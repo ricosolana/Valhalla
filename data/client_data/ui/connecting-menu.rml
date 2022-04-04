@@ -1,0 +1,10 @@
+<rml>
+	<head>
+		<link type="text/rcss" href="connecting-menu-styles.rcss"/>
+		<link type="text/rcss" href="styles.rcss" />
+		<title>ConnectingMenu</title>
+	</head>
+	<body id="body-connecting-menu">
+		<p class="text" id="connecting">Connecting...</P>
+	</body>
+</rml>

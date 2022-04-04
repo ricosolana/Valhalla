@@ -1,0 +1,6 @@
+out/
+.vs/
+*/x64/
+x64/
+AlchymeServer/quadtree_1M_alloc_debug.diagsession
+AlchymeServer/out.ppm

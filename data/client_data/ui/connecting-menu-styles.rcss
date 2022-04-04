@@ -1,0 +1,12 @@
+#body-connecting-menu {
+    background-color: #293134;
+    color: white;
+}
+
+#connecting {
+    display: inline-block;
+    width: 45%;
+    height: 8%;
+    position: fixed;
+    margin: 50% auto auto;
+}
