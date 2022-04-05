@@ -9,7 +9,7 @@
 * (static functions, no class object needed)
 */
 
-namespace Alchyme {
+namespace Valhalla {
     namespace Net {
 
         class Peer;

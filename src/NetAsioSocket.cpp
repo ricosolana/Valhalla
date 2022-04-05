@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace Net {
 		AsioSocket::AsioSocket(asio::io_context& ctx,
 			asio::ip::tcp::socket socket)

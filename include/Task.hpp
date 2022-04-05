@@ -3,7 +3,7 @@
 #include <functional>
 #include <chrono>
 
-namespace Alchyme {
+namespace Valhalla {
 	struct Task {
 		const std::function<void()> function;
 		std::chrono::steady_clock::time_point at;

@@ -9,7 +9,7 @@
 #error "Only the opengl sdl backend is supported."
 #endif
 
-namespace Alchyme {
+namespace Valhalla {
 	class MyRenderInterface : public Rml::RenderInterface
 	{
 	public:

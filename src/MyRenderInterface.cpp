@@ -8,7 +8,7 @@
 #error "Only the opengl sdl backend is supported."
 #endif
 
-namespace Alchyme {
+namespace Valhalla {
     MyRenderInterface::MyRenderInterface(SDL_Renderer* renderer, SDL_Window* screen)
     {
         mRenderer = renderer;
@@ -119,7 +119,7 @@ namespace Alchyme {
         file_interface->Close(file_handle);
 
         int w, h, n;
-        unsigned char* data = stbi_load_from_memory(buffer.data(), buffer.size(), &w, &h, &n, 4);
+        unsigned char* data = nullptr; // stbi_load_from_memory(buffer.data(), buffer.size(), &w, &h, &n, 4);
         if (data == nullptr) {
             return false;
         }
@@ -140,7 +140,7 @@ namespace Alchyme {
         // Load texture
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
-        stbi_image_free(data);
+        //stbi_image_free(data);
 
         return false;
     }

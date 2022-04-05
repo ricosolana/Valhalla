@@ -3,7 +3,7 @@
 #include "Shader.hpp"
 #include "Texture2D.hpp"
 
-namespace Alchyme {
+namespace Valhalla {
     class SpriteRenderer
     {
     public:

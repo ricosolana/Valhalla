@@ -1,7 +1,7 @@
 #include "MyFileInterface.hpp"
 #include <stdio.h>
 
-namespace Alchyme {
+namespace Valhalla {
 	MyFileInterface::MyFileInterface(const Rml::String& root) : root(root)
 	{
 	}

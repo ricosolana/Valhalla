@@ -1,6 +1,6 @@
 #include "SpriteRenderer.hpp"
 
-namespace Alchyme {
+namespace Valhalla {
     void SpriteRenderer::initRenderData()
     {
         // configure VAO/VBO

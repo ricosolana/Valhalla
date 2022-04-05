@@ -8,7 +8,7 @@
 
 using namespace asio::ip;
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace Net {
 		/**
 		 * @brief Custom socket implementation which makes use of Asio tcp socket

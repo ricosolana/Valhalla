@@ -9,20 +9,7 @@
 
 using namespace asio::ip;
 
-namespace Alchyme {
-	// contain within Net namespace
-	enum class PeerResult : uint8_t {
-		OK,
-		WRONG_VERSION,
-		WRONG_PASSWORD,
-		MAX_PEERS,
-		NOT_WHITELISTED,
-		BANNED,	// ip ban is checked very early
-		UID_ALREADY_ONLINE,
-		NAME_ALREADY_ONLINE,
-		BAD_MAGIC,
-		//STEAM_INVALID_SESSION_TICKET,
-	};
+namespace Valhalla {
 
 	class Game {
 	private:
@@ -42,15 +29,6 @@ namespace Alchyme {
 		asio::io_context m_ctx;
 
 	public:
-		const bool m_isServer;
-
-	public:
-		static Game* Get();
-		static void RunClient();
-		static void RunServer();
-
-		/*constexpr*/ Game(bool isServer);
-
 		virtual void Start();
 		virtual void Stop();
 

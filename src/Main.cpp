@@ -1,7 +1,8 @@
 #include "Client.hpp"
-#include "Server.hpp"
 
 #include <iostream>
+#include "BinaryWriter.hpp"
+#include <fstream>
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -11,23 +12,20 @@ int main(int argc, char **argv) {
 
 	// open file impl.txt
 
-	Alchyme::Utils::initLogger();
+	Valhalla::Utils::initLogger();
+	//Valhalla::Client::Run();
 
-	std::fstream f;
-	f.open("./data/impl.txt");
-	if (f.is_open()) {
-		std::string line;
-		std::getline(f, line);
-		f.close();
-		if (line == "client") {
-			Alchyme::Game::RunClient();
-		}
-		else if (line == "server")
-			Alchyme::Game::RunServer();
-		else
-			LOG(ERROR) << "Unknown impl in impl.txt (must be server or client)";
-	} else
-		LOG(ERROR) << "./data/impl.txt not found";
+	std::string s = "Hello, world!";
+
+	std::vector<unsigned char> vec;
+	auto writer = BinaryWriter(vec);
+	writer.Write(s);
+
+	std::ofstream wf("testc.dat", std::ios::out | std::ios::binary);
+
+	wf.write(reinterpret_cast<const char*>(vec.data()), vec.size());
+
+	wf.close();
 
 	return 0;
 }

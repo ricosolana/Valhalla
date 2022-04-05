@@ -1,15 +1,13 @@
-﻿# Alchyme Global Project Space
+﻿# Valhalla Global Project Space
 
 cmake_minimum_required (VERSION 3.14)
-project (Alchyme)
+project (Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
-
-#option(USE_STANDALONE_ASIO "set ON to use standalone Asio instead of Boost.Asio" ON)
 
 ############
 # LIBRARIES
@@ -65,12 +63,6 @@ target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT} WIN32_LEA
 endif()
 
 
-
-
-#include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-#conan_basic_setup(TARGETS)
-#
-#target_link_libraries(${PROJECT_NAME} CONAN_PKG::robin-hood-hashing)
 
 CPMAddPackage(
     NAME robinhood
@@ -233,57 +225,45 @@ CPMAddPackage(
     "BUILD_SAMPLES OFF"
     "BUILD_LUA_BINDINGS ON"
 )
-#target_compile_definitions(Alchyme PUBLIC RMLUI_STATIC_LIB)
+#target_compile_definitions(Valhalla PUBLIC RMLUI_STATIC_LIB)
 target_link_libraries(RmlCore freetype lua)
 
 #
 # Linking
 #
 
-add_executable(Alchyme
-    "src/client/Client.cpp"
-    "src/client/ClientRpc.cpp" 
-    "src/client/MyFileInterface.cpp" 
-    "src/client/MyRenderInterface.cpp" 
-    "src/client/MySystemInterface.cpp" 
-    "src/client/ScriptManager.cpp" 
-    "src/client/Shader.cpp"
-    "src/client/SpriteRenderer.cpp"
-    "src/client/Texture2D.cpp"
-
-    "src/server/Server.cpp" 
-    "src/server/ServerRpc.cpp"
+add_executable(Valhalla
+    "src/BinaryWriter.cpp"
+    "src/BinaryReader.cpp"
+    "src/Client.cpp"
+    "src/ClientRpc.cpp" 
+    "src/MyFileInterface.cpp" 
+    "src/MyRenderInterface.cpp" 
+    "src/MySystemInterface.cpp" 
+    "src/ScriptManager.cpp" 
+    "src/Shader.cpp"
+    "src/SpriteRenderer.cpp"
+    "src/Texture2D.cpp"
     
-    "src/Chunk.cpp"
     "src/Game.cpp" 
     "src/NetAsioSocket.cpp"
     "src/NetPeer.cpp" 
-    "src/NetPacket.cpp" 
+    "src/NetPackage.cpp" 
     "src/NetRpc.cpp" 
     "src/ResourceManager.cpp"
     "src/Task.cpp"
     "src/Utils.cpp"
-    "src/World.cpp"
-
-    #"src/server/ServerMain.cpp"
+    
     "src/Main.cpp"
 )
 
 
 
-target_include_directories(Alchyme PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(Valhalla PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-#target_include_directories(AlchymeClient PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#target_include_directories(AlchymeServer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(Valhalla PRIVATE cxx_std_20)
 
-
-
-target_compile_features(Alchyme PRIVATE cxx_std_20)
-
-#target_compile_features(AlchymeClient PRIVATE cxx_std_20)
-#target_compile_features(AlchymeServer PRIVATE cxx_std_20)
-
-target_link_libraries(Alchyme
+target_link_libraries(Valhalla
     Threads::Threads
     asio
     robinhood
@@ -305,51 +285,26 @@ target_link_libraries(Alchyme
 
 #include_directories(${CMAKE_SOURCE_DIR}/src)
 
-#set_target_properties(Alchyme OptickCore PROPERTIES
+#set_target_properties(Valhalla OptickCore PROPERTIES
 #    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 #)
 
-set_target_properties(Alchyme PROPERTIES
+set_target_properties(Valhalla PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run/
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
-    #VS_DEBUGGER_COMMAND_ARGUMENTS "server"
 )
 
-#set_target_properties(AlchymeClient PROPERTIES
-#    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run/
-#    CXX_EXTENSIONS OFF
-#    CXX_STANDARD_REQUIRED ON
-#    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/AlchymeClient"
-#)
-
-#set_target_properties(AlchymeServer PROPERTIES
-#    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run/
-#    CXX_EXTENSIONS OFF
-#    CXX_STANDARD_REQUIRED ON
-#    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/AlchymeServer"
-#)
 
 
-
-#set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Alchyme)
+#set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Valhalla)
 
 if (MSVC)
-    target_compile_options(Alchyme PRIVATE /bigobj "/diagnostics:caret")
-    #target_compile_options(AlchymeClient PRIVATE /bigobj "/diagnostics:caret")
-    #target_compile_options(AlchymeServer PRIVATE /bigobj "/diagnostics:caret")
+    target_compile_options(Valhalla PRIVATE /bigobj "/diagnostics:caret")
 endif()
 if(MSVC AND CMAKE_BUILD_TYPE MATCHES Release)
-    set_target_properties(Alchyme PROPERTIES WIN32_EXECUTABLE ON)
-    #set_target_properties(AlchymeClient PROPERTIES WIN32_EXECUTABLE ON)
-    #set_target_properties(AlchymeServer PROPERTIES WIN32_EXECUTABLE ON)
+    set_target_properties(Valhalla PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-     
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/client_data/data
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/AlchymeClient)
-
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/server_data/data
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/AlchymeServer)

@@ -15,7 +15,7 @@ struct Script {
 std::vector<Script> scripts;
 sol::state lua;
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace ScriptManager {
 		namespace Api {
 			void RegisterScript(sol::table scriptTable) {
@@ -40,16 +40,6 @@ namespace Alchyme {
 				}
 
 				Client::Get()->Connect(address, port);
-			}
-
-			void ServerStatus(std::string address) {
-				Client::Get()->m_mode = ConnectMode::STATUS;
-				ConnectToServer(address);
-			}
-
-			void ServerJoin(std::string address) {
-				Client::Get()->m_mode = ConnectMode::LOGIN;
-				ConnectToServer(address);
 			}
 
 			void DisconnectFromServer() {
@@ -104,8 +94,7 @@ namespace Alchyme {
 
 				apiTable["RegisterScript"] = Api::RegisterScript;
 				//apiTable["ConnectToServer"] = ScriptManager::Api::ConnectToServer;
-				apiTable["ServerJoin"] = Api::ServerJoin;
-				apiTable["ServerStatus"] = Api::ServerStatus;
+				apiTable["JoinServer"] = Api::ConnectToServer;
 				apiTable["DisconnectFromServer"] = Api::DisconnectFromServer;
 				apiTable["SendLogin"] = Api::SendLogin;
 

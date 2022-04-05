@@ -9,7 +9,7 @@
 #include "Texture2D.hpp"
 #include "Shader.hpp"
 
-namespace Alchyme {
+namespace Valhalla {
     namespace ResourceManager {
 
         void SetRoot(const char* r);

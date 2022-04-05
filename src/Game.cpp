@@ -1,28 +1,7 @@
 #include "Game.hpp"
 #include "Client.hpp"
-#include "Server.hpp"
 
-namespace Alchyme {
-	static std::unique_ptr<Game> impl;
-
-	Game* Game::Get() {
-		return impl.get();
-	}
-
-	void Game::RunClient() {
-		impl = std::make_unique<Client>();
-		impl->Start();
-	}
-
-	void Game::RunServer() {
-		impl = std::make_unique<Server>();
-		impl->Start();
-	}
-
-	Game::Game(bool isServer)
-		: m_isServer(isServer)
-	{}
-
+namespace Valhalla {
 	void Game::StartIOThread() {
 		m_ctxThread = std::thread([this]() {
 			el::Helpers::setThreadName("io");

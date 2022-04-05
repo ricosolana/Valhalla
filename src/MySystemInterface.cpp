@@ -3,7 +3,7 @@
 #include "Utils.hpp"
 #include <iostream>
 
-namespace Alchyme {
+namespace Valhalla {
     Rml::Input::KeyIdentifier MySystemInterface::TranslateKey(SDL_Keycode sdlkey)
     {
         using namespace Rml::Input;

@@ -3,7 +3,7 @@
 #include <RmlUi/Core/Types.h>
 #include <RmlUi/Core/FileInterface.h>
 
-namespace Alchyme {
+namespace Valhalla {
 	class MyFileInterface : public Rml::FileInterface {
 		Rml::String root;
 

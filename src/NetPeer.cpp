@@ -1,13 +1,11 @@
 #include "NetPeer.hpp"
 #include "Client.hpp"
-#include "Server.hpp"
 #include <memory>
 #include "NetRpc.hpp"
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace Net {
-		Peer::Peer(AsioSocket::Ptr socket)
-			: m_isServer(Game::Get()->m_isServer),
+		Peer::Peer(AsioSocket::Ptr socket) :
 			m_socket(socket),
 			m_rpc(std::make_unique<Rpc>(socket))
 		{}
@@ -21,7 +19,7 @@ namespace Alchyme {
 		}
 
 		void Peer::DisconnectLater() {
-			Game::Get()->DisconnectLater(this);
+			Client::Get()->DisconnectLater(this);
 		}
 
 		bool Peer::IsOnline() {

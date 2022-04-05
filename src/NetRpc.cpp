@@ -1,7 +1,7 @@
 #include "NetRpc.hpp"
 #include "NetPeer.hpp"
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace Net {
 		Rpc::Rpc(AsioSocket::Ptr socket)
 			: m_socket(socket) {
@@ -13,14 +13,14 @@ namespace Alchyme {
 		}
 
 		void Rpc::Register(const char* name, IMethod* method) {
-			auto hash = static_cast<RpcHash>(Utils::StrHash(name));
+			auto stableHash = Utils::GetStableHashCode(name);
 
 #ifndef _NDEBUG
-			if (m_methods.find(hash) != m_methods.end())
+			if (m_methods.find(stableHash) != m_methods.end())
 				throw std::runtime_error("Hash collision, or most likely duplicate RPC name registered");
 #endif
 
-			m_methods.insert({ hash, std::unique_ptr<IMethod>(method) });
+			m_methods.insert({ stableHash, std::unique_ptr<IMethod>(method) });
 		}
 
 		void Rpc::Update(Peer* peer) {
@@ -39,5 +39,8 @@ namespace Alchyme {
 				}
 			}
 		}
+
+
+
 	}
 }

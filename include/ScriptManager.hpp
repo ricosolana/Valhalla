@@ -2,7 +2,7 @@
 
 #include <sol/sol.hpp>
 
-namespace Alchyme {
+namespace Valhalla {
 	namespace ScriptManager {
 		void Init();
 		lua_State* GetLuaState();

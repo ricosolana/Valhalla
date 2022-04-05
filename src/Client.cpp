@@ -4,12 +4,18 @@
 #include <RmlUi/Debugger.h>
 #include "ScriptManager.hpp"
 
-namespace Alchyme {
-	Client* Client::Get() {
-		return static_cast<Client*>(Game::Get());
+namespace Valhalla {
+
+	static std::unique_ptr<Client> m_client;
+
+	void Client::Run() {
+		m_client = std::make_unique<Client>();
+		m_client->Start();
 	}
 
-	Client::Client() : Game(false) {}
+	Client* Client::Get() {
+		return m_client.get();
+	}
 
 	void Client::Stop() {
 		Rml::Shutdown();
@@ -269,6 +275,8 @@ namespace Alchyme {
 
 	void Client::ConnectCallback(Net::Peer* peer) {
 		LOG(INFO) << "Connected";
+		//peer->m_rpc->Register("ClientHandshake", new Net::Method(this, &RPC_ClientHandshake));
+		peer->m_rpc->Invoke("ServerHandshake");
 	}
 
 	void Client::DisconnectCallback(Net::Peer* peer) {

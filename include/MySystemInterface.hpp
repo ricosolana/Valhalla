@@ -5,7 +5,7 @@
 
 #include <SDL.h>
 
-namespace Alchyme {
+namespace Valhalla {
 	class MySystemInterface : public Rml::SystemInterface
 	{
 	public:

@@ -1,3 +1,0 @@
-db-file: C:\Users\Rico\PycharmProjects\SQLAuth\userdata.db
-port: 8001
-world: my world

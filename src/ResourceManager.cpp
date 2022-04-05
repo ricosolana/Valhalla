@@ -11,7 +11,7 @@
 
 #include <robin_hood.h>
 
-namespace Alchyme {
+namespace Valhalla {
     namespace ResourceManager {
         // Instantiate static variables
         std::string root;

@@ -13,7 +13,42 @@
 #define WHITE "\033[37m"
 #define GRAY "\033[90m"
 
-namespace Alchyme {
+void Stream::Read(byte* buffer, int offset, int count) {
+    std::memcpy(buffer + offset, m_buf.data() + m_pos, count);
+    m_pos += count;
+}
+
+byte Stream::ReadByte() {
+    byte b;
+    Read(&b, 0, 1);
+    return b;
+}
+
+void Stream::Read(std::vector<byte>& vec, int count) {
+    vec.insert(vec.end(), m_buf.begin() + m_pos, m_buf.begin() + m_pos + count);
+    m_pos += count;
+}
+
+
+
+void Stream::Write(byte* buffer, int offset, int count) {
+    m_buf.insert(m_buf.begin() + m_pos, buffer + offset, buffer + offset + count);
+    m_pos += count;
+}
+
+void Stream::WriteByte(byte value) {
+    Write(&value, 0, 1);
+}
+
+void Stream::Write(std::vector<byte>& vec, int count) {
+    // buffer -> internal
+    m_buf.insert(m_buf.begin() + m_pos, vec.begin(), vec.begin() + count);
+    m_pos += count;
+}
+
+
+
+namespace Valhalla {
 
     namespace Utils {
         void initLogger() {
@@ -34,6 +69,31 @@ namespace Alchyme {
             el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
             //el::Loggers::file
             LOG(INFO) << "Logger is configured";
+        }
+
+        int GetStableHashCode(const char* str) {
+            int num = 5381;
+            int num2 = num;
+            int num3 = 0;
+            while (str[num3] != '\0')
+            {
+                num = ((num << 5) + num) ^ (int)str[num3];
+                if (str[num3 + 1] == '\0')
+                {
+                    break;
+                }
+                num2 = ((num2 << 5) + num2) ^ (int)str[num3 + 1];
+                num3 += 2;
+            }
+            return num + num2 * 1566083941;
+        }
+
+        int GetUnicode8Count(const char* p) {
+            int count = 0;
+            for (p; *p != 0; ++p)
+                count += ((*p & 0xc0) != 0x80);
+
+            return count;
         }
 
         UID stringToUID(std::string_view sv) {

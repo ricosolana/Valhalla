@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace Alchyme {
+namespace Valhalla {
     Shader& Shader::Use()
     {
         glUseProgram(this->ID);
