@@ -16,18 +16,30 @@ void BinaryReader::Read(std::vector<byte>& out, int count) {
     m_stream.Read(out, count);
 }
 
-std::string BinaryReader::ReadString() {
-    //value.
-    auto byteCount = Read7BitEncodedInt();
+//template <> std::string BinaryReader::Read() {
+//    auto byteCount = Read7BitEncodedInt();
+//
+//    if (byteCount == 0)
+//        return "";
+//
+//    std::string out;
+//    out.resize(byteCount);
+//
+//    Read(reinterpret_cast<byte*>(out.data()), byteCount);
+//}
 
-    if (byteCount == 0)
-        return "";
-
-    std::string out;
-    out.resize(byteCount);
-
-    Read(reinterpret_cast<byte*>(out.data()), byteCount);
-}
+//std::string BinaryReader::Read() {
+//    //value.
+//    auto byteCount = Read7BitEncodedInt();
+//
+//    if (byteCount == 0)
+//        return "";
+//
+//    std::string out;
+//    out.resize(byteCount);
+//
+//    Read(reinterpret_cast<byte*>(out.data()), byteCount);
+//}
 
 int BinaryReader::Read7BitEncodedInt() {
     int out = 0;

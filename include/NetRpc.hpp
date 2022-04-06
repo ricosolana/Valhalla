@@ -5,72 +5,58 @@
 #include "NetSocket.hpp"
 
 #include "Utils.hpp"
+#include "NetPackage.hpp"
 
-namespace Valhalla {
-	namespace Net {
-		class Peer;
+class Peer;
 
-		/**
-		* The client and Rpc should be merged somehow
-		 * @brief
-		 *
-		*/
-		class Rpc {
-			using RpcHash = size_t;
+/**
+* The client and Rpc should be merged somehow
+	* @brief
+	*
+*/
+class Rpc {
+	void Append_impl(Package* p) {}
 
-			robin_hood::unordered_map<RpcHash, std::unique_ptr<IMethod>> m_methods;
+	template <typename T, typename... Types>
+	void Append_impl(Package* p, T var1, Types... var2) {
+		p->Write(var1);
 
-		public:
-			AsioSocket::Ptr m_socket;
-
-			int not_garbage;
-
-		public:
-			Rpc(AsioSocket::Ptr socket);
-			~Rpc();
-
-			/**
-			 * @brief Register a method to be remotely invoked
-			 * @param name the function identifier
-			 * @param method the function
-			*/
-			void Register(const char* name, IMethod* method);
-
-			void Append_impl(Packet* p) {}
-
-			template <typename T, typename... Types>
-			void Append_impl(Packet* p, T var1, Types... var2) {
-				p->Write(var1);
-
-				Append_impl(p, var2...);
-			}
-
-			/**
-			 * @brief Invoke a function remotely
-			 * @param name function name
-			 * @param ...types function params
-			*/
-			template <typename... Types>
-			void Invoke(const char* name, Types... params) {
-
-				/*
-				* Binary Packet Format:
-				*  |0...................1...................2....|
-				*  |0_1_2_3_4_5_6_7_8_9_0_1_2_3_4_5_6_7_8_9_0....|
-				*  |_Fn_Hash_|______________params_______________|
-				*/
-
-				Packet* p = new Packet();
-				p->Write(Utils::StrHash(name));
-
-				// Recursive variadic template write
-				Append_impl(p, params...);
-
-				// Flush packet
-				m_socket->FlushPacket(p);
-			}
-
-			void Update(Peer* peer);
-		};
+		Append_impl(p, var2...);
 	}
-}
+
+	robin_hood::unordered_map<int, std::unique_ptr<IMethod>> m_methods;
+	Socket2::Ptr m_socket;
+
+public:
+	int not_garbage;
+
+	Rpc(Socket2::Ptr socket);
+	~Rpc();
+
+	bool IsConnected();
+
+	/**
+		* @brief Register a method to be remotely invoked
+		* @param name the function identifier
+		* @param method the function
+	*/
+	void Register(const char* name, IMethod* method);
+
+	/**
+		* @brief Invoke a function remotely
+		* @param name function name
+		* @param ...types function params
+	*/
+	template <typename... Types>
+	void Invoke(const char* method, Types... params) {
+		if (!IsConnected())
+			return;
+
+		auto pkg = new Package();
+		int stable = Utils::GetStableHashCode(method);
+		Append_impl(pkg, params...); // serialize
+		m_socket->Send(pkg);
+	}
+
+	void Update();
+};

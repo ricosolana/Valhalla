@@ -233,28 +233,26 @@ target_link_libraries(RmlCore freetype lua)
 #
 
 add_executable(Valhalla
-    "src/BinaryWriter.cpp"
     "src/BinaryReader.cpp"
-    "src/Client.cpp"
-    "src/ClientRpc.cpp" 
+    "src/BinaryWriter.cpp"
+    "src/Main.cpp"
     "src/MyFileInterface.cpp" 
     "src/MyRenderInterface.cpp" 
     "src/MySystemInterface.cpp" 
+    "src/NetClient.cpp"
+    "src/NetPackage.cpp"    
+    "src/NetPeer.cpp" 
+    "src/NetRpc.cpp" 
+    "src/NetSocket2.cpp"
+    "src/ResourceManager.cpp"
     "src/ScriptManager.cpp" 
     "src/Shader.cpp"
     "src/SpriteRenderer.cpp"
-    "src/Texture2D.cpp"
-    
-    "src/Game.cpp" 
-    "src/NetAsioSocket.cpp"
-    "src/NetPeer.cpp" 
-    "src/NetPackage.cpp" 
-    "src/NetRpc.cpp" 
-    "src/ResourceManager.cpp"
+    "src/Stream.cpp"
     "src/Task.cpp"
+    "src/Texture2D.cpp"
     "src/Utils.cpp"
-    
-    "src/Main.cpp"
+    "src/ValhallaGame.cpp" 
 )
 
 

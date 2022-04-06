@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "Utils.hpp"
+#include "Stream.hpp"
 
 // https://dotnetfiddle.net/wg4fSm
 // C# BinaryWriter ported to C++
@@ -20,9 +20,9 @@ public:
 	void Write(const std::vector<byte>& in, int count);
 
 	template<typename T>
-	void Write(const T in) requires std::is_trivially_copyable_v<T> {
-		Write(reinterpret_cast<const byte*>(&value), sizeof(T));
+	void Write(const T &in) requires std::is_trivially_copyable_v<T> {
+		Write(reinterpret_cast<const byte*>(&in), sizeof(T));
 	}
 
-	void Write(const std::string & in);
+	void Write(const std::string &in);
 };

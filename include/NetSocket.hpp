@@ -1,66 +1,65 @@
 #pragma once
 
 #include <string>
-#include "NetPacket.hpp"
+#include "NetPackage.hpp"
 
 #include "Utils.hpp"
 #include <memory>
 
 using namespace asio::ip;
 
-namespace Valhalla {
-	namespace Net {
-		/**
-		 * @brief Custom socket implementation which makes use of Asio tcp socket
-		 *
-		*/
-		class AsioSocket : public std::enable_shared_from_this<AsioSocket> {
-			tcp::socket m_socket;
-			AsyncDeque<Packet*> m_sendQueue;
-			AsyncDeque<Packet*> m_recvQueue;
+//class ISocket {
+//public:
+//	virtual ISocket();
+//};
 
-			std::string m_hostname;
-			uint_least16_t m_port;
+/**
+	* @brief Custom socket implementation which makes use of Asio tcp socket
+	*
+*/
+// Shared ptr not really necessary with a simple 
+// client where socket state is tracked step by step
+class Socket2 : public std::enable_shared_from_this<Socket2> {
+	tcp::socket m_socket;
+	AsyncDeque<Package*> m_sendQueue;
+	AsyncDeque<Package*> m_recvQueue;
 
-			std::atomic_bool m_online = true;
+	int m_tempReadOffset = 0;
+	int m_tempWriteOffset = 0;
 
-		public:
-			using Ptr = std::shared_ptr<AsioSocket>;
+	std::string m_hostname;
+	uint_least16_t m_port;
 
-			AsioSocket(asio::io_context& ctx, tcp::socket socket);
-			AsioSocket(asio::io_context& ctx);
-			~AsioSocket();
+	//
+	std::atomic_bool m_online = true;
 
-			void Accept();
+public:
+	using Ptr = std::shared_ptr<Socket2>;
 
-			/**
-			 * @brief Add packet to queue
-			 * @param packet the new Packet()
-			 * @return result
-			*/
-			bool QueuePacket(NOTNULL Packet* packet);
+	Socket2(asio::io_context& ctx);
+	~Socket2();
 
-			/**
-			 * @brief Add packet to queue and flush
-			 * @param packet the new Packet()
-			 * @return result
-			*/
-			bool FlushPacket(NOTNULL Packet* packet);
-			bool Flush();
+	void Accept();
 
-			NULLABLE Packet* NextPacket();
-			bool Close();
+	/**
+		* @brief Send packet
+		* @param packet the new Packet()
+		* @return result
+	*/
+	void Send(NOTNULL Package* packet);
 
-			std::string& GetHostName();
-			uint_least16_t GetHostPort();
-			bool IsOnline();
-			tcp::socket& GetSocket();
+	bool HasNewData();
+	NULLABLE Package* Recv();
+	bool Close();
 
-		private:
-			void ReadHeader();
-			void ReadBody(Packet* packet);
-			void WriteHeader();
-			void WriteBody(Packet* packet);
-		};
-	}
-}
+	std::string& GetHostName();
+	uint_least16_t GetHostPort();
+	bool IsOnline();
+	tcp::socket& GetSocket();
+
+private:
+	void ReadPkgSize();
+	void ReadPkg();
+	void WritePkgSize();
+	void WritePkg(Package* pkg);
+};

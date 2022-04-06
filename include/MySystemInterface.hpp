@@ -5,7 +5,6 @@
 
 #include <SDL.h>
 
-namespace Valhalla {
 	class MySystemInterface : public Rml::SystemInterface
 	{
 	public:
@@ -16,4 +15,3 @@ namespace Valhalla {
 		double GetElapsedTime() override;
 		bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
 	};
-}

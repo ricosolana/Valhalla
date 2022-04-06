@@ -18,20 +18,24 @@ void BinaryWriter::Write(const std::vector<byte>& in, int count) {
 
 void BinaryWriter::Write(const std::string& in) {
 	//value.
-	int byteCount = Valhalla::Utils::GetUnicode8Count(in.c_str());
-	Write7BitEncodedInt(byteCount);
+	int byteCount = Utils::GetUnicode8Count(in.c_str());
 	if (byteCount > 256)
 		throw std::runtime_error("Writing big string not yet supported");
 
 	if (byteCount == 0)
 		return;
 
+	m_stream.ensureCapacity(1 + in.length());
+
+	Write7BitEncodedInt(byteCount);
+
 	Write(reinterpret_cast<const byte*>(in.c_str()), in.length());
 }
 
 void BinaryWriter::Write7BitEncodedInt(int in) {
+	m_stream.ensureCapacity(4);
 	unsigned int num;
-	for (num = (unsigned int)value; num >= 128U; num >>= 7)
+	for (num = (unsigned int)in; num >= 128U; num >>= 7)
 		Write((unsigned char)(num | 128U));
 
 	Write((unsigned char)num);

@@ -2,15 +2,13 @@
 
 #include <sol/sol.hpp>
 
-namespace Valhalla {
-	namespace ScriptManager {
-		void Init();
-		lua_State* GetLuaState();
+namespace ScriptManager {
+	void Init();
+	lua_State* GetLuaState();
 
-		namespace Event {
-			/// Event calls
-			void OnLogin();
-			void OnUpdate(float delta);
-		}
-	};
-}
+	namespace Event {
+		/// Event calls
+		void OnLogin();
+		void OnUpdate(float delta);
+	}
+};
