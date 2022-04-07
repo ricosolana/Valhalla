@@ -4,6 +4,8 @@ Open source Valheim client
 ## Disclaimer
 I am in no way affiliated, endorsed, or associated with Valheim nor its creators.
 
+The purpose of this project is just to explore and be creative in a non-commercial manner. Any usages of code below are in fair use and in full compliance with Coffee Stain Publishing EULA https://irongatestudio.se/CoffeeStainPublishingAB-GameContentUsagePolicy-18-05-2021.pdf
+
 ## Overview
 Valheim uses the Steamworks API for both ticket authentication and networking. I could have used the Steam gamenetworkingsockets for C++ to be better compatible with the Valheim server and overall general implementation, but that's too complicated to implement at the moment.
 
@@ -68,9 +70,36 @@ public void Connect(SteamNetworkingIPAddr host) {
 ```
 This basically uses the existing SteamNetworkingIPAddr structure to get the ip from it and use with ZSocket2.
 
-I though it would make sense to debug the code to make everything works as expected, but good luck doing that, becauseit seems that Unity keeps track of which debug logs originally existed for performance purposes or something idk. `ZLog.Log("hi"); // this never prints`
+It would make sense to debug the code to make everything works as expected, but it appears that something behind the scenes is preventing any new logs from logging:
+```c#
+ZLog.Log("This never gets logged");
+```
+A way around this is to use the console 
+```c#
+global::Console.instance.Print("This works with console enabled\n");
+```
+Just launch with the `-console` command line argument added and press F5 ingame to open it:
+`./valheim.exe -console`
 
-I really have no clue on how to do dll injections for modding/adding the funcitonality into the base game to support this, so the best I can do is provide the walkthrough and above code.
+I really have no clue on how to do dll injections for modding/adding the functionality into the base game to support this, so the best I can do is provide the walkthrough and above code.
+
+Also if you want to get past the steam auth ticket (for demonstration purposes):
+```c#
+void RPC_PeerInfo(ZRpc rpc, ZPackage pkg) {
+  // ...
+  if (m_isServer) {
+    string b = pkg.ReadString();
+    ZSteamSocket zsteamSocket = peer.m_socket as ZSteamSocket;
+    byte[] ticket = pkg.ReadByteArray();
+    if (!ZSteamMatchmaking.instance.VerifySessionTicket(ticket, zsteamSocket.GetPeerID())) {
+      ZLog.Log("Peer " + endPointString + " has invalid session ticket");
+      rpc.Invoke("Error", new object[] { 8 });
+      return;
+    }
+    // ...
+  }
+```
+Just read the ticket as a dummy and remove the verification `pkg.ReadByteArray();`.
 
 See My Valheim Manifesto for more findings and stuff
 https://docs.google.com/document/d/1Op_0dvQnDZkcbUCZ3MQMSAsxho7J8jbJeEkfW_8lMRY/edit?usp=sharing
