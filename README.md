@@ -1,5 +1,5 @@
 # Valhalla
-Open source Valheim client
+Open source Valheim client written in C++
 
 ## Disclaimer
 I am in no way affiliated, endorsed, or associated with Valheim nor its creators.
