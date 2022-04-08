@@ -7,9 +7,9 @@
   </head>
   <body id="body-main-menu">
     <strong class="title" id="title">Alchyme</strong>
-    <input class="text" id="hostname-in" value="localhost:8001"/>
-    <button onclick="ServerStatus(document)" class="button" id="server-status">Status</button>
-    <button onclick="ServerJoin(document)" class="button" id="server-join">Join</button>
+    <input class="text" id="hostname-in" value="localhost"/>
+    <button onclick="Connect(document)" class="button" id="connect">Connect</button>
+	<button onclick="Disconnect(document)" class="button" id="disconnect">Disconnect</button>
   </body>
 </rml>
 

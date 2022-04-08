@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "NetPackage.hpp"
+#include "ZPackage.hpp"
 
 #include "Utils.hpp"
 #include <memory>
@@ -19,10 +19,13 @@ using namespace asio::ip;
 */
 // Shared ptr not really necessary with a simple 
 // client where socket state is tracked step by step
-class Socket2 : public std::enable_shared_from_this<Socket2> {
+class ZSocket2 : public std::enable_shared_from_this<ZSocket2> {
 	tcp::socket m_socket;
-	AsyncDeque<Package*> m_sendQueue;
-	AsyncDeque<Package*> m_recvQueue;
+	// TODO use unique ptr
+	AsyncDeque<ZPackage*> m_sendQueue;
+
+	// TODO use unique_ptr
+	AsyncDeque<ZPackage*> m_recvQueue;
 
 	int m_tempReadOffset = 0;
 	int m_tempWriteOffset = 0;
@@ -34,10 +37,10 @@ class Socket2 : public std::enable_shared_from_this<Socket2> {
 	std::atomic_bool m_online = true;
 
 public:
-	using Ptr = std::shared_ptr<Socket2>;
+	using Ptr = std::shared_ptr<ZSocket2>;
 
-	Socket2(asio::io_context& ctx);
-	~Socket2();
+	ZSocket2(asio::io_context& ctx);
+	~ZSocket2();
 
 	void Accept();
 
@@ -46,10 +49,10 @@ public:
 		* @param packet the new Packet()
 		* @return result
 	*/
-	void Send(NOTNULL Package* packet);
+	void Send(ZPackage* packet);
 
 	bool HasNewData();
-	NULLABLE Package* Recv();
+	ZPackage* Recv();
 	bool Close();
 
 	std::string& GetHostName();
@@ -61,5 +64,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(Package* pkg);
+	void WritePkg(ZPackage* pkg);
 };

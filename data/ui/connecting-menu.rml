@@ -5,6 +5,6 @@
 		<title>ConnectingMenu</title>
 	</head>
 	<body id="body-connecting-menu">
-		<p class="text" id="connecting">Connecting...</P>
+		<p class="text" id="connecting">Connecting...</p>
 	</body>
 </rml>

@@ -1,4 +1,4 @@
-#include "ValhallaGame.hpp"
+#include "Game.hpp"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -35,12 +35,33 @@ void initLogger() {
     LOG(INFO) << "Logger is configured";
 }
 
+struct obyte {
+    unsigned char m;
+    obyte() {}
+};
+
 int main(int argc, char **argv) {
 
 	// Initialize logger
 	initLogger();
 
 	Game::Run();
+
+    //for (int trial = 1; trial <= 5; trial++) {
+    //    auto startTime(std::chrono::steady_clock::now());
+    //    std::vector<byte> vec_byte(1000000000);
+    //    auto dur = std::chrono::steady_clock::now() - startTime;
+    //
+    //    LOG(INFO) << "Byte vec: " << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << "ms (trial " << trial << ")";
+    //}
+    //
+    //for (int trial = 1; trial <= 5; trial++) {
+    //    auto startTime(std::chrono::steady_clock::now());
+    //    std::vector<byte> vec_byte(1000000000);
+    //    auto dur = std::chrono::steady_clock::now() - startTime;
+    //
+    //    LOG(INFO) << "oByte vec: " << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << "ms (trial " << trial << ")";
+    //}
 
 	return 0;
 }

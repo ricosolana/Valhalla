@@ -1,7 +1,21 @@
+#include <random>
+#include <limits>
 #include "Utils.hpp"
 
 namespace Utils {
-    int GetStableHashCode(const char* str) {
+
+    std::random_device rd;     //Get a random seed from the OS entropy device, or whatever
+    std::mt19937_64 eng(rd()); //Use the 64-bit Mersenne Twister 19937 generator
+                               //and seed it with entropy.
+
+    UID_t GenerateUID() {
+        //Define the distribution, by default it goes from 0 to MAX(unsigned long long)
+        //or what have you.
+        std::uniform_int_distribution<int64_t> distr;
+        return distr(eng);
+    }
+
+    int32_t GetStableHashCode(const char* str) {
         int num = 5381;
         int num2 = num;
         int num3 = 0;
@@ -18,7 +32,7 @@ namespace Utils {
         return num + num2 * 1566083941;
     }
 
-    int GetUnicode8Count(const char* p) {
+    int32_t GetUnicode8Count(const char* p) {
         int count = 0;
         for (p; *p != 0; ++p)
             count += ((*p & 0xc0) != 0x80);
@@ -26,10 +40,10 @@ namespace Utils {
         return count;
     }
 
-    UID StringToUID(std::string_view sv) {
+    UID_t StringToUID(std::string_view sv) {
         std::string s(sv);
         std::stringstream ss(s);
-        UID uid;
+        UID_t uid;
         ss >> uid;
         return uid;
     }

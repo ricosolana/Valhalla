@@ -3,8 +3,8 @@
 #include <RmlUi/Lua.h>
 #include <sol/sol.hpp>
 #include <filesystem>
-#include "NetClient.hpp"
-#include "ValhallaGame.hpp"
+#include "ZNet.hpp"
+#include "Game.hpp"
 
 struct Script {
 	const std::function<void()> onEnable;
@@ -31,12 +31,16 @@ namespace ScriptManager {
 
 		void Connect(std::string host, std::string port) {
 			LOG(INFO) << "Lua connect invoked";
-			Game::Get().m_client->Connect(host, port);
+			Game::Get()->m_znet->Connect(host, port);
 		}
 
 		void Disconnect() {
 			LOG(INFO) << "Lua disconnect invoked";
-			Game::Get().m_client->Disconnect();
+			Game::Get()->m_znet->Disconnect();
+		}
+
+		void Login(std::string password) {
+			LOG(INFO) << "Lua login invoked";
 		}
 	}
 
@@ -60,7 +64,7 @@ namespace ScriptManager {
 			output += Rml::String(s);
 			lua_pop(L, 1);  /* pop result */
 		}
-		output += "\n";
+		//output += "\n";
 		Rml::Log::Message(Rml::Log::LT_INFO, "[LUA] %s", output.c_str());
 		return 0;
 	}
@@ -77,11 +81,12 @@ namespace ScriptManager {
 
 			Rml::Lua::Initialise(L);
 
-			auto apiTable = lua["Alchyme"].get_or_create<sol::table>();
+			auto apiTable = lua["Valhalla"].get_or_create<sol::table>();
 
 			apiTable["RegisterScript"] = Api::RegisterScript;
 			apiTable["Connect"] = Api::Connect;
-			apiTable["DisconnectFromServer"] = Api::Disconnect;
+			apiTable["Disconnect"] = Api::Disconnect;
+			apiTable["Login"] = Api::Login;
 
 
 
@@ -100,6 +105,16 @@ namespace ScriptManager {
 
 			lua.safe_script(scriptCode);
 		}
+	}
+
+	void Uninit() {
+		for (auto& script : scripts) {
+			if (script.onDisable) // check is mandatory to avoid std::bad_function_call
+									// if function is empty
+
+				script.onDisable();
+		}
+		scripts.clear();
 	}
 
 	lua_State* GetLuaState() {

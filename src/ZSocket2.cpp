@@ -1,22 +1,20 @@
-#include "NetSocket.hpp"
+#include "ZSocket.hpp"
 #include <string>
 #include <iostream>
 
-Socket2::Socket2(asio::io_context& ctx)
+ZSocket2::ZSocket2(asio::io_context& ctx)
 	: m_socket(ctx) {}
 
-Socket2::~Socket2() {
+ZSocket2::~ZSocket2() {
 	while (!m_sendQueue.empty()) delete m_sendQueue.pop_front();
 	while (!m_recvQueue.empty()) delete m_recvQueue.pop_front();
-
-	LOG(DEBUG) << "~NetSocket2()";
 	Close();
 }
 
 
 
-void Socket2::Accept() {
-	LOG(DEBUG) << "NetSocket2::Accept()";
+void ZSocket2::Accept() {
+	LOG(INFO) << "NetSocket2 Accept";
 
 	m_hostname = m_socket.remote_endpoint().address().to_string();
 	m_port = m_socket.remote_endpoint().port();
@@ -29,7 +27,7 @@ void Socket2::Accept() {
 	* the size and data is written to the same buffer
 	* Im not doing for readability
 */
-void Socket2::Send(NOTNULL Package* pkg) {
+void ZSocket2::Send(ZPackage* pkg) {
 	if (pkg->Size() == 0)
 		return;
 
@@ -40,17 +38,16 @@ void Socket2::Send(NOTNULL Package* pkg) {
 		const bool was_empty = m_sendQueue.empty();
 		m_sendQueue.push_back(std::move(pkg));
 		if (was_empty) {
-			LOG(DEBUG) << "Reinitiating Writer";
 			WritePkgSize();
 		}
 	}
 }
 
-bool Socket2::HasNewData() {
+bool ZSocket2::HasNewData() {
 	return !m_recvQueue.empty();
 }
 
-Package* Socket2::Recv() {
+ZPackage* ZSocket2::Recv() {
 	if (!m_recvQueue.empty())
 		return m_recvQueue.pop_front();
 	return nullptr;
@@ -58,9 +55,9 @@ Package* Socket2::Recv() {
 
 
 
-bool Socket2::Close() {
+bool ZSocket2::Close() {
 	if (m_online) {
-		LOG(DEBUG) << "NetSocket2::Close()";
+		LOG(INFO) << "NetSocket2::Close()";
 
 		m_online = false;
 
@@ -74,27 +71,25 @@ bool Socket2::Close() {
 
 
 
-std::string& Socket2::GetHostName() {
+std::string& ZSocket2::GetHostName() {
 	return m_hostname;
 }
 
-uint_least16_t Socket2::GetHostPort() {
+uint_least16_t ZSocket2::GetHostPort() {
 	return m_port;
 }
 
-bool Socket2::IsOnline() {
+bool ZSocket2::IsOnline() {
 	return m_online;
 }
 
-tcp::socket& Socket2::GetSocket() {
+tcp::socket& ZSocket2::GetSocket() {
 	return m_socket;
 }
 
 
 
-void Socket2::ReadPkgSize() {
-	LOG(DEBUG) << "ReadHeader()";
-
+void ZSocket2::ReadPkgSize() {
 	auto self(shared_from_this());
 	asio::async_read(m_socket,
 		asio::buffer(&m_tempReadOffset, 4),
@@ -110,19 +105,19 @@ void Socket2::ReadPkgSize() {
 	);
 }
 
-void Socket2::ReadPkg() {
-	LOG(DEBUG) << "ReadBody()";
-			
+void ZSocket2::ReadPkg() {
 	if (m_tempReadOffset == 0 || m_tempReadOffset > 10485760) {
 		LOG(ERROR) << "Invalid pkg size received " << m_tempReadOffset;
 		Close();
 	}
 	else {
-		auto pkg = new Package(m_tempReadOffset);
-		//packet->m_buf.resize(packet->offset);
+		auto pkg = new ZPackage(); //new Package(m_tempReadOffset);
+		// the initialization is pointless
+		pkg->Buffer().resize(m_tempReadOffset);
+
 		auto self(shared_from_this());
 		asio::async_read(m_socket,
-			asio::buffer(pkg->Buffer()),
+			asio::buffer(pkg->Buffer(), m_tempReadOffset), // whether vec needs to be reserved or resized
 			[this, self, pkg](const std::error_code& e, size_t) {
 			if (!e) {
 				m_recvQueue.push_back(pkg);
@@ -136,9 +131,7 @@ void Socket2::ReadPkg() {
 	}
 }
 
-void Socket2::WritePkgSize() {
-	LOG(DEBUG) << "WriteHeader()";
-
+void ZSocket2::WritePkgSize() {
 	auto pkg = m_sendQueue.front();
 
 	m_tempWriteOffset = pkg->Size();
@@ -157,15 +150,13 @@ void Socket2::WritePkgSize() {
 	});
 }
 
-void Socket2::WritePkg(Package *pkg) {
-	LOG(DEBUG) << "WriteBody()";
-
+void ZSocket2::WritePkg(ZPackage *pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
 		asio::buffer(pkg->Buffer().data(), m_tempWriteOffset),
 		[this, self, pkg](const std::error_code& e, size_t) {
+		delete pkg;
 		if (!e) {
-			delete pkg;
 			m_sendQueue.pop_front();
 			if (!m_sendQueue.empty()) {
 				WritePkgSize();

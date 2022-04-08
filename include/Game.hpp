@@ -3,11 +3,12 @@
 #include <thread>
 #include <asio.hpp>
 #include "Task.hpp"
-#include "NetPeer.hpp"
+#include "ZNetPeer.hpp"
 #include "MyRenderInterface.hpp"
 #include "MySystemInterface.hpp"
 #include "MyFileInterface.hpp"
-#include "NetClient.hpp"
+#include "ZNet.hpp"
+#include "Settings.hpp"
 
 using namespace asio::ip;
 
@@ -16,7 +17,7 @@ class Game {
 
 	// perfect structure for this job
 	// https://stackoverflow.com/questions/2209224/vector-vs-list-in-stl
-	std::list<Task> m_tasks;
+	std::list<std::unique_ptr<Task>> m_tasks;
 
 	std::recursive_mutex m_taskMutex;
 
@@ -29,22 +30,22 @@ class Game {
 	std::unique_ptr<MySystemInterface> m_systemInterface;
 	std::unique_ptr<MyFileInterface> m_fileInterface;
 
-public:
-	std::unique_ptr<Client> m_client;
+	Settings m_settings;
 
+public:
 	static constexpr const char* VERSION = "1.0.0";
+	std::unique_ptr<ZNet> m_znet;
 
-public:
-	static Game& Get();
+	static Game *Get();
 	static void Run();
 
 	void Stop();
 
-	void RunTask(std::function<void()> task);
-	void RunTaskLater(std::function<void()> task, std::chrono::milliseconds after);
-	void RunTaskAt(std::function<void()> task, std::chrono::steady_clock::time_point at);
-	void RunTaskLaterRepeat(std::function<void()> task, std::chrono::milliseconds after, std::chrono::milliseconds period);
-	void RunTaskAtRepeat(std::function<void()> task, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
+	Task* RunTask(Task::F f);
+	Task* RunTaskLater(Task::F f, std::chrono::milliseconds after);
+	Task* RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at);
+	Task* RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period);
+	Task* RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
 
 private:
 	void Start();

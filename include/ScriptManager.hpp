@@ -4,6 +4,7 @@
 
 namespace ScriptManager {
 	void Init();
+	void Uninit();
 	lua_State* GetLuaState();
 
 	namespace Event {

@@ -9,30 +9,27 @@
 
 using namespace std::chrono_literals;
 
-// Simple tag mark a field as never being null
-#define NOTNULL 
-// Simple tag mark a field as able to be null
-#define NULLABLE 
-
 using byte = uint8_t;
-using UID = size_t;
+using UID_t = int64_t;
 
-struct TwoTupleHasher
-{
-	template<typename A, typename B>
-	std::size_t operator()(const std::tuple<A, B>& tup) const
-	{
-		return ((std::hash<A>{}(std::get<0>(tup))
-			^ (std::hash<B>{}(std::get<1>(tup)) << 1) >> 1));
-	}
-};
+//struct TwoTupleHasher
+//{
+//	template<typename A, typename B>
+//	std::size_t operator()(const std::tuple<A, B>& tup) const
+//	{
+//		return ((std::hash<A>{}(std::get<0>(tup))
+//			^ (std::hash<B>{}(std::get<1>(tup)) << 1) >> 1));
+//	}
+//};
 
 namespace Utils {
-	int GetStableHashCode(const char* str);
+	UID_t GenerateUID();
 
-	int GetUnicode8Count(const char* p);
+	int32_t GetStableHashCode(const char* str);
 
-	UID StringToUID(std::string_view sv);
+	int32_t GetUnicode8Count(const char* p);
+
+	UID_t StringToUID(std::string_view sv);
 
 	bool IsAddress(std::string_view s);
 

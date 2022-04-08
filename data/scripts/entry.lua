@@ -45,7 +45,9 @@ function mainScript.onLogin()
 	
 end
 
+print("about to register")
+
 -- Register this for routine/scheduled event
-Alchyme.RegisterScript(mainScript)
+Valhalla.RegisterScript(mainScript)
 
 mainScript = nil

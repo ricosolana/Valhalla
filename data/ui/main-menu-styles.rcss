@@ -16,7 +16,7 @@
     margin: 10% auto auto;
 }
 
-#server-status, server-join, server-disconnect {
+#connect, disconnect {
     display: inline-block;
     width: 20%;
     height: 8%;

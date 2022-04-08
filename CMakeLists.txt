@@ -98,13 +98,13 @@ CPMAddPackage(
 
 
 
-#CPMAddPackage(
-#    NAME json
-#    GITHUB_REPOSITORY nlohmann/json
-#    VERSION 3.9.1
-#    OPTIONS
-#    "JSON_BuildTests OFF"
-#)
+CPMAddPackage(
+    NAME json
+    GITHUB_REPOSITORY nlohmann/json
+    VERSION 3.9.1
+    OPTIONS
+    "JSON_BuildTests OFF"
+)
 
 
 
@@ -235,15 +235,12 @@ target_link_libraries(RmlCore freetype lua)
 add_executable(Valhalla
     "src/BinaryReader.cpp"
     "src/BinaryWriter.cpp"
+    "src/Game.cpp" 
+    "src/HashUtils.cpp"
     "src/Main.cpp"
     "src/MyFileInterface.cpp" 
     "src/MyRenderInterface.cpp" 
     "src/MySystemInterface.cpp" 
-    "src/NetClient.cpp"
-    "src/NetPackage.cpp"    
-    "src/NetPeer.cpp" 
-    "src/NetRpc.cpp" 
-    "src/NetSocket2.cpp"
     "src/ResourceManager.cpp"
     "src/ScriptManager.cpp" 
     "src/Shader.cpp"
@@ -252,7 +249,17 @@ add_executable(Valhalla
     "src/Task.cpp"
     "src/Texture2D.cpp"
     "src/Utils.cpp"
-    "src/ValhallaGame.cpp" 
+    "src/ZDO.cpp"
+    "src/ZDOID.cpp"
+    "src/ZDOMan.cpp"
+    "src/ZDOPeer.cpp"
+    "src/ZNet.cpp"
+    "src/ZNetPeer.cpp" 
+    "src/ZPackage.cpp"    
+    "src/ZRoutedRpc.cpp"
+    "src/ZRoutedRpcMethod" # might be able to omit if header only
+    "src/ZRpc.cpp" 
+    "src/ZSocket2.cpp"
 )
 
 
@@ -270,7 +277,7 @@ target_link_libraries(Valhalla
     stb
     easyloggingpp
     libglew_static
-    #nlohmann_json::nlohmann_json
+    nlohmann_json::nlohmann_json
     SDL2-static
     SDL2main
     #OptickCore

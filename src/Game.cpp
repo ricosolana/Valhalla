@@ -1,16 +1,17 @@
-#include "ValhallaGame.hpp"
+#include "Game.hpp"
 #include <SDL.h>
 #include <RmlUi/Core.h>
 #include <RmlUi/Debugger.h>
 #include "ScriptManager.hpp"
 
-static Game GAME;
-Game& Game::Get() {
-	return GAME;
+std::unique_ptr<Game> GAME;
+Game *Game::Get() {
+	return GAME.get();
 }
 
 void Game::Run() {
-	GAME.Start();
+	GAME = std::make_unique<Game>();
+	GAME->Start();
 }
 
 
@@ -20,6 +21,7 @@ void Game::Start() {
 	InitGLEW();
 	InitRML();
 	ScriptManager::Init();
+	m_znet = std::make_unique<ZNet>();
 
 	m_running = true;
 
@@ -33,14 +35,20 @@ void Game::Start() {
 			std::scoped_lock lock(m_taskMutex);
 			const auto now = std::chrono::steady_clock::now();
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
-				if (itr->at < now) {
-					itr->function();
-					if (itr->Repeats()) {
-						itr->at += itr->period;
-						++itr;
-					}
-					else
+				auto ptr = itr->get();
+				if (ptr->at < now) {
+					if (ptr->period < 0ms) {
 						itr = m_tasks.erase(itr);
+					}
+					else {
+						ptr->function(ptr);
+						if (ptr->Repeats()) {
+							ptr->at += ptr->period;
+							++itr;
+						}
+						else
+							itr = m_tasks.erase(itr);
+					}
 				}
 				else
 					++itr;
@@ -59,6 +67,7 @@ void Game::Start() {
 
 void Game::Stop() {
 	m_running = false;
+	ScriptManager::Uninit();
 	Rml::Shutdown();
 	SDL_DestroyRenderer(m_sdlRenderer);
 	SDL_GL_DeleteContext(m_sdlGLContext);
@@ -127,7 +136,7 @@ void Game::InitGLEW() {
 void Game::InitRML() {
 	m_renderInterface = std::make_unique<MyRenderInterface>(m_sdlRenderer, m_sdlWindow);
 	m_systemInterface = std::make_unique<MySystemInterface>();
-	m_fileInterface = std::make_unique<MyFileInterface>("./data/client_data/");
+	m_fileInterface = std::make_unique<MyFileInterface>("./data/");
 
 	Rml::SetRenderInterface(m_renderInterface.get());
 	Rml::SetSystemInterface(m_systemInterface.get());
@@ -152,6 +161,8 @@ void Game::InitRML() {
 
 void Game::Update(float delta) {
 	// This is important to processing RPC remote invocations
+
+	m_znet->Update();
 
 	ScriptManager::Event::OnUpdate(delta);
 
@@ -231,23 +242,25 @@ void Game::Update(float delta) {
 
 
 
-void Game::RunTask(std::function<void()> task) {
-	RunTaskLater(task, 0ms);
+Task* Game::RunTask(Task::F f) {
+	return RunTaskLater(f, 0ms);
 }
 
-void Game::RunTaskLater(std::function<void()> task, std::chrono::milliseconds after) {
-	RunTaskLaterRepeat(task, after, 0ms);
+Task* Game::RunTaskLater(Task::F f, std::chrono::milliseconds after) {
+	return RunTaskLaterRepeat(f, after, 0ms);
 }
 
-void Game::RunTaskAt(std::function<void()> task, std::chrono::steady_clock::time_point at) {
-	RunTaskAtRepeat(task, at, 0ms);
+Task* Game::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at) {
+	return RunTaskAtRepeat(f, at, 0ms);
 }
 
-void Game::RunTaskLaterRepeat(std::function<void()> task, std::chrono::milliseconds after, std::chrono::milliseconds period) {
-	RunTaskAtRepeat(task, std::chrono::steady_clock::now() + after, period);
+Task* Game::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period) {
+	return RunTaskAtRepeat(f, std::chrono::steady_clock::now() + after, period);
 }
 
-void Game::RunTaskAtRepeat(std::function<void()> task, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) {
+Task* Game::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) {
 	std::scoped_lock lock(m_taskMutex);
-	m_tasks.push_back({ task, at, period });
+	Task* task = new Task{f, at, period};
+	m_tasks.push_back(std::unique_ptr<Task>(task));
+	return task;
 }
