@@ -119,7 +119,7 @@ void ZSocket2::ReadPkg() {
 			asio::buffer(pkg.Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
 			[this, self, &pkg](const std::error_code& e, size_t) {
 			if (!e) {
-				m_recvQueue.push_back(pkg);
+				m_recvQueue.push_back(std::move(pkg));
 				ReadPkgSize();
 			}
 			else {

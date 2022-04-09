@@ -164,3 +164,7 @@ void ZPackage::Clear() {
 //void ZPackage::SetPos(int32_t pos) {
 //    m_stream.m_pos = (int64_t)pos;
 //}
+
+void ZPackage::ResetPos() {
+    m_stream.m_pos = 0;
+}

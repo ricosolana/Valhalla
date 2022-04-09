@@ -102,6 +102,7 @@ public:
     int32_t Size() const;
     void Clear();
     //void SetPos(int32_t pos);
+    void ResetPos();
 
 };
     
