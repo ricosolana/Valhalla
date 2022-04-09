@@ -19,20 +19,18 @@ class ZRpc {
 	Task* m_pingTask = nullptr;
 	robin_hood::unordered_map<int32_t, std::unique_ptr<ZRpcMethodBase>> m_methods;
 
-	void Serialize(ZPackage* pkg) {}
+	void Serialize(ZPackage pkg) {}
 
-	void SendPackage(ZPackage *pkg);
+	void SendPackage(ZPackage pkg);
 
 public:
-	int not_garbage;
-
 	ZRpc(ZSocket2::Ptr socket);
 	~ZRpc();
 
 	bool IsConnected();
 
 	template <typename T, typename... Types>
-	static void Serialize(ZPackage* pkg, T var1, Types... var2) {
+	static void Serialize(ZPackage pkg, T var1, Types... var2) {
 		pkg->Write(var1);
 
 		Serialize(pkg, var2...);
@@ -57,9 +55,9 @@ public:
 		if (!IsConnected())
 			return;
 
-		auto pkg = new ZPackage();
+		ZPackage pkg;
 		auto stable = Utils::GetStableHashCode(method);
-		pkg->Write(stable);
+		pkg.Write(stable);
 		Serialize(pkg, params...); // serialize
 		SendPackage(pkg);
 	}

@@ -27,7 +27,7 @@ constexpr auto invoke_tuple(F f, C& c, ZRpc* rpc, Tuple t) {
 class ZRpcMethodBase
 {
 public:
-    virtual void Invoke(ZRpc* pao, ZPackage* pkg) = 0;
+    virtual void Invoke(ZRpc* pao, ZPackage &pkg) = 0;
 };
 
 template<class C, class...Args>
@@ -38,9 +38,9 @@ class ZRpcMethod final : public ZRpcMethodBase {
     Lambda lambda;
 
     template<class F>
-    auto Invoke_impl(ZPackage* pkg) {
+    auto Invoke_impl(ZPackage &pkg) {
         //F f; p->Read(f);
-        F f = pkg->Read<F>();
+        F f = pkg.Read<F>();
         std::tuple<F> a{ f };
         return a;
     }
@@ -48,9 +48,8 @@ class ZRpcMethod final : public ZRpcMethodBase {
     // Split a param,
     // Add that param from Packet into tuple
     template<class F, class S, class...R>
-    auto Invoke_impl(ZPackage* pkg) {
-        auto f = pkg->Read<F>();
-        //F f; p->Read<F>(f);
+    auto Invoke_impl(ZPackage &pkg) {
+        auto f = pkg.Read<F>();
         std::tuple<F> a{ f };
         std::tuple<S, R...> b = Invoke_impl<S, R...>(pkg);
         return std::tuple_cat(a, b);
@@ -59,7 +58,7 @@ class ZRpcMethod final : public ZRpcMethodBase {
 public:
     ZRpcMethod(C* object, Lambda lam) : object(object), lambda(lam) {}
 
-    void Invoke(ZRpc* rpc, ZPackage* pkg) {
+    void Invoke(ZRpc* rpc, ZPackage &pkg) override {
         // Invoke_impl returns a tuple of types by recursion
         if constexpr (sizeof...(Args))
         {

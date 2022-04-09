@@ -21,11 +21,18 @@ using namespace asio::ip;
 // client where socket state is tracked step by step
 class ZSocket2 : public std::enable_shared_from_this<ZSocket2> {
 	tcp::socket m_socket;
+
+	// If unique ptr is used, the small ptr only is copied
+	// but a deallocation will always take place for dead Packages
+	// Should use smart ptr anyways to avoid memory leaks
+	// ---
+	// If ZPackage ref-value is used, the Deque is reallocated to fit the thing
+	// A 
 	// TODO use unique ptr
-	AsyncDeque<ZPackage*> m_sendQueue;
+	AsyncDeque<ZPackage> m_sendQueue;
 
 	// TODO use unique_ptr
-	AsyncDeque<ZPackage*> m_recvQueue;
+	AsyncDeque<ZPackage> m_recvQueue;
 
 	int m_tempReadOffset = 0;
 	int m_tempWriteOffset = 0;
@@ -49,10 +56,10 @@ public:
 		* @param packet the new Packet()
 		* @return result
 	*/
-	void Send(ZPackage* packet);
+	void Send(ZPackage packet);
 
 	bool HasNewData();
-	ZPackage* Recv();
+	ZPackage Recv();
 	bool Close();
 
 	std::string& GetHostName();
@@ -64,5 +71,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(ZPackage* pkg);
+	void WritePkg(ZPackage pkg);
 };

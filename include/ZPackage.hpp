@@ -22,18 +22,23 @@ public:
     ZPackage();
     // Used in inventory item reading
     //Package(std::string& base64);
-            
+
+
     // Used for reading incoming data from packet
     ZPackage(byte* data, int32_t count);
     ZPackage(std::vector<byte>& vec);
     ZPackage(int32_t reserve);
 
+
+    //static std::unique_ptr<ZPackage> New();
+    //static void ReturnPkg(ZPackage* pkg);
+
     void Load(byte* buf, int32_t offset);
 
 
 
-    void Write(ZPackage& in);
-    void WriteCompressed(ZPackage& in);
+    void Write(const ZPackage& in);
+    void WriteCompressed(const ZPackage& in);
     void Write(const byte* in, int32_t count);
     template<typename T>
     void Write(const T &in) requires std::is_fundamental_v<T> {
@@ -57,13 +62,12 @@ public:
         return m_reader.Read<T>();
     }
 
-    ZPackage* ReadPackage();
-
     template<typename T>
     T Read() requires std::same_as<T, ZPackage> {
-        std::vector<byte> vec;
-        ReadByteArray(vec);
-        return ZPackage(vec);
+        int32_t count = Read<int32_t>();
+        ZPackage pkg(count);
+        m_stream.Read(pkg.Bytes(), count);
+        return pkg; // Might have to use std::move
     }
 
     template<typename T>
@@ -92,12 +96,12 @@ public:
 
 
 
-    void GetArray(std::vector<byte> &vec);
+    //void GetArray(std::vector<byte> &vec);
 
-    std::vector<byte>& Buffer();
-    int32_t Size();
+    byte* Bytes() const;
+    int32_t Size() const;
     void Clear();
-    void SetPos(int32_t pos);
+    //void SetPos(int32_t pos);
 
 };
     

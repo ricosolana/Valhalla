@@ -6,8 +6,8 @@ ZSocket2::ZSocket2(asio::io_context& ctx)
 	: m_socket(ctx) {}
 
 ZSocket2::~ZSocket2() {
-	while (!m_sendQueue.empty()) delete m_sendQueue.pop_front();
-	while (!m_recvQueue.empty()) delete m_recvQueue.pop_front();
+	//while (!m_sendQueue.empty()) delete m_sendQueue.pop_front();
+	//while (!m_recvQueue.empty()) delete m_recvQueue.pop_front();
 	Close();
 }
 
@@ -27,11 +27,11 @@ void ZSocket2::Accept() {
 	* the size and data is written to the same buffer
 	* Im not doing for readability
 */
-void ZSocket2::Send(ZPackage* pkg) {
-	if (pkg->Size() == 0)
+void ZSocket2::Send(ZPackage pkg) {
+	if (pkg.Size() == 0)
 		return;
 
-	if (pkg->Size() + 4 > 10485760)
+	if (pkg.Size() + 4 > 10485760)
 		LOG(ERROR) << "Too big package";
 
 	if (m_online) {
@@ -47,10 +47,8 @@ bool ZSocket2::HasNewData() {
 	return !m_recvQueue.empty();
 }
 
-ZPackage* ZSocket2::Recv() {
-	if (!m_recvQueue.empty())
-		return m_recvQueue.pop_front();
-	return nullptr;
+ZPackage ZSocket2::Recv() {
+	return m_recvQueue.pop_front();
 }
 
 
@@ -111,14 +109,15 @@ void ZSocket2::ReadPkg() {
 		Close();
 	}
 	else {
-		auto pkg = new ZPackage(); //new Package(m_tempReadOffset);
+		ZPackage pkg(m_tempReadOffset);
+		//auto pkg = new ZPackage(); //new Package(m_tempReadOffset);
 		// the initialization is pointless
-		pkg->Buffer().resize(m_tempReadOffset);
+		//pkg->Buffer().resize(m_tempReadOffset);
 
 		auto self(shared_from_this());
 		asio::async_read(m_socket,
-			asio::buffer(pkg->Buffer(), m_tempReadOffset), // whether vec needs to be reserved or resized
-			[this, self, pkg](const std::error_code& e, size_t) {
+			asio::buffer(pkg.Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
+			[this, self, &pkg](const std::error_code& e, size_t) {
 			if (!e) {
 				m_recvQueue.push_back(pkg);
 				ReadPkgSize();
@@ -132,16 +131,16 @@ void ZSocket2::ReadPkg() {
 }
 
 void ZSocket2::WritePkgSize() {
-	auto pkg = m_sendQueue.front();
+	auto &&pkg = m_sendQueue.front();
 
-	m_tempWriteOffset = pkg->Size();
+	m_tempWriteOffset = pkg.Size();
 
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
 		asio::buffer(&m_tempWriteOffset, 4),
-		[this, self, pkg](const std::error_code& e, size_t) {
+		[this, self, &pkg](const std::error_code& e, size_t) {
 		if (!e) {
-			WritePkg(pkg);
+			WritePkg(std::move(pkg));
 		}
 		else {
 			LOG(DEBUG) << "write header error: " << e.message() << " (" << e.value() << ")";
@@ -150,12 +149,11 @@ void ZSocket2::WritePkgSize() {
 	});
 }
 
-void ZSocket2::WritePkg(ZPackage *pkg) {
+void ZSocket2::WritePkg(ZPackage pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
-		asio::buffer(pkg->Buffer().data(), m_tempWriteOffset),
-		[this, self, pkg](const std::error_code& e, size_t) {
-		delete pkg;
+		asio::buffer(pkg.Bytes(), m_tempWriteOffset),
+		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
 			m_sendQueue.pop_front();
 			if (!m_sendQueue.empty()) {

@@ -25,7 +25,7 @@ void BinaryWriter::Write(const std::string& in) {
 	if (byteCount == 0)
 		return;
 
-	m_stream.ensureCapacity(1 + in.length());
+	m_stream.reserveExtra(1 + in.length());
 
 	Write7BitEncodedInt(byteCount);
 
@@ -33,7 +33,7 @@ void BinaryWriter::Write(const std::string& in) {
 }
 
 void BinaryWriter::Write7BitEncodedInt(int in) {
-	m_stream.ensureCapacity(4);
+	m_stream.reserveExtra(4);
 	unsigned int num;
 	for (num = (unsigned int)in; num >= 128U; num >>= 7)
 		Write((unsigned char)(num | 128U));

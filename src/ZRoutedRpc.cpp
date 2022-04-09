@@ -14,17 +14,19 @@ void ZRoutedRpc::Register(const char* name, ZRpcMethodBase* method) {
 
 void ZRoutedRpc::RPC_RoutedRPC(ZRpc rpc, ZPackage pkg)
 {
-	RoutedRPCData routedRPCData;
-	routedRPCData.Deserialize(pkg);
-	if (routedRPCData.m_targetPeerID == m_id 
-		|| routedRPCData.m_targetPeerID == 0L)
-		HandleRoutedRPC(std::move(routedRPCData));
+	throw std::runtime_error("not implemented");
+	//RoutedRPCData routedRPCData;
+	//routedRPCData.Deserialize(pkg);
+	//if (routedRPCData.m_targetPeerID == m_id 
+	//	|| routedRPCData.m_targetPeerID == 0L)
+	//	HandleRoutedRPC(std::move(routedRPCData));
 	
 }
 
 // Token: 0x06000AA3 RID: 2723 RVA: 0x00050474 File Offset: 0x0004E674
 void ZRoutedRpc::HandleRoutedRPC(RoutedRPCData data)
 {
+	throw std::runtime_error("not implemented");
 	//if (data.m_targetZDO)
 	//{
 	//

@@ -1,6 +1,33 @@
 #include "ZPackage.hpp"
 #include <assert.h>
 
+
+//std::deque<std::unique_ptr<ZPackage>> unusedPackages;
+
+//ZPackage* ZPackage::NewPkg() {
+//    if (unusedPackages.empty()) {
+//        for (int i = 0; i < 10; i++) {
+//            unusedPackages.push_back(std::make_unique<ZPackage>());
+//        }
+//    }
+//    auto&& front = unusedPackages.front();
+//    unusedPackages.pop_front();
+//    auto ptr = front.get();
+//    usedPackages.push_back(front);
+//    return ptr;
+//}
+//
+//void ZPackage::ReturnPkg(ZPackage* pkg) {
+//    unusedPackages.push_back
+//    auto&& front1 = unusedPackages.front();
+//    unusedPackages.pop_front();
+//    return std::move(front1);
+//}
+
+//std::unique_ptr<ZPackage> ZPackage::New() {
+//    return std::make_unique<
+//}
+
 ZPackage::ZPackage()
     : m_writer(m_stream), m_reader(m_stream) {
 
@@ -8,8 +35,7 @@ ZPackage::ZPackage()
 
 ZPackage::ZPackage(byte* data, int32_t count)
     : ZPackage() {
-    m_stream.Write(data, 0, count);
-    m_stream.m_pos = 0;
+    Load(data, count);
 }
 
 ZPackage::ZPackage(std::vector<byte>& vec)
@@ -21,18 +47,17 @@ ZPackage::ZPackage(int32_t reserve)
 
 
 void ZPackage::Load(byte* data, int32_t count) {
-    Clear();
-    m_stream.Write(data, 0, count);
     m_stream.m_pos = 0;
+    m_stream.Write(data, 0, count);
 }
 
 
 
-void ZPackage::Write(ZPackage& in) {
-    Write(in.m_stream.Buffer());
+void ZPackage::Write(const ZPackage& in) {
+    Write(in.Bytes(), in.Size());
 }
 
-void ZPackage::WriteCompressed(ZPackage& in) {
+void ZPackage::WriteCompressed(const ZPackage& in) {
     throw std::runtime_error("not implemented");
 }
 
@@ -90,11 +115,11 @@ void ZPackage::Write(const Quaternion& q)
 //    return m_reader.Read<std::string>();
 //}
 
-ZPackage* ZPackage::ReadPackage() {
-    std::vector<byte> vec;
-    ReadByteArray(vec);
-    return new ZPackage(vec);
-}
+//ZPackage* ZPackage::ReadPackage() {
+//    std::vector<byte> vec;
+//    ReadByteArray(vec);
+//    return new ZPackage(vec);
+//}
 
 //void Package::ReadPackage(Package* out) {
 //    ReadByteArray(out->m_stream.Buffer());
@@ -108,10 +133,10 @@ void ZPackage::ReadByteArray(std::vector<byte>& out) {
     m_stream.Read(out, Read<int32_t>());
 }
 
-void ZPackage::GetArray(std::vector<byte>& vec) {
-    // https://onlinegdb.com/uCR3uyzin
-    vec = m_stream.Buffer();
-}
+//void ZPackage::GetArray(std::vector<byte>& vec) {
+//    // https://onlinegdb.com/uCR3uyzin
+//    vec = m_stream.Buffer();
+//}
 
 void ZPackage::Read(std::vector<std::string>& out) {
     auto count = Read<int32_t>();
@@ -124,18 +149,18 @@ void ZPackage::Read(std::vector<std::string>& out) {
 
 
 
-std::vector<byte>& ZPackage::Buffer() {
-    return m_stream.Buffer();
+byte* ZPackage::Bytes() const {
+    return m_stream.Bytes();
 }
 
-int ZPackage::Size() {
-    return m_stream.Buffer().size();
+int ZPackage::Size() const {
+    return m_stream.m_pos;
 }
 
 void ZPackage::Clear() {
-    m_stream.Buffer().clear();
+    m_stream.m_pos = 0;
 }
 
-void ZPackage::SetPos(int32_t pos) {
-    m_stream.m_pos = (int64_t)pos;
-}
+//void ZPackage::SetPos(int32_t pos) {
+//    m_stream.m_pos = (int64_t)pos;
+//}

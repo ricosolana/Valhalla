@@ -4,14 +4,13 @@
 
 ZRpc::ZRpc(ZSocket2::Ptr socket)
 	: m_socket(socket), m_lastPing(std::chrono::steady_clock::now() + 3s) {
-	this->not_garbage = 69420;
 
 	// pinger
 	this->m_pingTask = Game::Get()->RunTaskLaterRepeat([this](Task* task) {
-		auto pkg = new ZPackage();
-		pkg->Write<int32_t>(0);
-		pkg->Write(false);
-		SendPackage(pkg);
+		ZPackage pkg;
+		pkg.Write<int32_t>(0);
+		pkg.Write(false);
+		SendPackage(std::move(pkg));
 	}, 3s, 1s);
 }
 
@@ -39,16 +38,16 @@ void ZRpc::Register(const char* name, ZRpcMethodBase* method) {
 void ZRpc::Update() {
 	auto now(std::chrono::steady_clock::now());
 
-	std::unique_ptr<ZPackage> pkg;
-	while (pkg = std::unique_ptr<ZPackage>(m_socket->Recv())) {
-		auto hash = pkg->Read<int32_t>();
+	while (m_socket->HasNewData()) {
+		auto pkg = m_socket->Recv();
+		auto hash = pkg.Read<int32_t>();
 		if (hash == 0) {
-			if (pkg->Read<bool>()) {
+			if (pkg.Read<bool>()) {
 				// Reply to the server with a pong
-				pkg->Write<int32_t>(0);
-				pkg->Write(false);
-				auto ptr = pkg.release();
-				SendPackage(ptr);
+				pkg.Clear();
+				pkg.Write<int32_t>(0);
+				pkg.Write(false);
+				SendPackage(std::move(pkg));
 			}
 			else {
 				m_lastPing = now;
@@ -57,7 +56,7 @@ void ZRpc::Update() {
 		else {
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(this, pkg.get());
+				find->second->Invoke(this, pkg);
 			}
 			else {
 				LOG(DEBUG) << "Server tried remotely calling unknown RPC";
@@ -73,8 +72,8 @@ void ZRpc::Update() {
 
 }
 
-void ZRpc::SendPackage(ZPackage* pkg) {
+void ZRpc::SendPackage(ZPackage pkg) {
 	//this.m_sentPackages++;
 	//this.m_sentData += pkg.Size();
-	m_socket->Send(pkg);
+	m_socket->Send(std::move(pkg));
 }

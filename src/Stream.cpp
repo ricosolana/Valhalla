@@ -1,11 +1,27 @@
 #include "Stream.hpp"
 
-Stream::Stream(int reserve) {
-    m_buf.reserve(reserve);
+Stream::Stream(int count) {
+    reserve(count);
 }
 
+// Move Constructor
+//Stream::Stream(Stream&& other)
+//    : m_bytes{ other.m_bytes }
+//{
+//
+//    cout << "Move Constructor for "
+//        << *source.data << endl;
+//    source.data = nullptr;
+//}
+
+
+
 void Stream::Read(byte* buffer, int offset, int count) {
-    std::memcpy(buffer + offset, m_buf.data() + m_pos, count);
+    Read(buffer + offset, count);
+}
+
+void Stream::Read(byte* buffer, int count) {
+    std::memcpy(buffer, m_bytes.get() + m_pos, count);
     m_pos += count;
 }
 
@@ -16,15 +32,22 @@ byte Stream::ReadByte() {
 }
 
 void Stream::Read(std::vector<byte>& vec, int count) {
-    vec.insert(vec.end(), m_buf.begin() + m_pos, m_buf.begin() + m_pos + count);
+    vec.clear();
+    vec.insert(vec.begin(), m_bytes.get() + m_pos, m_bytes.get() + m_pos + count);
     m_pos += count;
 }
 
 
 
 void Stream::Write(const byte* buffer, int offset, int count) {
-    m_buf.insert(m_buf.begin() + m_pos, buffer + offset, buffer + offset + count);
+    Write(buffer + offset, count);
+}
+
+void Stream::Write(const byte* buffer, int count) {
+    ensureCapacity(m_pos + count);
+    std::memcpy(m_bytes.get() + m_pos, buffer, count);
     m_pos += count;
+    m_size += count;
 }
 
 void Stream::WriteByte(const byte value) {
@@ -32,11 +55,42 @@ void Stream::WriteByte(const byte value) {
 }
 
 void Stream::Write(const std::vector<byte>& vec, int count) {
-    // buffer -> internal
-    m_buf.insert(m_buf.begin() + m_pos, vec.begin(), vec.begin() + count);
-    m_pos += count;
+    Write(vec.data(), 0, count);
 }
 
-void Stream::ensureCapacity(int extra) {
-    m_buf.reserve(m_buf.size() + extra);
+
+
+void Stream::Clear() {
+    m_pos = 0;
+    m_size = 0;
+}
+
+size_t Stream::Size() {
+    return m_size;
+}
+
+
+
+
+void Stream::reserve(int count) {
+    if (m_alloc < count) {
+        auto oldPtr = m_bytes.release();
+        auto newPtr = new byte[count];
+        std::memcpy(newPtr, oldPtr, static_cast<size_t>(count));
+        m_bytes = std::unique_ptr<byte>(newPtr);
+        delete[] oldPtr;
+        m_alloc = count;
+    }
+}
+
+void Stream::reserveExtra(int extra) {
+    reserve(m_alloc + extra);
+}
+
+void Stream::ensureCapacity(int count) {
+    reserve(count << 1);
+}
+
+void Stream::ensureExtra(int extra) {
+    ensureCapacity(m_alloc + extra);
 }
