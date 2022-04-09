@@ -51,7 +51,7 @@ void ZNet::Connect(std::string host, std::string port) {
 			m_peer->m_socket->Accept();
 
 			Game::Get()->RunTaskLater([this](Task *task) {
-				m_peer->m_rpc->Register("PeerInfo", new ZRpcMethod(this, &ZNet::RPC_PeerInfo));
+				//m_peer->m_rpc->Register("PeerInfo", new ZRpcMethod(this, &ZNet::RPC_PeerInfo));
 				m_peer->m_rpc->Register("Disconnect", new ZRpcMethod(this, &ZNet::RPC_Disconnect));
 				//m_peer->m_rpc->Register("Error", new Method(this, &RPC_Error));
 				m_peer->m_rpc->Register("ClientHandshake", new ZRpcMethod(this, &ZNet::RPC_ClientHandshake));

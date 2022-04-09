@@ -71,5 +71,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(ZPackage pkg);
+	void WritePkg(ZPackage &pkg);
 };

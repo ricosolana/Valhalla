@@ -140,7 +140,7 @@ void ZSocket2::WritePkgSize() {
 		asio::buffer(&m_tempWriteOffset, 4),
 		[this, self, &pkg](const std::error_code& e, size_t) {
 		if (!e) {
-			WritePkg(std::move(pkg));
+			WritePkg(pkg);
 		}
 		else {
 			LOG(DEBUG) << "write header error: " << e.message() << " (" << e.value() << ")";
@@ -149,7 +149,7 @@ void ZSocket2::WritePkgSize() {
 	});
 }
 
-void ZSocket2::WritePkg(ZPackage pkg) {
+void ZSocket2::WritePkg(ZPackage &pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
 		asio::buffer(pkg.Bytes(), m_tempWriteOffset),
