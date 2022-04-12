@@ -10,6 +10,8 @@ void ZRoutedRpc::SetUID(UID_t uid) {
 
 void ZRoutedRpc::Register(const char* name, ZRpcMethodBase* method) {
 	throw std::runtime_error("not implemented");
+
+	//m_functions.insert({Utils::GetStableHashCode(name), new ZRoutedRpcMethod(});
 }
 
 void ZRoutedRpc::RPC_RoutedRPC(ZRpc rpc, ZPackage pkg)

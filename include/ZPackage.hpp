@@ -5,21 +5,28 @@
 #include <stdexcept>
 #include <memory>
 
-#include "BinaryWriter.hpp"
-#include "BinaryReader.hpp"
+#include "Stream.hpp"
 #include "ZDOID.hpp"
 #include "Vector2.hpp"
 #include "Vector3.hpp"
 #include "Quaternion.hpp"
+#include "PlayerProfile.hpp"
+
+// how to handle circular dependency with double includes
 
 class ZPackage {
-    BinaryWriter m_writer;
-    BinaryReader m_reader;
+    //BinaryWriter m_writer;
+    //BinaryReader m_reader;
     Stream m_stream;
+
+    void Write7BitEncodedInt(int value);
+    int Read7BitEncodedInt();
 
 public:
     // Used when creating a packet for dispatch
-    ZPackage();
+    ZPackage() = default;
+    ZPackage(const ZPackage&) = delete; // copy
+    ZPackage(ZPackage&&) = default; // move
     // Used in inventory item reading
     //Package(std::string& base64);
 
@@ -30,44 +37,65 @@ public:
     ZPackage(int32_t reserve);
 
 
-    //static std::unique_ptr<ZPackage> New();
-    //static void ReturnPkg(ZPackage* pkg);
 
-    void Load(byte* buf, int32_t offset);
-
-
-
-    void Write(const ZPackage& in);
-    void WriteCompressed(const ZPackage& in);
-    void Write(const byte* in, int32_t count);
-    template<typename T>
-    void Write(const T &in) requires std::is_fundamental_v<T> {
-        m_writer.Write(in);
-    }
+    void Write(const byte* in, int32_t count);          // Write array
+    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte*>(&in), sizeof(T)); }
     void Write(const std::string& in);
-
-    void Write(const std::vector<byte> &in);
-
-    void Write(const std::vector<std::string>& in);
-
+    void Write(const std::vector<byte> &in);            // Write array
+    void Write(const std::vector<std::string>& in);     // Write string array (ZRpc)
+    void Write(const ZPackage& in);
     void Write(const ZDOID &id);
-    void Write(const Vector3 &v3);
-    void Write(const Vector2i &v2);
-    void Write(const Quaternion &q);
-
+    void Write(const Vector3 &in);
+    void Write(const Vector2i &in);
+    void Write(const Quaternion& in);
+    //void Write(const PlayerProfile& in);
 
 
     template<typename T>
-    T Read() {
-        return m_reader.Read<T>();
+    T Read() requires std::is_fundamental_v<T> {
+        T out;
+        m_stream.Read(reinterpret_cast<byte*>(&out), sizeof(T));
+        return out;
+    }
+
+    template<typename T>
+    T Read() requires std::same_as<T, std::string> {
+        auto byteCount = Read7BitEncodedInt();
+
+        if (byteCount == 0)
+            return "";
+
+        std::string out;
+        out.resize(byteCount);
+
+        m_stream.Read(reinterpret_cast<byte*>(out.data()), byteCount);
+
+        return out;
+    }
+
+    template<typename T>
+    T Read() requires std::same_as<T, std::vector<byte>> {
+        T out;
+        m_stream.Read(out, Read<int32_t>());
+        return out;
+    }
+
+    template<typename T>
+    T Read() requires std::same_as<T, std::vector<std::string>> {
+        T out;
+        auto count = Read<int32_t>();
+        while (count--) {
+            out.emplace_back(Read<std::string>());
+        }
+        return out;
     }
 
     template<typename T>
     T Read() requires std::same_as<T, ZPackage> {
-        int32_t count = Read<int32_t>();
+        auto count = Read<int32_t>();
         ZPackage pkg(count);
-        m_stream.Read(pkg.Bytes(), count);
-        return pkg; // Might have to use std::move
+        m_stream.Read(pkg.m_stream.Bytes(), count);
+        return pkg;
     }
 
     template<typename T>
@@ -87,22 +115,58 @@ public:
 
     template<typename T>
     T Read() requires std::same_as<T, Quaternion> {
-        return Vector2i{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
+        return Quaternion{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
     }
 
-    void ReadByteArray(std::vector<byte> &out);
+    //template<typename T>
+    //T Read() requires std::same_as<T, Player> {
+    //
+    //
+    //
+    //
+    //    return PlayerProfile{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
+    //}
 
+
+
+    void Load(byte* buf, int32_t offset);
+
+    ZPackage ReadCompressed();
+    void WriteCompressed(const ZPackage& in);
+
+    void Read(std::vector<byte>& out);
     void Read(std::vector<std::string>& out);
 
 
 
-    //void GetArray(std::vector<byte> &vec);
+    static void Serialize(ZPackage& pkg) {}
 
-    byte* Bytes() const;
-    int32_t Size() const;
-    void Clear();
-    //void SetPos(int32_t pos);
-    void ResetPos();
+    template <typename T, typename... Types>
+    static void Serialize(ZPackage& pkg, T var1, Types... var2) {
+        pkg.Write(var1);
+
+        Serialize(pkg, var2...);
+    }
+
+
+
+    template<class F>
+    static auto Deserialize(ZPackage& pkg) {
+        return std::tuple(pkg.Read<F>());
+    }
+
+    template<class F, class S, class...R>
+    static auto Deserialize(ZPackage& pkg) {
+        auto a(Deserialize<F>(pkg));
+        std::tuple<S, R...> b = Deserialize<S, R...>(pkg);
+        return std::tuple_cat(a, b);
+    }
+
+
+
+    Stream& GetStream() {
+        return m_stream;
+    }
 
 };
     

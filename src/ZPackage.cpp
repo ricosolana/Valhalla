@@ -1,40 +1,7 @@
 #include "ZPackage.hpp"
-#include <assert.h>
+#include <zlib.h>
 
-
-//std::deque<std::unique_ptr<ZPackage>> unusedPackages;
-
-//ZPackage* ZPackage::NewPkg() {
-//    if (unusedPackages.empty()) {
-//        for (int i = 0; i < 10; i++) {
-//            unusedPackages.push_back(std::make_unique<ZPackage>());
-//        }
-//    }
-//    auto&& front = unusedPackages.front();
-//    unusedPackages.pop_front();
-//    auto ptr = front.get();
-//    usedPackages.push_back(front);
-//    return ptr;
-//}
-//
-//void ZPackage::ReturnPkg(ZPackage* pkg) {
-//    unusedPackages.push_back
-//    auto&& front1 = unusedPackages.front();
-//    unusedPackages.pop_front();
-//    return std::move(front1);
-//}
-
-//std::unique_ptr<ZPackage> ZPackage::New() {
-//    return std::make_unique<
-//}
-
-ZPackage::ZPackage()
-    : m_writer(m_stream), m_reader(m_stream) {
-
-}
-
-ZPackage::ZPackage(byte* data, int32_t count)
-    : ZPackage() {
+ZPackage::ZPackage(byte* data, int32_t count) {
     Load(data, count);
 }
 
@@ -42,35 +9,32 @@ ZPackage::ZPackage(std::vector<byte>& vec)
     : ZPackage(vec.data(), vec.size()) {}
 
 ZPackage::ZPackage(int32_t reserve)
-    : m_stream(reserve), m_writer(m_stream), m_reader(m_stream) {}
+    : m_stream(reserve) {}
 
 
-
-void ZPackage::Load(byte* data, int32_t count) {
-    m_stream.m_pos = 0;
-    m_stream.Write(data, 0, count);
-}
-
-
-
-void ZPackage::Write(const ZPackage& in) {
-    Write(in.Bytes(), in.Size());
-}
-
-void ZPackage::WriteCompressed(const ZPackage& in) {
-    throw std::runtime_error("not implemented");
-}
 
 void ZPackage::Write(const byte* in, int32_t count) {
-    m_writer.Write(count);
-	m_writer.Write(in, count);
+    Write(count);
+	m_stream.Write(in, count);
 }
 
 void ZPackage::Write(const std::string& in) {
-	m_writer.Write(in);
+    int byteCount = Utils::GetUnicode8Count(in.c_str());
+    if (byteCount > 256)
+        throw std::runtime_error("Writing big string not yet supported");
+
+    // slight optimization
+    m_stream.ReserveExtra(1 + in.length());
+
+    Write7BitEncodedInt(byteCount);
+
+    if (byteCount == 0)
+        return;
+
+    m_stream.Write(reinterpret_cast<const byte*>(in.c_str()), byteCount);
 }
 
-void ZPackage::Write(const std::vector<byte> & in) {
+void ZPackage::Write(const std::vector<byte>& in) {
     Write(in.data(), static_cast<int32_t>(in.size()));
 }
 
@@ -81,62 +45,57 @@ void ZPackage::Write(const std::vector<std::string>& in) {
     }
 }
 
-void ZPackage::Write(const ZDOID& id)
-{
-    m_writer.Write(id.m_userID);
-    m_writer.Write(id.m_id);
+void ZPackage::Write(const ZPackage& in) {
+    Write(in.m_stream.Bytes(), in.m_stream.Length());
 }
 
-void ZPackage::Write(const Vector3& v3)
-{
-    m_writer.Write(v3.x);
-    m_writer.Write(v3.y);
-    m_writer.Write(v3.z);
+void ZPackage::Write(const ZDOID& in) {
+    Write(in.m_userID);
+    Write(in.m_id);
 }
 
-void ZPackage::Write(const Vector2i& v2)
-{
-    m_writer.Write(v2.x);
-    m_writer.Write(v2.y);
+void ZPackage::Write(const Vector3& in) {
+    Write(in.x);
+    Write(in.y);
+    Write(in.z);
 }
 
-void ZPackage::Write(const Quaternion& q)
+void ZPackage::Write(const Vector2i& in) {
+     Write(in.x);
+     Write(in.y);
+}
+
+void ZPackage::Write(const Quaternion& in)
 {
-    m_writer.Write(q.x);
-    m_writer.Write(q.y);
-    m_writer.Write(q.z);
-    m_writer.Write(q.w);
+     Write(in.x);
+     Write(in.y);
+     Write(in.z);
+     Write(in.w);
 }
 
 
 
+void ZPackage::Load(byte* data, int32_t count) {
+    m_stream.Clear();
+    m_stream.Write(data, 0, count);
+}
 
-//std::string Package::ReadString() {
-//    return m_reader.Read<std::string>();
-//}
 
-//ZPackage* ZPackage::ReadPackage() {
-//    std::vector<byte> vec;
-//    ReadByteArray(vec);
-//    return new ZPackage(vec);
-//}
 
-//void Package::ReadPackage(Package* out) {
-//    ReadByteArray(out->m_stream.Buffer());
-//}
-//
-//void Package::ReadPackage(Package& out) {
-//    ReadByteArray(out.m_stream.Buffer());
-//}
+ZPackage ZPackage::ReadCompressed() {
+    int count = Read<int32_t>();
 
-void ZPackage::ReadByteArray(std::vector<byte>& out) {
+    //return ZPackage(Utils::Decompress(Read(count)));
+    throw std::runtime_error("not implemented");
+}
+
+void ZPackage::WriteCompressed(const ZPackage& in) {
+    throw std::runtime_error("not implemented");
+}
+
+void ZPackage::Read(std::vector<byte>& out) {
     m_stream.Read(out, Read<int32_t>());
 }
-
-//void ZPackage::GetArray(std::vector<byte>& vec) {
-//    // https://onlinegdb.com/uCR3uyzin
-//    vec = m_stream.Buffer();
-//}
 
 void ZPackage::Read(std::vector<std::string>& out) {
     auto count = Read<int32_t>();
@@ -149,22 +108,28 @@ void ZPackage::Read(std::vector<std::string>& out) {
 
 
 
-byte* ZPackage::Bytes() const {
-    return m_stream.Bytes();
+void ZPackage::Write7BitEncodedInt(int in) {
+    m_stream.ReserveExtra(4);
+    unsigned int num;
+    for (num = (unsigned int)in; num >= 128U; num >>= 7)
+        Write((unsigned char)(num | 128U));
+
+    Write((unsigned char)num);
 }
 
-int ZPackage::Size() const {
-    return m_stream.m_pos;
+int ZPackage::Read7BitEncodedInt() {
+    int out = 0;
+    int num2 = 0;
+    while (num2 != 35)
+    {
+        auto b = Read<byte>();
+        out |= (int)(b & 127) << num2;
+        num2 += 7;
+        if ((b & 128) == 0)
+        {
+            return out;
+        }
+    }
+    throw std::runtime_error("bad encoded Int32");
 }
 
-void ZPackage::Clear() {
-    m_stream.m_pos = 0;
-}
-
-//void ZPackage::SetPos(int32_t pos) {
-//    m_stream.m_pos = (int64_t)pos;
-//}
-
-void ZPackage::ResetPos() {
-    m_stream.m_pos = 0;
-}

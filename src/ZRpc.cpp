@@ -44,7 +44,7 @@ void ZRpc::Update() {
 		if (hash == 0) {
 			if (pkg.Read<bool>()) {
 				// Reply to the server with a pong
-				pkg.Clear();
+				pkg.GetStream().Clear();
 				pkg.Write<int32_t>(0);
 				pkg.Write(false);
 				SendPackage(std::move(pkg));

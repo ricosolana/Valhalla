@@ -9,7 +9,7 @@ namespace ScriptManager {
 
 	namespace Event {
 		/// Event calls
-		void OnLogin();
+		void OnPreLogin();
 		void OnUpdate(float delta);
 	}
 };

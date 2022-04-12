@@ -6,18 +6,16 @@
 class Stream {
 	std::unique_ptr<byte> m_bytes;
 	size_t m_alloc = 0; // allocated bytes
-	size_t m_size; // written bytes
-	
-	void ensureCapacity(int count);
-	void ensureExtra(int extra);
-
-public:
+	size_t m_length = 0; // written bytes
 	size_t m_pos = 0; // read/write head offset from origin
 
-	Stream(int count = 0);
+	void EnsureCapacity(int count);
+	void EnsureExtra(int extra);
 
-	// Move Constructor
-	//Stream(Stream&& other);
+public:
+	Stream(int count = 0);
+	Stream(const Stream&) = delete; // copy 
+	Stream(Stream&&) noexcept;
 
 	
 	// internal -> buffer
@@ -38,9 +36,10 @@ public:
 
 	void Clear();
 
-	size_t Size();
+	size_t Length() const;
+	void SetLength(size_t length);
+	void ResetPos();
 
-	void reserve(int count);
-	void reserveExtra(int extra);
-
+	void Reserve(int count);
+	void ReserveExtra(int extra);
 };

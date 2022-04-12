@@ -10,7 +10,7 @@ struct Script {
 	const std::function<void()> onEnable;
 	const std::function<void()> onDisable;
 	const std::function<void(float)> onUpdate;
-	const std::function<void()> onLogin;
+	const std::function<void()> onPreLogin;
 };
 
 std::vector<Script> scripts;
@@ -23,7 +23,7 @@ namespace ScriptManager {
 				scriptTable["onEnable"].get_or(std::function<void()>()),
 				scriptTable["onDisable"].get_or(std::function<void()>()),
 				scriptTable["onUpdate"].get_or(std::function<void(float)>()),
-				scriptTable["onLogin"].get_or(std::function<void()>()),
+				scriptTable["onPreLogin"].get_or(std::function<void()>()),
 			};
 			scripts.push_back(script);
 			script.onEnable();
@@ -39,8 +39,9 @@ namespace ScriptManager {
 			Game::Get()->m_znet->Disconnect();
 		}
 
-		void Login(std::string password) {
-			LOG(INFO) << "Lua login invoked";
+		void SendPeerInfo(std::string password) {
+			LOG(INFO) << "Lua peer info invoked";
+			Game::Get()->m_znet->SendPeerInfo(password);
 		}
 	}
 
@@ -86,7 +87,7 @@ namespace ScriptManager {
 			apiTable["RegisterScript"] = Api::RegisterScript;
 			apiTable["Connect"] = Api::Connect;
 			apiTable["Disconnect"] = Api::Disconnect;
-			apiTable["Login"] = Api::Login;
+			apiTable["SendPeerInfo"] = Api::SendPeerInfo;
 
 
 
@@ -123,12 +124,12 @@ namespace ScriptManager {
 
 	namespace Event {
 		/// Event forward calls
-		void OnLogin() {
+		void OnPreLogin() {
 			for (auto& script : scripts) {
-				if (script.onLogin) // check is mandatory to avoid std::bad_function_call
+				if (script.onPreLogin) // check is mandatory to avoid std::bad_function_call
 										// if function is empty
 
-					script.onLogin();
+					script.onPreLogin();
 			}
 		}
 

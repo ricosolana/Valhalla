@@ -9,6 +9,7 @@
 #include "MyFileInterface.hpp"
 #include "ZNet.hpp"
 #include "Settings.hpp"
+#include "PlayerProfile.hpp"
 
 using namespace asio::ip;
 
@@ -33,8 +34,9 @@ class Game {
 	Settings m_settings;
 
 public:
-	static constexpr const char* VERSION = "1.0.0";
+	static constexpr const char* VERSION = "0.202.19";
 	std::unique_ptr<ZNet> m_znet;
+	std::unique_ptr<PlayerProfile> m_playerProfile;
 
 	static Game *Get();
 	static void Run();

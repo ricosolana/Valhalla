@@ -8,12 +8,16 @@
 // C# BinaryWriter ported to C++
 // Used to Write to the internal vector
 class BinaryWriter {
-	Stream& m_stream;
+	Stream *m_stream;
 
 	void Write7BitEncodedInt(int value);
 
 public:
-	BinaryWriter(Stream& stream);
+	BinaryWriter(Stream* stream);
+
+	BinaryWriter(BinaryWriter&) = delete; // copy
+
+	BinaryWriter(BinaryWriter&&); // move
 
 	void Write(const byte* in, int offset, int count);
 	void Write(const byte* in, int count);

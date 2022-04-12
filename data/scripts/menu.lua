@@ -28,7 +28,8 @@ function Disconnect(doc)
 	Valhalla.Disconnect()
 end
 
-function Login(doc)	
+-- login with password
+function SendPeerInfo(doc)	
 	print("login")
 	
 	local connectingDoc = {}
@@ -41,9 +42,8 @@ function Login(doc)
 	doc:Hide()
 	connectingDoc:Show()
 	
-	Valhalla.Login(
-		doc:GetElementById('username-in'):GetAttribute('value'),
-		doc:GetElementById('login-key-in'):GetAttribute('value')
+	Valhalla.SendPeerInfo(
+		doc:GetElementById('password-in'):GetAttribute('value')
 	)
 	
 end

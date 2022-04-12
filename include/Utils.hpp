@@ -6,6 +6,8 @@
 #include <easylogging++.h>
 #include <iostream>
 #include "AsyncDeque.hpp"
+#include <zlib.h>
+#include <robin_hood.h>
 
 using namespace std::chrono_literals;
 
@@ -23,6 +25,24 @@ using UID_t = int64_t;
 //};
 
 namespace Utils {
+	template <class F, class C, class Pass, class Tuple, size_t... Is>
+	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple& t, std::index_sequence<Is...>) {
+		return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
+	}
+
+	template <class F, class C, class Pass, class Tuple>
+	constexpr void InvokeTuple(F f, C& c, Pass pass, Tuple& t) {
+		InvokeTupleImpl(f, c, pass, t,
+			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
+	}
+
+
+	int Compress(z_stream* strm, unsigned char* buf, unsigned len,
+		unsigned* max);
+
+	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
+	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
+
 	UID_t GenerateUID();
 
 	int32_t GetStableHashCode(const char* str);

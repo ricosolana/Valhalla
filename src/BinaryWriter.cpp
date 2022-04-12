@@ -1,11 +1,17 @@
 #include "BinaryWriter.hpp"
 #include "Utils.hpp"
 
-BinaryWriter::BinaryWriter(Stream& stream)
+BinaryWriter::BinaryWriter(Stream* stream)
 	: m_stream(stream) {}
 
+BinaryWriter::BinaryWriter(BinaryWriter&& old) 
+{
+	m_stream = old.m_stream;
+	old.m_stream = nullptr;
+}
+
 void BinaryWriter::Write(const byte* in, int offset, int count) {
-	m_stream.Write(in, offset, count);
+	m_stream->Write(in, offset, count);
 }
 
 void BinaryWriter::Write(const byte* in, int count) {
@@ -13,7 +19,7 @@ void BinaryWriter::Write(const byte* in, int count) {
 }
 
 void BinaryWriter::Write(const std::vector<byte>& in, int count) {
-	m_stream.Write(in, count);
+	m_stream->Write(in, count);
 }
 
 void BinaryWriter::Write(const std::string& in) {
@@ -25,7 +31,7 @@ void BinaryWriter::Write(const std::string& in) {
 	if (byteCount == 0)
 		return;
 
-	m_stream.reserveExtra(1 + in.length());
+	m_stream->ReserveExtra(1 + in.length());
 
 	Write7BitEncodedInt(byteCount);
 
@@ -33,7 +39,7 @@ void BinaryWriter::Write(const std::string& in) {
 }
 
 void BinaryWriter::Write7BitEncodedInt(int in) {
-	m_stream.reserveExtra(4);
+	m_stream->ReserveExtra(4);
 	unsigned int num;
 	for (num = (unsigned int)in; num >= 128U; num >>= 7)
 		Write((unsigned char)(num | 128U));

@@ -5,7 +5,7 @@ local mainScript = {
 	onEnable = nil,
 	onDisable = nil,
 	onUpdate = nil,
-	onLogin = nil
+	onPreLogin = nil
 }
 
 function mainScript.onEnable() 
@@ -23,7 +23,7 @@ function mainScript.onEnable()
     uiMainMenu:Show()
 end
 
-function mainScript.onLogin() 
+function mainScript.onPreLogin() 
 	print("Lua Login called!")
 	
 	local mainMenuDoc = {}

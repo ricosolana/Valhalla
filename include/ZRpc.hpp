@@ -19,8 +19,6 @@ class ZRpc {
 	Task* m_pingTask = nullptr;
 	robin_hood::unordered_map<int32_t, std::unique_ptr<ZRpcMethodBase>> m_methods;
 
-	static void Serialize(ZPackage &pkg) {}
-
 	void SendPackage(ZPackage pkg);
 
 public:
@@ -28,13 +26,6 @@ public:
 	~ZRpc();
 
 	bool IsConnected();
-
-	template <typename T, typename... Types>
-	static void Serialize(ZPackage &pkg, T var1, Types... var2) {
-		pkg.Write(var1);
-
-		Serialize(pkg, var2...);
-	}
 
 	/**
 		* @brief Register a method to be remotely invoked
@@ -58,7 +49,7 @@ public:
 		ZPackage pkg;
 		auto stable = Utils::GetStableHashCode(method);
 		pkg.Write(stable);
-		Serialize(pkg, params...); // serialize
+		ZPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(std::move(pkg));
 	}
 

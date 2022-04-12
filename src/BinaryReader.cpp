@@ -1,11 +1,17 @@
 #include <stdexcept>
 #include "BinaryReader.hpp"
 
-BinaryReader::BinaryReader(Stream &stream)
+BinaryReader::BinaryReader(Stream *stream)
 	: m_stream(stream) {}
 
+BinaryReader::BinaryReader(BinaryReader&& old) 
+{
+    m_stream = old.m_stream;
+    old.m_stream = nullptr;
+}
+
 void BinaryReader::Read(byte* out, int offset, int count) {
-    m_stream.Read(out, offset, count);
+    m_stream->Read(out, offset, count);
 }
 
 void BinaryReader::Read(byte* out, int count) {
@@ -13,7 +19,7 @@ void BinaryReader::Read(byte* out, int count) {
 }
 
 void BinaryReader::Read(std::vector<byte>& out, int count) {
-    m_stream.Read(out, count);
+    m_stream->Read(out, count);
 }
 
 //template <> std::string BinaryReader::Read() {

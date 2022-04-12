@@ -49,15 +49,15 @@ public:
 
 		throw std::runtime_error("not implemented");
 
-		RoutedRPCData *routedRPCData = new RoutedRPCData();
+		RoutedRPCData routedRPCData;
 		
-		//routedRPCData.m_msgID = m_id + (int64_t)m_rpcMsgID;
-		//routedRPCData.m_senderPeerID = m_id;
-		//routedRPCData.m_targetPeerID = targetPeerID;
-		//routedRPCData.m_targetZDO = targetZDO;
-		//routedRPCData.m_methodHash = Utils::GetStableHashCode(methodName);
-		//ZRpc.Serialize(routedRPCData.m_parameters, params);
-		//routedRPCData.m_parameters.SetPos(0);
+		routedRPCData.m_msgID = m_id + (int64_t)m_rpcMsgID;
+		routedRPCData.m_senderPeerID = m_id;
+		routedRPCData.m_targetPeerID = targetPeerID;
+		routedRPCData.m_targetZDO = targetZDO;
+		routedRPCData.m_methodHash = Utils::GetStableHashCode(methodName);
+		ZRpc::Serialize(routedRPCData.m_parameters, params);
+		routedRPCData.m_parameters.SetPos(0);
 
 		m_rpcMsgID++;
 
@@ -66,7 +66,7 @@ public:
 			this.HandleRoutedRPC(routedRPCData);
 		else {
 			// Send to server
-			ZPackage pkg;
+			//ZPackage pkg;
 			//rpcData.Serialize(pkg);
 			//peer->m_rpc.Invoke("RoutedRPC", pkg);
 		}

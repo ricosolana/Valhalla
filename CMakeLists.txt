@@ -4,6 +4,7 @@ cmake_minimum_required (VERSION 3.14)
 project (Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_cpm)
+#add_subdirectory(external/openssl-cmake)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
@@ -12,6 +13,34 @@ endif()
 ############
 # LIBRARIES
 ############
+
+
+#find_package(CryptoPP REQUIRED)
+#CPMAddPackage(
+#    NAME cryptopp
+#    GITHUB_REPOSITORY noloader/cryptopp-cmake
+#    #VERSION 3.11.3
+#    GIT_TAG CRYPTOPP_8_6_0
+#    DOWNLOAD_ONLY TRUE
+#)
+#add_library(cryptopp INTERFACE)
+#target_include_directories(cryptopp INTERFACE ${cryptopp_SOURCE_DIR})
+
+#set(OPENSSL_ROOT_DIR "C:/Users/Rico/Documents/VisualStudio2019/Libraries/OpenSSL-Win64")
+
+
+set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
+set(OPENSSL_INCLUDE_DIR "C:/Program Files/OpenSSL-Win64/include")
+set(OPENSSL_LIBRARIES "C:/Program Files/OpenSSL-Win64/lib")
+find_package(openssl)
+include_directories(${OPENSSL_INCLUDE_DIRS})
+
+
+#option(BUILD_OPENSSL ON)
+#option(SYSTEM_OPENSSL ON)
+#target_include_directories(ssl BEFORE INTERFACE $<BUILD_INTERFACE:${OPENSSL_PREFIX}/usr/local/include> )
+#target_include_directories(crypto BEFORE INTERFACE $<BUILD_INTERFACE:${OPENSSL_PREFIX}/usr/local/include> )
+
 
 # ASIO
 find_package(Threads REQUIRED)
@@ -241,6 +270,9 @@ add_executable(Valhalla
     "src/MyFileInterface.cpp" 
     "src/MyRenderInterface.cpp" 
     "src/MySystemInterface.cpp" 
+    "src/Player.cpp"
+    "src/PlayerProfile.cpp"
+    "src/Quaternion.cpp"
     "src/ResourceManager.cpp"
     "src/ScriptManager.cpp" 
     "src/Shader.cpp"
@@ -269,6 +301,9 @@ target_include_directories(Valhalla PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(Valhalla PRIVATE cxx_std_20)
 
 target_link_libraries(Valhalla
+    #cryptopp-static
+    OpenSSL::SSL 
+    OpenSSL::Crypto
     Threads::Threads
     asio
     robinhood

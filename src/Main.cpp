@@ -1,4 +1,5 @@
 #include "Game.hpp"
+#include <openssl/md5.h>
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -35,11 +36,6 @@ void initLogger() {
     LOG(INFO) << "Logger is configured";
 }
 
-struct obyte {
-    unsigned char m;
-    obyte() {}
-};
-
 int main(int argc, char **argv) {
 
 	// Initialize logger
@@ -47,21 +43,40 @@ int main(int argc, char **argv) {
 
 	Game::Run();
 
-    //for (int trial = 1; trial <= 5; trial++) {
-    //    auto startTime(std::chrono::steady_clock::now());
-    //    std::vector<byte> vec_byte(1000000000);
-    //    auto dur = std::chrono::steady_clock::now() - startTime;
+    //ZPackage pkg1;
+    //pkg1.Write("1.0.0");
+    //pkg1.GetStream().ResetPos();
     //
-    //    LOG(INFO) << "Byte vec: " << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << "ms (trial " << trial << ")";
-    //}
+    //std::vector<byte> bytes;
+    //auto len = pkg1.GetStream().Length();
     //
-    //for (int trial = 1; trial <= 5; trial++) {
-    //    auto startTime(std::chrono::steady_clock::now());
-    //    std::vector<byte> vec_byte(1000000000);
-    //    auto dur = std::chrono::steady_clock::now() - startTime;
-    //
-    //    LOG(INFO) << "oByte vec: " << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << "ms (trial " << trial << ")";
-    //}
+    //pkg1.GetStream().Read(bytes, len);
+
+    if (true)
+        return 0;
+
+    std::string password = "hello world";
+
+    ZPackage pkg;
+
+    std::vector<byte> digest;
+    auto b = MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr);
+    digest.insert(digest.begin(), b, b + 16);
+
+    if (password.empty())
+        pkg.Write("");
+    else 
+        pkg.Write(std::string(reinterpret_cast<char*>(
+            MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr)), 16));
+
+    pkg.GetStream().ResetPos();
+
+    std::string hashed = pkg.Read<std::string>();
+    LOG(INFO) << hashed;
+
+    //ZPackage pkg(21);
+    //pkg.Write(4);
+    //auto mov = std::move(pkg);
 
 	return 0;
 }

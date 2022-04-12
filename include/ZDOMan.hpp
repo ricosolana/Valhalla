@@ -8,6 +8,14 @@
 #include "HashUtils.hpp"
 
 class ZDOMan {
+	struct SaveData
+	{
+		int64_t m_myid;
+		uint32_t m_nextUid = 1U;
+		std::vector<ZDO*> m_zdos;
+		robin_hood::unordered_map<ZDOID, int64_t, HashUtils::Hasher> m_deadZDOs;
+	};
+
 	// why static
 	static int64_t compareReceiver;
 
@@ -36,21 +44,13 @@ class ZDOMan {
 	std::vector<ZDO> m_tempToSyncDistant;
 	std::vector<ZDO> m_tempNearObjects;
 	std::vector<ZDOID> m_tempRemoveList;
-	//ZDOMan.SaveData m_saveData;
+	SaveData m_saveData;
 
 public:
 	//Action<ZDO> m_onZDODestroyed;
 
 	ZDOMan();
+
+	int64_t GetMyID();
 };
 
-struct SaveData
-{
-	int64_t m_myid;
-
-	uint32_t m_nextUid = 1U;
-
-	std::vector<ZDO*> m_zdos;
-
-	robin_hood::unordered_map<ZDOID, int64_t, HashUtils::Hasher> m_deadZDOs;
-};

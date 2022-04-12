@@ -8,12 +8,16 @@
 // C# BinaryReader ported to C++
 // Used to Read from the internal vector
 class BinaryReader {
-	Stream& m_stream;
+	Stream *m_stream;
 
 	int Read7BitEncodedInt();
 
 public:
-	BinaryReader(Stream& stream);
+	BinaryReader(Stream *stream);
+
+	BinaryReader(BinaryReader&) = delete; // copy
+
+	BinaryReader(BinaryReader&&); // move
 
 	void Read(byte* out, int offset, int count);
 	void Read(byte* out, int count);

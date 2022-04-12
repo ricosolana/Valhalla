@@ -28,10 +28,10 @@ void ZSocket2::Accept() {
 	* Im not doing for readability
 */
 void ZSocket2::Send(ZPackage pkg) {
-	if (pkg.Size() == 0)
+	if (pkg.GetStream().Length() == 0)
 		return;
 
-	if (pkg.Size() + 4 > 10485760)
+	if (pkg.GetStream().Length() + 4 > 10485760)
 		LOG(ERROR) << "Too big package";
 
 	if (m_online) {
@@ -109,17 +109,20 @@ void ZSocket2::ReadPkg() {
 		Close();
 	}
 	else {
-		ZPackage pkg(m_tempReadOffset);
+		//m_recvQueue.push_back(ZPackage(m_tempReadOffset));
+		//auto &front = m_recvQueue.front();
+		m_recv.GetStream().Reserve(m_tempReadOffset);
 		//auto pkg = new ZPackage(); //new Package(m_tempReadOffset);
 		// the initialization is pointless
 		//pkg->Buffer().resize(m_tempReadOffset);
 
 		auto self(shared_from_this());
 		asio::async_read(m_socket,
-			asio::buffer(pkg.Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
-			[this, self, &pkg](const std::error_code& e, size_t) {
+			asio::buffer(m_recv.GetStream().Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
+			[this, self](const std::error_code& e, size_t) {
 			if (!e) {
-				m_recvQueue.push_back(std::move(pkg));
+				m_recv.GetStream().SetLength(m_tempReadOffset);
+				m_recvQueue.push_back(std::move(m_recv));
 				ReadPkgSize();
 			}
 			else {
@@ -131,9 +134,9 @@ void ZSocket2::ReadPkg() {
 }
 
 void ZSocket2::WritePkgSize() {
-	auto &&pkg = m_sendQueue.front();
+	auto &pkg = m_sendQueue.front();
 
-	m_tempWriteOffset = pkg.Size();
+	m_tempWriteOffset = pkg.GetStream().Length();
 
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
@@ -152,7 +155,7 @@ void ZSocket2::WritePkgSize() {
 void ZSocket2::WritePkg(ZPackage &pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
-		asio::buffer(pkg.Bytes(), m_tempWriteOffset),
+		asio::buffer(pkg.GetStream().Bytes(), m_tempWriteOffset),
 		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
 			m_sendQueue.pop_front();
