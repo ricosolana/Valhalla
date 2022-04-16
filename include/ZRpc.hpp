@@ -1,12 +1,10 @@
 #pragma once
 
 #include <robin_hood.h>
-#include "ZRpcMethod.hpp"
+#include "ZMethod.hpp"
 #include "ZSocket.hpp"
 
 #include "Task.hpp"
-
-struct ZNetPeer;
 
 /**
 * The client and Rpc should be merged somehow
@@ -17,11 +15,11 @@ class ZRpc {
 	ZSocket2::Ptr m_socket;
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
-	robin_hood::unordered_map<int32_t, std::unique_ptr<ZRpcMethodBase>> m_methods;
+	robin_hood::unordered_map<int32_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
 
 	void SendPackage(ZPackage pkg);
 
-public:
+public:	
 	ZRpc(ZSocket2::Ptr socket);
 	~ZRpc();
 
@@ -34,7 +32,7 @@ public:
 	*/
 	// TODO hide away the 'new' operator while being passed
 	// and/or instead use std function or bind?
-	void Register(const char* name, ZRpcMethodBase* method);
+	void Register(const char* name, ZMethodBase<ZRpc*> *method);
 
 	/**
 		* @brief Invoke a function remotely

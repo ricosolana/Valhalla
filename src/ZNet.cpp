@@ -53,14 +53,20 @@ void ZNet::Connect(std::string host, std::string port) {
 		if (!ec) {
 			m_peer->m_socket->Accept();
 
+			auto m = new ZMethod(this, &ZNet::RPC_PeerInfo);
+
 			Game::Get()->RunTaskLater([this](Task *task) {
-				m_peer->m_rpc->Register("PeerInfo", new ZRpcMethod(this, &ZNet::RPC_PeerInfo));
-				m_peer->m_rpc->Register("Disconnect", new ZRpcMethod(this, &ZNet::RPC_Disconnect));
-				m_peer->m_rpc->Register("Error", new ZRpcMethod(this, &ZNet::RPC_Error));
-				m_peer->m_rpc->Register("ClientHandshake", new ZRpcMethod(this, &ZNet::RPC_ClientHandshake));
+				m_routedRpc = std::make_unique<ZRoutedRpc>(m_peer.get());
+				m_zdoMan = std::make_unique<ZDOMan>(m_peer.get());
+
+				m_routedRpc->SetUID(m_zdoMan->GetMyID());
+
+				m_peer->m_rpc->Register("PeerInfo", new ZMethod(this, &ZNet::RPC_PeerInfo));
+				m_peer->m_rpc->Register("Disconnect", new ZMethod(this, &ZNet::RPC_Disconnect));
+				m_peer->m_rpc->Register("Error", new ZMethod(this, &ZNet::RPC_Error));
+				m_peer->m_rpc->Register("ClientHandshake", new ZMethod(this, &ZNet::RPC_ClientHandshake));
 
 				Game::Get()->m_playerProfile = std::make_unique<PlayerProfile>();
-				m_zdoMan = std::make_unique<ZDOMan>();
 
 				m_peer->m_rpc->Invoke("ServerHandshake");
 			}, 1s);
@@ -87,9 +93,11 @@ void ZNet::Connect(std::string host, std::string port) {
 }
 
 void ZNet::Disconnect() {
-	m_peer->m_socket->Close();
+	if (m_peer) {
+		m_peer->m_socket->Close();
 
-	StopIOThread();
+		StopIOThread();
+	}
 }
 
 void ZNet::Update() {
@@ -116,6 +124,7 @@ void ZNet::RPC_ClientHandshake(ZRpc* rpc, bool needPassword) {
 	}
 }
 
+// The server send peer info once the client is completely validated
 void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 	auto num = pkg.Read<UID_t>();
 	auto ver = pkg.Read<std::string>();
@@ -128,31 +137,27 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 		LOG(INFO) << "Incompatible versions";
 		return;
 	}
-	Vector3 refPos = pkg.Read<Vector3>();
-	std::string name = pkg.Read<std::string>();
+	m_peer->m_refPos = pkg.Read<Vector3>();
+	m_peer->m_uid = num;
+	m_peer->m_playerName = pkg.Read<std::string>();
 
 	//ZNet.m_world = new World();
-	//ZNet.m_world.m_name = pkg.ReadString();
-	//ZNet.m_world.m_seed = pkg.ReadInt();
-	//ZNet.m_world.m_seedName = pkg.ReadString();
-	//ZNet.m_world.m_uid = pkg.ReadLong();
-	//ZNet.m_world.m_worldGenVersion = pkg.ReadInt();
+	m_world.m_name = pkg.Read<std::string>();
+	m_world.m_seed = pkg.Read<int32_t>();
+	m_world.m_seedName = pkg.Read<std::string>();
+	m_world.m_uid = pkg.Read<UID_t>();
+	m_world.m_worldGenVersion = pkg.Read<int32_t>();
 	//WorldGenerator.Initialize(ZNet.m_world);
-	//this.m_netTime = pkg.ReadDouble();
-	//
-	//peer.m_refPos = refPos;
-	//peer.m_uid = num;
-	//peer.m_playerName = text2;
-	//rpc->Register("RefPos", new ZRpcMethod(this, &ZNet::RPC_RefPos));
-	//rpc->Register("PlayerList", new ZRpcMethod(this, &ZNet::RPC_PlayerList));
-	//rpc->Register("RemotePrint", new ZRpcMethod(this, &ZNet::RPC_RemotePrint));
-	//
-	//rpc.Register<double>("NetTime", new Action<ZRpc, double>(this.RPC_NetTime));
+
+	m_netTime = pkg.Read<double>();
+
+	//rpc->Register("RefPos", new ZMethod(this, &ZNet::RPC_RefPos));
+	//rpc->Register("PlayerList", new ZMethod(this, &ZNet::RPC_PlayerList));
+	//rpc->Register("RemotePrint", new ZMethod(this, &ZNet::RPC_RemotePrint));
+	
+	//rpc->Register("NetTime", new ZMethod(this, &ZNet::RPC_NetTime));
 	
 	m_connectionStatus = ConnectionStatus::Connected;
-	
-	//m_zdoMan.AddPeer(peer);
-	//m_routedRpc.AddPeer(peer);
 }
 
 void ZNet::RPC_Error(ZRpc* rpc, int32_t error) {

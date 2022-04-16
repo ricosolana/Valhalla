@@ -122,6 +122,7 @@ void ZSocket2::ReadPkg() {
 			[this, self](const std::error_code& e, size_t) {
 			if (!e) {
 				m_recv.GetStream().SetLength(m_tempReadOffset);
+				m_recv.GetStream().ResetPos();
 				m_recvQueue.push_back(std::move(m_recv));
 				ReadPkgSize();
 			}

@@ -5,6 +5,8 @@
 #include "MySystemInterface.hpp"
 #include "MyFileInterface.hpp"
 #include "ZDOMan.hpp"
+#include "ZRoutedRpc.hpp"
+#include "World.hpp"
 
 enum class ConnectionStatus : int32_t
 {
@@ -32,8 +34,6 @@ class ZNet {
 	asio::io_context m_ctx;
 
 	ConnectionStatus m_connectionStatus = ConnectionStatus::None;
-	std::unique_ptr<ZNetPeer> m_peer;
-	std::unique_ptr<ZDOMan> m_zdoMan;
 
 	void StopIOThread();
 
@@ -43,8 +43,13 @@ class ZNet {
 	void RPC_Error(ZRpc* rpc, int32_t error);
 	void RPC_Disconnect(ZRpc* rpc);
 
-
 public:
+	std::unique_ptr<ZNetPeer> m_peer;
+	std::unique_ptr<ZDOMan> m_zdoMan;
+	std::unique_ptr<ZRoutedRpc> m_routedRpc;
+	World m_world;
+	double m_netTime;
+
 	void Connect(std::string host, std::string port);
 	void Disconnect();
 	void Update();

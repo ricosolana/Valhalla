@@ -289,7 +289,6 @@ add_executable(Valhalla
     "src/ZNetPeer.cpp" 
     "src/ZPackage.cpp"    
     "src/ZRoutedRpc.cpp"
-    "src/ZRoutedRpcMethod" # might be able to omit if header only
     "src/ZRpc.cpp" 
     "src/ZSocket2.cpp"
 )

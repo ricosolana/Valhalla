@@ -19,9 +19,11 @@ void ZPackage::Write(const byte* in, int32_t count) {
 }
 
 void ZPackage::Write(const std::string& in) {
-    int byteCount = Utils::GetUnicode8Count(in.c_str());
+    int byteCount = static_cast<int>(in.length()); // Utils::GetUnicode8Count(in.c_str());
     if (byteCount > 256)
         throw std::runtime_error("Writing big string not yet supported");
+
+    // std::u8string s()
 
     // slight optimization
     m_stream.ReserveExtra(1 + in.length());
@@ -30,6 +32,8 @@ void ZPackage::Write(const std::string& in) {
 
     if (byteCount == 0)
         return;
+
+    // string is not correctly encoded in the case of non-utf8 formats
 
     m_stream.Write(reinterpret_cast<const byte*>(in.c_str()), byteCount);
 }

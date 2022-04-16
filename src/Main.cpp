@@ -52,27 +52,19 @@ int main(int argc, char **argv) {
     //
     //pkg1.GetStream().Read(bytes, len);
 
-    if (true)
-        return 0;
-
-    std::string password = "hello world";
-
-    ZPackage pkg;
-
-    std::vector<byte> digest;
-    auto b = MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr);
-    digest.insert(digest.begin(), b, b + 16);
-
-    if (password.empty())
-        pkg.Write("");
-    else 
-        pkg.Write(std::string(reinterpret_cast<char*>(
-            MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr)), 16));
-
-    pkg.GetStream().ResetPos();
-
-    std::string hashed = pkg.Read<std::string>();
-    LOG(INFO) << hashed;
+    //std::string password = "raspberry";
+    //
+    //ZPackage pkg;
+    //
+    //auto b = MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr);
+    //std::vector<byte> digest;
+    //digest.insert(digest.begin(), b, b + 16);
+    //
+    //std::vector<byte> bytes;
+    //pkg.Write(std::string(reinterpret_cast<char*>(
+    //        MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr)), 16));
+    //bytes.insert(bytes.begin(), pkg.GetStream().Bytes(), pkg.GetStream().Bytes() + pkg.GetStream().Length());
+    
 
     //ZPackage pkg(21);
     //pkg.Write(4);

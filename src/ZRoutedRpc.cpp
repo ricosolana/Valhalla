@@ -1,5 +1,5 @@
 #include "ZRoutedRpc.hpp"
-#include "ZRoutedRpcMethod.hpp"
+#include "ZMethod.hpp"
 
 ZRoutedRpc::ZRoutedRpc(ZNetPeer* peer) 
 	: m_peer(peer) {}
@@ -8,10 +8,10 @@ void ZRoutedRpc::SetUID(UID_t uid) {
 	m_id = uid;
 }
 
-void ZRoutedRpc::Register(const char* name, ZRpcMethodBase* method) {
-	throw std::runtime_error("not implemented");
+void ZRoutedRpc::Register(const char* name, ZMethodBase<UID_t>* method) {
+	//throw std::runtime_error("not implemented");
 
-	//m_functions.insert({Utils::GetStableHashCode(name), new ZRoutedRpcMethod(});
+	m_functions.insert({ Utils::GetStableHashCode(name), method });
 }
 
 void ZRoutedRpc::RPC_RoutedRPC(ZRpc rpc, ZPackage pkg)
@@ -62,7 +62,7 @@ void ZRoutedRpc::RoutedRPCData::Serialize(ZPackage pkg) {
 	pkg.Write(m_targetPeerID);
 	pkg.Write(m_targetZDO);
 	pkg.Write(m_methodHash);
-	pkg.Write(*m_parameters);
+	pkg.Write(m_parameters);
 }
 
 void ZRoutedRpc::RoutedRPCData::Deserialize(ZPackage pkg) {

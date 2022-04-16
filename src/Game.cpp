@@ -66,6 +66,7 @@ void Game::Start() {
 }
 
 void Game::Stop() {
+	m_znet->Disconnect();
 	m_running = false;
 	ScriptManager::Uninit();
 	Rml::Shutdown();

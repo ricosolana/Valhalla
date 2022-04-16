@@ -1,5 +1,4 @@
 #include "ZRpc.hpp"
-#include "ZNetPeer.hpp"
 #include "Game.hpp"
 
 ZRpc::ZRpc(ZSocket2::Ptr socket)
@@ -24,7 +23,7 @@ bool ZRpc::IsConnected() {
 	return m_socket->IsOnline();
 }
 
-void ZRpc::Register(const char* name, ZRpcMethodBase* method) {
+void ZRpc::Register(const char* name, ZMethodBase<ZRpc*>* method) {
 	auto stableHash = Utils::GetStableHashCode(name);
 
 #ifndef _NDEBUG
@@ -32,7 +31,7 @@ void ZRpc::Register(const char* name, ZRpcMethodBase* method) {
 		throw std::runtime_error("Hash collision");
 #endif
 
-	m_methods.insert({ stableHash, std::unique_ptr<ZRpcMethodBase>(method) });
+	m_methods.insert({ stableHash, std::unique_ptr<ZMethodBase<ZRpc*>>(method) });
 }
 
 void ZRpc::Update() {

@@ -2,7 +2,7 @@
 
 #include <robin_hood.h>
 #include "ZNetPeer.hpp"
-#include "ZRoutedRpcMethod.hpp"
+#include "ZMethod.hpp"
 
 class ZRoutedRpc {
 	struct RoutedRPCData
@@ -15,7 +15,7 @@ class ZRoutedRpc {
 		int64_t m_targetPeerID;
 		ZDOID m_targetZDO;
 		int32_t m_methodHash;
-		ZPackage *m_parameters = new ZPackage();
+		ZPackage m_parameters;// = new ZPackage();
 	};
 
 public:
@@ -25,7 +25,7 @@ public:
 	//void AddPeer(ZNetPeer *peer);
 	//void RemovePeer(ZNetPeer *peer);
 
-	void Register(const char* name, ZRpcMethodBase* method);
+	void Register(const char* name, ZMethodBase<UID_t>* method);
 
 	template <typename... Types>
 	void InvokeRoutedRPC(const char* methodName, Types... params) {
@@ -57,7 +57,7 @@ public:
 		routedRPCData.m_targetZDO = targetZDO;
 		routedRPCData.m_methodHash = Utils::GetStableHashCode(methodName);
 		ZRpc::Serialize(routedRPCData.m_parameters, params);
-		routedRPCData.m_parameters.SetPos(0);
+		routedRPCData.m_parameters.GetStream().ResetPos();
 
 		m_rpcMsgID++;
 
@@ -84,6 +84,6 @@ private:
 	UID_t m_id;
 	ZNetPeer* m_peer;
 	//std::vector<ZNetPeer> m_peers;
-	robin_hood::unordered_map<int32_t, ZRoutedRpcMethodBase*> m_functions;
+	robin_hood::unordered_map<int32_t, ZMethodBase<UID_t>*> m_functions;
 };
 

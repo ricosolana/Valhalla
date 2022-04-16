@@ -4,6 +4,8 @@
 #include <string>
 #include <stdexcept>
 #include <memory>
+#include <locale>
+#include <codecvt>
 
 #include "Stream.hpp"
 #include "ZDOID.hpp"
@@ -51,6 +53,7 @@ public:
     //void Write(const PlayerProfile& in);
 
 
+
     template<typename T>
     T Read() requires std::is_fundamental_v<T> {
         T out;
@@ -61,6 +64,9 @@ public:
     template<typename T>
     T Read() requires std::same_as<T, std::string> {
         auto byteCount = Read7BitEncodedInt();
+
+        if (byteCount < 0)
+            throw std::runtime_error("invalid string length");
 
         if (byteCount == 0)
             return "";
@@ -95,6 +101,8 @@ public:
         auto count = Read<int32_t>();
         ZPackage pkg(count);
         m_stream.Read(pkg.m_stream.Bytes(), count);
+        pkg.GetStream().SetLength(count);
+        pkg.GetStream().ResetPos();
         return pkg;
     }
 
