@@ -4,9 +4,6 @@
 #include <asio.hpp>
 #include "Task.hpp"
 #include "ZNetPeer.hpp"
-#include "MyRenderInterface.hpp"
-#include "MySystemInterface.hpp"
-#include "MyFileInterface.hpp"
 #include "ZNet.hpp"
 #include "Settings.hpp"
 #include "PlayerProfile.hpp"
@@ -21,15 +18,6 @@ class Game {
 	std::list<std::unique_ptr<Task>> m_tasks;
 
 	std::recursive_mutex m_taskMutex;
-
-	SDL_Window* m_sdlWindow = nullptr;
-	SDL_GLContext* m_sdlGLContext = nullptr;
-	SDL_Renderer* m_sdlRenderer = nullptr;
-
-	Rml::Context* m_rmlContext = nullptr;
-	std::unique_ptr<MyRenderInterface> m_renderInterface;
-	std::unique_ptr<MySystemInterface> m_systemInterface;
-	std::unique_ptr<MyFileInterface> m_fileInterface;
 
 	Settings m_settings;
 
@@ -53,8 +41,4 @@ private:
 	void Start();
 
 	void Update(float delta);
-
-	void InitSDL();
-	void InitGLEW();
-	void InitRML();
 };

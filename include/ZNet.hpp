@@ -1,9 +1,6 @@
 #pragma once
 
 #include "ZNetPeer.hpp"
-#include "MyRenderInterface.hpp"
-#include "MySystemInterface.hpp"
-#include "MyFileInterface.hpp"
 #include "ZDOMan.hpp"
 #include "ZRoutedRpc.hpp"
 #include "World.hpp"

@@ -1,5 +1,9 @@
 #include "Game.hpp"
 #include <openssl/md5.h>
+//#include <steam>
+//#include <nlohmann/json.hpp>
+//#include <robin_hood.h>
+#include <steam/steamnetworkingsockets.h>
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -36,12 +40,28 @@ void initLogger() {
     LOG(INFO) << "Logger is configured";
 }
 
+// use this instead of steamapi
+// https://github.com/ValveSoftware/GameNetworkingSockets/blob/e0d33386903202d9af61e76d69c54e46ece2f457/tests/test_p2p.cpp#L233
+
+// webapi to auth ticket
+// // https://partner.steamgames.com/doc/features/auth#client_to_backend_webapi
+// https://partner.steamgames.com/doc/webapi/ISteamUserAuth#AuthenticateUserTicket
+
+#ifdef _MSC_VER
+#pragma warning( disable: 4702 ) /* unreachable code */
+#endif
+
 int main(int argc, char **argv) {
 
 	// Initialize logger
 	initLogger();
 
-	Game::Run();
+    //SteamNetworkingSockets()->CreateListenSocketP2P
+    SteamNetworkingIdentity identity;
+    
+    identity.ParseString("str:peer-server");
+
+	//Game::Run();
 
     //ZPackage pkg1;
     //pkg1.Write("1.0.0");

@@ -36,6 +36,48 @@ find_package(openssl)
 include_directories(${OPENSSL_INCLUDE_DIRS})
 
 
+
+
+
+#set(GameNetworkingSockets_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/GameNetworkingSockets")
+#set( _GameNetworkingSockets_HEADER_SEARCH_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/GameNetworkingSockets/include/GameNetworkingSockets" )
+#set( _GameNetworkingSockets_LIB_SEARCH_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/GameNetworkingSockets/lib" )
+#find_package(GameNetworkingSockets CONFIG REQUIRED)
+#target_include_directories(Valhalla PRIVATE ${GameNetworkingSockets_INCLUDE_DIR})
+
+
+
+#find_package(GameNetworkingSockets)
+
+
+
+#CPMAddPackage(
+#    NAME GameNetworkingSockets
+#    GITHUB_REPOSITORY ValveSoftware/GameNetworkingSockets
+#    #VERSION 3.11.3
+#    GIT_TAG v1.4.1
+#    DOWNLOAD_ONLY TRUE
+#    OPTIONS
+#    "USE_STEAMWEBRTC ON"
+#    "Protobuf_USE_STATIC_LIBS ON"
+#)
+##add_library(lua STATIC ${Lua_sources})
+##add_library(gamenetworkingsockets STATIC ${gamenetworkingsockets_sources})
+#add_library(gamenetworkingsockets PUBLIC)
+#target_include_directories(GameNetworkingSockets SYSTEM INTERFACE ${gamenetworkingsockets_SOURCE_DIR}/include)
+#target_include_directories(gamenetworkingsockets PUBLIC ${gamenetworkingsockets_SOURCE_DIR}/include)
+#target_include_directories(gamenetworkingsockets PUBLIC ${gamenetworkingsockets_BINARY_DIR})
+#target_compile_definitions(gamenetworkingsockets PUBLIC STEAMNETWORKINGSOCKETS_STATIC_LINK)
+#target_include_directories(gamenetworkingsockets SYSTEM INTERFACE ${gamenetworkingsockets_SOURCE_DIR}/include)
+#target_include_directories(gamenetworkingsockets SYSTEM INTERFACE ${gamenetworkingsockets_BINARY_DIR}/include)
+
+#target_include_directories(gamenetworkingsockets PRIVATE ${gamenetworkingsockets_INCLUDE_DIR})
+
+
+
+
+
+
 #option(BUILD_OPENSSL ON)
 #option(SYSTEM_OPENSSL ON)
 #target_include_directories(ssl BEFORE INTERFACE $<BUILD_INTERFACE:${OPENSSL_PREFIX}/usr/local/include> )
@@ -105,25 +147,7 @@ target_include_directories(robinhood SYSTEM INTERFACE ${robinhood_SOURCE_DIR}/sr
 
 
 
-find_package(OpenGL REQUIRED)
-
-
-
-CPMAddPackage("gh:g-truc/glm@0.9.9.8#0.9.9.8")
-
-
-
 #CPMAddPackage("gh:bombomby/optick@1.3.1.0#1.3.1.0")
-
-
-
-CPMAddPackage(
-    GITHUB_REPOSITORY Perlmint/glew-cmake
-    VERSION 2.2.0
-    GIT_TAG glew-cmake-2.2.0
-    OPTIONS
-    "glew-cmake_BUILD_SHARED OFF"
-)
 
 
 
@@ -133,19 +157,6 @@ CPMAddPackage(
     VERSION 3.9.1
     OPTIONS
     "JSON_BuildTests OFF"
-)
-
-
-
-CPMAddPackage(
-    NAME SDL2
-    GITHUB_REPOSITORY libsdl-org/SDL
-    VERSION 2.0.14
-    GIT_TAG release-2.0.14
-    OPTIONS
-    "SDL_SHARED OFF"
-    "SDL_STATIC ON"
-    "LIBC ON"
 )
 
 
@@ -227,36 +238,6 @@ endif()
 
 
 
-CPMAddPackage(
-    NAME Freetype
-    GITHUB_REPOSITORY freetype/freetype
-    VERSION 2.10.4
-    GIT_TAG VER-2-10-4
-    OPTIONS
-    "CMAKE_DISABLE_FIND_PACKAGE_ZLIB TRUE"
-    "CMAKE_DISABLE_FIND_PACKAGE_BZip2 TRUE"
-    "CMAKE_DISABLE_FIND_PACKAGE_PNG TRUE"
-    "CMAKE_DISABLE_FIND_PACKAGE_HarfBuzz TRUE"
-    "CMAKE_DISABLE_FIND_PACKAGE_BrotliDec TRUE"
-)
-export(EXPORT freetype-targets)
-
-
-
-CPMAddPackage(
-    NAME RmlUi
-    GITHUB_REPOSITORY mikke89/RmlUi
-    VERSION 4.1
-    GIT_TAG 4.1
-    OPTIONS
-    "BUILD_SHARED_LIBS OFF"
-    "BUILD_TESTING OFF"
-    "BUILD_SAMPLES OFF"
-    "BUILD_LUA_BINDINGS ON"
-)
-#target_compile_definitions(Valhalla PUBLIC RMLUI_STATIC_LIB)
-target_link_libraries(RmlCore freetype lua)
-
 #
 # Linking
 #
@@ -267,19 +248,19 @@ add_executable(Valhalla
     "src/Game.cpp" 
     "src/HashUtils.cpp"
     "src/Main.cpp"
-    "src/MyFileInterface.cpp" 
-    "src/MyRenderInterface.cpp" 
-    "src/MySystemInterface.cpp" 
+     
+     
+     
     "src/Player.cpp"
     "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
     "src/ResourceManager.cpp"
     "src/ScriptManager.cpp" 
-    "src/Shader.cpp"
-    "src/SpriteRenderer.cpp"
+    
+    
     "src/Stream.cpp"
     "src/Task.cpp"
-    "src/Texture2D.cpp"
+    
     "src/Utils.cpp"
     "src/ZDO.cpp"
     "src/ZDOID.cpp"
@@ -301,24 +282,20 @@ target_compile_features(Valhalla PRIVATE cxx_std_20)
 
 target_link_libraries(Valhalla
     #cryptopp-static
+    #gamenetworkingsockets
+    #GameNetworkingSockets::shared
+    #GameNetworkingSockets::GameNetworkingSockets_s
     OpenSSL::SSL 
     OpenSSL::Crypto
     Threads::Threads
     asio
     robinhood
-    OpenGL::GL
-    glm
     stb
     easyloggingpp
-    libglew_static
     nlohmann_json::nlohmann_json
-    SDL2-static
-    SDL2main
     #OptickCore
     zlibstatic
     sol2
-    RmlLua
-    RmlDebugger	
 )
 
 

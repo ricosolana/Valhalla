@@ -1,6 +1,4 @@
 #include "ScriptManager.hpp"
-#include <RmlUi/Core.h>
-#include <RmlUi/Lua.h>
 #include <sol/sol.hpp>
 #include <filesystem>
 #include "ZNet.hpp"
@@ -50,7 +48,8 @@ namespace ScriptManager {
 		int n = lua_gettop(L);  /* number of arguments */
 		int i;
 		lua_getglobal(L, "tostring");
-		Rml::String output = "";
+		//Rml::String output = "";
+		std::string output = "";
 		for (i = 1; i <= n; i++)
 		{
 			const char* s;
@@ -62,17 +61,18 @@ namespace ScriptManager {
 				return luaL_error(L, "'tostring' must return a string to 'print'");
 			if (i > 1)
 				output += "\t";
-			output += Rml::String(s);
+			output += (s);
 			lua_pop(L, 1);  /* pop result */
 		}
 		//output += "\n";
-		Rml::Log::Message(Rml::Log::LT_INFO, "[LUA] %s", output.c_str());
+		//Rml::Log::Message(Rml::Log::LT_INFO, "[LUA] %s", output.c_str());
+		std::cout << "[LUA] " << output << "\n";
 		return 0;
 	}
 
 	void Init() {
 		std::string scriptCode;
-		if (Rml::GetFileInterface()->LoadFile("scripts/entry.lua", scriptCode)) {
+		//if (Rml::GetFileInterface()->LoadFile("scripts/entry.lua", scriptCode)) {
 
 			// State
 			lua = sol::state();
@@ -80,7 +80,7 @@ namespace ScriptManager {
 
 			auto L(lua.lua_state());
 
-			Rml::Lua::Initialise(L);
+			//Rml::Lua::Initialise(L);
 
 			auto apiTable = lua["Valhalla"].get_or_create<sol::table>();
 
@@ -105,7 +105,7 @@ namespace ScriptManager {
 			// ...
 
 			lua.safe_script(scriptCode);
-		}
+		//}
 	}
 
 	void Uninit() {
