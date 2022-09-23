@@ -1,5 +1,9 @@
 # Valhalla
-Open source Valheim client written in C++
+Open source Valheim server and client written in C++
+
+The client is on the `main` branch (this branch), the server is on the `server` branch.
+
+I will not continue development on the client because I do not like graphical programming (so this branch is essentially unused/archived).
 
 ## Disclaimer
 I am in no way affiliated, endorsed, or associated with Valheim nor its creators.
