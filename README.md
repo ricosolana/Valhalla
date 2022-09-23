@@ -1,1 +1,1 @@
-This a demonstration to test out vcpkg functionality with a minimal GameNetworkingSockets example
+This a demonstration to test out vcpkg functionality with a minimal GameNetworkingSockets example. See https://stackoverflow.com/questions/73823088/cmake-cpm-link-with-gamenetworkingsockets/73829822#73829822 for vcpkg setup
