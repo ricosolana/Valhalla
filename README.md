@@ -78,5 +78,7 @@ Log messages to Player.log file using `ZLog.Log("Your message here")`
 
 Just read the ticket as a dummy and remove the verification `pkg.ReadByteArray();`.
 
+You should now be able to connect with IP to any server (Steam must still be open although it's relatively unused).
+
 See My Valheim Manifesto for more findings and stuff
 https://docs.google.com/document/d/1Op_0dvQnDZkcbUCZ3MQMSAsxho7J8jbJeEkfW_8lMRY/edit?usp=sharing
