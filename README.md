@@ -17,6 +17,8 @@ I did find a way around this issue, by digging into the C# source, and using one
 Walkthrough of how to do this below:
 
 ## Dnspy
+The purpose of this portion is in order to get Valheim to work with a non-steam socket server. This is also used in the development of my server because it doesn't seem that you can locally host a dedicated server and connect to it locally with the client via `Connect with IP` (I suspect this is due to Steam networking not seeing the local server for some reason).
+
 I used Dnspy to do all of this, with Valheim v0.202.19. 
 
 What you will need to do is open the `assembly_valheim.dll` located at `./valheim_Data/Managed/assembly_valheim.dll`.
