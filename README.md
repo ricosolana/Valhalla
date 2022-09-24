@@ -27,7 +27,7 @@ I highly recommend making a backup of the dll before continuing.
 
 For my usages, I have removed any steam layering and lobby stuff to simplify things. It's up to you if you want to do the same. Most of it is just for the server finder and for the smart udp networking that it uses.
 
-## Server-side
+### Server-side
 Change the Unity MonoBehaviour::Awake() method:
 ```c#
 // ZNet.cs
@@ -51,7 +51,7 @@ if (ZNet.m_openServer) {
 ```
 This uses the C# TcpSocket instead of Steam sockets
 
-## Client-side
+### Client-side
 Change the connect(ip) method:
 ```c#
 public void Connect(SteamNetworkingIPAddr host) {
@@ -76,13 +76,13 @@ public void Connect(SteamNetworkingIPAddr host) {
   this.m_connectingDialog.gameObject.SetActive(true);
 }
 ```
-This basically uses the existing SteamNetworkingIPAddr structure to get the ip from it and use with ZSocket2.
+Make sure to include `System.Net.Sockets` and `System.Net`.
 
 It would make sense to debug the code to make everything works as expected, but it appears that something behind the scenes is preventing any new logs from logging:
 ```c#
 ZLog.Log("This never gets logged");
 ```
-A way around this is to use the console 
+An ugly way around this is to use the console for debugging
 ```c#
 global::Console.instance.Print("This works with console enabled\n");
 ```
