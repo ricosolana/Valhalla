@@ -27,7 +27,8 @@ I highly recommend making a backup of the dll before continuing.
 
 For my usages, I have removed any steam layering and lobby stuff to simplify things. It's up to you if you want to do the same. Most of it is just for the server finder and for the smart udp networking that it uses.
 
-In ZNet.cs, in the Unity Awake() method:
+## Server-side
+Change the Unity MonoBehaviour::Awake() method:
 ```c#
 // ZNet.cs
 if (ZNet.m_openServer) {
@@ -39,7 +40,7 @@ if (ZNet.m_openServer) {
   ZSteamMatchmaking.instance.RegisterServer(ZNet.m_ServerName, password, versionString, ZNet.m_publicServer, ZNet.m_world.m_seedName);
 }
 ```
-Change it to this:
+to this:
 ```c#
 // ZNet.cs
 if (ZNet.m_openServer) {
@@ -48,9 +49,10 @@ if (ZNet.m_openServer) {
   this.m_hostSocket = socket;
 }
 ```
-What this does is basically uses the socket implementation that wraps a C# TcpClient, and starts it as a server.
+This uses the C# TcpSocket instead of Steam sockets
 
-The next thing is to change the connect(ip) method for the client:
+## Client-side
+Change the connect(ip) method:
 ```c#
 public void Connect(SteamNetworkingIPAddr host) {
   ZNetPeer peer = new ZNetPeer(new ZSteamSocket(host), true);
@@ -59,7 +61,7 @@ public void Connect(SteamNetworkingIPAddr host) {
   this.m_connectingDialog.gameObject.SetActive(true);
 }
 ```
-Change it to this:
+to this:
 ```c#
 public void Connect(SteamNetworkingIPAddr host) {
   string ip;
