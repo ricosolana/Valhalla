@@ -4,35 +4,59 @@
 #include <chrono>
 #include <assert.h>
 
-#include <steam_api.h>
-#include <isteamgameserver.h>
-#include <steam_gameserver.h>
+//#include "SteamManager.h"
+#include "Game.h"
+#include "easylogging++.h"
+
+INITIALIZE_EASYLOGGINGPP
+
+// https://stackoverflow.com/a/17350413
+// Colors for output
+#define RESET "\033[0m"
+#define BLACK "\033[30m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define GOLD "\033[33m"
+#define BLUE "\033[34m"
+#define PURPLE "\033[35m"
+#define CYAN "\033[36m"
+#define WHITE "\033[37m"
+#define GRAY "\033[90m"
+
+void initLogger() {
+    el::Configurations loggerConfiguration;
+    //el::Helpers::installCustomFormatSpecifier(el::CustomFormatSpecifier("%startTime", std::bind(getTimeSinceProgramStart)));
+    //std::string format = "%s [%startTime][%level][%thread][%fbase]: %msg";
+
+    // https://github.com/amrayn/easyloggingpp#datetime-format-specifiers
+    // [%fbase:L%line]
+    std::string format = "[%datetime{%H:%m:%s.%g}] [%thread thread/%level]: %msg";
+    loggerConfiguration.set(el::Level::Info, el::ConfigurationType::Format, format);
+    loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, RED + format + RESET);
+    loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, RED + format + RESET);
+    loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, GOLD + format + RESET);
+    loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format, GOLD + format + RESET);
+    el::Helpers::setThreadName("main");
+    el::Loggers::reconfigureAllLoggers(loggerConfiguration);
+    el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+    //el::Loggers::file
+    LOG(INFO) << "Logger is configured";
+}
 
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
+
+    initLogger();
 
     //SteamUtils()->SetWarningMessageHook([](int severity, const char* text) {
     //    std::cout << "severity: " << severity << ", " << text << "\n";
     //});
 
-    if (SteamAPI_RestartAppIfNecessary(892970)) {
-        std::cout << "Restarting app through Steam?\n";
-        exit(0);
-    }
+    //InitSteamGameServer();
 
-    if (!SteamGameServer_Init(0, 2456, 2457, EServerMode::eServerModeNoAuthentication, "1.0.0.0"))
-        throw std::runtime_error("Failed to init steam game server");
+    //Valhalla()->Launch();
 
-    SteamGameServer()->SetProduct("valheim");   // for version checking
-    SteamGameServer()->SetModDir("valheim");    // game save location
-    SteamGameServer()->SetDedicatedServer(true);
-    SteamGameServer()->SetMaxPlayerCount(64);
-    SteamGameServer()->LogOnAnonymous();        // no steam login necessary
-
-    std::cout << "Server ID: " << SteamGameServer()->GetSteamID().ConvertToUint64() << "\n";
-    std::cout << "Authentication status: " << SteamGameServerNetworkingSockets()->InitAuthentication() << "\n";
-
-    SteamGameServer_Shutdown();
+    LOG(INFO) << "znet: " << Valhalla()->m_znet << "\n";
 
 	return 0;
 }
