@@ -3,6 +3,7 @@
 #include <filesystem>
 #include "ZNet.h"
 #include "Game.h"
+#include "ResourceManager.h"
 
 struct Script {
 	const std::function<void()> onEnable;
@@ -72,7 +73,8 @@ namespace ScriptManager {
 
 	void Init() {
 		std::string scriptCode;
-		//if (Rml::GetFileInterface()->LoadFile("scripts/entry.lua", scriptCode)) {
+		//ResourceManager::ReadFileBytes
+		if (Rml::GetFileInterface()->LoadFile("scripts/entry.lua", scriptCode)) {
 
 			// State
 			lua = sol::state();
@@ -105,7 +107,7 @@ namespace ScriptManager {
 			// ...
 
 			lua.safe_script(scriptCode);
-		//}
+		}
 	}
 
 	void Uninit() {
