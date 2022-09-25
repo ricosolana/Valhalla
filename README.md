@@ -10,13 +10,15 @@ I am in no way affiliated, endorsed, or associated with Valheim nor its creators
 
 The purpose of this project is just to explore and be creative in a non-commercial manner. Any usages of code below are in fair use and in full compliance with Coffee Stain Publishing EULA https://irongatestudio.se/CoffeeStainPublishingAB-GameContentUsagePolicy-18-05-2021.pdf
 
+Do this at your own risk. I am not liable for anything you decide to do with this.
+
 ## Overview
 Valheim uses the Steamworks API for authentication, networking, and lobbies. Valve's GameNetworkingSockets will not work because Steam sockets require the Steam backend. This is frustrating because I want legitimate clients to be authorized normally and join this server. I hope to use Steam authorization in the future, its just too complicated right now. So, how can clients connect?
 
 A temporary fix is introduced by modifying a few lines in both the Valheim server and client. For some reason, the devs left some of their older networking sockets that make use of C# TCP sockets. We will be using those.
 
 ## Patching
-We will be modifying the Valheim C# assembly using Dnspy. 
+We will be modifying the Valheim C# assembly using Dnspy. This will allow for us to easily connect, but there will be no encryption or user authentication.
 
 Make a backup of the `assembly_valheim.dll` before continuing. 
 
