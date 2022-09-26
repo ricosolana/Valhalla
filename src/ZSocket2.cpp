@@ -79,19 +79,17 @@
 
 
 
-ZSocket2::ZSocket2(asio::io_context& ctx)
-	: m_socket(ctx) {}
+ZSocket2::ZSocket2(tcp::socket sock)
+	: m_socket(std::move(sock)) {}
 
 ZSocket2::~ZSocket2() {
-	//while (!m_sendQueue.empty()) delete m_sendQueue.pop_front();
-	//while (!m_recvQueue.empty()) delete m_recvQueue.pop_front();
 	Close();
 }
 
 
 
-void ZSocket2::Accept() {
-	LOG(INFO) << "NetSocket2 Accept";
+void ZSocket2::Start() {
+	LOG(INFO) << "NetSocket2::Start()";
 
 	m_hostname = m_socket.remote_endpoint().address().to_string();
 	m_port = m_socket.remote_endpoint().port();
@@ -102,10 +100,10 @@ void ZSocket2::Send(ZPackage pkg) {
 	if (pkg.GetStream().Length() == 0)
 		return;
 
-	if (pkg.GetStream().Length() + 4 > 10485760)
+	if (pkg.GetStream().Length() + 4 > 10485760) {
 		LOG(ERROR) << "Too big package";
-
-	if (m_online) {
+		Close();
+	} else if (IsConnected()) {
 		const bool was_empty = m_sendQueue.empty();
 		m_sendQueue.push_back(std::move(pkg));
 		if (was_empty) {
@@ -114,26 +112,22 @@ void ZSocket2::Send(ZPackage pkg) {
 	}
 }
 
-bool ZSocket2::HasNewData() {
-	return !m_recvQueue.empty();
-}
-
 ZPackage ZSocket2::Recv() {
 	return m_recvQueue.pop_front();
 }
 
-bool ZSocket2::Close() {
-	if (m_online) {
+bool ZSocket2::HasNewData() {
+	return !m_recvQueue.empty();
+}
+
+void ZSocket2::Close() {
+	if (IsConnected()) {
 		LOG(INFO) << "NetSocket2::Close()";
 
-		m_online = false;
+		m_connected = false;
 
 		m_socket.close();
-
-		return true;
 	}
-
-	return false;
 }
 
 std::string& ZSocket2::GetHostName() {
@@ -145,7 +139,7 @@ uint_least16_t ZSocket2::GetHostPort() {
 }
 
 bool ZSocket2::IsConnected() {
-	return m_online;
+	return m_connected;
 }
 
 

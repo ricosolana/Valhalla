@@ -5,7 +5,7 @@
 #include <assert.h>
 
 //#include "SteamManager.h"
-#include "Game.h"
+#include "ValhallaServer.h"
 #include "easylogging++.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -51,7 +51,13 @@ int main(int argc, char **argv) {
 
     //InitSteamGameServer();
 
-    Valhalla()->Launch();
+    //try {
+        Valhalla()->Launch();
+    //}
+    //catch (std::exception& e) {
+    //    LOG(ERROR) << e.what();
+    //    return 1;
+    //}
 
     //LOG(INFO) << "znet: " << Valhalla()->m_znet << "\n";
 

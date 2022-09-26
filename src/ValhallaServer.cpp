@@ -1,5 +1,6 @@
-#include "Game.h"
+#include "ValhallaServer.h"
 #include "ScriptManager.h"
+#include "ResourceManager.h"
 
 std::unique_ptr<ValhallaServer> VALHALLA_SERVER_INSTANCE(std::make_unique<ValhallaServer>());
 ValhallaServer* Valhalla() {
@@ -14,17 +15,19 @@ void ValhallaServer::Launch() {
 	//assert(!VALHALLA_SERVER_INSTANCE && "Tried launching another server instance!");
 	assert(!m_running && "Tried calling Launch() twice!");
 
-	ScriptManager::Init();
-	m_znet = std::make_unique<ZNet>();
+	ResourceManager::SetRoot("./data/");
+	//ScriptManager::Init();
+	m_znet = std::make_unique<ZNet>(2456);
+	m_znet->Listen();
 
 	m_running = true;
-
 	while (m_running) {
 		auto now = std::chrono::steady_clock::now();
 		static auto last_tick = now; // Initialized to this once
 		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last_tick).count();
 		last_tick = now;
 
+		// mutex is carefully scoped in this micro-scope
 		{
 			std::scoped_lock lock(m_taskMutex);
 			const auto now = std::chrono::steady_clock::now();
@@ -58,7 +61,7 @@ void ValhallaServer::Launch() {
 }
 
 void ValhallaServer::Terminate() {
-	m_znet->Disconnect();
+	//m_znet->Disconnect();
 	m_running = false;
 	ScriptManager::Uninit();
 }
@@ -68,7 +71,7 @@ void ValhallaServer::Update(float delta) {
 
 	m_znet->Update();
 
-	ScriptManager::Event::OnUpdate(delta);
+	//ScriptManager::Event::OnUpdate(delta);
 }
 
 

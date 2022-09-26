@@ -4,6 +4,7 @@
 #include "ZDOMan.h"
 #include "ZRoutedRpc.h"
 #include "World.h"
+#include "ZAcceptor.h"
 
 enum class ConnectionStatus : int32_t
 {
@@ -25,32 +26,32 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 	"ErrorAlreadyConnected", "ErrorBanned", "ErrorFull"};
 
 class ZNet {
-	static constexpr const char* VALHEIM_PORT = "2456";
+	//static constexpr const char* VALHEIM_PORT = "2456";
 
-	std::thread m_ctxThread;
 	asio::io_context m_ctx;
+	std::unique_ptr<IAcceptor> m_acceptor;
+	std::vector<std::unique_ptr<ZNetPeer>> m_peers;
 
-	ConnectionStatus m_connectionStatus = ConnectionStatus::None;
+	//ConnectionStatus m_connectionStatus = ConnectionStatus::None;
 
-	void StopIOThread();
-
-	void RPC_ClientHandshake(ZRpc* rpc, bool needPassword);
+	void RPC_ServerHandshake(ZRpc* rpc);
 	void RPC_PeerInfo(ZRpc* rpc, ZPackage pkg);
 
-	void RPC_Error(ZRpc* rpc, int32_t error);
 	void RPC_Disconnect(ZRpc* rpc);
 
+	void SendPeerInfo(ZRpc* rpc);
 public:
-	std::unique_ptr<ZNetPeer> m_peer;
+	ZNet(uint16_t port);
+
 	std::unique_ptr<ZDOMan> m_zdoMan;
 	std::unique_ptr<ZRoutedRpc> m_routedRpc;
 	World m_world;
 	double m_netTime;
 
-	void Connect(std::string host, std::string port);
-	void Disconnect();
+	void Listen();
 	void Update();
 
-	void SendPeerInfo(std::string_view password);
+	ZNetPeer* GetPeer(ZRpc* rpc);
+	void SendPeerInfo();
 	int64_t GetUID();
 };

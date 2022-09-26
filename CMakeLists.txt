@@ -23,7 +23,8 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
-
+#add_compile_definitions(SOL_NO_PRINT_ERRORS)
+remove_definitions(SOL_PRINT_ERRORS)
 
 
 #IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
@@ -101,7 +102,7 @@ add_executable(${PROJECT_NAME}
 
     "src/BinaryReader.cpp"
     "src/BinaryWriter.cpp"
-    "src/Game.cpp" 
+    "src/ValhallaServer.cpp" 
     "src/HashUtils.cpp"
     "src/Main.cpp"
      
@@ -128,7 +129,7 @@ add_executable(${PROJECT_NAME}
     "src/ZRoutedRpc.cpp"
     "src/ZRpc.cpp" 
     "src/ZSocket2.cpp"
-)
+ "src/ZAcceptor.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

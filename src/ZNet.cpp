@@ -1,155 +1,148 @@
 #include "ZNet.h"
-#include "Game.h"
+#include "ValhallaServer.h"
 #include "ScriptManager.h"
 #include <openssl/md5.h>
+#include "ValhallaServer.h"
 
-void ZNet::StopIOThread() {
-	m_ctx.stop();
+using namespace asio::ip;
 
-	if (m_ctxThread.joinable())
-		m_ctxThread.join();
-
-	m_ctx.restart();
+ZNet::ZNet(uint16_t port) 
+	: m_ctx() {
+	m_acceptor = std::make_unique<AcceptorZSocket2>(m_ctx, port);
 }
 
-void ZNet::SendPeerInfo(std::string_view password) {
-	ZPackage pkg;
-	pkg.Write(GetUID());
-	pkg.Write(ValhallaServer::VERSION);
-	pkg.Write(Vector3());
-	pkg.Write(Valhalla()->m_playerProfile->m_playerName);
-	//TODO hash not being written correctly or something
-	// compare written bytes to received bytes with debug
-	std::string pw = password.empty() ? "" : std::string(reinterpret_cast<char*>(
-		MD5(reinterpret_cast<const unsigned char*>(password.data()), password.length(), nullptr)), 16);
-	pkg.Write(pw);
-	byte dummy[1024];
-	pkg.Write(dummy, sizeof(dummy));
-	//string data = (string.IsNullOrEmpty(password) ? "" : ZNet.HashPassword(password));
-	//zpackage.Write(data);
-	//byte[] dummyTicket = new byte[1024];
-	//zpackage.Write(dummyTicket);
+void ZNet::Listen() {
+	LOG(INFO) << "Starting server";
 
-	m_peer->m_rpc->Invoke("PeerInfo", std::move(pkg));
-}
-
-void ZNet::Connect(std::string host, std::string port) {
-	if (m_peer)
-		return;
-
-	if (port.empty()) port = VALHEIM_PORT;
-
-	m_peer = std::make_unique<ZNetPeer>(std::make_shared<ZSocket2>(m_ctx));
-
-	asio::ip::tcp::resolver resolver(m_ctx);
-	auto endpoints = resolver.resolve(asio::ip::tcp::v4(), host, port);
-
-	LOG(INFO) << "Connecting...";
-
-	asio::async_connect(
-		m_peer->m_socket->GetSocket(), endpoints.begin(), endpoints.end(),
-		[this](const asio::error_code& ec, asio::ip::tcp::resolver::results_type::iterator it) {
-
-		if (!ec) {
-			m_peer->m_socket->Accept();
-
-			auto m = new ZMethod(this, &ZNet::RPC_PeerInfo);
-
-			Valhalla()->RunTaskLater([this](Task *task) {
-				m_routedRpc = std::make_unique<ZRoutedRpc>(m_peer.get());
-				m_zdoMan = std::make_unique<ZDOMan>(m_peer.get());
-
-				m_routedRpc->SetUID(m_zdoMan->GetMyID());
-
-				m_peer->m_rpc->Register("PeerInfo", new ZMethod(this, &ZNet::RPC_PeerInfo));
-				m_peer->m_rpc->Register("Disconnect", new ZMethod(this, &ZNet::RPC_Disconnect));
-				m_peer->m_rpc->Register("Error", new ZMethod(this, &ZNet::RPC_Error));
-				m_peer->m_rpc->Register("ClientHandshake", new ZMethod(this, &ZNet::RPC_ClientHandshake));
-
-				Valhalla()->m_playerProfile = std::make_unique<PlayerProfile>();
-
-				m_peer->m_rpc->Invoke("ServerHandshake");
-			}, 1s);
-		}
-		else {
-			LOG(ERROR) << "Failed to connect: " << ec.message();
-
-			Valhalla()->RunTask([this](Task* task) {
-				m_peer.reset();
-				StopIOThread();
-			});
-		}
-	});
-
-	m_ctxThread = std::thread([this]() {
-		el::Helpers::setThreadName("io");
-		m_ctx.run();
-	});
-
-	#if defined(_WIN32)// && !defined(_NDEBUG)
-		void* pThr = m_ctxThread.native_handle();
-		SetThreadDescription(pThr, L"IO Thread");
-	#endif
-}
-
-void ZNet::Disconnect() {
-	if (m_peer) {
-		m_peer->m_socket->Close();
-
-		StopIOThread();
-	}
+	m_acceptor->Start();
 }
 
 void ZNet::Update() {
-	if (m_peer) {
-		if (m_peer->m_rpc->IsConnected()) {
-			m_peer->m_rpc->Update();
+
+	// UPDATE()
+	//   update banlist
+	//     disconnect msg dispatch
+	//     removed from peers
+	//     socket terminated
+	//   Checks for new queued connections
+	//	   Checks if still connected?
+	//     adds to peers
+	//     register rpcs
+	//	 UpdatePeers()
+	//	   removes any stale m_peers
+	//     updates rpcs
+	//   periodic sends
+	//   zdo updates
+	//   
+
+	// Accept connections
+	while (m_acceptor->HasNewConnection()) {
+		auto&& peer = std::make_unique<ZNetPeer>(m_acceptor->Accept());
+
+		peer->m_rpc->Register("PeerInfo", new ZMethod(this, &ZNet::RPC_PeerInfo));
+		peer->m_rpc->Register("Disconnect", new ZMethod(this, &ZNet::RPC_Disconnect));
+		peer->m_rpc->Register("ServerHandshake", new ZMethod(this, &ZNet::RPC_ServerHandshake));
+
+		peer->m_socket->Start();
+
+		m_peers.push_back(std::move(peer));
+	}
+
+	// Remove stale peers
+	auto&& itr = m_peers.begin();
+	while (itr != m_peers.end()) {
+		if (!(*itr)->m_socket->IsConnected()) {
+			itr = m_peers.erase(itr);
 		}
 		else {
-			LOG(INFO) << "Disconnected";
-			m_peer.reset();
-			StopIOThread();
+			++itr;
 		}
+	}
+
+	// Updaate rpcs
+	for (auto&& peer : m_peers) {
+		peer->m_rpc->Update();
 	}
 }
 
-void ZNet::RPC_ClientHandshake(ZRpc* rpc, bool needPassword) {
-	LOG(INFO) << "Client Handshake";
-	if (needPassword) {
-		// then display password screen
-		ScriptManager::Event::OnPreLogin();
-	}
-	else {
-		SendPeerInfo("");
-	}
+void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
+	auto&& peer = GetPeer(rpc);
+	assert(peer);
+
+	LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
+	//this.ClearPlayerData(peer);
+	bool flag = !Valhalla()->m_serverPassword.empty();
+	peer->m_rpc->Invoke("ClientHandshake", flag);
+}
+
+void ZNet::SendPeerInfo(ZRpc* rpc) {
+	ZPackage pkg;
+	pkg.Write(GetUID());
+	pkg.Write(ValhallaServer::VERSION);
+	pkg.Write(Vector3()); // dummy
+	pkg.Write("Stranger"); // valheim uses this, which is dumb
+
+	// why does a server need to send a position and name?
+	// clearly someone didnt think of the protocol
+	
+	pkg.Write(m_world.m_name);
+	pkg.Write(m_world.m_seed);
+	pkg.Write(m_world.m_seedName);
+	pkg.Write(m_world.m_uid);
+	pkg.Write(m_world.m_worldGenVersion);
+	pkg.Write(m_netTime);
+
+	rpc->Invoke("PeerInfo", std::move(pkg));
 }
 
 // The server send peer info once the client is completely validated
 void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
-	auto num = pkg.Read<UID_t>();
-	auto ver = pkg.Read<std::string>();
-	auto endPointString = std::string(); // = m_peer->m_socket->GetEndPointString();
-	auto hostName = m_peer->m_socket->GetHostName();
-	LOG(INFO) << "VERSION check their:" << ver << "  mine:" << ValhallaServer::VERSION;
-	if (ver != std::string(ValhallaServer::VERSION)) {
-		m_connectionStatus = ConnectionStatus::ErrorVersion;
-		
-		LOG(INFO) << "Incompatible versions";
+	auto&& peer = GetPeer(rpc);
+
+	auto hostName = peer->m_socket->GetHostName();
+
+	auto refUid = pkg.Read<UID_t>();
+	auto refVer = pkg.Read<std::string>();
+	LOG(INFO) << "Connecting client has version " << refVer;
+	if (refVer != std::string(ValhallaServer::VERSION)) {
+		rpc->Invoke("Error", ConnectionStatus::ErrorVersion);
+		// disconnect client later as a cleanup
+		LOG(INFO) << "Client " << hostName << " has an incompatible version";
 		return;
 	}
-	m_peer->m_refPos = pkg.Read<Vector3>();
-	m_peer->m_uid = num;
-	m_peer->m_playerName = pkg.Read<std::string>();
+	auto&& refPos = pkg.Read<Vector3>();
+	auto&& refName = pkg.Read<std::string>();
 
-	//ZNet.m_world = new World();
-	m_world.m_name = pkg.Read<std::string>();
-	m_world.m_seed = pkg.Read<int32_t>();
-	m_world.m_seedName = pkg.Read<std::string>();
-	m_world.m_uid = pkg.Read<UID_t>();
-	m_world.m_worldGenVersion = pkg.Read<int32_t>();
-	//WorldGenerator.Initialize(ZNet.m_world);
+	auto&& refPassword = pkg.Read<std::string>();
+	if (refPassword != Valhalla()->m_serverPassword) {
+		rpc->Invoke("Error", ConnectionStatus::ErrorPassword);
+		// disconnect client later as a cleanup
+		LOG(INFO) << "Client " << hostName << " provided the wrong password";
+		return;
+	}
 
-	m_netTime = pkg.Read<double>();
+	// check if player uid is already connected
+	peer->m_refPos = refPos;
+	peer->m_uid = refUid;
+	peer->m_playerName = refName;
+
+	//rpc.Register<Vector3, bool>("RefPos", new Action<ZRpc, Vector3, bool>(this.RPC_RefPos));
+	//rpc.Register<ZPackage>("PlayerList", new Action<ZRpc, ZPackage>(this.RPC_PlayerList));
+	//rpc.Register<string>("RemotePrint", new Action<ZRpc, string>(this.RPC_RemotePrint));
+
+	//rpc.Register<ZDOID>("CharacterID", new Action<ZRpc, ZDOID>(this.RPC_CharacterID));
+	//rpc.Register<string>("Kick", new Action<ZRpc, string>(this.RPC_Kick));
+	//rpc.Register<string>("Ban", new Action<ZRpc, string>(this.RPC_Ban));
+	//rpc.Register<string>("Unban", new Action<ZRpc, string>(this.RPC_Unban));
+	//rpc.Register("Save", new ZRpc.RpcMethod.Method(this.RPC_Save));
+	//rpc.Register("PrintBanned", new ZRpc.RpcMethod.Method(this.RPC_PrintBanned));
+
+	SendPeerInfo(rpc);
+	//SendPlayerList();
+
+
+
+	// check if player is banned
 
 	//rpc->Register("RefPos", new ZMethod(this, &ZNet::RPC_RefPos));
 	//rpc->Register("PlayerList", new ZMethod(this, &ZNet::RPC_PlayerList));
@@ -157,21 +150,23 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 	
 	//rpc->Register("NetTime", new ZMethod(this, &ZNet::RPC_NetTime));
 	
-	m_connectionStatus = ConnectionStatus::Connected;
-}
-
-void ZNet::RPC_Error(ZRpc* rpc, int32_t error) {
-	m_connectionStatus = static_cast<ConnectionStatus>(error);
-	const char* str = error < (int32_t)ConnectionStatus::MAX ? STATUS_STRINGS[error] : "invalid error code";
-	LOG(ERROR) << "Got connection error: " << error << " (" << str << ")";
 }
 
 void ZNet::RPC_Disconnect(ZRpc *rpc) {
 	LOG(INFO) << "RPC_Disconnect";
-	Disconnect();
+	//Disconnect();
+}
+
+ZNetPeer *ZNet::GetPeer(ZRpc* rpc) {
+	for (auto&& peer : m_peers) {
+		if (peer->m_rpc.get() == rpc)
+			return peer.get();
+	}
+	return nullptr;
 }
 
 int64_t ZNet::GetUID()
 {
 	return m_zdoMan->GetMyID();
 }
+

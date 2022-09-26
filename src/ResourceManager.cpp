@@ -14,6 +14,10 @@ namespace ResourceManager {
         root = r;
     }
 
+    //FILE* OpenFile(const char* path) {
+    //    return OpenFile(path);
+    //}
+
     FILE* OpenFile(const std::string &path) {
         return fopen((root + path).c_str(), "rb");
     }

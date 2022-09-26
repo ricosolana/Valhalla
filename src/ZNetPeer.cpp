@@ -2,7 +2,7 @@
 #include "ZNet.h"
 #include <memory>
 
-ZNetPeer::ZNetPeer(ZSocket2::Ptr socket) :
-	m_socket(socket),
-	m_rpc(std::make_unique<ZRpc>(socket))
+ZNetPeer::ZNetPeer(ISocket::Ptr sock) :
+	m_socket(sock),
+	m_rpc(std::make_unique<ZRpc>(sock))
 {}

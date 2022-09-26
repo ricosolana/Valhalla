@@ -1,5 +1,5 @@
 #include "ZRpc.h"
-#include "Game.h"
+#include "ValhallaServer.h"
 
 ZRpc::ZRpc(ZSocket2::Ptr socket)
 	: m_socket(socket), m_lastPing(std::chrono::steady_clock::now() + 3s) {

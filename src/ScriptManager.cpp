@@ -2,8 +2,9 @@
 #include <sol/sol.hpp>
 #include <filesystem>
 #include "ZNet.h"
-#include "Game.h"
+#include "ValhallaServer.h"
 #include "ResourceManager.h"
+#include <easylogging++.h>
 
 struct Script {
 	const std::function<void()> onEnable;
@@ -28,19 +29,14 @@ namespace ScriptManager {
 			script.onEnable();
 		}
 
-		void Connect(std::string host, std::string port) {
-			LOG(INFO) << "Lua connect invoked";
-			Valhalla()->m_znet->Connect(host, port);
-		}
-
 		void Disconnect() {
 			LOG(INFO) << "Lua disconnect invoked";
-			Valhalla()->m_znet->Disconnect();
+			//Valhalla()->m_znet->Disconnect();
 		}
 
 		void SendPeerInfo(std::string password) {
 			LOG(INFO) << "Lua peer info invoked";
-			Valhalla()->m_znet->SendPeerInfo(password);
+			//Valhalla()->m_znet->SendPeerInfo(password);
 		}
 	}
 
@@ -65,16 +61,16 @@ namespace ScriptManager {
 			output += (s);
 			lua_pop(L, 1);  /* pop result */
 		}
-		//output += "\n";
-		//Rml::Log::Message(Rml::Log::LT_INFO, "[LUA] %s", output.c_str());
-		std::cout << "[LUA] " << output << "\n";
+		LOG(INFO) << "[LUA] " << output;
 		return 0;
 	}
 
+	// how should scripting be best handled?
+	// scripts should be added like mods
+	// multiple entry points, where each primary entry script is loaded
 	void Init() {
 		std::string scriptCode;
-		//ResourceManager::ReadFileBytes
-		if (Rml::GetFileInterface()->LoadFile("scripts/entry.lua", scriptCode)) {
+		if (ResourceManager::ReadFileBytes("scripts/entry.lua", scriptCode)) {
 
 			// State
 			lua = sol::state();
@@ -87,13 +83,34 @@ namespace ScriptManager {
 			auto apiTable = lua["Valhalla"].get_or_create<sol::table>();
 
 			apiTable["RegisterScript"] = Api::RegisterScript;
-			apiTable["Connect"] = Api::Connect;
+
+			// most of these are useless when on a server
+			// however catching player login events is desired, anddisconnecting a player, ...
+			//apiTable["Connect"] = Api::Connect;
 			apiTable["Disconnect"] = Api::Disconnect;
 			apiTable["SendPeerInfo"] = Api::SendPeerInfo;
 
+			//sol::set_default_exception_handler(L, )
+			lua.set_exception_handler([](lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
+				// L is the lua state, which you can wrap in a state_view if necessary
+				// maybe_exception will contain exception, if it exists
+				// description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
+				if (maybe_exception) {
+					const std::exception& ex = *maybe_exception;
+					LOG(ERROR) << "[LUA exception] " << ex.what();
+				}
+				else {
+					LOG(ERROR) << "[LUA description] " << description;
+				}
 
+				// you must push 1 element onto the stack to be
+				// transported through as the error object in Lua
+				// note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
+				// so we push a single string (in our case, the description of the error)
+				return sol::stack::push(L, description);
+			});
 
-			// Basically RML print, but add [LUA] to LOG differenciate better
+			// Override Lua print
 			lua_getglobal(L, "_G");
 
 			lua_pushcfunction(L, OverrideLuaPrint);

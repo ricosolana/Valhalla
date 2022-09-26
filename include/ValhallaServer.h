@@ -16,10 +16,14 @@ class ValhallaServer {
 
 	std::recursive_mutex m_taskMutex;
 
-	Settings m_settings;
+	//Settings m_settings;
+
+	World world;
 
 public:
 	static constexpr const char* VERSION = "0.202.19";
+	std::string m_serverName;
+	std::string m_serverPassword;
 	std::unique_ptr<ZNet> m_znet;
 	std::unique_ptr<PlayerProfile> m_playerProfile;
 

@@ -6,6 +6,8 @@
 #include <memory>
 #include <locale>
 #include <codecvt>
+#include <concepts>
+#include <type_traits>
 
 #include "Stream.h"
 #include "ZDOID.h"
@@ -13,6 +15,9 @@
 #include "Vector3.h"
 #include "Quaternion.h"
 #include "PlayerProfile.h"
+
+template<typename E>
+concept EnumType = std::is_enum_v<E>;
 
 // how to handle circular dependency with double includes
 
@@ -51,6 +56,15 @@ public:
     void Write(const Vector2i &in);
     void Write(const Quaternion& in);
     //void Write(const PlayerProfile& in);
+
+    
+
+    // https://stackoverflow.com/questions/60524480/how-to-force-a-template-parameter-to-be-an-enum-or-enum-class
+    template<EnumType E>
+    void Write(E v) {
+        using T = std::underlying_type_t<E>;
+        Write((T)v);
+    }
 
 
 
@@ -149,6 +163,11 @@ public:
 
     static void Serialize(ZPackage& pkg) {}
 
+    
+    // this wont compile when trying to use enums
+    // see:
+    // https://cplusplus.com/reference/type_traits/underlying_type/
+    // this might allow compile when casting the enum to its underlying type
     template <typename T, typename... Types>
     static void Serialize(ZPackage& pkg, T var1, Types... var2) {
         pkg.Write(var1);
