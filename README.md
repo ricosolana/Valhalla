@@ -41,43 +41,44 @@ Make a backup of the `assembly_valheim.dll` before continuing.
 
 Open the `assembly_valheim.dll` and navigate to `ZNet.cs`.
 
-### Server-side
-211.7: Crossplay got added
-It seems from a glance that this patching is no longer required because you can connect to a custom socket backend?
-
-<details><summary>210.6</summary>
-  
-Change the ZNet MonoBehaviour::Awake() method similar to:
-```c#
-// ZNet.cs
-if (ZNet.m_openServer) {
-  ZSteamSocket zsteamSocket = new ZSteamSocket();
-  zsteamSocket.StartHost();
-  this.m_hostSocket = zsteamSocket;
-  bool password = ZNet.m_serverPassword != "";
-  string versionString = global::Version.GetVersionString();
-  ZSteamMatchmaking.instance.RegisterServer(ZNet.m_ServerName, password, versionString, ZNet.m_publicServer, ZNet.m_world.m_seedName);
-}
-```
-to this:
-```c#
-// ZNet.cs
-if (ZNet.m_openServer) {
-  ZSocket2 socket = new ZSocket2();
-  socket.StartHost(2456);
-  this.m_hostSocket = socket;
-}
-```
-  
-</details>
-
-
 ### Client-side
+
+<details><summary>211.7</summary>
+
+Change the FejdStartup JoinServer() method similar to:
+```c#
+// FejdStartup
+ZPlayFabMatchmaking.FindHostByIp(serverJoin.GetIPPortString(), delegate(PlayFabMatchmakingServerData result)
+{
+	ZNet.SetServerHost(result.remotePlayerId);
+	ZLog.Log("Determined backend of dedicated server to be PlayFab");
+}, delegate
+{
+	ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBackendType.Steamworks);
+	ZLog.Log("Determined backend of dedicated server to be Steamworks");
+}, true);
+```
+to this
+```c#
+// FejdStartup
+ZPlayFabMatchmaking.FindHostByIp(serverJoin.GetIPPortString(), delegate(PlayFabMatchmakingServerData result)
+{
+	ZNet.SetServerHost(result.remotePlayerId);
+	ZLog.Log("Determined backend of dedicated server to be PlayFab");
+}, delegate
+{
+	ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBackendType.CustomSocket);
+	ZLog.Log("Determined backend of dedicated server to be a CustomSocket (insecure)");
+}, true);
+```
+
+</details>
 
 <details><summary>210.6</summary>
   
 Change the ZNet::connect(ip) method similar to:
 ```c#
+// ZNet
 public void Connect(SteamNetworkingIPAddr host) {
   ZNetPeer peer = new ZNetPeer(new ZSteamSocket(host), true);
   this.OnNewConnection(peer);
@@ -87,6 +88,7 @@ public void Connect(SteamNetworkingIPAddr host) {
 ```
 to this:
 ```c#
+// ZNet
 public void Connect(SteamNetworkingIPAddr host) {
   string ip;
   host.ToString(out ip, false);
@@ -104,6 +106,36 @@ public void Connect(SteamNetworkingIPAddr host) {
 </details>
 
 Make sure to include `System.Net.Sockets` and `System.Net`.
+
+### Server-side
+211.7: Crossplay got added (9/27/2022)
+You can connect now connect to any TCP server. The catch is that the devs didn't include it for some reason. It would have been one small check to see if a Steam server is registered, and if it isnt, try connecting to the server as a custom socket.
+
+<details><summary>210.6</summary>
+  
+Change the ZNet MonoBehaviour::Awake() method similar to:
+```c#
+// ZNet
+if (ZNet.m_openServer) {
+  ZSteamSocket zsteamSocket = new ZSteamSocket();
+  zsteamSocket.StartHost();
+  this.m_hostSocket = zsteamSocket;
+  bool password = ZNet.m_serverPassword != "";
+  string versionString = global::Version.GetVersionString();
+  ZSteamMatchmaking.instance.RegisterServer(ZNet.m_ServerName, password, versionString, ZNet.m_publicServer, ZNet.m_world.m_seedName);
+}
+```
+to this:
+```c#
+// ZNet
+if (ZNet.m_openServer) {
+  ZSocket2 socket = new ZSocket2();
+  socket.StartHost(2456);
+  this.m_hostSocket = socket;
+}
+```
+  
+</details>
 
 Lastly remove the ticket read/write from both the server/client.
 
