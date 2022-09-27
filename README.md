@@ -42,7 +42,8 @@ Make a backup of the `assembly_valheim.dll` before continuing.
 Open the `assembly_valheim.dll` and navigate to `ZNet.cs`.
 
 ### Server-side
-Crossplay got added
+211.7: Crossplay got added
+It seems from a glance that this patching is no longer required because you can connect to a custom socket backend?
 
 <details><summary>210.6</summary>
   
