@@ -14,8 +14,11 @@ if(NOT (EXISTS ${STEAMAPI_ZIP_LOCATION}))
   )
 endif()
 
+# allow for zip to finalize?
+#ctest_sleep(3)
+
 if(NOT(EXISTS ${STEAMAPI_LOCATION}))
-    message(STATUS "Unzipping Steam SDK to ${STEAMAPI_ZIP_LOCATION}")
+    message(STATUS "Unzipping Steam SDK to ${STEAMAPI_LOCATION}")
     file(ARCHIVE_EXTRACT INPUT ${STEAMAPI_ZIP_LOCATION} DESTINATION ${STEAMAPI_LOCATION})
 endif()
 

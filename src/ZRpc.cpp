@@ -1,7 +1,7 @@
 #include "ZRpc.h"
 #include "ValhallaServer.h"
 
-ZRpc::ZRpc(ZSocket2::Ptr socket)
+ZRpc::ZRpc(ISocket::Ptr socket)
 	: m_socket(socket), m_lastPing(std::chrono::steady_clock::now() + 3s) {
 
 	// pinger
@@ -58,14 +58,14 @@ void ZRpc::Update() {
 				find->second->Invoke(this, pkg);
 			}
 			else {
-				LOG(DEBUG) << "Server tried remotely calling unknown RPC";
+				LOG(INFO) << "Client tried invoking unknown RPC handler";
 				m_socket->Close();
 			}
 		}
 	}
 	
 	if (now - m_lastPing > 30s) {
-		LOG(WARNING) << "Server timeout";
+		LOG(INFO) << "Client timeout";
 		m_socket->Close();
 	}
 

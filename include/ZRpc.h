@@ -12,7 +12,7 @@
 	*
 */
 class ZRpc {
-	ZSocket2::Ptr m_socket;
+	ISocket::Ptr m_socket;
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
 	robin_hood::unordered_map<int32_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
@@ -20,7 +20,7 @@ class ZRpc {
 	void SendPackage(ZPackage pkg);
 
 public:	
-	ZRpc(ZSocket2::Ptr socket);
+	ZRpc(ISocket::Ptr socket);
 	~ZRpc();
 
 	bool IsConnected();
