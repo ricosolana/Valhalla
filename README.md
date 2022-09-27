@@ -1,7 +1,9 @@
 # Valhalla
 Open source Valheim server and client written in C++
 
-The client is on the `main` branch (this branch), the server is on the `server` branch.
+The branches are all over the place, and I plan to fix this eventually. In the meantime bear with it.
+
+The client is on the `main` branch (this branch), the current-dev server is on the `steam-gameserver` branch.
 
 I have halted any further development of the client until further notice (graphical programming = bad).
 
@@ -11,6 +13,20 @@ I am in no way affiliated, endorsed, or associated with Valheim nor its creators
 The purpose of this project is just to explore and be creative in a non-commercial manner. Any usages of code below are in fair use and in full compliance with Coffee Stain Publishing EULA https://irongatestudio.se/CoffeeStainPublishingAB-GameContentUsagePolicy-18-05-2021.pdf
 
 Do this at your own risk. I am not liable for anything you decide to do with this.
+
+## Building
+For the server, assuming you have no dependencies or required stuff installed, open a shell and install vcpkg, then bootstrap it:
+```bash
+git clone https://github.com/microsoft/vcpkg
+.\vcpkg\bootstrap-vcpkg.bat
+```
+Now the libraries to install:
+```bash
+.\vcpkg\vcpkg.exe integrate install
+.\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
+.\vcpkg\vcpkg.exe install robin-hood-hashing --triplet=x64-windows
+.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
+.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
 
 ## Overview
 Valheim uses the Steamworks API for authentication, networking, and lobbies. Valve's GameNetworkingSockets will not work because Steam sockets require the Steam backend. This is frustrating because I want legitimate clients to be authorized normally and join this server. I hope to use Steam authorization in the future, its just too complicated right now. So, how can clients connect?
