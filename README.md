@@ -67,6 +67,7 @@ if (ZNet.m_openServer) {
   this.m_hostSocket = socket;
 }
 ```
+  
 </details>
 
 
@@ -99,6 +100,7 @@ public void Connect(SteamNetworkingIPAddr host) {
   this.m_connectingDialog.gameObject.SetActive(true);
 }
 ```
+  
 </details>
 
 Make sure to include `System.Net.Sockets` and `System.Net`.
