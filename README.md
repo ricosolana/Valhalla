@@ -27,6 +27,7 @@ Now the libraries to install:
 .\vcpkg\vcpkg.exe install robin-hood-hashing --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
 .\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
+```
 
 ## Overview
 Valheim uses the Steamworks API for authentication, networking, and lobbies. Valve's GameNetworkingSockets will not work because Steam sockets require the Steam backend. This is frustrating because I want legitimate clients to be authorized normally and join this server. I hope to use Steam authorization in the future, its just too complicated right now. So, how can clients connect?
