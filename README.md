@@ -42,9 +42,9 @@ Make a backup of the `assembly_valheim.dll` before continuing.
 Open the `assembly_valheim.dll` and navigate to `ZNet.cs`.
 
 ### Server-side
-207.20 just came out and they've added crossplay
+Crossplay got added
 
-<details><summary>206.10</summary>
+<details><summary>210.6</summary>
   
 Change the ZNet MonoBehaviour::Awake() method similar to:
 ```c#
@@ -72,9 +72,8 @@ if (ZNet.m_openServer) {
 
 
 ### Client-side
-207 crossplay...
 
-<details><summary>206.10</summary>
+<details><summary>210.6</summary>
   
 Change the ZNet::connect(ip) method similar to:
 ```c#
