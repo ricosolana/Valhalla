@@ -42,6 +42,9 @@ Make a backup of the `assembly_valheim.dll` before continuing.
 Open the `assembly_valheim.dll` and navigate to `ZNet.cs`.
 
 ### Server-side
+207.20 just came out and they've added crossplay
+
+<details><summary>206.10</summary>
 Change the ZNet MonoBehaviour::Awake() method similar to:
 ```c#
 // ZNet.cs
@@ -63,8 +66,13 @@ if (ZNet.m_openServer) {
   this.m_hostSocket = socket;
 }
 ```
+</details>
+
 
 ### Client-side
+207 crossplay...
+
+<details><summary>206.10</summary>
 Change the ZNet::connect(ip) method similar to:
 ```c#
 public void Connect(SteamNetworkingIPAddr host) {
@@ -89,6 +97,8 @@ public void Connect(SteamNetworkingIPAddr host) {
   this.m_connectingDialog.gameObject.SetActive(true);
 }
 ```
+</details>
+
 Make sure to include `System.Net.Sockets` and `System.Net`.
 
 Lastly remove the ticket read/write from both the server/client.
