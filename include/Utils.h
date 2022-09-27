@@ -12,7 +12,7 @@
 using namespace std::chrono_literals;
 
 using byte = uint8_t;
-using UID_t = int64_t;
+using UUID = int64_t;
 
 //struct TwoTupleHasher
 //{
@@ -43,13 +43,13 @@ namespace Utils {
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
 
-	UID_t GenerateUID();
+	UUID GenerateUID();
 
 	int32_t GetStableHashCode(const char* str);
 
 	int32_t GetUnicode8Count(const char* p);
 
-	UID_t StringToUID(std::string_view sv);
+	UUID StringToUID(std::string_view sv);
 
 	bool IsAddress(std::string_view s);
 

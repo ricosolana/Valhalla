@@ -1,12 +1,8 @@
 #include "ZRoutedRpc.h"
 #include "ZMethod.h"
 
-ZRoutedRpc::ZRoutedRpc(ZNetPeer* peer) 
-	: m_peer(peer) {}
-
-void ZRoutedRpc::SetUID(UID_t uid) {
-	m_id = uid;
-}
+ZRoutedRpc::ZRoutedRpc(UID_t uid) 
+	: m_id(uid) {}
 
 void ZRoutedRpc::Register(const char* name, ZMethodBase<UID_t>* method) {
 	//throw std::runtime_error("not implemented");

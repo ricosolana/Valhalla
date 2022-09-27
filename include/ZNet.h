@@ -43,9 +43,9 @@ class ZNet {
 public:
 	ZNet(uint16_t port);
 
-	std::unique_ptr<ZDOMan> m_zdoMan;
 	std::unique_ptr<ZRoutedRpc> m_routedRpc;
-	World m_world;
+	std::unique_ptr<ZDOMan> m_zdoMan;
+	std::unique_ptr<World> m_world;
 	double m_netTime;
 
 	void Listen();

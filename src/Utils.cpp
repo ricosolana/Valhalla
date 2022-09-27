@@ -162,7 +162,7 @@ namespace Utils {
     std::mt19937_64 eng(rd()); //Use the 64-bit Mersenne Twister 19937 generator
                                //and seed it with entropy.
 
-    UID_t GenerateUID() {
+    UUID GenerateUID() {
         //Define the distribution, by default it goes from 0 to MAX(unsigned long long)
         //or what have you.
         std::uniform_int_distribution<int64_t> distr;
@@ -194,10 +194,10 @@ namespace Utils {
         return count;
     }
 
-    UID_t StringToUID(std::string_view sv) {
+    UUID StringToUID(std::string_view sv) {
         std::string s(sv);
         std::stringstream ss(s);
-        UID_t uid;
+        UUID uid;
         ss >> uid;
         return uid;
     }

@@ -8,11 +8,18 @@ using namespace asio::ip;
 
 ZNet::ZNet(uint16_t port) 
 	: m_ctx() {
+
 	m_acceptor = std::make_unique<AcceptorZSocket2>(m_ctx, port);
 }
 
 void ZNet::Listen() {
 	LOG(INFO) << "Starting server";
+
+	UUID uid(1234567891011);
+
+	m_routedRpc = std::make_unique<ZRoutedRpc>(uid);
+	m_zdoMan = std::make_unique<ZDOMan>(uid);
+	m_world = std::make_unique<World>();
 
 	m_acceptor->Start();
 }
@@ -85,11 +92,11 @@ void ZNet::SendPeerInfo(ZRpc* rpc) {
 	// why does a server need to send a position and name?
 	// clearly someone didnt think of the protocol
 	
-	pkg.Write(m_world.m_name);
-	pkg.Write(m_world.m_seed);
-	pkg.Write(m_world.m_seedName);
-	pkg.Write(m_world.m_uid);
-	pkg.Write(m_world.m_worldGenVersion);
+	pkg.Write(m_world->m_name);
+	pkg.Write(m_world->m_seed);
+	pkg.Write(m_world->m_seedName);
+	pkg.Write(m_world->m_uid);
+	pkg.Write(m_world->m_worldGenVersion);
 	pkg.Write(m_netTime);
 
 	rpc->Invoke("PeerInfo", std::move(pkg));
@@ -101,13 +108,13 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 
 	auto hostName = peer->m_socket->GetHostName();
 
-	auto refUid = pkg.Read<UID_t>();
+	auto refUid = pkg.Read<UUID>();
 	auto refVer = pkg.Read<std::string>();
-	LOG(INFO) << "Connecting client has version " << refVer;
+	LOG(INFO) << "Client " << hostName << " has version " << refVer;
 	if (refVer != std::string(ValhallaServer::VERSION)) {
 		rpc->Invoke("Error", ConnectionStatus::ErrorVersion);
 		// disconnect client later as a cleanup
-		LOG(INFO) << "Client " << hostName << " has an incompatible version";
+		LOG(INFO) << "Client version is incompatible";
 		return;
 	}
 	auto&& refPos = pkg.Read<Vector3>();
@@ -117,7 +124,7 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 	if (refPassword != Valhalla()->m_serverPassword) {
 		rpc->Invoke("Error", ConnectionStatus::ErrorPassword);
 		// disconnect client later as a cleanup
-		LOG(INFO) << "Client " << hostName << " provided the wrong password";
+		LOG(INFO) << "Client password is incorrect";
 		return;
 	}
 

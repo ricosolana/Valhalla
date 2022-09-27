@@ -6,10 +6,6 @@
 #include "Utils.h"
 #include <memory>
 
-#include <isteamnetworkingutils.h>
-#include <steam_gameserver.h>
-#include <isteamutils.h>
-
 #include <asio.hpp>
 
 using namespace asio::ip;
@@ -31,19 +27,6 @@ public:
 	virtual uint16_t GetHostPort() = 0;
 	virtual bool IsConnected() = 0;
 };
-
-
-
-
-
-//class SteamSocket : public ISocket {
-//public:
-//	//void onStatusChanged(SteamNetConnectionStatusChangedCallback_t* info);
-//
-//	// https://forums.unrealengine.com/t/implementing-steam-callback/55272/6
-//	STEAM_GAMESERVER_CALLBACK(SteamSocket, onStatusChanged, SteamNetConnectionStatusChangedCallback_t);
-//};
-
 
 /**
 	* @brief Custom socket implementation which makes use of Asio tcp socket

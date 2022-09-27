@@ -19,9 +19,9 @@ class ZRoutedRpc {
 	};
 
 public:
-	ZRoutedRpc(ZNetPeer* peer);
+	ZRoutedRpc(UID_t uid);
 
-	void SetUID(UID_t uid);
+	//void SetUID(UID_t uid);
 	//void AddPeer(ZNetPeer *peer);
 	//void RemovePeer(ZNetPeer *peer);
 
@@ -29,7 +29,7 @@ public:
 
 	template <typename... Types>
 	void InvokeRoutedRPC(const char* methodName, Types... params) {
-		InvokeRoutedRPC(m_peer->m_uid, methodName, params);
+		InvokeRoutedRPC(m_id, methodName, params);
 	}
 
 	template <typename... Types>
@@ -82,8 +82,8 @@ private:
 
 	int32_t m_rpcMsgID = 1;
 	UID_t m_id;
-	ZNetPeer* m_peer;
 	//std::vector<ZNetPeer> m_peers;
 	robin_hood::unordered_map<int32_t, ZMethodBase<UID_t>*> m_functions;
 };
 
+//ZRoutedRpc* RoutedRpc();
