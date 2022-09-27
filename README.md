@@ -45,6 +45,7 @@ Open the `assembly_valheim.dll` and navigate to `ZNet.cs`.
 207.20 just came out and they've added crossplay
 
 <details><summary>206.10</summary>
+  
 Change the ZNet MonoBehaviour::Awake() method similar to:
 ```c#
 // ZNet.cs
@@ -73,6 +74,7 @@ if (ZNet.m_openServer) {
 207 crossplay...
 
 <details><summary>206.10</summary>
+  
 Change the ZNet::connect(ip) method similar to:
 ```c#
 public void Connect(SteamNetworkingIPAddr host) {
