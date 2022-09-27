@@ -105,7 +105,7 @@ public void Connect(SteamNetworkingIPAddr host) {
   
 </details>
 
-Make sure to include `System.Net.Sockets` and `System.Net`.
+Make sure to include `System.Net.Sockets` and `System.Net`. Enable the ZRpc method name debug (set ZNet.m_DEBUG to true).
 
 ### Server-side
 211.7: Crossplay got added (9/27/2022)
