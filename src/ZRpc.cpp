@@ -53,12 +53,21 @@ void ZRpc::Update() {
 			}
 		}
 		else {
+			// 
+
+#if TRUE
+			std::string name = pkg.Read<std::string>();
+#endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
 				find->second->Invoke(this, pkg);
 			}
 			else {
+#if TRUE
+				LOG(INFO) << "Client tried invoking unknown RPC handler: " << name;
+#else
 				LOG(INFO) << "Client tried invoking unknown RPC handler";
+#endif
 				m_socket->Close();
 			}
 		}

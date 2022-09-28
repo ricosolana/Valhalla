@@ -19,13 +19,13 @@ class ZRoutedRpc {
 	};
 
 public:
-	ZRoutedRpc(UID_t uid);
+	ZRoutedRpc(UUID uuid);
 
 	//void SetUID(UID_t uid);
 	//void AddPeer(ZNetPeer *peer);
 	//void RemovePeer(ZNetPeer *peer);
 
-	void Register(const char* name, ZMethodBase<UID_t>* method);
+	void Register(const char* name, ZMethodBase<UUID>* method);
 
 	template <typename... Types>
 	void InvokeRoutedRPC(const char* methodName, Types... params) {
@@ -33,14 +33,14 @@ public:
 	}
 
 	template <typename... Types>
-	void InvokeRoutedRPC(UID_t targetPeerID, const char* methodName, Types... params) {
-		InvokeRoutedRPC(targetPeerID, ZDOID::NONE, methodName, params);
+	void InvokeRoutedRPC(UUID uuid, const char* methodName, Types... params) {
+		InvokeRoutedRPC(uuid, ZDOID::NONE, methodName, params);
 	}
 
 	//int64_t GetServerPeerID();
 
 	template <typename... Types>
-	void InvokeRoutedRPC(long targetPeerID, ZDOID targetZDO, std::string methodName, Types... params) {
+	void InvokeRoutedRPC(UUID targetPeerID, ZDOID targetZDO, std::string methodName, Types... params) {
 		//auto pkg = new ZPackage();
 		//auto stable = Utils::GetStableHashCode(method);
 		//pkg->Write(stable);
@@ -73,7 +73,7 @@ public:
 	}
 
 public:
-	static UID_t Everybody;
+	static UUID Everybody;
 
 private:
 	//void RouteRPC(RoutedRPCData rpcData);
@@ -81,9 +81,9 @@ private:
 	void HandleRoutedRPC(RoutedRPCData data);
 
 	int32_t m_rpcMsgID = 1;
-	UID_t m_id;
+	UUID m_id;
 	//std::vector<ZNetPeer> m_peers;
-	robin_hood::unordered_map<int32_t, ZMethodBase<UID_t>*> m_functions;
+	robin_hood::unordered_map<int32_t, ZMethodBase<UUID>*> m_functions;
 };
 
 //ZRoutedRpc* RoutedRpc();

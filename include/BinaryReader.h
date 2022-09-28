@@ -32,12 +32,21 @@ public:
 
 	template<typename T>
 	T Read() requires std::same_as<T, std::string> {
-		//value.
-		auto byteCount = Read7BitEncodedInt();
+		
+		//static_assert(sizeof(wchar_t) == 2, "wchar_t is not 2 bytes wide!");
 
-		if (byteCount == 0)
+		// new fully functional method:
+		auto byteCount = Read7BitEncodedInt(); // num2
+
+		// could return a blank string?
+		// if byteCount is malformed,
+		// the user input might malicious?
+		// so throw to panic
+		if (byteCount < 0)
+			throw std::runtime_error("Invalid string");
+		else if (byteCount == 0)
 			return "";
-
+		
 		std::string out;
 		out.resize(byteCount);
 

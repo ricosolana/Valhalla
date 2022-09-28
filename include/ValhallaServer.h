@@ -20,7 +20,7 @@ class ValhallaServer {
 
 public:
 	//static constexpr const char* VERSION = "0.202.19";
-	static constexpr const char* VERSION = "0.210.6";
+	static constexpr const char* VERSION = "0.211.7";
 	std::string m_serverName;
 	std::string m_serverPassword;
 

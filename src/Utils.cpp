@@ -186,11 +186,64 @@ namespace Utils {
         return num + num2 * 1566083941;
     }
 
-    int32_t GetUnicode8Count(const char* p) {
-        int count = 0;
-        for (p; *p != 0; ++p)
-            count += ((*p & 0xc0) != 0x80);
+    // exclude any 0b10xxxxxx (as these are trail bytes)
+    // this function is optimized under the assumption that the
+    // input string is correctly utf-8 encoded
+    // it will work incorrectly if it is not encoded expectedly
+    //int32_t GetUTF8Count(const char* p) {
+    //    int count = 0;
+    //    for (p; *p != 0; ++p)
+    //        count += ((*p & 0xc0) != 0x80);
+    //
+    //    return count;
+    //}
 
+    // https://en.wikipedia.org/wiki/UTF-8#Encoding
+    int32_t GetUTF8Count(const byte *p) {
+        // leading bits:
+        //   0: total 1 byte
+        //   110: total 2 bytes (trailing 10xxxxxx)
+        //   1110: total 3 bytes (trailing 10xxxxxx)
+        //   11110: total 4 bytes (trailing 10xxxxxx)
+        int32_t count = 0;
+        for (; *p != '\0'; ++p, count++) {
+#define CHECK_TRAILING_BYTES(n) \
+        { \
+            for (p++; /*next byte*/ \
+                *p != '\0', i < n; /*min bounds check*/ \
+                ++p, ++i) /*increment*/ \
+            { \
+                if (((*p) >> 6) != 0b10) { \
+                    return -1; \
+                } \
+            } \
+            /* if string ended prematurely, panic */ \
+            if (i != n) \
+                return -1; \
+        }
+
+            // 1-byte code point
+            if (((*p) >> 7) == 0b0) {
+                continue;
+            }
+            else {
+                int i = 0;
+                // 2-byte code point
+                if (((*p) >> 5) == 0b110) {
+                    CHECK_TRAILING_BYTES(1);
+                }
+                // 3-byte code point
+                else if (((*p) >> 4) == 0b1110) {
+                    CHECK_TRAILING_BYTES(2);
+                }
+                // 4-byte code point
+                else if (((*p) >> 3) == 0b11110) {
+                    CHECK_TRAILING_BYTES(3);
+                }
+                else
+                    return -1;
+            }
+        }
         return count;
     }
 

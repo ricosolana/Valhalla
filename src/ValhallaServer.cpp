@@ -14,6 +14,7 @@ ValhallaServer* Valhalla() {
 void ValhallaServer::Launch() {
 	//assert(!VALHALLA_SERVER_INSTANCE && "Tried launching another server instance!");
 	assert(!m_running && "Tried calling Launch() twice!");
+	assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
 
 	ResourceManager::SetRoot("./data/");
 	//ScriptManager::Init();

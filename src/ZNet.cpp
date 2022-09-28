@@ -79,7 +79,8 @@ void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
 	LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
 	//this.ClearPlayerData(peer);
 	bool flag = !Valhalla()->m_serverPassword.empty();
-	peer->m_rpc->Invoke("ClientHandshake", flag);
+	std::string salt = "Im opposing salt"; // must be 16 bytes
+	peer->m_rpc->Invoke("ClientHandshake", flag, salt);
 }
 
 void ZNet::SendPeerInfo(ZRpc* rpc) {

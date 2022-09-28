@@ -47,7 +47,9 @@ namespace Utils {
 
 	int32_t GetStableHashCode(const char* str);
 
-	int32_t GetUnicode8Count(const char* p);
+	// Gets the unicode code points in a UTF-8 encoded string
+	// Return -1 on bad encoding
+	int32_t GetUTF8Count(const byte* p);
 
 	UUID StringToUID(std::string_view sv);
 

@@ -24,9 +24,10 @@ void BinaryWriter::Write(const std::vector<byte>& in, int count) {
 
 void BinaryWriter::Write(const std::string& in) {
 	//value.
-	int byteCount = Utils::GetUnicode8Count(in.c_str());
-	if (byteCount > 256)
-		throw std::runtime_error("Writing big string not yet supported");
+	// 
+	int byteCount = in.length(); //Utils::GetUTF8Count(reinterpret_cast<const byte*>(in.c_str()));
+	//if (byteCount > 256)
+		//throw std::runtime_error("Writing big string not yet supported");
 
 	if (byteCount == 0)
 		return;
@@ -34,7 +35,6 @@ void BinaryWriter::Write(const std::string& in) {
 	m_stream->ReserveExtra(1 + in.length());
 
 	Write7BitEncodedInt(byteCount);
-
 	Write(reinterpret_cast<const byte*>(in.c_str()), in.length());
 }
 

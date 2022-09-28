@@ -1,10 +1,10 @@
 #include "ZRoutedRpc.h"
 #include "ZMethod.h"
 
-ZRoutedRpc::ZRoutedRpc(UID_t uid) 
+ZRoutedRpc::ZRoutedRpc(UUID uid)
 	: m_id(uid) {}
 
-void ZRoutedRpc::Register(const char* name, ZMethodBase<UID_t>* method) {
+void ZRoutedRpc::Register(const char* name, ZMethodBase<UUID>* method) {
 	//throw std::runtime_error("not implemented");
 
 	m_functions.insert({ Utils::GetStableHashCode(name), method });

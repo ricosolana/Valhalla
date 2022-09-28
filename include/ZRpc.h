@@ -3,6 +3,7 @@
 #include <robin_hood.h>
 #include "ZMethod.h"
 #include "ZSocket.h"
+//#include "ValhallaServer.h"
 
 #include "Task.h"
 
@@ -15,6 +16,9 @@ class ZRpc {
 	ISocket::Ptr m_socket;
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
+		
+	// should probably use std::function
+	// as its more flexible
 	robin_hood::unordered_map<int32_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
 
 	void SendPackage(ZPackage pkg);
@@ -47,6 +51,9 @@ public:
 		ZPackage pkg;
 		auto stable = Utils::GetStableHashCode(method);
 		pkg.Write(stable);
+#if TRUE // debug mode
+		pkg.Write(method);
+#endif
 		ZPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(std::move(pkg));
 	}
