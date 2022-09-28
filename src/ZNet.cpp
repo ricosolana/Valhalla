@@ -44,21 +44,21 @@ void ZNet::Update() {
 
 	// Accept connections
 	while (m_acceptor->HasNewConnection()) {
-		auto&& peer = std::make_unique<ZNetPeer>(m_acceptor->Accept());
+		auto&& rpc = std::make_unique<ZRpc>(m_acceptor->Accept());
 
-		peer->m_rpc->Register("PeerInfo", new ZMethod(this, &ZNet::RPC_PeerInfo));
-		peer->m_rpc->Register("Disconnect", new ZMethod(this, &ZNet::RPC_Disconnect));
-		peer->m_rpc->Register("ServerHandshake", new ZMethod(this, &ZNet::RPC_ServerHandshake));
+		REGISTER_RPC(rpc, "PeerInfo", ZNet::RPC_PeerInfo);
+		REGISTER_RPC(rpc, "Disconnect", ZNet::RPC_Disconnect);
+		REGISTER_RPC(rpc, "ServerHandshake", ZNet::RPC_ServerHandshake);
 
-		peer->m_socket->Start();
+		rpc->m_socket->Start();
 
-		m_peers.push_back(std::move(peer));
+		m_joining.push_back(std::move(rpc));
 	}
-
+	 
 	// Remove stale peers
 	auto&& itr = m_peers.begin();
 	while (itr != m_peers.end()) {
-		if (!(*itr)->m_socket->IsConnected()) {
+		if (!(*itr)->m_rpc->m_socket->IsConnected()) {
 			itr = m_peers.erase(itr);
 		}
 		else {
@@ -66,21 +66,12 @@ void ZNet::Update() {
 		}
 	}
 
-	// Updaate rpcs
+
+
+	// Update rpcs
 	for (auto&& peer : m_peers) {
 		peer->m_rpc->Update();
 	}
-}
-
-void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
-	auto&& peer = GetPeer(rpc);
-	assert(peer);
-
-	LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
-	//this.ClearPlayerData(peer);
-	bool flag = !Valhalla()->m_serverPassword.empty();
-	std::string salt = "Im opposing salt"; // must be 16 bytes
-	peer->m_rpc->Invoke("ClientHandshake", flag, salt);
 }
 
 void ZNet::SendPeerInfo(ZRpc* rpc) {
@@ -92,7 +83,7 @@ void ZNet::SendPeerInfo(ZRpc* rpc) {
 
 	// why does a server need to send a position and name?
 	// clearly someone didnt think of the protocol
-	
+
 	pkg.Write(m_world->m_name);
 	pkg.Write(m_world->m_seed);
 	pkg.Write(m_world->m_seedName);
@@ -107,7 +98,11 @@ void ZNet::SendPeerInfo(ZRpc* rpc) {
 void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 	auto&& peer = GetPeer(rpc);
 
-	auto hostName = peer->m_socket->GetHostName();
+	//auto hostName = peer->m_socket->GetHostName();
+
+	assert(false);
+
+	auto &&hostName = peer->m_rpc->m_socket->GetHostName();
 
 	auto refUid = pkg.Read<UUID>();
 	auto refVer = pkg.Read<std::string>();
@@ -155,15 +150,67 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage pkg) {
 	//rpc->Register("RefPos", new ZMethod(this, &ZNet::RPC_RefPos));
 	//rpc->Register("PlayerList", new ZMethod(this, &ZNet::RPC_PlayerList));
 	//rpc->Register("RemotePrint", new ZMethod(this, &ZNet::RPC_RemotePrint));
-	
+
 	//rpc->Register("NetTime", new ZMethod(this, &ZNet::RPC_NetTime));
-	
+
 }
 
-void ZNet::RPC_Disconnect(ZRpc *rpc) {
+void ZNet::RPC_Disconnect(ZRpc* rpc) {
 	LOG(INFO) << "RPC_Disconnect";
 	//Disconnect();
 }
+
+void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
+	auto&& peer = GetPeer(rpc);
+	assert(peer);
+
+	//LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
+	//this.ClearPlayerData(peer);
+	bool flag = !Valhalla()->m_serverPassword.empty();
+	std::string salt = "Im opposing salt"; // must be 16 bytes
+	peer->m_rpc->Invoke("ClientHandshake", flag, salt);
+}
+
+
+
+
+void ZNet::SendPlayerList() {
+
+	//for (auto&& m_peers : m_peers) {
+	//
+	//	if (m_peers->IsReady()) {
+	//
+	//	}
+	//
+	//}
+	//
+	//foreach(ZNetPeer znetPeer in this.m_peers)
+	//{
+	//	if (znetPeer.IsReady())
+	//	{
+	//		ZNet.PlayerInfo playerInfo2 = new ZNet.PlayerInfo
+	//		{
+	//			m_characterID = znetPeer.m_characterID,
+	//			m_name = znetPeer.m_playerName,
+	//			m_host = znetPeer.m_socket.GetHostName(),
+	//			m_publicPosition = znetPeer.m_publicRefPos
+	//		};
+	//		if (playerInfo2.m_publicPosition)
+	//		{
+	//			playerInfo2.m_position = znetPeer.m_refPos;
+	//		}
+	//		this.m_players.Add(playerInfo2);
+	//	}
+	//}
+}
+
+void ZNet::RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos) {
+	auto&& peer = GetPeer(rpc);
+
+	peer->m_refPos = pos;
+	peer->m_publicRefPos = publicRefPos;
+}
+
 
 ZNetPeer *ZNet::GetPeer(ZRpc* rpc) {
 	for (auto&& peer : m_peers) {

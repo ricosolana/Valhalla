@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <assert.h>
+#include <bitset>
 
 //#include "SteamManager.h"
 #include "ValhallaServer.h"
@@ -40,10 +41,44 @@ void initLogger() {
     LOG(INFO) << "Logger is configured";
 }
 
+// https://www.reddit.com/r/cpp_questions/comments/dhrahr/how_do_you_make_a_weak_map_that_doesnt_leak_weak/
+//template<typename K, typename V>
+//struct weak_deleter {
+//private:
+//    //friend robin_hood::unordered_map<K, V>;
+//
+//    robin_hood::unordered_map<K, V> *pMap;
+//    K key;
+//
+//public:
+//    weak_deleter(robin_hood::unordered_map<K, V>& pMap) 
+//        : pMap(&pMap) {}
+//
+//    ~weak_deleter() {
+//        pMap->erase()
+//    }
+//};
+
+//struct socket_t {
+//    UUID uuid;
+//    std::string hostname;
+//};
+
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
 
     initLogger();
+
+    //robin_hood::unordered_map<UUID, std::weak_ptr<socket_t>> map;
+    //
+    //std::shared_ptr<socket_t> strong{ 
+    //    new socket_t {69420, "127.0.0.1"}, 
+    //    [&](socket_t* s) { map.erase(s->uuid); }
+    //};
+
+
+
+
 
     //SteamUtils()->SetWarningMessageHook([](int severity, const char* text) {
     //    std::cout << "severity: " << severity << ", " << text << "\n";

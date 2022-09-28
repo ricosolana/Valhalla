@@ -7,13 +7,15 @@
 
 #include "Task.h"
 
+// Register an rpc method for remote invocation
+#define REGISTER_RPC(rpc, name, method) rpc->Register(name, new ZMethod(this, &method));
+
 /**
 * The client and Rpc should be merged somehow
 	* @brief
 	*
 */
 class ZRpc {
-	ISocket::Ptr m_socket;
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
 		
@@ -24,6 +26,8 @@ class ZRpc {
 	void SendPackage(ZPackage pkg);
 
 public:	
+	ISocket::Ptr m_socket;
+
 	ZRpc(ISocket::Ptr socket);
 	~ZRpc();
 
