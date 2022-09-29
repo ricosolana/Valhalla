@@ -53,12 +53,12 @@ void ZRoutedRpc::HandleRoutedRPC(RoutedRPCData data)
 
 void ZRoutedRpc::RoutedRPCData::Serialize(ZPackage pkg) {
 	throw std::runtime_error("not implemented");
-	pkg.Write(m_msgID);
-	pkg.Write(m_senderPeerID);
-	pkg.Write(m_targetPeerID);
-	pkg.Write(m_targetZDO);
-	pkg.Write(m_methodHash);
-	pkg.Write(m_parameters);
+	//pkg.Write(m_msgID);
+	//pkg.Write(m_senderPeerID);
+	//pkg.Write(m_targetPeerID);
+	//pkg.Write(m_targetZDO);
+	//pkg.Write(m_methodHash);
+	//pkg.Write(m_parameters);
 }
 
 void ZRoutedRpc::RoutedRPCData::Deserialize(ZPackage pkg) {

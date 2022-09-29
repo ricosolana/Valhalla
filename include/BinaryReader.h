@@ -14,10 +14,8 @@ class BinaryReader {
 
 public:
 	BinaryReader(Stream *stream);
-
-	BinaryReader(BinaryReader&) = delete; // copy
-
-	BinaryReader(BinaryReader&&); // move
+	BinaryReader(BinaryReader&) = default; // copy
+	BinaryReader(BinaryReader&&) = delete; // move
 
 	void Read(byte* out, int offset, int count);
 	void Read(byte* out, int count);

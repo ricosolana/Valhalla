@@ -5,6 +5,7 @@
 #include "ZDOID.h"
 
 struct ZNetPeer {
+	using Ptr = std::shared_ptr<ZNetPeer>;
 	//ZNetPeer(ISocket::Ptr sock);
 	ZNetPeer(std::unique_ptr<ZRpc> rpc);
 

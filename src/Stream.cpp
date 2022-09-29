@@ -4,18 +4,17 @@ Stream::Stream(int count) {
     Reserve(count);
 }
 
-// Move Constructor
-Stream::Stream(Stream&& old) noexcept
+// Copy constructor
+Stream::Stream(const Stream& other)
+    : Stream(other.m_alloc)
 {
-    m_bytes.swap(old.m_bytes);
+    // TODO should m_length or m_alloc bytes be copied
+    //   technically, m_alloc bytes will be a true copy
+    //   but m_length bytes leads to better defined behaviour
 
-    this->m_alloc = old.m_alloc;
-    this->m_length = old.m_length;
-    this->m_pos = old.m_pos;
-
-    old.m_alloc = 0;
-    old.m_length = 0;
-    old.m_pos = 0;
+    // any bytes past m_length could be garbage (undefined behaviour)
+    // so anyways, purpose is met, but not a true copy
+    this->Write(other.Bytes(), other.Length());
 }
 
 

@@ -3,39 +3,41 @@
 #include <iostream>
 
 ZSocket2::ZSocket2(tcp::socket sock)
-	: m_socket(std::move(sock)) {}
+	: m_socket(std::move(sock)),
+	m_hostname(m_socket.remote_endpoint().address().to_string()),
+	m_port(m_socket.remote_endpoint().port()),
+	m_connectivity(Connectivity::CONNECTING) {
+}
 
 ZSocket2::~ZSocket2() {
 	Close();
 }
 
-
-
 void ZSocket2::Start() {
 	LOG(INFO) << "NetSocket2::Start()";
 
-	m_hostname = m_socket.remote_endpoint().address().to_string();
-	m_port = m_socket.remote_endpoint().port();
+	m_connectivity = Connectivity::CONNECTED;
 	ReadPkgSize();
 }
 
-void ZSocket2::Send(ZPackage pkg) {
-	if (pkg.GetStream().Length() == 0)
+void ZSocket2::Send(ZPackage::Ptr pkg) {
+	if (pkg->GetStream().Length() == 0)
 		return;
-
-	if (pkg.GetStream().Length() + 4 > 10485760) {
+	std::deque<ZPackage::Ptr> d;
+	if (pkg->GetStream().Length() + 4 > 10485760) {
 		LOG(ERROR) << "Too big package";
 		Close();
-	} else if (IsConnected()) {
+	} else if (m_connectivity != Connectivity::CLOSED) {
 		const bool was_empty = m_sendQueue.empty();
-		m_sendQueue.push_back(std::move(pkg));
+		d.push_back(pkg);
+		m_sendQueue.push_back(pkg);
 		if (was_empty) {
 			WritePkgSize();
 		}
 	}
 }
 
-ZPackage ZSocket2::Recv() {
+ZPackage::Ptr ZSocket2::Recv() {
 	return m_recvQueue.pop_front();
 }
 
@@ -44,10 +46,10 @@ bool ZSocket2::HasNewData() {
 }
 
 void ZSocket2::Close() {
-	if (IsConnected()) {
+	if (m_connectivity != Connectivity::CLOSED) {
 		LOG(INFO) << "NetSocket2::Close()";
 
-		m_connected = false;
+		m_connectivity = Connectivity::CLOSED;
 
 		m_socket.close();
 	}
@@ -61,8 +63,8 @@ uint_least16_t ZSocket2::GetHostPort() {
 	return m_port;
 }
 
-bool ZSocket2::IsConnected() {
-	return m_connected;
+Connectivity ZSocket2::GetConnectivity() {
+	return m_connectivity;
 }
 
 
@@ -97,19 +99,17 @@ void ZSocket2::ReadPkg() {
 	else {
 		//m_recvQueue.push_back(ZPackage(m_tempReadOffset));
 		//auto &front = m_recvQueue.front();
-		m_recv.GetStream().Reserve(m_tempReadOffset);
-		//auto pkg = new ZPackage(); //new Package(m_tempReadOffset);
-		// the initialization is pointless
-		//pkg->Buffer().resize(m_tempReadOffset);
+		
+		auto recv(PKG(m_tempReadOffset));
 
 		auto self(shared_from_this());
 		asio::async_read(m_socket,
-			asio::buffer(m_recv.GetStream().Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
-			[this, self](const std::error_code& e, size_t) {
+			asio::buffer(recv->GetStream().Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
+			[this, self, recv](const std::error_code& e, size_t) {
 			if (!e) {
-				m_recv.GetStream().SetLength(m_tempReadOffset);
-				m_recv.GetStream().ResetPos();
-				m_recvQueue.push_back(std::move(m_recv));
+				recv->GetStream().SetLength(m_tempReadOffset);
+				recv->GetStream().ResetPos();
+				m_recvQueue.push_back(recv);
 				ReadPkgSize();
 			}
 			else {
@@ -121,9 +121,11 @@ void ZSocket2::ReadPkg() {
 }
 
 void ZSocket2::WritePkgSize() {
-	auto &pkg = m_sendQueue.front();
+	// capture the perfect front object
+	// instead of making another shared_ptr and incrementing ref
+	auto &&pkg = m_sendQueue.front(); 
 
-	m_tempWriteOffset = pkg.GetStream().Length();
+	m_tempWriteOffset = pkg->GetStream().Length();
 
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
@@ -139,10 +141,10 @@ void ZSocket2::WritePkgSize() {
 	});
 }
 
-void ZSocket2::WritePkg(ZPackage &pkg) {
+void ZSocket2::WritePkg(ZPackage::Ptr &pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
-		asio::buffer(pkg.GetStream().Bytes(), m_tempWriteOffset),
+		asio::buffer(pkg->GetStream().Bytes(), m_tempWriteOffset),
 		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
 			m_sendQueue.pop_front();

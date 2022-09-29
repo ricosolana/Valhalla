@@ -53,22 +53,22 @@ public:
 	}
 
 	// Adds an item to back of Queue
-	void push_back(T &&item)
+	void push_back(const T &item)
 	{
 		std::scoped_lock lock(m_mutex);
-		m_deque.emplace_back(std::move(item));
-		//m_deque.push_back((item));
+		//m_deque.emplace_back((item));
+		m_deque.push_back((item));
 
 		std::unique_lock<std::mutex> ul(muxBlocking);
 		m_cv.notify_one();
 	}
 
 	// Adds an item to front of Queue
-	void push_front(T &&item)
+	void push_front(const T &item)
 	{
 		std::scoped_lock lock(m_mutex);
-		m_deque.emplace_front(std::move(item));
-		//m_deque.push_front((item));
+		//m_deque.emplace_front((item));
+		m_deque.push_front((item));
 
 		std::unique_lock<std::mutex> ul(muxBlocking);
 		m_cv.notify_one();

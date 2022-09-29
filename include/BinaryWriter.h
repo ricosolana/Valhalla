@@ -14,10 +14,8 @@ class BinaryWriter {
 
 public:
 	BinaryWriter(Stream* stream);
-
-	BinaryWriter(BinaryWriter&) = delete; // copy
-
-	BinaryWriter(BinaryWriter&&); // move
+	BinaryWriter(BinaryWriter&) = default; // copy
+	BinaryWriter(BinaryWriter&&) = delete; // move
 
 	void Write(const byte* in, int offset, int count);
 	void Write(const byte* in, int count);

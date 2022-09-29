@@ -23,15 +23,13 @@ class ZRpc {
 	// as its more flexible
 	robin_hood::unordered_map<int32_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
 
-	void SendPackage(ZPackage pkg);
+	void SendPackage(ZPackage::Ptr pkg);
 
 public:	
 	ISocket::Ptr m_socket;
 
 	ZRpc(ISocket::Ptr socket);
 	~ZRpc();
-
-	bool IsConnected();
 
 	/**
 		* @brief Register a method to be remotely invoked
@@ -49,18 +47,27 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
-		if (!IsConnected())
+		if (m_socket->GetConnectivity() == Connectivity::CLOSED)
 			return;
 
-		ZPackage pkg;
+		auto pkg(PKG());
 		auto stable = Utils::GetStableHashCode(method);
-		pkg.Write(stable);
+		pkg->Write(stable);
 #if TRUE // debug mode
-		pkg.Write(method);
+		pkg->Write(method);
 #endif
 		ZPackage::Serialize(pkg, std::move(params)...); // serialize
-		SendPackage(std::move(pkg));
+		SendPackage(pkg);
 	}
 
+	// To be called every tick
 	void Update();
+
+
+
+	/* RPC wrapped methods
+	*/
+	//void RemotePrint(std::string& s);
+	//void SendPlayerList();
+	//void 
 };

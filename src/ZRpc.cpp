@@ -6,10 +6,11 @@ ZRpc::ZRpc(ISocket::Ptr socket)
 
 	// pinger
 	this->m_pingTask = Valhalla()->RunTaskLaterRepeat([this](Task* task) {
-		ZPackage pkg;
-		pkg.Write<int32_t>(0);
-		pkg.Write(false);
-		SendPackage(std::move(pkg));
+		//ZPackage pkg;
+		auto pkg(PKG());
+		pkg->Write<int32_t>(0);
+		pkg->Write(false);
+		SendPackage(pkg);
 	}, 3s, 1s);
 }
 
@@ -19,17 +20,11 @@ ZRpc::~ZRpc() {
 		this->m_pingTask->Cancel();
 }
 
-bool ZRpc::IsConnected() {
-	return m_socket->IsConnected();
-}
-
 void ZRpc::Register(const char* name, ZMethodBase<ZRpc*>* method) {
 	auto stableHash = Utils::GetStableHashCode(name);
 
-#ifndef _NDEBUG
-	if (m_methods.find(stableHash) != m_methods.end())
-		throw std::runtime_error("Hash collision");
-#endif
+	assert(!m_methods.contains(stableHash)
+		&& "runtime rpc hash collision");
 
 	m_methods.insert({ stableHash, std::unique_ptr<ZMethodBase<ZRpc*>>(method) });
 }
@@ -37,16 +32,18 @@ void ZRpc::Register(const char* name, ZMethodBase<ZRpc*>* method) {
 void ZRpc::Update() {
 	auto now(std::chrono::steady_clock::now());
 
-	while (m_socket->HasNewData()) {
+	// Process up to 20 packets at a time
+	for (int _c = 0; _c < 20, m_socket->HasNewData(); _c++) {
+//	while (m_socket->HasNewData()) {
 		auto pkg = m_socket->Recv();
-		auto hash = pkg.Read<int32_t>();
+		auto hash = pkg->Read<int32_t>();
 		if (hash == 0) {
-			if (pkg.Read<bool>()) {
+			if (pkg->Read<bool>()) {
 				// Reply to the server with a pong
-				pkg.GetStream().Clear();
-				pkg.Write<int32_t>(0);
-				pkg.Write(false);
-				SendPackage(std::move(pkg));
+				pkg->GetStream().Clear();
+				pkg->Write<int32_t>(0);
+				pkg->Write(false);
+				SendPackage(pkg);
 			}
 			else {
 				m_lastPing = now;
@@ -56,7 +53,7 @@ void ZRpc::Update() {
 			// 
 
 #if TRUE
-			std::string name = pkg.Read<std::string>();
+			std::string name = pkg->Read<std::string>();
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
@@ -80,8 +77,8 @@ void ZRpc::Update() {
 
 }
 
-void ZRpc::SendPackage(ZPackage pkg) {
+void ZRpc::SendPackage(ZPackage::Ptr pkg) {
 	//this.m_sentPackages++;
 	//this.m_sentData += pkg.Size();
-	m_socket->Send(std::move(pkg));
+	m_socket->Send(pkg);
 }

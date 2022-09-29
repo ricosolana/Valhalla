@@ -9,13 +9,14 @@ class Stream {
 	size_t m_length = 0; // written bytes
 	size_t m_pos = 0; // read/write head offset from origin
 
+	// Reserves in the next power of two
 	void EnsureCapacity(int count);
 	void EnsureExtra(int extra);
 
 public:
 	Stream(int count = 0);
-	Stream(const Stream&) = delete; // copy 
-	Stream(Stream&&) noexcept;
+	Stream(const Stream&); // copy 
+	Stream(Stream&&) = delete; //noexcept;
 
 	
 	// internal -> buffer
@@ -40,6 +41,7 @@ public:
 	void SetLength(size_t length);
 	void ResetPos();
 
+	// Reserves count bytes if m_alloc is less than count
 	void Reserve(int count);
 	void ReserveExtra(int extra);
 };

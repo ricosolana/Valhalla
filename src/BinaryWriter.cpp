@@ -4,11 +4,11 @@
 BinaryWriter::BinaryWriter(Stream* stream)
 	: m_stream(stream) {}
 
-BinaryWriter::BinaryWriter(BinaryWriter&& old) 
-{
-	m_stream = old.m_stream;
-	old.m_stream = nullptr;
-}
+//BinaryWriter::BinaryWriter(BinaryWriter&& old) 
+//{
+//	m_stream = old.m_stream;
+//	old.m_stream = nullptr;
+//}
 
 void BinaryWriter::Write(const byte* in, int offset, int count) {
 	m_stream->Write(in, offset, count);

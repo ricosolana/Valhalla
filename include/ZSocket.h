@@ -10,6 +10,12 @@
 
 using namespace asio::ip;
 
+enum class Connectivity {
+	CONNECTING,
+	CONNECTED,
+	CLOSED
+};
+
 class ISocket : public std::enable_shared_from_this<ISocket> {
 public:
 	using Ptr = std::shared_ptr<ISocket>;
@@ -19,13 +25,13 @@ public:
 	virtual void Start() = 0;
 	virtual void Close() = 0;
 
-	virtual void Send(ZPackage packet) = 0;
-	virtual ZPackage Recv() = 0;
+	virtual void Send(ZPackage::Ptr packet) = 0;
+	virtual ZPackage::Ptr Recv() = 0;
 	virtual bool HasNewData() = 0;
 
 	virtual std::string& GetHostName() = 0;
 	virtual uint16_t GetHostPort() = 0;
-	virtual bool IsConnected() = 0;
+	virtual Connectivity GetConnectivity() = 0;
 };
 
 /**
@@ -37,18 +43,16 @@ public:
 class ZSocket2 : public ISocket {
 	tcp::socket m_socket;
 
-	AsyncDeque<ZPackage> m_sendQueue;
-	AsyncDeque<ZPackage> m_recvQueue;
+	AsyncDeque<ZPackage::Ptr> m_sendQueue;
+	AsyncDeque<ZPackage::Ptr> m_recvQueue;
 
 	int m_tempReadOffset = 0;
 	int m_tempWriteOffset = 0;
 
-	ZPackage m_recv;
-
 	std::string m_hostname;
 	uint16_t m_port;
 
-	std::atomic_bool m_connected = true;
+	std::atomic<Connectivity> m_connectivity;
 
 public:
 	ZSocket2(tcp::socket sock);
@@ -58,13 +62,13 @@ public:
 	void Start() override;
 	void Close() override;
 
-	void Send(ZPackage packet) override;
-	ZPackage Recv() override;
+	void Send(ZPackage::Ptr packet) override;
+	ZPackage::Ptr Recv() override;
 	bool HasNewData() override;
 
 	std::string& GetHostName() override;
 	uint16_t GetHostPort() override;
-	bool IsConnected() override;
+	Connectivity GetConnectivity() override;
 
 	// Declared
 	tcp::socket& GetSocket();
@@ -73,5 +77,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(ZPackage &pkg);
+	void WritePkg(ZPackage::Ptr& pkg);
 };

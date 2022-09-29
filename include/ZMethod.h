@@ -17,7 +17,7 @@ template<class T>
 class ZMethodBase
 {
 public:
-    virtual void Invoke(T t, ZPackage &pkg) = 0;
+    virtual void Invoke(T t, ZPackage::Ptr pkg) = 0;
 };
 
 template<class T, class C, class...Args>
@@ -31,7 +31,7 @@ public:
     ZMethod(C* object, Lambda lam) : object(object), lambda(lam) {}
 
     //template<class T>
-    void Invoke(T t, ZPackage &pkg) override {
+    void Invoke(T t, ZPackage::Ptr pkg) override {
         if constexpr (sizeof...(Args)) {
             auto tupl = ZPackage::Deserialize<Args...>(pkg);
 

@@ -49,8 +49,8 @@ void ZPackage::Write(const std::vector<std::string>& in) {
     }
 }
 
-void ZPackage::Write(const ZPackage& in) {
-    Write(in.m_stream.Bytes(), in.m_stream.Length());
+void ZPackage::Write(const ZPackage::Ptr in) {
+    Write(in->m_stream.Bytes(), in->m_stream.Length());
 }
 
 void ZPackage::Write(const ZDOID& in) {
@@ -86,14 +86,14 @@ void ZPackage::Load(byte* data, int32_t count) {
 
 
 
-ZPackage ZPackage::ReadCompressed() {
-    int count = Read<int32_t>();
+ZPackage::Ptr ZPackage::ReadCompressed() {
+    //int count = Read<int32_t>();
 
     //return ZPackage(Utils::Decompress(Read(count)));
     throw std::runtime_error("not implemented");
 }
 
-void ZPackage::WriteCompressed(const ZPackage& in) {
+void ZPackage::WriteCompressed(ZPackage::Ptr in) {
     throw std::runtime_error("not implemented");
 }
 

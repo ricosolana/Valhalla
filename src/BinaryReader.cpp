@@ -4,11 +4,11 @@
 BinaryReader::BinaryReader(Stream *stream)
 	: m_stream(stream) {}
 
-BinaryReader::BinaryReader(BinaryReader&& old) 
-{
-    m_stream = old.m_stream;
-    old.m_stream = nullptr;
-}
+//BinaryReader::BinaryReader(BinaryReader&& old) 
+//{
+//    m_stream = old.m_stream;
+//    old.m_stream = nullptr;
+//}
 
 void BinaryReader::Read(byte* out, int offset, int count) {
     m_stream->Read(out, offset, count);
