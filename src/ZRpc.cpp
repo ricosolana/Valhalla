@@ -9,7 +9,7 @@ ZRpc::ZRpc(ISocket::Ptr socket)
 		//ZPackage pkg;
 		auto pkg(PKG());
 		pkg->Write<int32_t>(0);
-		pkg->Write(false);
+		pkg->Write(true);
 		SendPackage(pkg);
 	}, 3s, 1s);
 }
@@ -33,8 +33,7 @@ void ZRpc::Update() {
 	auto now(std::chrono::steady_clock::now());
 
 	// Process up to 20 packets at a time
-	for (int _c = 0; _c < 20, m_socket->HasNewData(); _c++) {
-//	while (m_socket->HasNewData()) {
+	for (int _c = 0; _c < 20 && m_socket->HasNewData(); _c++) {
 		auto pkg = m_socket->Recv();
 		auto hash = pkg->Read<int32_t>();
 		if (hash == 0) {
@@ -50,8 +49,6 @@ void ZRpc::Update() {
 			}
 		}
 		else {
-			// 
-
 #if TRUE
 			std::string name = pkg->Read<std::string>();
 #endif

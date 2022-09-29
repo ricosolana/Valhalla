@@ -21,6 +21,11 @@ void ZNet::Listen() {
 	m_zdoMan = std::make_unique<ZDOMan>(uid);
 	m_world = std::make_unique<World>();
 
+	Valhalla()->RunTaskLaterRepeat([this](Task* self) {
+		SendNetTime();
+		SendPlayerList();		
+	}, 1s, 2s);
+
 	m_acceptor->Start();
 }
 
@@ -56,8 +61,8 @@ void ZNet::Update() {
 	}
 	
 	{
-		// Remove stale joining
-		// Allowed to have empty references
+		// Remove invalid joining
+		// Removes any
 		auto&& itr = m_joining.begin();
 		while (itr != m_joining.end()) {
 			if (!(*itr) || (*itr)->m_socket->GetConnectivity() == Connectivity::CLOSED) {
@@ -180,9 +185,7 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	//rpc.Register("PrintBanned", new ZRpc.RpcMethod.Method(this.RPC_PrintBanned));
 
 	SendPeerInfo(rpc);
-	SendPlayerList();
-
-
+	//SendPlayerList();
 
 	// check if player is banned
 
@@ -194,10 +197,11 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 
 }
 
-//void ZNet::RPC_Disconnect(ZRpc* rpc) {
-//	LOG(INFO) << "RPC_Disconnect";
-//	//Disconnect();
-//}
+void ZNet::RPC_Disconnect(ZRpc* rpc) {
+	LOG(INFO) << "RPC_Disconnect";
+	auto&& peer = GetPeer(rpc);
+	Disconnect(peer);
+}
 
 void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
 	//LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
@@ -249,7 +253,10 @@ void ZNet::RPC_Save(ZRpc* rpc) {
 }
 
 void ZNet::RPC_PrintBanned(ZRpc* rpc) {
+	std::string s = "Banned users";
+	//std::vector<std:
 
+	RemotePrint(rpc, s);
 }
 
 
@@ -257,10 +264,13 @@ void ZNet::RPC_PrintBanned(ZRpc* rpc) {
 
 
 void ZNet::Kick(std::string user) {
-
+	auto&& peer = GetPeer(user);
 }
 
 void ZNet::Kick(ZNetPeer::Ptr peer) {
+	if (!peer)
+		return;
+
 	LOG(INFO) << "Kicking " << peer->m_playerName;
 
 	SendDisconnect(peer);
@@ -313,6 +323,12 @@ void ZNet::SendPlayerList() {
 	}
 }
 
+void ZNet::SendNetTime() {
+	for (auto&& peer : m_peers) {
+		peer->m_rpc->Invoke("NetTime", m_netTime);
+	}
+}
+
 void ZNet::RemotePrint(ZRpc* rpc, std::string& s) {
 	rpc->Invoke("RemotePrint", s);
 }
@@ -330,6 +346,9 @@ void ZNet::SendDisconnect(ZNetPeer::Ptr peer) {
 	peer->m_rpc->Invoke("Disconnect");
 }
 
+void ZNet::Disconnect(ZNetPeer::Ptr peer) {
+	peer->m_rpc->m_socket->Close();
+}
 
 
 
@@ -341,6 +360,24 @@ ZNetPeer::Ptr ZNet::GetPeer(ZRpc* rpc) {
 	}
 	return nullptr;
 }
+
+ZNetPeer::Ptr ZNet::GetPeer(std::string &name) {
+	for (auto&& peer : m_peers) {
+		if (peer->m_playerName == name)
+			return peer;
+	}
+	return nullptr;
+}
+
+ZNetPeer::Ptr ZNet::GetPeer(UUID uuid) {
+	for (auto&& peer : m_peers) {
+		if (peer->m_uid == uuid)
+			return peer;
+	}
+	return nullptr;
+}
+
+
 
 int64_t ZNet::GetUID()
 {

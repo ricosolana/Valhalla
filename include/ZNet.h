@@ -59,12 +59,13 @@ class ZNet {
 	void Ban(ZNetPeer::Ptr peer);
 	void Unban(std::string user);
 	void Unban(ZNetPeer::Ptr peer);
-	void Disconnect(ZNetPeer::Ptr peer);
 
 	void SendPlayerList();
+	void SendNetTime();
 	void RemotePrint(ZRpc* rpc, std::string &s);
 	void SendDisconnect();
 	void SendDisconnect(ZNetPeer::Ptr peer);
+	void Disconnect(ZNetPeer::Ptr peer);
 	
 public:
 	ZNet(uint16_t port);
@@ -78,6 +79,11 @@ public:
 	void Update();
 
 	ZNetPeer::Ptr GetPeer(ZRpc* rpc);
+	ZNetPeer::Ptr GetPeer(std::string& name);
+	ZNetPeer::Ptr GetPeer(UUID uuid);
+	//ZNetPeer::Ptr GetPeer(std::string &ip) ; // get by address
+												// might return multiple peers
+
 	//ZNetPeer* GetJoining(ZRpc* rpc);
 	int64_t GetUID();
 };
