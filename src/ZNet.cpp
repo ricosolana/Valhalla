@@ -185,6 +185,10 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	//rpc.Register("PrintBanned", new ZRpc.RpcMethod.Method(this.RPC_PrintBanned));
 
 	SendPeerInfo(rpc);
+
+	m_zdoMan->AddPeer(peer);
+	//m_routedRpc->AddPeer(peer);
+
 	//SendPlayerList();
 
 	// check if player is banned
@@ -219,8 +223,9 @@ void ZNet::RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos) {
 }
 
 void ZNet::RPC_CharacterID(ZRpc* rpc, ZDOID characterID) {
+	throw std::runtime_error("Not implemented");
 	auto &&peer = GetPeer(rpc);
-	peer->m_characterID = characterID;
+	//peer->m_characterID = characterID;
 
 	LOG(INFO) << "Got character ZDOID from " << peer->m_playerName << " : " << characterID.ToString();
 }

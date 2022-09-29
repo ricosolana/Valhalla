@@ -16,7 +16,7 @@ struct ZDOID {
 
 	static const ZDOID NONE;
 
-	int64_t m_userID;
-	uint32_t m_id;
-	int32_t m_hash;
+	const int64_t m_userID;
+	const uint32_t m_id;
+	const int32_t m_hash;
 };
