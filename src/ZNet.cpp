@@ -51,8 +51,8 @@ void ZNet::Update() {
 	while (m_acceptor->HasNewConnection()) {
 		auto&& rpc = std::make_unique<ZRpc>(m_acceptor->Accept());
 
-		//REGISTER_RPC(rpc, "PeerInfo", ZNet::RPC_PeerInfo);
-		//REGISTER_RPC(rpc, "Disconnect", ZNet::RPC_Disconnect); // client only
+		REGISTER_RPC(rpc, "PeerInfo", ZNet::RPC_PeerInfo);
+		REGISTER_RPC(rpc, "Disconnect", ZNet::RPC_Disconnect); // client only
 		REGISTER_RPC(rpc, "ServerHandshake", ZNet::RPC_ServerHandshake);
 
 		rpc->m_socket->Start();

@@ -46,10 +46,22 @@ public:
         // call lua is easy with sol
         auto lua = sol::state();
         lua.open_libraries();
-        lua.script("function f() print(\"lua handshake invoked!\") end");
-        sol::function lua_func = lua["f"];
+        //lua.new_usertype<ZRpc>("ZRpc",
+            //"Invoke", &ZRpc::Invoke); // dummy
+        //lua.script("function f() print(\"lua handshake invoked!\") end");
+        //sol::function lua_func = lua["f"];
 
-        Utils::InvokeTupleS(lua_func, t, tupl);
+        // this might invoke the lua functor
+        
+        /*
+        * just add manual pre/post events, rpc handlers will have to wait
+        * rpc handlers are too much on the side of dynamic catches
+        * it introduces complicated indirection in either pre or post rpc event
+        * when should it be called in terms of line in rpc?
+        * 
+        * so just insert event dispatch in rpc callbacks directly for greater intentional control
+        * the base game will be too difficult to modify
+        */
 
         if constexpr (sizeof...(Args)) {
             auto tupl = ZPackage::Deserialize<Args...>(pkg);
@@ -60,7 +72,7 @@ public:
             // functions, as sol supports
 
             // Pre-rpc lua handler
-
+            //Utils::InvokeTupleS(lua_func, t, tupl);
 
 
             // RPC CALL
@@ -69,8 +81,11 @@ public:
             // Pre-rpc lua handler
             //Utils::InvokeTuple(post_lua_rpc_handler, nullptr, t, tupl);
         }
-        else
+        else {
+            // no unpack needed
+            //std::invoke(lua_func, t);
             std::invoke(lambda, object, t);
+        }
 
         // Utils::InvokeTuple(lambda, object, t, tupl);
     }
