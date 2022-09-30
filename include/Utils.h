@@ -25,6 +25,7 @@ using UUID = int64_t;
 //};
 
 namespace Utils {
+
 	template <class F, class C, class Pass, class Tuple, size_t... Is>
 	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple& t, std::index_sequence<Is...>) {
 		return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
@@ -33,6 +34,19 @@ namespace Utils {
 	template <class F, class C, class Pass, class Tuple>
 	constexpr void InvokeTuple(F f, C& c, Pass pass, Tuple& t) {
 		InvokeTupleImpl(f, c, pass, t,
+			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
+	}
+
+	// for lua
+	template <class F, class Pass, class Tuple, size_t... Is>
+	constexpr auto InvokeTupleImplS(F f, Pass pass, Tuple& t, std::index_sequence<Is...>) {
+		return std::invoke(f, pass, std::move(std::get<Is>(t))...);
+		//return std::forward()
+	}
+
+	template <class F, class Pass, class Tuple>
+	constexpr void InvokeTupleS(F f, Pass pass, Tuple& t) {
+		InvokeTupleImplS(f, pass, t,
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 

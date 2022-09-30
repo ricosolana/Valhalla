@@ -19,7 +19,7 @@ ZDOMan::ZDOMan(UUID uid)
 void ZDOMan::AddPeer(ZNetPeer::Ptr peer) {
 	m_peers.push_back(std::make_unique<ZDOPeer>(peer));
 	
-	REGISTER_RPC(peer->m_rpc, "ZDOData", ZDOMan::RPC_ZDOData);
+	//REGISTER_RPC(peer->m_rpc, "ZDOData", ZDOMan::RPC_ZDOData);
 }
 
 int64_t ZDOMan::GetMyID()

@@ -38,6 +38,11 @@ public:
 	*/
 	// TODO hide away the 'new' operator while being passed
 	// and/or instead use std function or bind?
+	// used like
+
+	// Best case usage should be like this:
+	// rpc->Register("Handshake", [this]() { this->RPC_ServerHandshake( }
+
 	void Register(const char* name, ZMethodBase<ZRpc*> *method);
 
 	/**

@@ -80,6 +80,8 @@ namespace ScriptManager {
 
 			//Rml::Lua::Initialise(L);
 
+			//sol::function
+
 			auto apiTable = lua["Valhalla"].get_or_create<sol::table>();
 
 			apiTable["RegisterScript"] = Api::RegisterScript;

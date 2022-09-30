@@ -4,13 +4,14 @@
 #include <functional>
 #include "ZPackage.h"
 #include "Utils.h"
+#include <sol/sol.hpp>
 
 /* https://godbolt.org/z/MMGsa8rhr
 * to implement deduction guides
 * (static functions, no class object needed)
 */
 
-//class ZRpc;
+class ZRpc;
 
 // Thanks @Fux
 template<class T>
@@ -43,15 +44,24 @@ public:
         // invoke lua functions
         // so need to 
         // call lua is easy with sol
+        auto lua = sol::state();
+        lua.open_libraries();
+        lua.script("function f() print(\"lua handshake invoked!\") end");
+        sol::function lua_func = lua["f"];
 
+        Utils::InvokeTupleS(lua_func, t, tupl);
 
         if constexpr (sizeof...(Args)) {
             auto tupl = ZPackage::Deserialize<Args...>(pkg);
 
             // func, self, rpc, ...
 
+            // Should REALLY CONSIDER switching to std function for 
+            // functions, as sol supports
+
             // Pre-rpc lua handler
-            //Utils::InvokeTuple(pre_lua_rpc_handler, nullptr, t, tupl);
+
+
 
             // RPC CALL
             Utils::InvokeTuple(lambda, object, t, tupl);
