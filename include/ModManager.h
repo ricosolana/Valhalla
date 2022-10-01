@@ -2,10 +2,10 @@
 
 #include <sol/sol.hpp>
 
-namespace ScriptManager {
+namespace ModManager {
 	void Init();
 	void Uninit();
-	lua_State* GetLuaState();
+	//lua_State* GetLuaState();
 
 	namespace Event {
 		/// Event calls

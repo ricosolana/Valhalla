@@ -17,13 +17,13 @@ public:
 	BinaryWriter(BinaryWriter&) = default; // copy
 	BinaryWriter(BinaryWriter&&) = delete; // move
 
-	void Write(const byte* in, int offset, int count);
-	void Write(const byte* in, int count);
-	void Write(const std::vector<byte>& in, int count);
+	void Write(const byte_t* in, int offset, int count);
+	void Write(const byte_t* in, int count);
+	void Write(const std::vector<byte_t>& in, int count);
 
 	template<typename T>
 	void Write(const T &in) requires std::is_trivially_copyable_v<T> {
-		Write(reinterpret_cast<const byte*>(&in), sizeof(T));
+		Write(reinterpret_cast<const byte_t*>(&in), sizeof(T));
 	}
 
 	void Write(const std::string &in);

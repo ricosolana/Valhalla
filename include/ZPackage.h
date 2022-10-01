@@ -46,16 +46,16 @@ public:
 
 
     // Used for reading incoming data from packet
-    ZPackage(byte* data, int32_t count);
-    ZPackage(std::vector<byte>& vec);
+    ZPackage(byte_t* data, int32_t count);
+    ZPackage(std::vector<byte_t>& vec);
     ZPackage(int32_t reserve);
 
 
 
-    void Write(const byte* in, int32_t count);          // Write array
-    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte*>(&in), sizeof(T)); }
+    void Write(const byte_t* in, int32_t count);          // Write array
+    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
-    void Write(const std::vector<byte> &in);            // Write array
+    void Write(const std::vector<byte_t> &in);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (ZRpc)
     void Write(const ZPackage::Ptr in);
     void Write(const ZDOID &id);
@@ -78,7 +78,7 @@ public:
     template<typename T>
     T Read() requires std::is_fundamental_v<T> {
         T out;
-        m_stream.Read(reinterpret_cast<byte*>(&out), sizeof(T));
+        m_stream.Read(reinterpret_cast<byte_t*>(&out), sizeof(T));
         return out;
     }
 
@@ -95,13 +95,13 @@ public:
         std::string out;
         out.resize(byteCount);
 
-        m_stream.Read(reinterpret_cast<byte*>(out.data()), byteCount);
+        m_stream.Read(reinterpret_cast<byte_t*>(out.data()), byteCount);
 
         return out;
     }
 
     template<typename T>
-    T Read() requires std::same_as<T, std::vector<byte>> {
+    T Read() requires std::same_as<T, std::vector<byte_t>> {
         T out;
         m_stream.Read(out, Read<int32_t>());
         return out;
@@ -158,12 +158,12 @@ public:
 
 
 
-    void Load(byte* buf, int32_t offset);
+    void Load(byte_t* buf, int32_t offset);
 
     ZPackage::Ptr ReadCompressed();
     void WriteCompressed(ZPackage::Ptr);
 
-    void Read(std::vector<byte>& out);
+    void Read(std::vector<byte_t>& out);
     void Read(std::vector<std::string>& out);
 
 

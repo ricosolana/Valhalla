@@ -114,7 +114,7 @@ add_executable(${PROJECT_NAME}
     "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
     "src/ResourceManager.cpp"
-    "src/ScriptManager.cpp" 
+    "src/ModManager.cpp" 
     
     
     "src/Stream.cpp"

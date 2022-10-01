@@ -19,11 +19,11 @@ Stream::Stream(const Stream& other)
 
 
 
-void Stream::Read(byte* buffer, int offset, int count) {
+void Stream::Read(byte_t* buffer, int offset, int count) {
     Read(buffer + offset, count);
 }
 
-void Stream::Read(byte* buffer, int count) {
+void Stream::Read(byte_t* buffer, int count) {
     if (m_pos + count > m_length) throw std::runtime_error("reading garbage data");
 
     std::memcpy(buffer, m_bytes.get() + m_pos, count);
@@ -31,13 +31,13 @@ void Stream::Read(byte* buffer, int count) {
     m_pos += count;
 }
 
-byte Stream::ReadByte() {
-    byte b;
+byte_t Stream::ReadByte() {
+    byte_t b;
     Read(&b, 0, 1);
     return b;
 }
 
-void Stream::Read(std::vector<byte>& vec, int count) {
+void Stream::Read(std::vector<byte_t>& vec, int count) {
     if (m_pos + count > m_length) throw std::runtime_error("reading garbage data");
 
     vec.clear();
@@ -47,22 +47,22 @@ void Stream::Read(std::vector<byte>& vec, int count) {
 
 
 
-void Stream::Write(const byte* buffer, int offset, int count) {
+void Stream::Write(const byte_t* buffer, int offset, int count) {
     Write(buffer + offset, count);
 }
 
-void Stream::Write(const byte* buffer, int count) {
+void Stream::Write(const byte_t* buffer, int count) {
     EnsureCapacity(m_pos + count);
     std::memcpy(m_bytes.get() + m_pos, buffer, count);
     m_pos += count;
     m_length += count;
 }
 
-void Stream::WriteByte(const byte value) {
+void Stream::WriteByte(const byte_t value) {
     Write(&value, 0, 1);
 }
 
-void Stream::Write(const std::vector<byte>& vec, int count) {
+void Stream::Write(const std::vector<byte_t>& vec, int count) {
     Write(vec.data(), 0, count);
 }
 
@@ -92,7 +92,7 @@ void Stream::ResetPos() {
 void Stream::Reserve(int count) {
     if (m_alloc < count) {
         auto oldPtr = std::move(m_bytes);
-        m_bytes = std::unique_ptr<byte>(new byte[count]);
+        m_bytes = std::unique_ptr<byte_t>(new byte_t[count]);
         if (oldPtr) {
             std::memcpy(m_bytes.get(), oldPtr.get(), static_cast<size_t>(count));
         }

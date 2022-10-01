@@ -1,6 +1,6 @@
 #include "ZNet.h"
 #include "ValhallaServer.h"
-#include "ScriptManager.h"
+#include "ModManager.h"
 #include <openssl/md5.h>
 #include "ValhallaServer.h"
 
@@ -15,7 +15,7 @@ ZNet::ZNet(uint16_t port)
 void ZNet::Listen() {
 	LOG(INFO) << "Starting server";
 
-	UUID uid(1234567891011);
+	uuid_t uid(1234567891011);
 
 	m_routedRpc = std::make_unique<ZRoutedRpc>(uid);
 	m_zdoMan = std::make_unique<ZDOMan>(uid);
@@ -124,20 +124,21 @@ void ZNet::SendPeerInfo(ZRpc* rpc) {
 void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	auto &&hostName = rpc->m_socket->GetHostName();
 
-	auto refUid = pkg->Read<UUID>();
-	auto refVer = pkg->Read<std::string>();
-	LOG(INFO) << "Client " << hostName << " has version " << refVer;
-	if (refVer != std::string(ValhallaServer::VERSION)) {
+	auto uuid = pkg->Read<uuid_t>();
+	auto ver = pkg->Read<std::string>();
+	LOG(INFO) << "Client " << hostName << " has version " << ver;
+	if (ver != std::string(ValhallaServer::VERSION)) {
 		rpc->Invoke("Error", ConnectionStatus::ErrorVersion);
 		// disconnect client later as a cleanup
 		LOG(INFO) << "Client version is incompatible";
 		return;
 	}
-	auto&& refPos = pkg->Read<Vector3>();
-	auto&& refName = pkg->Read<std::string>();
 
-	auto&& refPassword = pkg->Read<std::string>();
-	if (refPassword != Valhalla()->m_serverPassword) {
+	auto pos = pkg->Read<Vector3>();
+	auto name = pkg->Read<std::string>();
+	auto password = pkg->Read<std::string>();
+	
+	if (password != Valhalla()->m_serverPassword) {
 		rpc->Invoke("Error", ConnectionStatus::ErrorPassword);
 		// disconnect client later as a cleanup
 		LOG(INFO) << "Client password is incorrect";
@@ -145,22 +146,20 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	}
 
 	// Find the rpc and transfer
-	std::unique_ptr<ZRpc> swapped;
+	std::unique_ptr<ZRpc> swappedRpc;
 	for (auto&& j : m_joining) {
 		if (j.get() == rpc) {
-			swapped = std::move(j);
+			swappedRpc = std::move(j);
 			break;
 		}
 	}
-	assert(swapped && "Swapped rpc wsa never assigned!");
+	assert(swappedRpc && "Swapped rpc wsa never assigned!");
 
-	auto peer(std::make_shared<ZNetPeer>(std::move(swapped)));
+	auto peer(std::make_shared<ZNetPeer>(std::move(swappedRpc), uuid, name));
 	m_peers.push_back(peer);
 
 	// check if player uid is already connected
-	peer->m_refPos = refPos;
-	peer->m_uid = refUid;
-	peer->m_playerName = refName;
+	peer->m_pos = pos;
 
 	REGISTER_RPC(rpc, "RefPos", ZNet::RPC_RefPos);
 	//REGISTER_RPC(rpc, "PlayerList", ) // used by client 
@@ -218,16 +217,15 @@ void ZNet::RPC_ServerHandshake(ZRpc* rpc) {
 void ZNet::RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos) {
 	auto&& peer = GetPeer(rpc);
 
-	peer->m_refPos = pos;
-	peer->m_publicRefPos = publicRefPos;
+	peer->m_pos = pos;
+	peer->m_visibleOnMap = publicRefPos; // stupid name
 }
 
 void ZNet::RPC_CharacterID(ZRpc* rpc, ZDOID characterID) {
-	throw std::runtime_error("Not implemented");
 	auto &&peer = GetPeer(rpc);
-	//peer->m_characterID = characterID;
+	peer->m_characterID = characterID;
 
-	LOG(INFO) << "Got character ZDOID from " << peer->m_playerName << " : " << characterID.ToString();
+	LOG(INFO) << "Got character ZDOID from " << peer->m_name << " : " << characterID.ToString();
 }
 
 
@@ -268,35 +266,54 @@ void ZNet::RPC_PrintBanned(ZRpc* rpc) {
 
 
 
-void ZNet::Kick(std::string user) {
-	auto&& peer = GetPeer(user);
+void ZNet::Kick(const std::string &user) {
+	Kick(GetPeer(user));
 }
 
 void ZNet::Kick(ZNetPeer::Ptr peer) {
 	if (!peer)
 		return;
 
-	LOG(INFO) << "Kicking " << peer->m_playerName;
+	LOG(INFO) << "Kicking " << peer->m_name;
 
 	SendDisconnect(peer);
 	Disconnect(peer);
 }
 
-void ZNet::Ban(std::string user) {
+void ZNet::Ban(const std::string &user, std::chrono::minutes dur, const std::string &reason) {
+	LOG(INFO) << "Banning " << user;
+	
+	auto now(std::chrono::steady_clock::now());
+	auto expiry(now + dur);
 
+	m_banList.insert({ user,
+		ban_info { now, expiry, reason} });
+
+	//Ban(GetPeer(user));
 }
 
-void ZNet::Ban(ZNetPeer::Ptr peer) {
+/*
+void ZNet::Ban(ZNetPeer::Ptr peer, std::chrono::minutes dur, std::string reason) {
 
+	if (!peer)
+		return;
+
+	auto now(std::chrono::steady_clock::now());
+	auto expiry(now + dur);
+
+	m_banList.insert({peer->m_playerName, 
+		ban_info { now, expiry, reason}});
+}*/
+
+void ZNet::Unban(const std::string &user) {
+	LOG(INFO) << "Unbanning " << user;
+
+	m_banList.erase(user);
 }
 
-void ZNet::Unban(std::string user) {
-
-}
-
-void ZNet::Unban(ZNetPeer::Ptr peer) {
-
-}
+//void ZNet::Unban(ZNetPeer::Ptr peer) {
+//
+//}
 
 
 
@@ -309,12 +326,12 @@ void ZNet::SendPlayerList() {
 		pkg->Write((int)m_peers.size());
 
 		for (auto&& peer : m_peers) {
-			pkg->Write(peer->m_playerName);
+			pkg->Write(peer->m_name);
 			pkg->Write(peer->m_rpc->m_socket->GetHostName());
 			pkg->Write(peer->m_characterID);
-			pkg->Write(peer->m_publicRefPos);
-			if (peer->m_publicRefPos) {
-				pkg->Write(peer->m_refPos);
+			pkg->Write(peer->m_visibleOnMap);
+			if (peer->m_visibleOnMap) {
+				pkg->Write(peer->m_pos);
 			}
 		}
 
@@ -334,7 +351,7 @@ void ZNet::SendNetTime() {
 	}
 }
 
-void ZNet::RemotePrint(ZRpc* rpc, std::string& s) {
+void ZNet::RemotePrint(ZRpc* rpc, const std::string& s) {
 	rpc->Invoke("RemotePrint", s);
 }
 
@@ -366,17 +383,17 @@ ZNetPeer::Ptr ZNet::GetPeer(ZRpc* rpc) {
 	return nullptr;
 }
 
-ZNetPeer::Ptr ZNet::GetPeer(std::string &name) {
+ZNetPeer::Ptr ZNet::GetPeer(const std::string &name) {
 	for (auto&& peer : m_peers) {
-		if (peer->m_playerName == name)
+		if (peer->m_name == name)
 			return peer;
 	}
 	return nullptr;
 }
 
-ZNetPeer::Ptr ZNet::GetPeer(UUID uuid) {
+ZNetPeer::Ptr ZNet::GetPeer(uuid_t uuid) {
 	for (auto&& peer : m_peers) {
-		if (peer->m_uid == uuid)
+		if (peer->m_uuid == uuid)
 			return peer;
 	}
 	return nullptr;
@@ -384,7 +401,7 @@ ZNetPeer::Ptr ZNet::GetPeer(UUID uuid) {
 
 
 
-int64_t ZNet::GetUID()
+uuid_t ZNet::GetUID()
 {
 	return m_zdoMan->GetMyID();
 }

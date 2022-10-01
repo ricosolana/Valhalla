@@ -4,7 +4,7 @@
 #include "Utils.h"
 
 class Stream {
-	std::unique_ptr<byte> m_bytes;
+	std::unique_ptr<byte_t> m_bytes;
 	size_t m_alloc = 0; // allocated bytes
 	size_t m_length = 0; // written bytes
 	size_t m_pos = 0; // read/write head offset from origin
@@ -20,18 +20,18 @@ public:
 
 	
 	// internal -> buffer
-	void Read(byte* buffer, int offset, int count);
-	void Read(byte* buffer, int count);
-	byte ReadByte();
-	void Read(std::vector<byte>& vec, int count);
+	void Read(byte_t* buffer, int offset, int count);
+	void Read(byte_t* buffer, int count);
+	byte_t ReadByte();
+	void Read(std::vector<byte_t>& vec, int count);
 
 	// buffer -> internal
-	void Write(const byte* buffer, int offset, int count);
-	void Write(const byte* buffer, int count);
-	void WriteByte(const byte value);
-	void Write(const std::vector<byte>& vec, int count);
+	void Write(const byte_t* buffer, int offset, int count);
+	void Write(const byte_t* buffer, int count);
+	void WriteByte(const byte_t value);
+	void Write(const std::vector<byte_t>& vec, int count);
 
-	byte* Bytes() const {
+	byte_t* Bytes() const {
 		return m_bytes.get();
 	}
 

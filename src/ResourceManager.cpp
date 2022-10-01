@@ -8,53 +8,65 @@
 
 namespace ResourceManager {
     // Instantiate static variables
-    std::string root;
+    fs::path root;
 
-    void SetRoot(const char* r) {
+    void SetRoot(const fs::path &r) {
         root = r;
     }
 
-    //FILE* OpenFile(const char* path) {
-    //    return OpenFile(path);
-    //}
-
-    FILE* OpenFile(const std::string &path) {
-        return fopen((root + path).c_str(), "rb");
+    fs::path GetPath(const fs::path &path) {
+        return root / path;
     }
 
-    bool ReadFileBytes(const char* path, std::vector<unsigned char> &buffer) {
-        auto f = OpenFile(path);
+    std::ifstream GetFile(const fs::path &path) {
+        return std::ifstream(GetPath(path), std::ios::binary);
+    }
 
-        if (!f)
+    bool ReadFileBytes(const fs::path &path, std::vector<byte_t> &vec) {
+        auto file = GetFile(path);
+        
+        //file.is_open();
+        //file.open();
+
+        // Stop eating new lines in binary mode!!!
+        file.unsetf(std::ios::skipws);
+
+        // get its size:
+        std::streampos fileSize;
+
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // fileSize == -1 when doesnt exists
+        if (fileSize < 0)
             return false;
 
-        fseek(f, 0, SEEK_END);
-        auto buffer_size = ftell(f);
-        fseek(f, 0, SEEK_SET);
+        // reserve capacity
+        vec.reserve(fileSize);
+        
+        //std::cout << "file open1: " << file.is_open() << "\n";
 
-        buffer.resize(buffer_size);
+        // read the data:
+        vec.insert(vec.begin(),
+            std::istream_iterator<byte_t>(file),
+            std::istream_iterator<byte_t>());
 
-        //char* buffer = new char[buffer_size];
-        fread(buffer.data(), 1, buffer_size, f);
-        fclose(f);
+        //std::cout << "file open2: " << file.is_open() << "\n";
+
         return true;
     }
 
-    bool ReadFileBytes(const char* path, std::string& buffer) {
-        auto f = OpenFile(path);
-
-        if (!f)
+    bool ReadFileBytes(const fs::path& path, std::string& str) {
+        std::vector<byte_t> buffer;
+        if (!ReadFileBytes(path, buffer))
             return false;
 
-        fseek(f, 0, SEEK_END);
-        auto buffer_size = ftell(f);
-        fseek(f, 0, SEEK_SET);
+        str.reserve(buffer.size());
 
-        buffer.resize(buffer_size);
+        str.insert(str.begin(), buffer.begin(), buffer.end());
 
-        //char* buffer = new char[buffer_size];
-        fread(buffer.data(), 1, buffer_size, f);
-        fclose(f);
         return true;
     }
+
 }

@@ -14,7 +14,7 @@
 // object net sync manager
 class ZDOMan {
 	struct SaveData {
-		UUID m_myid;
+		uuid_t m_myid;
 		uint32_t m_nextUid = 1U;
 		std::vector<ZDO*> m_zdos;
 		robin_hood::unordered_map<ZDOID, int64_t, HashUtils::Hasher> m_deadZDOs;
@@ -89,10 +89,10 @@ class ZDOMan {
 	//robin_hood::unordered_map<Vector2i, List<ZDO>> m_objectsByOutsideSector;
 	//List<ZDOMan.ZDOPeer> m_peers = new List<ZDOMan.ZDOPeer>();
 	const int m_maxDeadZDOs = 100000;
-	robin_hood::unordered_map<ZDOID, UUID, HashUtils::Hasher> m_deadZDOs;
+	robin_hood::unordered_map<ZDOID, uuid_t, HashUtils::Hasher> m_deadZDOs;
 	std::vector<ZDOID> m_destroySendList;
 	robin_hood::unordered_set<ZDOID, HashUtils::Hasher> m_clientChangeQueue;
-	UUID m_myid;
+	uuid_t m_myid;
 	uint32_t m_nextUid = 1U;
 	int32_t m_width;
 	int32_t m_halfWidth;
@@ -115,7 +115,7 @@ class ZDOMan {
 public:
 	//Action<ZDO> m_onZDODestroyed;
 
-	ZDOMan(UUID uid);
+	ZDOMan(uuid_t uid);
 
 	int64_t GetMyID();
 
@@ -125,8 +125,8 @@ public:
 private:
 	void RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg);
 
-	void RPC_DestroyZDO(UUID sender, ZPackage pkg);
-	void RPC_RequestZDO(UUID sender, ZDOID id);
+	void RPC_DestroyZDO(uuid_t sender, ZPackage pkg);
+	void RPC_RequestZDO(uuid_t sender, ZDOID id);
 
 	ZDOPeer* GetZDOPeer(ZRpc* rpc);
 };

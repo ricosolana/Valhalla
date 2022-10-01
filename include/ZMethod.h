@@ -44,8 +44,8 @@ public:
         // invoke lua functions
         // so need to 
         // call lua is easy with sol
-        auto lua = sol::state();
-        lua.open_libraries();
+        //auto lua = sol::state();
+        //lua.open_libraries();
         //lua.new_usertype<ZRpc>("ZRpc",
             //"Invoke", &ZRpc::Invoke); // dummy
         //lua.script("function f() print(\"lua handshake invoked!\") end");

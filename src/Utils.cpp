@@ -81,8 +81,8 @@ namespace Utils {
     }
 
     // https://zlib.net/zpipe.c
-    std::vector<byte> Compress(const byte* uncompressedBytes, int count, int level) {
-        std::vector<byte> ret(count);
+    std::vector<byte_t> Compress(const byte_t* uncompressedBytes, int count, int level) {
+        std::vector<byte_t> ret(count);
 
         z_stream zs;
         zs.zalloc = Z_NULL;
@@ -105,8 +105,8 @@ namespace Utils {
         return ret;
     }
 
-    std::vector<byte> Decompress(const byte* compressedBytes, int count) {
-        std::vector<byte> ret;
+    std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count) {
+        std::vector<byte_t> ret;
 
         if (count == 0)
             return ret;
@@ -115,7 +115,7 @@ namespace Utils {
         unsigned half_length = count / 2;
 
         unsigned uncompLength = full_length;
-        std::unique_ptr<byte> uncomp = std::unique_ptr<byte>(new byte[uncompLength]);
+        std::unique_ptr<byte_t> uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength]);
 
         z_stream stream;
         stream.next_in = (Bytef*)compressedBytes;
@@ -134,7 +134,7 @@ namespace Utils {
             if (stream.total_out >= uncompLength) {
                 // Increase size of output buffer  
                 auto old = std::move(uncomp);
-                uncomp = std::unique_ptr<byte>(new byte[uncompLength + half_length]);
+                uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength + half_length]);
                 memcpy(uncomp.get(), old.get(), uncompLength);
                 uncompLength += half_length;
             }
@@ -162,7 +162,7 @@ namespace Utils {
     std::mt19937_64 eng(rd()); //Use the 64-bit Mersenne Twister 19937 generator
                                //and seed it with entropy.
 
-    UUID GenerateUID() {
+    uuid_t GenerateUID() {
         //Define the distribution, by default it goes from 0 to MAX(unsigned long long)
         //or what have you.
         std::uniform_int_distribution<int64_t> distr;
@@ -199,7 +199,7 @@ namespace Utils {
     //}
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int32_t GetUTF8Count(const byte *p) {
+    int32_t GetUTF8Count(const byte_t*p) {
         // leading bits:
         //   0: total 1 byte
         //   110: total 2 bytes (trailing 10xxxxxx)
@@ -247,10 +247,10 @@ namespace Utils {
         return count;
     }
 
-    UUID StringToUID(std::string_view sv) {
+    uuid_t StringToUID(std::string_view sv) {
         std::string s(sv);
         std::stringstream ss(s);
-        UUID uid;
+        uuid_t uid;
         ss >> uid;
         return uid;
     }

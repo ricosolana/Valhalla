@@ -10,15 +10,15 @@ BinaryReader::BinaryReader(Stream *stream)
 //    old.m_stream = nullptr;
 //}
 
-void BinaryReader::Read(byte* out, int offset, int count) {
+void BinaryReader::Read(byte_t* out, int offset, int count) {
     m_stream->Read(out, offset, count);
 }
 
-void BinaryReader::Read(byte* out, int count) {
+void BinaryReader::Read(byte_t* out, int count) {
     Read(out, 0, count);
 }
 
-void BinaryReader::Read(std::vector<byte>& out, int count) {
+void BinaryReader::Read(std::vector<byte_t>& out, int count) {
     m_stream->Read(out, count);
 }
 
@@ -52,7 +52,7 @@ int BinaryReader::Read7BitEncodedInt() {
     int num2 = 0;
     while (num2 != 35)
     {
-        auto b = Read<byte>();
+        auto b = Read<byte_t>();
         out |= (int)(b & 127) << num2;
         num2 += 7;
         if ((b & 128) == 0)

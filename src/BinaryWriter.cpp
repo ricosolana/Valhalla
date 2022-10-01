@@ -10,15 +10,15 @@ BinaryWriter::BinaryWriter(Stream* stream)
 //	old.m_stream = nullptr;
 //}
 
-void BinaryWriter::Write(const byte* in, int offset, int count) {
+void BinaryWriter::Write(const byte_t* in, int offset, int count) {
 	m_stream->Write(in, offset, count);
 }
 
-void BinaryWriter::Write(const byte* in, int count) {
+void BinaryWriter::Write(const byte_t* in, int count) {
 	Write(in, 0, count);
 }
 
-void BinaryWriter::Write(const std::vector<byte>& in, int count) {
+void BinaryWriter::Write(const std::vector<byte_t>& in, int count) {
 	m_stream->Write(in, count);
 }
 
@@ -35,7 +35,7 @@ void BinaryWriter::Write(const std::string& in) {
 	m_stream->ReserveExtra(1 + in.length());
 
 	Write7BitEncodedInt(byteCount);
-	Write(reinterpret_cast<const byte*>(in.c_str()), in.length());
+	Write(reinterpret_cast<const byte_t*>(in.c_str()), in.length());
 }
 
 void BinaryWriter::Write7BitEncodedInt(int in) {

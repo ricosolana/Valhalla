@@ -23,7 +23,7 @@ class PlayerProfile {
 		bool m_haveDeathPoint;
 		Vector3 m_homePoint;
 		//byte[] m_mapData;
-		std::vector<byte> m_mapData;
+		std::vector<byte_t> m_mapData;
 	};
 
 	//bool SavePlayerToDisk();
@@ -32,7 +32,7 @@ class PlayerProfile {
 	//WorldPlayerData GetWorldData(UID_t worldUID);
 
 	robin_hood::unordered_map<int64_t, WorldPlayerData> m_worldData;
-	std::vector<byte> m_playerData;
+	std::vector<byte_t> m_playerData;
 
 public:
 	PlayerProfile(std::string_view filename = "");
@@ -68,7 +68,7 @@ public:
 
 	std::string m_filename;
 	std::string m_playerName;
-	UUID m_playerID = 0;
+	uuid_t m_playerID = 0;
 	std::string m_startSeed;
 
 	// figure out usages

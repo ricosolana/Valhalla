@@ -4,11 +4,19 @@
 #include <string>
 
 #include <vector>
+#include <filesystem>
+#include <Utils.h>
+
+namespace fs = std::filesystem;
 
 namespace ResourceManager {
 
-    void SetRoot(const char* r);
+    // Set the data root directory
+    void SetRoot(const fs::path &root);
 
-    bool ReadFileBytes(const char* path, std::vector<unsigned char> &buffer);
-    bool ReadFileBytes(const char* path, std::string& buffer);
+    // Returns the combined root directory with a path
+    fs::path GetPath(const fs::path &path);
+
+    bool ReadFileBytes(const fs::path &path, std::vector<byte_t> &buffer);
+    bool ReadFileBytes(const fs::path& path, std::string &str);
 };

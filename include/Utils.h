@@ -11,8 +11,9 @@
 
 using namespace std::chrono_literals;
 
-using byte = uint8_t;
-using UUID = int64_t;
+using byte_t = uint8_t;
+using uuid_t = int64_t;
+using hash_t = int32_t;
 
 //struct TwoTupleHasher
 //{
@@ -57,15 +58,15 @@ namespace Utils {
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
 
-	UUID GenerateUID();
+	uuid_t GenerateUID();
 
-	int32_t GetStableHashCode(const char* str);
+	hash_t GetStableHashCode(const char* str);
 
 	// Gets the unicode code points in a UTF-8 encoded string
 	// Return -1 on bad encoding
-	int32_t GetUTF8Count(const byte* p);
+	int32_t GetUTF8Count(const byte_t* p);
 
-	UUID StringToUID(std::string_view sv);
+	uuid_t StringToUID(std::string_view sv);
 
 	bool IsAddress(std::string_view s);
 

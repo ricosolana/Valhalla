@@ -22,7 +22,7 @@ class ZDO {
 	robin_hood::unordered_map<int, long> m_longs;
 	robin_hood::unordered_map<int, std::string> m_strings;
 	//robin_hood::unordered_map<int, byte[]> m_byteArrays;
-	robin_hood::unordered_map<int, std::vector<byte>> m_byteArrays;
+	robin_hood::unordered_map<int, std::vector<byte_t>> m_byteArrays;
 	//ZDOMan m_zdoMan;
 	ZDOMan* m_zdoMan = nullptr;
 

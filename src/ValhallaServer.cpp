@@ -1,5 +1,5 @@
 #include "ValhallaServer.h"
-#include "ScriptManager.h"
+#include "ModManager.h"
 #include "ResourceManager.h"
 
 std::unique_ptr<ValhallaServer> VALHALLA_SERVER_INSTANCE(std::make_unique<ValhallaServer>());
@@ -17,7 +17,7 @@ void ValhallaServer::Launch() {
 	assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
 
 	ResourceManager::SetRoot("./data/");
-	//ScriptManager::Init();
+	ModManager::Init();
 	m_znet = std::make_unique<ZNet>(2456);
 	m_znet->Listen();
 
@@ -64,7 +64,7 @@ void ValhallaServer::Launch() {
 void ValhallaServer::Terminate() {
 	//m_znet->Disconnect();
 	m_running = false;
-	ScriptManager::Uninit();
+	ModManager::Uninit();
 }
 
 void ValhallaServer::Update(float delta) {

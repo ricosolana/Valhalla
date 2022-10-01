@@ -17,14 +17,14 @@ public:
 	BinaryReader(BinaryReader&) = default; // copy
 	BinaryReader(BinaryReader&&) = delete; // move
 
-	void Read(byte* out, int offset, int count);
-	void Read(byte* out, int count);
-	void Read(std::vector<byte>& out, int count);
+	void Read(byte_t* out, int offset, int count);
+	void Read(byte_t* out, int count);
+	void Read(std::vector<byte_t>& out, int count);
 
 	template<typename T>
 	T Read() requires std::is_fundamental_v<T> {
 		T out;
-		Read(reinterpret_cast<byte*>(&out), sizeof(T));
+		Read(reinterpret_cast<byte_t*>(&out), sizeof(T));
 		return out;
 	}
 
@@ -48,7 +48,7 @@ public:
 		std::string out;
 		out.resize(byteCount);
 
-		Read(reinterpret_cast<byte*>(out.data()), byteCount);
+		Read(reinterpret_cast<byte_t*>(out.data()), byteCount);
 
 		// Do not worry about string copy when optimizations are disabled
 		return out;

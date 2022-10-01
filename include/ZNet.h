@@ -25,15 +25,20 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 	"ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword", 
 	"ErrorAlreadyConnected", "ErrorBanned", "ErrorFull"};
 
+struct ban_info {
+	std::chrono::steady_clock::time_point issued;
+	std::chrono::steady_clock::time_point expiry;
+	std::string reason;
+};
+
 class ZNet {
-
-	//static constexpr const char* VALHEIM_PORT = "2456";
-
 	asio::io_context m_ctx;
 	std::unique_ptr<IAcceptor> m_acceptor;
 
 	std::vector<std::unique_ptr<ZRpc>> m_joining;
 	std::vector<ZNetPeer::Ptr> m_peers;
+
+	robin_hood::unordered_map<std::string, ban_info> m_banList;
 
 	//ConnectionStatus m_connectionStatus = ConnectionStatus::None;
 
@@ -53,16 +58,16 @@ class ZNet {
 	void RPC_Save(ZRpc* rpc);
 	void RPC_PrintBanned(ZRpc* rpc);
 	
-	void Kick(std::string user);
+	void Kick(const std::string &user);
 	void Kick(ZNetPeer::Ptr peer);
-	void Ban(std::string user);
-	void Ban(ZNetPeer::Ptr peer);
-	void Unban(std::string user);
-	void Unban(ZNetPeer::Ptr peer);
+	void Ban(const std::string &user, std::chrono::minutes dur = 10000h, const std::string &reason = "Banned for misuse");
+	//void Ban(ZNetPeer::Ptr peer, std::chrono::minutes dur = 10000h, std::string reason = "Banned for misuse");
+	void Unban(const std::string &user);
+	//void Unban(ZNetPeer::Ptr peer);
 
 	void SendPlayerList();
 	void SendNetTime();
-	void RemotePrint(ZRpc* rpc, std::string &s);
+	void RemotePrint(ZRpc* rpc, const std::string &s);
 	void SendDisconnect();
 	void SendDisconnect(ZNetPeer::Ptr peer);
 	void Disconnect(ZNetPeer::Ptr peer);
@@ -79,11 +84,11 @@ public:
 	void Update();
 
 	ZNetPeer::Ptr GetPeer(ZRpc* rpc);
-	ZNetPeer::Ptr GetPeer(std::string& name);
-	ZNetPeer::Ptr GetPeer(UUID uuid);
+	ZNetPeer::Ptr GetPeer(const std::string& name);
+	ZNetPeer::Ptr GetPeer(uuid_t uuid);
 	//ZNetPeer::Ptr GetPeer(std::string &ip) ; // get by address
 												// might return multiple peers
 
 	//ZNetPeer* GetJoining(ZRpc* rpc);
-	int64_t GetUID();
+	uuid_t GetUID();
 };
