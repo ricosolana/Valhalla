@@ -8,7 +8,11 @@
 #include "Task.h"
 
 // Register an rpc method for remote invocation
-#define REGISTER_RPC(rpc, name, method) rpc->Register(name, new ZMethod(this, &method));
+//#define REGISTER_RPC(rpc, name, method) rpc->Register(name, new ZMethod(this, &method));
+
+#define RPC_DEBUG
+
+enum class ConnectionStatus;
 
 /**
 * The client and Rpc should be merged somehow
@@ -18,12 +22,12 @@
 class ZRpc {
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
-		
-	// should probably use std::function
-	// as its more flexible
-	robin_hood::unordered_map<int32_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
+	bool m_ignore = false;
+	
+	robin_hood::unordered_map<hash_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
 
 	void SendPackage(ZPackage::Ptr pkg);
+	void Register(const char* name, ZMethodBase<ZRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
@@ -32,23 +36,33 @@ public:
 	~ZRpc();
 
 	/**
-		* @brief Register a method to be remotely invoked
-		* @param name the function identifier
-		* @param method the function
+		* @brief Register a static method for remote invocation
+		* @param name function name to register
+		* @param method ptr to a static function
 	*/
-	// TODO hide away the 'new' operator while being passed
-	// and/or instead use std function or bind?
-	// used like
+	template<class ...Args>
+	auto Register(const char* name, void(*f)(ZRpc*, Args...)) {
+		return Register(name, new ZMethod(f));
+	}
 
-	// Best case usage should be like this:
-	// rpc->Register("Handshake", [this]() { this->RPC_ServerHandshake( }
-
-	void Register(const char* name, ZMethodBase<ZRpc*> *method);
+	//template<class
+	//auto Register(const char* name, )
+	
+	/**
+		* @brief Register an instance method for remote invocation
+		* @param name function name to register
+		* @param object the object containing the member function
+		* @param method ptr to a member function
+	*/
+	template<class C, class ...Args>
+	auto Register(const char* name, C *object, void(C::*f)(ZRpc*, Args...)) {
+		return Register(name, new ZMethod(object, f));
+	}
 
 	/**
-		* @brief Invoke a function remotely
-		* @param name function name
-		* @param ...types function params
+		* @brief Invoke a remote function
+		* @param name function name to invoke
+		* @param ...types function parameters
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
@@ -58,7 +72,7 @@ public:
 		auto pkg(PKG());
 		auto stable = Utils::GetStableHashCode(method);
 		pkg->Write(stable);
-#if TRUE // debug mode
+#ifdef RPC_DEBUG // debug mode
 		pkg->Write(method);
 #endif
 		ZPackage::Serialize(pkg, std::move(params)...); // serialize
@@ -68,11 +82,8 @@ public:
 	// To be called every tick
 	void Update();
 
+	// Get the ping in ms
+	std::chrono::milliseconds GetPing();
 
-
-	/* RPC wrapped methods
-	*/
-	//void RemotePrint(std::string& s);
-	//void SendPlayerList();
-	//void 
+	void SendError(ConnectionStatus status);
 };

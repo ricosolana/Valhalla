@@ -24,7 +24,7 @@ void Stream::Read(byte_t* buffer, int offset, int count) {
 }
 
 void Stream::Read(byte_t* buffer, int count) {
-    if (m_pos + count > m_length) throw std::runtime_error("reading garbage data");
+    if (m_pos + count > m_length) throw std::range_error("Stream::Read(byte_t* buffer, int count) length exceeded");
 
     std::memcpy(buffer, m_bytes.get() + m_pos, count);
     // throw if invalid
@@ -33,12 +33,12 @@ void Stream::Read(byte_t* buffer, int count) {
 
 byte_t Stream::ReadByte() {
     byte_t b;
-    Read(&b, 0, 1);
+    Read(&b, 1);
     return b;
 }
 
 void Stream::Read(std::vector<byte_t>& vec, int count) {
-    if (m_pos + count > m_length) throw std::runtime_error("reading garbage data");
+    if (m_pos + count > m_length) throw std::range_error("Stream::Read(std::vector<byte_t>& vec, int count) length exceeded");
 
     vec.clear();
     vec.insert(vec.begin(), m_bytes.get() + m_pos, m_bytes.get() + m_pos + count);

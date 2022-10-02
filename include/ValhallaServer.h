@@ -4,7 +4,6 @@
 #include "Task.h"
 #include "ZNetPeer.h"
 #include "ZNet.h"
-#include "Settings.h"
 #include "PlayerProfile.h"
 
 class ValhallaServer {
@@ -23,6 +22,9 @@ public:
 	static constexpr const char* VERSION = "0.211.7";
 	std::string m_serverName;
 	std::string m_serverPassword;
+	uuid_t m_serverUuid;
+	int m_maxPeers;
+	robin_hood::unordered_map<std::string, ban_info> m_banList;
 
 	std::unique_ptr<ZNet> m_znet;
 

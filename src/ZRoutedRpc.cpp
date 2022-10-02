@@ -2,12 +2,7 @@
 #include "ZMethod.h"
 #include "ValhallaServer.h"
 
-ZRoutedRpc::ZRoutedRpc(UUID uid)
-	: m_id(uid) {}
-
-void ZRoutedRpc::Register(const char* name, ZMethodBase<UUID>* method) {
-	//throw std::runtime_error("not implemented");
-
+void ZRoutedRpc::Register(const char* name, ZMethodBase<uuid_t>* method) {
 	m_functions.insert({ Utils::GetStableHashCode(name), method });
 }
 
@@ -15,12 +10,12 @@ void ZRoutedRpc::RPC_RoutedRPC(ZRpc *rpc, ZPackage::Ptr pkg) {
 	RoutedRPCData data(pkg);
 
 	// Server is the intended receiver
-	if (data.m_targetPeerID == m_id 
+	if (data.m_targetPeerID == Valhalla()->m_serverUuid
 		|| data.m_targetPeerID == EVERYBODY)
 		HandleRoutedRPC(data);
-
+	
 	// Server acts as a middleman
-	if (data.m_targetPeerID != m_id)
+	if (data.m_targetPeerID != Valhalla()->m_serverUuid)
 		RouteRPC(data);	
 }
 

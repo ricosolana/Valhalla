@@ -31,14 +31,17 @@ struct ban_info {
 	std::string reason;
 };
 
+namespace NetManager {
+
+}
+
 class ZNet {
+private:
 	asio::io_context m_ctx;
 	std::unique_ptr<IAcceptor> m_acceptor;
 
 	std::vector<std::unique_ptr<ZRpc>> m_joining;
 	std::vector<ZNetPeer::Ptr> m_peers;
-
-	robin_hood::unordered_map<std::string, ban_info> m_banList;
 
 	//ConnectionStatus m_connectionStatus = ConnectionStatus::None;
 
@@ -49,8 +52,6 @@ class ZNet {
 	void RPC_ServerHandshake(ZRpc* rpc);
 
 	void RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos);
-	//void RPC_PlayerList(ZRpc* rpc, ZPackage::Ptr pkg);
-	//void RPC_RemotePrint(ZRpc* rpc, std::string s);
 	void RPC_CharacterID(ZRpc* rpc, ZDOID characterID);
 	void RPC_Kick(ZRpc* rpc, std::string user);
 	void RPC_Ban(ZRpc* rpc, std::string user);

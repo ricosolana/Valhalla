@@ -16,10 +16,15 @@ void ValhallaServer::Launch() {
 	assert(!m_running && "Tried calling Launch() twice!");
 	assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
 
+	m_serverName = "lorem ipsum";
+	m_serverUuid = Utils::GenerateUID();
+
 	ResourceManager::SetRoot("./data/");
 	ModManager::Init();
 	m_znet = std::make_unique<ZNet>(2456);
 	m_znet->Listen();
+
+
 
 	m_running = true;
 	while (m_running) {

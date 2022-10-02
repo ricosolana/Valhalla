@@ -15,10 +15,10 @@ ZNet::ZNet(uint16_t port)
 void ZNet::Listen() {
 	LOG(INFO) << "Starting server";
 
-	uuid_t uid(1234567891011);
+	//uuid_t uid(1234567891011);
 
-	m_routedRpc = std::make_unique<ZRoutedRpc>(uid);
-	m_zdoMan = std::make_unique<ZDOMan>(uid);
+	m_routedRpc = std::make_unique<ZRoutedRpc>();
+	m_zdoMan = std::make_unique<ZDOMan>();
 	m_world = std::make_unique<World>();
 
 	Valhalla()->RunTaskLaterRepeat([this](Task* self) {
@@ -51,9 +51,13 @@ void ZNet::Update() {
 	while (m_acceptor->HasNewConnection()) {
 		auto&& rpc = std::make_unique<ZRpc>(m_acceptor->Accept());
 
-		REGISTER_RPC(rpc, "PeerInfo", ZNet::RPC_PeerInfo);
-		REGISTER_RPC(rpc, "Disconnect", ZNet::RPC_Disconnect); // client only
-		REGISTER_RPC(rpc, "ServerHandshake", ZNet::RPC_ServerHandshake);
+		rpc->Register("PeerInfo", this, &ZNet::RPC_PeerInfo);
+		rpc->Register("Disconnect", this, &ZNet::RPC_Disconnect);
+		rpc->Register("ServerHandshake", this, &ZNet::RPC_ServerHandshake);
+
+		//rpc->Register("ServerHandshake", [](ZRpc*) {
+		//	LOG(INFO) << "Lambda handshake!";
+		//});
 
 		rpc->m_socket->Start();
 
@@ -89,14 +93,26 @@ void ZNet::Update() {
 
 	// Update peers
 	for (auto&& peer : m_peers) {
-		peer->m_rpc->Update();
+		try {
+			peer->m_rpc->Update();
+		}
+		catch (const std::range_error& e) {
+			LOG(ERROR) << "Peer provided malformed data";
+			peer->m_rpc->m_socket->Close();
+		}
 	}
 
 	// Update joining
 	//	this is done after peers rpc update because in the weird case
 	//	where a joining becomes a peer then is processed twice in an update tick
 	for (auto&& rpc : m_joining) {
-		rpc->Update();
+		try {
+			rpc->Update();
+		}
+		catch (const std::range_error& e) {
+			LOG(ERROR) << "Connecting peer provided malformed data";
+			rpc->m_socket->Close();
+		}
 	}
 }
 
@@ -120,31 +136,40 @@ void ZNet::SendPeerInfo(ZRpc* rpc) {
 	rpc->Invoke("PeerInfo", pkg);
 }
 
+static void my_static(ZRpc*) {}
+
 // The server send peer info once the client is completely validated
 void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	auto &&hostName = rpc->m_socket->GetHostName();
 
 	auto uuid = pkg->Read<uuid_t>();
-	auto ver = pkg->Read<std::string>();
-	LOG(INFO) << "Client " << hostName << " has version " << ver;
-	if (ver != std::string(ValhallaServer::VERSION)) {
-		rpc->Invoke("Error", ConnectionStatus::ErrorVersion);
-		// disconnect client later as a cleanup
-		LOG(INFO) << "Client version is incompatible";
-		return;
+	auto version = pkg->Read<std::string>();
+	LOG(INFO) << "Client " << hostName << " has version " << version;
+	if (version != std::string(ValhallaServer::VERSION)) {
+		return rpc->SendError(ConnectionStatus::ErrorVersion);
 	}
 
 	auto pos = pkg->Read<Vector3>();
 	auto name = pkg->Read<std::string>();
 	auto password = pkg->Read<std::string>();
+	//auto ticket = read array... // normally for steam
 	
 	if (password != Valhalla()->m_serverPassword) {
-		rpc->Invoke("Error", ConnectionStatus::ErrorPassword);
-		// disconnect client later as a cleanup
-		LOG(INFO) << "Client password is incorrect";
-		return;
+		return rpc->SendError(ConnectionStatus::ErrorPassword);
 	}
 
+	// if peer already connected
+	if (GetPeer(uuid)) {
+		return rpc->SendError(ConnectionStatus::ErrorAlreadyConnected);
+	}
+
+	// check if banned
+	//if ()
+
+	// pass the data to the lua OnPeerInfo
+	if (!ModManager::Event::OnPeerInfo(rpc->m_socket, uuid, name, version))
+		return;
+	
 	// Find the rpc and transfer
 	std::unique_ptr<ZRpc> swappedRpc;
 	for (auto&& j : m_joining) {
@@ -158,46 +183,20 @@ void ZNet::RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
 	auto peer(std::make_shared<ZNetPeer>(std::move(swappedRpc), uuid, name));
 	m_peers.push_back(peer);
 
-	// check if player uid is already connected
 	peer->m_pos = pos;
 
-	REGISTER_RPC(rpc, "RefPos", ZNet::RPC_RefPos);
-	//REGISTER_RPC(rpc, "PlayerList", ) // used by client 
-	//REGISTER_RPC(rpc, "RemotePrint") // used by client
-
-	//rpc.Register<Vector3, bool>("RefPos", new Action<ZRpc, Vector3, bool>(this.RPC_RefPos));
-	//rpc.Register<ZPackage>("PlayerList", new Action<ZRpc, ZPackage>(this.RPC_PlayerList));
-	//rpc.Register<string>("RemotePrint", new Action<ZRpc, string>(this.RPC_RemotePrint));
-
-	REGISTER_RPC(rpc, "CharacterID", ZNet::RPC_CharacterID);
-	REGISTER_RPC(rpc, "Kick", ZNet::RPC_Kick);
-	REGISTER_RPC(rpc, "Ban", ZNet::RPC_Ban);
-	REGISTER_RPC(rpc, "Unban", ZNet::RPC_Unban);
-	REGISTER_RPC(rpc, "Save", ZNet::RPC_Save);
-	REGISTER_RPC(rpc, "PrintBanned", ZNet::RPC_PrintBanned);
-
-	//rpc.Register<ZDOID>("CharacterID", new Action<ZRpc, ZDOID>(this.RPC_CharacterID));
-	//rpc.Register<string>("Kick", new Action<ZRpc, string>(this.RPC_Kick));
-	//rpc.Register<string>("Ban", new Action<ZRpc, string>(this.RPC_Ban));
-	//rpc.Register<string>("Unban", new Action<ZRpc, string>(this.RPC_Unban));
-	//rpc.Register("Save", new ZRpc.RpcMethod.Method(this.RPC_Save));
-	//rpc.Register("PrintBanned", new ZRpc.RpcMethod.Method(this.RPC_PrintBanned));
+	rpc->Register("RefPos", this, &ZNet::RPC_RefPos);
+	rpc->Register("CharacterID", this, &ZNet::RPC_CharacterID);
+	rpc->Register("Kick", this, &ZNet::RPC_Kick);
+	rpc->Register("Ban", this, &ZNet::RPC_Ban);
+	rpc->Register("Unban", this, &ZNet::RPC_Unban);
+	rpc->Register("Save", this, &ZNet::RPC_Save);
+	rpc->Register("PrintBanned", this, &ZNet::RPC_PrintBanned);
 
 	SendPeerInfo(rpc);
 
-	m_zdoMan->AddPeer(peer);
+	//m_zdoMan->AddPeer(peer);
 	//m_routedRpc->AddPeer(peer);
-
-	//SendPlayerList();
-
-	// check if player is banned
-
-	//rpc->Register("RefPos", new ZMethod(this, &ZNet::RPC_RefPos));
-	//rpc->Register("PlayerList", new ZMethod(this, &ZNet::RPC_PlayerList));
-	//rpc->Register("RemotePrint", new ZMethod(this, &ZNet::RPC_RemotePrint));
-
-	//rpc->Register("NetTime", new ZMethod(this, &ZNet::RPC_NetTime));
-
 }
 
 void ZNet::RPC_Disconnect(ZRpc* rpc) {
@@ -286,7 +285,7 @@ void ZNet::Ban(const std::string &user, std::chrono::minutes dur, const std::str
 	auto now(std::chrono::steady_clock::now());
 	auto expiry(now + dur);
 
-	m_banList.insert({ user,
+	Valhalla()->m_banList.insert({ user,
 		ban_info { now, expiry, reason} });
 
 	//Ban(GetPeer(user));
@@ -308,7 +307,7 @@ void ZNet::Ban(ZNetPeer::Ptr peer, std::chrono::minutes dur, std::string reason)
 void ZNet::Unban(const std::string &user) {
 	LOG(INFO) << "Unbanning " << user;
 
-	m_banList.erase(user);
+	Valhalla()->m_banList.erase(user);
 }
 
 //void ZNet::Unban(ZNetPeer::Ptr peer) {

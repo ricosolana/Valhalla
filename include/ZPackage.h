@@ -8,6 +8,7 @@
 #include <codecvt>
 #include <concepts>
 #include <type_traits>
+#include <robin_hood.h>
 
 #include "Stream.h"
 #include "ZDOID.h"
@@ -57,6 +58,7 @@ public:
     void Write(const std::string& in);
     void Write(const std::vector<byte_t> &in);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (ZRpc)
+    void Write(const robin_hood::unordered_set<std::string>& in);
     void Write(const ZPackage::Ptr in);
     void Write(const ZDOID &id);
     void Write(const Vector3 &in);

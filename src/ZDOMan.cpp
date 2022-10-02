@@ -3,10 +3,9 @@
 
 int64_t ZDOMan::compareReceiver;
 
-ZDOMan::ZDOMan(UUID uid)
+ZDOMan::ZDOMan()
 {
 	//ZDOMan.m_instance = this;
-	m_myid = uid; // Utils::GenerateUID();
 	//Valhalla()->m_znet->m_routedRpc->Register("DestroyZDO", new ZMethod(this, &ZDOMan::RPC_DestroyZDO));
 	//Valhalla()->m_znet->m_routedRpc->Register("RequestZDO", new ZMethod(this, &ZDOMan::RPC_RequestZDO));
 	//ZRoutedRpc.instance.Register<ZPackage>("DestroyZDO", new Action<long, ZPackage>(this.RPC_DestroyZDO));
@@ -98,7 +97,7 @@ void ZDOMan::RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg) {
 	*/
 }
 
-void ZDOMan::RPC_DestroyZDO(UUID sender, ZPackage pkg) {
+void ZDOMan::RPC_DestroyZDO(uuid_t sender, ZPackage pkg) {
 	int num = pkg.Read<int32_t>();
 	for (int i = 0; i < num; i++)
 	{
@@ -107,7 +106,7 @@ void ZDOMan::RPC_DestroyZDO(UUID sender, ZPackage pkg) {
 	}
 }
 
-void ZDOMan::RPC_RequestZDO(UUID sender, ZDOID id)
+void ZDOMan::RPC_RequestZDO(uuid_t sender, ZDOID id)
 {
 	//m_peer->ForceSendZDO(id);	
 }

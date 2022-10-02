@@ -1,11 +1,11 @@
 #include "ZPackage.h"
 #include <zlib.h>
 
-ZPackage::ZPackage(byte* data, int32_t count) {
+ZPackage::ZPackage(byte_t* data, int32_t count) {
     Load(data, count);
 }
 
-ZPackage::ZPackage(std::vector<byte>& vec)
+ZPackage::ZPackage(std::vector<byte_t>& vec)
     : ZPackage(vec.data(), vec.size()) {}
 
 ZPackage::ZPackage(int32_t reserve)
@@ -13,7 +13,7 @@ ZPackage::ZPackage(int32_t reserve)
 
 
 
-void ZPackage::Write(const byte* in, int32_t count) {
+void ZPackage::Write(const byte_t* in, int32_t count) {
     Write(count);
 	m_stream.Write(in, count);
 }
@@ -35,14 +35,21 @@ void ZPackage::Write(const std::string& in) {
 
     // string is not correctly encoded in the case of non-utf8 formats
 
-    m_stream.Write(reinterpret_cast<const byte*>(in.c_str()), byteCount);
+    m_stream.Write(reinterpret_cast<const byte_t*>(in.c_str()), byteCount);
 }
 
-void ZPackage::Write(const std::vector<byte>& in) {
+void ZPackage::Write(const std::vector<byte_t>& in) {
     Write(in.data(), static_cast<int32_t>(in.size()));
 }
 
 void ZPackage::Write(const std::vector<std::string>& in) {
+    Write(static_cast<int32_t>(in.size()));
+    for (auto&& s : in) {
+        Write(s);
+    }
+}
+
+void ZPackage::Write(const robin_hood::unordered_set<std::string>& in) {
     Write(static_cast<int32_t>(in.size()));
     for (auto&& s : in) {
         Write(s);
@@ -79,7 +86,7 @@ void ZPackage::Write(const Quaternion& in)
 
 
 
-void ZPackage::Load(byte* data, int32_t count) {
+void ZPackage::Load(byte_t* data, int32_t count) {
     m_stream.Clear();
     m_stream.Write(data, 0, count);
 }
@@ -97,7 +104,7 @@ void ZPackage::WriteCompressed(ZPackage::Ptr in) {
     throw std::runtime_error("not implemented");
 }
 
-void ZPackage::Read(std::vector<byte>& out) {
+void ZPackage::Read(std::vector<byte_t>& out) {
     m_stream.Read(out, Read<int32_t>());
 }
 
@@ -126,7 +133,7 @@ int ZPackage::Read7BitEncodedInt() {
     int num2 = 0;
     while (num2 != 35)
     {
-        auto b = Read<byte>();
+        auto b = Read<byte_t>();
         out |= (int)(b & 127) << num2;
         num2 += 7;
         if ((b & 128) == 0)

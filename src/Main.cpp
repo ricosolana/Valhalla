@@ -4,6 +4,7 @@
 #include <chrono>
 #include <assert.h>
 #include <bitset>
+#include <signal.h>
 
 //#include "SteamManager.h"
 #include "ValhallaServer.h"
@@ -64,10 +65,19 @@ void initLogger() {
 //    std::string hostname;
 //};
 
+static void on_interrupt(int num) {
+    LOG(ERROR) << "Interrupt caught";
+
+}
+
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
 
+    // try to parse settings one by one
+
     initLogger();
+
+    signal(SIGINT, on_interrupt);
 
     //robin_hood::unordered_map<UUID, std::weak_ptr<socket_t>> map;
     //

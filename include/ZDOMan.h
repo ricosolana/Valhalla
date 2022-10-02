@@ -115,7 +115,7 @@ class ZDOMan {
 public:
 	//Action<ZDO> m_onZDODestroyed;
 
-	ZDOMan(uuid_t uid);
+	ZDOMan();
 
 	int64_t GetMyID();
 

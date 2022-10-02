@@ -132,7 +132,7 @@ add_executable(${PROJECT_NAME}
     "src/ZRpc.cpp" 
     "src/ZSocket2.cpp"
     "src/ZAcceptor.cpp"
-)
+ "src/ZoneSystem.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

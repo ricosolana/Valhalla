@@ -1,8 +1,11 @@
 #include "ZRpc.h"
 #include "ValhallaServer.h"
+#include "ZNet.h"
+
+using namespace std::chrono;
 
 ZRpc::ZRpc(ISocket::Ptr socket)
-	: m_socket(socket), m_lastPing(std::chrono::steady_clock::now() + 3s) {
+	: m_socket(socket), m_lastPing(steady_clock::now() + 3s) {
 
 	// pinger
 	this->m_pingTask = Valhalla()->RunTaskLaterRepeat([this](Task* task) {
@@ -30,7 +33,10 @@ void ZRpc::Register(const char* name, ZMethodBase<ZRpc*>* method) {
 }
 
 void ZRpc::Update() {
-	auto now(std::chrono::steady_clock::now());
+	if (m_ignore)
+		return;
+
+	auto now(steady_clock::now());
 
 	// Process up to 20 packets at a time
 	for (int _c = 0; _c < 20 && m_socket->HasNewData(); _c++) {
@@ -45,19 +51,25 @@ void ZRpc::Update() {
 				SendPackage(pkg);
 			}
 			else {
+				//m_ping = duration_cast<milliseconds>(now - m_lastPing);
 				m_lastPing = now;
 			}
 		}
 		else {
-#if TRUE
+#ifdef RPC_DEBUG
 			std::string name = pkg->Read<std::string>();
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(this, pkg);
+				try {
+					find->second->Invoke(this, pkg);
+				}
+				catch (std::exception& e) {
+					// close socket because it might have
+				}
 			}
 			else {
-#if TRUE
+#ifdef RPC_DEBUG
 				LOG(INFO) << "Client tried invoking unknown RPC handler: " << name;
 #else
 				LOG(INFO) << "Client tried invoking unknown RPC handler";
@@ -72,6 +84,20 @@ void ZRpc::Update() {
 		m_socket->Close();
 	}
 
+}
+
+std::chrono::milliseconds ZRpc::GetPing() {
+	//return m_ping.count();
+	auto now(steady_clock::now());
+	return duration_cast<milliseconds>(now - m_lastPing);
+}
+
+void ZRpc::SendError(ConnectionStatus status) {
+	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
+	Invoke("Error", status);
+	// then disconnect later
+	m_ignore = true;
+	Valhalla()->RunTaskLater([this](Task*) { m_socket->Close(); }, GetPing() * 2);
 }
 
 void ZRpc::SendPackage(ZPackage::Ptr pkg) {

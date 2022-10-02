@@ -9,58 +9,46 @@ class Mod {
 public:
 	// required attributes
 	const std::string m_name;
-	const std::string m_version; // std::array<int, 3> version;
-	const int m_apiVersion;
-	const std::string m_description;
-
-	// optional attributes
-	const std::vector<std::string> m_authors;
-	const std::string m_website;
+	const int m_priority;
 
 	// lua
 	sol::state m_state;
-	//std::unique_ptr<
-	//sol::state_view view;
 	
 	const std::function<void()> m_onEnable;
 	const std::function<void()> m_onDisable;
 	const std::function<void(float)> m_onUpdate;
-	const std::function<void(ISocket::Ptr, uuid_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
-	//const std::function<void()>
+	const std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
 
 	Mod(const std::string &name,
-		const std::string &version,
-		const int api_version,
-		const std::string &description,
-		const std::vector<std::string> &authors,
-		const std::string &website,
+		int priority,
 		sol::state state,
 		const std::function<void()> &onEnable,
 		const std::function<void()> &onDisable,
 		const std::function<void(float)> &onUpdate,
-		const std::function<void(ISocket::Ptr, uuid_t, std::string, std::string)> &onPeerInfo)
-		:	m_name(name), m_version(version), m_apiVersion(api_version), m_description(description),
-			m_authors(m_authors), m_state(std::move(state)), 
+		const std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)> &onPeerInfo)
+		:	m_name(name), m_priority(priority), m_state(std::move(state)), 
 			m_onEnable(onEnable), m_onDisable(onDisable), m_onUpdate(onUpdate), m_onPeerInfo(onPeerInfo) {}
 
 };
 
-//std::vector<Script> scripts;
-//sol::state lua;
-//std::vector<Mod> mods;
 robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
-//robin_hood::unordered_map<lua_State*, Mod*> modsByState; // 
+std::vector<Mod*> modsByPriority; // priority sorted
+
+static bool prioritySort(Mod* a, Mod* b) {
+	return a->m_priority < b->m_priority;
+}
 
 namespace ModManager {
 	namespace Api {
-		sol::state LoadModFrom(const std::string& name) {
-			//return LoadModFrom(name)
+
+		// Load a Lua script starting in relative root 'data/mods/'
+		sol::state LoadLuaFrom(const fs::path& luaPath) {
 			std::string modCode;
-			if (!ResourceManager::ReadFileBytes(fs::path("scripts") / fs::path(name) / "mod.lua", modCode)) {
-				throw std::runtime_error(std::string("Failed to open mod file ") + name);
+			if (!ResourceManager::ReadFileBytes(fs::path("mods") / luaPath, modCode)) {
+				throw std::runtime_error(std::string("Failed to open Lua file ") + luaPath.string());
 			}
 
-			auto state = (sol::state());
+			auto state = sol::state();
 
 			state.open_libraries();
 			state.script(modCode);
@@ -68,25 +56,34 @@ namespace ModManager {
 			return state;
 		}
 
-		void RegisterMod(sol::state state) {//, robin_hood::unordered_set<std::string> circular) {
+		//sol::state LoadModFrom(const std::string& name) {
+		//	//return LoadModFrom(name)
+		//	std::string modCode;
+		//	if (!ResourceManager::ReadFileBytes(fs::path("scripts") / fs::path(name) / "mod.lua", modCode)) {
+		//		throw std::runtime_error(std::string("Failed to open mod file ") + name);
+		//	}
+		//
+		//	auto state = (sol::state());
+		//
+		//	state.open_libraries();
+		//	state.script(modCode);
+		//
+		//	return state;
+		//}
+
+		void LoadModInfoFrom(const fs::path& dirname, std::string& outName, std::string& outEntry, int &outPriority) {
+			auto&& state = LoadLuaFrom(dirname / "modInfo.lua");
+
 			auto modInfo = state["modInfo"];
 
-			// required attributes
+			// required
 			sol::optional<std::string> name = modInfo["name"]; // str
-			sol::optional<std::string> version = modInfo["version"]; // str
 			sol::optional<int> api_version = modInfo["api_version"];
-			sol::optional<std::string> description = modInfo["description"]; // str
+			sol::optional<std::string> entry = modInfo["entry"];
+			sol::optional<int> priority = modInfo["priority"];
+			sol::optional<std::string> version = modInfo["version"]; // str
 
-			// optional attributes
-			auto authors = modInfo["authors"].get_or(std::vector<std::string>());
-			auto website = modInfo["website"].get_or(std::string());
-
-			auto onEnable = modInfo["onEnable"].get_or(std::function<void()>());
-			auto onDisable = modInfo["onDisable"].get_or(std::function<void()>());
-			auto onUpdate = modInfo["onUpdate"].get_or(std::function<void(float)>());
-			auto onPeerInfo = modInfo["onPeerInfo"].get_or(std::function<void(ISocket::Ptr, uuid_t, std::string, std::string)>());
-
-			if (!(name && version && api_version && description)) {
+			if (!(name && api_version && entry && priority && version)) {
 				throw std::runtime_error("modInfo missing required specifiers");
 			}
 
@@ -94,13 +91,28 @@ namespace ModManager {
 				throw std::runtime_error("tried registering mod with same name as an existing mod");
 			}
 
+			outName = name.value();
+			outEntry = entry.value();
+			outPriority = priority.value();
 
+			//LOG(INFO) << "Loading mod '" << name.value() << "' " << version.value();
+		}
+
+
+
+		std::unique_ptr<Mod> LoadModFrom(const fs::path& dirname, const std::string& name, int priority) {//, robin_hood::unordered_set<std::string> circular) {
+			auto&& state = LoadLuaFrom(dirname);
+
+			auto onEnable = state["onEnable"].get_or(std::function<void()>());
+			auto onDisable = state["onDisable"].get_or(std::function<void()>());
+			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
+			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)>());
 
 			// https://stackoverflow.com/a/61071485
 			// Override Lua print
 			auto L(state.lua_state());
 			lua_getglobal(L, "_G");
-				lua_pushcclosure(L, [](lua_State* L) -> int
+			lua_pushcclosure(L, [](lua_State* L) -> int
 				{
 					int n = lua_gettop(L);  /* number of arguments */
 					int i;
@@ -122,20 +134,22 @@ namespace ModManager {
 						lua_pop(L, 1);  /* pop result */
 					}
 
-					auto view = sol::state_view(L);
-
-					auto find = mods.find(view["modInfo"]["name"]);
-					if (find == mods.end()) {
-						LOG(ERROR) << "A loaded mod has deleted its modInfo";
-						return 0;
-					}
-
-					auto&& mod = find->second;
-
-					LOG(INFO) << "[" << mod->m_name << "] " << output;
+//					auto view = sol::state_view(L);
+					
+					//
+					//auto find = mods.find(view["modInfo"]["name"]);
+					//if (find == mods.end()) {
+					//	LOG(ERROR) << "A loaded mod has deleted its modInfo";
+					//	return 0;
+					//}
+					//
+					//auto&& mod = find->second;
+					//
+					//LOG(INFO) << "[" << mod->m_name << "] " << output;
+					LOG(INFO) << "[LUA] " << output;
 					return 0;
 				}, 0);
-				lua_setfield(L, -2, "print");
+			lua_setfield(L, -2, "print");
 			lua_pop(L, 1); //pop _G
 
 			//state.new_usertype<Task>("Task",
@@ -163,56 +177,11 @@ namespace ModManager {
 
 			//apiTable["RegisterMod"] = Api::RegisterMod;
 			apiTable["Version"] = ValhallaServer::VERSION;
-			
-			//Valhalla()->RunTask([](Task* self) {});
-
-			//apiTable["RunTask"] = [](sol::function f) {Valhalla()->RunTask([&f](Task* self) {f(self);});};
-
-
-
-			//apiTable["Disconnect"] = Api::Disconnect;
-			//apiTable["SendPeerInfo"] = Api::SendPeerInfo;
-
-			// dependency management
-			/*
-			sol::optional<std::vector<std::string>> depend = modInfo["depend"];
-
-			if (depend) {
-				for (auto&& d : depend.value()) {
-					if (!mods.contains(d)) {
-						if (!circular.contains(d)) {
-							// circular dependencies i will not care about
-							// circular can be determined by going around the daisy chain while holding a certain
-							// reference, and if that same one is found, then thats circular dependency, then throw or 
-							// something, but this is lua so it doesnt matter too much
-							try {
-								RegisterMod(LoadModFrom(d), circular);
-								//LOG(INFO) << "Loaded " << d << " as a dependency of " << name.value();
-							}
-							catch (std::exception& e) {
-								LOG(ERROR) << "failed to load dependency: " << e.what();
-								//mods.erase(name.value());
-								throw std::runtime_error(e.what());
-							}
-						}
-						else {
-							throw std::runtime_error("A mod references itself through")
-						}
-					}
-				}
-			}*/
-
 
 			auto ptr(new Mod(
 				// required
-				name.value(),
-				version.value(),
-				api_version.value(),
-				description.value(),
-
-				// optional
-				authors,
-				website,
+				name,
+				priority,
 
 				// lua
 				std::move(state),
@@ -224,30 +193,30 @@ namespace ModManager {
 				onPeerInfo
 			));
 
-			mods.insert({ name.value(), std::unique_ptr<Mod>(ptr) });
-			//modsByState.insert({ name.value(), ptr});
-
-			if (onEnable)
-				onEnable();
-
-			LOG(INFO) << "Loaded mod '" << name.value() << "' " << version.value();
+			return std::unique_ptr<Mod>(ptr);
 		}
-
-		//void Disconnect() {
-		//	LOG(INFO) << "Lua disconnect invoked";
-		//	//Valhalla()->m_znet->Disconnect();
-		//}
-
 	}
+
+
 
 	void Init() {
 		for (const auto& dir 
-			: fs::directory_iterator(ResourceManager::GetPath("scripts"))) {
+			: fs::directory_iterator(ResourceManager::GetPath("mods"))) {
 			
 			try {
 				if (dir.exists() && dir.is_directory()) {
-					Api::RegisterMod(
-						Api::LoadModFrom(dir.path().filename().string()));
+					auto&& dirname = dir.path().filename();
+
+					std::string name, entry;
+					int priority;
+					Api::LoadModInfoFrom(dirname, name, entry, priority);
+
+					auto &&mod = Api::LoadModFrom(dirname / (entry + ".lua"), name, priority);
+
+					modsByPriority.push_back(mod.get());
+					mods.insert({ name, std::move(mod) });
+
+					LOG(INFO) << "Loaded mod '" << name << "'";
 				}
 			}
 			catch (std::exception& e) {
@@ -256,15 +225,15 @@ namespace ModManager {
 		}
 
 		LOG(INFO) << "Loaded " << mods.size() << " mods";
+
+		std::sort(modsByPriority.begin(), modsByPriority.end(), prioritySort);
+
+		ModManager::Event::OnEnable();
 	}
 
 	void Uninit() {
-		for (auto&& mod : mods) {
-			LOG(INFO) << "Disabling " << mod.first;
-			if (mod.second->m_onDisable)
-				mod.second->m_onDisable();
-		}
-		//modsByState.clear();
+		Event::OnDisable();
+		modsByPriority.clear();
 		mods.clear();
 	}
 
@@ -274,14 +243,31 @@ namespace ModManager {
 	//}
 
 	namespace Event {
+
+		void OnEnable() {
+			for (auto&& mod : modsByPriority) {
+				if (mod->m_onEnable) mod->m_onEnable();
+			}
+		}
+
+		void OnDisable() {
+			for (auto&& mod : modsByPriority) {
+				if (mod->m_onDisable) mod->m_onDisable();
+			}
+		}
+
 		/// Event forward calls
-		void OnPeerInfo(ISocket::Ptr socket, uuid_t uuid, const std::string& name, const std::string& version) {
+		bool OnPeerInfo(ISocket::Ptr socket, uuid_t uuid, 
+			const std::string& name, const std::string& version) {
+			//bool allow = true;
+			int allowWeight = 1;
 			for (auto&& mod : mods) {
 				if (mod.second->m_onPeerInfo) // check is mandatory to avoid std::bad_function_call
 										// if function is empty
 		
 					mod.second->m_onPeerInfo(socket, uuid, name, version);
 			}
+			return allowWeight;
 		}
 
 		void OnNewConnection() {
