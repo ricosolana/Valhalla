@@ -1,6 +1,6 @@
-#include "ZRpc.h"
+#include "NetRpc.h"
 #include "ValhallaServer.h"
-#include "ZNet.h"
+#include "NetManager.h"
 
 using namespace std::chrono;
 

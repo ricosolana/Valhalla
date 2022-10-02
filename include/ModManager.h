@@ -1,12 +1,11 @@
 #pragma once
 
 #include <sol/sol.hpp>
-#include "ZSocket.h"
+#include "NetSocket.h"
 
 namespace ModManager {
 	void Init();
 	void Uninit();
-	//lua_State* GetLuaState();
 
 	namespace Event {
 		// Do not call externally

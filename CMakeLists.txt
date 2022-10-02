@@ -125,12 +125,12 @@ add_executable(${PROJECT_NAME}
     "src/ZDOID.cpp"
     "src/ZDOMan.cpp"
     "src/ZDOPeer.cpp"
-    "src/ZNet.cpp"
-    "src/ZNetPeer.cpp" 
-    "src/ZPackage.cpp"    
-    "src/ZRoutedRpc.cpp"
-    "src/ZRpc.cpp" 
-    "src/ZSocket2.cpp"
+    "src/NetManager.cpp"
+    "src/NetPeer.cpp" 
+    "src/NetPackage.cpp"    
+    "src/NetRpcManager.cpp"
+    "src/NetRpc.cpp" 
+    "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
  "src/ZoneSystem.cpp")
 

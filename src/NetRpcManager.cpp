@@ -1,5 +1,5 @@
-#include "ZRoutedRpc.h"
-#include "ZMethod.h"
+#include "NetRpcManager.h"
+#include "Method.h"
 #include "ValhallaServer.h"
 
 void ZRoutedRpc::Register(const char* name, ZMethodBase<uuid_t>* method) {
@@ -24,11 +24,11 @@ void ZRoutedRpc::RouteRPC(RoutedRPCData data) {
 	data.Serialize(pkg);
 
 	if (data.m_targetPeerID == EVERYBODY) {
-		for (auto&& peer : m_peers) {
+		for (auto&& peer : NetManager::GetPeers()) {
 			peer->m_rpc->Invoke("RoutedRPC", pkg);
 		}
 	} else {
-		auto peer = Valhalla()->m_znet->GetPeer(data.m_targetPeerID);
+		auto peer = NetManager::GetPeer(data.m_targetPeerID);
 		if (peer) {
 			peer->m_rpc->Invoke("RoutedRPC", pkg);
 		}

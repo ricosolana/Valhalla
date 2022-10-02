@@ -2,6 +2,8 @@
 #include "ModManager.h"
 #include "ResourceManager.h"
 
+using namespace std::chrono;
+
 std::unique_ptr<ValhallaServer> VALHALLA_SERVER_INSTANCE(std::make_unique<ValhallaServer>());
 ValhallaServer* Valhalla() {
 	//if (!VALHALLA_SERVER_INSTANCE)
@@ -21,22 +23,23 @@ void ValhallaServer::Launch() {
 
 	ResourceManager::SetRoot("./data/");
 	ModManager::Init();
-	m_znet = std::make_unique<ZNet>(2456);
-	m_znet->Listen();
+	//m_znet = std::make_unique<ZNet>(2456);
+	//m_znet->Listen();
+	NetManager::Listen(2456);
 
 
 
 	m_running = true;
 	while (m_running) {
-		auto now = std::chrono::steady_clock::now();
+		auto now = steady_clock::now();
 		static auto last_tick = now; // Initialized to this once
-		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last_tick).count();
+		auto elapsed = std::chrono::duration_cast<microseconds>(now - last_tick).count();
 		last_tick = now;
 
 		// mutex is carefully scoped in this micro-scope
 		{
 			std::scoped_lock lock(m_taskMutex);
-			const auto now = std::chrono::steady_clock::now();
+			const auto now = steady_clock::now();
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
 				auto ptr = itr->get();
 				if (ptr->at < now) {
@@ -59,25 +62,27 @@ void ValhallaServer::Launch() {
 		}
 
 		// UPDATE
-		Update(elapsed / 1000000.f);
+		Update(elapsed / (double)duration_cast<microseconds>(1s).count());
 
-		// This is temporary to not spin lock
+		// Spin lock prevention
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
 
 void ValhallaServer::Terminate() {
-	//m_znet->Disconnect();
+	LOG(INFO) << "Terminating server";
+
 	m_running = false;
 	ModManager::Uninit();
+	NetManager::Close();
 }
 
 void ValhallaServer::Update(float delta) {
 	// This is important to processing RPC remote invocations
 
-	m_znet->Update();
+	NetManager::Update(delta);
 
-	//ScriptManager::Event::OnUpdate(delta);
+	ModManager::Event::OnUpdate(delta);
 }
 
 

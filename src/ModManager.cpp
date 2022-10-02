@@ -1,6 +1,6 @@
 #include "ModManager.h"
 #include <sol/sol.hpp>
-#include "ZNet.h"
+#include "NetManager.h"
 #include "ValhallaServer.h"
 #include "ResourceManager.h"
 #include <easylogging++.h>
@@ -172,6 +172,8 @@ namespace ModManager {
 			//	"", ZRpc::Invoke,
 			//	"", ZRpc::Register,
 			//	"", ZRpc::m_socket)
+
+			
 
 			auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 

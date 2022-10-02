@@ -1,8 +1,8 @@
 #pragma once
 
 #include <robin_hood.h>
-#include "ZMethod.h"
-#include "ZSocket.h"
+#include "Method.h"
+#include "NetSocket.h"
 //#include "ValhallaServer.h"
 
 #include "Task.h"

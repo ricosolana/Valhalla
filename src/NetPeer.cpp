@@ -1,5 +1,5 @@
-#include "ZNetPeer.h"
-#include "ZNet.h"
+#include "NetPeer.h"
+#include "NetManager.h"
 #include <memory>
 
 //ZNetPeer::ZNetPeer(ISocket::Ptr sock) :
@@ -8,6 +8,8 @@
 //{}
 
 void ZNetPeer::Kick() {
+	LOG(INFO) << "Kicking " << m_name;
+
 	SendDisconnect();
 	Disconnect();
 }

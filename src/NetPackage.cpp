@@ -1,4 +1,4 @@
-#include "ZPackage.h"
+#include "NetPackage.h"
 #include <zlib.h>
 
 ZPackage::ZPackage(byte_t* data, int32_t count) {

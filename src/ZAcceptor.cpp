@@ -1,14 +1,18 @@
-#include "ZAcceptor.h"
+#include "NetAcceptor.h"
 #include "ValhallaServer.h"
 
 AcceptorZSocket2::AcceptorZSocket2(asio::io_context& ctx, asio::ip::port_type port)
-	: m_ctx(ctx), m_acceptor(ctx, tcp::endpoint(tcp::v4(), port)) {}
+	: m_ctx(ctx), m_acceptor(ctx, tcp::endpoint(tcp::v4(), port)) {
+	m_accepting = false;
+}
 
 AcceptorZSocket2::~AcceptorZSocket2() {
 	Close();
 }
 
 void AcceptorZSocket2::Start() {
+	assert(!m_accepting);
+
 	LOG(INFO) << "Starting server on port " << m_acceptor.local_endpoint().port();
 
 	DoAccept();
@@ -18,6 +22,8 @@ void AcceptorZSocket2::Start() {
 		m_ctx.run();
 	});
 
+	m_accepting = true;
+
 #if defined(_WIN32)// && !defined(_NDEBUG)
 	void* pThr = m_ctxThread.native_handle();
 	SetThreadDescription(pThr, L"IO Thread");
@@ -25,10 +31,16 @@ void AcceptorZSocket2::Start() {
 }
 
 void AcceptorZSocket2::Close() {
-	if (m_accepting) {
-		m_accepting = false;
-		m_acceptor.close();
-	}
+	assert(m_accepting && "Tried closing ZAccepter while inactive");
+
+	m_accepting = false;
+	m_acceptor.close();
+
+	assert(std::this_thread::get_id() !=
+		m_ctxThread.get_id() && "Tried closing ZAccepter from same thread (gridlock)");
+
+	if (m_ctxThread.joinable())
+		m_ctxThread.join();
 }
 
 std::shared_ptr<ISocket> AcceptorZSocket2::Accept() {
@@ -49,7 +61,13 @@ void AcceptorZSocket2::DoAccept() {
 				m_awaiting.push_back(std::make_shared<ZSocket2>(std::move(socket)));
 			}
 			else {
-				LOG(ERROR) << "Failed to accept: " << ec.message();
+				if (ec.value() == asio::error::operation_aborted) {
+					LOG(INFO) << "ZAccepter aborted";
+					return;
+				}
+				else {
+					LOG(ERROR) << "Failed to accept: " << ec.message() << " : " << ec.value();
+				}
 			}
 
 			DoAccept();

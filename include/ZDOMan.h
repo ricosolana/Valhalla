@@ -6,7 +6,7 @@
 #include "ZDO.h"
 #include "Vector2.h"
 #include "HashUtils.h"
-#include "ZNetPeer.h"
+#include "NetPeer.h"
 
 // might be better named
 // zeta object transceiver

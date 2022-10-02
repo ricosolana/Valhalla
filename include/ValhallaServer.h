@@ -2,12 +2,12 @@
 
 #include <thread>
 #include "Task.h"
-#include "ZNetPeer.h"
-#include "ZNet.h"
+#include "NetPeer.h"
+#include "NetManager.h"
 #include "PlayerProfile.h"
 
 class ValhallaServer {
-	bool m_running = false;
+	std::atomic_bool m_running = false;
 
 	// perfect structure for this job
 	// https://stackoverflow.com/questions/2209224/vector-vs-list-in-stl
@@ -24,9 +24,7 @@ public:
 	std::string m_serverPassword;
 	uuid_t m_serverUuid;
 	int m_maxPeers;
-	robin_hood::unordered_map<std::string, ban_info> m_banList;
-
-	std::unique_ptr<ZNet> m_znet;
+	robin_hood::unordered_set<std::string> m_banned;
 
 	void Launch();
 	void Terminate();

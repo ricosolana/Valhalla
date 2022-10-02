@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZSocket.h"
-#include "ZRpc.h"
+#include "NetSocket.h"
+#include "NetRpc.h"
 #include "ZDOID.h"
 #include "Utils.h"
 

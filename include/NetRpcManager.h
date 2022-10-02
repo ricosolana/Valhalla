@@ -1,8 +1,8 @@
 #pragma once
 
 #include <robin_hood.h>
-#include "ZNetPeer.h"
-#include "ZMethod.h"
+#include "NetPeer.h"
+#include "Method.h"
 
 class ZRoutedRpc {
 	struct RoutedRPCData

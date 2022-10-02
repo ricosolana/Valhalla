@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Utils.h"
-#include "ZPackage.h"
+//#include "ZPackage.h"
 #include <robin_hood.h>
 #include "Player.h"
+#include "NetPackage.h"
 
 struct PlayerStats {
 	int m_kills;

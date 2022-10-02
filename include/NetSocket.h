@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "ZPackage.h"
+#include "NetPackage.h"
 
 #include "Utils.h"
 #include <memory>
@@ -43,6 +43,7 @@ public:
 class ZSocket2 : public ISocket {
 	tcp::socket m_socket;
 
+	// change these to vectors of data
 	AsyncDeque<ZPackage::Ptr> m_sendQueue;
 	AsyncDeque<ZPackage::Ptr> m_recvQueue;
 

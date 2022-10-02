@@ -3,7 +3,7 @@
 #include <memory>
 #include <thread>
 
-#include "ZSocket.h"
+#include "NetSocket.h"
 
 class IAcceptor {
 public:

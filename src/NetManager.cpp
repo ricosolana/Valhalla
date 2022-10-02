@@ -1,0 +1,383 @@
+#include "NetManager.h"
+#include "ValhallaServer.h"
+#include "ModManager.h"
+#include <openssl/md5.h>
+#include "ValhallaServer.h"
+#include "ModManager.h"
+
+using namespace asio::ip;
+using namespace std::chrono;
+
+namespace NetManager {
+	double m_netTime = 2040;
+	//static auto m_startTime = steady_clock::now();
+
+	asio::io_context m_ctx;
+	std::unique_ptr<IAcceptor> m_acceptor;
+
+	std::vector<std::unique_ptr<ZRpc>> m_joining;
+	std::vector<ZNetPeer::Ptr> m_peers;
+	std::unique_ptr<World> m_world;
+
+	void RemotePrint(ZRpc* rpc, const std::string& s) {
+		rpc->Invoke("RemotePrint", s);
+	}
+
+	void Disconnect(ZNetPeer::Ptr peer) {
+		peer->m_rpc->m_socket->Close();
+	}
+
+
+
+
+	void Kick(ZNetPeer::Ptr peer) {
+		if (!peer)
+			return;
+
+		peer->Kick();
+	}
+
+	void Kick(const std::string& user) {
+		Kick(GetPeer(user));
+	}
+
+	void Ban(const std::string& user) {
+		LOG(INFO) << "Banning " << user;
+
+		Valhalla()->m_banned.insert(user);
+	}
+
+	void Unban(const std::string& user) {
+		LOG(INFO) << "Unbanning " << user;
+
+		Valhalla()->m_banned.erase(user);
+	}
+
+	void SendDisconnect(ZNetPeer::Ptr peer) {
+		LOG(INFO) << "Disconnect sent to " << peer->m_rpc->m_socket->GetHostName();
+		peer->m_rpc->Invoke("Disconnect");
+	}
+
+	void SendDisconnect() {
+		LOG(INFO) << "Sending disconnect msg";
+
+		for (auto&& peer : m_peers) {
+			SendDisconnect(peer);
+		}
+	}
+
+
+
+	void RPC_ServerHandshake(ZRpc* rpc) {
+		//LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
+		//this.ClearPlayerData(peer);
+		bool flag = !Valhalla()->m_serverPassword.empty();
+		std::string salt = "Im opposing salt"; // must be 16 bytes
+		rpc->Invoke("ClientHandshake", flag, salt);
+	}
+
+	void RPC_Disconnect(ZRpc* rpc) {
+		LOG(INFO) << "RPC_Disconnect";
+		auto&& peer = GetPeer(rpc);
+		Disconnect(peer);
+	}
+
+
+	void RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos) {
+		auto&& peer = GetPeer(rpc);
+
+		peer->m_pos = pos;
+		peer->m_visibleOnMap = publicRefPos; // stupid name
+	}
+
+	void RPC_CharacterID(ZRpc* rpc, ZDOID characterID) {
+		auto&& peer = GetPeer(rpc);
+		peer->m_characterID = characterID;
+
+		LOG(INFO) << "Got character ZDOID from " << peer->m_name << " : " << characterID.ToString();
+	}
+
+
+
+	void RPC_Kick(ZRpc* rpc, std::string user) {
+		// check if rpc is admin first
+		// if (!rpc.perm_admin...) return
+
+		std::string msg = "Kicking user " + user;
+		RemotePrint(rpc, msg);
+		Kick(user);
+	}
+
+	void RPC_Ban(ZRpc* rpc, std::string user) {
+		std::string msg = "Banning user " + user;
+		RemotePrint(rpc, msg);
+		Ban(user);
+	}
+
+	void RPC_Unban(ZRpc* rpc, std::string user) {
+		std::string msg = "Unbanning user " + user;
+		RemotePrint(rpc, msg);
+		Unban(user);
+	}
+
+	void RPC_Save(ZRpc* rpc) {
+
+	}
+
+	void RPC_PrintBanned(ZRpc* rpc) {
+		std::string s = "Banned users";
+		//std::vector<std:
+
+		RemotePrint(rpc, s);
+	}
+
+
+	//void ZNet::Unban(ZNetPeer::Ptr peer) {
+	//
+	//}
+
+
+
+
+
+
+	void SendPlayerList() {
+		if (!m_peers.empty()) {
+			auto pkg(PKG());
+			pkg->Write((int)m_peers.size());
+
+			for (auto&& peer : m_peers) {
+				pkg->Write(peer->m_name);
+				pkg->Write(peer->m_rpc->m_socket->GetHostName());
+				pkg->Write(peer->m_characterID);
+				pkg->Write(peer->m_visibleOnMap);
+				if (peer->m_visibleOnMap) {
+					pkg->Write(peer->m_pos);
+				}
+			}
+
+			for (auto&& peer : m_peers) {
+				// this is the problem
+				peer->m_rpc->Invoke("PlayerList", pkg);
+			}
+		}
+	}
+
+	void SendNetTime() {
+		for (auto&& peer : m_peers) {
+			peer->m_rpc->Invoke("NetTime", m_netTime);
+		}
+	}
+
+
+
+
+
+
+
+	void SendPeerInfo(ZRpc* rpc) {
+		//auto now(steady_clock::now());
+		//double netTime =
+		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
+		auto pkg(PKG());
+		pkg->Write(Valhalla()->m_serverUuid);
+		pkg->Write(ValhallaServer::VERSION);
+		pkg->Write(Vector3()); // dummy
+		pkg->Write("Stranger"); // valheim uses this, which is dumb
+
+		// why does a server need to send a position and name?
+		// clearly someone didnt think of the protocol
+
+		pkg->Write(m_world->m_name);
+		pkg->Write(m_world->m_seed);
+		pkg->Write(m_world->m_seedName);
+		pkg->Write(m_world->m_uid);
+		pkg->Write(m_world->m_worldGenVersion);
+		pkg->Write(m_netTime);
+
+		rpc->Invoke("PeerInfo", pkg);
+	}
+
+	void RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
+		auto&& hostName = rpc->m_socket->GetHostName();
+
+		auto uuid = pkg->Read<uuid_t>();
+		auto version = pkg->Read<std::string>();
+		LOG(INFO) << "Client " << hostName << " has version " << version;
+		if (version != std::string(ValhallaServer::VERSION)) {
+			return rpc->SendError(ConnectionStatus::ErrorVersion);
+		}
+
+		auto pos = pkg->Read<Vector3>();
+		auto name = pkg->Read<std::string>();
+		auto password = pkg->Read<std::string>();
+		//auto ticket = read array... // normally for steam
+
+		if (password != Valhalla()->m_serverPassword) {
+			return rpc->SendError(ConnectionStatus::ErrorPassword);
+		}
+
+		// if peer already connected
+		if (GetPeer(uuid)) {
+			return rpc->SendError(ConnectionStatus::ErrorAlreadyConnected);
+		}
+
+		// check if banned
+		//if ()
+
+		// pass the data to the lua OnPeerInfo
+		if (!ModManager::Event::OnPeerInfo(rpc->m_socket, uuid, name, version))
+			return;
+
+		// Find the rpc and transfer
+		std::unique_ptr<ZRpc> swappedRpc;
+		for (auto&& j : m_joining) {
+			if (j.get() == rpc) {
+				swappedRpc = std::move(j);
+				break;
+			}
+		}
+		assert(swappedRpc && "Swapped rpc wsa never assigned!");
+
+		auto peer(std::make_shared<ZNetPeer>(std::move(swappedRpc), uuid, name));
+		m_peers.push_back(peer);
+
+		peer->m_pos = pos;
+
+		rpc->Register("RefPos", &RPC_RefPos);
+		rpc->Register("CharacterID", &RPC_CharacterID);
+		rpc->Register("Kick", &RPC_Kick);
+		rpc->Register("Ban", &RPC_Ban);
+		rpc->Register("Unban", &RPC_Unban);
+		rpc->Register("Save", &RPC_Save);
+		rpc->Register("PrintBanned", &RPC_PrintBanned);
+
+		SendPeerInfo(rpc);
+
+		//m_zdoMan->AddPeer(peer);
+		//m_routedRpc->AddPeer(peer);
+	}
+
+
+	ZNetPeer::Ptr GetPeer(ZRpc* rpc) {
+		for (auto&& peer : m_peers) {
+			if (peer->m_rpc.get() == rpc)
+				return peer;
+		}
+		return nullptr;
+	}
+
+	ZNetPeer::Ptr GetPeer(const std::string& name) {
+		for (auto&& peer : m_peers) {
+			if (peer->m_name == name)
+				return peer;
+		}
+		return nullptr;
+	}
+
+	ZNetPeer::Ptr GetPeer(uuid_t uuid) {
+		for (auto&& peer : m_peers) {
+			if (peer->m_uuid == uuid)
+				return peer;
+		}
+		return nullptr;
+	}
+
+
+
+	void Listen(uint16_t port) {
+		LOG(INFO) << "Starting server on port " << port;
+
+		m_acceptor = std::make_unique<AcceptorZSocket2>(m_ctx, port);
+		m_acceptor->Start();
+
+		m_world = std::make_unique<World>();
+
+		Valhalla()->RunTaskLaterRepeat([](Task*) {
+			SendNetTime();
+			SendPlayerList();
+			}, 1s, 2s);
+	}
+
+	void Update(double delta) {
+		// Accept connections
+		while (m_acceptor->HasNewConnection()) {
+			auto&& rpc = std::make_unique<ZRpc>(m_acceptor->Accept());
+
+			rpc->Register("PeerInfo", &RPC_PeerInfo);
+			rpc->Register("Disconnect", &RPC_Disconnect);
+			rpc->Register("ServerHandshake", &RPC_ServerHandshake);
+
+			//rpc->Register("ServerHandshake", [](ZRpc*) {
+			//	LOG(INFO) << "Lambda handshake!";
+			//});
+
+			rpc->m_socket->Start();
+
+			m_joining.push_back(std::move(rpc));
+		}
+
+		{
+			// Remove invalid joining
+			// Removes any
+			auto&& itr = m_joining.begin();
+			while (itr != m_joining.end()) {
+				if (!(*itr) || (*itr)->m_socket->GetConnectivity() == Connectivity::CLOSED) {
+					itr = m_joining.erase(itr);
+				}
+				else {
+					++itr;
+				}
+			}
+		}
+
+		{
+			// Remove stale peers
+			auto&& itr = m_peers.begin();
+			while (itr != m_peers.end()) {
+				if ((*itr)->m_rpc->m_socket->GetConnectivity() == Connectivity::CLOSED) {
+					itr = m_peers.erase(itr);
+				}
+				else {
+					++itr;
+				}
+			}
+		}
+
+		// Update peers
+		for (auto&& peer : m_peers) {
+			try {
+				peer->m_rpc->Update();
+			}
+			catch (const std::range_error& e) {
+				LOG(ERROR) << "Peer might be out of sync: " << e.what();
+				peer->m_rpc->m_socket->Close();
+			}
+		}
+
+		// Update joining
+		//	this is done after peers rpc update because in the weird case
+		//	where a joining becomes a peer then is processed twice in an update tick
+		for (auto&& rpc : m_joining) {
+			try {
+				rpc->Update();
+			}
+			catch (const std::range_error& e) {
+				LOG(ERROR) << "Connecting peer provided malformed data";
+				rpc->m_socket->Close();
+			}
+		}
+
+		m_netTime += delta;
+	}
+
+	void Close() {
+		m_acceptor.reset();
+	}
+
+	const std::vector<ZNetPeer::Ptr>& GetPeers() {
+		return m_peers;
+	}
+
+}
+
