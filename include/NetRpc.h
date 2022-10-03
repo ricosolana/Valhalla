@@ -3,37 +3,28 @@
 #include <robin_hood.h>
 #include "Method.h"
 #include "NetSocket.h"
-//#include "ValhallaServer.h"
 
 #include "Task.h"
-
-// Register an rpc method for remote invocation
-//#define REGISTER_RPC(rpc, name, method) rpc->Register(name, new ZMethod(this, &method));
 
 #define RPC_DEBUG
 
 enum class ConnectionStatus;
 
-/**
-* The client and Rpc should be merged somehow
-	* @brief
-	*
-*/
-class ZRpc {
+class NetRpc {
 	std::chrono::steady_clock::time_point m_lastPing;
 	Task* m_pingTask = nullptr;
 	bool m_ignore = false;
 	
-	robin_hood::unordered_map<hash_t, std::unique_ptr<ZMethodBase<ZRpc*>>> m_methods;
+	robin_hood::unordered_map<hash_t, std::unique_ptr<ZMethodBase<NetRpc*>>> m_methods;
 
-	void SendPackage(ZPackage::Ptr pkg);
-	void Register(const char* name, ZMethodBase<ZRpc*>* method);
+	void SendPackage(NetPackage::Ptr pkg);
+	void Register(const char* name, ZMethodBase<NetRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
 
-	ZRpc(ISocket::Ptr socket);
-	~ZRpc();
+	NetRpc(ISocket::Ptr socket);
+	~NetRpc();
 
 	/**
 		* @brief Register a static method for remote invocation
@@ -41,13 +32,10 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(const char* name, void(*f)(ZRpc*, Args...)) {
+	auto Register(const char* name, void(*f)(NetRpc*, Args...)) {
 		return Register(name, new ZMethod(f));
 	}
-
-	//template<class
-	//auto Register(const char* name, )
-	
+		
 	/**
 		* @brief Register an instance method for remote invocation
 		* @param name function name to register
@@ -55,7 +43,7 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(const char* name, C *object, void(C::*f)(ZRpc*, Args...)) {
+	auto Register(const char* name, C *object, void(C::*f)(NetRpc*, Args...)) {
 		return Register(name, new ZMethod(object, f));
 	}
 
@@ -75,14 +63,14 @@ public:
 #ifdef RPC_DEBUG // debug mode
 		pkg->Write(method);
 #endif
-		ZPackage::Serialize(pkg, std::move(params)...); // serialize
+		NetPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(pkg);
 	}
 
 	// To be called every tick
 	void Update();
 
-	// Get the ping in ms
+	// Get the ping
 	std::chrono::milliseconds GetPing();
 
 	void SendError(ConnectionStatus status);

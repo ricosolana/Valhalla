@@ -2,9 +2,7 @@
 
 #include <thread>
 #include "Task.h"
-#include "NetPeer.h"
 #include "NetManager.h"
-#include "PlayerProfile.h"
 
 class ValhallaServer {
 	std::atomic_bool m_running = false;

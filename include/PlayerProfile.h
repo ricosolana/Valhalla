@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Utils.h"
-//#include "ZPackage.h"
 #include <robin_hood.h>
+#include "Utils.h"
 #include "Player.h"
 #include "NetPackage.h"
 
@@ -29,7 +28,7 @@ class PlayerProfile {
 
 	//bool SavePlayerToDisk();
 	//bool LoadPlayerFromDisk();
-	//ZPackage LoadPlayerDataFromDisk();
+	//NetPackage LoadPlayerDataFromDisk();
 	//WorldPlayerData GetWorldData(UID_t worldUID);
 
 	robin_hood::unordered_map<int64_t, WorldPlayerData> m_worldData;

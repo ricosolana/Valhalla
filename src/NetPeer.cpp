@@ -2,22 +2,22 @@
 #include "NetManager.h"
 #include <memory>
 
-//ZNetPeer::ZNetPeer(ISocket::Ptr sock) :
+//NetPeer::NetPeer(ISocket::Ptr sock) :
 //	m_socket(sock),
-//	m_rpc(std::make_unique<ZRpc>(sock))
+//	m_rpc(std::make_unique<NetRpc>(sock))
 //{}
 
-void ZNetPeer::Kick() {
+void NetPeer::Kick() {
 	LOG(INFO) << "Kicking " << m_name;
 
 	SendDisconnect();
 	Disconnect();
 }
 
-void ZNetPeer::SendDisconnect() {
+void NetPeer::SendDisconnect() {
 	m_rpc->Invoke("Disconnect");
 }
 
-void ZNetPeer::Disconnect() {
+void NetPeer::Disconnect() {
 	m_rpc->m_socket->Close();
 }

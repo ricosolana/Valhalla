@@ -1,9 +1,8 @@
+#include <openssl/md5.h>
+#include "ModManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
-#include "ModManager.h"
-#include <openssl/md5.h>
-#include "ValhallaServer.h"
-#include "ModManager.h"
+#include "World.h"
 
 using namespace asio::ip;
 using namespace std::chrono;
@@ -15,22 +14,22 @@ namespace NetManager {
 	asio::io_context m_ctx;
 	std::unique_ptr<IAcceptor> m_acceptor;
 
-	std::vector<std::unique_ptr<ZRpc>> m_joining;
-	std::vector<ZNetPeer::Ptr> m_peers;
+	std::vector<std::unique_ptr<NetRpc>> m_joining;
+	std::vector<NetPeer::Ptr> m_peers;
 	std::unique_ptr<World> m_world;
 
-	void RemotePrint(ZRpc* rpc, const std::string& s) {
+	void RemotePrint(NetRpc* rpc, const std::string& s) {
 		rpc->Invoke("RemotePrint", s);
 	}
 
-	void Disconnect(ZNetPeer::Ptr peer) {
+	void Disconnect(NetPeer::Ptr peer) {
 		peer->m_rpc->m_socket->Close();
 	}
 
 
 
 
-	void Kick(ZNetPeer::Ptr peer) {
+	void Kick(NetPeer::Ptr peer) {
 		if (!peer)
 			return;
 
@@ -53,7 +52,7 @@ namespace NetManager {
 		Valhalla()->m_banned.erase(user);
 	}
 
-	void SendDisconnect(ZNetPeer::Ptr peer) {
+	void SendDisconnect(NetPeer::Ptr peer) {
 		LOG(INFO) << "Disconnect sent to " << peer->m_rpc->m_socket->GetHostName();
 		peer->m_rpc->Invoke("Disconnect");
 	}
@@ -68,7 +67,7 @@ namespace NetManager {
 
 
 
-	void RPC_ServerHandshake(ZRpc* rpc) {
+	void RPC_ServerHandshake(NetRpc* rpc) {
 		//LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
 		//this.ClearPlayerData(peer);
 		bool flag = !Valhalla()->m_serverPassword.empty();
@@ -76,21 +75,21 @@ namespace NetManager {
 		rpc->Invoke("ClientHandshake", flag, salt);
 	}
 
-	void RPC_Disconnect(ZRpc* rpc) {
+	void RPC_Disconnect(NetRpc* rpc) {
 		LOG(INFO) << "RPC_Disconnect";
 		auto&& peer = GetPeer(rpc);
 		Disconnect(peer);
 	}
 
 
-	void RPC_RefPos(ZRpc* rpc, Vector3 pos, bool publicRefPos) {
+	void RPC_RefPos(NetRpc* rpc, Vector3 pos, bool publicRefPos) {
 		auto&& peer = GetPeer(rpc);
 
 		peer->m_pos = pos;
 		peer->m_visibleOnMap = publicRefPos; // stupid name
 	}
 
-	void RPC_CharacterID(ZRpc* rpc, ZDOID characterID) {
+	void RPC_CharacterID(NetRpc* rpc, ZDOID characterID) {
 		auto&& peer = GetPeer(rpc);
 		peer->m_characterID = characterID;
 
@@ -99,7 +98,7 @@ namespace NetManager {
 
 
 
-	void RPC_Kick(ZRpc* rpc, std::string user) {
+	void RPC_Kick(NetRpc* rpc, std::string user) {
 		// check if rpc is admin first
 		// if (!rpc.perm_admin...) return
 
@@ -108,23 +107,23 @@ namespace NetManager {
 		Kick(user);
 	}
 
-	void RPC_Ban(ZRpc* rpc, std::string user) {
+	void RPC_Ban(NetRpc* rpc, std::string user) {
 		std::string msg = "Banning user " + user;
 		RemotePrint(rpc, msg);
 		Ban(user);
 	}
 
-	void RPC_Unban(ZRpc* rpc, std::string user) {
+	void RPC_Unban(NetRpc* rpc, std::string user) {
 		std::string msg = "Unbanning user " + user;
 		RemotePrint(rpc, msg);
 		Unban(user);
 	}
 
-	void RPC_Save(ZRpc* rpc) {
+	void RPC_Save(NetRpc* rpc) {
 
 	}
 
-	void RPC_PrintBanned(ZRpc* rpc) {
+	void RPC_PrintBanned(NetRpc* rpc) {
 		std::string s = "Banned users";
 		//std::vector<std:
 
@@ -132,7 +131,7 @@ namespace NetManager {
 	}
 
 
-	//void ZNet::Unban(ZNetPeer::Ptr peer) {
+	//void ZNet::Unban(NetPeer::Ptr peer) {
 	//
 	//}
 
@@ -175,7 +174,7 @@ namespace NetManager {
 
 
 
-	void SendPeerInfo(ZRpc* rpc) {
+	void SendPeerInfo(NetRpc* rpc) {
 		//auto now(steady_clock::now());
 		//double netTime =
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
@@ -198,7 +197,7 @@ namespace NetManager {
 		rpc->Invoke("PeerInfo", pkg);
 	}
 
-	void RPC_PeerInfo(ZRpc* rpc, ZPackage::Ptr pkg) {
+	void RPC_PeerInfo(NetRpc* rpc, NetPackage::Ptr pkg) {
 		auto&& hostName = rpc->m_socket->GetHostName();
 
 		auto uuid = pkg->Read<uuid_t>();
@@ -230,7 +229,7 @@ namespace NetManager {
 			return;
 
 		// Find the rpc and transfer
-		std::unique_ptr<ZRpc> swappedRpc;
+		std::unique_ptr<NetRpc> swappedRpc;
 		for (auto&& j : m_joining) {
 			if (j.get() == rpc) {
 				swappedRpc = std::move(j);
@@ -239,7 +238,7 @@ namespace NetManager {
 		}
 		assert(swappedRpc && "Swapped rpc wsa never assigned!");
 
-		auto peer(std::make_shared<ZNetPeer>(std::move(swappedRpc), uuid, name));
+		auto peer(std::make_shared<NetPeer>(std::move(swappedRpc), uuid, name));
 		m_peers.push_back(peer);
 
 		peer->m_pos = pos;
@@ -254,12 +253,13 @@ namespace NetManager {
 
 		SendPeerInfo(rpc);
 
-		//m_zdoMan->AddPeer(peer);
-		//m_routedRpc->AddPeer(peer);
+		//NetSyncManager::OnNewPeer(peer);
+		NetRpcManager::OnNewPeer(peer);
+		ZoneSystem::OnNewPeer
 	}
 
 
-	ZNetPeer::Ptr GetPeer(ZRpc* rpc) {
+	NetPeer::Ptr GetPeer(NetRpc* rpc) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_rpc.get() == rpc)
 				return peer;
@@ -267,7 +267,7 @@ namespace NetManager {
 		return nullptr;
 	}
 
-	ZNetPeer::Ptr GetPeer(const std::string& name) {
+	NetPeer::Ptr GetPeer(const std::string& name) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_name == name)
 				return peer;
@@ -275,7 +275,7 @@ namespace NetManager {
 		return nullptr;
 	}
 
-	ZNetPeer::Ptr GetPeer(uuid_t uuid) {
+	NetPeer::Ptr GetPeer(uuid_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_uuid == uuid)
 				return peer;
@@ -302,13 +302,13 @@ namespace NetManager {
 	void Update(double delta) {
 		// Accept connections
 		while (m_acceptor->HasNewConnection()) {
-			auto&& rpc = std::make_unique<ZRpc>(m_acceptor->Accept());
+			auto&& rpc = std::make_unique<NetRpc>(m_acceptor->Accept());
 
 			rpc->Register("PeerInfo", &RPC_PeerInfo);
 			rpc->Register("Disconnect", &RPC_Disconnect);
 			rpc->Register("ServerHandshake", &RPC_ServerHandshake);
 
-			//rpc->Register("ServerHandshake", [](ZRpc*) {
+			//rpc->Register("ServerHandshake", [](NetRpc*) {
 			//	LOG(INFO) << "Lambda handshake!";
 			//});
 
@@ -375,7 +375,7 @@ namespace NetManager {
 		m_acceptor.reset();
 	}
 
-	const std::vector<ZNetPeer::Ptr>& GetPeers() {
+	const std::vector<NetPeer::Ptr>& GetPeers() {
 		return m_peers;
 	}
 

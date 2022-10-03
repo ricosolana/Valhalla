@@ -6,7 +6,7 @@
 #include "HashUtils.h"
 
 class ZDO;
-struct ZNetPeer;
+struct NetPeer;
 
 struct PeerZDOInfo
 {
@@ -23,7 +23,7 @@ struct ZDOPeer
 	void ForceSendZDO(ZDOID id);
 	bool ShouldSend(ZDO *zdo);
 
-	ZNetPeer *m_peer;
+	NetPeer *m_peer;
 	robin_hood::unordered_map<ZDOID, PeerZDOInfo, HashUtils::Hasher> m_zdos;
 	robin_hood::unordered_set<ZDOID, HashUtils::Hasher> m_forceSend;
 	robin_hood::unordered_set<ZDOID, HashUtils::Hasher> m_invalidSector;

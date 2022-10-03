@@ -53,7 +53,7 @@ class ZDOMan {
 		bool ShouldSend(ZDO zdo);
 
 		// Token: 0x04000CD2 RID: 3282
-		ZNetPeer::Ptr m_peer;
+		NetPeer::Ptr m_peer;
 
 		robin_hood::unordered_map<ZDOID, PeerZDOInfo, HashUtils::Hasher> m_zdos;
 
@@ -75,7 +75,7 @@ class ZDOMan {
 
 		// Token: 0x02000126 RID: 294
 
-		ZDOPeer(ZNetPeer::Ptr peer) {
+		ZDOPeer(NetPeer::Ptr peer) {
 
 		}
 
@@ -119,16 +119,16 @@ public:
 
 	int64_t GetMyID();
 
-	void AddPeer(ZNetPeer::Ptr peer);
+	void AddPeer(NetPeer::Ptr peer);
 	ZDO GetZDO(ZDOID& zdoid);
 
 private:
-	void RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg);
+	void RPC_ZDOData(NetRpc* rpc, NetPackage::Ptr pkg);
 
-	void RPC_DestroyZDO(uuid_t sender, ZPackage pkg);
+	void RPC_DestroyZDO(uuid_t sender, NetPackage pkg);
 	void RPC_RequestZDO(uuid_t sender, ZDOID id);
 
-	ZDOPeer* GetZDOPeer(ZRpc* rpc);
+	ZDOPeer* GetZDOPeer(NetRpc* rpc);
 };
 
 //ZDOMan ZDOMan();

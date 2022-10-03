@@ -1,7 +1,7 @@
 #include "ZDOPeer.h"
 #include "ZDO.h"
 //#include "ZDOID.hpp"
-//#include "ZNetPeer.h"
+//#include "NetPeer.h"
 
 void ZDOPeer::ZDOSectorInvalidated(ZDO* zdo) {
 	throw std::runtime_error("Not implemented");

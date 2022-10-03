@@ -1,4 +1,6 @@
 // main.cpp
+#include <asio.hpp>
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -6,9 +8,8 @@
 #include <bitset>
 #include <signal.h>
 
-//#include "SteamManager.h"
-#include "ValhallaServer.h"
 #include "easylogging++.h"
+#include "ValhallaServer.h"
 
 INITIALIZE_EASYLOGGINGPP
 

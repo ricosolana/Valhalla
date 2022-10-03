@@ -4,27 +4,22 @@
 #include <functional>
 #include "NetPackage.h"
 #include "Utils.h"
-//#include <sol/sol.hpp>
 
 /* https://godbolt.org/z/MMGsa8rhr
 * to implement deduction guides
 * (static functions, no class object needed)
 */
 
-// Base specifier for later deductions
-//template<class...>
-//class ZMethodBase;
-
 // Thanks @Fux
 template<class T>
 class ZMethodBase
 {
 public:
-    virtual void Invoke(T t, ZPackage::Ptr pkg) = 0;
+    virtual void Invoke(T t, NetPackage::Ptr pkg) = 0;
 };
 
 // Base specifier
-// Rpc, templates...
+// Rpc, classes...
 template<class T, class...V> class ZMethod;
 
 // Rpc, instance, function<args...>
@@ -38,9 +33,9 @@ class ZMethod<T, C, void(C::*)(T, Args...)> : public ZMethodBase<T> {
 public:
     ZMethod(C* object, Lambda lam) : object(object), lambda(lam) {}
 
-    void Invoke(T t, ZPackage::Ptr pkg) override {
+    void Invoke(T t, NetPackage::Ptr pkg) override {
         if constexpr (sizeof...(Args)) {
-            auto tupl = ZPackage::Deserialize<Args...>(pkg);
+            auto tupl = NetPackage::Deserialize<Args...>(pkg);
 
             // RPC CALL
             Utils::InvokeTuple(lambda, object, t, tupl);
@@ -65,9 +60,9 @@ class ZMethod<void(*)(T, Args...)> : public ZMethodBase<T> {
 public:
     ZMethod(Lambda lam) : lambda(lam) {}
 
-    void Invoke(T t, ZPackage::Ptr pkg) override {
+    void Invoke(T t, NetPackage::Ptr pkg) override {
         if constexpr (sizeof...(Args)) {
-            auto tupl = ZPackage::Deserialize<Args...>(pkg);
+            auto tupl = NetPackage::Deserialize<Args...>(pkg);
 
             // RPC CALL
             Utils::InvokeTupleS(lambda, t, tupl);

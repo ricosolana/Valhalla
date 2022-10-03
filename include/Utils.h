@@ -2,18 +2,64 @@
 
 #include <asio.hpp>
 
+//#ifdef _WIN32
+//#  ifdef ASIO_STANDALONE
+////     Set the proper SDK version before including boost/Asio
+//#      include <SDKDDKVer.h>
+////     Note boost/ASIO includes Windows.h. 
+//#      include <asio.hpp>
+//#   else //  USE_ASIO
+//#      include <Windows.h>
+//#   endif //  ASIO_STANDALONE
+//#else // _WIN32
+//#  ifdef ASIO_STANDALONE
+//#     include <asio.hpp>
+//#  endif // ASIO_STANDALONE
+//#endif //_WIN32
+
 #include <chrono>
-#include <easylogging++.h>
 #include <iostream>
-#include "AsyncDeque.h"
 #include <zlib.h>
 #include <robin_hood.h>
+#include "AsyncDeque.h"
+#include <easylogging++.h>
+#include <type_traits>
+#include <concepts>
+#include <bitset>
 
 using namespace std::chrono_literals;
 
 using byte_t = uint8_t;
 using uuid_t = int64_t;
 using hash_t = int32_t;
+//std::bitset<8> b;
+
+template<typename T>
+class BitMask {
+	//static_assert(std::is_integral_v<std::underlying_type_t<T>>, "Must be an integral enum");
+	static_assert(std::is_enum<T>::value, "Must be an enum");
+
+	// https://en.cppreference.com/w/cpp/utility/to_underlying
+	std::underlying_type_t<T> value;
+
+public:
+	//BitMask()
+	//BitMask(T value) : value(std::to_underlying(value)) {}
+
+	BitMask(T value) : value(static_cast<std::underlying_type_t<T>>(value)) {}
+
+	T operator()() {
+		return static_cast<T>(value);
+	}
+
+	bool operator()(T otherEnum) {
+		auto otherValue = static_cast<std::underlying_type_t<T>>(otherEnum);
+
+		return (value & otherValue) == otherValue;
+	}
+
+	//operator |=
+};
 
 //struct TwoTupleHasher
 //{

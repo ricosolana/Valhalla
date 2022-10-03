@@ -22,9 +22,9 @@ concept EnumType = std::is_enum_v<E>;
 
 // how to handle circular dependency with double includes
 
-#define PKG(...) std::make_shared<ZPackage>(##__VA_ARGS__)
+#define PKG(...) std::make_shared<NetPackage>(##__VA_ARGS__)
 
-class ZPackage {
+class NetPackage {
     //BinaryWriter m_writer;
     //BinaryReader m_reader;
     Stream m_stream;
@@ -33,23 +33,23 @@ class ZPackage {
     int Read7BitEncodedInt();
 
 public:
-    using Ptr = std::shared_ptr<ZPackage>;
+    using Ptr = std::shared_ptr<NetPackage>;
 
     
 
     // Used when creating a packet for dispatch
-    ZPackage() = default;
-    ZPackage(const ZPackage&) = default; // copy
-    ZPackage(ZPackage&&) = delete; // move
+    NetPackage() = default;
+    NetPackage(const NetPackage&) = default; // copy
+    NetPackage(NetPackage&&) = delete; // move
     // Used in inventory item reading
     //Package(std::string& base64);
 
 
 
     // Used for reading incoming data from packet
-    ZPackage(byte_t* data, int32_t count);
-    ZPackage(std::vector<byte_t>& vec);
-    ZPackage(int32_t reserve);
+    NetPackage(byte_t* data, int32_t count);
+    NetPackage(std::vector<byte_t>& vec);
+    NetPackage(int32_t reserve);
 
 
 
@@ -57,9 +57,9 @@ public:
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
     void Write(const std::vector<byte_t> &in);            // Write array
-    void Write(const std::vector<std::string>& in);     // Write string array (ZRpc)
+    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     void Write(const robin_hood::unordered_set<std::string>& in);
-    void Write(const ZPackage::Ptr in);
+    void Write(const NetPackage::Ptr in);
     void Write(const ZDOID &id);
     void Write(const Vector3 &in);
     void Write(const Vector2i &in);
@@ -120,7 +120,7 @@ public:
     }
 
     template<typename T>
-    T Read() requires std::same_as<T, ZPackage::Ptr> {
+    T Read() requires std::same_as<T, NetPackage::Ptr> {
         auto count = Read<int32_t>();
         auto pkg(PKG(count));
         m_stream.Read(pkg->m_stream.Bytes(), count);
@@ -162,8 +162,8 @@ public:
 
     void Load(byte_t* buf, int32_t offset);
 
-    ZPackage::Ptr ReadCompressed();
-    void WriteCompressed(ZPackage::Ptr);
+    NetPackage::Ptr ReadCompressed();
+    void WriteCompressed(NetPackage::Ptr);
 
     void Read(std::vector<byte_t>& out);
     void Read(std::vector<std::string>& out);
@@ -171,7 +171,7 @@ public:
 
 
     // Empty template accepter
-    static void Serialize(ZPackage::Ptr pkg) {}
+    static void Serialize(NetPackage::Ptr pkg) {}
 
     
     // this wont compile when trying to use enums
@@ -179,7 +179,7 @@ public:
     // https://cplusplus.com/reference/type_traits/underlying_type/
     // this might allow compile when casting the enum to its underlying type
     template <typename T, typename... Types>
-    static void Serialize(ZPackage::Ptr pkg, T var1, Types... var2) {
+    static void Serialize(NetPackage::Ptr pkg, T var1, Types... var2) {
         pkg->Write(var1);
 
         Serialize(pkg, var2...);
@@ -188,12 +188,12 @@ public:
 
 
     template<class F>
-    static auto Deserialize(ZPackage::Ptr pkg) {
+    static auto Deserialize(NetPackage::Ptr pkg) {
         return std::tuple(pkg->Read<F>());
     }
 
     template<class F, class S, class...R>
-    static auto Deserialize(ZPackage::Ptr pkg) {
+    static auto Deserialize(NetPackage::Ptr pkg) {
         auto a(Deserialize<F>(pkg));
         std::tuple<S, R...> b = Deserialize<S, R...>(pkg);
         return std::tuple_cat(a, b);

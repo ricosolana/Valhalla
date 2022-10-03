@@ -159,19 +159,19 @@ namespace ModManager {
 			//	"Repeats", &Task::Repeats,
 			//	"function", &Task::function); // dummy
 			//
-			//state.new_usertype<ZNetPeer>("ZNetPeer",
-			//	"Kick", &ZNetPeer::Kick,
-			//	"characterId", &ZNetPeer::m_characterID,
-			//	"playerName", &ZNetPeer::m_playerName,
-			//	"publicRefPos", &ZNetPeer::m_publicRefPos,
-			//	"refPos", &ZNetPeer::m_refPos,
-			//	"rpc", &ZNetPeer::m_rpc,
-			//	"uid", &ZNetPeer::m_uid);
+			//state.new_usertype<NetPeer>("NetPeer",
+			//	"Kick", &NetPeer::Kick,
+			//	"characterId", &NetPeer::m_characterID,
+			//	"playerName", &NetPeer::m_playerName,
+			//	"publicRefPos", &NetPeer::m_publicRefPos,
+			//	"refPos", &NetPeer::m_refPos,
+			//	"rpc", &NetPeer::m_rpc,
+			//	"uid", &NetPeer::m_uid);
 			//
-			//state.new_usertype<ZRpc>("ZRpc",
-			//	"", ZRpc::Invoke,
-			//	"", ZRpc::Register,
-			//	"", ZRpc::m_socket)
+			//state.new_usertype<NetRpc>("NetRpc",
+			//	"", NetRpc::Invoke,
+			//	"", NetRpc::Register,
+			//	"", NetRpc::m_socket)
 
 			
 

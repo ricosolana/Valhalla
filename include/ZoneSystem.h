@@ -2,13 +2,8 @@
 
 #include "Utils.h"
 
-class ZoneSystem {
-
-	void SendGlobalKeys(uuid_t target);
+namespace ZoneSystem {
 
 public:
-	void OnNewPeer(uuid_t target) {
-		SendGlobalKeys(target);
-		//SendLocationIcons(target);
-	}
+	void OnNewPeer(uuid_t target);
 };

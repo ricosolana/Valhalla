@@ -8,14 +8,14 @@ ZDOMan::ZDOMan()
 	//ZDOMan.m_instance = this;
 	//Valhalla()->m_znet->m_routedRpc->Register("DestroyZDO", new ZMethod(this, &ZDOMan::RPC_DestroyZDO));
 	//Valhalla()->m_znet->m_routedRpc->Register("RequestZDO", new ZMethod(this, &ZDOMan::RPC_RequestZDO));
-	//ZRoutedRpc.instance.Register<ZPackage>("DestroyZDO", new Action<long, ZPackage>(this.RPC_DestroyZDO));
-	//ZRoutedRpc.instance.Register<ZDOID>("RequestZDO", new Action<long, ZDOID>(this.RPC_RequestZDO));
+	//NetRpcManager.instance.Register<NetPackage>("DestroyZDO", new Action<long, NetPackage>(this.RPC_DestroyZDO));
+	//NetRpcManager.instance.Register<ZDOID>("RequestZDO", new Action<long, ZDOID>(this.RPC_RequestZDO));
 	m_width = 512;
 	m_halfWidth = m_width / 2;
 	//ResetSectorArray();
 }
 
-void ZDOMan::AddPeer(ZNetPeer::Ptr peer) {
+void ZDOMan::AddPeer(NetPeer::Ptr peer) {
 	m_peers.push_back(std::make_unique<ZDOPeer>(peer));
 	
 	//REGISTER_RPC(peer->m_rpc, "ZDOData", ZDOMan::RPC_ZDOData);
@@ -26,7 +26,7 @@ int64_t ZDOMan::GetMyID()
 	return m_myid;
 }
 
-void ZDOMan::RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg) {
+void ZDOMan::RPC_ZDOData(NetRpc* rpc, NetPackage::Ptr pkg) {
 	throw std::runtime_error("Not implemented");
 	/*
 	auto zdopeer = GetZDOPeer(rpc);
@@ -57,7 +57,7 @@ void ZDOMan::RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg) {
 		auto num4 = pkg->Read<uint32_t>(); // data revision
 		auto owner = pkg->Read<int64_t>(); // owner
 		auto vector = pkg->Read<Vector3>(); // position
-		auto pkg2 = pkg->Read<ZPackage::Ptr>(); // 
+		auto pkg2 = pkg->Read<NetPackage::Ptr>(); // 
 		auto zdo2 = GetZDO(zdoid);
 		bool flag = false;
 		if (zdo2)
@@ -97,7 +97,7 @@ void ZDOMan::RPC_ZDOData(ZRpc* rpc, ZPackage::Ptr pkg) {
 	*/
 }
 
-void ZDOMan::RPC_DestroyZDO(uuid_t sender, ZPackage pkg) {
+void ZDOMan::RPC_DestroyZDO(uuid_t sender, NetPackage pkg) {
 	int num = pkg.Read<int32_t>();
 	for (int i = 0; i < num; i++)
 	{

@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include <memory>
+
 #include "NetPackage.h"
 
 #include "Utils.h"
-#include <memory>
 
 #include <asio.hpp>
 
@@ -25,8 +26,8 @@ public:
 	virtual void Start() = 0;
 	virtual void Close() = 0;
 
-	virtual void Send(ZPackage::Ptr packet) = 0;
-	virtual ZPackage::Ptr Recv() = 0;
+	virtual void Send(NetPackage::Ptr packet) = 0;
+	virtual NetPackage::Ptr Recv() = 0;
 	virtual bool HasNewData() = 0;
 
 	virtual std::string& GetHostName() = 0;
@@ -44,8 +45,8 @@ class ZSocket2 : public ISocket {
 	tcp::socket m_socket;
 
 	// change these to vectors of data
-	AsyncDeque<ZPackage::Ptr> m_sendQueue;
-	AsyncDeque<ZPackage::Ptr> m_recvQueue;
+	AsyncDeque<NetPackage::Ptr> m_sendQueue;
+	AsyncDeque<NetPackage::Ptr> m_recvQueue;
 
 	int m_tempReadOffset = 0;
 	int m_tempWriteOffset = 0;
@@ -63,8 +64,8 @@ public:
 	void Start() override;
 	void Close() override;
 
-	void Send(ZPackage::Ptr packet) override;
-	ZPackage::Ptr Recv() override;
+	void Send(NetPackage::Ptr packet) override;
+	NetPackage::Ptr Recv() override;
 	bool HasNewData() override;
 
 	std::string& GetHostName() override;
@@ -78,5 +79,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(ZPackage::Ptr& pkg);
+	void WritePkg(NetPackage::Ptr& pkg);
 };

@@ -1,24 +1,24 @@
 #include "NetPackage.h"
 #include <zlib.h>
 
-ZPackage::ZPackage(byte_t* data, int32_t count) {
+NetPackage::NetPackage(byte_t* data, int32_t count) {
     Load(data, count);
 }
 
-ZPackage::ZPackage(std::vector<byte_t>& vec)
-    : ZPackage(vec.data(), vec.size()) {}
+NetPackage::NetPackage(std::vector<byte_t>& vec)
+    : NetPackage(vec.data(), vec.size()) {}
 
-ZPackage::ZPackage(int32_t reserve)
+NetPackage::NetPackage(int32_t reserve)
     : m_stream(reserve) {}
 
 
 
-void ZPackage::Write(const byte_t* in, int32_t count) {
+void NetPackage::Write(const byte_t* in, int32_t count) {
     Write(count);
 	m_stream.Write(in, count);
 }
 
-void ZPackage::Write(const std::string& in) {
+void NetPackage::Write(const std::string& in) {
     int byteCount = static_cast<int>(in.length()); // Utils::GetUnicode8Count(in.c_str());
     if (byteCount > 256)
         throw std::runtime_error("Writing big string not yet supported");
@@ -38,45 +38,45 @@ void ZPackage::Write(const std::string& in) {
     m_stream.Write(reinterpret_cast<const byte_t*>(in.c_str()), byteCount);
 }
 
-void ZPackage::Write(const std::vector<byte_t>& in) {
+void NetPackage::Write(const std::vector<byte_t>& in) {
     Write(in.data(), static_cast<int32_t>(in.size()));
 }
 
-void ZPackage::Write(const std::vector<std::string>& in) {
+void NetPackage::Write(const std::vector<std::string>& in) {
     Write(static_cast<int32_t>(in.size()));
     for (auto&& s : in) {
         Write(s);
     }
 }
 
-void ZPackage::Write(const robin_hood::unordered_set<std::string>& in) {
+void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
     Write(static_cast<int32_t>(in.size()));
     for (auto&& s : in) {
         Write(s);
     }
 }
 
-void ZPackage::Write(const ZPackage::Ptr in) {
+void NetPackage::Write(const NetPackage::Ptr in) {
     Write(in->m_stream.Bytes(), in->m_stream.Length());
 }
 
-void ZPackage::Write(const ZDOID& in) {
+void NetPackage::Write(const ZDOID& in) {
     Write(in.m_userID);
     Write(in.m_id);
 }
 
-void ZPackage::Write(const Vector3& in) {
+void NetPackage::Write(const Vector3& in) {
     Write(in.x);
     Write(in.y);
     Write(in.z);
 }
 
-void ZPackage::Write(const Vector2i& in) {
+void NetPackage::Write(const Vector2i& in) {
      Write(in.x);
      Write(in.y);
 }
 
-void ZPackage::Write(const Quaternion& in)
+void NetPackage::Write(const Quaternion& in)
 {
      Write(in.x);
      Write(in.y);
@@ -86,29 +86,29 @@ void ZPackage::Write(const Quaternion& in)
 
 
 
-void ZPackage::Load(byte_t* data, int32_t count) {
+void NetPackage::Load(byte_t* data, int32_t count) {
     m_stream.Clear();
     m_stream.Write(data, 0, count);
 }
 
 
 
-ZPackage::Ptr ZPackage::ReadCompressed() {
+NetPackage::Ptr NetPackage::ReadCompressed() {
     //int count = Read<int32_t>();
 
-    //return ZPackage(Utils::Decompress(Read(count)));
+    //return NetPackage(Utils::Decompress(Read(count)));
     throw std::runtime_error("not implemented");
 }
 
-void ZPackage::WriteCompressed(ZPackage::Ptr in) {
+void NetPackage::WriteCompressed(NetPackage::Ptr in) {
     throw std::runtime_error("not implemented");
 }
 
-void ZPackage::Read(std::vector<byte_t>& out) {
+void NetPackage::Read(std::vector<byte_t>& out) {
     m_stream.Read(out, Read<int32_t>());
 }
 
-void ZPackage::Read(std::vector<std::string>& out) {
+void NetPackage::Read(std::vector<std::string>& out) {
     auto count = Read<int32_t>();
     out.reserve(count);
 
@@ -119,7 +119,7 @@ void ZPackage::Read(std::vector<std::string>& out) {
 
 
 
-void ZPackage::Write7BitEncodedInt(int in) {
+void NetPackage::Write7BitEncodedInt(int in) {
     m_stream.ReserveExtra(4);
     unsigned int num;
     for (num = (unsigned int)in; num >= 128U; num >>= 7)
@@ -128,7 +128,7 @@ void ZPackage::Write7BitEncodedInt(int in) {
     Write((unsigned char)num);
 }
 
-int ZPackage::Read7BitEncodedInt() {
+int NetPackage::Read7BitEncodedInt() {
     int out = 0;
     int num2 = 0;
     while (num2 != 35)

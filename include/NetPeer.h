@@ -5,11 +5,11 @@
 #include "ZDOID.h"
 #include "Utils.h"
 
-struct ZNetPeer {
+struct NetPeer {
 public:
-	using Ptr = std::shared_ptr<ZNetPeer>;
+	using Ptr = std::shared_ptr<NetPeer>;
 
-	std::unique_ptr<ZRpc> m_rpc;
+	std::unique_ptr<NetRpc> m_rpc;
 
 	const uuid_t m_uuid;
 	const std::string m_name;
@@ -19,7 +19,7 @@ public:
 	ZDOID m_characterID = ZDOID::NONE;
 
 public:
-	ZNetPeer(std::unique_ptr<ZRpc> rpc,
+	NetPeer(std::unique_ptr<NetRpc> rpc,
 		uuid_t uuid, const std::string &name)
 		: m_rpc(std::move(rpc)), m_name(name), m_uuid(uuid) 
 	{}

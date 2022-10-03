@@ -1,6 +1,7 @@
-#include "NetSocket.h"
 #include <string>
 #include <iostream>
+#include <asio.hpp>
+#include "NetSocket.h"
 
 ZSocket2::ZSocket2(tcp::socket sock)
 	: m_socket(std::move(sock)),
@@ -20,10 +21,10 @@ void ZSocket2::Start() {
 	ReadPkgSize();
 }
 
-void ZSocket2::Send(ZPackage::Ptr pkg) {
+void ZSocket2::Send(NetPackage::Ptr pkg) {
 	if (pkg->GetStream().Length() == 0)
 		return;
-	std::deque<ZPackage::Ptr> d;
+	std::deque<NetPackage::Ptr> d;
 	if (pkg->GetStream().Length() + 4 > 10485760) {
 		LOG(ERROR) << "Too big package";
 		Close();
@@ -37,7 +38,7 @@ void ZSocket2::Send(ZPackage::Ptr pkg) {
 	}
 }
 
-ZPackage::Ptr ZSocket2::Recv() {
+NetPackage::Ptr ZSocket2::Recv() {
 	return m_recvQueue.pop_front();
 }
 
@@ -97,7 +98,7 @@ void ZSocket2::ReadPkg() {
 		Close();
 	}
 	else {
-		//m_recvQueue.push_back(ZPackage(m_tempReadOffset));
+		//m_recvQueue.push_back(NetPackage(m_tempReadOffset));
 		//auto &front = m_recvQueue.front();
 		
 		auto recv(PKG(m_tempReadOffset));
@@ -141,7 +142,7 @@ void ZSocket2::WritePkgSize() {
 	});
 }
 
-void ZSocket2::WritePkg(ZPackage::Ptr &pkg) {
+void ZSocket2::WritePkg(NetPackage::Ptr &pkg) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
 		asio::buffer(pkg->GetStream().Bytes(), m_tempWriteOffset),

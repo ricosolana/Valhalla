@@ -1,9 +1,7 @@
 #pragma once
 
 #include "NetPeer.h"
-#include "ZDOMan.h"
 #include "NetRpcManager.h"
-#include "World.h"
 #include "NetAcceptor.h"
 
 enum class ConnectionStatus : int32_t
@@ -27,15 +25,15 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 
 namespace NetManager {
 
-	void RemotePrint(ZRpc* rpc, const std::string &text);
+	void RemotePrint(NetRpc* rpc, const std::string &text);
 
 	void Listen(uint16_t port);
 	void Update(double delta);
 	void Close();
 
-	ZNetPeer::Ptr GetPeer(ZRpc* rpc);
-	ZNetPeer::Ptr GetPeer(const std::string& name);
-	ZNetPeer::Ptr GetPeer(uuid_t uuid);
+	NetPeer::Ptr GetPeer(NetRpc* rpc);
+	NetPeer::Ptr GetPeer(const std::string& name);
+	NetPeer::Ptr GetPeer(uuid_t uuid);
 
-	const std::vector<ZNetPeer::Ptr> &GetPeers();
+	const std::vector<NetPeer::Ptr> &GetPeers();
 }

@@ -4,12 +4,12 @@
 
 using namespace std::chrono;
 
-ZRpc::ZRpc(ISocket::Ptr socket)
+NetRpc::NetRpc(ISocket::Ptr socket)
 	: m_socket(socket), m_lastPing(steady_clock::now() + 3s) {
 
 	// pinger
 	this->m_pingTask = Valhalla()->RunTaskLaterRepeat([this](Task* task) {
-		//ZPackage pkg;
+		//NetPackage pkg;
 		auto pkg(PKG());
 		pkg->Write<int32_t>(0);
 		pkg->Write(true);
@@ -17,22 +17,22 @@ ZRpc::ZRpc(ISocket::Ptr socket)
 	}, 3s, 1s);
 }
 
-ZRpc::~ZRpc() {
-	LOG(DEBUG) << "~ZRpc()";
+NetRpc::~NetRpc() {
+	LOG(DEBUG) << "~NetRpc()";
 	if (m_pingTask)
 		this->m_pingTask->Cancel();
 }
 
-void ZRpc::Register(const char* name, ZMethodBase<ZRpc*>* method) {
+void NetRpc::Register(const char* name, ZMethodBase<NetRpc*>* method) {
 	auto stableHash = Utils::GetStableHashCode(name);
 
 	assert(!m_methods.contains(stableHash)
 		&& "runtime rpc hash collision");
 
-	m_methods.insert({ stableHash, std::unique_ptr<ZMethodBase<ZRpc*>>(method) });
+	m_methods.insert({ stableHash, std::unique_ptr<ZMethodBase<NetRpc*>>(method) });
 }
 
-void ZRpc::Update() {
+void NetRpc::Update() {
 	if (m_ignore)
 		return;
 
@@ -86,13 +86,13 @@ void ZRpc::Update() {
 
 }
 
-std::chrono::milliseconds ZRpc::GetPing() {
+std::chrono::milliseconds NetRpc::GetPing() {
 	//return m_ping.count();
 	auto now(steady_clock::now());
 	return duration_cast<milliseconds>(now - m_lastPing);
 }
 
-void ZRpc::SendError(ConnectionStatus status) {
+void NetRpc::SendError(ConnectionStatus status) {
 	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
 	Invoke("Error", status);
 	// then disconnect later
@@ -100,7 +100,7 @@ void ZRpc::SendError(ConnectionStatus status) {
 	Valhalla()->RunTaskLater([this](Task*) { m_socket->Close(); }, GetPing() * 2);
 }
 
-void ZRpc::SendPackage(ZPackage::Ptr pkg) {
+void NetRpc::SendPackage(NetPackage::Ptr pkg) {
 	//this.m_sentPackages++;
 	//this.m_sentData += pkg.Size();
 	m_socket->Send(pkg);
