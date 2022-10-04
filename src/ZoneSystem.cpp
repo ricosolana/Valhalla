@@ -1,97 +1,94 @@
 #include "ZoneSystem.h"
 #include "NetRpcManager.h"
+#include "HeightMap.h"
 
 namespace ZoneSystem {
 
 	struct ZoneLocation {
 		// Token: 0x0600118C RID: 4492 RVA: 0x00075999 File Offset: 0x00073B99
-		public ZoneSystem.ZoneLocation Clone()
-		{
-			return base.MemberwiseClone() as ZoneSystem.ZoneLocation;
-		}
+		ZoneLocation(const ZoneLocation& other); // copy constructor
 
 		// everything below is serialized by unity
 
-		// Token: 0x040011BC RID: 4540
-		public bool m_enable = true;
+		bool m_enable = true;
 
 		// Token: 0x040011BD RID: 4541
-		public string m_prefabName;
+		std::string m_prefabName;
 
 		// Token: 0x040011BE RID: 4542
-		[BitMask(typeof(Heightmap.Biome))]
-		public Heightmap.Biome m_biome;
+		//[BitMask(typeof(Heightmap.Biome))]
+		Biome m_biome;
 
 		// Token: 0x040011BF RID: 4543
-		[BitMask(typeof(Heightmap.BiomeArea))]
-		public Heightmap.BiomeArea m_biomeArea = Heightmap.BiomeArea.Everything;
+		//[BitMask(typeof(Heightmap.BiomeArea))]
+		BiomeArea m_biomeArea = BiomeArea::Everything;
 
-		public int m_quantity;
+		int m_quantity;
 
-		public float m_chanceToSpawn = 10f;
+		float m_chanceToSpawn = 10.f;
 
-		public bool m_prioritized;
+		bool m_prioritized;
 
-		public bool m_centerFirst;
+		bool m_centerFirst;
 
-		public bool m_unique;
+		bool m_unique;
 
-		public string m_group = "";
+		std::string m_group;
 
-		public float m_minDistanceFromSimilar;
+		float m_minDistanceFromSimilar;
 
-		public bool m_iconAlways;
+		bool m_iconAlways;
 
-		public bool m_iconPlaced;
+		bool m_iconPlaced;
 
-		public bool m_randomRotation = true;
+		bool m_randomRotation = true;
 
-		public bool m_slopeRotation;
+		bool m_slopeRotation;
 
-		public bool m_snapToWater;
+		bool m_snapToWater;
 
-		public float m_minTerrainDelta;
+		float m_minTerrainDelta;
 
-		public float m_maxTerrainDelta = 2f;
+		float m_maxTerrainDelta = 2.f;
 
-		public bool m_inForest;
+		bool m_inForest;
 
-		public float m_forestTresholdMin;
+		float m_forestTresholdMin;
 
-		public float m_forestTresholdMax = 1f;
+		float m_forestTresholdMax = 1.f;
 
-		public float m_minDistance;
+		float m_minDistance;
 
-		public float m_maxDistance;
+		float m_maxDistance;
 
-		public float m_minAltitude = -1000f;
+		float m_minAltitude = -1000.f;
 
-		public float m_maxAltitude = 1000f;
+		float m_maxAltitude = 1000.f;
 
 
 		// everything below is marked as
 		// non serializable
 
 
-		public GameObject m_prefab;
+		GameObject m_prefab;
 
-		public int m_hash;
+		int m_hash;
 
-		public Location m_location;
+		Location m_location;
 
-		public float m_interiorRadius = 10f;
+		float m_interiorRadius = 10f;
 
-		public float m_exteriorRadius = 10f;
+		float m_exteriorRadius = 10f;
 
-		public Vector3 m_interiorPosition;
+		Vector3 m_interiorPosition;
 
-		public Vector3 m_generatorPosition;
+		Vector3 m_generatorPosition;
 
-		public List<ZNetView> m_netViews = new List<ZNetView>();
+		List<ZNetView> m_netViews = new List<ZNetView>();
 
-		public List<RandomSpawn> m_randomSpawns = new List<RandomSpawn>();
+		List<RandomSpawn> m_randomSpawns = new List<RandomSpawn>();
 
-		public bool m_foldout;
+		bool m_foldout;
 	};
 
 	struct LocationInstance {

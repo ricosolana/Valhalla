@@ -132,7 +132,7 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp" 
     "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
- "src/ZoneSystem.cpp")
+ "src/ZoneSystem.cpp" "include/HeightMap.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
