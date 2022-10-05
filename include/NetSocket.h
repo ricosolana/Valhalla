@@ -33,6 +33,8 @@ public:
 	virtual std::string& GetHostName() = 0;
 	virtual uint16_t GetHostPort() = 0;
 	virtual Connectivity GetConnectivity() = 0;
+
+	virtual int GetSendQueueSize() = 0;
 };
 
 /**
@@ -45,11 +47,12 @@ class ZSocket2 : public ISocket {
 	tcp::socket m_socket;
 
 	// change these to vectors of data
-	AsyncDeque<NetPackage::Ptr> m_sendQueue;
+	AsyncDeque<std::vector<byte_t>> m_sendQueue;
 	AsyncDeque<NetPackage::Ptr> m_recvQueue;
 
 	int m_tempReadOffset = 0;
 	int m_tempWriteOffset = 0;
+	std::atomic_int m_sendQueueSize = 0;
 
 	std::string m_hostname;
 	uint16_t m_port;
@@ -71,6 +74,7 @@ public:
 	std::string& GetHostName() override;
 	uint16_t GetHostPort() override;
 	Connectivity GetConnectivity() override;
+	int GetSendQueueSize() override;
 
 	// Declared
 	tcp::socket& GetSocket();
@@ -79,5 +83,5 @@ private:
 	void ReadPkgSize();
 	void ReadPkg();
 	void WritePkgSize();
-	void WritePkg(NetPackage::Ptr& pkg);
+	void WritePkg(const std::vector<byte_t>& buf);
 };

@@ -96,11 +96,6 @@ namespace NetRpcManager {
 
 	void OnNewPeer(NetPeer::Ptr peer) {
 		peer->m_rpc->Register("RoutedRPC", &RPC_RoutedRPC);
-		// ZoneSystem callback
-		//if (this.m_onNewPeer != null)
-		//{
-		//	this.m_onNewPeer(peer.m_uid);
-		//}
 	}
 
 	void OnPeerQuit(NetPeer::Ptr peer) {

@@ -3,6 +3,7 @@
 #include "NetManager.h"
 #include "ValhallaServer.h"
 #include "World.h"
+#include "ZoneSystem.h"
 
 using namespace asio::ip;
 using namespace std::chrono;
@@ -254,8 +255,9 @@ namespace NetManager {
 		SendPeerInfo(rpc);
 
 		//NetSyncManager::OnNewPeer(peer);
+
 		NetRpcManager::OnNewPeer(peer);
-		ZoneSystem::OnNewPeer
+		ZoneSystem::OnNewPeer(peer);
 	}
 
 

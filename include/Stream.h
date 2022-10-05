@@ -24,12 +24,14 @@ public:
 	void Read(byte_t* buffer, int count);
 	byte_t ReadByte();
 	void Read(std::vector<byte_t>& vec, int count);
+	void Read(std::vector<byte_t>& vec);
 
 	// buffer -> internal
 	void Write(const byte_t* buffer, int offset, int count);
 	void Write(const byte_t* buffer, int count);
 	void WriteByte(const byte_t value);
 	void Write(const std::vector<byte_t>& vec, int count);
+	void Write(const std::vector<byte_t>& vec);
 
 	byte_t* Bytes() const {
 		return m_bytes.get();

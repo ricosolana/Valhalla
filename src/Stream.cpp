@@ -45,6 +45,10 @@ void Stream::Read(std::vector<byte_t>& vec, int count) {
     m_pos += count;
 }
 
+void Stream::Read(std::vector<byte_t>& vec) {
+    return Read(vec, m_length);
+}
+
 
 
 void Stream::Write(const byte_t* buffer, int offset, int count) {
@@ -63,7 +67,11 @@ void Stream::WriteByte(const byte_t value) {
 }
 
 void Stream::Write(const std::vector<byte_t>& vec, int count) {
-    Write(vec.data(), 0, count);
+    Write(vec.data(), count);
+}
+
+void Stream::Write(const std::vector<byte_t>& vec) {
+    Write(vec.data(), m_length);
 }
 
 

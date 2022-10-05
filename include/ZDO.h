@@ -23,12 +23,9 @@ class ZDO {
 	robin_hood::unordered_map<int, std::string> m_strings;
 	//robin_hood::unordered_map<int, byte[]> m_byteArrays;
 	robin_hood::unordered_map<int, std::vector<byte_t>> m_byteArrays;
-	//ZDOMan m_zdoMan;
-	ZDOMan* m_zdoMan = nullptr;
 
 public:
-	enum ObjectType
-	{
+	enum ObjectType {
 		Default,
 		Prioritized,
 		Solid,
@@ -38,7 +35,7 @@ public:
 	ZDOID m_uid;
 	bool m_persistent = false;
 	bool m_distant = false;
-	int64_t m_owner = 0;
+	//int64_t m_owner = 0; // is equal to server uuid as the server owns it
 	int64_t m_timeCreated = 0;
 	uint32_t m_ownerRevision = 0;
 	uint32_t m_dataRevision = 0;

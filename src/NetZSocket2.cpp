@@ -3,6 +3,11 @@
 #include <asio.hpp>
 #include "NetSocket.h"
 
+/*
+* If memory allocations from vector is too much of a concern,
+* can reuse vectors with some kind of an object maintanance pool
+*/
+
 ZSocket2::ZSocket2(tcp::socket sock)
 	: m_socket(std::move(sock)),
 	m_hostname(m_socket.remote_endpoint().address().to_string()),
@@ -24,14 +29,18 @@ void ZSocket2::Start() {
 void ZSocket2::Send(NetPackage::Ptr pkg) {
 	if (pkg->GetStream().Length() == 0)
 		return;
-	std::deque<NetPackage::Ptr> d;
+
 	if (pkg->GetStream().Length() + 4 > 10485760) {
 		LOG(ERROR) << "Too big package";
 		Close();
 	} else if (m_connectivity != Connectivity::CLOSED) {
 		const bool was_empty = m_sendQueue.empty();
-		d.push_back(pkg);
-		m_sendQueue.push_back(pkg);
+
+		std::vector<byte_t> buf;
+		pkg->GetStream().Read(buf);
+		m_sendQueue.push_back(std::move(buf)); // this blocks
+		m_sendQueueSize += buf.size();
+
 		if (was_empty) {
 			WritePkgSize();
 		}
@@ -68,6 +77,12 @@ Connectivity ZSocket2::GetConnectivity() {
 	return m_connectivity;
 }
 
+int ZSocket2::GetSendQueueSize() {
+	return m_sendQueueSize;
+}
+
+
+
 
 
 tcp::socket& ZSocket2::GetSocket() {
@@ -97,10 +112,7 @@ void ZSocket2::ReadPkg() {
 		LOG(ERROR) << "Invalid pkg size received " << m_tempReadOffset;
 		Close();
 	}
-	else {
-		//m_recvQueue.push_back(NetPackage(m_tempReadOffset));
-		//auto &front = m_recvQueue.front();
-		
+	else {		
 		auto recv(PKG(m_tempReadOffset));
 
 		auto self(shared_from_this());
@@ -122,18 +134,16 @@ void ZSocket2::ReadPkg() {
 }
 
 void ZSocket2::WritePkgSize() {
-	// capture the perfect front object
-	// instead of making another shared_ptr and incrementing ref
-	auto &&pkg = m_sendQueue.front(); 
+	auto &&vec = m_sendQueue.front(); 
 
-	m_tempWriteOffset = pkg->GetStream().Length();
+	m_tempWriteOffset = vec.size();
 
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
 		asio::buffer(&m_tempWriteOffset, 4),
-		[this, self, &pkg](const std::error_code& e, size_t) {
+		[this, self, &vec](const std::error_code& e, size_t) {
 		if (!e) {
-			WritePkg(pkg);
+			WritePkg(vec);
 		}
 		else {
 			LOG(DEBUG) << "write header error: " << e.message() << " (" << e.value() << ")";
@@ -142,13 +152,13 @@ void ZSocket2::WritePkgSize() {
 	});
 }
 
-void ZSocket2::WritePkg(NetPackage::Ptr &pkg) {
+void ZSocket2::WritePkg(const std::vector<byte_t> &buf) {
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
-		asio::buffer(pkg->GetStream().Bytes(), m_tempWriteOffset),
+		asio::buffer(buf, m_tempWriteOffset),
 		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
-			m_sendQueue.pop_front();
+			m_sendQueueSize -= m_sendQueue.pop_front().size();
 			if (!m_sendQueue.empty()) {
 				WritePkgSize();
 			}

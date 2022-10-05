@@ -21,11 +21,11 @@
 #include <iostream>
 #include <zlib.h>
 #include <robin_hood.h>
-#include "AsyncDeque.h"
 #include <easylogging++.h>
 #include <type_traits>
 #include <concepts>
 #include <bitset>
+#include "AsyncDeque.h"
 
 using namespace std::chrono_literals;
 
