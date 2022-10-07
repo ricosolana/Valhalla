@@ -9,7 +9,11 @@ The purpose of this project is just to explore and be creative in a non-commerci
 Do this at your own risk. I am not liable for anything you decide to do with this.
 
 ## Overview
-I have separated the different implementations of Valhalla into branches. The main branch is mainly informative based and my personal findings. The client is located on the `client` branch. The server is located in the `server` branch. The client is no longer being developed due to my technical limitations with graphical programming. The `steamapi-example` branch is a minimal example of steam api. I made a feeble attempt in using the steam api to host the server (like Valheim does), but I kept running into issues with the server requiring the Steam client to be already running.
+ - I have separated the different implementations of Valhalla into branches. 
+ - The `main` branch is mainly informative based and my personal findings. 
+ - The server is located in the `server` branch. 
+ - The client is located on the `client` branch. It is no longer being maintained due to my technical limitations with graphical programming.
+ - The `steamapi-example` branch is a minimal example of steam api. I made a feeble attempt with the steam api to host the server (like Valheim does), but I kept running into issues with the server requiring the Steam client to be already running (located on the `steam-gameserver` branch).
 
-See My Valheim Manifesto (old but cool)
+See My Valheim Manifesto (old)
 https://docs.google.com/document/d/1Op_0dvQnDZkcbUCZ3MQMSAsxho7J8jbJeEkfW_8lMRY/edit?usp=sharing
