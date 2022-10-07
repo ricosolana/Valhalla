@@ -8,6 +8,7 @@ You'll have to manually build the server (I created a new Cmake project within M
 ## Progress
 10/7/2022 - The client can join and finally see the world, albeit is an ocean.
 
+![Ocean spawn image](/res/ocean_spawn.jpg)
 
 ## Building
 For the server, assuming you have no dependencies or required stuff installed, open a shell and install vcpkg, then bootstrap it:
