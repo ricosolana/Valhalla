@@ -50,7 +50,7 @@ namespace NetRpcManager {
 				find->second->Invoke(data.m_targetPeerID, data.m_parameters);
 			}
 			else {
-				LOG(INFO) << "Client tried invoking unknown RoutedRPC handler";
+				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
 			}
 		}
 	}
@@ -80,7 +80,7 @@ namespace NetRpcManager {
 		data.m_methodHash = Utils::GetStableHashCode(name.c_str());
 		data.m_parameters = pkg;
 
-		data.m_parameters->GetStream().ResetPos();
+		data.m_parameters->GetStream().SetMarker(0);
 
 		// Handle message
 		if (target == SERVER_ID

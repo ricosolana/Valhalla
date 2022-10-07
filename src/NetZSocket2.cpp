@@ -37,7 +37,7 @@ void ZSocket2::Send(NetPackage::Ptr pkg) {
 		const bool was_empty = m_sendQueue.empty();
 
 		std::vector<byte_t> buf;
-		pkg->GetStream().Read(buf);
+		pkg->GetStream().Bytes(buf);
 		m_sendQueue.push_back(std::move(buf)); // this blocks
 		m_sendQueueSize += buf.size();
 
@@ -121,7 +121,6 @@ void ZSocket2::ReadPkg() {
 			[this, self, recv](const std::error_code& e, size_t) {
 			if (!e) {
 				recv->GetStream().SetLength(m_tempReadOffset);
-				recv->GetStream().ResetPos();
 				m_recvQueue.push_back(recv);
 				ReadPkgSize();
 			}

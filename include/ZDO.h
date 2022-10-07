@@ -7,8 +7,6 @@
 #include "Utils.h"
 #include "ZDOID.h"
 
-class ZDOMan;
-
 class ZDO {
 	int m_prefab = 0;
 	Vector2i m_sector;

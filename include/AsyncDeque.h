@@ -11,8 +11,6 @@
 #include <chrono>
 #include <cstdint>
 
-//#define USE_DEQUE_WAIT
-
 template<typename T>
 class AsyncDeque
 {

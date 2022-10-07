@@ -102,8 +102,8 @@ endif()
 add_executable(${PROJECT_NAME}
     #"src/SteamManager.cpp"
 
-    "src/BinaryReader.cpp"
-    "src/BinaryWriter.cpp"
+    
+    
     "src/ValhallaServer.cpp" 
     "src/HashUtils.cpp"
     "src/Main.cpp"
@@ -132,7 +132,7 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp" 
     "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
- "src/ZoneSystem.cpp" "include/HeightMap.h")
+ "src/ZoneSystem.cpp" "include/HeightMap.h" "include/CompileSettings.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

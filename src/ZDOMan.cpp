@@ -110,6 +110,7 @@ namespace ZDOManager {
 	}
 
 	void RPC_ZDOData(NetRpc* rpc, NetPackage::Ptr pkg) {
+		throw std::runtime_error("Not implemented");
 		auto zdopeer = GetPeer(rpc);
 		assert(zdopeer);
 
@@ -147,7 +148,7 @@ namespace ZDOManager {
 			if (zdo) {
 				if (num4 <= zdo->m_dataRevision) {
 					if (num3 > zdo->m_ownerRevision) {
-						zdo->m_owner = owner;
+						//zdo->m_owner = owner;
 						zdo->m_ownerRevision = num3;
 						zdopeer->m_zdos.insert({ zdoid, ZDOPeer::PeerZDOInfo(num4, num3, time) });
 					}
@@ -160,25 +161,26 @@ namespace ZDOManager {
 				flag = true;
 			}
 
-			zdo->m_ownerRevision = num3;
-			zdo->m_dataRevision = num4;
-			zdo->m_owner = owner;
-			zdo->InternalSetPosition(vector);
-			zdopeer->m_zdos.insert({ zdoid, 
-				ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
-			);
-			zdo->Deserialize(pkg2);
-			if (flag && m_deadZDOs.contains(zdoid)) {
-				zdo->SetOwner(Valhalla()->m_serverUuid);
-				this.DestroyZDO(zdo);
-			}
+			//zdo->m_ownerRevision = num3;
+			//zdo->m_dataRevision = num4;
+			//zdo->m_owner = owner;
+			//zdo->InternalSetPosition(vector);
+			//zdopeer->m_zdos.insert({ zdoid, 
+			//	ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
+			//);
+			//zdo->Deserialize(pkg2);
+			//if (flag && m_deadZDOs.contains(zdoid)) {
+			//	zdo->SetOwner(Valhalla()->m_serverUuid);
+			//	this.DestroyZDO(zdo);
+			//}
 		}
 
-		m_zdosRecv += zdosRecv;
+		//m_zdosRecv += zdosRecv;
 			
 	}
 
 	bool SendZDOs(ZDOPeer* peer, bool flush) {
+		throw std::runtime_error("Not implemented");
 		int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
 		
 		// flush is presumably for preventing network lagg
@@ -190,12 +192,12 @@ namespace ZDOManager {
 		if (availableSpace < 2048)
 			return false;
 
-		m_tempToSync.Clear();
-		CreateSyncList(peer, m_tempToSync);
+		//m_tempToSync.Clear();
+		//CreateSyncList(peer, m_tempToSync);
 
 		// continue only if there are updated/invalid zdos to send
-		if (m_tempToSync.Count == 0 && peer->m_invalidSector.empty())
-			return false;
+		//if (m_tempToSync.Count == 0 && peer->m_invalidSector.empty())
+		//	return false;
 
 		/*
 		* ZDOData packet structure:
@@ -227,31 +229,31 @@ namespace ZDOManager {
 		//float time = Time.time;
 		float time = 0;
 		
-		int currentTemp = 0;
-		while (currentTemp < m_tempToSync.Count && pkg->GetStream().Length() <= availableSpace)
-		{
-			ZDO *zdo = m_tempToSync[currentTemp];
-			peer->m_forceSend.erase(zdo->m_uid);
-
-
-			pkg->Write(zdo->m_uid);
-			pkg->Write(zdo->m_ownerRevision);
-			pkg->Write(zdo->m_dataRevision);
-			pkg->Write(zdo->m_owner);
-			pkg->Write(zdo->GetPosition());
-			
-			auto zdopkg(PKG());
-			zdo->Serialize(zdopkg); // dump zdo information onto packet
-			pkg->Write(zdopkg);
-
-			peer->m_zdos[zdo->m_uid] = ZDOPeer::PeerZDOInfo(
-				zdo->m_dataRevision, zdo->m_ownerRevision, time);
-			
-			zdosWritten = true;
-			//m_zdosSent++;
-			currentTemp++;
-		}
-		pkg->Write(ZDOID::NONE); // used as the null terminator
+		//int currentTemp = 0;
+		//while (currentTemp < m_tempToSync.Count && pkg->GetStream().Length() <= availableSpace)
+		//{
+		//	ZDO *zdo = m_tempToSync[currentTemp];
+		//	peer->m_forceSend.erase(zdo->m_uid);
+		//
+		//
+		//	pkg->Write(zdo->m_uid);
+		//	pkg->Write(zdo->m_ownerRevision);
+		//	pkg->Write(zdo->m_dataRevision);
+		//	pkg->Write(zdo->m_owner);
+		//	pkg->Write(zdo->GetPosition());
+		//	
+		//	auto zdopkg(PKG());
+		//	zdo->Serialize(zdopkg); // dump zdo information onto packet
+		//	pkg->Write(zdopkg);
+		//
+		//	peer->m_zdos[zdo->m_uid] = ZDOPeer::PeerZDOInfo(
+		//		zdo->m_dataRevision, zdo->m_ownerRevision, time);
+		//	
+		//	zdosWritten = true;
+		//	//m_zdosSent++;
+		//	currentTemp++;
+		//}
+		//pkg->Write(ZDOID::NONE); // used as the null terminator
 
 		if (zdosWritten)
 			peer->m_peer->m_rpc->Invoke("ZDOData", pkg);

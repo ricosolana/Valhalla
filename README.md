@@ -81,3 +81,11 @@ Valheim networking system:
 						You can tell that the devs really tried to improve network performance, because some code is left over as a "reminder" I guess (SendZDOToPeers, ...). It would be better if they compressed the SendZDOs call like literally every other game. Some mods take care of this, but still why.
 				
 				SendDestroyed ZDOs to all peers 
+
+
+	Through some debugging, it appears that every ZDO on the server has its owner set to the server uid. In thinking about what data goes in/out between server/client, I should be able to create a system to send out ZDOs. I'm just not going to be able to rewrite Valheims system completely because its insanely long. Each of these heavy-lifting classes are at least 1k lines. The largest class I've found so far is Player (~5k).
+
+	It seem that when RandEventSystem is invoke remotely by the server -> client for the first time, the player client is able to load the world (visually). This is based off one test however and requires further validation. This oculd also correlate with the player global join message being sent, but its unknown whether this is an effective causation.
+
+		In Game::FindSpawnPoint, this is what dictates the player
+		spawning into the world and seeing terrain/trees (after the loading screen 8s wait). The player will spawn in only after 8s have passed and ZNetScene is ready.

@@ -8,4 +8,6 @@ namespace ZoneSystem {
 	void OnNewPeer(NetPeer::Ptr peer);
 
 	Vector2i GetZoneCoords(const Vector3 &point);
+
+	void Init();
 }

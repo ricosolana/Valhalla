@@ -13,11 +13,7 @@ class ValhallaServer {
 
 	std::recursive_mutex m_taskMutex;
 
-	//Settings m_settings;
-
 public:
-	//static constexpr const char* VERSION = "0.202.19";
-	static constexpr const char* VERSION = "0.211.7";
 	std::string m_serverName;
 	std::string m_serverPassword;
 	uuid_t m_serverUuid;

@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <concepts>
 #include <bitset>
+#include "CompileSettings.h"
 #include "AsyncDeque.h"
 
 using namespace std::chrono_literals;

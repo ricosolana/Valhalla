@@ -1,39 +1,32 @@
 #include "NetPackage.h"
 #include <zlib.h>
 
-NetPackage::NetPackage(byte_t* data, int32_t count) {
-    Load(data, count);
+NetPackage::NetPackage(byte_t* data, uint32_t count) {
+    From(data, count);
 }
 
 NetPackage::NetPackage(std::vector<byte_t>& vec)
-    : NetPackage(vec.data(), vec.size()) {}
+    : NetPackage(vec.data(), static_cast<uint32_t>(vec.size())) {}
 
-NetPackage::NetPackage(int32_t reserve)
+NetPackage::NetPackage(uint32_t reserve)
     : m_stream(reserve) {}
 
 
 
-void NetPackage::Write(const byte_t* in, int32_t count) {
+void NetPackage::Write(const byte_t* in, uint32_t count) {
     Write(count);
 	m_stream.Write(in, count);
 }
 
 void NetPackage::Write(const std::string& in) {
-    int byteCount = static_cast<int>(in.length()); // Utils::GetUnicode8Count(in.c_str());
-    if (byteCount > 256)
-        throw std::runtime_error("Writing big string not yet supported");
+    int byteCount = static_cast<int>(in.length());
 
-    // std::u8string s()
-
-    // slight optimization
     m_stream.ReserveExtra(1 + in.length());
 
     Write7BitEncodedInt(byteCount);
 
     if (byteCount == 0)
         return;
-
-    // string is not correctly encoded in the case of non-utf8 formats
 
     m_stream.Write(reinterpret_cast<const byte_t*>(in.c_str()), byteCount);
 }
@@ -76,8 +69,7 @@ void NetPackage::Write(const Vector2i& in) {
      Write(in.y);
 }
 
-void NetPackage::Write(const Quaternion& in)
-{
+void NetPackage::Write(const Quaternion& in) {
      Write(in.x);
      Write(in.y);
      Write(in.z);
@@ -86,23 +78,12 @@ void NetPackage::Write(const Quaternion& in)
 
 
 
-void NetPackage::Load(byte_t* data, int32_t count) {
+void NetPackage::From(byte_t* data, int32_t count) {
     m_stream.Clear();
-    m_stream.Write(data, 0, count);
+    m_stream.Write(data, count);
 }
 
 
-
-NetPackage::Ptr NetPackage::ReadCompressed() {
-    //int count = Read<int32_t>();
-
-    //return NetPackage(Utils::Decompress(Read(count)));
-    throw std::runtime_error("not implemented");
-}
-
-void NetPackage::WriteCompressed(NetPackage::Ptr in) {
-    throw std::runtime_error("not implemented");
-}
 
 void NetPackage::Read(std::vector<byte_t>& out) {
     m_stream.Read(out, Read<int32_t>());
@@ -111,7 +92,7 @@ void NetPackage::Read(std::vector<byte_t>& out) {
 void NetPackage::Read(std::vector<std::string>& out) {
     auto count = Read<int32_t>();
     out.reserve(count);
-
+    
     while (count--) {
         out.push_back(Read<std::string>());
     }
@@ -141,6 +122,6 @@ int NetPackage::Read7BitEncodedInt() {
             return out;
         }
     }
-    throw std::runtime_error("bad encoded Int32");
+    throw std::runtime_error("bad encoded int");
 }
 

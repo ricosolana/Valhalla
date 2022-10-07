@@ -75,8 +75,10 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void InvokeRoute(const std::string& name, Args... params) {
-		InvokeRoute(_ServerID(), name, params);
+	void InvokeRoute(uuid_t target, const ZDOID& targetZDO, const std::string& name, Args... params) {
+		auto pkg(PKG());
+		NetPackage::Serialize(pkg, params...);
+		_InvokeRoute(target, targetZDO, name, pkg);
 	}
 
 	/**
@@ -86,7 +88,7 @@ namespace NetRpcManager {
 	*/
 	template <typename... Args>
 	void InvokeRoute(uuid_t target, const std::string& name, Args... params) {
-		InvokeRoute(target, ZDOID::NONE, name, params);
+		InvokeRoute(target, ZDOID::NONE, name, params...);
 	}
 
 	/**
@@ -95,9 +97,8 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void InvokeRoute(uuid_t target, const ZDOID &targetZDO, const std::string& name, Args... params) {
-		auto pkg(PKG());
-		NetPackage::Serialize(pkg, params);
-		_InvokeRoute(target, targetZDO, name, pkg);
+	void InvokeRoute(const std::string& name, Args... params) {
+		InvokeRoute(_ServerID(), name, params...);
 	}
+
 };

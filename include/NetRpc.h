@@ -6,8 +6,6 @@
 
 #include "Task.h"
 
-#define RPC_DEBUG
-
 enum class ConnectionStatus;
 
 class NetRpc {

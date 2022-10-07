@@ -102,6 +102,8 @@ namespace ZoneSystem {
 	// used for runestones/vegvisirs
 	static std::vector<std::pair<Vector2i, LocationInstance>> m_locationInstances;
 
+	static const char* TEMPLE_START = "TempleStart";
+
 	static constexpr float ZONE_SIZE = 64;
 
 	void SendGlobalKeys(uuid_t target) {
@@ -131,8 +133,15 @@ namespace ZoneSystem {
 	}
 
 	void SendLocationIcons(uuid_t target) {
-		throw std::runtime_error("Not implemented");
-		//auto pkg(PKG());
+		auto pkg(PKG());
+
+		// count
+		pkg->Write((int32_t)1);
+		// key
+		pkg->Write(Vector3{ 0, 40, 0 });
+		// value
+		pkg->Write("StartTemple");
+
 		//tempIconList.Clear();
 		//GetLocationIcons(this.tempIconList);
 		//zpackage.Write(this.tempIconList.Count);
@@ -141,22 +150,23 @@ namespace ZoneSystem {
 		//	pkg->Write(keyValuePair.Key);
 		//	pkg->Write(keyValuePair.Value);
 		//}
-		////NetRpcManager::
-		//
-		//ZRoutedRpc.instance.InvokeRoutedRPC(peer, "LocationIcons", new object[]
-		//	{
-		//		zpackage
-		//	});
+		
+		NetRpcManager::InvokeRoute(target, "LocationIcons", pkg);
 	}
 
 	void OnNewPeer(NetPeer::Ptr peer) {
 		SendGlobalKeys(peer->m_uuid);
-		//SendLocationIcons(target);
+		SendLocationIcons(peer->m_uuid);
 	}
 
 	Vector2i GetZoneCoords(const Vector3 &point) {
 		int x = (int)((point.x + ZONE_SIZE / 2.f) / ZONE_SIZE);
 		int y = (int)((point.z + ZONE_SIZE / 2.f) / ZONE_SIZE);
 		return { x, y };
+	}
+
+	void Init() {
+		// inserts the blank dummy key
+		m_globalKeys.insert("");
 	}
 }

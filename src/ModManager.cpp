@@ -178,7 +178,7 @@ namespace ModManager {
 			auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
 			//apiTable["RegisterMod"] = Api::RegisterMod;
-			apiTable["Version"] = ValhallaServer::VERSION;
+			apiTable["Version"] = SERVER_VERSION;
 
 			auto ptr(new Mod(
 				// required

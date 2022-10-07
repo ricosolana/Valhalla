@@ -25,35 +25,31 @@ concept EnumType = std::is_enum_v<E>;
 #define PKG(...) std::make_shared<NetPackage>(##__VA_ARGS__)
 
 class NetPackage {
-    //BinaryWriter m_writer;
-    //BinaryReader m_reader;
-    Stream m_stream;
-
     void Write7BitEncodedInt(int value);
     int Read7BitEncodedInt();
 
 public:
     using Ptr = std::shared_ptr<NetPackage>;
 
-    
+    Stream m_stream;
 
     // Used when creating a packet for dispatch
     NetPackage() = default;
     NetPackage(const NetPackage&) = default; // copy
     NetPackage(NetPackage&&) = delete; // move
-    // Used in inventory item reading
+    // Used in container item reading
     //Package(std::string& base64);
 
 
 
     // Used for reading incoming data from packet
-    NetPackage(byte_t* data, int32_t count);
+    NetPackage(byte_t* data, uint32_t count);
     NetPackage(std::vector<byte_t>& vec);
-    NetPackage(int32_t reserve);
+    NetPackage(uint32_t reserve);
 
 
 
-    void Write(const byte_t* in, int32_t count);          // Write array
+    void Write(const byte_t* in, uint32_t count);
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
     void Write(const std::vector<byte_t> &in);            // Write array
@@ -71,8 +67,9 @@ public:
     // https://stackoverflow.com/questions/60524480/how-to-force-a-template-parameter-to-be-an-enum-or-enum-class
     template<EnumType E>
     void Write(E v) {
+        //std::to_underlying
         using T = std::underlying_type_t<E>;
-        Write((T)v);
+        Write(static_cast<T>(v));
     }
 
 
@@ -94,10 +91,14 @@ public:
         if (byteCount == 0)
             return "";
 
-        std::string out;
-        out.resize(byteCount);
+        // this is a bit slower because the resize then copy again
+        //std::string out;
+        //out.resize(byteCount);
+        //
+        //m_stream.Read(reinterpret_cast<byte_t*>(out.data()), byteCount);
 
-        m_stream.Read(reinterpret_cast<byte_t*>(out.data()), byteCount);
+        std::string out;
+        m_stream.Read(out, byteCount);
 
         return out;
     }
@@ -114,7 +115,7 @@ public:
         T out;
         auto count = Read<int32_t>();
         while (count--) {
-            out.emplace_back(Read<std::string>());
+            out.push_back(Read<std::string>());
         }
         return out;
     }
@@ -124,14 +125,14 @@ public:
         auto count = Read<int32_t>();
         auto pkg(PKG(count));
         m_stream.Read(pkg->m_stream.Bytes(), count);
-        pkg->GetStream().SetLength(count);
-        pkg->GetStream().ResetPos();
+        pkg->m_stream.SetLength(count);
+        pkg->m_stream.SetMarker(0);
         return pkg;
     }
 
     template<typename T>
     T Read() requires std::same_as<T, ZDOID> {
-        return ZDOID(Read<int64_t>(), Read<uint32_t>());
+        return ZDOID(Read<uuid_t>(), Read<uint32_t>());
     }
 
     template<typename T>
@@ -160,24 +161,22 @@ public:
 
 
 
-    void Load(byte_t* buf, int32_t offset);
-
-    NetPackage::Ptr ReadCompressed();
-    void WriteCompressed(NetPackage::Ptr);
+    void From(byte_t* buf, int32_t offset);
 
     void Read(std::vector<byte_t>& out);
     void Read(std::vector<std::string>& out);
 
 
 
+    Stream& GetStream() {
+        return m_stream;
+    }
+
+
+
     // Empty template accepter
     static void Serialize(NetPackage::Ptr pkg) {}
 
-    
-    // this wont compile when trying to use enums
-    // see:
-    // https://cplusplus.com/reference/type_traits/underlying_type/
-    // this might allow compile when casting the enum to its underlying type
     template <typename T, typename... Types>
     static void Serialize(NetPackage::Ptr pkg, T var1, Types... var2) {
         pkg->Write(var1);
@@ -197,12 +196,6 @@ public:
         auto a(Deserialize<F>(pkg));
         std::tuple<S, R...> b = Deserialize<S, R...>(pkg);
         return std::tuple_cat(a, b);
-    }
-
-
-
-    Stream& GetStream() {
-        return m_stream;
     }
 
 };

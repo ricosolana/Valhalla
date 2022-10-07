@@ -4,6 +4,7 @@
 #include "ValhallaServer.h"
 #include "World.h"
 #include "ZoneSystem.h"
+#include "ZDOMan.h"
 
 using namespace asio::ip;
 using namespace std::chrono;
@@ -181,7 +182,7 @@ namespace NetManager {
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
 		auto pkg(PKG());
 		pkg->Write(Valhalla()->m_serverUuid);
-		pkg->Write(ValhallaServer::VERSION);
+		pkg->Write(SERVER_VERSION);
 		pkg->Write(Vector3()); // dummy
 		pkg->Write("Stranger"); // valheim uses this, which is dumb
 
@@ -204,7 +205,7 @@ namespace NetManager {
 		auto uuid = pkg->Read<uuid_t>();
 		auto version = pkg->Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
-		if (version != std::string(ValhallaServer::VERSION)) {
+		if (version != SERVER_VERSION) {
 			return rpc->SendError(ConnectionStatus::ErrorVersion);
 		}
 
@@ -212,6 +213,7 @@ namespace NetManager {
 		auto name = pkg->Read<std::string>();
 		auto password = pkg->Read<std::string>();
 		//auto ticket = read array... // normally for steam
+		pkg->Read<std::vector<byte_t>>();
 
 		if (password != Valhalla()->m_serverPassword) {
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
@@ -255,7 +257,7 @@ namespace NetManager {
 		SendPeerInfo(rpc);
 
 		//NetSyncManager::OnNewPeer(peer);
-
+		//ZDOManager::OnNewPeer(peer);
 		NetRpcManager::OnNewPeer(peer);
 		ZoneSystem::OnNewPeer(peer);
 	}
@@ -294,6 +296,8 @@ namespace NetManager {
 		m_acceptor->Start();
 
 		m_world = std::make_unique<World>();
+
+		ZoneSystem::Init();
 
 		Valhalla()->RunTaskLaterRepeat([](Task*) {
 			SendNetTime();
@@ -361,13 +365,13 @@ namespace NetManager {
 		//	this is done after peers rpc update because in the weird case
 		//	where a joining becomes a peer then is processed twice in an update tick
 		for (auto&& rpc : m_joining) {
-			try {
+			//try {
 				rpc->Update();
-			}
-			catch (const std::range_error& e) {
-				LOG(ERROR) << "Connecting peer provided malformed data";
-				rpc->m_socket->Close();
-			}
+			//}
+			//catch (const std::range_error& e) {
+			//	LOG(ERROR) << "Connecting peer provided malformed payload";
+			//	rpc->m_socket->Close();
+			//}
 		}
 
 		m_netTime += delta;

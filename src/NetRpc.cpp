@@ -14,7 +14,7 @@ NetRpc::NetRpc(ISocket::Ptr socket)
 		pkg->Write<int32_t>(0);
 		pkg->Write(true);
 		SendPackage(pkg);
-	}, 3s, 1s);
+	}, 3s, RPC_PING_INTERVAL);
 }
 
 NetRpc::~NetRpc() {
@@ -70,16 +70,16 @@ void NetRpc::Update() {
 			}
 			else {
 #ifdef RPC_DEBUG
-				LOG(INFO) << "Client tried invoking unknown RPC handler: " << name;
+				LOG(INFO) << "Client tried invoking unknown RPC: " << name;
 #else
-				LOG(INFO) << "Client tried invoking unknown RPC handler";
+				LOG(INFO) << "Client tried invoking unknown RPC: " << hash;
 #endif
-				m_socket->Close();
+				//m_socket->Close();
 			}
 		}
 	}
 	
-	if (now - m_lastPing > 30s) {
+	if (now - m_lastPing > RPC_PING_TIMEOUT) {
 		LOG(INFO) << "Client timeout";
 		m_socket->Close();
 	}
