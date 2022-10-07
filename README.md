@@ -1,11 +1,5 @@
 # Valhalla
-Open source Valheim server and client written in C++
-
-The branches are all over the place, and I plan to fix this eventually. In the meantime bear with it.
-
-The client is on the `main` branch (this branch), the current-dev server is on the `main-server` branch.
-
-I have halted any further development of the client until further notice (graphical programming = bad).
+Open source Valheim server and client written in C++.
 
 ## Disclaimer
 I am in no way affiliated, endorsed, or associated with Valheim nor its creators.
@@ -14,22 +8,9 @@ The purpose of this project is just to explore and be creative in a non-commerci
 
 Do this at your own risk. I am not liable for anything you decide to do with this.
 
-## Building
-For the server, assuming you have no dependencies or required stuff installed, open a shell and install vcpkg, then bootstrap it:
-```bash
-git clone https://github.com/microsoft/vcpkg
-.\vcpkg\bootstrap-vcpkg.bat
-```
-Now the libraries to install:
-```bash
-.\vcpkg\vcpkg.exe integrate install
-.\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
-.\vcpkg\vcpkg.exe install robin-hood-hashing --triplet=x64-windows
-.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
-.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
-```
-
 ## Overview
+I have separated the different implementations of Valhalla into branches. The main branch is mainly informative based and my personal findings. The client is located on the `client` branch. The server is located in the `server` branch. The client is no longer being developed due to my technical limitations with graphical programming. The `steamapi-example` branch is a minimal example of steam api. I made a feeble attempt in using the steam api to host the server (like Valheim does), but I kept running into issues with the server requiring the Steam client to be already running.
+
 Valheim uses the Steamworks API for authentication, networking, and lobbies. Valve's GameNetworkingSockets will not work because Steam sockets require the Steam backend. This is frustrating because I want legitimate clients to be authorized normally and join this server. I hope to use Steam authorization in the future, its just too complicated right now. So, how can clients connect?
 
 A temporary fix is introduced by modifying a few lines in both the Valheim server and client. For some reason, the devs left some of their older networking sockets that make use of C# TCP sockets. We will be using those.
