@@ -3,7 +3,7 @@ Open source Valheim server and client written in C++
 
 The branches are all over the place, and I plan to fix this eventually. In the meantime bear with it.
 
-The client is on the `main` branch (this branch), the current-dev server is on the `steam-gameserver` branch.
+The client is on the `main` branch (this branch), the current-dev server is on the `main-server` branch.
 
 I have halted any further development of the client until further notice (graphical programming = bad).
 
