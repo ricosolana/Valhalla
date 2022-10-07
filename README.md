@@ -7,10 +7,10 @@ You'll have to manually build the server (I created a new Cmake project within M
 
 ## Progress
 10/8/2022 + TODO
-    
-    I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
-    
-    Also the client ZRpc occasionally experiences a timeout. I'm not sure why yet, because data is still sent fine between the client and server until the timeout disconenct.
+
+ - I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
+ 
+ - Also the client ZRpc occasionally experiences a timeout. I'm not sure why yet, because data is still sent fine between the client and server until the timeout disconenct.
     
 
 10/7/2022 - The client can join and finally see the world, albeit is an ocean.
@@ -38,8 +38,8 @@ This patch works on Valheim 0.211.8 (Crossplay update). The steps below assume y
 1. Download and install [Dnspy](https://github.com/dnSpy/dnSpy/releases/tag/v6.1.8). Open it after installing.
 
 2. Within Dnspy, open `assembly_valheim.dll` using **one** of the following methods:
- - Drag-and-drop the `assembly_valheim.dll` into the left hand side of Dnspy `Assembly Explorer`.
- - In the top-left click on `File`->`Open` then locate `assembly_valheim.dll`. It should be wherever you installed the game under `.\valheim_Data\Managed`.
+   - Drag-and-drop the `assembly_valheim.dll` into the left hand side of Dnspy `Assembly Explorer`.
+   - In the top-left click on `File`->`Open` then locate `assembly_valheim.dll`. It should be wherever you installed the game under `.\valheim_Data\Managed`.
     
 2. Enter the shortcut `ctrl`+`shift`+`K` (search assemblies). Search for `fejdstartup`. Double click the first result (.cctor). 
 
