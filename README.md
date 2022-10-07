@@ -33,7 +33,7 @@ Install the required libraries:
 ```
 
 ## Patching
-This patch works on Valheim 0.211.8 (Crossplay update). The steps below assume you have never used Dnspy. Make sure to backup `assembly_valheim` before continuing.
+This patch works on Valheim 0.211.8 (Crossplay update). The steps below assume you have never used Dnspy. Make sure to backup `assembly_valheim.dll` before continuing.
 
 1. Download and install [Dnspy](https://github.com/dnSpy/dnSpy/releases/tag/v6.1.8). Open it after installing.
 
@@ -41,9 +41,9 @@ This patch works on Valheim 0.211.8 (Crossplay update). The steps below assume y
    - Drag-and-drop the `assembly_valheim.dll` into the left hand side of Dnspy `Assembly Explorer`.
    - In the top-left click on `File`->`Open` then locate `assembly_valheim.dll`. It should be wherever you installed the game under `.\valheim_Data\Managed`.
     
-2. Enter the shortcut `ctrl`+`shift`+`K` (search assemblies). Search for `fejdstartup`. Double click the first result (.cctor). 
+2. Enter the shortcut `ctrl`+`shift`+`K` (search assemblies). Search for `fejdstartup`. Double-click the first result (.cctor). 
 
-3. Scroll down to line 857. Right-click then click on `Edit Method C#...`.
+3. Scroll down to line 857. Right-click then `Edit Method C#...`.
 
 4. The following line should be on line 46 in the code editor window:
 ```c#
@@ -54,6 +54,6 @@ ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBacke
 
 6. Click on compile in the bottom right. The change should now be reflected in the class view.
 
-7. In the top-left click on `File`->`Save Module`. Click `OK` in the window.
+7. In the top-left click on `File`->`Save Module...`. Click `OK` in the window.
 
-The assembly should now be patched. Open Valheim, and try joining the Valhalla server as you would any other dedicated server.
+The assembly should now be patched. Open Valheim join the Valhalla server as you would any other dedicated server. You might spawn in water or on barren land. This is perfectly normal as the server has no other functionality at its current state of development.
