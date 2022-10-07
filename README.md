@@ -6,6 +6,13 @@ This is the non-steam server implementation. It's a TCP server implementation th
 You'll have to manually build the server (I created a new Cmake project within MSVC).
 
 ## Progress
+10/8/2022 + TODO
+    
+    I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
+    
+    Also the client ZRpc occasionally experiences a timeout. I'm not sure why yet, because data is still sent fine between the client and server until the timeout disconenct.
+    
+
 10/7/2022 - The client can join and finally see the world, albeit is an ocean.
 
 ![Ocean spawn image](/res/ocean_spawn.jpg)
