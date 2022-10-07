@@ -365,13 +365,13 @@ namespace NetManager {
 		//	this is done after peers rpc update because in the weird case
 		//	where a joining becomes a peer then is processed twice in an update tick
 		for (auto&& rpc : m_joining) {
-			//try {
+			try {
 				rpc->Update();
-			//}
-			//catch (const std::range_error& e) {
-			//	LOG(ERROR) << "Connecting peer provided malformed payload";
-			//	rpc->m_socket->Close();
-			//}
+			}
+			catch (const std::range_error& e) {
+				LOG(ERROR) << "Connecting peer provided malformed payload";
+				rpc->m_socket->Close();
+			}
 		}
 
 		m_netTime += delta;
