@@ -26,6 +26,7 @@ public:
 	Task* RunTask(Task::F f);
 	Task* RunTaskLater(Task::F f, std::chrono::milliseconds after);
 	Task* RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at);
+	Task* RunTaskRepeat(Task::F f, std::chrono::milliseconds period);
 	Task* RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period);
 	Task* RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
 

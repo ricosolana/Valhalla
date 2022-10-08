@@ -10,7 +10,6 @@ enum class ConnectionStatus;
 
 class NetRpc {
 	std::chrono::steady_clock::time_point m_lastPing;
-	Task* m_pingTask = nullptr;
 	bool m_ignore = false;
 	
 	robin_hood::unordered_map<hash_t, std::unique_ptr<ZMethodBase<NetRpc*>>> m_methods;

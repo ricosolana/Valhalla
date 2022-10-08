@@ -111,6 +111,7 @@ namespace ZDOManager {
 
 	void RPC_ZDOData(NetRpc* rpc, NetPackage::Ptr pkg) {
 		throw std::runtime_error("Not implemented");
+
 		auto zdopeer = GetPeer(rpc);
 		assert(zdopeer);
 
@@ -138,41 +139,43 @@ namespace ZDOManager {
 
 			auto zdo = GetZDO(zdoid);
 
-			auto num3 = pkg->Read<uint32_t>(); // owner revision
-			auto num4 = pkg->Read<uint32_t>(); // data revision
+			auto ownerRevision = pkg->Read<uint32_t>(); // owner revision
+			auto dataRevision = pkg->Read<uint32_t>(); // data revision
 			auto owner = pkg->Read<uuid_t>(); // owner
-			auto vector = pkg->Read<Vector3>(); // position
+			auto vec3 = pkg->Read<Vector3>(); // position
 			auto pkg2 = pkg->Read<NetPackage::Ptr>(); //
 			
-			bool flag = false;
+			bool flagCreated = false;
 			if (zdo) {
-				if (num4 <= zdo->m_dataRevision) {
-					if (num3 > zdo->m_ownerRevision) {
+				if (dataRevision <= zdo->m_dataRevision) {
+					if (ownerRevision > zdo->m_ownerRevision) {
 						//zdo->m_owner = owner;
-						zdo->m_ownerRevision = num3;
-						zdopeer->m_zdos.insert({ zdoid, ZDOPeer::PeerZDOInfo(num4, num3, time) });
+						zdo->m_ownerRevision = ownerRevision;
+						zdopeer->m_zdos.insert({ zdoid, ZDOPeer::PeerZDOInfo(dataRevision, ownerRevision, time) });
 					}
 					continue;
 				}
 			}
 			else
 			{
-				zdo = CreateNewZDO(zdoid, vector);
-				flag = true;
+				zdo = CreateNewZDO(zdoid, vec3);
+				flagCreated = true;
 			}
 
-			//zdo->m_ownerRevision = num3;
-			//zdo->m_dataRevision = num4;
+			zdo->m_ownerRevision = ownerRevision;
+			zdo->m_dataRevision = dataRevision;
 			//zdo->m_owner = owner;
-			//zdo->InternalSetPosition(vector);
-			//zdopeer->m_zdos.insert({ zdoid, 
-			//	ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
-			//);
-			//zdo->Deserialize(pkg2);
-			//if (flag && m_deadZDOs.contains(zdoid)) {
-			//	zdo->SetOwner(Valhalla()->m_serverUuid);
-			//	this.DestroyZDO(zdo);
-			//}
+			zdo->InternalSetPosition(vector);
+			zdopeer->m_zdos.insert({ zdoid, 
+				ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
+			);
+			zdo->Deserialize(pkg2);
+
+			if (flagCreated && m_deadZDOs.contains(zdoid)) {
+				zdo->SetOwner(Valhalla()->m_serverUuid);
+				this.DestroyZDO(zdo);
+			} else 
+				zdo->o
 		}
 
 		//m_zdosRecv += zdosRecv;

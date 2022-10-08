@@ -108,6 +108,8 @@ namespace ModManager {
 			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
 			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)>());
 
+			state["bruh"].get<std::string>()
+
 			// https://stackoverflow.com/a/61071485
 			// Override Lua print
 			auto L(state.lua_state());

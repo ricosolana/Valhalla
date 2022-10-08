@@ -64,7 +64,10 @@ void ValhallaServer::Launch() {
 		// UPDATE
 		Update(elapsed / (double)duration_cast<microseconds>(1s).count());
 
-		// Spin lock prevention
+		// Prevent spin lock
+		// TODO
+		//	this could be adjusted in order to accomodate 
+		//	more resource intensive workloads
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
@@ -97,6 +100,10 @@ Task* ValhallaServer::RunTaskLater(Task::F f, std::chrono::milliseconds after) {
 
 Task* ValhallaServer::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at) {
 	return RunTaskAtRepeat(f, at, 0ms);
+}
+
+Task* ValhallaServer::RunTaskRepeat(Task::F f, std::chrono::milliseconds period) {
+	return RunTaskLaterRepeat(f, 0ms, period);
 }
 
 Task* ValhallaServer::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period) {

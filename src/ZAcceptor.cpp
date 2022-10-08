@@ -11,7 +11,7 @@ AcceptorZSocket2::~AcceptorZSocket2() {
 }
 
 void AcceptorZSocket2::Start() {
-	assert(!m_accepting);
+	assert(!m_accepting, "Tried starting ZAccepter twice!");
 
 	LOG(INFO) << "Starting server on port " << m_acceptor.local_endpoint().port();
 
@@ -23,11 +23,6 @@ void AcceptorZSocket2::Start() {
 	});
 
 	m_accepting = true;
-
-#if defined(_WIN32)// && !defined(_NDEBUG)
-	void* pThr = m_ctxThread.native_handle();
-	SetThreadDescription(pThr, L"IO Thread");
-#endif
 }
 
 void AcceptorZSocket2::Close() {

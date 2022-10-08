@@ -1,7 +1,7 @@
 #pragma once
 
 struct Quaternion {
-	static const Quaternion identity;
+	static const Quaternion IDENTITY;
 
 	float x, y, z, w;
 };

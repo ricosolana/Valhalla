@@ -212,8 +212,7 @@ namespace NetManager {
 		auto pos = pkg->Read<Vector3>();
 		auto name = pkg->Read<std::string>();
 		auto password = pkg->Read<std::string>();
-		//auto ticket = read array... // normally for steam
-		pkg->Read<std::vector<byte_t>>();
+		pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
 
 		if (password != Valhalla()->m_serverPassword) {
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
@@ -262,15 +261,19 @@ namespace NetManager {
 		ZoneSystem::OnNewPeer(peer);
 	}
 
-
+	// Retrieve a peer by its member Rpc
+	// Will breakpoint if peer not found
 	NetPeer::Ptr GetPeer(NetRpc* rpc) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_rpc.get() == rpc)
 				return peer;
-		}
-		return nullptr;
+		}sizeof(ZDO);
+		//return nullptr;
+		assert(false && "Unable to find Peer attributing to Rpc");
+		throw std::runtime_error("Unable to find Peer attributing to Rpc");
 	}
 
+	// Return the peer or nullptr
 	NetPeer::Ptr GetPeer(const std::string& name) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_name == name)
@@ -279,6 +282,7 @@ namespace NetManager {
 		return nullptr;
 	}
 
+	// Return the peer or nullptr
 	NetPeer::Ptr GetPeer(uuid_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_uuid == uuid)
@@ -290,8 +294,6 @@ namespace NetManager {
 
 
 	void Listen(uint16_t port) {
-		LOG(INFO) << "Starting server on port " << port;
-
 		m_acceptor = std::make_unique<AcceptorZSocket2>(m_ctx, port);
 		m_acceptor->Start();
 
@@ -299,10 +301,30 @@ namespace NetManager {
 
 		ZoneSystem::Init();
 
-		Valhalla()->RunTaskLaterRepeat([](Task*) {
+		// net time and player list sent every 2 seconds to players
+		Valhalla()->RunTaskRepeat([](Task*) {
 			SendNetTime();
 			SendPlayerList();
-			}, 1s, 2s);
+		}, 2s);
+
+		// Ping rpcs every second
+		Valhalla()->RunTaskRepeat([](Task*) {
+			for (auto&& rpc : m_joining) {
+				LOG(DEBUG) << "Rpc join pinging ";
+				auto pkg(PKG());
+				pkg->Write<int32_t>(0);
+				pkg->Write(true);
+				rpc->m_socket->Send(pkg);
+			}
+
+			for (auto&& peer : m_peers) {
+				LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
+				auto pkg(PKG());
+				pkg->Write<int32_t>(0);
+				pkg->Write(true);
+				peer->m_rpc->m_socket->Send(pkg);
+			}
+		}, 1s);
 	}
 
 	void Update(double delta) {
@@ -313,10 +335,6 @@ namespace NetManager {
 			rpc->Register("PeerInfo", &RPC_PeerInfo);
 			rpc->Register("Disconnect", &RPC_Disconnect);
 			rpc->Register("ServerHandshake", &RPC_ServerHandshake);
-
-			//rpc->Register("ServerHandshake", [](NetRpc*) {
-			//	LOG(INFO) << "Lambda handshake!";
-			//});
 
 			rpc->m_socket->Start();
 

@@ -33,6 +33,7 @@ using namespace std::chrono_literals;
 using byte_t = uint8_t;
 using uuid_t = int64_t;
 using hash_t = int32_t;
+using bytes_t = std::vector<byte_t>;
 //std::bitset<8> b;
 
 template<typename T>
@@ -107,7 +108,7 @@ namespace Utils {
 
 	uuid_t GenerateUID();
 
-	hash_t GetStableHashCode(const char* str);
+	hash_t GetStableHashCode(const std::string &s);
 
 	// Gets the unicode code points in a UTF-8 encoded string
 	// Return -1 on bad encoding

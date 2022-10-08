@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <asio.hpp>
+
 #include "NetSocket.h"
 
 /*
@@ -27,7 +28,8 @@ void ZSocket2::Start() {
 }
 
 void ZSocket2::Send(NetPackage::Ptr pkg) {
-	if (pkg->GetStream().Length() == 0)
+	if (pkg->GetStream().Length() == 0 
+		|| m_connectivity == Connectivity::CLOSED)
 		return;
 
 	if (pkg->GetStream().Length() + 4 > 10485760) {
@@ -39,7 +41,7 @@ void ZSocket2::Send(NetPackage::Ptr pkg) {
 		std::vector<byte_t> buf;
 		pkg->GetStream().Bytes(buf);
 		m_sendQueue.push_back(std::move(buf)); // this blocks
-		m_sendQueueSize += buf.size();
+		m_sendQueueSize += sizeof(m_tempWriteOffset) + buf.size();
 
 		if (was_empty) {
 			WritePkgSize();
@@ -94,7 +96,7 @@ tcp::socket& ZSocket2::GetSocket() {
 void ZSocket2::ReadPkgSize() {
 	auto self(shared_from_this());
 	asio::async_read(m_socket,
-		asio::buffer(&m_tempReadOffset, 4),
+		asio::buffer(&m_tempReadOffset, sizeof(m_tempReadOffset)),
 		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
 			ReadPkg();
@@ -136,12 +138,13 @@ void ZSocket2::WritePkgSize() {
 	auto &&vec = m_sendQueue.front(); 
 
 	m_tempWriteOffset = vec.size();
-
+	
 	auto self(shared_from_this());
 	asio::async_write(m_socket,
-		asio::buffer(&m_tempWriteOffset, 4),
+		asio::buffer(&m_tempWriteOffset, sizeof(m_tempWriteOffset)),
 		[this, self, &vec](const std::error_code& e, size_t) {
 		if (!e) {
+			m_sendQueueSize -= sizeof(m_tempWriteOffset);
 			WritePkg(vec);
 		}
 		else {

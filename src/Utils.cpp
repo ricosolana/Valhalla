@@ -169,7 +169,7 @@ namespace Utils {
         return distr(eng);
     }
 
-    int32_t GetStableHashCode(const char* str) {
+    int32_t GetStableHashCode(const std::string& str) {
         int num = 5381;
         int num2 = num;
         int num3 = 0;

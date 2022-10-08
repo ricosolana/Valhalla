@@ -5,22 +5,11 @@
 using namespace std::chrono;
 
 NetRpc::NetRpc(ISocket::Ptr socket)
-	: m_socket(socket), m_lastPing(steady_clock::now() + 3s) {
-
-	// pinger
-	this->m_pingTask = Valhalla()->RunTaskLaterRepeat([this](Task* task) {
-		//NetPackage pkg;
-		auto pkg(PKG());
-		pkg->Write<int32_t>(0);
-		pkg->Write(true);
-		SendPackage(pkg);
-	}, 3s, RPC_PING_INTERVAL);
+	: m_socket(socket), m_lastPing(steady_clock::now()) {
 }
 
 NetRpc::~NetRpc() {
 	LOG(DEBUG) << "~NetRpc()";
-	if (m_pingTask)
-		this->m_pingTask->Cancel();
 }
 
 void NetRpc::Register(const char* name, ZMethodBase<NetRpc*>* method) {
@@ -33,8 +22,13 @@ void NetRpc::Register(const char* name, ZMethodBase<NetRpc*>* method) {
 }
 
 void NetRpc::Update() {
-	if (m_ignore)
+	if (m_ignore) {
+		if (m_socket->GetSendQueueSize() == 0) {
+			// then kill the socket?
+			m_socket->Close();
+		}
 		return;
+	}
 
 	auto now(steady_clock::now());
 
@@ -61,12 +55,12 @@ void NetRpc::Update() {
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				try {
+				//try {
 					find->second->Invoke(this, pkg);
-				}
-				catch (std::exception& e) {
+				//}
+				//catch (std::exception& e) {
 					// close socket because it might have
-				}
+				//}
 			}
 			else {
 #ifdef RPC_DEBUG
