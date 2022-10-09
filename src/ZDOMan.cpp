@@ -42,7 +42,7 @@ namespace ZDOManager {
 		}
 
 		bool ShouldSend(ZDO zdo) {
-			auto find = m_zdos.find(zdo.m_uid);
+			auto find = m_zdos.find(zdo.m_zdoid);
 			return find != m_zdos.end()
 				|| ((uint64_t)zdo.m_ownerRevision > (uint64_t)find->second.m_ownerRevision)
 				|| (zdo.m_dataRevision > find->second.m_dataRevision);

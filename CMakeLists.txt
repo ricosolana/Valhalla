@@ -46,6 +46,11 @@ endif ()
 
 
 
+# optick profiler
+CPMAddPackage("gh:bombomby/optick@1.3.1.0#1.3.1.0")
+
+
+
 # ASIO
 
 CPMAddPackage("gh:chriskohlhoff/asio#asio-1-21-0@1.21.0")
@@ -132,7 +137,7 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp" 
     "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
- "src/ZoneSystem.cpp" "include/HeightMap.h" "include/CompileSettings.h")
+ "src/ZoneSystem.cpp" "include/HeightMap.h" "include/CompileSettings.h" "src/Vector3.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -151,6 +156,7 @@ target_link_libraries(${PROJECT_NAME}
     sol2
     easyloggingpp
     asio
+    OptickCore
 )
 
 
@@ -169,6 +175,12 @@ endif()
 if(MSVC AND CMAKE_BUILD_TYPE MATCHES Release)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)
 endif()
+
+
+
+set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
 
 
 

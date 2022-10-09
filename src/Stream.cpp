@@ -54,10 +54,6 @@ void Stream::Read(std::string& s, uint32_t count) {
     m_marker += count;
 }
 
-//void Stream::Read(std::vector<byte_t>& vec) {
-//    return Read(vec, m_length - m_marker);
-//}
-
 
 
 void Stream::Write(const byte_t* buffer, uint32_t count) {
@@ -67,44 +63,13 @@ void Stream::Write(const byte_t* buffer, uint32_t count) {
     m_length += count;
 }
 
-void Stream::Write(const byte_t value) {
-    Write(&value, 1);
-}
-
-void Stream::Write(const std::vector<byte_t>& vec, uint32_t count) {
-    Write(vec.data(), count);
-}
-
-void Stream::Write(const std::vector<byte_t>& vec) {
-    Write(vec.data(), m_length);
-}
-
 
 
 void Stream::Bytes(std::vector<byte_t>& vec) {
     vec.insert(vec.begin(), Bytes(), Bytes() + m_length);
 }
 
-byte_t* Stream::Bytes() const {
-#ifdef REALLOC_STREAM
-    return m_bytes;
-#else
-    return m_bytes.get();
-#endif
-}
 
-
-
-void Stream::Clear() {
-    m_marker = 0;
-    m_length = 0;
-}
-
-
-
-uint32_t Stream::Length() const {
-    return m_length;
-}
 
 void Stream::SetLength(uint32_t length) {
     if (length > m_alloc) throw std::runtime_error("length exceeds allocated memory");
@@ -114,13 +79,6 @@ void Stream::SetLength(uint32_t length) {
 
 
 
-uint32_t Stream::Marker() const {
-    return m_marker;
-}
-
-void Stream::Skip(uint32_t marks) {
-    return SetMarker(m_marker + marks);
-}
 
 void Stream::SetMarker(uint32_t marker) {
     if (marker > m_length) throw std::runtime_error("marks exceeds remaining length");
@@ -145,16 +103,4 @@ void Stream::Reserve(uint32_t count) {
 #endif
         m_alloc = count;
     }
-}
-
-void Stream::ReserveExtra(uint32_t extra) {
-    Reserve(m_alloc + extra);
-}
-
-void Stream::EnsureCapacity(uint32_t count) {
-    Reserve(count << 1);
-}
-
-void Stream::EnsureExtra(uint32_t extra) {
-    EnsureCapacity(m_alloc + extra);
 }

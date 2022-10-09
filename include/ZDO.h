@@ -17,12 +17,12 @@ class ZDO {
 	Quaternion m_rotation = Quaternion::IDENTITY;
 
 	robin_hood::unordered_map<hash_t, float> m_floats;
-	robin_hood::unordered_map<hash_t, Vector3> m_vec3;
+	robin_hood::unordered_map<hash_t, Vector3> m_vecs;
 	robin_hood::unordered_map<hash_t, Quaternion> m_quats;
-	robin_hood::unordered_map<hash_t, int> m_ints;
-	robin_hood::unordered_map<hash_t, long> m_longs;
+	robin_hood::unordered_map<hash_t, int32_t> m_ints;
+	robin_hood::unordered_map<hash_t, int64_t> m_longs;
 	robin_hood::unordered_map<hash_t, std::string> m_strings;
-	robin_hood::unordered_map<hash_t, std::vector<byte_t>> m_byteArrays;
+	robin_hood::unordered_map<hash_t, bytes_t> m_byteArrays;
 
 	// thinking about an [] operatoro override?
 	// how to remove all the maps above
@@ -60,14 +60,14 @@ public:
 	bool GetBool(hash_t hash, bool def = false);
 	bool GetBool(const std::string& key, bool def = false);
 	
-	const bytes_t* GetBytes(hash_t hash);
-	const bytes_t* GetBytes(const std::string& key);
+	std::optional<const bytes_t&> GetBytes(hash_t hash);
+	std::optional<const bytes_t&> GetBytes(const std::string& key);
 
 	float GetFloat(hash_t hash, float def = 0);
 	float GetFloat(const std::string& key, float def = 0);
 
-	const ZDOID& GetZDOID(std::pair<hash_t, hash_t>& key);
-	std::pair<hash_t, hash_t> GetHashZDOID(const std::string& key);
+	const ZDOID& GetZDOID(const std::pair<hash_t, hash_t>& key);
+	std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
 	const ZDOID& GetZDOID(const std::string& key);
 
 	int32_t GetInt(hash_t hash, int32_t def = 0);
@@ -76,8 +76,8 @@ public:
 	int64_t GetLong(hash_t hash, int64_t def = 0);
 	int64_t GetLong(const std::string& key, int64_t def = 0);
 
-	const Quaternion& GetQuaternion(hash_t hash);
-	const Quaternion& GetQuaternion(const std::string& key);
+	const Quaternion& GetQuaternion(hash_t hash, const Quaternion& def);
+	const Quaternion& GetQuaternion(const std::string& key, const Quaternion& def);
 
 	const std::string& GetString(hash_t hash, const std::string& def = "");
 	const std::string& GetString(const std::string& key, const std::string& def = "");
@@ -87,7 +87,39 @@ public:
 
 
 
+	void Set(hash_t hash, bool value);
+	void Set(const std::string& key, bool value);
+
+	void Set(hash_t hash, const bytes_t& value);
+	void Set(const std::string& key, const bytes_t& value);
+
+	void Set(hash_t hash, float value);
+	void Set(const std::string& key, float value);
+
+	// Set a ZDOID with key as hashed combopair key
+	void Set(const std::pair<hash_t, hash_t>& key, const ZDOID& value);
+	void Set(const std::string& key, const ZDOID& value);
+
+	void Set(hash_t hash, int32_t value);
+	void Set(const std::string& key, int32_t value);
+
+	void Set(hash_t hash, int64_t value);
+	void Set(const std::string& key, int64_t value);
+
+	void Set(hash_t hash, const Quaternion& value);
+	void Set(const std::string& key, const Quaternion& value);
+
+	void Set(hash_t hash, const std::string& value);
+	void Set(const std::string& key, const std::string& value);
+
+	void Set(hash_t hash, const Vector3& value);
+	void Set(const std::string& key, const Vector3& value);
+
+
+	// id of the client or server
 	uuid_t m_owner;
+
+	// contains id of the client or server, and the object id
 	ZDOID m_zdoid;
 	bool m_persistent = false;
 	bool m_distant = false;
@@ -97,8 +129,8 @@ public:
 	uint32_t m_dataRevision = 0;
 	int32_t m_pgwVersion = 0;
 	ObjectType m_type = ObjectType::Default;
-	float m_tempSortValue = 0;
+	//float m_tempSortValue = 0; // only used iin sending for limited prioritization
 	bool m_tempHaveRevision = 0;
-	int32_t m_tempRemoveEarmark = -1;
-	int32_t m_tempCreateEarmark = -1;
+	int32_t m_tempRemoveEarmark = -1; // equal to frame counter at intervals
+	int32_t m_tempCreateEarmark = -1; // ^
 };
