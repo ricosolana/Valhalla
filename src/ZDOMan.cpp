@@ -165,17 +165,17 @@ namespace ZDOManager {
 			zdo->m_ownerRevision = ownerRevision;
 			zdo->m_dataRevision = dataRevision;
 			//zdo->m_owner = owner;
-			zdo->InternalSetPosition(vector);
-			zdopeer->m_zdos.insert({ zdoid, 
-				ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
-			);
-			zdo->Deserialize(pkg2);
-
-			if (flagCreated && m_deadZDOs.contains(zdoid)) {
-				zdo->SetOwner(Valhalla()->m_serverUuid);
-				this.DestroyZDO(zdo);
-			} else 
-				zdo->o
+			//zdo->InternalSetPosition(vector);
+			//zdopeer->m_zdos.insert({ zdoid, 
+			//	ZDOPeer::PeerZDOInfo(zdo->m_dataRevision, zdo->m_ownerRevision, time) }
+			//);
+			//zdo->Deserialize(pkg2);
+			//
+			//if (flagCreated && m_deadZDOs.contains(zdoid)) {
+			//	zdo->SetOwner(Valhalla()->m_serverUuid);
+			//	this.DestroyZDO(zdo);
+			//} else 
+			//	zdo->o
 		}
 
 		//m_zdosRecv += zdosRecv;

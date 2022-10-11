@@ -47,7 +47,8 @@ endif ()
 
 
 # optick profiler
-CPMAddPackage("gh:bombomby/optick@1.3.1.0#1.3.1.0")
+#CPMAddPackage("gh:bombomby/optick@1.3.1.0#1.3.1.0")
+CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 
 
 
@@ -137,7 +138,7 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp" 
     "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
- "src/ZoneSystem.cpp" "include/HeightMap.h" "include/CompileSettings.h" "src/Vector3.cpp")
+ "src/ZoneSystem.cpp" "include/Heightmap.h" "include/CompileSettings.h" "src/Vector.cpp" "src/WorldGenerator.cpp" "include/WorldGenerator.h" "src/MathUtils.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

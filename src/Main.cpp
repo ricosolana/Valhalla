@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <bitset>
 #include <signal.h>
+#include <optick.h>
 
 #include "easylogging++.h"
 #include "ValhallaServer.h"
@@ -62,6 +63,7 @@ static void on_interrupt(int num) {
 
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
+    OPTICK_THREAD("main");
     initLogger();
 
     signal(SIGINT, on_interrupt);

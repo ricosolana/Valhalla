@@ -36,6 +36,12 @@ using hash_t = int32_t;
 using bytes_t = std::vector<byte_t>;
 //std::bitset<8> b;
 
+//using Dictionary = robin_hood::unordered_map;
+
+static constexpr float PI = 3.141592653589;
+
+//float FISQRT(float)
+
 template<typename T>
 class BitMask {
 	//static_assert(std::is_integral_v<std::underlying_type_t<T>>, "Must be an integral enum");

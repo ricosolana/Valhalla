@@ -5,6 +5,7 @@
 #include "World.h"
 #include "ZoneSystem.h"
 #include "ZDOMan.h"
+#include <optick.h>
 
 using namespace asio::ip;
 using namespace std::chrono;
@@ -328,6 +329,7 @@ namespace NetManager {
 	}
 
 	void Update(double delta) {
+		OPTICK_EVENT();
 		// Accept connections
 		while (m_acceptor->HasNewConnection()) {
 			auto&& rpc = std::make_unique<NetRpc>(m_acceptor->Accept());

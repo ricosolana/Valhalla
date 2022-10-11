@@ -87,7 +87,7 @@ public:
 
 	// Write all bytes from the specified vector
 	auto Write(const std::vector<byte_t>& vec) {
-		return Write(vec, vec.size());
+		return Write(vec, static_cast<uint32_t>(vec.size()));
 	}
 
 

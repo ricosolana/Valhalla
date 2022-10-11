@@ -1,6 +1,7 @@
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
+#include <optick.h>
 
 using namespace std::chrono;
 
@@ -31,6 +32,8 @@ void ValhallaServer::Launch() {
 
 	m_running = true;
 	while (m_running) {
+		OPTICK_FRAME("main");
+
 		auto now = steady_clock::now();
 		static auto last_tick = now; // Initialized to this once
 		auto elapsed = std::chrono::duration_cast<microseconds>(now - last_tick).count();

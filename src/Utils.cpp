@@ -5,6 +5,7 @@
 
 namespace Utils {
 
+
     // https://stackoverflow.com/questions/12398377/is-it-possible-to-have-zlib-read-from-and-write-to-the-same-memory-buffer
     int Compress(z_stream* strm, unsigned char* buf, unsigned len,
         unsigned* max)

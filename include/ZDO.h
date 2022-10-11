@@ -60,8 +60,8 @@ public:
 	bool GetBool(hash_t hash, bool def = false);
 	bool GetBool(const std::string& key, bool def = false);
 	
-	std::optional<const bytes_t&> GetBytes(hash_t hash);
-	std::optional<const bytes_t&> GetBytes(const std::string& key);
+	/*std::optional<const bytes_t&>*/ bytes_t* GetBytes(hash_t hash);
+	/*std::optional<const bytes_t&>*/ bytes_t* GetBytes(const std::string& key);
 
 	float GetFloat(hash_t hash, float def = 0);
 	float GetFloat(const std::string& key, float def = 0);
@@ -96,7 +96,7 @@ public:
 	void Set(hash_t hash, float value);
 	void Set(const std::string& key, float value);
 
-	// Set a ZDOID with key as hashed combopair key
+	// Set a ZDOID with key as hashed key pair
 	void Set(const std::pair<hash_t, hash_t>& key, const ZDOID& value);
 	void Set(const std::string& key, const ZDOID& value);
 

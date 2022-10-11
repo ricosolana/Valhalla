@@ -65,12 +65,6 @@ void Stream::Write(const byte_t* buffer, uint32_t count) {
 
 
 
-void Stream::Bytes(std::vector<byte_t>& vec) {
-    vec.insert(vec.begin(), Bytes(), Bytes() + m_length);
-}
-
-
-
 void Stream::SetLength(uint32_t length) {
     if (length > m_alloc) throw std::runtime_error("length exceeds allocated memory");
 

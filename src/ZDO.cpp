@@ -1,6 +1,6 @@
 #include "ZDO.h"
 #include "ZDOMan.h"
-
+#include <functional>
 
 bool ZDO::GetBool(hash_t hash, bool def) {
 	auto&& find = m_ints.find(hash);
@@ -12,14 +12,14 @@ bool ZDO::GetBool(const std::string& key, bool def) {
 	return GetBool(Utils::GetStableHashCode(key), def);
 }
 
-std::optional<const bytes_t&> ZDO::GetBytes(hash_t hash) {
+/*std::optional<std::reference_wrapper<bytes_t>>*/ bytes_t* ZDO::GetBytes(hash_t hash) {
 	auto&& find = m_byteArrays.find(hash);
 	if (find != m_byteArrays.end())
-		return find->second;
-	return std::optional<const bytes_t&>();
+		return &find->second;
+	return nullptr; //std::optional<const bytes_t&>();
 }
 
-std::optional<const bytes_t&> ZDO::GetBytes(const std::string& key) {
+bytes_t* ZDO::GetBytes(const std::string& key) {
 	return GetBytes(Utils::GetStableHashCode(key));
 }
 
@@ -74,13 +74,13 @@ const Quaternion& ZDO::GetQuaternion(const std::string& key, const Quaternion& d
 	return GetQuaternion(Utils::GetStableHashCode(key), def);
 }
 
-const std::string& ZDO::GetString(hash_t hash, const std::string& def = "") {
+const std::string& ZDO::GetString(hash_t hash, const std::string& def) {
 	auto&& find = m_strings.find(hash);
 	if (find != m_strings.end())
 		return find->second;
 	return def;
 }
-const std::string& ZDO::GetString(const std::string& key, const std::string& def = "") {
+const std::string& ZDO::GetString(const std::string& key, const std::string& def) {
 	return GetString(Utils::GetStableHashCode(key), def);
 }
 

@@ -4,6 +4,7 @@
 #include "ValhallaServer.h"
 #include "ResourceManager.h"
 #include <easylogging++.h>
+#include <optick.h>
 
 class Mod {
 public:
@@ -108,7 +109,7 @@ namespace ModManager {
 			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
 			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)>());
 
-			state["bruh"].get<std::string>()
+			//state["bruh"].get<std::string>()
 
 			// https://stackoverflow.com/a/61071485
 			// Override Lua print
@@ -279,6 +280,7 @@ namespace ModManager {
 		}
 
 		void OnUpdate(float delta) {
+			//OPTICK_EVENT();
 			for (auto& mod : mods) {
 				if (mod.second->m_onUpdate)
 					mod.second->m_onUpdate(delta);
