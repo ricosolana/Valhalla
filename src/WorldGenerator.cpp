@@ -90,6 +90,15 @@ namespace WorldGenerator {
 	static constexpr float	ashlandsMinDistance = 12000;
 	static constexpr float	ashlandsYOffset = -4000;
 
+
+	/*
+	* See https://docs.unity3d.com/ScriptReference/Random.Range.html
+	*	for random algorithm implementation discussion
+	*	A c++ implementation of Unity.Random.Range needs to be created
+	*		to perfectly recreate Valheim worldgen
+	*/
+
+
 	// Forward declarations
 	void Pregenerate();
 	void FindMountains();
@@ -117,7 +126,7 @@ namespace WorldGenerator {
 	float GetBaseHeight(float wx, float wy /*bool menuTerrain*/);
 	float AddRivers(float wx, float wy, float h);
 	float GetHeight(float wx, float wy);
-	float GetBiomeHeight(int biome, float wx, float wy);
+	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
 	float GetMarshHeight(float wx, float wy);
 	float GetMeadowsHeight(float wx, float wy);
 	float GetForestHeight(float wx, float wy);
@@ -372,7 +381,7 @@ namespace WorldGenerator {
 		if (list.empty())
 			return -1;
 
-		return list[UnityEngine.Random.Range(0, list.Count)];
+		return list[UnityEngine.Random.Range(0, list.size())];
 	}
 
 	bool HaveRiver(const std::vector<River> &rivers, const Vector2 &p0) {
@@ -531,8 +540,7 @@ namespace WorldGenerator {
 		}
 	}
 
-	void GetWeight(const std::vector<RiverPoint> &points, float wx, float wy, float &weight, float &width)
-	{
+	void GetWeight(const std::vector<RiverPoint> &points, float wx, float wy, float &weight, float &width) {
 		Vector2 b(wx, wy);
 		weight = 0;
 		width = 0;
@@ -614,8 +622,7 @@ namespace WorldGenerator {
 		return num3;
 	}
 
-	float AddRivers(float wx, float wy, float h)
-	{
+	float AddRivers(float wx, float wy, float h) {
 		float num;
 		float v;
 		GetRiverWeight(wx, wy, num, v);
@@ -639,8 +646,7 @@ namespace WorldGenerator {
 	}
 
 
-	float GetMarshHeight(float wx, float wy)
-	{
+	float GetMarshHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float num = 0.137f;
@@ -653,9 +659,7 @@ namespace WorldGenerator {
 		return num + Mathf.PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 	}
 
-	// Token: 0x060016EB RID: 5867 RVA: 0x0009BAC0 File Offset: 0x00099CC0
-	float GetMeadowsHeight(float wx, float wy)
-	{
+	float GetMeadowsHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float baseHeight = GetBaseHeight(wx, wy);
@@ -677,8 +681,7 @@ namespace WorldGenerator {
 		return num2 + Mathf.PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 	}
 
-	float GetForestHeight(float wx, float wy)
-	{
+	float GetForestHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float num = GetBaseHeight(wx, wy);
@@ -692,8 +695,7 @@ namespace WorldGenerator {
 		return num + Mathf.PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 	}
 
-	float GetPlainsHeight(float wx, float wy)
-	{
+	float GetPlainsHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float baseHeight = GetBaseHeight(wx, wy);
@@ -716,8 +718,7 @@ namespace WorldGenerator {
 	}
 
 
-	float GetAshlandsHeight(float wx, float wy)
-	{
+	float GetAshlandsHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float num = GetBaseHeight(wx, wy);
@@ -729,11 +730,10 @@ namespace WorldGenerator {
 		num += 0.1f;
 		num += Mathf.PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.01f;
 		num += Mathf.PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
-		return this.AddRivers(wx2, wy2, num);
+		return AddRivers(wx2, wy2, num);
 	}
 
-	float GetEdgeHeight(float wx, float wy)
-	{
+	float GetEdgeHeight(float wx, float wy) {
 		float magnitude = MathUtils::Magnitude(wx, wy);
 		float num = 10490;
 		if (magnitude > num)
@@ -747,13 +747,11 @@ namespace WorldGenerator {
 		return AddRivers(wx, wy, num3);
 	}
 
-	float GetOceanHeight(float wx, float wy)
-	{
+	float GetOceanHeight(float wx, float wy) {
 		return GetBaseHeight(wx, wy);
 	}
 
-	float BaseHeightTilt(float wx, float wy)
-	{
+	float BaseHeightTilt(float wx, float wy) {
 		float baseHeight = GetBaseHeight(wx - 1.f, wy);
 		float baseHeight2 = GetBaseHeight(wx + 1.f, wy);
 		float baseHeight3 = GetBaseHeight(wx, wy - 1.f);
@@ -762,8 +760,7 @@ namespace WorldGenerator {
 			+ abs(baseHeight3 - baseHeight4);
 	}
 
-	float GetSnowMountainHeight(float wx, float wy)
-	{
+	float GetSnowMountainHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float num = GetBaseHeight(wx, wy);
@@ -778,11 +775,10 @@ namespace WorldGenerator {
 		num = AddRivers(wx2, wy2, num);
 		num += Mathf.PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.01f;
 		num += Mathf.PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
-		return num + Mathf.PerlinNoise(wx * 0.2f, wy * 0.2f) * 2f * num2;
+		return num + Mathf.PerlinNoise(wx * 0.2f, wy * 0.2f) * 2.f * num2;
 	}
 
-	float GetDeepNorthHeight(float wx, float wy)
-	{
+	float GetDeepNorthHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
 		float num = GetBaseHeight(wx, wy);
@@ -846,14 +842,12 @@ namespace WorldGenerator {
 	}
 
 	// public
-	Heightmap::Biome GetBiome(const Vector3 &point)
-	{
+	Heightmap::Biome GetBiome(const Vector3 &point) {
 		return GetBiome(point.x, point.z);
 	}
 
 	// public
-	Heightmap::Biome GetBiome(float wx, float wy)
-	{
+	Heightmap::Biome GetBiome(float wx, float wy) {
 		auto magnitude = MathUtils::Magnitude(wx, wy);
 		auto baseHeight = GetBaseHeight(wx, wy);
 		float num = WorldAngle(wx, wy) * 100.f;
@@ -909,75 +903,52 @@ namespace WorldGenerator {
 
 
 
-	float GetHeight(float wx, float wy)
-	{
+	float GetHeight(float wx, float wy) {
 		auto biome = GetBiome(wx, wy);
 		return GetBiomeHeight(biome, wx, wy);
 	}
 
 	// public
-	float GetBiomeHeight(int biome, float wx, float wy)
-	{
-		if (biome <= Heightmap::Biome::Plains)
+	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy) {
+		switch (biome)
 		{
-			switch (biome)
-			{
-			case Heightmap::Biome::Meadows:
-				return this.GetMeadowsHeight(wx, wy) * 200f;
-			case Heightmap::Biome::Swamp:
-				return this.GetMarshHeight(wx, wy) * 200f;
-			case (Heightmap::Biome)3:
-				break;
-			case Heightmap.Biome.Mountain:
-				return this.GetSnowMountainHeight(wx, wy, false) * 200f;
-			default:
-				if (biome == Heightmap.Biome.BlackForest)
-				{
-					return this.GetForestHeight(wx, wy) * 200f;
-				}
-				if (biome == Heightmap.Biome.Plains)
-				{
-					return this.GetPlainsHeight(wx, wy) * 200f;
-				}
-				break;
-			}
+		case Heightmap::Biome::Meadows:
+			return GetMeadowsHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::Swamp:
+			return GetMarshHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::Swamp | Heightmap::Biome::Mountain: // (Heightmap::Biome)3:
+			break; // why is this here?
+		case Heightmap::Biome::Mountain:
+			return GetSnowMountainHeight(wx, wy, false) * 200.f;
+		case Heightmap::Biome::BlackForest:
+			return GetForestHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::Plains:
+			return GetPlainsHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::AshLands:
+			return GetAshlandsHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::DeepNorth:
+			return GetDeepNorthHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::Ocean:
+			return GetOceanHeight(wx, wy) * 200.f;
+		case Heightmap::Biome::Mistlands: // valheim doesnt correctly implement mistlands yet
+			return GetForestHeight(wx, wy) * 200.f;
+		default:
+			LOG(ERROR) << "Tried to retrieve biome height for unknown biome " << (int)biome;
+			//return 0.f;
+			break;
 		}
-		else if (biome <= Heightmap.Biome.DeepNorth)
-		{
-			if (biome == Heightmap.Biome.AshLands)
-			{
-				return this.GetAshlandsHeight(wx, wy) * 200f;
-			}
-			if (biome == Heightmap.Biome.DeepNorth)
-			{
-				return this.GetDeepNorthHeight(wx, wy) * 200f;
-			}
-		}
-		else
-		{
-			if (biome == Heightmap.Biome.Ocean)
-			{
-				return this.GetOceanHeight(wx, wy) * 200f;
-			}
-			if (biome == Heightmap.Biome.Mistlands)
-			{
-				return this.GetForestHeight(wx, wy) * 200f;
-			}
-		}
-		return 0f;
+		return 0.f;
 	}
 
 	// public
-	bool InForest(const Vector3 &pos)
-	{
+	bool InForest(const Vector3 &pos) {
 		return GetForestFactor(pos) < 1.15f;
 	}
 
 	// public
-	float GetForestFactor(const Vector3 &pos)
-	{
+	float GetForestFactor(const Vector3 &pos) {
 		float d = 0.4f;
-		return Utils.Fbm(pos * 0.01f * d, 3, 1.6f, 0.7f);
+		return MathUtils::Fbm(pos * 0.01f * d, 3, 1.6f, 0.7f);
 	}
 
 	// public
@@ -990,8 +961,8 @@ namespace WorldGenerator {
 		for (int i = 0; i < num; i++)
 		{
 			Vector2 vector = UnityEngine.Random.insideUnitCircle * radius;
-			Vector3 vector2 = center + new Vector3(vector.x, 0f, vector.y);
-			float height = this.GetHeight(vector2.x, vector2.z);
+			Vector3 vector2 = center + Vector3(vector.x, 0, vector.y);
+			float height = GetHeight(vector2.x, vector2.z);
 			if (height < num3)
 			{
 				num3 = height;
@@ -1004,7 +975,7 @@ namespace WorldGenerator {
 			}
 		}
 		delta = num2 - num3;
-		slopeDirection = Vector3.Normalize(a - b);
+		slopeDirection = (a - b).Normalize();
 	}
 
 	// public

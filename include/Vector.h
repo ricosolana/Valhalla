@@ -13,14 +13,14 @@ struct Vector2 {
 	Vector2(const Vector2& other) = default; //copy
 	Vector2(Vector2&& other) = default; // move
 
-
+	// vector arithmetic
 	Vector2 &operator=(const Vector2& other);
 	Vector2 operator+(const Vector2& other) const;
 	Vector2 operator-(const Vector2& other) const;
 	Vector2 operator*(const Vector2& other) const;
 	Vector2 operator/(const Vector2& other) const;
 	
-
+	// scalar arithmetic
 	Vector2 operator*(float other) const;
 
 	Vector2& operator+=(const Vector2& other);
@@ -52,7 +52,10 @@ struct Vector2 {
 		return MathUtils::SqDistance(x, y, other.x, other.y);
 	}
 
-	void Normalize();
+	//normalize and returns this
+	Vector2 &Normalize();
+
+	//normalize and returns a copy
 	Vector2 Normalized();
 
 	static const Vector2 ZERO;
@@ -64,17 +67,52 @@ struct Vector2i {
 	Vector2i(int32_t x = 0, int32_t y = 0)
 		: x(x), y(y) {}
 
+	Vector2i(const Vector2i& other) = default; //copy
+	Vector2i(Vector2i&& other) = default; // move
+
+
+	Vector2i& operator=(const Vector2i& other);
+	Vector2i operator+(const Vector2i& other) const;
+	Vector2i operator-(const Vector2i& other) const;
+	Vector2i operator*(const Vector2i& other) const;
+	Vector2i operator/(const Vector2i& other) const;
+
+
+	Vector2i operator*(float other) const;
+
+	Vector2i& operator+=(const Vector2i& other);
+	Vector2i& operator-=(const Vector2i& other);
+	Vector2i& operator*=(const Vector2i& other);
+	Vector2i& operator/=(const Vector2i& other);
+
+	Vector2i& operator*=(float other);
+	Vector2i& operator/=(float other);
+
 	bool operator==(const Vector2i& other) const;
 	bool operator!=(const Vector2i& other) const;
-	Vector2i operator+(const Vector2i& other) const;
 
-	float Magnitude() {
-		return Magnitude(x, y);
+
+
+	float SqMagnitude() const {
+		return MathUtils::SqMagnitude(x, y);
 	}
 
-	static float Magnitude(float x, float y) {
-		return sqrt(x * x + y * y);
+	float Magnitude() const {
+		return MathUtils::Magnitude(x, y);
 	}
+
+	float Distance(const Vector2i& other) const {
+		return MathUtils::Distance(x, y, other.x, other.y);
+	}
+
+	float SqDistance(const Vector2i& other) const {
+		return MathUtils::SqDistance(x, y, other.x, other.y);
+	}
+
+	Vector2i& Normalize();
+	Vector2i Normalized();
+
+	static const Vector2i ZERO;
 };
 
 struct Vector3 {
@@ -83,15 +121,51 @@ struct Vector3 {
 	Vector3(float x = 0, float y = 0, float z = 0)
 		: x(x), y(y), z(z) {}
 
+
+	Vector3(const Vector3& other) = default; //copy
+	Vector3(Vector3&& other) = default; // move
+
+
+	Vector3& operator=(const Vector3& other);
+	Vector3 operator+(const Vector3& other) const;
+	Vector3 operator-(const Vector3& other) const;
+	Vector3 operator*(const Vector3& other) const;
+	Vector3 operator/(const Vector3& other) const;
+
+
+	Vector3 operator*(float other) const;
+
+	Vector3& operator+=(const Vector3& other);
+	Vector3& operator-=(const Vector3& other);
+	Vector3& operator*=(const Vector3& other);
+	Vector3& operator/=(const Vector3& other);
+
+	Vector3& operator*=(float other);
+	Vector3& operator/=(float other);
+
 	bool operator==(const Vector3& other) const;
 	bool operator!=(const Vector3& other) const;
-	Vector3 operator+(const Vector3& other) const;
 
-	float Magnitude() {
-		return Magnitude(x, y, z);
+
+
+	float SqMagnitude() const {
+		return MathUtils::SqMagnitude(x, y, z);
 	}
 
-	static float Magnitude(float x, float y, float z) {
-		return sqrt(x * x + y * y + z * z);
+	float Magnitude() const {
+		return MathUtils::Magnitude(x, y, z);
 	}
+
+	float Distance(const Vector3& other) const {
+		return MathUtils::Distance(x, y, z, other.x, other.y, other.z);
+	}
+
+	float SqDistance(const Vector3& other) const {
+		return MathUtils::SqDistance(x, y, z, other.x, other.y, other.z);
+	}
+
+	Vector3& Normalize();
+	Vector3 Normalized();
+
+	static const Vector3 ZERO;
 };

@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Vector"
+
+class Vector2;
+class Vector3;
+
 namespace MathUtils {
 
 	/*
@@ -14,6 +19,19 @@ namespace MathUtils {
 
 	float Distance(float x1, float y1, float x2, float y2);
 
+
+	float SqMagnitude(float x, float y, float z);
+
+	float Magnitude(float x, float y, float z);
+
+	float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2);
+
+	float Distance(float x1, float y1, float z1, float x2, float y2, float z2);
+
+
+
+
+
 	float Clamp01(float value);
 
 	float Lerp(float a, float b, float t);
@@ -24,6 +42,15 @@ namespace MathUtils {
 	float SmoothStep(float p_Min, float p_Max, float p_X);
 
 	double LerpStep(double l, double h, double v);
+
+
+
+	// fractional brownian noise/motion?
+	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain);
+
+	float FbmMaxValue(int octaves, float gain);
+
+	float Fbm(class Vector2 &p, int octaves, float lacunarity, float gain);
 
 
 

@@ -1,5 +1,7 @@
 #include <cmath>
 #include "MathUtils.h"
+#include "Vector.h"
+#include <stdexcept>
 
 namespace MathUtils {
 	float SqMagnitude(float x, float y) {
@@ -17,6 +19,31 @@ namespace MathUtils {
 	float Distance(float x1, float y1, float x2, float y2) {
 		return SqDistance(x1, y1, x2, y2);
 	}
+
+
+
+
+	float SqMagnitude(float x, float y, float z) {
+		return x * x + y * y + z * z;
+	}
+
+	float Magnitude(float x, float y, float z) {
+		return sqrt(SqMagnitude(x, y, z));
+	}
+
+	float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
+		return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
+	}
+
+	float Distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+		return SqDistance(x1, y1, z1, x2, y2, z2);
+	}
+
+
+
+
+
+
 
 
 
@@ -63,6 +90,43 @@ namespace MathUtils {
 	double LerpStep(double l, double h, double v)
 	{
 		return Clamp01((v - l) / (h - l));
+	}
+
+
+
+
+
+
+	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain)
+	{
+		return Fbm(Vector2(p.x, p.z), octaves, lacunarity, gain);
+	}
+
+	float FbmMaxValue(int octaves, float gain)
+	{
+		float num = 0;
+		float num2 = 1;
+		for (int i = 0; i < octaves; i++)
+		{
+			num += num2;
+			num2 *= gain;
+		}
+		return num;
+	}
+
+	float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain)
+	{
+		throw std::runtime_error("Not implemented");
+		float num = 0;
+		float num2 = 1;
+		Vector2 vector = p;
+		for (int i = 0; i < octaves; i++)
+		{
+			//num += num2 * Mathf.PerlinNoise(vector.x, vector.y);
+			num2 *= gain;
+			vector *= lacunarity;
+		}
+		return num;
 	}
 
 
