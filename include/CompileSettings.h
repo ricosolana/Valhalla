@@ -18,7 +18,7 @@ static constexpr std::chrono::seconds RPC_PING_INTERVAL = 1s;
 //#define USE_DEQUE_WAIT
 
 // Change on updates
-#define SERVER_VERSION "0.211.8"
+#define SERVER_VERSION "0.211.9"
 
 // Possibly faster but more unsafe Stream
 //#define REALLOC_STREAM

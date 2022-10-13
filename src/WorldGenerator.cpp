@@ -47,7 +47,7 @@ namespace WorldGenerator {
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint> *m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
-	ReaderWriterLockSlim m_riverCacheLock; // c# lock mechanism?
+	//ReaderWriterLockSlim m_riverCacheLock; // c# lock mechanism?
 	//std::vector<Heightmap::Biome> m_biomes; // seems unused
 
 	static constexpr float	riverGridSize = 64;
@@ -503,41 +503,32 @@ namespace WorldGenerator {
 		}
 	}
 
-	void GetRiverWeight(float wx, float wy, float &weight, float &width) {
+	std::mutex m_mutRiverCache;
+
+	void GetRiverWeight(float wx, float wy, float &weight, float &width) {		
 		Vector2i riverGrid = GetRiverGrid(wx, wy);
-		//m_riverCacheLock.EnterReadLock();
+
+		std::scoped_lock<std::mutex> lock(m_mutRiverCache);
 		if (riverGrid == m_cachedRiverGrid) {
-			if (m_cachedRiverPoints) // fuckk
-			{
-				GetWeight(*m_cachedRiverPoints, wx, wy, weight, width);
-				//m_riverCacheLock.ExitReadLock();
-				return;
+			if (m_cachedRiverPoints) {
+				return GetWeight(*m_cachedRiverPoints, wx, wy, weight, width);
 			}
-			weight = 0;
-			width = 0;
-			//this.m_riverCacheLock.ExitReadLock();
-			return;
 		}
 		else {
-
 			auto&& find = m_riverPoints.find(riverGrid);
 			if (find != m_riverPoints.end()) {
 				GetWeight(find->second, wx, wy, weight, width);
-				m_riverCacheLock.EnterWriteLock();
 				m_cachedRiverGrid = riverGrid;
-				//m_cachedRiverPoints = array;
 				m_cachedRiverPoints = &find->second;
-				//this.m_riverCacheLock.ExitWriteLock();
 				return;
 			}
-			//this.m_riverCacheLock.EnterWriteLock();
+
 			m_cachedRiverGrid = riverGrid;
 			m_cachedRiverPoints = nullptr;
-			//this.m_riverCacheLock.ExitWriteLock();
-			weight = 0;
-			width = 0;
-			return;
 		}
+
+		weight = 0;
+		width = 0;
 	}
 
 	void GetWeight(const std::vector<RiverPoint> &points, float wx, float wy, float &weight, float &width) {
