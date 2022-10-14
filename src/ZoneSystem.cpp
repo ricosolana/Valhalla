@@ -17,11 +17,11 @@ namespace ZoneSystem {
 
 		// Token: 0x040011BE RID: 4542
 		//[BitMask(typeof(Heightmap.Biome))]
-		Biome m_biome;
+		Heightmap::Biome m_biome;
 
 		// Token: 0x040011BF RID: 4543
 		//[BitMask(typeof(Heightmap.BiomeArea))]
-		BiomeArea m_biomeArea = BiomeArea::Everything;
+		Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
 
 		int m_quantity;
 

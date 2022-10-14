@@ -11,7 +11,7 @@ AcceptorZSocket2::~AcceptorZSocket2() {
 }
 
 void AcceptorZSocket2::Start() {
-	assert(!m_accepting, "Tried starting ZAccepter twice!");
+	assert(!m_accepting && "Tried starting ZAccepter twice!");
 
 	LOG(INFO) << "Starting server on port " << m_acceptor.local_endpoint().port();
 

@@ -3,8 +3,7 @@
 #include <robin_hood.h>
 #include <type_traits>
 #include "Quaternion.h"
-#include "Vector2.h"
-#include "Vector3.h"
+#include "Vector.h"
 #include "Utils.h"
 #include "ZDOID.h"
 

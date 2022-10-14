@@ -97,8 +97,7 @@ namespace MathUtils {
 
 
 
-	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain)
-	{
+	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain) {
 		return Fbm(Vector2(p.x, p.z), octaves, lacunarity, gain);
 	}
 

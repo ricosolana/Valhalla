@@ -1,9 +1,7 @@
 #pragma once
 
-#include "Vector"
-
-class Vector2;
-class Vector3;
+struct Vector2;
+struct Vector3;
 
 namespace MathUtils {
 
@@ -50,7 +48,7 @@ namespace MathUtils {
 
 	float FbmMaxValue(int octaves, float gain);
 
-	float Fbm(class Vector2 &p, int octaves, float lacunarity, float gain);
+	float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain);
 
 
 

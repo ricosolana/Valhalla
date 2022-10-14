@@ -248,15 +248,14 @@ namespace Utils {
         return count;
     }
 
-    uuid_t StringToUID(std::string_view sv) {
-        std::string s(sv);
+    uuid_t StringToUID(const std::string& s) {
         std::stringstream ss(s);
         uuid_t uid;
         ss >> uid;
         return uid;
     }
 
-    bool IsAddress(std::string_view s) {
+    bool IsAddress(const std::string& s) {
         //address make_address(const char* str,
         //    asio::error_code & ec) ASIO_NOEXCEPT
         asio::error_code ec;

@@ -21,6 +21,10 @@ public:
 	ISocket::Ptr m_socket;
 
 	NetRpc(ISocket::Ptr socket);
+
+	NetRpc(const NetRpc& other) = delete; // copy
+	NetRpc(NetRpc&& other) = delete; // move
+
 	~NetRpc();
 
 	/**

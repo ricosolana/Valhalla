@@ -281,6 +281,7 @@ Vector3& Vector3::Normalize() {
 }
 
 Vector3 Vector3::Normalized() {
-	Vector3 vec(x, y);
-	return vec.Normalize();
+	Vector3 vec(x, y, z);
+	vec.Normalize();
+	return vec;
 }

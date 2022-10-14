@@ -12,8 +12,7 @@
 
 #include "Stream.h"
 #include "ZDOID.h"
-#include "Vector2.h"
-#include "Vector3.h"
+#include "Vector.h"
 #include "Quaternion.h"
 #include "PlayerProfile.h"
 

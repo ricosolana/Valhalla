@@ -5,9 +5,10 @@
 #include "MathUtils.h"
 
 struct Vector2 {
-	float x = 0, y = 0;
+	float x, y;
 
-	Vector2(float x = 0, float y = 0) 
+	Vector2() : x(0), y(0) {}
+	Vector2(float x, float y) 
 		: x(x), y(y) {}
 
 	Vector2(const Vector2& other) = default; //copy
@@ -62,9 +63,10 @@ struct Vector2 {
 };
 
 struct Vector2i {
-	int32_t x = 0, y = 0;
+	int32_t x, y;
 
-	Vector2i(int32_t x = 0, int32_t y = 0)
+	Vector2i() : x(0), y(0) {}
+	Vector2i(int32_t x, int32_t y)
 		: x(x), y(y) {}
 
 	Vector2i(const Vector2i& other) = default; //copy
@@ -116,9 +118,10 @@ struct Vector2i {
 };
 
 struct Vector3 {
-	float x = 0, y = 0, z = 0;
+	float x, y, z;
 
-	Vector3(float x = 0, float y = 0, float z = 0)
+	Vector3() : x(0), y(0), z(0) {}
+	Vector3(float x, float y, float z)
 		: x(x), y(y), z(z) {}
 
 

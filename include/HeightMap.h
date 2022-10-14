@@ -31,7 +31,7 @@ public:
 	};
 
 	// Token: 0x020001DE RID: 478
-	enum class BiomeArea
+	enum BiomeArea
 	{
 		Edge = 1 << 0,
 		Median = 1 << 1,

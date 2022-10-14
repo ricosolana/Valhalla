@@ -5,6 +5,7 @@
 #include "ResourceManager.h"
 #include <easylogging++.h>
 #include <optick.h>
+#include "NetRpc.h"
 
 class Mod {
 public:
@@ -161,20 +162,41 @@ namespace ModManager {
 			//	"period", &Task::period,
 			//	"Repeats", &Task::Repeats,
 			//	"function", &Task::function); // dummy
-			//
-			//state.new_usertype<NetPeer>("NetPeer",
-			//	"Kick", &NetPeer::Kick,
-			//	"characterId", &NetPeer::m_characterID,
-			//	"playerName", &NetPeer::m_playerName,
-			//	"publicRefPos", &NetPeer::m_publicRefPos,
-			//	"refPos", &NetPeer::m_refPos,
-			//	"rpc", &NetPeer::m_rpc,
-			//	"uid", &NetPeer::m_uid);
-			//
+			
+			// pass the ptr later when calling lua-side functions
+			state.new_usertype<NetPeer>("NetPeer",
+				"Kick", &NetPeer::Kick,
+				"characterID", &NetPeer::m_characterID,
+				"name", &NetPeer::m_name,
+				"visibleOnMap", &NetPeer::m_visibleOnMap,
+				"pos", &NetPeer::m_pos,
+				"Rpc", [](NetPeer& self) { return self.m_rpc.get(); }, // &NetPeer::m_rpc, // [](sol::this_state L) {},
+				"uuid", &NetPeer::m_uuid);
+			
+
+			// To register an RPC, must pass a lua stack handler
+			// basically, get the lua state to get args passed to RPC invoke
+			// https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
+			// so this works:
+			state.new_usertype<NetRpc>("NetRpc",
+				//"Invoke", &NetRpc::Invoke,
+				"Register", [](sol::this_state L, sol::variadic_args args) {
+					sol::state_view view(L);
+					LOG(INFO) << "Lua Register call args:";
+					for (auto&& arg : args) {
+						LOG(INFO) << arg.as<std::string>();
+						//LOG(INFO) << std::string(arg);
+					}
+				},
+				"socket", &NetRpc::m_socket
+			);
+
+			// just call the callback function with the ptr
+
 			//state.new_usertype<NetRpc>("NetRpc",
-			//	"", NetRpc::Invoke,
-			//	"", NetRpc::Register,
-			//	"", NetRpc::m_socket)
+			//	//"Invoke", &NetRpc::Invoke,
+			//	"Register", &NetRpc::Register,
+			//	"socket", &NetRpc::m_socket);
 
 			
 
@@ -224,7 +246,7 @@ namespace ModManager {
 					LOG(INFO) << "Loaded mod '" << name << "'";
 				}
 			}
-			catch (std::exception& e) {
+			catch (const std::exception& e) {
 				LOG(ERROR) << "Failed to load mod: " << e.what();
 			}
 		}

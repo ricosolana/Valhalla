@@ -109,6 +109,10 @@ namespace Utils {
 	int Compress(z_stream* strm, unsigned char* buf, unsigned len,
 		unsigned* max);
 
+
+	std::vector<byte_t> Compress(const byte_t* uncompressedBytes, int count, int level);
+	std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count);
+
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
 
@@ -120,16 +124,17 @@ namespace Utils {
 	// Return -1 on bad encoding
 	int32_t GetUTF8Count(const byte_t* p);
 
-	uuid_t StringToUID(std::string_view sv);
+	uuid_t StringToUID(const std::string &s);
 
-	bool IsAddress(std::string_view s);
+	bool IsAddress(const std::string& s);
 
 	//std::string join(std::vector<std::string_view>& strings);
 
 	//constexpr std::string join(std::initializer_list<std::string_view> strings);
 
+	// ugly
 	template<typename StrContainer>
-	std::string Join(std::string delimiter, StrContainer container) {
+	std::string Join(const std::string& delimiter, StrContainer container) {
 		std::string result;
 		for (int i = 0; i < container.size() - 1; i++) {
 			result += std::string(*(container.begin() + i)) + delimiter;
