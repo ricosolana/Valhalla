@@ -56,9 +56,9 @@ ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBacke
 
 7. In the top-left click on `File`->`Save Module...`. Click `OK` in the window.
 
-The assembly should now be patched. Open Valheim join the Valhalla server as you would any other dedicated server. You might spawn in water or on barren land. This is perfectly normal as the server has no other functionality at its current state of development.
+The assembly should now be patched. Open Valheim join the Valhalla server as you would any other dedicated server. For my case (or others) who are behind a NAT, try entering `localhost:2456` to connect to the server (if locally hosted). You might spawn in water or on barren land. This is perfectly normal as the server has no other functionality at its current state of development.
 
-<details><summary>Old method (210.6 or NAT)</summary>
+<details><summary>Old method (210.6)</summary>
   
 Change the ZNet::connect(ip) method similar to:
 ```c#
