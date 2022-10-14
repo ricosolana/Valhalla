@@ -57,3 +57,34 @@ ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBacke
 7. In the top-left click on `File`->`Save Module...`. Click `OK` in the window.
 
 The assembly should now be patched. Open Valheim join the Valhalla server as you would any other dedicated server. You might spawn in water or on barren land. This is perfectly normal as the server has no other functionality at its current state of development.
+
+<details><summary>Old method (210.6 or NAT)</summary>
+  
+Change the ZNet::connect(ip) method similar to:
+```c#
+// ZNet
+public void Connect(SteamNetworkingIPAddr host) {
+  ZNetPeer peer = new ZNetPeer(new ZSteamSocket(host), true);
+  this.OnNewConnection(peer);
+  ZNet.m_connectionStatus = ZNet.ConnectionStatus.Connecting;
+  this.m_connectingDialog.gameObject.SetActive(true);
+}
+```
+to this:
+```c#
+// ZNet
+public void Connect(SteamNetworkingIPAddr host) {
+  string ip;
+  host.ToString(out ip, false);
+  
+  TcpClient tcpClient = ZSocket2.CreateSocket();
+  IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ip), (int)host.m_port);
+  tcpClient.Client.Connect(ep);
+  ZNetPeer peer = new ZNetPeer(new ZSocket2(tcpClient, null), true);
+  this.OnNewConnection(peer);
+  ZNet.m_connectionStatus = ZNet.ConnectionStatus.Connecting;
+  this.m_connectingDialog.gameObject.SetActive(true);
+}
+```
+  
+</details>
