@@ -227,9 +227,13 @@ namespace NetManager {
 		// check if banned
 		//if ()
 
+		//if (IsBann)
+
 		// pass the data to the lua OnPeerInfo
-		if (!ModManager::Event::OnPeerInfo(rpc->m_socket, uuid, name, version))
+		if (!ModManager::Event::OnPeerInfo(rpc, uuid, name, version)) {
+			rpc->SendError(ConnectionStatus::ErrorBanned);
 			return;
+		}
 
 		// Find the rpc and transfer
 		std::unique_ptr<NetRpc> swappedRpc;

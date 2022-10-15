@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <filesystem>
-#include <Utils.h>
+#include "Utils.h"
 
 namespace fs = std::filesystem;
 
@@ -17,6 +17,11 @@ namespace ResourceManager {
     // Returns the combined root directory with a path
     fs::path GetPath(const fs::path &path);
 
-    bool ReadFileBytes(const fs::path &path, std::vector<byte_t> &buffer);
-    bool ReadFileBytes(const fs::path& path, std::string &str);
+    bool ReadFileBytes(const fs::path& path, byte_t* buf, int size);
+    bool ReadFileBytes(const fs::path &path, bytes_t &buffer);
+    bool ReadFileBytes(const fs::path& path, std::string &s);
+
+    bool WriteFileBytes(const fs::path& path, const byte_t* buf, int size);
+    bool WriteFileBytes(const fs::path& path, const bytes_t& buffer);
+    bool WriteFileBytes(const fs::path& path, const std::string &s);
 };

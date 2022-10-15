@@ -109,6 +109,7 @@ void ZDO::Set(const std::string& key, bool value) {
 void ZDO::Set(hash_t hash, const bytes_t& value) {
 	m_byteArrays.insert({ hash, value });
 	// increase data revision
+	Revise();
 }
 void ZDO::Set(const std::string& key, const bytes_t& value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -120,6 +121,7 @@ void ZDO::Set(hash_t hash, float value) {
 		&& find->second == value)
 		return;
 	m_floats.insert({ hash, value });
+	Revise();
 	// increase rev
 }
 void ZDO::Set(const std::string& key, float value) {
@@ -146,6 +148,7 @@ void ZDO::Set(hash_t hash, int32_t value) {
 	// Update data revision
 	// IncreaseDataRevision
 	m_ints.insert({ hash, value });
+	Revise();
 }
 void ZDO::Set(const std::string& key, int32_t value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -156,6 +159,7 @@ void ZDO::Set(hash_t hash, int64_t value) {
 	if (find != m_longs.end() && value == find->second)
 		return;
 	m_longs.insert({ hash, value });
+	Revise();
 }
 void ZDO::Set(const std::string& key, int64_t value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -166,6 +170,7 @@ void ZDO::Set(hash_t hash, const Quaternion& value) {
 	if (find != m_quats.end() && value == find->second)
 		return;
 	m_quats.insert({ hash, value });
+	Revise();
 }
 void ZDO::Set(const std::string& key, const Quaternion& value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -176,6 +181,7 @@ void ZDO::Set(hash_t hash, const std::string& value) {
 	if (find != m_strings.end() && value == find->second)
 		return;
 	m_strings.insert({ hash, value });
+	Revise();
 }
 void ZDO::Set(const std::string& key, const std::string& value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -186,6 +192,7 @@ void ZDO::Set(hash_t hash, const Vector3& value) {
 	if (find != m_vecs.end() && value == find->second)
 		return;
 	m_vecs.insert({ hash, value });
+	Revise();
 }
 void ZDO::Set(const std::string& key, const Vector3& value) {
 	return Set(Utils::GetStableHashCode(key), value);

@@ -110,7 +110,7 @@ namespace Utils {
 		unsigned* max);
 
 
-	std::vector<byte_t> Compress(const byte_t* uncompressedBytes, int count, int level);
+	std::vector<byte_t> Compress(const byte_t* uncompressedBytes, int count, int level = Z_DEFAULT_COMPRESSION);
 	std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count);
 
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);

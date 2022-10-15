@@ -18,53 +18,94 @@ namespace ResourceManager {
         return root / path;
     }
 
-    std::ifstream GetFile(const fs::path &path) {
+    std::ifstream GetInFile(const fs::path &path) {
         return std::ifstream(GetPath(path), std::ios::binary);
     }
+    
+    std::ofstream GetOutFile(const fs::path& path) {
+        return std::ofstream(GetPath(path), std::ios::binary);
+    }
 
-    bool ReadFileBytes(const fs::path &path, std::vector<byte_t> &vec) {
-        auto file = GetFile(path);
-        
-        //file.is_open();
-        //file.open();
+    bool ReadFileBytes(const fs::path& path, byte_t* buf, int size) {
+        auto file = GetInFile(path);
 
         // Stop eating new lines in binary mode!!!
         file.unsetf(std::ios::skipws);
 
-        // get its size:
-        std::streampos fileSize;
-
-        file.seekg(0, std::ios::end);
-        fileSize = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        // fileSize == -1 when doesnt exists
-        if (fileSize < 0)
+        if (!file)
             return false;
 
-        // reserve capacity
-        vec.reserve(fileSize);
+        std::copy(std::istream_iterator<byte_t>(file),
+            std::istream_iterator<byte_t>(),
+            buf);
+
+        return true;
+    }
+
+    bool ReadFileBytes(const fs::path &path, bytes_t &vec) {
+        auto file = GetInFile(path);
         
-        //std::cout << "file open1: " << file.is_open() << "\n";
+        // Stop eating new lines in binary mode!!!
+        file.unsetf(std::ios::skipws);
+
+        if (!file)
+            return false;
 
         // read the data:
         vec.insert(vec.begin(),
             std::istream_iterator<byte_t>(file),
             std::istream_iterator<byte_t>());
 
-        //std::cout << "file open2: " << file.is_open() << "\n";
-
         return true;
     }
 
     bool ReadFileBytes(const fs::path& path, std::string& str) {
-        std::vector<byte_t> buffer;
-        if (!ReadFileBytes(path, buffer))
+        auto file = GetInFile(path);
+
+        // Stop eating new lines in binary mode!!!
+        // im not sure whether this is redundant
+        file.unsetf(std::ios::skipws);
+
+        if (!file)
             return false;
 
-        str.reserve(buffer.size());
+        // read the data:
+        str.insert(str.begin(),
+            std::istream_iterator<byte_t>(file),
+            std::istream_iterator<byte_t>());
 
-        str.insert(str.begin(), buffer.begin(), buffer.end());
+        return true;
+    }
+
+    bool WriteFileBytes(const fs::path& path, const byte_t* buf, int size) {
+        auto file = GetOutFile(path);
+
+        if (!file)
+            return false;
+
+        std::copy(buf, buf + size, std::ostream_iterator<byte_t>(file));
+
+        return true;
+    }
+
+    bool WriteFileBytes(const fs::path& path, const bytes_t& vec) {
+        auto file = GetOutFile(path);
+
+        if (!file)
+            return false;
+
+        std::copy(vec.begin(), vec.end(), std::ostream_iterator<byte_t>(file));
+
+        return true;
+    }
+
+    bool WriteFileBytes(const fs::path& path, const std::string& str) {
+        auto file = GetOutFile(path);
+
+        if (!file)
+            return false;
+
+        std::copy(str.begin(), str.end() - 1, std::ostream_iterator<byte_t>(file));
 
         return true;
     }

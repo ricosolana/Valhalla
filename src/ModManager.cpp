@@ -7,6 +7,7 @@
 #include <optick.h>
 #include "NetRpc.h"
 
+
 class Mod {
 public:
 	// required attributes
@@ -19,7 +20,7 @@ public:
 	const std::function<void()> m_onEnable;
 	const std::function<void()> m_onDisable;
 	const std::function<void(float)> m_onUpdate;
-	const std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
+	const std::function<bool(NetRpc*, uuid_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
 
 	Mod(const std::string &name,
 		int priority,
@@ -27,7 +28,7 @@ public:
 		const std::function<void()> &onEnable,
 		const std::function<void()> &onDisable,
 		const std::function<void(float)> &onUpdate,
-		const std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)> &onPeerInfo)
+		const std::function<bool(NetRpc*, uuid_t, std::string, std::string)> &onPeerInfo)
 		:	m_name(name), m_priority(priority), m_state(std::move(state)), 
 			m_onEnable(onEnable), m_onDisable(onDisable), m_onUpdate(onUpdate), m_onPeerInfo(onPeerInfo) {}
 
@@ -108,7 +109,7 @@ namespace ModManager {
 			auto onEnable = state["onEnable"].get_or(std::function<void()>());
 			auto onDisable = state["onDisable"].get_or(std::function<void()>());
 			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
-			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(ISocket::Ptr, uuid_t, std::string, std::string)>());
+			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(NetRpc*, uuid_t, std::string, std::string)>());
 
 			//state["bruh"].get<std::string>()
 
@@ -163,25 +164,29 @@ namespace ModManager {
 			//	"Repeats", &Task::Repeats,
 			//	"function", &Task::function); // dummy
 			
+			// https://sol2.readthedocs.io/en/latest/api/property.html
 			// pass the ptr later when calling lua-side functions
+			// https://github.com/LaG1924/AltCraft/blob/267eeeb94ad4863683dc96dc392e0e30ef16a39e/src/Plugin.cpp#L242
 			state.new_usertype<NetPeer>("NetPeer",
 				"Kick", &NetPeer::Kick,
 				"characterID", &NetPeer::m_characterID,
 				"name", &NetPeer::m_name,
 				"visibleOnMap", &NetPeer::m_visibleOnMap,
 				"pos", &NetPeer::m_pos,
-				"Rpc", [](NetPeer& self) { return self.m_rpc.get(); }, // &NetPeer::m_rpc, // [](sol::this_state L) {},
+				//"Rpc", [](NetPeer& self) { return self.m_rpc.get(); }, // &NetPeer::m_rpc, // [](sol::this_state L) {},
+				"rpc", sol::property([](NetPeer& self) { return self.m_rpc.get(); }),
+				//[](NetPeer& self) { return self.m_rpc.get(); }, // &NetPeer::m_rpc, // [](sol::this_state L) {},
 				"uuid", &NetPeer::m_uuid);
 			
-
 			// To register an RPC, must pass a lua stack handler
 			// basically, get the lua state to get args passed to RPC invoke
 			// https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
 			// so this works:
 			state.new_usertype<NetRpc>("NetRpc",
 				//"Invoke", &NetRpc::Invoke,
-				"Register", [](sol::this_state L, sol::variadic_args args) {
-					sol::state_view view(L);
+				"Register", //[](sol::this_state L, sol::variadic_args args) {
+					[](NetRpc& self, sol::variadic_args args) {
+					//sol::state_view view(L);
 					LOG(INFO) << "Lua Register call args:";
 					for (auto&& arg : args) {
 						LOG(INFO) << arg.as<std::string>();
@@ -190,6 +195,32 @@ namespace ModManager {
 				},
 				"socket", &NetRpc::m_socket
 			);
+
+			// https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
+			state.new_usertype<ISocket>("ISocket",
+				"Close", &ISocket::Close,
+				"GetConnectivity", &ISocket::GetConnectivity,
+				"GetHostName", &ISocket::GetHostName,
+				"GetHostPort", &ISocket::GetHostPort,
+				"GetSendQueueSize", &ISocket::GetSendQueueSize
+				//"HasNewData", &ISocket::HasNewData,
+				//"Recv", &ISocket::Recv,
+				//"Send", &ISocket::Send,
+				//"Start", &ISocket::Start				
+			);
+
+			//state.new_usertype<ZSocket2>("ZSocket2",
+			//	"Close", &ZSocket2::Close,
+			//	"GetConnectivity", &ZSocket2::GetConnectivity,
+			//	"GetHostName", &ZSocket2::GetHostName,
+			//	"GetHostPort", &ZSocket2::GetHostPort,
+			//	"GetSendQueueSize", &ZSocket2::GetSendQueueSize,
+			//	//"HasNewData", &ZSocket2::HasNewData,
+			//	//"Recv", &ZSocket2::Recv,
+			//	//"Send", &ZSocket2::Send,
+			//	//"Start", &ZSocket2::Start
+			//	sol::base_classes, sol::bases<ISocket>()
+			//);
 
 			// just call the callback function with the ptr
 
@@ -284,17 +315,16 @@ namespace ModManager {
 		}
 
 		/// Event forward calls
-		bool OnPeerInfo(ISocket::Ptr socket, uuid_t uuid, 
+		bool OnPeerInfo(NetRpc *rpc, uuid_t uuid, 
 			const std::string& name, const std::string& version) {
-			//bool allow = true;
-			int allowWeight = 1;
+			bool allow = true;
 			for (auto&& mod : mods) {
 				if (mod.second->m_onPeerInfo) // check is mandatory to avoid std::bad_function_call
 										// if function is empty
 		
-					mod.second->m_onPeerInfo(socket, uuid, name, version);
+					allow = mod.second->m_onPeerInfo(rpc, uuid, name, version);
 			}
-			return allowWeight;
+			return allow;
 		}
 
 		void OnNewConnection() {

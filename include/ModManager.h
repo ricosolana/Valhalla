@@ -3,6 +3,8 @@
 #include <sol/sol.hpp>
 #include "NetSocket.h"
 
+class NetRpc;
+
 namespace ModManager {
 	void Init();
 	void Uninit();
@@ -14,7 +16,7 @@ namespace ModManager {
 		void OnDisable();
 
 		/// Event calls
-		bool OnPeerInfo(ISocket::Ptr socket, 
+		bool OnPeerInfo(NetRpc* rpc, 
 			uuid_t uuid, 
 			const std::string& name, 
 			const std::string& version);

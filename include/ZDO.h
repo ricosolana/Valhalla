@@ -23,6 +23,10 @@ class ZDO {
 	robin_hood::unordered_map<hash_t, std::string> m_strings;
 	robin_hood::unordered_map<hash_t, bytes_t> m_byteArrays;
 
+	void Revise() {
+		m_dataRevision++;
+	}
+
 	// thinking about an [] operatoro override?
 	// how to remove all the maps above
 	// it takes up an extremely large amount of memory and is confusing

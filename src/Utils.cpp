@@ -93,7 +93,7 @@ namespace Utils {
         zs.next_in = (Bytef*)uncompressedBytes;
         zs.avail_out = (uInt)ret.size(); // HERE
         zs.next_out = (Bytef*)ret.data();
-
+        
         if (deflateInit2(&zs, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
             throw std::runtime_error("unable to compress");
 

@@ -8,6 +8,7 @@
 #include <bitset>
 #include <signal.h>
 #include <optick.h>
+#include "ResourceManager.h"
 
 #include "easylogging++.h"
 #include "ValhallaServer.h"
@@ -68,7 +69,16 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, on_interrupt);
 
-    LOG(INFO) << "Press ctrl+c to gracefully exit";
+    LOG(INFO) << "Press ctrl+c to exit";
+
+    ResourceManager::SetRoot("data");
+    bytes_t buf;
+
+    ResourceManager::ReadFileBytes("pic.jpg", buf);
+    auto compressed = Utils::Compress(buf.data(), buf.size());
+    ResourceManager::WriteFileBytes("pic", compressed);
+
+    return 0;
 
     //try {
         Valhalla()->Launch();

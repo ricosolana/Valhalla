@@ -4,7 +4,7 @@
 #include "ZoneSystem.h"
 
 namespace NetRpcManager {
-	static robin_hood::unordered_map<hash_t, ZMethodBase<uuid_t>*> m_methods;
+	robin_hood::unordered_map<hash_t, ZMethodBase<uuid_t>*> m_methods;
 
 	uuid_t _ServerID() {
 		return Valhalla()->m_serverUuid;
@@ -35,7 +35,7 @@ namespace NetRpcManager {
 	void _HandleRoutedRPC(Data data) {
 		// If method call is for rerouting
 		if (data.m_targetZDO) {
-			throw std::runtime_error("Not implemented");
+			//throw std::runtime_error("Not implemented");
 			//ZDO zdo = ZDOMan.instance.GetZDO(data.m_targetZDO);
 			//if (zdo != null) {
 			//	ZNetView znetView = ZNetScene.instance.FindInstance(zdo);
