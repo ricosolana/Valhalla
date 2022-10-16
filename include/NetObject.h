@@ -1,9 +1,16 @@
 #pragma once
 
+/*
+ * ZNetView equivalent
+ * NetObject is a wrapper around a ZDO and certain exceptional ZRoutedRPC methods hosted here only
+ */
+
 // change name to something more obvious
 // netobject
-// netview is just a wrapper
-class NetView
+// netview is just a wrapper to represent an object with synchronized fields and method calls
+class NetObject {
+
+};
 
 private void Awake()
 {
@@ -96,6 +103,12 @@ public void Destroy()
 }
 
 // Token: 0x06000C6E RID: 3182 RVA: 0x0000A190 File Offset: 0x00008390
+
+// this name is misleading
+// what is owner? entity? player?
+// owner here refers to client or server
+// local vs remote
+// more extensive testing is required
 public bool IsOwner()
 {
 	return this.m_NetSync.IsOwner();
