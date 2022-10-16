@@ -2,6 +2,39 @@
 #include "NetSyncManager.h"
 #include <functional>
 
+
+
+
+
+const NetSync::ID NetSync::ID::NONE(0, 0);
+
+NetSync::ID::ID()
+	: ID(NONE)
+{}
+
+NetSync::ID::ID(int64_t userID, uint32_t id)
+	: m_userID(userID), m_id(id), m_hash(HashUtils::Hasher{}(m_userID) ^ HashUtils::Hasher{}(m_id))
+{}
+
+std::string NetSync::ID::ToString() {
+	return std::to_string(m_userID) + ":" + std::to_string(m_id);
+}
+
+bool NetSync::ID::operator==(const NetSync::ID& other) const {
+	return m_userID == other.m_userID
+		&& m_id == other.m_id;
+}
+
+bool NetSync::ID::operator!=(const NetSync::ID& other) const {
+	return !(*this == other);
+}
+
+NetSync::ID::operator bool() const noexcept {
+	return *this != NONE;
+}
+
+
+
 bool NetSync::GetBool(hash_t hash, bool def) {
 	auto&& find = m_ints.find(hash);
 	if (find != m_ints.end())
@@ -33,14 +66,14 @@ float NetSync::GetFloat(const std::string& key, float def) {
 	return GetFloat(Utils::GetStableHashCode(key), def);
 }
 
-const NetSyncID& NetSync::GetNetSyncID(const std::pair<hash_t, hash_t>& pair) {
+const NetSync::ID& NetSync::GetNetSyncID(const std::pair<hash_t, hash_t>& pair) {
 	auto k = GetLong(pair.first);
 	auto v = GetLong(pair.second);
 	if (k == 0 || v == 0)
-		return NetSyncID::NONE;
-	return NetSyncID(k, (uint32_t)v);
+		return NetSync::ID::NONE;
+	return NetSync::ID(k, (uint32_t)v);
 }
-const NetSyncID& NetSync::GetNetSyncID(const std::string& key) {
+const NetSync::ID& NetSync::GetNetSyncID(const std::string& key) {
 	return GetNetSyncID(ToHashPair(key));
 }
 
@@ -128,12 +161,12 @@ void NetSync::Set(const std::string& key, float value) {
 	return Set(Utils::GetStableHashCode(key), value);
 }
 
-void NetSync::Set(const std::pair<hash_t, hash_t>& key, const NetSyncID& value) {
+void NetSync::Set(const std::pair<hash_t, hash_t>& key, const NetSync::ID& value) {
 	// it sets long for some reason for the key.value
 	Set(key.first, value.m_userID);
 	Set(key.second, (uuid_t)value.m_id);
 }
-void NetSync::Set(const std::string& key, const NetSyncID& value) {
+void NetSync::Set(const std::string& key, const NetSync::ID& value) {
 	return Set(ToHashPair(key), value);
 }
 

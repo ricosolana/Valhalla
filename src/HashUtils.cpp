@@ -18,7 +18,7 @@ namespace HashUtils {
 		return (int32_t)num2 ^ (int32_t)(num2 >> 32);
 	}
 
-	int Hasher::operator()(const NetSyncID& value) const {
+	int Hasher::operator()(const NetSync::ID& value) const {
 		return value.m_hash;
 	}
 

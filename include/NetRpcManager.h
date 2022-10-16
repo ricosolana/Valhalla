@@ -12,7 +12,7 @@ namespace NetRpcManager {
 		uuid_t m_msgID;
 		uuid_t m_senderPeerID;
 		uuid_t m_targetPeerID;
-		NetSyncID m_targetNetSync;
+		NetSync::ID m_targetNetSync;
 		hash_t m_methodHash;
 		NetPackage::Ptr m_parameters;
 
@@ -23,7 +23,7 @@ namespace NetRpcManager {
 			: m_msgID(pkg->Read<uuid_t>()),
 			m_senderPeerID(pkg->Read<uuid_t>()),
 			m_targetPeerID(pkg->Read<uuid_t>()),
-			m_targetNetSync(pkg->Read<NetSyncID>()),
+			m_targetNetSync(pkg->Read<NetSync::ID>()),
 			m_methodHash(pkg->Read<hash_t>()),
 			m_parameters(pkg->Read<NetPackage::Ptr>())
 		{}
@@ -44,7 +44,7 @@ namespace NetRpcManager {
 
 	// Internal use only by NetRpcManager
 	uuid_t _ServerID();
-	void _InvokeRoute(uuid_t target, const NetSyncID& targetNetSync, const std::string& name, NetPackage::Ptr pkg);
+	void _InvokeRoute(uuid_t target, const NetSync::ID& targetNetSync, const std::string& name, NetPackage::Ptr pkg);
 	void _HandleRoutedRPC(Data data);
 	void _Register(const std::string& name, ZMethodBase<uuid_t>* method);
 
@@ -75,7 +75,7 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void InvokeRoute(uuid_t target, const NetSyncID& targetNetSync, const std::string& name, Args... params) {
+	void InvokeRoute(uuid_t target, const NetSync::ID& targetNetSync, const std::string& name, Args... params) {
 		auto pkg(PKG());
 		NetPackage::Serialize(pkg, params...);
 		_InvokeRoute(target, targetNetSync, name, pkg);
@@ -88,7 +88,7 @@ namespace NetRpcManager {
 	*/
 	template <typename... Args>
 	void InvokeRoute(uuid_t target, const std::string& name, Args... params) {
-		InvokeRoute(target, NetSyncID::NONE, name, params...);
+		InvokeRoute(target, NetSync::ID::NONE, name, params...);
 	}
 
 	/**

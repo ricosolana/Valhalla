@@ -128,7 +128,7 @@ add_executable(${PROJECT_NAME}
     
     "src/Utils.cpp"
     "src/NetSync.cpp"
-    "src/NetSyncID.cpp"
+    
     "src/NetSyncManager.cpp"
     
     "src/NetManager.cpp"

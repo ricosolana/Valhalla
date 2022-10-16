@@ -2,7 +2,7 @@
 
 #include "NetSocket.h"
 #include "NetRpc.h"
-#include "NetSyncID.h"
+#include "NetSync.h"
 #include "Utils.h"
 
 struct NetPeer {
@@ -16,7 +16,7 @@ public:
 
 	Vector3 m_pos;
 	bool m_visibleOnMap = false;
-	NetSyncID m_characterID = NetSyncID::NONE;
+	NetSync::ID m_characterID = NetSync::ID::NONE;
 
 public:
 	NetPeer(std::unique_ptr<NetRpc> rpc,

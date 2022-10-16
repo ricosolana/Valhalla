@@ -53,7 +53,7 @@ void NetPackage::Write(const NetPackage::Ptr in) {
     Write(in->m_stream.Bytes(), in->m_stream.Length());
 }
 
-void NetPackage::Write(const NetSyncID& in) {
+void NetPackage::Write(const NetSync::ID& in) {
     Write(in.m_userID);
     Write(in.m_id);
 }

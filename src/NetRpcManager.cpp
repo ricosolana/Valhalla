@@ -68,7 +68,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(uuid_t target, const NetSyncID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
+	void _InvokeRoute(uuid_t target, const NetSync::ID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
 		static uuid_t m_rpcMsgID = 1;
 		static auto SERVER_ID(Valhalla()->m_serverUuid);
 

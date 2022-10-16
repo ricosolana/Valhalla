@@ -1,7 +1,7 @@
 #pragma once
 
 #include <concepts>
-#include "NetSyncID.h"
+#include "NetSync.h"
 //struct NetSyncID;
 
 // C# hash equivalencies
@@ -17,6 +17,6 @@ namespace HashUtils {
 		int operator()(const int64_t &value) const;
 		int operator()(const float &value) const;
 		int operator()(const double &value) const;
-		int operator()(const NetSyncID &value) const;
+		int operator()(const NetSync::ID &value) const;
 	};
 }

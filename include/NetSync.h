@@ -5,7 +5,6 @@
 #include "Quaternion.h"
 #include "Vector.h"
 #include "Utils.h"
-#include "NetSyncID.h"
 
 // each NetSync is 0.5Kb minimum (with all 7 maps)
 // each NetSync is .168Kb minimum (with 1 map only)
@@ -51,6 +50,27 @@ class NetSync {
 	// robin_hood::unordered_map<hash_t, std::vector<byte_t>> m_vars;
 
 public:
+
+	struct ID {
+		explicit ID();
+		explicit ID(int64_t userID, uint32_t id);
+
+		std::string ToString();
+
+		bool operator==(const ID& other) const;
+		bool operator!=(const ID& other) const;
+
+		// Return whether this has a value besides NONE
+		explicit operator bool() const noexcept;
+
+		static const ID NONE;
+
+		uuid_t m_userID;
+		uint32_t m_id;
+		hash_t m_hash;
+	};
+
+
 	//enum class ObjectType {
 	//	Default,
 	//	Prioritized,
@@ -69,9 +89,9 @@ public:
 	float GetFloat(hash_t hash, float def = 0);
 	float GetFloat(const std::string& key, float def = 0);
 
-	const NetSyncID& GetNetSyncID(const std::pair<hash_t, hash_t>& key);
+	const ID& GetNetSyncID(const std::pair<hash_t, hash_t>& key);
 	std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
-	const NetSyncID& GetNetSyncID(const std::string& key);
+	const ID& GetNetSyncID(const std::string& key);
 
 	int32_t GetInt(hash_t hash, int32_t def = 0);
 	int32_t GetInt(const std::string& key, int32_t def = 0);
@@ -100,8 +120,8 @@ public:
 	void Set(const std::string& key, float value);
 
 	// Set a NetSyncID with key as hashed key pair
-	void Set(const std::pair<hash_t, hash_t>& key, const NetSyncID& value);
-	void Set(const std::string& key, const NetSyncID& value);
+	void Set(const std::pair<hash_t, hash_t>& key, const ID& value);
+	void Set(const std::string& key, const ID& value);
 
 	void Set(hash_t hash, int32_t value);
 	void Set(const std::string& key, int32_t value);
@@ -123,7 +143,7 @@ public:
 	///uuid_t m_owner;
 
 	// contains id of the client or server, and the object id
-	NetSyncID m_NetSyncID;
+	ID m_NetSyncID;
 	//bool m_persistent = false;	// set by ZNetView
 	//bool m_distant = false;		// set by ZNetView
 	uuid_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed

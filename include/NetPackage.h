@@ -11,10 +11,10 @@
 #include <robin_hood.h>
 
 #include "Stream.h"
-#include "NetSyncID.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "PlayerProfile.h"
+#include "NetSync.h"
 
 template<typename E>
 concept EnumType = std::is_enum_v<E>;
@@ -55,7 +55,7 @@ public:
     void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     void Write(const robin_hood::unordered_set<std::string>& in);
     void Write(const NetPackage::Ptr in);
-    void Write(const NetSyncID &id);
+    void Write(const NetSync::ID &id);
     void Write(const Vector3 &in);
     void Write(const Vector2i &in);
     void Write(const Quaternion& in);
@@ -130,8 +130,8 @@ public:
     }
 
     template<typename T>
-    T Read() requires std::same_as<T, NetSyncID> {
-        return NetSyncID(Read<uuid_t>(), Read<uint32_t>());
+    T Read() requires std::same_as<T, NetSync::ID> {
+        return NetSync::ID(Read<uuid_t>(), Read<uint32_t>());
     }
 
     template<typename T>

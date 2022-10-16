@@ -92,7 +92,7 @@ namespace NetManager {
 		peer->m_visibleOnMap = publicRefPos; // stupid name
 	}
 
-	void RPC_CharacterID(NetRpc* rpc, NetSyncID characterID) {
+	void RPC_CharacterID(NetRpc* rpc, NetSync::ID characterID) {
 		auto&& peer = GetPeer(rpc);
 		peer->m_characterID = characterID;
 
