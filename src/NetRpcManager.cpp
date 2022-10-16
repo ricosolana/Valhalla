@@ -34,11 +34,11 @@ namespace NetRpcManager {
 	// Token: 0x06000AA3 RID: 2723 RVA: 0x00050474 File Offset: 0x0004E674
 	void _HandleRoutedRPC(Data data) {
 		// If method call is for rerouting
-		if (data.m_targetZDO) {
+		if (data.m_targetNetSync) {
 			//throw std::runtime_error("Not implemented");
-			//ZDO zdo = ZDOMan.instance.GetZDO(data.m_targetZDO);
-			//if (zdo != null) {
-			//	ZNetView znetView = ZNetScene.instance.FindInstance(zdo);
+			//NetSync NetSync = NetSyncMan.instance.GetNetSync(data.m_targetNetSync);
+			//if (NetSync != null) {
+			//	ZNetView znetView = ZNetScene.instance.FindInstance(NetSync);
 			//	if (znetView != null) {
 			//		znetView.HandleRoutedRPC(data);
 			//	}
@@ -68,7 +68,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(uuid_t target, const ZDOID& targetZDO, const std::string& name, NetPackage::Ptr pkg) {
+	void _InvokeRoute(uuid_t target, const NetSyncID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
 		static uuid_t m_rpcMsgID = 1;
 		static auto SERVER_ID(Valhalla()->m_serverUuid);
 
@@ -76,7 +76,7 @@ namespace NetRpcManager {
 		data.m_msgID = SERVER_ID + m_rpcMsgID++;
 		data.m_senderPeerID = SERVER_ID;
 		data.m_targetPeerID = target;
-		data.m_targetZDO = targetZDO;
+		data.m_targetNetSync = targetNetSync;
 		data.m_methodHash = Utils::GetStableHashCode(name.c_str());
 		data.m_parameters = pkg;
 

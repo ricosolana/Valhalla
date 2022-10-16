@@ -71,14 +71,14 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-    ResourceManager::SetRoot("data");
-    bytes_t buf;
+    //ResourceManager::SetRoot("data");
+    //bytes_t buf;
 
-    ResourceManager::ReadFileBytes("pic.jpg", buf);
-    auto compressed = Utils::Compress(buf.data(), buf.size());
-    ResourceManager::WriteFileBytes("pic", compressed);
+    //ResourceManager::ReadFileBytes("pic.jpg", buf);
+    //auto compressed = Utils::Compress(buf.data(), buf.size());
+    //ResourceManager::WriteFileBytes("pic", compressed);
 
-    return 0;
+    //return 0;
 
     //try {
         Valhalla()->Launch();

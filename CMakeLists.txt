@@ -127,10 +127,10 @@ add_executable(${PROJECT_NAME}
     "src/Task.cpp"
     
     "src/Utils.cpp"
-    "src/ZDO.cpp"
-    "src/ZDOID.cpp"
-    "src/ZDOMan.cpp"
-    "src/ZDOPeer.cpp"
+    "src/NetSync.cpp"
+    "src/NetSyncID.cpp"
+    "src/NetSyncManager.cpp"
+    
     "src/NetManager.cpp"
     "src/NetPeer.cpp" 
     "src/NetPackage.cpp"    
@@ -142,7 +142,7 @@ add_executable(${PROJECT_NAME}
      "src/Vector.cpp" 
      #"src/WorldGenerator.cpp" # temporarily broken
      "src/MathUtils.cpp"
-)
+ "include/NetLivable.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

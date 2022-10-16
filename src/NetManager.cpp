@@ -4,7 +4,7 @@
 #include "ValhallaServer.h"
 #include "World.h"
 #include "ZoneSystem.h"
-#include "ZDOMan.h"
+#include "NetSyncManager.h"
 #include <optick.h>
 
 using namespace asio::ip;
@@ -92,11 +92,11 @@ namespace NetManager {
 		peer->m_visibleOnMap = publicRefPos; // stupid name
 	}
 
-	void RPC_CharacterID(NetRpc* rpc, ZDOID characterID) {
+	void RPC_CharacterID(NetRpc* rpc, NetSyncID characterID) {
 		auto&& peer = GetPeer(rpc);
 		peer->m_characterID = characterID;
 
-		LOG(INFO) << "Got character ZDOID from " << peer->m_name << " : " << characterID.ToString();
+		LOG(INFO) << "Got character NetSyncID from " << peer->m_name << " : " << characterID.ToString();
 	}
 
 
@@ -261,7 +261,7 @@ namespace NetManager {
 		SendPeerInfo(rpc);
 
 		//NetSyncManager::OnNewPeer(peer);
-		//ZDOManager::OnNewPeer(peer);
+		//NetSyncManager::OnNewPeer(peer);
 		NetRpcManager::OnNewPeer(peer);
 		ZoneSystem::OnNewPeer(peer);
 	}
@@ -272,7 +272,7 @@ namespace NetManager {
 		for (auto&& peer : m_peers) {
 			if (peer->m_rpc.get() == rpc)
 				return peer;
-		}sizeof(ZDO);
+		}sizeof(NetSync);
 		//return nullptr;
 		assert(false && "Unable to find Peer attributing to Rpc");
 		throw std::runtime_error("Unable to find Peer attributing to Rpc");

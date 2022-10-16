@@ -13,6 +13,17 @@ Stream::Stream(const Stream& other)
     Write(other.Bytes(), other.m_length);
 }
 
+//Stream::Stream(Stream&& other) 
+//    : Stream(other.m_alloc) {
+//    // essentially want to swap the elements
+//#ifdef REALLOC_STREAM
+//
+//#else
+//    this->m_bytes = std::move(other.m_bytes); //this->m_bytes.swap(other.m_bytes);
+//    this->m_length
+//#endif
+//}
+
 
 #ifdef REALLOC_STREAM
 Stream::~Stream() {

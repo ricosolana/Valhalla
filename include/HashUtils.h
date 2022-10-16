@@ -1,8 +1,8 @@
 #pragma once
 
 #include <concepts>
-#include "ZDOID.h"
-//struct ZDOID;
+#include "NetSyncID.h"
+//struct NetSyncID;
 
 // C# hash equivalencies
 namespace HashUtils {
@@ -17,6 +17,6 @@ namespace HashUtils {
 		int operator()(const int64_t &value) const;
 		int operator()(const float &value) const;
 		int operator()(const double &value) const;
-		int operator()(const ZDOID &value) const;
+		int operator()(const NetSyncID &value) const;
 	};
 }

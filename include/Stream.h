@@ -25,7 +25,7 @@ class Stream {
 public:
 	Stream(uint32_t count = 0);
 	Stream(const Stream&); // copy 
-	Stream(Stream&&) = delete; // move removed
+	Stream(Stream&&) = default; // move removed
 
 #ifdef REALLOC_STREAM
 	~Stream();

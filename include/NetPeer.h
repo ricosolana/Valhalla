@@ -2,7 +2,7 @@
 
 #include "NetSocket.h"
 #include "NetRpc.h"
-#include "ZDOID.h"
+#include "NetSyncID.h"
 #include "Utils.h"
 
 struct NetPeer {
@@ -16,7 +16,7 @@ public:
 
 	Vector3 m_pos;
 	bool m_visibleOnMap = false;
-	ZDOID m_characterID = ZDOID::NONE;
+	NetSyncID m_characterID = NetSyncID::NONE;
 
 public:
 	NetPeer(std::unique_ptr<NetRpc> rpc,

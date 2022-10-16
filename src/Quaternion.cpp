@@ -15,7 +15,7 @@ bool Quaternion::operator!=(const Quaternion & other) const {
 // determine whether the 
 
 // it might be premature optimizaiton to
-// pay too much attention to zdois impl's
+// pay too much attention to NetSyncis impl's
 
 
 

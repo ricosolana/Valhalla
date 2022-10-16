@@ -105,12 +105,11 @@ namespace Utils {
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 
+	bool Compress(const byte_t* buf, unsigned int bufSize, int level, byte_t* out, unsigned int& outSize);
+	void Compress(const bytes_t& buf, int level, bytes_t& out);
+	std::vector<byte_t> Compress(const byte_t* buf, unsigned int bufSize, int level);
 
-	int Compress(z_stream* strm, unsigned char* buf, unsigned len,
-		unsigned* max);
 
-
-	std::vector<byte_t> Compress(const byte_t* uncompressedBytes, int count, int level = Z_DEFAULT_COMPRESSION);
 	std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count);
 
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
