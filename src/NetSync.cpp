@@ -3,6 +3,25 @@
 #include <functional>
 #include "ValhallaServer.h"
 
+std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
+	return std::make_pair(
+		Utils::GetStableHashCode(std::string(key + "_u")),
+		Utils::GetStableHashCode(std::string(key + "_i"))
+	);
+}
+
+
+
+hash_t NetSync::to_prefix(hash_t hash, TypePrefix pref) {
+	return ((hash + pref) ^ pref)
+		^ (pref << 13);
+}
+
+hash_t NetSync::from_prefix(hash_t hash, TypePrefix pref) {
+	return (hash ^ (pref << 13)
+		^ pref) - pref;
+}
+
 
 
 const NetSync::ID NetSync::ID::NONE(0, 0);
@@ -36,199 +55,176 @@ NetSync::ID::operator bool() const noexcept {
 
 
 
+NetSync::~NetSync() {
+	for (auto&& m : m_members) {
+		auto&& pair = m.second;
+		switch (pair.first) {
+		case TP_FLOAT:		delete (float*)			pair.second; break;
+		case TP_VECTOR:		delete (Vector3*)		pair.second; break;
+		case TP_QUATERNION: delete (Quaternion*)	pair.second; break;
+		case TP_INT:		delete (int32_t*)		pair.second; break;
+		case TP_LONG:		delete (int64_t*)		pair.second; break;
+		case TP_STRING:		delete (std::string*)	pair.second; break;
+		case TP_ARRAY:		delete (bytes_t*)		pair.second; break;
+		default:
+			LOG(ERROR) << "Invalid type assigned to NetSync";
+		}
+	}
+}
+
+
 /*
-// a better hashing system could utilize the 32 bits, somehow xorshift in accordance with the 
-// prefix
-hash_t to_prefix(hash_t hash, TypePrefix pref) {
-	return ((hash ^ (hash_t) pref) 
-		^ ((hash_t)pref << (hash_t)pref));
+* 
+* 
+*		 Hash Getters
+* 
+* 
+*/
+
+// Trivial
+
+float NetSync::GetFloat(hash_t key, float value) {
+	return Get(key, TP_FLOAT, value);
 }
 
-hash_t from_prefix(hash_t hash, TypePrefix pref) {
-	return hash ^ ((hash_t)pref << (hash_t)pref)
-		^ (hash_t)pref;
+int32_t NetSync::GetInt(hash_t key, int32_t value) {
+	return Get(key, TP_INT, value);
 }
 
-hash_t hash64to32(int64_t hash, char pref) {
-	hash /= (int)pref;
-	hash_t ret = hash - ((int)pref) * 256;
-	return ret;
+int64_t NetSync::GetLong(hash_t key, int64_t value) {
+	return Get(key, TP_LONG, value);
 }
 
-
-
-// convert the 32 bit hash to 64
-int64_t hash32to64(int32_t hash, char pref) {
-	int64_t ret = hash + ((int)pref) * 256;
-	ret *= ((int)pref);
-	return ret;
+const Quaternion& NetSync::GetQuaternion(hash_t key, const Quaternion& value) {
+	return Get(key, TP_QUATERNION, value);
 }
 
-hash_t hash64to32(int64_t hash, char pref) {
-	hash /= (int) pref;
-	hash_t ret = hash - ((int)pref) * 256;
-	return ret;
-}*/
-
-hash_t to_prefix(hash_t hash, TypePrefix pref) {
-	return ((hash + pref) ^ pref)
-		^ (pref << 13);
+const Vector3& NetSync::GetVector3(hash_t key, const Vector3& value) {
+	return Get(key, TP_VECTOR, value);
 }
 
-hash_t from_prefix(hash_t hash, TypePrefix pref) {
-	return (hash ^ (pref << 13)
-		^ pref) - pref;
+const std::string& NetSync::GetString(hash_t key, const std::string& value) {
+	return Get(key, TP_STRING, value);
 }
 
-
-
-
-
-bool NetSync::GetBool(hash_t hash, bool def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::INT));
-	if (find != m_members.end() && find->second.first == TypePrefix::INT) {
-		return *((int*)find->second.second) == 1 ? true : false;
-	}
-	return def;
-}
-bool NetSync::GetBool(const std::string& key, bool def) const {
-	return GetBool(Utils::GetStableHashCode(key), def);
+const bytes_t* NetSync::GetBytes(hash_t key) {
+	return Get<bytes_t>(key, TP_ARRAY);
 }
 
-const bytes_t* NetSync::GetBytes(hash_t hash) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::ARR));
-	if (find != m_members.end() && find->second.first == TypePrefix::ARR) {
-		return (bytes_t*)find->second.second;
-	}
-	return nullptr;
+// Special
+
+bool NetSync::GetBool(hash_t key, bool value) {
+	return GetInt(key, value ? 1 : 0);
 }
 
-const bytes_t* NetSync::GetBytes(const std::string& key) const {
-	return GetBytes(Utils::GetStableHashCode(key));
-}
-
-float NetSync::GetFloat(hash_t hash, float def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::FLOAT));
-	if (find != m_members.end() && find->second.first == TypePrefix::FLOAT) {
-		return *(float*)find->second.second;
-	}
-	return def;
-}
-float NetSync::GetFloat(const std::string& key, float def) const {
-	return GetFloat(Utils::GetStableHashCode(key), def);
-}
-
-NetSync::ID NetSync::GetNetSyncID(const std::pair<hash_t, hash_t>& pair) const {
-	auto k = GetLong(pair.first);
-	auto v = GetLong(pair.second);
+const NetSync::ID NetSync::GetID(const std::pair<hash_t, hash_t>& key) {
+	auto k = GetLong(key.first);
+	auto v = GetLong(key.second);
 	if (k == 0 || v == 0)
 		return NetSync::ID::NONE;
 	return NetSync::ID(k, (uint32_t)v);
 }
-NetSync::ID NetSync::GetNetSyncID(const std::string& key) const {
-	return GetNetSyncID(ToHashPair(key));
+
+
+
+/*
+*
+*
+*		 String Getters
+*
+*
+*/
+
+// Trivial
+
+float NetSync::GetFloat(const std::string& key, float value) {
+	return GetFloat(Utils::GetStableHashCode(key), value);
 }
 
-int32_t NetSync::GetInt(hash_t hash, int32_t def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::INT));
-	if (find != m_members.end() && find->second.first == TypePrefix::INT) {
-		return *(int32_t*)find->second.second;
-	}
-	return def;
-}
-int32_t NetSync::GetInt(const std::string& key, int32_t def) const {
-	return GetInt(Utils::GetStableHashCode(key), def);
+int32_t NetSync::GetInt(const std::string& key, int32_t value) {
+	return GetInt(Utils::GetStableHashCode(key), value);
 }
 
-int64_t NetSync::GetLong(hash_t hash, int64_t def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::LONG));
-	if (find != m_members.end() && find->second.first == TypePrefix::LONG) {
-		return *(int64_t*)find->second.second;
-	}
-	return def;
-}
-int64_t NetSync::GetLong(const std::string& key, int64_t def) const {
-	return GetLong(Utils::GetStableHashCode(key));
+int64_t NetSync::GetLong(const std::string& key, int64_t value) {
+	return GetLong(Utils::GetStableHashCode(key), value);
 }
 
-const Quaternion& NetSync::GetQuaternion(hash_t hash, const Quaternion& def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::QUAT));
-	if (find != m_members.end() && find->second.first == TypePrefix::QUAT) {
-		return *(Quaternion*)find->second.second;
-	}
-	return def;
-}
-const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& def) const {
-	return GetQuaternion(Utils::GetStableHashCode(key), def);
+const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& value) {
+	return GetQuaternion(Utils::GetStableHashCode(key), value);
 }
 
-const std::string& NetSync::GetString(hash_t hash, const std::string& def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::STR));
-	if (find != m_members.end() && find->second.first == TypePrefix::STR) {
-		return *(std::string*)find->second.second;
-	}
-	return def;
-}
-const std::string& NetSync::GetString(const std::string& key, const std::string& def) const {
-	return GetString(Utils::GetStableHashCode(key), def);
+const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& value) {
+	return GetVector3(Utils::GetStableHashCode(key), value);
 }
 
-const Vector3& NetSync::GetVector3(hash_t hash, const Vector3& def) const {
-	auto&& find = m_members.find(to_prefix(hash, TypePrefix::VECTOR));
-	if (find != m_members.end() && find->second.first == TypePrefix::VECTOR) {
-		return *(Vector3*)find->second.second;
-	}
-	return def;
+const std::string& NetSync::GetString(const std::string& key, const std::string& value) {
+	return GetString(Utils::GetStableHashCode(key), value);
 }
-const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& def) const {
-	return GetVector3(Utils::GetStableHashCode(key), def);
+
+const bytes_t* NetSync::GetBytes(const std::string& key) {
+	return GetBytes(Utils::GetStableHashCode(key));
+}
+
+// Special
+
+bool NetSync::GetBool(const std::string& key, bool value) {
+	return GetBool(Utils::GetStableHashCode(key), value);
+}
+
+const NetSync::ID NetSync::GetID(const std::string& key) {
+	return GetID(ToHashPair(key));
 }
 
 
 
+/*
+*
+*
+*		 Hash Setters
+*
+*
+*/
 
+// Trivial
 
 void NetSync::Set(hash_t key, float value) {
-	return Set(key, value, FLOAT);
+	Set(key, value, TP_FLOAT);
 }
 
 void NetSync::Set(hash_t key, int32_t value) {
-	return Set(key, value, INT);
+	Set(key, value, TP_INT);
 }
 
 void NetSync::Set(hash_t key, int64_t value) {
-	return Set(key, value, LONG);
+	Set(key, value, TP_LONG);
 }
 
 void NetSync::Set(hash_t key, const Quaternion& value) {
-	return Set(key, value, QUAT);
+	Set(key, value, TP_QUATERNION);
 }
 
 void NetSync::Set(hash_t key, const Vector3& value) {
-	return Set(key, value, VECTOR);
+	Set(key, value, TP_VECTOR);
 }
 
 void NetSync::Set(hash_t key, const std::string& value) {
-	return Set(key, value, STR);
+	Set(key, value, TP_STRING);
 }
 
 void NetSync::Set(hash_t key, const bytes_t &value) {
-	return Set(key, value, ARR);
+	Set(key, value, TP_ARRAY);
 }
 
+// Special
 
-
-// special overloads
 void NetSync::Set(hash_t key, bool value) {
-	return Set(key, value ? (int32_t)1 : 0);
+	Set(key, value ? (int32_t)1 : 0);
 }
 
-void NetSync::Set(std::pair<hash_t, hash_t> key, const ID& value) {
+void NetSync::Set(const std::pair<hash_t, hash_t> &key, const ID& value) {
 	Set(key.first, value.m_userID);
 	Set(key.second, (int64_t)value.m_id);
 }
-
-
 
 
 
@@ -238,11 +234,4 @@ bool NetSync::Local() {
 
 void NetSync::SetLocal() {
 	SetOwner(Valhalla()->m_serverUuid);
-}
-
-std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
-	return std::make_pair(
-		Utils::GetStableHashCode(std::string(key + "_u")),
-		Utils::GetStableHashCode(std::string(key + "_i"))
-	);
 }
