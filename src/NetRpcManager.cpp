@@ -4,13 +4,13 @@
 #include "ZoneSystem.h"
 
 namespace NetRpcManager {
-	robin_hood::unordered_map<hash_t, ZMethodBase<uuid_t>*> m_methods;
+	robin_hood::unordered_map<hash_t, IMethod<uuid_t>*> m_methods;
 
 	uuid_t _ServerID() {
 		return Valhalla()->m_serverUuid;
 	}
 
-	void _Register(const std::string& name, ZMethodBase<uuid_t>* method) {
+	void _Register(const std::string& name, IMethod<uuid_t>* method) {
 		m_methods.insert({ Utils::GetStableHashCode(name.c_str()), method });
 	}
 

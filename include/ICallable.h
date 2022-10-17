@@ -1,31 +1,13 @@
 #pragma once
 
-#include <robin_hood.h>
 #include "Method.h"
-#include "NetSocket.h"
 
-#include "Task.h"
+template<typename T>
+class ICallable {
+private:
+	void Register(const char* name, IMethod<T>* method);
 
-enum class ConnectionStatus;
-
-class NetRpc {
-	std::chrono::steady_clock::time_point m_lastPing;
-	bool m_ignore = false;
-	
-	robin_hood::unordered_map<hash_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
-
-	void SendPackage(NetPackage::Ptr pkg);
-	void Register(const char* name, IMethod<NetRpc*>* method);
-
-public:	
-	ISocket::Ptr m_socket;
-
-	NetRpc(ISocket::Ptr socket);
-
-	NetRpc(const NetRpc& other) = delete; // copy
-	NetRpc(NetRpc&& other) = delete; // move
-
-	~NetRpc();
+public:
 
 	/**
 		* @brief Register a static method for remote invocation
@@ -33,10 +15,10 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(const char* name, void(*f)(NetRpc*, Args...)) {
+	auto Register(const char* name, void(*f)(T, Args...)) {
 		return Register(name, new MethodImpl(f));
 	}
-		
+
 	/**
 		* @brief Register an instance method for remote invocation
 		* @param name function name to register
@@ -44,7 +26,7 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(const char* name, C *object, void(C::*f)(NetRpc*, Args...)) {
+	auto Register(const char* name, C* object, void(C::* f)(T, Args...)) {
 		return Register(name, new MethodImpl(object, f));
 	}
 
@@ -61,18 +43,13 @@ public:
 		auto pkg(PKG());
 		auto stable = Utils::GetStableHashCode(method);
 		pkg->Write(stable);
-#ifdef RPC_DEBUG // debug mode
+#ifdef RPC_DEBUG
 		pkg->Write(method);
-#endif
+#endif // RPC_DEBUG
 		NetPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(pkg);
 	}
-
-	// To be called every tick
-	void Update();
-
-	// Get the ping
-	std::chrono::milliseconds GetPing();
-
-	void SendError(ConnectionStatus status);
 };
+
+// why is this needed?
+// there should be another way that is more performant and not ugly like this

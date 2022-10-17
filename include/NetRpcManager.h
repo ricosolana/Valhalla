@@ -46,7 +46,7 @@ namespace NetRpcManager {
 	uuid_t _ServerID();
 	void _InvokeRoute(uuid_t target, const NetSync::ID& targetNetSync, const std::string& name, NetPackage::Ptr pkg);
 	void _HandleRoutedRPC(Data data);
-	void _Register(const std::string& name, ZMethodBase<uuid_t>* method);
+	void _Register(const std::string& name, IMethod<uuid_t>* method);
 
 	/**
 		* @brief Register a static method for routed remote invocation
@@ -55,7 +55,7 @@ namespace NetRpcManager {
 	*/
 	template<class ...Args>
 	auto Register(const std::string& name, void(*f)(uuid_t, Args...)) {
-		return _Register(name, new ZMethod(f));
+		return _Register(name, new MethodImpl(f));
 	}
 
 	/**
@@ -66,7 +66,7 @@ namespace NetRpcManager {
 	*/
 	template<class C, class ...Args>
 	auto Register(const std::string& name, C* object, void(C::* f)(uuid_t, Args...)) {
-		return _Register(name, new ZMethod(object, f));
+		return _Register(name, new MethodImpl(object, f));
 	}
 
 	/**

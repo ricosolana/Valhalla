@@ -1,8 +1,7 @@
 #include "NetSync.h"
 #include "NetSyncManager.h"
 #include <functional>
-
-
+#include "ValhallaServer.h"
 
 
 
@@ -35,95 +34,95 @@ NetSync::ID::operator bool() const noexcept {
 
 
 
-bool NetSync::GetBool(hash_t hash, bool def) {
+bool NetSync::GetBool(hash_t hash, bool def) const {
 	auto&& find = m_ints.find(hash);
 	if (find != m_ints.end())
 		return find->second == 1 ? true : false;
 	return def;
 }
-bool NetSync::GetBool(const std::string& key, bool def) {
+bool NetSync::GetBool(const std::string& key, bool def) const {
 	return GetBool(Utils::GetStableHashCode(key), def);
 }
 
-/*std::optional<std::reference_wrapper<bytes_t>>*/ bytes_t* NetSync::GetBytes(hash_t hash) {
+const bytes_t* NetSync::GetBytes(hash_t hash) const {
 	auto&& find = m_bytes.find(hash);
 	if (find != m_bytes.end())
 		return &find->second;
-	return nullptr; //std::optional<const bytes_t&>();
+	return nullptr;
 }
 
-bytes_t* NetSync::GetBytes(const std::string& key) {
+const bytes_t* NetSync::GetBytes(const std::string& key) const {
 	return GetBytes(Utils::GetStableHashCode(key));
 }
 
-float NetSync::GetFloat(hash_t hash, float def) {
+float NetSync::GetFloat(hash_t hash, float def) const {
 	auto&& find = m_floats.find(hash);
 	if (find != m_floats.end())
 		return find->second;
 	return def;
 }
-float NetSync::GetFloat(const std::string& key, float def) {
+float NetSync::GetFloat(const std::string& key, float def) const {
 	return GetFloat(Utils::GetStableHashCode(key), def);
 }
 
-const NetSync::ID& NetSync::GetNetSyncID(const std::pair<hash_t, hash_t>& pair) {
+NetSync::ID NetSync::GetNetSyncID(const std::pair<hash_t, hash_t>& pair) const {
 	auto k = GetLong(pair.first);
 	auto v = GetLong(pair.second);
 	if (k == 0 || v == 0)
 		return NetSync::ID::NONE;
 	return NetSync::ID(k, (uint32_t)v);
 }
-const NetSync::ID& NetSync::GetNetSyncID(const std::string& key) {
+NetSync::ID NetSync::GetNetSyncID(const std::string& key) const {
 	return GetNetSyncID(ToHashPair(key));
 }
 
-int32_t NetSync::GetInt(hash_t hash, int32_t def) {
+int32_t NetSync::GetInt(hash_t hash, int32_t def) const {
 	auto&& find = m_ints.find(hash);
 	if (find != m_ints.end())
 		return find->second;
 	return def;
 }
-int32_t NetSync::GetInt(const std::string& key, int32_t def) {
+int32_t NetSync::GetInt(const std::string& key, int32_t def) const {
 	return GetInt(Utils::GetStableHashCode(key), def);
 }
 
-int64_t NetSync::GetLong(hash_t hash, int64_t def) {
+int64_t NetSync::GetLong(hash_t hash, int64_t def) const {
 	auto&& find = m_longs.find(hash);
 	if (find != m_longs.end())
 		return find->second;
 	return def;
 }
-int64_t NetSync::GetLong(const std::string& key, int64_t def) {
+int64_t NetSync::GetLong(const std::string& key, int64_t def) const {
 	return GetLong(Utils::GetStableHashCode(key));
 }
 
-const Quaternion& NetSync::GetQuaternion(hash_t hash, const Quaternion& def) {
+const Quaternion& NetSync::GetQuaternion(hash_t hash, const Quaternion& def) const {
 	auto&& find = m_quaternions.find(hash);
 	if (find != m_quaternions.end())
 		return find->second;
 	return def;
 }
-const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& def) {
+const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& def) const {
 	return GetQuaternion(Utils::GetStableHashCode(key), def);
 }
 
-const std::string& NetSync::GetString(hash_t hash, const std::string& def) {
+const std::string& NetSync::GetString(hash_t hash, const std::string& def) const {
 	auto&& find = m_strings.find(hash);
 	if (find != m_strings.end())
 		return find->second;
 	return def;
 }
-const std::string& NetSync::GetString(const std::string& key, const std::string& def) {
+const std::string& NetSync::GetString(const std::string& key, const std::string& def) const {
 	return GetString(Utils::GetStableHashCode(key), def);
 }
 
-const Vector3& NetSync::GetVector3(hash_t hash, const Vector3& def) {
+const Vector3& NetSync::GetVector3(hash_t hash, const Vector3& def) const {
 	auto&& find = m_vectors.find(hash);
 	if (find != m_vectors.end())
 		return find->second;
 	return def;
 }
-const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& def) {
+const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& def) const {
 	return GetVector3(Utils::GetStableHashCode(key), def);
 }
 
@@ -239,3 +238,15 @@ std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
 		Utils::GetStableHashCode(std::string(key + "_i"))
 	);
 }
+
+
+
+bool NetSync::Local() {
+	return m_owner == Valhalla()->m_serverUuid;
+}
+
+void NetSync::SetLocal() {
+	SetOwner(Valhalla()->m_serverUuid);
+}
+
+

@@ -12,13 +12,13 @@ NetRpc::~NetRpc() {
 	LOG(DEBUG) << "~NetRpc()";
 }
 
-void NetRpc::Register(const char* name, ZMethodBase<NetRpc*>* method) {
+void NetRpc::Register(const char* name, IMethod<NetRpc*>* method) {
 	auto stableHash = Utils::GetStableHashCode(name);
 
 	assert(!m_methods.contains(stableHash)
 		&& "runtime rpc hash collision");
 
-	m_methods.insert({ stableHash, std::unique_ptr<ZMethodBase<NetRpc*>>(method) });
+	m_methods.insert({ stableHash, std::unique_ptr<IMethod<NetRpc*>>(method) });
 }
 
 void NetRpc::Update() {

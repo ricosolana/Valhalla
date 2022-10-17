@@ -12,7 +12,7 @@
 
 // Thanks @Fux
 template<class T>
-class ZMethodBase
+class IMethod
 {
 public:
     virtual void Invoke(T t, NetPackage::Ptr pkg) = 0;
@@ -20,18 +20,18 @@ public:
 
 // Base specifier
 // Rpc, classes...
-template<class T, class...V> class ZMethod;
+template<class T, class...V> class MethodImpl;
 
 // Rpc, instance, function<args...>
 template<class T, class C, class...Args>
-class ZMethod<T, C, void(C::*)(T, Args...)> : public ZMethodBase<T> {
+class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
     using Lambda = void(C::*)(T, Args...);
 
     C* object;
     Lambda lambda;
 
 public:
-    ZMethod(C* object, Lambda lam) : object(object), lambda(lam) {}
+    MethodImpl(C* object, Lambda lam) : object(object), lambda(lam) {}
 
     void Invoke(T t, NetPackage::Ptr pkg) override {
         if constexpr (sizeof...(Args)) {
@@ -48,17 +48,17 @@ public:
 
 // Specifying deduction guide
 template<class T, class C, class ...Args>
-ZMethod(C* object, void(C::*)(T, Args...)) -> ZMethod<T, C, void(C::*)(T, Args...)>;
+MethodImpl(C* object, void(C::*)(T, Args...)) -> MethodImpl<T, C, void(C::*)(T, Args...)>;
 
 // static specifier
 template<class T, class...Args>
-class ZMethod<void(*)(T, Args...)> : public ZMethodBase<T> {
+class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
     using Lambda = void(*)(T, Args...);
 
     Lambda lambda;
 
 public:
-    ZMethod(Lambda lam) : lambda(lam) {}
+    MethodImpl(Lambda lam) : lambda(lam) {}
 
     void Invoke(T t, NetPackage::Ptr pkg) override {
         if constexpr (sizeof...(Args)) {
@@ -75,4 +75,4 @@ public:
 
 // Specifying deduction guide
 template<class T, class ...Args>
-ZMethod(void(*)(T, Args...)) -> ZMethod<void(*)(T, Args...)>;
+MethodImpl(void(*)(T, Args...)) -> MethodImpl<void(*)(T, Args...)>;

@@ -4,24 +4,20 @@
 namespace NetSyncManager {
 
 	struct NetSyncPeer {
-		struct PeerNetSyncInfo {
-			uint32_t m_dataRevision;
-			int64_t m_ownerRevision;
-			float m_syncTime;
 
-			PeerNetSyncInfo(uint32_t dataRevision, uint32_t ownerRevision, float syncTime)
-			{
-				m_dataRevision = dataRevision;
-				m_ownerRevision = (int64_t)((uint64_t)ownerRevision);
-				m_syncTime = syncTime;
-			}
+		struct Rev {
+			uint32_t m_dataRevision;
+			uint32_t m_ownerRevision;
+			float m_syncTime;
+			//char a;
+			//uint64_t m_time; // time in ms since last modified (synced)
 		};
 
 		NetPeer::Ptr m_peer;
-		robin_hood::unordered_map<NetSync::ID, PeerNetSyncInfo, HashUtils::Hasher> m_NetSyncs;
+		robin_hood::unordered_map<NetSync::ID, Rev, HashUtils::Hasher> m_syncs;
 		robin_hood::unordered_set<NetSync::ID, HashUtils::Hasher> m_forceSend;
 		robin_hood::unordered_set<NetSync::ID, HashUtils::Hasher> m_invalidSector;
-		int m_sendIndex;
+		//int m_sendIndex = 0;
 
 		NetSyncPeer(NetPeer::Ptr peer) : m_peer(peer) {}
 
@@ -30,10 +26,10 @@ namespace NetSyncManager {
 			//if (NetSync->m_owner == m_peer->m_uuid)
 			//	return;
 			//
-			//if (m_NetSyncs.contains(NetSync->m_uid) 
+			//if (m_syncs.contains(NetSync->m_uid) 
 			//	&& !ZNetScene.instance.InActiveArea(NetSync->GetSector(), m_peer->m_pos)) {
 			//	m_invalidSector.insert(NetSync.m_uid);
-			//	m_NetSyncs.erase(NetSync->m_uid);
+			//	m_syncs.erase(NetSync->m_uid);
 			//}
 		}
 
@@ -41,11 +37,12 @@ namespace NetSyncManager {
 			m_forceSend.insert(id);
 		}
 
-		bool ShouldSend(NetSync netSync) {
-			//auto find = m_NetSyncs.find(netSync.m_NetSyncID);
-			//return find != m_NetSyncs.end()
-			//	|| ((uint64_t) netSync.m_ownerRevision > (uint64_t)find->second.m_ownerRevision)
-			//	|| (netSync.m_dataRevision > find->second.m_dataRevision);
+		// Returns whether the sync is outdated
+		bool ShouldSend(NetSync *netSync) {
+			auto find = m_syncs.find(netSync->m_id);
+			return find != m_syncs.end()
+				|| netSync->m_ownerRevision > find->second.m_ownerRevision
+				|| netSync->m_dataRevision > find->second.m_dataRevision;
 			return 0;
 		}
 	};
@@ -77,6 +74,9 @@ namespace NetSyncManager {
 		//	return result;
 		//}
 		//return null;
+
+		
+
 		return nullptr;
 	}
 
@@ -152,7 +152,7 @@ namespace NetSyncManager {
 					if (ownerRevision > NetSync->m_ownerRevision) {
 						//NetSync->m_owner = owner;
 						NetSync->m_ownerRevision = ownerRevision;
-						NetSyncpeer->m_NetSyncs.insert({ NetSyncid, NetSyncPeer::PeerNetSyncInfo(dataRevision, ownerRevision, time) });
+						NetSyncpeer->m_syncs.insert({ NetSyncid, NetSyncPeer::Rev(dataRevision, ownerRevision, time) });
 					}
 					continue;
 				}
@@ -167,8 +167,8 @@ namespace NetSyncManager {
 			NetSync->m_dataRevision = dataRevision;
 			//NetSync->m_owner = owner;
 			//NetSync->InternalSetPosition(vector);
-			//NetSyncpeer->m_NetSyncs.insert({ NetSyncid, 
-			//	NetSyncPeer::PeerNetSyncInfo(NetSync->m_dataRevision, NetSync->m_ownerRevision, time) }
+			//NetSyncpeer->m_syncs.insert({ NetSyncid, 
+			//	NetSyncPeer::Rev(NetSync->m_dataRevision, NetSync->m_ownerRevision, time) }
 			//);
 			//NetSync->Deserialize(pkg2);
 			//
@@ -250,7 +250,7 @@ namespace NetSyncManager {
 		//	NetSync->Serialize(NetSyncpkg); // dump NetSync information onto packet
 		//	pkg->Write(NetSyncpkg);
 		//
-		//	peer->m_NetSyncs[NetSync->m_uid] = NetSyncPeer::PeerNetSyncInfo(
+		//	peer->m_syncs[NetSync->m_uid] = NetSyncPeer::Rev(
 		//		NetSync->m_dataRevision, NetSync->m_ownerRevision, time);
 		//	
 		//	NetSyncsWritten = true;

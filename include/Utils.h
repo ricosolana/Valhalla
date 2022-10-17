@@ -38,7 +38,7 @@ using bytes_t = std::vector<byte_t>;
 
 //using Dictionary = robin_hood::unordered_map;
 
-static constexpr float PI = 3.141592653589;
+static constexpr float PI = 3.141592653589f;
 
 //float FISQRT(float)
 

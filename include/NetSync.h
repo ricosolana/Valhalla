@@ -80,33 +80,33 @@ public:
 
 
 	
-	bool GetBool(hash_t hash, bool def = false);
-	bool GetBool(const std::string& key, bool def = false);
+	bool GetBool(hash_t hash, bool def = false) const;
+	bool GetBool(const std::string& key, bool def = false) const;
 	
-	/*std::optional<const bytes_t&>*/ bytes_t* GetBytes(hash_t hash);
-	/*std::optional<const bytes_t&>*/ bytes_t* GetBytes(const std::string& key);
+	const bytes_t* GetBytes(hash_t hash) const;
+	const bytes_t* GetBytes(const std::string& key) const;
 
-	float GetFloat(hash_t hash, float def = 0);
-	float GetFloat(const std::string& key, float def = 0);
+	float GetFloat(hash_t hash, float def = 0) const;
+	float GetFloat(const std::string& key, float def = 0) const;
 
-	const ID& GetNetSyncID(const std::pair<hash_t, hash_t>& key);
-	std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
-	const ID& GetNetSyncID(const std::string& key);
+	ID GetNetSyncID(const std::pair<hash_t, hash_t>& key) const;
+	static std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
+	ID GetNetSyncID(const std::string& key) const;
 
-	int32_t GetInt(hash_t hash, int32_t def = 0);
-	int32_t GetInt(const std::string& key, int32_t def = 0);
+	int32_t GetInt(hash_t hash, int32_t def = 0) const;
+	int32_t GetInt(const std::string& key, int32_t def = 0) const;
 
-	int64_t GetLong(hash_t hash, int64_t def = 0);
-	int64_t GetLong(const std::string& key, int64_t def = 0);
+	int64_t GetLong(hash_t hash, int64_t def = 0) const;
+	int64_t GetLong(const std::string& key, int64_t def = 0) const;
 
-	const Quaternion& GetQuaternion(hash_t hash, const Quaternion& def);
-	const Quaternion& GetQuaternion(const std::string& key, const Quaternion& def);
+	const Quaternion& GetQuaternion(hash_t hash, const Quaternion& def) const;
+	const Quaternion& GetQuaternion(const std::string& key, const Quaternion& def) const;
 
-	const std::string& GetString(hash_t hash, const std::string& def = "");
-	const std::string& GetString(const std::string& key, const std::string& def = "");
+	const std::string& GetString(hash_t hash, const std::string& def = "") const;
+	const std::string& GetString(const std::string& key, const std::string& def = "") const;
 
-	const Vector3& GetVector3(hash_t hash, const Vector3 &def);
-	const Vector3& GetVector3(const std::string& key, const Vector3& def);
+	const Vector3& GetVector3(hash_t hash, const Vector3 &def) const;
+	const Vector3& GetVector3(const std::string& key, const Vector3& def) const;
 
 
 
@@ -143,7 +143,7 @@ public:
 	///uuid_t m_owner;
 
 	// contains id of the client or server, and the object id
-	ID m_NetSyncID;
+	ID m_id;
 	//bool m_persistent = false;	// set by ZNetView
 	//bool m_distant = false;		// set by ZNetView
 	uuid_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed
@@ -156,6 +156,33 @@ public:
 	//bool m_tempHaveRevision = 0; // appears to be unused besides assignments
 	int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
 	int32_t m_tempCreatedAt = -1; // ^
+
+	// Return whether the ZDO instance is self hosted or remotely hosted
+	bool Local();
+
+	// Whether an owner has been assigned to this ZDO
+	// I really dislike the null owner operability structure of Valheim server
+	// Why would owner ever be 0? What circumstances ever allow this?
+	bool HasOwner() {
+		return m_owner;
+	}
+
+	// Claim ownership over this ZDO
+	void SetLocal();
+
+	// set the owner of the ZDO
+	void SetOwner(uuid_t owner) {
+		if (m_owner != owner) {
+			m_owner = owner;
+			m_ownerRevision++;
+		}
+	}
+
+	bool Valid() {
+		if (m_id)
+			return true;
+		return false;
+	}
 
 	// earmark might refer to a unique marker/designator
 };
