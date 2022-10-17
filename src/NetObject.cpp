@@ -81,8 +81,7 @@ void NetObject::ResetNetSync() {
 	m_sync = nullptr;
 }
 
-void NetObject::HandleRoutedRPC(NetRpcManager::Data rpcData)
-{
+void NetObject::HandleRoutedRPC(NetRpcManager::Data rpcData) {
 	auto&& find = m_functions.find(rpcData.m_methodHash);
 	if (find != m_functions.end()) {
 		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters);

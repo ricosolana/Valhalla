@@ -6,6 +6,23 @@
 #include "Vector.h"
 #include "Utils.h"
 
+enum TypePrefix {
+	//FLOAT = 'F',
+	//VECTOR = 'V',
+	//QUAT = 'Q',
+	//INT = 'I',
+	//LONG = 'L',
+	//STR = 'S',
+	//ARR = 'A',
+	FLOAT = 0b10,
+	VECTOR = 0b101,
+	QUAT = 0b1011,
+	INT = 0b10110,
+	LONG = 0b101101,
+	STR = 0b1011011,
+	ARR = 0b10110111
+};
+
 // each NetSync is 0.5Kb minimum (with all 7 maps)
 // each NetSync is .168Kb minimum (with 1 map only)
 class NetSync {
@@ -14,13 +31,35 @@ class NetSync {
 	Vector3 m_position;
 	Quaternion m_rotation = Quaternion::IDENTITY;
 
-	robin_hood::unordered_map<hash_t, float> m_floats;
-	robin_hood::unordered_map<hash_t, Vector3> m_vectors;
-	robin_hood::unordered_map<hash_t, Quaternion> m_quaternions;
-	robin_hood::unordered_map<hash_t, int32_t> m_ints;
-	robin_hood::unordered_map<hash_t, int64_t> m_longs;
-	robin_hood::unordered_map<hash_t, std::string> m_strings;
-	robin_hood::unordered_map<hash_t, bytes_t> m_bytes;
+
+	// new version will consist of fewer maps reduce memory
+	// and will contain prefixes for hashes or smth
+
+
+
+	//static constexpr char PREFIX_FLOAT = 'F';
+	//static constexpr char PREFIX_VECS = 'V';
+	//static constexpr char PREFIX_QUATS = 'Q';
+	//static constexpr char PREFIX_INTS = 'I';
+	//static constexpr char PREFIX_LONGS = 'L';
+	//static constexpr char PREFIX_STRINGS = 'S';
+	//static constexpr char PREFIX_BYTES = 'B';
+
+	// design criteria
+	// require way to convert members to vanilla structure on demand
+	// 64bit hash -> 32 bit hash
+	// member retrieval (rather the easiest)
+
+	// bytes[0] is the char, the remaining is the data
+	robin_hood::unordered_map<int64_t, std::pair<TypePrefix, void*>> m_members;
+
+	//robin_hood::unordered_map<hash_t, float> m_floats;
+	//robin_hood::unordered_map<hash_t, Vector3> m_vectors;
+	//robin_hood::unordered_map<hash_t, Quaternion> m_quaternions;
+	//robin_hood::unordered_map<hash_t, int32_t> m_ints;
+	//robin_hood::unordered_map<hash_t, int64_t> m_longs;
+	//robin_hood::unordered_map<hash_t, std::string> m_strings;
+	//robin_hood::unordered_map<hash_t, bytes_t> m_bytes;
 
 	void Revise() {
 		m_dataRevision++;

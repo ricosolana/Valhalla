@@ -34,10 +34,61 @@ NetSync::ID::operator bool() const noexcept {
 
 
 
+
+
+/*
+// a better hashing system could utilize the 32 bits, somehow xorshift in accordance with the 
+// prefix
+hash_t to_prefix(hash_t hash, TypePrefix pref) {
+	return ((hash ^ (hash_t) pref) 
+		^ ((hash_t)pref << (hash_t)pref));
+}
+
+hash_t from_prefix(hash_t hash, TypePrefix pref) {
+	return hash ^ ((hash_t)pref << (hash_t)pref)
+		^ (hash_t)pref;
+}
+
+hash_t hash64to32(int64_t hash, char pref) {
+	hash /= (int)pref;
+	hash_t ret = hash - ((int)pref) * 256;
+	return ret;
+}
+
+
+
+// convert the 32 bit hash to 64
+int64_t hash32to64(int32_t hash, char pref) {
+	int64_t ret = hash + ((int)pref) * 256;
+	ret *= ((int)pref);
+	return ret;
+}
+
+hash_t hash64to32(int64_t hash, char pref) {
+	hash /= (int) pref;
+	hash_t ret = hash - ((int)pref) * 256;
+	return ret;
+}*/
+
+hash_t to_prefix(hash_t hash, TypePrefix pref) {
+	return ((hash + pref) ^ pref)
+		^ (pref << 13);
+}
+
+hash_t from_prefix(hash_t hash, TypePrefix pref) {
+	return (hash ^ (pref << 13)
+		^ pref) - pref;
+}
+
+
+
+
+
 bool NetSync::GetBool(hash_t hash, bool def) const {
-	auto&& find = m_ints.find(hash);
-	if (find != m_ints.end())
-		return find->second == 1 ? true : false;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::INT));
+	if (find != m_members.end() && find->second.first == TypePrefix::INT) {
+		return *((int*)find->second.second) == 1 ? true : false;
+	}
 	return def;
 }
 bool NetSync::GetBool(const std::string& key, bool def) const {
@@ -45,9 +96,10 @@ bool NetSync::GetBool(const std::string& key, bool def) const {
 }
 
 const bytes_t* NetSync::GetBytes(hash_t hash) const {
-	auto&& find = m_bytes.find(hash);
-	if (find != m_bytes.end())
-		return &find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::ARR));
+	if (find != m_members.end() && find->second.first == TypePrefix::ARR) {
+		return (bytes_t*)find->second.second;
+	}
 	return nullptr;
 }
 
@@ -56,9 +108,10 @@ const bytes_t* NetSync::GetBytes(const std::string& key) const {
 }
 
 float NetSync::GetFloat(hash_t hash, float def) const {
-	auto&& find = m_floats.find(hash);
-	if (find != m_floats.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::FLOAT));
+	if (find != m_members.end() && find->second.first == TypePrefix::FLOAT) {
+		return *(float*)find->second.second;
+	}
 	return def;
 }
 float NetSync::GetFloat(const std::string& key, float def) const {
@@ -77,9 +130,10 @@ NetSync::ID NetSync::GetNetSyncID(const std::string& key) const {
 }
 
 int32_t NetSync::GetInt(hash_t hash, int32_t def) const {
-	auto&& find = m_ints.find(hash);
-	if (find != m_ints.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::INT));
+	if (find != m_members.end() && find->second.first == TypePrefix::INT) {
+		return *(int32_t*)find->second.second;
+	}
 	return def;
 }
 int32_t NetSync::GetInt(const std::string& key, int32_t def) const {
@@ -87,9 +141,10 @@ int32_t NetSync::GetInt(const std::string& key, int32_t def) const {
 }
 
 int64_t NetSync::GetLong(hash_t hash, int64_t def) const {
-	auto&& find = m_longs.find(hash);
-	if (find != m_longs.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::LONG));
+	if (find != m_members.end() && find->second.first == TypePrefix::LONG) {
+		return *(int64_t*)find->second.second;
+	}
 	return def;
 }
 int64_t NetSync::GetLong(const std::string& key, int64_t def) const {
@@ -97,9 +152,10 @@ int64_t NetSync::GetLong(const std::string& key, int64_t def) const {
 }
 
 const Quaternion& NetSync::GetQuaternion(hash_t hash, const Quaternion& def) const {
-	auto&& find = m_quaternions.find(hash);
-	if (find != m_quaternions.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::QUAT));
+	if (find != m_members.end() && find->second.first == TypePrefix::QUAT) {
+		return *(Quaternion*)find->second.second;
+	}
 	return def;
 }
 const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& def) const {
@@ -107,9 +163,10 @@ const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternio
 }
 
 const std::string& NetSync::GetString(hash_t hash, const std::string& def) const {
-	auto&& find = m_strings.find(hash);
-	if (find != m_strings.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::STR));
+	if (find != m_members.end() && find->second.first == TypePrefix::STR) {
+		return *(std::string*)find->second.second;
+	}
 	return def;
 }
 const std::string& NetSync::GetString(const std::string& key, const std::string& def) const {
@@ -117,9 +174,10 @@ const std::string& NetSync::GetString(const std::string& key, const std::string&
 }
 
 const Vector3& NetSync::GetVector3(hash_t hash, const Vector3& def) const {
-	auto&& find = m_vectors.find(hash);
-	if (find != m_vectors.end())
-		return find->second;
+	auto&& find = m_members.find(to_prefix(hash, TypePrefix::VECTOR));
+	if (find != m_members.end() && find->second.first == TypePrefix::VECTOR) {
+		return *(Vector3*)find->second.second;
+	}
 	return def;
 }
 const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& def) const {
@@ -139,22 +197,38 @@ void NetSync::Set(const std::string& key, bool value) {
 }
 
 void NetSync::Set(hash_t hash, const bytes_t& value) {
-	m_bytes.insert({ hash, value });
-	// increase data revision
-	Revise();
+	// TODO 
+	//	this is a memory leak
+	//	allocating a ptr then another a ptr isnt great, too much indirection through ptrs
+	//	vector and string allocate under the hood, which just adds more complexity
+	auto&& find = m_members.find(to_prefix(hash, ARR));
+	if (find != m_members.end()) {// resize the array
+		auto&& vec = (bytes_t*)find->second.second;
+		vec->clear();
+		vec->insert(vec->begin(), value.begin(), value.end());
+	}
+	else {
+		//delete (bytes_t*)find->second.second;
+		//find->second.first == ARR
+		m_members.insert({ to_prefix(hash, ARR), new bytes_t(value) });
+		Revise();
+	}
 }
 void NetSync::Set(const std::string& key, const bytes_t& value) {
 	return Set(Utils::GetStableHashCode(key), value);
 }
 
 void NetSync::Set(hash_t hash, float value) {
-	auto&& find = m_floats.find(hash);
-	if (find != m_floats.end()
-		&& find->second == value)
-		return;
-	m_floats.insert({ hash, value });
-	Revise();
-	// increase rev
+	hash = to_prefix(hash, FLOAT);
+	auto&& find = m_members.find(hash);
+	if (find != m_members.end()) {
+		auto&& f = (float*)find->second.second;
+		*f = value;
+	}
+	else {
+		m_members.insert({ hash, new float(value) });
+		Revise();
+	}
 }
 void NetSync::Set(const std::string& key, float value) {
 	return Set(Utils::GetStableHashCode(key), value);
@@ -170,16 +244,8 @@ void NetSync::Set(const std::string& key, const NetSync::ID& value) {
 }
 
 void NetSync::Set(hash_t hash, int32_t value) {
-	// alternative for performance?
-	//auto insert = m_ints.insert({});
-
-	auto&& find = m_ints.find(hash);
-	if (find != m_ints.end())
-		return;
-
-	// Update data revision
-	// IncreaseDataRevision
-	m_ints.insert({ hash, value });
+	// TODO work on this
+	m_members.insert({ hash, new int32_t(value) });
 	Revise();
 }
 void NetSync::Set(const std::string& key, int32_t value) {
