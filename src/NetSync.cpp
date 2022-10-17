@@ -188,113 +188,58 @@ const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& def) c
 
 
 
-
-void NetSync::Set(hash_t hash, bool value) {
-	return Set(hash, value ? 1 : 0);
+void NetSync::Set(hash_t key, float value) {
+	return Set(key, value, FLOAT);
 }
+
+void NetSync::Set(hash_t key, int32_t value) {
+	return Set(key, value, INT);
+}
+
+void NetSync::Set(hash_t key, int64_t value) {
+	return Set(key, value, LONG);
+}
+
+void NetSync::Set(hash_t key, const Quaternion& value) {
+	return Set(key, value, QUAT);
+}
+
+void NetSync::Set(hash_t key, const Vector3& value) {
+	return Set(key, value, VECTOR);
+}
+
+void NetSync::Set(hash_t key, const std::string& value) {
+	return Set(key, value, STR);
+}
+
+void NetSync::Set(hash_t key, const bytes_t &value) {
+	return Set(key, value, ARR);
+}
+
+
+
+// special overloads
+void NetSync::Set(hash_t key, bool value) {
+	return Set(key, value ? (int32_t)1 : 0);
+}
+
+void NetSync::Set(std::pair<hash_t, hash_t> key, const ID& value) {
+	//return Set(key, value ?);
+	Set(key.first, value.m_userID);
+	Set(key.second, (int64_t)value.m_id);
+}
+
+
+
+// special overloads str->hash
 void NetSync::Set(const std::string& key, bool value) {
 	return Set(Utils::GetStableHashCode(key), value);
 }
 
-void NetSync::Set(hash_t hash, const bytes_t& value) {
-	// TODO 
-	//	this is a memory leak
-	//	allocating a ptr then another a ptr isnt great, too much indirection through ptrs
-	//	vector and string allocate under the hood, which just adds more complexity
-	auto&& find = m_members.find(to_prefix(hash, ARR));
-	if (find != m_members.end()) {// resize the array
-		auto&& vec = (bytes_t*)find->second.second;
-		vec->clear();
-		vec->insert(vec->begin(), value.begin(), value.end());
-	}
-	else {
-		//delete (bytes_t*)find->second.second;
-		//find->second.first == ARR
-		m_members.insert({ to_prefix(hash, ARR), new bytes_t(value) });
-		Revise();
-	}
-}
-void NetSync::Set(const std::string& key, const bytes_t& value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(hash_t hash, float value) {
-	hash = to_prefix(hash, FLOAT);
-	auto&& find = m_members.find(hash);
-	if (find != m_members.end()) {
-		auto&& f = (float*)find->second.second;
-		*f = value;
-	}
-	else {
-		m_members.insert({ hash, new float(value) });
-		Revise();
-	}
-}
-void NetSync::Set(const std::string& key, float value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(const std::pair<hash_t, hash_t>& key, const NetSync::ID& value) {
-	// it sets long for some reason for the key.value
-	Set(key.first, value.m_userID);
-	Set(key.second, (uuid_t)value.m_id);
-}
-void NetSync::Set(const std::string& key, const NetSync::ID& value) {
+void NetSync::Set(const std::string& key, const ID& value) {
 	return Set(ToHashPair(key), value);
 }
 
-void NetSync::Set(hash_t hash, int32_t value) {
-	// TODO work on this
-	m_members.insert({ hash, new int32_t(value) });
-	Revise();
-}
-void NetSync::Set(const std::string& key, int32_t value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(hash_t hash, int64_t value) {
-	auto&& find = m_longs.find(hash);
-	if (find != m_longs.end() && value == find->second)
-		return;
-	m_longs.insert({ hash, value });
-	Revise();
-}
-void NetSync::Set(const std::string& key, int64_t value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(hash_t hash, const Quaternion& value) {
-	auto&& find = m_quaternions.find(hash);
-	if (find != m_quaternions.end() && value == find->second)
-		return;
-	m_quaternions.insert({ hash, value });
-	Revise();
-}
-void NetSync::Set(const std::string& key, const Quaternion& value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(hash_t hash, const std::string& value) {
-	auto&& find = m_strings.find(hash);
-	if (find != m_strings.end() && value == find->second)
-		return;
-	m_strings.insert({ hash, value });
-	Revise();
-}
-void NetSync::Set(const std::string& key, const std::string& value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(hash_t hash, const Vector3& value) {
-	auto&& find = m_vectors.find(hash);
-	if (find != m_vectors.end() && value == find->second)
-		return;
-	m_vectors.insert({ hash, value });
-	Revise();
-}
-void NetSync::Set(const std::string& key, const Vector3& value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
 
 
 

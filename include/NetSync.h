@@ -23,6 +23,9 @@ enum TypePrefix {
 	ARR = 0b10110111
 };
 
+hash_t to_prefix(hash_t hash, TypePrefix pref);
+hash_t from_prefix(hash_t hash, TypePrefix pref);
+
 // each NetSync is 0.5Kb minimum (with all 7 maps)
 // each NetSync is .168Kb minimum (with 1 map only)
 class NetSync {
@@ -129,7 +132,6 @@ public:
 	float GetFloat(const std::string& key, float def = 0) const;
 
 	ID GetNetSyncID(const std::pair<hash_t, hash_t>& key) const;
-	static std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
 	ID GetNetSyncID(const std::string& key) const;
 
 	int32_t GetInt(hash_t hash, int32_t def = 0) const;
@@ -149,33 +151,81 @@ public:
 
 
 
-	void Set(hash_t hash, bool value);
-	void Set(const std::string& key, bool value);
 
-	void Set(hash_t hash, const bytes_t& value);
-	void Set(const std::string& key, const bytes_t& value);
 
-	void Set(hash_t hash, float value);
-	void Set(const std::string& key, float value);
 
-	// Set a NetSyncID with key as hashed key pair
-	void Set(const std::pair<hash_t, hash_t>& key, const ID& value);
-	void Set(const std::string& key, const ID& value);
+	template<typename T>
+	requires std::same_as<T, float>
+		|| std::same_as<T, int32_t>
+		|| std::same_as<T, int64_t>
+		|| std::same_as<T, Quaternion>
+		|| std::same_as<T, Vector3>
+		|| std::same_as<T, std::string>
+		|| std::same_as<T, bytes_t>
+	void Set(hash_t key, const T &value, TypePrefix prefix) {
+		key = to_prefix(key, prefix);
+		auto&& find = m_members.find(key);
+		if (find != m_members.end()) {
+			// test check if the var is the correct type
+			if (prefix != find->second.first)
+				return;
 
-	void Set(hash_t hash, int32_t value);
-	void Set(const std::string& key, int32_t value);
+			// reassign if changed
+			auto&& v = (T*)find->second.second;
+			if (*v == value)
+				return;
+			*v = value;
+		}
+		else {
+			m_members.insert({ key, new T(value) });
+		}
 
-	void Set(hash_t hash, int64_t value);
-	void Set(const std::string& key, int64_t value);
+		Revise();
+	}
 
-	void Set(hash_t hash, const Quaternion& value);
-	void Set(const std::string& key, const Quaternion& value);
+	// basic params
+	void Set(hash_t key, float value);
+	void Set(hash_t key, int32_t value);
+	void Set(hash_t key, int64_t value);
+	void Set(hash_t key, const Quaternion &value);
+	void Set(hash_t key, const Vector3 &value);
+	void Set(hash_t key, const std::string &value);
+	void Set(hash_t key, const bytes_t &value);
 
-	void Set(hash_t hash, const std::string& value);
-	void Set(const std::string& key, const std::string& value);
+	// special overloads
+	void Set(hash_t key, bool value);
+	void Set(std::pair<hash_t, hash_t> key, const ID& value);
 
-	void Set(hash_t hash, const Vector3& value);
-	void Set(const std::string& key, const Vector3& value);
+
+
+
+	// basic params str->hash
+	template<typename T>
+	requires std::same_as<T, float>
+		|| std::same_as<T, int32_t>
+		|| std::same_as<T, int64_t>
+		|| std::same_as<T, Quaternion>
+		|| std::same_as<T, Vector3>
+		|| std::same_as<T, std::string>
+		|| std::same_as<T, bytes_t>
+	void Set(const std::string &key, const T &value) { return Set(Utils::GetStableHashCode(key), value); }
+
+	// special overloads str->hash
+	void Set(const std::string &key, bool value);
+	void Set(const std::string &key, const ID &value);
+
+
+
+	//void Set(const std::string& key, float value) { return Set(Utils::GetStableHashCode(key), value); }
+	//void Set(const std::string& key, int32_t value) { return Set(Utils::GetStableHashCode(key), value); }
+	//void Set(const std::string& key, int64_t value) { return Set(Utils::GetStableHashCode(key), value); }
+	//void Set(const std::string& key, const Quaternion& value) { return Set(Utils::GetStableHashCode(key), value); }
+	//void Set(const std::string& key, const Vector3& value) { return Set(Utils::GetStableHashCode(key), value); }
+
+
+	// complicated overloads
+	// zdoid, string, array, bool, 
+
 
 
 	// id of the client or server
@@ -222,6 +272,8 @@ public:
 			return true;
 		return false;
 	}
+
+	static std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
 
 	// earmark might refer to a unique marker/designator
 };
