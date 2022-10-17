@@ -224,31 +224,11 @@ void NetSync::Set(hash_t key, bool value) {
 }
 
 void NetSync::Set(std::pair<hash_t, hash_t> key, const ID& value) {
-	//return Set(key, value ?);
 	Set(key.first, value.m_userID);
 	Set(key.second, (int64_t)value.m_id);
 }
 
 
-
-// special overloads str->hash
-void NetSync::Set(const std::string& key, bool value) {
-	return Set(Utils::GetStableHashCode(key), value);
-}
-
-void NetSync::Set(const std::string& key, const ID& value) {
-	return Set(ToHashPair(key), value);
-}
-
-
-
-
-std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
-	return std::make_pair(
-		Utils::GetStableHashCode(std::string(key + "_u")),
-		Utils::GetStableHashCode(std::string(key + "_i"))
-	);
-}
 
 
 
@@ -260,4 +240,9 @@ void NetSync::SetLocal() {
 	SetOwner(Valhalla()->m_serverUuid);
 }
 
-
+std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
+	return std::make_pair(
+		Utils::GetStableHashCode(std::string(key + "_u")),
+		Utils::GetStableHashCode(std::string(key + "_i"))
+	);
+}

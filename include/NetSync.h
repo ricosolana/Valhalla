@@ -120,6 +120,69 @@ public:
 	//	Terrain
 	//};
 
+	// return the object, or nullptr if not found
+	template<typename T>
+	requires std::same_as<T, float>
+		|| std::same_as<T, int32_t>
+		|| std::same_as<T, int64_t>
+		|| std::same_as<T, Quaternion>
+		|| std::same_as<T, Vector3>
+		|| std::same_as<T, std::string>
+		|| std::same_as<T, bytes_t>
+	const T* Get(hash_t key, TypePrefix prefix) {
+		key = to_prefix(key, prefix);
+		auto&& find = m_members.find(key);
+		if (find != m_members.end() 
+			&& prefix == find->second.first) {
+			return (T*)find->second.second;
+		}
+		return nullptr;
+	}
+
+
+
+
+	// basic params
+	float GetFloat(hash_t key, float value = 0);
+	int32_t GetInt(hash_t key, int32_t value = 0);
+	int64_t GetLong(hash_t key, int64_t value = 0);
+	const Quaternion& GetQuaternion(hash_t key, const Quaternion& value = Quaternion::IDENTITY);
+	const Vector3& GetVector3(hash_t key, const Vector3& value);
+	const std::string& GetString(hash_t key, const std::string& value = "");
+	const bytes_t* GetBytes(hash_t key);
+
+	// special overloads
+	bool GetBool(hash_t key, bool value = false);
+	const ID& GetID(std::pair<hash_t, hash_t> key, const ID& value);
+
+	float GetFloat(const std::string& key, float value = 0);
+	int32_t GetInt(const std::string& key, int32_t value = 0);
+	int64_t GetLong(const std::string& key, int64_t value = 0);
+	const Quaternion& GetQuaternion(const std::string& key, const Quaternion &value = Quaternion::IDENTITY);
+	const Vector3& GetVector3(const std::string& key, const Vector3& value);
+	const std::string& GetString(const std::string& key, const std::string& value = "");
+	const bytes_t* GetBytes(const std::string& key);
+
+	bool GetBool(const std::string &key, bool value = false);
+	const ID& GetID(std::pair<hash_t, hash_t> key, const ID& value);
+
+
+
+	// basic params str->hash
+	template<typename T>
+	requires std::same_as<T, float>
+		|| std::same_as<T, int32_t>
+		|| std::same_as<T, int64_t>
+		|| std::same_as<T, Quaternion>
+		|| std::same_as<T, Vector3>
+		|| std::same_as<T, std::string>
+		|| std::same_as<T, bytes_t>
+	T Get(const std::string & key, const T & value) { return Get(Utils::GetStableHashCode(key), value); }
+
+	// special overloads str->hash
+	void Set(const std::string& key, bool value) { return Set(Utils::GetStableHashCode(key), value); }
+	void Set(const std::string& key, const ID& value) { return Set(ToHashPair(key), value); }
+
 
 	
 	bool GetBool(hash_t hash, bool def = false) const;
@@ -211,8 +274,8 @@ public:
 	void Set(const std::string &key, const T &value) { return Set(Utils::GetStableHashCode(key), value); }
 
 	// special overloads str->hash
-	void Set(const std::string &key, bool value);
-	void Set(const std::string &key, const ID &value);
+	void Set(const std::string& key, bool value) { return Set(Utils::GetStableHashCode(key), value); }
+	void Set(const std::string& key, const ID& value) { return Set(ToHashPair(key), value); }
 
 
 
