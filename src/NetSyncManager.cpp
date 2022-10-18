@@ -14,9 +14,9 @@ namespace NetSyncManager {
 		};
 
 		NetPeer::Ptr m_peer;
-		robin_hood::unordered_map<NetSync::ID, Rev, HashUtils::Hasher> m_syncs;
-		robin_hood::unordered_set<NetSync::ID, HashUtils::Hasher> m_forceSend;
-		robin_hood::unordered_set<NetSync::ID, HashUtils::Hasher> m_invalidSector;
+		robin_hood::unordered_map<NetID, Rev, HashUtils::Hasher> m_syncs;
+		robin_hood::unordered_set<NetID, HashUtils::Hasher> m_forceSend;
+		robin_hood::unordered_set<NetID, HashUtils::Hasher> m_invalidSector;
 		//int m_sendIndex = 0;
 
 		NetSyncPeer(NetPeer::Ptr peer) : m_peer(peer) {}
@@ -33,7 +33,7 @@ namespace NetSyncManager {
 			//}
 		}
 
-		void ForceSendNetSync(NetSync::ID id) {
+		void ForceSendNetSync(NetID id) {
 			m_forceSend.insert(id);
 		}
 
@@ -48,7 +48,7 @@ namespace NetSyncManager {
 	};
 
 	static std::vector<std::unique_ptr<NetSyncPeer>> m_peers;
-	static robin_hood::unordered_map<NetSync::ID, uuid_t, HashUtils::Hasher> m_deadNetSyncs;
+	static robin_hood::unordered_map<NetID, uuid_t, HashUtils::Hasher> m_deadNetSyncs;
 	
 	static constexpr int SECTOR_WIDTH = 512;
 
@@ -63,7 +63,7 @@ namespace NetSyncManager {
 		return y * SECTOR_WIDTH + x;
 	}
 
-	NetSync *GetNetSync(NetSync::ID& id) {
+	NetSync *GetNetSync(NetID& id) {
 		if (!id) {
 			return nullptr;
 		}
@@ -100,7 +100,7 @@ namespace NetSyncManager {
 		return GetPeer(netpeer->m_uuid);
 	}
 
-	NetSync *CreateNewNetSync(NetSync::ID uid, Vector3 position)
+	NetSync *CreateNewNetSync(NetID uid, Vector3 position)
 	{
 		//NetSync NetSync = NetSyncPool.Create(this, uid, position);
 		//NetSync.m_owner = this.m_myid;
@@ -121,7 +121,7 @@ namespace NetSyncManager {
 		auto invalid_sector_count = pkg->Read<int32_t>(); // invalid sector count
 		for (int i = 0; i < invalid_sector_count; i++)
 		{
-			auto id = pkg->Read<NetSync::ID>();
+			auto id = pkg->Read<NetID>();
 			//NetSync NetSync = this.GetNetSync(id);
 			//if (NetSync != null)
 			//{
@@ -132,7 +132,7 @@ namespace NetSyncManager {
 		int NetSyncsRecv = 0;
 		for (;;)
 		{
-			auto NetSyncid = pkg->Read<NetSync::ID>(); // uid
+			auto NetSyncid = pkg->Read<NetID>(); // uid
 			if (!NetSyncid)
 				break;
 

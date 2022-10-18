@@ -17,6 +17,6 @@ namespace HashUtils {
 		int operator()(const int64_t &value) const;
 		int operator()(const float &value) const;
 		int operator()(const double &value) const;
-		int operator()(const NetSync::ID &value) const;
+		int operator()(const NetID &value) const;
 	};
 }

@@ -130,24 +130,6 @@ public:
 	//~NetSync() = delete;
 	~NetSync();
 
-	struct ID {
-		explicit ID();
-		explicit ID(int64_t userID, uint32_t id);
-
-		std::string ToString();
-
-		bool operator==(const ID& other) const;
-		bool operator!=(const ID& other) const;
-
-		// Return whether this has a value besides NONE
-		explicit operator bool() const noexcept;
-
-		static const ID NONE;
-
-		uuid_t m_userID;
-		uint32_t m_id;
-		hash_t m_hash;
-	};
 
 
 	enum class ObjectType : int8_t {
@@ -174,7 +156,7 @@ public:
 	// Special hash getters
 
 	bool GetBool(hash_t key, bool value = false);
-	const ID GetID(const std::pair<hash_t, hash_t> &key /* no default */);
+	const NetID GetID(const std::pair<hash_t, hash_t> &key /* no default */);
 
 
 
@@ -191,7 +173,7 @@ public:
 	// Special string getters
 
 	bool GetBool(const std::string &key, bool value = false);
-	const ID GetID(const std::string &key /* no default */);
+	const NetID GetID(const std::string &key /* no default */);
 
 
 
@@ -208,7 +190,7 @@ public:
 	// Special hash setters
 
 	void Set(hash_t key, bool value);
-	void Set(const std::pair<hash_t, hash_t> &key, const ID& value);
+	void Set(const std::pair<hash_t, hash_t> &key, const NetID& value);
 
 
 
@@ -221,8 +203,8 @@ public:
 
 	// Special string setters
 
-	void Set(const std::string& key, const ID& value) { Set(ToHashPair(key), value); }
-	void Set(const char* key, const ID& value) { Set(ToHashPair(key), value); }
+	void Set(const std::string& key, const NetID& value) { Set(ToHashPair(key), value); }
+	void Set(const char* key, const NetID& value) { Set(ToHashPair(key), value); }
 
 
 
@@ -237,7 +219,7 @@ public:
 	Quaternion m_rotation = Quaternion::IDENTITY;
 
 	// contains id of the client or server, and the object id
-	ID m_id;
+	NetID m_id;
 	bool m_persistent = false;	// set by ZNetView; use bitmask
 	bool m_distant = false;		// set by ZNetView; use bitmask
 	uuid_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed

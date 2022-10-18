@@ -2,7 +2,7 @@
 #include "NetSyncManager.h"
 #include <functional>
 #include "ValhallaServer.h"
-
+#include "NetID.h"
 
 //constexpr std::pair<hash_t, hash_t> ToHashPair(const char* key) {
 //	//constexpr auto s = "hello" " " "world";
@@ -48,30 +48,30 @@ hash_t NetSync::from_prefix(hash_t hash, MemberShift pref) {
 
 
 
-const NetSync::ID NetSync::ID::NONE(0, 0);
+const NetID NetID::NONE(0, 0);
 
-NetSync::ID::ID()
-	: ID(NONE)
+NetID::NetID()
+	: NetID(NONE)
 {}
 
-NetSync::ID::ID(int64_t userID, uint32_t id)
+NetID::NetID(int64_t userID, uint32_t id)
 	: m_userID(userID), m_id(id), m_hash(HashUtils::Hasher{}(m_userID) ^ HashUtils::Hasher{}(m_id))
 {}
 
-std::string NetSync::ID::ToString() {
+std::string NetID::ToString() {
 	return std::to_string(m_userID) + ":" + std::to_string(m_id);
 }
 
-bool NetSync::ID::operator==(const NetSync::ID& other) const {
+bool NetID::operator==(const NetID& other) const {
 	return m_userID == other.m_userID
 		&& m_id == other.m_id;
 }
 
-bool NetSync::ID::operator!=(const NetSync::ID& other) const {
+bool NetID::operator!=(const NetID& other) const {
 	return !(*this == other);
 }
 
-NetSync::ID::operator bool() const noexcept {
+NetID::operator bool() const noexcept {
 	return *this != NONE;
 }
 
@@ -141,12 +141,12 @@ bool NetSync::GetBool(hash_t key, bool value) {
 	return GetInt(key, value ? 1 : 0);
 }
 
-const NetSync::ID NetSync::GetID(const std::pair<hash_t, hash_t>& key) {
+const NetID NetSync::GetID(const std::pair<hash_t, hash_t>& key) {
 	auto k = GetLong(key.first);
 	auto v = GetLong(key.second);
 	if (k == 0 || v == 0)
-		return NetSync::ID::NONE;
-	return NetSync::ID(k, (uint32_t)v);
+		return NetID::NONE;
+	return NetID(k, (uint32_t)v);
 }
 
 
@@ -195,7 +195,7 @@ bool NetSync::GetBool(const std::string& key, bool value) {
 	return GetBool(Utils::GetStableHashCode(key), value);
 }
 
-const NetSync::ID NetSync::GetID(const std::string& key) {
+const NetID NetSync::GetID(const std::string& key) {
 	return GetID(ToHashPair(key));
 }
 
@@ -245,7 +245,7 @@ void NetSync::Set(hash_t key, bool value) {
 	Set(key, value ? (int32_t)1 : 0);
 }
 
-void NetSync::Set(const std::pair<hash_t, hash_t> &key, const ID& value) {
+void NetSync::Set(const std::pair<hash_t, hash_t> &key, const NetID& value) {
 	Set(key.first, value.m_userID);
 	Set(key.second, (int64_t)value.m_id);
 }

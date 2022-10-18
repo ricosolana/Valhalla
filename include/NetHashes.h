@@ -507,7 +507,7 @@ enum class PrivateArea_ZDO : hash_t {
 	CREATOR_NAME = __H("creatorName"),
 	ENABLED = __H("enabled"),
 	PERMITTED = __H("permitted"),
-	ID = __H("pu_id"),
+	NetID = __H("pu_id"),
 	NAME = __H("pu_name"),
 };
 
@@ -537,7 +537,7 @@ enum class RandomFlyingBird_ZDO : hash_t {
 
 enum class Saddle_ZDO : hash_t {
 	// partial
-	//ID= __H("-empty"),
+	//NetID= __H("-empty"),
 
 	STAMINA = __H("stamina"),
 	USER = __H("user"),

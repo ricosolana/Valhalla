@@ -16,7 +16,7 @@ public:
 
 	Vector3 m_pos;
 	bool m_visibleOnMap = false;
-	NetSync::ID m_characterID = NetSync::ID::NONE;
+	NetID m_characterID = NetID::NONE;
 
 public:
 	NetPeer(std::unique_ptr<NetRpc> rpc,
