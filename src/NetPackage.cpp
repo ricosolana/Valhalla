@@ -1,5 +1,6 @@
 #include "NetPackage.h"
-#include <zlib.h>
+#include "NetSync.h"
+
 
 NetPackage::NetPackage(byte_t* data, uint32_t count) {
     From(data, count);

@@ -14,7 +14,10 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "PlayerProfile.h"
-#include "NetSync.h"
+//#include "NetSync.h"
+
+//class NetSync;
+//struct NetSync::ID;
 
 template<typename E>
 concept EnumType = std::is_enum_v<E>;
@@ -63,6 +66,7 @@ public:
 
     
 
+    // Enum overload; writes the enum underlying value
     // https://stackoverflow.com/questions/60524480/how-to-force-a-template-parameter-to-be-an-enum-or-enum-class
     template<EnumType E>
     void Write(E v) {
@@ -147,6 +151,11 @@ public:
     template<typename T>
     T Read() requires std::same_as<T, Quaternion> {
         return Quaternion{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
+    }
+
+    template<EnumType E>
+    E Read() {
+        return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
     //template<typename T>

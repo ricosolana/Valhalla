@@ -15,7 +15,9 @@ class NetRpc {
 	robin_hood::unordered_map<hash_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
 	void SendPackage(NetPackage::Ptr pkg);
+
 	void Register(const char* name, IMethod<NetRpc*>* method);
+	void Register(hash_t hash, IMethod<NetRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
@@ -47,6 +49,29 @@ public:
 	auto Register(const char* name, C *object, void(C::*f)(NetRpc*, Args...)) {
 		return Register(name, new MethodImpl(object, f));
 	}
+
+	/**
+		* @brief Register a static method for remote invocation
+		* @param name function name to register
+		* @param method ptr to a static function
+	*/
+	template<class ...Args>
+	auto Register(hash_t hash, void(*f)(NetRpc*, Args...)) {
+		return Register(hash, new MethodImpl(f));
+	}
+
+	/**
+		* @brief Register an instance method for remote invocation
+		* @param name function name to register
+		* @param object the object containing the member function
+		* @param method ptr to a member function
+	*/
+	template<class C, class ...Args>
+	auto Register(hash_t hash, C* object, void(C::* f)(NetRpc*, Args...)) {
+		return Register(hash, new MethodImpl(object, f));
+	}
+
+
 
 	/**
 		* @brief Invoke a remote function

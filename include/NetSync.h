@@ -6,7 +6,7 @@
 #include "Vector.h"
 #include "Utils.h"
 
-
+#include "NetPackage.h"
 
 
 
@@ -27,22 +27,48 @@ public:
 	static std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
 
 private:
-	enum TypePrefix {
-		TP_FLOAT = 0b10,
-		TP_VECTOR = 0b101,
-		TP_QUATERNION = 0b1011,
-		TP_INT = 0b10110,
-		TP_LONG = 0b101101,
-		TP_STRING = 0b1011011,
-		TP_ARRAY = 0b10110111
-	}; 
+	//enum TypePrefix {
+	//	TP_FLOAT = 0b10,
+	//	TP_VECTOR = 0b101,
+	//	TP_QUATERNION = 0b1011,
+	//	TP_INT = 0b10110,
+	//	TP_LONG = 0b101101,
+	//	TP_STRING = 0b1011011,
+	//	TP_ARRAY = 0b10110111
+	//}; 
 
-	static hash_t to_prefix(hash_t hash, TypePrefix pref);
-	static hash_t from_prefix(hash_t hash, TypePrefix pref);
+
+	// PGW might stand for 'primary game world' version
+	// packet gateway format (unlikely)
+	// the static game PGW version is stored in ZoneSystem, which controls locations and sectoring
+	// It might be closer to 'player game world' version
+	static constexpr int32_t PGW_VERSION = 53;
+
+	// https://stackoverflow.com/a/1122109
+	enum class MemberShift : uint8_t {
+		FLOAT = 0, // shift by 0 bits
+		VECTOR3,
+		QUATERNION,
+		INT,
+		STRING,
+		LONG,
+		ARRAY, // should be shift by 6 bits
+
+		//MASK_FLOAT =		0b1,
+		//MASK_VECTOR3 =		0b1 << 1,
+		//MASK_QUATERNION =	0b1 << 2,
+		//MASK_INT =			0b1 << 3,
+		//MASK_STRING =		0b1 << 4,
+		//MASK_LONG =			0b1 << 5,
+		//MASK_ARRAY =		0b1 << 6
+	};
+
+	static hash_t to_prefix(hash_t hash, MemberShift pref);
+	static hash_t from_prefix(hash_t hash, MemberShift pref);
 
 	// Trivial getter
 	template<TrivialSyncType T>
-	const T* Get(hash_t key, TypePrefix prefix) {
+	const T* Get(hash_t key, MemberShift prefix) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()
@@ -55,7 +81,7 @@ private:
 	// Trivial getter w/ defaults
 	template<TrivialSyncType T>
 		requires (!std::same_as<T, bytes_t>)
-	const T& Get(hash_t key, TypePrefix prefix, const T& value) {
+	const T& Get(hash_t key, MemberShift prefix, const T& value) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()
@@ -66,7 +92,7 @@ private:
 	}
 
 	template<TrivialSyncType T>
-	void Set(hash_t key, const T& value, TypePrefix prefix) {
+	void SetWith(hash_t key, const T& value, MemberShift prefix) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()) {
@@ -83,17 +109,17 @@ private:
 		else {
 			m_members.insert({ key, std::make_pair(prefix, new T(value)) });
 		}
+	}
+
+	template<TrivialSyncType T>
+	void Set(hash_t key, const T& value, MemberShift prefix) {
+		SetWith(key, value, prefix);
 
 		Revise();
 	}
 
 private:
-	int m_prefab = 0;
-	Vector2i m_sector;
-	Vector3 m_position;
-	Quaternion m_rotation = Quaternion::IDENTITY;
-
-	robin_hood::unordered_map<int64_t, std::pair<TypePrefix, void*>> m_members;
+	robin_hood::unordered_map<hash_t, std::pair<MemberShift, void*>> m_members;
 
 	void Revise() {
 		m_dataRevision++;
@@ -124,12 +150,12 @@ public:
 	};
 
 
-	//enum class ObjectType {
-	//	Default,
-	//	Prioritized,
-	//	Solid,
-	//	Terrain
-	//};
+	enum class ObjectType : int8_t {
+		Default,
+		Prioritized,
+		Solid,
+		Terrain
+	};
 
 
 
@@ -189,29 +215,41 @@ public:
 	// Trivial string setters (+bool)
 
 	template<typename T> requires TrivialSyncType<T> || std::same_as<T, bool>
-	void Set(const std::string &key, const T &value) { Set(Utils::GetStableHashCode(key), value); }
+	void Set(const std::string& key, const T &value) { Set(Utils::GetStableHashCode(key), value); }
 	void Set(const std::string& key, const std::string& value) { Set(Utils::GetStableHashCode(key), value); } // String overload
+	void Set(const char* key, const std::string &value) { Set(Utils::GetStableHashCode(key), value); } // string constexpr overload
 
 	// Special string setters
 
 	void Set(const std::string& key, const ID& value) { Set(ToHashPair(key), value); }
+	void Set(const char* key, const ID& value) { Set(ToHashPair(key), value); }
 
 
+
+
+
+	uint8_t m_dataMask = 0;
+	//uint8_t sizes[7];
+
+	hash_t m_prefab = 0;
+	Vector2i m_sector;
+	Vector3 m_position;
+	Quaternion m_rotation = Quaternion::IDENTITY;
 
 	// contains id of the client or server, and the object id
 	ID m_id;
-	//bool m_persistent = false;	// set by ZNetView
-	//bool m_distant = false;		// set by ZNetView
+	bool m_persistent = false;	// set by ZNetView; use bitmask
+	bool m_distant = false;		// set by ZNetView; use bitmask
 	uuid_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed
 	int64_t m_timeCreated = 0;
 	uint32_t m_ownerRevision = 0;
 	uint32_t m_dataRevision = 0;
 	//int32_t m_pgwVersion = 0; // 53 const mostly by ZNetView
-	//ObjectType m_type = ObjectType::Default; // ultimately decided by ZNetView script object instance
+	ObjectType m_type = ObjectType::Default; // set by ZNetView; use bitmask
 	//float m_tempSortValue = 0; // only used in sending priority
 	//bool m_tempHaveRevision = 0; // appears to be unused besides assignments
-	int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
-	int32_t m_tempCreatedAt = -1; // ^
+	//int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
+	//int32_t m_tempCreatedAt = -1; // ^
 
 	// Return whether the ZDO instance is self hosted or remotely hosted
 	bool Local();
@@ -239,4 +277,7 @@ public:
 			return true;
 		return false;
 	}
+
+	void Serialize(NetPackage::Ptr pkg);
+	void Deserialize(NetPackage::Ptr pkg);
 };

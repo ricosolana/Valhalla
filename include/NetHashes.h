@@ -13,6 +13,7 @@
 /*
 * 
 * Rpc manager methods
+* as of 0.211.9
 * 
 */
 
@@ -174,7 +175,7 @@ enum class MineRock_RPC : hash_t {
 	Hit = __H("Hit"),
 };
 
-enum class MineRock_RPC : hash_t {
+enum class MineRock5_RPC : hash_t {
 	Damage = __H("Damage"),
 	SetAreaHealth = __H("SetAreaHealth"),
 };

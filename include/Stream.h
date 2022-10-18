@@ -138,10 +138,12 @@ public:
 	}
 
 	// Skip the internal marker ahead by marks bytes
-	// May throw
-	auto Skip(uint32_t marks) {
-		return SetMarker(m_marker + marks);
-	}
+	// Memory may be allocated and initialized
+	//auto Skip(uint32_t marks) {
+	//	//Write//
+	//	//ReserveExtra(marks);
+	//	return SetMarker(m_marker + marks);
+	//}
 
 	void SetMarker(uint32_t marker); 
 

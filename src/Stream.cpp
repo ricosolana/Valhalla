@@ -69,9 +69,14 @@ void Stream::Read(std::string& s, uint32_t count) {
 
 void Stream::Write(const byte_t* buffer, uint32_t count) {
     EnsureCapacity(m_marker + count);
-    std::memcpy(Bytes() + m_marker, buffer, count);
+
+    //std::memcpy(Bytes() + m_marker, buffer, count);
+    std::copy(buffer, buffer + count, Bytes() + m_marker);
     m_marker += count;
-    m_length += count;
+
+    // Make it so that the length is always at least marker
+    // Also prevents length incrementing when marker is moved back
+    m_length = std::max(m_marker, m_length);
 }
 
 
@@ -81,7 +86,6 @@ void Stream::SetLength(uint32_t length) {
 
     m_length = length;
 }
-
 
 
 

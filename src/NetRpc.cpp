@@ -21,6 +21,13 @@ void NetRpc::Register(const char* name, IMethod<NetRpc*>* method) {
 	m_methods.insert({ stableHash, std::unique_ptr<IMethod<NetRpc*>>(method) });
 }
 
+void NetRpc::Register(hash_t hash, IMethod<NetRpc*>* method) {
+	assert(!m_methods.contains(hash)
+		&& "runtime rpc hash collision");
+
+	m_methods.insert({ hash, std::unique_ptr<IMethod<NetRpc*>>(method) });
+}
+
 void NetRpc::Update() {
 	if (m_ignore) {
 		if (m_socket->GetSendQueueSize() == 0) {
