@@ -139,7 +139,7 @@ add_executable(${PROJECT_NAME}
      "src/Vector.cpp" 
      #"src/WorldGenerator.cpp" # temporarily broken
      "src/MathUtils.cpp"
- "include/NetObject.h" "include/ICallable.h" "src/NetObject.cpp" "include/NetHashes.h" "include/NetID.h")
+ "include/NetObject.h" "include/ICallable.h" "src/NetObject.cpp" "include/NetHashes.h" "include/NetID.h" "src/SteamManager.cpp" "include/SteamManager.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
