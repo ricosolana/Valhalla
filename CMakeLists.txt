@@ -4,9 +4,7 @@
 cmake_minimum_required (VERSION 3.14)
 project (Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-# for some fuckin reason you have to login to steam not to download sdk
-# who cares
-#include(get_steamapi)
+include(get_steamapi)
 include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -47,7 +45,6 @@ endif ()
 
 
 # optick profiler
-#CPMAddPackage("gh:bombomby/optick@1.3.1.0#1.3.1.0")
 CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 
 
@@ -146,14 +143,14 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    #PUBLIC ${STEAMAPI_SOURCE_DIR}
+    PUBLIC ${STEAMAPI_SOURCE_DIR}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
     
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
-    #${STEAMAPI_BINARY_DIR}
+    ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
     robin_hood::robin_hood # not really needed, but this is c++ :>)
     ZLIB::ZLIB
@@ -188,13 +185,14 @@ set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
 )
 
 
+# steam stuff
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${STEAMAPI_SHARED_DIR}
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
 
-#file(COPY ${STEAMAPI_SHARED_DIR}
-#    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-#)
-
+# working directory and resources
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
