@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <optick.h>
 #include "ResourceManager.h"
-#include "NetSyncHashes.h"
+#include "NetHashes.h"
 
 #include "easylogging++.h"
 #include "ValhallaServer.h"

@@ -173,7 +173,7 @@ namespace Utils {
         return distr(eng);
     }
 
-    int32_t GetStableHashCode(const std::string& str) {
+    hash_t GetStableHashCode(const std::string& str) {
         int num = 5381;
         int num2 = num;
         int num3 = 0;
@@ -189,6 +189,8 @@ namespace Utils {
         }
         return num + num2 * 1566083941;
     }
+
+
 
     // exclude any 0b10xxxxxx (as these are trail bytes)
     // this function is optimized under the assumption that the

@@ -119,6 +119,26 @@ namespace Utils {
 
 	hash_t GetStableHashCode(const std::string &s);
 
+	constexpr hash_t GetStableHashCode(const char* str, unsigned num, unsigned num2, unsigned idx) {
+		if (str[idx] != '\0') {
+			num = ((num << 5) + num) ^ (unsigned)str[idx];
+			if (str[idx + 1] != '\0') {
+				num2 = ((num2 << 5) + num2) ^ (unsigned)str[idx + 1];
+				idx += 2;
+				return GetStableHashCode(str, num, num2, idx);
+			}
+		}
+		return num + num2 * 1566083941;
+	}
+
+	constexpr hash_t GetStableHashCode(const char* str) {
+		int num = 5381;
+		int num2 = num;
+		int num3 = 0;
+
+		return GetStableHashCode(str, num, num2, num3);
+	}
+
 	// Gets the unicode code points in a UTF-8 encoded string
 	// Return -1 on bad encoding
 	int32_t GetUTF8Count(const byte_t* p);
