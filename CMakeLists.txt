@@ -142,18 +142,20 @@ add_executable(${PROJECT_NAME}
      "src/Vector.cpp" 
      #"src/WorldGenerator.cpp" # temporarily broken
      "src/MathUtils.cpp"
- "include/NetObject.h" "include/ICallable.h" "src/NetObject.cpp" "include/NetHashes.h" "include/NetID.h")
+     "src/NetObject.cpp"
+     "src/SteamManager.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    #PUBLIC ${STEAMAPI_SOURCE_DIR}
+    PUBLIC ${STEAMAPI_SOURCE_DIR}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
     
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
-    #${STEAMAPI_BINARY_DIR}
+    ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
     robin_hood::robin_hood # not really needed, but this is c++ :>)
     ZLIB::ZLIB
