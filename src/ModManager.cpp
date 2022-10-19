@@ -199,9 +199,8 @@ namespace ModManager {
 			// https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
 			state.new_usertype<ISocket>("ISocket",
 				"Close", &ISocket::Close,
-				"GetConnectivity", &ISocket::GetConnectivity,
+				"Connected", &ISocket::Connected,
 				"GetHostName", &ISocket::GetHostName,
-				"GetHostPort", &ISocket::GetHostPort,
 				"GetSendQueueSize", &ISocket::GetSendQueueSize
 				//"HasNewData", &ISocket::HasNewData,
 				//"Recv", &ISocket::Recv,

@@ -335,8 +335,8 @@ namespace NetManager {
 	void Update(double delta) {
 		OPTICK_EVENT();
 		// Accept connections
-		while (m_acceptor->HasNewConnection()) {
-			auto&& rpc = std::make_unique<NetRpc>(m_acceptor->Accept());
+		while (auto socket = m_acceptor->Accept()) {
+			auto&& rpc = std::make_unique<NetRpc>(socket);
 
 			rpc->Register("PeerInfo", &RPC_PeerInfo);
 			rpc->Register("Disconnect", &RPC_Disconnect);
@@ -352,7 +352,7 @@ namespace NetManager {
 			// Removes any
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
-				if (!(*itr) || (*itr)->m_socket->GetConnectivity() == Connectivity::CLOSED) {
+				if (!(*itr) || !(*itr)->m_socket->Connected()) {
 					itr = m_joining.erase(itr);
 				}
 				else {
@@ -365,7 +365,7 @@ namespace NetManager {
 			// Remove stale peers
 			auto&& itr = m_peers.begin();
 			while (itr != m_peers.end()) {
-				if ((*itr)->m_rpc->m_socket->GetConnectivity() == Connectivity::CLOSED) {
+				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					itr = m_peers.erase(itr);
 				}
 				else {
@@ -411,4 +411,3 @@ namespace NetManager {
 	}
 
 }
-

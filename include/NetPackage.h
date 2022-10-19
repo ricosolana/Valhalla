@@ -46,7 +46,7 @@ public:
 
     // Used for reading incoming data from packet
     NetPackage(byte_t* data, uint32_t count);
-    NetPackage(std::vector<byte_t>& vec);
+    NetPackage(bytes_t& vec);
     NetPackage(uint32_t reserve);
 
 
@@ -54,7 +54,7 @@ public:
     void Write(const byte_t* in, uint32_t count);
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
-    void Write(const std::vector<byte_t> &in);            // Write array
+    void Write(const bytes_t &in);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     void Write(const robin_hood::unordered_set<std::string>& in);
     void Write(const NetPackage::Ptr in);
@@ -107,7 +107,7 @@ public:
     }
 
     template<typename T>
-    T Read() requires std::same_as<T, std::vector<byte_t>> {
+    T Read() requires std::same_as<T, bytes_t> {
         T out;
         m_stream.Read(out, Read<int32_t>());
         return out;
@@ -127,7 +127,7 @@ public:
     T Read() requires std::same_as<T, NetPackage::Ptr> {
         auto count = Read<int32_t>();
         auto pkg(PKG(count));
-        m_stream.Read(pkg->m_stream.Bytes(), count);
+        m_stream.Read(pkg->m_stream.Ptr(), count);
         pkg->m_stream.SetLength(count);
         pkg->m_stream.SetMarker(0);
         return pkg;

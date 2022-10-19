@@ -80,7 +80,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
-		if (m_socket->GetConnectivity() == Connectivity::CLOSED)
+		if (!m_socket->Connected())
 			return;
 
 		auto pkg(PKG());

@@ -39,11 +39,9 @@ void AcceptorZSocket2::Close() {
 }
 
 std::shared_ptr<ISocket> AcceptorZSocket2::Accept() {
+	if (m_awaiting.empty())
+		return nullptr;
 	return m_awaiting.pop_front();
-}
-
-bool AcceptorZSocket2::HasNewConnection() {
-	return !m_awaiting.empty();
 }
 
 

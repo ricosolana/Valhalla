@@ -36,7 +36,7 @@ void Stream::Read(byte_t* buffer, uint32_t count) {
     if (m_marker + count > m_length) throw std::range_error("Stream::Read(byte_t* buffer, int count) length exceeded");
 
     std::memcpy(buffer, 
-        Bytes() + m_marker,
+        Ptr() + m_marker,
         count);
     m_marker += count;
 }
@@ -51,8 +51,8 @@ void Stream::Read(std::vector<byte_t>& vec, uint32_t count) {
     if (m_marker + count > m_length) throw std::range_error("Stream::Read(std::vector<byte_t>& vec, int count) length exceeded");
     
     vec.insert(vec.end(), 
-        Bytes() + m_marker, 
-        Bytes() + m_marker + count);
+        Ptr() + m_marker, 
+        Ptr() + m_marker + count);
     m_marker += count;
 }
 
@@ -60,8 +60,8 @@ void Stream::Read(std::string& s, uint32_t count) {
     if (m_marker + count > m_length) throw std::range_error("Stream::Read(std::string& s, int count) length exceeded");
 
     s.insert(s.end(),
-        Bytes() + m_marker,
-        Bytes() + m_marker + count);
+        Ptr() + m_marker,
+        Ptr() + m_marker + count);
     m_marker += count;
 }
 
@@ -71,7 +71,7 @@ void Stream::Write(const byte_t* buffer, uint32_t count) {
     EnsureCapacity(m_marker + count);
 
     //std::memcpy(Bytes() + m_marker, buffer, count);
-    std::copy(buffer, buffer + count, Bytes() + m_marker);
+    std::copy(buffer, buffer + count, Ptr() + m_marker);
     m_marker += count;
 
     // Make it so that the length is always at least marker

@@ -39,9 +39,13 @@ void NetRpc::Update() {
 
 	auto now(steady_clock::now());
 
-	// Process up to 20 packets at a time
-	for (int _c = 0; _c < 20 && m_socket->HasNewData(); _c++) {
-		auto pkg = m_socket->Recv();
+	// Send packet data
+	m_socket->Update();
+
+	// Read packets
+	while (auto pkg = m_socket->Recv()) {
+		assert(pkg && "Got null package and executing!");
+
 		auto hash = pkg->Read<int32_t>();
 		if (hash == 0) {
 			if (pkg->Read<bool>()) {

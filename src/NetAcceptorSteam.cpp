@@ -43,53 +43,58 @@ const char* strState(ESteamNetworkingConnectionState state) {
 
 
 
-void OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t data) {
+ISocket::Ptr AcceptorSteam::Accept() {
+	if (m_awaiting.empty())
+		return nullptr;
+	auto&& front = std::move(m_awaiting.front());
+	m_awaiting.pop_front();
+	return front;
+}
 
-	LOG(INFO) << "Steam status changed msg " << strState(data.m_info.m_eState);
-	if (data.m_info.m_eState == k_ESteamNetworkingConnectionState_Connected && data.m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
+
+
+void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
+
+	LOG(INFO) << "Steam status changed msg " << strState(data->m_info.m_eState);
+	if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
+		&& data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
 	{
-		LOG(INFO) << "Client fully connected";
-
-		auto socket = std::make_shared<SteamSocket>()
-
-			ZSteamSocket zsteamSocket = ZSteamSocket.FindSocket(data.m_hConn);
-		if (zsteamSocket != null)
-		{
+		auto pair = m_connecting.find(data->m_hConn);
+		if (pair != m_connecting.end()) {
+			auto zsteamSocket = pair->second;
 			SteamNetConnectionInfo_t steamNetConnectionInfo_t;
-			if (SteamGameServerNetworkingSockets.GetConnectionInfo(data.m_hConn, out steamNetConnectionInfo_t))
+			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &steamNetConnectionInfo_t))
 			{
-				zsteamSocket.m_peerID = steamNetConnectionInfo_t.m_identityRemote;
+				zsteamSocket->m_peerID = steamNetConnectionInfo_t.m_identityRemote;
 			}
-			ZLog.Log("Got connection SteamID " + zsteamSocket.m_peerID.GetSteamID().ToString());
+
+			LOG(INFO) << "Got connection, SteamID: " << zsteamSocket->m_peerID.GetSteamID64();
+			m_connecting.erase(pair);
+			m_awaiting.push_back(zsteamSocket);
 		}
 	}
-	if (data.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting && data.m_eOldState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_None)
+	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
+		&& data->m_eOldState == k_ESteamNetworkingConnectionState_None)
 	{
-		ZLog.Log("New connection");
-		ZSteamSocket listner = ZSteamSocket.GetListner();
-		if (listner != null)
-		{
-			listner.OnNewConnection(data.m_hConn);
+		m_connecting.insert({ data->m_hConn, std::make_shared<SteamSocket>(data->m_hConn) });
+	}
+	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+	{
+		LOG(INFO) << "Got problem " << data->m_info.m_eEndReason << ":" << data->m_info.m_szEndDebug;
+		auto pair = m_connecting.find(data->m_hConn);
+		if (pair != m_connecting.end()) {
+			LOG(INFO) << "Closing socket";
+			pair->second->Close();
+			m_connecting.erase(pair);
 		}
 	}
-	if (data.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
 	{
-		ZLog.Log("Got problem " + data.m_info.m_eEndReason.ToString() + ":" + data.m_info.m_szEndDebug);
-		ZSteamSocket zsteamSocket2 = ZSteamSocket.FindSocket(data.m_hConn);
-		if (zsteamSocket2 != null)
-		{
-			ZLog.Log("  Closing socket " + zsteamSocket2.GetHostName());
-			zsteamSocket2.Close();
-		}
-	}
-	if (data.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer)
-	{
-		ZLog.Log("Socket closed by peer " + data.ToString());
-		ZSteamSocket zsteamSocket3 = ZSteamSocket.FindSocket(data.m_hConn);
-		if (zsteamSocket3 != null)
-		{
-			ZLog.Log("  Closing socket " + zsteamSocket3.GetHostName());
-			zsteamSocket3.Close();
+		auto pair = m_connecting.find(data->m_hConn);
+		if (pair != m_connecting.end()) {
+			LOG(INFO) << "Closing socket";
+			pair->second->Close();
+			m_connecting.erase(pair);
 		}
 	}
 }

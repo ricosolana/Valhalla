@@ -4,81 +4,55 @@
 
 #include "NetSocket.h"
 
-/*
-* If memory allocations from vector is too much of a concern,
-* can reuse vectors with some kind of an object maintanance pool
-*/
-
 ZSocket2::ZSocket2(tcp::socket sock)
 	: m_socket(std::move(sock)),
-	m_hostname(m_socket.remote_endpoint().address().to_string()),
-	m_port(m_socket.remote_endpoint().port()),
-	m_connectivity(Connectivity::CONNECTING) {
-}
+	m_hostname(m_socket.remote_endpoint().address().to_string()) {}
 
 ZSocket2::~ZSocket2() {
 	Close();
 }
 
+
+
 void ZSocket2::Start() {
 	LOG(INFO) << "NetSocket2::Start()";
 
-	m_connectivity = Connectivity::CONNECTED;
 	ReadPkgSize();
 }
 
-void ZSocket2::Send(NetPackage::Ptr pkg) {
-	if (pkg->GetStream().Length() == 0 
-		|| m_connectivity == Connectivity::CLOSED)
-		return;
-
-	const bool was_empty = m_sendQueue.empty();
-
-	auto bytes = pkg->m_stream.Bytes();
-	m_sendQueueSize += sizeof(m_tempWriteOffset) + bytes.size();
-	m_sendQueue.push_back(bytes); // this blocks
-}
-
-NetPackage::Ptr ZSocket2::Recv() {
-	return m_recvQueue.pop_front();
-}
-
-bool ZSocket2::HasNewData() {
-	return !m_recvQueue.empty();
-}
-
 void ZSocket2::Close() {
-	if (m_connectivity != Connectivity::CLOSED) {
+	if (Connected()) {
 		LOG(INFO) << "NetSocket2::Close()";
 
-		m_connectivity = Connectivity::CLOSED;
+		m_connected = false;
 
 		m_socket.close();
 	}
 }
 
-std::string& ZSocket2::GetHostName() {
-	return m_hostname;
+
+
+void ZSocket2::Update() {
+	if (m_sendQueue.empty()) {
+		WritePkgSize();
+	}
 }
 
-uint_least16_t ZSocket2::GetHostPort() {
-	return m_port;
+void ZSocket2::Send(NetPackage::Ptr pkg) {
+	if (pkg->GetStream().Length() == 0 || !Connected())
+		return;
+
+	auto &&bytes = m_pool.empty() ? bytes_t() : m_pool.pop_front();
+
+	pkg->m_stream.Bytes(bytes);
+	m_sendQueueSize += sizeof(m_tempWriteOffset) + bytes.size();
+	m_sendQueue.push_back(std::move(bytes)); // capable of blocking
 }
 
-Connectivity ZSocket2::GetConnectivity() {
-	return m_connectivity;
-}
-
-int ZSocket2::GetSendQueueSize() {
-	return m_sendQueueSize;
-}
-
-
-
-
-
-tcp::socket& ZSocket2::GetSocket() {
-	return m_socket;
+NetPackage::Ptr ZSocket2::Recv() {
+	if (m_recvQueue.empty())
+		return nullptr;
+	return m_recvQueue.pop_front();
 }
 
 
@@ -95,8 +69,7 @@ void ZSocket2::ReadPkgSize() {
 			LOG(DEBUG) << "read header error: " << e.message() << " (" << e.value() << ")";
 			Close();
 		}
-	}
-	);
+	});
 }
 
 void ZSocket2::ReadPkg() {
@@ -150,7 +123,9 @@ void ZSocket2::WritePkg(const std::vector<byte_t> &buf) {
 		asio::buffer(buf, m_tempWriteOffset),
 		[this, self](const std::error_code& e, size_t) {
 		if (!e) {
-			m_sendQueueSize -= m_sendQueue.pop_front().size();
+			auto bytes = m_sendQueue.pop_front();
+			m_sendQueueSize -= bytes.size();
+			m_pool.push_back(std::move(bytes)); // Return to pool
 			if (!m_sendQueue.empty()) {
 				WritePkgSize();
 			}

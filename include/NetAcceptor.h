@@ -3,7 +3,6 @@
 #include <memory>
 #include <thread>
 
-
 #include "NetSocket.h"
 
 class IAcceptor {
@@ -13,8 +12,7 @@ public:
 	virtual void Start() = 0;
 	virtual void Close() = 0;
 
-	virtual std::shared_ptr<ISocket> Accept() = 0;
-	virtual bool HasNewConnection() = 0;
+	virtual ISocket::Ptr Accept() = 0;
 };
 
 class AcceptorSteam : public IAcceptor {
@@ -23,7 +21,9 @@ private:
 	uint16_t m_port;
 	HSteamListenSocket m_listenSocket;
 
-	AsyncDeque<std::shared_ptr<SteamSocket>> m_awaiting;
+	robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connecting;
+
+	std::deque<std::shared_ptr<SteamSocket>> m_awaiting;
 
 public:
 	AcceptorSteam(uint16_t port);
@@ -32,11 +32,12 @@ public:
 	void Start() override;
 	void Close() override;
 
-	std::shared_ptr<ISocket> Accept() override;
-	bool HasNewConnection() override;
+	ISocket::Ptr Accept() override;
 
 private:
-	void DoAccept();
+	// https://partner.steamgames.com/doc/sdk/api#callbacks
+	STEAM_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
+
 };
 
 class AcceptorZSocket2 : public IAcceptor {
@@ -57,8 +58,6 @@ public:
 	void Close() override;
 
 	std::shared_ptr<ISocket> Accept() override;
-	bool HasNewConnection() override;
-
 private:
 	void DoAccept();
 };
