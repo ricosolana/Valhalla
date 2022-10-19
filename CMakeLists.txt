@@ -6,7 +6,7 @@ project (Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 # for some fuckin reason you have to login to steam not to download sdk
 # who cares
-#include(get_steamapi)
+include(get_steamapi)
 include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -189,12 +189,12 @@ set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
 
 
 
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-#file(COPY ${STEAMAPI_SHARED_DIR}
-#    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-#)
+file(COPY ${STEAMAPI_SHARED_DIR}
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
