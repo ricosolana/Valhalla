@@ -6,7 +6,7 @@ NetPackage::NetPackage(byte_t* data, uint32_t count) {
     From(data, count);
 }
 
-NetPackage::NetPackage(bytes_t& vec)
+NetPackage::NetPackage(BYTES_t& vec)
     : NetPackage(vec.data(), static_cast<uint32_t>(vec.size())) {}
 
 NetPackage::NetPackage(uint32_t reserve)
@@ -32,7 +32,7 @@ void NetPackage::Write(const std::string& in) {
     m_stream.Write(reinterpret_cast<const byte_t*>(in.c_str()), byteCount);
 }
 
-void NetPackage::Write(const bytes_t& in) {
+void NetPackage::Write(const BYTES_t& in) {
     Write(in.data(), static_cast<int32_t>(in.size()));
 }
 
@@ -86,7 +86,7 @@ void NetPackage::From(byte_t* data, int32_t count) {
 
 
 
-void NetPackage::Read(bytes_t& out) {
+void NetPackage::Read(BYTES_t& out) {
     m_stream.Read(out, Read<int32_t>());
 }
 

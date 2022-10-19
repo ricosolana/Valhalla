@@ -1,7 +1,6 @@
 #pragma once
 
-#include <sol/sol.hpp>
-#include "NetSocket.h"
+#include "Utils.h"
 
 class NetRpc;
 
@@ -17,7 +16,7 @@ namespace ModManager {
 
 		/// Event calls
 		bool OnPeerInfo(NetRpc* rpc, 
-			uuid_t uuid, 
+			UUID_t uuid, 
 			const std::string& name, 
 			const std::string& version);
 		void OnUpdate(float delta);

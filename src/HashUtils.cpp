@@ -1,7 +1,7 @@
 #include "HashUtils.h"
+#include "NetID.h"
 
 namespace HashUtils {
-
 	int Hasher::operator()(const int64_t& value) const {
 		return (int32_t)value ^ ((int32_t)(value >> 32));
 	}

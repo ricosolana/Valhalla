@@ -48,7 +48,7 @@ namespace NetSyncManager {
 	};
 
 	static std::vector<std::unique_ptr<NetSyncPeer>> m_peers;
-	static robin_hood::unordered_map<NetID, uuid_t, HashUtils::Hasher> m_deadNetSyncs;
+	static robin_hood::unordered_map<NetID, UUID_t, HashUtils::Hasher> m_deadNetSyncs;
 	
 	static constexpr int SECTOR_WIDTH = 512;
 
@@ -80,7 +80,7 @@ namespace NetSyncManager {
 		return nullptr;
 	}
 
-	NetSyncPeer* GetPeer(uuid_t uuid) {
+	NetSyncPeer* GetPeer(UUID_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_peer->m_uuid == uuid)
 				return peer.get();
@@ -142,7 +142,7 @@ namespace NetSyncManager {
 
 			auto ownerRevision = pkg->Read<uint32_t>(); // owner revision
 			auto dataRevision = pkg->Read<uint32_t>(); // data revision
-			auto owner = pkg->Read<uuid_t>(); // owner
+			auto owner = pkg->Read<UUID_t>(); // owner
 			auto vec3 = pkg->Read<Vector3>(); // position
 			auto pkg2 = pkg->Read<NetPackage::Ptr>(); //
 			

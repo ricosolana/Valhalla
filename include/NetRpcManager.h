@@ -1,30 +1,29 @@
 #pragma once
 
-#include <robin_hood.h>
 #include "NetPeer.h"
 #include "Method.h"
 
 namespace NetRpcManager {
 
-	static constexpr uuid_t EVERYBODY = 0;
+	static constexpr UUID_t EVERYBODY = 0;
 
 	struct Data {
-		uuid_t m_msgID;
-		uuid_t m_senderPeerID;
-		uuid_t m_targetPeerID;
+		UUID_t m_msgID;
+		UUID_t m_senderPeerID;
+		UUID_t m_targetPeerID;
 		NetID m_targetNetSync;
-		hash_t m_methodHash;
+		HASH_t m_methodHash;
 		NetPackage::Ptr m_parameters;
 
 		Data() {}
 
 		// Will unpack the package
 		Data(NetPackage::Ptr pkg)
-			: m_msgID(pkg->Read<uuid_t>()),
-			m_senderPeerID(pkg->Read<uuid_t>()),
-			m_targetPeerID(pkg->Read<uuid_t>()),
+			: m_msgID(pkg->Read<UUID_t>()),
+			m_senderPeerID(pkg->Read<UUID_t>()),
+			m_targetPeerID(pkg->Read<UUID_t>()),
 			m_targetNetSync(pkg->Read<NetID>()),
-			m_methodHash(pkg->Read<hash_t>()),
+			m_methodHash(pkg->Read<HASH_t>()),
 			m_parameters(pkg->Read<NetPackage::Ptr>())
 		{}
 
@@ -43,10 +42,10 @@ namespace NetRpcManager {
 	void OnPeerQuit(NetPeer::Ptr peer);
 
 	// Internal use only by NetRpcManager
-	uuid_t _ServerID();
-	void _InvokeRoute(uuid_t target, const NetID& targetNetSync, const std::string& name, NetPackage::Ptr pkg);
+	UUID_t _ServerID();
+	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, const std::string& name, NetPackage::Ptr pkg);
 	void _HandleRoutedRPC(Data data);
-	void _Register(const std::string& name, IMethod<uuid_t>* method);
+	void _Register(const std::string& name, IMethod<UUID_t>* method);
 
 	/**
 		* @brief Register a static method for routed remote invocation
@@ -54,7 +53,7 @@ namespace NetRpcManager {
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(const std::string& name, void(*f)(uuid_t, Args...)) {
+	auto Register(const std::string& name, void(*f)(UUID_t, Args...)) {
 		return _Register(name, new MethodImpl(f));
 	}
 
@@ -65,7 +64,7 @@ namespace NetRpcManager {
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(const std::string& name, C* object, void(C::* f)(uuid_t, Args...)) {
+	auto Register(const std::string& name, C* object, void(C::* f)(UUID_t, Args...)) {
 		return _Register(name, new MethodImpl(object, f));
 	}
 
@@ -75,7 +74,7 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void InvokeRoute(uuid_t target, const NetID& targetNetSync, const std::string& name, Args... params) {
+	void InvokeRoute(UUID_t target, const NetID& targetNetSync, const std::string& name, Args... params) {
 		auto pkg(PKG());
 		NetPackage::Serialize(pkg, params...);
 		_InvokeRoute(target, targetNetSync, name, pkg);
@@ -87,7 +86,7 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void InvokeRoute(uuid_t target, const std::string& name, Args... params) {
+	void InvokeRoute(UUID_t target, const std::string& name, Args... params) {
 		InvokeRoute(target, NetID::NONE, name, params...);
 	}
 

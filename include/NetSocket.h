@@ -1,26 +1,20 @@
 #pragma once
 
-//#include <asio.hpp>
-
-#include "Utils.h"
-
 #include <string>
 #include <memory>
+
+#include "Utils.h"
+#include "NetPackage.h"
+#include "AsyncDeque.h"
+
+#include <asio.hpp> // Where should this go?
+
+#ifdef ENABLE_STEAM
 #include <steam_api.h>
 #include <isteamgameserver.h>
 #include <steam_gameserver.h>
 #include <isteamnetworkingutils.h>
-#include "NetPackage.h"
-
-
-
-using namespace asio::ip;
-
-//enum class Connectivity {
-//	CONNECTING,
-//	CONNECTED,
-//	CLOSED
-//};
+#endif
 
 class ISocket : public std::enable_shared_from_this<ISocket> {
 public:
@@ -38,14 +32,14 @@ public:
 	virtual const std::string& GetHostName() const = 0;
 
 	virtual bool Connected() const = 0;
-	//virtual Connectivity GetConnectivity() = 0;
 
 	virtual int GetSendQueueSize() const = 0;
 };
 
+#ifdef ENABLE_STEAM
 class SteamSocket : public ISocket {
 private:
-	std::deque<bytes_t> m_sendQueue;
+	std::deque<BYTES_t> m_sendQueue;
 	std::deque<NetPackage::Ptr> m_recvQueue;
 
 public:
@@ -81,6 +75,7 @@ public:
 	void SendQueued();
 
 };
+#endif // ENABLE_STEAM
 
 /**
 	* @brief Custom socket implementation which makes use of Asio tcp socket
@@ -89,12 +84,12 @@ public:
 // Shared ptr not really necessary with a simple 
 // client where socket state is tracked step by step
 class ZSocket2 : public ISocket {
-	tcp::socket m_socket;
+	asio::ip::tcp::socket m_socket;
 
 	// Reusable vec pool
-	AsyncDeque<bytes_t> m_pool;
+	AsyncDeque<BYTES_t> m_pool;
 
-	AsyncDeque<bytes_t> m_sendQueue;
+	AsyncDeque<BYTES_t> m_sendQueue;
 	AsyncDeque<NetPackage::Ptr> m_recvQueue;
 
 	int m_tempReadOffset = 0;
@@ -109,7 +104,7 @@ class ZSocket2 : public ISocket {
 	//std::atomic<Connectivity> m_connectivity;
 
 public:
-	ZSocket2(tcp::socket sock);
+	ZSocket2(asio::ip::tcp::socket sock);
 	~ZSocket2();
 
 	// Virtual
@@ -131,7 +126,7 @@ public:
 	}
 
 	// Declared
-	tcp::socket& GetSocket() {
+	auto&& GetSocket() {
 		return m_socket;
 	}
 

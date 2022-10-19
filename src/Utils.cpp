@@ -1,5 +1,6 @@
 #include <random>
 #include <limits>
+
 #include "Utils.h"
 
 namespace Utils {
@@ -31,7 +32,7 @@ namespace Utils {
         return true;
     }
 
-    void Compress(const bytes_t& buf, int level, bytes_t& out) {
+    void Compress(const BYTES_t& buf, int level, BYTES_t& out) {
         out.resize(buf.size());
 
         unsigned int compressedSize = out.size();
@@ -166,14 +167,14 @@ namespace Utils {
     std::mt19937_64 eng(rd()); //Use the 64-bit Mersenne Twister 19937 generator
                                //and seed it with entropy.
 
-    uuid_t GenerateUID() {
+    UUID_t GenerateUID() {
         //Define the distribution, by default it goes from 0 to MAX(unsigned long long)
         //or what have you.
         std::uniform_int_distribution<int64_t> distr;
         return distr(eng);
     }
 
-    hash_t GetStableHashCode(const std::string& str) {
+    HASH_t GetStableHashCode(const std::string& str) {
         int num = 5381;
         int num2 = num;
         int num3 = 0;
@@ -253,19 +254,11 @@ namespace Utils {
         return count;
     }
 
-    uuid_t StringToUID(const std::string& s) {
+    UUID_t StringToUID(const std::string& s) {
         std::stringstream ss(s);
-        uuid_t uid;
+        UUID_t uid;
         ss >> uid;
         return uid;
-    }
-
-    bool IsAddress(const std::string& s) {
-        //address make_address(const char* str,
-        //    asio::error_code & ec) ASIO_NOEXCEPT
-        asio::error_code ec;
-        asio::ip::make_address(s, ec);
-        return ec ? false : true;
     }
 
     std::string Join(std::vector<std::string_view>& strings) {

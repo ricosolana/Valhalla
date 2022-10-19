@@ -21,7 +21,7 @@ void NetRpc::Register(const char* name, IMethod<NetRpc*>* method) {
 	m_methods.insert({ stableHash, std::unique_ptr<IMethod<NetRpc*>>(method) });
 }
 
-void NetRpc::Register(hash_t hash, IMethod<NetRpc*>* method) {
+void NetRpc::Register(HASH_t hash, IMethod<NetRpc*>* method) {
 	assert(!m_methods.contains(hash)
 		&& "runtime rpc hash collision");
 

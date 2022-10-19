@@ -1,7 +1,8 @@
 #include <cmath>
+#include <stdexcept>
+
 #include "MathUtils.h"
 #include "Vector.h"
-#include <stdexcept>
 
 namespace MathUtils {
 	float SqMagnitude(float x, float y) {

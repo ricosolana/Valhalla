@@ -1,10 +1,11 @@
-#include "Utils.h"
+// main.cpp
+#include <asio.hpp>
 
+#include <signal.h>
 #include <optick.h>
-#include "ResourceManager.h"
+#include <easylogging++.h>
 
 #include "ValhallaServer.h"
-#include "SteamManager.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -57,45 +58,15 @@ static void on_interrupt(int num) {
 
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
-
-    
-
     OPTICK_THREAD("main");
     initLogger();
-
-
-    // test steam
-    InitSteam();
-
-    //while (true);
-    UnInitSteam();
-    return 0;
-    
-
 
     signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-
-
-    
-
-    /*
-    // my tiny unit test
-    NetSync zdo;
-    zdo.Set("Bruh", std::string("well then"));
-    zdo.Set("Bruh2", "here we go again");
-
-    LOG(INFO) << "Bruh: " << zdo.GetString("Bruh");
-    LOG(INFO) << "Bruh3: " << zdo.GetString("Bruh3");
-    LOG(INFO) << "Bruh-int: " << zdo.GetInt("Bruh");*/
-
-
-
-
     //ResourceManager::SetRoot("data");
-    //bytes_t buf;
+    //BYTES_t buf;
 
     //ResourceManager::ReadFileBytes("pic.jpg", buf);
     //auto compressed = Utils::Compress(buf.data(), buf.size());

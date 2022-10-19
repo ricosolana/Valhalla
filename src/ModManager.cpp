@@ -1,12 +1,12 @@
-#include "ModManager.h"
 #include <sol/sol.hpp>
+#include <easylogging++.h>
+#include <optick.h>
+
+#include "ModManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
 #include "ResourceManager.h"
-#include <easylogging++.h>
-#include <optick.h>
 #include "NetRpc.h"
-
 
 class Mod {
 public:
@@ -20,7 +20,7 @@ public:
 	const std::function<void()> m_onEnable;
 	const std::function<void()> m_onDisable;
 	const std::function<void(float)> m_onUpdate;
-	const std::function<bool(NetRpc*, uuid_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
+	const std::function<bool(NetRpc*, UUID_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
 
 	Mod(const std::string &name,
 		int priority,
@@ -28,7 +28,7 @@ public:
 		const std::function<void()> &onEnable,
 		const std::function<void()> &onDisable,
 		const std::function<void(float)> &onUpdate,
-		const std::function<bool(NetRpc*, uuid_t, std::string, std::string)> &onPeerInfo)
+		const std::function<bool(NetRpc*, UUID_t, std::string, std::string)> &onPeerInfo)
 		:	m_name(name), m_priority(priority), m_state(std::move(state)), 
 			m_onEnable(onEnable), m_onDisable(onDisable), m_onUpdate(onUpdate), m_onPeerInfo(onPeerInfo) {}
 
@@ -109,7 +109,7 @@ namespace ModManager {
 			auto onEnable = state["onEnable"].get_or(std::function<void()>());
 			auto onDisable = state["onDisable"].get_or(std::function<void()>());
 			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
-			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(NetRpc*, uuid_t, std::string, std::string)>());
+			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(NetRpc*, UUID_t, std::string, std::string)>());
 
 			//state["bruh"].get<std::string>()
 
@@ -314,7 +314,7 @@ namespace ModManager {
 		}
 
 		/// Event forward calls
-		bool OnPeerInfo(NetRpc *rpc, uuid_t uuid, 
+		bool OnPeerInfo(NetRpc *rpc, UUID_t uuid, 
 			const std::string& name, const std::string& version) {
 			bool allow = true;
 			for (auto&& mod : mods) {

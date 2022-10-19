@@ -1,9 +1,9 @@
 #pragma once
 
 #include <robin_hood.h>
+
 #include "Method.h"
 #include "NetSocket.h"
-
 #include "Task.h"
 
 enum class ConnectionStatus;
@@ -12,12 +12,12 @@ class NetRpc {
 	std::chrono::steady_clock::time_point m_lastPing;
 	bool m_ignore = false;
 	
-	robin_hood::unordered_map<hash_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
 	void SendPackage(NetPackage::Ptr pkg);
 
 	void Register(const char* name, IMethod<NetRpc*>* method);
-	void Register(hash_t hash, IMethod<NetRpc*>* method);
+	void Register(HASH_t hash, IMethod<NetRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
@@ -56,7 +56,7 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(hash_t hash, void(*f)(NetRpc*, Args...)) {
+	auto Register(HASH_t hash, void(*f)(NetRpc*, Args...)) {
 		return Register(hash, new MethodImpl(f));
 	}
 
@@ -67,7 +67,7 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(hash_t hash, C* object, void(C::* f)(NetRpc*, Args...)) {
+	auto Register(HASH_t hash, C* object, void(C::* f)(NetRpc*, Args...)) {
 		return Register(hash, new MethodImpl(object, f));
 	}
 

@@ -93,13 +93,13 @@ public:
 
 
 	// Gets all the data in the package
-	bytes_t Bytes() const {
+	BYTES_t Bytes() const {
 		//out.insert(out.begin(), Bytes(), Bytes() + m_length);
-		return bytes_t(Ptr(), Ptr() + m_length);
+		return BYTES_t(Ptr(), Ptr() + m_length);
 	}
 
 	// Gets all the data in the package
-	void Bytes(bytes_t &out) const {
+	void Bytes(BYTES_t &out) const {
 		out.clear();
 		out.insert(out.begin(), Ptr(), Ptr() + m_length);
 	}

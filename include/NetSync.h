@@ -2,13 +2,11 @@
 
 #include <robin_hood.h>
 #include <type_traits>
+
 #include "Quaternion.h"
 #include "Vector.h"
 #include "Utils.h"
-
 #include "NetPackage.h"
-
-
 
 template<typename T>
 concept TrivialSyncType = std::same_as<T, float>
@@ -17,14 +15,14 @@ concept TrivialSyncType = std::same_as<T, float>
 	|| std::same_as<T, Quaternion>
 	|| std::same_as<T, Vector3>
 	|| std::same_as<T, std::string>
-	|| std::same_as<T, bytes_t>;
+	|| std::same_as<T, BYTES_t>;
 
 // NetSync is 500+ bytes (with all 7 maps)
 // NetSync is 168 bytes (with 1 map only)
 // NetSync is 144 bytes (combined member map, reduced members)
 class NetSync {
 public:
-	static std::pair<hash_t, hash_t> ToHashPair(const std::string& key);
+	static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
 	//enum TypePrefix {
@@ -63,12 +61,12 @@ private:
 		//MASK_ARRAY =		0b1 << 6
 	};
 
-	static hash_t to_prefix(hash_t hash, MemberShift pref);
-	static hash_t from_prefix(hash_t hash, MemberShift pref);
+	static HASH_t to_prefix(HASH_t hash, MemberShift pref);
+	static HASH_t from_prefix(HASH_t hash, MemberShift pref);
 
 	// Trivial getter
 	template<TrivialSyncType T>
-	const T* Get(hash_t key, MemberShift prefix) {
+	const T* Get(HASH_t key, MemberShift prefix) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()
@@ -80,8 +78,8 @@ private:
 
 	// Trivial getter w/ defaults
 	template<TrivialSyncType T>
-		requires (!std::same_as<T, bytes_t>)
-	const T& Get(hash_t key, MemberShift prefix, const T& value) {
+		requires (!std::same_as<T, BYTES_t>)
+	const T& Get(HASH_t key, MemberShift prefix, const T& value) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()
@@ -92,7 +90,7 @@ private:
 	}
 
 	template<TrivialSyncType T>
-	void SetWith(hash_t key, const T& value, MemberShift prefix) {
+	void SetWith(HASH_t key, const T& value, MemberShift prefix) {
 		key = to_prefix(key, prefix);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()) {
@@ -112,14 +110,14 @@ private:
 	}
 
 	template<TrivialSyncType T>
-	void Set(hash_t key, const T& value, MemberShift prefix) {
+	void Set(HASH_t key, const T& value, MemberShift prefix) {
 		SetWith(key, value, prefix);
 
 		Revise();
 	}
 
 private:
-	robin_hood::unordered_map<hash_t, std::pair<MemberShift, void*>> m_members;
+	robin_hood::unordered_map<HASH_t, std::pair<MemberShift, void*>> m_members;
 
 	void Revise() {
 		m_dataRevision++;
@@ -145,18 +143,18 @@ public:
 
 	// Trivial hash getters
 
-	float GetFloat(hash_t key, float value = 0);
-	int32_t GetInt(hash_t key, int32_t value = 0);
-	int64_t GetLong(hash_t key, int64_t value = 0);
-	const Quaternion& GetQuaternion(hash_t key, const Quaternion& value = Quaternion::IDENTITY);
-	const Vector3& GetVector3(hash_t key, const Vector3& value);
-	const std::string& GetString(hash_t key, const std::string& value = "");
-	const bytes_t* GetBytes(hash_t key /* no default */);
+	float GetFloat(HASH_t key, float value = 0);
+	int32_t GetInt(HASH_t key, int32_t value = 0);
+	int64_t GetLong(HASH_t key, int64_t value = 0);
+	const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value = Quaternion::IDENTITY);
+	const Vector3& GetVector3(HASH_t key, const Vector3& value);
+	const std::string& GetString(HASH_t key, const std::string& value = "");
+	const BYTES_t* GetBytes(HASH_t key /* no default */);
 
 	// Special hash getters
 
-	bool GetBool(hash_t key, bool value = false);
-	const NetID GetID(const std::pair<hash_t, hash_t> &key /* no default */);
+	bool GetBool(HASH_t key, bool value = false);
+	const NetID GetID(const std::pair<HASH_t, HASH_t> &key /* no default */);
 
 
 
@@ -168,7 +166,7 @@ public:
 	const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value = Quaternion::IDENTITY);
 	const Vector3& GetVector3(const std::string& key, const Vector3& value);
 	const std::string& GetString(const std::string& key, const std::string& value = "");
-	const bytes_t* GetBytes(const std::string& key /* no default */);
+	const BYTES_t* GetBytes(const std::string& key /* no default */);
 
 	// Special string getters
 
@@ -179,18 +177,18 @@ public:
 
 	// Trivial hash setters
 
-	void Set(hash_t key, float value);
-	void Set(hash_t key, int32_t value);
-	void Set(hash_t key, int64_t value);
-	void Set(hash_t key, const Quaternion &value);
-	void Set(hash_t key, const Vector3 &value);
-	void Set(hash_t key, const std::string &value);
-	void Set(hash_t key, const bytes_t &value);
+	void Set(HASH_t key, float value);
+	void Set(HASH_t key, int32_t value);
+	void Set(HASH_t key, int64_t value);
+	void Set(HASH_t key, const Quaternion &value);
+	void Set(HASH_t key, const Vector3 &value);
+	void Set(HASH_t key, const std::string &value);
+	void Set(HASH_t key, const BYTES_t &value);
 
 	// Special hash setters
 
-	void Set(hash_t key, bool value);
-	void Set(const std::pair<hash_t, hash_t> &key, const NetID& value);
+	void Set(HASH_t key, bool value);
+	void Set(const std::pair<HASH_t, HASH_t> &key, const NetID& value);
 
 
 
@@ -213,7 +211,7 @@ public:
 	uint8_t m_dataMask = 0;
 	//uint8_t sizes[7];
 
-	hash_t m_prefab = 0;
+	HASH_t m_prefab = 0;
 	Vector2i m_sector;
 	Vector3 m_position;
 	Quaternion m_rotation = Quaternion::IDENTITY;
@@ -222,7 +220,7 @@ public:
 	NetID m_id;
 	bool m_persistent = false;	// set by ZNetView; use bitmask
 	bool m_distant = false;		// set by ZNetView; use bitmask
-	uuid_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed
+	UUID_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed
 	int64_t m_timeCreated = 0;
 	uint32_t m_ownerRevision = 0;
 	uint32_t m_dataRevision = 0;
@@ -247,7 +245,7 @@ public:
 	void SetLocal();
 
 	// set the owner of the ZDO
-	void SetOwner(uuid_t owner) {
+	void SetOwner(UUID_t owner) {
 		if (m_owner != owner) {
 			m_owner = owner;
 			m_ownerRevision++;

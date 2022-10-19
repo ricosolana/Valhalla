@@ -1,11 +1,12 @@
+#include <optick.h>
 #include <openssl/md5.h>
+
 #include "ModManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
 #include "World.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
-#include <optick.h>
 
 using namespace asio::ip;
 using namespace std::chrono;
@@ -203,7 +204,7 @@ namespace NetManager {
 	void RPC_PeerInfo(NetRpc* rpc, NetPackage::Ptr pkg) {
 		auto&& hostName = rpc->m_socket->GetHostName();
 
-		auto uuid = pkg->Read<uuid_t>();
+		auto uuid = pkg->Read<UUID_t>();
 		auto version = pkg->Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
 		if (version != SERVER_VERSION) {
@@ -288,7 +289,7 @@ namespace NetManager {
 	}
 
 	// Return the peer or nullptr
-	NetPeer::Ptr GetPeer(uuid_t uuid) {
+	NetPeer::Ptr GetPeer(UUID_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_uuid == uuid)
 				return peer;
@@ -399,7 +400,10 @@ namespace NetManager {
 		}
 
 		m_netTime += delta;
+
+#ifdef ENABLE_STEAM
 		SteamGameServer_RunCallbacks();
+#endif
 	}
 
 	void Close() {

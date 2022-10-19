@@ -21,7 +21,7 @@ private:
 
 	//Rigidbody m_body;
 
-	robin_hood::unordered_map<hash_t, std::unique_ptr<IMethod<uuid_t>>> m_functions;
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<UUID_t>>> m_functions;
 
 	bool m_ghost;
 
@@ -64,7 +64,7 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(const char* name, void(*f)(uuid_t, Args...)) {
+	auto Register(const char* name, void(*f)(UUID_t, Args...)) {
 		return Register(name, new MethodImpl(f));
 	}
 
@@ -75,7 +75,7 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(const char* name, C* object, void(C::* f)(uuid_t, Args...)) {
+	auto Register(const char* name, C* object, void(C::* f)(UUID_t, Args...)) {
 		return Register(name, new MethodImpl(object, f));
 	}
 
@@ -89,7 +89,7 @@ public:
 		* @param ...types function parameters
 	*/
 	template <typename... Types>
-	void Invoke(uuid_t target, const char* method, Types... params) {
+	void Invoke(UUID_t target, const char* method, Types... params) {
 		NetRpcManager::InvokeRoute(target, m_sync->m_id, method, std::move(params)...);
 	}
 

@@ -1,10 +1,11 @@
+#include <functional>
+
 #include "NetSync.h"
 #include "NetSyncManager.h"
-#include <functional>
 #include "ValhallaServer.h"
 #include "NetID.h"
 
-//constexpr std::pair<hash_t, hash_t> ToHashPair(const char* key) {
+//constexpr std::pair<HASH_t, HASH_t> ToHashPair(const char* key) {
 //	//constexpr auto s = "hello" " " "world";
 //
 //	return std::make_pair(
@@ -13,7 +14,7 @@
 //	);
 //}
 
-std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
+std::pair<HASH_t, HASH_t> NetSync::ToHashPair(const std::string& key) {
 	return std::make_pair(
 		Utils::GetStableHashCode(std::string(key + "_u")),
 		Utils::GetStableHashCode(std::string(key + "_i"))
@@ -22,8 +23,8 @@ std::pair<hash_t, hash_t> NetSync::ToHashPair(const std::string& key) {
 
 
 
-hash_t NetSync::to_prefix(hash_t hash, MemberShift pref) {
-	auto tshift = static_cast<hash_t>(pref);
+HASH_t NetSync::to_prefix(HASH_t hash, MemberShift pref) {
+	auto tshift = static_cast<HASH_t>(pref);
 
 	return (hash
 		+ (tshift * tshift)
@@ -37,8 +38,8 @@ hash_t NetSync::to_prefix(hash_t hash, MemberShift pref) {
 	//				- (tshift * tshift);
 }
 
-hash_t NetSync::from_prefix(hash_t hash, MemberShift pref) {
-	auto tshift = static_cast<hash_t>(pref);
+HASH_t NetSync::from_prefix(HASH_t hash, MemberShift pref) {
+	auto tshift = static_cast<HASH_t>(pref);
 	return 
 		((hash 
 			^ (tshift << tshift)) 
@@ -89,7 +90,7 @@ NetSync::~NetSync() {
 		case MemberShift::INT:			delete (int32_t*)		pair.second; break;
 		case MemberShift::LONG:			delete (int64_t*)		pair.second; break;
 		case MemberShift::STRING:		delete (std::string*)	pair.second; break;
-		case MemberShift::ARRAY:		delete (bytes_t*)		pair.second; break;
+		case MemberShift::ARRAY:		delete (BYTES_t*)		pair.second; break;
 		default:
 			LOG(ERROR) << "Invalid type assigned to NetSync";
 		}
@@ -107,41 +108,41 @@ NetSync::~NetSync() {
 
 // Trivial
 
-float NetSync::GetFloat(hash_t key, float value) {
+float NetSync::GetFloat(HASH_t key, float value) {
 	return Get(key, MemberShift::FLOAT, value);
 }
 
-int32_t NetSync::GetInt(hash_t key, int32_t value) {
+int32_t NetSync::GetInt(HASH_t key, int32_t value) {
 	return Get(key, MemberShift::INT, value);
 }
 
-int64_t NetSync::GetLong(hash_t key, int64_t value) {
+int64_t NetSync::GetLong(HASH_t key, int64_t value) {
 	return Get(key, MemberShift::LONG, value);
 }
 
-const Quaternion& NetSync::GetQuaternion(hash_t key, const Quaternion& value) {
+const Quaternion& NetSync::GetQuaternion(HASH_t key, const Quaternion& value) {
 	return Get(key, MemberShift::QUATERNION, value);
 }
 
-const Vector3& NetSync::GetVector3(hash_t key, const Vector3& value) {
+const Vector3& NetSync::GetVector3(HASH_t key, const Vector3& value) {
 	return Get(key, MemberShift::VECTOR3, value);
 }
 
-const std::string& NetSync::GetString(hash_t key, const std::string& value) {
+const std::string& NetSync::GetString(HASH_t key, const std::string& value) {
 	return Get(key, MemberShift::STRING, value);
 }
 
-const bytes_t* NetSync::GetBytes(hash_t key) {
-	return Get<bytes_t>(key, MemberShift::ARRAY);
+const BYTES_t* NetSync::GetBytes(HASH_t key) {
+	return Get<BYTES_t>(key, MemberShift::ARRAY);
 }
 
 // Special
 
-bool NetSync::GetBool(hash_t key, bool value) {
+bool NetSync::GetBool(HASH_t key, bool value) {
 	return GetInt(key, value ? 1 : 0);
 }
 
-const NetID NetSync::GetID(const std::pair<hash_t, hash_t>& key) {
+const NetID NetSync::GetID(const std::pair<HASH_t, HASH_t>& key) {
 	auto k = GetLong(key.first);
 	auto v = GetLong(key.second);
 	if (k == 0 || v == 0)
@@ -185,7 +186,7 @@ const std::string& NetSync::GetString(const std::string& key, const std::string&
 	return GetString(Utils::GetStableHashCode(key), value);
 }
 
-const bytes_t* NetSync::GetBytes(const std::string& key) {
+const BYTES_t* NetSync::GetBytes(const std::string& key) {
 	return GetBytes(Utils::GetStableHashCode(key));
 }
 
@@ -211,41 +212,41 @@ const NetID NetSync::GetID(const std::string& key) {
 
 // Trivial
 
-void NetSync::Set(hash_t key, float value) {
+void NetSync::Set(HASH_t key, float value) {
 	Set(key, value, MemberShift::FLOAT);
 }
 
-void NetSync::Set(hash_t key, int32_t value) {
+void NetSync::Set(HASH_t key, int32_t value) {
 	Set(key, value, MemberShift::INT);
 }
 
-void NetSync::Set(hash_t key, int64_t value) {
+void NetSync::Set(HASH_t key, int64_t value) {
 	Set(key, value, MemberShift::LONG);
 }
 
-void NetSync::Set(hash_t key, const Quaternion& value) {
+void NetSync::Set(HASH_t key, const Quaternion& value) {
 	Set(key, value, MemberShift::QUATERNION);
 }
 
-void NetSync::Set(hash_t key, const Vector3& value) {
+void NetSync::Set(HASH_t key, const Vector3& value) {
 	Set(key, value, MemberShift::VECTOR3);
 }
 
-void NetSync::Set(hash_t key, const std::string& value) {
+void NetSync::Set(HASH_t key, const std::string& value) {
 	Set(key, value, MemberShift::STRING);
 }
 
-void NetSync::Set(hash_t key, const bytes_t &value) {
+void NetSync::Set(HASH_t key, const BYTES_t &value) {
 	Set(key, value, MemberShift::ARRAY);
 }
 
 // Special
 
-void NetSync::Set(hash_t key, bool value) {
+void NetSync::Set(HASH_t key, bool value) {
 	Set(key, value ? (int32_t)1 : 0);
 }
 
-void NetSync::Set(const std::pair<hash_t, hash_t> &key, const NetID& value) {
+void NetSync::Set(const std::pair<HASH_t, HASH_t> &key, const NetID& value) {
 	Set(key.first, value.m_userID);
 	Set(key.second, (int64_t)value.m_id);
 }
@@ -357,7 +358,7 @@ void NetSync::Serialize(NetPackage::Ptr pkg) {
 	TYPE_SERIALIZE(int32_t, MemberShift::INT);
 	TYPE_SERIALIZE(std::string, MemberShift::STRING);
 	TYPE_SERIALIZE(int64_t, MemberShift::LONG);
-	TYPE_SERIALIZE(bytes_t, MemberShift::ARRAY);
+	TYPE_SERIALIZE(BYTES_t, MemberShift::ARRAY);
 }
 
 void NetSync::Deserialize(NetPackage::Ptr pkg) {
@@ -366,7 +367,7 @@ void NetSync::Deserialize(NetPackage::Ptr pkg) {
 	m_timeCreated = pkg->Read<int64_t>();
 	auto m_pgwVersion = pkg->Read<int32_t>(); // version 
 	m_type = pkg->Read<ObjectType>();
-	m_prefab = pkg->Read<hash_t>();
+	m_prefab = pkg->Read<HASH_t>();
 	m_rotation = pkg->Read<Quaternion>();
 
 	m_dataMask = pkg->Read<int32_t>();
@@ -375,7 +376,7 @@ void NetSync::Deserialize(NetPackage::Ptr pkg) {
 	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
 		auto count = pkg->Read<uint8_t>(); \
 		while (count--) { \
-			auto key = pkg->Read<hash_t>(); \
+			auto key = pkg->Read<HASH_t>(); \
 			SetWith(key, pkg->Read<type>(), mtype); \
 		} \
 	}
@@ -386,5 +387,5 @@ void NetSync::Deserialize(NetPackage::Ptr pkg) {
 	TYPE_DESERIALIZE(int32_t, MemberShift::INT);
 	TYPE_DESERIALIZE(std::string, MemberShift::STRING);
 	TYPE_DESERIALIZE(int64_t, MemberShift::LONG);
-	TYPE_DESERIALIZE(bytes_t, MemberShift::ARRAY);
+	TYPE_DESERIALIZE(BYTES_t, MemberShift::ARRAY);
 }

@@ -1,4 +1,5 @@
 #include "ZoneSystem.h"
+#include "NetPackage.h"
 #include "NetRpcManager.h"
 #include "HeightMap.h"
 
@@ -106,7 +107,7 @@ namespace ZoneSystem {
 
 	static constexpr float ZONE_SIZE = 64;
 
-	void SendGlobalKeys(uuid_t target) {
+	void SendGlobalKeys(UUID_t target) {
 		NetRpcManager::InvokeRoute(target, "GlobalKeys", m_globalKeys);
 	}
 
@@ -132,7 +133,7 @@ namespace ZoneSystem {
 		//}
 	}
 
-	void SendLocationIcons(uuid_t target) {
+	void SendLocationIcons(UUID_t target) {
 		auto pkg(PKG());
 
 		// count

@@ -4,6 +4,9 @@
 
 using namespace std::chrono_literals;
 
+// Enable steam?
+//#define ENABLE_STEAM
+
 // Uncomment this to enable RPC method name debugging
 // Must also be enabled on client!
 //#define RPC_DEBUG

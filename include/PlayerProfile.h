@@ -68,7 +68,7 @@ public:
 
 	std::string m_filename;
 	std::string m_playerName;
-	uuid_t m_playerID = 0;
+	UUID_t m_playerID = 0;
 	std::string m_startSeed;
 
 	// figure out usages

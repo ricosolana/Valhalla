@@ -1,8 +1,8 @@
 #pragma once
 
 #include <concepts>
-#include "NetSync.h"
-//struct NetSyncID;
+
+struct NetID;
 
 // C# hash equivalencies
 namespace HashUtils {

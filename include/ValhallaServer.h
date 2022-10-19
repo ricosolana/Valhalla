@@ -16,7 +16,7 @@ class ValhallaServer {
 public:
 	std::string m_serverName;
 	std::string m_serverPassword;
-	uuid_t m_serverUuid;
+	UUID_t m_serverUuid;
 	int m_maxPeers;
 	robin_hood::unordered_set<std::string> m_banned;
 

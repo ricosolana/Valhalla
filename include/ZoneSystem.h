@@ -2,7 +2,6 @@
 
 #include "Utils.h"
 #include "NetPeer.h"
-#include "NetPackage.h"
 
 namespace ZoneSystem {
 	void OnNewPeer(NetPeer::Ptr peer);

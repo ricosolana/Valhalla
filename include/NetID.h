@@ -16,7 +16,7 @@ struct NetID {
 
 	static const NetID NONE;
 
-	uuid_t m_userID;
+	UUID_t m_userID;
 	uint32_t m_id;
-	hash_t m_hash;
+	HASH_t m_hash;
 };

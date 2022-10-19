@@ -94,8 +94,8 @@ if(WIN32)
 
     message(STATUS "Set _WIN32_WINNT=${_WIN32_WINNT}")
 
-    #target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT} WIN32_LEAN_AND_MEAN)
-    target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT})
+    target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT} WIN32_LEAN_AND_MEAN)
+    #target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT})
 endif()
 
 
@@ -136,11 +136,17 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp" 
     "src/NetZSocket2.cpp"
     "src/ZAcceptor.cpp"
-     "src/ZoneSystem.cpp" 
-     "src/Vector.cpp" 
-     #"src/WorldGenerator.cpp" # temporarily broken
-     "src/MathUtils.cpp"
- "include/NetObject.h" "include/ICallable.h" "src/NetObject.cpp" "include/NetHashes.h" "include/NetID.h" "src/SteamManager.cpp" "include/SteamManager.h" "src/NetSteamSocket.cpp" "src/NetAcceptorSteam.cpp")
+    "src/ZoneSystem.cpp" 
+    "src/Vector.cpp" 
+    #"src/WorldGenerator.cpp" # temporarily broken
+    "src/MathUtils.cpp"
+    "src/NetObject.cpp" 
+
+    # steam
+    #"src/SteamManager.cpp" 
+    #"src/NetSteamSocket.cpp" 
+    #"src/NetAcceptorSteam.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

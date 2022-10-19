@@ -1,32 +1,6 @@
 #pragma once
 
-//#define _WINSOCKAPI_
-//#define WIN32_LEAN_AND_MEAN
-#include <WinSock2.h>
-#include <Windows.h>
-
-//#define _WINSOCK2API_
-//#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
-
-//#include <Windows.h>
-//#include <WinSock2.h>
-//#include <Windows.h>
 #include <asio.hpp>
-
-//#ifdef _WIN32
-//#  ifdef ASIO_STANDALONE
-////     Set the proper SDK version before including boost/Asio
-//#      include <SDKDDKVer.h>
-////     Note boost/ASIO includes Windows.h. 
-//#      include <asio.hpp>
-//#   else //  USE_ASIO
-//#      include <Windows.h>
-//#   endif //  ASIO_STANDALONE
-//#else // _WIN32
-//#  ifdef ASIO_STANDALONE
-//#     include <asio.hpp>
-//#  endif // ASIO_STANDALONE
-//#endif //_WIN32
 
 #include <chrono>
 #include <iostream>
@@ -35,24 +9,20 @@
 #include <easylogging++.h>
 #include <type_traits>
 #include <concepts>
-#include <bitset>
-#include "CompileSettings.h"
-#include "AsyncDeque.h"
 
+#include "CompileSettings.h"
+
+//#include <asio.hpp>
 
 //bytes
 using namespace std::chrono_literals;
 
 using byte_t = uint8_t;
-using uuid_t = int64_t;
-using hash_t = int32_t;
-using bytes_t = std::vector<byte_t>;
-//std::bitset<8> b;
-
-//using Dictionary = robin_hood::unordered_map;
+using UUID_t = int64_t;
+using HASH_t = int32_t;
+using BYTES_t = std::vector<byte_t>;
 
 static constexpr float PI = 3.141592653589f;
-
 
 namespace Utils {
 
@@ -71,7 +41,6 @@ namespace Utils {
 	template <class F, class Pass, class Tuple, size_t... Is>
 	constexpr auto InvokeTupleImplS(F f, Pass pass, Tuple& t, std::index_sequence<Is...>) {
 		return std::invoke(f, pass, std::move(std::get<Is>(t))...);
-		//return std::forward()
 	}
 
 	template <class F, class Pass, class Tuple>
@@ -81,7 +50,7 @@ namespace Utils {
 	}
 
 	bool Compress(const byte_t* buf, unsigned int bufSize, int level, byte_t* out, unsigned int& outSize);
-	void Compress(const bytes_t& buf, int level, bytes_t& out);
+	void Compress(const BYTES_t& buf, int level, BYTES_t& out);
 	std::vector<byte_t> Compress(const byte_t* buf, unsigned int bufSize, int level);
 
 
@@ -90,11 +59,11 @@ namespace Utils {
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
 
-	uuid_t GenerateUID();
+	UUID_t GenerateUID();
 
-	hash_t GetStableHashCode(const std::string &s);
+	HASH_t GetStableHashCode(const std::string &s);
 
-	constexpr hash_t GetStableHashCode(const char* str, unsigned num, unsigned num2, unsigned idx) {
+	constexpr HASH_t GetStableHashCode(const char* str, unsigned num, unsigned num2, unsigned idx) {
 		if (str[idx] != '\0') {
 			num = ((num << 5) + num) ^ (unsigned)str[idx];
 			if (str[idx + 1] != '\0') {
@@ -106,7 +75,7 @@ namespace Utils {
 		return num + num2 * 1566083941;
 	}
 
-	constexpr hash_t GetStableHashCode(const char* str) {
+	constexpr HASH_t GetStableHashCode(const char* str) {
 		int num = 5381;
 		int num2 = num;
 		int num3 = 0;
@@ -118,9 +87,7 @@ namespace Utils {
 	// Return -1 on bad encoding
 	int32_t GetUTF8Count(const byte_t* p);
 
-	uuid_t StringToUID(const std::string &s);
-
-	bool IsAddress(const std::string& s);
+	UUID_t StringToUID(const std::string &s);
 
 	//std::string join(std::vector<std::string_view>& strings);
 

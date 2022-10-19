@@ -15,6 +15,7 @@ public:
 	virtual ISocket::Ptr Accept() = 0;
 };
 
+#ifdef ENABLE_STEAM
 class AcceptorSteam : public IAcceptor {
 private:
 	std::atomic_bool m_accepting;
@@ -39,6 +40,7 @@ private:
 	STEAM_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
 
 };
+#endif
 
 class AcceptorZSocket2 : public IAcceptor {
 private:

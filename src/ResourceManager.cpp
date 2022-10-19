@@ -1,10 +1,9 @@
-#include "ResourceManager.h"
-
 #include <iostream>
 #include <sstream>
 #include <fstream>
-
 #include <robin_hood.h>
+
+#include "ResourceManager.h"
 
 namespace ResourceManager {
     // Instantiate static variables
@@ -42,7 +41,7 @@ namespace ResourceManager {
         return true;
     }
 
-    bool ReadFileBytes(const fs::path &path, bytes_t &vec) {
+    bool ReadFileBytes(const fs::path &path, BYTES_t &vec) {
         auto file = GetInFile(path);
         
         // Stop eating new lines in binary mode!!!
@@ -88,7 +87,7 @@ namespace ResourceManager {
         return true;
     }
 
-    bool WriteFileBytes(const fs::path& path, const bytes_t& vec) {
+    bool WriteFileBytes(const fs::path& path, const BYTES_t& vec) {
         auto file = GetOutFile(path);
 
         if (!file)

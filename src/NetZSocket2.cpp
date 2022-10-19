@@ -1,10 +1,9 @@
 #include <string>
 #include <iostream>
-#include <asio.hpp>
 
 #include "NetSocket.h"
 
-ZSocket2::ZSocket2(tcp::socket sock)
+ZSocket2::ZSocket2(asio::ip::tcp::socket sock)
 	: m_socket(std::move(sock)),
 	m_hostname(m_socket.remote_endpoint().address().to_string()) {}
 
@@ -42,7 +41,7 @@ void ZSocket2::Send(NetPackage::Ptr pkg) {
 	if (pkg->GetStream().Length() == 0 || !Connected())
 		return;
 
-	auto &&bytes = m_pool.empty() ? bytes_t() : m_pool.pop_front();
+	auto &&bytes = m_pool.empty() ? BYTES_t() : m_pool.pop_front();
 
 	pkg->m_stream.Bytes(bytes);
 	m_sendQueueSize += sizeof(m_tempWriteOffset) + bytes.size();

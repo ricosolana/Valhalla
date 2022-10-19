@@ -4,8 +4,7 @@
 #include "NetRpcManager.h"
 #include "NetAcceptor.h"
 
-enum class ConnectionStatus : int32_t
-{
+enum class ConnectionStatus : int32_t {
 	None,
 	Connecting,
 	Connected,
@@ -24,7 +23,6 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 	"ErrorAlreadyConnected", "ErrorBanned", "ErrorFull"};
 
 namespace NetManager {
-
 	void RemotePrint(NetRpc* rpc, const std::string &text);
 
 	void Listen(uint16_t port);
@@ -33,7 +31,7 @@ namespace NetManager {
 
 	NetPeer::Ptr GetPeer(NetRpc* rpc);
 	NetPeer::Ptr GetPeer(const std::string& name);
-	NetPeer::Ptr GetPeer(uuid_t uuid);
+	NetPeer::Ptr GetPeer(UUID_t uuid);
 
 	const std::vector<NetPeer::Ptr> &GetPeers();
 }

@@ -1,5 +1,7 @@
 #include "NetSocket.h"
 
+#ifdef ENABLE_STEAM
+
 SteamSocket::SteamSocket(HSteamNetConnection con) {
 	m_con = con;
 	SteamNetConnectionInfo_t info;
@@ -78,3 +80,5 @@ void SteamSocket::SendQueued() {
 		m_sendQueue.pop_front();
 	}
 }
+
+#endif

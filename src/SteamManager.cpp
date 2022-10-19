@@ -1,5 +1,7 @@
-#include <easylogging++.h>
 #include "SteamManager.h"
+
+#ifdef ENABLE_STEAM
+#include <easylogging++.h>
 #include "NetSocket.h"
 
 void InitSteam() {
@@ -55,4 +57,4 @@ void InitSteamGameServerCallbacks() {
 
 }
 
-
+#endif

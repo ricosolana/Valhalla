@@ -1,16 +1,18 @@
+#include <robin_hood.h>
+
 #include "NetRpcManager.h"
 #include "Method.h"
 #include "ValhallaServer.h"
 #include "ZoneSystem.h"
 
 namespace NetRpcManager {
-	robin_hood::unordered_map<hash_t, IMethod<uuid_t>*> m_methods;
+	robin_hood::unordered_map<HASH_t, IMethod<UUID_t>*> m_methods;
 
-	uuid_t _ServerID() {
+	UUID_t _ServerID() {
 		return Valhalla()->m_serverUuid;
 	}
 
-	void _Register(const std::string& name, IMethod<uuid_t>* method) {
+	void _Register(const std::string& name, IMethod<UUID_t>* method) {
 		m_methods.insert({ Utils::GetStableHashCode(name.c_str()), method });
 	}
 
@@ -68,8 +70,8 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(uuid_t target, const NetID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
-		static uuid_t m_rpcMsgID = 1;
+	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
+		static UUID_t m_rpcMsgID = 1;
 		static auto SERVER_ID(Valhalla()->m_serverUuid);
 
 		Data data;
