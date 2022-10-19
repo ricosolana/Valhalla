@@ -1,16 +1,18 @@
 #pragma once
 
+//#include <asio.hpp>
+
+#include "Utils.h"
+
 #include <string>
 #include <memory>
 #include <steam_api.h>
 #include <isteamgameserver.h>
 #include <steam_gameserver.h>
 #include <isteamnetworkingutils.h>
-
 #include "NetPackage.h"
-#include "Utils.h"
 
-#include <asio.hpp>
+
 
 using namespace asio::ip;
 

@@ -1,10 +1,5 @@
-#include <steam_api.h>
-#include <isteamgameserver.h>
-#include <steam_gameserver.h>
-
-#include "SteamManager.h"
 #include <easylogging++.h>
-#include <isteamnetworkingutils.h>
+#include "SteamManager.h"
 #include "NetSocket.h"
 
 void InitSteam() {

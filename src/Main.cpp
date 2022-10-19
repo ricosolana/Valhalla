@@ -1,17 +1,8 @@
-// main.cpp
-#include <asio.hpp>
+#include "Utils.h"
 
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <assert.h>
-#include <bitset>
-#include <signal.h>
 #include <optick.h>
 #include "ResourceManager.h"
-#include "NetHashes.h"
 
-#include "easylogging++.h"
 #include "ValhallaServer.h"
 #include "SteamManager.h"
 

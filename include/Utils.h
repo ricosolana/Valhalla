@@ -1,5 +1,16 @@
 #pragma once
 
+//#define _WINSOCKAPI_
+//#define WIN32_LEAN_AND_MEAN
+#include <WinSock2.h>
+#include <Windows.h>
+
+//#define _WINSOCK2API_
+//#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
+
+//#include <Windows.h>
+//#include <WinSock2.h>
+//#include <Windows.h>
 #include <asio.hpp>
 
 //#ifdef _WIN32
@@ -28,6 +39,8 @@
 #include "CompileSettings.h"
 #include "AsyncDeque.h"
 
+
+//bytes
 using namespace std::chrono_literals;
 
 using byte_t = uint8_t;
@@ -40,44 +53,6 @@ using bytes_t = std::vector<byte_t>;
 
 static constexpr float PI = 3.141592653589f;
 
-//float FISQRT(float)
-
-template<typename T>
-class BitMask {
-	//static_assert(std::is_integral_v<std::underlying_type_t<T>>, "Must be an integral enum");
-	static_assert(std::is_enum<T>::value, "Must be an enum");
-
-	// https://en.cppreference.com/w/cpp/utility/to_underlying
-	std::underlying_type_t<T> value;
-
-public:
-	//BitMask()
-	//BitMask(T value) : value(std::to_underlying(value)) {}
-
-	BitMask(T value) : value(static_cast<std::underlying_type_t<T>>(value)) {}
-
-	T operator()() {
-		return static_cast<T>(value);
-	}
-
-	bool operator()(T otherEnum) {
-		auto otherValue = static_cast<std::underlying_type_t<T>>(otherEnum);
-
-		return (value & otherValue) == otherValue;
-	}
-
-	//operator |=
-};
-
-//struct TwoTupleHasher
-//{
-//	template<typename A, typename B>
-//	std::size_t operator()(const std::tuple<A, B>& tup) const
-//	{
-//		return ((std::hash<A>{}(std::get<0>(tup))
-//			^ (std::hash<B>{}(std::get<1>(tup)) << 1) >> 1));
-//	}
-//};
 
 namespace Utils {
 
