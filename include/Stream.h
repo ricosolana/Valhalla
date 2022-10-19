@@ -5,9 +5,9 @@
 
 class Stream {
 #ifdef REALLOC_STREAM
-	byte_t* m_bytes = nullptr;
+	byte_t* m_buf = nullptr;
 #else
-	std::unique_ptr<byte_t> m_bytes;
+	std::unique_ptr<byte_t> m_buf;
 #endif
 	uint32_t m_alloc = 0; // allocated bytes
 	uint32_t m_length = 0; // written bytes
@@ -93,19 +93,20 @@ public:
 
 
 	// Gets all the data in the package
-	void Bytes(std::vector<byte_t>& out) {
-		out.insert(out.begin(), Bytes(), Bytes() + m_length);
+	bytes_t Bytes() {
+		//out.insert(out.begin(), Bytes(), Bytes() + m_length);
+		return bytes_t(Ptr(), Ptr() + m_length);
 	}
 
 	// https://stackoverflow.com/a/9370717
 	
 	// Returns the raw bytes pointer
 	// implicitly hinted inline or
-	byte_t* Bytes() const {
+	byte_t* Ptr() const {
 #ifdef REALLOC_STREAM
-		return m_bytes;
+		return m_buf;
 #else
-		return m_bytes.get();
+		return m_buf.get();
 #endif
 	}
 

@@ -1,5 +1,7 @@
 #pragma once
 
-void InitSteamGameServer();
+void InitSteam();
+
+void UnInitSteam();
 
 //void InitSteamGameServerCallbacks();

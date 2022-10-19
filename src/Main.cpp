@@ -13,6 +13,7 @@
 
 #include "easylogging++.h"
 #include "ValhallaServer.h"
+#include "SteamManager.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -71,10 +72,23 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     initLogger();
 
+
+    // test steam
+    InitSteam();
+
+    //while (true);
+    UnInitSteam();
+    return 0;
+    
+
+
     signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
 
+
+
+    
 
     /*
     // my tiny unit test

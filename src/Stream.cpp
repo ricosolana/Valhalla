@@ -19,7 +19,7 @@ Stream::Stream(const Stream& other)
 //#ifdef REALLOC_STREAM
 //
 //#else
-//    this->m_bytes = std::move(other.m_bytes); //this->m_bytes.swap(other.m_bytes);
+//    this->m_buf = std::move(other.m_buf); //this->m_buf.swap(other.m_buf);
 //    this->m_length
 //#endif
 //}
@@ -27,7 +27,7 @@ Stream::Stream(const Stream& other)
 
 #ifdef REALLOC_STREAM
 Stream::~Stream() {
-    free(m_bytes);
+    free(m_buf);
 }
 #endif
 
@@ -100,14 +100,14 @@ void Stream::SetMarker(uint32_t marker) {
 void Stream::Reserve(uint32_t count) {
     if (m_alloc < count) {
 #ifdef REALLOC_STREAM
-        m_bytes = (byte_t*) realloc(m_bytes, sizeof(byte_t) * count);
-        if (!m_bytes)
+        m_buf = (byte_t*) realloc(m_buf, sizeof(byte_t) * count);
+        if (!m_buf)
             throw std::runtime_error("Stream failed to realloc; rare exception");
 #else
-        auto oldPtr = std::move(m_bytes);
-        m_bytes = std::unique_ptr<byte_t>(new byte_t[count]);
+        auto oldPtr = std::move(m_buf);
+        m_buf = std::unique_ptr<byte_t>(new byte_t[count]);
         if (oldPtr) {
-            std::memcpy(m_bytes.get(), oldPtr.get(), static_cast<size_t>(count));
+            std::memcpy(m_buf.get(), oldPtr.get(), static_cast<size_t>(count));
         }
 #endif
         m_alloc = count;

@@ -3,6 +3,7 @@
 #include <memory>
 #include <thread>
 
+
 #include "NetSocket.h"
 
 class IAcceptor {
@@ -14,6 +15,28 @@ public:
 
 	virtual std::shared_ptr<ISocket> Accept() = 0;
 	virtual bool HasNewConnection() = 0;
+};
+
+class AcceptorSteam : public IAcceptor {
+private:
+	std::atomic_bool m_accepting;
+	uint16_t m_port;
+	HSteamListenSocket m_listenSocket;
+
+	AsyncDeque<std::shared_ptr<SteamSocket>> m_awaiting;
+
+public:
+	AcceptorSteam(uint16_t port);
+	~AcceptorSteam();
+
+	void Start() override;
+	void Close() override;
+
+	std::shared_ptr<ISocket> Accept() override;
+	bool HasNewConnection() override;
+
+private:
+	void DoAccept();
 };
 
 class AcceptorZSocket2 : public IAcceptor {

@@ -32,21 +32,11 @@ void ZSocket2::Send(NetPackage::Ptr pkg) {
 		|| m_connectivity == Connectivity::CLOSED)
 		return;
 
-	if (pkg->GetStream().Length() + 4 > 10485760) {
-		LOG(ERROR) << "Too big package";
-		Close();
-	} else if (m_connectivity != Connectivity::CLOSED) {
-		const bool was_empty = m_sendQueue.empty();
+	const bool was_empty = m_sendQueue.empty();
 
-		std::vector<byte_t> buf;
-		pkg->GetStream().Bytes(buf);
-		m_sendQueue.push_back(std::move(buf)); // this blocks
-		m_sendQueueSize += sizeof(m_tempWriteOffset) + buf.size();
-
-		if (was_empty) {
-			WritePkgSize();
-		}
-	}
+	auto bytes = pkg->m_stream.Bytes();
+	m_sendQueueSize += sizeof(m_tempWriteOffset) + bytes.size();
+	m_sendQueue.push_back(bytes); // this blocks
 }
 
 NetPackage::Ptr ZSocket2::Recv() {
@@ -119,7 +109,7 @@ void ZSocket2::ReadPkg() {
 
 		auto self(shared_from_this());
 		asio::async_read(m_socket,
-			asio::buffer(recv->GetStream().Bytes(), m_tempReadOffset), // whether vec needs to be reserved or resized
+			asio::buffer(recv->GetStream().Ptr(), m_tempReadOffset), // whether vec needs to be reserved or resized
 			[this, self, recv](const std::error_code& e, size_t) {
 			if (!e) {
 				recv->GetStream().SetLength(m_tempReadOffset);

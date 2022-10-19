@@ -5,15 +5,16 @@
 #include "SteamManager.h"
 #include <easylogging++.h>
 #include <isteamnetworkingutils.h>
+#include "NetSocket.h"
 
-void InitSteamGameServer() {
+void InitSteam() {
     if (SteamAPI_RestartAppIfNecessary(892970)) {
         LOG(INFO) << "Restarting app through Steam";
         exit(0);
     }
 
     if (!SteamGameServer_Init(0, 2456, 2457, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
-        LOG(FATAL) << "Failed to init steam game server";
+        LOG(ERROR) << "Failed to init steam game server";
         exit(0);
     }
 
@@ -46,9 +47,17 @@ void InitSteamGameServer() {
     //SteamGameServer_Shutdown();
 }
 
-void sInitSteamGameServerCallbacks() {
+void UnInitSteam() {
+    SteamGameServer_Shutdown();
+    //SteamGameServer()->
+    //GameServer.Shutdown();
+}
+
+void InitSteamGameServerCallbacks() {
     //SteamGameServerCallba
 
 
 
 }
+
+

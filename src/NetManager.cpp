@@ -399,6 +399,7 @@ namespace NetManager {
 		}
 
 		m_netTime += delta;
+		SteamGameServer_RunCallbacks();
 	}
 
 	void Close() {
