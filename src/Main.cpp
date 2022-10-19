@@ -14,6 +14,8 @@
 #include "easylogging++.h"
 #include "ValhallaServer.h"
 
+#include "SteamManager.h"
+
 INITIALIZE_EASYLOGGINGPP
 
 // https://stackoverflow.com/a/17350413
@@ -75,28 +77,8 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
+    InitSteam();
 
-    /*
-    // my tiny unit test
-    NetSync zdo;
-    zdo.Set("Bruh", std::string("well then"));
-    zdo.Set("Bruh2", "here we go again");
-
-    LOG(INFO) << "Bruh: " << zdo.GetString("Bruh");
-    LOG(INFO) << "Bruh3: " << zdo.GetString("Bruh3");
-    LOG(INFO) << "Bruh-int: " << zdo.GetInt("Bruh");*/
-
-
-
-
-    //ResourceManager::SetRoot("data");
-    //bytes_t buf;
-
-    //ResourceManager::ReadFileBytes("pic.jpg", buf);
-    //auto compressed = Utils::Compress(buf.data(), buf.size());
-    //ResourceManager::WriteFileBytes("pic", compressed);
-
-    //return 0;
 
     //try {
         Valhalla()->Launch();
@@ -105,6 +87,8 @@ int main(int argc, char **argv) {
     //    LOG(ERROR) << e.what();
     //    return 1;
     //}
+
+    UnInitSteam();
 
 	return 0;
 }
