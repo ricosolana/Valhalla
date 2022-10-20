@@ -7,6 +7,7 @@
 #include <concepts>
 #include <type_traits>
 #include <robin_hood.h>
+#include <bitset>
 
 #include "Stream.h"
 #include "Vector.h"
@@ -19,7 +20,11 @@ concept EnumType = std::is_enum_v<E>;
 #define PKG(...) std::make_shared<NetPackage>(##__VA_ARGS__)
 
 class NetPackage {
-    void Write7BitEncodedInt(int value);
+private:
+    //friend Stream;
+
+private:
+    void Write7BitEncodedInt(int32_t value);
     int Read7BitEncodedInt();
 
 public:
@@ -37,8 +42,8 @@ public:
 
 
     // Used for reading incoming data from packet
-    NetPackage(byte_t* data, uint32_t count);
-    NetPackage(BYTES_t& vec);
+    NetPackage(const byte_t* data, uint32_t count);
+    NetPackage(const BYTES_t& vec);
     NetPackage(uint32_t reserve);
 
 
@@ -78,24 +83,28 @@ public:
 
     template<typename T>
     T Read() requires std::same_as<T, std::string> {
-        auto byteCount = Read7BitEncodedInt();
+        auto count = Read7BitEncodedInt();
 
-        if (byteCount < 0)
+        if (count < 0)
             throw std::runtime_error("invalid string length");
 
-        if (byteCount == 0)
+        if (count == 0)
             return "";
+        
+        std::string s;
+        //m_stream.Read(s, byteCount);
 
-        // this is a bit slower because the resize then copy again
-        //std::string out;
-        //out.resize(byteCount);
-        //
-        //m_stream.Read(reinterpret_cast<byte_t*>(out.data()), byteCount);
 
-        std::string out;
-        m_stream.Read(out, byteCount);
 
-        return out;
+        if (m_stream.m_marker + count > m_stream.m_length) throw std::range_error("NetPackage::Read<std::string>() length exceeded");
+        s.insert(s.end(),
+            m_stream.Ptr() + m_stream.m_marker,
+            m_stream.Ptr() + m_stream.m_marker + count);
+        m_stream.m_marker += count;
+
+
+
+        return s;
     }
 
     template<typename T>
@@ -161,7 +170,7 @@ public:
 
 
 
-    void From(byte_t* buf, int32_t offset);
+    void From(const byte_t* buf, int32_t offset);
 
     void Read(std::vector<byte_t>& out);
     void Read(std::vector<std::string>& out);

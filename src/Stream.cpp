@@ -50,20 +50,21 @@ byte_t Stream::Read() {
 void Stream::Read(std::vector<byte_t>& vec, uint32_t count) {
     if (m_marker + count > m_length) throw std::range_error("Stream::Read(std::vector<byte_t>& vec, int count) length exceeded");
     
-    vec.insert(vec.end(), 
+    vec.clear();
+    vec.insert(vec.begin(), 
         Ptr() + m_marker, 
         Ptr() + m_marker + count);
     m_marker += count;
 }
 
-void Stream::Read(std::string& s, uint32_t count) {
-    if (m_marker + count > m_length) throw std::range_error("Stream::Read(std::string& s, int count) length exceeded");
-
-    s.insert(s.end(),
-        Ptr() + m_marker,
-        Ptr() + m_marker + count);
-    m_marker += count;
-}
+//void Stream::Read(std::string& s, uint32_t count) {
+//    if (m_marker + count > m_length) throw std::range_error("Stream::Read(std::string& s, int count) length exceeded");
+//
+//    s.insert(s.end(),
+//        Ptr() + m_marker,
+//        Ptr() + m_marker + count);
+//    m_marker += count;
+//}
 
 
 

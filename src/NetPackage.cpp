@@ -2,11 +2,11 @@
 #include "NetSync.h"
 
 
-NetPackage::NetPackage(byte_t* data, uint32_t count) {
+NetPackage::NetPackage(const byte_t* data, uint32_t count) {
     From(data, count);
 }
 
-NetPackage::NetPackage(BYTES_t& vec)
+NetPackage::NetPackage(const BYTES_t& vec)
     : NetPackage(vec.data(), static_cast<uint32_t>(vec.size())) {}
 
 NetPackage::NetPackage(uint32_t reserve)
@@ -79,7 +79,7 @@ void NetPackage::Write(const Quaternion& in) {
 
 
 
-void NetPackage::From(byte_t* data, int32_t count) {
+void NetPackage::From(const byte_t* data, int32_t count) {
     m_stream.Clear();
     m_stream.Write(data, count);
     m_stream.SetMarker(0);
@@ -95,6 +95,7 @@ void NetPackage::Read(std::vector<std::string>& out) {
     auto count = Read<int32_t>();
     out.reserve(count);
     
+    out.clear();
     while (count--) {
         out.push_back(Read<std::string>());
     }
@@ -102,8 +103,8 @@ void NetPackage::Read(std::vector<std::string>& out) {
 
 
 
-void NetPackage::Write7BitEncodedInt(int in) {
-    m_stream.ReserveExtra(4);
+void NetPackage::Write7BitEncodedInt(int32_t in) {
+    m_stream.ReserveExtra(4); // hmm
     unsigned int num;
     for (num = (unsigned int)in; num >= 128U; num >>= 7)
         Write((unsigned char)(num | 128U));

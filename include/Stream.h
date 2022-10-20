@@ -3,7 +3,11 @@
 #include <vector>
 #include "Utils.h"
 
+class NetPackage;
+
 class Stream {
+	friend NetPackage;
+
 #ifdef REALLOC_STREAM
 	byte_t* m_buf = nullptr;
 #else
@@ -32,43 +36,21 @@ public:
 #endif
 	
 	// Read count bytes into the specified buffer
-	// May throw
+	// Will throw if count exceeds end
 	void Read(byte_t* buffer, uint32_t count);
 	
 	// Read a single byte from the buffer
-	// May throw
+	// Will throw if at end
 	byte_t Read();
 
-	// Reads count bytes into the specified vector
-	// The vector is solely inserted into
-	// May throw
+	// Reads count bytes overriding the specified vector
+	// Will throw if count exceeds end
 	void Read(std::vector<byte_t>& vec, uint32_t count);
 
-	// Reads the remaining bytes into the specified vector
-	// The vector is solely inserted into
-	// Should never throw
-	//void Read(std::vector<byte_t>& vec);
-
-	void Read(std::string& s, uint32_t count);
-
-	//template<typename C, typename T = typename C::value_type>
-	//void Read(C& container)
-	//{
-	//	for (int v : container) { ... }
-	//}
-
-	//template<typename C,
-	//	typename T = std::decay_t<
-	//	decltype(*Read(std::declval<C>()))>>
-	//void Read(C& container, uint32_t count) {
-	//	if (m_marker + count > m_length) throw std::range_error("Stream::Read(CONTAINER, int count) length exceeded");
-	//
-	//	container.insert(container.end(),
-	//		Bytes() + m_marker,
-	//		Bytes() + m_marker + count);
-	//
-	//	m_marker += count;
-	//}
+	// Reads count bytes overriding the specified string
+	// '\0' is not included in count (raw bytes only)
+	// Will throw if count exceeds end
+	//void Read(std::string& s, uint32_t count);
 
 	
 
