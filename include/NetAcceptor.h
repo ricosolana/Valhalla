@@ -22,8 +22,9 @@ private:
 	HSteamListenSocket m_listenSocket;
 
 	robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connecting;
+	robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_awaiting;
 
-	std::deque<std::shared_ptr<SteamSocket>> m_awaiting;
+	//std::deque<std::shared_ptr<SteamSocket>> m_awaiting;
 
 public:
 	AcceptorSteam(uint16_t port);

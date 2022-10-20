@@ -47,7 +47,7 @@ void AcceptorSteam::Close() {
 		m_listenSocket = k_HSteamListenSocket_Invalid;
 	}
 
-	//this.m_peerID.Clear();
+	//this.m_steamNetId.Clear();
 }
 
 
@@ -68,9 +68,11 @@ const char* strState(ESteamNetworkingConnectionState state) {
 ISocket::Ptr AcceptorSteam::Accept() {
 	if (m_awaiting.empty())
 		return nullptr;
-	auto&& front = std::move(m_awaiting.front());
-	m_awaiting.pop_front();
-	return front;
+
+	auto pair = m_awaiting.begin();
+	auto socket = pair->second; // itr becomes invalid, so store ptr
+	m_awaiting.erase(pair);
+	return socket;
 }
 
 
@@ -83,41 +85,37 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 	{
 		auto pair = m_connecting.find(data->m_hConn);
 		if (pair != m_connecting.end()) {
-			auto zsteamSocket = pair->second;
+			auto socket = pair->second;
+
 			SteamNetConnectionInfo_t steamNetConnectionInfo_t;
-			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &steamNetConnectionInfo_t))
-			{
-				zsteamSocket->m_peerID = steamNetConnectionInfo_t.m_identityRemote;
+			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &steamNetConnectionInfo_t)) {
+				socket->m_steamNetId = steamNetConnectionInfo_t.m_identityRemote;
 			}
 
-			LOG(INFO) << "Got connection, SteamID: " << zsteamSocket->m_peerID.GetSteamID64();
+			LOG(INFO) << "Got connection, SteamID: " << socket->m_steamNetId.GetSteamID64();
+			m_awaiting.insert({ data->m_hConn, socket });
 			m_connecting.erase(pair);
-			m_awaiting.push_back(zsteamSocket);
 		}
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_None)
 	{
-		m_connecting.insert({ data->m_hConn, std::make_shared<SteamSocket>(data->m_hConn) });
+		auto eresult = SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn);
+		LOG(INFO) << "Accepting connection " + eresult;
+		if (eresult == k_EResultOK) {
+			m_connecting.insert({ data->m_hConn, std::make_shared<SteamSocket>(data->m_hConn) });
+		}
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
 	{
 		LOG(INFO) << "Got problem " << data->m_info.m_eEndReason << ":" << data->m_info.m_szEndDebug;
-		auto pair = m_connecting.find(data->m_hConn);
-		if (pair != m_connecting.end()) {
-			LOG(INFO) << "Closing socket";
-			pair->second->Close();
-			m_connecting.erase(pair);
-		}
+		m_connecting.erase(data->m_hConn);
+		m_awaiting.erase(data->m_hConn);
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
 	{
-		auto pair = m_connecting.find(data->m_hConn);
-		if (pair != m_connecting.end()) {
-			LOG(INFO) << "Closing socket";
-			pair->second->Close();
-			m_connecting.erase(pair);
-		}
+		m_connecting.erase(data->m_hConn);
+		m_awaiting.erase(data->m_hConn);
 	}
 }
 
