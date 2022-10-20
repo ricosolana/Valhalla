@@ -7,14 +7,10 @@
 #include "NetPackage.h"
 #include "AsyncDeque.h"
 
-#include <asio.hpp> // Where should this go?
-
-#ifdef ENABLE_STEAM
 #include <steam_api.h>
 #include <isteamgameserver.h>
 #include <steam_gameserver.h>
 #include <isteamnetworkingutils.h>
-#endif
 
 class ISocket : public std::enable_shared_from_this<ISocket> {
 public:
@@ -36,7 +32,6 @@ public:
 	virtual int GetSendQueueSize() const = 0;
 };
 
-#ifdef ENABLE_STEAM
 class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
@@ -74,65 +69,4 @@ public:
 
 	void SendQueued();
 
-};
-#endif // ENABLE_STEAM
-
-/**
-	* @brief Custom socket implementation which makes use of Asio tcp socket
-	*
-*/
-// Shared ptr not really necessary with a simple 
-// client where socket state is tracked step by step
-class ZSocket2 : public ISocket {
-	asio::ip::tcp::socket m_socket;
-
-	// Reusable vec pool
-	AsyncDeque<BYTES_t> m_pool;
-
-	AsyncDeque<BYTES_t> m_sendQueue;
-	AsyncDeque<NetPackage::Ptr> m_recvQueue;
-
-	int m_tempReadOffset = 0;
-	int m_tempWriteOffset = 0;
-	std::atomic_int m_sendQueueSize = 0;
-
-	std::string m_hostname;
-	uint16_t m_port;
-
-	std::atomic_bool m_connected = true;
-
-	//std::atomic<Connectivity> m_connectivity;
-
-public:
-	ZSocket2(asio::ip::tcp::socket sock);
-	~ZSocket2();
-
-	// Virtual
-	void Start() override;
-	void Close() override;
-
-	void Update() override;
-	void Send(NetPackage::Ptr packet) override;
-	NetPackage::Ptr Recv() override;
-
-	const std::string& GetHostName() const override {
-		return m_hostname;
-	}
-	bool Connected() const override {
-		return m_connected;
-	}
-	int GetSendQueueSize() const override {
-		return m_sendQueueSize;
-	}
-
-	// Declared
-	auto&& GetSocket() {
-		return m_socket;
-	}
-
-private:
-	void ReadPkgSize();
-	void ReadPkg();
-	void WritePkgSize();
-	void WritePkg(const std::vector<byte_t>& buf);
 };

@@ -1,15 +1,37 @@
 #include "NetAcceptor.h"
+#include <isteamutils.h>
 
 AcceptorSteam::AcceptorSteam(uint16_t port) 
 	: m_port(port) {
+	float timeout = 30000.0f;
+	int32 offline = 1;
+	int32 sendrate = 153600;
+
+	//SteamGameServer()->
+
+	//SteamGameServerUtils()->Cre
+
+	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
+		k_ESteamNetworkingConfig_Global, 0,
+		k_ESteamNetworkingConfig_Float, &timeout);
+	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_IP_AllowWithoutAuth,
+		k_ESteamNetworkingConfig_Global, 0,
+		k_ESteamNetworkingConfig_Int32, &offline);
+	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMin,
+		k_ESteamNetworkingConfig_Global, 0,
+		k_ESteamNetworkingConfig_Int32, &sendrate);
+	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMax,
+		k_ESteamNetworkingConfig_Global, 0,
+		k_ESteamNetworkingConfig_Int32, &sendrate);
 }
 
 AcceptorSteam::~AcceptorSteam() {
-
+	Close();
 }
 
 void AcceptorSteam::Start() {
 	SteamNetworkingIPAddr steamNetworkingIPAddr; // nullify or whatever (default)
+	steamNetworkingIPAddr.Clear(); // this is important, otherwise server wouldnt open listen socket
 	steamNetworkingIPAddr.m_port = m_port; // it is later reassigned by fejd manager
 	this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
 }
@@ -97,4 +119,16 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 			m_connecting.erase(pair);
 		}
 	}
+}
+
+void AcceptorSteam::OnSteamServersConnected(SteamServersConnected_t* data) {
+	LOG(INFO) << "Server connected";
+}
+
+void AcceptorSteam::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
+	LOG(INFO) << "Server disconnected";
+}
+
+void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
+	LOG(INFO) << "Server connect failure";
 }

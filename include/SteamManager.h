@@ -2,10 +2,7 @@
 
 #include "Utils.h"
 
-#ifdef ENABLE_STEAM
-void InitSteam();
-
+void InitSteam(uint16_t port);
 void UnInitSteam();
-#endif
 
 //void InitSteamGameServerCallbacks();

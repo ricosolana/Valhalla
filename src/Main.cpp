@@ -1,6 +1,4 @@
 // main.cpp
-#include <asio.hpp>
-
 #include <signal.h>
 #include <optick.h>
 #include <easylogging++.h>
@@ -71,6 +69,7 @@ int main(int argc, char **argv) {
     //ResourceManager::ReadFileBytes("pic.jpg", buf);
     //auto compressed = Utils::Compress(buf.data(), buf.size());
     //ResourceManager::WriteFileBytes("pic", compressed);
+
 
     //return 0;
 

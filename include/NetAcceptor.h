@@ -15,7 +15,6 @@ public:
 	virtual ISocket::Ptr Accept() = 0;
 };
 
-#ifdef ENABLE_STEAM
 class AcceptorSteam : public IAcceptor {
 private:
 	std::atomic_bool m_accepting;
@@ -37,29 +36,11 @@ public:
 
 private:
 	// https://partner.steamgames.com/doc/sdk/api#callbacks
-	STEAM_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
+	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
 
-};
-#endif
+	// dummy prints
+	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersConnected, SteamServersConnected_t);
+	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
+	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
 
-class AcceptorZSocket2 : public IAcceptor {
-private:
-	asio::io_context& m_ctx;
-	std::thread m_ctxThread;
-	asio::ip::tcp::acceptor m_acceptor;
-
-	std::atomic_bool m_accepting;
-
-	AsyncDeque<std::shared_ptr<ZSocket2>> m_awaiting;
-
-public:
-	AcceptorZSocket2(asio::io_context &ctx, asio::ip::port_type port);
-	~AcceptorZSocket2();
-
-	void Start() override;
-	void Close() override;
-
-	std::shared_ptr<ISocket> Accept() override;
-private:
-	void DoAccept();
 };

@@ -8,14 +8,12 @@
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
 
-using namespace asio::ip;
 using namespace std::chrono;
 
 namespace NetManager {
 	double m_netTime = 2040;
 	//static auto m_startTime = steady_clock::now();
 
-	asio::io_context m_ctx;
 	std::unique_ptr<IAcceptor> m_acceptor;
 
 	std::vector<std::unique_ptr<NetRpc>> m_joining;
@@ -214,7 +212,11 @@ namespace NetManager {
 		auto pos = pkg->Read<Vector3>();
 		auto name = pkg->Read<std::string>();
 		auto password = pkg->Read<std::string>();
-		pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
+		auto ticket = pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
+
+		if (!SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_peerID.GetSteamID())) {
+			return rpc->SendError(ConnectionStatus::ErrorBanned);
+		}
 
 		if (password != Valhalla()->m_serverPassword) {
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
@@ -300,7 +302,7 @@ namespace NetManager {
 
 
 	void Listen(uint16_t port) {
-		m_acceptor = std::make_unique<AcceptorZSocket2>(m_ctx, port);
+		m_acceptor = std::make_unique<AcceptorSteam>(port);
 		m_acceptor->Start();
 
 		m_world = std::make_unique<World>();
@@ -400,10 +402,10 @@ namespace NetManager {
 		}
 
 		m_netTime += delta;
-
-#ifdef ENABLE_STEAM
+		//SteamAPI_RunCallbacks();
 		SteamGameServer_RunCallbacks();
-#endif
+
+		
 	}
 
 	void Close() {

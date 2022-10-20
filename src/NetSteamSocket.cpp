@@ -1,13 +1,11 @@
 #include "NetSocket.h"
 
-#ifdef ENABLE_STEAM
-
 SteamSocket::SteamSocket(HSteamNetConnection con) {
 	m_con = con;
 	SteamNetConnectionInfo_t info;
 	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_con, &info);
 	m_peerID = info.m_identityRemote;
-	LOG(INFO) << "Peer connected " << m_peerID.GetGenericString();
+	LOG(INFO) << "Peer connected " << m_peerID.GetSteamID64();
 	//ZSteamSocket.m_sockets.Add(this);
 }
 
@@ -80,5 +78,3 @@ void SteamSocket::SendQueued() {
 		m_sendQueue.pop_front();
 	}
 }
-
-#endif

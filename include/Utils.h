@@ -1,7 +1,5 @@
 #pragma once
 
-#include <asio.hpp>
-
 #include <chrono>
 #include <iostream>
 #include <zlib.h>
@@ -9,10 +7,9 @@
 #include <easylogging++.h>
 #include <type_traits>
 #include <concepts>
+#include <assert.h>
 
 #include "CompileSettings.h"
-
-//#include <asio.hpp>
 
 //bytes
 using namespace std::chrono_literals;

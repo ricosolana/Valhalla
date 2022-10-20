@@ -2,6 +2,7 @@
 #include "ModManager.h"
 #include "ResourceManager.h"
 #include <optick.h>
+#include "SteamManager.h"
 
 using namespace std::chrono;
 
@@ -22,11 +23,10 @@ void ValhallaServer::Launch() {
 	m_serverName = "lorem ipsum";
 	m_serverUuid = Utils::GenerateUID();
 
+	InitSteam(PORT);
 	ResourceManager::SetRoot("./data/");
 	ModManager::Init();
-	//m_znet = std::make_unique<ZNet>(2456);
-	//m_znet->Listen();
-	NetManager::Listen(2456);
+	NetManager::Listen(PORT);
 
 
 
@@ -81,6 +81,7 @@ void ValhallaServer::Terminate() {
 	m_running = false;
 	ModManager::Uninit();
 	NetManager::Close();
+	UnInitSteam();
 }
 
 void ValhallaServer::Update(float delta) {
