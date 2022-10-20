@@ -97,7 +97,7 @@ public:
 	void Update();
 
 	// Get the ping
-	std::chrono::milliseconds GetPing();
+	//std::chrono::milliseconds GetPing();
 
 	void SendError(ConnectionStatus status);
 };

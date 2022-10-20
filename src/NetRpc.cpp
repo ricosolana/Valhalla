@@ -29,14 +29,6 @@ void NetRpc::Register(HASH_t hash, IMethod<NetRpc*>* method) {
 }
 
 void NetRpc::Update() {
-	if (m_ignore) {
-		if (m_socket->GetSendQueueSize() == 0) {
-			// then kill the socket?
-			m_socket->Close();
-		}
-		return;
-	}
-
 	auto now(steady_clock::now());
 
 	// Send packet data
@@ -91,18 +83,19 @@ void NetRpc::Update() {
 
 }
 
-std::chrono::milliseconds NetRpc::GetPing() {
-	//return m_ping.count();
-	auto now(steady_clock::now());
-	return duration_cast<milliseconds>(now - m_lastPing);
-}
+//std::chrono::milliseconds NetRpc::GetPing() {
+//	//return m_ping.count();
+//	auto now(steady_clock::now());
+//	return duration_cast<milliseconds>(now - m_lastPing);
+//}
 
 void NetRpc::SendError(ConnectionStatus status) {
 	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
 	Invoke("Error", status);
 	// then disconnect later
-	m_ignore = true;
-	Valhalla()->RunTaskLater([this](Task*) { m_socket->Close(); }, GetPing() * 2);
+	//m_ignore = true;
+	//Valhalla()->RunTaskLater([this](Task*) { m_socket->Close(); }, GetPing() * 2);
+	m_socket->Close();
 }
 
 void NetRpc::SendPackage(NetPackage::Ptr pkg) {
