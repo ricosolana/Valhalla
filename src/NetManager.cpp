@@ -200,6 +200,8 @@ namespace NetManager {
 	}
 
 	void RPC_PeerInfo(NetRpc* rpc, NetPackage::Ptr pkg) {
+		assert(rpc && rpc->m_socket);
+
 		auto&& hostName = rpc->m_socket->GetHostName();
 
 		auto uuid = pkg->Read<UUID_t>();
@@ -214,10 +216,11 @@ namespace NetManager {
 		auto password = pkg->Read<std::string>();
 		auto ticket = pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
 
-		if (!SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_peerID.GetSteamID())) {
+		if (SteamGameServer()->BeginAuthSession(
+			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamNetId.GetSteamID()) != k_EAuthSessionResponseOK) {
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 		}
-
+		
 		if (password != Valhalla()->m_serverPassword) {
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
 		}
@@ -246,7 +249,7 @@ namespace NetManager {
 				break;
 			}
 		}
-		assert(swappedRpc && "Swapped rpc wsa never assigned!");
+		assert(swappedRpc && "Swapped rpc was never assigned!");
 
 		auto peer(std::make_shared<NetPeer>(std::move(swappedRpc), uuid, name));
 		m_peers.push_back(peer);
@@ -339,6 +342,7 @@ namespace NetManager {
 		OPTICK_EVENT();
 		// Accept connections
 		while (auto socket = m_acceptor->Accept()) {
+			assert(socket && "Socket shouldnt be null!");
 			auto&& rpc = std::make_unique<NetRpc>(socket);
 
 			rpc->Register("PeerInfo", &RPC_PeerInfo);
@@ -356,6 +360,7 @@ namespace NetManager {
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
 				if (!(*itr) || !(*itr)->m_socket->Connected()) {
+					LOG(INFO) << "Cleaning up null joining peer";
 					itr = m_joining.erase(itr);
 				}
 				else {
@@ -369,6 +374,7 @@ namespace NetManager {
 			auto&& itr = m_peers.begin();
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
+					LOG(INFO) << "Cleaning up disconnected peer";
 					itr = m_peers.erase(itr);
 				}
 				else {
@@ -383,7 +389,7 @@ namespace NetManager {
 				peer->m_rpc->Update();
 			}
 			catch (const std::range_error& e) {
-				LOG(ERROR) << "Peer might be out of sync: " << e.what();
+				LOG(ERROR) << "Peer provided malformed data: " << e.what();
 				peer->m_rpc->m_socket->Close();
 			}
 		}
@@ -403,9 +409,7 @@ namespace NetManager {
 
 		m_netTime += delta;
 		//SteamAPI_RunCallbacks();
-		SteamGameServer_RunCallbacks();
-
-		
+		SteamGameServer_RunCallbacks();		
 	}
 
 	void Close() {

@@ -83,8 +83,9 @@ public:
 		if (!m_socket->Connected())
 			return;
 
-		auto pkg(PKG());
 		auto stable = Utils::GetStableHashCode(method);
+		
+		auto pkg(PKG());
 		pkg->Write(stable);
 #ifdef RPC_DEBUG // debug mode
 		pkg->Write(method);

@@ -38,8 +38,8 @@ private:
 	std::deque<NetPackage::Ptr> m_recvQueue;
 
 public:
-	HSteamNetConnection m_con;
-	SteamNetworkingIdentity m_peerID;
+	HSteamNetConnection m_steamNetCon;
+	SteamNetworkingIdentity m_steamNetId;
 
 public:
 	SteamSocket(HSteamNetConnection con);
@@ -57,7 +57,7 @@ public:
 		return "";
 	}
 	bool Connected() const override {
-		return m_con != k_HSteamNetConnection_Invalid;
+		return m_steamNetCon != k_HSteamNetConnection_Invalid;
 	}
 	int GetSendQueueSize() const override {
 		return 0;

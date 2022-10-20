@@ -38,7 +38,7 @@ void NetRpc::Update() {
 	while (auto pkg = m_socket->Recv()) {
 		assert(pkg && "Got null package and executing!");
 
-		auto hash = pkg->Read<int32_t>();
+		auto hash = pkg->Read<HASH_t>();
 		if (hash == 0) {
 			if (pkg->Read<bool>()) {
 				// Reply to the server with a pong
