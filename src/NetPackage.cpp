@@ -82,6 +82,7 @@ void NetPackage::Write(const Quaternion& in) {
 void NetPackage::From(byte_t* data, int32_t count) {
     m_stream.Clear();
     m_stream.Write(data, count);
+    m_stream.SetMarker(0);
 }
 
 

@@ -76,7 +76,7 @@ void Stream::Write(const byte_t* buffer, uint32_t count) {
 
     // Make it so that the length is always at least marker
     // Also prevents length incrementing when marker is moved back
-    //m_length = std::max(m_marker, m_length);
+    m_length = max(m_marker, m_length);
     //m_length = 0;
 }
 
