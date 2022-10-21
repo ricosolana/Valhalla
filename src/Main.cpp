@@ -3,6 +3,7 @@
 #include <optick.h>
 #include <easylogging++.h>
 
+#include "ResourceManager.h"
 #include "ValhallaServer.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -56,6 +57,8 @@ static void on_interrupt(int num) {
 
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
+    ResourceManager::SetRoot("./data/");
+
     OPTICK_THREAD("main");
     initLogger();
 

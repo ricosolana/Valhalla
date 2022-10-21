@@ -1,5 +1,6 @@
 #include <optick.h>
 #include <openssl/md5.h>
+#include <openssl/rand.h>
 
 #include "ModManager.h"
 #include "NetManager.h"
@@ -19,6 +20,42 @@ namespace NetManager {
 	std::vector<std::unique_ptr<NetRpc>> m_joining;
 	std::vector<NetPeer::Ptr> m_peers;
 	std::unique_ptr<World> m_world;
+
+	bool m_hasPassword = false;
+	std::string m_salt;
+	std::string m_saltedPassword;
+
+	//private static string ServerPasswordSalt()
+	//{
+	//	if (ZNet.m_serverPasswordSalt.Length == 0)
+	//	{
+	//		byte[] array = new byte[16];
+	//		RandomNumberGenerator.Create().GetBytes(array);
+	//		ZNet.m_serverPasswordSalt = Encoding.ASCII.GetString(array);
+	//	}
+	//	return ZNet.m_serverPasswordSalt;
+	//}
+
+	// used during server start
+	void InitPassword(const std::string &password) {
+		m_hasPassword = !password.empty();
+
+		if (m_hasPassword) {
+			// Create random 16 byte salt
+			m_salt.resize(16); assert(m_salt.size() == 16);
+			auto v = RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
+
+			// Hash a salted password
+			m_saltedPassword.resize(16); assert(m_saltedPassword.size() == 16);
+
+			auto merge = password + m_salt;
+			MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+				merge.size(), reinterpret_cast<uint8_t*>(m_saltedPassword.data()));
+		}
+	}
+
+
+
 
 	void RemotePrint(NetRpc* rpc, const std::string& s) {
 		rpc->Invoke(Rpc_Hash::RemotePrint, s);
@@ -72,9 +109,9 @@ namespace NetManager {
 	void RPC_ServerHandshake(NetRpc* rpc) {
 		//LOG(INFO) << "Client initiated handshake " << peer->m_socket->GetHostName();
 		//this.ClearPlayerData(peer);
-		bool flag = !Valhalla()->m_serverPassword.empty();
-		std::string salt = "Im opposing salt"; // must be 16 bytes
-		rpc->Invoke("ClientHandshake", flag, salt);
+		//bool flag = !Valhalla()->m_serverPassword.empty();
+		//std::string salt = "Im opposing salt"; // must be 16 bytes
+		rpc->Invoke("ClientHandshake", m_hasPassword, m_salt);
 	}
 
 	void RPC_Disconnect(NetRpc* rpc) {
@@ -181,7 +218,7 @@ namespace NetManager {
 		//double netTime =
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
 		auto pkg(PKG());
-		pkg->Write(Valhalla()->m_serverUuid);
+		pkg->Write(Valhalla()->Uuid());
 		pkg->Write(SERVER_VERSION);
 		pkg->Write(Vector3()); // dummy
 		pkg->Write("Stranger"); // valheim uses this, which is dumb
@@ -221,7 +258,8 @@ namespace NetManager {
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 		}
 		
-		if (password != Valhalla()->m_serverPassword) {
+		//if (password != Valhalla()->m_serverPassword) {
+		if (password != m_saltedPassword) {
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
 		}
 
@@ -304,9 +342,11 @@ namespace NetManager {
 
 
 
-	void Listen(uint16_t port) {
+	void Listen(uint16_t port, const std::string &password) {
 		m_acceptor = std::make_unique<AcceptorSteam>(port);
 		m_acceptor->Start();
+
+		InitPassword(password);		
 
 		m_world = std::make_unique<World>();
 

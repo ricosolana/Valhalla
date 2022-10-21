@@ -4,12 +4,14 @@
 #include "Method.h"
 #include "ValhallaServer.h"
 #include "ZoneSystem.h"
+#include "NetSyncManager.h"
+#include "NetObject.h"
 
 namespace NetRpcManager {
 	robin_hood::unordered_map<HASH_t, IMethod<UUID_t>*> m_methods;
 
 	UUID_t _ServerID() {
-		return Valhalla()->m_serverUuid;
+		return Valhalla()->Uuid();
 	}
 
 	void _Register(HASH_t hash, IMethod<UUID_t>* method) {
@@ -22,7 +24,9 @@ namespace NetRpcManager {
 
 		if (data.m_targetPeerID == EVERYBODY) {
 			for (auto&& peer : NetManager::GetPeers()) {
-				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+				// send to everyone (except sender)
+				if (data.m_senderPeerID != peer->m_uuid)
+					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
 			}
 		}
 		else {
@@ -35,8 +39,20 @@ namespace NetRpcManager {
 
 	// Token: 0x06000AA3 RID: 2723 RVA: 0x00050474 File Offset: 0x0004E674
 	void _HandleRoutedRPC(Data data) {
-		// If method call is for rerouting
+		// If invocation was for RoutedRPC:
 		if (data.m_targetNetSync) {
+
+			/// Intended code implementation:
+			//auto sync = NetSyncManager::Get(data.m_targetNetSync);
+			//if (sync) {
+			//	auto obj = NetScene::Get(data.m_targetNetSync);
+			//	if (obj) {
+			//		obj->HandleRoutedRPC(data);
+			//	}
+			//}
+			
+
+
 			//throw std::runtime_error("Not implemented");
 			//NetSync NetSync = NetSyncMan.instance.GetNetSync(data.m_targetNetSync);
 			//if (NetSync != null) {
@@ -61,18 +77,18 @@ namespace NetRpcManager {
 		Data data(pkg);
 
 		// Server is the intended receiver
-		if (data.m_targetPeerID == Valhalla()->m_serverUuid
+		if (data.m_targetPeerID == _ServerID()
 			|| data.m_targetPeerID == EVERYBODY)
 			_HandleRoutedRPC(data);
 
 		// Server acts as a middleman
-		if (data.m_targetPeerID != Valhalla()->m_serverUuid)
+		if (data.m_targetPeerID != _ServerID())
 			_RouteRPC(data);
 	}
 
 	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage::Ptr pkg) {
 		static UUID_t m_rpcMsgID = 1;
-		static auto SERVER_ID(Valhalla()->m_serverUuid);
+		static auto SERVER_ID(_ServerID());
 
 		Data data;
 		data.m_msgID = SERVER_ID + m_rpcMsgID++;

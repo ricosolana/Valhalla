@@ -249,11 +249,11 @@ void NetSync::Set(const std::pair<HASH_t, HASH_t> &key, const NetID& value) {
 
 
 bool NetSync::Local() {
-	return m_owner == Valhalla()->m_serverUuid;
+	return m_owner == Valhalla()->Uuid();
 }
 
 void NetSync::SetLocal() {
-	SetOwner(Valhalla()->m_serverUuid);
+	SetOwner(Valhalla()->Uuid());
 }
 
 

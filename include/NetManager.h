@@ -25,7 +25,7 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 namespace NetManager {
 	void RemotePrint(NetRpc* rpc, const std::string &text);
 
-	void Listen(uint16_t port);
+	void Listen(uint16_t port, const std::string& password);
 	void Update(double delta);
 	void Close();
 

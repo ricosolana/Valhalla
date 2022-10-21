@@ -22,10 +22,18 @@ find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
-find_package(RapidJSON CONFIG REQUIRED)
+find_package(c4core CONFIG REQUIRED)
+find_package(ryml CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
+
+
+
+#set_target_properties(ryml::ryml PROPERTIES RYML_STANDALONE ON)
+#set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
+#    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+#)
 
 
 
@@ -55,10 +63,6 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
-    #"src/SteamManager.cpp"
-
-    
-    
     "src/ValhallaServer.cpp" 
     "src/HashUtils.cpp"
     "src/Main.cpp"
@@ -114,7 +118,8 @@ target_link_libraries(${PROJECT_NAME}
     ZLIB::ZLIB
     PUBLIC lua
     sol2
-    rapidjson
+    PUBLIC c4core::c4core
+    PRIVATE ryml::ryml
     easyloggingpp
     OptickCore
 )

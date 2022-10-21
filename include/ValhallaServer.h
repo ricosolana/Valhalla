@@ -13,12 +13,21 @@ class ValhallaServer {
 
 	std::recursive_mutex m_taskMutex;
 
-public:
 	std::string m_serverName;
-	std::string m_serverPassword;
-	constexpr static uint16_t PORT = 2456;
-	UUID_t m_serverUuid;
+	uint16_t m_hostPort = 2456;
 	int m_maxPeers;
+	UUID_t m_serverUuid;
+
+public:
+	const std::string& Name() const {
+		return m_serverName;
+	}
+
+	UUID_t Uuid() const {
+		return m_serverUuid;
+	}
+
+	//std::string m_serverPassword;
 	robin_hood::unordered_set<std::string> m_banned;
 
 	void Launch();

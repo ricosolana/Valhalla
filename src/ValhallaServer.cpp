@@ -1,7 +1,11 @@
+#include <optick.h>
+#include <ryml/ryml.hpp>
+#include <c4/format.hpp>
+#include <ryml/ryml_std.hpp>
+
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
-#include <optick.h>
 #include "SteamManager.h"
 
 using namespace std::chrono;
@@ -18,15 +22,26 @@ ValhallaServer* Valhalla() {
 void ValhallaServer::Launch() {
 	//assert(!VALHALLA_SERVER_INSTANCE && "Tried launching another server instance!");
 	assert(!m_running && "Tried calling Launch() twice!");
-	assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
+	//assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
+
+	std::string buf;
+	if (!ResourceManager::ReadFileBytes("server.yml", buf))
+		throw std::runtime_error("server.yml not found");
+
+	ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(buf));
+
+	auto password = tree["password"].valid();
+	auto seed = tree["password"].is_seed();
+	//tree["password"].get()->;
+
+	// seed is false when the item exists (because it is not a starter root)
 
 	m_serverName = "lorem ipsum";
 	m_serverUuid = Utils::GenerateUID();
 
-	InitSteam(PORT);
-	ResourceManager::SetRoot("./data/");
+	InitSteam(m_hostPort);
 	ModManager::Init();
-	NetManager::Listen(PORT);
+	//NetManager::Listen(2456, password);
 
 
 
