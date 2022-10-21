@@ -22,9 +22,11 @@ find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
+
 
 
 #IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
@@ -112,6 +114,7 @@ target_link_libraries(${PROJECT_NAME}
     ZLIB::ZLIB
     PUBLIC lua
     sol2
+    rapidjson
     easyloggingpp
     OptickCore
 )
