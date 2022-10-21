@@ -90,7 +90,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(UUID_t target, const char* method, Types... params) {
-		NetRpcManager::InvokeRoute(target, m_sync->m_id, method, std::move(params)...);
+		NetRpcManager::Invoke(target, m_sync->m_id, method, std::move(params)...);
 	}
 
 	/**
@@ -100,7 +100,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
-		NetRpcManager::InvokeRoute(m_sync->m_owner, m_sync->m_id, method, std::move(params)...);
+		NetRpcManager::Invoke(m_sync->m_owner, m_sync->m_id, method, std::move(params)...);
 	}
 
 	//static void StartGhostInit();

@@ -12,15 +12,6 @@ NetRpc::~NetRpc() {
 	LOG(DEBUG) << "~NetRpc()";
 }
 
-void NetRpc::Register(const char* name, IMethod<NetRpc*>* method) {
-	auto stableHash = Utils::GetStableHashCode(name);
-
-	assert(!m_methods.contains(stableHash)
-		&& "runtime rpc hash collision");
-
-	m_methods.insert({ stableHash, std::unique_ptr<IMethod<NetRpc*>>(method) });
-}
-
 void NetRpc::Register(HASH_t hash, IMethod<NetRpc*>* method) {
 	assert(!m_methods.contains(hash)
 		&& "runtime rpc hash collision");

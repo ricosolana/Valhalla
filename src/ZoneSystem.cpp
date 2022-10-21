@@ -2,6 +2,7 @@
 #include "NetPackage.h"
 #include "NetRpcManager.h"
 #include "HeightMap.h"
+//#include ""
 
 namespace ZoneSystem {
 	
@@ -100,15 +101,15 @@ namespace ZoneSystem {
 
 	static robin_hood::unordered_set<std::string> m_globalKeys;
 
-	// used for runestones/vegvisirs
+	// used for runestones/vegvisirs/boss temples/crypts/... any feature
 	static std::vector<std::pair<Vector2i, LocationInstance>> m_locationInstances;
 
-	static const char* TEMPLE_START = "TempleStart";
+	//static const char* TEMPLE_START = "StartTemple";
 
 	static constexpr float ZONE_SIZE = 64;
 
 	void SendGlobalKeys(UUID_t target) {
-		NetRpcManager::InvokeRoute(target, "GlobalKeys", m_globalKeys);
+		NetRpcManager::Invoke(target, RoutedRpc_Hash::GlobalKeys, m_globalKeys);
 	}
 
 	void GetLocationIcons(std::vector<std::pair<Vector3, std::string>> &icons) {
@@ -152,7 +153,7 @@ namespace ZoneSystem {
 		//	pkg->Write(keyValuePair.Value);
 		//}
 		
-		NetRpcManager::InvokeRoute(target, "LocationIcons", pkg);
+		NetRpcManager::Invoke(target, RoutedRpc_Hash::LocationIcons, pkg);
 	}
 
 	void OnNewPeer(NetPeer::Ptr peer) {

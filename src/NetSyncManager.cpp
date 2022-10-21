@@ -1,5 +1,6 @@
 #include "NetSyncManager.h"
 #include "ValhallaServer.h"
+#include "NetHashes.h"
 
 namespace NetSyncManager {
 
@@ -260,21 +261,13 @@ namespace NetSyncManager {
 		//pkg->Write(NetSyncID::NONE); // used as the null terminator
 
 		if (NetSyncsWritten)
-			peer->m_peer->m_rpc->Invoke("NetSyncData", pkg);
+			peer->m_peer->m_rpc->Invoke(Rpc_Hash::ZDOData, pkg);
 
 		return NetSyncsWritten;
 	}
 
 	void OnNewPeer(NetPeer::Ptr peer) {		
 		m_peers.push_back(std::make_unique<NetSyncPeer>(peer));
-		peer->m_rpc->Register("NetSyncData", &RPC_NetSyncData);
-
-		//NetSyncMan.NetSyncPeer NetSyncpeer = new NetSyncMan.NetSyncPeer();
-		//NetSyncpeer.m_peer = netPeer;
-		//this.m_peers.Add(NetSyncpeer);
-		//NetSyncpeer.m_peer.m_rpc.Register<ZPackage>("NetSyncData", new Action<ZRpc, ZPackage>(this.RPC_NetSyncData));
+		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_NetSyncData);
 	}
-
-
-
 }

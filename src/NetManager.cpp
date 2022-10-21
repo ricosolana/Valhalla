@@ -21,7 +21,7 @@ namespace NetManager {
 	std::unique_ptr<World> m_world;
 
 	void RemotePrint(NetRpc* rpc, const std::string& s) {
-		rpc->Invoke("RemotePrint", s);
+		rpc->Invoke(Rpc_Hash::RemotePrint, s);
 	}
 
 	void Disconnect(NetPeer::Ptr peer) {
@@ -159,14 +159,14 @@ namespace NetManager {
 
 			for (auto&& peer : m_peers) {
 				// this is the problem
-				peer->m_rpc->Invoke("PlayerList", pkg);
+				peer->m_rpc->Invoke(Rpc_Hash::PlayerList, pkg);
 			}
 		}
 	}
 
 	void SendNetTime() {
 		for (auto&& peer : m_peers) {
-			peer->m_rpc->Invoke("NetTime", m_netTime);
+			peer->m_rpc->Invoke(Rpc_Hash::NetTime, m_netTime);
 		}
 	}
 
@@ -196,7 +196,7 @@ namespace NetManager {
 		pkg->Write(m_world->m_worldGenVersion);
 		pkg->Write(m_netTime);
 
-		rpc->Invoke("PeerInfo", pkg);
+		rpc->Invoke(Rpc_Hash::PeerInfo, pkg);
 	}
 
 	void RPC_PeerInfo(NetRpc* rpc, NetPackage::Ptr pkg) {
@@ -256,13 +256,13 @@ namespace NetManager {
 
 		peer->m_pos = pos;
 
-		rpc->Register("RefPos", &RPC_RefPos);
-		rpc->Register("CharacterID", &RPC_CharacterID);
-		rpc->Register("Kick", &RPC_Kick);
-		rpc->Register("Ban", &RPC_Ban);
-		rpc->Register("Unban", &RPC_Unban);
-		rpc->Register("Save", &RPC_Save);
-		rpc->Register("PrintBanned", &RPC_PrintBanned);
+		rpc->Register(Rpc_Hash::RefPos, &RPC_RefPos);
+		rpc->Register(Rpc_Hash::CharacterID, &RPC_CharacterID);
+		rpc->Register(Rpc_Hash::Kick, &RPC_Kick);
+		rpc->Register(Rpc_Hash::Ban, &RPC_Ban);
+		rpc->Register(Rpc_Hash::Unban, &RPC_Unban);
+		rpc->Register(Rpc_Hash::Save, &RPC_Save);
+		rpc->Register(Rpc_Hash::PrintBanned, &RPC_PrintBanned);
 
 		SendPeerInfo(rpc);
 
@@ -345,9 +345,9 @@ namespace NetManager {
 			assert(socket && "Socket shouldnt be null!");
 			auto&& rpc = std::make_unique<NetRpc>(socket);
 
-			rpc->Register("PeerInfo", &RPC_PeerInfo);
-			rpc->Register("Disconnect", &RPC_Disconnect);
-			rpc->Register("ServerHandshake", &RPC_ServerHandshake);
+			rpc->Register(Rpc_Hash::PeerInfo, &RPC_PeerInfo);
+			rpc->Register(Rpc_Hash::Disconnect, &RPC_Disconnect);
+			rpc->Register(Rpc_Hash::ServerHandshake, &RPC_ServerHandshake);
 
 			rpc->m_socket->Start();
 
@@ -360,7 +360,7 @@ namespace NetManager {
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
 				if (!(*itr) || !(*itr)->m_socket->Connected()) {
-					LOG(INFO) << "Cleaning up null joining peer";
+					//LOG(INFO) << "Cleaning up null joining peer";
 					itr = m_joining.erase(itr);
 				}
 				else {
@@ -408,7 +408,7 @@ namespace NetManager {
 		}
 
 		m_netTime += delta;
-		SteamGameServer_RunCallbacks();		
+		SteamGameServer_RunCallbacks();
 	}
 
 	void Close() {

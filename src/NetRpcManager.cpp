@@ -12,8 +12,8 @@ namespace NetRpcManager {
 		return Valhalla()->m_serverUuid;
 	}
 
-	void _Register(const std::string& name, IMethod<UUID_t>* method) {
-		m_methods.insert({ Utils::GetStableHashCode(name.c_str()), method });
+	void _Register(HASH_t hash, IMethod<UUID_t>* method) {
+		m_methods.insert({ hash, method });
 	}
 
 	void _RouteRPC(Data data) {
@@ -22,13 +22,13 @@ namespace NetRpcManager {
 
 		if (data.m_targetPeerID == EVERYBODY) {
 			for (auto&& peer : NetManager::GetPeers()) {
-				peer->m_rpc->Invoke("RoutedRPC", pkg);
+				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
 			}
 		}
 		else {
 			auto peer = NetManager::GetPeer(data.m_targetPeerID);
 			if (peer) {
-				peer->m_rpc->Invoke("RoutedRPC", pkg);
+				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
 			}
 		}
 	}
@@ -70,7 +70,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, const std::string& name, NetPackage::Ptr pkg) {
+	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage::Ptr pkg) {
 		static UUID_t m_rpcMsgID = 1;
 		static auto SERVER_ID(Valhalla()->m_serverUuid);
 
@@ -79,7 +79,7 @@ namespace NetRpcManager {
 		data.m_senderPeerID = SERVER_ID;
 		data.m_targetPeerID = target;
 		data.m_targetNetSync = targetNetSync;
-		data.m_methodHash = Utils::GetStableHashCode(name.c_str());
+		data.m_methodHash = hash;
 		data.m_parameters = pkg;
 
 		data.m_parameters->GetStream().SetMarker(0);
@@ -97,7 +97,7 @@ namespace NetRpcManager {
 	}
 
 	void OnNewPeer(NetPeer::Ptr peer) {
-		peer->m_rpc->Register("RoutedRPC", &RPC_RoutedRPC);
+		peer->m_rpc->Register(Rpc_Hash::RoutedRPC, &RPC_RoutedRPC);
 	}
 
 	void OnPeerQuit(NetPeer::Ptr peer) {
