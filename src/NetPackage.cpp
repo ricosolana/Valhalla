@@ -105,18 +105,17 @@ void NetPackage::Read(std::vector<std::string>& out) {
 
 void NetPackage::Write7BitEncodedInt(int32_t in) {
     m_stream.ReserveExtra(4); // hmm
-    unsigned int num;
-    for (num = (unsigned int)in; num >= 128U; num >>= 7)
-        Write((unsigned char)(num | 128U));
+    uint32_t num;
+    for (num = (uint32_t)in; num >= 128U; num >>= 7)
+        Write((uint8_t)(num | 128U));
 
-    Write((unsigned char)num);
+    Write((uint8_t)num);
 }
 
 int NetPackage::Read7BitEncodedInt() {
     int out = 0;
     int num2 = 0;
-    while (num2 != 35)
-    {
+    while (num2 != 35) {
         auto b = Read<byte_t>();
         out |= (int)(b & 127) << num2;
         num2 += 7;
@@ -127,4 +126,3 @@ int NetPackage::Read7BitEncodedInt() {
     }
     throw std::runtime_error("bad encoded int");
 }
-

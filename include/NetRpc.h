@@ -5,6 +5,7 @@
 #include "Method.h"
 #include "NetSocket.h"
 #include "Task.h"
+#include "NetHashes.h"
 
 enum class ConnectionStatus;
 
@@ -16,8 +17,8 @@ class NetRpc {
 
 	void SendPackage(NetPackage::Ptr pkg);
 
-	void Register(const char* name, IMethod<NetRpc*>* method);
 	void Register(HASH_t hash, IMethod<NetRpc*>* method);
+	void Register(const char* name, IMethod<NetRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
@@ -50,26 +51,29 @@ public:
 		return Register(name, new MethodImpl(object, f));
 	}
 
+
+
 	/**
 		* @brief Register a static method for remote invocation
-		* @param name function name to register
+		* @param rpc hash to register
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, void(*f)(NetRpc*, Args...)) {
-		return Register(hash, new MethodImpl(f));
+		return Register(static_cast<HASH_t>(hash), new MethodImpl(f));
 	}
 
 	/**
 		* @brief Register an instance method for remote invocation
-		* @param name function name to register
+		* @param rpc hash to register
 		* @param object the object containing the member function
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(HASH_t hash, C* object, void(C::* f)(NetRpc*, Args...)) {
-		return Register(hash, new MethodImpl(object, f));
+	auto Register(Rpc_Hash hash, C* object, void(C::* f)(NetRpc*, Args...)) {
+		return Register(static_cast<HASH_t>(hash), new MethodImpl(object, f));
 	}
+
 
 
 
@@ -79,12 +83,12 @@ public:
 		* @param ...types function parameters
 	*/
 	template <typename... Types>
-	void Invoke(const char* method, Types... params) {
+	void Invoke(HASH_t stable, Types... params) {
 		if (!m_socket->Connected())
 			return;
 
-		auto stable = Utils::GetStableHashCode(method);
-		
+		//auto stable = static_cast<HASH_t>(hash);
+
 		auto pkg(PKG());
 		pkg->Write(stable);
 #ifdef RPC_DEBUG // debug mode
@@ -92,6 +96,16 @@ public:
 #endif
 		NetPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(pkg);
+	}
+
+	template <typename... Types>
+	void Invoke(Rpc_Hash hash, Types... params) {
+		Invoke(static_cast<HASH_t>(hash), std::move(params)...);
+	}
+
+	template <typename... Types>
+	void Invoke(const char* method, Types... params) {
+		Invoke(Utils::GetStableHashCode(method), std::move(params)...);
 	}
 
 	// To be called every tick

@@ -25,7 +25,7 @@ public:
 	virtual void Send(NetPackage::Ptr packet) = 0;
 	virtual NetPackage::Ptr Recv() = 0;
 
-	virtual const std::string& GetHostName() const = 0;
+	virtual std::string GetHostName() const = 0;
 
 	virtual bool Connected() const = 0;
 
@@ -53,8 +53,10 @@ public:
 	void Send(NetPackage::Ptr packet) override;
 	NetPackage::Ptr Recv() override;
 
-	const std::string& GetHostName() const override {
-		return "";
+	std::string GetHostName() const override {
+		//SteamNetworkingUtils()->GetIPv4FakeIPType
+		//m_steamNetId.GetSteamID()
+		return std::string("type: ") + std::to_string(m_steamNetId.m_eType); // .m_eTypeGetIPv4()GetIPAddr()->st;
 	}
 	bool Connected() const override {
 		return m_steamNetCon != k_HSteamNetConnection_Invalid;
@@ -63,10 +65,7 @@ public:
 		return 0;
 	}
 
-	// Declared
-	// Flush is used only once the socket is closed
-	//void Flush();
-
+private:
 	void SendQueued();
 
 };

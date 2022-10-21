@@ -408,7 +408,6 @@ namespace NetManager {
 		}
 
 		m_netTime += delta;
-		//SteamAPI_RunCallbacks();
 		SteamGameServer_RunCallbacks();		
 	}
 

@@ -11,6 +11,8 @@
 
 #include "CompileSettings.h"
 
+#define __H(str) Utils::GetStableHashCode(str)
+
 //bytes
 using namespace std::chrono_literals;
 

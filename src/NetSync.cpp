@@ -30,12 +30,6 @@ HASH_t NetSync::to_prefix(HASH_t hash, MemberShift pref) {
 		+ (tshift * tshift)
 			^ tshift)
 				^ (tshift << tshift);
-
-	//return 
-	//	((hash ^ 
-	//		(tshift << tshift)) 
-	//			^ tshift)
-	//				- (tshift * tshift);
 }
 
 HASH_t NetSync::from_prefix(HASH_t hash, MemberShift pref) {
@@ -96,6 +90,7 @@ NetSync::~NetSync() {
 		}
 	}
 }
+
 
 
 /*

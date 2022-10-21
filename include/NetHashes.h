@@ -3,7 +3,6 @@
 #include "Utils.h"
 
 // Recursive method
-#define __H(str) Utils::GetStableHashCode(str)
 
 
 
