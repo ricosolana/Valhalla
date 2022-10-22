@@ -51,21 +51,6 @@ AcceptorSteam::AcceptorSteam(const std::string& name,
 }
 
 AcceptorSteam::~AcceptorSteam() {
-	Close();
-}
-
-void AcceptorSteam::Start() {
-	SteamNetworkingIPAddr steamNetworkingIPAddr; // nullify or whatever (default)
-	steamNetworkingIPAddr.Clear(); // this is important, otherwise server wouldnt open listen socket
-	steamNetworkingIPAddr.m_port = m_port; // it is later reassigned by fejd manager
-	this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
-}
-
-void AcceptorSteam::Close() {
-	// used for client connected socket only
-	
-
-	// server use only
 	if (m_listenSocket != k_HSteamListenSocket_Invalid) {
 		LOG(INFO) << "Stopping Steam listening socket";
 		SteamGameServerNetworkingSockets()->CloseListenSocket(m_listenSocket);
@@ -73,45 +58,44 @@ void AcceptorSteam::Close() {
 	}
 
 	SteamGameServer_Shutdown();
+}
 
-	//this.m_steamNetId.Clear();
+void AcceptorSteam::Listen() {
+	SteamNetworkingIPAddr steamNetworkingIPAddr; // nullify or whatever (default)
+	steamNetworkingIPAddr.Clear(); // this is important, otherwise server wouldnt open listen socket
+	steamNetworkingIPAddr.m_port = m_port; // it is later reassigned by fejd manager
+	this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
+}
+
+ISocket::Ptr AcceptorSteam::Accept() {
+	if (m_readyAccepted.empty())
+		return nullptr;
+
+	auto pair = m_readyAccepted.begin();
+	auto socket = pair->second; // itr becomes invalid, so store ptr
+	m_readyAccepted.erase(pair);
+	return socket;
 }
 
 
 
-const char* messages[] = { "None", "Connecting", "FindingRoute", "Connnected", "ClosedByPeer", "ProblemDetectedLocally",
-	"FinWait", "Linger", "Dead"
-};
-
-const char* strState(ESteamNetworkingConnectionState state) {
+const char* stateToString(ESteamNetworkingConnectionState state) {
+	static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connnected", "ClosedByPeer", "ProblemDetectedLocally",
+		"FinWait", "Linger", "Dead"
+	};
 	if (state >= 0 && state <= 5) {
 		return messages[state];
 	}
 	return messages[5 + (-state)];
 }
 
-
-
-ISocket::Ptr AcceptorSteam::Accept() {
-	if (m_awaiting.empty())
-		return nullptr;
-
-	auto pair = m_awaiting.begin();
-	auto socket = pair->second; // itr becomes invalid, so store ptr
-	m_awaiting.erase(pair);
-	return socket;
-}
-
-
-
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-
-	LOG(INFO) << "Steam status changed msg " << strState(data->m_info.m_eState);
+	LOG(INFO) << "Connection status changed: " << stateToString(data->m_info.m_eState);
 	if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
 	{
-		auto pair = m_connecting.find(data->m_hConn);
-		if (pair != m_connecting.end()) {
+		auto pair = m_pendingConnect.find(data->m_hConn);
+		if (pair != m_pendingConnect.end()) {
 			auto socket = pair->second;
 
 			SteamNetConnectionInfo_t steamNetConnectionInfo_t;
@@ -119,30 +103,35 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 				socket->m_steamNetId = steamNetConnectionInfo_t.m_identityRemote;
 			}
 
-			LOG(INFO) << "Got connection, SteamID: " << socket->m_steamNetId.GetSteamID64();
-			m_awaiting.insert({ data->m_hConn, socket });
-			m_connecting.erase(pair);
+			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamNetId.GetSteamID64();
+			m_readyAccepted.insert({ data->m_hConn, socket });
+			m_pendingConnect.erase(pair);
 		}
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_None)
 	{
 		auto eresult = SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn);
-		LOG(INFO) << "Accepting connection " + eresult;
+		LOG(INFO) << "Accepting new connection " << eresult;
 		if (eresult == k_EResultOK) {
-			m_connecting.insert({ data->m_hConn, std::make_shared<SteamSocket>(data->m_hConn) });
+			auto ptr = std::make_shared<SteamSocket>(data->m_hConn);
+			m_pendingConnect.insert({ data->m_hConn, ptr });
+			m_sockets.insert({ data->m_hConn, ptr });
 		}
 	}
-	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
-	{
-		LOG(INFO) << "Got problem " << data->m_info.m_eEndReason << ":" << data->m_info.m_szEndDebug;
-		m_connecting.erase(data->m_hConn);
-		m_awaiting.erase(data->m_hConn);
-	}
-	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
-	{
-		m_connecting.erase(data->m_hConn);
-		m_awaiting.erase(data->m_hConn);
+	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
+		|| data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
+	{		
+		if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+			LOG(INFO) << data->m_info.m_szEndDebug;
+
+		auto pair = m_sockets.find(data->m_hConn);
+		if (pair != m_sockets.end())
+			pair->second->Close();
+
+		m_pendingConnect.erase(data->m_hConn);
+		m_readyAccepted.erase(data->m_hConn);
+		m_sockets.erase(pair);
 	}
 }
 
