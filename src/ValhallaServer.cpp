@@ -1,7 +1,8 @@
 #include <optick.h>
-#include <ryml/ryml.hpp>
-#include <c4/format.hpp>
-#include <ryml/ryml_std.hpp>
+//#include <ryml/ryml.hpp>
+//#include <c4/format.hpp>
+//#include <ryml/ryml_std.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include "ValhallaServer.h"
 #include "ModManager.h"
@@ -28,20 +29,25 @@ void ValhallaServer::Launch() {
 	if (!ResourceManager::ReadFileBytes("server.yml", buf))
 		throw std::runtime_error("server.yml not found");
 
-	ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(buf));
-
-	auto password = tree["password"].valid();
-	auto seed = tree["password"].is_seed();
+	//ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(buf));
+	//
+	//auto password = tree["password"].valid();
+	//auto seed = tree["password"].is_seed();
+	//auto c = tree["password"].val().str; // .get()->m_val.
 	//tree["password"].get()->;
 
-	// seed is false when the item exists (because it is not a starter root)
+	auto node = YAML::Load(buf);
 
-	m_serverName = "lorem ipsum";
+	m_serverName = node["server-name"].as<std::string>("My server");
+	auto worldName = node["world-name"].as<std::string>("Dedicated world");
+
+	auto password = node["password"].as<std::string>("secret");
+	auto port = node["port"].as<uint16_t>(2456);
 	m_serverUuid = Utils::GenerateUID();
 
-	InitSteam(m_hostPort);
+	InitSteam(port);
 	ModManager::Init();
-	//NetManager::Listen(2456, password);
+	NetManager::Listen(port, password);
 
 
 

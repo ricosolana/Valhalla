@@ -14,7 +14,6 @@ class ValhallaServer {
 	std::recursive_mutex m_taskMutex;
 
 	std::string m_serverName;
-	uint16_t m_hostPort = 2456;
 	int m_maxPeers;
 	UUID_t m_serverUuid;
 

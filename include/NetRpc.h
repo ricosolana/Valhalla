@@ -16,10 +16,11 @@ class NetRpc {
 	
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
-	void SendPackage(NetPackage::Ptr pkg);
+	void SendPackage(NetPackage::Ptr pkg) {
+		m_socket->Send(pkg);
+	}
 
 	void Register(HASH_t hash, IMethod<NetRpc*>* method);
-	//void Register(const char* name, IMethod<NetRpc*>* method);
 
 public:	
 	ISocket::Ptr m_socket;
@@ -99,6 +100,7 @@ public:
 		auto pkg(PKG());
 		pkg->Write(hash);
 #ifdef RPC_DEBUG // debug mode
+#error RPC_DEBUG not fully implemented
 		pkg->Write(hash);
 #endif
 		NetPackage::Serialize(pkg, std::move(params)...); // serialize

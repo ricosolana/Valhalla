@@ -7,10 +7,6 @@ AcceptorSteam::AcceptorSteam(uint16_t port)
 	int32 offline = 1;
 	int32 sendrate = 153600;
 
-	//SteamGameServer()->
-
-	//SteamGameServerUtils()->Cre
-
 	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
 		k_ESteamNetworkingConfig_Global, 0,
 		k_ESteamNetworkingConfig_Float, &timeout);

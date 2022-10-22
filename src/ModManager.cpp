@@ -301,41 +301,65 @@ namespace ModManager {
 
 	namespace Event {
 
+#define EXECUTE(func, ...) \
+for (auto&& mod : modsByPriority) { \
+	if (!mod->func) \
+		continue; \
+	try { \
+		mod->func(##__VA_ARGS__); \
+	} \
+	catch (sol::error& e) { \
+		LOG(ERROR) << e.what(); \
+	} \
+}
+
+#define EXECUTE_RES(func, ret, ...) \
+for (auto&& mod : modsByPriority) { \
+	if (!mod->func) \
+		continue; \
+	try { \
+		ret = mod->func(##__VA_ARGS__); \
+	} \
+	catch (sol::error& e) { \
+		LOG(ERROR) << e.what(); \
+	} \
+}
+
 		void OnEnable() {
-			for (auto&& mod : modsByPriority) {
-				if (mod->m_onEnable) mod->m_onEnable();
-			}
+			OPTICK_EVENT();
+
+			EXECUTE(m_onEnable);
 		}
 
 		void OnDisable() {
-			for (auto&& mod : modsByPriority) {
-				if (mod->m_onDisable) mod->m_onDisable();
-			}
+			OPTICK_EVENT();
+
+			EXECUTE(m_onDisable);
+		}
+
+		void OnUpdate(float delta) {
+			OPTICK_EVENT();
+
+			EXECUTE(m_onUpdate, delta);
 		}
 
 		/// Event forward calls
 		bool OnPeerInfo(NetRpc *rpc, UUID_t uuid, 
 			const std::string& name, const std::string& version) {
+			OPTICK_EVENT();
+
 			bool allow = true;
-			for (auto&& mod : mods) {
-				if (mod.second->m_onPeerInfo) // check is mandatory to avoid std::bad_function_call
-										// if function is empty
-		
-					allow = mod.second->m_onPeerInfo(rpc, uuid, name, version);
-			}
+			EXECUTE_RES(m_onPeerInfo, allow, rpc, uuid, name, version);
+
 			return allow;
 		}
 
-		void OnNewConnection() {
-			
+		void OnChatMessage() {
+
 		}
 
-		void OnUpdate(float delta) {
-			//OPTICK_EVENT();
-			for (auto& mod : mods) {
-				if (mod.second->m_onUpdate)
-					mod.second->m_onUpdate(delta);
-			}
-		}
+
+
+
 	}
 }

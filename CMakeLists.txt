@@ -22,8 +22,9 @@ find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
-find_package(c4core CONFIG REQUIRED)
-find_package(ryml CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
+#find_package(c4core CONFIG REQUIRED)
+#find_package(ryml CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
@@ -118,8 +119,9 @@ target_link_libraries(${PROJECT_NAME}
     ZLIB::ZLIB
     PUBLIC lua
     sol2
-    PUBLIC c4core::c4core
-    PRIVATE ryml::ryml
+    yaml-cpp
+    #PUBLIC c4core::c4core
+    #PRIVATE ryml::ryml
     easyloggingpp
     OptickCore
 )

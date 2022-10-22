@@ -1,3 +1,5 @@
+#include <optick.h>
+
 #include "NetRpc.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
@@ -20,6 +22,8 @@ void NetRpc::Register(HASH_t hash, IMethod<NetRpc*>* method) {
 }
 
 void NetRpc::Update() {
+	OPTICK_EVENT();
+
 	auto now(steady_clock::now());
 
 	// Send packet data
@@ -39,7 +43,6 @@ void NetRpc::Update() {
 				SendPackage(pkg);
 			}
 			else {
-				//m_ping = duration_cast<milliseconds>(now - m_lastPing);
 				m_lastPing = now;
 			}
 		}
@@ -49,12 +52,7 @@ void NetRpc::Update() {
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				//try {
-					find->second->Invoke(this, pkg);
-				//}
-				//catch (std::exception& e) {
-					// close socket because it might have
-				//}
+				find->second->Invoke(this, pkg);
 			}
 			else {
 #ifdef RPC_DEBUG
@@ -68,29 +66,14 @@ void NetRpc::Update() {
 	}
 	
 	if (now - m_lastPing > RPC_PING_TIMEOUT) {
-		LOG(INFO) << "Client timeout";
+		LOG(INFO) << "Client RPC timeout";
 		m_socket->Close();
 	}
 
 }
 
-//std::chrono::milliseconds NetRpc::GetPing() {
-//	//return m_ping.count();
-//	auto now(steady_clock::now());
-//	return duration_cast<milliseconds>(now - m_lastPing);
-//}
-
 void NetRpc::SendError(ConnectionStatus status) {
 	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
 	Invoke("Error", status);
-	// then disconnect later
-	//m_ignore = true;
-	//Valhalla()->RunTaskLater([this](Task*) { m_socket->Close(); }, GetPing() * 2);
 	m_socket->Close();
-}
-
-void NetRpc::SendPackage(NetPackage::Ptr pkg) {
-	//this.m_sentPackages++;
-	//this.m_sentData += pkg.Size();
-	m_socket->Send(pkg);
 }
