@@ -1,6 +1,6 @@
 server-name: we gaminggg
 server-port: 2456
-server-password: ""
+server-password: "hello world"
 server-public: true
 world-name: Dedicated world
 world-seed: 123456789

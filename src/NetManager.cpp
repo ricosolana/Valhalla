@@ -40,19 +40,22 @@ namespace NetManager {
 	void InitPassword(const std::string &password) {
 		m_hasPassword = !password.empty();
 
-		assert(!m_hasPassword && "Password hasher currently broken");
+		//assert(!m_hasPassword && "Password hasher currently broken");
 
 		if (m_hasPassword) {
 			// Create random 16 byte salt
 			m_salt.resize(16);
-			auto v = RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
+			RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
+			Utils::FormatAscii(m_salt);
+
+			const auto merge = password + m_salt;
 
 			// Hash a salted password
 			m_saltedPassword.resize(16);
-
-			auto merge = password + m_salt;
 			MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
 				merge.size(), reinterpret_cast<uint8_t*>(m_saltedPassword.data()));
+
+			Utils::FormatAscii(m_saltedPassword);
 		}
 	}
 
@@ -344,49 +347,25 @@ namespace NetManager {
 
 
 
-	void Start(const std::string& name,
-		const std::string& password,
-		uint16_t port,
-		bool isPublic,
-		float timeout) {
-		m_acceptor = std::make_unique<AcceptorSteam>(name, !password.empty(), port, isPublic, timeout);
-		m_acceptor->Start();
+	void Start(const ServerSettings& settings) {
+		m_acceptor = std::make_unique<AcceptorSteam>(
+			settings.serverName, 
+			!settings.serverPassword.empty(), 
+			settings.serverPort, 
+			settings.serverPublic, 
+			settings.socketTimeout);
+		m_acceptor->Listen();
 
-		InitPassword(password);		
+		InitPassword(settings.serverPassword);
 
 		m_world = std::make_unique<World>();
 
 		ZoneSystem::Init();
-
-		// net time and player list sent every 2 seconds to players
-		Valhalla()->RunTaskRepeat([](Task*) {
-			SendNetTime();
-			SendPlayerList();
-		}, 2s);
-
-		// Ping rpcs every second
-		Valhalla()->RunTaskRepeat([](Task*) {
-			for (auto&& rpc : m_joining) {
-				LOG(DEBUG) << "Rpc join pinging ";
-				auto pkg(PKG());
-				pkg->Write<int32_t>(0);
-				pkg->Write(true);
-				rpc->m_socket->Send(pkg);
-			}
-
-			for (auto&& peer : m_peers) {
-				LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
-				auto pkg(PKG());
-				pkg->Write<int32_t>(0);
-				pkg->Write(true);
-				peer->m_rpc->m_socket->Send(pkg);
-			}
-		}, 1s);
 	}
 
 	void Update(double delta) {
 		OPTICK_EVENT();
-		// Accept connections
+		// Accept new connections into joining
 		while (auto socket = m_acceptor->Accept()) {
 			assert(socket && "Socket shouldnt be null!");
 			auto&& rpc = std::make_unique<NetRpc>(socket);
@@ -400,9 +379,8 @@ namespace NetManager {
 			m_joining.push_back(std::move(rpc));
 		}
 
+		// Cleanup joining
 		{
-			// Remove invalid joining
-			// Removes any
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
 				if (!(*itr) || !(*itr)->m_socket->Connected()) {
@@ -415,6 +393,7 @@ namespace NetManager {
 			}
 		}
 
+		// Cleanup peers
 		{
 			// Remove stale peers
 			auto&& itr = m_peers.begin();
@@ -429,6 +408,31 @@ namespace NetManager {
 			}
 		}
 
+		// Send periodic data (2s)
+		PERIODIC_NOW(2s, {
+			SendNetTime();
+			SendPlayerList();
+		});		
+
+		// Send periodic pings (1s)
+		PERIODIC_NOW(1s, {
+			for (auto&& rpc : m_joining) {
+				LOG(DEBUG) << "Rpc join pinging ";
+				auto pkg(PKG());
+				pkg->Write<HASH_t>(0);
+				pkg->Write(true);
+				rpc->m_socket->Send(pkg);
+			}
+
+			for (auto&& peer : m_peers) {
+				LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
+				auto pkg(PKG());
+				pkg->Write<HASH_t>(0);
+				pkg->Write(true);
+				peer->m_rpc->m_socket->Send(pkg);
+			}
+		});
+
 		// Update peers
 		for (auto&& peer : m_peers) {
 			try {
@@ -440,9 +444,7 @@ namespace NetManager {
 			}
 		}
 
-		// Update joining
-		//	this is done after peers rpc update because in the weird case
-		//	where a joining becomes a peer then is processed twice in an update tick
+		// Update joining (after peer update to avoid double updating any moved peer)
 		for (auto&& rpc : m_joining) {
 			try {
 				rpc->Update();

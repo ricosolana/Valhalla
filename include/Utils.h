@@ -2,16 +2,57 @@
 
 #include <chrono>
 #include <iostream>
-#include <zlib.h>
-#include <robin_hood.h>
-#include <easylogging++.h>
 #include <type_traits>
 #include <concepts>
 #include <assert.h>
+#include <optick.h>
+#include <zlib.h>
+#include <robin_hood.h>
+#include <easylogging++.h>
 
 #include "CompileSettings.h"
 
+using namespace std::chrono;
+
 #define __H(str) Utils::GetStableHashCode(str)
+
+
+
+// Runs a static periodic task later
+#define PERIODIC_LATER(__period, __initial, ...) {\
+    auto __now = steady_clock::now();\
+    static auto __last_run = __now + __initial;\
+    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    if (__elapsed > __period) {\
+        __last_run = __now;\
+        { __VA_ARGS__ }\
+    }\
+}
+
+// Runs a static periodic task
+#define PERIODIC_NOW(__period, ...) {\
+    auto __now = steady_clock::now();\
+    static auto __last_run = __now;\
+    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    if (__elapsed > __period) {\
+        __last_run = __now;\
+        { __VA_ARGS__ }\
+    }\
+}
+
+// Runs a static task later
+#define DISPATCH_LATER(__initial, ...) {\
+    auto __now = steady_clock::now();\
+    static auto __last_run = __now;\
+    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    if (__elapsed > __initial) {\
+		__last_run = steady_clock::time_point::max();\
+        { __VA_ARGS__ }\
+    }\
+}
+
+
+
 
 //bytes
 using namespace std::chrono_literals;
@@ -57,6 +98,11 @@ namespace Utils {
 
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
+
+
+	// Encoding.ASCII.GetString equivalent:
+	// bytes greater than 127 get turned to literal '?' (63)
+	void FormatAscii(std::string& in);
 
 	UUID_t GenerateUID();
 

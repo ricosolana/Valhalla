@@ -1,4 +1,6 @@
 #include "NetSocket.h"
+#include <isteamnetworkingsockets.h>
+#include <isteamnetworkingutils.h>
 
 SteamSocket::SteamSocket(HSteamNetConnection con) {
 	m_steamNetCon = con;
@@ -27,7 +29,11 @@ void SteamSocket::Close() {
 	//	I will instead attempt to flush the data, instead of fucking sleeping on the main thread
 	// Im certain theres a reason behind this, but wtf could it be?
 	SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_steamNetCon);
-	SteamGameServerNetworkingSockets()->CloseConnection(m_steamNetCon, 0, "", true);
+
+	// sleeping on the main thread aint great
+	//std::this_thread::sleep_for(100ms);
+
+	SteamGameServerNetworkingSockets()->CloseConnection(m_steamNetCon, 0, "", false);
 	SteamGameServer()->EndAuthSession(steamID);
 	m_steamNetCon = k_HSteamNetConnection_Invalid;
 	m_steamNetId.Clear();
@@ -37,6 +43,7 @@ void SteamSocket::Close() {
 
 void SteamSocket::Update() {
 	SendQueued();
+	//if (this->)
 }
 
 void SteamSocket::Send(NetPackage::Ptr pkg) {
@@ -56,6 +63,25 @@ NetPackage::Ptr SteamSocket::Recv() {
 		}
 	}
 	return nullptr;
+}
+
+
+
+
+int SteamSocket::GetSendQueueSize() const {
+	if (Connected()) {
+		int num = 0;
+		for (auto&& bytes : m_sendQueue) {
+			num += bytes.size();
+		}
+		SteamNetConnectionRealTimeStatus_t rt;
+		if (SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_steamNetCon, &rt, 0, NULL) == k_EResultOK) {
+			num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
+		}
+
+		return num;
+	}
+	return -1;
 }
 
 

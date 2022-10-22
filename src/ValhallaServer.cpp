@@ -7,6 +7,7 @@
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
+#include "ServerSettings.h"
 
 using namespace std::chrono;
 
@@ -39,61 +40,61 @@ void ValhallaServer::Launch() {
 			LOG(INFO) << "Server config not found, creating...";
 	}
 
-	auto serverName =					loadNode["server-name"].as<std::string>("My server");
-	auto serverPort =					loadNode["server-port"].as<uint16_t>(2456);
-	auto serverPassword =				loadNode["server-password"].as<std::string>("secret");
-	auto serverPublic =					loadNode["server-public"].as<bool>(false);
+	ServerSettings settings;
 
-	auto worldName =					loadNode["world-name"].as<std::string>("Dedicated world");
-	auto worldSeed =					loadNode["world-seed"].as<int32_t>(123456789);
+	settings.serverName =				loadNode["server-name"].as<std::string>("My server");
+	settings.serverPort =				loadNode["server-port"].as<uint16_t>(2456);
+	settings.serverPassword =			loadNode["server-password"].as<std::string>("secret");
+	settings.serverPublic =				loadNode["server-public"].as<bool>(false);
 
-	auto playerWhitelist =				loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
-	auto playerTimeout =				loadNode["player-timeout"].as<float>(30000);		// player timeout in milliseconds
-	auto playerMax =					loadNode["player-max"].as<unsigned int>(64);		// max allowed players
-	auto playerAuth =					loadNode["player-auth"].as<bool>(true);				// allow authed players only
-	auto playerList =					loadNode["player-list"].as<bool>(true);				// does not send playerlist to players
-	auto playerArrivePing =				loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
-	
+	settings.worldName =				loadNode["world-name"].as<std::string>("Dedicated world");
+	settings.worldName =				loadNode["world-seed-name"].as<std::string>("Some special seed");
+	settings.worldSeed =				Utils::GetStableHashCode(settings.worldSeedName);
+
+	settings.playerWhitelist =			loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
+	settings.playerMax =				loadNode["player-max"].as<unsigned int>(64);		// max allowed players
+	settings.playerAuth =				loadNode["player-auth"].as<bool>(true);				// allow authed players only
+	settings.playerList =				loadNode["player-list"].as<bool>(true);				// does not send playerlist to players
+	settings.playerArrivePing =			loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
+
+	settings.socketTimeout =			loadNode["socket-timeout"].as<float>(30000);		// player timeout in milliseconds
+	settings.socketCongestion =			loadNode["socket-congestion"].as<int32_t>(10240);
+
+
+
 	YAML::Node saveNode;
 
-	saveNode["server-name"] =			serverName;
-	saveNode["server-port"] =			serverPort;
-	saveNode["server-password"] =		serverPassword;
-	saveNode["server-public"] =			serverPublic;
+	saveNode["server-name"] =			settings.serverName;
+	saveNode["server-port"] =			settings.serverPort;
+	saveNode["server-password"] =		settings.serverPassword;
+	saveNode["server-public"] =			settings.serverPublic;
 
-	saveNode["world-name"] =			worldName;
-	saveNode["world-seed"] =			worldSeed;
+	saveNode["world-name"] =			settings.worldName;
+	saveNode["world-seed"] =			settings.worldSeed;
 
-	saveNode["player-whitelist"] =		playerWhitelist;
-	saveNode["player-timeout"] =		playerTimeout;
-	saveNode["player-max"] =			playerMax;
-	saveNode["player-auth"] =			playerAuth;
-	saveNode["player-list"] =			playerList;
-	saveNode["player-arrive-ping"] =	playerArrivePing;
+	saveNode["player-whitelist"] =		settings.playerWhitelist;
+	saveNode["player-max"] =			settings.playerMax;
+	saveNode["player-auth"] =			settings.playerAuth;
+	saveNode["player-list"] =			settings.playerList;
+	saveNode["player-arrive-ping"] =	settings.playerArrivePing;
 
-	if (saveNode != loadNode) {
-		YAML::Emitter out;
-		out.SetIndent(4);
-		out << saveNode;
+	saveNode["socket-timeout"] =		settings.socketTimeout;
+	saveNode["socket-congestion"] =		settings.socketCongestion;
 
-		assert(out.good());
+	YAML::Emitter out;
+	out.SetIndent(4);
+	out << saveNode;
 
-		ResourceManager::WriteFileBytes("server.yml", out.c_str());
+	ResourceManager::WriteFileBytes("server.yml", out.c_str());
 
-		LOG(INFO) << "Patched server config";
-	}
-	else {
-		LOG(INFO) << "Server config loaded";
-	}
-
-
-
+	LOG(INFO) << "Server config loaded";
+	
 	// have other settings like chat spam prevention, fly prevention, advanced permission settings
 	
 	m_serverUuid = Utils::GenerateUID();
 
 	ModManager::Init();
-	NetManager::Start(serverName, serverPassword, serverPort, serverPublic, playerTimeout);
+	NetManager::Start(settings);
 
 
 
@@ -109,7 +110,6 @@ void ValhallaServer::Launch() {
 		// mutex is carefully scoped in this micro-scope
 		{
 			std::scoped_lock lock(m_taskMutex);
-			const auto now = steady_clock::now();
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
 				auto ptr = itr->get();
 				if (ptr->at < now) {

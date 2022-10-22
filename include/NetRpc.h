@@ -12,7 +12,7 @@ enum class ConnectionStatus;
 
 class NetRpc {
 	std::chrono::steady_clock::time_point m_lastPing;
-	bool m_ignore = false;
+	bool m_closeEventually = false;
 	
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 

@@ -29,6 +29,10 @@ void NetRpc::Update() {
 	// Send packet data
 	m_socket->Update();
 
+	if (m_closeEventually) {
+		return;
+	}
+
 	// Read packets
 	while (auto pkg = m_socket->Recv()) {
 		assert(pkg && "Got null package and executing!");
@@ -38,7 +42,7 @@ void NetRpc::Update() {
 			if (pkg->Read<bool>()) {
 				// Reply to the server with a pong
 				pkg->GetStream().Clear();
-				pkg->Write<int32_t>(0);
+				pkg->Write<HASH_t>(0);
 				pkg->Write(false);
 				SendPackage(pkg);
 			}
@@ -69,11 +73,11 @@ void NetRpc::Update() {
 		LOG(INFO) << "Client RPC timeout";
 		m_socket->Close();
 	}
-
 }
 
 void NetRpc::SendError(ConnectionStatus status) {
 	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
 	Invoke("Error", status);
-	m_socket->Close();
+	m_closeEventually = true;
+	//m_socket->Close();
 }

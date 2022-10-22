@@ -1,5 +1,7 @@
 #include <random>
 #include <limits>
+#include <openssl/rand.h>
+#include <openssl/md5.h>
 
 #include "Utils.h"
 
@@ -80,7 +82,7 @@ namespace Utils {
 
         if (inflateInit2(&stream, (16 + MAX_WBITS)) != Z_OK)
             throw std::runtime_error("unable to decompress gzip stream");
-
+        
         while (true) {
             // If our output buffer is too small  
             if (stream.total_out >= uncompLength) {
@@ -163,15 +165,70 @@ namespace Utils {
         return ret;
     }
 
-    std::random_device rd;     //Get a random seed from the OS entropy device, or whatever
-    std::mt19937_64 eng(rd()); //Use the 64-bit Mersenne Twister 19937 generator
-                               //and seed it with entropy.
+
+
+
+
+    void FormatAscii(std::string& in) {
+
+        //OPTICK_EVE
+        //__LINE__;
+        //__TIMESTAMP__;
+
+        //__FILE__
+
+        auto period = 5s;
+
+        auto now = steady_clock::now();
+        static auto last_run = now; // Initialized to this once
+        auto elapsed = std::chrono::duration_cast<milliseconds>(now - last_run); // .count();
+
+        // now repeat every period
+        if (elapsed > period) {
+            last_run = now;
+            // run func
+        }
+
+
+        byte_t *data = reinterpret_cast<byte_t*>(in.data());
+        for (int i = 0; i < in.size(); i++) {
+            if (data[i] > 127)
+                data[i] = 63;
+        }
+    }
+
+
+    //std::string BytesToAscii(const byte_t* bytes, int count) {
+    //    std::string result;
+    //    for (int i = 0; i < count; i++) {
+    //        if (bytes[i] > 127)
+    //            result[i] = '?';
+    //        else 
+    //            result[i] =
+    //            //bytes[i] = 63;
+    //    }
+    //}
+
+    //void GenerateBytes(std::vec)
+
+    void GenerateBytes(byte_t* out, unsigned int count) {
+        RAND_bytes(out, count);
+    }
+
+    BYTES_t GenerateBytes(unsigned int count) {
+        BYTES_t result(count);
+
+        GenerateBytes(result.data(), count);
+
+        return result;
+    }
+
+
 
     UUID_t GenerateUID() {
-        //Define the distribution, by default it goes from 0 to MAX(unsigned long long)
-        //or what have you.
-        std::uniform_int_distribution<int64_t> distr;
-        return distr(eng);
+        UUID_t result;
+        GenerateBytes(reinterpret_cast<byte_t*>(&result), sizeof(result));
+        return result;
     }
 
     HASH_t GetStableHashCode(const std::string& str) {

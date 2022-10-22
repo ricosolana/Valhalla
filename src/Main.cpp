@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <optick.h>
 #include <easylogging++.h>
+#include <openssl/md5.h>
 
 #include "ResourceManager.h"
 #include "ValhallaServer.h"
@@ -55,6 +56,28 @@ static void on_interrupt(int num) {
     //getc(stdin); // pause
 }
 
+void InitPassword(const std::string& password) {
+    auto m_hasPassword = !password.empty();
+
+    if (m_hasPassword) {
+        // Create random 16 byte salt
+        //m_salt.resize(16);
+        //auto v = RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
+
+        std::string m_salt = "abcdefghijklmnop";
+        std::string m_saltedPassword;
+
+        // Hash a salted password
+        m_saltedPassword.resize(16);
+
+        auto merge = password + m_salt;
+        MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+            merge.size(), reinterpret_cast<uint8_t*>(m_saltedPassword.data()));
+        
+    }
+}
+
+
 // See https://partner.steamgames.com/doc/sdk/api for documentation
 int main(int argc, char **argv) {
     ResourceManager::SetRoot("./data/");
@@ -66,13 +89,10 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
+    //InitPassword("hello world");
+
     //ResourceManager::SetRoot("data");
     //BYTES_t buf;
-
-    //ResourceManager::ReadFileBytes("pic.jpg", buf);
-    //auto compressed = Utils::Compress(buf.data(), buf.size());
-    //ResourceManager::WriteFileBytes("pic", compressed);
-
 
     //return 0;
 

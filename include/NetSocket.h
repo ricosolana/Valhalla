@@ -18,17 +18,27 @@ public:
 
 	virtual ~ISocket() = default;
 
+	// Begin socket readers
 	virtual void Start() = 0;
+
+	// Terminates the connection
 	virtual void Close() = 0;
 
+	// Call every tick to reengage writers
 	virtual void Update() = 0;
+	// Send a packet to the remote host
 	virtual void Send(NetPackage::Ptr packet) = 0;
+	// Receive a packet from the remote host
 	virtual NetPackage::Ptr Recv() = 0;
 
+	// Get the name of this connection
 	virtual std::string GetHostName() const = 0;
 
+	// Returns true if the socket is alive
 	virtual bool Connected() const = 0;
 
+	// Returns the size in bytes of packets queued for sending
+	// Returns -1 on failure
 	virtual int GetSendQueueSize() const = 0;
 };
 
@@ -61,9 +71,7 @@ public:
 	bool Connected() const override {
 		return m_steamNetCon != k_HSteamNetConnection_Invalid;
 	}
-	int GetSendQueueSize() const override {
-		return 0;
-	}
+	int GetSendQueueSize() const override;
 
 private:
 	void SendQueued();
