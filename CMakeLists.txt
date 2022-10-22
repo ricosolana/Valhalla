@@ -29,7 +29,7 @@ find_package(yaml-cpp CONFIG REQUIRED)
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
 
-
+add_compile_definitions(NOMINMAX)
 
 #set_target_properties(ryml::ryml PROPERTIES RYML_STANDALONE ON)
 #set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
@@ -99,10 +99,10 @@ add_executable(${PROJECT_NAME}
     "src/NetObject.cpp" 
 
     # steam
-    "src/SteamManager.cpp" 
+     
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
-)
+ "include/ServerSettings.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

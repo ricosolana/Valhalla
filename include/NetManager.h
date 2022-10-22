@@ -3,6 +3,7 @@
 #include "NetPeer.h"
 #include "NetRpcManager.h"
 #include "NetAcceptor.h"
+#include "ServerSettings.h"
 
 enum class ConnectionStatus : int32_t {
 	None,
@@ -25,11 +26,7 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 namespace NetManager {
 	void RemotePrint(NetRpc* rpc, const std::string &text);
 
-	void Start(const std::string& name,
-		const std::string& password,
-		uint16_t port,
-		bool isPublic,
-		float timeout);
+	void Start(const ServerSettings& settings);
 	void Update(double delta);
 	void Close();
 
