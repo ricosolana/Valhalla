@@ -4,24 +4,23 @@
 
 using namespace std::chrono_literals;
 
-// Enable steam?
-//#define ENABLE_STEAM
-
-// Uncomment this to enable RPC method name debugging
-// Must also be enabled on client!
+// Enable RPC method name debugging
 //#define RPC_DEBUG
 
 // Timeout for RPC pong
-static constexpr std::chrono::seconds RPC_PING_TIMEOUT = 30s;
+#define RPC_PING_TIMEOUT 30s
 
 // Interval for RPC pinging
-static constexpr std::chrono::seconds RPC_PING_INTERVAL = 1s;
+#define RPC_PING_INTERVAL 1s
 
-// Enable or disable AsyncQueue wait
+// Enable AsyncQueue wait
 //#define USE_DEQUE_WAIT
 
 // Change on updates
-#define SERVER_VERSION "0.211.9"
+#define VALHEIM_VERSION "0.211.9"
 
-// Possibly faster but more unsafe Stream
+// Experimental Stream setting (untested)
 //#define REALLOC_STREAM
+
+// DO NOT CHANGE THIS VALUE!
+#define VALHEIM_APP_ID 892970

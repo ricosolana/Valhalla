@@ -27,7 +27,8 @@ private:
 	//std::deque<std::shared_ptr<SteamSocket>> m_awaiting;
 
 public:
-	AcceptorSteam(uint16_t port);
+	AcceptorSteam(const std::string& name, 
+		bool hasPassword, uint16_t port, bool isPublic, float timeout);
 	~AcceptorSteam();
 
 	void Start() override;

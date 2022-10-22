@@ -7,7 +7,6 @@
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
-#include "SteamManager.h"
 
 using namespace std::chrono;
 
@@ -25,29 +24,76 @@ void ValhallaServer::Launch() {
 	assert(!m_running && "Tried calling Launch() twice!");
 	//assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
 
-	std::string buf;
-	if (!ResourceManager::ReadFileBytes("server.yml", buf))
-		throw std::runtime_error("server.yml not found");
+	YAML::Node loadNode;
+	{
+		std::string buf;
+		if (ResourceManager::ReadFileBytes("server.yml", buf)) {
+			try {
+				loadNode = YAML::Load(buf);
+			}
+			catch (YAML::ParserException& e) {
+				LOG(INFO) << e.what();
+			}
+		} 
+		else
+			LOG(INFO) << "Server config not found, creating...";
+	}
 
-	//ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(buf));
-	//
-	//auto password = tree["password"].valid();
-	//auto seed = tree["password"].is_seed();
-	//auto c = tree["password"].val().str; // .get()->m_val.
-	//tree["password"].get()->;
+	auto serverName =					loadNode["server-name"].as<std::string>("My server");
+	auto serverPort =					loadNode["server-port"].as<uint16_t>(2456);
+	auto serverPassword =				loadNode["server-password"].as<std::string>("secret");
+	auto serverPublic =					loadNode["server-public"].as<bool>(false);
 
-	auto node = YAML::Load(buf);
+	auto worldName =					loadNode["world-name"].as<std::string>("Dedicated world");
+	auto worldSeed =					loadNode["world-seed"].as<int32_t>(123456789);
 
-	m_serverName = node["server-name"].as<std::string>("My server");
-	auto worldName = node["world-name"].as<std::string>("Dedicated world");
+	auto playerWhitelist =				loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
+	auto playerTimeout =				loadNode["player-timeout"].as<float>(30000);		// player timeout in milliseconds
+	auto playerMax =					loadNode["player-max"].as<unsigned int>(64);		// max allowed players
+	auto playerAuth =					loadNode["player-auth"].as<bool>(true);				// allow authed players only
+	auto playerList =					loadNode["player-list"].as<bool>(true);				// does not send playerlist to players
+	auto playerArrivePing =				loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
+	
+	YAML::Node saveNode;
 
-	auto password = node["password"].as<std::string>("secret");
-	auto port = node["port"].as<uint16_t>(2456);
+	saveNode["server-name"] =			serverName;
+	saveNode["server-port"] =			serverPort;
+	saveNode["server-password"] =		serverPassword;
+	saveNode["server-public"] =			serverPublic;
+
+	saveNode["world-name"] =			worldName;
+	saveNode["world-seed"] =			worldSeed;
+
+	saveNode["player-whitelist"] =		playerWhitelist;
+	saveNode["player-timeout"] =		playerTimeout;
+	saveNode["player-max"] =			playerMax;
+	saveNode["player-auth"] =			playerAuth;
+	saveNode["player-list"] =			playerList;
+	saveNode["player-arrive-ping"] =	playerArrivePing;
+
+	if (saveNode != loadNode) {
+		YAML::Emitter out;
+		out.SetIndent(4);
+		out << saveNode;
+
+		assert(out.good());
+
+		ResourceManager::WriteFileBytes("server.yml", out.c_str());
+
+		LOG(INFO) << "Patched server config";
+	}
+	else {
+		LOG(INFO) << "Server config loaded";
+	}
+
+
+
+	// have other settings like chat spam prevention, fly prevention, advanced permission settings
+	
 	m_serverUuid = Utils::GenerateUID();
 
-	InitSteam(port);
 	ModManager::Init();
-	NetManager::Listen(port, password);
+	NetManager::Start(serverName, serverPassword, serverPort, serverPublic, playerTimeout);
 
 
 
@@ -102,7 +148,6 @@ void ValhallaServer::Terminate() {
 	m_running = false;
 	ModManager::Uninit();
 	NetManager::Close();
-	UnInitSteam();
 }
 
 void ValhallaServer::Update(float delta) {

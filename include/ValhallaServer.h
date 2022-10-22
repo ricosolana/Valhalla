@@ -18,10 +18,6 @@ class ValhallaServer {
 	UUID_t m_serverUuid;
 
 public:
-	const std::string& Name() const {
-		return m_serverName;
-	}
-
 	UUID_t Uuid() const {
 		return m_serverUuid;
 	}

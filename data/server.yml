@@ -1,3 +1,12 @@
-password: "my secret"
-#bruh: false
-seq = [ 3 , " ", "hello world" ]
+server-name: we gaminggg
+server-port: 2456
+server-password: ""
+server-public: true
+world-name: Dedicated world
+world-seed: 123456789
+player-whitelist: false
+player-timeout: 30000
+player-max: 64
+player-auth: true
+player-list: true
+player-arrive-ping: true

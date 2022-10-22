@@ -40,13 +40,15 @@ namespace NetManager {
 	void InitPassword(const std::string &password) {
 		m_hasPassword = !password.empty();
 
+		assert(!m_hasPassword && "Password hasher currently broken");
+
 		if (m_hasPassword) {
 			// Create random 16 byte salt
-			m_salt.resize(16); assert(m_salt.size() == 16);
+			m_salt.resize(16);
 			auto v = RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
 
 			// Hash a salted password
-			m_saltedPassword.resize(16); assert(m_saltedPassword.size() == 16);
+			m_saltedPassword.resize(16);
 
 			auto merge = password + m_salt;
 			MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
@@ -219,7 +221,7 @@ namespace NetManager {
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
 		auto pkg(PKG());
 		pkg->Write(Valhalla()->Uuid());
-		pkg->Write(SERVER_VERSION);
+		pkg->Write(VALHEIM_VERSION);
 		pkg->Write(Vector3()); // dummy
 		pkg->Write("Stranger"); // valheim uses this, which is dumb
 
@@ -244,7 +246,7 @@ namespace NetManager {
 		auto uuid = pkg->Read<UUID_t>();
 		auto version = pkg->Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
-		if (version != SERVER_VERSION) {
+		if (version != VALHEIM_VERSION) {
 			return rpc->SendError(ConnectionStatus::ErrorVersion);
 		}
 
@@ -342,8 +344,12 @@ namespace NetManager {
 
 
 
-	void Listen(uint16_t port, const std::string &password) {
-		m_acceptor = std::make_unique<AcceptorSteam>(port);
+	void Start(const std::string& name,
+		const std::string& password,
+		uint16_t port,
+		bool isPublic,
+		float timeout) {
+		m_acceptor = std::make_unique<AcceptorSteam>(name, !password.empty(), port, isPublic, timeout);
 		m_acceptor->Start();
 
 		InitPassword(password);		

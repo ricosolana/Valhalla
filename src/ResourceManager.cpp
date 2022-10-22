@@ -104,7 +104,7 @@ namespace ResourceManager {
         if (!file)
             return false;
 
-        std::copy(str.begin(), str.end() - 1, std::ostream_iterator<byte_t>(file));
+        std::copy(str.begin(), str.end(), std::ostream_iterator<byte_t>(file));
 
         return true;
     }

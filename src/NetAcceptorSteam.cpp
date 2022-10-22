@@ -1,12 +1,41 @@
 #include "NetAcceptor.h"
 #include <isteamutils.h>
 
-AcceptorSteam::AcceptorSteam(uint16_t port) 
+AcceptorSteam::AcceptorSteam(const std::string& name, 
+	bool hasPassword, 
+	uint16_t port,
+	bool isPublic,
+	float timeout)
 	: m_port(port) {
-	float timeout = 30000.0f;
+
+	if (SteamAPI_RestartAppIfNecessary(VALHEIM_APP_ID)) {
+		LOG(INFO) << "Restarting app through Steam";
+		exit(0);
+	}
+
+	if (!SteamGameServer_Init(0, port, port + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
+		LOG(ERROR) << "Failed to init steam game server";
+		exit(0);
+	}
+
+	SteamGameServer()->SetProduct("valheim");   // for version checking
+	SteamGameServer()->SetModDir("valheim");    // game save location
+	SteamGameServer()->SetDedicatedServer(true);
+	SteamGameServer()->SetMaxPlayerCount(64);
+	SteamGameServer()->LogOnAnonymous();        // no steam login necessary
+		
+	LOG(INFO) << "Starting server on port " << port;
+	LOG(INFO) << "Server ID: " << SteamGameServer()->GetSteamID().ConvertToUint64();
+	LOG(INFO) << "Authentication status: " << SteamGameServerNetworkingSockets()->InitAuthentication();
+
+	SteamGameServer()->SetServerName(name.c_str());
+	SteamGameServer()->SetMapName(name.c_str());
+	SteamGameServer()->SetPasswordProtected(hasPassword);
+	SteamGameServer()->SetGameTags(VALHEIM_VERSION);
+	SteamGameServer()->SetAdvertiseServerActive(isPublic);
+
 	int32 offline = 1;
 	int32 sendrate = 153600;
-
 	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
 		k_ESteamNetworkingConfig_Global, 0,
 		k_ESteamNetworkingConfig_Float, &timeout);
@@ -42,6 +71,8 @@ void AcceptorSteam::Close() {
 		SteamGameServerNetworkingSockets()->CloseListenSocket(m_listenSocket);
 		m_listenSocket = k_HSteamListenSocket_Invalid;
 	}
+
+	SteamGameServer_Shutdown();
 
 	//this.m_steamNetId.Clear();
 }
