@@ -259,7 +259,7 @@ namespace NetManager {
 		auto ticket = pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
 
 		if (SteamGameServer()->BeginAuthSession(
-			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamNetId.GetSteamID()) != k_EAuthSessionResponseOK) {
+			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamID.GetSteamID()) != k_EAuthSessionResponseOK) {
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 		}
 		

@@ -1,6 +1,6 @@
 #include <robin_hood.h>
 
-#include "NetRpcManager.h"
+#include "NetRouteManager.h"
 #include "Method.h"
 #include "ValhallaServer.h"
 #include "ZoneSystem.h"
@@ -65,7 +65,7 @@ namespace NetRpcManager {
 		else {
 			auto&& find = m_methods.find(data.m_methodHash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(data.m_targetPeerID, data.m_parameters);
+				find->second->Invoke(data.m_targetPeerID, data.m_parameters, NetInvoke::ROUTE, data.m_methodHash);
 			}
 			else {
 				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;

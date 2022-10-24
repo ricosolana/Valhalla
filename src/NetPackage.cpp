@@ -55,7 +55,7 @@ void NetPackage::Write(const NetPackage::Ptr in) {
 }
 
 void NetPackage::Write(const NetID& in) {
-    Write(in.m_userID);
+    Write(in.m_uuid);
     Write(in.m_id);
 }
 

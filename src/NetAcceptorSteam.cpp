@@ -80,7 +80,7 @@ ISocket::Ptr AcceptorSteam::Accept() {
 
 
 const char* stateToString(ESteamNetworkingConnectionState state) {
-	static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connnected", "ClosedByPeer", "ProblemDetectedLocally",
+	static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connected", "ClosedByPeer", "ProblemDetectedLocally",
 		"FinWait", "Linger", "Dead"
 	};
 	if (state >= 0 && state <= 5) {
@@ -100,10 +100,10 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 
 			SteamNetConnectionInfo_t steamNetConnectionInfo_t;
 			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &steamNetConnectionInfo_t)) {
-				socket->m_steamNetId = steamNetConnectionInfo_t.m_identityRemote;
+				socket->m_steamID = steamNetConnectionInfo_t.m_identityRemote;
 			}
 
-			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamNetId.GetSteamID64();
+			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamID.GetSteamID64();
 			m_readyAccepted.insert({ data->m_hConn, socket });
 			m_pendingConnect.erase(pair);
 		}

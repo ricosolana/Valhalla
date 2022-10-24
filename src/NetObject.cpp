@@ -84,7 +84,7 @@ void NetObject::ResetNetSync() {
 void NetObject::HandleRoutedRPC(NetRpcManager::Data rpcData) {
 	auto&& find = m_functions.find(rpcData.m_methodHash);
 	if (find != m_functions.end()) {
-		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters);
+		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters, NetInvoke::OBJECT, rpcData.m_methodHash);
 	}
 	else {
 		LOG(INFO) << "Failed to find rpc method " << rpcData.m_methodHash;

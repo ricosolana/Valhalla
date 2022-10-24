@@ -61,7 +61,7 @@ namespace NetRpcManager {
 	}
 
 	template<class ...Args>
-	auto Register(RoutedRpc_Hash hash, void(*f)(UUID_t, Args...)) {
+	auto Register(Routed_Hash hash, void(*f)(UUID_t, Args...)) {
 		return _Register(static_cast<HASH_t>(hash), new MethodImpl(f));
 	}
 
@@ -89,7 +89,7 @@ namespace NetRpcManager {
 	}
 
 	template<class C, class ...Args>
-	auto Register(RoutedRpc_Hash hash, C* object, void(C::* f)(UUID_t, Args...)) {
+	auto Register(Routed_Hash hash, C* object, void(C::* f)(UUID_t, Args...)) {
 		return _Register(static_cast<HASH_t>(hash), new MethodImpl(object, f));
 	}
 
@@ -118,7 +118,7 @@ namespace NetRpcManager {
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const NetID& targetNetSync, RoutedRpc_Hash hash, Args... params) {
+	void Invoke(UUID_t target, const NetID& targetNetSync, Routed_Hash hash, Args... params) {
 		auto pkg(PKG());
 		NetPackage::Serialize(pkg, params...);
 		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), pkg);
@@ -151,7 +151,7 @@ namespace NetRpcManager {
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, RoutedRpc_Hash hash, Args... params) {
+	void Invoke(UUID_t target, Routed_Hash hash, Args... params) {
 		Invoke(target, NetID::NONE, static_cast<HASH_t>(hash), params...);
 	}
 
@@ -178,7 +178,7 @@ namespace NetRpcManager {
 	}
 
 	template <typename... Args>
-	void Invoke(RoutedRpc_Hash hash, Args... params) {
+	void Invoke(Routed_Hash hash, Args... params) {
 		Invoke(_ServerID(), static_cast<HASH_t>(hash), params...);
 	}
 

@@ -7,34 +7,12 @@
 #include "ValhallaServer.h"
 #include "ResourceManager.h"
 #include "NetRpc.h"
+#include "NetHashes.h"
 
-class Mod {
-public:
-	// required attributes
-	const std::string m_name;
-	const int m_priority;
 
-	// lua
-	sol::state m_state;
-	
-	const std::function<void()> m_onEnable;
-	const std::function<void()> m_onDisable;
-	const std::function<void(float)> m_onUpdate;
-	const std::function<bool(NetRpc*, UUID_t, std::string, std::string)> m_onPeerInfo; // onHandshake; //onNewConnection;
-
-	Mod(const std::string &name,
-		int priority,
-		sol::state state,
-		const std::function<void()> &onEnable,
-		const std::function<void()> &onDisable,
-		const std::function<void(float)> &onUpdate,
-		const std::function<bool(NetRpc*, UUID_t, std::string, std::string)> &onPeerInfo)
-		:	m_name(name), m_priority(priority), m_state(std::move(state)), 
-			m_onEnable(onEnable), m_onDisable(onDisable), m_onUpdate(onUpdate), m_onPeerInfo(onPeerInfo) {}
-
-};
 
 robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
+//robin_
 std::vector<Mod*> modsByPriority; // priority sorted
 
 static bool prioritySort(Mod* a, Mod* b) {
@@ -43,6 +21,9 @@ static bool prioritySort(Mod* a, Mod* b) {
 
 namespace ModManager {
 	namespace Api {
+
+		// can get the lua state by passing sol::this_state type at end
+		// https://sol2.readthedocs.io/en/latest/tutorial/functions.html#any-return-to-and-from-lua
 
 		// Load a Lua script starting in relative root 'data/mods/'
 		sol::state LoadLuaFrom(const fs::path& luaPath) {
@@ -104,58 +85,25 @@ namespace ModManager {
 
 
 		std::unique_ptr<Mod> LoadModFrom(const fs::path& dirname, const std::string& name, int priority) {//, robin_hood::unordered_set<std::string> circular) {
-			auto&& state = LoadLuaFrom(dirname);
+			
+			auto mod = std::make_unique<Mod>(name, priority, LoadLuaFrom(dirname));
+			auto ptr = mod.get();
 
-			auto onEnable = state["onEnable"].get_or(std::function<void()>());
-			auto onDisable = state["onDisable"].get_or(std::function<void()>());
-			auto onUpdate = state["onUpdate"].get_or(std::function<void(float)>());
-			auto onPeerInfo = state["onPeerInfo"].get_or(std::function<bool(NetRpc*, UUID_t, std::string, std::string)>());
+			auto&& state = mod->m_state;
+			
+			state.globals()["print"] = [ptr](sol::variadic_args args) {
+				auto tostring(ptr->m_state["tostring"]);
 
-			//state["bruh"].get<std::string>()
+				std::string s;
+				int idx = 0;
+				for (auto&& arg : args) {
+					if (idx++ > 0)
+						s += " ";
+					s += tostring(arg);
+				}
 
-			// https://stackoverflow.com/a/61071485
-			// Override Lua print
-			auto L(state.lua_state());
-			lua_getglobal(L, "_G");
-			lua_pushcclosure(L, [](lua_State* L) -> int
-				{
-					int n = lua_gettop(L);  /* number of arguments */
-					int i;
-					lua_getglobal(L, "tostring");
-					//Rml::String output = "";
-					std::string output = "";
-					for (i = 1; i <= n; i++)
-					{
-						const char* s;
-						lua_pushvalue(L, -1);  /* function to be called */
-						lua_pushvalue(L, i);   /* value to print */
-						lua_call(L, 1, 1);
-						s = lua_tostring(L, -1);  /* get result */
-						if (s == nullptr)
-							return luaL_error(L, "'tostring' must return a string to 'print'");
-						if (i > 1)
-							output += "\t";
-						output += (s);
-						lua_pop(L, 1);  /* pop result */
-					}
-
-//					auto view = sol::state_view(L);
-					
-					//
-					//auto find = mods.find(view["modInfo"]["name"]);
-					//if (find == mods.end()) {
-					//	LOG(ERROR) << "A loaded mod has deleted its modInfo";
-					//	return 0;
-					//}
-					//
-					//auto&& mod = find->second;
-					//
-					//LOG(INFO) << "[" << mod->m_name << "] " << output;
-					LOG(INFO) << "[LUA] " << output;
-					return 0;
-				}, 0);
-			lua_setfield(L, -2, "print");
-			lua_pop(L, 1); //pop _G
+				LOG(INFO) << "[" << ptr->m_name << "] " << s;
+			};
 
 			//state.new_usertype<Task>("Task",
 			//	"at", &Task::at,
@@ -165,7 +113,7 @@ namespace ModManager {
 			//	"function", &Task::function); // dummy
 			
 			// https://sol2.readthedocs.io/en/latest/api/property.html
-			// pass the ptr later when calling lua-side functions
+			// pass the mod later when calling lua-side functions
 			// https://github.com/LaG1924/AltCraft/blob/267eeeb94ad4863683dc96dc392e0e30ef16a39e/src/Plugin.cpp#L242
 			state.new_usertype<NetPeer>("NetPeer",
 				"Kick", &NetPeer::Kick,
@@ -181,7 +129,6 @@ namespace ModManager {
 			// To register an RPC, must pass a lua stack handler
 			// basically, get the lua state to get args passed to RPC invoke
 			// https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
-			// so this works:
 			state.new_usertype<NetRpc>("NetRpc",
 				//"Invoke", &NetRpc::Invoke,
 				"Register", //[](sol::this_state L, sol::variadic_args args) {
@@ -205,52 +152,70 @@ namespace ModManager {
 				//"HasNewData", &ISocket::HasNewData,
 				//"Recv", &ISocket::Recv,
 				//"Send", &ISocket::Send,
-				//"Start", &ISocket::Start				
+				//"Start", &ISocket::Start
 			);
 
-			//state.new_usertype<ZSocket2>("ZSocket2",
-			//	"Close", &ZSocket2::Close,
-			//	"GetConnectivity", &ZSocket2::GetConnectivity,
-			//	"GetHostName", &ZSocket2::GetHostName,
-			//	"GetHostPort", &ZSocket2::GetHostPort,
-			//	"GetSendQueueSize", &ZSocket2::GetSendQueueSize,
-			//	//"HasNewData", &ZSocket2::HasNewData,
-			//	//"Recv", &ZSocket2::Recv,
-			//	//"Send", &ZSocket2::Send,
-			//	//"Start", &ZSocket2::Start
-			//	sol::base_classes, sol::bases<ISocket>()
-			//);
+			state.new_usertype<NetPackage>("NetPackage"
+				//"", &NetPackage::
+			);
 
-			// just call the callback function with the ptr
-
-			//state.new_usertype<NetRpc>("NetRpc",
-			//	//"Invoke", &NetRpc::Invoke,
-			//	"Register", &NetRpc::Register,
-			//	"socket", &NetRpc::m_socket);
-
+			//state.new_usertype<BYTES_t>("Bytes")
 			
+			state.new_usertype<NetID>("NetID",
+				"uuid", &NetID::m_uuid,
+				"id", &NetID::m_id
+			);
+			
+			state.new_usertype<Vector3>("Vector3",
+				"x", &Vector3::x,
+				"y", &Vector3::y,
+				"z", &Vector3::z,
+				"Distance", &Vector3::Distance,
+				"Magnitude", &Vector3::Magnitude,
+				"Normalize", &Vector3::Normalize,
+				"Normalized", &Vector3::Normalized,
+				"SqDistance", &Vector3::SqDistance,
+				"SqMagnitude", &Vector3::SqMagnitude
+				//"ZERO", &Vector3::ZERO
+			);
+			
+			state.new_usertype<Vector2i>("Vector3",
+				"x", &Vector2i::x,
+				"y", &Vector2i::y,
+				"Distance", &Vector2i::Distance,
+				"Magnitude", &Vector2i::Magnitude,
+				"Normalize", &Vector2i::Normalize,
+				"Normalized", &Vector2i::Normalized,
+				"SqDistance", &Vector2i::SqDistance,
+				"SqMagnitude", &Vector2i::SqMagnitude
+				//"ZERO", &Vector2i::ZERO
+			);
+
+			state.new_usertype<Quaternion>("Quaternion",
+				"x", &Quaternion::x,
+				"y", &Quaternion::y,
+				"z", &Quaternion::z,
+				"w", &Quaternion::w
+				//"IDENTITY", &Quaternion::IDENTITY
+			);
+
+			//state.new_usertype<
 
 			auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
-			//apiTable["RegisterMod"] = Api::RegisterMod;
 			apiTable["Version"] = VALHEIM_VERSION;
+			
+			apiTable["RpcCallback"] = [ptr](std::string name, sol::function callback) {
+				ptr->m_rpcCallbacks.insert({ Utils::GetStableHashCode(name), callback});
+			};
+			apiTable["RouteCallback"] = [ptr](std::string name, sol::function callback) {
+				ptr->m_routeCallbacks.insert({ Utils::GetStableHashCode(name), callback });
+			};
+			apiTable["SyncCallback"] = [ptr](std::string name, sol::function callback) {
+				ptr->m_syncCallbacks.insert({ Utils::GetStableHashCode(name), callback });
+			};
 
-			auto ptr(new Mod(
-				// required
-				name,
-				priority,
-
-				// lua
-				std::move(state),
-
-				// optional callbacks
-				onEnable,
-				onDisable,
-				onUpdate,
-				onPeerInfo
-			));
-
-			return std::unique_ptr<Mod>(ptr);
+			return mod;
 		}
 	}
 
@@ -263,6 +228,9 @@ namespace ModManager {
 			try {
 				if (dir.exists() && dir.is_directory()) {
 					auto&& dirname = dir.path().filename();
+
+					if (dirname.string().starts_with("--"))
+						continue;
 
 					std::string name, entry;
 					int priority;
@@ -292,6 +260,10 @@ namespace ModManager {
 		Event::OnDisable();
 		modsByPriority.clear();
 		mods.clear();
+	}
+
+	std::vector<Mod*>& GetMods() {
+		return modsByPriority;
 	}
 
 	// instead get a particular mod

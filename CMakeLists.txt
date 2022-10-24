@@ -88,7 +88,7 @@ add_executable(${PROJECT_NAME}
     "src/NetManager.cpp"
     "src/NetPeer.cpp" 
     "src/NetPackage.cpp"    
-    "src/NetRpcManager.cpp"
+    "src/NetRouteManager.cpp"
     "src/NetRpc.cpp" 
     
     

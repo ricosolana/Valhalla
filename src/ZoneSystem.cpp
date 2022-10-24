@@ -1,6 +1,6 @@
 #include "ZoneSystem.h"
 #include "NetPackage.h"
-#include "NetRpcManager.h"
+#include "NetRouteManager.h"
 #include "HeightMap.h"
 //#include ""
 
@@ -109,7 +109,7 @@ namespace ZoneSystem {
 	static constexpr float ZONE_SIZE = 64;
 
 	void SendGlobalKeys(UUID_t target) {
-		NetRpcManager::Invoke(target, RoutedRpc_Hash::GlobalKeys, m_globalKeys);
+		NetRpcManager::Invoke(target, Routed_Hash::GlobalKeys, m_globalKeys);
 	}
 
 	void GetLocationIcons(std::vector<std::pair<Vector3, std::string>> &icons) {
@@ -153,7 +153,7 @@ namespace ZoneSystem {
 		//	pkg->Write(keyValuePair.Value);
 		//}
 		
-		NetRpcManager::Invoke(target, RoutedRpc_Hash::LocationIcons, pkg);
+		NetRpcManager::Invoke(target, Routed_Hash::LocationIcons, pkg);
 	}
 
 	void OnNewPeer(NetPeer::Ptr peer) {

@@ -5,10 +5,6 @@
 // Recursive method
 
 
-
-
-
-
 /*
 * 
 * Rpc manager methods
@@ -42,7 +38,7 @@ enum class Rpc_Hash : HASH_t {
 //		Talker.Say is ran by Client by Chat.SendText
 //		Talker.RPC_Say appears to be used ONLY by client (due to localPlayer null check)
 
-enum class RoutedRpc_Hash : HASH_t {
+enum class Routed_Hash : HASH_t {
 	SleepStart = __H("SleepStart"),
 	SleepStop = __H("SleepStop"),
 	DamageText = __H("DamageText"),
@@ -70,7 +66,7 @@ enum class RoutedRpc_Hash : HASH_t {
 * 
 */
 
-enum class ArmorStand_RPC : HASH_t {	
+enum class ArmorStand_RPC : HASH_t {
 	DestroyAttachment = __H("RPC_DestroyAttachment"),
 	DropItem = __H("RPC_DropItem"),
 	DropItemByName = __H("RPC_DropItemByName"),

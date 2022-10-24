@@ -48,8 +48,8 @@ private:
 	std::deque<NetPackage::Ptr> m_recvQueue;
 
 public:
-	HSteamNetConnection m_steamNetCon;
-	SteamNetworkingIdentity m_steamNetId;
+	HSteamNetConnection m_handle;
+	SteamNetworkingIdentity m_steamID;
 
 public:
 	SteamSocket(HSteamNetConnection con);
@@ -64,13 +64,13 @@ public:
 	NetPackage::Ptr Recv() override;
 
 	std::string GetHostName() const override {
-		//SteamNetworkingUtils()->GetIPv4FakeIPType
-		//m_steamNetId.GetSteamID()
-		return std::string("type: ") + std::to_string(m_steamNetId.m_eType); // .m_eTypeGetIPv4()GetIPAddr()->st;
+		return std::to_string(m_steamID.GetSteamID64());
 	}
+
 	bool Connected() const override {
-		return m_steamNetCon != k_HSteamNetConnection_Invalid;
+		return m_handle != k_HSteamNetConnection_Invalid;
 	}
+
 	int GetSendQueueSize() const override;
 
 private:

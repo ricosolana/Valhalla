@@ -56,7 +56,8 @@ void NetRpc::Update() {
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(this, pkg);
+				// lua pre handler
+				find->second->Invoke(this, pkg, NetInvoke::RPC, hash);
 			}
 			else {
 #ifdef RPC_DEBUG

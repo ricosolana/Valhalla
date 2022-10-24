@@ -68,7 +68,9 @@ namespace Utils {
 
 	template <class F, class C, class Pass, class Tuple, size_t... Is>
 	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple& t, std::index_sequence<Is...>) {
-		return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
+		//return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
+		// the move causes the params to get invalidated when passing twice
+		return std::invoke(f, c, pass, std::get<Is>(t)...);
 	}
 
 	template <class F, class C, class Pass, class Tuple>
@@ -77,10 +79,11 @@ namespace Utils {
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 
-	// for lua
+	// Static method invoke
 	template <class F, class Pass, class Tuple, size_t... Is>
 	constexpr auto InvokeTupleImplS(F f, Pass pass, Tuple& t, std::index_sequence<Is...>) {
-		return std::invoke(f, pass, std::move(std::get<Is>(t))...);
+		//return std::invoke(f, pass, std::move(std::get<Is>(t))...);
+		return std::invoke(f, pass, std::get<Is>(t)...);
 	}
 
 	template <class F, class Pass, class Tuple>
