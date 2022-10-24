@@ -9,8 +9,7 @@ onEnable = function()
     Valhalla.RpcCallback("PeerInfo", function(rpc, pkg)
         --print(type(pkg))
         --print(pkg.type())
-        rpc.socket:GetHostName
-        print("PeerInfo called!!!")
+        print("got peer" .. rpc.socket:GetHostName())
     end)
 end
 

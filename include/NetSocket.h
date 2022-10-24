@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <optional>
 
 #include "Utils.h"
 #include "NetPackage.h"
@@ -27,9 +28,9 @@ public:
 	// Call every tick to reengage writers
 	virtual void Update() = 0;
 	// Send a packet to the remote host
-	virtual void Send(NetPackage::Ptr packet) = 0;
+	virtual void Send(const NetPackage& pkg) = 0;
 	// Receive a packet from the remote host
-	virtual NetPackage::Ptr Recv() = 0;
+	virtual std::optional<NetPackage> Recv() = 0;
 
 	// Get the name of this connection
 	virtual std::string GetHostName() const = 0;
@@ -45,11 +46,11 @@ public:
 class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
-	std::deque<NetPackage::Ptr> m_recvQueue;
+	std::deque<NetPackage> m_recvQueue;
 
 public:
 	HSteamNetConnection m_handle;
-	SteamNetworkingIdentity m_steamID;
+	SteamNetworkingIdentity m_steamNetId;
 
 public:
 	SteamSocket(HSteamNetConnection con);
@@ -60,11 +61,11 @@ public:
 	void Close() override;
 	
 	void Update() override;
-	void Send(NetPackage::Ptr packet) override;
-	NetPackage::Ptr Recv() override;
+	void Send(const NetPackage &pkg) override;
+	std::optional<NetPackage> Recv() override;
 
 	std::string GetHostName() const override {
-		return std::to_string(m_steamID.GetSteamID64());
+		return std::to_string(m_steamNetId.GetSteamID64());
 	}
 
 	bool Connected() const override {

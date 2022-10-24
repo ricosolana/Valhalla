@@ -186,16 +186,16 @@ namespace NetManager {
 
 	void SendPlayerList() {
 		if (!m_peers.empty()) {
-			auto pkg(PKG());
-			pkg->Write((int)m_peers.size());
+			NetPackage pkg;
+			pkg.Write((int)m_peers.size());
 
 			for (auto&& peer : m_peers) {
-				pkg->Write(peer->m_name);
-				pkg->Write(peer->m_rpc->m_socket->GetHostName());
-				pkg->Write(peer->m_characterID);
-				pkg->Write(peer->m_visibleOnMap);
+				pkg.Write(peer->m_name);
+				pkg.Write(peer->m_rpc->m_socket->GetHostName());
+				pkg.Write(peer->m_characterID);
+				pkg.Write(peer->m_visibleOnMap);
 				if (peer->m_visibleOnMap) {
-					pkg->Write(peer->m_pos);
+					pkg.Write(peer->m_pos);
 				}
 			}
 
@@ -222,44 +222,44 @@ namespace NetManager {
 		//auto now(steady_clock::now());
 		//double netTime =
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
-		auto pkg(PKG());
-		pkg->Write(Valhalla()->Uuid());
-		pkg->Write(VALHEIM_VERSION);
-		pkg->Write(Vector3()); // dummy
-		pkg->Write("Stranger"); // valheim uses this, which is dumb
+		NetPackage pkg;
+		pkg.Write(Valhalla()->Uuid());
+		pkg.Write(VALHEIM_VERSION);
+		pkg.Write(Vector3()); // dummy
+		pkg.Write("Stranger"); // valheim uses this, which is dumb
 
 		// why does a server need to send a position and name?
 		// clearly someone didnt think of the protocol
 
-		pkg->Write(m_world->m_name);
-		pkg->Write(m_world->m_seed);
-		pkg->Write(m_world->m_seedName);
-		pkg->Write(m_world->m_uid);
-		pkg->Write(m_world->m_worldGenVersion);
-		pkg->Write(m_netTime);
+		pkg.Write(m_world->m_name);
+		pkg.Write(m_world->m_seed);
+		pkg.Write(m_world->m_seedName);
+		pkg.Write(m_world->m_uid);
+		pkg.Write(m_world->m_worldGenVersion);
+		pkg.Write(m_netTime);
 
 		rpc->Invoke(Rpc_Hash::PeerInfo, pkg);
 	}
 
-	void RPC_PeerInfo(NetRpc* rpc, NetPackage::Ptr pkg) {
+	void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 		assert(rpc && rpc->m_socket);
 
 		auto&& hostName = rpc->m_socket->GetHostName();
 
-		auto uuid = pkg->Read<UUID_t>();
-		auto version = pkg->Read<std::string>();
+		auto uuid = pkg.Read<UUID_t>();
+		auto version = pkg.Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
 		if (version != VALHEIM_VERSION) {
 			return rpc->SendError(ConnectionStatus::ErrorVersion);
 		}
 
-		auto pos = pkg->Read<Vector3>();
-		auto name = pkg->Read<std::string>();
-		auto password = pkg->Read<std::string>();
-		auto ticket = pkg->Read<std::vector<byte_t>>(); // read in the dummy ticket
+		auto pos = pkg.Read<Vector3>();
+		auto name = pkg.Read<std::string>();
+		auto password = pkg.Read<std::string>();
+		auto ticket = pkg.Read<std::vector<byte_t>>(); // read in the dummy ticket
 
 		if (SteamGameServer()->BeginAuthSession(
-			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamID.GetSteamID()) != k_EAuthSessionResponseOK) {
+			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamNetId.GetSteamID()) != k_EAuthSessionResponseOK) {
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 		}
 		
@@ -418,17 +418,18 @@ namespace NetManager {
 		PERIODIC_NOW(1s, {
 			for (auto&& rpc : m_joining) {
 				LOG(DEBUG) << "Rpc join pinging ";
-				auto pkg(PKG());
-				pkg->Write<HASH_t>(0);
-				pkg->Write(true);
+				//auto pkg(PKG());
+				NetPackage pkg;
+				pkg.Write<HASH_t>(0);
+				pkg.Write(true);
 				rpc->m_socket->Send(pkg);
 			}
 
 			for (auto&& peer : m_peers) {
 				LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
-				auto pkg(PKG());
-				pkg->Write<HASH_t>(0);
-				pkg->Write(true);
+				NetPackage pkg;
+				pkg.Write<HASH_t>(0);
+				pkg.Write(true);
 				peer->m_rpc->m_socket->Send(pkg);
 			}
 		});

@@ -258,6 +258,6 @@ public:
 		return false;
 	}
 
-	void Serialize(NetPackage::Ptr pkg);
-	void Deserialize(NetPackage::Ptr pkg);
+	void Serialize(NetPackage &pkg);
+	void Deserialize(NetPackage &pkg);
 };

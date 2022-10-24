@@ -19,20 +19,21 @@ namespace NetRpcManager {
 	}
 
 	void _RouteRPC(Data data) {
-		auto pkg(PKG());
+		//auto pkg(PKG());
+		NetPackage pkg;
 		data.Serialize(pkg);
 
 		if (data.m_targetPeerID == EVERYBODY) {
 			for (auto&& peer : NetManager::GetPeers()) {
 				// send to everyone (except sender)
 				if (data.m_senderPeerID != peer->m_uuid)
-					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, std::move(pkg));
 			}
 		}
 		else {
 			auto peer = NetManager::GetPeer(data.m_targetPeerID);
 			if (peer) {
-				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, std::move(pkg));
 			}
 		}
 	}
@@ -73,7 +74,7 @@ namespace NetRpcManager {
 		}
 	}
 
-	void RPC_RoutedRPC(NetRpc* rpc, NetPackage::Ptr pkg) {
+	void RPC_RoutedRPC(NetRpc* rpc, NetPackage pkg) {
 		Data data(pkg);
 
 		// Server is the intended receiver
@@ -86,7 +87,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage::Ptr pkg) {
+	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage pkg) {
 		static UUID_t m_rpcMsgID = 1;
 		static auto SERVER_ID(_ServerID());
 
@@ -96,9 +97,10 @@ namespace NetRpcManager {
 		data.m_targetPeerID = target;
 		data.m_targetNetSync = targetNetSync;
 		data.m_methodHash = hash;
-		data.m_parameters = pkg;
+		data.m_parameters = std::move(pkg);
+		//assert(false);
 
-		data.m_parameters->GetStream().SetMarker(0);
+		data.m_parameters.m_stream.SetMarker(0);
 
 		// Handle message
 		if (target == SERVER_ID

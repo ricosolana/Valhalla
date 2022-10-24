@@ -13,27 +13,27 @@ namespace NetRpcManager {
 		UUID_t m_targetPeerID;
 		NetID m_targetNetSync;
 		HASH_t m_methodHash;
-		NetPackage::Ptr m_parameters;
+		NetPackage m_parameters;
 
 		Data() {}
 
 		// Will unpack the package
-		Data(NetPackage::Ptr pkg)
-			: m_msgID(pkg->Read<UUID_t>()),
-			m_senderPeerID(pkg->Read<UUID_t>()),
-			m_targetPeerID(pkg->Read<UUID_t>()),
-			m_targetNetSync(pkg->Read<NetID>()),
-			m_methodHash(pkg->Read<HASH_t>()),
-			m_parameters(pkg->Read<NetPackage::Ptr>())
+		Data(NetPackage& pkg)
+			: m_msgID(pkg.Read<UUID_t>()),
+			m_senderPeerID(pkg.Read<UUID_t>()),
+			m_targetPeerID(pkg.Read<UUID_t>()),
+			m_targetNetSync(pkg.Read<NetID>()),
+			m_methodHash(pkg.Read<HASH_t>()),
+			m_parameters(pkg.Read<NetPackage>())
 		{}
 
-		void Serialize(NetPackage::Ptr pkg) {
-			pkg->Write(m_msgID);
-			pkg->Write(m_senderPeerID);
-			pkg->Write(m_targetPeerID);
-			pkg->Write(m_targetNetSync);
-			pkg->Write(m_methodHash);
-			pkg->Write(m_parameters);
+		void Serialize(NetPackage &pkg) {
+			pkg.Write(m_msgID);
+			pkg.Write(m_senderPeerID);
+			pkg.Write(m_targetPeerID);
+			pkg.Write(m_targetNetSync);
+			pkg.Write(m_methodHash);
+			pkg.Write(m_parameters);
 		}
 	};
 
@@ -43,7 +43,7 @@ namespace NetRpcManager {
 
 	// Internal use only by NetRpcManager
 	UUID_t _ServerID();
-	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage::Ptr pkg);
+	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage pkg);
 	void _HandleRoutedRPC(Data data);
 
 	void _Register(HASH_t hash, IMethod<UUID_t>* method);
@@ -112,30 +112,34 @@ namespace NetRpcManager {
 	*/
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, Args... params) {
-		auto pkg(PKG());
+		assert(false);
+		NetPackage pkg;
 		NetPackage::Serialize(pkg, params...);
 		_InvokeRoute(target, targetNetSync, hash, pkg);
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, Routed_Hash hash, Args... params) {
-		auto pkg(PKG());
+		assert(false);
+		NetPackage pkg;
 		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), pkg);
+		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), (pkg));
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, const char* name, Args... params) {
-		auto pkg(PKG());
+		assert(false);
+		NetPackage pkg;
 		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), pkg);
+		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), (pkg));
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, const std::string& name, Args... params) {
-		auto pkg(PKG());
+		assert(false);
+		NetPackage pkg;
 		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), pkg);
+		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), (pkg));
 	}
 
 

@@ -258,14 +258,14 @@ void NetSync::SetLocal() {
 
 
 
-void NetSync::Serialize(NetPackage::Ptr pkg) {
-	pkg->Write(m_persistent);
-	pkg->Write(m_distant);
-	pkg->Write(m_timeCreated);
-	pkg->Write(PGW_VERSION);
-	pkg->Write(m_type); // sbyte
-	pkg->Write(m_prefab);
-	pkg->Write(m_rotation);
+void NetSync::Serialize(NetPackage &pkg) {
+	pkg.Write(m_persistent);
+	pkg.Write(m_distant);
+	pkg.Write(m_timeCreated);
+	pkg.Write(PGW_VERSION);
+	pkg.Write(m_type); // sbyte
+	pkg.Write(m_prefab);
+	pkg.Write(m_rotation);
 	int num = 0;
 
 	// sections organized like this:
@@ -304,24 +304,24 @@ void NetSync::Serialize(NetPackage::Ptr pkg) {
 	}*/
 
 	// pkg.Write(num);
-	pkg->Write((int32_t)m_dataMask);
+	pkg.Write((int32_t)m_dataMask);
 	
 #define TYPE_SERIALIZE(type, mtype)	\
 	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
-		auto size_mark = pkg->m_stream.Marker(); \
+		auto size_mark = pkg.m_stream.Marker(); \
 		uint8_t size = 0; \
-		pkg->Write(size); \
+		pkg.Write(size); \
 		for (auto&& pair : m_members) { \
 			if (pair.second.first != mtype) \
 				continue; \
 			size++; \
-			pkg->Write(from_prefix(pair.first, mtype)); \
-			pkg->Write(*(type*)pair.second.second); \
+			pkg.Write(from_prefix(pair.first, mtype)); \
+			pkg.Write(*(type*)pair.second.second); \
 		} \
-		auto end_mark = pkg->m_stream.Marker(); \
-		pkg->m_stream.SetMarker(size_mark); \
-		pkg->Write(size); \
-		pkg->m_stream.SetMarker(end_mark); \
+		auto end_mark = pkg.m_stream.Marker(); \
+		pkg.m_stream.SetMarker(size_mark); \
+		pkg.Write(size); \
+		pkg.m_stream.SetMarker(end_mark); \
 	}
 
 
@@ -356,23 +356,23 @@ void NetSync::Serialize(NetPackage::Ptr pkg) {
 	TYPE_SERIALIZE(BYTES_t, MemberShift::ARRAY);
 }
 
-void NetSync::Deserialize(NetPackage::Ptr pkg) {
-	m_persistent = pkg->Read<bool>();
-	m_distant = pkg->Read<bool>();
-	m_timeCreated = pkg->Read<int64_t>();
-	auto m_pgwVersion = pkg->Read<int32_t>(); // version 
-	m_type = pkg->Read<ObjectType>();
-	m_prefab = pkg->Read<HASH_t>();
-	m_rotation = pkg->Read<Quaternion>();
+void NetSync::Deserialize(NetPackage &pkg) {
+	m_persistent = pkg.Read<bool>();
+	m_distant = pkg.Read<bool>();
+	m_timeCreated = pkg.Read<int64_t>();
+	auto m_pgwVersion = pkg.Read<int32_t>(); // version 
+	m_type = pkg.Read<ObjectType>();
+	m_prefab = pkg.Read<HASH_t>();
+	m_rotation = pkg.Read<Quaternion>();
 
-	m_dataMask = pkg->Read<int32_t>();
+	m_dataMask = pkg.Read<int32_t>();
 
 #define TYPE_DESERIALIZE(type, mtype) \
 	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
-		auto count = pkg->Read<uint8_t>(); \
+		auto count = pkg.Read<uint8_t>(); \
 		while (count--) { \
-			auto key = pkg->Read<HASH_t>(); \
-			SetWith(key, pkg->Read<type>(), mtype); \
+			auto key = pkg.Read<HASH_t>(); \
+			SetWith(key, pkg.Read<type>(), mtype); \
 		} \
 	}
 

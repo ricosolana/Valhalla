@@ -33,17 +33,23 @@ void NetRpc::Update() {
 		return;
 	}
 
-	// Read packets
-	while (auto pkg = m_socket->Recv()) {
-		assert(pkg && "Got null package and executing!");
+	std::optional<int> igr;
+	if (igr) {
+		//igr.v
+	}
 
-		auto hash = pkg->Read<HASH_t>();
+	// Read packets
+	while (auto opt = m_socket->Recv()) {
+		//assert(pkg && "Got null package and executing!");
+		NetPackage pkg = opt.value();
+
+		auto hash = pkg.Read<HASH_t>();
 		if (hash == 0) {
-			if (pkg->Read<bool>()) {
+			if (pkg.Read<bool>()) {
 				// Reply to the server with a pong
-				pkg->GetStream().Clear();
-				pkg->Write<HASH_t>(0);
-				pkg->Write(false);
+				pkg.m_stream.Clear();
+				pkg.Write<HASH_t>(0);
+				pkg.Write(false);
 				SendPackage(pkg);
 			}
 			else {

@@ -17,27 +17,26 @@
 template<typename E>
 concept EnumType = std::is_enum_v<E>;
 
-#define PKG(...) std::make_shared<NetPackage>(##__VA_ARGS__)
-
 class NetPackage {
-private:
-    //friend Stream;
-
 private:
     void Write7BitEncodedInt(int32_t value);
     int Read7BitEncodedInt();
 
 public:
-    using Ptr = std::shared_ptr<NetPackage>;
+    //using Ptr = std::shared_ptr<NetPackage>;
 
     Stream m_stream;
 
     // Used when creating a packet for dispatch
     NetPackage() = default;
-    NetPackage(const NetPackage&) = default; // copy
-    NetPackage(NetPackage&&) = delete; // move
+    NetPackage(const NetPackage& other); // copy
+    NetPackage(NetPackage&& other) = default; // move
     // Used in container item reading
     //Package(std::string& base64);
+
+
+
+    void operator=(const NetPackage& other);
 
 
 
@@ -54,7 +53,7 @@ public:
     void Write(const BYTES_t &in);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     void Write(const robin_hood::unordered_set<std::string>& in);
-    void Write(const NetPackage::Ptr in);
+    void Write(const NetPackage &in);
     void Write(const NetID &id);
     void Write(const Vector3 &in);
     void Write(const Vector2i &in);
@@ -125,12 +124,13 @@ public:
     }
 
     template<typename T>
-    T Read() requires std::same_as<T, NetPackage::Ptr> {
+    T Read() requires std::same_as<T, NetPackage> {
         auto count = Read<int32_t>();
-        auto pkg(PKG(count));
-        m_stream.Read(pkg->m_stream.Ptr(), count);
-        pkg->m_stream.SetLength(count);
-        pkg->m_stream.SetMarker(0);
+        //auto pkg(PKG(count));
+        NetPackage pkg;
+        m_stream.Read(pkg.m_stream.Ptr(), count);
+        pkg.m_stream.SetLength(count);
+        pkg.m_stream.SetMarker(0);
         return pkg;
     }
 
@@ -177,35 +177,37 @@ public:
 
 
 
-    Stream& GetStream() {
-        return m_stream;
-    }
+    // Empty template recursor
+    static void Serialize(NetPackage &pkg) {}
 
-
-
-    // Empty template accepter
-    static void Serialize(NetPackage::Ptr pkg) {}
-
+    // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static void Serialize(NetPackage::Ptr pkg, T var1, Types... var2) {
-        pkg->Write(var1);
+    static void Serialize(NetPackage& pkg, T var1, Types... var2) {
+        pkg.Write(var1);
 
         Serialize(pkg, var2...);
     }
 
+    //template <typename T, typename... Types>
+    //static NetPackage Serialize(T var1, Types... var2) {
+    //    NetPackage pkg;
+    //    Serialize(pkg, var1, var2...);
+    //    return pkg;
+    //}
 
 
+
+    // Final variadic parameter
     template<class F>
-    static auto Deserialize(NetPackage::Ptr pkg) {
-        return std::tuple(pkg->Read<F>());
+    static auto Deserialize(NetPackage &pkg) {
+        return std::tuple(pkg.Read<F>());
     }
 
+    // Reads parameters from a package
     template<class F, class S, class...R>
-    static auto Deserialize(NetPackage::Ptr pkg) {
+    static auto Deserialize(NetPackage &pkg) {
         auto a(Deserialize<F>(pkg));
         std::tuple<S, R...> b = Deserialize<S, R...>(pkg);
         return std::tuple_cat(a, b);
     }
-
 };
-    

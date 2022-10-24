@@ -16,7 +16,7 @@ class NetRpc {
 	
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
-	void SendPackage(NetPackage::Ptr pkg) {
+	void SendPackage(const NetPackage &pkg) {
 		m_socket->Send(pkg);
 	}
 
@@ -97,11 +97,11 @@ public:
 		if (!m_socket->Connected())
 			return;
 
-		auto pkg(PKG());
-		pkg->Write(hash);
+		NetPackage pkg; // TODO make into member to optimize; or even crazier, make static
+		pkg.Write(hash);
 #ifdef RPC_DEBUG // debug mode
-#error RPC_DEBUG not fully implemented
-		pkg->Write(hash);
+#error not implemented
+		pkg.Write(hash);
 #endif
 		NetPackage::Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(pkg);

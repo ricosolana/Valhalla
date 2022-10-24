@@ -8,15 +8,17 @@ class NetPackage;
 class Stream {
 	friend NetPackage;
 
-#ifdef REALLOC_STREAM
-	byte_t* m_buf = nullptr;
+#ifdef SAFE_STREAM
+	BYTES_t m_buf;
 #else
 	std::unique_ptr<byte_t> m_buf;
+	uint32_t m_alloc; // allocated bytes
 #endif
-	uint32_t m_alloc = 0; // allocated bytes
-	uint32_t m_length = 0; // written bytes
-	uint32_t m_marker = 0; // read/write head offset from origin
 
+	uint32_t m_length; // written bytes
+	uint32_t m_marker; // read/write head offset from origin
+
+#ifndef SAFE_STREAM
 	// Reserves in the next power of two
 	void EnsureCapacity(uint32_t count) {
 		Reserve(count << 1);
@@ -25,11 +27,15 @@ class Stream {
 	void EnsureExtra(uint32_t extra) {
 		EnsureCapacity(m_alloc + extra);
 	}
+#endif
 
 public:
-	Stream(uint32_t count = 0);
-	Stream(const Stream&); // copy 
-	Stream(Stream&&) = default; // move removed
+	Stream();
+	Stream(uint32_t count);
+	Stream(const Stream& other); // copy 
+	Stream(Stream&& other) noexcept; // move
+
+	void operator=(const Stream& other);
 
 #ifdef REALLOC_STREAM
 	~Stream();
@@ -88,11 +94,12 @@ public:
 
 	// https://stackoverflow.com/a/9370717
 	
+
 	// Returns the raw bytes pointer
 	// implicitly hinted inline or
-	byte_t* Ptr() const {
-#ifdef REALLOC_STREAM
-		return m_buf;
+	const byte_t* Ptr() const {
+#ifdef SAFE_STREAM
+		return m_buf.data();
 #else
 		return m_buf.get();
 #endif
@@ -137,10 +144,11 @@ public:
 	void SetMarker(uint32_t marker); 
 
 
-
+#ifndef SAFE_STREAM
 	// Reserves count bytes if m_alloc is less than count
 	void Reserve(uint32_t count);
 	auto ReserveExtra(uint32_t extra) {
 		return Reserve(m_alloc + extra);
 	}
+#endif
 };

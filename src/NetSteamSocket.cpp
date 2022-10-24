@@ -6,8 +6,8 @@ SteamSocket::SteamSocket(HSteamNetConnection con) {
 	m_handle = con;
 	SteamNetConnectionInfo_t info;
 	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_handle, &info);
-	m_steamID = info.m_identityRemote;
-	LOG(INFO) << "Peer connected " << m_steamID.GetSteamID64();
+	m_steamNetId = info.m_identityRemote;
+	LOG(INFO) << "Peer connected " << m_steamNetId.GetSteamID64();
 	//ZSteamSocket.m_sockets.Add(this);
 }
 
@@ -22,7 +22,7 @@ void SteamSocket::Start() {}
 void SteamSocket::Close() {
 	//Flush();
 	//Thread.Sleep(100);
-	auto steamID = m_steamID.GetSteamID();
+	auto steamID = m_steamNetId.GetSteamID();
 	// Valheim does not linger the socket connection, it closes it immediately, 
 	// NOT BEFORE CALLING THREAD.SLEEP ON THE MAIN THREAD!?!
 	// 
@@ -36,7 +36,7 @@ void SteamSocket::Close() {
 	SteamGameServerNetworkingSockets()->CloseConnection(m_handle, 0, "", false);
 	SteamGameServer()->EndAuthSession(steamID);
 	m_handle = k_HSteamNetConnection_Invalid;
-	m_steamID.Clear();
+	m_steamNetId.Clear();
 }
 
 
@@ -46,23 +46,23 @@ void SteamSocket::Update() {
 	//if (this->)
 }
 
-void SteamSocket::Send(NetPackage::Ptr pkg) {
-	if (pkg->m_stream.Length() == 0 || !Connected())
+void SteamSocket::Send(const NetPackage &pkg) {
+	if (pkg.m_stream.Length() == 0 || !Connected())
 		return;
 
-	m_sendQueue.push_back(pkg->m_stream.Bytes());	
+	m_sendQueue.push_back(pkg.m_stream.Bytes());
 }
 
-NetPackage::Ptr SteamSocket::Recv() {
+std::optional<NetPackage> SteamSocket::Recv() {
 	if (Connected()) {
 		SteamNetworkingMessage_t* msg; // will point to allocated messages
 		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_handle, &msg, 1) == 1) {
-			auto pkg(PKG((byte_t*)msg->m_pData, msg->m_cbSize));
+			NetPackage pkg((byte_t*)msg->m_pData, msg->m_cbSize);
 			msg->Release();
 			return pkg;
 		}
 	}
-	return nullptr;
+	return std::nullopt;
 }
 
 

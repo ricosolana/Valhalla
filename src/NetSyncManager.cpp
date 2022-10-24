@@ -24,13 +24,13 @@ namespace NetSyncManager {
 
 		void NetSyncSectorInvalidated(NetSync *netSync) {
 			throw std::runtime_error("Not implemented");
-			//if (NetSync->m_owner == m_peer->m_uuid)
+			//if (sync->m_owner == m_peer->m_uuid)
 			//	return;
 			//
-			//if (m_syncs.contains(NetSync->m_uid) 
-			//	&& !ZNetScene.instance.InActiveArea(NetSync->GetSector(), m_peer->m_pos)) {
-			//	m_invalidSector.insert(NetSync.m_uid);
-			//	m_syncs.erase(NetSync->m_uid);
+			//if (m_syncs.contains(sync->m_uid) 
+			//	&& !ZNetScene.instance.InActiveArea(sync->GetSector(), m_peer->m_pos)) {
+			//	m_invalidSector.insert(sync.m_uid);
+			//	m_syncs.erase(sync->m_uid);
 			//}
 		}
 
@@ -69,7 +69,7 @@ namespace NetSyncManager {
 			return nullptr;
 		}
 		////auto &&find = m_objec
-		//NetSync result;
+		//sync result;
 		//if (this.m_objectsByID.TryGetValue(id, out result))
 		//{
 		//	return result;
@@ -103,84 +103,84 @@ namespace NetSyncManager {
 
 	NetSync *CreateNewNetSync(NetID uid, Vector3 position)
 	{
-		//NetSync NetSync = NetSyncPool.Create(this, uid, position);
-		//NetSync.m_owner = this.m_myid;
-		//NetSync.m_timeCreated = ZNet.instance.GetTime().Ticks;
-		//this.m_objectsByID.Add(uid, NetSync);
-		//return NetSync;
+		//sync sync = NetSyncPool.Create(this, uid, position);
+		//sync.m_owner = this.m_myid;
+		//sync.m_timeCreated = ZNet.instance.GetTime().Ticks;
+		//this.m_objectsByID.Add(uid, sync);
+		//return sync;
 		return nullptr;
 	}
 
-	void RPC_NetSyncData(NetRpc* rpc, NetPackage::Ptr pkg) {
+	void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg) {
 		throw std::runtime_error("Not implemented");
 
-		auto NetSyncpeer = GetPeer(rpc);
-		assert(NetSyncpeer);
+		auto syncPeer = GetPeer(rpc);
+		assert(syncPeer);
 
 		float time = 0; //Time.time;
 		//int num = 0; // NetSyncs to be received
-		auto invalid_sector_count = pkg->Read<int32_t>(); // invalid sector count
+		auto invalid_sector_count = pkg.Read<int32_t>(); // invalid sector count
 		for (int i = 0; i < invalid_sector_count; i++)
 		{
-			auto id = pkg->Read<NetID>();
-			//NetSync NetSync = this.GetNetSync(id);
-			//if (NetSync != null)
+			auto id = pkg.Read<NetID>();
+			//sync sync = this.GetNetSync(id);
+			//if (sync != null)
 			//{
-			//	NetSync.InvalidateSector();
+			//	sync.InvalidateSector();
 			//}
 		}
 
-		int NetSyncsRecv = 0;
+		int recv = 0;
 		for (;;)
 		{
-			auto NetSyncid = pkg->Read<NetID>(); // uid
-			if (!NetSyncid)
+			auto syncId = pkg.Read<NetID>(); // uid
+			if (!syncId)
 				break;
 
-			NetSyncsRecv++;
+			recv++;
 
-			auto NetSync = GetNetSync(NetSyncid);
+			auto sync = GetNetSync(syncId);
 
-			auto ownerRevision = pkg->Read<uint32_t>(); // owner revision
-			auto dataRevision = pkg->Read<uint32_t>(); // data revision
-			auto owner = pkg->Read<UUID_t>(); // owner
-			auto vec3 = pkg->Read<Vector3>(); // position
-			auto pkg2 = pkg->Read<NetPackage::Ptr>(); //
+			auto ownerRevision = pkg.Read<uint32_t>(); // owner revision
+			auto dataRevision = pkg.Read<uint32_t>(); // data revision
+			auto owner = pkg.Read<UUID_t>(); // owner
+			auto vec3 = pkg.Read<Vector3>(); // position
+			auto pkg2 = pkg.Read<NetPackage>(); //
 			
 			bool flagCreated = false;
-			if (NetSync) {
-				if (dataRevision <= NetSync->m_dataRevision) {
-					if (ownerRevision > NetSync->m_ownerRevision) {
-						//NetSync->m_owner = owner;
-						NetSync->m_ownerRevision = ownerRevision;
-						NetSyncpeer->m_syncs.insert({ NetSyncid, NetSyncPeer::Rev(dataRevision, ownerRevision, time) });
+			if (sync) {
+				if (dataRevision <= sync->m_dataRevision) {
+					if (ownerRevision > sync->m_ownerRevision) {
+						//sync->m_owner = owner;
+						sync->m_ownerRevision = ownerRevision;
+						syncPeer->m_syncs.insert({ syncId, NetSyncPeer::Rev(dataRevision, ownerRevision, time) });
 					}
 					continue;
 				}
 			}
 			else
 			{
-				NetSync = CreateNewNetSync(NetSyncid, vec3);
+				sync = CreateNewNetSync(syncId, vec3);
 				flagCreated = true;
 			}
 
-			NetSync->m_ownerRevision = ownerRevision;
-			NetSync->m_dataRevision = dataRevision;
-			//NetSync->m_owner = owner;
-			//NetSync->InternalSetPosition(vector);
-			//NetSyncpeer->m_syncs.insert({ NetSyncid, 
-			//	NetSyncPeer::Rev(NetSync->m_dataRevision, NetSync->m_ownerRevision, time) }
+			sync->m_ownerRevision = ownerRevision;
+			sync->m_dataRevision = dataRevision;
+			//sync->m_owner = owner;
+			//sync->InternalSetPosition(vector);
+			//syncPeer->m_syncs.insert({ syncId, 
+			//	NetSyncPeer::Rev(sync->m_dataRevision, sync->m_ownerRevision, time) }
 			//);
-			//NetSync->Deserialize(pkg2);
+			//sync->Deserialize(pkg2);
 			//
-			//if (flagCreated && m_deadNetSyncs.contains(NetSyncid)) {
-			//	NetSync->SetOwner(Valhalla()->m_serverUuid);
-			//	this.DestroyNetSync(NetSync);
+			//if (flagCreated && m_deadNetSyncs.contains(syncId)) {
+			//	sync->SetOwner(Valhalla()->m_serverUuid);
+			//	this.DestroyNetSync(sync);
 			//} else 
-			//	NetSync->o
+			//	sync->o
 		}
 
-		//m_NetSyncsRecv += NetSyncsRecv;
+		//m_NetSyncsRecv += recv;
 			
 	}
 
@@ -207,24 +207,25 @@ namespace NetSyncManager {
 		/*
 		* NetSyncData packet structure:
 		*  - 4 bytes: invalidSectors.size()
-		*    - invalidSectors NetSyncid array with size above
-		*  - array of NetSync [
-		*		NetSyncid,
+		*    - invalidSectors syncId array with size above
+		*  - array of sync [
+		*		syncId,
 		*		owner rev
 		*		data rev
 		*		owner
-		*		NetSync pos
-		*		NetSync data
+		*		sync pos
+		*		sync data
 		*    ] NetSyncID::null for termination
 		*/
 
-		auto pkg(PKG());
+		//auto pkg(PKG());
+		NetPackage pkg;
 		bool NetSyncsWritten = false;
 
-		pkg->Write(static_cast<int32_t>(peer->m_invalidSector.size()));
+		pkg.Write(static_cast<int32_t>(peer->m_invalidSector.size()));
 		if (!peer->m_invalidSector.empty()) {
 			for (auto&& id : peer->m_invalidSector) {
-				pkg->Write(id);
+				pkg.Write(id);
 			}
 
 			peer->m_invalidSector.clear();
@@ -237,22 +238,22 @@ namespace NetSyncManager {
 		//int currentTemp = 0;
 		//while (currentTemp < m_tempToSync.Count && pkg->GetStream().Length() <= availableSpace)
 		//{
-		//	NetSync *NetSync = m_tempToSync[currentTemp];
-		//	peer->m_forceSend.erase(NetSync->m_uid);
+		//	sync *sync = m_tempToSync[currentTemp];
+		//	peer->m_forceSend.erase(sync->m_uid);
 		//
 		//
-		//	pkg->Write(NetSync->m_uid);
-		//	pkg->Write(NetSync->m_ownerRevision);
-		//	pkg->Write(NetSync->m_dataRevision);
-		//	pkg->Write(NetSync->m_owner);
-		//	pkg->Write(NetSync->GetPosition());
+		//	pkg->Write(sync->m_uid);
+		//	pkg->Write(sync->m_ownerRevision);
+		//	pkg->Write(sync->m_dataRevision);
+		//	pkg->Write(sync->m_owner);
+		//	pkg->Write(sync->GetPosition());
 		//	
 		//	auto NetSyncpkg(PKG());
-		//	NetSync->Serialize(NetSyncpkg); // dump NetSync information onto packet
+		//	sync->Serialize(NetSyncpkg); // dump sync information onto packet
 		//	pkg->Write(NetSyncpkg);
 		//
-		//	peer->m_syncs[NetSync->m_uid] = NetSyncPeer::Rev(
-		//		NetSync->m_dataRevision, NetSync->m_ownerRevision, time);
+		//	peer->m_syncs[sync->m_uid] = NetSyncPeer::Rev(
+		//		sync->m_dataRevision, sync->m_ownerRevision, time);
 		//	
 		//	NetSyncsWritten = true;
 		//	//m_NetSyncsSent++;

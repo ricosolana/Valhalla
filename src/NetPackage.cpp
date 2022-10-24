@@ -2,6 +2,10 @@
 #include "NetSync.h"
 
 
+NetPackage::NetPackage(const NetPackage& other) 
+    : m_stream(other.m_stream) {}
+
+
 NetPackage::NetPackage(const byte_t* data, uint32_t count) {
     From(data, count);
 }
@@ -11,6 +15,12 @@ NetPackage::NetPackage(const BYTES_t& vec)
 
 NetPackage::NetPackage(uint32_t reserve)
     : m_stream(reserve) {}
+
+
+
+void NetPackage::operator=(const NetPackage& other) {
+    this->m_stream = other.m_stream;
+}
 
 
 
@@ -50,8 +60,8 @@ void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
     }
 }
 
-void NetPackage::Write(const NetPackage::Ptr in) {
-    Write(in->m_stream.Ptr(), in->m_stream.Length());
+void NetPackage::Write(const NetPackage& in) {
+    Write(in.m_stream.Ptr(), in.m_stream.Length());
 }
 
 void NetPackage::Write(const NetID& in) {

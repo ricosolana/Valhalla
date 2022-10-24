@@ -135,14 +135,14 @@ namespace ZoneSystem {
 	}
 
 	void SendLocationIcons(UUID_t target) {
-		auto pkg(PKG());
+		NetPackage pkg;
 
 		// count
-		pkg->Write((int32_t)1);
+		pkg.Write((int32_t)1);
 		// key
-		pkg->Write(Vector3{ 0, 40, 0 });
+		pkg.Write(Vector3{ 0, 40, 0 });
 		// value
-		pkg->Write("StartTemple");
+		pkg.Write("StartTemple");
 
 		//tempIconList.Clear();
 		//GetLocationIcons(this.tempIconList);

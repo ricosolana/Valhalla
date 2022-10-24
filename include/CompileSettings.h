@@ -22,5 +22,8 @@ using namespace std::chrono_literals;
 // Experimental Stream setting (untested)
 //#define REALLOC_STREAM
 
+// Probably should've used this from the start
+#define SAFE_STREAM
+
 // DO NOT CHANGE THIS VALUE!
 #define VALHEIM_APP_ID 892970

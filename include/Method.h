@@ -23,7 +23,7 @@ template<class T>
 class IMethod
 {
 public:
-    virtual void Invoke(T t, NetPackage::Ptr pkg, NetInvoke type, HASH_t hash) = 0;
+    virtual void Invoke(T t, NetPackage& pkg, NetInvoke type, HASH_t hash) = 0;
 };
 
 // Base specifier
@@ -41,13 +41,12 @@ class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
 public:
     MethodImpl(C* object, Lambda lam) : object(object), lambda(lam) {}
 
-    void Invoke(T t, NetPackage::Ptr pkg, NetInvoke type, HASH_t hash) override {
+    void Invoke(T t, NetPackage &pkg, NetInvoke type, HASH_t hash) override {
         if constexpr (sizeof...(Args)) {
-            auto copy(pkg);
-
             auto tupl = NetPackage::Deserialize<Args...>(pkg);
             //auto luaTupl = NetPackage::Deserialize<Args...>(pkg);
-
+            
+            /*
             for (auto&& mod : ModManager::GetMods()) {
                 if (type == NetInvoke::RPC) {
                     auto&& find = mod->m_rpcCallbacks.find(hash);
@@ -64,12 +63,13 @@ public:
                     if (find != mod->m_syncCallbacks.end())
                         Utils::InvokeTupleS(find->second, t, tupl);
                 }
-            }
+            }*/
 
             // RPC CALL
             Utils::InvokeTuple(lambda, object, t, tupl);
         }
         else {
+            /*
             for (auto&& mod : ModManager::GetMods()) {
                 if (type == NetInvoke::RPC) {
                     auto&& find = mod->m_rpcCallbacks.find(hash);
@@ -86,7 +86,7 @@ public:
                     if (find != mod->m_syncCallbacks.end())
                         std::invoke(find->second, t);
                 }
-            }
+            }*/
 
             std::invoke(lambda, object, t);
         }
@@ -107,7 +107,7 @@ class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
 public:
     MethodImpl(Lambda lam) : lambda(lam) {}
 
-    void Invoke(T t, NetPackage::Ptr pkg, NetInvoke type, HASH_t hash) override {
+    void Invoke(T t, NetPackage &pkg, NetInvoke type, HASH_t hash) override {
         if constexpr (sizeof...(Args)) {
             auto tupl = NetPackage::Deserialize<Args...>(pkg);
 
@@ -118,7 +118,7 @@ public:
 
             //sol::function lua_callback;
             //Utils::InvokeTupleS(lua_callback, t, tupl);
-
+            /*
             for (auto&& mod : ModManager::GetMods()) {
                 if (type == NetInvoke::RPC) {
                     auto&& find = mod->m_rpcCallbacks.find(hash);
@@ -135,12 +135,13 @@ public:
                     if (find != mod->m_syncCallbacks.end())
                         Utils::InvokeTupleS(find->second, t, tupl);
                 }
-            }
+            }*/
 
             // RPC CALL
             Utils::InvokeTupleS(lambda, t, tupl);
         }
         else {
+            /*
             for (auto&& mod : ModManager::GetMods()) {
                 if (type == NetInvoke::RPC) {
                     auto&& find = mod->m_rpcCallbacks.find(hash);
@@ -157,7 +158,7 @@ public:
                     if (find != mod->m_syncCallbacks.end())
                         std::invoke(find->second, t);
                 }
-            }
+            }*/
 
             std::invoke(lambda, t);
         }
