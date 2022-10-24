@@ -43,7 +43,7 @@ namespace NetRpcManager {
 
 	// Internal use only by NetRpcManager
 	UUID_t _ServerID();
-	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage pkg);
+	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage &pkg);
 	void _HandleRoutedRPC(Data data);
 
 	void _Register(HASH_t hash, IMethod<UUID_t>* method);
@@ -111,23 +111,23 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, Args... params) {
-		_InvokeRoute(target, targetNetSync, hash, NetPackage::Serialize(params...));
+	void Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, const Args&... params) {
+		_Invoke(target, targetNetSync, hash, NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const NetID& targetNetSync, Routed_Hash hash, Args... params) {
-		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), NetPackage::Serialize(params...));
+	void Invoke(UUID_t target, const NetID& targetNetSync, Routed_Hash hash, const Args&... params) {
+		_Invoke(target, targetNetSync, static_cast<HASH_t>(hash), NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const NetID& targetNetSync, const char* name, Args... params) {
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
+	void Invoke(UUID_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
+		_Invoke(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const NetID& targetNetSync, const std::string& name, Args... params) {
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
+	void Invoke(UUID_t target, const NetID& targetNetSync, const std::string& name, const Args&... params) {
+		_Invoke(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
 	}
 
 
@@ -138,22 +138,22 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void Invoke(UUID_t target, HASH_t hash, Args... params) {
+	void Invoke(UUID_t target, HASH_t hash, const Args&... params) {
 		Invoke(target, NetID::NONE, hash, params...);
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, Routed_Hash hash, Args... params) {
+	void Invoke(UUID_t target, Routed_Hash hash, const Args&... params) {
 		Invoke(target, NetID::NONE, static_cast<HASH_t>(hash), params...);
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const char* name, Args... params) {
+	void Invoke(UUID_t target, const char* name, const Args&... params) {
 		Invoke(target, NetID::NONE, Utils::GetStableHashCode(name), params...);
 	}
 
 	template <typename... Args>
-	void Invoke(UUID_t target, const std::string& name, Args... params) {
+	void Invoke(UUID_t target, const std::string& name, const Args&... params) {
 		Invoke(target, NetID::NONE, Utils::GetStableHashCode(name), params...);
 	}
 
@@ -165,22 +165,22 @@ namespace NetRpcManager {
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
-	void Invoke(HASH_t hash, Args... params) {
+	void Invoke(HASH_t hash, const Args&... params) {
 		Invoke(_ServerID(), hash, params...);
 	}
 
 	template <typename... Args>
-	void Invoke(Routed_Hash hash, Args... params) {
+	void Invoke(Routed_Hash hash, const Args&... params) {
 		Invoke(_ServerID(), static_cast<HASH_t>(hash), params...);
 	}
 
 	template <typename... Args>
-	void Invoke(const char* name, Args... params) {
+	void Invoke(const char* name, const Args&... params) {
 		Invoke(_ServerID(), Utils::GetStableHashCode(name), params...);
 	}
 
 	template <typename... Args>
-	void Invoke(const std::string& name, Args... params) {
+	void Invoke(const std::string& name, const Args&... params) {
 		Invoke(_ServerID(), Utils::GetStableHashCode(name), params...);
 	}
 

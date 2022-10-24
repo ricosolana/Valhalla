@@ -95,7 +95,7 @@ public:
 	// Passing parameter pack by reference
 	// https://stackoverflow.com/a/6361619
 	template <typename... Types>
-	void Invoke(HASH_t hash, Types... params) {
+	void Invoke(HASH_t hash, const Types&... params) {
 		if (!m_socket->Connected())
 			return;
 
@@ -105,13 +105,13 @@ public:
 #error not implemented
 		pkg.Write(hash);
 #endif
-		NetPackage::_Serialize(pkg, std::move(params)...); // serialize
+		NetPackage::_Serialize(pkg, params...); // serialize
 		SendPackage(pkg);
 	}
 
 	template <typename... Types>
-	void Invoke(Rpc_Hash hash, Types... params) {
-		Invoke(static_cast<HASH_t>(hash), std::move(params)...);
+	void Invoke(Rpc_Hash hash, const Types&... params) {
+		Invoke(static_cast<HASH_t>(hash), params...);
 	}
 
 	//template <typename... Types>
@@ -120,8 +120,8 @@ public:
 	//}
 
 	template <typename... Types>
-	void Invoke(const std::string &name, Types... params) {
-		Invoke(Utils::GetStableHashCode(name), std::move(params)...);
+	void Invoke(const std::string &name, const Types&... params) {
+		Invoke(Utils::GetStableHashCode(name), params...);
 	}
 
 	// To be called every tick

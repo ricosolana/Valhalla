@@ -181,14 +181,14 @@ public:
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static void _Serialize(NetPackage& pkg, T var1, Types... var2) {
+    static void _Serialize(NetPackage& pkg, T var1, const Types&... var2) {
         pkg.Write(var1);
 
         _Serialize(pkg, var2...);
     }
 
     template <typename T, typename... Types>
-    static NetPackage Serialize(T var1, Types... var2) {
+    static NetPackage Serialize(T var1, const Types&... var2) {
         NetPackage pkg;
         _Serialize(pkg, var1, var2...);
         return pkg;

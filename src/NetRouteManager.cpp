@@ -87,7 +87,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _InvokeRoute(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage pkg) {
+	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage &pkg) {
 		static UUID_t m_rpcMsgID = 1;
 		static auto SERVER_ID(_ServerID());
 
