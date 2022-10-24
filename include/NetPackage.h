@@ -126,13 +126,11 @@ public:
     template<typename T>
     T Read() requires std::same_as<T, NetPackage> {
         auto count = Read<int32_t>();
-        //auto pkg(PKG(count));
-        //NetPackage pkg;
-        //m_stream.Read(pkg.m_stream.Ptr(), count);
-        //pkg.m_stream.SetLength(count);
-        //pkg.m_stream.SetPos(0);
-        //return pkg;
-        throw;
+        NetPackage pkg(count);
+        m_stream.Read(pkg.m_stream.m_buf, count);
+        assert(pkg.m_stream.Length() == count);
+        assert(pkg.m_stream.Position() == 0);
+        return pkg;
     }
 
     template<typename T>
@@ -189,12 +187,12 @@ public:
         Serialize(pkg, var2...);
     }
 
-    //template <typename T, typename... Types>
-    //static NetPackage Serialize(T var1, Types... var2) {
-    //    NetPackage pkg;
-    //    Serialize(pkg, var1, var2...);
-    //    return pkg;
-    //}
+    template <typename T, typename... Types>
+    static NetPackage Serialize(T var1, Types... var2) {
+        NetPackage pkg;
+        Serialize(pkg, var1, var2...);
+        return pkg;
+    }
 
 
 
