@@ -177,20 +177,20 @@ public:
 
 
     // Empty template recursor
-    static void Serialize(NetPackage &pkg) {}
+    static void _Serialize(NetPackage &pkg) {}
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static void Serialize(NetPackage& pkg, T var1, Types... var2) {
+    static void _Serialize(NetPackage& pkg, T var1, Types... var2) {
         pkg.Write(var1);
 
-        Serialize(pkg, var2...);
+        _Serialize(pkg, var2...);
     }
 
     template <typename T, typename... Types>
     static NetPackage Serialize(T var1, Types... var2) {
         NetPackage pkg;
-        Serialize(pkg, var1, var2...);
+        _Serialize(pkg, var1, var2...);
         return pkg;
     }
 

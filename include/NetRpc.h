@@ -92,6 +92,8 @@ public:
 		* @param name function name to invoke
 		* @param ...types function parameters
 	*/
+	// Passing parameter pack by reference
+	// https://stackoverflow.com/a/6361619
 	template <typename... Types>
 	void Invoke(HASH_t hash, Types... params) {
 		if (!m_socket->Connected())
@@ -103,7 +105,7 @@ public:
 #error not implemented
 		pkg.Write(hash);
 #endif
-		NetPackage::Serialize(pkg, std::move(params)...); // serialize
+		NetPackage::_Serialize(pkg, std::move(params)...); // serialize
 		SendPackage(pkg);
 	}
 

@@ -112,34 +112,22 @@ namespace NetRpcManager {
 	*/
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, Args... params) {
-		assert(false);
-		NetPackage pkg;
-		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, hash, pkg);
+		_InvokeRoute(target, targetNetSync, hash, NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, Routed_Hash hash, Args... params) {
-		assert(false);
-		NetPackage pkg;
-		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), (pkg));
+		_InvokeRoute(target, targetNetSync, static_cast<HASH_t>(hash), NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, const char* name, Args... params) {
-		assert(false);
-		NetPackage pkg;
-		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), (pkg));
+		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
 	void Invoke(UUID_t target, const NetID& targetNetSync, const std::string& name, Args... params) {
-		assert(false);
-		NetPackage pkg;
-		NetPackage::Serialize(pkg, params...);
-		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), (pkg));
+		_InvokeRoute(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
 	}
 
 
