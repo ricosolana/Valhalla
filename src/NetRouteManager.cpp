@@ -100,7 +100,9 @@ namespace NetRpcManager {
 		data.m_parameters = std::move(pkg);
 		//assert(false);
 
-		data.m_parameters.m_stream.SetMarker(0);
+		
+
+		data.m_parameters.m_stream.SetPos(0);
 
 		// Handle message
 		if (target == SERVER_ID

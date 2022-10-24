@@ -8,39 +8,17 @@ class NetPackage;
 class Stream {
 	friend NetPackage;
 
-#ifdef SAFE_STREAM
 	BYTES_t m_buf;
-#else
-	std::unique_ptr<byte_t> m_buf;
-	uint32_t m_alloc; // allocated bytes
-#endif
-
-	uint32_t m_length; // written bytes
-	uint32_t m_marker; // read/write head offset from origin
-
-#ifndef SAFE_STREAM
-	// Reserves in the next power of two
-	void EnsureCapacity(uint32_t count) {
-		Reserve(count << 1);
-	}
-
-	void EnsureExtra(uint32_t extra) {
-		EnsureCapacity(m_alloc + extra);
-	}
-#endif
+	uint32_t m_pos; // read/write head offset from origin
 
 public:
 	Stream();
-	Stream(uint32_t count);
-	Stream(const Stream& other); // copy 
-	Stream(Stream&& other) noexcept; // move
+	Stream(uint32_t reserve);
+	//Stream(const Stream& other) = default; // copy 
+	//Stream(Stream&& other) = default; // move
 
-	void operator=(const Stream& other);
+	//void operator=(const Stream& other);
 
-#ifdef REALLOC_STREAM
-	~Stream();
-#endif
-	
 	// Read count bytes into the specified buffer
 	// Will throw if count exceeds end
 	void Read(byte_t* buffer, uint32_t count);
@@ -82,14 +60,12 @@ public:
 
 	// Gets all the data in the package
 	BYTES_t Bytes() const {
-		//out.insert(out.begin(), Bytes(), Bytes() + m_length);
-		return BYTES_t(Ptr(), Ptr() + m_length);
+		return m_buf;
 	}
 
 	// Gets all the data in the package
 	void Bytes(BYTES_t &out) const {
-		out.clear();
-		out.insert(out.begin(), Ptr(), Ptr() + m_length);
+		out = m_buf;
 	}
 
 	// https://stackoverflow.com/a/9370717
@@ -98,11 +74,7 @@ public:
 	// Returns the raw bytes pointer
 	// implicitly hinted inline or
 	const byte_t* Ptr() const {
-#ifdef SAFE_STREAM
 		return m_buf.data();
-#else
-		return m_buf.get();
-#endif
 	}
 
 
@@ -110,45 +82,29 @@ public:
 	// Reset the marker and length members
 	// No array shrinking is performed
 	void Clear() {
-		m_marker = 0;
-		m_length = 0;
+		m_pos = 0;
+		m_buf.clear();
 	}
 
 
 
 	// Returns the length of this stream
 	uint32_t Length() const {
-		return m_length;
+		return m_buf.size();
 	}
 
 	// Sets the length of this stream
-	// Will not realloc
-	// May throw
-	void SetLength(uint32_t length);
+	void SetLength(uint32_t length) {
+		m_buf.resize(length);
+	}
 	
 
 
-	// Returns the internal offset of this stream
-	uint32_t Marker() const {
-		return m_marker;
+	// Returns the position of this stream
+	uint32_t Position() const {
+		return m_pos;
 	}
 
-	// Skip the internal marker ahead by marks bytes
-	// Memory may be allocated and initialized
-	//auto Skip(uint32_t marks) {
-	//	//Write//
-	//	//ReserveExtra(marks);
-	//	return SetMarker(m_marker + marks);
-	//}
-
-	void SetMarker(uint32_t marker); 
-
-
-#ifndef SAFE_STREAM
-	// Reserves count bytes if m_alloc is less than count
-	void Reserve(uint32_t count);
-	auto ReserveExtra(uint32_t extra) {
-		return Reserve(m_alloc + extra);
-	}
-#endif
+	// Sets the positino of this stream
+	void SetPos(uint32_t pos); 
 };

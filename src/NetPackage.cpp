@@ -32,7 +32,7 @@ void NetPackage::Write(const byte_t* in, uint32_t count) {
 void NetPackage::Write(const std::string& in) {
     int byteCount = static_cast<int>(in.length());
 
-    m_stream.ReserveExtra(1 + in.length());
+    //m_stream.ReserveExtra(1 + in.length());
 
     Write7BitEncodedInt(byteCount);
 
@@ -92,7 +92,7 @@ void NetPackage::Write(const Quaternion& in) {
 void NetPackage::From(const byte_t* data, int32_t count) {
     m_stream.Clear();
     m_stream.Write(data, count);
-    m_stream.SetMarker(0);
+    m_stream.SetPos(0);
 }
 
 
@@ -114,7 +114,7 @@ void NetPackage::Read(std::vector<std::string>& out) {
 
 
 void NetPackage::Write7BitEncodedInt(int32_t in) {
-    m_stream.ReserveExtra(4); // hmm
+    //m_stream.ReserveExtra(4); // hmm
     uint32_t num;
     for (num = (uint32_t)in; num >= 128U; num >>= 7)
         Write((uint8_t)(num | 128U));

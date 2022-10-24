@@ -95,11 +95,11 @@ public:
 
 
 
-        if (m_stream.m_marker + count > m_stream.m_length) throw std::range_error("NetPackage::Read<std::string>() length exceeded");
+        if (m_stream.Position() + count > m_stream.Length()) throw std::range_error("NetPackage::Read<std::string>() length exceeded");
         s.insert(s.end(),
-            m_stream.Ptr() + m_stream.m_marker,
-            m_stream.Ptr() + m_stream.m_marker + count);
-        m_stream.m_marker += count;
+            m_stream.m_buf.begin() + m_stream.m_pos,
+            m_stream.m_buf.begin() + m_stream.m_pos + count);
+        m_stream.m_pos += count;
 
 
 
@@ -127,11 +127,12 @@ public:
     T Read() requires std::same_as<T, NetPackage> {
         auto count = Read<int32_t>();
         //auto pkg(PKG(count));
-        NetPackage pkg;
-        m_stream.Read(pkg.m_stream.Ptr(), count);
-        pkg.m_stream.SetLength(count);
-        pkg.m_stream.SetMarker(0);
-        return pkg;
+        //NetPackage pkg;
+        //m_stream.Read(pkg.m_stream.Ptr(), count);
+        //pkg.m_stream.SetLength(count);
+        //pkg.m_stream.SetPos(0);
+        //return pkg;
+        throw;
     }
 
     template<typename T>

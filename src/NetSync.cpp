@@ -308,7 +308,7 @@ void NetSync::Serialize(NetPackage &pkg) {
 	
 #define TYPE_SERIALIZE(type, mtype)	\
 	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
-		auto size_mark = pkg.m_stream.Marker(); \
+		auto size_mark = pkg.m_stream.Position(); \
 		uint8_t size = 0; \
 		pkg.Write(size); \
 		for (auto&& pair : m_members) { \
@@ -318,10 +318,10 @@ void NetSync::Serialize(NetPackage &pkg) {
 			pkg.Write(from_prefix(pair.first, mtype)); \
 			pkg.Write(*(type*)pair.second.second); \
 		} \
-		auto end_mark = pkg.m_stream.Marker(); \
-		pkg.m_stream.SetMarker(size_mark); \
+		auto end_mark = pkg.m_stream.Position(); \
+		pkg.m_stream.SetPos(size_mark); \
 		pkg.Write(size); \
-		pkg.m_stream.SetMarker(end_mark); \
+		pkg.m_stream.SetPos(end_mark); \
 	}
 
 
