@@ -1,13 +1,15 @@
 # Valhalla 
 
 ## Server
-This is the non-steam server implementation. It's a TCP server implementation that mimics how Valheim ZSocket2 sends/receives. Joining the server normally through the Valheim client does require a small patch to be made before joining (see [Patching](https://github.com/PeriodicSeizures/Valhalla/tree/server#patching)).
-
-You'll have to manually build the server (I created a new Cmake project within MSVC), or install the release version to try it out.
+Now compatible with the Steam Valheim client.
 
 ## Progress
-10/8/2022 + TODO
+10/24/2022 + TODO
+ - Using Steam API now, clients can join without requiring any Patching. Lua bindings are minorly in progress.
 
+ - Focus must be put into ZDO's and RoutedRPC stuff and game states. The login procedure was comparitively easy. Now it will get difficult.
+
+10/8/2022 + TODO
  - I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
  
  - Also the client ZRpc occasionally experiences a timeout. I'm not sure why yet, because data is still sent fine between the client and server until the timeout disconenct.
@@ -31,60 +33,3 @@ Install the required libraries:
 .\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
 .\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
 ```
-
-## Patching
-This patch works on Valheim 0.211.8 (Crossplay update). The steps below assume you have never used Dnspy. Make sure to backup `assembly_valheim.dll` before continuing.
-
-1. Download and install [Dnspy](https://github.com/dnSpy/dnSpy/releases/tag/v6.1.8). Open it after installing.
-
-2. Within Dnspy, open `assembly_valheim.dll` using **one** of the following methods:
-   - Drag-and-drop the `assembly_valheim.dll` into the left hand side of Dnspy `Assembly Explorer`.
-   - In the top-left click on `File`->`Open` then locate `assembly_valheim.dll`. It should be wherever you installed the game under `.\valheim_Data\Managed`.
-    
-2. Enter the shortcut `ctrl`+`shift`+`K` (search assemblies). Search for `fejdstartup`. Double-click the first result (.cctor). 
-
-3. Scroll down to line 857. Right-click then `Edit Method C#...`.
-
-4. The following line should be on line 46 in the code editor window:
-```c#
-ZNet.SetServerHost(serverJoin.GetIPString(), (int)serverJoin.m_port, OnlineBackendType.Steamworks);
-```
-
-5. Change `OnlineBackendType.Steamworks` to `OnlineBackendType.CustomSocket`.
-
-6. Click on compile in the bottom right. The change should now be reflected in the class view.
-
-7. In the top-left click on `File`->`Save Module...`. Click `OK` in the window.
-
-The assembly should now be patched. Open Valheim join the Valhalla server as you would any other dedicated server. For my case (or others) who are behind a NAT, try entering `localhost:2456` to connect to the server (if locally hosted). You might spawn in water or on barren land. This is perfectly normal as the server has no other functionality at its current state of development.
-
-<details><summary>Old method (210.6)</summary>
-  
-Change the ZNet::connect(ip) method similar to:
-```c#
-// ZNet
-public void Connect(SteamNetworkingIPAddr host) {
-  ZNetPeer peer = new ZNetPeer(new ZSteamSocket(host), true);
-  this.OnNewConnection(peer);
-  ZNet.m_connectionStatus = ZNet.ConnectionStatus.Connecting;
-  this.m_connectingDialog.gameObject.SetActive(true);
-}
-```
-to this:
-```c#
-// ZNet
-public void Connect(SteamNetworkingIPAddr host) {
-  string ip;
-  host.ToString(out ip, false);
-  
-  TcpClient tcpClient = ZSocket2.CreateSocket();
-  IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ip), (int)host.m_port);
-  tcpClient.Client.Connect(ep);
-  ZNetPeer peer = new ZNetPeer(new ZSocket2(tcpClient, null), true);
-  this.OnNewConnection(peer);
-  ZNet.m_connectionStatus = ZNet.ConnectionStatus.Connecting;
-  this.m_connectingDialog.gameObject.SetActive(true);
-}
-```
-  
-</details>
