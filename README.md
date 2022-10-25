@@ -5,11 +5,19 @@ Now compatible with the Steam Valheim client.
 
 ## Progress
 10/24/2022 + TODO
- - Using Steam API now, clients can join without requiring any Patching. Lua bindings are minorly in progress.
+ - Clients can now directly join without any patching. 
+ 
+ - Limited Lua support. Lua Rpc/Routed/Sync callbacks will be prioritized next.
 
- - Focus must be put into ZDO's and RoutedRPC stuff and game states. The login procedure was comparitively easy. Now it will get difficult.
+ - Must prioritize working on ZDO dispersement, ZNetView, and gameobjects.
 
- - I have to recreate the functionality of some Unity components and classes. Two important features of Unity heavily used by Valheim are Random and Mathf.PerlinNoise, both of which are in native code. PerlinNoise might be possible by mapping Unity input and outputs to a huge texture, but random will not be trivial (I could use a map with several thousands of Random values, but just no..). The algorithms will have to be reverse engineered. For now, I will ignore the problem until I begin work on dungeons and randomly generated locations.
+ - UnityEngine Random and Mathf.PerlinNoise are required, both of which are in native code. Theres no likely solution besides reverse engineering the original algorithms or being provided equivalent if not native algorithms from Unity themselves.
+ 
+ - All gameobjects in Valheim (especially character-like) are prefabs with predefined members and attributes (such as persistent...). No single component has a specialized class attached, its a one-works-for-all way of functionality (All entities have Humanoid class, which really simplifies the design, but many settings happen to be redundant with this design). 
+ 
+ - So far (limiting to the Chair class), the Chair and other gameobjects when interacted client-side dont make same use of interact/hover/useitem on the server-side. The client at the lowest level sets a ZDO, which gets sent. The server sort of processes and relays this off to other clients.
+ 
+ - The client has too much control over deciding who should be the target of ZNetView calls. This can be easily solved by gating each client->client call by checking if the call is meant to be sent, and is well formed. This is one of the goals of this project.
 
 10/8/2022 + TODO
  - I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
@@ -34,4 +42,5 @@ Install the required libraries:
 .\vcpkg\vcpkg.exe install robin-hood-hashing --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
 .\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
+.\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
 ```
