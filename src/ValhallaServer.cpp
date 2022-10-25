@@ -106,7 +106,7 @@ void ValhallaServer::Launch() {
 
 		auto now = steady_clock::now();
 		static auto last_tick = now; // Initialized to this once
-		auto elapsed = std::chrono::duration_cast<microseconds>(now - last_tick).count();
+		auto elapsed = duration_cast<nanoseconds>(now - last_tick); // .count();
 		last_tick = now;
 
 		// mutex is carefully scoped in this micro-scope
@@ -133,16 +133,18 @@ void ValhallaServer::Launch() {
 			}
 		}
 
+		// now inc uS
+		m_nS += elapsed.count();
+		
 		// UPDATE
-		float delta = elapsed / (double)duration_cast<microseconds>(1s).count();
-		m_time += delta;
+		float delta = elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
 		Update(delta);
 
 		// Prevent spin lock
 		// TODO
 		//	this could be adjusted in order to accomodate 
 		//	more resource intensive workloads
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(1ms);
 	}
 }
 
@@ -172,23 +174,23 @@ Task* ValhallaServer::RunTask(Task::F f) {
 	return RunTaskLater(f, 0ms);
 }
 
-Task* ValhallaServer::RunTaskLater(Task::F f, std::chrono::milliseconds after) {
+Task* ValhallaServer::RunTaskLater(Task::F f, milliseconds after) {
 	return RunTaskLaterRepeat(f, after, 0ms);
 }
 
-Task* ValhallaServer::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at) {
+Task* ValhallaServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
 	return RunTaskAtRepeat(f, at, 0ms);
 }
 
-Task* ValhallaServer::RunTaskRepeat(Task::F f, std::chrono::milliseconds period) {
+Task* ValhallaServer::RunTaskRepeat(Task::F f, milliseconds period) {
 	return RunTaskLaterRepeat(f, 0ms, period);
 }
 
-Task* ValhallaServer::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period) {
-	return RunTaskAtRepeat(f, std::chrono::steady_clock::now() + after, period);
+Task* ValhallaServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
+	return RunTaskAtRepeat(f, steady_clock::now() + after, period);
 }
 
-Task* ValhallaServer::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) {
+Task* ValhallaServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
 	std::scoped_lock lock(m_taskMutex);
 	Task* task = new Task{f, at, period};
 	m_tasks.push_back(std::unique_ptr<Task>(task));

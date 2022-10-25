@@ -2,7 +2,15 @@
 
 #include "Utils.h"
 
-struct NetID {
+class NetID {
+public:
+	// TODO make these private and use getters; 
+	//	could make this a friend class of the Hasher object
+	UUID_t m_uuid;
+	uint32_t m_id;
+	HASH_t m_hash;
+
+public:
 	explicit NetID();
 	explicit NetID(int64_t userID, uint32_t id);
 
@@ -15,8 +23,4 @@ struct NetID {
 	explicit operator bool() const noexcept;
 
 	static const NetID NONE;
-
-	UUID_t m_uuid;
-	uint32_t m_id;
-	HASH_t m_hash;
 };

@@ -2,6 +2,7 @@
 
 #include <robin_hood.h>
 #include <type_traits>
+#include <any>
 
 #include "Quaternion.h"
 #include "Vector.h"
@@ -10,38 +11,38 @@
 
 template<typename T>
 concept TrivialSyncType = std::same_as<T, float>
-	|| std::same_as<T, int32_t>
-	|| std::same_as<T, int64_t>
-	|| std::same_as<T, Quaternion>
 	|| std::same_as<T, Vector3>
+	|| std::same_as<T, Quaternion>
+	|| std::same_as<T, int32_t>
+	|| std::same_as<T, int64_t>	
 	|| std::same_as<T, std::string>
 	|| std::same_as<T, BYTES_t>;
 
 // NetSync is 500+ bytes (with all 7 maps)
 // NetSync is 168 bytes (with 1 map only)
 // NetSync is 144 bytes (combined member map, reduced members)
+// Currently 160 bytes
 class NetSync {
 public:
+	enum class ObjectType : int8_t {
+		Default,
+		Prioritized,
+		Solid,
+		Terrain
+	};
+
+	struct Rev {
+		uint32_t m_dataRev = 0;
+		uint32_t m_ownerRev = 0;
+		//float m_syncTime;
+		uint64_t m_time = 0;
+		//char a;
+		//uint64_t m_time; // time in ms since last modified (synced)
+	};
+
 	static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
-	//enum TypePrefix {
-	//	TP_FLOAT = 0b10,
-	//	TP_VECTOR = 0b101,
-	//	TP_QUATERNION = 0b1011,
-	//	TP_INT = 0b10110,
-	//	TP_LONG = 0b101101,
-	//	TP_STRING = 0b1011011,
-	//	TP_ARRAY = 0b10110111
-	//}; 
-
-
-	// PGW might stand for 'primary game world' version
-	// packet gateway format (unlikely)
-	// the static game PGW version is stored in ZoneSystem, which controls locations and sectoring
-	// It might be closer to 'player game world' version
-	static constexpr int32_t PGW_VERSION = 53;
-
 	// https://stackoverflow.com/a/1122109
 	enum class MemberShift : uint8_t {
 		FLOAT = 0, // shift by 0 bits
@@ -50,53 +51,87 @@ private:
 		INT,
 		STRING,
 		LONG,
-		ARRAY, // should be shift by 6 bits
-
-		//MASK_FLOAT =		0b1,
-		//MASK_VECTOR3 =		0b1 << 1,
-		//MASK_QUATERNION =	0b1 << 2,
-		//MASK_INT =			0b1 << 3,
-		//MASK_STRING =		0b1 << 4,
-		//MASK_LONG =			0b1 << 5,
-		//MASK_ARRAY =		0b1 << 6
+		ARRAY, // shift by 6 bits
 	};
 
-	static HASH_t to_prefix(HASH_t hash, MemberShift pref);
-	static HASH_t from_prefix(HASH_t hash, MemberShift pref);
-
-	// Trivial getter
 	template<TrivialSyncType T>
-	const T* Get(HASH_t key, MemberShift prefix) {
-		key = to_prefix(key, prefix);
+	constexpr MemberShift GetShift() {
+		if constexpr (std::same_as<T, float>) {
+			return MemberShift::FLOAT;
+		}
+		else if constexpr (std::same_as<T, Vector3>) {
+			return MemberShift::VECTOR3;
+		}
+		else if constexpr (std::same_as<T, Quaternion>) {
+			return MemberShift::QUATERNION;
+		}
+		else if constexpr (std::same_as<T, int32_t>) {
+			return MemberShift::INT;
+		}
+		else if constexpr (std::same_as<T, int64_t>) {
+			return MemberShift::LONG;
+		}
+		else if constexpr (std::same_as<T, std::string>) {
+			return MemberShift::STRING;
+		}
+		else { //if constexpr (std::same_as<T, BYTES_t>) {
+			return MemberShift::ARRAY;
+		}
+	}
+
+	template<TrivialSyncType T>
+	constexpr HASH_t ToShiftHash(HASH_t hash) {
+		auto prefix = GetType<T>();
+		auto tshift = static_cast<HASH_t>(prefix);
+
+		return (hash
+			+ (tshift * tshift)
+			^ tshift)
+			^ (tshift << tshift);
+	}
+
+	template<TrivialSyncType T>
+	constexpr HASH_t FromShiftHash(HASH_t hash) {
+		auto prefix = GetType<T>();
+		auto tshift = static_cast<HASH_t>(prefix);
+		return
+			((hash
+				^ (tshift << tshift))
+				^ tshift)
+			- (tshift * tshift);
+	}
+
+	// Get the object by hash
+	// No copies are made (even for primitives)
+	// Returns null if not found 
+	// Throws on type mismatch
+	template<TrivialSyncType T>
+	const T* _Get(HASH_t key) {
+		key = ToShiftHash<T>(key);
 		auto&& find = m_members.find(key);
-		if (find != m_members.end()
-			&& prefix == find->second.first) {
+		if (find != m_members.end()) {
+			if (find->second.first != GetPrefix<T>())
+				throw std::invalid_argument("type mismatch");
 			return (T*)find->second.second;
 		}
 		return nullptr;
 	}
 
-	// Trivial getter w/ defaults
+	// Set the object by hash
+	// If the hash already exists (assuming type matches), type assignment operator is used
+	// Otherwise, a copy is made of the value and allocated
+	// Throws on type mismatch
 	template<TrivialSyncType T>
-		requires (!std::same_as<T, BYTES_t>)
-	const T& Get(HASH_t key, MemberShift prefix, const T& value) {
-		key = to_prefix(key, prefix);
-		auto&& find = m_members.find(key);
-		if (find != m_members.end()
-			&& prefix == find->second.first) {
-			return *(T*)find->second.second;
-		}
-		return value;
-	}
-
-	template<TrivialSyncType T>
-	void SetWith(HASH_t key, const T& value, MemberShift prefix) {
-		key = to_prefix(key, prefix);
+	void _Set(HASH_t key, const T& value) {
+		auto prefix = GetShift<T>();
+		key = ToShiftHash<T>(key);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()) {
 			// test check if the var is the correct type
+			//		if not, a bad collision might of occurred while hashing
+			//		the algorithm might have to be adjusted in this case
 			if (prefix != find->second.first)
-				return;
+				throw std::invalid_argument("type mismatch");
 
 			// reassign if changed
 			auto&& v = (T*)find->second.second;
@@ -107,41 +142,72 @@ private:
 		else {
 			m_members.insert({ key, std::make_pair(prefix, new T(value)) });
 		}
+
+		m_dataMask |= (0b1 << static_cast<uint8_t>(GetShift<T>()));
 	}
 
-	template<TrivialSyncType T>
-	void Set(HASH_t key, const T& value, MemberShift prefix) {
-		SetWith(key, value, prefix);
-
-		Revise();
+	void _Set(HASH_t key, const void* value, MemberShift prefix) {
+		switch (prefix) {
+			case MemberShift::FLOAT:		_Set(key, *(float*)			value); break;
+			case MemberShift::VECTOR3:		_Set(key, *(Vector3*)		value); break;
+			case MemberShift::QUATERNION:	_Set(key, *(Quaternion*)	value); break;
+			case MemberShift::INT:			_Set(key, *(int32_t*)		value); break;
+			case MemberShift::LONG:			_Set(key, *(int64_t*)		value); break;
+			case MemberShift::STRING:		_Set(key, *(std::string*)	value); break;
+			case MemberShift::ARRAY:		_Set(key, *(BYTES_t*)		value); break;
+			default:
+				throw std::invalid_argument("invalid type");
+		}
 	}
 
 private:
 	robin_hood::unordered_map<HASH_t, std::pair<MemberShift, void*>> m_members;
 
+	bool m_persistent = false;	// set by ZNetView
+	bool m_distant = false;		// set by ZNetView
+	//int64_t m_timeCreated = 0;	// TerrainModifier (10000 ticks / ms) (union)?
+	int32_t m_pgwVersion = 0;	// 53 is the latest
+	ObjectType m_type = ObjectType::Default; // set by ZNetView
+	HASH_t m_prefab = 0;
+	Quaternion m_rotation = Quaternion::IDENTITY;
+	uint8_t m_dataMask = 0;
+
+	Vector2i m_sector;
+	Vector3 m_position;			// position of the 
+	NetID m_id;					// unique identifier; immutable through 'lifetime'
+	UUID_t m_owner = 0;			// local or remote UUID_t
+
+	//uint32_t m_ownerRev = 0;	// could be rev structure
+	//uint32_t m_dataRev = 0;	// could be rev structure
+
+	Rev m_rev;
+
 	void Revise() {
-		m_dataRevision++;
+		m_rev.m_dataRev++;
 	}
 
 public:
+	// Create ZDO with me (im owner)
+	NetSync() {
+		this->m_owner = Valhalla()->Uuid();
+		this->m_rev.m_time = Valhalla()->Time();
+	}
 
-	//~NetSync() = delete;
+
+
+	NetSync(const NetSync& other); // copy constructor
+
 	~NetSync();
 
-
-
-	enum class ObjectType : int8_t {
-		Default,
-		Prioritized,
-		Solid,
-		Terrain
-	};
-
-
-
-
-
 	// Trivial hash getters
+
+	template<TrivialSyncType T>
+		requires (!std::same_as<T, BYTES_t>)
+	const T& Get(HASH_t key, const T& value) {
+		auto&& get = _Get<T>(key);
+		if (get) return *get;
+		return value;
+	}
 
 	float GetFloat(HASH_t key, float value = 0);
 	int32_t GetInt(HASH_t key, int32_t value = 0);
@@ -154,7 +220,7 @@ public:
 	// Special hash getters
 
 	bool GetBool(HASH_t key, bool value = false);
-	const NetID GetID(const std::pair<HASH_t, HASH_t> &key /* no default */);
+	const NetID GetNetID(const std::pair<HASH_t, HASH_t> &key /* no default */);
 
 
 
@@ -171,19 +237,18 @@ public:
 	// Special string getters
 
 	bool GetBool(const std::string &key, bool value = false);
-	const NetID GetID(const std::string &key /* no default */);
+	const NetID GetNetID(const std::string &key /* no default */);
 
 
 
 	// Trivial hash setters
 
-	void Set(HASH_t key, float value);
-	void Set(HASH_t key, int32_t value);
-	void Set(HASH_t key, int64_t value);
-	void Set(HASH_t key, const Quaternion &value);
-	void Set(HASH_t key, const Vector3 &value);
-	void Set(HASH_t key, const std::string &value);
-	void Set(HASH_t key, const BYTES_t &value);
+	template<TrivialSyncType T>
+	void Set(HASH_t key, const T& value) {
+		_Set(key, value);
+
+		Revise();
+	}
 
 	// Special hash setters
 
@@ -207,43 +272,64 @@ public:
 
 
 
-
-	uint8_t m_dataMask = 0;
-	//uint8_t sizes[7];
-
-	HASH_t m_prefab = 0;
-	Vector2i m_sector;
-	Vector3 m_position;
-	Quaternion m_rotation = Quaternion::IDENTITY;
-
-	// contains id of the client or server, and the object id
-	NetID m_id;
-	bool m_persistent = false;	// set by ZNetView; use bitmask
-	bool m_distant = false;		// set by ZNetView; use bitmask
-	UUID_t m_owner = 0;			// this seems to equal the local id, although it is not entirely confirmed
-	int64_t m_timeCreated = 0;
-	uint32_t m_ownerRevision = 0;
-	uint32_t m_dataRevision = 0;
-	//int32_t m_pgwVersion = 0; // 53 const mostly by ZNetView
-	ObjectType m_type = ObjectType::Default; // set by ZNetView; use bitmask
-
+	
+	
 
 	// dumb vars
-	// waste of space?
-	float m_tempSortValue = 0; // only used in sending priority
+	//float m_tempSortValue = 0; // only used in sending priority
 	//bool m_tempHaveRevision = 0; // appears to be unused besides assignments
 
 	//int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
 	//int32_t m_tempCreatedAt = -1; // ^
 
+	bool Persists() const {
+		return m_persistent;
+	}
+
+	bool Distant() const {
+		return m_distant;
+	}
+
+	int32_t Version() const {
+		return m_pgwVersion;
+	}
+
+	ObjectType Type() const {
+		return m_type;
+	}
+
+	HASH_t PrefabHash() const {
+		return m_prefab;
+	}
+
+	const Quaternion& Rotation() const {
+		return m_rotation;
+	}
+
+	const Vector2i& Sector() const {
+		return m_sector;
+	}
+
+	const NetID ID() const {
+		return m_id;
+	}
+
+	const Rev GetRev() const {
+		return m_rev;
+	}
+
+
+
+	UUID_t Owner() {
+		return m_owner;
+	}
+
 	// Return whether the ZDO instance is self hosted or remotely hosted
 	bool Local();
 
 	// Whether an owner has been assigned to this ZDO
-	// I really dislike the null owner operability structure of Valheim server
-	// Why would owner ever be 0? What circumstances ever allow this?
 	bool HasOwner() const {
-		return m_owner;
+		return m_owner != 0;
 	}
 
 	// Claim ownership over this ZDO
@@ -253,7 +339,7 @@ public:
 	void SetOwner(UUID_t owner) {
 		if (m_owner != owner) {
 			m_owner = owner;
-			m_ownerRevision++;
+			m_rev.m_ownerRev++;
 		}
 	}
 
@@ -263,6 +349,9 @@ public:
 		return false;
 	}
 
+	// Write ZDO to the package
 	void Serialize(NetPackage &pkg);
+
+	// Load ZDO from the package
 	void Deserialize(NetPackage &pkg);
 };

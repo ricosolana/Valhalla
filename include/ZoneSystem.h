@@ -12,4 +12,5 @@ namespace ZoneSystem {
 
 	static constexpr int ACTIVE_AREA = 1;
 	static constexpr int ACTIVE_DISTANT_AREA = 1;
+	static constexpr int PGW_VERSION = 53;
 }

@@ -15,7 +15,9 @@ namespace NetSyncManager {
 
 
 
-	void ShutDown();
+	//void ShutDown();
+
+	void Stop();
 
 	void PrepareSave();
 
@@ -33,6 +35,8 @@ namespace NetSyncManager {
 
 	NetSync* CreateNewZDO(const NetID &uid, const Vector3 &position);
 
+	// Sector Coords -> Sector Pitch
+	// Returns -1 on invalid sector
 	void AddToSector(NetSync *zdo, const Vector2i &sector);
 
 	void ZDOSectorInvalidated(NetSync *zdo);
@@ -42,7 +46,7 @@ namespace NetSyncManager {
 	NetSync* GetZDO(const NetID &id);
 
 	// called when registering joining peer
-	void AddPeer(NetPeer::Ptr netPeer);
+	//void AddPeer(NetPeer::Ptr netPeer);
 	void RemovePeer(NetPeer::Ptr netPeer);
 
 	void Update(float dt);
@@ -54,7 +58,7 @@ namespace NetSyncManager {
 
 	void FindSectorObjects(const Vector2i &sector, int area, std::vector<NetSync*> sectorObjects);
 
-	long GetMyID();
+	//long GetMyID();
 
 	void GetAllZDOsWithPrefab(std::string prefab, std::vector<NetSync*> zdos);
 
@@ -76,5 +80,5 @@ namespace NetSyncManager {
 
 	void ClientChanged(const NetID& id);
 
-	std::function<NetSync*> m_onZDODestroyed;
+	std::function<void(NetSync*)> m_onZDODestroyed;
 }

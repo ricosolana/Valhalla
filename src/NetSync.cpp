@@ -22,8 +22,8 @@ std::pair<HASH_t, HASH_t> NetSync::ToHashPair(const std::string& key) {
 }
 
 
-
-HASH_t NetSync::to_prefix(HASH_t hash, MemberShift pref) {
+/*
+HASH_t NetSync::ToShiftHash(HASH_t hash, MemberShift pref) {
 	auto tshift = static_cast<HASH_t>(pref);
 
 	return (hash
@@ -40,7 +40,7 @@ HASH_t NetSync::from_prefix(HASH_t hash, MemberShift pref) {
 				^ tshift)
 					- (tshift * tshift);
 }
-
+*/
 
 
 const NetID NetID::NONE(0, 0);
@@ -72,6 +72,30 @@ NetID::operator bool() const noexcept {
 
 
 
+// copy constructor
+NetSync::NetSync(const NetSync& other) {
+	// also copy members
+
+	this->m_persistent = other.m_persistent;
+	this->m_distant = other.m_distant;
+	this->m_pgwVersion = other.m_pgwVersion;
+	this->m_type = other.m_type;
+	this->m_prefab = other.m_prefab;
+	this->m_rotation = other.m_rotation;
+	this->m_dataMask = other.m_dataMask;
+	
+	this->m_sector = other.m_sector;
+	this->m_position = other.m_position;	
+	this->m_id = other.m_id;
+	this->m_owner = other.m_owner;
+
+	this->m_rev = other.m_rev;
+
+	for (auto&& pair1 : other.m_members) {
+		_Set(pair1.first, pair1.second.second, pair1.second.first);
+	}
+}
+
 
 
 NetSync::~NetSync() {
@@ -86,7 +110,7 @@ NetSync::~NetSync() {
 		case MemberShift::STRING:		delete (std::string*)	pair.second; break;
 		case MemberShift::ARRAY:		delete (BYTES_t*)		pair.second; break;
 		default:
-			LOG(ERROR) << "Invalid type assigned to NetSync";
+			throw std::invalid_argument("invalid MemberShift type");
 		}
 	}
 }
@@ -104,31 +128,31 @@ NetSync::~NetSync() {
 // Trivial
 
 float NetSync::GetFloat(HASH_t key, float value) {
-	return Get(key, MemberShift::FLOAT, value);
+	return Get<float>(key, value);
 }
 
 int32_t NetSync::GetInt(HASH_t key, int32_t value) {
-	return Get(key, MemberShift::INT, value);
+	return Get<int32_t>(key, value);
 }
 
 int64_t NetSync::GetLong(HASH_t key, int64_t value) {
-	return Get(key, MemberShift::LONG, value);
+	return Get<int64_t>(key, value);
 }
 
 const Quaternion& NetSync::GetQuaternion(HASH_t key, const Quaternion& value) {
-	return Get(key, MemberShift::QUATERNION, value);
+	return Get<Quaternion>(key, value);
 }
 
 const Vector3& NetSync::GetVector3(HASH_t key, const Vector3& value) {
-	return Get(key, MemberShift::VECTOR3, value);
+	return Get<Vector3>(key, value);
 }
 
 const std::string& NetSync::GetString(HASH_t key, const std::string& value) {
-	return Get(key, MemberShift::STRING, value);
+	return Get<std::string>(key, value);
 }
 
 const BYTES_t* NetSync::GetBytes(HASH_t key) {
-	return Get<BYTES_t>(key, MemberShift::ARRAY);
+	return _Get<BYTES_t>(key);
 }
 
 // Special
@@ -137,7 +161,7 @@ bool NetSync::GetBool(HASH_t key, bool value) {
 	return GetInt(key, value ? 1 : 0);
 }
 
-const NetID NetSync::GetID(const std::pair<HASH_t, HASH_t>& key) {
+const NetID NetSync::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
 	auto k = GetLong(key.first);
 	auto v = GetLong(key.second);
 	if (k == 0 || v == 0)
@@ -191,8 +215,8 @@ bool NetSync::GetBool(const std::string& key, bool value) {
 	return GetBool(Utils::GetStableHashCode(key), value);
 }
 
-const NetID NetSync::GetID(const std::string& key) {
-	return GetID(ToHashPair(key));
+const NetID NetSync::GetNetID(const std::string& key) {
+	return GetNetID(ToHashPair(key));
 }
 
 
@@ -206,34 +230,6 @@ const NetID NetSync::GetID(const std::string& key) {
 */
 
 // Trivial
-
-void NetSync::Set(HASH_t key, float value) {
-	Set(key, value, MemberShift::FLOAT);
-}
-
-void NetSync::Set(HASH_t key, int32_t value) {
-	Set(key, value, MemberShift::INT);
-}
-
-void NetSync::Set(HASH_t key, int64_t value) {
-	Set(key, value, MemberShift::LONG);
-}
-
-void NetSync::Set(HASH_t key, const Quaternion& value) {
-	Set(key, value, MemberShift::QUATERNION);
-}
-
-void NetSync::Set(HASH_t key, const Vector3& value) {
-	Set(key, value, MemberShift::VECTOR3);
-}
-
-void NetSync::Set(HASH_t key, const std::string& value) {
-	Set(key, value, MemberShift::STRING);
-}
-
-void NetSync::Set(HASH_t key, const BYTES_t &value) {
-	Set(key, value, MemberShift::ARRAY);
-}
 
 // Special
 
@@ -261,126 +257,74 @@ void NetSync::SetLocal() {
 void NetSync::Serialize(NetPackage &pkg) {
 	pkg.Write(m_persistent);
 	pkg.Write(m_distant);
-	pkg.Write(m_timeCreated);
-	pkg.Write(PGW_VERSION);
+	static_assert(sizeof(Rev::m_time) == 8, "Fix this");
+	pkg.Write(m_rev.m_time);
+	pkg.Write(m_pgwVersion);
 	pkg.Write(m_type); // sbyte
 	pkg.Write(m_prefab);
 	pkg.Write(m_rotation);
-	int num = 0;
 
 	// sections organized like this:
 	//	32 bit mask: F V Q I S L A
-	//  for each present type in order:
-	//		
+	//  for each present type in order...
 
-	/*
-	if (this.m_floats != null && this.m_floats.Count > 0)
-	{
-		num |= 1;
-	}
-	if (this.m_vec3 != null && this.m_vec3.Count > 0)
-	{
-		num |= 2;
-	}
-	if (this.m_quats != null && this.m_quats.Count > 0)
-	{
-		num |= 4;
-	}
-	if (this.m_ints != null && this.m_ints.Count > 0)
-	{
-		num |= 8;
-	}
-	if (this.m_strings != null && this.m_strings.Count > 0)
-	{
-		num |= 16;
-	}
-	if (this.m_longs != null && this.m_longs.Count > 0)
-	{
-		num |= 64;
-	}
-	if (this.m_byteArrays != null && this.m_byteArrays.Count > 0)
-	{
-		num |= 128;
-	}*/
-
-	// pkg.Write(num);
 	pkg.Write((int32_t)m_dataMask);
-	
-#define TYPE_SERIALIZE(type, mtype)	\
-	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
+
+#define TYPE_SERIALIZE(T) \
+{ \
+	if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) { \
 		auto size_mark = pkg.m_stream.Position(); \
 		uint8_t size = 0; \
 		pkg.Write(size); \
 		for (auto&& pair : m_members) { \
-			if (pair.second.first != mtype) \
+			if (pair.second.first != GetShift<T>()) \
 				continue; \
 			size++; \
-			pkg.Write(from_prefix(pair.first, mtype)); \
-			pkg.Write(*(type*)pair.second.second); \
+			pkg.Write(FromShiftHash<T>(pair.first)); \
+			pkg.Write(*(T*)pair.second.second); \
 		} \
 		auto end_mark = pkg.m_stream.Position(); \
 		pkg.m_stream.SetPos(size_mark); \
 		pkg.Write(size); \
 		pkg.m_stream.SetPos(end_mark); \
-	}
+	} \
+}
 
-
-
-	// 2 Optimization ideas:
-	//	- using an array[7] with sizes, used to write size directly
-	//		- pros: type amount known with random access; lower cpu
-	//		- cons: requires a 7 byte array for every ZDO; higher ram usage; more complexity for every set/get
-	//	- bitmask to determine presence, skip a pkg byte for later size write, then iteration of members while counting
-	//		- pros: straightforward; low memory utilization; only complex in sends/receives
-	//		- cons: higher iterations, even useless
-
-	// Proposed optimization #1
-	//pkg->Write(sizes[shift]);
-	//uint8_t num = 0;
-	//for (auto&& pair : m_members) {
-	//	// break early for optimization
-	//	if (pair.second.first != MemberShift::FLOAT || num == sizes[shift])
-	//		break;
-	//
-	//	num++;
-	//	
-	//	pkg->Write(from_prefix(pair.first,));
-	//}
-
-	TYPE_SERIALIZE(float, MemberShift::FLOAT);
-	TYPE_SERIALIZE(Vector3, MemberShift::VECTOR3);
-	TYPE_SERIALIZE(Quaternion, MemberShift::QUATERNION);
-	TYPE_SERIALIZE(int32_t, MemberShift::INT);
-	TYPE_SERIALIZE(std::string, MemberShift::STRING);
-	TYPE_SERIALIZE(int64_t, MemberShift::LONG);
-	TYPE_SERIALIZE(BYTES_t, MemberShift::ARRAY);
+	TYPE_SERIALIZE(float);
+	TYPE_SERIALIZE(Vector3);
+	TYPE_SERIALIZE(Quaternion);
+	TYPE_SERIALIZE(int32_t);
+	TYPE_SERIALIZE(std::string);
+	TYPE_SERIALIZE(int64_t);
+	TYPE_SERIALIZE(BYTES_t);
 }
 
 void NetSync::Deserialize(NetPackage &pkg) {
-	m_persistent = pkg.Read<bool>();
-	m_distant = pkg.Read<bool>();
-	m_timeCreated = pkg.Read<int64_t>();
-	auto m_pgwVersion = pkg.Read<int32_t>(); // version 
-	m_type = pkg.Read<ObjectType>();
-	m_prefab = pkg.Read<HASH_t>();
-	m_rotation = pkg.Read<Quaternion>();
+	this->m_persistent = pkg.Read<bool>();
+	this->m_distant = pkg.Read<bool>();
+	this->m_rev.m_time = pkg.Read<int64_t>();
+	this->m_pgwVersion = pkg.Read<int32_t>();
+	this->m_type = pkg.Read<ObjectType>();
+	this->m_prefab = pkg.Read<HASH_t>();
+	this->m_rotation = pkg.Read<Quaternion>();
+	this->m_dataMask = pkg.Read<int32_t>();
 
-	m_dataMask = pkg.Read<int32_t>();
-
-#define TYPE_DESERIALIZE(type, mtype) \
-	if ((m_dataMask >> static_cast<uint8_t>(mtype)) & 0b1) { \
+#define TYPE_DESERIALIZE(T) \
+{ \
+	if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) { \
 		auto count = pkg.Read<uint8_t>(); \
 		while (count--) { \
 			auto key = pkg.Read<HASH_t>(); \
-			SetWith(key, pkg.Read<type>(), mtype); \
+			_Set(key, pkg.Read<T>()); \
 		} \
-	}
+	} \
+}
 
-	TYPE_DESERIALIZE(float, MemberShift::FLOAT);
-	TYPE_DESERIALIZE(Vector3, MemberShift::VECTOR3);
-	TYPE_DESERIALIZE(Quaternion, MemberShift::QUATERNION);
-	TYPE_DESERIALIZE(int32_t, MemberShift::INT);
-	TYPE_DESERIALIZE(std::string, MemberShift::STRING);
-	TYPE_DESERIALIZE(int64_t, MemberShift::LONG);
-	TYPE_DESERIALIZE(BYTES_t, MemberShift::ARRAY);
+	TYPE_DESERIALIZE(float);
+	TYPE_DESERIALIZE(Vector3);
+	TYPE_DESERIALIZE(Quaternion);
+	TYPE_DESERIALIZE(int32_t);
+	TYPE_DESERIALIZE(std::string);
+	TYPE_DESERIALIZE(int64_t);
+	TYPE_DESERIALIZE(BYTES_t);
 }
