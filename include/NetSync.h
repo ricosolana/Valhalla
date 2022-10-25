@@ -226,8 +226,13 @@ public:
 	uint32_t m_dataRevision = 0;
 	//int32_t m_pgwVersion = 0; // 53 const mostly by ZNetView
 	ObjectType m_type = ObjectType::Default; // set by ZNetView; use bitmask
-	//float m_tempSortValue = 0; // only used in sending priority
+
+
+	// dumb vars
+	// waste of space?
+	float m_tempSortValue = 0; // only used in sending priority
 	//bool m_tempHaveRevision = 0; // appears to be unused besides assignments
+
 	//int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
 	//int32_t m_tempCreatedAt = -1; // ^
 
@@ -237,7 +242,7 @@ public:
 	// Whether an owner has been assigned to this ZDO
 	// I really dislike the null owner operability structure of Valheim server
 	// Why would owner ever be 0? What circumstances ever allow this?
-	bool HasOwner() {
+	bool HasOwner() const {
 		return m_owner;
 	}
 
@@ -252,7 +257,7 @@ public:
 		}
 	}
 
-	bool Valid() {
+	bool Valid() const {
 		if (m_id)
 			return true;
 		return false;

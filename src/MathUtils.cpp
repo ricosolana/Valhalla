@@ -46,7 +46,9 @@ namespace MathUtils {
 
 
 
-
+	float Clamp(float value, float min, float max) {
+		return std::min(std::max(value, min), max);
+	}
 
 	float Clamp01(float value)
 	{

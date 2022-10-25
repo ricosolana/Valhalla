@@ -87,7 +87,7 @@ namespace NetRpcManager {
 			_RouteRPC(data);
 	}
 
-	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage &pkg) {
+	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage &&pkg) {
 		static UUID_t m_rpcMsgID = 1;
 		static auto SERVER_ID(_ServerID());
 
@@ -98,7 +98,6 @@ namespace NetRpcManager {
 		data.m_targetNetSync = targetNetSync;
 		data.m_methodHash = hash;
 		data.m_parameters = std::move(pkg);
-		//assert(false);
 
 		
 

@@ -16,6 +16,8 @@ class ValhallaServer {
 	std::string m_serverName;
 	int m_maxPeers;
 	UUID_t m_serverUuid;
+	//std::chrono::steady_clock::time_point start;
+	float m_time = 0;
 
 public:
 	UUID_t Uuid() const {
@@ -27,6 +29,10 @@ public:
 
 	void Launch();
 	void Terminate();
+
+	float Time() {
+		return m_time;
+	}
 
 	Task* RunTask(Task::F f);
 	Task* RunTaskLater(Task::F f, std::chrono::milliseconds after);

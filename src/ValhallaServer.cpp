@@ -25,6 +25,8 @@ void ValhallaServer::Launch() {
 	assert(!m_running && "Tried calling Launch() twice!");
 	//assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
 
+	//start = steady_clock::now();
+
 	YAML::Node loadNode;
 	{
 		std::string buf;
@@ -132,7 +134,9 @@ void ValhallaServer::Launch() {
 		}
 
 		// UPDATE
-		Update(elapsed / (double)duration_cast<microseconds>(1s).count());
+		float delta = elapsed / (double)duration_cast<microseconds>(1s).count();
+		m_time += delta;
+		Update(delta);
 
 		// Prevent spin lock
 		// TODO
@@ -149,6 +153,10 @@ void ValhallaServer::Terminate() {
 	ModManager::Uninit();
 	NetManager::Close();
 }
+
+
+
+
 
 void ValhallaServer::Update(float delta) {
 	// This is important to processing RPC remote invocations

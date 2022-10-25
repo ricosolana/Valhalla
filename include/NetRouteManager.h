@@ -43,7 +43,7 @@ namespace NetRpcManager {
 
 	// Internal use only by NetRpcManager
 	UUID_t _ServerID();
-	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage &pkg);
+	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage &&pkg);
 	void _HandleRoutedRPC(Data data);
 
 	void _Register(HASH_t hash, IMethod<UUID_t>* method);

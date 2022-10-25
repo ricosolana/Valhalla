@@ -18,7 +18,7 @@ endif()
 ############
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(robin_hood CONFIG REQUIRED)    
+find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
@@ -102,7 +102,8 @@ add_executable(${PROJECT_NAME}
      
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
- "include/ServerSettings.h")
+    "src/objects/Beehive.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
