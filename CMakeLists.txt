@@ -103,7 +103,7 @@ add_executable(${PROJECT_NAME}
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
     "src/objects/Beehive.cpp"
-)
+ "include/NetScene.h" "src/NetScene.cpp" "include/NetSceneHashes.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

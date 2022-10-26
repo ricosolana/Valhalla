@@ -12,7 +12,7 @@
 using namespace std::chrono;
 
 namespace NetManager {
-	double m_netTime = 2040;
+	//double m_netTime = 2040;
 	//static auto m_startTime = steady_clock::now();
 
 	std::unique_ptr<IAcceptor> m_acceptor;
@@ -208,7 +208,7 @@ namespace NetManager {
 
 	void SendNetTime() {
 		for (auto&& peer : m_peers) {
-			peer->m_rpc->Invoke(Rpc_Hash::NetTime, m_netTime);
+			peer->m_rpc->Invoke(Rpc_Hash::NetTime, (double)Valhalla()->Time());
 		}
 	}
 
@@ -236,7 +236,7 @@ namespace NetManager {
 		pkg.Write(m_world->m_seedName);
 		pkg.Write(m_world->m_uid);
 		pkg.Write(m_world->m_worldGenVersion);
-		pkg.Write(m_netTime);
+		pkg.Write((double)Valhalla()->Time());
 
 		rpc->Invoke(Rpc_Hash::PeerInfo, pkg);
 	}
@@ -456,7 +456,7 @@ namespace NetManager {
 			}
 		}
 
-		m_netTime += delta;
+		//m_netTime += delta;
 		SteamGameServer_RunCallbacks();
 	}
 

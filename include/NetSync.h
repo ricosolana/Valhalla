@@ -32,12 +32,17 @@ public:
 	};
 
 	struct Rev {
-		uint32_t m_dataRev = 0;
-		uint32_t m_ownerRev = 0;
-		//float m_syncTime;
-		uint64_t m_time = 0;
-		//char a;
-		//uint64_t m_time; // time in ms since last modified (synced)
+		uint32_t m_dataRev;
+		uint32_t m_ownerRev;
+		int64_t m_time;
+
+		Rev() : m_dataRev(0), m_ownerRev(0), m_time(Valhalla()->Ticks()) {}
+
+		Rev(uint32_t data, uint32_t owner)
+			: m_dataRev(data), m_ownerRev(owner), m_time(Valhalla()->Ticks()) {}
+
+		Rev(uint32_t data, uint32_t owner, int64_t time) 
+			: m_dataRev(data), m_ownerRev(owner), m_time(time) {}
 	};
 
 	static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
@@ -180,19 +185,24 @@ private:
 	//uint32_t m_ownerRev = 0;	// could be rev structure
 	//uint32_t m_dataRev = 0;	// could be rev structure
 
-	Rev m_rev;
-
 	void Revise() {
 		m_rev.m_dataRev++;
 	}
 
 public:
+	Rev m_rev;
+
+public:
 	// Create ZDO with me (im owner)
 	NetSync() {
 		this->m_owner = Valhalla()->Uuid();
-		this->m_rev.m_time = Valhalla()->Time();
 	}
 
+	// Loading ZDO from the disk packet
+	NetSync(NetPackage& reader, int version);
+
+	// Save ZDO to the disk packet
+	void Save(NetPackage &writer);
 
 
 	NetSync(const NetSync& other); // copy constructor
@@ -314,15 +324,39 @@ public:
 		return m_id;
 	}
 
-	const Rev GetRev() const {
-		return m_rev;
-	}
+	//const Rev GetRev() const {
+	//	return m_rev;
+	//}
 
-
-
-	UUID_t Owner() {
+	UUID_t Owner() const {
 		return m_owner;
 	}
+
+	const Vector3& Position() const {
+		return m_position;
+	}
+
+	void InvalidateSector() {
+		this->SetSector(Vector2i(-100000, -10000));
+	}
+
+	void SetSector(const Vector2i& sector);
+
+
+
+
+	void SetPosition(const Vector3& pos);
+
+	//bool Outdated(const Rev& min) const {
+	//	return min.m_dataRev > m_rev.m_dataRev
+	//		|| min.m_ownerRev > m_rev.m_ownerRev;
+	//}
+
+
+
+	//friend void NetSyncManager::RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
+
+
 
 	// Return whether the ZDO instance is self hosted or remotely hosted
 	bool Local();
@@ -349,9 +383,15 @@ public:
 		return false;
 	}
 
-	// Write ZDO to the package
+	void ResetOwner() {
+		m_owner = 0;
+	}
+
+	// Write ZDO to the network packet
 	void Serialize(NetPackage &pkg);
 
-	// Load ZDO from the package
+	// Load ZDO from the network packet
 	void Deserialize(NetPackage &pkg);
 };
+
+typedef NetSync ZDO;

@@ -4,6 +4,7 @@
 #include "NetSyncManager.h"
 #include "ValhallaServer.h"
 #include "NetID.h"
+#include "ZoneSystem.h"
 
 //constexpr std::pair<HASH_t, HASH_t> ToHashPair(const char* key) {
 //	//constexpr auto s = "hello" " " "world";
@@ -71,6 +72,100 @@ NetID::operator bool() const noexcept {
 }
 
 
+
+NetSync::NetSync(NetPackage& pkg, int version) {
+	this->m_rev.m_ownerRev =	pkg.Read<uint32_t>();
+	this->m_rev.m_dataRev =		pkg.Read<uint32_t>();
+	this->m_persistent =		pkg.Read<bool>();
+	this->m_owner = 			pkg.Read<UUID_t>();
+	this->m_rev.m_time =		pkg.Read<int64_t>();
+	this->m_pgwVersion =		pkg.Read<int32_t>();
+
+	if (version >= 16 && version < 24)
+		pkg.Read<int32_t>();
+
+	if (version >= 23)
+		this->m_type = pkg.Read<ObjectType>();
+
+	if (version >= 22)
+		this->m_distant = pkg.Read<bool>();
+
+	if (version < 13) {
+		pkg.Read<char>();
+		pkg.Read<char>();
+	}
+
+	if (version >= 17)
+		this->m_prefab = pkg.Read<HASH_t>();
+
+	this->m_sector = pkg.Read<Vector2i>();
+	this->m_position = pkg.Read<Vector3>();
+	this->m_rotation = pkg.Read<Quaternion>();
+
+#define TYPE_LOAD(T) \
+{ \
+	auto count = pkg.Read<uint8_t>(); \
+	while (count--) { \
+		auto key = pkg.Read<HASH_t>(); \
+		_Set(key, pkg.Read<T>()); \
+	} \
+}
+
+	TYPE_LOAD(float);
+	TYPE_LOAD(Vector3);
+	TYPE_LOAD(Quaternion);
+	TYPE_LOAD(int32_t);
+	TYPE_LOAD(int64_t);
+	TYPE_LOAD(std::string);	
+	TYPE_LOAD(BYTES_t);
+
+	if (version < 17)
+		this->m_prefab = GetInt("prefab", 0);
+}
+
+void NetSync::Save(NetPackage& pkg) {
+	pkg.Write(this->m_rev.m_ownerRev);
+	pkg.Write(this->m_rev.m_dataRev);
+	pkg.Write(this->m_persistent);
+	pkg.Write(this->m_owner);
+	pkg.Write(this->m_rev.m_time);
+	pkg.Write(this->m_pgwVersion);
+	pkg.Write(this->m_type);
+	pkg.Write(this->m_distant);
+	pkg.Write(this->m_prefab);
+	pkg.Write(this->m_sector);
+	pkg.Write(this->m_position);
+	pkg.Write(this->m_rotation);
+
+#define TYPE_SAVE(T) \
+{ \
+	if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) { \
+		auto size_mark = pkg.m_stream.Position(); \
+		uint8_t size = 0; \
+		pkg.Write(size); \
+		for (auto&& pair : m_members) { \
+			if (pair.second.first != GetShift<T>()) \
+				continue; \
+			size++; \
+			pkg.Write(FromShiftHash<T>(pair.first)); \
+			pkg.Write(*(T*)pair.second.second); \
+		} \
+		auto end_mark = pkg.m_stream.Position(); \
+		pkg.m_stream.SetPos(size_mark); \
+		pkg.Write(size); \
+		pkg.m_stream.SetPos(end_mark); \
+	} \
+	else pkg.Write((uint8_t)0); \
+}
+
+	TYPE_SAVE(float);
+	TYPE_SAVE(Vector3);
+	TYPE_SAVE(Quaternion);
+	TYPE_SAVE(int32_t);
+	TYPE_SAVE(int64_t);
+	TYPE_SAVE(std::string);
+	TYPE_SAVE(BYTES_t);
+}
 
 // copy constructor
 NetSync::NetSync(const NetSync& other) {
@@ -253,6 +348,28 @@ void NetSync::SetLocal() {
 }
 
 
+void NetSync::SetPosition(const Vector3& pos) {
+	if (m_position != pos) {
+		m_position = pos;
+		assert(false);
+		SetSector(ZoneSystem::GetZoneCoords(m_position));
+		if (Local())
+			Revise();
+	}
+}
+
+void NetSync::SetSector(const Vector2i& sector) {
+	if (m_sector == sector) {
+		return;
+	}
+	NetSyncManager::RemoveFromSector(this, m_sector);
+	m_sector = sector;
+	NetSyncManager::AddToSector(this, m_sector);
+	NetSyncManager::ZDOSectorInvalidated(this);
+}
+
+
+
 
 void NetSync::Serialize(NetPackage &pkg) {
 	pkg.Write(m_persistent);
@@ -294,12 +411,15 @@ void NetSync::Serialize(NetPackage &pkg) {
 	TYPE_SERIALIZE(Vector3);
 	TYPE_SERIALIZE(Quaternion);
 	TYPE_SERIALIZE(int32_t);
-	TYPE_SERIALIZE(std::string);
 	TYPE_SERIALIZE(int64_t);
+	TYPE_SERIALIZE(std::string);
 	TYPE_SERIALIZE(BYTES_t);
 }
 
 void NetSync::Deserialize(NetPackage &pkg) {
+	// Since the data is arriving from the client, must assert things
+	// Filter the client inputs
+
 	this->m_persistent = pkg.Read<bool>();
 	this->m_distant = pkg.Read<bool>();
 	this->m_rev.m_time = pkg.Read<int64_t>();
@@ -307,6 +427,7 @@ void NetSync::Deserialize(NetPackage &pkg) {
 	this->m_type = pkg.Read<ObjectType>();
 	this->m_prefab = pkg.Read<HASH_t>();
 	this->m_rotation = pkg.Read<Quaternion>();
+
 	this->m_dataMask = pkg.Read<int32_t>();
 
 #define TYPE_DESERIALIZE(T) \
@@ -324,7 +445,7 @@ void NetSync::Deserialize(NetPackage &pkg) {
 	TYPE_DESERIALIZE(Vector3);
 	TYPE_DESERIALIZE(Quaternion);
 	TYPE_DESERIALIZE(int32_t);
-	TYPE_DESERIALIZE(std::string);
 	TYPE_DESERIALIZE(int64_t);
+	TYPE_DESERIALIZE(std::string);
 	TYPE_DESERIALIZE(BYTES_t);
 }

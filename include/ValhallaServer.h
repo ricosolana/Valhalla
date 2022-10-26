@@ -16,9 +16,10 @@ class ValhallaServer {
 	std::string m_serverName;
 	int m_maxPeers;
 	UUID_t m_serverUuid;
-	uint64_t m_nS = 0; // time in uS
-	//std::chrono::steady_clock::time_point start;
-	//float m_time = 0;
+
+	steady_clock::time_point m_startTime;
+	steady_clock::time_point m_prevUpdate;
+	steady_clock::time_point m_nowUpdate;
 
 public:
 	UUID_t Uuid() const {
@@ -32,13 +33,24 @@ public:
 	void Terminate();
 
 	// Return the time in nanoseconds
-	uint64_t Nanos() {
-		return m_nS;
+	auto Nanos() {
+		//return m_nanos;
+		return m_startTime - m_nowUpdate;
 	}
 
-	// According to C# DateTime.Ticks
-	uint64_t Ticks() {
-		return m_nS / 100;
+	// Returns the time in Ticks (C# DateTime.Ticks)
+	uint64_t Ticks() {		
+		return Nanos().count() / 100;
+	}
+
+	// Returns the time in seconds (Unity Time.time)
+	float Time() {
+		return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
+	}
+
+	float Delta() {
+		auto elapsed = m_nowUpdate - m_prevUpdate;
+		return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
 	}
 
 	Task* RunTask(Task::F f);

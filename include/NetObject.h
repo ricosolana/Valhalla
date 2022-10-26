@@ -108,3 +108,5 @@ public:
 	//static void FinishGhostInit();
 
 };
+
+typedef NetObject ZNetView;

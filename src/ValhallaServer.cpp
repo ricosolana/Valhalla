@@ -98,18 +98,21 @@ void ValhallaServer::Launch() {
 	ModManager::Init();
 	NetManager::Start(settings);
 
-
+	m_startTime = steady_clock::now(); // const during server run
+	m_prevUpdate = steady_clock::now();
+	m_nowUpdate = steady_clock::now();
 
 	m_running = true;
 	while (m_running) {
 		OPTICK_FRAME("main");
 
 		auto now = steady_clock::now();
-		static auto last_tick = now; // Initialized to this once
-		auto elapsed = duration_cast<nanoseconds>(now - last_tick); // .count();
-		last_tick = now;
+		auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
 
-		// mutex is carefully scoped in this micro-scope
+		m_prevUpdate = m_nowUpdate; // old state
+		m_nowUpdate = now; // new state
+
+		// mutex is carefully scoped
 		{
 			std::scoped_lock lock(m_taskMutex);
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
@@ -132,13 +135,10 @@ void ValhallaServer::Launch() {
 					++itr;
 			}
 		}
-
-		// now inc uS
-		m_nS += elapsed.count();
-		
+				
 		// UPDATE
-		float delta = elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
-		Update(delta);
+		//float delta = elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
+		Update(Delta());
 
 		// Prevent spin lock
 		// TODO

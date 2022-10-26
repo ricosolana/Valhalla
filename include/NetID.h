@@ -24,3 +24,5 @@ public:
 
 	static const NetID NONE;
 };
+
+typedef NetID ZDOID;

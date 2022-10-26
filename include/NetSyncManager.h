@@ -8,6 +8,8 @@
 #include "HashUtils.h"
 #include "NetPeer.h"
 
+//class NetSync;
+
 namespace NetSyncManager {
 	void OnNewPeer(NetPeer::Ptr peer);
 
@@ -54,15 +56,19 @@ namespace NetSyncManager {
 	void DestroyZDO(NetSync* zdo);
 
 	void FindSectorObjects(const Vector2i &sector, int area, int distantArea, 
-		std::vector<NetSync*> sectorObjects, std::vector<NetSync*> distantSectorObjects = nullptr);
+		std::vector<NetSync*> &sectorObjects, std::vector<NetSync*> *distantSectorObjects = nullptr);
 
-	void FindSectorObjects(const Vector2i &sector, int area, std::vector<NetSync*> sectorObjects);
+	void FindSectorObjects(const Vector2i &sector, int area, std::vector<NetSync*> &sectorObjects);
 
 	//long GetMyID();
 
-	void GetAllZDOsWithPrefab(std::string prefab, std::vector<NetSync*> zdos);
+	void GetAllZDOsWithPrefab(const std::string &prefab, std::vector<NetSync*> zdos);
 
-	bool GetAllZDOsWithPrefabIterative(std::string prefab, std::vector<NetSync*> zdos, ref int index);
+	// Used to get portals incrementally in a coroutine
+	// basically, the coroutine thread is frozen in place
+	// its not real multithreading, but is confusing for no reason
+	// this can be refactored to have clearer intent
+	bool GetAllZDOsWithPrefabIterative(const std::string &prefab, std::vector<NetSync*> zdos, int &index);
 
 	// periodic stat logging
 	//int NrOfObjects();
@@ -76,9 +82,11 @@ namespace NetSyncManager {
 
 	void ForceSendZDO(const NetID &id);
 
-	void ForceSendZDO(long peerID, const NetID& id);
+	void ForceSendZDO(UUID_t peerID, const NetID& id);
 
-	void ClientChanged(const NetID& id);
+	//void ClientChanged(const NetID& id);
 
 	std::function<void(NetSync*)> m_onZDODestroyed;
+
+	void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
 }

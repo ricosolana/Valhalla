@@ -28,3 +28,5 @@ public:
 	void SendDisconnect();
 	void Disconnect();
 };
+
+typedef NetPeer ZNetPeer;
