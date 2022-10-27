@@ -3,6 +3,7 @@
 #include "NetHashes.h"
 #include "ZoneSystem.h"
 #include "NetRouteManager.h"
+#include "HashUtils.h"
 
 namespace NetSyncManager {
 
@@ -15,7 +16,7 @@ namespace NetSyncManager {
 
 		NetSyncPeer(NetPeer::Ptr peer) : m_peer(peer) {}
 
-		void NetSyncSectorInvalidated(NetSync *netSync) {
+		void NetSyncSectorInvalidated(NetSync* netSync) {
 			throw std::runtime_error("Not implemented");
 			//if (sync->m_owner == m_peer->m_uuid)
 			//	return;
@@ -34,7 +35,7 @@ namespace NetSyncManager {
 		// Returns whether the sync is outdated
 		//	tests if the peer does not have a copy
 		//	tests if the zdo is outdated in owner and data
-		bool ShouldSend(NetSync *netSync) {
+		bool ShouldSend(NetSync* netSync) {
 			auto find = m_syncs.find(netSync->ID());
 
 			//return find == m_syncs.end() 
@@ -46,71 +47,64 @@ namespace NetSyncManager {
 		}
 	};
 
-	typedef NetSyncPeer ZDOPeer;
+	// forward declararing
 
-	//robin_hood::unordered_map<UUID_t, std::unique_ptr<NetSyncPeer>> m_peers;
-	std::vector<std::unique_ptr<NetSyncPeer>> m_peers;
-	robin_hood::unordered_map<NetID, UUID_t, HashUtils::Hasher> m_deadZDOs;
+	void ResetSectorArray();
+	NetSyncPeer* GetPeer(UUID_t uuid);
+	NetSyncPeer* GetPeer(NetPeer::Ptr netPeer);
+	NetSyncPeer* GetPeer(NetRpc *rpc);
+	void UpdateStats(float dt);
+	//void SendZDOToPeers(float dt);
+	void SendZDOToPeers2(float dt);
+	void FlushClientObjects();
+	void ReleaseZDOS(float dt);
+	bool IsInPeerActiveArea(const Vector2i& sector, UUID_t id);
+	void ReleaseNearbyZDOS(const Vector3& refPosition, UUID_t id);
+	void SendDestroyed();
+	void RPC_DestroyZDO(UUID_t sender, NetPackage pkg);
+	void HandleDestroyedZDO(const NetID& uid);
+	void SendAllZDOs(NetSyncPeer* peer);
+	bool SendZDOs(NetSyncPeer* peer, bool flush);
+	void RPC_ZDOData(NetRpc *rpc, NetPackage pkg);
+	void CreateSyncList(NetSyncPeer* peer, std::vector<NetSync*>& toSync);
+	void AddForceSendZdos(NetSyncPeer* peer, std::vector<NetSync*>& syncList);
+	//static int ServerSendCompare(NetSync* x, NetSync* y);
+	void ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, NetSyncPeer* peer);
+	//static int ClientSendCompare(NetSync* x, NetSync* y); // used as comparator
+	//void ClientSortSendZDOS(std::vector<NetSync*> objects, NetSyncPeer* peer);
+	//void PrintZdoList(std::vector<NetSync*> zdos);
+	//void AddDistantObjects(NetSyncPeer* peer, int maxItems, std::vector<NetSync*> &toSync);
+	int SectorToIndex(const Vector2i& s);
+	void FindObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
+	void FindDistantObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
+	void RemoveOrphanNonPersistentZDOS();
+	bool IsPeerConnected(UUID_t uid);
+	//bool InvalidZDO(NetSync* zdo); // used as comparator
+	//std::vector<NetSync> GetSaveClone();
+	void RPC_RequestZDO(UUID_t sender, NetID id);
+	//NetSyncPeer* GetPeer(UUID_t uid);
+
+
+
+
+	//typedef NetSyncPeer ZDOPeer;
 
 	static constexpr int SECTOR_WIDTH = 512;
-
-
-
-	int m_nextSendPeer = -1; // possibly redundant
-
-	std::vector<NetSync*> tempSectorObjects;
-
-	//static long compareReceiver; // redundant
-
-
-
-
-	robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>, HashUtils::Hasher> m_objectsByID;
-
-	// list<zdo>[]
-	//std::vector<std::vector<NetSync*>> m_objectsBySector;
-	// the usage of array<vec> seems to be well defined and ok
-	// there are no conflicting usages for testing for null
-	//std::array<std::vector<NetSync*>, SECTOR_WIDTH> m_objectsBySector;
-	std::array<robin_hood::unordered_set<NetSync*>, SECTOR_WIDTH*SECTOR_WIDTH> m_objectsBySector;
-
-	//robin_hood::unordered_map<Vector2i, std::vector<NetSync*>> m_objectsByOutsideSector;
-	robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher> m_objectsByOutsideSector;
-
-	//std::vector<NetSyncPeer> m_peers;
-
 	static constexpr int MAX_DEAD_ZDOS = 100000;
 
-	//robin_hood::unordered_map<NetID, int64_t> m_deadZDOs;
-
+	std::vector<std::unique_ptr<NetSyncPeer>> m_peers;
+	robin_hood::unordered_map<NetID, UUID_t, HashUtils::Hasher> m_deadZDOs;
+	std::vector<NetSync*> tempSectorObjects;
+	robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>, HashUtils::Hasher> m_objectsByID;
+	std::array<robin_hood::unordered_set<NetSync*>, SECTOR_WIDTH*SECTOR_WIDTH> m_objectsBySector;
+	robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher> m_objectsByOutsideSector;
 	std::vector<NetID> m_destroySendList;
-
-	// used by client only
-	//robin_hood::unordered_set<NetID> m_clientChangeQueue;
-
-	//UUID_t m_myid; // effectively const on server start
 
 	// this is used incrementally for assigning new revisions and zdos that are created
 	uint32_t m_nextUid = 1;
-
-	//int32_t m_width;
-	//int32_t m_halfWidth;
-
-	float m_sendTimer; // possibly redundant
-
-	// used for client stats rate
-	//static constexpr float m_sendFPS = 20;
-
-	float m_releaseZDOTimer; // possibly redundant
-
-	//static ZDOMan m_instance;
-
-	// player hud stats
-	//int m_zdosSent;
-	//int m_zdosRecv;
-	//int m_zdosSentLastSec;
-	//int m_zdosRecvLastSec;
-	//float m_statTimer;
+	float m_sendTimer = 0; // redundant ?
+	float m_releaseZDOTimer = 0; // redundant ?
+	int m_nextSendPeer = -1; // redundant ?
 
 	std::vector<NetSync*> m_tempToSync;
 	std::vector<NetSync*> m_tempToSyncDistant;
@@ -156,7 +150,7 @@ namespace NetSyncManager {
 				auto&& bytes = zpackage.m_stream.Bytes();
 				writer.Write(bytes);
 			}
-			writer.Write<int32_t>(m_deadZDOs.size());
+			writer.Write((int32_t)m_deadZDOs.size());
 			for (auto&& keyValuePair : m_deadZDOs) {
 				writer.Write(keyValuePair.first.m_uuid);
 				writer.Write(keyValuePair.first.m_id);
@@ -173,42 +167,6 @@ namespace NetSyncManager {
 
 
 
-
-	// forward declararing privates
-
-	void ResetSectorArray();
-	//NetSyncPeer* FindPeer(NetPeer::Ptr netPeer);
-	//NetSyncPeer* FindPeer(NetRpc *rpc);
-	void UpdateStats(float dt);
-	//void SendZDOToPeers(float dt);
-	void SendZDOToPeers2(float dt);
-	void FlushClientObjects();
-	void ReleaseZDOS(float dt);
-	bool IsInPeerActiveArea(const Vector2i &sector, UUID_t id);
-	void ReleaseNearbyZDOS(const Vector3 &refPosition, UUID_t id);
-	void SendDestroyed();
-	void RPC_DestroyZDO(UUID_t sender, NetPackage pkg);
-	void HandleDestroyedZDO(const NetID &uid);
-	void SendAllZDOs(NetSyncPeer* peer);
-	bool SendZDOs(NetSyncPeer* peer, bool flush);
-	//void RPC_ZDOData(NetRpc *rpc, NetPackage pkg);
-	void CreateSyncList(NetSyncPeer* peer, std::vector<NetSync*> &toSync);
-	void AddForceSendZdos(NetSyncPeer* peer, std::vector<NetSync*> &syncList);
-	//static int ServerSendCompare(NetSync* x, NetSync* y);
-	void ServerSortSendZDOS(std::vector<NetSync*> &objects, const Vector3 &refPos, NetSyncPeer* peer);
-	//static int ClientSendCompare(NetSync* x, NetSync* y); // used as comparator
-	//void ClientSortSendZDOS(std::vector<NetSync*> objects, NetSyncPeer* peer);
-	//void PrintZdoList(std::vector<NetSync*> zdos);
-	//void AddDistantObjects(NetSyncPeer* peer, int maxItems, std::vector<NetSync*> &toSync);
-	//int SectorToIndex(const Vector2i &s);
-	void FindObjects(const Vector2i &sector, std::vector<NetSync*> &objects);
-	void FindDistantObjects(const Vector2i &sector, std::vector<NetSync*> &objects);
-	void RemoveOrphanNonPersistentZDOS();
-	bool IsPeerConnected(UUID_t uid);
-	//bool InvalidZDO(NetSync* zdo); // used as comparator
-	std::vector<NetSync> GetSaveClone();
-	void RPC_RequestZDO(UUID_t sender, NetID id);
-	//NetSyncPeer* GetPeer(UUID_t uid);
 
 
 
@@ -274,7 +232,7 @@ namespace NetSyncManager {
 			auto data = reader.Read<BYTES_t>();
 			NetPackage zpackage(data);
 
-			auto zdo = std::make_unique<ZDO>(zpackage, version);
+			auto zdo = std::make_unique<NetSync>(zpackage, version);
 
 			//zdo->Load(zpackage, version);
 			zdo->ResetOwner();
@@ -284,13 +242,13 @@ namespace NetSyncManager {
 			{
 				num = zdo->ID().m_id + 1U;
 			}
-			m_objectsByID.insert({ zdo->ID(), zdo });
+			m_objectsByID.insert({ zdo->ID(), std::move(zdo) });
 		}
 		m_deadZDOs.clear();
-		int num3 = reader.Read<int32_t>();
+		auto num3 = reader.Read<int32_t>();
 		for (int j = 0; j < num3; j++) {
 			auto key = reader.Read<NetID>();
-			long value = reader.Read<UUID_t>();
+			auto value = reader.Read<UUID_t>();
 			m_deadZDOs.insert({ key, value });
 			if (key.m_uuid == Valhalla()->Uuid() && key.m_id >= num) {
 				num = key.m_id + 1U;
@@ -300,7 +258,6 @@ namespace NetSyncManager {
 		LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
 		RemoveOldGeneratedZDOS();
 		m_nextUid = num;
-
 	}
 
 	void RemoveOldGeneratedZDOS() {
@@ -331,7 +288,7 @@ namespace NetSyncManager {
 	}
 
 	NetSync* CreateNewZDO(const Vector3 &position) {
-		ZDOID zdoid;
+		NetID zdoid;
 
 		do {
 			zdoid = NetID(Valhalla()->Uuid(), m_nextUid++);
@@ -341,7 +298,7 @@ namespace NetSyncManager {
 	}
 
 	NetSync *CreateNewZDO(const NetID &uid, const Vector3 &position) {
-		return m_objectsByID.insert({ uid, std::make_unique<ZDO>() })
+		return m_objectsByID.insert({ uid, std::make_unique<NetSync>() })
 			.first->second.get();
 	}
 
@@ -393,7 +350,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	ZDO *GetZDO(const ZDOID &id) {
+	NetSync *GetZDO(const NetID &id) {
 		if (id) {
 			auto&& find = m_objectsByID.find(id);
 			if (find != m_objectsByID.end())
@@ -520,30 +477,32 @@ namespace NetSyncManager {
 			//return ZNetScene::InActiveArea(sector, NetManager::GetReferencePosition());
 
 		auto &&peer = NetManager::GetPeer(uid);
-		return peer && ZNetScene::InActiveArea(sector, peer->m_pos);
+		//return peer && ZNetScene::InActiveArea(sector, peer->m_pos);
+		throw std::runtime_error("not implemented");
 	}
 
 	void ReleaseNearbyZDOS(const Vector3 &refPosition, UUID_t uid) {
+		throw std::runtime_error("not implemented");
 		auto&& zone = ZoneSystem::GetZoneCoords(refPosition);
 		m_tempNearObjects.clear();
 		FindSectorObjects(zone, ZoneSystem::ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
 		for (auto&& zdo : m_tempNearObjects) {
 			if (zdo->Persists()) {
 				if (zdo->Owner() == uid) {
-					if (!ZNetScene::InActiveArea(zdo->Sector(), zone)) {
-						zdo->ResetOwner();
-					}
+					//if (!ZNetScene::InActiveArea(zdo->Sector(), zone)) {
+					//	zdo->ResetOwner();
+					//}
 				}
-				else if ((!zdo->HasOwner() 
-					|| !IsInPeerActiveArea(zdo->Sector(), zdo->Owner())) 
-					&& ZNetScene::InActiveArea(zdo->Sector(), zone)) {
-					zdo->SetOwner(uid);
-				}
+				//else if ((!zdo->HasOwner() 
+				//	|| !IsInPeerActiveArea(zdo->Sector(), zdo->Owner())) 
+				//	&& ZNetScene::InActiveArea(zdo->Sector(), zone)) {
+				//	zdo->SetOwner(uid);
+				//}
 			}
 		}
 	}
 
-	void DestroyZDO(ZDO *zdo) {
+	void DestroyZDO(NetSync *zdo) {
 		if (zdo->Local())
 			m_destroySendList.push_back(zdo->ID());
 	}
@@ -553,7 +512,7 @@ namespace NetSyncManager {
 			return;
 
 		NetPackage zpackage;
-		zpackage.Write<int32_t>(m_destroySendList.size());
+		zpackage.Write((int32_t)m_destroySendList.size());
 		for (auto &&id : m_destroySendList)
 			zpackage.Write(id);
 
@@ -564,12 +523,12 @@ namespace NetSyncManager {
 	void RPC_DestroyZDO(UUID_t sender, NetPackage pkg) {
 		int num = pkg.Read<int32_t>();
 		for (int i = 0; i < num; i++) {
-			ZDOID uid = pkg.Read<ZDOID>();
+			auto uid = pkg.Read<NetID>();
 			HandleDestroyedZDO(uid);
 		}
 	}
 
-	void HandleDestroyedZDO(const ZDOID &uid) {
+	void HandleDestroyedZDO(const NetID &uid) {
 		if (uid.m_uuid == Valhalla()->Uuid() && uid.m_id >= m_nextUid)
 			m_nextUid = uid.m_uuid + 1;
 
@@ -577,8 +536,10 @@ namespace NetSyncManager {
 		if (!zdo)
 			return;
 
-		if (m_onZDODestroyed)
-			m_onZDODestroyed(zdo);
+		//if (m_onZDODestroyed)
+		//	m_onZDODestroyed(zdo);
+
+		throw std::runtime_error("not implemented");
 
 		RemoveFromSector(zdo, zdo->Sector());
 		m_objectsByID.erase(zdo->ID());
@@ -591,7 +552,7 @@ namespace NetSyncManager {
 		m_deadZDOs[uid] = Valhalla()->Ticks(); // ticks;
 	}
 
-	void SendAllZDOs(ZDOPeer *peer) {
+	void SendAllZDOs(NetSyncPeer *peer) {
 		while (SendZDOs(peer, true));
 	}
 
@@ -737,7 +698,7 @@ namespace NetSyncManager {
 		this.m_zdosRecv += found;
 	}*/
 
-	void FindSectorObjects(const Vector2i &sector, int area, int distantArea, std::vector<ZDO*> &sectorObjects, std::vector<ZDO*> *distantSectorObjects) {
+	void FindSectorObjects(const Vector2i &sector, int area, int distantArea, std::vector<NetSync*> &sectorObjects, std::vector<NetSync*> *distantSectorObjects) {
 		FindObjects(sector, sectorObjects);
 		for (int i = 1; i <= area; i++)
 		{
@@ -768,7 +729,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	void FindSectorObjects(Vector2i sector, int area, std::vector<ZDO*> sectorObjects)
+	void FindSectorObjects(Vector2i sector, int area, std::vector<NetSync*> sectorObjects)
 	{
 		for (int i = sector.y - area; i <= sector.y + area; i++)
 		{
@@ -779,7 +740,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	void CreateSyncList(ZDOPeer *peer, std::vector<ZDO*> toSync) {
+	void CreateSyncList(NetSyncPeer *peer, std::vector<NetSync*> toSync) {
 		Vector3 refPos = peer->m_peer->m_pos;
 		auto zone = ZoneSystem::GetZoneCoords(refPos);
 		tempSectorObjects.clear();
@@ -805,7 +766,7 @@ namespace NetSyncManager {
 		AddForceSendZdos(peer, toSync);
 	}
 
-	void AddForceSendZdos(ZDOPeer *peer, std::vector<ZDO*> &syncList){
+	void AddForceSendZdos(NetSyncPeer *peer, std::vector<NetSync*> &syncList){
 		if (!peer->m_forceSend.empty()) {
 			m_tempRemoveList.clear();
 			for (auto&& zdoid : peer->m_forceSend) {
@@ -849,16 +810,16 @@ namespace NetSyncManager {
 		}
 	}*/
 
-	void ServerSortSendZDOS(std::vector<ZDO*> &objects, const Vector3 &refPos, ZDOPeer *peer) {
+	void ServerSortSendZDOS(std::vector<NetSync*> &objects, const Vector3 &refPos, NetSyncPeer *peer) {
 		auto uuid = peer->m_peer->m_uuid;
 		//float time = Valhalla()->Time();
 		auto ticks = Valhalla()->Ticks();
-		std::sort(objects.begin(), objects.end(), [uuid, refPos, ticks] (const ZDO* x, const ZDO* y) {
+		std::sort(objects.begin(), objects.end(), [uuid, refPos, ticks] (const NetSync* x, const NetSync* y) {
 
 			// zdos are sorted according to
 			// priority -> distance -> age ->
-			bool flag = x->Type() == ZDO::ObjectType::Prioritized && x->HasOwner() && x->Owner() != uuid;
-			bool flag2 = y->Type() == ZDO::ObjectType::Prioritized && y->HasOwner() && y->Owner() != uuid;
+			bool flag = x->Type() == NetSync::ObjectType::Prioritized && x->HasOwner() && x->Owner() != uuid;
+			bool flag2 = y->Type() == NetSync::ObjectType::Prioritized && y->HasOwner() && y->Owner() != uuid;
 
 			if (flag == flag2) {
 				if (x->Type() == y->Type()) {
@@ -978,7 +939,7 @@ namespace NetSyncManager {
 		return num2 * SECTOR_WIDTH + num;
 	}*/
 
-	void FindObjects(const Vector2i &sector, std::vector<ZDO*> &objects) {
+	void FindObjects(const Vector2i &sector, std::vector<NetSync*> &objects) {
 		int num = SectorToIndex(sector);
 		if (num != -1) {
 			objects.insert(objects.end(), 
@@ -993,7 +954,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	void FindDistantObjects(const Vector2i &sector, std::vector<ZDO*> &objects) {
+	void FindDistantObjects(const Vector2i &sector, std::vector<NetSync*> &objects) {
 		auto num = SectorToIndex(sector);
 		if (num != -1) {
 			auto&& list = m_objectsBySector[num];
@@ -1021,7 +982,7 @@ namespace NetSyncManager {
 				&& (!value->HasOwner() || !IsPeerConnected(value->Owner())))
 			{
 				auto &&uid = value->ID();
-				LOG(INFO) << "Destroying abandoned non persistent zdo " << uid << " owner " << value->Owner();
+				LOG(INFO) << "Destroying abandoned non persistent zdo owner: " << value->Owner();
 				value->SetLocal();
 				DestroyZDO(value.get());
 			}
@@ -1063,7 +1024,7 @@ namespace NetSyncManager {
 	// also since portals are treated as zdos (NOT AS PORTALS), they are in the same huge list
 	// this isnt particularly great, because portals are global and can be loaded at any time
 	// portals could be stored in separate list for the better
-	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<ZDO*> &zdos, int &index) {
+	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int &index) {
 		auto stableHashCode = Utils::GetStableHashCode(prefab);
 
 		// Search through all sector objects for PREFAB
@@ -1140,7 +1101,7 @@ namespace NetSyncManager {
 			});
 	}*/
 
-	void RPC_RequestZDO(UUID_t sender, ZDOID id) {
+	void RPC_RequestZDO(UUID_t sender, NetID id) {
 		auto&& peer = GetPeer(sender);
 		if (peer)
 			peer->ForceSendNetSync(id);
@@ -1157,13 +1118,13 @@ namespace NetSyncManager {
 	//}
 
 	// Global send
-	void ForceSendZDO(const ZDOID &id) {
+	void ForceSendZDO(const NetID&id) {
 		for (auto&& zdopeer : m_peers)
 			zdopeer->ForceSendNetSync(id);
 	}
 
 	// Single target by id
-	void ForceSendZDO(UUID_t peerID, const ZDOID &id) {
+	void ForceSendZDO(UUID_t peerID, const NetID&id) {
 		auto&& peer = GetPeer(peerID);
 		if (peer)
 			peer->ForceSendNetSync(id);
@@ -1197,7 +1158,7 @@ namespace NetSyncManager {
 
 
 
-	int SectorToIndex(Vector2i s) {
+	int SectorToIndex(const Vector2i &s) {
 		int x = s.x + SECTOR_WIDTH / 2;
 		int y = s.y + SECTOR_WIDTH / 2;
 		if (x < 0 || y < 0 
@@ -1207,7 +1168,7 @@ namespace NetSyncManager {
 		return y * SECTOR_WIDTH + x;
 	}
 
-	NetSync *GetNetSync(NetID& id) {
+	NetSync *GetNetSync(const NetID& id) {
 		if (id) {
 			auto&& find = m_objectsByID.find(id);
 			if (find != m_objectsByID.end())
@@ -1245,7 +1206,7 @@ namespace NetSyncManager {
 		return nullptr;
 	}
 
-	void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg) {
+	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 		throw std::runtime_error("Not implemented");
 
 		auto syncPeer = GetPeer(rpc);
@@ -1276,7 +1237,7 @@ namespace NetSyncManager {
 			auto vec3 = pkg.Read<Vector3>();		// position
 			auto zdoBytes = pkg.Read<NetPackage>();	// serialized data
 		
-			ZDO::Rev rev(dataRev, ownerRev);
+			NetSync::Rev rev(dataRev, ownerRev);
 
 			// if the zdo already existed (locally/remotely), compare revisions
 			bool flagCreated = false;
@@ -1308,7 +1269,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	bool SendNetSyncs(NetSyncPeer* peer, bool flush) {
+	bool SendZDOs(NetSyncPeer* peer, bool flush) {
 		assert(false);
 		int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
 		
@@ -1393,6 +1354,6 @@ namespace NetSyncManager {
 
 	void OnNewPeer(NetPeer::Ptr peer) {		
 		m_peers.push_back(std::make_unique<NetSyncPeer>(peer));
-		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_NetSyncData);
+		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_ZDOData);
 	}
 }

@@ -3,7 +3,6 @@
 #include "NetSync.h"
 #include "NetObject.h"
 
-
 namespace NetScene {
 
 	void Init();
@@ -12,13 +11,13 @@ namespace NetScene {
 
 	void AddInstance(ZDO zdo, ZNetView *nview);
 
-	void Destroy(GameObject go);
+	//void Destroy(GameObject go);
 
-	GameObject GetPrefab(int hash);
+	//GameObject GetPrefab(int hash);
 
-	GameObject GetPrefab(const std::string &name);
+	//GameObject GetPrefab(const std::string &name);
 
-	int GetPrefabHash(GameObject go);
+	//int GetPrefabHash(GameObject go);
 
 	bool IsAreaReady(const Vector3& point);
 
@@ -26,7 +25,7 @@ namespace NetScene {
 
 	bool HaveInstance(ZDO *zdo);
 
-	GameObject FindInstance(const ZDOID &id);
+	//GameObject FindInstance(const ZDOID &id);
 
 	void Update();
 
@@ -42,12 +41,12 @@ namespace NetScene {
 
 	int NrOfInstances();
 
-	void SpawnObject(const Vector3 &pos, const Quaternion &rot, GameObject prefab);
+	//void SpawnObject(const Vector3 &pos, const Quaternion &rot, GameObject prefab);
 
-	List<string> GetPrefabNames();
+	//List<string> GetPrefabNames();
 
-	List<GameObject> m_prefabs = new List<GameObject>();
+	//List<GameObject> m_prefabs = new List<GameObject>();
 
-	List<GameObject> m_nonNetViewPrefabs = new List<GameObject>();
+	//List<GameObject> m_nonNetViewPrefabs = new List<GameObject>();
 
 }

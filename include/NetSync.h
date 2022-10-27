@@ -32,17 +32,9 @@ public:
 	};
 
 	struct Rev {
-		uint32_t m_dataRev;
-		uint32_t m_ownerRev;
-		int64_t m_time;
-
-		Rev() : m_dataRev(0), m_ownerRev(0), m_time(Valhalla()->Ticks()) {}
-
-		Rev(uint32_t data, uint32_t owner)
-			: m_dataRev(data), m_ownerRev(owner), m_time(Valhalla()->Ticks()) {}
-
-		Rev(uint32_t data, uint32_t owner, int64_t time) 
-			: m_dataRev(data), m_ownerRev(owner), m_time(time) {}
+		uint32_t m_dataRev = 0;
+		uint32_t m_ownerRev = 0;
+		int64_t m_time = 0;
 	};
 
 	static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
@@ -86,8 +78,8 @@ private:
 
 	template<TrivialSyncType T>
 	constexpr HASH_t ToShiftHash(HASH_t hash) {
-		auto prefix = GetType<T>();
-		auto tshift = static_cast<HASH_t>(prefix);
+		auto shift = GetShift<T>();
+		auto tshift = static_cast<HASH_t>(shift);
 
 		return (hash
 			+ (tshift * tshift)
@@ -97,8 +89,8 @@ private:
 
 	template<TrivialSyncType T>
 	constexpr HASH_t FromShiftHash(HASH_t hash) {
-		auto prefix = GetType<T>();
-		auto tshift = static_cast<HASH_t>(prefix);
+		auto shift = GetShift<T>();
+		auto tshift = static_cast<HASH_t>(shift);
 		return
 			((hash
 				^ (tshift << tshift))
@@ -115,7 +107,7 @@ private:
 		key = ToShiftHash<T>(key);
 		auto&& find = m_members.find(key);
 		if (find != m_members.end()) {
-			if (find->second.first != GetPrefix<T>())
+			if (find->second.first != GetShift<T>())
 				throw std::invalid_argument("type mismatch");
 			return (T*)find->second.second;
 		}
@@ -194,9 +186,7 @@ public:
 
 public:
 	// Create ZDO with me (im owner)
-	NetSync() {
-		this->m_owner = Valhalla()->Uuid();
-	}
+	NetSync();
 
 	// Loading ZDO from the disk packet
 	NetSync(NetPackage& reader, int version);
@@ -394,4 +384,4 @@ public:
 	void Deserialize(NetPackage &pkg);
 };
 
-typedef NetSync ZDO;
+//typedef NetSync ZDO;

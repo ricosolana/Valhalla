@@ -3,6 +3,7 @@
 #include <concepts>
 
 struct NetID;
+struct Vector2i;
 
 // C# hash equivalencies
 namespace HashUtils {
@@ -18,5 +19,6 @@ namespace HashUtils {
 		int operator()(const float &value) const;
 		int operator()(const double &value) const;
 		int operator()(const NetID &value) const;
+		int operator()(const Vector2i& value) const;
 	};
 }

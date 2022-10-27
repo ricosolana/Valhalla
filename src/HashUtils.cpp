@@ -1,5 +1,6 @@
 #include "HashUtils.h"
 #include "NetID.h"
+#include "Vector.h"
 
 namespace HashUtils {
 	int Hasher::operator()(const int64_t& value) const {
@@ -19,7 +20,12 @@ namespace HashUtils {
 	}
 
 	int Hasher::operator()(const NetID& value) const {
-		return value.m_hash;
+		//return value.m_hash;
+		return Hasher{}(value.m_uuid) ^ Hasher{}(value.m_id);
+	}
+
+	int Hasher::operator()(const Vector2i& value) const {
+		return value.x ^ value.y;
 	}
 
 	// then given an int hash, convert it to size_t

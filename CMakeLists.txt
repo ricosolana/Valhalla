@@ -103,7 +103,8 @@ add_executable(${PROJECT_NAME}
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
     "src/objects/Beehive.cpp"
- "include/NetScene.h" "src/NetScene.cpp" "include/NetSceneHashes.h")
+    #"src/NetScene.cpp" # temporarily broken
+ "src/ChatManager.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -86,7 +86,7 @@ namespace NetSyncManager {
 
 	//void ClientChanged(const NetID& id);
 
-	std::function<void(NetSync*)> m_onZDODestroyed;
+	//std::function<void(NetSync*)> m_onZDODestroyed;
 
-	void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
+	//void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
 }

@@ -51,7 +51,7 @@ NetID::NetID()
 {}
 
 NetID::NetID(int64_t userID, uint32_t id)
-	: m_uuid(userID), m_id(id), m_hash(HashUtils::Hasher{}(m_uuid) ^ HashUtils::Hasher{}(m_id))
+	: m_uuid(userID), m_id(id)
 {}
 
 std::string NetID::ToString() {
@@ -72,6 +72,10 @@ NetID::operator bool() const noexcept {
 }
 
 
+
+NetSync::NetSync() {
+	this->m_owner = Valhalla()->Uuid();
+}
 
 NetSync::NetSync(NetPackage& pkg, int version) {
 	this->m_rev.m_ownerRev =	pkg.Read<uint32_t>();
