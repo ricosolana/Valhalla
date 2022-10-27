@@ -15,7 +15,7 @@ namespace NetRpcManager {
 		HASH_t m_methodHash;
 		NetPackage m_parameters;
 
-		Data() {}
+		Data() : m_msgID(0), m_senderPeerID(0), m_targetPeerID(0), m_methodHash(0) {}
 
 		// Will unpack the package
 		Data(NetPackage& pkg)
