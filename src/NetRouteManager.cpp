@@ -8,14 +8,21 @@
 #include "NetObject.h"
 
 namespace NetRpcManager {
-	robin_hood::unordered_map<HASH_t, IMethod<UUID_t>*> m_methods;
+
+	// Method hash, pair<callback, watcher>
+	robin_hood::unordered_map<HASH_t, 
+		std::pair<std::unique_ptr<IMethod<UUID_t>>, std::unique_ptr<IMethod<UUID_t>>>> m_methods;
 
 	UUID_t _ServerID() {
 		return Valhalla()->Uuid();
 	}
 
 	void _Register(HASH_t hash, IMethod<UUID_t>* method) {
-		m_methods.insert({ hash, method });
+		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<UUID_t>>(method), nullptr) });
+	}
+
+	void _Register(HASH_t hash, IMethod<UUID_t>* method, IMethod<UUID_t>* watcher) {
+		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<UUID_t>>(method), std::unique_ptr<IMethod<UUID_t>>(watcher)) });
 	}
 
 	void _RouteRPC(Data data) {
@@ -26,8 +33,16 @@ namespace NetRpcManager {
 		if (data.m_targetPeerID == EVERYBODY) {
 			for (auto&& peer : NetManager::GetPeers()) {
 				// send to everyone (except sender)
-				if (data.m_senderPeerID != peer->m_uuid)
-					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, std::move(pkg));
+				if (data.m_senderPeerID != peer->m_uuid) {
+
+					// Incur the watcher to validate the peers data
+					auto&& find = m_methods.find(data.m_methodHash);
+					if (find != m_methods.end() && find->second.second) {
+						find->second.second->Invoke(data.m_targetPeerID, data.m_parameters, NetInvoke::WATCH, data.m_methodHash);
+					}
+
+					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+				}
 			}
 		}
 		else {
@@ -66,7 +81,7 @@ namespace NetRpcManager {
 		else {
 			auto&& find = m_methods.find(data.m_methodHash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(data.m_targetPeerID, data.m_parameters, NetInvoke::ROUTE, data.m_methodHash);
+				find->second.first->Invoke(data.m_targetPeerID, data.m_parameters, NetInvoke::ROUTE, data.m_methodHash);
 			}
 			else {
 				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
@@ -77,7 +92,7 @@ namespace NetRpcManager {
 	void RPC_RoutedRPC(NetRpc* rpc, NetPackage pkg) {
 		Data data(pkg);
 
-		// Server is the intended receiver
+		// Server is the intended receiver (or EVERYONE)
 		if (data.m_targetPeerID == _ServerID()
 			|| data.m_targetPeerID == EVERYBODY)
 			_HandleRoutedRPC(data);

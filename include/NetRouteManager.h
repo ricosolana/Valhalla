@@ -46,7 +46,13 @@ namespace NetRpcManager {
 	void _Invoke(UUID_t target, const NetID& targetNetSync, HASH_t hash, NetPackage &&pkg);
 	void _HandleRoutedRPC(Data data);
 
+	// Registers a RoutedRpc function
+	// Must pass an IMethod created using new
 	void _Register(HASH_t hash, IMethod<UUID_t>* method);
+
+	// Registers a RoutedRpc function with data watching (routes directed to EVERYONE except server)
+	// Must pass IMethod instances created using new
+	void _Register(HASH_t hash, IMethod<UUID_t>* method, IMethod<UUID_t>* watcher);
 
 
 

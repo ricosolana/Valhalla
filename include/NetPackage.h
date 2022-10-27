@@ -203,6 +203,7 @@ public:
     }
 
     // Reads parameters from a package
+    // The marker will be modified
     template<class F, class S, class...R>
     static auto Deserialize(NetPackage &pkg) {
         auto a(Deserialize<F>(pkg));

@@ -10,7 +10,8 @@
 enum class NetInvoke {
     RPC,
     ROUTE,
-    OBJECT
+    OBJECT,
+    WATCH
 };
 
 /* https://godbolt.org/z/MMGsa8rhr
@@ -23,7 +24,10 @@ template<class T>
 class IMethod
 {
 public:
-    virtual void Invoke(T t, NetPackage& pkg, NetInvoke type, HASH_t hash) = 0;
+    // Invoke a function with variadic parameters
+    // A copy of the package is made
+    // You may perform a move on the package as needed
+    virtual void Invoke(T t, NetPackage pkg, NetInvoke type, HASH_t hash) = 0;
 };
 
 // Base specifier
@@ -41,7 +45,7 @@ class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
 public:
     MethodImpl(C* object, Lambda lam) : object(object), lambda(lam) {}
 
-    void Invoke(T t, NetPackage &pkg, NetInvoke type, HASH_t hash) override {
+    void Invoke(T t, NetPackage pkg, NetInvoke type, HASH_t hash) override {
         if constexpr (sizeof...(Args)) {
             auto tupl = NetPackage::Deserialize<Args...>(pkg);
             //auto luaTupl = NetPackage::Deserialize<Args...>(pkg);
@@ -107,7 +111,7 @@ class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
 public:
     MethodImpl(Lambda lam) : lambda(lam) {}
 
-    void Invoke(T t, NetPackage &pkg, NetInvoke type, HASH_t hash) override {
+    void Invoke(T t, NetPackage pkg, NetInvoke type, HASH_t hash) override {
         if constexpr (sizeof...(Args)) {
             auto tupl = NetPackage::Deserialize<Args...>(pkg);
 
