@@ -23,15 +23,16 @@ private:
     int Read7BitEncodedInt();
 
 public:
-    //using Ptr = std::shared_ptr<NetPackage>;
-
     Stream m_stream;
 
-    // Used when creating a packet for dispatch
     NetPackage() = default;
-    NetPackage(const NetPackage& other); // copy
-    NetPackage(NetPackage&& other) = default; // move
-    // Used in container item reading
+    NetPackage(const BYTE_t* data, uint32_t count); // raw bytes constructor
+    NetPackage(BYTES_t &&vec);                      // assign vector constructor
+    NetPackage(const BYTES_t& vec);                 // copy vector constructor
+    NetPackage(const BYTES_t& vec, uint32_t count); // vector count constructor
+    NetPackage(uint32_t reserve);                   // reserve initial memory
+    NetPackage(const NetPackage& other) = default;  // copy
+    NetPackage(NetPackage&& other) = default;       // move
     //Package(std::string& base64);
 
 
@@ -40,15 +41,8 @@ public:
 
 
 
-    // Used for reading incoming data from packet
-    NetPackage(const byte_t* data, uint32_t count);
-    NetPackage(const BYTES_t& vec);
-    NetPackage(uint32_t reserve);
-
-
-
-    void Write(const byte_t* in, uint32_t count);
-    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const byte_t*>(&in), sizeof(T)); }
+    void Write(const BYTE_t* in, uint32_t count);
+    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
     void Write(const BYTES_t &in);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
@@ -76,7 +70,7 @@ public:
     template<typename T>
     T Read() requires std::is_fundamental_v<T> {
         T out;
-        m_stream.Read(reinterpret_cast<byte_t*>(&out), sizeof(T));
+        m_stream.Read(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
 
@@ -135,7 +129,7 @@ public:
 
     template<typename T>
     T Read() requires std::same_as<T, NetID> {
-        return NetID(Read<UUID_t>(), Read<uint32_t>());
+        return NetID(Read<OWNER_t>(), Read<uint32_t>());
     }
 
     template<typename T>
@@ -158,6 +152,8 @@ public:
         return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
+
+
     //template<typename T>
     //T Read() requires std::same_as<T, Player> {
     //
@@ -169,14 +165,21 @@ public:
 
 
 
-    void From(const byte_t* buf, int32_t offset);
+    // Reads a byte array from package
+    // The target vector be overwritten
+    void Read(BYTES_t& out);
 
-    void Read(std::vector<byte_t>& out);
+    // Reads a string array from package
+    // The target vector will be overwritten
     void Read(std::vector<std::string>& out);
 
+    // Reads a NetPackage from package
+    // The target package will be overwritten
+    void Read(NetPackage &out);
 
 
-    // Empty template recursor
+
+    // Empty template
     static void _Serialize(NetPackage &pkg) {}
 
     // Writes variadic parameters into a package

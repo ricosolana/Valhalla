@@ -1,4 +1,9 @@
-﻿##########
+﻿# CLion setup:
+# - use msvc compiler 2022
+# - specify the vcpkg toolchain file location
+# - specify arm64 architecture
+
+##########
 # Project
 ##########
 cmake_minimum_required (VERSION 3.14)
@@ -36,7 +41,12 @@ add_compile_definitions(NOMINMAX)
 #    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 #)
 
-
+# ignore annoying msvc warnings
+if(WIN32)
+    add_definitions("/wd4244") # float loss
+    add_definitions("/wd4267") # int loss
+    add_definitions("/wd4996") # c functions it seems unsafe
+endif()
 
 #IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
     add_compile_definitions(ELPP_DISABLE_DEBUG_LOGS)
@@ -104,7 +114,7 @@ add_executable(${PROJECT_NAME}
     "src/NetAcceptorSteam.cpp"
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
- "src/ChatManager.cpp")
+ "src/ChatManager.cpp" include/MethodLua.h)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -1,17 +1,19 @@
 #include "NetPackage.h"
 #include "NetSync.h"
 
-
-NetPackage::NetPackage(const NetPackage& other) 
-    : m_stream(other.m_stream) {}
-
-
-NetPackage::NetPackage(const byte_t* data, uint32_t count) {
-    From(data, count);
+NetPackage::NetPackage(const BYTE_t* data, uint32_t count) {
+    m_stream.Write(data, count);
+    m_stream.SetPos(0);
 }
+
+NetPackage::NetPackage(BYTES_t &&vec)
+    : m_stream(std::move(vec)) {}
 
 NetPackage::NetPackage(const BYTES_t& vec)
     : NetPackage(vec.data(), static_cast<uint32_t>(vec.size())) {}
+
+NetPackage::NetPackage(const BYTES_t& vec, uint32_t count)
+    : NetPackage(vec.data(), count) {}
 
 NetPackage::NetPackage(uint32_t reserve)
     : m_stream(reserve) {}
@@ -24,7 +26,7 @@ void NetPackage::operator=(const NetPackage& other) {
 
 
 
-void NetPackage::Write(const byte_t* in, uint32_t count) {
+void NetPackage::Write(const BYTE_t* in, uint32_t count) {
     Write(count);
 	m_stream.Write(in, count);
 }
@@ -39,7 +41,7 @@ void NetPackage::Write(const std::string& in) {
     if (byteCount == 0)
         return;
 
-    m_stream.Write(reinterpret_cast<const byte_t*>(in.c_str()), byteCount);
+    m_stream.Write(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
 }
 
 void NetPackage::Write(const BYTES_t& in) {
@@ -89,11 +91,11 @@ void NetPackage::Write(const Quaternion& in) {
 
 
 
-void NetPackage::From(const byte_t* data, int32_t count) {
-    m_stream.Clear();
-    m_stream.Write(data, count);
-    m_stream.SetPos(0);
-}
+//void NetPackage::From(const BYTE_t* data, uint32_t count) {
+//    m_stream.Clear();
+//    m_stream.Write(data, count);
+//    m_stream.SetPos(0);
+//}
 
 
 
@@ -111,6 +113,10 @@ void NetPackage::Read(std::vector<std::string>& out) {
     }
 }
 
+void NetPackage::Read(NetPackage &out) {
+    out = NetPackage(std::move(Read<BYTES_t>()));
+}
+
 
 
 void NetPackage::Write7BitEncodedInt(int32_t in) {
@@ -126,7 +132,7 @@ int NetPackage::Read7BitEncodedInt() {
     int out = 0;
     int num2 = 0;
     while (num2 != 35) {
-        auto b = Read<byte_t>();
+        auto b = Read<BYTE_t>();
         out |= (int)(b & 127) << num2;
         num2 += 7;
         if ((b & 128) == 0)

@@ -21,7 +21,7 @@ private:
 
 	//Rigidbody m_body;
 
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<UUID_t>>> m_functions;
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<OWNER_t>>> m_functions;
 
 	bool m_ghost;
 
@@ -64,7 +64,7 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(const char* name, void(*f)(UUID_t, Args...)) {
+	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
 		return Register(name, new MethodImpl(f));
 	}
 
@@ -75,13 +75,13 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(const char* name, C* object, void(C::* f)(UUID_t, Args...)) {
+	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
 		return Register(name, new MethodImpl(object, f));
 	}
 
 	//void Unregister(string name); // seems unused
 
-	void HandleRoutedRPC(NetRpcManager::Data rpcData); // directly calls
+	void HandleRoutedRPC(NetRouteManager::Data rpcData); // directly calls
 
 	/**
 		* @brief Invoke a remote function
@@ -89,8 +89,8 @@ public:
 		* @param ...types function parameters
 	*/
 	template <typename... Types>
-	void Invoke(UUID_t target, const char* method, Types... params) {
-		NetRpcManager::Invoke(target, m_sync->m_id, method, std::move(params)...);
+	void Invoke(OWNER_t target, const char* method, Types... params) {
+		NetRouteManager::Invoke(target, m_sync->m_id, method, std::move(params)...);
 	}
 
 	/**
@@ -100,7 +100,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
-		NetRpcManager::Invoke(m_sync->m_owner, m_sync->m_id, method, std::move(params)...);
+		NetRouteManager::Invoke(m_sync->m_owner, m_sync->m_id, method, std::move(params)...);
 	}
 
 	//static void StartGhostInit();

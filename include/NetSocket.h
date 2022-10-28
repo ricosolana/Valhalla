@@ -13,30 +13,45 @@
 #include <steam_gameserver.h>
 #include <isteamnetworkingutils.h>
 
-class ISocket : public std::enable_shared_from_this<ISocket> {
+class ISocket {
 public:
-	using Ptr = std::shared_ptr<ISocket>;
-
 	virtual ~ISocket() = default;
+
+
 
 	// Begin socket readers
 	virtual void Start() = 0;
 
+
+
 	// Terminates the connection
 	virtual void Close() = 0;
 
+
+
 	// Call every tick to reengage writers
 	virtual void Update() = 0;
+
 	// Send a packet to the remote host
 	virtual void Send(const NetPackage& pkg) = 0;
+
 	// Receive a packet from the remote host
+    // This function shall not block, and the optional may be empty
 	virtual std::optional<NetPackage> Recv() = 0;
 
+
+
 	// Get the name of this connection
+    // This represents the identity of the remote
 	virtual std::string GetHostName() const = 0;
 
+
+
 	// Returns true if the socket is alive
+    // Expected to return false if the connection has been closed
 	virtual bool Connected() const = 0;
+
+
 
 	// Returns the size in bytes of packets queued for sending
 	// Returns -1 on failure
@@ -46,10 +61,9 @@ public:
 class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
-	std::deque<NetPackage> m_recvQueue;
 
 public:
-	HSteamNetConnection m_handle;
+	HSteamNetConnection m_hConn;
 	SteamNetworkingIdentity m_steamNetId;
 
 public:
@@ -69,7 +83,7 @@ public:
 	}
 
 	bool Connected() const override {
-		return m_handle != k_HSteamNetConnection_Invalid;
+		return m_hConn != k_HSteamNetConnection_Invalid;
 	}
 
 	int GetSendQueueSize() const override;

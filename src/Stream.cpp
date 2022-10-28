@@ -8,10 +8,15 @@ Stream::Stream(uint32_t count)
     m_buf.reserve(count);
 }
 
+Stream::Stream(BYTES_t vec)
+    : Stream() {
+    m_buf = std::move(vec);
+}
 
 
-void Stream::Read(byte_t* buffer, uint32_t count) {
-    if (m_pos + count > Length()) throw std::range_error("Stream::Read(byte_t* buffer, int count) length exceeded");
+
+void Stream::Read(BYTE_t* buffer, uint32_t count) {
+    if (m_pos + count > Length()) throw std::range_error("Stream::Read(BYTE_t* buffer, int count) length exceeded");
 
     // read into 'buffer'
     std::copy(m_buf.begin() + m_pos, m_buf.begin() + m_pos + count, buffer);
@@ -19,14 +24,14 @@ void Stream::Read(byte_t* buffer, uint32_t count) {
     m_pos += count;
 }
 
-byte_t Stream::Read() {
-    byte_t b;
+BYTE_t Stream::Read() {
+    BYTE_t b;
     Read(&b, 1);
     return b;
 }
 
-void Stream::Read(std::vector<byte_t>& vec, uint32_t count) {
-    if (m_pos + count > Length()) throw std::range_error("Stream::Read(std::vector<byte_t>& vec, int count) length exceeded");
+void Stream::Read(std::vector<BYTE_t>& vec, uint32_t count) {
+    if (m_pos + count > Length()) throw std::range_error("Stream::Read(std::vector<BYTE_t>& vec, int count) length exceeded");
     
     vec.clear();
     vec.insert(vec.begin(), 
@@ -37,7 +42,7 @@ void Stream::Read(std::vector<byte_t>& vec, uint32_t count) {
 
 
 
-void Stream::Write(const byte_t* buffer, uint32_t count) {
+void Stream::Write(const BYTE_t* buffer, uint32_t count) {
     // trim everything else away
     m_buf.resize(m_pos);
 

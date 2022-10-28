@@ -4,7 +4,7 @@
 #include "NetPeer.h"
 
 namespace ZoneSystem {
-	void OnNewPeer(NetPeer::Ptr peer);
+	void OnNewPeer(NetPeer *peer);
 
 	Vector2i GetZoneCoords(const Vector3 &point);
 

@@ -23,9 +23,9 @@ class NetRpc {
 	void Register(HASH_t hash, IMethod<NetRpc*>* method);
 
 public:	
-	ISocket::Ptr m_socket;
+	ISocket *m_socket;
 
-	NetRpc(ISocket::Ptr socket);
+	NetRpc(ISocket *socket);
 
 	NetRpc(const NetRpc& other) = delete; // copy
 	NetRpc(NetRpc&& other) = delete; // move

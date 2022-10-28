@@ -25,7 +25,7 @@ namespace ResourceManager {
         return std::ofstream(GetPath(path), std::ios::binary);
     }
 
-    bool ReadFileBytes(const fs::path& path, byte_t* buf, int size) {
+    bool ReadFileBytes(const fs::path& path, BYTE_t* buf, int size) {
         auto file = GetInFile(path);
 
         // Stop eating new lines in binary mode!!!
@@ -34,8 +34,8 @@ namespace ResourceManager {
         if (!file)
             return false;
 
-        std::copy(std::istream_iterator<byte_t>(file),
-            std::istream_iterator<byte_t>(),
+        std::copy(std::istream_iterator<BYTE_t>(file),
+            std::istream_iterator<BYTE_t>(),
             buf);
 
         return true;
@@ -52,8 +52,8 @@ namespace ResourceManager {
 
         // read the data:
         vec.insert(vec.begin(),
-            std::istream_iterator<byte_t>(file),
-            std::istream_iterator<byte_t>());
+            std::istream_iterator<BYTE_t>(file),
+            std::istream_iterator<BYTE_t>());
 
         return true;
     }
@@ -70,19 +70,19 @@ namespace ResourceManager {
 
         // read the data:
         str.insert(str.begin(),
-            std::istream_iterator<byte_t>(file),
-            std::istream_iterator<byte_t>());
+            std::istream_iterator<BYTE_t>(file),
+            std::istream_iterator<BYTE_t>());
 
         return true;
     }
 
-    bool WriteFileBytes(const fs::path& path, const byte_t* buf, int size) {
+    bool WriteFileBytes(const fs::path& path, const BYTE_t* buf, int size) {
         auto file = GetOutFile(path);
 
         if (!file)
             return false;
 
-        std::copy(buf, buf + size, std::ostream_iterator<byte_t>(file));
+        std::copy(buf, buf + size, std::ostream_iterator<BYTE_t>(file));
 
         return true;
     }
@@ -93,7 +93,7 @@ namespace ResourceManager {
         if (!file)
             return false;
 
-        std::copy(vec.begin(), vec.end(), std::ostream_iterator<byte_t>(file));
+        std::copy(vec.begin(), vec.end(), std::ostream_iterator<BYTE_t>(file));
 
         return true;
     }
@@ -104,7 +104,7 @@ namespace ResourceManager {
         if (!file)
             return false;
 
-        std::copy(str.begin(), str.end(), std::ostream_iterator<byte_t>(file));
+        std::copy(str.begin(), str.end(), std::ostream_iterator<BYTE_t>(file));
 
         return true;
     }

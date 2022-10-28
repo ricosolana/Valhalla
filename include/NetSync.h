@@ -172,7 +172,7 @@ private:
 	Vector2i m_sector;
 	Vector3 m_position;			// position of the 
 	NetID m_id;					// unique identifier; immutable through 'lifetime'
-	UUID_t m_owner = 0;			// local or remote UUID_t
+	OWNER_t m_owner = 0;			// local or remote OWNER_t
 
 	//uint32_t m_ownerRev = 0;	// could be rev structure
 	//uint32_t m_dataRev = 0;	// could be rev structure
@@ -318,7 +318,7 @@ public:
 	//	return m_rev;
 	//}
 
-	UUID_t Owner() const {
+	OWNER_t Owner() const {
 		return m_owner;
 	}
 
@@ -360,7 +360,7 @@ public:
 	void SetLocal();
 
 	// set the owner of the ZDO
-	void SetOwner(UUID_t owner) {
+	void SetOwner(OWNER_t owner) {
 		if (m_owner != owner) {
 			m_owner = owner;
 			m_rev.m_ownerRev++;

@@ -51,10 +51,16 @@ static void on_interrupt(int num) {
 
 // Steam Documentation https://partner.steamgames.com/doc/sdk/api
 int main(int argc, char **argv) {
-    ResourceManager::SetRoot("./data/");
-
     OPTICK_THREAD("main");
     initLogger();
+
+    const char* root = "./data/";
+    for (int i = 1; i < argc-1; i++) {
+        if (strcmp(argv[i], "-root") == 0) {
+            if (i < argc) root = argv[++i];
+        }
+    }
+    ResourceManager::SetRoot(root);
 
     signal(SIGINT, on_interrupt);
 

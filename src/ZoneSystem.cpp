@@ -108,8 +108,8 @@ namespace ZoneSystem {
 
 	static constexpr float ZONE_SIZE = 64;
 
-	void SendGlobalKeys(UUID_t target) {
-		NetRpcManager::Invoke(target, Routed_Hash::GlobalKeys, m_globalKeys);
+	void SendGlobalKeys(OWNER_t target) {
+		NetRouteManager::Invoke(target, Routed_Hash::GlobalKeys, m_globalKeys);
 	}
 
 	void GetLocationIcons(std::vector<std::pair<Vector3, std::string>> &icons) {
@@ -134,7 +134,7 @@ namespace ZoneSystem {
 		//}
 	}
 
-	void SendLocationIcons(UUID_t target) {
+	void SendLocationIcons(OWNER_t target) {
 		NetPackage pkg;
 
 		// count
@@ -153,10 +153,10 @@ namespace ZoneSystem {
 		//	pkg->Write(keyValuePair.Value);
 		//}
 		
-		NetRpcManager::Invoke(target, Routed_Hash::LocationIcons, pkg);
+		NetRouteManager::Invoke(target, Routed_Hash::LocationIcons, pkg);
 	}
 
-	void OnNewPeer(NetPeer::Ptr peer) {
+	void OnNewPeer(NetPeer *peer) {
 		SendGlobalKeys(peer->m_uuid);
 		SendLocationIcons(peer->m_uuid);
 	}

@@ -1,6 +1,6 @@
 modInfo = {
-    name                = "My example mod",
-    priority            = 4,
+    name                = "--My other mod",
+    priority            = 2,
     entry               = "Main",
     version             = "1.0",
     api_version         = 1, 

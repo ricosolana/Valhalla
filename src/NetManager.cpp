@@ -17,30 +17,17 @@ namespace NetManager {
 
 	std::unique_ptr<IAcceptor> m_acceptor;
 
-	std::vector<std::unique_ptr<NetRpc>> m_joining;
-	std::vector<NetPeer::Ptr> m_peers;
+	std::vector<std::unique_ptr<NetRpc>> m_joining; // used to temporarily connecting peers (until PeerInfo)
+	std::vector<std::unique_ptr<NetPeer>> m_peers;
 	std::unique_ptr<World> m_world;
 
 	bool m_hasPassword = false;
 	std::string m_salt;
 	std::string m_saltedPassword;
 
-	//private static string ServerPasswordSalt()
-	//{
-	//	if (ZNet.m_serverPasswordSalt.Length == 0)
-	//	{
-	//		byte[] array = new byte[16];
-	//		RandomNumberGenerator.Create().GetBytes(array);
-	//		ZNet.m_serverPasswordSalt = Encoding.ASCII.GetString(array);
-	//	}
-	//	return ZNet.m_serverPasswordSalt;
-	//}
-
 	// used during server start
-	void InitPassword(const std::string &password) {
-		m_hasPassword = !password.empty();
-
-		//assert(!m_hasPassword && "Password hasher currently broken");
+	void InitPassword() {
+		m_hasPassword = !Valhalla()->Settings().serverPassword.empty();
 
 		if (m_hasPassword) {
 			// Create random 16 byte salt
@@ -48,7 +35,7 @@ namespace NetManager {
 			RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
 			Utils::FormatAscii(m_salt);
 
-			const auto merge = password + m_salt;
+			const auto merge = Valhalla()->Settings().serverPassword + m_salt;
 
 			// Hash a salted password
 			m_saltedPassword.resize(16);
@@ -66,14 +53,14 @@ namespace NetManager {
 		rpc->Invoke(Rpc_Hash::RemotePrint, s);
 	}
 
-	void Disconnect(NetPeer::Ptr peer) {
+	void Disconnect(NetPeer *peer) {
 		peer->m_rpc->m_socket->Close();
 	}
 
 
 
 
-	void Kick(NetPeer::Ptr peer) {
+	void Kick(NetPeer *peer) {
 		if (!peer)
 			return;
 
@@ -96,7 +83,7 @@ namespace NetManager {
 		Valhalla()->m_banned.erase(user);
 	}
 
-	void SendDisconnect(NetPeer::Ptr peer) {
+	void SendDisconnect(NetPeer *peer) {
 		LOG(INFO) << "Disconnect sent to " << peer->m_rpc->m_socket->GetHostName();
 		peer->m_rpc->Invoke("Disconnect");
 	}
@@ -105,7 +92,7 @@ namespace NetManager {
 		LOG(INFO) << "Sending disconnect msg";
 
 		for (auto&& peer : m_peers) {
-			SendDisconnect(peer);
+			SendDisconnect(peer.get());
 		}
 	}
 
@@ -223,7 +210,7 @@ namespace NetManager {
 		//double netTime =
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
 		NetPackage pkg;
-		pkg.Write(Valhalla()->Uuid());
+		pkg.Write(Valhalla()->ID());
 		pkg.Write(VALHEIM_VERSION);
 		pkg.Write(Vector3()); // dummy
 		pkg.Write("Stranger"); // valheim uses this, which is dumb
@@ -246,56 +233,48 @@ namespace NetManager {
 
 		auto&& hostName = rpc->m_socket->GetHostName();
 
-		auto uuid = pkg.Read<UUID_t>();
+		auto uuid = pkg.Read<OWNER_t>();
 		auto version = pkg.Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
-		if (version != VALHEIM_VERSION) {
+		if (version != VALHEIM_VERSION)
 			return rpc->SendError(ConnectionStatus::ErrorVersion);
-		}
 
 		auto pos = pkg.Read<Vector3>();
 		auto name = pkg.Read<std::string>();
 		auto password = pkg.Read<std::string>();
 		auto ticket = pkg.Read<BYTES_t>(); // read in the dummy ticket
 
-		if (SteamGameServer()->BeginAuthSession(
-			ticket.data(), ticket.size(), std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)->m_steamNetId.GetSteamID()) != k_EAuthSessionResponseOK) {
+        auto *steamSocket = dynamic_cast<SteamSocket*>(rpc->m_socket);
+		if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
-		}
-		
-		//if (password != Valhalla()->m_serverPassword) {
-		if (password != m_saltedPassword) {
+
+		if (password != m_saltedPassword)
 			return rpc->SendError(ConnectionStatus::ErrorPassword);
-		}
 
 		// if peer already connected
-		if (GetPeer(uuid)) {
+		if (GetPeer(uuid))
 			return rpc->SendError(ConnectionStatus::ErrorAlreadyConnected);
-		}
 
-		// check if banned
-		//if ()
-
-		//if (IsBann)
+        if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
+            return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// pass the data to the lua OnPeerInfo
-		if (!ModManager::Event::OnPeerInfo(rpc, uuid, name, version)) {
-			rpc->SendError(ConnectionStatus::ErrorBanned);
-			return;
-		}
+		if (!ModManager::Event::OnPeerInfo(rpc, uuid, name, version))
+			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Find the rpc and transfer
+
 		std::unique_ptr<NetRpc> swappedRpc;
 		for (auto&& j : m_joining) {
 			if (j.get() == rpc) {
 				swappedRpc = std::move(j);
+                assert(!j && "Never moved!");
 				break;
 			}
 		}
-		assert(swappedRpc && "Swapped rpc was never assigned!");
+		assert(swappedRpc && "RPC was never swapped!");
 
-		auto peer(std::make_shared<NetPeer>(std::move(swappedRpc), uuid, name));
-		m_peers.push_back(peer);
+		auto peer(std::make_unique<NetPeer>(std::move(swappedRpc), uuid, name));
 
 		peer->m_pos = pos;
 
@@ -311,52 +290,47 @@ namespace NetManager {
 
 		//NetSyncManager::OnNewPeer(peer);
 		//NetSyncManager::OnNewPeer(peer);
-		NetRpcManager::OnNewPeer(peer);
-		ZoneSystem::OnNewPeer(peer);
+		NetRouteManager::OnNewPeer(peer.get());
+		ZoneSystem::OnNewPeer(peer.get());
+
+        m_peers.push_back(std::move(peer));
 	}
 
 	// Retrieve a peer by its member Rpc
-	// Will breakpoint if peer not found
-	NetPeer::Ptr GetPeer(NetRpc* rpc) {
+	// Will throw if peer by rpc is not found
+	NetPeer *GetPeer(NetRpc* rpc) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_rpc.get() == rpc)
-				return peer;
-		}sizeof(NetSync);
-		//return nullptr;
-		assert(false && "Unable to find Peer attributing to Rpc");
+				return peer.get();
+		}
 		throw std::runtime_error("Unable to find Peer attributing to Rpc");
 	}
 
 	// Return the peer or nullptr
-	NetPeer::Ptr GetPeer(const std::string& name) {
+	NetPeer *GetPeer(const std::string& name) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_name == name)
-				return peer;
+				return peer.get();
 		}
 		return nullptr;
 	}
 
 	// Return the peer or nullptr
-	NetPeer::Ptr GetPeer(UUID_t uuid) {
+	NetPeer *GetPeer(OWNER_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_uuid == uuid)
-				return peer;
+				return peer.get();
 		}
 		return nullptr;
 	}
 
 
 
-	void Start(const ServerSettings& settings) {
-		m_acceptor = std::make_unique<AcceptorSteam>(
-			settings.serverName, 
-			!settings.serverPassword.empty(), 
-			settings.serverPort, 
-			settings.serverPublic, 
-			settings.socketTimeout);
+	void Init() {
+		m_acceptor = std::make_unique<AcceptorSteam>();
 		m_acceptor->Listen();
 
-		InitPassword(settings.serverPassword);
+		InitPassword();
 
 		m_world = std::make_unique<World>();
 
@@ -367,7 +341,8 @@ namespace NetManager {
 		OPTICK_EVENT();
 		// Accept new connections into joining
 		while (auto socket = m_acceptor->Accept()) {
-			assert(socket && "Socket shouldnt be null!");
+			assert(socket && "Got null socket!");
+
 			auto&& rpc = std::make_unique<NetRpc>(socket);
 
 			rpc->Register(Rpc_Hash::PeerInfo, &RPC_PeerInfo);
@@ -383,13 +358,18 @@ namespace NetManager {
 		{
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
-				if (!(*itr) || !(*itr)->m_socket->Connected()) {
-					//LOG(INFO) << "Cleaning up null joining peer";
-					itr = m_joining.erase(itr);
-				}
-				else {
-					++itr;
-				}
+                if (!(*itr)) {
+                    // Then they were successfully moved into m_peers
+                    itr = m_joining.erase(itr);
+                } else if (!(*itr)->m_socket->Connected()) {
+                    // Then they were disconnected while joining, so cleanup:
+                    LOG(INFO) << "Cleaning up joining peer";
+                    auto socket = (*itr)->m_socket;
+                    m_acceptor->Cleanup(socket);
+                    itr = m_joining.erase(itr);
+                } else {
+                    ++itr;
+                }
 			}
 		}
 
@@ -399,7 +379,9 @@ namespace NetManager {
 			auto&& itr = m_peers.begin();
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
-					LOG(INFO) << "Cleaning up disconnected peer";
+					LOG(INFO) << "Cleaning up peer";
+                    auto socket = (*itr)->m_rpc->m_socket;
+                    m_acceptor->Cleanup(socket);
 					itr = m_peers.erase(itr);
 				}
 				else {
@@ -464,7 +446,7 @@ namespace NetManager {
 		m_acceptor.reset();
 	}
 
-	const std::vector<NetPeer::Ptr>& GetPeers() {
+	const std::vector<std::unique_ptr<NetPeer>>& GetPeers() {
 		return m_peers;
 	}
 

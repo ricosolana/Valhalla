@@ -5,7 +5,7 @@
 struct NetID {
 	// TODO make these private and use getters; 
 	//	could make this a friend class of the Hasher object
-	UUID_t m_uuid;
+	OWNER_t m_uuid;
 	uint32_t m_id;
 
 	explicit NetID();

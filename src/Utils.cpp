@@ -9,7 +9,7 @@ namespace Utils {
     // https://stackoverflow.com/questions/12398377/is-it-possible-to-have-zlib-read-from-and-write-to-the-same-memory-buffer
     // https://zlib.net/zpipe.c
 
-    bool Compress(const byte_t* buf, unsigned int bufSize, int level, byte_t* out, unsigned int &outSize) {
+    bool Compress(const BYTE_t* buf, unsigned int bufSize, int level, BYTE_t* out, unsigned int &outSize) {
         z_stream zs;
         zs.zalloc = Z_NULL;
         zs.zfree = Z_NULL;
@@ -44,8 +44,8 @@ namespace Utils {
         out.resize(compressedSize);
     }
 
-    std::vector<byte_t> Compress(const byte_t* buf, unsigned int bufSize, int level) {
-        std::vector<byte_t> out(bufSize);
+    std::vector<BYTE_t> Compress(const BYTE_t* buf, unsigned int bufSize, int level) {
+        std::vector<BYTE_t> out(bufSize);
 
         if (!Compress(buf, bufSize, level, out.data(), bufSize))
             throw std::runtime_error("compression error");
@@ -61,8 +61,8 @@ namespace Utils {
 
     // This method is unfinished and untested
     // it requires tinkering and validation
-    bool Decompress(const byte_t* buf, unsigned int bufSize, byte_t **out, unsigned int &outSize) {
-        //std::vector<byte_t> ret;
+    bool Decompress(const BYTE_t* buf, unsigned int bufSize, BYTE_t **out, unsigned int &outSize) {
+        //std::vector<BYTE_t> ret;
 
         if (bufSize == 0)
             return true;
@@ -71,7 +71,7 @@ namespace Utils {
         const unsigned half_length = bufSize / 2;
 
         unsigned uncompLength = full_length;
-        std::unique_ptr<byte_t> uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength]);
+        std::unique_ptr<BYTE_t> uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength]);
 
         z_stream stream;
         stream.next_in = (Bytef*)buf;
@@ -88,7 +88,7 @@ namespace Utils {
             if (stream.total_out >= uncompLength) {
                 // Increase size of output buffer  
                 auto old = std::move(uncomp);
-                uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength + half_length]);
+                uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength + half_length]);
                 memcpy(uncomp.get(), old.get(), uncompLength);
                 uncompLength += half_length;
             }
@@ -112,8 +112,8 @@ namespace Utils {
         return true;
     }
 
-    std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count) {
-        std::vector<byte_t> ret;
+    std::vector<BYTE_t> Decompress(const BYTE_t* compressedBytes, int count) {
+        std::vector<BYTE_t> ret;
 
         if (count == 0)
             return ret;
@@ -122,7 +122,7 @@ namespace Utils {
         unsigned half_length = count / 2;
 
         unsigned uncompLength = full_length;
-        std::unique_ptr<byte_t> uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength]);
+        std::unique_ptr<BYTE_t> uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength]);
 
         z_stream stream;
         stream.next_in = (Bytef*)compressedBytes;
@@ -141,7 +141,7 @@ namespace Utils {
             if (stream.total_out >= uncompLength) {
                 // Increase size of output buffer  
                 auto old = std::move(uncomp);
-                uncomp = std::unique_ptr<byte_t>(new byte_t[uncompLength + half_length]);
+                uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength + half_length]);
                 memcpy(uncomp.get(), old.get(), uncompLength);
                 uncompLength += half_length;
             }
@@ -190,7 +190,7 @@ namespace Utils {
         }
 
 
-        byte_t *data = reinterpret_cast<byte_t*>(in.data());
+        BYTE_t *data = reinterpret_cast<BYTE_t*>(in.data());
         for (int i = 0; i < in.size(); i++) {
             if (data[i] > 127)
                 data[i] = 63;
@@ -198,7 +198,7 @@ namespace Utils {
     }
 
 
-    //std::string BytesToAscii(const byte_t* bytes, int count) {
+    //std::string BytesToAscii(const BYTE_t* bytes, int count) {
     //    std::string result;
     //    for (int i = 0; i < count; i++) {
     //        if (bytes[i] > 127)
@@ -211,7 +211,7 @@ namespace Utils {
 
     //void GenerateBytes(std::vec)
 
-    void GenerateBytes(byte_t* out, unsigned int count) {
+    void GenerateBytes(BYTE_t* out, unsigned int count) {
         RAND_bytes(out, count);
     }
 
@@ -225,9 +225,9 @@ namespace Utils {
 
 
 
-    UUID_t GenerateUID() {
-        UUID_t result;
-        GenerateBytes(reinterpret_cast<byte_t*>(&result), sizeof(result));
+    OWNER_t GenerateUID() {
+        OWNER_t result;
+        GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
         return result;
     }
 
@@ -263,7 +263,7 @@ namespace Utils {
     //}
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int32_t GetUTF8Count(const byte_t*p) {
+    int32_t GetUTF8Count(const BYTE_t*p) {
         // leading bits:
         //   0: total 1 byte
         //   110: total 2 bytes (trailing 10xxxxxx)
@@ -311,9 +311,9 @@ namespace Utils {
         return count;
     }
 
-    UUID_t StringToUID(const std::string& s) {
+    OWNER_t StringToUID(const std::string& s) {
         std::stringstream ss(s);
-        UUID_t uid;
+        OWNER_t uid;
         ss >> uid;
         return uid;
     }

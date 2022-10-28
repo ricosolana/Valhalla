@@ -2,7 +2,9 @@
 
 #include <thread>
 #include "Task.h"
-#include "NetManager.h"
+#include "ServerSettings.h"
+
+#define SERVER_ID Valhalla()->ID()
 
 class ValhallaServer {
 	std::atomic_bool m_running = false;
@@ -13,20 +15,24 @@ class ValhallaServer {
 
 	std::recursive_mutex m_taskMutex;
 
-	std::string m_serverName;
-	int m_maxPeers;
-	UUID_t m_serverUuid;
+    ServerSettings m_settings;
+	const OWNER_t m_serverId; // generated at start
 
 	steady_clock::time_point m_startTime;
 	steady_clock::time_point m_prevUpdate;
 	steady_clock::time_point m_nowUpdate;
 
 public:
-	UUID_t Uuid() const {
-		return m_serverUuid;
+    ValhallaServer() : m_serverId(Utils::GenerateUID()) {}
+
+	OWNER_t ID() const {
+		return m_serverId;
 	}
 
-	//std::string m_serverPassword;
+    const ServerSettings& Settings() const {
+        return m_settings;
+    }
+
 	robin_hood::unordered_set<std::string> m_banned;
 
 	void Launch();
@@ -39,7 +45,7 @@ public:
 	}
 
 	// Returns the time in Ticks (C# DateTime.Ticks)
-	uint64_t Ticks() {		
+	int64_t Ticks() {
 		return Nanos().count() / 100;
 	}
 

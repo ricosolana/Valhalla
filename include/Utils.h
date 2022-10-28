@@ -57,10 +57,10 @@ using namespace std::chrono;
 //bytes
 using namespace std::chrono_literals;
 
-using byte_t = uint8_t;
-using UUID_t = int64_t;
+using BYTE_t = uint8_t;
+using OWNER_t = int64_t;
 using HASH_t = int32_t;
-using BYTES_t = std::vector<byte_t>;
+using BYTES_t = std::vector<BYTE_t>;
 
 static constexpr float PI = 3.141592653589f;
 
@@ -92,12 +92,12 @@ namespace Utils {
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 
-	bool Compress(const byte_t* buf, unsigned int bufSize, int level, byte_t* out, unsigned int& outSize);
+	bool Compress(const BYTE_t* buf, unsigned int bufSize, int level, BYTE_t* out, unsigned int& outSize);
 	void Compress(const BYTES_t& buf, int level, BYTES_t& out);
-	std::vector<byte_t> Compress(const byte_t* buf, unsigned int bufSize, int level);
+	std::vector<BYTE_t> Compress(const BYTE_t* buf, unsigned int bufSize, int level);
 
 
-	std::vector<byte_t> Decompress(const byte_t* compressedBytes, int count);
+	std::vector<BYTE_t> Decompress(const BYTE_t* compressedBytes, int count);
 
 	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
 	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
@@ -107,7 +107,7 @@ namespace Utils {
 	// bytes greater than 127 get turned to literal '?' (63)
 	void FormatAscii(std::string& in);
 
-	UUID_t GenerateUID();
+	OWNER_t GenerateUID();
 
 	HASH_t GetStableHashCode(const std::string &s);
 
@@ -120,7 +120,7 @@ namespace Utils {
 				return GetStableHashCode(str, num, num2, idx);
 			}
 		}
-		return num + num2 * 1566083941;
+		return static_cast<HASH_t>(num + num2 * 1566083941);
 	}
 
 	constexpr HASH_t GetStableHashCode(const char* str) {
@@ -133,9 +133,9 @@ namespace Utils {
 
 	// Gets the unicode code points in a UTF-8 encoded string
 	// Return -1 on bad encoding
-	int32_t GetUTF8Count(const byte_t* p);
+	int32_t GetUTF8Count(const BYTE_t* p);
 
-	UUID_t StringToUID(const std::string &s);
+	OWNER_t StringToUID(const std::string &s);
 
 	//std::string join(std::vector<std::string_view>& strings);
 

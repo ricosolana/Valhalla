@@ -19,8 +19,9 @@ struct ServerSettings {
 	bool			playerList;
 	bool			playerArrivePing;
 
-	float			socketTimeout;
-	unsigned int	socketCongestion;
+	milliseconds	socketTimeout;          // ms
+	unsigned int	socketMaxCongestion;    // congestion rate
+    unsigned int	socketMinCongestion;    // congestion rate
 
 
 };

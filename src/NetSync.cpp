@@ -74,14 +74,14 @@ NetID::operator bool() const noexcept {
 
 
 NetSync::NetSync() {
-	this->m_owner = Valhalla()->Uuid();
+	this->m_owner = Valhalla()->ID();
 }
 
 NetSync::NetSync(NetPackage& pkg, int version) {
 	this->m_rev.m_ownerRev =	pkg.Read<uint32_t>();
 	this->m_rev.m_dataRev =		pkg.Read<uint32_t>();
 	this->m_persistent =		pkg.Read<bool>();
-	this->m_owner = 			pkg.Read<UUID_t>();
+	this->m_owner = 			pkg.Read<OWNER_t>();
 	this->m_rev.m_time =		pkg.Read<int64_t>();
 	this->m_pgwVersion =		pkg.Read<int32_t>();
 
@@ -344,11 +344,11 @@ void NetSync::Set(const std::pair<HASH_t, HASH_t> &key, const NetID& value) {
 
 
 bool NetSync::Local() {
-	return m_owner == Valhalla()->Uuid();
+	return m_owner == Valhalla()->ID();
 }
 
 void NetSync::SetLocal() {
-	SetOwner(Valhalla()->Uuid());
+	SetOwner(Valhalla()->ID());
 }
 
 

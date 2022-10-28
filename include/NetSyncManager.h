@@ -11,7 +11,7 @@
 //class NetSync;
 
 namespace NetSyncManager {
-	void OnNewPeer(NetPeer::Ptr peer);
+	void OnNewPeer(NetPeer *peer);
 
 
 
@@ -26,10 +26,12 @@ namespace NetSyncManager {
 	// bwriter
 	void SaveAsync(NetPackage &writer);
 
-	// breader
+	// broader
 	void Load(NetPackage &reader, int version);
 
-	void RemoveOldGeneratedZDOS();
+    // This actually frees the zdos list
+    // They arent marked, theyre trashed
+	void ReleaseLegacyZDOS();
 
 	void CapDeadZDOList();
 
@@ -41,6 +43,7 @@ namespace NetSyncManager {
 	// Returns -1 on invalid sector
 	void AddToSector(NetSync *zdo, const Vector2i &sector);
 
+    // used by zdo to self invalidate its sector
 	void ZDOSectorInvalidated(NetSync *zdo);
 
 	void RemoveFromSector(NetSync* zdo, const Vector2i &sector);
@@ -49,7 +52,7 @@ namespace NetSyncManager {
 
 	// called when registering joining peer
 	//void AddPeer(NetPeer::Ptr netPeer);
-	void RemovePeer(NetPeer::Ptr netPeer);
+	void RemovePeer(NetPeer *netPeer);
 
 	void Update(float dt);
 
@@ -82,7 +85,7 @@ namespace NetSyncManager {
 
 	void ForceSendZDO(const NetID &id);
 
-	void ForceSendZDO(UUID_t peerID, const NetID& id);
+	void ForceSendZDO(OWNER_t peerID, const NetID& id);
 
 	//void ClientChanged(const NetID& id);
 

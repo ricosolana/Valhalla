@@ -3,10 +3,11 @@
 #include "NetRpc.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
+#include "ModManager.h"
 
 using namespace std::chrono;
 
-NetRpc::NetRpc(ISocket::Ptr socket)
+NetRpc::NetRpc(ISocket *socket)
 	: m_socket(socket), m_lastPing(steady_clock::now()) {
 }
 
@@ -62,8 +63,8 @@ void NetRpc::Update() {
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				// lua pre handler
-				find->second->Invoke(this, pkg, NetInvoke::RPC, hash);
+				find->second->Invoke(this, pkg,
+                                     ModManager::getCallbacks().m_onRpc[hash]);
 			}
 			else {
 #ifdef RPC_DEBUG
@@ -76,7 +77,7 @@ void NetRpc::Update() {
 		}
 	}
 	
-	if (now - m_lastPing > RPC_PING_TIMEOUT) {
+	if (now - m_lastPing > Valhalla()->Settings().socketTimeout) {
 		LOG(INFO) << "Client RPC timeout";
 		m_socket->Close();
 	}

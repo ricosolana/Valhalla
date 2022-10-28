@@ -1,13 +1,12 @@
 #include <optick.h>
-//#include <ryml/ryml.hpp>
-//#include <c4/format.hpp>
-//#include <ryml/ryml_std.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
 #include "ServerSettings.h"
+#include "NetManager.h"
+#include "ChatManager.h"
 
 using namespace std::chrono;
 
@@ -42,46 +41,46 @@ void ValhallaServer::Launch() {
 			LOG(INFO) << "Server config not found, creating...";
 	}
 
-	ServerSettings settings;
+	m_settings.serverName =				loadNode["server-name"].as<std::string>("My server");
+	m_settings.serverPort =				loadNode["server-port"].as<uint16_t>(2456);
+	m_settings.serverPassword =			loadNode["server-password"].as<std::string>("secret");
+	m_settings.serverPublic =			loadNode["server-public"].as<bool>(false);
 
-	settings.serverName =				loadNode["server-name"].as<std::string>("My server");
-	settings.serverPort =				loadNode["server-port"].as<uint16_t>(2456);
-	settings.serverPassword =			loadNode["server-password"].as<std::string>("secret");
-	settings.serverPublic =				loadNode["server-public"].as<bool>(false);
+	m_settings.worldName =				loadNode["world-name"].as<std::string>("Dedicated world");
+    m_settings.worldSeedName =			loadNode["world-seed-name"].as<std::string>("Some special seed");
+	m_settings.worldSeed =				Utils::GetStableHashCode(m_settings.worldSeedName);
 
-	settings.worldName =				loadNode["world-name"].as<std::string>("Dedicated world");
-	settings.worldName =				loadNode["world-seed-name"].as<std::string>("Some special seed");
-	settings.worldSeed =				Utils::GetStableHashCode(settings.worldSeedName);
+	m_settings.playerWhitelist =		loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
+	m_settings.playerMax =				loadNode["player-max"].as<unsigned int>(64);		// max allowed players
+	m_settings.playerAuth =				loadNode["player-auth"].as<bool>(true);				// allow authed players only
+	m_settings.playerList =				loadNode["player-list"].as<bool>(true);				// does not send player list to players
+	m_settings.playerArrivePing =		loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
 
-	settings.playerWhitelist =			loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
-	settings.playerMax =				loadNode["player-max"].as<unsigned int>(64);		// max allowed players
-	settings.playerAuth =				loadNode["player-auth"].as<bool>(true);				// allow authed players only
-	settings.playerList =				loadNode["player-list"].as<bool>(true);				// does not send playerlist to players
-	settings.playerArrivePing =			loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
-
-	settings.socketTimeout =			loadNode["socket-timeout"].as<float>(30000);		// player timeout in milliseconds
-	settings.socketCongestion =			loadNode["socket-congestion"].as<int32_t>(10240);
+	m_settings.socketTimeout =		    milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
+	m_settings.socketMaxCongestion =	loadNode["socket-max-congestion"].as<int32_t>(10240);
+    m_settings.socketMinCongestion =	loadNode["socket-min-congestion"].as<int32_t>(2048);
 
 
 
 	YAML::Node saveNode;
 
-	saveNode["server-name"] =			settings.serverName;
-	saveNode["server-port"] =			settings.serverPort;
-	saveNode["server-password"] =		settings.serverPassword;
-	saveNode["server-public"] =			settings.serverPublic;
+	saveNode["server-name"] =			    m_settings.serverName;
+	saveNode["server-port"] =			    m_settings.serverPort;
+	saveNode["server-password"] =		    m_settings.serverPassword;
+	saveNode["server-public"] =			    m_settings.serverPublic;
 
-	saveNode["world-name"] =			settings.worldName;
-	saveNode["world-seed"] =			settings.worldSeed;
+	saveNode["world-name"] =			    m_settings.worldName;
+	saveNode["world-seed"] =			    m_settings.worldSeed;
 
-	saveNode["player-whitelist"] =		settings.playerWhitelist;
-	saveNode["player-max"] =			settings.playerMax;
-	saveNode["player-auth"] =			settings.playerAuth;
-	saveNode["player-list"] =			settings.playerList;
-	saveNode["player-arrive-ping"] =	settings.playerArrivePing;
+	saveNode["player-whitelist"] =		    m_settings.playerWhitelist;
+	saveNode["player-max"] =			    m_settings.playerMax;
+	saveNode["player-auth"] =			    m_settings.playerAuth;
+	saveNode["player-list"] =			    m_settings.playerList;
+	saveNode["player-arrive-ping"] =	    m_settings.playerArrivePing;
 
-	saveNode["socket-timeout"] =		settings.socketTimeout;
-	saveNode["socket-congestion"] =		settings.socketCongestion;
+	saveNode["socket-timeout"] =		    m_settings.socketTimeout.count();
+	saveNode["socket-max-congestion"] =		m_settings.socketMaxCongestion;
+    saveNode["socket-min-congestion"] =		m_settings.socketMinCongestion;
 
 	YAML::Emitter out;
 	out.SetIndent(4);
@@ -93,10 +92,11 @@ void ValhallaServer::Launch() {
 	
 	// have other settings like chat spam prevention, fly prevention, advanced permission settings
 	
-	m_serverUuid = Utils::GenerateUID();
+
 
 	ModManager::Init();
-	NetManager::Start(settings);
+    NetManager::Init();
+    ChatManager::Init();
 
 	m_startTime = steady_clock::now(); // const during server run
 	m_prevUpdate = steady_clock::now();
@@ -152,7 +152,7 @@ void ValhallaServer::Terminate() {
 	LOG(INFO) << "Terminating server";
 
 	m_running = false;
-	ModManager::Uninit();
+    ModManager::UnInit();
 	NetManager::Close();
 }
 
