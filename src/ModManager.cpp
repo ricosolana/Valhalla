@@ -55,6 +55,14 @@ namespace ModManager {
         void RegisterOnSync(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
             Register(mod, m_callbacks.m_onSync[Utils::GetStableHashCode(name)], lua_callback, priority);
         }
+
+        void RegisterOnRouteWatch(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
+            Register(mod, m_callbacks.m_onRouteWatch[Utils::GetStableHashCode(name)], lua_callback, priority);
+        }
+
+        //void RegisterOnSyncWatch(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
+        //    Register(mod, m_callbacks.m_onSyncWatch[Utils::GetStableHashCode(name)], lua_callback, priority);
+        //}
     }
 
     // can get the lua state by passing sol::this_state type at end
@@ -86,35 +94,41 @@ namespace ModManager {
         state.script(modCode);
     }
 
-    void RunModInfoFrom(const fs::path& dirname, std::string& outName, std::string& outEntry) {
+    void RunModInfoFrom(const fs::path& dirname,
+                        std::string& outName,
+                        std::string& outVersion,
+                        int &outApiVersion,
+                        std::string& outEntry) {
         auto&& state = RunLuaFrom(dirname / "modInfo.lua");
 
         auto modInfo = state["modInfo"];
 
         // required
         sol::optional<std::string> name = modInfo["name"]; // str
-        sol::optional<int> api_version = modInfo["api_version"];
-        sol::optional<std::string> entry = modInfo["entry"];
         sol::optional<std::string> version = modInfo["version"]; // str
+        sol::optional<int> apiVersion = modInfo["apiVersion"];
+        sol::optional<std::string> entry = modInfo["entry"];
 
-        if (!(name && api_version && entry && version)) {
-            throw std::runtime_error("modInfo missing required specifiers");
+        if (!(name && version && apiVersion && entry)) {
+            throw std::runtime_error("incomplete modInfo");
         }
 
         if (mods.contains(name.value())) {
-            throw std::runtime_error("tried registering mod with same name as an existing mod");
+            throw std::runtime_error("tried registering mod with duplicate name");
         }
 
         outName = name.value();
+        outVersion = version.value();
+        outApiVersion = apiVersion.value();
         outEntry = entry.value();
-
-        //LOG(INFO) << "Loading mod '" << name.value() << "' " << version.value();
     }
 
 
 
-    std::unique_ptr<Mod> PrepareModEnvironment(const std::string& name) {
-        auto mod = std::make_unique<Mod>(name);
+    std::unique_ptr<Mod> PrepareModEnvironment(const std::string& name,
+                                               std::string& version,
+                                               int apiVersion) {
+        auto mod = std::make_unique<Mod>(name, version, apiVersion);
         auto ptr = mod.get();
 
         auto&& state = mod->m_state;
@@ -228,11 +242,10 @@ namespace ModManager {
             //"IDENTITY", &Quaternion::IDENTITY
         );
 
-        state.new_usertype<Mod>("Mod",
-                                "name", &Mod::m_name
-        );
-
-        //state.new_usertype<
+        state.new_enum("Mod",
+                       "name", &Mod::m_name,
+                       "version", &Mod::m_version,
+                       "apiVersion", &Mod::m_apiVersion);
 
         auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
@@ -262,15 +275,17 @@ namespace ModManager {
         apiTable["OnSync"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnSync(ptr, name, lua_callback, 0); },
                                            [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnSync(ptr, name, lua_callback, priority); });
 
-        // todo try this
-        //state["modThis"] = sol::property([ptr]() { return ptr; });
+        apiTable["OnRouteWatch"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnRouteWatch(ptr, name, lua_callback, 0); },
+                                            [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnRouteWatch(ptr, name, lua_callback, priority); });
 
-        //apiTable["OnRouteWatch"] = [ptr](const std::string& name, const sol::function& callback, int priority) {
-        //    m_onRouteWatch[Utils::GetStableHashCode(name)].emplace_back(callback, priority);
-        //};
-        //apiTable["OnSyncWatch"] = [ptr](const std::string& name, const sol::function& callback, int priority) {
-        //    m_onSyncWatch[Utils::GetStableHashCode(name)].emplace_back(callback, priority);
-        //};
+        //apiTable["OnSyncWatch"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnSyncWatch(ptr, name, lua_callback, 0); },
+        //                                   [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnSyncWatch(ptr, name, lua_callback, priority); });
+
+
+        // todo try this
+        state["modThis"] = sol::property([ptr]() { return ptr; });
+
+
 
         return mod;
     }
@@ -288,9 +303,10 @@ namespace ModManager {
 					if (dirname.string().starts_with("--"))
 						continue;
 
-					std::string name, entry;
-                    RunModInfoFrom(dirname, name, entry);
-                    auto mod = PrepareModEnvironment(name);
+					std::string name, version, entry;
+                    int apiVersion;
+                    RunModInfoFrom(dirname, name, version, apiVersion, entry);
+                    auto mod = PrepareModEnvironment(name, version, apiVersion);
                     RunModFrom(mod.get(), dirname / (entry + ".lua"));
 
 					mods.insert({ name, std::move(mod) });
@@ -391,9 +407,9 @@ for (auto&& ppair : func) { \
 			return allow;
 		}
 
-		void OnChatMessage() {
-
-		}
+        void OnChatMessage(OWNER_t sender, ChatManager::Type type, std::string text) {
+            //stuffEXECUTE(m_callbacks.m_onChatMessage, delta);
+        }
 
 
 

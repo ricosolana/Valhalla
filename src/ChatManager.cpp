@@ -6,13 +6,6 @@
 
 namespace ChatManager {
 
-    enum class Type : int32_t {
-        Whisper,
-        Normal,
-        Shout,
-        Ping
-    };
-
     void RPC_ChatMessage(OWNER_t sender, Vector3 position, Type type, std::string name, std::string text, std::string senderAccountId);
     void WATCHER_RPC_ChatMessage(OWNER_t sender, Vector3 position, Type type, std::string name, std::string text, std::string senderAccountId);
 
@@ -23,13 +16,19 @@ namespace ChatManager {
 
 
 
-    void RPC_ChatMessage(OWNER_t sender, Vector3 position, Type type, std::string name, std::string text, std::string senderAccountId) {
-        LOG(INFO) << "Received chat '" << text << "' from " << name << ", type: " << static_cast<int>(type) << ", " << senderAccountId;
+    void RPC_ChatMessage(OWNER_t sender, Vector3, Type type, std::string, std::string text, std::string) {
+        //LOG(INFO) << "Received chat '" << text << "' from " << name << ", type: " << static_cast<int>(type) << ", " << senderAccountId;
 
         auto &&peer = NetManager::GetPeer(sender);
         if (peer) {
             LOG(INFO) << "The peer name is " << peer->m_name;
         }
+
+        ModManager::Event::OnChatMessage(sender, type, text);
+
+
+
+
 
         //this.OnNewChatMessage(null, sender, position, (Talker.Type)type, name, text, senderAccountId);
     }

@@ -13,14 +13,14 @@ namespace NetRouteManager {
 
 	// Method hash, pair<callback, watcher>
 	robin_hood::unordered_map<HASH_t, 
-		std::pair<std::unique_ptr<IMethod<OWNER_t>>, std::unique_ptr<IMethodLua<OWNER_t>>>> m_methods;
+		std::pair<std::unique_ptr<IMethod<OWNER_t>>, std::unique_ptr<IMethod<OWNER_t>>>> m_methods;
 
 	void _Register(HASH_t hash, IMethod<OWNER_t>* method) {
-		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<OWNER_t>>(method), nullptr) });
+        _Register(hash, method, nullptr);
 	}
 
-	void _Register(HASH_t hash, IMethod<OWNER_t>* method, IMethodLua<OWNER_t>* watcher) {
-		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<OWNER_t>>(method), std::unique_ptr<IMethodLua<OWNER_t>>(watcher)) });
+	void _Register(HASH_t hash, IMethod<OWNER_t>* method, IMethod<OWNER_t>* watcher) {
+		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<OWNER_t>>(method), std::unique_ptr<IMethod<OWNER_t>>(watcher)) });
 	}
 
 	void _RouteRPC(Data data) {
@@ -36,7 +36,8 @@ namespace NetRouteManager {
 					// Incur the watcher to validate the peers data
 					auto&& find = m_methods.find(data.m_methodHash);
 					if (find != m_methods.end() && find->second.second) {
-						//find->second.second->Invoke(data.m_targetPeerID, data.m_parameters, NetInvoke::WATCH, data.m_methodHash);
+						find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
+                                                    ModManager::getCallbacks().m_onRouteWatch[data.m_methodHash]);
 					}
 
 					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
