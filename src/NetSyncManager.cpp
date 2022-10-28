@@ -1221,7 +1221,6 @@ namespace NetSyncManager {
 		auto syncPeer = GetPeer(rpc);
 		assert(syncPeer);
 
-		//int found = 0; // NetSyncs to be received
 		{
 			auto invalid_sector_count = pkg.Read<int32_t>(); // invalid sector count
 			while (invalid_sector_count--) {
@@ -1256,6 +1255,7 @@ namespace NetSyncManager {
 			// if the zdo already existed (locally/remotely), compare revisions
 			bool flagCreated = false;
 			if (sync) {
+                // if the client data rev is not new, and they've reassigned the owner:
 				if (dataRev <= sync->m_rev.m_dataRev) {
 					if (ownerRev > sync->m_rev.m_ownerRev) {
 						sync->m_rev.m_ownerRev = ownerRev;
@@ -1275,7 +1275,8 @@ namespace NetSyncManager {
 			sync->Deserialize(des);
 
 			syncPeer->m_syncs[syncId] = rev;
-			
+
+            // If the ZDO was just created as a copy, but it was removed recently
 			if (flagCreated && m_deadZDOs.contains(syncId)) {
 				sync->SetLocal();
 				DestroyZDO(sync);

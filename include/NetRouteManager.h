@@ -5,7 +5,6 @@
 #include "ValhallaServer.h"
 
 namespace NetRouteManager {
-
 	static constexpr OWNER_t EVERYBODY = 0;
 
 	struct Data {
@@ -19,7 +18,7 @@ namespace NetRouteManager {
 		Data() : m_msgID(0), m_senderPeerID(0), m_targetPeerID(0), m_methodHash(0) {}
 
 		// Will unpack the package
-		Data(NetPackage& pkg)
+		explicit Data(NetPackage& pkg)
 			: m_msgID(pkg.Read<OWNER_t>()),
 			m_senderPeerID(pkg.Read<OWNER_t>()),
 			m_targetPeerID(pkg.Read<OWNER_t>()),
@@ -28,7 +27,7 @@ namespace NetRouteManager {
 			m_parameters(pkg.Read<NetPackage>())
 		{}
 
-		void Serialize(NetPackage &pkg) {
+		void Serialize(NetPackage &pkg) const {
 			pkg.Write(m_msgID);
 			pkg.Write(m_senderPeerID);
 			pkg.Write(m_targetPeerID);
@@ -112,8 +111,8 @@ namespace NetRouteManager {
 
 
 	/**
-		* @brief Invoke a routed remote function
-		* @param name function name to invoke
+		* @brief Invoke a routed function bound to a peer with sub zdo
+		* @param name function name
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
@@ -139,8 +138,8 @@ namespace NetRouteManager {
 
 
 	/**
-		* @brief Invoke a routed remote function
-		* @param name function name to invoke
+		* @brief Invoke a routed function bound to a peer
+		* @param name function name
 		* @param ...types function parameters
 	*/
 	template <typename... Args>
@@ -162,32 +161,4 @@ namespace NetRouteManager {
 	void Invoke(OWNER_t target, const std::string& name, const Args&... params) {
 		Invoke(target, NetID::NONE, Utils::GetStableHashCode(name), params...);
 	}
-
-
-
-	/**
-		* @brief Invoke a routed remote function
-		* @param name function name to invoke
-		* @param ...types function parameters
-	*/
-	template <typename... Args>
-	void Invoke(HASH_t hash, const Args&... params) {
-		Invoke(SERVER_ID, hash, params...);
-	}
-
-	template <typename... Args>
-	void Invoke(Routed_Hash hash, const Args&... params) {
-		Invoke(SERVER_ID, static_cast<HASH_t>(hash), params...);
-	}
-
-	template <typename... Args>
-	void Invoke(const char* name, const Args&... params) {
-		Invoke(SERVER_ID, Utils::GetStableHashCode(name), params...);
-	}
-
-	template <typename... Args>
-	void Invoke(const std::string& name, const Args&... params) {
-		Invoke(SERVER_ID, Utils::GetStableHashCode(name), params...);
-	}
-
 };

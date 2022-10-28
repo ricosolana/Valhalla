@@ -33,14 +33,20 @@ namespace NetRouteManager {
 				// send to everyone (except sender)
 				if (data.m_senderPeerID != peer->m_uuid) {
 
-					// Incur the watcher to validate the peers data
-					auto&& find = m_methods.find(data.m_methodHash);
-					if (find != m_methods.end() && find->second.second) {
-						find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
-                                                    ModManager::getCallbacks().m_onRouteWatch[data.m_methodHash]);
-					}
 
-					peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+                    // If the call was from this SERVER, no validation is necessary; data is valid
+                    if (data.m_senderPeerID != SERVER_ID) {
+
+                        // Incur the watcher to validate the peers data
+                        auto &&find = m_methods.find(data.m_methodHash);
+                        if (find != m_methods.end() && find->second.second) {
+                            find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
+                                                        ModManager::getCallbacks().m_onRouteWatch[data.m_methodHash]);
+                        }
+                    }
+
+                    peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+
 				}
 			}
 		}
@@ -104,6 +110,7 @@ namespace NetRouteManager {
 			_HandleRoutedRPC(data);
 
 		// Server acts as a middleman
+        // Server may validate packet before forwarding it
 		if (data.m_targetPeerID != SERVER_ID)
 			_RouteRPC(data);
 	}
@@ -117,17 +124,17 @@ namespace NetRouteManager {
 		data.m_targetPeerID = target;
 		data.m_targetNetSync = targetNetSync;
 		data.m_methodHash = hash;
-		data.m_parameters = std::move(pkg);
+		data.m_parameters = pkg;
 
 		data.m_parameters.m_stream.SetPos(0);
 
-		// Handle message
+		// Message destined to server or everyone
 		if (target == SERVER_ID
 			|| target == EVERYBODY) {
 			_HandleRoutedRPC(data);
 		}
 
-		// Pass the message along to the recipient
+        // No validation is necessary as server is the sender due to this Invoke function
 		if (target != SERVER_ID) {
 			_RouteRPC(data);
 		}
