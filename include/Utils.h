@@ -67,28 +67,28 @@ static constexpr float PI = 3.141592653589f;
 namespace Utils {
 
 	template <class F, class C, class Pass, class Tuple, size_t... Is>
-	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple& t, std::index_sequence<Is...>) {
-		//return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
+	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple t, std::index_sequence<Is...>) {
+		return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
 		// the move causes the params to get invalidated when passing twice
-		return std::invoke(f, c, pass, std::get<Is>(t)...);
+		//return std::invoke(f, c, pass, std::get<Is>(t)...);
 	}
 
 	template <class F, class C, class Pass, class Tuple>
-	constexpr void InvokeTuple(F f, C& c, Pass pass, Tuple& t) {
-		InvokeTupleImpl(f, c, pass, t,
+	constexpr void InvokeTuple(F f, C& c, Pass pass, Tuple t) {
+		InvokeTupleImpl(f, c, pass, std::move(t),
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 
 	// Static method invoke
 	template <class F, class Pass, class Tuple, size_t... Is>
-	constexpr auto InvokeTupleImplS(F f, Pass pass, Tuple& t, std::index_sequence<Is...>) {
-		//return std::invoke(f, pass, std::move(std::get<Is>(t))...);
-		return std::invoke(f, pass, std::get<Is>(t)...);
+	constexpr auto InvokeTupleImplS(F f, Pass pass, Tuple t, std::index_sequence<Is...>) {
+		return std::invoke(f, pass, std::move(std::get<Is>(t))...);
+		//return std::invoke(f, pass, std::get<Is>(t)...);
 	}
 
 	template <class F, class Pass, class Tuple>
-	constexpr void InvokeTupleS(F f, Pass pass, Tuple& t) {
-		InvokeTupleImplS(f, pass, t,
+	constexpr void InvokeTupleS(F f, Pass pass, Tuple t) {
+		InvokeTupleImplS(f, pass, std::move(t),
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 

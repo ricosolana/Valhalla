@@ -51,7 +51,7 @@ public:
                 }
             }
 
-            Utils::InvokeTuple(lambda, object, t, tuple);
+            Utils::InvokeTuple(lambda, object, t, std::move(tuple));
         }
         else {
             // lua
@@ -63,7 +63,7 @@ public:
                 }
             }
 
-            std::invoke(lambda, object, t);
+            std::invoke(lambda, object, std::move(t));
         }
     }
 };

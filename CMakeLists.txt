@@ -16,7 +16,8 @@ if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
 
-
+add_compile_definitions(WIN32_LEAN_AND_MEAN)
+#add_compile_definitions(VC_EXTRALEAN)
 
 ############
 # Libraries
@@ -28,6 +29,7 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(libssh CONFIG REQUIRED)
 #find_package(c4core CONFIG REQUIRED)
 #find_package(ryml CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
@@ -114,7 +116,7 @@ add_executable(${PROJECT_NAME}
     "src/NetAcceptorSteam.cpp"
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
- "src/ChatManager.cpp" include/MethodLua.h)
+ "src/ChatManager.cpp" include/MethodLua.h src/ConsoleSSH.cpp)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -132,6 +134,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC lua
     sol2
     yaml-cpp
+    ssh
     #PUBLIC c4core::c4core
     #PRIVATE ryml::ryml
     easyloggingpp

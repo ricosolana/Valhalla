@@ -1,8 +1,16 @@
+#ifdef _WIN32
+//#define _WIN32_WINNT 0x0A00
+//#define WIN32_LEAN_AND_MEAN
+//#define WIN32_LEAN_AND_MEAN
+//#include <windows.h>
+//#include <winsock2.h>
+#endif
+
 // main.cpp
-#include <signal.h>
+#include <csignal>
 #include <optick.h>
 #include <easylogging++.h>
-#include <openssl/md5.h>
+#include "ConsoleSSH.h"
 
 #include "ResourceManager.h"
 #include "ValhallaServer.h"
@@ -65,6 +73,10 @@ int main(int argc, char **argv) {
     signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
+
+    sshTest();
+
+    return 0;
 
     //try {
         Valhalla()->Launch();
