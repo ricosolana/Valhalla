@@ -1,6 +1,7 @@
 #include "NetSocket.h"
 #include <isteamnetworkingsockets.h>
 #include <isteamnetworkingutils.h>
+//#include <Windows.h>
 
 SteamSocket::SteamSocket(HSteamNetConnection con) {
     m_hConn = con;

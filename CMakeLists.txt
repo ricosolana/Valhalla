@@ -3,11 +3,15 @@
 # - specify the vcpkg toolchain file location
 # - specify arm64 architecture
 
+# Winsock multiple includes errors:
+# - Locate Windows.h and remove the define section containing WIN32_LEAN_AND_MEAN
+# - Add an '#include <Winsock2.h>' replacing the above section
+
 ##########
 # Project
 ##########
 cmake_minimum_required (VERSION 3.14)
-project (Valhalla)
+project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_steamapi)
 include(get_cpm)
@@ -16,7 +20,8 @@ if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
 
-add_compile_definitions(WIN32_LEAN_AND_MEAN)
+
+#add_compile_definitions(WIN32_LEAN_AND_MEAN)
 #add_compile_definitions(VC_EXTRALEAN)
 
 ############
@@ -30,12 +35,17 @@ find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(libssh CONFIG REQUIRED)
+find_package(asio CONFIG REQUIRED)
 #find_package(c4core CONFIG REQUIRED)
 #find_package(ryml CONFIG REQUIRED)
 #find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
 
+target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
+target_compile_definitions(ssh INTERFACE WIN32_LEAN_AND_MEAN)
+
+# remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX)
 
 #set_target_properties(ryml::ryml PROPERTIES RYML_STANDALONE ON)
@@ -110,13 +120,13 @@ add_executable(${PROJECT_NAME}
     "src/MathUtils.cpp"
     "src/NetObject.cpp" 
 
-    # steam
-     
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
- "src/ChatManager.cpp" include/MethodLua.h src/ConsoleSSH.cpp)
+    "src/ChatManager.cpp"
+    "src/ConsoleSSH.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -139,7 +149,10 @@ target_link_libraries(${PROJECT_NAME}
     #PRIVATE ryml::ryml
     easyloggingpp
     OptickCore
+    asio asio::asio
 )
+
+target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
 
 
 ##########

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <asio.hpp>
 #include <string>
 #include <memory>
 #include <optional>
