@@ -4,7 +4,6 @@
 #include <thread>
 
 #include "NetSocket.h"
-#include "ValhallaServer.h"
 
 class IAcceptor {
 public:
@@ -32,7 +31,6 @@ private:
 
 public:
 	AcceptorSteam();
-
 	~AcceptorSteam() override;
 
 	void Listen() override;
@@ -49,4 +47,32 @@ private:
 	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersConnected, SteamServersConnected_t);
 	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
 	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
+};
+
+class RCONAcceptor : public IAcceptor {
+private:
+    asio::io_context m_ctx;
+    std::thread m_thread;
+    asio::ip::tcp::acceptor m_acceptor;
+
+    std::mutex m_mut;
+    robin_hood::unordered_map<RCONSocket*, std::unique_ptr<RCONSocket>> m_sockets;
+    robin_hood::unordered_set<RCONSocket*> m_connected;
+
+public:
+    RCONAcceptor();
+    ~RCONAcceptor() noexcept override;
+
+    // Init listening and queueing any accepted connections
+    void Listen() override;
+
+    // Poll for a ready and newly accepted connection
+    ISocket *Accept() override;
+
+    // Internally cleans up the socket
+    // Expected to be closed with no external references
+    void Cleanup(ISocket* socket) override;
+
+private:
+    void DoAccept();
 };

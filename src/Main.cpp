@@ -9,7 +9,6 @@
 #include <csignal>
 #include <optick.h>
 #include <easylogging++.h>
-#include "ConsoleSSH.h"
 
 #include "ResourceManager.h"
 #include "ValhallaServer.h"
@@ -73,9 +72,6 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-    sshTest();
-
-    return 0;
 
     //try {
         Valhalla()->Launch();

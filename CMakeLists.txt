@@ -34,7 +34,7 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(libssh CONFIG REQUIRED)
+#find_package(libssh CONFIG REQUIRED) # server is too complicated
 find_package(asio CONFIG REQUIRED)
 #find_package(c4core CONFIG REQUIRED)
 #find_package(ryml CONFIG REQUIRED)
@@ -42,8 +42,8 @@ find_package(asio CONFIG REQUIRED)
 #add_compile_definitions(SOL_NO_PRINT_ERRORS)
 remove_definitions(SOL_PRINT_ERRORS)
 
-target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
-target_compile_definitions(ssh INTERFACE WIN32_LEAN_AND_MEAN)
+#target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
+#target_compile_definitions(ssh INTERFACE WIN32_LEAN_AND_MEAN)
 
 # remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX)
@@ -125,8 +125,7 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-    "src/ConsoleSSH.cpp"
-)
+        src/RCONSocket.cpp src/RCONAcceptor.cpp)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -144,7 +143,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC lua
     sol2
     yaml-cpp
-    ssh
+    #ssh
     #PUBLIC c4core::c4core
     #PRIVATE ryml::ryml
     easyloggingpp

@@ -60,6 +60,11 @@ void ValhallaServer::Launch() {
 	m_settings.socketMaxCongestion =	loadNode["socket-max-congestion"].as<int32_t>(10240);
     m_settings.socketMinCongestion =	loadNode["socket-min-congestion"].as<int32_t>(2048);
 
+    m_settings.rconEnabled =            loadNode["rcon-enabled"].as<bool>(false);
+    m_settings.rconPort =               loadNode["rcon-port"].as<uint16_t>(25575);
+    m_settings.rconPassword =           loadNode["rcon-password"].as<std::string>("");
+    m_settings.rconKeys =               loadNode["rcon-keys"].as<std::vector<std::string>>(std::vector<std::string>());
+
 
 
 	YAML::Node saveNode;
@@ -82,7 +87,13 @@ void ValhallaServer::Launch() {
 	saveNode["socket-max-congestion"] =		m_settings.socketMaxCongestion;
     saveNode["socket-min-congestion"] =		m_settings.socketMinCongestion;
 
-	YAML::Emitter out;
+    saveNode["rcon-enabled"] =              m_settings.rconEnabled;
+    saveNode["rcon-port"] =                 m_settings.rconPort;
+    saveNode["rcon-password"] =             m_settings.rconPassword;
+    saveNode["rcon-keys"] =                 m_settings.rconKeys;
+
+
+    YAML::Emitter out;
 	out.SetIndent(4);
 	out << saveNode;
 
@@ -97,6 +108,14 @@ void ValhallaServer::Launch() {
 	ModManager::Init();
     NetManager::Init();
     ChatManager::Init();
+    if (m_settings.rconEnabled) {
+        if (m_settings.rconPassword.empty())
+            m_settings.rconPassword = "mysecret";
+        LOG(INFO) << "Enabling RCON on port " << m_settings.rconPort;
+        LOG(INFO) << "RCON password is '" << m_settings.rconPassword << "'";
+        m_rcon = std::make_unique<RCONAcceptor>();
+        m_rcon->Listen();
+    }
 
 	m_startTime = steady_clock::now(); // const during server run
 	m_prevUpdate = steady_clock::now();
@@ -163,8 +182,69 @@ void ValhallaServer::Terminate() {
 void ValhallaServer::Update(float delta) {
 	// This is important to processing RPC remote invocations
 
-	NetManager::Update(delta);
+    if (m_rcon) {
+        while (auto rconSocket = m_rcon->Accept()) {
+            m_rconSockets.insert({ 0, static_cast<RCONSocket*>(rconSocket) });
+            rconSocket->Start();
+        }
 
+        for (auto&& pair : m_rconSockets) {
+            static constexpr int32_t RCON_COMMAND_RESPONSE = 0;
+            static constexpr int32_t RCON_COMMAND = 2;
+            static constexpr int32_t RCON_LOGIN = 3;
+
+            auto&& rconSocket = pair.second;
+            rconSocket->Update();
+            while (auto opt = rconSocket->Recv()) {
+                auto &&pkg = opt.value();
+
+                auto id = pkg.Read<int32_t>();
+                auto cmd = pkg.Read<int32_t>();
+                auto payload = pkg.m_stream.Remaining();
+
+                auto message = std::string((char*)payload.data());
+
+                if (!pair.first) {
+                    if (cmd == RCON_LOGIN) {
+                        if (!m_rconSockets.contains(id) && m_settings.rconPassword == message) {
+                            pair.first = id;
+
+                            std::string spacedMsg = " ";
+
+                            NetPackage authPkg;
+                            authPkg.Write(id);
+                            authPkg.Write(RCON_COMMAND_RESPONSE);
+                            authPkg.m_stream.Write((BYTE_t*)spacedMsg.data(), spacedMsg.size());
+                            authPkg.Write((BYTE_t)0);
+
+                            rconSocket->Send(authPkg);
+
+                            continue;
+                        }
+                    }
+                } else {
+                    // run the command
+                    LOG(INFO) << "Got command " << message;
+
+                    std::string replyMsg = "You executed the command " + message;
+
+                    NetPackage replyPkg;
+                    replyPkg.Write(id);
+                    replyPkg.Write(RCON_COMMAND_RESPONSE);
+                    replyPkg.m_stream.Write((BYTE_t*)replyMsg.data(), replyMsg.size());
+                    replyPkg.Write((BYTE_t)0);
+
+                    rconSocket->Send(replyPkg);
+                    continue;
+                }
+
+                rconSocket->Close();
+                break;
+            }
+        }
+    }
+
+	NetManager::Update(delta);
 	ModManager::Event::OnUpdate(delta);
 }
 

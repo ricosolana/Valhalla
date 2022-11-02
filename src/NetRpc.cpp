@@ -34,11 +34,6 @@ void NetRpc::Update() {
 		return;
 	}
 
-	std::optional<int> igr;
-	if (igr) {
-		//igr.v
-	}
-
 	// Read packets
 	while (auto opt = m_socket->Recv()) {
 		//assert(pkg && "Got null package and executing!");

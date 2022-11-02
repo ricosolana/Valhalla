@@ -1,6 +1,7 @@
 #include <isteamutils.h>
 
 #include "NetAcceptor.h"
+#include "ValhallaServer.h"
 
 AcceptorSteam::AcceptorSteam()
 	: m_port(Valhalla()->Settings().serverPort) {
@@ -31,7 +32,7 @@ AcceptorSteam::AcceptorSteam()
 	SteamGameServer()->SetGameTags(VALHEIM_VERSION);
 	SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
-    float timeout = Valhalla()->Settings().socketTimeout.count();
+    float timeout = (float)Valhalla()->Settings().socketTimeout.count();
 	int32 offline = 1;
 	int32 sendrate = 153600;
 	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
@@ -66,13 +67,12 @@ void AcceptorSteam::Listen() {
 }
 
 ISocket *AcceptorSteam::Accept() {
-	if (m_connected.empty())
-		return nullptr;
-
-	auto pair = m_connected.begin();
-	auto socket = pair->second; // itr becomes invalid, so store ptr
-	m_connected.erase(pair);
-	return socket;
+    auto pair = m_connected.begin();
+    if (pair == m_connected.end())
+        return nullptr;
+    auto socket = pair->second;
+    auto itr = m_connected.erase(pair);
+    return socket;
 }
 
 void AcceptorSteam::Cleanup(ISocket* socket) {
@@ -81,13 +81,8 @@ void AcceptorSteam::Cleanup(ISocket* socket) {
 
     auto pair = m_sockets.find(steamSocket->m_hConn);
     if (pair != m_sockets.end())
-        pair->second->Close();
+        socket->Close();
 
-    //m_connecting.erase(steamSocket->m_hConn);
-    //m_connected.erase(steamSocket->m_hConn);
-
-    // Remove the connected socket once the server has processed it
-    // Do this in cleanup
     m_sockets.erase(pair);
 }
 
@@ -118,8 +113,10 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 				socket->m_steamNetId = steamNetConnectionInfo_t.m_identityRemote;
 			}
 
+            // Under what circumstances should an assign be used vs an insert
+            // insert has behaviour to determine beforehand whether an element existed
 			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamNetId.GetSteamID64();
-			m_connected.insert({data->m_hConn, socket });
+			m_connected[data->m_hConn] = socket;
 			m_connecting.erase(pair);
 		}
 	}
@@ -130,33 +127,32 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 		LOG(INFO) << "Accepting new connection " << eresult;
 		if (eresult == k_EResultOK) {
 			auto ptr = std::make_unique<SteamSocket>(data->m_hConn);    // First time connecting, so alloc
-			m_connecting.insert({data->m_hConn, ptr.get() });
-			m_sockets.insert({ data->m_hConn, std::move(ptr) });
+			m_connecting[data->m_hConn] = ptr.get();
+			m_sockets[data->m_hConn] = std::move(ptr);
 		}
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
 		|| data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
-	{		
+	{
 		if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
 			LOG(INFO) << data->m_info.m_szEndDebug;
 
+        // Determine that the socket was correctly opened since the connection began
 		auto pair = m_sockets.find(data->m_hConn);
 		if (pair == m_sockets.end()) {
             LOG(ERROR) << "Unable to find disconnecting socket";
             return;
         }
 
-        pair->second->Close();
-
-        // Remove any that were ready for accept but never polled
+        // Remove if was ready for external accept/polling
         m_connected.erase(data->m_hConn);
 
-        // If they were connecting before being able to get completely accepted into accept queue, then nuke from sockets
-        // This effectively prevents rare memory leaks
+        // Remote if was in initial connecting state
         auto erased = m_connecting.erase(data->m_hConn);
-        if (erased)
+        if (erased) // Internally free (never became external)
             m_sockets.erase(pair);
-
+        else // Close it so external can respond
+            pair->second->Close();
 	}
 }
 

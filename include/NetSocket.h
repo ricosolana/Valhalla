@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <queue>
 
 #include "Utils.h"
 #include "NetPackage.h"
@@ -14,9 +15,13 @@
 #include <steam_gameserver.h>
 #include <isteamnetworkingutils.h>
 
+// All ISocket functions are expected to:
+// - return instantly without blocking
+// - be thread safe
+// - be fully implemented
 class ISocket {
 public:
-	virtual ~ISocket() = default;
+	virtual ~ISocket() noexcept = default;
 
 
 
@@ -44,19 +49,19 @@ public:
 
 	// Get the name of this connection
     // This represents the identity of the remote
-	virtual std::string GetHostName() const = 0;
+	[[nodiscard]] virtual std::string GetHostName() const = 0;
 
 
 
 	// Returns true if the socket is alive
     // Expected to return false if the connection has been closed
-	virtual bool Connected() const = 0;
+	[[nodiscard]] virtual bool Connected() const = 0;
 
 
 
 	// Returns the size in bytes of packets queued for sending
 	// Returns -1 on failure
-	virtual int GetSendQueueSize() const = 0;
+	[[nodiscard]] virtual int GetSendQueueSize() const = 0;
 };
 
 class SteamSocket : public ISocket {
@@ -68,8 +73,8 @@ public:
 	SteamNetworkingIdentity m_steamNetId;
 
 public:
-	SteamSocket(HSteamNetConnection con);
-	~SteamSocket();
+	explicit SteamSocket(HSteamNetConnection con);
+	~SteamSocket() override;
 
 	// Virtual
 	void Start() override;
@@ -79,17 +84,60 @@ public:
 	void Send(const NetPackage &pkg) override;
 	std::optional<NetPackage> Recv() override;
 
-	std::string GetHostName() const override {
+	[[nodiscard]] std::string GetHostName() const override {
 		return std::to_string(m_steamNetId.GetSteamID64());
 	}
 
-	bool Connected() const override {
+	[[nodiscard]] bool Connected() const override {
 		return m_hConn != k_HSteamNetConnection_Invalid;
 	}
 
-	int GetSendQueueSize() const override;
+	[[nodiscard]] int GetSendQueueSize() const override;
 
 private:
 	void SendQueued();
 
+};
+
+class RCONSocket : public ISocket {
+private:
+    asio::ip::tcp::socket  m_socket;
+
+    AsyncDeque<BYTES_t> m_sendQueue;
+    AsyncDeque<NetPackage> m_recvQueue;
+    std::atomic_int m_sendQueueSize;
+    std::atomic_bool m_connected;
+
+    NetPackage m_tempReadPkg;
+    uint32_t m_tempReadSize;
+    uint32_t m_tempWriteSize;
+
+public:
+    explicit RCONSocket(asio::ip::tcp::socket socket);
+    ~RCONSocket() noexcept override;
+
+    // Virtual
+    void Start() override;
+    void Close() override;
+
+    void Update() override;
+    void Send(const NetPackage &pkg) override;
+    std::optional<NetPackage> Recv() override;
+
+    std::string GetHostName() const override;
+
+    bool Connected() const override {
+        return m_connected;
+    }
+
+    int GetSendQueueSize() const override {
+        return m_sendQueueSize;
+    }
+
+private:
+    void ReadPacketSize();
+    void ReadPacket();
+
+    void WritePacketSize();
+    void WritePacket(BYTES_t& bytes);
 };

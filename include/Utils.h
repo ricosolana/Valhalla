@@ -7,7 +7,7 @@
 #include <iostream>
 #include <type_traits>
 #include <concepts>
-#include <assert.h>
+#include <cassert>
 #include <optick.h>
 #include <zlib.h>
 #include <robin_hood.h>

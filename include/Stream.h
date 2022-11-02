@@ -13,8 +13,8 @@ class Stream {
 
 public:
 	Stream();
-	Stream(uint32_t reserve);
-    Stream(BYTES_t vec);        // assign constructor
+	explicit Stream(uint32_t reserve);
+    explicit Stream(BYTES_t vec);        // assign constructor
 	//Stream(const Stream& other) = default; // copy 
 	//Stream(Stream&& other) = default; // move
 
@@ -60,7 +60,7 @@ public:
 
 
 	// Gets all the data in the package
-	BYTES_t Bytes() const {
+	[[nodiscard]] BYTES_t Bytes() const {
 		return m_buf;
 	}
 
@@ -69,12 +69,22 @@ public:
 		out = m_buf;
 	}
 
+    BYTES_t& Buf() {
+        return m_buf;
+    }
+
+    BYTES_t Remaining() {
+        BYTES_t res;
+        Read(res, m_buf.size() - m_pos);
+        return res;
+    }
+
 	// https://stackoverflow.com/a/9370717
 	
 
 	// Returns the raw bytes pointer
 	// implicitly hinted inline or
-	const BYTE_t* Ptr() const {
+	[[nodiscard]] const BYTE_t* Ptr() const {
 		return m_buf.data();
 	}
 
