@@ -108,13 +108,11 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 		if (pair != m_connecting.end()) {
 			auto socket = pair->second;
 
-			SteamNetConnectionInfo_t steamNetConnectionInfo_t;
-			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &steamNetConnectionInfo_t)) {
-				socket->m_steamNetId = steamNetConnectionInfo_t.m_identityRemote;
+			SteamNetConnectionInfo_t outInfo{};
+			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &outInfo)) {
+				socket->m_steamNetId = outInfo.m_identityRemote;
 			}
 
-            // Under what circumstances should an assign be used vs an insert
-            // insert has behaviour to determine beforehand whether an element existed
 			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamNetId.GetSteamID64();
 			m_connected[data->m_hConn] = socket;
 			m_connecting.erase(pair);

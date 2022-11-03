@@ -202,7 +202,6 @@ void ValhallaServer::Update(float delta) {
                 pkg.m_stream.Write((BYTE_t*)msg.data(), msg.size() + 1);
 
                 rconSocket->Send(std::move(pkg));
-                assert(pkg.m_stream.Buf().empty());
             };
 
             rconSocket->Update();
@@ -211,7 +210,7 @@ void ValhallaServer::Update(float delta) {
 
                 auto client_id = pkg.Read<int32_t>();
                 auto msg_type = pkg.Read<int32_t>();
-                auto in_msg = std::string((char*)pkg.m_stream.Remaining().data());
+                auto in_msg = std::string((char*) pkg.m_stream.Remaining().data());
 
                 if (pair.first
                     || (msg_type == RCON_LOGIN && !m_rconSockets.contains(client_id) && in_msg == m_settings.rconPassword)) {
