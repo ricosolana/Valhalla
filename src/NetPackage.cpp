@@ -63,7 +63,11 @@ void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
 }
 
 void NetPackage::Write(const NetPackage& in) {
-    Write(in.m_stream.Ptr(), in.m_stream.Length());
+    Write(in.m_stream.m_buf.data(), in.m_stream.Length());
+}
+
+void NetPackage::Write(const BYTES_t &in, uint32_t count) {
+    Write(in.data(), count);
 }
 
 void NetPackage::Write(const NetID& in) {

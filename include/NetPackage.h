@@ -45,6 +45,7 @@ public:
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
     void Write(const std::string& in);
     void Write(const BYTES_t &in);            // Write array
+    void Write(const BYTES_t &in, uint32_t count);            // Write array
     void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     void Write(const robin_hood::unordered_set<std::string>& in);
     void Write(const NetPackage &in);

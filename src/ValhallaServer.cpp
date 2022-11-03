@@ -184,7 +184,7 @@ void ValhallaServer::Update(float delta) {
 
     if (m_rcon) {
         while (auto rconSocket = m_rcon->Accept()) {
-            m_rconSockets.insert({ 0, static_cast<RCONSocket*>(rconSocket) });
+            m_rconSockets.insert({ 0, std::static_pointer_cast<RCONSocket>(rconSocket) });
             rconSocket->Start();
         }
 

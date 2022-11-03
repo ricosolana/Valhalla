@@ -7,8 +7,8 @@
 
 using namespace std::chrono;
 
-NetRpc::NetRpc(ISocket *socket)
-	: m_socket(socket), m_lastPing(steady_clock::now()) {
+NetRpc::NetRpc(ISocket::Ptr socket)
+	: m_socket(std::move(socket)), m_lastPing(steady_clock::now()) {
 }
 
 NetRpc::~NetRpc() {

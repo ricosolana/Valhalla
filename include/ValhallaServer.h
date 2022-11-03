@@ -19,7 +19,7 @@ class ValhallaServer {
     ServerSettings m_settings;
 	const OWNER_t m_serverId; // generated at start
     std::unique_ptr<RCONAcceptor> m_rcon;
-    robin_hood::unordered_map<int32_t, RCONSocket*> m_rconSockets;
+    robin_hood::unordered_map<int32_t, std::shared_ptr<RCONSocket>> m_rconSockets;
 
 	steady_clock::time_point m_startTime;
 	steady_clock::time_point m_prevUpdate;

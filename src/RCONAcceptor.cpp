@@ -24,22 +24,14 @@ void RCONAcceptor::Listen() {
     });
 }
 
-ISocket* RCONAcceptor::Accept() {
+ISocket::Ptr RCONAcceptor::Accept() {
     std::scoped_lock<std::mutex> scope(m_mut);
-    auto pair = m_connected.begin();
+    auto &&pair = m_connected.begin();
     if (pair == m_connected.end())
         return nullptr;
-    auto socket = *pair;
+    auto &&socket = *pair;
     auto itr = m_connected.erase(pair);
     return socket;
-}
-
-void RCONAcceptor::Cleanup(ISocket *socket) {
-    auto* rconSocket = dynamic_cast<RCONSocket*>(socket);
-    assert(rconSocket && "Received a non rcon socket in RCONAcceptor!");
-
-    std::scoped_lock<std::mutex> scope(m_mut);
-    m_sockets.erase(rconSocket);
 }
 
 
@@ -49,12 +41,8 @@ void RCONAcceptor::DoAccept() {
             [this](const asio::error_code& ec, tcp::socket socket) {
 
         if (!ec) {
-            auto rcon = std::make_unique<RCONSocket>(std::move(socket));
-            {
-                std::scoped_lock<std::mutex> scope(m_mut);
-                m_connected.insert(rcon.get());
-                m_sockets.insert({ rcon.get(), std::move(rcon)});
-            }
+            std::scoped_lock<std::mutex> scope(m_mut);
+            m_connected.insert(std::make_shared<RCONSocket>(std::move(socket)));
         }
         else if (ec.value() == asio::error::operation_aborted) {
             return;

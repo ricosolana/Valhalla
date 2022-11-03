@@ -13,21 +13,23 @@ public:
 	virtual void Listen() = 0;
 
 	// Poll for a ready and newly accepted connection
-	virtual ISocket *Accept() = 0;
+	virtual ISocket::Ptr Accept() = 0;
 
-    // Internally cleans up the socket
-    // Expected to be closed with no external references
-    virtual void Cleanup(ISocket* socket) = 0;
+    // Do not use
+    //virtual void Cleanup(ISocket* socket) = 0;
 };
 
 class AcceptorSteam : public IAcceptor {
 private:
-	uint16_t m_port;
+	const uint16_t m_port;
 	HSteamListenSocket m_listenSocket;
 
-	robin_hood::unordered_map<HSteamNetConnection, std::unique_ptr<SteamSocket>> m_sockets;	// holds all sockets and manages lifetime
-	robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connecting;	            // holds all newly connecting sockets
-	robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connected;	            // holds sockets ready for application
+	//robin_hood::unordered_map<HSteamNetConnection, std::unique_ptr<SteamSocket>> m_sockets;	// holds all sockets and manages lifetime
+	//robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connecting;	            // holds all newly connecting sockets
+	//robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connected;	            // holds sockets ready for application
+
+    robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;	// holds all sockets and manages lifetime
+    robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
 
 public:
 	AcceptorSteam();
@@ -35,9 +37,9 @@ public:
 
 	void Listen() override;
 
-	ISocket *Accept() override;
+	ISocket::Ptr Accept() override;
 
-    void Cleanup(ISocket* socket) override;
+    //void Cleanup(ISocket* socket) override;
 
 private:
 	// https://partner.steamgames.com/doc/sdk/api#callbacks
@@ -56,8 +58,7 @@ private:
     asio::ip::tcp::acceptor m_acceptor;
 
     std::mutex m_mut;
-    robin_hood::unordered_map<RCONSocket*, std::unique_ptr<RCONSocket>> m_sockets;
-    robin_hood::unordered_set<RCONSocket*> m_connected;
+    robin_hood::unordered_set<std::shared_ptr<RCONSocket>> m_connected;
 
 public:
     RCONAcceptor();
@@ -67,11 +68,7 @@ public:
     void Listen() override;
 
     // Poll for a ready and newly accepted connection
-    ISocket *Accept() override;
-
-    // Internally cleans up the socket
-    // Expected to be closed with no external references
-    void Cleanup(ISocket* socket) override;
+    ISocket::Ptr Accept() override;
 
 private:
     void DoAccept();

@@ -13,11 +13,22 @@ Stream::Stream(BYTES_t vec)
     m_buf = std::move(vec);
 }
 
-Stream::Stream(Stream &&other) {
+Stream::Stream(const Stream &other) {
+    //this->m_buf = other.m_buf;
+    //this->m_pos = other.m_pos;
+    *this = other;
+}
+
+Stream::Stream(Stream &&other) noexcept {
     this->m_buf = std::move(other.m_buf);
     this->m_pos = other.m_pos;
 
     other.m_pos = 0;
+}
+
+void Stream::operator=(const Stream &other) {
+    this->m_pos = other.m_pos;
+    this->m_buf = other.m_buf;
 }
 
 

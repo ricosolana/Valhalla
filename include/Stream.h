@@ -13,12 +13,12 @@ private: uint32_t m_pos; // read/write head offset from origin
 
 public:
 	Stream();
-	explicit Stream(uint32_t reserve);
-    explicit Stream(BYTES_t vec);        // assign constructor
-	Stream(const Stream& other) = default; // copy
-	Stream(Stream&& other); // move
+	explicit Stream(uint32_t reserve);  // capacity
+    explicit Stream(BYTES_t vec);       // assign
+	Stream(const Stream& other);        // copy
+	Stream(Stream&& other) noexcept ;   // move
 
-	//void operator=(const Stream& other);
+	void operator=(const Stream& other);
 
 	// Read count bytes into the specified buffer
 	// Will throw if count exceeds end

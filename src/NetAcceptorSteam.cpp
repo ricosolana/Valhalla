@@ -32,7 +32,7 @@ AcceptorSteam::AcceptorSteam()
 	SteamGameServer()->SetGameTags(VALHEIM_VERSION);
 	SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
-    float timeout = (float)Valhalla()->Settings().socketTimeout.count();
+    auto timeout = (float)Valhalla()->Settings().socketTimeout.count();
 	int32 offline = 1;
 	int32 sendrate = 153600;
 	SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
@@ -51,7 +51,9 @@ AcceptorSteam::AcceptorSteam()
 
 AcceptorSteam::~AcceptorSteam() {
 	if (m_listenSocket != k_HSteamListenSocket_Invalid) {
-		LOG(INFO) << "Stopping Steam listening socket";
+		LOG(INFO) << "Destroying Steam acceptor";
+        for (auto &&socket : m_sockets)
+            socket.second->Close();
 		SteamGameServerNetworkingSockets()->CloseListenSocket(m_listenSocket);
 		m_listenSocket = k_HSteamListenSocket_Invalid;
 	}
@@ -60,13 +62,13 @@ AcceptorSteam::~AcceptorSteam() {
 }
 
 void AcceptorSteam::Listen() {
-	SteamNetworkingIPAddr steamNetworkingIPAddr;    // nullify or whatever (default)
+	SteamNetworkingIPAddr steamNetworkingIPAddr{};    // nullify or whatever (default)
 	steamNetworkingIPAddr.Clear();                  // this is important, otherwise bind is invalid
 	steamNetworkingIPAddr.m_port = m_port;          // it is later reassigned by FejdManager
 	this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
 }
 
-ISocket *AcceptorSteam::Accept() {
+ISocket::Ptr AcceptorSteam::Accept() {
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
         return nullptr;
@@ -75,16 +77,6 @@ ISocket *AcceptorSteam::Accept() {
     return socket;
 }
 
-void AcceptorSteam::Cleanup(ISocket* socket) {
-    auto* steamSocket = dynamic_cast<SteamSocket*>(socket);
-    assert(steamSocket && "Received a non steam socket in SteamAcceptor!");
-
-    auto pair = m_sockets.find(steamSocket->m_hConn);
-    if (pair != m_sockets.end())
-        socket->Close();
-
-    m_sockets.erase(pair);
-}
 
 
 const char* stateToString(ESteamNetworkingConnectionState state) {
@@ -97,60 +89,32 @@ const char* stateToString(ESteamNetworkingConnectionState state) {
 	return messages[5 + (-state)];
 }
 
-
-
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-	LOG(INFO) << "Connection status changed: " << stateToString(data->m_info.m_eState);
+	LOG(INFO) << "Connection status: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
+
 	if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
-	{
-		auto pair = m_connecting.find(data->m_hConn);
-		if (pair != m_connecting.end()) {
-			auto socket = pair->second;
-
-			SteamNetConnectionInfo_t outInfo{};
-			if (SteamGameServerNetworkingSockets()->GetConnectionInfo(data->m_hConn, &outInfo)) {
-				socket->m_steamNetId = outInfo.m_identityRemote;
-			}
-
-			LOG(INFO) << "Connection ready, SteamID: " << socket->m_steamNetId.GetSteamID64();
-			m_connected[data->m_hConn] = socket;
-			m_connecting.erase(pair);
-		}
+    {
+        m_connected[data->m_hConn] = m_sockets[data->m_hConn];
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_None)
-	{
-		auto eresult = SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn);
-		LOG(INFO) << "Accepting new connection " << eresult;
-		if (eresult == k_EResultOK) {
-			auto ptr = std::make_unique<SteamSocket>(data->m_hConn);    // First time connecting, so alloc
-			m_connecting[data->m_hConn] = ptr.get();
-			m_sockets[data->m_hConn] = std::move(ptr);
-		}
+    {
+		if (SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn) == k_EResultOK)
+            m_sockets[data->m_hConn] = std::make_unique<SteamSocket>(data->m_hConn);
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
 		|| data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
-	{
+    {
 		if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
 			LOG(INFO) << data->m_info.m_szEndDebug;
 
-        // Determine that the socket was correctly opened since the connection began
-		auto pair = m_sockets.find(data->m_hConn);
-		if (pair == m_sockets.end()) {
-            LOG(ERROR) << "Unable to find disconnecting socket";
-            return;
-        }
+        auto pair = m_sockets.find(data->m_hConn);
 
-        // Remove if was ready for external accept/polling
+        pair->second->Close();
+        
         m_connected.erase(data->m_hConn);
-
-        // Remote if was in initial connecting state
-        auto erased = m_connecting.erase(data->m_hConn);
-        if (erased) // Internally free (never became external)
-            m_sockets.erase(pair);
-        else // Close it so external can respond
-            pair->second->Close();
+        m_sockets.erase(pair);
 	}
 }
 

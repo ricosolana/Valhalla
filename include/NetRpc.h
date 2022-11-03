@@ -16,16 +16,16 @@ class NetRpc {
 	
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
-	void SendPackage(const NetPackage &pkg) {
+	void SendPackage(const NetPackage &pkg) const {
 		m_socket->Send(pkg);
 	}
 
 	void Register(HASH_t hash, IMethod<NetRpc*>* method);
 
 public:	
-	ISocket *m_socket;
+	ISocket::Ptr m_socket;
 
-	NetRpc(ISocket *socket);
+	NetRpc(ISocket::Ptr socket);
 
 	NetRpc(const NetRpc& other) = delete; // copy
 	NetRpc(NetRpc&& other) = delete; // move
@@ -124,11 +124,8 @@ public:
 		Invoke(Utils::GetStableHashCode(name), params...);
 	}
 
-	// To be called every tick
+	// Call every frame
 	void Update();
-
-	// Get the ping
-	//std::chrono::milliseconds GetPing();
 
 	void SendError(ConnectionStatus status);
 };

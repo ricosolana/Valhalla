@@ -244,7 +244,7 @@ namespace NetManager {
 		auto password = pkg.Read<std::string>();
 		auto ticket = pkg.Read<BYTES_t>(); // read in the dummy ticket
 
-        auto *steamSocket = dynamic_cast<SteamSocket*>(rpc->m_socket);
+        auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
 		if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
@@ -340,10 +340,10 @@ namespace NetManager {
 	void Update(double delta) {
 		OPTICK_EVENT();
 		// Accept new connections into joining
-		while (auto socket = m_acceptor->Accept()) {
+		while (auto &&socket = m_acceptor->Accept()) {
 			assert(socket && "Got null socket!");
 
-			auto&& rpc = std::make_unique<NetRpc>(socket);
+			auto&& rpc = std::make_unique<NetRpc>(std::move(socket));
 
 			rpc->Register(Rpc_Hash::PeerInfo, &RPC_PeerInfo);
 			rpc->Register(Rpc_Hash::Disconnect, &RPC_Disconnect);
@@ -358,14 +358,7 @@ namespace NetManager {
 		{
 			auto&& itr = m_joining.begin();
 			while (itr != m_joining.end()) {
-                if (!(*itr)) {
-                    // Then they were successfully moved into m_peers
-                    itr = m_joining.erase(itr);
-                } else if (!(*itr)->m_socket->Connected()) {
-                    // Then they were disconnected while joining, so cleanup:
-                    LOG(INFO) << "Cleaning up joining peer";
-                    auto socket = (*itr)->m_socket;
-                    m_acceptor->Cleanup(socket);
+                if (!(*itr && (*itr)->m_socket->Connected())) {
                     itr = m_joining.erase(itr);
                 } else {
                     ++itr;
@@ -380,8 +373,6 @@ namespace NetManager {
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					LOG(INFO) << "Cleaning up peer";
-                    auto socket = (*itr)->m_rpc->m_socket;
-                    m_acceptor->Cleanup(socket);
 					itr = m_peers.erase(itr);
 				}
 				else {

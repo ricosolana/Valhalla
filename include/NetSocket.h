@@ -21,6 +21,9 @@
 // - be fully implemented
 class ISocket {
 public:
+    using Ptr = std::shared_ptr<ISocket>;
+
+public:
 	virtual ~ISocket() noexcept = default;
 
 
