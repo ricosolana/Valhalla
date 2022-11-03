@@ -13,6 +13,13 @@ Stream::Stream(BYTES_t vec)
     m_buf = std::move(vec);
 }
 
+Stream::Stream(Stream &&other) {
+    this->m_buf = std::move(other.m_buf);
+    this->m_pos = other.m_pos;
+
+    other.m_pos = 0;
+}
+
 
 
 void Stream::Read(BYTE_t* buffer, uint32_t count) {

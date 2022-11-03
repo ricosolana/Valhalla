@@ -39,7 +39,8 @@ public:
 	virtual void Update() = 0;
 
 	// Send a packet to the remote host
-	virtual void Send(const NetPackage& pkg) = 0;
+    // Packet will be copied unless moved
+	virtual void Send(NetPackage pkg) = 0;
 
 	// Receive a packet from the remote host
     // This function shall not block, and the optional may be empty
@@ -81,7 +82,7 @@ public:
 	void Close() override;
 	
 	void Update() override;
-	void Send(const NetPackage &pkg) override;
+	void Send(NetPackage pkg) override;
 	std::optional<NetPackage> Recv() override;
 
 	[[nodiscard]] std::string GetHostName() const override {
@@ -121,7 +122,7 @@ public:
     void Close() override;
 
     void Update() override;
-    void Send(const NetPackage &pkg) override;
+    void Send(NetPackage pkg) override;
     std::optional<NetPackage> Recv() override;
 
     std::string GetHostName() const override;

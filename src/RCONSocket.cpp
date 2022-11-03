@@ -30,8 +30,8 @@ void RCONSocket::Update() {
     }
 }
 
-void RCONSocket::Send(const NetPackage &pkg) {
-    m_sendQueue.push_back(pkg.m_stream.Bytes());
+void RCONSocket::Send(NetPackage pkg) {
+    m_sendQueue.push_back(std::move(pkg.m_stream.Bytes()));
 }
 
 std::optional<NetPackage> RCONSocket::Recv() {
@@ -64,13 +64,13 @@ void RCONSocket::ReadPacket() {
     if (m_tempReadSize < 10 || m_tempReadSize > 4096) {
         Close();
     } else {
-        m_tempReadPkg.m_stream.Buf().resize(m_tempReadSize);
+        m_tempReadPkg.m_stream.m_buf.resize(m_tempReadSize);
         asio::async_read(m_socket,
-                         asio::buffer(m_tempReadPkg.m_stream.Buf()),
+                         asio::buffer(m_tempReadPkg.m_stream.m_buf),
                          [this](const asio::error_code& ec, size_t) {
              if (!ec) {
                  // Ensure payload is null terminated
-                 if (m_tempReadPkg.m_stream.Ptr()[m_tempReadSize - 1] != '\0') {
+                 if (m_tempReadPkg.m_stream.m_buf[m_tempReadSize - 1] != '\0') {
                      Close();
                  } else {
                      m_recvQueue.push_back(std::move(m_tempReadPkg));

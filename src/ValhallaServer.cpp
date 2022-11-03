@@ -194,52 +194,44 @@ void ValhallaServer::Update(float delta) {
             static constexpr int32_t RCON_LOGIN = 3;
 
             auto&& rconSocket = pair.second;
+
+            auto send_response = [rconSocket](int32_t client_id, const std::string& msg) {
+                static NetPackage pkg;
+                pkg.Write(client_id);
+                pkg.Write(RCON_COMMAND_RESPONSE);
+                pkg.m_stream.Write((BYTE_t*)msg.data(), msg.size() + 1);
+
+                rconSocket->Send(std::move(pkg));
+                assert(pkg.m_stream.Buf().empty());
+            };
+
             rconSocket->Update();
             while (auto opt = rconSocket->Recv()) {
                 auto &&pkg = opt.value();
 
-                auto id = pkg.Read<int32_t>();
-                auto cmd = pkg.Read<int32_t>();
-                auto payload = pkg.m_stream.Remaining();
+                auto client_id = pkg.Read<int32_t>();
+                auto msg_type = pkg.Read<int32_t>();
+                auto in_msg = std::string((char*)pkg.m_stream.Remaining().data());
 
-                auto message = std::string((char*)payload.data());
+                if (pair.first
+                    || (msg_type == RCON_LOGIN && !m_rconSockets.contains(client_id) && in_msg == m_settings.rconPassword)) {
 
-                if (!pair.first) {
-                    if (cmd == RCON_LOGIN) {
-                        if (!m_rconSockets.contains(id) && m_settings.rconPassword == message) {
-                            pair.first = id;
+                    std::string out_msg = " ";
 
-                            std::string spacedMsg = " ";
+                    if (!pair.first) {  // auth
+                        pair.first = client_id;
+                    } else {            // command
+                        LOG(INFO) << "Got command " << in_msg;
 
-                            NetPackage authPkg;
-                            authPkg.Write(id);
-                            authPkg.Write(RCON_COMMAND_RESPONSE);
-                            authPkg.m_stream.Write((BYTE_t*)spacedMsg.data(), spacedMsg.size());
-                            authPkg.Write((BYTE_t)0);
-
-                            rconSocket->Send(authPkg);
-
-                            continue;
-                        }
+                        out_msg = "You executed the command " + in_msg;
                     }
+
+                    send_response(client_id, out_msg);
                 } else {
-                    // run the command
-                    LOG(INFO) << "Got command " << message;
-
-                    std::string replyMsg = "You executed the command " + message;
-
-                    NetPackage replyPkg;
-                    replyPkg.Write(id);
-                    replyPkg.Write(RCON_COMMAND_RESPONSE);
-                    replyPkg.m_stream.Write((BYTE_t*)replyMsg.data(), replyMsg.size());
-                    replyPkg.Write((BYTE_t)0);
-
-                    rconSocket->Send(replyPkg);
-                    continue;
+                    // send deny message before closing
+                    rconSocket->Close();
+                    break;
                 }
-
-                rconSocket->Close();
-                break;
             }
         }
     }

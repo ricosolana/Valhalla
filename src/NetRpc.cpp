@@ -37,7 +37,7 @@ void NetRpc::Update() {
 	// Read packets
 	while (auto opt = m_socket->Recv()) {
 		//assert(pkg && "Got null package and executing!");
-		NetPackage pkg = opt.value();
+		auto&& pkg = opt.value();
 
 		auto hash = pkg.Read<HASH_t>();
 		if (hash == 0) {

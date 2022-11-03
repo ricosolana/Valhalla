@@ -47,11 +47,11 @@ void SteamSocket::Update() {
 	//if (this->)
 }
 
-void SteamSocket::Send(const NetPackage &pkg) {
+void SteamSocket::Send(NetPackage pkg) {
 	if (pkg.m_stream.Length() == 0 || !Connected())
 		return;
 
-	m_sendQueue.push_back(pkg.m_stream.Bytes());
+    m_sendQueue.push_back(std::move(pkg.m_stream.m_buf));
 }
 
 std::optional<NetPackage> SteamSocket::Recv() {

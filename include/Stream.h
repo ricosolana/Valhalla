@@ -8,15 +8,15 @@ class NetPackage;
 class Stream {
 	friend NetPackage;
 
-	BYTES_t m_buf;
-	uint32_t m_pos; // read/write head offset from origin
+public: BYTES_t m_buf;
+private: uint32_t m_pos; // read/write head offset from origin
 
 public:
 	Stream();
 	explicit Stream(uint32_t reserve);
     explicit Stream(BYTES_t vec);        // assign constructor
-	//Stream(const Stream& other) = default; // copy 
-	//Stream(Stream&& other) = default; // move
+	Stream(const Stream& other) = default; // copy
+	Stream(Stream&& other); // move
 
 	//void operator=(const Stream& other);
 
@@ -69,25 +69,11 @@ public:
 		out = m_buf;
 	}
 
-    BYTES_t& Buf() {
-        return m_buf;
-    }
-
     BYTES_t Remaining() {
         BYTES_t res;
         Read(res, m_buf.size() - m_pos);
         return res;
     }
-
-	// https://stackoverflow.com/a/9370717
-	
-
-	// Returns the raw bytes pointer
-	// implicitly hinted inline or
-	[[nodiscard]] const BYTE_t* Ptr() const {
-		return m_buf.data();
-	}
-
 
 
 	// Reset the marker and length members
