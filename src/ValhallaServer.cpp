@@ -184,6 +184,8 @@ void ValhallaServer::Update(float delta) {
 
     if (m_rcon) {
         OPTICK_EVENT("Rcon");
+        // TODO add cleanup
+        //  also consider making socket cleaner easier to look at and understand; too many iterator / loops
         while (auto opt = m_rcon->Accept()) {
             auto &&rconSocket = opt.value();
             m_rconSockets[0] = std::static_pointer_cast<RCONSocket>(rconSocket);
@@ -226,21 +228,32 @@ void ValhallaServer::Update(float delta) {
 
                         //Utils::Split()
 
-                        if ("ban" == in_msg) {
+                        auto args(Utils::Split(in_msg, " "));
 
-                        } else if ("kick" == in_msg) {
-                            auto id = (OWNER_t)std::stoll(in_msg);
+                        if ("ban" == args[0] && args.size() == 2) {
+                            m_banned.insert(std::string(args[1]));
+                            out_msg = "Banned " + std::string(args[1]);
+                        } else if ("kick" == args[0] && args.size() == 2) {
+                            auto id = (OWNER_t) std::stoll(std::string(args[1]));
                             auto peer = NetManager::GetPeer(id);
                             if (peer) {
                                 peer->Kick();
                                 out_msg = "Kicked " + peer->m_name;
                             } else
                                 out_msg = "Peer is not online";
+                        } else if ("list" == args[0]) {
+                            out_msg = "Player-list not yet supported";
+                        } else if ("stop" == args[0]) {
+                            out_msg = "Stopping server...";
+                            RunTaskLater([this](Task*) {
+                                Terminate();
+                            }, 5s);
+                        } else if ("quit" == args[0] || "exit" == args[0]) {
+                            out_msg = "Closing RCON connection...";
+                            rconSocket->Close(true);
                         } else {
                             out_msg = "Unknown command";
                         }
-
-                        //out_msg = "You executed the command " + in_msg;
                     }
 
                     send_response(client_id, out_msg);
