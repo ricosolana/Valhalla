@@ -1,6 +1,8 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
+
 #include "NetSocket.h"
+#include "ValhallaServer.h"
 
 RCONSocket::RCONSocket(asio::ip::tcp::socket socket)
     : m_socket(std::move(socket)),
@@ -9,35 +11,51 @@ RCONSocket::RCONSocket(asio::ip::tcp::socket socket)
     m_connected = true;
 }
 
-RCONSocket::~RCONSocket() noexcept {
-    Close();
+RCONSocket::~RCONSocket() {
+    Close(true);
 }
+
+
 
 void RCONSocket::Start() {
     ReadPacketSize();
 }
 
-void RCONSocket::Close() {
-    if (Connected()) {
-        m_connected = false;
+void RCONSocket::Close(bool flush) {
+    if (!Connected())
+        return;
+
+    m_connected = false;
+
+    if (flush) {
+        auto self(shared_from_this());
+        Valhalla()->RunTaskLater([this, self](Task*) {
+            m_socket.close();
+        }, 3s);
+    } else {
         m_socket.close();
     }
 }
 
 void RCONSocket::Update() {
+    OPTICK_EVENT();
     if (!m_sendQueue.empty()) {
         WritePacketSize();
     }
 }
 
 void RCONSocket::Send(NetPackage pkg) {
+    if (pkg.m_stream.Length() == 0)
+        return;
+
     m_sendQueue.push_back(std::move(pkg.m_stream.Bytes()));
 }
 
 std::optional<NetPackage> RCONSocket::Recv() {
-    if (m_recvQueue.empty())
-        return std::nullopt;
-    return m_recvQueue.pop_back();
+    OPTICK_EVENT();
+    if (Connected() && !m_recvQueue.empty())
+        return m_recvQueue.pop_back();
+    return std::nullopt;
 }
 
 std::string RCONSocket::GetHostName() const {
@@ -53,16 +71,17 @@ void RCONSocket::ReadPacketSize() {
                      [this](const asio::error_code& ec, size_t) {
         if (!ec) {
             // process command
-            ReadPacket();
+            if (Connected()) // if flushing while closing, do not read
+                ReadPacket();
         } else {
-            Close();
+            Close(false);
         }
     });
 }
 
 void RCONSocket::ReadPacket() {
     if (m_tempReadSize < 10 || m_tempReadSize > 4096) {
-        Close();
+        Close(false);
     } else {
         m_tempReadPkg.m_stream.m_buf.resize(m_tempReadSize);
         asio::async_read(m_socket,
@@ -71,13 +90,13 @@ void RCONSocket::ReadPacket() {
              if (!ec) {
                  // Ensure payload is null terminated
                  if (m_tempReadPkg.m_stream.m_buf[m_tempReadSize - 1] != '\0') {
-                     Close();
+                     Close(false);
                  } else {
                      m_recvQueue.push_back(std::move(m_tempReadPkg));
                      ReadPacketSize();
                  }
              } else {
-                 Close();
+                 Close(false);
              }
          });
     }
@@ -95,7 +114,7 @@ void RCONSocket::WritePacketSize() {
              m_sendQueueSize -= sizeof(m_tempWriteSize);
              WritePacket(bytes);
          } else {
-             Close();
+             Close(false);
          }
      });
 }
@@ -110,7 +129,7 @@ void RCONSocket::WritePacket(BYTES_t& bytes) {
               if (!m_sendQueue.empty())
                 WritePacketSize();
           } else {
-              Close();
+              Close(false);
           }
       });
 }

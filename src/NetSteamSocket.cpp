@@ -1,60 +1,61 @@
 #include "NetSocket.h"
 #include <isteamnetworkingsockets.h>
 #include <isteamnetworkingutils.h>
-//#include <Windows.h>
+#include "ValhallaServer.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection con) {
     m_hConn = con;
 	SteamNetConnectionInfo_t info;
 	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
 	m_steamNetId = info.m_identityRemote;
-	LOG(INFO) << "Peer connected " << m_steamNetId.GetSteamID64();
-	//ZSteamSocket.m_sockets.Add(this);
+
+    m_connected = true;
 }
 
 SteamSocket::~SteamSocket() {
-	Close();
+    Close(true);
 }
-
 
 
 void SteamSocket::Start() {}
 
-void SteamSocket::Close() {
-	//Flush();
-	//Thread.Sleep(100);
-	auto steamID = m_steamNetId.GetSteamID();
-	// Valheim does not linger the socket connection, it closes it immediately, 
-	// NOT BEFORE CALLING THREAD.SLEEP ON THE MAIN THREAD!?!
-	// 
-	//	I will instead attempt to flush the data, instead of fucking sleeping on the main thread
-	// Im certain theres a reason behind this, but wtf could it be?
-	SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
+void SteamSocket::Close(bool flush) {
+    if (!Connected())
+        return;
 
-	// sleeping on the main thread aint great
-	//std::this_thread::sleep_for(100ms);
+    m_connected = false;
 
-	SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
-	SteamGameServer()->EndAuthSession(steamID);
-    m_hConn = k_HSteamNetConnection_Invalid;
-	m_steamNetId.Clear();
+    auto steamID = m_steamNetId.GetSteamID();
+
+    if (flush) {
+        SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
+        auto self(shared_from_this());
+        Valhalla()->RunTaskLater([this, self, steamID](Task*) {
+            SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
+            SteamGameServer()->EndAuthSession(steamID);
+        }, 3s);
+    } else {
+        SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
+        SteamGameServer()->EndAuthSession(steamID);
+    }
 }
 
 
 
 void SteamSocket::Update() {
+    OPTICK_EVENT();
 	SendQueued();
-	//if (this->)
 }
 
 void SteamSocket::Send(NetPackage pkg) {
-	if (pkg.m_stream.Length() == 0 || !Connected())
+	if (pkg.m_stream.Length() == 0)
 		return;
 
     m_sendQueue.push_back(std::move(pkg.m_stream.m_buf));
 }
 
 std::optional<NetPackage> SteamSocket::Recv() {
+    OPTICK_EVENT();
 	if (Connected()) {
 		SteamNetworkingMessage_t* msg; // will point to allocated messages
 		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, 1) == 1) {
@@ -95,12 +96,11 @@ void SteamSocket::SendQueued() {
 		auto&& front = m_sendQueue.front();
 
 		int64_t num = 0;
-		// could try SendMessage(); does not copy data buffer
+		// TODO use SendMessage(); does not copy message structure buffer
 		// https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages
-		auto eresult = SteamGameServerNetworkingSockets()->SendMessageToConnection(
-                m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, &num);
-		if (eresult != k_EResultOK) {
-			LOG(INFO) << "Failed to send data, ec: " << eresult;
+		if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
+                m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, &num) != k_EResultOK) {
+			LOG(INFO) << "Failed to send data";
 			return;
 		}
 

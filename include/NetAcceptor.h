@@ -13,7 +13,7 @@ public:
 	virtual void Listen() = 0;
 
 	// Poll for a ready and newly accepted connection
-	virtual ISocket::Ptr Accept() = 0;
+	virtual std::optional<ISocket::Ptr> Accept() = 0;
 
     // Do not use
     //virtual void Cleanup(ISocket* socket) = 0;
@@ -24,10 +24,6 @@ private:
 	const uint16_t m_port;
 	HSteamListenSocket m_listenSocket;
 
-	//robin_hood::unordered_map<HSteamNetConnection, std::unique_ptr<SteamSocket>> m_sockets;	// holds all sockets and manages lifetime
-	//robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connecting;	            // holds all newly connecting sockets
-	//robin_hood::unordered_map<HSteamNetConnection, SteamSocket*> m_connected;	            // holds sockets ready for application
-
     robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;	// holds all sockets and manages lifetime
     robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
 
@@ -37,7 +33,7 @@ public:
 
 	void Listen() override;
 
-	ISocket::Ptr Accept() override;
+	std::optional<ISocket::Ptr> Accept() override;
 
     //void Cleanup(ISocket* socket) override;
 
@@ -68,7 +64,7 @@ public:
     void Listen() override;
 
     // Poll for a ready and newly accepted connection
-    ISocket::Ptr Accept() override;
+    std::optional<ISocket::Ptr> Accept() override;
 
 private:
     void DoAccept();

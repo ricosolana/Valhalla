@@ -13,5 +13,5 @@ void NetPeer::SendDisconnect() {
 }
 
 void NetPeer::Disconnect() {
-	m_rpc->m_socket->Close();
+	m_rpc->m_socket->Close(true);
 }

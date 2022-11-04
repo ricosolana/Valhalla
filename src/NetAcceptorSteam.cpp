@@ -53,7 +53,8 @@ AcceptorSteam::~AcceptorSteam() {
 	if (m_listenSocket != k_HSteamListenSocket_Invalid) {
 		LOG(INFO) << "Destroying Steam acceptor";
         for (auto &&socket : m_sockets)
-            socket.second->Close();
+            socket.second->Close(true);
+
 		SteamGameServerNetworkingSockets()->CloseListenSocket(m_listenSocket);
 		m_listenSocket = k_HSteamListenSocket_Invalid;
 	}
@@ -68,10 +69,11 @@ void AcceptorSteam::Listen() {
 	this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
 }
 
-ISocket::Ptr AcceptorSteam::Accept() {
+std::optional<ISocket::Ptr> AcceptorSteam::Accept() {
+    OPTICK_EVENT();
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
-        return nullptr;
+        return std::nullopt;
     auto socket = pair->second;
     auto itr = m_connected.erase(pair);
     return socket;
@@ -101,7 +103,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_None)
     {
 		if (SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn) == k_EResultOK)
-            m_sockets[data->m_hConn] = std::make_unique<SteamSocket>(data->m_hConn);
+            m_sockets[data->m_hConn] = std::make_shared<SteamSocket>(data->m_hConn);
 	}
 	else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
 		|| data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
@@ -111,8 +113,8 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 
         auto pair = m_sockets.find(data->m_hConn);
 
-        pair->second->Close();
-        
+        pair->second->Close(false);
+
         m_connected.erase(data->m_hConn);
         m_sockets.erase(pair);
 	}

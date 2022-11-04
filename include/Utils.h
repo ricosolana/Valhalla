@@ -140,10 +140,6 @@ namespace Utils {
 
 	OWNER_t StringToUID(const std::string &s);
 
-	//std::string join(std::vector<std::string_view>& strings);
-
-	//constexpr std::string join(std::initializer_list<std::string_view> strings);
-
 	// ugly
 	template<typename StrContainer>
 	std::string Join(const std::string& delimiter, StrContainer container) {
@@ -155,5 +151,5 @@ namespace Utils {
 		return result;
 	}
 
-	std::vector<std::string_view> Split(std::string_view s, char ch);
+    std::vector<std::string_view> Split(std::string& s, const std::string &delim);
 }

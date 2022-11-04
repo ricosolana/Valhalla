@@ -10,6 +10,7 @@
 #include <optick.h>
 #include <easylogging++.h>
 
+#include "Utils.h"
 #include "ResourceManager.h"
 #include "ValhallaServer.h"
 
@@ -71,7 +72,6 @@ int main(int argc, char **argv) {
     signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
-
 
     //try {
         Valhalla()->Launch();

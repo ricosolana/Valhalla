@@ -54,7 +54,8 @@ namespace NetManager {
 	}
 
 	void Disconnect(NetPeer *peer) {
-		peer->m_rpc->m_socket->Close();
+		//peer->m_rpc->m_socket->Close();
+        peer->Disconnect();
 	}
 
 
@@ -340,10 +341,8 @@ namespace NetManager {
 	void Update(double delta) {
 		OPTICK_EVENT();
 		// Accept new connections into joining
-		while (auto &&socket = m_acceptor->Accept()) {
-			assert(socket && "Got null socket!");
-
-			auto&& rpc = std::make_unique<NetRpc>(std::move(socket));
+		while (auto opt = m_acceptor->Accept()) {
+			auto&& rpc = std::make_unique<NetRpc>(opt.value());
 
 			rpc->Register(Rpc_Hash::PeerInfo, &RPC_PeerInfo);
 			rpc->Register(Rpc_Hash::Disconnect, &RPC_Disconnect);
@@ -414,7 +413,7 @@ namespace NetManager {
 			}
 			catch (const std::range_error& e) {
 				LOG(ERROR) << "Peer provided malformed data: " << e.what();
-				peer->m_rpc->m_socket->Close();
+				peer->m_rpc->m_socket->Close(false);
 			}
 		}
 
@@ -425,7 +424,7 @@ namespace NetManager {
 			}
 			catch (const std::range_error& e) {
 				LOG(ERROR) << "Connecting peer provided malformed payload";
-				rpc->m_socket->Close();
+				rpc->m_socket->Close(false);
 			}
 		}
 

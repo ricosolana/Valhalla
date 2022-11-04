@@ -19,12 +19,12 @@
 // - return instantly without blocking
 // - be thread safe
 // - be fully implemented
-class ISocket {
+class ISocket : public std::enable_shared_from_this<ISocket> {
 public:
     using Ptr = std::shared_ptr<ISocket>;
 
 public:
-	virtual ~ISocket() noexcept = default;
+	virtual ~ISocket() = default;
 
 
 
@@ -34,7 +34,7 @@ public:
 
 
 	// Terminates the connection
-	virtual void Close() = 0;
+	virtual void Close(bool flush) = 0;
 
 
 
@@ -71,6 +71,7 @@ public:
 class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
+    bool m_connected;
 
 public:
 	HSteamNetConnection m_hConn;
@@ -78,11 +79,11 @@ public:
 
 public:
 	explicit SteamSocket(HSteamNetConnection con);
-	~SteamSocket() override;
+    ~SteamSocket() override;
 
 	// Virtual
 	void Start() override;
-	void Close() override;
+	void Close(bool flush) override;
 	
 	void Update() override;
 	void Send(NetPackage pkg) override;
@@ -93,7 +94,8 @@ public:
 	}
 
 	[[nodiscard]] bool Connected() const override {
-		return m_hConn != k_HSteamNetConnection_Invalid;
+		//return m_hConn != k_HSteamNetConnection_Invalid;
+        return m_connected;
 	}
 
 	[[nodiscard]] int GetSendQueueSize() const override;
@@ -118,11 +120,11 @@ private:
 
 public:
     explicit RCONSocket(asio::ip::tcp::socket socket);
-    ~RCONSocket() noexcept override;
+    ~RCONSocket() override;
 
     // Virtual
     void Start() override;
-    void Close() override;
+    void Close(bool flush) override;
 
     void Update() override;
     void Send(NetPackage pkg) override;

@@ -250,10 +250,7 @@ namespace Utils {
 
 
 
-    // exclude any 0b10xxxxxx (as these are trail bytes)
-    // this function is optimized under the assumption that the
-    // input string is correctly utf-8 encoded
-    // it will work incorrectly if it is not encoded expectedly
+    // Will break on incorrectly encoded strings
     //int32_t GetUTF8Count(const char* p) {
     //    int count = 0;
     //    for (p; *p != 0; ++p)
@@ -274,7 +271,7 @@ namespace Utils {
 #define CHECK_TRAILING_BYTES(n) \
         { \
             for (p++; /*next byte*/ \
-                *p != '\0', i < n; /*min bounds check*/ \
+                *p != '\0', i < (n); /*min bounds check*/ \
                 ++p, ++i) /*increment*/ \
             { \
                 if (((*p) >> 6) != 0b10) { \
@@ -282,7 +279,7 @@ namespace Utils {
                 } \
             } \
             /* if string ended prematurely, panic */ \
-            if (i != n) \
+            if (i != (n)) \
                 return -1; \
         }
 
@@ -326,52 +323,21 @@ namespace Utils {
         return result;
     }
 
-    std::vector<std::string_view> Split(std::string_view s, char ch) {
-        //std::string s = "scott>=tiger>=mushroom";
-
-        // split in Java appears to be a recursive decay function (for the pattern)
-
-        int off = 0;
-        int next = 0;
-        std::vector<std::string_view> list;
-        while ((next = s.find(ch, off)) != std::string::npos) {
-            list.push_back(s.substr(off, next));
-            off = next + 1;
+    std::vector<std::string_view> Split(std::string& s, const std::string &delim) {
+        std::string_view remaining(s);
+        std::vector<std::string_view> result;
+        int pos = 0;
+        //ABC DE FGHI JK
+        while ((pos = remaining.find(delim)) != std::string::npos) {
+            // If the delim was not at idx 0, then add everything from 0 to the pos
+            if (pos) result.push_back(remaining.substr(0, pos));
+            // Trim everything before pos
+            remaining = remaining.substr(pos + 1);
         }
-        // If no match was found, return this
-        if (off == 0)
-            return { s };
-
-        // Add remaining segment
-        list.push_back(s.substr(off));
-
-        // Construct result
-        int resultSize = list.size();
-        while (resultSize > 0 && list[resultSize - 1].empty()) {
-            resultSize--;
-        }
-
-        return std::vector<std::string_view>(list.begin(), list.begin() + resultSize);
-
-
-
-
-
-
-        //std::vector<std::string_view> res;
-        //
-        //size_t pos = 0;
-        //while ((pos = s.find(delimiter)) != std::string::npos) {
-        //    //std::cout << token << std::endl;
-        //    res.push_back(s.substr(0, pos));
-        //    //s.erase(0, pos + delimiter.length());
-        //    if (pos + delimiter.length() == s.length())
-        //        s = s.substr(pos + delimiter.length());
-        //    else s = s.substr(pos + delimiter.length());
-        //}
-        //if (res.empty())
-        //    res.push_back(s);
-        ////std::cout << s << std::endl;
-        //return res;
+        // add final match to list after delim
+        if (!remaining.empty())
+            result.push_back(remaining);
+        return result;
     }
+
 }

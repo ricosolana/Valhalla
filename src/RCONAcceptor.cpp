@@ -24,12 +24,13 @@ void RCONAcceptor::Listen() {
     });
 }
 
-ISocket::Ptr RCONAcceptor::Accept() {
+std::optional<ISocket::Ptr> RCONAcceptor::Accept() {
+    OPTICK_EVENT();
     std::scoped_lock<std::mutex> scope(m_mut);
     auto &&pair = m_connected.begin();
     if (pair == m_connected.end())
-        return nullptr;
-    auto &&socket = *pair;
+        return std::nullopt;
+    auto socket = *pair;
     auto itr = m_connected.erase(pair);
     return socket;
 }
@@ -51,7 +52,3 @@ void RCONAcceptor::DoAccept() {
         DoAccept();
     });
 }
-
-
-
-

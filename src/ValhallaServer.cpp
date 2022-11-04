@@ -183,8 +183,10 @@ void ValhallaServer::Update(float delta) {
 	// This is important to processing RPC remote invocations
 
     if (m_rcon) {
-        while (auto rconSocket = m_rcon->Accept()) {
-            m_rconSockets.insert({ 0, std::static_pointer_cast<RCONSocket>(rconSocket) });
+        OPTICK_EVENT("Rcon");
+        while (auto opt = m_rcon->Accept()) {
+            auto &&rconSocket = opt.value();
+            m_rconSockets[0] = std::static_pointer_cast<RCONSocket>(rconSocket);
             rconSocket->Start();
         }
 
@@ -222,13 +224,30 @@ void ValhallaServer::Update(float delta) {
                     } else {            // command
                         LOG(INFO) << "Got command " << in_msg;
 
-                        out_msg = "You executed the command " + in_msg;
+                        //Utils::Split()
+
+                        if ("ban" == in_msg) {
+
+                        } else if ("kick" == in_msg) {
+                            auto id = (OWNER_t)std::stoll(in_msg);
+                            auto peer = NetManager::GetPeer(id);
+                            if (peer) {
+                                peer->Kick();
+                                out_msg = "Kicked " + peer->m_name;
+                            } else
+                                out_msg = "Peer is not online";
+                        } else {
+                            out_msg = "Unknown command";
+                        }
+
+                        //out_msg = "You executed the command " + in_msg;
                     }
 
                     send_response(client_id, out_msg);
                 } else {
                     // send deny message before closing
-                    rconSocket->Close();
+                    send_response(-1, " ");
+                    rconSocket->Close(true);
                     break;
                 }
             }

@@ -74,7 +74,7 @@ void NetRpc::Update() {
 	
 	if (now - m_lastPing > Valhalla()->Settings().socketTimeout) {
 		LOG(INFO) << "Client RPC timeout";
-		m_socket->Close();
+		m_socket->Close(false);
 	}
 }
 
