@@ -1,6 +1,8 @@
 #include <optick.h>
 #include <yaml-cpp/yaml.h>
 
+#include <utility>
+
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
@@ -141,7 +143,7 @@ void ValhallaServer::Launch() {
 						itr = m_tasks.erase(itr);
 					}
 					else {
-						ptr->function(ptr);
+						ptr->function(*ptr);
 						if (ptr->Repeats()) {
 							ptr->at += ptr->period;
 							++itr;
@@ -193,16 +195,16 @@ void ValhallaServer::Update(float delta) {
         }
 
         for (auto&& pair : m_rconSockets) {
-            static constexpr int32_t RCON_COMMAND_RESPONSE = 0;
+            static constexpr int32_t RCON_S2C_RESPONSE = 0;
             static constexpr int32_t RCON_COMMAND = 2;
-            static constexpr int32_t RCON_LOGIN = 3;
+            static constexpr int32_t RCON_C2S_LOGIN = 3;
 
             auto&& rconSocket = pair.second;
 
             auto send_response = [rconSocket](int32_t client_id, const std::string& msg) {
                 static NetPackage pkg;
                 pkg.Write(client_id);
-                pkg.Write(RCON_COMMAND_RESPONSE);
+                pkg.Write(RCON_S2C_RESPONSE);
                 pkg.m_stream.Write((BYTE_t*)msg.data(), msg.size() + 1);
 
                 rconSocket->Send(std::move(pkg));
@@ -217,16 +219,19 @@ void ValhallaServer::Update(float delta) {
                 auto in_msg = std::string((char*) pkg.m_stream.Remaining().data());
 
                 if (pair.first
-                    || (msg_type == RCON_LOGIN && !m_rconSockets.contains(client_id) && in_msg == m_settings.rconPassword)) {
+                    || (msg_type == RCON_C2S_LOGIN && !m_rconSockets.contains(client_id) && in_msg == m_settings.rconPassword)) {
 
                     std::string out_msg = " ";
+
+                    // Ideas for dynamic high-performance command parser:
+                    // robin hood map to contain lowercase commands as keys
+                    // map will contain functions with args ( client id )
+                    // rcon is not secure anyway... not much should be inputted here
 
                     if (!pair.first) {  // auth
                         pair.first = client_id;
                     } else {            // command
                         LOG(INFO) << "Got command " << in_msg;
-
-                        //Utils::Split()
 
                         auto args(Utils::Split(in_msg, " "));
 
@@ -245,7 +250,7 @@ void ValhallaServer::Update(float delta) {
                             out_msg = "Player-list not yet supported";
                         } else if ("stop" == args[0]) {
                             out_msg = "Stopping server...";
-                            RunTaskLater([this](Task*) {
+                            RunTaskLater([this](Task&) {
                                 Terminate();
                             }, 5s);
                         } else if ("quit" == args[0] || "exit" == args[0]) {
@@ -273,29 +278,29 @@ void ValhallaServer::Update(float delta) {
 
 
 
-Task* ValhallaServer::RunTask(Task::F f) {
-	return RunTaskLater(f, 0ms);
+Task& ValhallaServer::RunTask(Task::F f) {
+	return RunTaskLater(std::move(f), 0ms);
 }
 
-Task* ValhallaServer::RunTaskLater(Task::F f, milliseconds after) {
-	return RunTaskLaterRepeat(f, after, 0ms);
+Task& ValhallaServer::RunTaskLater(Task::F f, milliseconds after) {
+	return RunTaskLaterRepeat(std::move(f), after, 0ms);
 }
 
-Task* ValhallaServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
-	return RunTaskAtRepeat(f, at, 0ms);
+Task& ValhallaServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
+	return RunTaskAtRepeat(std::move(f), at, 0ms);
 }
 
-Task* ValhallaServer::RunTaskRepeat(Task::F f, milliseconds period) {
-	return RunTaskLaterRepeat(f, 0ms, period);
+Task& ValhallaServer::RunTaskRepeat(Task::F f, milliseconds period) {
+	return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
-Task* ValhallaServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
-	return RunTaskAtRepeat(f, steady_clock::now() + after, period);
+Task& ValhallaServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
+	return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
 }
 
-Task* ValhallaServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
+Task& ValhallaServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
 	std::scoped_lock lock(m_taskMutex);
-	Task* task = new Task{f, at, period};
+	Task* task = new Task{std::move(f), at, period};
 	m_tasks.push_back(std::unique_ptr<Task>(task));
-	return task;
+	return *task;
 }

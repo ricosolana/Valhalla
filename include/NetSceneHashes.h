@@ -1693,7 +1693,7 @@ enum class Object_hash : HASH_t {
 	wood_stepladder = __H("wood_stepladder"),
 	wood_wall_half = __H("wood_wall_half"),
 	wood_wall_log = __H("wood_wall_log"),
-	wood_wall_log_4x0.5 = __H("wood_wall_log_4x0.5"),
+	wood_wall_log_4x0_5 = __H("wood_wall_log_4x0.5"),
 	wood_wall_quarter = __H("wood_wall_quarter"),
 	wood_wall_roof = __H("wood_wall_roof"),
 	wood_wall_roof_45 = __H("wood_wall_roof_45"),

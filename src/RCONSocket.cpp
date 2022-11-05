@@ -29,7 +29,7 @@ void RCONSocket::Close(bool flush) {
 
     if (flush) {
         auto self(shared_from_this());
-        Valhalla()->RunTaskLater([this, self](Task*) {
+        Valhalla()->RunTaskLater([this, self](Task&) {
             m_socket.close();
         }, 3s);
     } else {

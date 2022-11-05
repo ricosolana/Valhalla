@@ -9,7 +9,7 @@ namespace NetScene {
 
 	void Shutdown();
 
-	void AddInstance(ZDO zdo, ZNetView *nview);
+	void AddInstance(NetSync* zdo, ZNetView *nview);
 
 	//void Destroy(GameObject go);
 
@@ -21,9 +21,9 @@ namespace NetScene {
 
 	bool IsAreaReady(const Vector3& point);
 
-	ZNetView FindInstance(ZDO *zdo);
+	ZNetView *FindInstance(NetSync* zdo);
 
-	bool HaveInstance(ZDO *zdo);
+	bool HaveInstance(NetSync* zdo);
 
 	//GameObject FindInstance(const ZDOID &id);
 
@@ -41,7 +41,7 @@ namespace NetScene {
 
 	int NrOfInstances();
 
-	//void SpawnObject(const Vector3 &pos, const Quaternion &rot, GameObject prefab);
+	void SpawnObject(const Vector3 &pos, const Quaternion &rot, GameObject prefab);
 
 	//List<string> GetPrefabNames();
 

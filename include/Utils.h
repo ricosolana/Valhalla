@@ -19,8 +19,6 @@ using namespace std::chrono;
 
 #define __H(str) Utils::GetStableHashCode(str)
 
-
-
 // Runs a static periodic task later
 #define PERIODIC_LATER(__period, __initial, ...) {\
     auto __now = steady_clock::now();\

@@ -384,4 +384,4 @@ public:
 	void Deserialize(NetPackage &pkg);
 };
 
-//typedef NetSync ZDO;
+using ZDO = NetSync;

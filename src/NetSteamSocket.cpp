@@ -17,6 +17,7 @@ SteamSocket::~SteamSocket() {
 }
 
 
+
 void SteamSocket::Start() {}
 
 void SteamSocket::Close(bool flush) {
@@ -30,7 +31,7 @@ void SteamSocket::Close(bool flush) {
     if (flush) {
         SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
         auto self(shared_from_this());
-        Valhalla()->RunTaskLater([this, self, steamID](Task*) {
+        Valhalla()->RunTaskLater([this, self, steamID](Task&) {
             SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
             SteamGameServer()->EndAuthSession(steamID);
         }, 3s);
@@ -57,8 +58,9 @@ void SteamSocket::Send(NetPackage pkg) {
 std::optional<NetPackage> SteamSocket::Recv() {
     OPTICK_EVENT();
 	if (Connected()) {
+#define MSG_COUNT 1
 		SteamNetworkingMessage_t* msg; // will point to allocated messages
-		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, 1) == 1) {
+		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) >= MSG_COUNT) {
 			NetPackage pkg((BYTE_t*)msg->m_pData, msg->m_cbSize);
 			msg->Release();
 			return pkg;
@@ -69,15 +71,14 @@ std::optional<NetPackage> SteamSocket::Recv() {
 
 
 
-
 int SteamSocket::GetSendQueueSize() const {
 	if (Connected()) {
 		int num = 0;
 		for (auto&& bytes : m_sendQueue) {
-			num += bytes.size();
+			num += (int)bytes.size();
 		}
-		SteamNetConnectionRealTimeStatus_t rt;
-		if (SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, NULL) == k_EResultOK) {
+		SteamNetConnectionRealTimeStatus_t rt{};
+		if (SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
 			num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
 		}
 
@@ -95,11 +96,20 @@ void SteamSocket::SendQueued() {
 	while (!m_sendQueue.empty()) {
 		auto&& front = m_sendQueue.front();
 
-		int64_t num = 0;
-		// TODO use SendMessage(); does not copy message structure buffer
-		// https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages
-		if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
-                m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, &num) != k_EResultOK) {
+        // TODO use SendMessage(); does not copy message structure buffer
+        //  But memory container must not be vector
+        // https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages
+        //auto msg = SteamNetworkingUtils()->AllocateMessage(0);
+        //msg->m_cbSize = front.size();
+        //msg->m_pData = front.data();
+        //msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
+        //    msg-
+        //};
+        //int64_t num = 0;
+        //SteamGameServerNetworkingSockets()->SendMessages(1, msg,);
+
+        if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
+                m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) != k_EResultOK) {
 			LOG(INFO) << "Failed to send data";
 			return;
 		}
