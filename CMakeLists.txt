@@ -125,7 +125,7 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-        src/RCONSocket.cpp src/RCONAcceptor.cpp)
+        src/RCONSocket.cpp src/RCONAcceptor.cpp include/LuaEvent.h)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

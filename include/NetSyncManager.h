@@ -11,7 +11,7 @@
 //class NetSync;
 
 namespace NetSyncManager {
-	void OnPeerJoin(NetPeer *peer);
+	void OnNewPeer(NetPeer *peer);
     void OnPeerQuit(NetPeer *peer);
 
 

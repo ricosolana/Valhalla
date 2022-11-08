@@ -13,7 +13,8 @@
 
 robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
 
-ModCallbacks m_callbacks;
+// Event category, Event name,
+robin_hood::unordered_map<HASH_t, robin_hood::unordered_map<HASH_t, std::vector<ModCallback>>> m_callbacks;
 
 static bool ModCallbackSort(const ModCallback &a,
                             const ModCallback &b) {
@@ -21,48 +22,12 @@ static bool ModCallbackSort(const ModCallback &a,
 }
 
 namespace ModManager {
-
     namespace Api {
-        void Register(Mod* mod, std::vector<ModCallback> &callbacks, const sol::function& lua_callback, int priority) {
-            callbacks.emplace_back(std::make_pair(mod, std::make_pair(lua_callback, priority)));
-            std::sort(callbacks.begin(), callbacks.end(), ModCallbackSort);
+        void Register(Mod* mod, HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback, int priority) {
+            auto&& vec = m_callbacks[categoryHash][eventHash];
+            vec.emplace_back(mod, std::make_pair(lua_callback, priority));
+            std::sort(vec.begin(), vec.end(), ModCallbackSort);
         }
-
-        void RegisterOnEnable(Mod* mod, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onEnable, lua_callback, priority);
-        }
-
-        void RegisterOnDisable(Mod* mod, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onDisable, lua_callback, priority);
-        }
-
-        void RegisterOnUpdate(Mod* mod, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onUpdate, lua_callback, priority);
-        }
-
-        void RegisterOnPeerInfo(Mod* mod, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onPeerInfo, lua_callback, priority);
-        }
-
-        void RegisterOnRpc(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onRpc[Utils::GetStableHashCode(name)], lua_callback, priority);
-        }
-
-        void RegisterOnRoute(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onRoute[Utils::GetStableHashCode(name)], lua_callback, priority);
-        }
-
-        void RegisterOnSync(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onSync[Utils::GetStableHashCode(name)], lua_callback, priority);
-        }
-
-        void RegisterOnRouteWatch(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
-            Register(mod, m_callbacks.m_onRouteWatch[Utils::GetStableHashCode(name)], lua_callback, priority);
-        }
-
-        //void RegisterOnSyncWatch(Mod* mod, const std::string& name, const sol::function& lua_callback, int priority) {
-        //    Register(mod, m_callbacks.m_onSyncWatch[Utils::GetStableHashCode(name)], lua_callback, priority);
-        //}
     }
 
     // can get the lua state by passing sol::this_state type at end
@@ -254,33 +219,10 @@ namespace ModManager {
         // method overloading is easy
         // https://sol2.readthedocs.io/en/latest/api/overload.html
 
-        apiTable["OnEnable"] = sol::overload([ptr](const sol::function& lua_callback) { Api::RegisterOnEnable(ptr, lua_callback, 0); },
-                                             [ptr](const sol::function& lua_callback, int priority) { Api::RegisterOnEnable(ptr, lua_callback, priority); });
-
-        apiTable["OnDisable"] = sol::overload([ptr](const sol::function& lua_callback) { Api::RegisterOnDisable(ptr, lua_callback, 0); },
-                                              [ptr](const sol::function& lua_callback, int priority) { Api::RegisterOnDisable(ptr, lua_callback, priority); });
-
-        apiTable["OnUpdate"] = sol::overload([ptr](const sol::function& lua_callback) { Api::RegisterOnUpdate(ptr, lua_callback, 0); },
-                                             [ptr](const sol::function& lua_callback, int priority) { Api::RegisterOnUpdate(ptr, lua_callback, priority); });
-
-        apiTable["OnPeerInfo"] = sol::overload([ptr](const sol::function& lua_callback) { Api::RegisterOnPeerInfo(ptr, lua_callback, 0); },
-                                               [ptr](const sol::function& lua_callback, int priority) { Api::RegisterOnPeerInfo(ptr, lua_callback, priority); });
-
-        apiTable["OnRpc"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnRpc(ptr, name, lua_callback, 0); },
-                                          [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnRpc(ptr, name, lua_callback, priority); });
-
-        apiTable["OnRoute"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnRoute(ptr, name, lua_callback, 0); },
-                                            [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnRoute(ptr, name, lua_callback, priority); });
-
-        apiTable["OnSync"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnSync(ptr, name, lua_callback, 0); },
-                                           [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnSync(ptr, name, lua_callback, priority); });
-
-        apiTable["OnRouteWatch"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnRouteWatch(ptr, name, lua_callback, 0); },
-                                            [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnRouteWatch(ptr, name, lua_callback, priority); });
-
-        //apiTable["OnSyncWatch"] = sol::overload([ptr](const std::string& name, const sol::function& lua_callback) { Api::RegisterOnSyncWatch(ptr, name, lua_callback, 0); },
-        //                                   [ptr](const std::string& name, const sol::function& lua_callback, int priority) { Api::RegisterOnSyncWatch(ptr, name, lua_callback, priority); });
-
+        apiTable["OnEvent"] = sol::overload([ptr](std::string categoryName, std::string eventName, sol::function lua_callback) { Api::Register(ptr, Utils::GetStableHashCode(categoryName), Utils::GetStableHashCode(eventName), lua_callback, 0); },
+                                            [ptr](std::string categoryName, std::string eventName, sol::function lua_callback, int priority) { Api::Register(ptr, Utils::GetStableHashCode(categoryName), Utils::GetStableHashCode(eventName), lua_callback, priority); },
+                                            [ptr](HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback) { Api::Register(ptr, categoryHash, eventHash, lua_callback, 0); },
+                                            [ptr](HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback, int priority) { Api::Register(ptr, categoryHash, eventHash, lua_callback, priority); });
 
         // todo try this
         state["modThis"] = sol::property([ptr]() { return ptr; });
@@ -321,98 +263,19 @@ namespace ModManager {
 
 		LOG(INFO) << "Loaded " << mods.size() << " mods";
 
-		ModManager::Event::OnEnable();
+        CallEvent("Server", "Enable");
 	}
 
 	void UnInit() {
-		Event::OnDisable();
+        CallEvent("Server", "Disable");
 		mods.clear();
 	}
 
-	//std::vector<Mod*>& GetMods() {
-	//	return modsByPriority;
-	//}
-
-	// instead get a particular mod
-	//lua_State* GetLuaState() {
-	//	return lua.lua_state();
-	//}
-
-    ModCallbacks& getCallbacks() {
-        return m_callbacks;
+    std::vector<ModCallback>& GetCallbacks(HASH_t category, HASH_t name) {
+        return m_callbacks[category][name];
     }
 
-	namespace Event {
-
-#define EXECUTE(func, ...) \
-for (auto&& ppair : func) { \
-    auto&& pair = ppair.second; \
-	if (!pair.first) \
-		continue; \
-	try { \
-		pair.first(##__VA_ARGS__); \
-	} \
-	catch (sol::error& e) { \
-		LOG(ERROR) << e.what(); \
-	} \
-}
-
-#define EXECUTE_RES(func, res, ...) \
-for (auto&& ppair : func) { \
-    auto&& pair = ppair.second; \
-	if (!pair.first) \
-		continue; \
-	try { \
-		res = pair.first(##__VA_ARGS__); \
-	} \
-	catch (sol::error& e) { \
-		LOG(ERROR) << e.what(); \
-	} \
-}
-
-        void OnEnable() {
-			OPTICK_EVENT();
-
-			EXECUTE(m_callbacks.m_onEnable);
-		}
-
-		void OnDisable() {
-			OPTICK_EVENT();
-
-			EXECUTE(m_callbacks.m_onDisable);
-		}
-
-		void OnUpdate(float delta) {
-			OPTICK_EVENT();
-
-			EXECUTE(m_callbacks.m_onUpdate, delta);
-		}
-
-		/// Event forward calls
-		bool OnPeerInfo(NetRpc *rpc, OWNER_t uuid,
-                        const std::string& name, const std::string& version) {
-			OPTICK_EVENT();
-
-			bool allow = true;
-            EXECUTE_RES(m_callbacks.m_onPeerInfo, allow, rpc, uuid, name, version);
-
-            //for (auto &&ppair: m_onPeerInfo) {
-            //    auto &&pair = ppair.second;
-            //    if (!pair.first)continue;
-            //    try { allow = pair.first(rpc, uuid, name, version); } catch (sol::error &e) {
-            //        LOG(ERROR) << e.what();
-            //    }
-            //};
-
-			return allow;
-		}
-
-        void OnChatMessage(OWNER_t sender, ChatManager::Type type, std::string text) {
-            //stuffEXECUTE(m_callbacks.m_onChatMessage, delta);
-        }
-
-
-
-
-	}
+    std::vector<ModCallback>& GetCallbacks(const char* category, const char* name) {
+        return GetCallbacks(Utils::GetStableHashCode(category), Utils::GetStableHashCode(name));
+    }
 }

@@ -24,7 +24,8 @@ namespace ChatManager {
             LOG(INFO) << "The peer name is " << peer->m_name;
         }
 
-        ModManager::Event::OnChatMessage(sender, type, text);
+        ModManager::CallEvent("Player", "ChatMessage", sender, type, text);
+        //ModManager::Event::OnChatMessage(sender, type, text);
 
 
 

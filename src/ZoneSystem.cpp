@@ -137,12 +137,14 @@ namespace ZoneSystem {
 	void SendLocationIcons(OWNER_t target) {
 		NetPackage pkg;
 
+        // TODO this is temporarary to get the client to login to the world
+
 		// count
 		pkg.Write((int32_t)1);
 		// key
 		pkg.Write(Vector3{ 0, 40, 0 });
 		// value
-		pkg.Write("StartTemple");
+		pkg.Write(LOCATION_SPAWN);
 
 		//tempIconList.Clear();
 		//GetLocationIcons(this.tempIconList);

@@ -24,45 +24,55 @@ public:
 
 using ModCallback = std::pair<Mod*, std::pair<sol::function, int>>;
 
-struct ModCallbacks {
-    std::vector<ModCallback> m_onEnable;
-    std::vector<ModCallback> m_onDisable;
-    std::vector<ModCallback> m_onUpdate;
-    std::vector<ModCallback> m_onPeerInfo;
-    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRpc;
-    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRoute;
-    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSync;
-    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRouteWatch;
-    //robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSyncWatch;
-};
+//struct ModCallbacks {
+//    std::vector<ModCallback> m_onEnable;
+//    std::vector<ModCallback> m_onDisable;
+//    std::vector<ModCallback> m_onUpdate;
+//    std::vector<ModCallback> m_onPeerInfo;
+//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRpc;
+//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRoute;
+//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSync;
+//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRouteWatch;
+//    //robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSyncWatch;
+//};
 
 
 namespace ModManager {
 	void Init();
 	void UnInit();
 
-    ModCallbacks& getCallbacks();
+    std::vector<ModCallback>& GetCallbacks(HASH_t category, HASH_t name);
+    std::vector<ModCallback>& GetCallbacks(const char* category, const char* name);
 
-	namespace Event {
-		// Do not call externally
-		void OnEnable();
-		// Do not call externally
-		void OnDisable();
+    template <typename... Args>
+    sol::table CallEvent(HASH_t category, HASH_t name, Args... params) {
+        OPTICK_EVENT();
+        auto&& callbacks = GetCallbacks(category, name);
 
-		/// Event calls
-		bool OnPeerInfo(NetRpc* rpc,
-                        OWNER_t uuid,
-                        const std::string& name,
-                        const std::string& version);
-		void OnUpdate(float delta);
+        sol::table eventResults;
+        for (auto&& callback : callbacks) {
+            try {
+                callback.second.first(eventResults, std::move(params)...);
+            } catch (const sol::error& e) {
+                LOG(ERROR) << e.what();
+            }
+        }
+        return eventResults;
+    }
 
-        void OnChatMessage(OWNER_t sender, ChatManager::Type type, std::string text);
+    template <typename... Args>
+    auto CallEvent(const char* category, const char* name, Args... params) {
+        return CallEvent(Utils::GetStableHashCode(category), Utils::GetStableHashCode(name), std::move(params)...);
+    }
 
-		//template <class Tuple>
-		//constexpr void OnRpcInvoke(Rpc_Hash hash, Tuple& t) {
-		//
-		//}
+    template <class Tuple>
+    auto CallEventTuple(HASH_t category, HASH_t name, Tuple t) {
+        auto seq = std::make_index_sequence<std::tuple_size<Tuple>{}>{};
+        return CallEvent(category, name, std::get<decltype(seq)>(t));
+    }
 
-		//void OnRpcCallback(Rpc_Hash hash, sol::variadic_args args);
-	}
+    template <class Tuple>
+    auto CallEventTuple(const char* category, const char* name, Tuple t) {
+        return CallEvent(category, name, std::move(t));
+    }
 };

@@ -11,7 +11,7 @@ namespace NetRouteManager {
 		OWNER_t m_msgID;
 		OWNER_t m_senderPeerID;
 		OWNER_t m_targetPeerID;
-		NetID m_targetNetSync;
+		NetID m_targetSync;
 		HASH_t m_methodHash;
 		NetPackage m_parameters;
 
@@ -20,18 +20,18 @@ namespace NetRouteManager {
 		// Will unpack the package
 		explicit Data(NetPackage& pkg)
 			: m_msgID(pkg.Read<OWNER_t>()),
-			m_senderPeerID(pkg.Read<OWNER_t>()),
-			m_targetPeerID(pkg.Read<OWNER_t>()),
-			m_targetNetSync(pkg.Read<NetID>()),
-			m_methodHash(pkg.Read<HASH_t>()),
-			m_parameters(pkg.Read<NetPackage>())
+              m_senderPeerID(pkg.Read<OWNER_t>()),
+              m_targetPeerID(pkg.Read<OWNER_t>()),
+              m_targetSync(pkg.Read<NetID>()),
+              m_methodHash(pkg.Read<HASH_t>()),
+              m_parameters(pkg.Read<NetPackage>())
 		{}
 
 		void Serialize(NetPackage &pkg) const {
 			pkg.Write(m_msgID);
 			pkg.Write(m_senderPeerID);
 			pkg.Write(m_targetPeerID);
-			pkg.Write(m_targetNetSync);
+			pkg.Write(m_targetSync);
 			pkg.Write(m_methodHash);
 			pkg.Write(m_parameters);
 		}

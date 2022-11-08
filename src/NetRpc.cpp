@@ -59,7 +59,7 @@ void NetRpc::Update() {
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
 				find->second->Invoke(this, pkg,
-                                     ModManager::getCallbacks().m_onRpc[hash]);
+                                     ModManager::GetCallbacks().m_onRpc[hash]);
 			}
 			else {
 #ifdef RPC_DEBUG

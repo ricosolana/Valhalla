@@ -260,7 +260,9 @@ namespace NetManager {
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// pass the data to the lua OnPeerInfo
-		if (!ModManager::Event::OnPeerInfo(rpc, uuid, name, version))
+        sol::table result = ModManager::CallEvent("Player", "PeerInfo", rpc, uuid, name, version);
+        sol::optional<bool> cancel = result["cancel"];
+        if (cancel && cancel.value())
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Find the rpc and transfer
@@ -289,8 +291,7 @@ namespace NetManager {
 
 		SendPeerInfo(rpc);
 
-		//NetSyncManager::OnPeerJoin(peer);
-		//NetSyncManager::OnPeerJoin(peer);
+        //NetSyncManager::OnNewPeer(peer.get());
 		NetRouteManager::OnNewPeer(peer.get());
 		ZoneSystem::OnNewPeer(peer.get());
 

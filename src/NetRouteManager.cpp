@@ -23,8 +23,7 @@ namespace NetRouteManager {
 		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<OWNER_t>>(method), std::unique_ptr<IMethod<OWNER_t>>(watcher)) });
 	}
 
-	void _RouteRPC(Data data) {
-		//auto pkg(PKG());
+	void _RouteRPC(const Data& data) {
 		NetPackage pkg;
 		data.Serialize(pkg);
 
@@ -35,18 +34,16 @@ namespace NetRouteManager {
 
 
                     // If the call was from this SERVER, no validation is necessary; data is valid
-                    if (data.m_senderPeerID != SERVER_ID) {
-
-                        // Incur the watcher to validate the peers data
-                        auto &&find = m_methods.find(data.m_methodHash);
-                        if (find != m_methods.end() && find->second.second) {
-                            find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
-                                                        ModManager::getCallbacks().m_onRouteWatch[data.m_methodHash]);
-                        }
-                    }
+                    //if (data.m_senderPeerID != SERVER_ID) {
+                    //    // Incur the watcher to validate the peers data
+                    //    auto &&find = m_methods.find(data.m_methodHash);
+                    //    if (find != m_methods.end() && find->second.second) {
+                    //        find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
+                    //                                    Utils::GetStableHashCode("RoutingFilter"), data.m_methodHash);
+                    //    }
+                    //}
 
                     peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
-
 				}
 			}
 		}
@@ -60,12 +57,12 @@ namespace NetRouteManager {
 
 	void _HandleRoutedRPC(Data data) {
 		// If invocation was for RoutedRPC:
-		if (data.m_targetNetSync) {
+		if (data.m_targetSync) {
 
 			/// Intended code implementation:
-			//auto sync = NetSyncManager::Get(data.m_targetNetSync);
+			//auto sync = NetSyncManager::Get(data.m_targetSync);
 			//if (sync) {
-			//	auto obj = NetScene::Get(data.m_targetNetSync);
+			//	auto obj = NetScene::Get(data.m_targetSync);
 			//	if (obj) {
 			//		obj->HandleRoutedRPC(data);
 			//	}
@@ -74,7 +71,7 @@ namespace NetRouteManager {
 
 
 			//throw std::runtime_error("Not implemented");
-			//NetSync NetSync = NetSyncMan.instance.GetNetSync(data.m_targetNetSync);
+			//NetSync NetSync = NetSyncMan.instance.GetNetSync(data.m_targetSync);
 			//if (NetSync != null) {
 			//	ZNetView znetView = ZNetScene.instance.FindInstance(NetSync);
 			//	if (znetView != null) {
@@ -85,8 +82,8 @@ namespace NetRouteManager {
 		else {
 			auto&& find = m_methods.find(data.m_methodHash);
 			if (find != m_methods.end()) {
-				find->second.first->Invoke(data.m_senderPeerID, data.m_parameters,
-                                           ModManager::getCallbacks().m_onRoute[data.m_methodHash]);
+				find->second.first->Invoke(data.m_senderPeerID, std::move(data.m_parameters),
+                                           Utils::GetStableHashCode("Routing"), data.m_methodHash);
 			}
 			else {
 				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
@@ -122,7 +119,7 @@ namespace NetRouteManager {
 		data.m_msgID = SERVER_ID + m_rpcMsgID++;
 		data.m_senderPeerID = SERVER_ID;
 		data.m_targetPeerID = target;
-		data.m_targetNetSync = targetNetSync;
+		data.m_targetSync = targetNetSync;
 		data.m_methodHash = hash;
 		data.m_parameters = pkg;
 

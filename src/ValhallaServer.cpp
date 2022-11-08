@@ -111,10 +111,6 @@ void ValhallaServer::Launch() {
 	ResourceManager::WriteFileBytes("server.yml", out.c_str());
 
 	LOG(INFO) << "Server config loaded";
-	
-	// have other settings like chat spam prevention, fly prevention, advanced permission settings
-	
-
 
 	ModManager::Init();
     NetManager::Init();
@@ -318,7 +314,8 @@ void ValhallaServer::Update(float delta) {
     }
 
 	NetManager::Update(delta);
-	ModManager::Event::OnUpdate(delta);
+    ModManager::CallEvent("Update", delta);
+	//ModManager::Event::OnUpdate(delta);
 }
 
 

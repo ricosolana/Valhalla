@@ -1149,7 +1149,7 @@ namespace NetSyncManager {
 		return flagWritten;
 	}
 
-	void OnPeerJoin(NetPeer *peer) {
+	void OnNewPeer(NetPeer *peer) {
 		m_peers.push_back(std::make_unique<SyncPeer>(peer));
 		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_ZDOData);
 	}
