@@ -62,14 +62,14 @@ namespace NetSyncManager {
 	void ReleaseZDOS(float dt);
 	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
-	void SendDestroyed();
+	void SendDestroyedZDOs();
 	void RPC_DestroyZDO(OWNER_t sender, NetPackage pkg);
 	void HandleDestroyedZDO(const NetID& uid);
 	void SendAllZDOs(SyncPeer* peer);
 	bool SendZDOs(SyncPeer* peer, bool flush);
 	void RPC_ZDOData(NetRpc *rpc, NetPackage pkg);
 	void CreateSyncList(SyncPeer* peer, std::vector<NetSync*>& toSync);
-	void AddForceSendZdos(SyncPeer* peer, std::vector<NetSync*>& syncList);
+	void AddForceSendZDOs(SyncPeer* peer, std::vector<NetSync*>& syncList);
 	//static int ServerSendCompare(NetSync* x, NetSync* y);
 	void ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, SyncPeer* peer);
 	//static int ClientSendCompare(NetSync* x, NetSync* y); // used as comparator
@@ -94,8 +94,7 @@ namespace NetSyncManager {
 	static constexpr int SECTOR_WIDTH = 512;
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
-    // try statically accessing from header
-	std::vector<std::unique_ptr<SyncPeer>> m_peers;
+	std::vector<std::unique_ptr<SyncPeer>> m_peers; // Lifetime container; could be a linked list or ?
 
 
 
@@ -109,11 +108,9 @@ namespace NetSyncManager {
 	std::vector<NetSync*> tempSectorObjects;
 	std::vector<NetID> m_destroySendList;
 
-	// this is used incrementally for assigning new revisions and zdos that are created
+	// Increments indefinitely for new ZDO id
 	uint32_t m_nextUid = 1;
-	float m_sendTimer = 0; // redundant ?
 	float m_releaseZDOTimer = 0; // redundant ?
-	int m_nextSendPeer = -1; // redundant ?
 
 	std::vector<NetSync*> m_tempToSync;
 	std::vector<NetSync*> m_tempToSyncDistant;
@@ -123,14 +120,14 @@ namespace NetSyncManager {
 	struct SaveData {
 		//OWNER_t m_myid = 0;
 		uint32_t m_nextUid = 1;
-		std::vector<NetSync> m_zdos;
+		std::vector<NetSync> m_zdos; // ZDO must be value, not ptr, because this will be separately saved
 		robin_hood::unordered_map<NetID, OWNER_t, HashUtils::Hasher> m_deadZDOs;
 
 		// Initialize
-		SaveData(uint32_t nextUid)
+		explicit SaveData(uint32_t nextUid)
 			: m_nextUid(nextUid) {
-			for (int i = 0; i < m_objectsBySector.size(); i++) {
-				for (auto zdo : m_objectsBySector[i]) {
+			for (auto&& sectorObjects : m_objectsBySector) {
+				for (auto zdo : sectorObjects) {
 					if (zdo->Persists()) {
 						m_zdos.push_back(*zdo);
 					}
@@ -148,7 +145,7 @@ namespace NetSyncManager {
 		// Save data to file
 		void Save(NetPackage& writer) {
 			writer.Write(Valhalla()->ID());
-			writer.Write(m_nextUid);
+			writer.Write<uint32_t>(m_nextUid);
 			writer.Write<int32_t>(m_zdos.size());
 
 			NetPackage zpackage;
@@ -171,22 +168,6 @@ namespace NetSyncManager {
 	};
 
 	std::unique_ptr<SaveData> m_saveData;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -229,7 +210,7 @@ namespace NetSyncManager {
 
 		reader.Read<OWNER_t>(); // skip
 		auto num = reader.Read<uint32_t>();
-		auto num2 = reader.Read<int32_t>();
+		const auto num2 = reader.Read<int32_t>();
 		m_objectsByID.clear();
 		ResetSectorArray();
 
@@ -238,13 +219,13 @@ namespace NetSyncManager {
 		//NetPackage zpackage;
 		for (int i = 0; i < num2; i++) {
 			//ZDO zdo = ZDOPool.Create(this);
-			auto data = reader.Read<BYTES_t>();
-			NetPackage zpackage(data);
+			//NetPackage zpackage = NetPackage(reader.Read<BYTES_t>());
 
-			auto zdo = std::make_unique<NetSync>(zpackage, version);
+			auto zdo = std::make_unique<NetSync>(
+                    NetPackage(reader.Read<BYTES_t>()), version);
 
 			//zdo->Load(zpackage, version);
-			zdo->ResetOwner();
+            zdo->Abandon();
 			AddToSector(zdo.get(), zdo->Sector());
 			if (zdo->ID().m_uuid == Valhalla()->ID()
 				&& zdo->ID().m_id >= num)
@@ -368,84 +349,27 @@ namespace NetSyncManager {
 		return nullptr;
 	}
 
-	//void AddPeer(ZNetPeer netPeer) {
-	//	ZDOPeer zdopeer = new ZDOMan.ZDOPeer();
-	//	zdopeer.m_peer = netPeer;
-	//	this.m_peers.Add(zdopeer);
-	//	zdopeer.m_peer.m_rpc.Register<ZPackage>("ZDOData", new Action<ZRpc, ZPackage>(this.RPC_ZDOData));
-	//}
-
-	void RemovePeer(NetPeer *netPeer) {
-		for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
-			if (itr->get()->m_peer->m_uuid == netPeer->m_uuid) {
-				RemoveOrphanNonPersistentZDOS();
-				itr = m_peers.erase(itr);
-				return; // DONT remove
-			}
-			else {
-				++itr;
-			}
-		}
-	}
-
-	// private
-	//ZDOPeer FindPeer(ZNetPeer netPeer) {
-	//	for (auto zdopeer : m_peers) {
-	//		if (zdopeer.m_peer == netPeer)
-	//		{
-	//			return zdopeer;
-	//		}
-	//	}
-	//	return null;
-	//}
-	//
-	//// private
-	//ZDOMan.ZDOPeer FindPeer(ZRpc rpc) {
-	//	foreach(ZDOMan.ZDOPeer zdopeer in this.m_peers)
-	//	{
-	//		if (zdopeer.m_peer.m_rpc == rpc)
-	//		{
-	//			return zdopeer;
-	//		}
-	//	}
-	//	return null;
-	//}
-
 	void Update(float dt) {
 		ReleaseZDOS(dt);
 		
 		SendZDOToPeers2(dt);
-		SendDestroyed();
-		//UpdateStats(dt);
+        SendDestroyedZDOs();
 	}
 
-	//void UpdateStats(float dt) {
-	//	m_statTimer += dt;
-	//	if (m_statTimer >= 1) {
-	//		m_statTimer = 0;
-	//		m_zdosSentLastSec = this.m_zdosSent;
-	//		m_zdosRecvLastSec = this.m_zdosRecv;
-	//		m_zdosRecv = 0;
-	//		m_zdosSent = 0;
-	//	}
-	//}
-
-	//private void SendZDOToPeers(float dt)
-	//{
-	//	this.m_sendTimer += dt;
-	//	if (this.m_sendTimer > 0.05f)
-	//	{
-	//		this.m_sendTimer = 0f;
-	//		foreach(ZDOMan.ZDOPeer peer in this.m_peers)
-	//		{
-	//			this.SendZDOs(peer, false);
-	//		}
-	//	}
-	//}
-
 	void SendZDOToPeers2(float dt) {
+        PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
+            for (auto&& peer : m_peers)
+            SendZDOs(peer.get(), false);
+        });
+
+
 		if (m_peers.empty())
 			return;
+
+        static int m_nextSendPeer = -1;
+        static float m_sendTimer = 0;
+
+
 
 		m_sendTimer += dt;
 		if (m_nextSendPeer < 0) {
@@ -480,7 +404,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	bool IsInPeerActiveArea(const Vector2i &sector, long uid) {
+	bool IsInPeerActiveArea(const Vector2i &sector, OWNER_t uid) {
 		assert(uid != Valhalla()->ID() && "Something possibly isnt right");
 		//if (uid == Valhalla()->ID())
 			//return ZNetScene::InActiveArea(sector, NetManager::GetReferencePosition());
@@ -499,7 +423,7 @@ namespace NetSyncManager {
 			if (zdo->Persists()) {
 				if (zdo->Owner() == uid) {
 					//if (!ZNetScene::InActiveArea(zdo->Sector(), zone)) {
-					//	zdo->ResetOwner();
+					//	zdo->Abandon();
 					//}
 				}
 				//else if ((!zdo->HasOwner() 
@@ -511,12 +435,12 @@ namespace NetSyncManager {
 		}
 	}
 
-	void DestroyZDO(NetSync *zdo) {
+	void MarkDestroyZDO(NetSync *zdo) {
 		if (zdo->Local())
 			m_destroySendList.push_back(zdo->ID());
 	}
 
-	void SendDestroyed() {
+	void SendDestroyedZDOs() {
 		if (m_destroySendList.empty())
 			return;
 
@@ -526,7 +450,7 @@ namespace NetSyncManager {
 			zpackage.Write(id);
 
 		m_destroySendList.clear();
-		NetRouteManager::Invoke(0, "DestroyZDO", zpackage);
+		NetRouteManager::Invoke(NetRouteManager::EVERYBODY, "DestroyZDO", zpackage);
 	}
 
 	void RPC_DestroyZDO(OWNER_t sender, NetPackage pkg) {
@@ -565,148 +489,6 @@ namespace NetSyncManager {
 		while (SendZDOs(peer, true));
 	}
 
-	/*
-	bool SendZDOs(ZDOMan.ZDOPeer peer, bool flush)
-	{
-		int sendQueueSize = peer.m_peer.m_socket.GetSendQueueSize();
-		if (!flush && sendQueueSize > 10240)
-		{
-			return false;
-		}
-		int found = 10240 - sendQueueSize;
-		if (found < 2048)
-		{
-			return false;
-		}
-		this.m_tempToSync.Clear();
-		this.CreateSyncList(peer, this.m_tempToSync);
-		if (this.m_tempToSync.Count == 0 && peer.m_invalidSector.Count == 0)
-		{
-			return false;
-		}
-		ZPackage zpackage = new ZPackage();
-		bool flag = false;
-		if (peer.m_invalidSector.Count > 0)
-		{
-			flag = true;
-			zpackage.Write(peer.m_invalidSector.Count);
-			foreach(ZDOID id in peer.m_invalidSector)
-			{
-				zpackage.Write(id);
-			}
-			peer.m_invalidSector.Clear();
-		}
-		else
-		{
-			zpackage.Write(0);
-		}
-		float time = Time.time;
-		ZPackage zpackage2 = new ZPackage();
-		bool flag2 = false;
-		int num2 = 0;
-		while (num2 < this.m_tempToSync.Count && zpackage.Size() <= found)
-		{
-			ZDO zdo = this.m_tempToSync[num2];
-			peer.m_forceSend.Remove(zdo.m_uid);
-			if (!ZNet.instance.IsServer())
-			{
-				this.m_clientChangeQueue.Remove(zdo.m_uid);
-			}
-			zpackage.Write(zdo.m_uid);
-			zpackage.Write(zdo.m_ownerRev);
-			zpackage.Write(zdo.m_dataRev);
-			zpackage.Write(zdo.m_owner);
-			zpackage.Write(zdo.GetPosition());
-			zpackage2.Clear();
-			zdo.Serialize(zpackage2);
-			zpackage.Write(zpackage2);
-			peer.m_zdos[zdo.m_uid] = new ZDOMan.ZDOPeer.PeerZDOInfo(zdo.m_dataRev, zdo.m_ownerRev, time);
-			flag2 = true;
-			this.m_zdosSent++;
-			num2++;
-		}
-		zpackage.Write(ZDOID.None);
-		if (flag2 || flag)
-		{
-			peer.m_peer.m_rpc.Invoke("ZDOData", new object[]
-				{
-					zpackage
-				});
-		}
-		return flag2 || flag;
-	}
-
-	// Token: 0x06000B75 RID: 2933 RVA: 0x00051A54 File Offset: 0x0004FC54
-	private void RPC_ZDOData(ZRpc rpc, ZPackage pkg)
-	{
-		ZDOMan.ZDOPeer zdopeer = this.FindPeer(rpc);
-		if (zdopeer == null)
-		{
-			ZLog.Log("ZDO data from unkown host, ignoring");
-			return;
-		}
-		float time = Time.time;
-		int found = 0;
-		ZPackage zdoBytes = new ZPackage();
-		int num2 = pkg.ReadInt();
-		for (int i = 0; i < num2; i++)
-		{
-			ZDOID id = pkg.ReadZDOID();
-			ZDO zdo = this.GetZDO(id);
-			if (zdo != null)
-			{
-				zdo.InvalidateSector();
-			}
-		}
-		for (;;)
-		{
-			ZDOID zdoid = pkg.ReadZDOID();
-			if (zdoid.IsNone())
-			{
-				break;
-			}
-			found++;
-			uint num3 = pkg.ReadUInt();
-			uint num4 = pkg.ReadUInt();
-			long owner = pkg.ReadLong();
-			Vector3 vector = pkg.ReadVector3();
-			pkg.ReadPackage(ref zdoBytes);
-			ZDO zdo2 = this.GetZDO(zdoid);
-			bool flag = false;
-			if (zdo2 != null)
-			{
-				if (num4 <= zdo2.m_dataRev)
-				{
-					if (num3 > zdo2.m_ownerRev)
-					{
-						zdo2.m_owner = owner;
-						zdo2.m_ownerRev = num3;
-						zdopeer.m_zdos[zdoid] = new ZDOMan.ZDOPeer.PeerZDOInfo(num4, num3, time);
-						continue;
-					}
-					continue;
-				}
-			}
-			else
-			{
-				zdo2 = this.CreateNewZDO(zdoid, vector);
-				flag = true;
-			}
-			zdo2.m_ownerRev = num3;
-			zdo2.m_dataRev = num4;
-			zdo2.m_owner = owner;
-			zdo2.InternalSetPosition(vector);
-			zdopeer.m_zdos[zdoid] = new ZDOMan.ZDOPeer.PeerZDOInfo(zdo2.m_dataRev, zdo2.m_ownerRev, time);
-			zdo2.Deserialize(zdoBytes);
-			if (ZNet.instance.IsServer() && flag && this.m_deadZDOs.ContainsKey(zdoid))
-			{
-				zdo2.SetOwner(this.m_myid);
-				this.DestroyZDO(zdo2);
-			}
-		}
-		this.m_zdosRecv += found;
-	}*/
-
 	void FindSectorObjects(const Vector2i &sector, int area, int distantArea, std::vector<NetSync*> &sectorObjects, std::vector<NetSync*> *distantSectorObjects) {
 		FindObjects(sector, sectorObjects);
 		for (int i = 1; i <= area; i++)
@@ -738,7 +520,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	void FindSectorObjects(Vector2i sector, int area, std::vector<NetSync*> sectorObjects)
+	void FindSectorObjects(Vector2i sector, int area, std::vector<NetSync*> &sectorObjects)
 	{
 		for (int i = sector.y - area; i <= sector.y + area; i++)
 		{
@@ -749,7 +531,7 @@ namespace NetSyncManager {
 		}
 	}
 
-	void CreateSyncList(SyncPeer *peer, std::vector<NetSync*> toSync) {
+	void CreateSyncList(SyncPeer *peer, std::vector<NetSync*> &toSync) {
 		Vector3 refPos = peer->m_peer->m_pos;
 		auto zone = ZoneSystem::GetZoneCoords(refPos);
 		tempSectorObjects.clear();
@@ -772,10 +554,10 @@ namespace NetSyncManager {
 				}
 			}
 		}
-		AddForceSendZdos(peer, toSync);
+        AddForceSendZDOs(peer, toSync);
 	}
 
-	void AddForceSendZdos(SyncPeer *peer, std::vector<NetSync*> &syncList){
+	void AddForceSendZDOs(SyncPeer *peer, std::vector<NetSync*> &syncList){
 		if (!peer->m_forceSend.empty()) {
 			m_tempRemoveList.clear();
 			for (auto&& zdoid : peer->m_forceSend) {
@@ -993,7 +775,7 @@ namespace NetSyncManager {
 				auto &&uid = value->ID();
 				LOG(INFO) << "Destroying abandoned non persistent zdo owner: " << value->Owner();
 				value->SetLocal();
-				DestroyZDO(value.get());
+                MarkDestroyZDO(value.get());
 			}
 		}
 	}
@@ -1279,7 +1061,7 @@ namespace NetSyncManager {
             // If the ZDO was just created as a copy, but it was removed recently
 			if (flagCreated && m_deadZDOs.contains(syncId)) {
 				sync->SetLocal();
-				DestroyZDO(sync);
+                MarkDestroyZDO(sync);
 			}
 		}
 	}
@@ -1288,18 +1070,17 @@ namespace NetSyncManager {
 		assert(false);
 		int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
 		
-		// flush is presumably for preventing network lagg
-        const auto CONGEST = Valhalla()->Settings().socketMaxCongestion;
-		if (!flush && sendQueueSize > CONGEST)
-			return false;
-		
-		// this isnt really available space, more of micro space
-		int availableSpace = CONGEST - sendQueueSize;
-		if (availableSpace < Valhalla()->Settings().socketMinCongestion)
+		// flushing forces a packet send
+        const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
+		if (!flush && sendQueueSize > threshold)
 			return false;
 
-		//m_tempToSync.Clear();
-		//CreateSyncList(peer, m_tempToSync);
+		auto availableSpace = threshold - sendQueueSize;
+		if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
+			return false;
+
+		m_tempToSync.clear();
+		CreateSyncList(peer, m_tempToSync);
 
 		// continue only if there are updated/invalid NetSyncs to send
 		//if (m_tempToSync.Count == 0 && peer->m_invalidSector.empty())
@@ -1319,9 +1100,10 @@ namespace NetSyncManager {
 		*    ] NetSyncID::null for termination
 		*/
 
+        bool flagWritten = false;
+
 		//auto pkg(PKG());
 		NetPackage pkg;
-		bool NetSyncsWritten = false;
 
 		pkg.Write(static_cast<int32_t>(peer->m_invalidSector.size()));
 		if (!peer->m_invalidSector.empty()) {
@@ -1330,46 +1112,58 @@ namespace NetSyncManager {
 			}
 
 			peer->m_invalidSector.clear();
-			NetSyncsWritten = true;
+            flagWritten = true;
 		}
 
 		//float time = Time.time;
-		float time = 0;
+		auto ticks = Valhalla()->Ticks();
 		
-		//int currentTemp = 0;
-		//while (currentTemp < m_tempToSync.Count && pkg->GetStream().Length() <= availableSpace)
-		//{
-		//	sync *sync = m_tempToSync[currentTemp];
-		//	peer->m_forceSend.erase(sync->m_uid);
-		//
-		//
-		//	pkg->Write(sync->m_uid);
-		//	pkg->Write(sync->m_ownerRev);
-		//	pkg->Write(sync->m_dataRev);
-		//	pkg->Write(sync->m_owner);
-		//	pkg->Write(sync->GetPosition());
-		//	
-		//	auto NetSyncpkg(PKG());
-		//	sync->Serialize(NetSyncpkg); // dump sync information onto packet
-		//	pkg->Write(NetSyncpkg);
-		//
-		//	peer->m_syncs[sync->m_uid] = SyncPeer::Rev(
-		//		sync->m_dataRev, sync->m_ownerRev, time);
-		//	
-		//	NetSyncsWritten = true;
-		//	//m_NetSyncsSent++;
-		//	currentTemp++;
-		//}
-		//pkg->Write(NetSyncID::NONE); // used as the null terminator
+		unsigned currentTemp = 0;
+		while (currentTemp < m_tempToSync.size() && pkg.m_stream.Length() <= availableSpace)
+		{
+			auto sync = m_tempToSync[currentTemp];
+			peer->m_forceSend.erase(sync->ID());
 
-		if (NetSyncsWritten)
+			pkg.Write(sync->ID());
+			pkg.Write(sync->m_rev.m_ownerRev);
+			pkg.Write(sync->m_rev.m_dataRev);
+			pkg.Write(sync->Owner());
+			pkg.Write(sync->Position());
+
+            // TODO could optimize
+            NetPackage syncPkg;
+			sync->Serialize(syncPkg); // dump sync information onto packet
+			pkg.Write(syncPkg);
+
+			peer->m_syncs[sync->ID()] = NetSync::Rev{
+				sync->m_rev.m_dataRev, sync->m_rev.m_ownerRev, ticks};
+
+			currentTemp++;
+            flagWritten = true;
+		}
+		pkg.Write(NetID::NONE); // used as the null terminator
+
+		if (flagWritten)
 			peer->m_peer->m_rpc->Invoke(Rpc_Hash::ZDOData, pkg);
 
-		return NetSyncsWritten;
+		return flagWritten;
 	}
 
-	void OnNewPeer(NetPeer *peer) {
+	void OnPeerJoin(NetPeer *peer) {
 		m_peers.push_back(std::make_unique<SyncPeer>(peer));
 		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_ZDOData);
 	}
+
+    void OnPeerQuit(NetPeer* peer) {
+        // This is the kind of iteration removal I am trying to avoid
+        for (auto&& itr  = m_peers.begin(); itr!=m_peers.end(); ) {
+            if ((*itr)->m_peer == peer) {
+                RemoveOrphanNonPersistentZDOS();
+                itr = m_peers.erase(itr);
+                return;
+            } else {
+                ++itr;
+            }
+        }
+    }
 }

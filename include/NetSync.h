@@ -181,6 +181,8 @@ private:
 		m_rev.m_dataRev++;
 	}
 
+    void FreeMembers();
+
 public:
 	Rev m_rev;
 
@@ -188,10 +190,10 @@ public:
 	// Create ZDO with me (im owner)
 	NetSync();
 
-	// Loading ZDO from the disk packet
-	NetSync(NetPackage& reader, int version);
+	// Loading ZDO from disk package
+	NetSync(NetPackage reader, int version);
 
-	// Save ZDO to the disk packet
+	// Save ZDO to the disk package
 	void Save(NetPackage &writer);
 
 
@@ -220,7 +222,7 @@ public:
 	// Special hash getters
 
 	bool GetBool(HASH_t key, bool value = false);
-	const NetID GetNetID(const std::pair<HASH_t, HASH_t> &key /* no default */);
+	NetID GetNetID(const std::pair<HASH_t, HASH_t> &key /* no default */);
 
 
 
@@ -237,7 +239,7 @@ public:
 	// Special string getters
 
 	bool GetBool(const std::string &key, bool value = false);
-	const NetID GetNetID(const std::string &key /* no default */);
+	NetID GetNetID(const std::string &key /* no default */);
 
 
 
@@ -282,35 +284,35 @@ public:
 	//int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
 	//int32_t m_tempCreatedAt = -1; // ^
 
-	bool Persists() const {
+	[[nodiscard]] bool Persists() const {
 		return m_persistent;
 	}
 
-	bool Distant() const {
+	[[nodiscard]] bool Distant() const {
 		return m_distant;
 	}
 
-	int32_t Version() const {
+	[[nodiscard]] int32_t Version() const {
 		return m_pgwVersion;
 	}
 
-	ObjectType Type() const {
+	[[nodiscard]] ObjectType Type() const {
 		return m_type;
 	}
 
-	HASH_t PrefabHash() const {
+	[[nodiscard]] HASH_t PrefabHash() const {
 		return m_prefab;
 	}
 
-	const Quaternion& Rotation() const {
+	[[nodiscard]] const Quaternion& Rotation() const {
 		return m_rotation;
 	}
 
-	const Vector2i& Sector() const {
+	[[nodiscard]] const Vector2i& Sector() const {
 		return m_sector;
 	}
 
-	const NetID ID() const {
+	[[nodiscard]] const NetID ID() const {
 		return m_id;
 	}
 
@@ -318,11 +320,11 @@ public:
 	//	return m_rev;
 	//}
 
-	OWNER_t Owner() const {
+	[[nodiscard]] OWNER_t Owner() const {
 		return m_owner;
 	}
 
-	const Vector3& Position() const {
+	[[nodiscard]] const Vector3& Position() const {
 		return m_position;
 	}
 
@@ -367,13 +369,15 @@ public:
 		}
 	}
 
-	bool Valid() const {
+	[[nodiscard]] bool Valid() const {
 		if (m_id)
 			return true;
 		return false;
 	}
 
-	void ResetOwner() {
+    void Invalidate();
+
+	void Abandon() {
 		m_owner = 0;
 	}
 

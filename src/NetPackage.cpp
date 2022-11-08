@@ -20,21 +20,32 @@ NetPackage::NetPackage(uint32_t reserve)
 
 
 
-void NetPackage::operator=(const NetPackage& other) {
+NetPackage& NetPackage::operator=(const NetPackage& other) {
     this->m_stream = other.m_stream;
+    return *this;
 }
 
 
 
 void NetPackage::Write(const BYTE_t* in, uint32_t count) {
     Write(count);
-	m_stream.Write(in, count);
+    m_stream.Write(in, count);
+}
+
+void NetPackage::Write(const BYTES_t &in, uint32_t count) {
+    Write(in.data(), count);
+}
+
+void NetPackage::Write(const BYTES_t& in) {
+    Write(in.data(), static_cast<int32_t>(in.size()));
+}
+
+void NetPackage::Write(const NetPackage& in) {
+    Write(in.m_stream.m_buf);
 }
 
 void NetPackage::Write(const std::string& in) {
     int byteCount = static_cast<int>(in.length());
-
-    //m_stream.ReserveExtra(1 + in.length());
 
     Write7BitEncodedInt(byteCount);
 
@@ -42,32 +53,6 @@ void NetPackage::Write(const std::string& in) {
         return;
 
     m_stream.Write(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
-}
-
-void NetPackage::Write(const BYTES_t& in) {
-    Write(in.data(), static_cast<int32_t>(in.size()));
-}
-
-void NetPackage::Write(const std::vector<std::string>& in) {
-    Write(static_cast<int32_t>(in.size()));
-    for (auto&& s : in) {
-        Write(s);
-    }
-}
-
-void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
-    Write(static_cast<int32_t>(in.size()));
-    for (auto&& s : in) {
-        Write(s);
-    }
-}
-
-void NetPackage::Write(const NetPackage& in) {
-    Write(in.m_stream.m_buf.data(), in.m_stream.Length());
-}
-
-void NetPackage::Write(const BYTES_t &in, uint32_t count) {
-    Write(in.data(), count);
 }
 
 void NetPackage::Write(const NetID& in) {
@@ -91,6 +76,20 @@ void NetPackage::Write(const Quaternion& in) {
      Write(in.y);
      Write(in.z);
      Write(in.w);
+}
+
+void NetPackage::Write(const std::vector<std::string>& in) {
+    Write(static_cast<int32_t>(in.size()));
+    for (auto&& s : in) {
+        Write(s);
+    }
+}
+
+void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
+    Write(static_cast<int32_t>(in.size()));
+    for (auto&& s : in) {
+        Write(s);
+    }
 }
 
 

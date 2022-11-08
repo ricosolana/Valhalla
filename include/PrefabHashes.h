@@ -2,7 +2,7 @@
 
 #include "Utils.h"
 
-enum PrefabHash : HASH_t {
+enum class PrefabHash : HASH_t {
 	_eventzone_boss_base = __H("_eventzone_boss_base"),
 	_TerrainCompiler = __H("_TerrainCompiler"),
 	_ZoneCtrl = __H("_ZoneCtrl"),
@@ -1045,7 +1045,7 @@ enum PrefabHash : HASH_t {
 	sfx_rock_destroyed = __H("sfx_rock_destroyed"),
 	sfx_rock_hit = __H("sfx_rock_hit"),
 	sfx_secretfound = __H("sfx_secretfound"),
-	sfx_secretfound 1 = __H("sfx_secretfound 1"),
+	sfx_secretfound_1 = __H("sfx_secretfound 1"),
 	sfx_serpent_alerted = __H("sfx_serpent_alerted"),
 	sfx_serpent_attack = __H("sfx_serpent_attack"),
 	sfx_serpent_attack_hit = __H("sfx_serpent_attack_hit"),
@@ -1684,7 +1684,7 @@ enum PrefabHash : HASH_t {
 	wood_stepladder = __H("wood_stepladder"),
 	wood_wall_half = __H("wood_wall_half"),
 	wood_wall_log = __H("wood_wall_log"),
-	wood_wall_log_4x0.5 = __H("wood_wall_log_4x0.5"),
+	wood_wall_log_4x0_5 = __H("wood_wall_log_4x0.5"),
 	wood_wall_quarter = __H("wood_wall_quarter"),
 	wood_wall_roof = __H("wood_wall_roof"),
 	wood_wall_roof_45 = __H("wood_wall_roof_45"),

@@ -9,6 +9,7 @@ RCONSocket::RCONSocket(asio::ip::tcp::socket socket)
     m_tempReadSize(0),
     m_tempWriteSize(0) {
     m_connected = true;
+    m_address = m_socket.remote_endpoint().address().to_string();
 }
 
 RCONSocket::~RCONSocket() {
@@ -59,7 +60,11 @@ std::optional<NetPackage> RCONSocket::Recv() {
 }
 
 std::string RCONSocket::GetHostName() const {
-    return m_socket.remote_endpoint().address().to_string();
+    return GetAddress();
+}
+
+std::string RCONSocket::GetAddress() const {
+    return m_address;
 }
 
 

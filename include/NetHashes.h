@@ -44,7 +44,7 @@ enum class Routed_Hash : HASH_t {
 	DamageText = __H("DamageText"),
 	Ping = __H("Ping"),
 	Pong = __H("Pong"),
-	DestroyZDO = __H("DestroyZDO"),
+	DestroyZDO = __H("MarkDestroyZDO"),
 	RequestZDO = __H("RequestZDO"),
 	SetGlobalKey = __H("SetGlobalKey"),
 	RemoveGlobalKey = __H("RemoveGlobalKey"),

@@ -37,23 +37,34 @@ public:
 
 
 
-    void operator=(const NetPackage& other);
+    NetPackage& operator=(const NetPackage& other);
 
 
 
+    // Write length-pointer data as byte array
     void Write(const BYTE_t* in, uint32_t count);
-    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
-    void Write(const std::string& in);
-    void Write(const BYTES_t &in);            // Write array
+    // Write length-vector as byte array
     void Write(const BYTES_t &in, uint32_t count);            // Write array
-    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
-    void Write(const robin_hood::unordered_set<std::string>& in);
+    // Write vector as byte array
+    void Write(const BYTES_t &in);
+    // Write Package as byte array
     void Write(const NetPackage &in);
+    // Write string
+    void Write(const std::string& in);
+    // Write NetID
     void Write(const NetID &id);
+    // Write Vector3
     void Write(const Vector3 &in);
+    // Write Vector2i
     void Write(const Vector2i &in);
+    // Write Quaternion
     void Write(const Quaternion& in);
-    //void Write(const PlayerProfile& in);
+    // Write string vector as string array
+    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
+    // Write string set as string array
+    void Write(const robin_hood::unordered_set<std::string>& in);
+    // Write primitive
+    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     
 

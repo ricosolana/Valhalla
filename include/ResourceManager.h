@@ -20,8 +20,10 @@ namespace ResourceManager {
     bool ReadFileBytes(const fs::path& path, BYTE_t* buf, int size);
     bool ReadFileBytes(const fs::path &path, BYTES_t &buffer);
     bool ReadFileBytes(const fs::path& path, std::string &s);
+    bool ReadFileLines(const fs::path& path, std::vector<std::string>& out);
 
     bool WriteFileBytes(const fs::path& path, const BYTE_t* buf, int size);
     bool WriteFileBytes(const fs::path& path, const BYTES_t& buffer);
-    bool WriteFileBytes(const fs::path& path, const std::string &s);
+    bool WriteFileBytes(const fs::path& path, const std::string& str);
+    bool WriteFileLines(const fs::path& path, const std::vector<std::string>& in);
 };

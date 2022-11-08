@@ -3,6 +3,7 @@
 #include "NetPeer.h"
 #include "NetRouteManager.h"
 #include "NetAcceptor.h"
+#include "Vector.h"
 
 enum class ConnectionStatus : int32_t {
 	None,
@@ -34,4 +35,6 @@ namespace NetManager {
 	NetPeer* GetPeer(OWNER_t uuid);
 
 	const std::vector<std::unique_ptr<NetPeer>> &GetPeers();
+
+    //static constexpr Vector3 REFERENCE_POS(1000000, 0, 1000000);
 }

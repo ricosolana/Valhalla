@@ -289,8 +289,8 @@ namespace NetManager {
 
 		SendPeerInfo(rpc);
 
-		//NetSyncManager::OnNewPeer(peer);
-		//NetSyncManager::OnNewPeer(peer);
+		//NetSyncManager::OnPeerJoin(peer);
+		//NetSyncManager::OnPeerJoin(peer);
 		NetRouteManager::OnNewPeer(peer.get());
 		ZoneSystem::OnNewPeer(peer.get());
 

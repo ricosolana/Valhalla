@@ -28,6 +28,13 @@ void ValhallaServer::Launch() {
 
 	//start = steady_clock::now();
 
+    {
+        std::vector<std::string> banned;
+        ResourceManager::ReadFileLines("banned.txt", banned);
+        for (auto&& s : banned)
+            m_banned.insert(std::move(s));
+    }
+
 	YAML::Node loadNode;
 	{
 		std::string buf;
@@ -59,8 +66,9 @@ void ValhallaServer::Launch() {
 	m_settings.playerArrivePing =		loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
 
 	m_settings.socketTimeout =		    milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
-	m_settings.socketMaxCongestion =	loadNode["socket-max-congestion"].as<int32_t>(10240);
-    m_settings.socketMinCongestion =	loadNode["socket-min-congestion"].as<int32_t>(2048);
+	m_settings.zdoMaxCongestion =	    loadNode["zdo-max-congestion"].as<int32_t>(10240);
+    m_settings.zdoMinCongestion =	    loadNode["zdo-min-congestion"].as<int32_t>(2048);
+    m_settings.zdoSendInterval =	    milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
     m_settings.rconEnabled =            loadNode["rcon-enabled"].as<bool>(false);
     m_settings.rconPort =               loadNode["rcon-port"].as<uint16_t>(25575);
@@ -86,8 +94,9 @@ void ValhallaServer::Launch() {
 	saveNode["player-arrive-ping"] =	    m_settings.playerArrivePing;
 
 	saveNode["socket-timeout"] =		    m_settings.socketTimeout.count();
-	saveNode["socket-max-congestion"] =		m_settings.socketMaxCongestion;
-    saveNode["socket-min-congestion"] =		m_settings.socketMinCongestion;
+	saveNode["zdo-max-congestion"] =		m_settings.zdoMaxCongestion;
+    saveNode["zdo-min-congestion"] =		m_settings.zdoMinCongestion;
+    saveNode["zdo-send-interval"] =		    m_settings.zdoSendInterval.count();
 
     saveNode["rcon-enabled"] =              m_settings.rconEnabled;
     saveNode["rcon-port"] =                 m_settings.rconPort;
@@ -175,6 +184,13 @@ void ValhallaServer::Terminate() {
 	m_running = false;
     ModManager::UnInit();
 	NetManager::Close();
+
+    {
+        std::vector<std::string> banned;
+        for (auto &&s: m_banned)
+            banned.push_back(std::move(s));
+        ResourceManager::WriteFileLines("banned.txt", banned);
+    }
 }
 
 
@@ -189,37 +205,73 @@ void ValhallaServer::Update(float delta) {
         // TODO add cleanup
         //  also consider making socket cleaner easier to look at and understand; too many iterator / loops
         while (auto opt = m_rcon->Accept()) {
-            auto &&rconSocket = opt.value();
-            m_rconSockets[0] = std::static_pointer_cast<RCONSocket>(rconSocket);
+            auto &&rconSocket = std::static_pointer_cast<RCONSocket>(opt.value());
+            m_unAuthRconSockets.push_back(rconSocket);
             rconSocket->Start();
+            LOG(INFO) << "Rcon connecting " << rconSocket->GetAddress();
         }
 
-        for (auto&& pair : m_rconSockets) {
-            static constexpr int32_t RCON_S2C_RESPONSE = 0;
-            static constexpr int32_t RCON_COMMAND = 2;
-            static constexpr int32_t RCON_C2S_LOGIN = 3;
+        static constexpr int32_t RCON_S2C_RESPONSE = 0;
+        static constexpr int32_t RCON_COMMAND = 2;
+        static constexpr int32_t RCON_C2S_LOGIN = 3;
 
-            auto&& rconSocket = pair.second;
+        auto send_response = [](std::shared_ptr<RCONSocket>& socket, int32_t client_id, const std::string &msg) {
+            static NetPackage pkg;
+            pkg.Write(client_id);
+            pkg.Write(RCON_S2C_RESPONSE);
+            pkg.m_stream.Write((BYTE_t *) msg.data(), msg.size() + 1);
 
-            auto send_response = [rconSocket](int32_t client_id, const std::string& msg) {
-                static NetPackage pkg;
-                pkg.Write(client_id);
-                pkg.Write(RCON_S2C_RESPONSE);
-                pkg.m_stream.Write((BYTE_t*)msg.data(), msg.size() + 1);
+            socket->Send(std::move(pkg));
+        };
 
-                rconSocket->Send(std::move(pkg));
-            };
+        // Un authed RCON sockets polling
+        for (auto&& itr = m_unAuthRconSockets.begin(); itr != m_unAuthRconSockets.end();) {
+            auto &&rconSocket = (*itr);
+            if (!(*itr)->Connected()) {
+                LOG(INFO) << "Unauthorized Rcon disconnected " << rconSocket->GetAddress();
+                itr = m_unAuthRconSockets.erase(itr);
+            } else {
+                rconSocket->Update();
+                auto opt = rconSocket->Recv();
+                // first packet must be the login packet
+                if (opt) {
+                    auto &&pkg = opt.value();
 
-            rconSocket->Update();
-            while (auto opt = rconSocket->Recv()) {
-                auto &&pkg = opt.value();
+                    auto client_id = pkg.Read<int32_t>();
+                    auto msg_type = pkg.Read<int32_t>();
+                    auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
+                    Utils::FormatAscii(in_msg);
 
-                auto client_id = pkg.Read<int32_t>();
-                auto msg_type = pkg.Read<int32_t>();
-                auto in_msg = std::string((char*) pkg.m_stream.Remaining().data());
+                    if (in_msg == m_settings.rconPassword && !m_authRconSockets.contains(client_id)) {
+                        send_response(rconSocket, client_id, " ");
+                        m_authRconSockets[client_id] = rconSocket;
+                        LOG(INFO) << "Rcon authorized " << rconSocket->GetAddress();
+                    } else {
+                        send_response(rconSocket, -1, " ");
+                        rconSocket->Close(true);
+                        LOG(INFO) << "Rcon failed authorization " << rconSocket->GetAddress();
+                    }
+                    itr = m_unAuthRconSockets.erase(itr);
+                } else
+                    ++itr;
+            }
+        }
 
-                if (pair.first
-                    || (msg_type == RCON_C2S_LOGIN && !m_rconSockets.contains(client_id) && in_msg == m_settings.rconPassword)) {
+        // Authed sockets
+        for (auto&& itr = m_authRconSockets.begin(); itr != m_authRconSockets.end();) {
+            auto &&rconSocket = itr->second;
+            if (!itr->second->Connected()) {
+                LOG(INFO) << "Authorized Rcon disconnected " << rconSocket->GetAddress();
+                itr = m_authRconSockets.erase(itr);
+            } else {
+                rconSocket->Update();
+                while (auto opt = rconSocket->Recv()) {
+                    auto &&pkg = opt.value();
+
+                    pkg.Read<int32_t>(); // dummy client id
+                    pkg.Read<int32_t>(); // dummy type
+                    auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
+                    Utils::FormatAscii(in_msg);
 
                     std::string out_msg = " ";
 
@@ -228,46 +280,39 @@ void ValhallaServer::Update(float delta) {
                     // map will contain functions with args ( client id )
                     // rcon is not secure anyway... not much should be inputted here
 
-                    if (!pair.first) {  // auth
-                        pair.first = client_id;
-                    } else {            // command
-                        LOG(INFO) << "Got command " << in_msg;
+                    LOG(INFO) << "Got command " << in_msg;
 
-                        auto args(Utils::Split(in_msg, " "));
+                    auto args(Utils::Split(in_msg, " "));
 
-                        if ("ban" == args[0] && args.size() == 2) {
-                            m_banned.insert(std::string(args[1]));
-                            out_msg = "Banned " + std::string(args[1]);
-                        } else if ("kick" == args[0] && args.size() == 2) {
-                            auto id = (OWNER_t) std::stoll(std::string(args[1]));
-                            auto peer = NetManager::GetPeer(id);
-                            if (peer) {
-                                peer->Kick();
-                                out_msg = "Kicked " + peer->m_name;
-                            } else
-                                out_msg = "Peer is not online";
-                        } else if ("list" == args[0]) {
-                            out_msg = "Player-list not yet supported";
-                        } else if ("stop" == args[0]) {
-                            out_msg = "Stopping server...";
-                            RunTaskLater([this](Task&) {
-                                Terminate();
-                            }, 5s);
-                        } else if ("quit" == args[0] || "exit" == args[0]) {
-                            out_msg = "Closing RCON connection...";
-                            rconSocket->Close(true);
-                        } else {
-                            out_msg = "Unknown command";
-                        }
+                    if ("ban" == args[0] && args.size() == 2) {
+                        m_banned.insert(std::string(args[1]));
+                        out_msg = "Banned " + std::string(args[1]);
+                    } else if ("kick" == args[0] && args.size() == 2) {
+                        auto id = (OWNER_t) std::stoll(std::string(args[1]));
+                        auto peer = NetManager::GetPeer(id);
+                        if (peer) {
+                            peer->Kick();
+                            out_msg = "Kicked " + peer->m_name;
+                        } else
+                            out_msg = "Peer is not online";
+                    } else if ("list" == args[0]) {
+                        out_msg = "Player-list not yet supported";
+                    } else if ("stop" == args[0]) {
+                        out_msg = "Stopping server...";
+                        RunTaskLater([this](Task &) {
+                            Terminate();
+                        }, 5s);
+                    } else if ("quit" == args[0] || "exit" == args[0]) {
+                        out_msg = "Closing RCON connection...";
+                        rconSocket->Close(true);
+                    } else {
+                        out_msg = "Unknown command";
                     }
 
-                    send_response(client_id, out_msg);
-                } else {
-                    // send deny message before closing
-                    send_response(-1, " ");
-                    rconSocket->Close(true);
-                    break;
+                    send_response(rconSocket, itr->first, out_msg);
                 }
+
+                ++itr;
             }
         }
     }

@@ -3,11 +3,16 @@
 #include <isteamnetworkingutils.h>
 #include "ValhallaServer.h"
 
-SteamSocket::SteamSocket(HSteamNetConnection con) {
-    m_hConn = con;
+SteamSocket::SteamSocket(HSteamNetConnection hConn)
+    : m_hConn(hConn) {
+
 	SteamNetConnectionInfo_t info;
 	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
 	m_steamNetId = info.m_identityRemote;
+
+    char buf[20];
+    info.m_addrRemote.ToString(buf, sizeof(buf), false);
+    this->m_address = std::string(buf);
 
     m_connected = true;
 }
@@ -27,7 +32,7 @@ void SteamSocket::Close(bool flush) {
     m_connected = false;
 
     auto steamID = m_steamNetId.GetSteamID();
-
+//m_steamNetId.GetIPAddr()
     if (flush) {
         SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
         auto self(shared_from_this());

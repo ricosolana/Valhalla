@@ -20,8 +20,9 @@ struct ServerSettings {
 	bool			playerArrivePing;
 
 	milliseconds	socketTimeout;          // ms
-	unsigned int	socketMaxCongestion;    // congestion rate
-    unsigned int	socketMinCongestion;    // congestion rate
+	unsigned int	zdoMaxCongestion;    // congestion rate
+    unsigned int	zdoMinCongestion;    // congestion rate
+    milliseconds    zdoSendInterval;
 
     bool            rconEnabled;
     uint16_t        rconPort;

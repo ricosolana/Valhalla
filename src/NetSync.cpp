@@ -77,7 +77,7 @@ NetSync::NetSync() {
 	this->m_owner = Valhalla()->ID();
 }
 
-NetSync::NetSync(NetPackage& pkg, int version) {
+NetSync::NetSync(NetPackage pkg, int version) {
 	this->m_rev.m_ownerRev =	pkg.Read<uint32_t>();
 	this->m_rev.m_dataRev =		pkg.Read<uint32_t>();
 	this->m_persistent =		pkg.Read<bool>();
@@ -173,8 +173,7 @@ void NetSync::Save(NetPackage& pkg) {
 
 // copy constructor
 NetSync::NetSync(const NetSync& other) {
-	// also copy members
-
+	// Member copy
 	this->m_persistent = other.m_persistent;
 	this->m_distant = other.m_distant;
 	this->m_pgwVersion = other.m_pgwVersion;
@@ -190,6 +189,7 @@ NetSync::NetSync(const NetSync& other) {
 
 	this->m_rev = other.m_rev;
 
+    // Pool copy
 	for (auto&& pair1 : other.m_members) {
 		_Set(pair1.first, pair1.second.second, pair1.second.first);
 	}
@@ -198,20 +198,7 @@ NetSync::NetSync(const NetSync& other) {
 
 
 NetSync::~NetSync() {
-	for (auto&& m : m_members) {
-		auto&& pair = m.second;
-		switch (pair.first) {
-		case MemberShift::FLOAT:		delete (float*)			pair.second; break;
-		case MemberShift::VECTOR3:		delete (Vector3*)		pair.second; break;
-		case MemberShift::QUATERNION:	delete (Quaternion*)	pair.second; break;
-		case MemberShift::INT:			delete (int32_t*)		pair.second; break;
-		case MemberShift::LONG:			delete (int64_t*)		pair.second; break;
-		case MemberShift::STRING:		delete (std::string*)	pair.second; break;
-		case MemberShift::ARRAY:		delete (BYTES_t*)		pair.second; break;
-		default:
-			throw std::invalid_argument("invalid MemberShift type");
-		}
-	}
+    FreeMembers();
 }
 
 
@@ -260,7 +247,7 @@ bool NetSync::GetBool(HASH_t key, bool value) {
 	return GetInt(key, value ? 1 : 0);
 }
 
-const NetID NetSync::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
+NetID NetSync::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
 	auto k = GetLong(key.first);
 	auto v = GetLong(key.second);
 	if (k == 0 || v == 0)
@@ -314,7 +301,7 @@ bool NetSync::GetBool(const std::string& key, bool value) {
 	return GetBool(Utils::GetStableHashCode(key), value);
 }
 
-const NetID NetSync::GetNetID(const std::string& key) {
+NetID NetSync::GetNetID(const std::string& key) {
 	return GetNetID(ToHashPair(key));
 }
 
@@ -351,7 +338,6 @@ void NetSync::SetLocal() {
 	SetOwner(Valhalla()->ID());
 }
 
-
 void NetSync::SetPosition(const Vector3& pos) {
 	if (m_position != pos) {
 		m_position = pos;
@@ -372,8 +358,39 @@ void NetSync::SetSector(const Vector2i& sector) {
 	NetSyncManager::ZDOSectorInvalidated(this);
 }
 
+void NetSync::FreeMembers() {
+    for (auto&& m : m_members) {
+        auto&& pair = m.second;
+        switch (pair.first) {
+            case MemberShift::FLOAT:		delete (float*)			pair.second; break;
+            case MemberShift::VECTOR3:		delete (Vector3*)		pair.second; break;
+            case MemberShift::QUATERNION:	delete (Quaternion*)	pair.second; break;
+            case MemberShift::INT:			delete (int32_t*)		pair.second; break;
+            case MemberShift::LONG:			delete (int64_t*)		pair.second; break;
+            case MemberShift::STRING:		delete (std::string*)	pair.second; break;
+            case MemberShift::ARRAY:		delete (BYTES_t*)		pair.second; break;
+        }
+    }
+}
 
+void NetSync::Invalidate() {
+    this->m_id = ZDOID::NONE;
+    this->m_persistent = false;
+    this->m_owner = 0;
+    this->m_rev.m_time = 0;
+    this->m_rev.m_ownerRev = 0;
+    this->m_rev.m_dataRev = 0;
+    this->m_pgwVersion = 0;
+    this->m_distant = false;
+    //this->m_tempSortValue = 0;
+    //this->m_tempHaveRevision = false;
+    this->m_prefab = 0;
+    this->m_sector = Vector2i::ZERO;
+    this->m_position = Vector3::ZERO;
+    this->m_rotation = Quaternion::IDENTITY;
 
+    FreeMembers();
+}
 
 void NetSync::Serialize(NetPackage &pkg) {
 	pkg.Write(m_persistent);

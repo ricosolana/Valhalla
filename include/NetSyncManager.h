@@ -11,9 +11,8 @@
 //class NetSync;
 
 namespace NetSyncManager {
-	void OnNewPeer(NetPeer *peer);
-
-
+	void OnPeerJoin(NetPeer *peer);
+    void OnPeerQuit(NetPeer *peer);
 
 
 
@@ -51,12 +50,10 @@ namespace NetSyncManager {
 	NetSync* GetZDO(const NetID &id);
 
 	// called when registering joining peer
-	//void AddPeer(NetPeer::Ptr netPeer);
-	void RemovePeer(NetPeer *netPeer);
 
 	void Update(float dt);
 
-	void DestroyZDO(NetSync* zdo);
+	void MarkDestroyZDO(NetSync* zdo);
 
 	void FindSectorObjects(const Vector2i &sector, int area, int distantArea, 
 		std::vector<NetSync*> &sectorObjects, std::vector<NetSync*> *distantSectorObjects = nullptr);

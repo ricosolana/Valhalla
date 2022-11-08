@@ -57,6 +57,10 @@ public:
 
 
 
+    // Get the address of this socket
+    [[nodiscard]] virtual std::string GetAddress() const = 0;
+
+
 	// Returns true if the socket is alive
     // Expected to return false if the connection has been closed
 	[[nodiscard]] virtual bool Connected() const = 0;
@@ -72,13 +76,14 @@ class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
     bool m_connected;
+    std::string m_address;
 
 public:
 	HSteamNetConnection m_hConn;
 	SteamNetworkingIdentity m_steamNetId;
 
 public:
-	explicit SteamSocket(HSteamNetConnection con);
+	explicit SteamSocket(HSteamNetConnection hConn);
     ~SteamSocket() override;
 
 	// Virtual
@@ -92,6 +97,10 @@ public:
 	[[nodiscard]] std::string GetHostName() const override {
 		return std::to_string(m_steamNetId.GetSteamID64());
 	}
+
+    [[nodiscard]] std::string GetAddress() const override {
+        return m_address;
+    }
 
 	[[nodiscard]] bool Connected() const override {
 		//return m_hConn != k_HSteamNetConnection_Invalid;
@@ -107,12 +116,13 @@ private:
 
 class RCONSocket : public ISocket {
 private:
-    asio::ip::tcp::socket  m_socket;
+    asio::ip::tcp::socket m_socket;
 
     AsyncDeque<BYTES_t> m_sendQueue;
     AsyncDeque<NetPackage> m_recvQueue;
     std::atomic_int m_sendQueueSize;
     std::atomic_bool m_connected;
+    std::string m_address;
 
     NetPackage m_tempReadPkg;
     uint32_t m_tempReadSize;
@@ -130,7 +140,8 @@ public:
     void Send(NetPackage pkg) override;
     std::optional<NetPackage> Recv() override;
 
-    std::string GetHostName() const override;
+    [[nodiscard]] std::string GetHostName() const override;
+    [[nodiscard]] std::string GetAddress() const override;
 
     bool Connected() const override {
         return m_connected;

@@ -105,7 +105,7 @@ Valheim networking system:
 
 						You can tell that the devs really tried to improve network performance, because some code is left over as a "reminder" I guess (SendZDOToPeers, ...). It would be better if they compressed the SendZDOs call like literally every other game. Some mods take care of this, but still why.
 				
-				SendDestroyed ZDOs to all peers 
+				SendDestroyedZDOs ZDOs to all peers 
 
 
 	Through some debugging, it appears that every ZDO on the server has its owner set to the server uid. In thinking about what data goes in/out between server/client, I should be able to create a system to send out ZDOs. I'm just not going to be able to rewrite Valheims system completely because its insanely long. Each of these heavy-lifting classes are at least 1k lines. The largest class I've found so far is Player (~5k).
