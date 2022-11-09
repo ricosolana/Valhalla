@@ -240,12 +240,49 @@ namespace ModManager {
         // method overloading is easy
         // https://sol2.readthedocs.io/en/latest/api/overload.html
 
-        apiTable["OnEvent"] = [ptr](sol::variadic_args args) {
+        apiTable["OnEvent"] = [ptr](sol::this_state thisState, sol::variadic_args args) {
             // match incrementally
             //std::string name;
             HASH_t name = 0;
             sol::function callback;
             int priority = 0;
+            for (int i=0; i < args.size(); i++) {
+                auto&& arg = args[i];
+                auto&& type = arg.get_type();
+                if (type == sol::type::string) {
+                    auto h = Utils::GetStableHashCode(arg.as<std::string>());
+                    if (name == 0) name = h;
+                    else name ^= h;
+                } else {
+                    if (type == sol::type::number) {
+                        priority = arg.as<int>();
+                    }
+                    // check next element forcefully, it must be a function
+                    if (i + 1 == args.size()) {
+                        if (type == sol::type::function) {
+                            callback = arg.as<sol::function>();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (name != 0 && callback.valid()) {
+                auto &&vec = m_callbacks[name];
+                vec.emplace_back(ModCallback{ptr, callback, priority});
+                std::sort(vec.begin(), vec.end(), ModCallbackSort);
+            } else {
+                lua_State *L = thisState.L;
+
+                lua_Debug ar;
+                lua_getstack(L, 1, &ar);
+                lua_getinfo(L, "nSl", &ar);
+                auto line = ar.currentline;
+
+                LOG(ERROR) << "Failed to register Lua event callback for Mod '" << ptr->m_name << "' Line " << line;
+            }
+
+            /*
             for (auto&& arg : args) {
                 auto&& type = arg.get_type();
                 if (type == sol::type::string) {
@@ -264,7 +301,7 @@ namespace ModManager {
 
             auto&& vec = m_callbacks[name];
             vec.emplace_back(ModCallback{ptr, callback, priority});
-            std::sort(vec.begin(), vec.end(), ModCallbackSort);
+            std::sort(vec.begin(), vec.end(), ModCallbackSort);*/
         };
 
         // todo try this
@@ -306,11 +343,11 @@ namespace ModManager {
 
 		LOG(INFO) << "Loaded " << mods.size() << " mods";
 
-        CallEvent("Server", "Enable");
+        CallEvent("Enable");
 	}
 
 	void UnInit() {
-        CallEvent("Server", "Disable");
+        CallEvent("Disable");
 		mods.clear();
 	}
 

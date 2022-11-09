@@ -66,7 +66,8 @@ void NetRpc::Update() {
 
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(this, pkg, Utils::GetStableHashCode("Rpc"));
+                // rpc takes a
+				find->second->Invoke(this, pkg, Utils::GetStableHashCode("InRpc") ^ hash);
 			}
 			else {
 #ifdef RPC_DEBUG
