@@ -13,21 +13,42 @@
 
 robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
 
-// Event category, Event name,
-robin_hood::unordered_map<HASH_t, robin_hood::unordered_map<HASH_t, std::vector<ModCallback>>> m_callbacks;
+// pre
+// transpile
+// post
+//std::array<robin_hood::unordered_map<HASH_t, std::vector<ModCallback>>, static_cast<int>(ModEventMode::_MAX)> m_callbacks;
+robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_callbacks;
 
 static bool ModCallbackSort(const ModCallback &a,
                             const ModCallback &b) {
-    return a.second.second < b.second.second;
+    return a.m_priority < b.m_priority;
 }
+
+/*
+HASH_t EventConcat(const std::initializer_list<std::string>& strings) {
+    HASH_t hash = 0;
+    for (auto&& str : strings) {
+        auto h = Utils::GetStableHashCode(str);
+        if (hash == 0)
+            hash = h;
+        else
+            hash ^= h;
+    }
+    return hash;
+
+    //std::string name;
+    //for (auto&& str : strings)
+    //    name += std::to_string(Utils::GetStableHashCode(str));
+    //return Utils::GetStableHashCode(name);
+}*/
 
 namespace ModManager {
     namespace Api {
-        void Register(Mod* mod, HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback, int priority) {
-            auto&& vec = m_callbacks[categoryHash][eventHash];
-            vec.emplace_back(mod, std::make_pair(lua_callback, priority));
-            std::sort(vec.begin(), vec.end(), ModCallbackSort);
-        }
+        //void Register(Mod* mod, HASH_t name, const sol::function& lua_callback, int priority) {
+        //    auto&& vec = m_callbacks[name];
+        //    vec.emplace_back(ModCallback{mod, lua_callback, priority});
+        //    std::sort(vec.begin(), vec.end(), ModCallbackSort);
+        //}
     }
 
     // can get the lua state by passing sol::this_state type at end
@@ -219,10 +240,32 @@ namespace ModManager {
         // method overloading is easy
         // https://sol2.readthedocs.io/en/latest/api/overload.html
 
-        apiTable["OnEvent"] = sol::overload([ptr](std::string categoryName, std::string eventName, sol::function lua_callback) { Api::Register(ptr, Utils::GetStableHashCode(categoryName), Utils::GetStableHashCode(eventName), lua_callback, 0); },
-                                            [ptr](std::string categoryName, std::string eventName, sol::function lua_callback, int priority) { Api::Register(ptr, Utils::GetStableHashCode(categoryName), Utils::GetStableHashCode(eventName), lua_callback, priority); },
-                                            [ptr](HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback) { Api::Register(ptr, categoryHash, eventHash, lua_callback, 0); },
-                                            [ptr](HASH_t categoryHash, HASH_t eventHash, const sol::function& lua_callback, int priority) { Api::Register(ptr, categoryHash, eventHash, lua_callback, priority); });
+        apiTable["OnEvent"] = [ptr](sol::variadic_args args) {
+            // match incrementally
+            //std::string name;
+            HASH_t name = 0;
+            sol::function callback;
+            int priority = 0;
+            for (auto&& arg : args) {
+                auto&& type = arg.get_type();
+                if (type == sol::type::string) {
+                    //name += std::to_string(Utils::GetStableHashCode(arg.as<std::string>()));
+                    //name ^= Utils::
+                    auto h = Utils::GetStableHashCode(arg.as<std::string>());
+                    if (name == 0) name = h;
+                    else name ^= h;
+                } else if (type == sol::type::number) {
+                    priority = arg.as<int>();
+                } else if (type == sol::type::function) {
+                    callback = arg.as<sol::function>();
+                }
+            }
+            //Api::Register(ptr, Utils::GetStableHashCode(name), callback, 0);
+
+            auto&& vec = m_callbacks[name];
+            vec.emplace_back(ModCallback{ptr, callback, priority});
+            std::sort(vec.begin(), vec.end(), ModCallbackSort);
+        };
 
         // todo try this
         state["modThis"] = sol::property([ptr]() { return ptr; });
@@ -271,11 +314,11 @@ namespace ModManager {
 		mods.clear();
 	}
 
-    std::vector<ModCallback>& GetCallbacks(HASH_t category, HASH_t name) {
-        return m_callbacks[category][name];
+    std::vector<ModCallback>& GetCallbacks(HASH_t hash) {
+        return m_callbacks[hash];
     }
 
-    std::vector<ModCallback>& GetCallbacks(const char* category, const char* name) {
-        return GetCallbacks(Utils::GetStableHashCode(category), Utils::GetStableHashCode(name));
+    std::vector<ModCallback>& GetCallbacks(const char* name) {
+        return GetCallbacks(Utils::GetStableHashCode(name));
     }
 }

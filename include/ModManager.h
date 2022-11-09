@@ -22,7 +22,20 @@ public:
             : m_name(name), m_version(version), m_apiVersion(apiVersion), m_state() {}
 };
 
-using ModCallback = std::pair<Mod*, std::pair<sol::function, int>>;
+struct ModCallback {
+    Mod* m_mod;
+    sol::function m_func;
+    int m_priority;
+};
+
+//enum class ModEventMode : uint8_t {
+//    PRE = 0,
+//    //TRANSPILE,
+//    POST,
+//    _MAX,
+//};
+
+//using ModCallback = std::pair<Mod*, std::pair<sol::function, int>>;
 
 //struct ModCallbacks {
 //    std::vector<ModCallback> m_onEnable;
@@ -37,22 +50,45 @@ using ModCallback = std::pair<Mod*, std::pair<sol::function, int>>;
 //};
 
 
+
+/*
+void _EventConcat(std::string& result) {}
+
+template<typename... STRING>
+void _EventConcat(std::string& result, const std::string& s1, const STRING&... s2) {
+    //result += std::to_string(Utils::GetStableHashCode(s1));
+    _EventConcat(s2...);
+}
+
+template<typename... STRING>
+std::string EventConcat(const std::string& s1, const STRING&... s2) {
+    std::string result;
+    _EventConcat(result, s1, s2...);
+    return result;
+}*/
+
+//HASH_t EventConcat(const std::initializer_list<std::string>& strings);
+
+//template<typename ...Types>
+
 namespace ModManager {
 	void Init();
 	void UnInit();
 
-    std::vector<ModCallback>& GetCallbacks(HASH_t category, HASH_t name);
-    std::vector<ModCallback>& GetCallbacks(const char* category, const char* name);
+    std::vector<ModCallback>& GetCallbacks(HASH_t hash);
+    std::vector<ModCallback>& GetCallbacks(const char* name);
+
+
 
     template <typename... Args>
-    sol::table CallEvent(HASH_t category, HASH_t name, Args... params) {
+    sol::table CallEvent(HASH_t name, Args... params) {
         OPTICK_EVENT();
-        auto&& callbacks = GetCallbacks(category, name);
+        auto&& callbacks = GetCallbacks(name);
 
         sol::table eventResults;
         for (auto&& callback : callbacks) {
             try {
-                callback.second.first(eventResults, std::move(params)...);
+                callback.m_func(eventResults, std::move(params)...);
             } catch (const sol::error& e) {
                 LOG(ERROR) << e.what();
             }
@@ -61,18 +97,35 @@ namespace ModManager {
     }
 
     template <typename... Args>
-    auto CallEvent(const char* category, const char* name, Args... params) {
-        return CallEvent(Utils::GetStableHashCode(category), Utils::GetStableHashCode(name), std::move(params)...);
+    auto CallEvent(const std::string& name, Args... params) {
+        return CallEvent(Utils::GetStableHashCode(name), std::move(params)...);
+    }
+
+    //template <typename... Args>
+    //auto CallEvent(const std::initializer_list<std::string> &strings, Args... params) {
+    //    std::string name;
+    //    for (auto&& str : strings)
+    //        name += Utils::GetStableHashCode(str);
+    //
+    //    return CallEvent(Utils::GetStableHashCode(name), std::move(params)...);
+    //}
+
+    template<class Tuple, size_t... Is>
+    auto CallEventTupleImpl(HASH_t name, Tuple t, std::index_sequence<Is...>) {
+        return CallEvent(name, std::move(std::get<Is>(t))...);
     }
 
     template <class Tuple>
-    auto CallEventTuple(HASH_t category, HASH_t name, Tuple t) {
-        auto seq = std::make_index_sequence<std::tuple_size<Tuple>{}>{};
-        return CallEvent(category, name, std::get<decltype(seq)>(t));
+    auto CallEventTuple(HASH_t name, Tuple t) {
+        return CallEventTupleImpl(name, std::move(t),
+                                  std::make_index_sequence < std::tuple_size<Tuple>{} > {});
+
+        //auto seq = std::make_index_sequence<std::tuple_size<Tuple>{}>{};
+        //return CallEvent(name, std::get<decltype(seq)>(std::move(t))...);
     }
 
     template <class Tuple>
-    auto CallEventTuple(const char* category, const char* name, Tuple t) {
-        return CallEvent(category, name, std::move(t));
+    auto CallEventTuple(const std::string& name, Tuple t) {
+        return CallEventTuple(Utils::GetStableHashCode(name), std::move(t));
     }
 };

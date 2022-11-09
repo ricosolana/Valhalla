@@ -56,10 +56,17 @@ void NetRpc::Update() {
 #ifdef RPC_DEBUG
 			std::string name = pkg->Read<std::string>();
 #endif
+            // event call mode: consist of
+            //  - pre: event dispatched prior to delegate
+            //  - transpile: event intended to replace delegate
+            //  - post: event dispatched after delegate
+            //  Any unstated mode will default to 'pre'
+            // ModManager::CallEvent("Enable", "pre") // should default to mode: 'pre'
+            // ModManager::CallEvent("Routing", "pre", data)
+
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(this, pkg,
-                                     ModManager::GetCallbacks().m_onRpc[hash]);
+				find->second->Invoke(this, pkg, Utils::GetStableHashCode("Rpc"));
 			}
 			else {
 #ifdef RPC_DEBUG

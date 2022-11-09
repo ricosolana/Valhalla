@@ -83,7 +83,7 @@ namespace NetRouteManager {
 			auto&& find = m_methods.find(data.m_methodHash);
 			if (find != m_methods.end()) {
 				find->second.first->Invoke(data.m_senderPeerID, std::move(data.m_parameters),
-                                           Utils::GetStableHashCode("Routing"), data.m_methodHash);
+                                           Utils::GetStableHashCode("Routing") ^ data.m_methodHash);
 			}
 			else {
 				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
