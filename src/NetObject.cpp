@@ -85,7 +85,7 @@ void NetObject::HandleRoutedRPC(NetRouteManager::Data rpcData) {
 	auto&& find = m_functions.find(rpcData.m_methodHash);
 	if (find != m_functions.end()) {
 		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters,
-                             Utils::GetStableHashCode("InvokeView") ^ rpcData.m_methodHash);
+                             Utils::GetStableHashCode("InRemoteView") ^ rpcData.m_methodHash);
 	}
 	else {
 		LOG(INFO) << "Failed to find rpc method " << rpcData.m_methodHash;

@@ -66,8 +66,9 @@ void NetRpc::Update() {
 
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-                // rpc takes a
-				find->second->Invoke(this, pkg, Utils::GetStableHashCode("InRpc") ^ hash);
+                // Rpc calls are specific for Lua
+				find->second->Invoke(this, pkg,
+                                     Utils::GetStableHashCode("InRemoteCall") ^ hash);
 			}
 			else {
 #ifdef RPC_DEBUG

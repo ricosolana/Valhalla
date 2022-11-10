@@ -16,11 +16,12 @@ robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
 // pre
 // transpile
 // post
-//std::array<robin_hood::unordered_map<HASH_t, std::vector<ModCallback>>, static_cast<int>(ModEventMode::_MAX)> m_callbacks;
-robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_callbacks;
+//std::array<robin_hood::unordered_map<HASH_t, std::vector<EventHandler>>, static_cast<int>(ModEventMode::_MAX)> m_callbacks;
+robin_hood::unordered_map<HASH_t, EventHandlerStream> m_callbacks;
+std::optional<EventHandlerStream> currentEventStream;
 
-static bool ModCallbackSort(const ModCallback &a,
-                            const ModCallback &b) {
+static bool EventHandlerSort(const EventHandler &a,
+                             const EventHandler &b) {
     return a.m_priority < b.m_priority;
 }
 
@@ -46,8 +47,8 @@ namespace ModManager {
     namespace Api {
         //void Register(Mod* mod, HASH_t name, const sol::function& lua_callback, int priority) {
         //    auto&& vec = m_callbacks[name];
-        //    vec.emplace_back(ModCallback{mod, lua_callback, priority});
-        //    std::sort(vec.begin(), vec.end(), ModCallbackSort);
+        //    vec.emplace_back(EventHandler{mod, lua_callback, priority});
+        //    std::sort(vec.begin(), vec.end(), EventHandlerSort);
         //}
     }
 
@@ -228,10 +229,7 @@ namespace ModManager {
             //"IDENTITY", &Quaternion::IDENTITY
         );
 
-        state.new_enum("Mod",
-                       "name", &Mod::m_name,
-                       "version", &Mod::m_version,
-                       "apiVersion", &Mod::m_apiVersion);
+
 
         auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
@@ -268,9 +266,9 @@ namespace ModManager {
             }
 
             if (name != 0 && callback.valid()) {
-                auto &&vec = m_callbacks[name];
-                vec.emplace_back(ModCallback{ptr, callback, priority});
-                std::sort(vec.begin(), vec.end(), ModCallbackSort);
+                auto &&vec = m_callbacks[name].m_callbacks;
+                vec.emplace_back(EventHandler{ptr, callback, priority});
+                std::sort(vec.begin(), vec.end(), EventHandlerSort);
             } else {
                 lua_State *L = thisState.L;
 
@@ -300,14 +298,45 @@ namespace ModManager {
             //Api::Register(ptr, Utils::GetStableHashCode(name), callback, 0);
 
             auto&& vec = m_callbacks[name];
-            vec.emplace_back(ModCallback{ptr, callback, priority});
-            std::sort(vec.begin(), vec.end(), ModCallbackSort);*/
+            vec.emplace_back(EventHandler{ptr, callback, priority});
+            std::sort(vec.begin(), vec.end(), EventHandlerSort);*/
         };
 
+        auto thisTable = state["This"].get_or_create<sol::table>();
+
+        //state.new_enum("Mod",
+        //               "name", &Mod::m_name,
+        //               "version", &Mod::m_version,
+        //               "apiVersion", &Mod::m_apiVersion);
+
         // todo try this
-        state["modThis"] = sol::property([ptr]() { return ptr; });
+        //thisTable["mod"] = sol::property([ptr]() { return ptr; });
 
+        {
+            auto thisModTable = thisTable["mod"].get_or_create<sol::table>();
+            thisModTable["name"] = ptr->m_name;
+            thisModTable["version"] = ptr->m_version;
+            thisModTable["apiVersion"] = ptr->m_apiVersion;
+        }
 
+        // get informaiton about the current event if any
+        {
+            auto thisEventTable = thisTable["event"].get_or_create<sol::table>();
+
+            // cancel might be better being a var
+            //thisEventTable["cancel"] = false;
+
+            // so lua usage:
+
+            thisEventTable["Cancel"] = [ptr]() {
+                // Intended to be called from within an OnEvent
+                // The intended delegate will be cancelled or ignored
+                // so somehow grab the current-temp event
+                // and flag for it to cancel the delegate in question
+
+            };
+            thisEventTable["cancelled"] =
+        }
 
         return mod;
     }
@@ -348,14 +377,19 @@ namespace ModManager {
 
 	void UnInit() {
         CallEvent("Disable");
+        m_callbacks.clear();
 		mods.clear();
 	}
 
-    std::vector<ModCallback>& GetCallbacks(HASH_t hash) {
+    std::vector<EventHandler>& GetCallbacks(HASH_t hash) {
         return m_callbacks[hash];
     }
 
-    std::vector<ModCallback>& GetCallbacks(const char* name) {
+    std::vector<EventHandler>& GetCallbacks(const char* name) {
         return GetCallbacks(Utils::GetStableHashCode(name));
+    }
+
+    std::optional<EventHandlerStream> &CurrentEventStream() {
+        return currentEventStream;
     }
 }

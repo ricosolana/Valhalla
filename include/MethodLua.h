@@ -15,7 +15,7 @@ public:
     // Invoke a function with variadic parameters
     // A copy of the package is made
     // You may perform a move on the package as needed
-    virtual void Invoke(T t, NetPackage pkg, std::vector<ModCallback>& callbacks) = 0;
+    virtual void Invoke(T t, NetPackage pkg, std::vector<EventHandler>& callbacks) = 0;
 };
 
 // Base specifier
@@ -26,7 +26,7 @@ template<class T, class...V> class MethodLuaImpl;
 template<class T, class...Args>
 class MethodLuaImpl<void(*)(T, Args...)> : public IMethodLua<T> {
 public:
-    void Invoke(T t, NetPackage pkg, std::vector<ModCallback>& callbacks) override {
+    void Invoke(T t, NetPackage pkg, std::vector<EventHandler>& callbacks) override {
         if constexpr (sizeof...(Args)) {
             auto tuple = NetPackage::Deserialize<Args...>(pkg);
 

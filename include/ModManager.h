@@ -9,6 +9,7 @@
 
 class NetRpc;
 
+struct EventHandler;
 
 class Mod {
 public:
@@ -18,14 +19,23 @@ public:
 
     sol::state m_state;
 
+    //EventHandler *m_currentEvent;
+    // replace the intended delegate call? (basically cancel it?)
+    //bool m_cancelDelegate = false;
+
     Mod(const std::string& name, const std::string &version, int apiVersion)
             : m_name(name), m_version(version), m_apiVersion(apiVersion), m_state() {}
 };
 
-struct ModCallback {
+struct EventHandler {
     Mod* m_mod;
     sol::function m_func;
     int m_priority;
+};
+
+struct EventHandlerStream {
+    std::vector<EventHandler> m_callbacks;
+    bool m_cancel = false;
 };
 
 //enum class ModEventMode : uint8_t {
@@ -35,18 +45,18 @@ struct ModCallback {
 //    _MAX,
 //};
 
-//using ModCallback = std::pair<Mod*, std::pair<sol::function, int>>;
+//using EventHandler = std::pair<Mod*, std::pair<sol::function, int>>;
 
-//struct ModCallbacks {
-//    std::vector<ModCallback> m_onEnable;
-//    std::vector<ModCallback> m_onDisable;
-//    std::vector<ModCallback> m_onUpdate;
-//    std::vector<ModCallback> m_onPeerInfo;
-//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRpc;
-//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRoute;
-//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSync;
-//    robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onRouteWatch;
-//    //robin_hood::unordered_map<HASH_t, std::vector<ModCallback>> m_onSyncWatch;
+//struct EventHandlerStream {
+//    std::vector<EventHandler> m_onEnable;
+//    std::vector<EventHandler> m_onDisable;
+//    std::vector<EventHandler> m_onUpdate;
+//    std::vector<EventHandler> m_onPeerInfo;
+//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRpc;
+//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRoute;
+//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onSync;
+//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRouteWatch;
+//    //robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onSyncWatch;
 //};
 
 
@@ -71,29 +81,52 @@ std::string EventConcat(const std::string& s1, const STRING&... s2) {
 
 //template<typename ...Types>
 
-namespace ModManager {
+// TODO event subscriber system?
+// Make all Managers into objects
+// What things should be namespaces?
+// perhaps everything?
+// Shouldnt be too verbose
+// Should be trivial to use and recognizable
+// Intended usages:
+//  - Valhalla()->ModManager()->CallEvent(...)
+//      MOD_EVENT(...) as a easy macro
+//  - Valhalla()->NetManager()->...
+//  - Valhalla()->
+class ModManager {
+public:
 	void Init();
 	void UnInit();
 
-    std::vector<ModCallback>& GetCallbacks(HASH_t hash);
-    std::vector<ModCallback>& GetCallbacks(const char* name);
+    std::vector<EventHandler>& GetCallbacks(HASH_t hash);
+    std::vector<EventHandler>& GetCallbacks(const char* name);
 
+    std::optional<EventHandlerStream> &CurrentEventStream();
+
+    // get event results
+
+    // Mod might be able to be hidden if var args can be constructed
 
 
     template <typename... Args>
-    sol::table CallEvent(HASH_t name, Args... params) {
+    bool CallEvent(HASH_t name, Args... params) {
         OPTICK_EVENT();
         auto&& callbacks = GetCallbacks(name);
 
-        sol::table eventResults;
+        auto &&opt = CurrentEventStream();
+        opt =
+
+        // have a method to get the status of the event results
+        // instead of weirdly passing a temporary around
+        //sol::table eventResults;
         for (auto&& callback : callbacks) {
             try {
-                callback.m_func(eventResults, std::move(params)...);
+                callback.m_func(std::move(params)...);
             } catch (const sol::error& e) {
                 LOG(ERROR) << e.what();
             }
         }
-        return eventResults;
+        //return eventResults;
+        return CurrentEventStream()
     }
 
     template <typename... Args>
