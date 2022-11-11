@@ -46,10 +46,12 @@ public:
 
     void Invoke(T t, NetPackage pkg) override {
         if constexpr (sizeof...(Args)) {
-            auto tuple = NetPackage::Deserialize<Args...>(pkg);
+            auto tuple = std::tuple_cat(std::forward_as_tuple(t),
+                                        NetPackage::Deserialize<Args...>(pkg));
 
             if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
-                std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object, t), tuple));
+                std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object),
+                                                  tuple));
                 //Utils::InvokeTuple(lambda, object, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
@@ -81,10 +83,11 @@ public:
 
     void Invoke(T t, NetPackage pkg) override {
         if constexpr (sizeof...(Args)) {
-            auto tuple = NetPackage::Deserialize<Args...>(pkg);
+            auto tuple = std::tuple_cat(std::forward_as_tuple(t),
+                                        NetPackage::Deserialize<Args...>(pkg));
 
             if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
-                std::apply(lambda, std::tuple_cat(std::forward_as_tuple(t), tuple));
+                std::apply(lambda, tuple);
                 //Utils::InvokeTupleS(lambda, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
