@@ -30,7 +30,7 @@ namespace NetManager {
 	void Update(double delta);
 	void Close();
 
-	NetPeer& GetPeer(NetRpc& rpc);
+	NetPeer* GetPeer(NetRpc* rpc);
 	NetPeer* GetPeer(const std::string& name);
 	NetPeer* GetPeer(OWNER_t uuid);
 

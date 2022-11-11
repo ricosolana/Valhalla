@@ -12,13 +12,13 @@ enum class ConnectionStatus;
 
 class NetRpc {
 public:
-    using MethodPtr = std::unique_ptr<IMethod<NetRpc&>>;
+    using MethodPtr = std::unique_ptr<IMethod<NetRpc*>>;
 
     template<class ...Args>
-    using FuncPtr = void(*)(NetRpc&, Args...);
+    using FuncPtr = void(*)(NetRpc*, Args...);
 
     template<class C, class ...Args>
-    using ClFuncPtr = void(C::*)(NetRpc&, Args...);
+    using ClFuncPtr = void(C::*)(NetRpc*, Args...);
 
 private:
     static constexpr HASH_t RPC_HASH = Utils::GetStableHashCode("Rpc");

@@ -88,7 +88,7 @@ namespace NetRouteManager {
 		}
 	}
 
-	void RPC_RoutedRPC(NetRpc& rpc, NetPackage pkg) {
+	void RPC_RoutedRPC(NetRpc* rpc, NetPackage pkg) {
 		Data data(pkg);
 
         // todo
@@ -96,7 +96,7 @@ namespace NetRouteManager {
         // check to see the id matches
 
         // do not trust the client to provide their correct id
-        data.m_senderPeerID = NetManager::GetPeer(rpc).m_uuid;
+        data.m_senderPeerID = NetManager::GetPeer(rpc)->m_uuid;
 
 		// Server is the intended receiver (or EVERYONE)
 		if (data.m_targetPeerID == SERVER_ID

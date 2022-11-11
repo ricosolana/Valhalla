@@ -51,7 +51,7 @@ void NetRpc::Update() {
 #endif
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-				find->second->Invoke(*this, pkg);
+				find->second->Invoke(this, pkg);
 			}
 		}
 	}

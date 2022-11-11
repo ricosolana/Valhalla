@@ -190,7 +190,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                         auto callback = arg.as<sol::function>();
 
                         self.Register(name,
-                                      std::make_unique<MethodImpl<NetRpc&>>(callback, std::move(types)));
+                                      std::make_unique<MethodImpl<NetRpc*>>(callback, std::move(types)));
                     } else {
                         LOG(ERROR) << "Last param must be a function";
                     }
