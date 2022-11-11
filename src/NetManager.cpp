@@ -256,6 +256,8 @@ namespace NetManager {
         if (Valhalla()->m_banned.contains(rpc.m_socket->GetHostName()))
             return rpc.SendError(ConnectionStatus::ErrorBanned);
 
+        auto ptr = &rpc;
+
 		// pass the data to the lua OnPeerInfo
         auto cancel = CALL_EVENT("PeerInfo", &rpc, uuid, name, version);
         if (cancel)
