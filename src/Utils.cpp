@@ -9,96 +9,128 @@ namespace Utils {
     // https://stackoverflow.com/questions/12398377/is-it-possible-to-have-zlib-read-from-and-write-to-the-same-memory-buffer
     // https://zlib.net/zpipe.c
 
-    bool Compress(const BYTE_t* buf, unsigned int bufSize, int level, BYTE_t* out, unsigned int &outSize) {
+
+
+    int CompressGz(const BYTE_t* in, unsigned int bufSize, int level, BYTE_t* out, unsigned int outCapacity) {
         z_stream zs;
         zs.zalloc = Z_NULL;
         zs.zfree = Z_NULL;
         zs.opaque = Z_NULL;
         zs.avail_in = (uInt) bufSize;
-        zs.next_in = (Bytef*) buf;
-        zs.avail_out = (uInt) outSize; // HERE
+        zs.next_in = (Bytef*) in;
+        zs.avail_out = (uInt) outCapacity; // HERE
         zs.next_out = (Bytef*) out;
 
         // possible init errors are:
-        //  - invalid param
-        //  - out of memory
-        //  - incompatible version
-        if (deflateInit2(&zs, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
-            return false;
+        //  - invalid param (can be fixed at compile time)
+        //  - out of memory (unlikely)
+        //  - incompatible version (should be fine if using the init macro)
+        // https://stackoverflow.com/a/72499721
+
+        if (int res = deflateInit2(&zs, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+            return res;
 
         deflate(&zs, Z_FINISH);
-        if (deflateEnd(&zs) != Z_OK)
+        if (int res = deflateEnd(&zs) != Z_OK)
+            return res;
+
+        return zs.total_out;
+    }
+
+    int CompressGz(const BYTE_t* in, unsigned int inSize, BYTE_t* out, unsigned int outCapacity) {
+        return CompressGz(in, inSize, Z_DEFAULT_COMPRESSION, out, outCapacity);
+    }
+
+    bool CompressGz(const BYTE_t* in, unsigned int inSize, int level, BYTES_t& out) {
+        out.resize(inSize);
+        int res = CompressGz(in, inSize, level, out.data(), out.size());
+        if (res < 0)
             return false;
 
-        outSize = zs.total_out;
+        out.resize(res);
         return true;
     }
 
-    void Compress(const BYTES_t& buf, int level, BYTES_t& out) {
-        out.resize(buf.size());
-
-        unsigned int compressedSize = out.size();
-        if (!Compress(buf.data(), buf.size(), level, out.data(), compressedSize))
-            throw std::runtime_error("compression error");
-
-        out.resize(compressedSize);
+    bool CompressGz(const BYTE_t* in, unsigned int inSize, BYTES_t& out) {
+        return CompressGz(in, inSize, Z_DEFAULT_COMPRESSION, out);
     }
 
-    std::vector<BYTE_t> Compress(const BYTE_t* buf, unsigned int bufSize, int level) {
-        std::vector<BYTE_t> out(bufSize);
 
-        if (!Compress(buf, bufSize, level, out.data(), bufSize))
-            throw std::runtime_error("compression error");
 
-        out.resize(bufSize);
+    int CompressGz(const BYTES_t& in, int level, BYTE_t* out, unsigned int outCapacity) {
+        return CompressGz(in.data(), in.size(), out, outCapacity);
+    }
 
-        return out;
+    bool CompressGz(const BYTES_t& in, int level, BYTES_t& out) {
+        return CompressGz(in.data(), in.size(), level, out);
+    }
+
+    bool CompressGz(const BYTES_t& in, BYTES_t& out) {
+        return CompressGz(in, Z_DEFAULT_COMPRESSION, out);
     }
 
 
 
 
 
-    // This method is unfinished and untested
-    // it requires tinkering and validation
-    bool Decompress(const BYTE_t* buf, unsigned int bufSize, BYTE_t **out, unsigned int &outSize) {
-        //std::vector<BYTE_t> ret;
 
-        if (bufSize == 0)
-            return true;
+    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize, int level) {
+        BYTES_t buf;
+        if (!CompressGz(in, inSize, level, buf))
+            throw compress_error("Unable to compress data");
+        return buf;
+    }
 
-        const unsigned full_length = bufSize;
-        const unsigned half_length = bufSize / 2;
+    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize) {
+        return CompressGz(in, inSize, Z_DEFAULT_COMPRESSION);
+    }
 
-        unsigned uncompLength = full_length;
-        std::unique_ptr<BYTE_t> uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength]);
+    BYTES_t CompressGz(const BYTES_t& in, int level) {
+        return CompressGz(in.data(), in.size(), level);
+    }
+
+    BYTES_t CompressGz(const BYTES_t& in) {
+        return CompressGz(in, in.size());
+    }
+
+
+
+
+
+
+
+    bool Decompress(const BYTE_t* in, unsigned int inSize, BYTES_t &out) {
+        if (inSize == 0)
+            return false;
+
+        //BYTES_t result;
+        out.resize(inSize);
 
         z_stream stream;
-        stream.next_in = (Bytef*)buf;
-        stream.avail_in = bufSize;
+        stream.next_in = (Bytef*) in;
+        stream.avail_in = inSize;
         stream.total_out = 0;
         stream.zalloc = Z_NULL;
         stream.zfree = Z_NULL;
 
-        if (inflateInit2(&stream, (16 + MAX_WBITS)) != Z_OK)
-            throw std::runtime_error("unable to decompress gzip stream");
-        
+        if (inflateInit2(&stream, 15 | 16) != Z_OK)
+            return false;
+
         while (true) {
-            // If our output buffer is too small  
-            if (stream.total_out >= uncompLength) {
-                // Increase size of output buffer  
-                auto old = std::move(uncomp);
-                uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength + half_length]);
-                memcpy(uncomp.get(), old.get(), uncompLength);
-                uncompLength += half_length;
+            // If our output buffer is too small
+            if (stream.total_out >= out.size()) {
+                out.resize(stream.total_out + inSize/2);
             }
 
-            stream.next_out = (Bytef*)(uncomp.get() + stream.total_out);
-            stream.avail_out = uncompLength - stream.total_out;
+            // Advance to the next chunk to decode
+            stream.next_out = (Bytef*)(out.data() + stream.total_out);
 
-            // Inflate another chunk.  
+            // Set the available output capacity
+            stream.avail_out = out.size() - stream.total_out;
+
+            // Inflate another chunk.
             int err = inflate(&stream, Z_SYNC_FLUSH);
-            if (err == Z_STREAM_END) 
+            if (err == Z_STREAM_END)
                 break;
             else if (err != Z_OK) {
                 return false;
@@ -108,62 +140,24 @@ namespace Utils {
         if (inflateEnd(&stream) != Z_OK)
             return false;
 
-        std::copy(uncomp.get(), uncomp.get() + stream.total_out, *out);
+        // Trim off the extra-capacity inflated bytes
+        out.resize(stream.total_out);
         return true;
     }
 
-    std::vector<BYTE_t> Decompress(const BYTE_t* compressedBytes, int count) {
-        std::vector<BYTE_t> ret;
-
-        if (count == 0)
-            return ret;
-
-        unsigned full_length = count;
-        unsigned half_length = count / 2;
-
-        unsigned uncompLength = full_length;
-        std::unique_ptr<BYTE_t> uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength]);
-
-        z_stream stream;
-        stream.next_in = (Bytef*)compressedBytes;
-        stream.avail_in = count;
-        stream.total_out = 0;
-        stream.zalloc = Z_NULL;
-        stream.zfree = Z_NULL;
-
-        bool done = false;
-
-        if (inflateInit2(&stream, (16 + MAX_WBITS)) != Z_OK)
-            throw std::runtime_error("unable to decompress gzip stream");
-
-        while (!done) {
-            // If our output buffer is too small  
-            if (stream.total_out >= uncompLength) {
-                // Increase size of output buffer  
-                auto old = std::move(uncomp);
-                uncomp = std::unique_ptr<BYTE_t>(new BYTE_t[uncompLength + half_length]);
-                memcpy(uncomp.get(), old.get(), uncompLength);
-                uncompLength += half_length;
-            }
-
-            stream.next_out = (Bytef*)(uncomp.get() + stream.total_out);
-            stream.avail_out = uncompLength - stream.total_out;
-
-            // Inflate another chunk.  
-            int err = inflate(&stream, Z_SYNC_FLUSH);
-            if (err == Z_STREAM_END) done = true;
-            else if (err != Z_OK) {
-                throw std::runtime_error("decompression error " + std::to_string(err));
-            }
-        }
-
-        if (inflateEnd(&stream) != Z_OK)
-            throw std::runtime_error("unable to end decompressing gzip stream");
-
-        ret.insert(ret.begin(), uncomp.get(), uncomp.get() + stream.total_out);
-
-        return ret;
+    BYTES_t Decompress(const BYTE_t* in, unsigned int inSize) {
+        BYTES_t buf;
+        if (!Decompress(in, inSize, buf))
+            throw compress_error("unable to decompress");
+        return buf;
     }
+
+    BYTES_t Decompress(const BYTES_t& in) {
+        return Decompress(in.data(), in.size());
+    }
+
+
+
 
 
 
@@ -308,12 +302,12 @@ namespace Utils {
         return count;
     }
 
-    OWNER_t StringToUID(const std::string& s) {
-        std::stringstream ss(s);
-        OWNER_t uid;
-        ss >> uid;
-        return uid;
-    }
+    //OWNER_t StringToUID(const std::string& s) {
+    //    std::stringstream ss(s);
+    //    OWNER_t uid;
+    //    ss >> uid;
+    //    return uid;
+    //}
 
     std::string Join(std::vector<std::string_view>& strings) {
         std::string result;

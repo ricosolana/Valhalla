@@ -66,8 +66,14 @@ using BYTES_t = std::vector<BYTE_t>;
 
 static constexpr float PI = 3.141592653589f;
 
+class compress_error : public std::runtime_error {
+    using runtime_error::runtime_error;
+};
+
 namespace Utils {
 
+
+    /*
 	template <class F, class C, class Pass, class Tuple, size_t... Is>
 	constexpr auto InvokeTupleImpl(F f, C& c, Pass pass, Tuple t, std::index_sequence<Is...>) {
 		return std::invoke(f, c, pass, std::move(std::get<Is>(t))...);
@@ -92,7 +98,7 @@ namespace Utils {
 	constexpr void InvokeTupleS(F f, Pass pass, Tuple t) {
 		InvokeTupleImplS(f, pass, std::move(t),
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
-	}
+	}*/
 
     // https://stackoverflow.com/questions/44776927/call-member-function-with-expanded-tuple-parms-stdinvoke-vs-stdapply
     //template<typename F, typename T, typename U>
@@ -100,26 +106,69 @@ namespace Utils {
     //    return std::apply(std::forward<F>(func), std::tuple_cat(std::forward_as_tuple(std::forward<T>(first)), std::forward<U>(tuple)));
     //}
 
-    //template<typename Tuple, size_t... Is>
-    //auto UnpackImpl(Tuple t, std::index_sequence<Is...>) {
-    //    return std::get<Is>(t);
-    //}
-    //template<typename Tuple>
-    //auto Unpack(Tuple &tuple) {
-    //    auto seq = std::make_index_sequence < std::tuple_size<Tuple>{} > {};
-    //    return std::get<std::tuple_size<Tuple>{}>()
-    //}
+    
+
+    // Compress a byte array with a specified length and compression level
+    // Stores the compressed contents into 'out' array
+    // Returns the compressed size otherwise a negative number on compression failure
+    int CompressGz(const BYTE_t* in, unsigned int inSize, int level, BYTE_t* out, unsigned int outCapacity);
+    // Compress a byte array with a specified length
+    // Stores the compressed contents into 'out' array
+    // Returns the compressed size otherwise a negative number on compression failure
+    int CompressGz(const BYTE_t* in, unsigned int inSize, BYTE_t* out, unsigned int outCapacity);
+    // Compress a byte array with a specified length and compression level
+    // Stores the compressed contents into 'out' vector
+    // Returns true otherwise false on compression failure
+    bool CompressGz(const BYTE_t* in, unsigned int inSize, int level, BYTES_t& out);
+    // Compress a byte array with a specified length
+    // Stores the compressed contents into 'out' vector
+    // Returns true otherwise false on compression failure
+    bool CompressGz(const BYTE_t* in, unsigned int inSize, BYTES_t& out);
+
+    // Compress a vector of bytes with a specified compression level
+    // Stores the compressed contents into 'out' array
+    // Returns the compressed size otherwise a negative number on compression failure
+    int CompressGz(const BYTES_t& in, int level, BYTE_t* out, unsigned int outCapacity);
+    // Compress a vector of bytes with a specified compression level
+    // Stores the compressed contents into 'out' vector
+    // Returns true otherwise false on compression failure
+    bool CompressGz(const BYTES_t& in, int level, BYTES_t& out);
+    // Compress a vector of bytes
+    // Stores the compressed contents into 'out' vector
+    // Returns true otherwise false on compression failure
+    bool CompressGz(const BYTES_t& in, BYTES_t& out);
 
 
 
-	bool Compress(const BYTE_t* buf, unsigned int bufSize, int level, BYTE_t* out, unsigned int& outSize);
-	void Compress(const BYTES_t& buf, int level, BYTES_t& out);
-	std::vector<BYTE_t> Compress(const BYTE_t* buf, unsigned int bufSize, int level);
+    // Compress a byte array with a specified length and compression level
+    // Returns the compressed contents as a byte vector
+    // Throws on compression failure
+    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize, int level);
+    // Compress a byte array with a specified length
+    // Returns the compressed contents as a byte vector
+    // Throws on compression failure
+    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize);
 
-	std::vector<BYTE_t> Decompress(const BYTE_t* compressedBytes, int count);
+    // Compress a vector with a specified compression level
+    // Returns the compressed contents as a byte vector
+    // Throws on compression failure
+    BYTES_t CompressGz(const BYTES_t& in, int level);
+    // Compress a vector with specified length
+    // Returns the compressed contents as a byte vector
+    // Throws on compression failure
+    BYTES_t CompressGz(const BYTES_t& in);
 
-	//byte* Compress(const byte* uncompressedBytes, int count, int *outCount, int level = Z_DEFAULT_COMPRESSION);
-	//byte* Decompress(const byte* compressedBytes, int count, int *outCount);
+
+
+    // Decompress a byte array with a specified length
+    // Stores the compressed contents into 'out' array
+    // Returns true otherwise false on decompresssion error
+    bool Decompress(const BYTE_t* in, unsigned int inSize, BYTES_t &out);
+
+    BYTES_t Decompress(const BYTE_t* in, unsigned int inSize);
+
+    BYTES_t Decompress(const BYTES_t& in);
+
 
 
 	// Encoding.ASCII.GetString equivalent:
@@ -130,7 +179,7 @@ namespace Utils {
 
 	HASH_t GetStableHashCode(const std::string &s);
 
-	constexpr HASH_t GetStableHashCode(const char* str, uint32_t num, uint32_t num2, uint32_t idx) {
+	constexpr HASH_t GetStableHashCode(const char* str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
 		if (str[idx] != '\0') {
 			num = ((num << 5) + num) ^ (unsigned)str[idx];
 			if (str[idx + 1] != '\0') {
@@ -154,7 +203,7 @@ namespace Utils {
 	// Return -1 on bad encoding
 	int32_t GetUTF8Count(const BYTE_t* p);
 
-	OWNER_t StringToUID(const std::string &s);
+	//OWNER_t StringToUID(const std::string &s);
 
 	// ugly
 	template<typename StrContainer>

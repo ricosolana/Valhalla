@@ -118,15 +118,22 @@ public:
     void Invoke(T t, NetPackage pkg) override {
         sol::variadic_results results;
         auto&& state(m_func.lua_state());
+
+        // Pass the rpc always
+        results.push_back(sol::make_object(state, t));
+
         for (auto&& pkgType : m_types) {
             switch (pkgType) {
                 case PkgType::BYTE_ARRAY:
+                    // Will be interpreted as sol container type
+                    // see https://sol2.readthedocs.io/en/latest/containers.html
                     results.push_back(sol::make_object(state, pkg.Read<BYTES_t>()));
                     break;
                 case PkgType::PKG:
                     results.push_back(sol::make_object(state, pkg.Read<NetPackage>()));
                     break;
                 case PkgType::STRING:
+                    // Primitive: string
                     results.push_back(sol::make_object(state, pkg.Read<std::string>()));
                     break;
                 case PkgType::NET_ID:
@@ -142,43 +149,60 @@ public:
                     results.push_back(sol::make_object(state, pkg.Read<Quaternion>()));
                     break;
                 case PkgType::STRING_ARRAY:
+                    // Container type of Primitive: string
                     results.push_back(sol::make_object(state, pkg.Read<std::vector<std::string>>()));
                     break;
+                case PkgType::BOOL:
+                    // Primitive: boolean
+                    results.push_back(sol::make_object(state, pkg.Read<bool>()));
+                    break;
                 case PkgType::INT8:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<int8_t>()));
                     break;
                 case PkgType::UINT8:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<uint8_t>()));
                     break;
                 case PkgType::INT16:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<int16_t>()));
                     break;
                 case PkgType::UINT16:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<uint16_t>()));
                     break;
                 case PkgType::INT32:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<int32_t>()));
                     break;
                 case PkgType::UINT32:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<uint32_t>()));
                     break;
                 case PkgType::INT64:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<int64_t>()));
                     break;
                 case PkgType::UINT64:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<uint64_t>()));
                     break;
                 case PkgType::FLOAT:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<float>()));
                     break;
                 case PkgType::DOUBLE:
+                    // Primitive: number
                     results.push_back(sol::make_object(state, pkg.Read<double>()));
                     break;
             }
         }
 
-        auto args(sol::as_args(results));
-        m_func(args);
+        m_func(results);
+
+        //auto args(sol::as_args(results));
+        //m_func(args);
     }
 };
 

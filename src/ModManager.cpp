@@ -132,8 +132,9 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                    "VECTOR2i", PkgType::VECTOR2i,
                    "QUATERNION", PkgType::QUATERNION,
                    "STRING_ARRAY", PkgType::STRING_ARRAY,
+                   "BOOL", PkgType::BOOL,
                    "INT8", PkgType::INT8, "UINT8", PkgType::UINT8,
-                        "CHAR", PkgType::INT8, "UCHAR", PkgType::UINT8, "BYTE", PkgType::UINT8, "BOOL", PkgType::UINT8,
+                        "CHAR", PkgType::INT8, "UCHAR", PkgType::UINT8, "BYTE", PkgType::UINT8,
                    "INT16", PkgType::INT16, "UINT16", PkgType::UINT16,
                         "SHORT", PkgType::INT16, "USHORT", PkgType::UINT16,
                    "INT32", PkgType::INT32, "UINT32", PkgType::UINT32,
@@ -144,29 +145,75 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                    "DOUBLE", PkgType::DOUBLE
                    );
 
+    //auto zlibTable = state["zlib"].get_or_create<sol::table>();
+    //zlibTable["Compress"] = sol::overload([](const BYTES_t& bytes) {
+    //    return Utils::Compress(bytes)
+    //    },
+    //                                      [](const BYTES_t& bytes, int length) {},
+    //                                      [](const BYTES_t& bytes, int length, int level) {});
+
+    state.new_usertype<Stream>("Stream",
+        "Length", &Stream::Length
+
+    );
+
+    // Package read/write types
+
+    state.new_usertype<NetPackage>("NetPackage",
+        "stream", &NetPackage::m_stream
+    );
+
+    //state.new_usertype<BYTES_t>("Bytes")
+
+    state.new_usertype<NetID>("NetID",
+                              "uuid", &NetID::m_uuid,
+                              "id", &NetID::m_id
+    );
+
+    state.new_usertype<Vector3>("Vector3",
+                                "x", &Vector3::x,
+                                "y", &Vector3::y,
+                                "z", &Vector3::z,
+                                "Distance", &Vector3::Distance,
+                                "Magnitude", &Vector3::Magnitude,
+                                "Normalize", &Vector3::Normalize,
+                                "Normalized", &Vector3::Normalized,
+                                "SqDistance", &Vector3::SqDistance,
+                                "SqMagnitude", &Vector3::SqMagnitude
+            //"ZERO", &Vector3::ZERO
+    );
+
+    state.new_usertype<Vector2i>("Vector3",
+                                 "x", &Vector2i::x,
+                                 "y", &Vector2i::y,
+                                 "Distance", &Vector2i::Distance,
+                                 "Magnitude", &Vector2i::Magnitude,
+                                 "Normalize", &Vector2i::Normalize,
+                                 "Normalized", &Vector2i::Normalized,
+                                 "SqDistance", &Vector2i::SqDistance,
+                                 "SqMagnitude", &Vector2i::SqMagnitude
+            //"ZERO", &Vector2i::ZERO
+    );
+
+    state.new_usertype<Quaternion>("Quaternion",
+                                   "x", &Quaternion::x,
+                                   "y", &Quaternion::y,
+                                   "z", &Quaternion::z,
+                                   "w", &Quaternion::w
+            //"IDENTITY", &Quaternion::IDENTITY
+    );
+
+
     // To register an RPC, must pass a lua stack handler
     // basically, get the lua state to get args passed to RPC invoke
     // https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
     state.new_usertype<NetRpc>("NetRpc",
-        //"Invoke", &NetRpc::Invoke,
-        //"Register", [](NetRpc& self, sol::variadic_args args) {
-        //    LOG(INFO) << "Lua Register call args:";
-        //    for (auto&& arg : args) {
-        //        LOG(INFO) << arg.as<std::string>();
-        //    }
-        //},
-
-        // rpc:Register("rpcname", function(pkg)
-        //     print("Received rpcname!")
-        // end
-
-        // rpc:Register("rpcname", PkgType.BOOL, function(enabled)
-        //     print("Received rpcname!")
-        // end
+        "Invoke", [](NetRpc& self, sol::variadic_args args) {
+            // Invoke will firstly
+        },
 
         "Register", [](NetRpc& self, sol::variadic_args args) {
-
-            HASH_t name = 0; //= Utils::GetStableHashCode(args[0].as<std::string>());
+            HASH_t name = 0;
             std::vector<PkgType> types;
 
             for (int i=0; i < args.size(); i++) {
@@ -215,49 +262,6 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
         //"Start", &ISocket::Init
     );
 
-    state.new_usertype<NetPackage>("NetPackage"
-        //"", &NetPackage::
-    );
-
-    //state.new_usertype<BYTES_t>("Bytes")
-
-    state.new_usertype<NetID>("NetID",
-        "uuid", &NetID::m_uuid,
-        "id", &NetID::m_id
-    );
-
-    state.new_usertype<Vector3>("Vector3",
-        "x", &Vector3::x,
-        "y", &Vector3::y,
-        "z", &Vector3::z,
-        "Distance", &Vector3::Distance,
-        "Magnitude", &Vector3::Magnitude,
-        "Normalize", &Vector3::Normalize,
-        "Normalized", &Vector3::Normalized,
-        "SqDistance", &Vector3::SqDistance,
-        "SqMagnitude", &Vector3::SqMagnitude
-        //"ZERO", &Vector3::ZERO
-    );
-
-    state.new_usertype<Vector2i>("Vector3",
-        "x", &Vector2i::x,
-        "y", &Vector2i::y,
-        "Distance", &Vector2i::Distance,
-        "Magnitude", &Vector2i::Magnitude,
-        "Normalize", &Vector2i::Normalize,
-        "Normalized", &Vector2i::Normalized,
-        "SqDistance", &Vector2i::SqDistance,
-        "SqMagnitude", &Vector2i::SqMagnitude
-        //"ZERO", &Vector2i::ZERO
-    );
-
-    state.new_usertype<Quaternion>("Quaternion",
-        "x", &Quaternion::x,
-        "y", &Quaternion::y,
-        "z", &Quaternion::z,
-        "w", &Quaternion::w
-        //"IDENTITY", &Quaternion::IDENTITY
-    );
 
 
 

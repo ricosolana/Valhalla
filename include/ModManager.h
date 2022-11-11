@@ -18,6 +18,7 @@ enum class PkgType {
     VECTOR2i,
     QUATERNION,
     STRING_ARRAY,
+    BOOL,
     INT8, UINT8, //BOOL, CHAR, UCHAR,
     INT16, UINT16, //SHORT, USHORT,
     INT32, UINT32, //INT, UINT,

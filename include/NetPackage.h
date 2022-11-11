@@ -27,10 +27,10 @@ public:
 
     NetPackage() = default;
     NetPackage(const BYTE_t* data, uint32_t count); // raw bytes constructor
-    NetPackage(BYTES_t &&vec);                      // assign vector constructor
-    NetPackage(const BYTES_t& vec);                 // copy vector constructor
+    explicit NetPackage(BYTES_t &&vec);                      // assign vector constructor
+    explicit NetPackage(const BYTES_t& vec);                 // copy vector constructor
     NetPackage(const BYTES_t& vec, uint32_t count); // vector count constructor
-    NetPackage(uint32_t reserve);                   // reserve initial memory
+    explicit NetPackage(uint32_t reserve);                   // reserve initial memory
     NetPackage(const NetPackage& other) = default;  // copy
     NetPackage(NetPackage&& other) = default;       // move
     //Package(std::string& base64);
