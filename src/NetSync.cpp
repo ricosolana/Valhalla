@@ -10,15 +10,15 @@
 //	//constexpr auto s = "hello" " " "world";
 //
 //	return std::make_pair(
-//		Utils::GetStableHashCode(key " "),
-//		Utils::GetStableHashCode(key " ")
+//		VUtils::GetStableHashCode(key " "),
+//		VUtils::GetStableHashCode(key " ")
 //	);
 //}
 
 std::pair<HASH_t, HASH_t> NetSync::ToHashPair(const std::string& key) {
 	return std::make_pair(
-		Utils::GetStableHashCode(std::string(key + "_u")),
-		Utils::GetStableHashCode(std::string(key + "_i"))
+		VUtils::String::GetStableHashCode(std::string(key + "_u")),
+		VUtils::String::GetStableHashCode(std::string(key + "_i"))
 	);
 }
 
@@ -268,37 +268,37 @@ NetID NetSync::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
 // Trivial
 
 float NetSync::GetFloat(const std::string& key, float value) {
-	return GetFloat(Utils::GetStableHashCode(key), value);
+	return GetFloat(VUtils::String::GetStableHashCode(key), value);
 }
 
 int32_t NetSync::GetInt(const std::string& key, int32_t value) {
-	return GetInt(Utils::GetStableHashCode(key), value);
+	return GetInt(VUtils::String::GetStableHashCode(key), value);
 }
 
 int64_t NetSync::GetLong(const std::string& key, int64_t value) {
-	return GetLong(Utils::GetStableHashCode(key), value);
+	return GetLong(VUtils::String::GetStableHashCode(key), value);
 }
 
 const Quaternion& NetSync::GetQuaternion(const std::string& key, const Quaternion& value) {
-	return GetQuaternion(Utils::GetStableHashCode(key), value);
+	return GetQuaternion(VUtils::String::GetStableHashCode(key), value);
 }
 
 const Vector3& NetSync::GetVector3(const std::string& key, const Vector3& value) {
-	return GetVector3(Utils::GetStableHashCode(key), value);
+	return GetVector3(VUtils::String::GetStableHashCode(key), value);
 }
 
 const std::string& NetSync::GetString(const std::string& key, const std::string& value) {
-	return GetString(Utils::GetStableHashCode(key), value);
+	return GetString(VUtils::String::GetStableHashCode(key), value);
 }
 
 const BYTES_t* NetSync::GetBytes(const std::string& key) {
-	return GetBytes(Utils::GetStableHashCode(key));
+	return GetBytes(VUtils::String::GetStableHashCode(key));
 }
 
 // Special
 
 bool NetSync::GetBool(const std::string& key, bool value) {
-	return GetBool(Utils::GetStableHashCode(key), value);
+	return GetBool(VUtils::String::GetStableHashCode(key), value);
 }
 
 NetID NetSync::GetNetID(const std::string& key) {

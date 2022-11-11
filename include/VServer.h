@@ -28,7 +28,7 @@ class VServer {
 	steady_clock::time_point m_nowUpdate;
 
 public:
-    VServer() : m_serverId(Utils::GenerateUID()) {}
+    VServer() : m_serverId(VUtils::GenerateUID()) {}
 
 	OWNER_t ID() const {
 		return m_serverId;

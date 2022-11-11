@@ -1,6 +1,6 @@
 #include "Vector.h"
-#include "Utils.h"
-#include "MathUtils.h"
+#include "VUtils.h"
+#include "VUtilsMath.h"
 
 const Vector2 Vector2::ZERO(0, 0);
 
@@ -73,7 +73,7 @@ Vector2& Vector2::Normalize() {
 	auto sqmagnitude = SqMagnitude();
 
 	if (sqmagnitude > 1E-05f * 1E-05f) {
-		*this *= MathUtils::FISQRT(sqmagnitude);
+		*this *= VUtils::Math::FISQRT(sqmagnitude);
 	}
 	else {
 		*this = Vector2::ZERO;
@@ -169,7 +169,7 @@ Vector2i& Vector2i::Normalize() {
 	auto sqmagnitude = SqMagnitude();
 
 	if (sqmagnitude > 1E-05f * 1E-05f) {
-		*this *= MathUtils::FISQRT(sqmagnitude);
+		*this *= VUtils::Math::FISQRT(sqmagnitude);
 	}
 	else {
 		*this = Vector2i::ZERO;
@@ -272,7 +272,7 @@ Vector3& Vector3::Normalize() {
 	auto sqmagnitude = SqMagnitude();
 
 	if (sqmagnitude > 1E-05f * 1E-05f * 1E-05f) {
-		*this *= MathUtils::FISQRT(sqmagnitude);
+		*this *= VUtils::Math::FISQRT(sqmagnitude);
 	}
 	else {
 		*this = Vector3::ZERO;

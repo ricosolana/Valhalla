@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <cmath>
-#include "MathUtils.h"
+#include "VUtilsMath.h"
 
 struct Vector2 {
 	float x, y;
@@ -38,19 +38,19 @@ struct Vector2 {
 
 
 	float SqMagnitude() const {
-		return MathUtils::SqMagnitude(x, y);
+		return VUtils::Math::SqMagnitude(x, y);
 	}
 
 	float Magnitude() const {
-		return MathUtils::Magnitude(x, y);
+		return VUtils::Math::Magnitude(x, y);
 	}
 
 	float Distance(const Vector2& other) const {
-		return MathUtils::Distance(x, y, other.x, other.y);
+		return VUtils::Math::Distance(x, y, other.x, other.y);
 	}
 
 	float SqDistance(const Vector2& other) const {
-		return MathUtils::SqDistance(x, y, other.x, other.y);
+		return VUtils::Math::SqDistance(x, y, other.x, other.y);
 	}
 
 	//normalize and returns this
@@ -96,19 +96,19 @@ struct Vector2i {
 
 
 	float SqMagnitude() const {
-		return MathUtils::SqMagnitude(x, y);
+		return VUtils::Math::SqMagnitude(x, y);
 	}
 
 	float Magnitude() const {
-		return MathUtils::Magnitude(x, y);
+		return VUtils::Math::Magnitude(x, y);
 	}
 
 	float Distance(const Vector2i& other) const {
-		return MathUtils::Distance(x, y, other.x, other.y);
+		return VUtils::Math::Distance(x, y, other.x, other.y);
 	}
 
 	float SqDistance(const Vector2i& other) const {
-		return MathUtils::SqDistance(x, y, other.x, other.y);
+		return VUtils::Math::SqDistance(x, y, other.x, other.y);
 	}
 
 	Vector2i& Normalize();
@@ -152,19 +152,19 @@ struct Vector3 {
 
 
 	float SqMagnitude() const {
-		return MathUtils::SqMagnitude(x, y, z);
+		return VUtils::Math::SqMagnitude(x, y, z);
 	}
 
 	float Magnitude() const {
-		return MathUtils::Magnitude(x, y, z);
+		return VUtils::Math::Magnitude(x, y, z);
 	}
 
 	float Distance(const Vector3& other) const {
-		return MathUtils::Distance(x, y, z, other.x, other.y, other.z);
+		return VUtils::Math::Distance(x, y, z, other.x, other.y, other.z);
 	}
 
 	float SqDistance(const Vector3& other) const {
-		return MathUtils::SqDistance(x, y, z, other.x, other.y, other.z);
+		return VUtils::Math::SqDistance(x, y, z, other.x, other.y, other.z);
 	}
 
 	Vector3& Normalize();

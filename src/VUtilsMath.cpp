@@ -1,10 +1,10 @@
 #include <cmath>
 #include <stdexcept>
 
-#include "MathUtils.h"
+#include "VUtilsMath.h"
 #include "Vector.h"
 
-namespace MathUtils {
+namespace VUtils::Math {
 	float SqMagnitude(float x, float y) {
 		return x * x + y * y;
 	}

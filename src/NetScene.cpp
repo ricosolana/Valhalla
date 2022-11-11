@@ -263,7 +263,7 @@ namespace NetScene {
 		for (auto zdo : currentNearObjects)
 		{
 			if (zdo->m_tempCreateEarmark != frameCount) {
-				zdo.m_tempSortValue = Utils.DistanceSqr(referencePosition, zdo.GetPosition());
+				zdo.m_tempSortValue = VUtils.DistanceSqr(referencePosition, zdo.GetPosition());
 				m_tempCurrentObjects2.Add(zdo);
 			}
 		}
@@ -287,7 +287,7 @@ namespace NetScene {
     // TODO make sort lambda runnable
 	static int ZDOCompare(ZDO *x, ZDO *y) {
 		if (x->Type() == y->Type()) {
-			return Utils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
+			return VUtils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
 		}
 		int type = (int)y->Type();
 		return type.CompareTo((int)x->Type());

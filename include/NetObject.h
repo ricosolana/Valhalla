@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vector.h"
-#include "Utils.h"
+#include "VUtils.h"
 #include "NetSync.h"
 
 #include "NetRouteManager.h"
@@ -17,7 +17,7 @@
 // netview is just a wrapper to represent an object with synchronized fields and method calls
 class NetObject {
 private:
-    static constexpr HASH_t SYNC_HASH = Utils::GetStableHashCode("Sync");
+    static constexpr HASH_t SYNC_HASH = VUtils::String::GetStableHashCode("Sync");
 
 	NetSync *m_sync; // zdo
 
@@ -79,7 +79,7 @@ public:
 	*/
 	template<class ...Args>
 	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
-		return Register(Utils::GetStableHashCode(name), f);
+		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
 
 	/**
@@ -90,7 +90,7 @@ public:
 	*/
 	template<class C, class ...Args>
 	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(Utils::GetStableHashCode(name), object, f);
+		return Register(VUtils::String::GetStableHashCode(name), object, f);
 	}
 
 	//void Unregister(string name); // seems unused

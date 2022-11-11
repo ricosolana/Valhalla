@@ -74,7 +74,7 @@ void NetObject::SetLocalScale(Vector3 scale) {
 //}
 
 std::string NetObject::GetPrefabName() const {
-	//return Utils.GetPrefabName(base.gameObject);
+	//return VUtils.GetPrefabName(base.gameObject);
 	return "";
 }
 

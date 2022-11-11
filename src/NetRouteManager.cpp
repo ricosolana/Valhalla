@@ -37,7 +37,7 @@ namespace NetRouteManager {
                     //    auto &&find = m_methods.find(data.m_methodHash);
                     //    if (find != m_methods.end() && find->second.second) {
                     //        find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
-                    //                                    Utils::GetStableHashCode("RoutingFilter"), data.m_methodHash);
+                    //                                    VUtils::GetStableHashCode("RoutingFilter"), data.m_methodHash);
                     //    }
                     //}
 

@@ -102,7 +102,7 @@ add_executable(${PROJECT_NAME}
     "src/Stream.cpp"
     "src/Task.cpp"
     
-    "src/Utils.cpp"
+    "src/VUtils.cpp"
     "src/NetSync.cpp"
     
     "src/NetSyncManager.cpp"
@@ -117,7 +117,7 @@ add_executable(${PROJECT_NAME}
     "src/ZoneSystem.cpp" 
     "src/Vector.cpp" 
     #"src/WorldGenerator.cpp" # temporarily broken
-    "src/MathUtils.cpp"
+    "src/VUtilsMath.cpp"
     "src/NetObject.cpp" 
 
     "src/NetSteamSocket.cpp" 
@@ -125,7 +125,7 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-        src/RCONSocket.cpp src/RCONAcceptor.cpp include/LuaEvent.h)
+        src/RCONSocket.cpp src/RCONAcceptor.cpp include/LuaEvent.h src/VUtilsString.cpp include/VUtilsString.h)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

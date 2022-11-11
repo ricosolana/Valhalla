@@ -3,7 +3,7 @@
 struct Vector2;
 struct Vector3;
 
-namespace MathUtils {
+namespace VUtils::Math {
 
 	/*
 	 * Linear algebra methods

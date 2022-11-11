@@ -580,7 +580,7 @@ namespace NetSyncManager {
 		if (flag && flag2)
 		{
 			//return x
-			//return Utils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
+			//return VUtils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
 		}
 		if (flag != flag2)
 		{
@@ -594,7 +594,7 @@ namespace NetSyncManager {
 		{
 			if (x->m_type == y->m_type)
 
-				return Utils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
+				return VUtils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
 
 			int type = (int)y.m_type;
 			return type.CompareTo((int)x.m_type);
@@ -614,8 +614,8 @@ namespace NetSyncManager {
 
 			if (flag == flag2) {
 				if (x->Type() == y->Type()) {
-					float age1 = MathUtils::Clamp(ticks - x->m_rev.m_time, 0, 100);
-					float age2 = MathUtils::Clamp(ticks - y->m_rev.m_time, 0, 100);
+					float age1 = VUtils::Math::Clamp(ticks - x->m_rev.m_time, 0, 100);
+					float age2 = VUtils::Math::Clamp(ticks - y->m_rev.m_time, 0, 100);
 					return x->Position().SqDistance(refPos) - age1 <
 							y->Position().SqDistance(refPos) - age2;
 				}
@@ -632,7 +632,7 @@ namespace NetSyncManager {
 	{
 		if (x.m_type == y.m_type)
 		{
-			return Utils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
+			return VUtils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
 		}
 		if (x.m_type == ZDO.ObjectType.Prioritized)
 		{
@@ -642,7 +642,7 @@ namespace NetSyncManager {
 		{
 			return 1;
 		}
-		return Utils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
+		return VUtils.CompareFloats(x.m_tempSortValue, y.m_tempSortValue);
 	}
 
 	// Token: 0x06000B7D RID: 2941 RVA: 0x00052270 File Offset: 0x00050470
@@ -798,7 +798,7 @@ namespace NetSyncManager {
 	//	iterating a few thousand zdos every frame isnt ideal)
 	/*
 	void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> &zdos) {
-		int stableHashCode = Utils::GetStableHashCode(prefab);
+		int stableHashCode = VUtils::GetStableHashCode(prefab);
 		for (auto&& pair: m_objectsByID) {
 			auto zdo = pair.second;
 			if (zdo->m_prefab == stableHashCode) {
@@ -816,7 +816,7 @@ namespace NetSyncManager {
 	// this isnt particularly great, because portals are global and can be loaded at any time
 	// portals could be stored in separate list for the better
 	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int &index) {
-		auto stableHashCode = Utils::GetStableHashCode(prefab);
+		auto stableHashCode = VUtils::String::GetStableHashCode(prefab);
 
 		// Search through all sector objects for PREFAB
 		if (index >= m_objectsBySector.size()) {

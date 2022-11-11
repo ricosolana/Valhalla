@@ -33,7 +33,7 @@ namespace NetManager {
 			// Create random 16 byte salt
 			m_salt.resize(16);
 			RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
-			Utils::FormatAscii(m_salt);
+			VUtils::String::FormatAscii(m_salt);
 
 			const auto merge = Valhalla()->Settings().serverPassword + m_salt;
 
@@ -42,7 +42,7 @@ namespace NetManager {
 			MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
 				merge.size(), reinterpret_cast<uint8_t*>(m_saltedPassword.data()));
 
-			Utils::FormatAscii(m_saltedPassword);
+			VUtils::String::FormatAscii(m_saltedPassword);
 		}
 	}
 

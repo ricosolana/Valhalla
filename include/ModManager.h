@@ -3,7 +3,7 @@
 #include <sol/sol.hpp>
 #include <utility>
 
-#include "Utils.h"
+#include "VUtils.h"
 #include "NetHashes.h"
 #include "Vector.h"
 #include "ChatManager.h"
@@ -96,7 +96,7 @@ public:
 
     template <typename... Args>
     auto CallEvent(const char* name, const Args&... params) {
-        return CallEvent(Utils::GetStableHashCode(name), params...);
+        return CallEvent(VUtils::String::GetStableHashCode(name), params...);
     }
 
     template <typename... Args>
@@ -121,7 +121,7 @@ public:
 
     template <class Tuple>
     auto CallEventTuple(const char* name, const Tuple& t) {
-        return CallEventTuple(Utils::GetStableHashCode(name), t);
+        return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
     }
 
     template <class Tuple>

@@ -7,7 +7,7 @@
 namespace NetRouteManager {
 	static constexpr OWNER_t EVERYBODY = 0;
 
-    static constexpr HASH_t ROUTE_HASH = Utils::GetStableHashCode("Route");
+    static constexpr HASH_t ROUTE_HASH = VUtils::String::GetStableHashCode("Route");
 
 	struct Data {
 		OWNER_t m_msgID;
@@ -70,7 +70,7 @@ namespace NetRouteManager {
 
 	template<class ...Args>
 	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
-		return Register(Utils::GetStableHashCode(name), f);
+		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
 
 	template<class ...Args>
@@ -98,7 +98,7 @@ namespace NetRouteManager {
 
 	template<class C, class ...Args>
 	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(Utils::GetStableHashCode(name), object, f);
+		return Register(VUtils::String::GetStableHashCode(name), object, f);
 	}
 
 	template<class C, class ...Args>
@@ -125,7 +125,7 @@ namespace NetRouteManager {
 
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
-		Invoke(target, targetNetSync, Utils::GetStableHashCode(name), params...);
+		Invoke(target, targetNetSync, VUtils::String::GetStableHashCode(name), params...);
 	}
 
 	template <typename... Args>
@@ -152,7 +152,7 @@ namespace NetRouteManager {
 
 	template <typename... Args>
 	void Invoke(OWNER_t target, const char* name, const Args&... params) {
-		Invoke(target, NetID::NONE, Utils::GetStableHashCode(name), params...);
+		Invoke(target, NetID::NONE, VUtils::String::GetStableHashCode(name), params...);
 	}
 
 	template <typename... Args>

@@ -6,7 +6,8 @@
 
 #include "Quaternion.h"
 #include "Vector.h"
-#include "Utils.h"
+#include "VUtils.h"
+#include "VUtilsString.h"
 #include "NetPackage.h"
 
 template<typename T>
@@ -262,9 +263,9 @@ public:
 	// Trivial string setters (+bool)
 
 	template<typename T> requires TrivialSyncType<T> || std::same_as<T, bool>
-	void Set(const std::string& key, const T &value) { Set(Utils::GetStableHashCode(key), value); }
-	void Set(const std::string& key, const std::string& value) { Set(Utils::GetStableHashCode(key), value); } // String overload
-	void Set(const char* key, const std::string &value) { Set(Utils::GetStableHashCode(key), value); } // string constexpr overload
+	void Set(const std::string& key, const T &value) { Set(VUtils::String::GetStableHashCode(key), value); }
+	void Set(const std::string& key, const std::string& value) { Set(VUtils::String::GetStableHashCode(key), value); } // String overload
+	void Set(const char* key, const std::string &value) { Set(VUtils::String::GetStableHashCode(key), value); } // string constexpr overload
 
 	// Special string setters
 

@@ -49,7 +49,7 @@ void VServer::Launch() {
 
 	m_settings.worldName =				loadNode["world-name"].as<std::string>("Dedicated world");
     m_settings.worldSeedName =			loadNode["world-seed-name"].as<std::string>("Some special seed");
-	m_settings.worldSeed =				Utils::GetStableHashCode(m_settings.worldSeedName);
+	m_settings.worldSeed =				VUtils::String::GetStableHashCode(m_settings.worldSeedName);
 
 	m_settings.playerWhitelist =		loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
 	m_settings.playerMax =				loadNode["player-max"].as<unsigned int>(64);		// max allowed players
@@ -230,7 +230,7 @@ void VServer::Update(float delta) {
                     auto client_id = pkg.Read<int32_t>();
                     auto msg_type = pkg.Read<int32_t>();
                     auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
-                    Utils::FormatAscii(in_msg);
+                    VUtils::String::FormatAscii(in_msg);
 
                     if (in_msg == m_settings.rconPassword && !m_authRconSockets.contains(client_id)) {
                         send_response(rconSocket, client_id, " ");
@@ -261,7 +261,7 @@ void VServer::Update(float delta) {
                     pkg.Read<int32_t>(); // dummy client id
                     pkg.Read<int32_t>(); // dummy type
                     auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
-                    Utils::FormatAscii(in_msg);
+                    VUtils::String::FormatAscii(in_msg);
 
                     std::string out_msg = " ";
 
@@ -272,7 +272,7 @@ void VServer::Update(float delta) {
 
                     LOG(INFO) << "Got command " << in_msg;
 
-                    auto args(Utils::Split(in_msg, " "));
+                    auto args(VUtils::String::Split(in_msg, " "));
 
                     if ("ban" == args[0] && args.size() == 2) {
                         m_banned.insert(std::string(args[1]));

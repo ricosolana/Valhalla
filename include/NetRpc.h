@@ -6,7 +6,7 @@
 #include "NetSocket.h"
 #include "Task.h"
 #include "NetHashes.h"
-#include "Utils.h"
+#include "VUtils.h"
 
 enum class ConnectionStatus;
 
@@ -21,7 +21,7 @@ public:
     using ClFuncPtr = void(C::*)(NetRpc*, Args...);
 
 private:
-    static constexpr HASH_t RPC_HASH = Utils::GetStableHashCode("Rpc");
+    static constexpr HASH_t RPC_HASH = VUtils::String::GetStableHashCode("Rpc");
 
 private:
 	std::chrono::steady_clock::time_point m_lastPing;
@@ -65,7 +65,7 @@ public:
 
 	template<class ...Args>
 	auto Register(const char* name, FuncPtr<Args...> f) {
-		return Register(Utils::GetStableHashCode(name), f);
+		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
 
 	template<class ...Args>
@@ -93,7 +93,7 @@ public:
 
 	template<class C, class ...Args>
 	auto Register(const char* name, C* object, ClFuncPtr<C, Args...> f) {
-		return Register(Utils::GetStableHashCode(name), object, f);
+		return Register(VUtils::String::GetStableHashCode(name), object, f);
 	}
 
 	template<class C, class ...Args>
@@ -132,7 +132,7 @@ public:
 
 	template <typename... Types>
 	void Invoke(const char* name, Types... params) {
-		Invoke(Utils::GetStableHashCode(name), std::move(params)...);
+		Invoke(VUtils::String::GetStableHashCode(name), std::move(params)...);
 	}
 
 	template <typename... Types>

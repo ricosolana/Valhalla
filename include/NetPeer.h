@@ -3,7 +3,7 @@
 #include "NetSocket.h"
 #include "NetRpc.h"
 #include "NetSync.h"
-#include "Utils.h"
+#include "VUtils.h"
 
 struct NetPeer {
 public:

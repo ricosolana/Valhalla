@@ -41,7 +41,7 @@ public:
 			return;
 
 		auto pkg(PKG());
-		auto stable = Utils::GetStableHashCode(method);
+		auto stable = VUtils::GetStableHashCode(method);
 		pkg->Write(stable);
 #ifdef RPC_DEBUG
 		pkg->Write(method);

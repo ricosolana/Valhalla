@@ -147,7 +147,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
 
     //auto zlibTable = state["zlib"].get_or_create<sol::table>();
     //zlibTable["Compress"] = sol::overload([](const BYTES_t& bytes) {
-    //    return Utils::Compress(bytes)
+    //    return VUtils::Compress(bytes)
     //    },
     //                                      [](const BYTES_t& bytes, int length) {},
     //                                      [](const BYTES_t& bytes, int length, int level) {});
@@ -222,7 +222,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
 
                 if (i == 0) {
                     if (type == sol::type::string) {
-                        name = Utils::GetStableHashCode(arg.as<std::string>());
+                        name = VUtils::String::GetStableHashCode(arg.as<std::string>());
                     } else if (type == sol::type::number) {
                         name = arg.as<HASH_t>();
                     } else {
@@ -282,7 +282,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
             auto&& arg = args[i];
             auto&& type = arg.get_type();
             if (type == sol::type::string) {
-                auto h = Utils::GetStableHashCode(arg.as<std::string>());
+                auto h = VUtils::String::GetStableHashCode(arg.as<std::string>());
                 if (name == 0) name = h;
                 else name ^= h;
             } else {

@@ -576,7 +576,7 @@ namespace WorldGenerator {
 	}
 
 	float GetBaseHeight(float wx, float wy) {
-		//float num2 = Utils.Length(wx, wy);
+		//float num2 = VUtils.Length(wx, wy);
 		float num2 = MathUtils::Magnitude(wx, wy);
 		wx += 100000 + m_offset0;
 		wy += 100000 + m_offset1;

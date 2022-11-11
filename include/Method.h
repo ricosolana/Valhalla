@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "NetPackage.h"
-#include "Utils.h"
+#include "VUtils.h"
 #include "ModManager.h"
 
 /* https://godbolt.org/z/MMGsa8rhr
@@ -12,7 +12,7 @@
 * (static functions, no class object needed)
 */
 
-static constexpr HASH_t POST_HASH = Utils::GetStableHashCode("POST");
+static constexpr HASH_t POST_HASH = VUtils::String::GetStableHashCode("POST");
 
 // Thanks @Fux
 template<class T>
@@ -52,7 +52,7 @@ public:
             if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
                 std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object),
                                                   tuple));
-                //Utils::InvokeTuple(lambda, object, t, tuple);
+                //VUtils::InvokeTuple(lambda, object, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
@@ -88,7 +88,7 @@ public:
 
             if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
                 std::apply(lambda, tuple);
-                //Utils::InvokeTupleS(lambda, t, tuple);
+                //VUtils::InvokeTupleS(lambda, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
