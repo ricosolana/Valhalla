@@ -1,5 +1,5 @@
 #include "NetObject.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 NetObject::NetObject() {
 	/*
@@ -57,6 +57,11 @@ NetObject::NetObject() {
 	ZNetScene.instance.AddInstance(this.m_zdo, this);*/
 }
 
+void NetObject::Register(HASH_t hash, IMethod<OWNER_t> *method) {
+    assert(!m_functions.contains(hash));
+    m_functions[hash] = std::unique_ptr<IMethod<OWNER_t>>(method);
+}
+
 void NetObject::SetLocalScale(Vector3 scale) {
 	//base.transform.localScale = scale;
 	if (m_sync && m_syncInitialScale && m_sync->Local()) {
@@ -84,8 +89,7 @@ void NetObject::ResetNetSync() {
 void NetObject::HandleRoutedRPC(NetRouteManager::Data rpcData) {
 	auto&& find = m_functions.find(rpcData.m_methodHash);
 	if (find != m_functions.end()) {
-		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters,
-                             Utils::GetStableHashCode("InRemoteView") ^ rpcData.m_methodHash);
+		find->second->Invoke(rpcData.m_senderPeerID, rpcData.m_parameters);
 	}
 	else {
 		LOG(INFO) << "Failed to find rpc method " << rpcData.m_methodHash;

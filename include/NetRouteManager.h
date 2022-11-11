@@ -2,10 +2,12 @@
 
 #include "NetPeer.h"
 #include "Method.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 namespace NetRouteManager {
 	static constexpr OWNER_t EVERYBODY = 0;
+
+    static constexpr HASH_t ROUTE_HASH = Utils::GetStableHashCode("Route");
 
 	struct Data {
 		OWNER_t m_msgID;
@@ -49,10 +51,6 @@ namespace NetRouteManager {
 	// Must pass an IMethod created using new
 	void _Register(HASH_t hash, IMethod<OWNER_t>* method);
 
-	// Registers a RoutedRpc function with data watching (routes directed to EVERYONE except server)
-	// Must pass IMethod instances created using new
-	void _Register(HASH_t hash, IMethod<OWNER_t>* method, IMethod<OWNER_t>* watcher);
-
 
 
 	/**
@@ -62,22 +60,22 @@ namespace NetRouteManager {
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, void(*f)(OWNER_t, Args...)) {
-		return _Register(hash, new MethodImpl(f));
+		return _Register(hash, new MethodImpl(f, ROUTE_HASH ^ hash));
 	}
 
 	template<class ...Args>
 	auto Register(Routed_Hash hash, void(*f)(OWNER_t, Args...)) {
-		return _Register(static_cast<HASH_t>(hash), new MethodImpl(f));
+		return Register(static_cast<HASH_t>(hash), f);
 	}
 
 	template<class ...Args>
 	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
-		return _Register(Utils::GetStableHashCode(name), new MethodImpl(f));
+		return Register(Utils::GetStableHashCode(name), f);
 	}
 
 	template<class ...Args>
-	auto Register(const std::string& name, void(*f)(OWNER_t, Args...)) {
-		return _Register(Utils::GetStableHashCode(name), new MethodImpl(f));
+	auto Register(std::string& name, void(*f)(OWNER_t, Args...)) {
+		return Register(name.c_str(), f);
 	}
 
 
@@ -90,22 +88,22 @@ namespace NetRouteManager {
 	*/
 	template<class C, class ...Args>
 	auto Register(HASH_t hash, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(hash, new MethodImpl(object, f));
+		return _Register(hash, object, new MethodImpl(object, f, ROUTE_HASH ^ hash));
 	}
 
 	template<class C, class ...Args>
 	auto Register(Routed_Hash hash, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(static_cast<HASH_t>(hash), new MethodImpl(object, f));
+		return Register(static_cast<HASH_t>(hash), object, f);
 	}
 
 	template<class C, class ...Args>
 	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(Utils::GetStableHashCode(name), new MethodImpl(object, f));
+		return Register(Utils::GetStableHashCode(name), object, f);
 	}
 
 	template<class C, class ...Args>
-	auto Register(const std::string& name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(Utils::GetStableHashCode(name), new MethodImpl(object, f));
+	auto Register(std::string& name, C* object, void(C::* f)(OWNER_t, Args...)) {
+		return Register(name.c_str(), object, f);
 	}
 
 
@@ -122,17 +120,17 @@ namespace NetRouteManager {
 
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, Routed_Hash hash, const Args&... params) {
-		_Invoke(target, targetNetSync, static_cast<HASH_t>(hash), NetPackage::Serialize(params...));
+		Invoke(target, targetNetSync, static_cast<HASH_t>(hash), params...);
 	}
 
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
-		_Invoke(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
+		Invoke(target, targetNetSync, Utils::GetStableHashCode(name), params...);
 	}
 
 	template <typename... Args>
-	void Invoke(OWNER_t target, const NetID& targetNetSync, const std::string& name, const Args&... params) {
-		_Invoke(target, targetNetSync, Utils::GetStableHashCode(name), NetPackage::Serialize(params...));
+	void Invoke(OWNER_t target, const NetID& targetNetSync, std::string& name, const Args&... params) {
+		Invoke(target, targetNetSync, name.c_str(), params...);
 	}
 
 
@@ -158,7 +156,7 @@ namespace NetRouteManager {
 	}
 
 	template <typename... Args>
-	void Invoke(OWNER_t target, const std::string& name, const Args&... params) {
-		Invoke(target, NetID::NONE, Utils::GetStableHashCode(name), params...);
+	void Invoke(OWNER_t target, std::string& name, const Args&... params) {
+		Invoke(target, NetID::NONE, name.c_str(), params...);
 	}
 };

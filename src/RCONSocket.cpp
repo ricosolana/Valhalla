@@ -2,7 +2,7 @@
 #pragma ide diagnostic ignored "misc-no-recursion"
 
 #include "NetSocket.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 RCONSocket::RCONSocket(asio::ip::tcp::socket socket)
     : m_socket(std::move(socket)),

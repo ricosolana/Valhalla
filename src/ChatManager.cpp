@@ -24,11 +24,11 @@ namespace ChatManager {
             LOG(INFO) << "The peer name is " << peer->m_name;
         }
 
-        ModManager::CallEvent("ChatMessage", sender, type, text);
-        //ModManager::Event::OnChatMessage(sender, type, text);
+        CALL_EVENT("ChatMessage", sender, type, text);
+        //VModManager::Event::OnChatMessage(sender, type, text);
 
         // Intended usage
-        //ModManager::CallEvent("ChatMessage")
+        //VModManager::CallEvent("ChatMessage")
 
 
 

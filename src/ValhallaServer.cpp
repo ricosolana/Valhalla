@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include "ValhallaServer.h"
+#include "VServer.h"
 #include "ModManager.h"
 #include "ResourceManager.h"
 #include "ServerSettings.h"
@@ -12,22 +12,14 @@
 
 using namespace std::chrono;
 
-std::unique_ptr<ValhallaServer> VALHALLA_SERVER_INSTANCE(std::make_unique<ValhallaServer>());
-ValhallaServer* Valhalla() {
-	//if (!VALHALLA_SERVER_INSTANCE)
-		//VALHALLA_SERVER_INSTANCE = std::make_unique<ValhallaServer>();
-	return VALHALLA_SERVER_INSTANCE.get();
+std::unique_ptr<VServer> VServer_INSTANCE(std::make_unique<VServer>());
+VServer* Valhalla() {
+	return VServer_INSTANCE.get();
 }
 
 
 
-void ValhallaServer::Launch() {
-	//assert(!VALHALLA_SERVER_INSTANCE && "Tried launching another server instance!");
-	assert(!m_running && "Tried calling Launch() twice!");
-	//assert(m_serverPassword.empty() && "Must implement password salting feature (reminder)");
-
-	//start = steady_clock::now();
-
+void VServer::Launch() {
     {
         std::vector<std::string> banned;
         ResourceManager::ReadFileLines("banned.txt", banned);
@@ -112,7 +104,8 @@ void ValhallaServer::Launch() {
 
 	LOG(INFO) << "Server config loaded";
 
-	ModManager::Init();
+    ModManager()->Init();
+	//VModManager::Init();
     NetManager::Init();
     ChatManager::Init();
     if (m_settings.rconEnabled) {
@@ -174,11 +167,12 @@ void ValhallaServer::Launch() {
 	}
 }
 
-void ValhallaServer::Terminate() {
+void VServer::Terminate() {
 	LOG(INFO) << "Terminating server";
 
 	m_running = false;
-    ModManager::UnInit();
+    //VModManager::UnInit();
+    ModManager()->UnInit();
 	NetManager::Close();
 
     {
@@ -193,7 +187,7 @@ void ValhallaServer::Terminate() {
 
 
 
-void ValhallaServer::Update(float delta) {
+void VServer::Update(float delta) {
 	// This is important to processing RPC remote invocations
 
     if (m_rcon) {
@@ -314,33 +308,33 @@ void ValhallaServer::Update(float delta) {
     }
 
 	NetManager::Update(delta);
-    ModManager::CallEvent("Update", delta);
-	//ModManager::Event::OnUpdate(delta);
+    CALL_EVENT("Update", delta);
+	//VModManager::Event::OnUpdate(delta);
 }
 
 
 
-Task& ValhallaServer::RunTask(Task::F f) {
+Task& VServer::RunTask(Task::F f) {
 	return RunTaskLater(std::move(f), 0ms);
 }
 
-Task& ValhallaServer::RunTaskLater(Task::F f, milliseconds after) {
+Task& VServer::RunTaskLater(Task::F f, milliseconds after) {
 	return RunTaskLaterRepeat(std::move(f), after, 0ms);
 }
 
-Task& ValhallaServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
+Task& VServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
 	return RunTaskAtRepeat(std::move(f), at, 0ms);
 }
 
-Task& ValhallaServer::RunTaskRepeat(Task::F f, milliseconds period) {
+Task& VServer::RunTaskRepeat(Task::F f, milliseconds period) {
 	return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
-Task& ValhallaServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
+Task& VServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
 	return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
 }
 
-Task& ValhallaServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
+Task& VServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
 	std::scoped_lock lock(m_taskMutex);
 	Task* task = new Task{std::move(f), at, period};
 	m_tasks.push_back(std::unique_ptr<Task>(task));

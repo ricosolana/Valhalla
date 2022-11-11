@@ -17,6 +17,8 @@
 // netview is just a wrapper to represent an object with synchronized fields and method calls
 class NetObject {
 private:
+    static constexpr HASH_t SYNC_HASH = Utils::GetStableHashCode("Sync");
+
 	NetSync *m_sync; // zdo
 
 	//Rigidbody m_body;
@@ -58,6 +60,18 @@ public:
 
 	void ResetNetSync();
 
+    void Register(HASH_t hash, IMethod<OWNER_t>* method);
+
+    template<class ...Args>
+    auto Register(HASH_t hash, void(*f)(OWNER_t, Args...)) {
+        return Register(hash, new MethodImpl(f, SYNC_HASH ^ hash));
+    }
+
+    template<class C, class ...Args>
+    auto Register(HASH_t hash, C* object, void(C::* f)(OWNER_t, Args...)) {
+        return Register(hash, new MethodImpl(object, f, SYNC_HASH ^ hash));
+    }
+
 	/**
 		* @brief Register a static method for remote invocation
 		* @param name function name to register
@@ -65,7 +79,7 @@ public:
 	*/
 	template<class ...Args>
 	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
-		return Register(name, new MethodImpl(f));
+		return Register(Utils::GetStableHashCode(name), f);
 	}
 
 	/**
@@ -76,7 +90,7 @@ public:
 	*/
 	template<class C, class ...Args>
 	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(name, new MethodImpl(object, f));
+		return Register(Utils::GetStableHashCode(name), object, f);
 	}
 
 	//void Unregister(string name); // seems unused
@@ -90,7 +104,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(OWNER_t target, const char* method, Types... params) {
-		NetRouteManager::Invoke(target, m_sync->m_id, method, std::move(params)...);
+		NetRouteManager::Invoke(target, m_sync->ID(), method, std::move(params)...);
 	}
 
 	/**
@@ -100,7 +114,7 @@ public:
 	*/
 	template <typename... Types>
 	void Invoke(const char* method, Types... params) {
-		NetRouteManager::Invoke(m_sync->m_owner, m_sync->m_id, method, std::move(params)...);
+		NetRouteManager::Invoke(m_sync->Owner(), m_sync->ID(), method, std::move(params)...);
 	}
 
 	//static void StartGhostInit();

@@ -11,26 +11,42 @@
 enum class ConnectionStatus;
 
 class NetRpc {
-	std::chrono::steady_clock::time_point m_lastPing;
-	bool m_closeEventually = false;
-	
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
+public:
+    using MethodPtr = std::unique_ptr<IMethod<NetRpc&>>;
 
-	void SendPackage(const NetPackage &pkg) const {
-		m_socket->Send(pkg);
+    template<class ...Args>
+    using FuncPtr = void(*)(NetRpc&, Args...);
+
+    template<class C, class ...Args>
+    using ClFuncPtr = void(C::*)(NetRpc&, Args...);
+
+private:
+    static constexpr HASH_t RPC_HASH = Utils::GetStableHashCode("Rpc");
+
+private:
+	std::chrono::steady_clock::time_point m_lastPing;
+	
+	robin_hood::unordered_map<HASH_t, MethodPtr> m_methods;
+
+private:
+	void SendPackage(NetPackage pkg) const {
+		m_socket->Send(std::move(pkg));
 	}
 
-	void Register(HASH_t hash, IMethod<NetRpc*>* method);
+public:
+    ISocket::Ptr m_socket;
 
-public:	
-	ISocket::Ptr m_socket;
-
-	NetRpc(ISocket::Ptr socket);
+public:
+	explicit NetRpc(ISocket::Ptr socket);
 
 	NetRpc(const NetRpc& other) = delete; // copy
 	NetRpc(NetRpc&& other) = delete; // move
 
 	~NetRpc();
+
+
+
+    void Register(HASH_t hash, MethodPtr method);
 
 	/**
 		* @brief Register a static method for remote invocation
@@ -38,23 +54,23 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(HASH_t hash, void(*f)(NetRpc*, Args...)) {
-		return Register(hash, new MethodImpl(f));
+	auto Register(HASH_t hash, FuncPtr<Args...> f) {
+		return Register(hash, MethodPtr(new MethodImpl(f, RPC_HASH ^ hash)));
 	}
 
 	template<class ...Args>
-	auto Register(Rpc_Hash hash, void(*f)(NetRpc*, Args...)) {
-		return Register(static_cast<HASH_t>(hash), new MethodImpl(f));
+	auto Register(Rpc_Hash hash, FuncPtr<Args...> f) { //FuncPtr<Args...> f) {
+		return Register(static_cast<HASH_t>(hash), f);
 	}
 
-	//template<class ...Args>
-	//auto Register(const char* name, void(*f)(NetRpc*, Args...)) {
-	//	return Register(Utils::GetStableHashCode(name), new MethodImpl(f));
-	//}
+	template<class ...Args>
+	auto Register(const char* name, FuncPtr<Args...> f) {
+		return Register(Utils::GetStableHashCode(name), f);
+	}
 
 	template<class ...Args>
-	auto Register(const std::string& name, void(*f)(NetRpc*, Args...)) {
-		return Register(Utils::GetStableHashCode(name), new MethodImpl(f));
+	auto Register(std::string& name, FuncPtr<Args...> f) {
+		return Register(name.c_str(), f);
 	}
 		
 
@@ -66,23 +82,23 @@ public:
 		* @param method ptr to a member function
 	*/
 	template<class C, class ...Args>
-	auto Register(HASH_t hash, C* object, void(C::* f)(NetRpc*, Args...)) {
-		return Register(hash, new MethodImpl(object, f));
+	auto Register(HASH_t hash, C* object, ClFuncPtr<C, Args...> f) {
+		return Register(hash, std::make_unique<MethodImpl>(object, f, RPC_HASH ^ hash));
 	}
 
 	template<class C, class ...Args>
-	auto Register(Rpc_Hash hash, C *object, void(C::*f)(NetRpc*, Args...)) {
-		return Register(static_cast<HASH_t>(hash), new MethodImpl(object, f));
+	auto Register(Rpc_Hash hash, C *object, ClFuncPtr<C, Args...> f) {
+		return Register(static_cast<HASH_t>(hash), object, f);
 	}
 
-	//template<class C, class ...Args>
-	//auto Register(const char* name, C* object, void(C::* f)(NetRpc*, Args...)) {
-	//	return Register(Utils::GetStableHashCode(name), new MethodImpl(object, f));
-	//}
+	template<class C, class ...Args>
+	auto Register(const char* name, C* object, ClFuncPtr<C, Args...> f) {
+		return Register(Utils::GetStableHashCode(name), object, f);
+	}
 
 	template<class C, class ...Args>
-	auto Register(const std::string& name, C* object, void(C::* f)(NetRpc*, Args...)) {
-		return Register(Utils::GetStableHashCode(name), new MethodImpl(object, f));
+	auto Register(std::string& name, C* object, ClFuncPtr<C, Args...> f) {
+		return Register(name.c_str(), object, f);
 	}
 
 
@@ -99,14 +115,14 @@ public:
 		if (!m_socket->Connected())
 			return;
 
-		NetPackage pkg; // TODO make into member to optimize; or even crazier, make static
+		NetPackage pkg; // TODO make into member to optimize; or make static
 		pkg.Write(hash);
 #ifdef RPC_DEBUG // debug mode
 #error not implemented
 		pkg.Write(hash);
 #endif
 		NetPackage::_Serialize(pkg, params...); // serialize
-		SendPackage(pkg);
+		SendPackage(std::move(pkg));
 	}
 
 	template <typename... Types>
@@ -114,14 +130,14 @@ public:
 		Invoke(static_cast<HASH_t>(hash), params...);
 	}
 
-	//template <typename... Types>
-	//void Invoke(const char* name, Types... params) {
-	//	Invoke(Utils::GetStableHashCode(name), std::move(params)...);
-	//}
+	template <typename... Types>
+	void Invoke(const char* name, Types... params) {
+		Invoke(Utils::GetStableHashCode(name), std::move(params)...);
+	}
 
 	template <typename... Types>
-	void Invoke(const std::string &name, const Types&... params) {
-		Invoke(Utils::GetStableHashCode(name), params...);
+	void Invoke(std::string &name, const Types&... params) {
+		Invoke(name.c_str(), params...);
 	}
 
 	// Call every frame

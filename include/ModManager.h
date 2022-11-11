@@ -1,164 +1,135 @@
 #pragma once
 
 #include <sol/sol.hpp>
+#include <utility>
 
 #include "Utils.h"
 #include "NetHashes.h"
 #include "Vector.h"
 #include "ChatManager.h"
+#include "VServer.h"
 
-class NetRpc;
+enum class PkgType {
+    BYTE_ARRAY,
+    PKG,
+    STRING,
+    NET_ID,
+    VECTOR3,
+    VECTOR2i,
+    QUATERNION,
+    STRING_ARRAY,
+    INT8, UINT8, //BOOL, CHAR, UCHAR,
+    INT16, UINT16, //SHORT, USHORT,
+    INT32, UINT32, //INT, UINT,
+    INT64, UINT64, //LONG, ULONG, OWNER_t,
+    FLOAT,
+    DOUBLE
+};
 
-struct EventHandler;
+class VModManager {
+    friend VServer;
 
-class Mod {
+    class Mod {
+    public:
+        const std::string m_name;
+        const std::string m_version;
+        const int m_apiVersion;
+
+        sol::state m_state;
+
+        Mod(std::string name, const std::string &version, int apiVersion)
+                : m_name(std::move(name)), m_version(version), m_apiVersion(apiVersion), m_state() {}
+    };
+
+    struct EventHandler {
+        Mod* m_mod;
+        sol::function m_func;
+        int m_priority;
+    };
+
+private:
+    robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
+    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
+
+    bool m_cancelCurrentEvent = false;
+
+private:
+    void Init();
+    void UnInit();
+
+    void RunModInfoFrom(const fs::path& dirname,
+                        std::string& outName,
+                        std::string& outVersion,
+                        int &outApiVersion,
+                        std::string& outEntry);
+
+    std::unique_ptr<Mod> PrepareModEnvironment(const std::string& name,
+                                               std::string& version,
+                                               int apiVersion);
+
+    static bool EventHandlerSort(const EventHandler &a,
+                                 const EventHandler &b);
+
 public:
-    const std::string m_name;
-    const std::string m_version;
-    const int m_apiVersion;
-
-    sol::state m_state;
-
-    //EventHandler *m_currentEvent;
-    // replace the intended delegate call? (basically cancel it?)
-    //bool m_cancelDelegate = false;
-
-    Mod(const std::string& name, const std::string &version, int apiVersion)
-            : m_name(name), m_version(version), m_apiVersion(apiVersion), m_state() {}
-};
-
-struct EventHandler {
-    Mod* m_mod;
-    sol::function m_func;
-    int m_priority;
-};
-
-struct EventHandlerStream {
-    std::vector<EventHandler> m_callbacks;
-    bool m_cancel = false;
-};
-
-//enum class ModEventMode : uint8_t {
-//    PRE = 0,
-//    //TRANSPILE,
-//    POST,
-//    _MAX,
-//};
-
-//using EventHandler = std::pair<Mod*, std::pair<sol::function, int>>;
-
-//struct EventHandlerStream {
-//    std::vector<EventHandler> m_onEnable;
-//    std::vector<EventHandler> m_onDisable;
-//    std::vector<EventHandler> m_onUpdate;
-//    std::vector<EventHandler> m_onPeerInfo;
-//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRpc;
-//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRoute;
-//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onSync;
-//    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onRouteWatch;
-//    //robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_onSyncWatch;
-//};
-
-
-
-/*
-void _EventConcat(std::string& result) {}
-
-template<typename... STRING>
-void _EventConcat(std::string& result, const std::string& s1, const STRING&... s2) {
-    //result += std::to_string(Utils::GetStableHashCode(s1));
-    _EventConcat(s2...);
-}
-
-template<typename... STRING>
-std::string EventConcat(const std::string& s1, const STRING&... s2) {
-    std::string result;
-    _EventConcat(result, s1, s2...);
-    return result;
-}*/
-
-//HASH_t EventConcat(const std::initializer_list<std::string>& strings);
-
-//template<typename ...Types>
-
-// TODO event subscriber system?
-// Make all Managers into objects
-// What things should be namespaces?
-// perhaps everything?
-// Shouldnt be too verbose
-// Should be trivial to use and recognizable
-// Intended usages:
-//  - Valhalla()->ModManager()->CallEvent(...)
-//      MOD_EVENT(...) as a easy macro
-//  - Valhalla()->NetManager()->...
-//  - Valhalla()->
-class ModManager {
-public:
-	void Init();
-	void UnInit();
-
-    std::vector<EventHandler>& GetCallbacks(HASH_t hash);
-    std::vector<EventHandler>& GetCallbacks(const char* name);
-
-    std::optional<EventHandlerStream> &CurrentEventStream();
-
-    // get event results
-
-    // Mod might be able to be hidden if var args can be constructed
-
-
+    // Dispatch a event for capture by any registered mod event handlers
+    // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    bool CallEvent(HASH_t name, Args... params) {
+    bool CallEvent(HASH_t name, const Args&... params) {
         OPTICK_EVENT();
-        auto&& callbacks = GetCallbacks(name);
+        auto&& find = m_callbacks.find(name);
+        if (find == m_callbacks.end())
+            return false;
 
-        auto &&opt = CurrentEventStream();
-        opt =
+        auto &&callbacks = find->second;
 
-        // have a method to get the status of the event results
-        // instead of weirdly passing a temporary around
-        //sol::table eventResults;
+        this->m_cancelCurrentEvent = false;
         for (auto&& callback : callbacks) {
             try {
-                callback.m_func(std::move(params)...);
+                callback.m_func(params...);
             } catch (const sol::error& e) {
                 LOG(ERROR) << e.what();
             }
         }
-        //return eventResults;
-        return CurrentEventStream()
+        return m_cancelCurrentEvent;
     }
 
     template <typename... Args>
-    auto CallEvent(const std::string& name, Args... params) {
-        return CallEvent(Utils::GetStableHashCode(name), std::move(params)...);
+    auto CallEvent(const char* name, const Args&... params) {
+        return CallEvent(Utils::GetStableHashCode(name), params...);
     }
 
-    //template <typename... Args>
-    //auto CallEvent(const std::initializer_list<std::string> &strings, Args... params) {
-    //    std::string name;
-    //    for (auto&& str : strings)
-    //        name += Utils::GetStableHashCode(str);
-    //
-    //    return CallEvent(Utils::GetStableHashCode(name), std::move(params)...);
-    //}
+    template <typename... Args>
+    auto CallEvent(std::string& name, const Args&... params) {
+        return CallEvent(name.c_str(), params...);
+    }
 
+
+
+private:
     template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, Tuple t, std::index_sequence<Is...>) {
-        return CallEvent(name, std::move(std::get<Is>(t))...);
+    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
+        return CallEvent(name, std::get<Is>(t)...);
     }
 
+public:
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, Tuple t) {
-        return CallEventTupleImpl(name, std::move(t),
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
+        return CallEventTupleImpl(name, t,
                                   std::make_index_sequence < std::tuple_size<Tuple>{} > {});
-
-        //auto seq = std::make_index_sequence<std::tuple_size<Tuple>{}>{};
-        //return CallEvent(name, std::get<decltype(seq)>(std::move(t))...);
     }
 
     template <class Tuple>
-    auto CallEventTuple(const std::string& name, Tuple t) {
-        return CallEventTuple(Utils::GetStableHashCode(name), std::move(t));
+    auto CallEventTuple(const char* name, const Tuple& t) {
+        return CallEventTuple(Utils::GetStableHashCode(name), t);
+    }
+
+    template <class Tuple>
+    auto CallEventTuple(std::string& name, const Tuple& t) {
+        return CallEventTuple(name.c_str(), t);
     }
 };
+
+VModManager* ModManager();
+
+#define CALL_EVENT(name, ...) ModManager()->CallEvent(name, ##__VA_ARGS__)
+#define CALL_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple(name, ##__VA_ARGS__)

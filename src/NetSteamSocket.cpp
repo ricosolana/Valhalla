@@ -1,7 +1,7 @@
 #include "NetSocket.h"
 #include <isteamnetworkingsockets.h>
 #include <isteamnetworkingutils.h>
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection hConn)
     : m_hConn(hConn) {
@@ -29,11 +29,10 @@ void SteamSocket::Close(bool flush) {
     if (!Connected())
         return;
 
-    m_connected = false;
-
     auto steamID = m_steamNetId.GetSteamID();
-//m_steamNetId.GetIPAddr()
+
     if (flush) {
+        SendQueued();
         SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
         auto self(shared_from_this());
         Valhalla()->RunTaskLater([this, self, steamID](Task&) {
@@ -44,6 +43,8 @@ void SteamSocket::Close(bool flush) {
         SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
         SteamGameServer()->EndAuthSession(steamID);
     }
+
+    m_connected = false;
 }
 
 
@@ -65,7 +66,7 @@ std::optional<NetPackage> SteamSocket::Recv() {
 	if (Connected()) {
 #define MSG_COUNT 1
 		SteamNetworkingMessage_t* msg; // will point to allocated messages
-		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) >= MSG_COUNT) {
+		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
 			NetPackage pkg((BYTE_t*)msg->m_pData, msg->m_cbSize);
 			msg->Release();
 			return pkg;

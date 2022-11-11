@@ -1,5 +1,5 @@
 #include "NetAcceptor.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 using asio::ip::tcp;
 

@@ -12,7 +12,7 @@
 
 #include "Utils.h"
 #include "ResourceManager.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 INITIALIZE_EASYLOGGINGPP
 

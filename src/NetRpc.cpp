@@ -1,9 +1,8 @@
 #include <optick.h>
 
 #include "NetRpc.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 #include "NetManager.h"
-#include "ModManager.h"
 
 using namespace std::chrono;
 
@@ -15,11 +14,9 @@ NetRpc::~NetRpc() {
 	LOG(DEBUG) << "~NetRpc()";
 }
 
-void NetRpc::Register(HASH_t hash, IMethod<NetRpc*>* method) {
-	assert(!m_methods.contains(hash)
-		&& "runtime rpc hash collision");
-
-	m_methods.insert({ hash, std::unique_ptr<IMethod<NetRpc*>>(method) });
+void NetRpc::Register(HASH_t hash, MethodPtr method) {
+	assert(!m_methods.contains(hash));
+	m_methods[hash] = std::move(method);
 }
 
 void NetRpc::Update() {
@@ -29,10 +26,6 @@ void NetRpc::Update() {
 
 	// Send packet data
 	m_socket->Update();
-
-	if (m_closeEventually) {
-		return;
-	}
 
 	// Read packets
 	while (auto opt = m_socket->Recv()) {
@@ -45,8 +38,8 @@ void NetRpc::Update() {
 				// Reply to the server with a pong
 				pkg.m_stream.Clear();
 				pkg.Write<HASH_t>(0);
-				pkg.Write(false);
-				SendPackage(pkg);
+				pkg.Write<bool>(false);
+				SendPackage(std::move(pkg));
 			}
 			else {
 				m_lastPing = now;
@@ -56,32 +49,14 @@ void NetRpc::Update() {
 #ifdef RPC_DEBUG
 			std::string name = pkg->Read<std::string>();
 #endif
-            // event call mode: consist of
-            //  - pre: event dispatched prior to delegate
-            //  - transpile: event intended to replace delegate
-            //  - post: event dispatched after delegate
-            //  Any unstated mode will default to 'pre'
-            // ModManager::CallEvent("Enable", "pre") // should default to mode: 'pre'
-            // ModManager::CallEvent("Routing", "pre", data)
-
 			auto&& find = m_methods.find(hash);
 			if (find != m_methods.end()) {
-                // Rpc calls are specific for Lua
-				find->second->Invoke(this, pkg,
-                                     Utils::GetStableHashCode("InRemoteCall") ^ hash);
-			}
-			else {
-#ifdef RPC_DEBUG
-				LOG(INFO) << "Client tried invoking unknown RPC: " << name;
-#else
-				LOG(INFO) << "Client tried invoking unknown RPC: " << hash;
-#endif
-				//m_socket->Close();
+				find->second->Invoke(*this, pkg);
 			}
 		}
 	}
 	
-	if (now - m_lastPing > Valhalla()->Settings().socketTimeout) {
+	if (now - m_lastPing > SERVER_SETTINGS.socketTimeout) {
 		LOG(INFO) << "Client RPC timeout";
 		m_socket->Close(false);
 	}
@@ -90,6 +65,5 @@ void NetRpc::Update() {
 void NetRpc::SendError(ConnectionStatus status) {
 	LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
 	Invoke("Error", status);
-	m_closeEventually = true;
-	//m_socket->Close();
+	m_socket->Close(true);
 }

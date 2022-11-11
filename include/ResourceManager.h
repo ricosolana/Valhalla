@@ -7,8 +7,6 @@
 
 #include "Utils.h"
 
-namespace fs = std::filesystem;
-
 namespace ResourceManager {
 
     // Set the data root directory

@@ -3,8 +3,7 @@
 #include "NetRouteManager.h"
 #include "NetManager.h"
 #include "Method.h"
-#include "MethodLua.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
 #include "NetObject.h"
@@ -12,15 +11,14 @@
 namespace NetRouteManager {
 
 	// Method hash, pair<callback, watcher>
-	robin_hood::unordered_map<HASH_t, 
-		std::pair<std::unique_ptr<IMethod<OWNER_t>>, std::unique_ptr<IMethod<OWNER_t>>>> m_methods;
+	//robin_hood::unordered_map<HASH_t,
+		//std::pair<std::unique_ptr<IMethod<OWNER_t>>, std::unique_ptr<IMethod<OWNER_t>>>> m_methods;
+
+    robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<OWNER_t>>> m_methods;
 
 	void _Register(HASH_t hash, IMethod<OWNER_t>* method) {
-        _Register(hash, method, nullptr);
-	}
-
-	void _Register(HASH_t hash, IMethod<OWNER_t>* method, IMethod<OWNER_t>* watcher) {
-		m_methods.insert({ hash, std::make_pair(std::unique_ptr<IMethod<OWNER_t>>(method), std::unique_ptr<IMethod<OWNER_t>>(watcher)) });
+        assert(!m_methods.contains(hash));
+		m_methods[hash] = std::unique_ptr<IMethod<OWNER_t>>(method);
 	}
 
 	void _RouteRPC(const Data& data) {
@@ -82,8 +80,7 @@ namespace NetRouteManager {
 		else {
 			auto&& find = m_methods.find(data.m_methodHash);
 			if (find != m_methods.end()) {
-				find->second.first->Invoke(data.m_senderPeerID, std::move(data.m_parameters),
-                                           Utils::GetStableHashCode("InRemoteRoute") ^ data.m_methodHash);
+				find->second->Invoke(data.m_senderPeerID, std::move(data.m_parameters));
 			}
 			else {
 				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
@@ -91,7 +88,7 @@ namespace NetRouteManager {
 		}
 	}
 
-	void RPC_RoutedRPC(NetRpc* rpc, NetPackage pkg) {
+	void RPC_RoutedRPC(NetRpc& rpc, NetPackage pkg) {
 		Data data(pkg);
 
         // todo
@@ -99,7 +96,7 @@ namespace NetRouteManager {
         // check to see the id matches
 
         // do not trust the client to provide their correct id
-        data.m_senderPeerID = NetManager::GetPeer(rpc)->m_uuid;
+        data.m_senderPeerID = NetManager::GetPeer(rpc).m_uuid;
 
 		// Server is the intended receiver (or EVERYONE)
 		if (data.m_targetPeerID == SERVER_ID

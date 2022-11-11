@@ -1,7 +1,7 @@
 #include <isteamutils.h>
 
 #include "NetAcceptor.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 
 AcceptorSteam::AcceptorSteam()
 	: m_port(Valhalla()->Settings().serverPort) {

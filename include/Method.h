@@ -12,6 +12,8 @@
 * (static functions, no class object needed)
 */
 
+static constexpr HASH_t POST_HASH = Utils::GetStableHashCode("POST");
+
 // Thanks @Fux
 template<class T>
 class IMethod
@@ -20,7 +22,7 @@ public:
     // Invoke a function with variadic parameters
     // A copy of the package is made
     // You may perform a move on the package as needed
-    virtual void Invoke(T t, NetPackage pkg, HASH_t name) = 0;
+    virtual void Invoke(T t, NetPackage pkg) = 0;
 };
 
 // Base specifier
@@ -28,63 +30,160 @@ public:
 template<class T, class...V> class MethodImpl;
 
 // Rpc, instance, function<args...>
+// Lua notes*
+//  Register an event handler like:
+//      OnEvent("Rpc", "PeerInfo", "POST")
 template<class T, class C, class...Args>
 class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
-    using Lambda = void(C::*)(T, Args...);
+    using FuncPtr = void(C::*)(T, Args...);
 
-    C* object;
-    Lambda lambda;
+    const C* object;
+    const FuncPtr lambda;
+    const HASH_t m_luaEventHash;
 
 public:
-    MethodImpl(C* object, Lambda lam) : object(object), lambda(lam) {}
+    MethodImpl(C* object, FuncPtr lam, HASH_t luaEventHash) : object(object), lambda(lam), m_luaEventHash(luaEventHash) {}
 
-    void Invoke(T t, NetPackage pkg, HASH_t name) override {
+    void Invoke(T t, NetPackage pkg) override {
         if constexpr (sizeof...(Args)) {
             auto tuple = NetPackage::Deserialize<Args...>(pkg);
 
-            ModManager::CallEventTuple(name, tuple);
-
-            Utils::InvokeTuple(lambda, object, t, std::move(tuple));
+            if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
+                std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object, t), tuple));
+                //Utils::InvokeTuple(lambda, object, t, tuple);
+            CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
             // lua
-            ModManager::CallEvent(name);
-
-            std::invoke(lambda, object, t);
+            if (!CALL_EVENT(m_luaEventHash))
+                std::invoke(lambda, object, t);
+            CALL_EVENT(m_luaEventHash ^ POST_HASH);
         }
     }
 };
 
 // Specifying deduction guide
 template<class T, class C, class ...Args>
-MethodImpl(C* object, void(C::*)(T, Args...)) -> MethodImpl<T, C, void(C::*)(T, Args...)>;
+MethodImpl(C* object, void(C::*)(T, Args...), HASH_t) -> MethodImpl<T, C, void(C::*)(T, Args...)>;
+
+
 
 // static specifier
 template<class T, class...Args>
 class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
-    using Lambda = void(*)(T, Args...);
+    using FuncPtr = void(*)(T, Args...);
 
-    Lambda lambda;
+    const FuncPtr lambda;
+    const HASH_t m_luaEventHash;
 
 public:
-    explicit MethodImpl(Lambda lam) : lambda(lam) {}
+    explicit MethodImpl(FuncPtr lam, HASH_t luaEventHash) : lambda(lam), m_luaEventHash(luaEventHash) {}
 
-    void Invoke(T t, NetPackage pkg, HASH_t name) override {
+    void Invoke(T t, NetPackage pkg) override {
         if constexpr (sizeof...(Args)) {
             auto tuple = NetPackage::Deserialize<Args...>(pkg);
 
-            ModManager::CallEventTuple(name, tuple);
-
-            Utils::InvokeTupleS(lambda, t, tuple);
+            if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
+                std::apply(lambda, std::tuple_cat(std::forward_as_tuple(t), tuple));
+                //Utils::InvokeTupleS(lambda, t, tuple);
+            CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
-            ModManager::CallEvent(name);
-
-            std::invoke(lambda, t);
+            if (!CALL_EVENT(m_luaEventHash))
+                std::invoke(lambda, t);
+            CALL_EVENT(m_luaEventHash ^ POST_HASH);
         }
     }
 };
 
 // Specifying deduction guide
 template<class T, class ...Args>
-MethodImpl(void(*)(T, Args...)) -> MethodImpl<void(*)(T, Args...)>;
+MethodImpl(void(*)(T, Args...), HASH_t) -> MethodImpl<void(*)(T, Args...)>;
+
+
+
+// Lua callbacks
+template<class T>
+class MethodImpl<T> : public IMethod<T> {
+    sol::function m_func;
+    std::vector<PkgType> m_types;
+
+public:
+    explicit MethodImpl(sol::function func, std::vector<PkgType> types)
+        : m_func(std::move(func)), m_types(std::move(types)) {}
+
+    void Invoke(T t, NetPackage pkg) override {
+        sol::variadic_results results;
+        auto&& state(m_func.lua_state());
+        for (auto&& pkgType : m_types) {
+            switch (pkgType) {
+                case PkgType::BYTE_ARRAY:
+                    results.push_back(sol::make_object(state, pkg.Read<BYTES_t>()));
+                    break;
+                case PkgType::PKG:
+                    results.push_back(sol::make_object(state, pkg.Read<NetPackage>()));
+                    break;
+                case PkgType::STRING:
+                    results.push_back(sol::make_object(state, pkg.Read<std::string>()));
+                    break;
+                case PkgType::NET_ID:
+                    results.push_back(sol::make_object(state, pkg.Read<NetID>()));
+                    break;
+                case PkgType::VECTOR3:
+                    results.push_back(sol::make_object(state, pkg.Read<Vector3>()));
+                    break;
+                case PkgType::VECTOR2i:
+                    results.push_back(sol::make_object(state, pkg.Read<Vector2i>()));
+                    break;
+                case PkgType::QUATERNION:
+                    results.push_back(sol::make_object(state, pkg.Read<Quaternion>()));
+                    break;
+                case PkgType::STRING_ARRAY:
+                    results.push_back(sol::make_object(state, pkg.Read<std::vector<std::string>>()));
+                    break;
+                case PkgType::INT8:
+                    results.push_back(sol::make_object(state, pkg.Read<int8_t>()));
+                    break;
+                case PkgType::UINT8:
+                    results.push_back(sol::make_object(state, pkg.Read<uint8_t>()));
+                    break;
+                case PkgType::INT16:
+                    results.push_back(sol::make_object(state, pkg.Read<int16_t>()));
+                    break;
+                case PkgType::UINT16:
+                    results.push_back(sol::make_object(state, pkg.Read<uint16_t>()));
+                    break;
+                case PkgType::INT32:
+                    results.push_back(sol::make_object(state, pkg.Read<int32_t>()));
+                    break;
+                case PkgType::UINT32:
+                    results.push_back(sol::make_object(state, pkg.Read<uint32_t>()));
+                    break;
+                case PkgType::INT64:
+                    results.push_back(sol::make_object(state, pkg.Read<int64_t>()));
+                    break;
+                case PkgType::UINT64:
+                    results.push_back(sol::make_object(state, pkg.Read<uint64_t>()));
+                    break;
+                case PkgType::FLOAT:
+                    results.push_back(sol::make_object(state, pkg.Read<float>()));
+                    break;
+                case PkgType::DOUBLE:
+                    results.push_back(sol::make_object(state, pkg.Read<double>()));
+                    break;
+            }
+        }
+
+        auto args(sol::as_args(results));
+        m_func(args);
+    }
+};
+
+//template<class T, class ...Args>
+//MethodImpl(sol::function, std::vector<PkgType>) -> MethodImpl<T>;
+
+
+
+
+
+

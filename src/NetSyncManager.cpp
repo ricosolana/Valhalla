@@ -1,7 +1,7 @@
 #include <array>
 #include "NetSyncManager.h"
 #include "NetManager.h"
-#include "ValhallaServer.h"
+#include "VServer.h"
 #include "NetHashes.h"
 #include "ZoneSystem.h"
 #include "NetRouteManager.h"
@@ -53,8 +53,8 @@ namespace NetSyncManager {
 
 	void ResetSectorArray();
 	SyncPeer* GetPeer(OWNER_t uuid);
-	SyncPeer* GetPeer(NetPeer *netPeer);
-	SyncPeer* GetPeer(NetRpc *rpc);
+	SyncPeer& GetPeer(NetPeer *netPeer);
+	SyncPeer& GetPeer(NetRpc *rpc);
 	void UpdateStats(float dt);
 	//void SendZDOToPeers(float dt);
 	void SendZDOToPeers2(float dt);
@@ -968,24 +968,24 @@ namespace NetSyncManager {
 		return nullptr;
 	}
 
-	SyncPeer* GetPeer(OWNER_t uuid) {
+	SyncPeer *GetPeer(OWNER_t uuid) {
 		for (auto&& peer : m_peers) {
 			if (peer->m_peer->m_uuid == uuid)
 				return peer.get();
 		}
-		return nullptr;
+        throw std::runtime_error("");
 	}
 
-	SyncPeer* GetPeer(NetRpc* rpc) {
+	SyncPeer& GetPeer(NetRpc& rpc) {
 		for (auto&& peer : m_peers) {
-			if (peer->m_peer->m_rpc.get() == rpc)
-				return peer.get();
+			if (peer->m_peer->m_rpc.get() == &rpc)
+				return *peer;
 		}
-		return nullptr;
+        throw std::runtime_error("");
 	}
 
-	SyncPeer* GetPeer(NetPeer *netpeer) {
-		return GetPeer(netpeer->m_uuid);
+	SyncPeer& GetPeer(NetPeer &netpeer) {
+		return GetPeer(*netpeer.m_rpc.get());
 	}
 
 	//NetSync *CreateNewNetSync(NetID uid, Vector3 position) {
@@ -997,11 +997,10 @@ namespace NetSyncManager {
 	//	return nullptr;
 	//}
 
-	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
+	void RPC_ZDOData(NetRpc& rpc, NetPackage pkg) {
 		//throw std::runtime_error("Not implemented");
 
 		auto syncPeer = GetPeer(rpc);
-		assert(syncPeer);
 
 		{
 			auto invalid_sector_count = pkg.Read<int32_t>(); // invalid sector count
@@ -1041,7 +1040,7 @@ namespace NetSyncManager {
 				if (dataRev <= sync->m_rev.m_dataRev) {
 					if (ownerRev > sync->m_rev.m_ownerRev) {
 						sync->m_rev.m_ownerRev = ownerRev;
-						syncPeer->m_syncs.insert({ syncId, rev });
+						syncPeer.m_syncs.insert({ syncId, rev });
 					}
 					continue;
 				}
@@ -1056,7 +1055,7 @@ namespace NetSyncManager {
 			sync->SetPosition(vec3);
 			sync->Deserialize(des);
 
-			syncPeer->m_syncs[syncId] = rev;
+			syncPeer.m_syncs[syncId] = rev;
 
             // If the ZDO was just created as a copy, but it was removed recently
 			if (flagCreated && m_deadZDOs.contains(syncId)) {

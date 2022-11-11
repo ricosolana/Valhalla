@@ -16,6 +16,7 @@
 #include "CompileSettings.h"
 
 using namespace std::chrono;
+namespace fs = std::filesystem;
 
 #define __H(str) Utils::GetStableHashCode(str)
 
@@ -93,10 +94,27 @@ namespace Utils {
 			std::make_index_sequence < std::tuple_size<Tuple>{} > {}); // last arg is for template only
 	}
 
+    // https://stackoverflow.com/questions/44776927/call-member-function-with-expanded-tuple-parms-stdinvoke-vs-stdapply
+    //template<typename F, typename T, typename U>
+    //decltype(auto) apply_invoke(F&& func, T&& first, U&& tuple) {
+    //    return std::apply(std::forward<F>(func), std::tuple_cat(std::forward_as_tuple(std::forward<T>(first)), std::forward<U>(tuple)));
+    //}
+
+    //template<typename Tuple, size_t... Is>
+    //auto UnpackImpl(Tuple t, std::index_sequence<Is...>) {
+    //    return std::get<Is>(t);
+    //}
+    //template<typename Tuple>
+    //auto Unpack(Tuple &tuple) {
+    //    auto seq = std::make_index_sequence < std::tuple_size<Tuple>{} > {};
+    //    return std::get<std::tuple_size<Tuple>{}>()
+    //}
+
+
+
 	bool Compress(const BYTE_t* buf, unsigned int bufSize, int level, BYTE_t* out, unsigned int& outSize);
 	void Compress(const BYTES_t& buf, int level, BYTES_t& out);
 	std::vector<BYTE_t> Compress(const BYTE_t* buf, unsigned int bufSize, int level);
-
 
 	std::vector<BYTE_t> Decompress(const BYTE_t* compressedBytes, int count);
 

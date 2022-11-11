@@ -8,7 +8,7 @@
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
 
-class ValhallaServer {
+class VServer {
 	std::atomic_bool m_running = false;
 
 	// perfect structure for this job
@@ -28,7 +28,7 @@ class ValhallaServer {
 	steady_clock::time_point m_nowUpdate;
 
 public:
-    ValhallaServer() : m_serverId(Utils::GenerateUID()) {}
+    VServer() : m_serverId(Utils::GenerateUID()) {}
 
 	OWNER_t ID() const {
 		return m_serverId;
@@ -75,4 +75,4 @@ private:
 	void Update(float delta);
 };
 
-ValhallaServer* Valhalla();
+VServer* Valhalla();

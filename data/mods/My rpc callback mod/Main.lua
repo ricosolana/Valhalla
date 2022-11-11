@@ -1,7 +1,7 @@
 Valhalla.OnEvent("Enable", function()
-    print("Join mod enabled!")
+    print(Mod.name .. " enabled!")
 end)
 
-Valhalla.OnEvent("InRemoteCall", "PeerInfo", function(rpc, pkg)
+Valhalla.OnEvent("Rpc", "PeerInfo", function(rpc, pkg)
     print("Lua caught PeerInfo: peer connected " .. rpc.socket:GetHostName())
 end)
