@@ -38,7 +38,9 @@ class VModManager {
 
         sol::state m_state;
 
-        void Throw(const std::string& msg);
+        //void Throw(const std::string& msg);
+
+        void Throw(const char* msg);
 
         Mod(std::string name, std::string version, int apiVersion)
                 : m_name(std::move(name)), m_version(std::move(version)), m_apiVersion(apiVersion), m_state() {}
@@ -77,7 +79,7 @@ public:
     // Dispatch a event for capture by any registered mod event handlers
     // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    bool CallEvent(HASH_t name, Args&... params) {
+    bool CallEvent(HASH_t name, const Args&... params) {
         OPTICK_EVENT();
         auto&& find = m_callbacks.find(name);
         if (find == m_callbacks.end())
@@ -97,12 +99,12 @@ public:
     }
 
     template <typename... Args>
-    auto CallEvent(const char* name, Args&... params) {
+    auto CallEvent(const char* name, const Args&... params) {
         return CallEvent(VUtils::String::GetStableHashCode(name), params...);
     }
 
     template <typename... Args>
-    auto CallEvent(std::string& name, Args&... params) {
+    auto CallEvent(std::string& name, const Args&... params) {
         return CallEvent(name.c_str(), params...);
     }
 
@@ -110,24 +112,24 @@ public:
 
 private:
     template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, Tuple& t, std::index_sequence<Is...>) {
+    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
         return CallEvent(name, std::get<Is>(t)...);
     }
 
 public:
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, Tuple& t) {
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
         return CallEventTupleImpl(name, t,
                                   std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 
     template <class Tuple>
-    auto CallEventTuple(const char* name, Tuple& t) {
+    auto CallEventTuple(const char* name, const Tuple& t) {
         return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
     }
 
     template <class Tuple>
-    auto CallEventTuple(std::string& name, Tuple& t) {
+    auto CallEventTuple(std::string& name, const Tuple& t) {
         return CallEventTuple(name.c_str(), t);
     }
 };

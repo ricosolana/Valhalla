@@ -28,7 +28,11 @@ int GetCurrentLuaLine(lua_State *L) {
     return ar.currentline;
 }
 
-void VModManager::Mod::Throw(const std::string& msg) {
+//void VModManager::Mod::Throw(const std::string& msg) {
+//    LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
+//}
+
+void VModManager::Mod::Throw(const char* msg) {
     LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
 }
 
@@ -188,7 +192,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
 
     // Package read/write types
     state.new_usertype<NetPackage>("NetPackage",
-        "stream", &NetPackage::m_stream
+                                   "stream", &NetPackage::m_stream
     );
 
     state.new_usertype<NetID>("NetID",
@@ -235,13 +239,14 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
     state.new_usertype<NetRpc>("NetRpc",
         "Invoke", [ptr](NetRpc& self, sol::variadic_args args) {
-            // Invoke will firstly
-            // args will be types that can be tested for which type
-            //bool pkg = args[0].is<NetPackage>();
+            auto &&tostring(ptr->m_state["tostring"]);
+
             NetPackage params;
             for (int i=0; i < args.size(); i++) {
                 auto &&arg = args[i];
                 auto &&type = arg.get_type();
+
+                static char errBuf[128] = "";
 
                 if (i == 0) {
                     if (type == sol::type::string) {
@@ -249,78 +254,124 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
                     } else if (type == sol::type::number) {
                         params.Write(arg.as<HASH_t>());
                     } else {
-                        return ptr->Throw("invalid parameter for method");
+                        sol::object o = tostring(arg);
+                        auto result = o.as<std::string>();
+                        snprintf(errBuf, sizeof(errBuf), "arg %d; expected string or number, got: %s", i, result.c_str());
+                        return ptr->Throw(errBuf);
                     }
                 } else {
                     // strict assumptions:
                     // Every first number is assumed to be the PkgType, and the next to be the object
                     if (type == sol::type::number) {
                         PkgType pkgType = arg.as<PkgType>();
-                        auto&& obj = args[++i];
 
-                        switch (pkgType) {
-                            case PkgType::BYTE_ARRAY:
-                                params.Write(obj.as<BYTES_t>());
-                                break;
-                            case PkgType::PKG:
-                                params.Write(obj.as<NetPackage>());
-                                break;
-                            case PkgType::STRING:
-                                params.Write(obj.as<std::string>());
-                                break;
-                            case PkgType::NET_ID:
-                                params.Write(obj.as<NetID>());
-                                break;
-                            case PkgType::VECTOR3:
-                                params.Write(obj.as<Vector3>());
-                                break;
-                            case PkgType::VECTOR2i:
-                                params.Write(obj.as<Vector2i>());
-                                break;
-                            case PkgType::QUATERNION:
-                                params.Write(obj.as<Quaternion>());
-                                break;
-                            case PkgType::STRING_ARRAY:
-                                params.Write(obj.as<std::vector<std::string>>());
-                                break;
-                            case PkgType::BOOL:
-                                params.Write(obj.as<bool>());
-                                break;
-                            case PkgType::INT8:
-                                params.Write(obj.as<int8_t>());
-                                break;
-                            case PkgType::UINT8:
-                                params.Write(obj.as<uint8_t>());
-                                break;
-                            case PkgType::INT16:
-                                params.Write(obj.as<int16_t>());
-                                break;
-                            case PkgType::UINT16:
-                                params.Write(obj.as<uint16_t>());
-                                break;
-                            case PkgType::INT32:
-                                params.Write(obj.as<int32_t>());
-                                break;
-                            case PkgType::UINT32:
-                                params.Write(obj.as<uint32_t>());
-                                break;
-                            case PkgType::INT64:
-                                params.Write(obj.as<int64_t>());
-                                break;
-                            case PkgType::UINT64:
-                                params.Write(obj.as<uint64_t>());
-                                break;
-                            case PkgType::FLOAT:
-                                params.Write(obj.as<float>());
-                                break;
-                            case PkgType::DOUBLE:
-                                params.Write(obj.as<double>());
-                                break;
-                            default:
-                                return ptr->Throw("unknown PkgType (use the enum; not a number)");
+                        // bounds check end of array for pairs
+                        if (i + 1 < args.size()) {
+                            auto &&obj = args[++i];
+
+                            if (obj.get_type() != sol::type::number) {
+                                sol::object o = tostring(obj);
+                                auto result = o.as<std::string>();
+                                snprintf(errBuf, sizeof(errBuf), "arg %d; expected number immediately after PkgType, got: %s", i, result.c_str());
+                                return ptr->Throw(errBuf);
+                            }
+
+                            switch (pkgType) {
+                                // these types do not require PkgType specifiers because they are lightuserdata
+                                /*
+                                case PkgType::BYTE_ARRAY:
+                                    params.Write(obj.as<BYTES_t>());
+                                    break;
+                                case PkgType::PKG:
+                                    params.Write(obj.as<NetPackage>());
+                                    break;
+                                case PkgType::STRING:
+                                    params.Write(obj.as<std::string>());
+                                    break;
+                                case PkgType::NET_ID:
+                                    params.Write(obj.as<NetID>());
+                                    break;
+                                case PkgType::VECTOR3:
+                                    params.Write(obj.as<Vector3>());
+                                    break;
+                                case PkgType::VECTOR2i:
+                                    params.Write(obj.as<Vector2i>());
+                                    break;
+                                case PkgType::QUATERNION:
+                                    params.Write(obj.as<Quaternion>());
+                                    break;
+                                case PkgType::STRING_ARRAY:
+                                    params.Write(obj.as<std::vector<std::string>>());
+                                    break;
+                                case PkgType::BOOL:
+                                    params.Write(obj.as<bool>());
+                                    break;
+                                */
+                                case PkgType::INT8:
+                                    params.Write(obj.as<int8_t>());
+                                    break;
+                                case PkgType::UINT8:
+                                    params.Write(obj.as<uint8_t>());
+                                    break;
+                                case PkgType::INT16:
+                                    params.Write(obj.as<int16_t>());
+                                    break;
+                                case PkgType::UINT16:
+                                    params.Write(obj.as<uint16_t>());
+                                    break;
+                                case PkgType::INT32:
+                                    params.Write(obj.as<int32_t>());
+                                    break;
+                                case PkgType::UINT32:
+                                    params.Write(obj.as<uint32_t>());
+                                    break;
+                                case PkgType::INT64:
+                                    params.Write(obj.as<int64_t>());
+                                    break;
+                                case PkgType::UINT64:
+                                    params.Write(obj.as<uint64_t>());
+                                    break;
+                                case PkgType::FLOAT:
+                                    params.Write(obj.as<float>());
+                                    break;
+                                case PkgType::DOUBLE:
+                                    params.Write(obj.as<double>());
+                                    break;
+                                default:
+                                    snprintf(errBuf, sizeof(errBuf), "arg %d; invalid PkgType enum, got: %d", i, static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
+                                    return ptr->Throw(errBuf);
+                            }
+                        } else {
+                            snprintf(errBuf, sizeof(errBuf), "arg %d; unknown number type", i);
+                            return ptr->Throw(errBuf);
                         }
                     } else {
-                        return ptr->Throw("parameters must be in (PkgType, obj) pairs");
+                        if (type == sol::type::string) {
+                            params.Write(arg.as<std::string>());
+                        } else if (type == sol::type::boolean) {
+                            params.Write(arg.as<bool>());
+                        } else {
+                            if (arg.is<BYTES_t>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<NetPackage>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<NetID>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<Vector3>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<Vector2i>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<Quaternion>()) {
+                                params.Write(arg.as<std::string>());
+                            } else if (arg.is<std::vector<std::string>>()) {
+                                params.Write(arg.as<std::string>());
+                            } else {
+                                sol::object o = tostring(arg);
+                                auto result = o.as<std::string>();
+                                snprintf(errBuf, sizeof(errBuf), "arg %d; expected serializable type, got: %s", i, result.c_str());
+                                return ptr->Throw(errBuf);
+                            }
+                        }
                     }
                 }
             }
@@ -433,8 +484,10 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // Get information about the current event
     {
         auto thisEventTable = state["Event"].get_or_create<sol::table>();
+        thisEventTable["Cancel"] = [this]() { m_cancelCurrentEvent = true; };
         thisEventTable["SetCancelled"] = [this](bool c) { m_cancelCurrentEvent = c; };
-        thisEventTable["Cancelled"] = [this]() { return m_cancelCurrentEvent; };
+        thisEventTable["cancelled"] = &m_cancelCurrentEvent;
+        //thisEventTable["Cancelled"] = [this]() { return m_cancelCurrentEvent; };
     }
 
     return mod;

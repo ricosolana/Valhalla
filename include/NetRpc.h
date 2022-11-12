@@ -21,7 +21,10 @@ public:
     using ClFuncPtr = void(C::*)(NetRpc*, Args...);
 
 private:
+    // When the server receives an rpc call
     static constexpr HASH_t RPC_HASH = VUtils::String::GetStableHashCode("Rpc");
+    // when the server sends an rpc call
+    static constexpr HASH_t RPC_INVOKE_HASH = VUtils::String::GetStableHashCode("RpcInvoke");
 
 private:
 	std::chrono::steady_clock::time_point m_lastPing;
@@ -117,6 +120,10 @@ public:
 	void Invoke(HASH_t hash, const Types&... params) {
 		if (!m_socket->Connected())
 			return;
+
+
+        if (CALL_EVENT(RPC_INVOKE_HASH ^ hash, params...))
+            return;
 
         //return InvokeRaw(hash, NetPackage::Serialize(params...));
 
