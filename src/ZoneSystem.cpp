@@ -109,6 +109,7 @@ namespace ZoneSystem {
 	static constexpr float ZONE_SIZE = 64;
 
 	void SendGlobalKeys(OWNER_t target) {
+        LOG(INFO) << "Sending global keys to " << target;
 		NetRouteManager::Invoke(target, Routed_Hash::GlobalKeys, m_globalKeys);
 	}
 
@@ -135,6 +136,8 @@ namespace ZoneSystem {
 	}
 
 	void SendLocationIcons(OWNER_t target) {
+        LOG(INFO) << "Senging location icons to " << target;
+
 		NetPackage pkg;
 
         // TODO this is temporarary to get the client to login to the world

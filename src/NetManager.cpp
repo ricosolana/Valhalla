@@ -256,8 +256,6 @@ namespace NetManager {
         if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
-        auto ptr = &rpc;
-
 		// pass the data to the lua OnPeerInfo
         auto cancel = CALL_EVENT("PeerInfo", rpc, uuid, name, version);
         if (cancel)
@@ -271,7 +269,13 @@ namespace NetManager {
             }
         }
 
-        auto peer(std::make_unique<NetPeer>(std::unique_ptr<NetRpc>(rpc), uuid, name));
+
+        NetPeer* peer;
+        {
+            auto ptr(std::make_unique<NetPeer>(std::unique_ptr<NetRpc>(rpc), uuid, name));
+            peer = ptr.get();
+            m_peers.push_back(std::move(ptr));
+        }
 
 		peer->m_pos = pos;
 
@@ -286,10 +290,8 @@ namespace NetManager {
 		SendPeerInfo(rpc);
 
         //NetSyncManager::OnNewPeer(peer.get());
-		NetRouteManager::OnNewPeer(peer.get());
-		ZoneSystem::OnNewPeer(peer.get());
-
-        m_peers.push_back(std::move(peer));
+		NetRouteManager::OnNewPeer(peer);
+		ZoneSystem::OnNewPeer(peer);
 	}
 
 	// Retrieve a peer by its member Rpc
