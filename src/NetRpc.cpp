@@ -19,6 +19,17 @@ void NetRpc::Register(HASH_t hash, MethodPtr method) {
 	m_methods[hash] = std::move(method);
 }
 
+//void NetRpc::InvokeRaw(HASH_t hash, NetPackage params) {
+//    if (!m_socket->Connected())
+//        return;
+//
+//    NetPackage pkg; // TODO make into member to optimize; or make static
+//    pkg.Write(hash);
+//    pkg.m_stream.Write(params.m_stream.m_buf);
+//
+//    SendPackage(std::move(pkg));
+//}
+
 void NetRpc::Update() {
 	OPTICK_EVENT();
 

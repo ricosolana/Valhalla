@@ -103,6 +103,9 @@ public:
 
 
 
+    // inefficient
+    //void InvokeRaw(HASH_t hash, NetPackage params);
+
 	/**
 		* @brief Invoke a remote function
 		* @param name function name to invoke
@@ -115,13 +118,12 @@ public:
 		if (!m_socket->Connected())
 			return;
 
+        //return InvokeRaw(hash, NetPackage::Serialize(params...));
+
 		NetPackage pkg; // TODO make into member to optimize; or make static
 		pkg.Write(hash);
-#ifdef RPC_DEBUG // debug mode
-#error not implemented
-		pkg.Write(hash);
-#endif
 		NetPackage::_Serialize(pkg, params...); // serialize
+
 		SendPackage(std::move(pkg));
 	}
 

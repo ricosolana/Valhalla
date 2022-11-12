@@ -7,5 +7,5 @@ end
 
 Valhalla.OnEvent("Rpc", "PeerInfo", "POST", function(rpc, pkg)
     print("Registering CompressHandshake")
-    rpc:Register("CompressHandshake", PkgType.BOOL, compressHandshake)
+    rpc:Register("CompressHandshake", 6, PkgType.BOOL, compressHandshake)
 end)

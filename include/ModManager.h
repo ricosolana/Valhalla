@@ -38,6 +38,8 @@ class VModManager {
 
         sol::state m_state;
 
+        void Throw(const std::string& msg);
+
         Mod(std::string name, const std::string &version, int apiVersion)
                 : m_name(std::move(name)), m_version(version), m_apiVersion(apiVersion), m_state() {}
     };

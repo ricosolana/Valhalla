@@ -21,6 +21,17 @@ bool VModManager::EventHandlerSort(const EventHandler &a,
 
 
 
+int GetCurrentLuaLine(lua_State *L) {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    return ar.currentline;
+}
+
+void VModManager::Mod::Throw(const std::string& msg) {
+    LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
+}
+
 // can get the lua state by passing sol::this_state type at end
 // https://sol2.readthedocs.io/en/latest/tutorial/functions.html#any-return-to-and-from-lua
 
@@ -145,25 +156,23 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                    "DOUBLE", PkgType::DOUBLE
                    );
 
+    auto utilsTable = state["VUtils"].get_or_create<sol::table>();
+
     //auto zlibTable = state["zlib"].get_or_create<sol::table>();
-    //zlibTable["Compress"] = sol::overload([](const BYTES_t& bytes) {
-    //    return VUtils::Compress(bytes)
-    //    },
-    //                                      [](const BYTES_t& bytes, int length) {},
-    //                                      [](const BYTES_t& bytes, int length, int level) {});
+    utilsTable["Compress"] = [](const BYTES_t& bytes) { return VUtils::CompressGz(bytes); };
+    utilsTable["Decompress"] = [](const BYTES_t& bytes) { return VUtils::Decompress(bytes); };
 
     state.new_usertype<Stream>("Stream",
-        "Length", &Stream::Length
-
+        "pos", sol::property(
+                [](Stream& self) { return self.Position(); },
+                [](Stream& self, uint32_t pos) { self.SetPos(pos); }),
+        "buf", &Stream::m_buf
     );
 
     // Package read/write types
-
     state.new_usertype<NetPackage>("NetPackage",
         "stream", &NetPackage::m_stream
     );
-
-    //state.new_usertype<BYTES_t>("Bytes")
 
     state.new_usertype<NetID>("NetID",
                               "uuid", &NetID::m_uuid,
@@ -208,11 +217,99 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
     // basically, get the lua state to get args passed to RPC invoke
     // https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
     state.new_usertype<NetRpc>("NetRpc",
-        "Invoke", [](NetRpc& self, sol::variadic_args args) {
+        "Invoke", [ptr](NetRpc& self, sol::variadic_args args) {
             // Invoke will firstly
+            // args will be types that can be tested for which type
+            //bool pkg = args[0].is<NetPackage>();
+            NetPackage params;
+            for (int i=0; i < args.size(); i++) {
+                auto &&arg = args[i];
+                auto &&type = arg.get_type();
+
+                if (i == 0) {
+                    if (type == sol::type::string) {
+                        params.Write(VUtils::String::GetStableHashCode(arg.as<std::string>()));
+                    } else if (type == sol::type::number) {
+                        params.Write(arg.as<HASH_t>());
+                    } else {
+                        return ptr->Throw("invalid parameter for method");
+                    }
+                } else {
+                    // strict assumptions:
+                    // Every first number is assumed to be the PkgType, and the next to be the object
+                    if (type == sol::type::number) {
+                        PkgType pkgType = arg.as<PkgType>();
+                        auto&& obj = args[++i];
+
+                        switch (pkgType) {
+                            case PkgType::BYTE_ARRAY:
+                                params.Write(obj.as<BYTES_t>());
+                                break;
+                            case PkgType::PKG:
+                                params.Write(obj.as<NetPackage>());
+                                break;
+                            case PkgType::STRING:
+                                params.Write(obj.as<std::string>());
+                                break;
+                            case PkgType::NET_ID:
+                                params.Write(obj.as<NetID>());
+                                break;
+                            case PkgType::VECTOR3:
+                                params.Write(obj.as<Vector3>());
+                                break;
+                            case PkgType::VECTOR2i:
+                                params.Write(obj.as<Vector2i>());
+                                break;
+                            case PkgType::QUATERNION:
+                                params.Write(obj.as<Quaternion>());
+                                break;
+                            case PkgType::STRING_ARRAY:
+                                params.Write(obj.as<std::vector<std::string>>());
+                                break;
+                            case PkgType::BOOL:
+                                params.Write(obj.as<bool>());
+                                break;
+                            case PkgType::INT8:
+                                params.Write(obj.as<int8_t>());
+                                break;
+                            case PkgType::UINT8:
+                                params.Write(obj.as<uint8_t>());
+                                break;
+                            case PkgType::INT16:
+                                params.Write(obj.as<int16_t>());
+                                break;
+                            case PkgType::UINT16:
+                                params.Write(obj.as<uint16_t>());
+                                break;
+                            case PkgType::INT32:
+                                params.Write(obj.as<int32_t>());
+                                break;
+                            case PkgType::UINT32:
+                                params.Write(obj.as<uint32_t>());
+                                break;
+                            case PkgType::INT64:
+                                params.Write(obj.as<int64_t>());
+                                break;
+                            case PkgType::UINT64:
+                                params.Write(obj.as<uint64_t>());
+                                break;
+                            case PkgType::FLOAT:
+                                params.Write(obj.as<float>());
+                                break;
+                            case PkgType::DOUBLE:
+                                params.Write(obj.as<double>());
+                                break;
+                        }
+                    } else {
+                        return ptr->Throw("parameters must be in (PkgType, obj) pairs");
+                    }
+                }
+            }
+
+            self.m_socket->Send(std::move(params));
         },
 
-        "Register", [](NetRpc& self, sol::variadic_args args) {
+        "Register", [ptr](NetRpc& self, sol::variadic_args args) {
             HASH_t name = 0;
             std::vector<PkgType> types;
 
@@ -226,12 +323,15 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                     } else if (type == sol::type::number) {
                         name = arg.as<HASH_t>();
                     } else {
-                        LOG(ERROR) << "Lua invalid register call";
-                        break;
+                        return ptr->Throw("first param must be a string or numeric hash");
                     }
                 } else if (i + 1 < args.size()) {
                     // grab middle pkgtypes
-                    types.push_back(arg.as<PkgType>());
+                    if (type == sol::type::number) {
+                        types.push_back(arg.as<PkgType>());
+                    } else {
+                        return ptr->Throw("middle params must be of PkgType (numeric enum)");
+                    }
                 } else {
                     if (type == sol::type::function) {
                         auto callback = arg.as<sol::function>();
@@ -239,11 +339,9 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                         self.Register(name,
                                       std::make_unique<MethodImpl<NetRpc*>>(callback, std::move(types)));
                     } else {
-                        LOG(ERROR) << "Last param must be a function";
+                        return ptr->Throw("fast param must be a function");
                     }
-                    break;
                 }
-
             }
         },
         "socket", sol::property([](NetRpc& self) { return self.m_socket; })
@@ -281,37 +379,29 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
         for (int i=0; i < args.size(); i++) {
             auto&& arg = args[i];
             auto&& type = arg.get_type();
-            if (type == sol::type::string) {
-                auto h = VUtils::String::GetStableHashCode(arg.as<std::string>());
-                if (name == 0) name = h;
-                else name ^= h;
-            } else {
-                if (type == sol::type::number) {
-                    priority = arg.as<int>();
+
+            if (i + 1 < args.size()) {
+                if (type == sol::type::string) {
+                    auto h = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                    if (name == 0) name = h;
+                    else name ^= h;
+                } else if (type == sol::type::number) {
+                    auto h = arg.as<HASH_t>();
+                    if (name == 0) name = h;
+                    else name ^= h;
+                } else {
+                    return ptr->Throw("first few params must be string or numeric hash");
                 }
-                // check next element forcefully, it must be a function
-                if (i + 1 == args.size()) {
-                    if (type == sol::type::function) {
-                        callback = arg.as<sol::function>();
-                        break;
-                    }
+            } else {
+                if (type == sol::type::function) {
+                    auto func = arg.as<sol::function>();
+                    auto &&vec = m_callbacks[name];
+                    vec.emplace_back(EventHandler{ptr, callback, priority});
+                    std::sort(vec.begin(), vec.end(), EventHandlerSort);
+                } else {
+                    return ptr->Throw("last param must be a function");
                 }
             }
-        }
-
-        if (name != 0 && callback.valid()) {
-            auto &&vec = m_callbacks[name];
-            vec.emplace_back(EventHandler{ptr, callback, priority});
-            std::sort(vec.begin(), vec.end(), EventHandlerSort);
-        } else {
-            lua_State *L = thisState.L;
-
-            lua_Debug ar;
-            lua_getstack(L, 1, &ar);
-            lua_getinfo(L, "nSl", &ar);
-            auto line = ar.currentline;
-
-            LOG(ERROR) << "Failed to register Lua event callback for Mod '" << ptr->m_name << "' Line " << line;
         }
     };
 
