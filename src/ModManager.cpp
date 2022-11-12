@@ -90,9 +90,11 @@ void VModManager::RunModInfoFrom(const fs::path& dirname,
 
 
 
-std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::string& name,
-                                           std::string& version,
-                                           int apiVersion) {
+std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
+        const std::string& name,
+        const std::string& version,
+        int apiVersion) {
+
     auto mod = std::make_unique<Mod>(name, version, apiVersion);
     auto ptr = mod.get();
 
@@ -100,7 +102,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
     state.open_libraries();
 
     state.globals()["print"] = [ptr](sol::variadic_args args) {
-        auto tostring(ptr->m_state["tostring"]);
+        auto &&tostring(ptr->m_state["tostring"]);
 
         std::string s;
         int idx = 0;
@@ -112,6 +114,18 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
 
         LOG(INFO) << "[" << ptr->m_name << "] " << s;
     };
+
+    {
+        auto utilsTable = state["VUtils"].get_or_create<sol::table>();
+
+        utilsTable["Compress"] = sol::resolve<BYTES_t(const BYTES_t&)>(VUtils::CompressGz);
+        utilsTable["Decompress"] = sol::resolve<BYTES_t(const BYTES_t&)>(VUtils::Decompress);
+        {
+            auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
+
+            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
+        }
+    }
 
     //state.new_usertype<Task>("Task",
     //	"at", &Task::at,
@@ -135,14 +149,17 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
         "uuid", &NetPeer::m_uuid);
 
     state.new_enum("PkgType",
+                   "BYTES", PkgType::BYTE_ARRAY,
                    "BYTE_ARRAY", PkgType::BYTE_ARRAY,
                    "PKG", PkgType::PKG,
+                   "PACKAGE", PkgType::PKG,
                    "STRING", PkgType::STRING,
                    "NET_ID", PkgType::NET_ID,
                    "VECTOR3", PkgType::VECTOR3,
                    "VECTOR2i", PkgType::VECTOR2i,
                    "QUATERNION", PkgType::QUATERNION,
                    "STRING_ARRAY", PkgType::STRING_ARRAY,
+                   "STRINGS", PkgType::STRING_ARRAY,
                    "BOOL", PkgType::BOOL,
                    "INT8", PkgType::INT8, "UINT8", PkgType::UINT8,
                         "CHAR", PkgType::INT8, "UCHAR", PkgType::UINT8, "BYTE", PkgType::UINT8,
@@ -156,17 +173,17 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                    "DOUBLE", PkgType::DOUBLE
                    );
 
-    auto utilsTable = state["VUtils"].get_or_create<sol::table>();
 
-    //auto zlibTable = state["zlib"].get_or_create<sol::table>();
-    utilsTable["Compress"] = [](const BYTES_t& bytes) { return VUtils::CompressGz(bytes); };
-    utilsTable["Decompress"] = [](const BYTES_t& bytes) { return VUtils::Decompress(bytes); };
+
+
 
     state.new_usertype<Stream>("Stream",
         "pos", sol::property(
                 [](Stream& self) { return self.Position(); },
                 [](Stream& self, uint32_t pos) { self.SetPos(pos); }),
-        "buf", &Stream::m_buf
+        "buf", sol::property(
+                [](Stream& self) { return std::ref(self.m_buf); },
+                [](Stream& self, decltype(Stream::m_buf)& buf) { self.m_buf = buf; })
     );
 
     // Package read/write types
@@ -299,6 +316,8 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                             case PkgType::DOUBLE:
                                 params.Write(obj.as<double>());
                                 break;
+                            default:
+                                return ptr->Throw("unknown PkgType (use the enum; not a number)");
                         }
                     } else {
                         return ptr->Throw("parameters must be in (PkgType, obj) pairs");
@@ -374,7 +393,6 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
         // match incrementally
         //std::string name;
         HASH_t name = 0;
-        sol::function callback;
         int priority = 0;
         for (int i=0; i < args.size(); i++) {
             auto&& arg = args[i];
@@ -394,9 +412,8 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(const std::
                 }
             } else {
                 if (type == sol::type::function) {
-                    auto func = arg.as<sol::function>();
                     auto &&vec = m_callbacks[name];
-                    vec.emplace_back(EventHandler{ptr, callback, priority});
+                    vec.emplace_back(EventHandler{ptr, arg.as<sol::function>(), priority});
                     std::sort(vec.begin(), vec.end(), EventHandlerSort);
                 } else {
                     return ptr->Throw("last param must be a function");
