@@ -120,9 +120,8 @@ public:
 	void Invoke(HASH_t hash, const Types&... params) {
 		if (!m_socket->Connected())
 			return;
-
-
-        if (CALL_EVENT(RPC_INVOKE_HASH ^ hash, params...))
+		
+        if (CALL_EVENT(RPC_INVOKE_HASH ^ hash, params...) == EVENT_CANCEL)
             return;
 
         //return InvokeRaw(hash, NetPackage::Serialize(params...));

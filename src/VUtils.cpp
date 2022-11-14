@@ -141,6 +141,10 @@ namespace VUtils {
         return buf;
     }
 
+    bool Decompress(const BYTES_t& in, BYTES_t& out) {
+        return Decompress(in.data(), in.size(), out);
+    }
+
     BYTES_t Decompress(const BYTES_t& in) {
         return Decompress(in.data(), in.size());
     }

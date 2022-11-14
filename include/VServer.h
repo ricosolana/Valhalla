@@ -9,6 +9,7 @@
 #define SERVER_SETTINGS Valhalla()->Settings()
 
 class VServer {
+private:
 	std::atomic_bool m_running = false;
 
 	// perfect structure for this job
@@ -27,6 +28,9 @@ class VServer {
 	steady_clock::time_point m_prevUpdate;
 	steady_clock::time_point m_nowUpdate;
 
+private:
+	void LoadFiles();
+
 public:
     VServer() : m_serverId(VUtils::GenerateUID()) {}
 
@@ -43,22 +47,22 @@ public:
 	void Launch();
 	void Terminate();
 
-	// Return the time in nanoseconds
+	// Get the time in nanoseconds
 	auto Nanos() {
-		//return m_nanos;
 		return m_startTime - m_nowUpdate;
 	}
 
-	// Returns the time in Ticks (C# DateTime.Ticks)
+	// Get the time in Ticks (C# DateTime.Ticks)
 	int64_t Ticks() {
 		return Nanos().count() / 100;
 	}
 
-	// Returns the time in seconds (Unity Time.time)
+	// Get the time in seconds (Unity Time.time)
 	float Time() {
 		return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
 	}
 
+	// Get the elapsed time since last frame in seconds
 	float Delta() {
 		auto elapsed = m_nowUpdate - m_prevUpdate;
 		return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();

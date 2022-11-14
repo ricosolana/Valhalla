@@ -213,10 +213,9 @@ namespace NetManager {
 		pkg.Write(Valhalla()->ID());
 		pkg.Write(VALHEIM_VERSION);
 		pkg.Write(Vector3()); // dummy
-		pkg.Write("Stranger"); // valheim uses this, which is dumb
+		pkg.Write("Stranger"); // dummy
 
-		// why does a server need to send a position and name?
-		// clearly someone didnt think of the protocol
+		// why does server need to send a position and name?
 
 		pkg.Write(m_world->m_name);
 		pkg.Write(m_world->m_seed);
@@ -256,9 +255,8 @@ namespace NetManager {
         if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
-		// pass the data to the lua OnPeerInfo
-        auto cancel = CALL_EVENT("PeerInfo", rpc, uuid, name, version);
-        if (cancel)
+		// Lua event
+        if (CALL_EVENT("PeerConnect", rpc, uuid, name, version) == EVENT_CANCEL)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Find the rpc and transfer
@@ -369,6 +367,7 @@ namespace NetManager {
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					LOG(INFO) << "Cleaning up peer";
+					CALL_EVENT("PeerDisconnect", itr->get());
 					itr = m_peers.erase(itr);
 				}
 				else {

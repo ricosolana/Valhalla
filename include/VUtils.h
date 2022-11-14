@@ -157,13 +157,18 @@ namespace VUtils {
 
     // Decompress a byte array with a specified length
     // Stores the decompressed contents into 'out' vector
-    // Returns true otherwise false on decompresssion error
+    // Returns true otherwise false on decompression error
     bool Decompress(const BYTE_t* in, unsigned int inSize, BYTES_t &out);
 
     // Decompress a byte array with a specified length
     // Returns the decompressed contents as a byte vector
     // Throws on decompression error
     BYTES_t Decompress(const BYTE_t* in, unsigned int inSize);
+
+    // Decompress a byte vector
+    // Stores the decompressed contents into 'out' vector
+    // Returns true otherwise false on decompression error
+    bool Decompress(const BYTES_t& in, BYTES_t &out);
 
     // Decompress a byte vector
     // Returns the decompressed contents as a byte vector

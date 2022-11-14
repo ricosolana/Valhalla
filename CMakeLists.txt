@@ -95,7 +95,7 @@ add_executable(${PROJECT_NAME}
     "src/Player.cpp"
     "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
-    "src/ResourceManager.cpp"
+    "src/VUtilsResource.cpp"
     "src/ModManager.cpp" 
     
     
@@ -125,7 +125,7 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-        src/RCONSocket.cpp src/RCONAcceptor.cpp include/LuaEvent.h src/VUtilsString.cpp include/VUtilsString.h)
+        src/RCONSocket.cpp src/RCONAcceptor.cpp  src/VUtilsString.cpp include/VUtilsString.h )
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

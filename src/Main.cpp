@@ -11,7 +11,7 @@
 #include <easylogging++.h>
 
 #include "VUtils.h"
-#include "ResourceManager.h"
+#include "VUtilsResource.h"
 #include "VServer.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
             if (i < argc) root = argv[++i];
         }
     }
-    ResourceManager::SetRoot(root);
+    VUtils::Resource::SetRoot(root);
 
     signal(SIGINT, on_interrupt);
 

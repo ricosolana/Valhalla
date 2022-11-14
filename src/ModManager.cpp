@@ -5,7 +5,7 @@
 #include "ModManager.h"
 #include "NetManager.h"
 #include "VServer.h"
-#include "ResourceManager.h"
+#include "VUtilsResource.h"
 #include "NetRpc.h"
 #include "NetHashes.h"
 
@@ -14,61 +14,64 @@ VModManager* ModManager() {
     return VModManager_INSTANCE.get();
 }
 
-bool VModManager::EventHandlerSort(const EventHandler &a,
-                             const EventHandler &b) {
-    return a.m_priority < b.m_priority;
-}
-
-
-
-int GetCurrentLuaLine(lua_State *L) {
+int GetCurrentLuaLine(lua_State* L) {
     lua_Debug ar;
     lua_getstack(L, 1, &ar);
     lua_getinfo(L, "nSl", &ar);
     return ar.currentline;
 }
 
-//void VModManager::Mod::Throw(const std::string& msg) {
-//    LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
-//}
+int LoadFileRequire(lua_State* L) {
+    std::string path = sol::stack::get<std::string>(L);
 
-void VModManager::Mod::Throw(const char* msg) {
-    LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
+    // load locally to the file
+    BYTES_t data;
+    if (!VUtils::Resource::ReadFileBytes("mods/" + path, data))
+        sol::stack::push(L, "Module '" + path + "' not found");
+    else
+        luaL_loadbuffer(L, reinterpret_cast<const char*>(data.data()), data.size(), path.c_str());
+
+    return 1;
 }
 
 // can get the lua state by passing sol::this_state type at end
 // https://sol2.readthedocs.io/en/latest/tutorial/functions.html#any-return-to-and-from-lua
 
 // Load a Lua script starting in relative root 'data/mods/'
-sol::state RunLuaFrom(const fs::path& luaPath) {
+void RunStateFrom(sol::state &state, const std::string& luaPath) {
     std::string modCode;
-    if (!ResourceManager::ReadFileBytes(fs::path("mods") / luaPath, modCode)) {
-        throw std::runtime_error(std::string("Failed to open Lua file ") + luaPath.string());
+    if (!VUtils::Resource::ReadFileBytes("mods/" + luaPath, modCode)) {
+        throw std::runtime_error(std::string("Failed to open Lua file ") + luaPath);
     }
 
-    auto state = sol::state();
-
-    state.open_libraries();
     state.script(modCode);
+}
+
+sol::state NewStateFrom(const std::string& luaPath) {
+    sol::state state;
+
+    RunStateFrom(state, luaPath);
 
     return state;
 }
 
-void RunLuaFrom(sol::state &state, const fs::path& luaPath) {
-    std::string modCode;
-    if (!ResourceManager::ReadFileBytes(fs::path("mods") / luaPath, modCode)) {
-        throw std::runtime_error(std::string("Failed to open Lua file ") + luaPath.string());
-    }
 
-    state.script(modCode);
+
+bool VModManager::EventHandlerSort(const EventHandler& a,
+    const EventHandler& b) {
+    return a.m_priority < b.m_priority;
 }
 
-void VModManager::RunModInfoFrom(const fs::path& dirname,
+void VModManager::Mod::Throw(const char* msg) {
+    LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
+}
+
+void VModManager::RunModInfoFrom(const std::string& dirname,
                     std::string& outName,
                     std::string& outVersion,
                     int &outApiVersion,
                     std::string& outEntry) {
-    auto&& state = RunLuaFrom(dirname / "modInfo.lua");
+    auto&& state = NewStateFrom(dirname + "/modInfo.lua");
 
     auto modInfo = state["modInfo"];
 
@@ -92,8 +95,6 @@ void VModManager::RunModInfoFrom(const fs::path& dirname,
     outEntry = entry.value();
 }
 
-
-
 std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
         const std::string& name,
         const std::string& version,
@@ -102,10 +103,35 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     auto mod = std::make_unique<Mod>(name, version, apiVersion);
     auto ptr = mod.get();
 
-    auto&& state = mod->m_state;
-    state.open_libraries();
+    
 
-    state.globals()["print"] = [ptr](sol::variadic_args args) {
+    static char errBuf[128] = "";
+
+    auto&& state = mod->m_state;
+    //state.open_libraries();
+    state.open_libraries(
+        sol::lib::base,
+        sol::lib::debug,
+        sol::lib::io, // override
+        sol::lib::math,
+        sol::lib::package, // override
+        sol::lib::string,
+        sol::lib::table,
+        sol::lib::utf8
+    );
+    
+    //state["loadfile"]
+
+    //auto&& tostring(ptr->m_state["tostring"]);
+    //for (auto&& s : state) {
+    //    LOG(INFO) << "Global: " << tostring(s.first).get<std::string>();
+    //}
+
+    state["package"]["searchers"] = state.create_table_with(
+        1, LoadFileRequire
+    );
+
+    state["print"] = [ptr](sol::variadic_args args) {
         auto &&tostring(ptr->m_state["tostring"]);
 
         std::string s;
@@ -122,12 +148,24 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     {
         auto utilsTable = state["VUtils"].get_or_create<sol::table>();
 
-        utilsTable["Compress"] = sol::resolve<BYTES_t(const BYTES_t&)>(VUtils::CompressGz);
-        utilsTable["Decompress"] = sol::resolve<BYTES_t(const BYTES_t&)>(VUtils::Decompress);
+        utilsTable["Compress"] = sol::resolve<bool(const BYTES_t&, BYTES_t&)>(VUtils::CompressGz);
+        utilsTable["Decompress"] = sol::resolve<bool(const BYTES_t&, BYTES_t&)>(VUtils::Decompress);
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
             stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
+        }
+        {
+            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+            
+            resourceUtilsTable["ReadFileBytes"] = sol::overload(
+                sol::resolve<bool(const std::string&, BYTES_t&)>(VUtils::Resource::ReadFileBytes),
+                sol::resolve<bool(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes)
+            );
+            resourceUtilsTable["WriteFileBytes"] = sol::overload(
+                sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes),
+                sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileBytes)
+            );
         }
     }
 
@@ -153,17 +191,14 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
         "uuid", &NetPeer::m_uuid);
 
     state.new_enum("PkgType",
-                   "BYTES", PkgType::BYTE_ARRAY,
-                   "BYTE_ARRAY", PkgType::BYTE_ARRAY,
-                   "PKG", PkgType::PKG,
-                   "PACKAGE", PkgType::PKG,
+                   "BYTE_ARRAY", PkgType::BYTE_ARRAY, "BYTES", PkgType::BYTE_ARRAY,
+                   "PKG", PkgType::PKG, "PACKAGE", PkgType::PKG,
                    "STRING", PkgType::STRING,
                    "NET_ID", PkgType::NET_ID,
                    "VECTOR3", PkgType::VECTOR3,
                    "VECTOR2i", PkgType::VECTOR2i,
                    "QUATERNION", PkgType::QUATERNION,
-                   "STRING_ARRAY", PkgType::STRING_ARRAY,
-                   "STRINGS", PkgType::STRING_ARRAY,
+                   "STRING_ARRAY", PkgType::STRING_ARRAY, "STRINGS", PkgType::STRING_ARRAY,
                    "BOOL", PkgType::BOOL,
                    "INT8", PkgType::INT8, "UINT8", PkgType::UINT8,
                         "CHAR", PkgType::INT8, "UCHAR", PkgType::UINT8, "BYTE", PkgType::UINT8,
@@ -171,15 +206,12 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
                         "SHORT", PkgType::INT16, "USHORT", PkgType::UINT16,
                    "INT32", PkgType::INT32, "UINT32", PkgType::UINT32,
                         "INT", PkgType::INT32, "UINT", PkgType::UINT32,
+                        "HASH_t", PkgType::INT32,
                    "INT64", PkgType::INT64, "UINT64", PkgType::UINT64,
                         "LONG", PkgType::INT64, "ULONG", PkgType::UINT64, "OWNER_t", PkgType::UINT64,
                    "FLOAT", PkgType::FLOAT,
                    "DOUBLE", PkgType::DOUBLE
-                   );
-
-
-
-
+    );
 
     state.new_usertype<Stream>("Stream",
         "pos", sol::property(
@@ -187,12 +219,62 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
                 [](Stream& self, uint32_t pos) { self.SetPos(pos); }),
         "buf", sol::property(
                 [](Stream& self) { return std::ref(self.m_buf); },
-                [](Stream& self, decltype(Stream::m_buf)& buf) { self.m_buf = buf; })
+                [](Stream& self, decltype(Stream::m_buf) buf) { self.m_buf = std::move(buf); })
     );
-
+    
     // Package read/write types
     state.new_usertype<NetPackage>("NetPackage",
-                                   "stream", &NetPackage::m_stream
+        "stream", &NetPackage::m_stream,
+        "Write", sol::overload(
+            // templated functions are too complex for resolve
+            // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
+            static_cast<void (NetPackage::*)(const BYTES_t&, uint32_t)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const BYTES_t&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const NetPackage&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const std::string&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const NetID&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const Vector3&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const Vector2i&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const Quaternion&)>(&NetPackage::Write),
+            static_cast<void (NetPackage::*)(const std::vector<std::string>&)>(&NetPackage::Write),
+            [ptr](NetPackage& self, PkgType pkgType, LUA_NUMBER val) {
+                switch (pkgType) {
+                case PkgType::INT8:
+                    self.Write<int8_t>(val);
+                    break;
+                case PkgType::UINT8:
+                    self.Write<uint8_t>(val);
+                    break;
+                case PkgType::INT16:
+                    self.Write<int16_t>(val);
+                    break;
+                case PkgType::UINT16:
+                    self.Write<uint16_t>(val);
+                    break;
+                case PkgType::INT32:
+                    self.Write<int32_t>(val);
+                    break;
+                case PkgType::UINT32:
+                    self.Write<uint32_t>(val);
+                    break;
+                case PkgType::INT64:
+                    self.Write<int64_t>(val);
+                    break;
+                case PkgType::UINT64:
+                    self.Write<uint64_t>(val);
+                    break;
+                case PkgType::FLOAT:
+                    self.Write<float>(val);
+                    break;
+                case PkgType::DOUBLE:
+                    self.Write<double>(val);
+                    break;
+                default:
+                    snprintf(errBuf, sizeof(errBuf), "invalid PkgType enum, got: %d",
+                        static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
+                    return ptr->Throw(errBuf);
+                }
+            })
     );
 
     state.new_usertype<NetID>("NetID",
@@ -233,7 +315,6 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
             //"IDENTITY", &Quaternion::IDENTITY
     );
 
-
     // To register an RPC, must pass a lua stack handler
     // basically, get the lua state to get args passed to RPC invoke
     // https://github.com/ThePhD/sol2/issues/471#issuecomment-320259767
@@ -246,7 +327,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
                 auto &&arg = args[i];
                 auto &&type = arg.get_type();
 
-                static char errBuf[128] = "";
+                
 
                 if (i == 0) {
                     if (type == sol::type::string) {
@@ -352,19 +433,19 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
                             params.Write(arg.as<bool>());
                         } else {
                             if (arg.is<BYTES_t>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<BYTES_t>());
                             } else if (arg.is<NetPackage>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<NetPackage>());
                             } else if (arg.is<NetID>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<NetID>());
                             } else if (arg.is<Vector3>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<Vector3>());
                             } else if (arg.is<Vector2i>()) {
-                                params.Write(arg.as<std::string>());
-                            } else if (arg.is<Quaternion>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<Vector2i>());
+                            } else if (arg.is<Vector2i>()) {
+                                params.Write(arg.as<Vector2i>());
                             } else if (arg.is<std::vector<std::string>>()) {
-                                params.Write(arg.as<std::string>());
+                                params.Write(arg.as<std::vector<std::string>>());
                             } else {
                                 sol::object o = tostring(arg);
                                 auto result = o.as<std::string>();
@@ -420,22 +501,25 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
     state.new_usertype<ISocket>("ISocket",
         "Close", &ISocket::Close,
-        "GetHostName", &ISocket::GetHostName,
-        "GetAddress", &ISocket::GetAddress,
         "Connected", &ISocket::Connected,
+        "GetAddress", &ISocket::GetAddress,
+        "GetHostName", &ISocket::GetHostName,
         "GetSendQueueSize", &ISocket::GetSendQueueSize
-        //"HasNewData", &ISocket::HasNewData,
-        //"Recv", &ISocket::Recv,
-        //"Send", &ISocket::Send,
-        //"Start", &ISocket::Init
     );
-
 
 
 
     auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
-    apiTable["Version"] = VALHEIM_VERSION;
+    apiTable["ServerVersion"] = SERVER_VERSION;
+    apiTable["ValheimVersion"] = VALHEIM_VERSION;
+    apiTable["Delta"] = []() { return Valhalla()->Delta(); };
+    apiTable["ID"] = []() { return Valhalla()->ID(); };
+    apiTable["Nanos"] = []() { return Valhalla()->Nanos(); };
+    apiTable["Ticks"] = []() { return Valhalla()->Ticks(); };
+    apiTable["Time"] = []() { return Valhalla()->Time(); };
+
+    //apiTable["RunTask"] = [](std::function<Task::F> f) { return Valhalla()->RunTask(f.); };
 
     // method overloading is easy
     // https://sol2.readthedocs.io/en/latest/api/overload.html
@@ -484,10 +568,9 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // Get information about the current event
     {
         auto thisEventTable = state["Event"].get_or_create<sol::table>();
-        thisEventTable["Cancel"] = [this]() { m_cancelCurrentEvent = true; };
-        thisEventTable["SetCancelled"] = [this](bool c) { m_cancelCurrentEvent = c; };
-        thisEventTable["cancelled"] = &m_cancelCurrentEvent;
-        //thisEventTable["Cancelled"] = [this]() { return m_cancelCurrentEvent; };
+        thisEventTable["Cancel"] = [this]() { m_eventStatus = EVENT_CANCEL; };
+        thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c; };
+        thisEventTable["cancelled"] = &m_eventStatus;
     }
 
     return mod;
@@ -497,20 +580,20 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
 
 void VModManager::Init() {
     for (const auto& dir
-        : fs::directory_iterator(ResourceManager::GetPath("mods"))) {
+        : fs::directory_iterator(VUtils::Resource::GetPath("mods"))) {
 
         try {
             if (dir.exists() && dir.is_directory()) {
-                auto&& dirname = dir.path().filename();
+                auto&& dirname = dir.path().filename().string();
 
-                if (dirname.string().starts_with("--"))
+                if (dirname.starts_with("--"))
                     continue;
 
                 std::string name, version, entry;
                 int apiVersion;
                 RunModInfoFrom(dirname, name, version, apiVersion, entry);
                 auto mod = PrepareModEnvironment(name, version, apiVersion);
-                RunLuaFrom(mod->m_state, dirname / (entry + ".lua"));
+                RunStateFrom(mod->m_state, dirname + "/" + (entry + ".lua"));
 
                 mods.insert({ name, std::move(mod) });
 

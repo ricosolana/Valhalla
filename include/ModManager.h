@@ -27,6 +27,15 @@ enum class PkgType {
     DOUBLE
 };
 
+//enum class EventStatus : uint8_t {
+//    CANCEL,
+//    PROCEED,
+//    NONE,
+//};
+
+static constexpr bool EVENT_PROCEED = false;
+static constexpr bool EVENT_CANCEL = true;
+
 class VModManager {
     friend VServer;
 
@@ -56,13 +65,13 @@ private:
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
     robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
-    bool m_cancelCurrentEvent = false;
+    bool m_eventStatus = EVENT_PROCEED;
 
 private:
     void Init();
     void UnInit();
 
-    void RunModInfoFrom(const fs::path& dirname,
+    void RunModInfoFrom(const std::string& dirname,
                         std::string& outName,
                         std::string& outVersion,
                         int &outApiVersion,
@@ -87,7 +96,7 @@ public:
 
         auto &&callbacks = find->second;
 
-        this->m_cancelCurrentEvent = false;
+        this->m_eventStatus = EVENT_PROCEED;
         for (auto&& callback : callbacks) {
             try {
                 callback.m_func(params...);
@@ -95,7 +104,7 @@ public:
                 LOG(ERROR) << e.what();
             }
         }
-        return m_cancelCurrentEvent;
+        return m_eventStatus;
     }
 
     template <typename... Args>

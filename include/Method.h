@@ -49,15 +49,14 @@ public:
             auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                         NetPackage::Deserialize<Args...>(pkg));
 
-            if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
+            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
                 std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object),
                                                   tuple));
-                //VUtils::InvokeTuple(lambda, object, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
             // lua
-            if (!CALL_EVENT(m_luaEventHash))
+            if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
                 std::invoke(lambda, object, t);
             CALL_EVENT(m_luaEventHash ^ POST_HASH);
         }
@@ -86,13 +85,12 @@ public:
             auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                         NetPackage::Deserialize<Args...>(pkg));
 
-            if (!CALL_EVENT_TUPLE(m_luaEventHash, tuple))
+            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
                 std::apply(lambda, tuple);
-                //VUtils::InvokeTupleS(lambda, t, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
         }
         else {
-            if (!CALL_EVENT(m_luaEventHash))
+            if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
                 std::invoke(lambda, t);
             CALL_EVENT(m_luaEventHash ^ POST_HASH);
         }

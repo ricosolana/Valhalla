@@ -5,7 +5,7 @@
 
 #include "VServer.h"
 #include "ModManager.h"
-#include "ResourceManager.h"
+#include "VUtilsResource.h"
 #include "ServerSettings.h"
 #include "NetManager.h"
 #include "ChatManager.h"
@@ -19,90 +19,96 @@ VServer* Valhalla() {
 
 
 
-void VServer::Launch() {
+void VServer::LoadFiles() {
     {
         std::vector<std::string> banned;
-        ResourceManager::ReadFileLines("banned.txt", banned);
+        VUtils::Resource::ReadFileLines("banned.txt", banned);
         for (auto&& s : banned)
             m_banned.insert(std::move(s));
     }
 
-	YAML::Node loadNode;
-	{
-		std::string buf;
-		if (ResourceManager::ReadFileBytes("server.yml", buf)) {
-			try {
-				loadNode = YAML::Load(buf);
-			}
-			catch (YAML::ParserException& e) {
-				LOG(INFO) << e.what();
-			}
-		} 
-		else
-			LOG(INFO) << "Server config not found, creating...";
-	}
+    YAML::Node loadNode;
+    {
+        std::string buf;
+        if (VUtils::Resource::ReadFileBytes("server.yml", buf)) {
+            try {
+                loadNode = YAML::Load(buf);
+            }
+            catch (YAML::ParserException& e) {
+                LOG(INFO) << e.what();
+            }
+        }
+        else
+            LOG(INFO) << "Server config not found, creating...";
+    }
 
-	m_settings.serverName =				loadNode["server-name"].as<std::string>("My server");
-	m_settings.serverPort =				loadNode["server-port"].as<uint16_t>(2456);
-	m_settings.serverPassword =			loadNode["server-password"].as<std::string>("secret");
-	m_settings.serverPublic =			loadNode["server-public"].as<bool>(false);
+    m_settings.serverName = loadNode["server-name"].as<std::string>("My server");
+    m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+    m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
+    m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
-	m_settings.worldName =				loadNode["world-name"].as<std::string>("Dedicated world");
-    m_settings.worldSeedName =			loadNode["world-seed-name"].as<std::string>("Some special seed");
-	m_settings.worldSeed =				VUtils::String::GetStableHashCode(m_settings.worldSeedName);
+    m_settings.worldName = loadNode["world-name"].as<std::string>("Dedicated world");
+    m_settings.worldSeedName = loadNode["world-seed-name"].as<std::string>("Some special seed");
+    m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
 
-	m_settings.playerWhitelist =		loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
-	m_settings.playerMax =				loadNode["player-max"].as<unsigned int>(64);		// max allowed players
-	m_settings.playerAuth =				loadNode["player-auth"].as<bool>(true);				// allow authed players only
-	m_settings.playerList =				loadNode["player-list"].as<bool>(true);				// does not send player list to players
-	m_settings.playerArrivePing =		loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
+    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
+    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(64);		// max allowed players
+    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);				// allow authed players only
+    m_settings.playerList = loadNode["player-list"].as<bool>(true);				// does not send player list to players
+    m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
 
-	m_settings.socketTimeout =		    milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
-	m_settings.zdoMaxCongestion =	    loadNode["zdo-max-congestion"].as<int32_t>(10240);
-    m_settings.zdoMinCongestion =	    loadNode["zdo-min-congestion"].as<int32_t>(2048);
-    m_settings.zdoSendInterval =	    milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
+    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
+    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
+    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
+    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
-    m_settings.rconEnabled =            loadNode["rcon-enabled"].as<bool>(false);
-    m_settings.rconPort =               loadNode["rcon-port"].as<uint16_t>(25575);
-    m_settings.rconPassword =           loadNode["rcon-password"].as<std::string>("");
-    m_settings.rconKeys =               loadNode["rcon-keys"].as<std::vector<std::string>>(std::vector<std::string>());
+    m_settings.rconEnabled = loadNode["rcon-enabled"].as<bool>(false);
+    m_settings.rconPort = loadNode["rcon-port"].as<uint16_t>(25575);
+    m_settings.rconPassword = loadNode["rcon-password"].as<std::string>("");
+    m_settings.rconKeys = loadNode["rcon-keys"].as<std::vector<std::string>>(std::vector<std::string>());
 
 
 
-	YAML::Node saveNode;
+    YAML::Node saveNode;
 
-	saveNode["server-name"] =			    m_settings.serverName;
-	saveNode["server-port"] =			    m_settings.serverPort;
-	saveNode["server-password"] =		    m_settings.serverPassword;
-	saveNode["server-public"] =			    m_settings.serverPublic;
+    saveNode["server-name"] = m_settings.serverName;
+    saveNode["server-port"] = m_settings.serverPort;
+    saveNode["server-password"] = m_settings.serverPassword;
+    saveNode["server-public"] = m_settings.serverPublic;
 
-	saveNode["world-name"] =			    m_settings.worldName;
-	saveNode["world-seed"] =			    m_settings.worldSeed;
+    saveNode["world-name"] = m_settings.worldName;
+    saveNode["world-seed"] = m_settings.worldSeed;
 
-	saveNode["player-whitelist"] =		    m_settings.playerWhitelist;
-	saveNode["player-max"] =			    m_settings.playerMax;
-	saveNode["player-auth"] =			    m_settings.playerAuth;
-	saveNode["player-list"] =			    m_settings.playerList;
-	saveNode["player-arrive-ping"] =	    m_settings.playerArrivePing;
+    saveNode["player-whitelist"] = m_settings.playerWhitelist;
+    saveNode["player-max"] = m_settings.playerMax;
+    saveNode["player-auth"] = m_settings.playerAuth;
+    saveNode["player-list"] = m_settings.playerList;
+    saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
 
-	saveNode["socket-timeout"] =		    m_settings.socketTimeout.count();
-	saveNode["zdo-max-congestion"] =		m_settings.zdoMaxCongestion;
-    saveNode["zdo-min-congestion"] =		m_settings.zdoMinCongestion;
-    saveNode["zdo-send-interval"] =		    m_settings.zdoSendInterval.count();
+    saveNode["socket-timeout"] = m_settings.socketTimeout.count();
+    saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
+    saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
+    saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
 
-    saveNode["rcon-enabled"] =              m_settings.rconEnabled;
-    saveNode["rcon-port"] =                 m_settings.rconPort;
-    saveNode["rcon-password"] =             m_settings.rconPassword;
-    saveNode["rcon-keys"] =                 m_settings.rconKeys;
+    saveNode["rcon-enabled"] = m_settings.rconEnabled;
+    saveNode["rcon-port"] = m_settings.rconPort;
+    saveNode["rcon-password"] = m_settings.rconPassword;
+    saveNode["rcon-keys"] = m_settings.rconKeys;
 
 
     YAML::Emitter out;
-	out.SetIndent(4);
-	out << saveNode;
+    out.SetIndent(4);
+    out << saveNode;
 
-	ResourceManager::WriteFileBytes("server.yml", out.c_str());
+    VUtils::Resource::WriteFileBytes("server.yml", out.c_str());
 
-	LOG(INFO) << "Server config loaded";
+    LOG(INFO) << "Server config loaded";
+}
+
+
+
+void VServer::Launch() {
+    this->LoadFiles();
 
     ModManager()->Init();
 	//VModManager::Init();
@@ -171,7 +177,6 @@ void VServer::Terminate() {
 	LOG(INFO) << "Terminating server";
 
 	m_running = false;
-    //VModManager::UnInit();
     ModManager()->UnInit();
 	NetManager::Close();
 
@@ -179,7 +184,7 @@ void VServer::Terminate() {
         std::vector<std::string> banned;
         for (auto &&s: m_banned)
             banned.push_back(std::move(s));
-        ResourceManager::WriteFileLines("banned.txt", banned);
+        VUtils::Resource::WriteFileLines("banned.txt", banned);
     }
 }
 
@@ -195,7 +200,8 @@ void VServer::Update(float delta) {
         // TODO add cleanup
         //  also consider making socket cleaner easier to look at and understand; too many iterator / loops
         while (auto opt = m_rcon->Accept()) {
-            auto &&rconSocket = std::static_pointer_cast<RCONSocket>(opt.value());
+            auto&& rconSocket = std::static_pointer_cast<RCONSocket>(opt.value());
+
             m_unAuthRconSockets.push_back(rconSocket);
             rconSocket->Start();
             LOG(INFO) << "Rcon connecting " << rconSocket->GetAddress();
@@ -205,7 +211,7 @@ void VServer::Update(float delta) {
         static constexpr int32_t RCON_COMMAND = 2;
         static constexpr int32_t RCON_C2S_LOGIN = 3;
 
-        auto send_response = [](std::shared_ptr<RCONSocket>& socket, int32_t client_id, const std::string &msg) {
+        static auto send_response = [](std::shared_ptr<RCONSocket>& socket, int32_t client_id, const std::string &msg) {
             static NetPackage pkg;
             pkg.Write(client_id);
             pkg.Write(RCON_S2C_RESPONSE);
@@ -233,6 +239,9 @@ void VServer::Update(float delta) {
                     VUtils::String::FormatAscii(in_msg);
 
                     if (in_msg == m_settings.rconPassword && !m_authRconSockets.contains(client_id)) {
+                        //if (CALL_EVENT("RconConnect", rconSocket) == EVENT_CANCEL)
+                            //continue;
+
                         send_response(rconSocket, client_id, " ");
                         m_authRconSockets[client_id] = rconSocket;
                         LOG(INFO) << "Rcon authorized " << rconSocket->GetAddress();

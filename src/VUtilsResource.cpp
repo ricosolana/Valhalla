@@ -3,17 +3,17 @@
 #include <fstream>
 #include <robin_hood.h>
 
-#include "ResourceManager.h"
+#include "VUtilsResource.h"
 
-namespace ResourceManager {
+namespace VUtils::Resource {
     // Instantiate static variables
     fs::path root;
 
-    void SetRoot(const fs::path &r) {
+    void SetRoot(const std::string &r) {
         root = r;
     }
 
-    fs::path GetPath(const fs::path &path) {
+    fs::path GetPath(const std::string &path) {
         return root / path;
     }
 
@@ -25,10 +25,13 @@ namespace ResourceManager {
     //    return std::ofstream(GetPath(path), std::ios::binary);
     //}
 
-    bool ReadFileBytes(const fs::path& path, BYTE_t* buf, int size) {
-        //auto file = GetInFile(path);
-        auto file = std::ifstream(GetPath(path), std::ios::binary);
+    bool ReadFileBytes(const std::string& path, BYTE_t* buf, int size) {
+        auto filesize = std::filesystem::file_size(GetPath(path));
+        if (filesize > size)
+            return false;
 
+        auto file = std::ifstream(GetPath(path), std::ios::binary);
+        
         // Stop eating new lines in binary mode!!!
         file.unsetf(std::ios::skipws);
 
@@ -42,8 +45,7 @@ namespace ResourceManager {
         return true;
     }
 
-    bool ReadFileBytes(const fs::path &path, BYTES_t &vec) {
-        //auto file = GetInFile(path);
+    bool ReadFileBytes(const std::string &path, BYTES_t &vec) {
         auto file = std::ifstream(GetPath(path), std::ios::binary);
         
         // Stop eating new lines in binary mode!!!
@@ -51,6 +53,8 @@ namespace ResourceManager {
 
         if (!file)
             return false;
+
+        vec.clear();
 
         // read the data:
         vec.insert(vec.begin(),
@@ -60,7 +64,7 @@ namespace ResourceManager {
         return true;
     }
 
-    bool ReadFileBytes(const fs::path& path, std::string& str) {
+    bool ReadFileBytes(const std::string& path, std::string& str) {
         //auto file = GetInFile(path);
         auto file = std::ifstream(GetPath(path), std::ios::binary);
 
@@ -71,6 +75,8 @@ namespace ResourceManager {
         if (!file)
             return false;
 
+        str.clear();
+
         // read the data:
         str.insert(str.begin(),
             std::istream_iterator<BYTE_t>(file),
@@ -79,16 +85,18 @@ namespace ResourceManager {
         return true;
     }
 
-    bool ReadFileLines(const fs::path& path, std::vector<std::string>& out) {
+    bool ReadFileLines(const std::string& path, std::vector<std::string>& out) {
         //auto file = GetInFile(path);
         auto file = std::ifstream(GetPath(path));
 
         if (!file)
             return false;
 
+        out.clear();
+
         std::string line;
         while (std::getline(file, line)) {
-            out.push_back(std::move(line));
+            out.push_back(line);
         }
 
         return true;
@@ -96,49 +104,52 @@ namespace ResourceManager {
 
 
 
-    bool WriteFileBytes(const fs::path& path, const BYTE_t* buf, int size) {
+    bool WriteFileBytes(const std::string& path, const BYTE_t* buf, int size) {
         //auto file = GetOutFile(path);
         auto file = std::ofstream(GetPath(path), std::ios::binary);
 
         if (!file)
             return false;
 
-        std::copy(buf, buf + size, std::ostream_iterator<BYTE_t>(file));
+        std::copy(buf, buf + size, 
+            std::ostream_iterator<BYTE_t>(file));
 
         file.close();
 
         return true;
     }
 
-    bool WriteFileBytes(const fs::path& path, const BYTES_t& vec) {
+    bool WriteFileBytes(const std::string& path, const BYTES_t& vec) {
         //auto file = GetOutFile(path);
         auto file = std::ofstream(GetPath(path), std::ios::binary);
 
         if (!file)
             return false;
 
-        std::copy(vec.begin(), vec.end(), std::ostream_iterator<BYTE_t>(file));
+        std::copy(vec.begin(), vec.end(), 
+            std::ostream_iterator<BYTE_t>(file));
 
         file.close();
 
         return true;
     }
 
-    bool WriteFileBytes(const fs::path& path, const std::string& str) {
+    bool WriteFileBytes(const std::string& path, const std::string& str) {
         //auto file = GetOutFile(path);
         auto file = std::ofstream(GetPath(path), std::ios::binary);
 
         if (!file)
             return false;
 
-        std::copy(str.begin(), str.end(), std::ostream_iterator<BYTE_t>(file));
+        std::copy(str.begin(), str.end(), 
+            std::ostream_iterator<BYTE_t>(file));
 
         file.close();
 
         return true;
     }
 
-    bool WriteFileLines(const fs::path& path, const std::vector<std::string>& in) {
+    bool WriteFileLines(const std::string& path, const std::vector<std::string>& in) {
         auto file = std::ofstream(GetPath(path));
 
         if (!file)
