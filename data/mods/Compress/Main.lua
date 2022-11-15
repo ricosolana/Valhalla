@@ -21,7 +21,7 @@ local compressHandshake = function(rpc, enabled)
     rpc:Invoke("CompressHandshake", enabled);
 end
 
-Valhalla.OnEvent("Rpc", "PeerInfo", "POST", function(rpc, pkg)
+Valhalla.OnEvent("RpcIn", "PeerInfo", "POST", function(rpc, pkg)
     print("Registering CompressHandshake")
     rpc:Register("CompressHandshake", PkgType.BOOL, compressHandshake)
 end)
@@ -31,15 +31,16 @@ Valhalla.OnEvent("PeerDisconnect", function(peer)
     table.remove(peers, peer.rpc)
 end)
 
-Valhalla.OnEvent("RpcInvoke", "ZDOData", function(rpc, method, pkg)
+Valhalla.OnEvent("RpcOut", "ZDOData", function(rpc, method, pkg)
     if peers[rpc] then
         This.Event.Cancel()
         rpc:Invoke("CompressedZDOData", VUtils.Compress(pkg))
     end
 end)
 
-Valhalla.OnEvent("Rpc", "CompressedZDOData", function(rpc, pkg)
+Valhalla.OnEvent("RpcIn", "CompressedZDOData", function(rpc, pkg)
     -- uncompress and forward the data
 
-    --pkg.buf = VUtils.Decompress(pkg)
+    local _pkg = VUtils.Decompress(pkg)
+    --print(_pkg)
 end)

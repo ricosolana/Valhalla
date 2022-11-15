@@ -12,8 +12,6 @@
 * (static functions, no class object needed)
 */
 
-static constexpr HASH_t POST_HASH = VUtils::String::GetStableHashCode("POST");
-
 // Thanks @Fux
 template<class T>
 class IMethod
@@ -52,13 +50,13 @@ public:
             if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
                 std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object),
                                                   tuple));
-            CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
+            CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
         }
         else {
             // lua
             if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
                 std::invoke(lambda, object, t);
-            CALL_EVENT(m_luaEventHash ^ POST_HASH);
+            CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
         }
     }
 };
@@ -87,12 +85,12 @@ public:
 
             if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
                 std::apply(lambda, tuple);
-            CALL_EVENT_TUPLE(m_luaEventHash ^ POST_HASH, tuple);
+            CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
         }
         else {
             if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
                 std::invoke(lambda, t);
-            CALL_EVENT(m_luaEventHash ^ POST_HASH);
+            CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
         }
     }
 };

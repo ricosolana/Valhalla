@@ -25,81 +25,47 @@ namespace VUtils::Resource {
     //    return std::ofstream(GetPath(path), std::ios::binary);
     //}
 
-    bool ReadFileBytes(const std::string& path, BYTE_t* buf, int size) {
-        auto filesize = std::filesystem::file_size(GetPath(path));
-        if (filesize > size)
-            return false;
-
+    std::optional<BYTES_t> ReadFileBytes(const std::string &path) {
         auto file = std::ifstream(GetPath(path), std::ios::binary);
-        
+
+        if (!file)
+            return std::nullopt;
+
         // Stop eating new lines in binary mode!!!
         file.unsetf(std::ios::skipws);
 
-        if (!file)
-            return false;
-
-        std::copy(std::istream_iterator<BYTE_t>(file),
-            std::istream_iterator<BYTE_t>(),
-            buf);
-
-        return true;
+        return BYTES_t(std::istream_iterator<BYTE_t>(file),
+                       std::istream_iterator<BYTE_t>());
     }
 
-    bool ReadFileBytes(const std::string &path, BYTES_t &vec) {
+    std::optional<std::string> ReadFileString(const std::string& path) {
         auto file = std::ifstream(GetPath(path), std::ios::binary);
-        
+
+        if (!file)
+            return std::nullopt;
+
         // Stop eating new lines in binary mode!!!
         file.unsetf(std::ios::skipws);
 
-        if (!file)
-            return false;
-
-        vec.clear();
-
-        // read the data:
-        vec.insert(vec.begin(),
+        return std::string(
             std::istream_iterator<BYTE_t>(file),
             std::istream_iterator<BYTE_t>());
-
-        return true;
     }
 
-    bool ReadFileBytes(const std::string& path, std::string& str) {
-        //auto file = GetInFile(path);
-        auto file = std::ifstream(GetPath(path), std::ios::binary);
-
-        // Stop eating new lines in binary mode!!!
-        // im not sure whether this is redundant
-        file.unsetf(std::ios::skipws);
-
-        if (!file)
-            return false;
-
-        str.clear();
-
-        // read the data:
-        str.insert(str.begin(),
-            std::istream_iterator<BYTE_t>(file),
-            std::istream_iterator<BYTE_t>());
-
-        return true;
-    }
-
-    bool ReadFileLines(const std::string& path, std::vector<std::string>& out) {
-        //auto file = GetInFile(path);
+    std::optional<std::vector<std::string>> ReadFileLines(const std::string& path) {
         auto file = std::ifstream(GetPath(path));
 
         if (!file)
-            return false;
+            return std::nullopt;
 
-        out.clear();
+        std::vector<std::string> out;
 
         std::string line;
         while (std::getline(file, line)) {
             out.push_back(line);
         }
 
-        return true;
+        return out;
     }
 
 
@@ -134,7 +100,7 @@ namespace VUtils::Resource {
         return true;
     }
 
-    bool WriteFileBytes(const std::string& path, const std::string& str) {
+    bool WriteFileString(const std::string& path, const std::string& str) {
         //auto file = GetOutFile(path);
         auto file = std::ofstream(GetPath(path), std::ios::binary);
 

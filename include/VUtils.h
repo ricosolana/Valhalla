@@ -106,74 +106,24 @@ namespace VUtils {
     // Compress a byte array with a specified length and compression level
     // Stores the compressed contents into 'out' array
     // Returns the compressed size otherwise a negative number on compression failure
-    int CompressGz(const BYTE_t* in, unsigned int inSize, int level, BYTE_t* out, unsigned int outCapacity);
-    // Compress a byte array with a specified length
-    // Stores the compressed contents into 'out' array
-    // Returns the compressed size otherwise a negative number on compression failure
-    int CompressGz(const BYTE_t* in, unsigned int inSize, BYTE_t* out, unsigned int outCapacity);
-    // Compress a byte array with a specified length and compression level
-    // Stores the compressed contents into 'out' vector
-    // Returns true otherwise false on compression failure
-    bool CompressGz(const BYTE_t* in, unsigned int inSize, int level, BYTES_t& out);
-    // Compress a byte array with a specified length
-    // Stores the compressed contents into 'out' vector
-    // Returns true otherwise false on compression failure
-    bool CompressGz(const BYTE_t* in, unsigned int inSize, BYTES_t& out);
-
-    // Compress a vector of bytes with a specified compression level
-    // Stores the compressed contents into 'out' array
-    // Returns the compressed size otherwise a negative number on compression failure
-    int CompressGz(const BYTES_t& in, int level, BYTE_t* out, unsigned int outCapacity);
-    // Compress a vector of bytes with a specified compression level
-    // Stores the compressed contents into 'out' vector
-    // Returns true otherwise false on compression failure
-    bool CompressGz(const BYTES_t& in, int level, BYTES_t& out);
-    // Compress a vector of bytes
-    // Stores the compressed contents into 'out' vector
-    // Returns true otherwise false on compression failure
-    bool CompressGz(const BYTES_t& in, BYTES_t& out);
-
-
-
-    // Compress a byte array with a specified length and compression level
-    // Returns the compressed contents as a byte vector
-    // Throws on compression failure
-    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize, int level);
-    // Compress a byte array with a specified length
-    // Returns the compressed contents as a byte vector
-    // Throws on compression failure
-    BYTES_t CompressGz(const BYTE_t* in, unsigned int inSize);
+    std::optional<BYTES_t> CompressGz(const BYTE_t* in, unsigned int inSize, int level);
 
     // Compress a vector with a specified compression level
-    // Returns the compressed contents as a byte vector
-    // Throws on compression failure
-    BYTES_t CompressGz(const BYTES_t& in, int level);
+    // Returns nullopt on compress failure
+    std::optional<BYTES_t> CompressGz(const BYTES_t& in, int level);
     // Compress a vector with specified length
-    // Returns the compressed contents as a byte vector
-    // Throws on compression failure
-    BYTES_t CompressGz(const BYTES_t& in);
+    // Returns nullopt on compress failure
+    std::optional<BYTES_t> CompressGz(const BYTES_t& in);
 
 
 
     // Decompress a byte array with a specified length
-    // Stores the decompressed contents into 'out' vector
-    // Returns true otherwise false on decompression error
-    bool Decompress(const BYTE_t* in, unsigned int inSize, BYTES_t &out);
-
-    // Decompress a byte array with a specified length
-    // Returns the decompressed contents as a byte vector
-    // Throws on decompression error
-    BYTES_t Decompress(const BYTE_t* in, unsigned int inSize);
+    // Returns nullopt on decompress failure
+    std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize);
 
     // Decompress a byte vector
-    // Stores the decompressed contents into 'out' vector
-    // Returns true otherwise false on decompression error
-    bool Decompress(const BYTES_t& in, BYTES_t &out);
-
-    // Decompress a byte vector
-    // Returns the decompressed contents as a byte vector
-    // Throws on decompression error
-    BYTES_t Decompress(const BYTES_t& in);
+    // Returns nullopt on decompress failure
+    std::optional<BYTES_t> Decompress(const BYTES_t& in);
 
     OWNER_t GenerateUID();
 }

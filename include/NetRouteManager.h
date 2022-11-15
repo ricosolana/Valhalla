@@ -7,8 +7,6 @@
 namespace NetRouteManager {
 	static constexpr OWNER_t EVERYBODY = 0;
 
-    static constexpr HASH_t ROUTE_HASH = VUtils::String::GetStableHashCode("Route");
-
 	struct Data {
 		OWNER_t m_msgID;
 		OWNER_t m_senderPeerID;
@@ -60,7 +58,7 @@ namespace NetRouteManager {
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, void(*f)(OWNER_t, Args...)) {
-		return _Register(hash, new MethodImpl(f, ROUTE_HASH ^ hash));
+		return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn ^ hash));
 	}
 
 	template<class ...Args>
@@ -88,7 +86,7 @@ namespace NetRouteManager {
 	*/
 	template<class C, class ...Args>
 	auto Register(HASH_t hash, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(hash, object, new MethodImpl(object, f, ROUTE_HASH ^ hash));
+		return _Register(hash, object, new MethodImpl(object, f, EVENT_HASH_RouteIn ^ hash));
 	}
 
 	template<class C, class ...Args>

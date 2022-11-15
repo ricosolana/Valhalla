@@ -27,14 +27,15 @@ enum class PkgType {
     DOUBLE
 };
 
-//enum class EventStatus : uint8_t {
-//    CANCEL,
-//    PROCEED,
-//    NONE,
-//};
-
 static constexpr bool EVENT_PROCEED = false;
 static constexpr bool EVENT_CANCEL = true;
+
+static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");
+static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");
+static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");
+static constexpr HASH_t EVENT_HASH_RconIn = __H("RconIn");
+
+static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POST");
 
 class VModManager {
     friend VServer;

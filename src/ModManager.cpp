@@ -25,11 +25,10 @@ int LoadFileRequire(lua_State* L) {
     std::string path = sol::stack::get<std::string>(L);
 
     // load locally to the file
-    BYTES_t data;
-    if (!VUtils::Resource::ReadFileBytes("mods/" + path, data))
-        sol::stack::push(L, "Module '" + path + "' not found");
+    if (auto opt = VUtils::Resource::ReadFileBytes("mods/" + path))
+        luaL_loadbuffer(L, reinterpret_cast<const char*>(opt.value().data()), opt.value().size(), path.c_str());
     else
-        luaL_loadbuffer(L, reinterpret_cast<const char*>(data.data()), data.size(), path.c_str());
+        sol::stack::push(L, "Module '" + path + "' not found");
 
     return 1;
 }
@@ -39,12 +38,10 @@ int LoadFileRequire(lua_State* L) {
 
 // Load a Lua script starting in relative root 'data/mods/'
 void RunStateFrom(sol::state &state, const std::string& luaPath) {
-    std::string modCode;
-    if (!VUtils::Resource::ReadFileBytes("mods/" + luaPath, modCode)) {
+    if (auto opt = VUtils::Resource::ReadFileString("mods/" + luaPath))
+        state.script(opt.value());
+    else
         throw std::runtime_error(std::string("Failed to open Lua file ") + luaPath);
-    }
-
-    state.script(modCode);
 }
 
 sol::state NewStateFrom(const std::string& luaPath) {
@@ -148,41 +145,28 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     {
         auto utilsTable = state["VUtils"].get_or_create<sol::table>();
 
-        utilsTable["Compress"] = sol::resolve<bool(const BYTES_t&, BYTES_t&)>(VUtils::CompressGz);
-        utilsTable["Decompress"] = sol::resolve<bool(const BYTES_t&, BYTES_t&)>(VUtils::Decompress);
+        utilsTable["Compress"] = sol::overload(
+                sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
+                sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
+        );
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
             stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
         }
         {
-            //auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
 
-            // TODO compile was failing because string was being taken by mutable reference
-            //  and lua does not like this
-            // but const reference works
-           //resourceUtilsTable["ReadFileBytes"] = [](const std::string&, BYTES_t &) {
-           //};
+            resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<BYTES_t>(const std::string&)>(VUtils::Resource::ReadFileBytes);
+            resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const std::string&)>(VUtils::Resource::ReadFileString);
+            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const std::string&)>(VUtils::Resource::ReadFileLines);
 
-           /*
-            resourceUtilsTable["ReadFileBytes"] = sol::overload(
-                sol::resolve<bool(const std::string&, BYTES_t&)>(VUtils::Resource::ReadFileBytes),
-                [](sol::this_state state, const std::string& path) {
-                    auto L(state.lua_state());
-                    std::string out;
-                    if (VUtils::Resource::ReadFileBytes(path, out))
-                        return sol::make_object(L, out);
-                    return sol::make_object(L, sol::nil);
-                }
-                //sol::resolve<bool(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes);
-                    //static_cast<bool (*)(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes);
-                    //sol::resolve<bool(const std::string&, std::string &)>(VUtils::Resource::ReadFileBytes);
-                    //bool ReadFileBytes(const std::string& path, std::string &s);
-            );*/
-            //resourceUtilsTable["WriteFileBytes"] = sol::overload(
-            //    sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes),
-            //    sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileBytes)
-            //);
+            resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
+            resourceUtilsTable["WriteFileString"] = sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileString);
+            resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const std::string&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
         }
     }
 

@@ -21,12 +21,6 @@ public:
     using ClFuncPtr = void(C::*)(NetRpc*, Args...);
 
 private:
-    // When the server receives an rpc call
-    static constexpr HASH_t RPC_HASH = VUtils::String::GetStableHashCode("Rpc");
-    // when the server sends an rpc call
-    static constexpr HASH_t RPC_INVOKE_HASH = VUtils::String::GetStableHashCode("RpcInvoke");
-
-private:
 	std::chrono::steady_clock::time_point m_lastPing;
 	
 	robin_hood::unordered_map<HASH_t, MethodPtr> m_methods;
@@ -58,7 +52,7 @@ public:
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, FuncPtr<Args...> f) {
-		return Register(hash, MethodPtr(new MethodImpl(f, RPC_HASH ^ hash)));
+		return Register(hash, MethodPtr(new MethodImpl(f, EVENT_HASH_RpcIn ^ hash)));
 	}
 
 	template<class ...Args>
@@ -86,7 +80,7 @@ public:
 	*/
 	template<class C, class ...Args>
 	auto Register(HASH_t hash, C* object, ClFuncPtr<C, Args...> f) {
-		return Register(hash, std::make_unique<MethodImpl>(object, f, RPC_HASH ^ hash));
+		return Register(hash, std::make_unique<MethodImpl>(object, f, EVENT_HASH_RpcIn ^ hash));
 	}
 
 	template<class C, class ...Args>
@@ -121,7 +115,7 @@ public:
 		if (!m_socket->Connected())
 			return;
 		
-        if (CALL_EVENT(RPC_INVOKE_HASH ^ hash, params...) == EVENT_CANCEL)
+        if (CALL_EVENT(EVENT_HASH_RpcOut ^ hash, params...) == EVENT_CANCEL)
             return;
 
         //return InvokeRaw(hash, NetPackage::Serialize(params...));

@@ -21,25 +21,30 @@ VServer* Valhalla() {
 
 void VServer::LoadFiles() {
     {
-        std::vector<std::string> banned;
-        VUtils::Resource::ReadFileLines("banned.txt", banned);
-        for (auto&& s : banned)
-            m_banned.insert(std::move(s));
+        auto opt = VUtils::Resource::ReadFileLines("banned.txt");
+        if (opt) {
+            auto&& banned = opt.value();
+            for (auto &&s: banned)
+                m_banned.insert(std::move(s));
+        }
     }
 
     YAML::Node loadNode;
+    bool createSettingsFile = false;
     {
-        std::string buf;
-        if (VUtils::Resource::ReadFileBytes("server.yml", buf)) {
+        if (auto&& opt = VUtils::Resource::ReadFileString("server.yml")) {
             try {
-                loadNode = YAML::Load(buf);
+                loadNode = YAML::Load(opt.value());
             }
-            catch (YAML::ParserException& e) {
+            catch (const YAML::ParserException& e) {
                 LOG(INFO) << e.what();
+                createSettingsFile = true;
             }
         }
-        else
+        else {
             LOG(INFO) << "Server config not found, creating...";
+            createSettingsFile = true;
+        }
     }
 
     m_settings.serverName = loadNode["server-name"].as<std::string>("My server");
@@ -67,42 +72,41 @@ void VServer::LoadFiles() {
     m_settings.rconPassword = loadNode["rcon-password"].as<std::string>("");
     m_settings.rconKeys = loadNode["rcon-keys"].as<std::vector<std::string>>(std::vector<std::string>());
 
-
-
-    YAML::Node saveNode;
-
-    saveNode["server-name"] = m_settings.serverName;
-    saveNode["server-port"] = m_settings.serverPort;
-    saveNode["server-password"] = m_settings.serverPassword;
-    saveNode["server-public"] = m_settings.serverPublic;
-
-    saveNode["world-name"] = m_settings.worldName;
-    saveNode["world-seed"] = m_settings.worldSeed;
-
-    saveNode["player-whitelist"] = m_settings.playerWhitelist;
-    saveNode["player-max"] = m_settings.playerMax;
-    saveNode["player-auth"] = m_settings.playerAuth;
-    saveNode["player-list"] = m_settings.playerList;
-    saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
-
-    saveNode["socket-timeout"] = m_settings.socketTimeout.count();
-    saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
-    saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
-    saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
-
-    saveNode["rcon-enabled"] = m_settings.rconEnabled;
-    saveNode["rcon-port"] = m_settings.rconPort;
-    saveNode["rcon-password"] = m_settings.rconPassword;
-    saveNode["rcon-keys"] = m_settings.rconKeys;
-
-
-    YAML::Emitter out;
-    out.SetIndent(4);
-    out << saveNode;
-
-    VUtils::Resource::WriteFileBytes("server.yml", out.c_str());
-
     LOG(INFO) << "Server config loaded";
+
+    if (createSettingsFile) {
+        YAML::Node saveNode;
+
+        saveNode["server-name"] = m_settings.serverName;
+        saveNode["server-port"] = m_settings.serverPort;
+        saveNode["server-password"] = m_settings.serverPassword;
+        saveNode["server-public"] = m_settings.serverPublic;
+
+        saveNode["world-name"] = m_settings.worldName;
+        saveNode["world-seed"] = m_settings.worldSeed;
+
+        saveNode["player-whitelist"] = m_settings.playerWhitelist;
+        saveNode["player-max"] = m_settings.playerMax;
+        saveNode["player-auth"] = m_settings.playerAuth;
+        saveNode["player-list"] = m_settings.playerList;
+        saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
+
+        saveNode["socket-timeout"] = m_settings.socketTimeout.count();
+        saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
+        saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
+        saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
+
+        saveNode["rcon-enabled"] = m_settings.rconEnabled;
+        saveNode["rcon-port"] = m_settings.rconPort;
+        saveNode["rcon-password"] = m_settings.rconPassword;
+        saveNode["rcon-keys"] = m_settings.rconKeys;
+
+        YAML::Emitter out;
+        out.SetIndent(4);
+        out << saveNode;
+
+        VUtils::Resource::WriteFileString("server.yml", out.c_str());
+    }
 }
 
 
@@ -261,6 +265,7 @@ void VServer::Update(float delta) {
             auto &&rconSocket = itr->second;
             if (!itr->second->Connected()) {
                 LOG(INFO) << "Authorized Rcon disconnected " << rconSocket->GetAddress();
+                CALL_EVENT("", rconSocket);
                 itr = m_authRconSockets.erase(itr);
             } else {
                 rconSocket->Update();
@@ -271,6 +276,9 @@ void VServer::Update(float delta) {
                     pkg.Read<int32_t>(); // dummy type
                     auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
                     VUtils::String::FormatAscii(in_msg);
+
+                    CALL_EVENT(EVENT_HASH_RconIn, in_msg);
+                    CALL_EVENT(EVENT_HASH_RconIn ^ EVENT_HASH_POST, in_msg);
 
                     std::string out_msg = " ";
 
