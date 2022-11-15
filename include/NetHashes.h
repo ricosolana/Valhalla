@@ -38,6 +38,12 @@ enum class Rpc_Hash : HASH_t {
 //		Talker.Say is ran by Client by Chat.SendText
 //		Talker.RPC_Say appears to be used ONLY by client (due to localPlayer null check)
 
+// Talker gets sent by client to client
+// Server is only a middle man in this scenario, 
+// with no concern about the packet contents
+//	only the sender and receiver
+
+
 enum class Routed_Hash : HASH_t {
 	SleepStart = __H("SleepStart"),
 	SleepStop = __H("SleepStop"),

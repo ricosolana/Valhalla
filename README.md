@@ -14,6 +14,19 @@ I have learnt a lot, and will return with another similar project in the future.
 Now compatible with the Steam Valheim client.
 
 ## Progress
+11/14/2022 + TODO
+ - Still planning to implement:
+    - ZDO/ZDOMan system
+    - ZNetView system for wrapping in-game ZDO object instances
+    - Representation of Unity GameObjects
+        - Everything eventually sent across network, just how
+        - ZNetScene capable of instantiating objects locally and remotely
+        - Most instantiated objects already contain a ZNetView with ZDO instance, so networking is automatic
+            - ZNetView instance is added to ZNetScene which takes care of everything
+            - ZNetScene added instances have few usages
+        - ZDO prefab hash field
+        - ZDO string field referring to prefabs by name
+
 10/24/2022 + TODO
  - Clients can now directly join without any patching. 
  

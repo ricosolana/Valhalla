@@ -156,16 +156,33 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
             stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
         }
         {
-            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
-            
+            //auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+
+            // TODO compile was failing because string was being taken by mutable reference
+            //  and lua does not like this
+            // but const reference works
+           //resourceUtilsTable["ReadFileBytes"] = [](const std::string&, BYTES_t &) {
+           //};
+
+           /*
             resourceUtilsTable["ReadFileBytes"] = sol::overload(
                 sol::resolve<bool(const std::string&, BYTES_t&)>(VUtils::Resource::ReadFileBytes),
-                sol::resolve<bool(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes)
-            );
-            resourceUtilsTable["WriteFileBytes"] = sol::overload(
-                sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes),
-                sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileBytes)
-            );
+                [](sol::this_state state, const std::string& path) {
+                    auto L(state.lua_state());
+                    std::string out;
+                    if (VUtils::Resource::ReadFileBytes(path, out))
+                        return sol::make_object(L, out);
+                    return sol::make_object(L, sol::nil);
+                }
+                //sol::resolve<bool(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes);
+                    //static_cast<bool (*)(const std::string&, std::string&)>(VUtils::Resource::ReadFileBytes);
+                    //sol::resolve<bool(const std::string&, std::string &)>(VUtils::Resource::ReadFileBytes);
+                    //bool ReadFileBytes(const std::string& path, std::string &s);
+            );*/
+            //resourceUtilsTable["WriteFileBytes"] = sol::overload(
+            //    sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes),
+            //    sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileBytes)
+            //);
         }
     }
 

@@ -55,7 +55,7 @@ namespace NetSyncManager {
 	SyncPeer* GetPeer(OWNER_t uuid);
 	SyncPeer* GetPeer(NetPeer *netPeer);
 	SyncPeer* GetPeer(NetRpc *rpc);
-	void UpdateStats(float dt);
+	//void UpdateStats(float dt);
 	//void SendZDOToPeers(float dt);
 	void SendZDOToPeers2(float dt);
 	void FlushClientObjects(); // sends all zdos; the fast that they're labeled as objects here proves the point a better name is SyncObject?
@@ -88,21 +88,32 @@ namespace NetSyncManager {
 
 
 
+	// ZDOPool is mostly only needed for c# because of gc, and the apparent lack of consolidated hashing and ability to have null
+	// arrays
+	// but they decided to reuse them to not overload the gc
+	// ZDOPool shouldnt be needed here, but do not focus on that for now
+
 
 	//typedef SyncPeer ZDOPeer;
 
 	static constexpr int SECTOR_WIDTH = 512;
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
-	std::vector<std::unique_ptr<SyncPeer>> m_peers; // Lifetime container; could be a linked list or ?
+	std::vector<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
 
 
 
-    //
+	// so ensure with a bunch of asserts of something that all ZDO external references are removed once the zdo is popped from here
     robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>, HashUtils::Hasher> m_objectsByID;    // primary lifetime container
 
+
+
     std::array<robin_hood::unordered_set<NetSync*>, SECTOR_WIDTH*SECTOR_WIDTH> m_objectsBySector;   // a bunch of objects
+	// TODO this might be essentially never used in game
     robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher> m_objectsByOutsideSector;
+
+	//constexpr static int s00 = sizeof(m_objectsBySector);
+	//constexpr static int s01 = sizeof(robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher>);
 
     robin_hood::unordered_map<NetID, OWNER_t, HashUtils::Hasher> m_deadZDOs;
 	std::vector<NetSync*> tempSectorObjects;
@@ -110,7 +121,6 @@ namespace NetSyncManager {
 
 	// Increments indefinitely for new ZDO id
 	uint32_t m_nextUid = 1;
-	float m_releaseZDOTimer = 0; // redundant ?
 
 	std::vector<NetSync*> m_tempToSync;
 	std::vector<NetSync*> m_tempToSyncDistant;
@@ -118,9 +128,8 @@ namespace NetSyncManager {
 	std::vector<NetID> m_tempRemoveList;
 
 	struct SaveData {
-		//OWNER_t m_myid = 0;
-		uint32_t m_nextUid = 1;
-		std::vector<NetSync> m_zdos; // ZDO must be value, not ptr, because this will be separately saved
+		uint32_t m_nextUid;
+		std::vector<NetSync> m_zdos; // ZDO stored as value for copy
 		robin_hood::unordered_map<NetID, OWNER_t, HashUtils::Hasher> m_deadZDOs;
 
 		// Initialize
@@ -187,7 +196,6 @@ namespace NetSyncManager {
 		m_tempRemoveList.clear();
 		m_peers.clear();
 		ResetSectorArray();
-		//GC.Collect();
 	}
 
 	void PrepareSave() {
@@ -321,6 +329,7 @@ namespace NetSyncManager {
 	void RemoveFromSector(NetSync* zdo, const Vector2i &sector) {
 		int num = SectorToIndex(sector);
 		//std::vector<NetSync*> list;
+		// m_objectsByOutsideSector requires further testing to detemine whether it is ever used
 		if (num != -1) {
 			//m_objectsBySector[found]
 			// better to use set for this
@@ -335,7 +344,6 @@ namespace NetSyncManager {
 			auto&& find = m_objectsByOutsideSector.find(sector);
 			if (find != m_objectsByOutsideSector.end())
 				find->second.erase(zdo);
-				//find->second.remove(zdo);
 				//list.Remove(zdo);
 		}
 	}
@@ -393,8 +401,8 @@ namespace NetSyncManager {
 			SendAllZDOs(peer.get());
 	}
 
-	// Token: 0x06000B6C RID: 2924 RVA: 0x00051450 File Offset: 0x0004F650
 	void ReleaseZDOS(float dt) {
+		static float m_releaseZDOTimer = 0;
 		m_releaseZDOTimer += dt;
 		if (m_releaseZDOTimer > 2) {
 			m_releaseZDOTimer = 0;
@@ -405,7 +413,7 @@ namespace NetSyncManager {
 	}
 
 	bool IsInPeerActiveArea(const Vector2i &sector, OWNER_t uid) {
-		assert(uid != Valhalla()->ID() && "Something possibly isnt right");
+		assert(uid != Valhalla()->ID() && "Shouldnt reach this point (server thinks its a peer?)");
 		//if (uid == Valhalla()->ID())
 			//return ZNetScene::InActiveArea(sector, NetManager::GetReferencePosition());
 
@@ -415,17 +423,19 @@ namespace NetSyncManager {
 	}
 
 	void ReleaseNearbyZDOS(const Vector3 &refPosition, OWNER_t uid) {
-		throw std::runtime_error("not implemented");
+		//throw std::runtime_error("not implemented");
 		auto&& zone = ZoneSystem::GetZoneCoords(refPosition);
 		m_tempNearObjects.clear();
 		FindSectorObjects(zone, ZoneSystem::ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
 		for (auto&& zdo : m_tempNearObjects) {
 			if (zdo->Persists()) {
 				if (zdo->Owner() == uid) {
+					// Should always run based on the logic
 					//if (!ZNetScene::InActiveArea(zdo->Sector(), zone)) {
-					//	zdo->Abandon();
+						zdo->Abandon();
 					//}
 				}
+				// Should always fail to run because of the Server-ZNet ref-pos out of bounds
 				//else if ((!zdo->HasOwner() 
 				//	|| !IsInPeerActiveArea(zdo->Sector(), zdo->Owner())) 
 				//	&& ZNetScene::InActiveArea(zdo->Sector(), zone)) {
@@ -450,7 +460,7 @@ namespace NetSyncManager {
 			zpackage.Write(id);
 
 		m_destroySendList.clear();
-		NetRouteManager::Invoke(NetRouteManager::EVERYBODY, "DestroyZDO", zpackage);
+		NetRouteManager::Invoke(NetRouteManager::EVERYBODY, Routed_Hash::DestroyZDO, zpackage);
 	}
 
 	void RPC_DestroyZDO(OWNER_t sender, NetPackage pkg) {
@@ -472,7 +482,7 @@ namespace NetSyncManager {
 		//if (m_onZDODestroyed)
 		//	m_onZDODestroyed(zdo);
 
-		throw std::runtime_error("not implemented");
+		//throw std::runtime_error("not implemented");
 
 		RemoveFromSector(zdo, zdo->Sector());
 		m_objectsByID.erase(zdo->ID());
