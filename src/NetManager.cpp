@@ -256,7 +256,7 @@ namespace NetManager {
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Lua event
-        if (CALL_EVENT("PeerConnect", rpc, uuid, name, version) == EVENT_CANCEL)
+        if (CALL_EVENT("PeerConnect", rpc, uuid, name, version) == EventStatus::CANCEL)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Find the rpc and transfer

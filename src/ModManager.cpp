@@ -569,9 +569,9 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // Get information about the current event
     {
         auto thisEventTable = state["Event"].get_or_create<sol::table>();
-        thisEventTable["Cancel"] = [this]() { m_eventStatus = EVENT_CANCEL; };
-        thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c; };
-        thisEventTable["cancelled"] = &m_eventStatus;
+        thisEventTable["Cancel"] =          [this]() { m_eventStatus = EventStatus::CANCEL; };
+        thisEventTable["SetCancelled"] =    [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        thisEventTable["cancelled"] =       [this]() { return m_eventStatus == EventStatus::CANCEL; };
     }
 
     return mod;

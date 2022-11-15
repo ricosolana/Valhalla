@@ -27,8 +27,11 @@ enum class PkgType {
     DOUBLE
 };
 
-static constexpr bool EVENT_PROCEED = false;
-static constexpr bool EVENT_CANCEL = true;
+enum class EventStatus {
+    DEFAULT,
+    PROCEED,
+    CANCEL,
+};
 
 static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");
 static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");
@@ -66,7 +69,7 @@ private:
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
     robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
-    bool m_eventStatus = EVENT_PROCEED;
+    EventStatus m_eventStatus = EventStatus::DEFAULT;
 
 private:
     void Init();
@@ -89,20 +92,21 @@ public:
     // Dispatch a event for capture by any registered mod event handlers
     // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    bool CallEvent(HASH_t name, const Args&... params) {
+    EventStatus CallEvent(HASH_t name, const Args&... params) {
         OPTICK_EVENT();
+
         auto&& find = m_callbacks.find(name);
-        if (find == m_callbacks.end())
-            return false;
+        if (find != m_callbacks.end()) {
+            auto &&callbacks = find->second;
 
-        auto &&callbacks = find->second;
+            this->m_eventStatus = EventStatus::DEFAULT;
 
-        this->m_eventStatus = EVENT_PROCEED;
-        for (auto&& callback : callbacks) {
-            try {
-                callback.m_func(params...);
-            } catch (const sol::error& e) {
-                LOG(ERROR) << e.what();
+            for (auto &&callback: callbacks) {
+                try {
+                    callback.m_func(params...);
+                } catch (const sol::error &e) {
+                    LOG(ERROR) << e.what();
+                }
             }
         }
         return m_eventStatus;

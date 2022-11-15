@@ -115,7 +115,7 @@ public:
 		if (!m_socket->Connected())
 			return;
 		
-        if (CALL_EVENT(EVENT_HASH_RpcOut ^ hash, params...) == EVENT_CANCEL)
+        if (CALL_EVENT(EVENT_HASH_RpcOut ^ hash, params...) == EventStatus::CANCEL)
             return;
 
         //return InvokeRaw(hash, NetPackage::Serialize(params...));

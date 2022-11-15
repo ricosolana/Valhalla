@@ -37,26 +37,42 @@ class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
 
     const C* object;
     const FuncPtr lambda;
-    const HASH_t m_luaEventHash;
+    const HASH_t m_invokerHash;
+    const HASH_t m_methodHash;
 
 public:
-    MethodImpl(C* object, FuncPtr lam, HASH_t luaEventHash) : object(object), lambda(lam), m_luaEventHash(luaEventHash) {}
+    MethodImpl(C* object, FuncPtr lam,
+               HASH_t invokerHash = 0,
+               HASH_t methodHash = 0)
+            : object(object), lambda(lam),
+              m_invokerHash(invokerHash), m_methodHash(methodHash) {}
+    // TODO add global invoke calls (i.e. invoke all lua rpcs events)
 
     void Invoke(T t, NetPackage pkg) override {
+        //assert(false);
         if constexpr (sizeof...(Args)) {
             auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                         NetPackage::Deserialize<Args...>(pkg));
 
-            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
+            // Pre events
+            CALL_EVENT_TUPLE(m_invokerHash, tuple);
+            auto result = CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash, tuple);
+
+            if (result != EventStatus::CANCEL)
                 std::apply(lambda, std::tuple_cat(std::forward_as_tuple(object),
                                                   tuple));
-            CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
+
+            // Post events
+            CALL_EVENT_TUPLE(m_invokerHash ^ EVENT_HASH_POST, tuple);
+            CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash ^ EVENT_HASH_POST, tuple);
         }
         else {
+
             // lua
-            if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
-                std::invoke(lambda, object, t);
-            CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
+            //auto result =
+            //if (CALL_EVENT(m_luaEventHash) != EventStatus::CANCEL)
+            //    std::invoke(lambda, object, t);
+            //CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
         }
     }
 };
@@ -79,16 +95,17 @@ public:
     explicit MethodImpl(FuncPtr lam, HASH_t luaEventHash) : lambda(lam), m_luaEventHash(luaEventHash) {}
 
     void Invoke(T t, NetPackage pkg) override {
+        assert(false);
         if constexpr (sizeof...(Args)) {
             auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                         NetPackage::Deserialize<Args...>(pkg));
 
-            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) == EVENT_PROCEED)
+            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) != EventStatus::CANCEL)
                 std::apply(lambda, tuple);
             CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
         }
         else {
-            if (CALL_EVENT(m_luaEventHash) == EVENT_PROCEED)
+            if (CALL_EVENT(m_luaEventHash) != EventStatus::CANCEL)
                 std::invoke(lambda, t);
             CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
         }

@@ -277,8 +277,10 @@ void VServer::Update(float delta) {
                     auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
                     VUtils::String::FormatAscii(in_msg);
 
+                    // Global message handler
                     CALL_EVENT(EVENT_HASH_RconIn, in_msg);
-                    CALL_EVENT(EVENT_HASH_RconIn ^ EVENT_HASH_POST, in_msg);
+                    // Specific message handler
+                    //CALL_EVENT(EVENT_HASH_RconIn ^ EVENT_HASH_POST, in_msg);
 
                     std::string out_msg = " ";
 
