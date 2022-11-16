@@ -236,14 +236,16 @@ public:
 
     // https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
     // empty
-    /*
+
+
+    //template<> //   doesnt work
     static auto Deserialize(NetPackage&) {
         //return std::make_tuple(); //std::tuple{};
         return std::tuple{};
     }
 
-    template<class ... Types> std::enable_if_t<sizeof...(Types) == 0>
-    static Deserialize(NetPackage &pkg) {}
+    //template<class ... Types> std::enable_if_t<sizeof...(Types) == 0>
+    //static Deserialize(NetPackage &pkg) {}
 
     // must unpack
     // how to unpack types in place without a, b unpacking
@@ -253,12 +255,14 @@ public:
         auto t = std::tuple(pkg.Read<T>());
         if constexpr (sizeof...(Types)) {
             return std::tuple_cat(t, Deserialize<Types...>(pkg));
+        } else {
+            return t;
         }
-        return t;
-    }*/
+    }
 
 
 
+    /*
     template <class... T>
     struct DeserializeImpl;
 
@@ -280,5 +284,5 @@ public:
     template<class... Types>
     static auto Deserialize(NetPackage& pkg) {
         return DeserializeImpl<Types...>()(pkg);
-    }
+    }*/
 };
