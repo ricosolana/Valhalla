@@ -16,9 +16,7 @@ public:
 
     template<class ...Args>
     using FuncPtr = void(*)(NetRpc*, Args...);
-
-    template<class C, class ...Args>
-    using ClFuncPtr = void(C::*)(NetRpc*, Args...);
+    //using FuncPtr = std::function<void(NetRpc*, Args...)>;
 
 private:
 	std::chrono::steady_clock::time_point m_lastPing;
@@ -56,7 +54,7 @@ public:
 	}
 
 	template<class ...Args>
-	auto Register(Rpc_Hash hash, FuncPtr<Args...> f) { //FuncPtr<Args...> f) {
+	auto Register(Rpc_Hash hash, FuncPtr<Args...> f) { //Fn<Args...> f) {
 		return Register(static_cast<HASH_t>(hash), f);
 	}
 
@@ -68,34 +66,6 @@ public:
 	template<class ...Args>
 	auto Register(std::string& name, FuncPtr<Args...> f) {
 		return Register(name.c_str(), f);
-	}
-		
-
-
-	/**
-		* @brief Register an instance method for remote invocation
-		* @param name function name to register
-		* @param object the object containing the member function
-		* @param method ptr to a member function
-	*/
-	template<class C, class ...Args>
-	auto Register(HASH_t hash, C* object, ClFuncPtr<C, Args...> f) {
-		return Register(hash, std::make_unique<MethodImpl>(object, f, EVENT_HASH_RpcIn ^ hash));
-	}
-
-	template<class C, class ...Args>
-	auto Register(Rpc_Hash hash, C *object, ClFuncPtr<C, Args...> f) {
-		return Register(static_cast<HASH_t>(hash), object, f);
-	}
-
-	template<class C, class ...Args>
-	auto Register(const char* name, C* object, ClFuncPtr<C, Args...> f) {
-		return Register(VUtils::String::GetStableHashCode(name), object, f);
-	}
-
-	template<class C, class ...Args>
-	auto Register(std::string& name, C* object, ClFuncPtr<C, Args...> f) {
-		return Register(name.c_str(), object, f);
 	}
 
 
