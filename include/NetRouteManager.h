@@ -58,7 +58,7 @@ namespace NetRouteManager {
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, void(*f)(OWNER_t, Args...)) {
-		return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn ^ hash));
+		return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
 	}
 
 	template<class ...Args>

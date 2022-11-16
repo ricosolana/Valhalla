@@ -164,7 +164,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 if (MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /bigobj "/diagnostics:caret" "/ENTRY:mainCRTStartup")
+    target_compile_options(${PROJECT_NAME} PRIVATE /bigobj "/diagnostics:caret")
 endif()
 if(MSVC AND CMAKE_BUILD_TYPE MATCHES Release)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)

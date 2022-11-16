@@ -52,7 +52,7 @@ public:
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, FuncPtr<Args...> f) {
-		return Register(hash, MethodPtr(new MethodImpl(f, EVENT_HASH_RpcIn ^ hash)));
+		return Register(hash, MethodPtr(new MethodImpl(f, EVENT_HASH_RpcIn, hash)));
 	}
 
 	template<class ...Args>

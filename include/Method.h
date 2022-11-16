@@ -42,15 +42,15 @@ class MethodImpl<T, C, void(C::*)(T, Args...)> : public IMethod<T> {
 
 public:
     MethodImpl(C* object, FuncPtr lam,
-               HASH_t invokerHash = 0,
-               HASH_t methodHash = 0)
+               HASH_t invokerHash, // TODO remove defaults
+               HASH_t methodHash)
             : object(object), lambda(lam),
               m_invokerHash(invokerHash), m_methodHash(methodHash) {}
     // TODO add global invoke calls (i.e. invoke all lua rpcs events)
 
     void Invoke(T t, NetPackage pkg) override {
         //assert(false);
-        if constexpr (sizeof...(Args)) {
+        //if constexpr (sizeof...(Args)) {
             auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                         NetPackage::Deserialize<Args...>(pkg));
 
@@ -65,21 +65,21 @@ public:
             // Post events
             CALL_EVENT_TUPLE(m_invokerHash ^ EVENT_HASH_POST, tuple);
             CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash ^ EVENT_HASH_POST, tuple);
-        }
-        else {
+        //}
+        //else {
 
             // lua
             //auto result =
             //if (CALL_EVENT(m_luaEventHash) != EventStatus::CANCEL)
             //    std::invoke(lambda, object, t);
             //CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
-        }
+        //}
     }
 };
 
 // Specifying deduction guide
 template<class T, class C, class ...Args>
-MethodImpl(C* object, void(C::*)(T, Args...), HASH_t) -> MethodImpl<T, C, void(C::*)(T, Args...)>;
+MethodImpl(C* object, void(C::*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<T, C, void(C::*)(T, Args...)>;
 
 
 
@@ -89,32 +89,63 @@ class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
     using FuncPtr = void(*)(T, Args...);
 
     const FuncPtr lambda;
-    const HASH_t m_luaEventHash;
+    const HASH_t m_invokerHash;
+    const HASH_t m_methodHash;
 
 public:
-    explicit MethodImpl(FuncPtr lam, HASH_t luaEventHash) : lambda(lam), m_luaEventHash(luaEventHash) {}
+    explicit MethodImpl(FuncPtr lam,
+                        HASH_t invokerHash, // TODO remove defaults
+                        HASH_t methodHash)
+                        : lambda(lam),
+                          m_invokerHash(invokerHash), m_methodHash(methodHash) {}
 
     void Invoke(T t, NetPackage pkg) override {
-        assert(false);
-        if constexpr (sizeof...(Args)) {
-            auto tuple = std::tuple_cat(std::forward_as_tuple(t),
-                                        NetPackage::Deserialize<Args...>(pkg));
+        //assert(false);
+        //if constexpr (sizeof...(Args)) {
+            //auto tuple = std::tuple_cat(std::forward_as_tuple(t),
+            //                            NetPackage::Deserialize<Args...>(pkg));
+            //
+            //if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) != EventStatus::CANCEL)
+            //    std::apply(lambda, tuple);
+            //
+            //CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
 
-            if (CALL_EVENT_TUPLE(m_luaEventHash, tuple) != EventStatus::CANCEL)
-                std::apply(lambda, tuple);
-            CALL_EVENT_TUPLE(m_luaEventHash ^ EVENT_HASH_POST, tuple);
-        }
-        else {
-            if (CALL_EVENT(m_luaEventHash) != EventStatus::CANCEL)
-                std::invoke(lambda, t);
-            CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
-        }
+
+
+
+
+
+        auto tuple = std::tuple_cat(std::forward_as_tuple(t),
+                                    NetPackage::Deserialize<Args...>(pkg));
+
+        // Pre events
+        CALL_EVENT_TUPLE(m_invokerHash, tuple);
+        auto result = CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash, tuple);
+
+        if (result != EventStatus::CANCEL)
+            std::apply(lambda, tuple);
+
+        // Post events
+        CALL_EVENT_TUPLE(m_invokerHash ^ EVENT_HASH_POST, tuple);
+        CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash ^ EVENT_HASH_POST, tuple);
+
+
+
+
+
+
+        //}
+        //else {
+        //    if (CALL_EVENT(m_luaEventHash) != EventStatus::CANCEL)
+        //        std::invoke(lambda, t);
+        //    CALL_EVENT(m_luaEventHash ^ EVENT_HASH_POST);
+        //}
     }
 };
 
 // Specifying deduction guide
 template<class T, class ...Args>
-MethodImpl(void(*)(T, Args...), HASH_t) -> MethodImpl<void(*)(T, Args...)>;
+MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<void(*)(T, Args...)>;
 
 
 
