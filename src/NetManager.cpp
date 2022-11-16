@@ -100,7 +100,7 @@ namespace NetManager {
 
 
 	void RPC_ServerHandshake(NetRpc* rpc) {
-		LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName();
+		LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
 		//this.ClearPlayerData(peer);
 		//bool flag = !Valhalla()->m_serverPassword.empty();
 		//std::string salt = "Im opposing salt"; // must be 16 bytes
@@ -124,7 +124,7 @@ namespace NetManager {
 		auto&& peer = GetPeer(rpc);
 		peer->m_characterID = characterID;
 
-		LOG(INFO) << "Got character NetSyncID from " << peer->m_name << " : " << characterID.ToString();
+		LOG(INFO) << "Got CharacterID from " << peer->m_name << " : " << characterID.ToString();
 	}
 
 
@@ -256,7 +256,7 @@ namespace NetManager {
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Lua event
-        if (CALL_EVENT("PeerConnect", rpc, uuid, name, version) == EventStatus::CANCEL)
+        if (CALL_EVENT(EVENT_HASH_PeerConnect, rpc, uuid, name, version) == EventStatus::CANCEL)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
 		// Find the rpc and transfer
@@ -343,8 +343,6 @@ namespace NetManager {
 			rpc->Register(Rpc_Hash::Disconnect, &RPC_Disconnect);
 			rpc->Register(Rpc_Hash::ServerHandshake, &RPC_ServerHandshake);
 
-			rpc->m_socket->Start();
-
 			m_joining.push_back(std::move(rpc));
 		}
 
@@ -367,7 +365,7 @@ namespace NetManager {
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					LOG(INFO) << "Cleaning up peer";
-					CALL_EVENT("PeerDisconnect", itr->get());
+					CALL_EVENT(EVENT_HASH_PeerQuit, itr->get());
 					itr = m_peers.erase(itr);
 				}
 				else {

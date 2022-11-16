@@ -54,7 +54,8 @@ private:
     asio::ip::tcp::acceptor m_acceptor;
 
     std::mutex m_mut;
-    robin_hood::unordered_set<std::shared_ptr<RCONSocket>> m_connected;
+	// or test whether the client id has been assigned beyond -1
+    std::list<std::shared_ptr<RCONSocket>> m_connected;
 
 public:
     RCONAcceptor();

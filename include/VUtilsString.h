@@ -44,11 +44,14 @@ namespace VUtils::String {
 
     HASH_t GetStableHashCode(const std::string &s);
 
+    HASH_t GetStableHashCode(const std::string_view& s);
+
     std::vector<std::string_view> Split(const std::string &s, const std::string &delim);
 
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
-    void FormatAscii(std::string &in);
+    // Returns whether any modification was done
+    bool FormatAscii(std::string &in);
 
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding

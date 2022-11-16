@@ -6,6 +6,7 @@
 SteamSocket::SteamSocket(HSteamNetConnection hConn)
     : m_hConn(hConn) {
 
+    // This constructor doesnt do anything special
 	SteamNetConnectionInfo_t info;
 	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
 	m_steamNetId = info.m_identityRemote;
@@ -22,8 +23,6 @@ SteamSocket::~SteamSocket() {
 }
 
 
-
-void SteamSocket::Start() {}
 
 void SteamSocket::Close(bool flush) {
     if (!Connected())

@@ -19,6 +19,23 @@ namespace VUtils::String {
         return num + num2 * 1566083941;
     }
 
+    HASH_t GetStableHashCode(const std::string_view& str) {
+        int num = 5381;
+        int num2 = num;
+        int num3 = 0;
+        while (num3 != str.size())
+        {
+            num = ((num << 5) + num) ^ (int)str[num3];
+            if (num3 + 1 != str.size())
+            {
+                break;
+            }
+            num2 = ((num2 << 5) + num2) ^ (int)str[num3 + 1];
+            num3 += 2;
+        }
+        return num + num2 * 1566083941;
+    }
+
     std::vector<std::string_view> Split(const std::string& s, const std::string &delim) {
         std::string_view remaining(s);
         std::vector<std::string_view> result;
@@ -36,12 +53,16 @@ namespace VUtils::String {
         return result;
     }
 
-    void FormatAscii(std::string& in) {
+    bool FormatAscii(std::string& in) {
+        bool modif = false;
         auto data = reinterpret_cast<BYTE_t*>(in.data());
         for (int i = 0; i < in.size(); i++) {
-            if (data[i] > 127)
+            if (data[i] > 127) {
+                modif = true;
                 data[i] = 63;
+            }
         }
+        return modif;
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding

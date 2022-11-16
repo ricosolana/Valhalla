@@ -28,11 +28,6 @@ public:
 
 
 
-	// Begin socket readers
-	virtual void Start() = 0;
-
-
-
 	// Terminates the connection
 	virtual void Close(bool flush) = 0;
 
@@ -46,7 +41,8 @@ public:
 	virtual void Send(NetPackage pkg) = 0;
 
 	// Receive a packet from the remote host
-    // This function shall not block, and the optional may be empty
+    // Packet will undergo basic structure validation
+    // This function shall not block
 	virtual std::optional<NetPackage> Recv() = 0;
 
 
@@ -87,7 +83,6 @@ public:
     ~SteamSocket() override;
 
 	// Virtual
-	void Start() override;
 	void Close(bool flush) override;
 	
 	void Update() override;
@@ -114,7 +109,24 @@ private:
 
 };
 
+
+
+enum class RCONMsgType : int32_t {
+    RCON_S2C_RESPONSE = 0,
+    RCON_COMMAND = 2,
+    RCON_C2S_LOGIN = 3
+};
+
+struct RCONMsg {
+    int32_t client;
+    RCONMsgType type;
+    std::string msg;
+};
+
+class RCONAcceptor;
 class RCONSocket : public ISocket {
+    friend RCONAcceptor; // might require forward declaring
+
 private:
     asio::ip::tcp::socket m_socket;
 
@@ -128,12 +140,13 @@ private:
     uint32_t m_tempReadSize;
     uint32_t m_tempWriteSize;
 
+    int32_t m_id = -1;
+
 public:
     explicit RCONSocket(asio::ip::tcp::socket socket);
     ~RCONSocket() override;
 
     // Virtual
-    void Start() override;
     void Close(bool flush) override;
 
     void Update() override;
@@ -150,6 +163,11 @@ public:
     int GetSendQueueSize() const override {
         return m_sendQueueSize;
     }
+
+
+    // Declared
+    void SendMsg(const std::string& msg);
+    std::optional<RCONMsg> RecvMsg();
 
 private:
     void ReadPacketSize();

@@ -41,7 +41,8 @@ void initLogger() {
     loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, RED + format + RESET);
     loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, RED + format + RESET);
     loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, GOLD + format + RESET);
-    loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format, GOLD + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + RESET);
+    loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format, 
+        GOLD + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + RESET);
     loggerConfiguration.setGlobally(el::ConfigurationType::Filename, "log.txt");
 
     el::Helpers::setThreadName("main");
@@ -73,13 +74,17 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-    //try {
+#ifndef _DEBUG
+    try {
+#endif
         Valhalla()->Launch();
-    //}
-    //catch (std::exception& e) {
-    //    LOG(ERROR) << e.what();
-    //    return 1;
-    //}
+#ifndef _DEBUG
+    }
+    catch (std::exception& e) {
+        LOG(ERROR) << e.what();
+        return 1;
+    }
+#endif
 
 	return 0;
 }

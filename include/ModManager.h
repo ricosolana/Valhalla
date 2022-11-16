@@ -37,6 +37,11 @@ static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");
 static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");
 static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");
 static constexpr HASH_t EVENT_HASH_RconIn = __H("RconIn");
+static constexpr HASH_t EVENT_HASH_Update = __H("Update");
+static constexpr HASH_t EVENT_HASH_RconConnect = __H("RconConnect");
+static constexpr HASH_t EVENT_HASH_RconDisconnect = __H("RconDisconnect");
+static constexpr HASH_t EVENT_HASH_PeerConnect = __H("PeerConnect");
+static constexpr HASH_t EVENT_HASH_PeerQuit = __H("PeerQuit");
 
 static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POST");
 

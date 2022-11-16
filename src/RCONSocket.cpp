@@ -3,6 +3,7 @@
 
 #include "NetSocket.h"
 #include "VServer.h"
+#include "VUtilsString.h"
 
 RCONSocket::RCONSocket(asio::ip::tcp::socket socket)
     : m_socket(std::move(socket)),
@@ -17,10 +18,6 @@ RCONSocket::~RCONSocket() {
 }
 
 
-
-void RCONSocket::Start() {
-    ReadPacketSize();
-}
 
 void RCONSocket::Close(bool flush) {
     if (!Connected())
@@ -59,6 +56,47 @@ std::optional<NetPackage> RCONSocket::Recv() {
     return std::nullopt;
 }
 
+void RCONSocket::SendMsg(const std::string& msg) {
+    // If pkg made static, must be single threaded
+    //  otherwise everything breaks
+    // Package is just a wrapper around a Stream, which wraps a 
+    //  vec, marker
+
+    /*static*/ NetPackage pkg;
+    pkg.Write(m_id);
+    pkg.Write(RCONMsgType::RCON_S2C_RESPONSE);
+    pkg.m_stream.Write((BYTE_t*)msg.data(),
+        msg.size() + 1); // +1 to go ahead and copy the \0
+
+    Send(std::move(pkg));
+}
+
+std::optional<RCONMsg> RCONSocket::RecvMsg() {
+    auto&& opt = Recv();
+    if (opt) {
+        auto&& pkg = opt.value();
+        if (pkg.m_stream.m_buf[m_tempReadSize - 1] != '\0') {
+            Close(false);
+        }
+        else {
+            RCONMsg msg;
+            msg.client = pkg.Read<int32_t>();
+            msg.type = pkg.Read<RCONMsgType>();
+            msg.msg = std::string((char*)pkg.m_stream.Remaining().data());
+
+            if (VUtils::String::FormatAscii(msg.msg)) {
+                // send message: non ascii unsupported
+                SendMsg("Only ascii is supported");
+                Close(true);
+            }
+            else {
+                return msg;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
 std::string RCONSocket::GetHostName() const {
     return GetAddress();
 }
@@ -71,9 +109,10 @@ std::string RCONSocket::GetAddress() const {
 
 void RCONSocket::ReadPacketSize() {
     // read the command from the remote client
+    auto self(shared_from_this());
     asio::async_read(m_socket,
                      asio::buffer(&m_tempReadSize, sizeof(m_tempReadSize)),
-                     [this](const asio::error_code& ec, size_t) {
+                     [this, self](const asio::error_code& ec, size_t) {
         if (!ec) {
             // process command
             if (Connected()) // if flushing while closing, do not read
@@ -85,25 +124,23 @@ void RCONSocket::ReadPacketSize() {
 }
 
 void RCONSocket::ReadPacket() {
+    // Splitting big packets is not yet supported
     if (m_tempReadSize < 10 || m_tempReadSize > 4096) {
         Close(false);
     } else {
         m_tempReadPkg.m_stream.m_buf.resize(m_tempReadSize);
+
+        auto self(shared_from_this());
         asio::async_read(m_socket,
-                         asio::buffer(m_tempReadPkg.m_stream.m_buf),
-                         [this](const asio::error_code& ec, size_t) {
-             if (!ec) {
-                 // Ensure payload is null terminated
-                 if (m_tempReadPkg.m_stream.m_buf[m_tempReadSize - 1] != '\0') {
-                     Close(false);
-                 } else {
-                     m_recvQueue.push_back(std::move(m_tempReadPkg));
-                     ReadPacketSize();
-                 }
-             } else {
-                 Close(false);
-             }
-         });
+            asio::buffer(m_tempReadPkg.m_stream.m_buf),
+            [this, self](const asio::error_code& ec, size_t) {
+            if (!ec) {
+                m_recvQueue.push_back(std::move(m_tempReadPkg));
+                ReadPacketSize();
+            } else {
+                Close(false);
+            }
+        });
     }
 }
 
@@ -111,9 +148,10 @@ void RCONSocket::WritePacketSize() {
     auto&& bytes = m_sendQueue.front();
     m_tempWriteSize = bytes.size();
 
+    auto self(shared_from_this());
     asio::async_write(m_socket,
                      asio::buffer(&m_tempWriteSize, sizeof(m_tempWriteSize)),
-                     [this, &bytes](const asio::error_code& ec, size_t) {
+                     [this, self, &bytes](const asio::error_code& ec, size_t) {
          if (!ec) {
              // process command
              m_sendQueueSize -= sizeof(m_tempWriteSize);
@@ -125,9 +163,11 @@ void RCONSocket::WritePacketSize() {
 }
 
 void RCONSocket::WritePacket(BYTES_t& bytes) {
+
+    auto self(shared_from_this());
     asio::async_write(m_socket,
                       asio::buffer(bytes),
-                      [this](const asio::error_code& ec, size_t) {
+                      [this, self](const asio::error_code& ec, size_t) {
           if (!ec) {
               // process command
               m_sendQueueSize -= m_sendQueue.pop_front().size();

@@ -51,7 +51,7 @@ AcceptorSteam::AcceptorSteam()
 
 AcceptorSteam::~AcceptorSteam() {
 	if (m_listenSocket != k_HSteamListenSocket_Invalid) {
-		LOG(INFO) << "Destroying Steam acceptor";
+		LOG(DEBUG) << "Destroying";
         for (auto &&socket : m_sockets)
             socket.second->Close(true);
 
@@ -92,7 +92,7 @@ const char* stateToString(ESteamNetworkingConnectionState state) {
 }
 
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-	LOG(INFO) << "Connection status: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
+	LOG(INFO) << "NetCnnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
 
 	if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
 		&& data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
@@ -121,13 +121,13 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 }
 
 void AcceptorSteam::OnSteamServersConnected(SteamServersConnected_t* data) {
-	LOG(INFO) << "Server connected";
+	LOG(INFO) << "Steam server connected";
 }
 
 void AcceptorSteam::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
-	LOG(INFO) << "Server disconnected";
+	LOG(INFO) << "Steam server disconnected";
 }
 
 void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
-	LOG(INFO) << "Server connect failure";
+	LOG(INFO) << "Steam server connect failure";
 }

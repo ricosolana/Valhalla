@@ -115,9 +115,12 @@ void VServer::Launch() {
     this->LoadFiles();
 
     ModManager()->Init();
-	//VModManager::Init();
     NetManager::Init();
     ChatManager::Init();
+
+    LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+
+    // Initialize rcon server
     if (m_settings.rconEnabled) {
         if (m_settings.rconPassword.empty())
             m_settings.rconPassword = "mysecret";
@@ -127,7 +130,6 @@ void VServer::Launch() {
         m_rcon->Listen();
     }
 
-	m_startTime = steady_clock::now(); // const during server run
 	m_prevUpdate = steady_clock::now();
 	m_nowUpdate = steady_clock::now();
 
@@ -141,7 +143,7 @@ void VServer::Launch() {
 		m_prevUpdate = m_nowUpdate; // old state
 		m_nowUpdate = now; // new state
 
-		// mutex is carefully scoped
+		// Mutex is scoped
 		{
 			std::scoped_lock lock(m_taskMutex);
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
@@ -164,35 +166,30 @@ void VServer::Launch() {
 					++itr;
 			}
 		}
-				
-		// UPDATE
-		//float delta = elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
+		
 		Update(Delta());
 
-		// Prevent spin lock
-		// TODO
-		//	this could be adjusted in order to accomodate 
-		//	more resource intensive workloads
+		// TODO adjust based on workload intensity
 		std::this_thread::sleep_for(1ms);
 	}
-}
 
-void VServer::Terminate() {
-	LOG(INFO) << "Terminating server";
-
-	m_running = false;
+    // Cleanup 
     ModManager()->UnInit();
-	NetManager::Close();
+    NetManager::Close();
 
     {
         std::vector<std::string> banned;
-        for (auto &&s: m_banned)
+        for (auto&& s : m_banned)
             banned.push_back(std::move(s));
         VUtils::Resource::WriteFileLines("banned.txt", banned);
     }
 }
 
+void VServer::Terminate() {
+	LOG(INFO) << "Terminating server";
 
+    m_running = false;
+}
 
 
 
@@ -206,119 +203,78 @@ void VServer::Update(float delta) {
         while (auto opt = m_rcon->Accept()) {
             auto&& rconSocket = std::static_pointer_cast<RCONSocket>(opt.value());
 
-            m_unAuthRconSockets.push_back(rconSocket);
-            rconSocket->Start();
-            LOG(INFO) << "Rcon connecting " << rconSocket->GetAddress();
-        }
-
-        static constexpr int32_t RCON_S2C_RESPONSE = 0;
-        static constexpr int32_t RCON_COMMAND = 2;
-        static constexpr int32_t RCON_C2S_LOGIN = 3;
-
-        static auto send_response = [](std::shared_ptr<RCONSocket>& socket, int32_t client_id, const std::string &msg) {
-            static NetPackage pkg;
-            pkg.Write(client_id);
-            pkg.Write(RCON_S2C_RESPONSE);
-            pkg.m_stream.Write((BYTE_t *) msg.data(), msg.size() + 1);
-
-            socket->Send(std::move(pkg));
-        };
-
-        // Un authed RCON sockets polling
-        for (auto&& itr = m_unAuthRconSockets.begin(); itr != m_unAuthRconSockets.end();) {
-            auto &&rconSocket = (*itr);
-            if (!(*itr)->Connected()) {
-                LOG(INFO) << "Unauthorized Rcon disconnected " << rconSocket->GetAddress();
-                itr = m_unAuthRconSockets.erase(itr);
-            } else {
-                rconSocket->Update();
-                auto opt = rconSocket->Recv();
-                // first packet must be the login packet
-                if (opt) {
-                    auto &&pkg = opt.value();
-
-                    auto client_id = pkg.Read<int32_t>();
-                    auto msg_type = pkg.Read<int32_t>();
-                    auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
-                    VUtils::String::FormatAscii(in_msg);
-
-                    if (in_msg == m_settings.rconPassword && !m_authRconSockets.contains(client_id)) {
-                        //if (CALL_EVENT("RconConnect", rconSocket) == EVENT_CANCEL)
-                            //continue;
-
-                        send_response(rconSocket, client_id, " ");
-                        m_authRconSockets[client_id] = rconSocket;
-                        LOG(INFO) << "Rcon authorized " << rconSocket->GetAddress();
-                    } else {
-                        send_response(rconSocket, -1, " ");
-                        rconSocket->Close(true);
-                        LOG(INFO) << "Rcon failed authorization " << rconSocket->GetAddress();
-                    }
-                    itr = m_unAuthRconSockets.erase(itr);
-                } else
-                    ++itr;
-            }
+            m_rconSockets.push_back(rconSocket);
+            LOG(INFO) << "Rcon accepted " << rconSocket->GetAddress();
+            CALL_EVENT(EVENT_HASH_RconConnect, rconSocket);
         }
 
         // Authed sockets
-        for (auto&& itr = m_authRconSockets.begin(); itr != m_authRconSockets.end();) {
-            auto &&rconSocket = itr->second;
-            if (!itr->second->Connected()) {
-                LOG(INFO) << "Authorized Rcon disconnected " << rconSocket->GetAddress();
-                CALL_EVENT("", rconSocket);
-                itr = m_authRconSockets.erase(itr);
+        for (auto&& itr = m_rconSockets.begin(); itr != m_rconSockets.end();) {
+            auto &&rconSocket = *itr;
+            if (!rconSocket->Connected()) {
+                LOG(INFO) << "Rcon disconnected " << rconSocket->GetAddress();
+                CALL_EVENT(EVENT_HASH_RconDisconnect, rconSocket);
+                itr = m_rconSockets.erase(itr);
             } else {
                 rconSocket->Update();
-                while (auto opt = rconSocket->Recv()) {
-                    auto &&pkg = opt.value();
 
-                    pkg.Read<int32_t>(); // dummy client id
-                    pkg.Read<int32_t>(); // dummy type
-                    auto in_msg = std::string((char *) pkg.m_stream.Remaining().data());
-                    VUtils::String::FormatAscii(in_msg);
+                // receive the msg not pkg
+                while (auto opt = rconSocket->RecvMsg()) {
+                    auto &&msg = opt.value();
+                    auto args = VUtils::String::Split(msg.msg, " ");
+                    if (args.empty())
+                        continue;
 
-                    // Global message handler
-                    CALL_EVENT(EVENT_HASH_RconIn, in_msg);
-                    // Specific message handler
-                    //CALL_EVENT(EVENT_HASH_RconIn ^ EVENT_HASH_POST, in_msg);
+                    LOG(INFO) << "Got command " << msg.msg;
 
-                    std::string out_msg = " ";
+                    HASH_t cmd = __H(args[0]);
 
-                    // Ideas for dynamic high-performance command parser:
-                    // robin hood map to contain lowercase commands as keys
-                    // map will contain functions with args ( client id )
-                    // rcon is not secure anyway... not much should be inputted here
+                    // Lua global handler
+                    CALL_EVENT(EVENT_HASH_RconIn, rconSocket, args);
 
-                    LOG(INFO) << "Got command " << in_msg;
+                    // Lua specific handler
+                    CALL_EVENT(EVENT_HASH_RconIn ^ cmd, rconSocket, args);
 
-                    auto args(VUtils::String::Split(in_msg, " "));
 
-                    if ("ban" == args[0] && args.size() == 2) {
-                        m_banned.insert(std::string(args[1]));
-                        out_msg = "Banned " + std::string(args[1]);
-                    } else if ("kick" == args[0] && args.size() == 2) {
+
+                    if ("ban" == args[0] && args.size() >= 2) {
+                        auto&& pair = m_banned.insert(std::string(args[1]));
+                        if (pair.second)
+                            rconSocket->SendMsg("Banned " + std::string(args[1]));
+                        else
+                            rconSocket->SendMsg(std::string(args[1]) + " is already banned");
+                    } else if ("kick" == args[0] && args.size() >= 2) {
                         auto id = (OWNER_t) std::stoll(std::string(args[1]));
                         auto peer = NetManager::GetPeer(id);
                         if (peer) {
                             peer->Kick();
-                            out_msg = "Kicked " + peer->m_name;
-                        } else
-                            out_msg = "Peer is not online";
+                            rconSocket->SendMsg("Kicked " + peer->m_name);
+                        }
+                        else {
+                            rconSocket->SendMsg(peer->m_name + " is not online");
+                        }
                     } else if ("list" == args[0]) {
-                        out_msg = "Player-list not yet supported";
+                        auto&& peers = NetManager::GetPeers();
+                        if (!peers.empty()) {
+                            for (auto&& peer : peers) {
+                                rconSocket->SendMsg(peer->m_name + " " + peer->m_rpc->m_socket->GetAddress()
+                                    + " " + peer->m_rpc->m_socket->GetHostName());
+                            }
+                        }
+                        else {
+                            rconSocket->SendMsg("There are no peers online");
+                        }
                     } else if ("stop" == args[0]) {
-                        out_msg = "Stopping server...";
+                        rconSocket->SendMsg("Stopping server...");
                         RunTaskLater([this](Task &) {
                             Terminate();
                         }, 5s);
                     } else if ("quit" == args[0] || "exit" == args[0]) {
-                        out_msg = "Closing RCON connection...";
+                        rconSocket->SendMsg("Closing Rcon connection...");
                         rconSocket->Close(true);
                     } else {
-                        out_msg = "Unknown command";
+                        rconSocket->SendMsg("Unknown command");
                     }
-
-                    send_response(rconSocket, itr->first, out_msg);
                 }
 
                 ++itr;
@@ -327,7 +283,7 @@ void VServer::Update(float delta) {
     }
 
 	NetManager::Update(delta);
-    CALL_EVENT("Update", delta);
+    CALL_EVENT(EVENT_HASH_Update, delta);
 	//VModManager::Event::OnUpdate(delta);
 }
 

@@ -20,11 +20,11 @@ private:
 
     ServerSettings m_settings;
 	const OWNER_t m_serverId; // generated at start
-    std::unique_ptr<RCONAcceptor> m_rcon;
-    std::vector<std::shared_ptr<RCONSocket>> m_unAuthRconSockets;
-    robin_hood::unordered_map<int32_t, std::shared_ptr<RCONSocket>> m_authRconSockets;
 
-	steady_clock::time_point m_startTime;
+    std::unique_ptr<RCONAcceptor> m_rcon;
+	std::list<std::shared_ptr<RCONSocket>> m_rconSockets;
+
+	const steady_clock::time_point m_startTime;
 	steady_clock::time_point m_prevUpdate;
 	steady_clock::time_point m_nowUpdate;
 
@@ -32,7 +32,9 @@ private:
 	void LoadFiles();
 
 public:
-    VServer() : m_serverId(VUtils::GenerateUID()) {}
+    VServer() 
+		: m_serverId(VUtils::GenerateUID()),
+		m_startTime(steady_clock::now()) {}
 
 	OWNER_t ID() const {
 		return m_serverId;

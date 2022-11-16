@@ -27,12 +27,36 @@ void RCONAcceptor::Listen() {
 std::optional<ISocket::Ptr> RCONAcceptor::Accept() {
     OPTICK_EVENT();
     std::scoped_lock<std::mutex> scope(m_mut);
-    auto &&pair = m_connected.begin();
-    if (pair == m_connected.end())
-        return std::nullopt;
-    auto socket = *pair;
-    auto itr = m_connected.erase(pair);
-    return socket;
+
+    // The objective is to validate any sockets in here before theyre actually accepted
+    // test m_connecting if theyve entered password correctly
+
+    for (auto&& itr = m_connected.begin(); 
+        itr != m_connected.end();) {
+
+        auto sock = (*itr);
+
+        if (sock->Connected()) {
+            // poll logins
+            if (auto&& opt = sock->RecvMsg()) {
+                auto&& msg = opt.value();
+                if (msg.msg == SERVER_SETTINGS.rconPassword)
+                    sock->m_id = msg.client;
+
+                sock->SendMsg(" ");
+
+                itr = m_connected.erase(itr);
+                if (sock->m_id != -1)
+                    return sock;
+                else
+                    sock->Close(true);
+            } else
+                ++itr;
+        } else 
+            itr = m_connected.erase(itr);
+    }
+
+    return std::nullopt;
 }
 
 
@@ -43,7 +67,9 @@ void RCONAcceptor::DoAccept() {
 
         if (!ec) {
             std::scoped_lock<std::mutex> scope(m_mut);
-            m_connected.insert(std::make_shared<RCONSocket>(std::move(socket)));
+            auto ptr(std::make_shared<RCONSocket>(std::move(socket)));
+            ptr->ReadPacketSize(); // start reading
+            m_connected.push_back(std::move(ptr)); // dont copy any shared ptrs
         }
         else if (ec.value() == asio::error::operation_aborted) {
             return;

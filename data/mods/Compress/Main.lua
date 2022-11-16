@@ -27,7 +27,7 @@ Valhalla.OnEvent("RpcIn", "PeerInfo", "POST", function(rpc, pkg)
 end)
 
 -- remove rpc references
-Valhalla.OnEvent("PeerDisconnect", function(peer)
+Valhalla.OnEvent("PeerQuit", function(peer)
     table.remove(peers, peer.rpc)
 end)
 
@@ -41,6 +41,5 @@ end)
 Valhalla.OnEvent("RpcIn", "CompressedZDOData", function(rpc, pkg)
     -- uncompress and forward the data
 
-    local _pkg = VUtils.Decompress(pkg)
-    --print(_pkg)
+    pkg.buf = VUtils.Decompress(pkg.buf)
 end)
