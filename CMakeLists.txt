@@ -125,7 +125,10 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-        src/RCONSocket.cpp src/RCONAcceptor.cpp  src/VUtilsString.cpp include/VUtilsString.h )
+    src/RCONSocket.cpp 
+    src/RCONAcceptor.cpp  
+    src/VUtilsString.cpp 
+ "src/GameObject.cpp" "src/GameObjectManager.cpp" "include/GameObjectManager.h" "include/VUtilsRandom.h" "src/VUtilsRandom.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

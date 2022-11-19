@@ -68,6 +68,8 @@ public:
 	[[nodiscard]] virtual int GetSendQueueSize() const = 0;
 };
 
+
+
 class SteamSocket : public ISocket {
 private:
 	std::deque<BYTES_t> m_sendQueue;
@@ -176,3 +178,5 @@ private:
     void WritePacketSize();
     void WritePacket(BYTES_t& bytes);
 };
+
+

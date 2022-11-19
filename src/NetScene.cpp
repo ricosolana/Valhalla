@@ -1,11 +1,16 @@
 #include "NetScene.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
+#include "GameObject.h"
 
 namespace NetScene {
     static constexpr int m_maxCreatedPerFrame = 10;
     static constexpr int m_maxDestroyedPerFrame = 20;
     static constexpr float m_createDestroyFps = 30;
+
+	// Holds ready to instantiate prefabs as template-like objects
+	// 
+	std::vector<TODO GameObject> m_prefabs;
 
     robin_hood::unordered_map<HASH_t, GameObject> m_namedPrefabs;
 
@@ -24,11 +29,10 @@ namespace NetScene {
 
 	bool IsPrefabZDOValid(ZDO *zdo);
 	GameObject CreateObject(ZDO *zdo);
-	bool InLoadingScreen();
 	void CreateObjects(std::vector<ZDO*> currentNearObjects, std::vector<ZDO*> &currentDistantObjects);
-	void CreateObjectsSorted(std::vector<ZDO*> currentNearObjects, int maxCreatedPerFrame, int &created);
+	void CreateObjectsSorted(std::vector<ZDO*> currentNearObjects, int maxCreatedPerFrame);
 	static int ZDOCompare(ZDO *x, ZDO *y);
-	void CreateDistantObjects(std::vector<ZDO*> objects, int maxCreatedPerFrame, int &created);
+	void CreateDistantObjects(std::vector<ZDO*> objects, int maxCreatedPerFrame);
 	void OnZDODestroyed(ZDO *zdo);
 	void RemoveObjects(std::vector<ZDO*> &currentNearObjects, std::vector<ZDO*> &currentDistantObjects);
 	void CreateDestroyObjects();
@@ -41,14 +45,14 @@ namespace NetScene {
 		LOG(INFO) << "m_prefabs:";
 		for (auto &&gameObject : m_prefabs) {
 			LOG(INFO) << gameObject.name + ", " + gameObject.name.GetStableHashCode();
-			m_namedPrefabs.Add(gameObject.name.GetStableHashCode(), gameObject);
+			m_namedPrefabs[VUtils::String::GetStableHashCode(gameObject.name)] = gameObject;
 		}
-		ZLog.Log("m_nonNetViewPrefabs:");
-		foreach(GameObject gameObject2 in this.m_nonNetViewPrefabs)
-		{
-			ZLog.Log(gameObject2.name + ", " + gameObject2.name.GetStableHashCode());
-			this.m_namedPrefabs.Add(gameObject2.name.GetStableHashCode(), gameObject2);
-		}
+		//LOG(INFO) << "m_nonNetViewPrefabs:";
+		//for (auto&& gameObject2 : m_nonNetViewPrefabs)
+		//{
+		//	LOG(INFO) << gameObject2.name + ", " + gameObject2.name.GetStableHashCode();
+		//	m_namedPrefabs[VUtils::String::GetStableHashCode(gameObject2.name)] = gameObject2;
+		//}
 		ZDOMan instance = ZDOMan.instance;
 		m_onZDODestroyed = (Action<ZDO>)Delegate.Combine(instance.m_onZDODestroyed, new Action<ZDO>(this.OnZDODestroyed));
 		NetRouteManager::Register("SpawnObject", RPC_SpawnObject);
@@ -61,11 +65,10 @@ namespace NetScene {
 				UnityEngine.Object.Destroy(keyValuePair.Value.gameObject);
 			}
 		}
-		m_instances.Clear();
-		base.enabled = false;
+		m_instances.clear();
 	}
 
-	void AddInstance(ZDO *zdo, ZNetView nview) {
+	void AddInstance(ZDO *zdo, ZNetView *nview) {
 		m_instances[zdo] = nview;
 	}
 
@@ -232,33 +235,22 @@ namespace NetScene {
 		return result;
 	}
 
-	//bool InLoadingScreen() {
-	//	return Player.m_localPlayer == null || Player.m_localPlayer.IsTeleporting();
-	//}
-
 	void CreateObjects(std::vector<ZDO*> &currentNearObjects, std::vector<ZDO*> &currentDistantObjects) {
-		int maxCreatedPerFrame = 10;
-        // TODO client only
-		if (InLoadingScreen()) {
-			maxCreatedPerFrame = 100;
-		}
+		int maxCreatedPerFrame = 100;
+
 		int frameCount = Time.frameCount;
 		for (auto&& pair : m_instances) {
             auto zdo = pair.first;
 			zdo.m_tempCreateEarmark = frameCount;
 		}
-		int num = 0;
-		CreateObjectsSorted(currentNearObjects, maxCreatedPerFrame, ref num);
-		CreateDistantObjects(currentDistantObjects, maxCreatedPerFrame, ref num);
+		CreateObjectsSorted(currentNearObjects, maxCreatedPerFrame);
+		CreateDistantObjects(currentDistantObjects, maxCreatedPerFrame);
 	}
 
-	void CreateObjectsSorted(std::vector<ZDO> &currentNearObjects, int maxCreatedPerFrame, ref int created) {
-		if (!ZoneSystem::IsActiveAreaLoaded())
-			return;
-
+	void CreateObjectsSorted(std::vector<ZDO*> &currentNearObjects, int maxCreatedPerFrame) {
 		m_tempCurrentObjects2.clear();
 		int frameCount = Time.frameCount;
-        // TODO client only?
+
 		Vector3 referencePosition = NetManager::GetReferencePosition();
 		for (auto zdo : currentNearObjects)
 		{
@@ -267,7 +259,7 @@ namespace NetScene {
 				m_tempCurrentObjects2.Add(zdo);
 			}
 		}
-		int num = Mathf.Max(m_tempCurrentObjects2.Count / 100, maxCreatedPerFrame);
+		int num = std::max(m_tempCurrentObjects2.size() / 100, maxCreatedPerFrame);
 		m_tempCurrentObjects2.Sort(new Comparison<ZDO>(ZNetScene.ZDOCompare));
 		for (auto zdo2 : m_tempCurrentObjects2) {
 			if (CreateObject(zdo2)) {
@@ -293,7 +285,7 @@ namespace NetScene {
 		return type.CompareTo((int)x->Type());
 	}
 
-	void CreateDistantObjects(std::vector<ZDO*> objects, int maxCreatedPerFrame, ref int created) {
+	void CreateDistantObjects(std::vector<ZDO*> objects, int maxCreatedPerFrame) {
 		if (created > maxCreatedPerFrame)
 			return;
 
@@ -362,7 +354,7 @@ namespace NetScene {
 		RemoveObjects(m_tempCurrentObjects, m_tempCurrentDistantObjects);
 	}
 
-	void RPC_SpawnObject(long spawner, Vector3 pos, Quaternion rot, int prefabHash) {
+	void RPC_SpawnObject(OWNER_t spawner, Vector3 pos, Quaternion rot, HASH_t prefabHash) {
 		GameObject prefab = GetPrefab(prefabHash);
 		if (!prefab) {
 			LOG(INFO) << "Missing prefab " << prefabHash;

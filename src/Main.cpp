@@ -13,6 +13,7 @@
 #include "VUtils.h"
 #include "VUtilsResource.h"
 #include "VServer.h"
+#include "VUtilsRandom.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -73,6 +74,13 @@ int main(int argc, char **argv) {
     signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
+
+    for (float i = 0; i < 2; i += .13f)
+    {
+        LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
+    }
+
+    return 0;
 
 #ifndef _DEBUG
     try {

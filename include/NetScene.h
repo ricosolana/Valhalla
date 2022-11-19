@@ -29,12 +29,16 @@ namespace NetScene {
 
 	void Update();
 
+	// TODO: move to ZoneSystem
 	bool InActiveArea(const Vector2i &zone, const Vector3 &refPoint);
 
+	// TODO: move to ZoneSystem
 	bool InActiveArea(const Vector2i &zone, const Vector2i &refCenterZone);
 
+	// TODO: move to ZoneSystem
 	bool OutsideActiveArea(const Vector3 &point);
 
+	// TODO: move to ZoneSystem
 	bool OutsideActiveArea(const Vector3 &point, const Vector3 &refPoint);
 
 	bool HaveInstanceInSector(const Vector2i &sector);
