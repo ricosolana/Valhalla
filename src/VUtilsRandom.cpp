@@ -2,6 +2,27 @@
 #include <limits>
 #include "VUtilsRandom.h"
 
+// It seems someone already had a random implementation made
+// This doesnt bother me because this part was relatively easy anyway
+//  https://gist.github.com/macklinb/a00be6b616cbf20fa95e4227575fe50b
+// My thread post
+//  https://forum.unity.com/threads/algorithm-implementations-of-random-and-perlinnoise.1348790/
+
+// I primarily used Ghidra along with DnSpy to understand function signatures and what data was passed
+//  back and forth
+// This helped a fuckton
+//  https://reverseengineering.stackexchange.com/questions/29393/is-there-a-way-to-find-the-implementation-of-methods-with-methodimploptions-inte
+
+// I searched for several broad strings within the .rdata portion of the .dll
+// Got references to that string, which pointed to a string table containing CSharp method names and native functions
+// Find wherever the string tale is referenced (should be within a func that binds names to funcs)
+// Get the offset into the string table for that reference, now add the offset into the func table
+
+// 
+// PerlinNoise was the harder part
+// But I still pulled it off :)
+
+
 namespace VUtils::Random {
 
 	Seed_t m_seed;
@@ -10,43 +31,57 @@ namespace VUtils::Random {
 		int32_t* seed = (int32_t*) &m_seed;
 
 		seed[0] = param_1;
-
-		int32_t mut = param_1 * 0x6c078965 + 1;
-		seed[1] = mut;
-		mut *= 0x6c078965 + 1;
-		seed[2] = mut;
-		seed[3] = mut * 0x6c078965 + 1;
+		seed[1] = seed[0] * 0x6c078965 + 1;
+		seed[2] = seed[1] * 0x6c078965 + 1;
+		seed[3] = seed[2] * 0x6c078965 + 1;
 	}
 
 	Seed_t GetSeed() {
 		return m_seed;
 	}
 
+    static uint32_t Shuffle() {
+        uint32_t* seed = (uint32_t*)&m_seed;
+        uint32_t mut1 = (seed[0] << 11) ^ seed[0];
+
+        seed[0] = seed[1];
+        seed[1] = seed[2];
+        seed[2] = seed[3];
+        mut1 = (((seed[3] >> 11) ^ mut1) >> 8) ^ seed[3] ^ mut1;
+        seed[3] = mut1;
+
+        return mut1;
+    }
+
 	float Range(float minInclude, float maxExclude) {
-		uint32_t* seed = (uint32_t*)&m_seed;
-		uint32_t mut = (seed[0] << 11) ^ seed[0];
-		mut = ((((seed[3] >> 11) ^ mut) >> 8) ^ seed[3]) ^ mut;
-
-		// shift the bits
-		seed[0] = seed[1];
-		seed[1] = seed[2];
-		seed[2] = seed[3];
-		seed[3] = mut;
-
-		float fVar4 = ((float) (uint64_t)(mut & 0x7fffff)) * 1.192093e-07f;
-		return ((1.0f - fVar4) * maxExclude) + (fVar4 * minInclude);
+        float r = (float)(uint64_t)(Shuffle() & 0x7fffff) * 1.192093e-07;
+        return (1.0f - r) * maxExclude + r * minInclude;
 	}
+
+    int32_t Range(int32_t minInclude, uint32_t maxExclude) {
+        uint32_t* seed = (uint32_t*)&m_seed;
+
+        if (minInclude < maxExclude) {
+            return minInclude + Shuffle() % (uint32_t)(maxExclude - minInclude);
+        }
+
+        if (maxExclude < minInclude) {
+            minInclude = minInclude - Shuffle() % (uint32_t)(minInclude - maxExclude);
+        }
+        return minInclude;
+    }
+
 
 
 
     // Ease-in-out function
     // t: [0, 1]
     // https://www.desmos.com/calculator/tgpfii21pt
-    static double myfade(double t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
-    static double mylerp(double t, double a, double b) { return a + t * (b - a); }
-    static double mygrad(int hash, double x, double y) {
+    static double myfade(float t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
+    static double mylerp(float t, float a, float b) { return a + t * (b - a); }
+    static double mygrad(int hash, float x, float y) {
         int h = hash & 15;                      // CONVERT LO 4 BITS OF HASH CODE
-        double u = h < 8 ? x : y,                 // INTO 12 GRADIENT DIRECTIONS.
+        float u = h < 8 ? x : y,                 // INTO 12 GRADIENT DIRECTIONS.
             v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
@@ -79,12 +114,6 @@ namespace VUtils::Random {
         49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,
         138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
     };
-
-    using uint = uint32_t;
-    using ulonglong = uint64_t;
-    using longlong = int64_t;
-    using undefined = uint8_t;
-    using undefined4 = uint32_t;
 
     /*
     undefined8 PerlinNoise(ulonglong bytesX, ulonglong bytesY)
@@ -306,34 +335,6 @@ namespace VUtils::Random {
         res /= 1.483f;
 
         return res;
-
-        // End of gradient fn, then Lerp
-        //x = ((fVar4 + f_sub1X_eqY) - (fVar5 + x)) * fadeOutputX + fVar5 + x;
-        // 
-        // This is the x-faded lerp
-        //x = lerp(fadeOutputX, fVar5 + x, fVar4 + f_sub1X_eqY);
-        
-        ////lerp()
-        //
-        //return 
-        //    SUB16_8(
-        //        CONCAT12_4(
-        //            SUB16_12(auVar1 >> 0x20),
-        //            ((((SUB16_4(auVar1) + fPostX) - (fVar3 + f_FadeInX_sub1Y)) * fadeOutputX
-        //        + fVar3 + f_FadeInX_sub1Y) - x) * myfade(fFadeInput2) + x));
-
-
-
-
-        //return lerp(v, lerp(u, grad(p[AA], x, y),           // AND ADD
-        //                               grad(p[BA], x - 1, y)),      // BLENDED
-        //                       lerp(u, grad(p[AB], x, y - 1),       // RESULTS
-        //                               grad(p[BB], x - 1, y - 1))), // FROM  8
-        //               lerp(v, lerp(u, grad(p[AA + 1], x, y),       // CORNERS
-        //                               grad(p[BA + 1], x - 1, y)),  // OF CUBE
-        //                       lerp(u, grad(p[AB + 1], x, y - 1),
-        //                               grad(p[BB + 1], x - 1, y - 1)));
-
     }
 
 

@@ -17,6 +17,11 @@ namespace VUtils::Random {
 
 	Seed_t GetSeed();
 
+	float Range(float minInclude, float maxExclude);
+	int32_t Range(int32_t minInclude, uint32_t maxExclude);
+
+
+
 	float PerlinNoise(float x, float y);
 
 }

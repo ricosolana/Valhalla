@@ -75,9 +75,21 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-    for (float i = 0; i < 2; i += .13f)
-    {
-        LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
+    //for (float i = 0; i < 2; i += .13f)
+    //{
+    //    LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
+    //}
+
+    VUtils::Random::SetSeed(69420);
+    auto seed = VUtils::Random::GetSeed();
+    //for (int i = 0; i < 5; i++) {
+    //    LOG(INFO) << "Rand [" << i << "]: "
+    //        << VUtils::Random::Range(0.0f, 420.0f);
+    //}
+
+    for (int i = 0; i < 5; i++) {
+        LOG(INFO) << "Rand [" << i << "]: "
+            << VUtils::Random::Range(0, 420);
     }
 
     return 0;
