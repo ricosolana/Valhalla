@@ -116,7 +116,7 @@ add_executable(${PROJECT_NAME}
     
     "src/ZoneSystem.cpp" 
     "src/Vector.cpp" 
-    #"src/WorldGenerator.cpp" # temporarily broken
+    "src/WorldGenerator.cpp" # temporarily broken
     "src/VUtilsMath.cpp"
     "src/NetObject.cpp" 
 
@@ -125,10 +125,13 @@ add_executable(${PROJECT_NAME}
     "src/objects/Beehive.cpp"
     #"src/NetScene.cpp" # temporarily broken
     "src/ChatManager.cpp"
-    src/RCONSocket.cpp 
-    src/RCONAcceptor.cpp  
-    src/VUtilsString.cpp 
- "src/GameObject.cpp" "src/GameObjectManager.cpp" "include/GameObjectManager.h" "include/VUtilsRandom.h" "src/VUtilsRandom.cpp")
+    "src/RCONSocket.cpp"
+    "src/RCONAcceptor.cpp"
+    "src/VUtilsString.cpp"
+    "src/GameObject.cpp"
+    "src/GameObjectManager.cpp"
+    "src/VUtilsRandom.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -25,7 +25,7 @@ namespace WorldGenerator {
 
 	float GetForestFactor(const Vector3& pos);
 
-	void GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
 
 	int GetSeed();
 

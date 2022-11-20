@@ -4,25 +4,32 @@
 // these are algorithms only, not steps, so shoo patent lawyers!
 
 #include "VUtils.h"
+#include "Vector.h"
 
 namespace VUtils::Random {
 
-	struct Seed_t {
-		int32_t data[4];
+	class State {
+	private:
+		int32_t m_seed[4];
+
+	private:
+		// Returns a random float from 0 to 1
+		float Next();
+
+		void Shuffle();
+
+	public:
+		State(int32_t seed);
+		State(const State& other); // copy construct
+
+		float Range(float minInclude, float maxExclude);
+		int32_t Range(int32_t minInclude, uint32_t maxExclude);
+
+		Vector2 GetRandomUnitCircle();
+
+		Vector3 OnUnitSphere();
+		Vector3 InsideUnitSphere();
 	};
-
-
-
-	void SetSeed(int32_t seed);
-
-	Seed_t GetSeed();
-
-	float Range(float minInclude, float maxExclude);
-	int32_t Range(int32_t minInclude, uint32_t maxExclude);
-
-
-
-	float PerlinNoise(float x, float y);
 
 }
 

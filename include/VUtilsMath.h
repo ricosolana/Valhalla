@@ -58,4 +58,10 @@ namespace VUtils::Math {
 
 	// Fast inverse square root
 	float FISQRT(float n);
+
+
+
+
+	// Perlin noise
+	float PerlinNoise(float x, float y);
 }
