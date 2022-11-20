@@ -33,12 +33,13 @@ namespace VUtils::Random {
 	}
 
     State::State(const State& other) {
-        std::copy(other.m_seed,
-            other.m_seed + sizeof(other.m_seed),
-            this->m_seed);
+        m_seed[0] = other.m_seed[0];
+        m_seed[1] = other.m_seed[1];
+        m_seed[2] = other.m_seed[2];
+        m_seed[3] = other.m_seed[3];
     }
 
-    void State::Shuffle() {
+    uint32_t State::NextInt() {
         uint32_t mut1 = (m_seed[0] << 11) ^ m_seed[0];
 
         m_seed[0] = m_seed[1];
@@ -46,27 +47,26 @@ namespace VUtils::Random {
         m_seed[2] = m_seed[3];
         mut1 = (((m_seed[3] >> 11) ^ mut1) >> 8) ^ m_seed[3] ^ mut1;
         m_seed[3] = mut1;
+
+        return mut1;
     }
 
-    float State::Next() {
-        Shuffle();
-        return (float)m_seed[3] * 1.192093e-07;
+    float State::NextFloat() {
+        return ((float)(NextInt() & 0x7FFFFF)) * 1.192093e-07;
     }
 
 	float State::Range(float minInclude, float maxExclude) {
-        float r = Next();
+        float r = NextFloat();
         return (1.0f - r) * maxExclude + r * minInclude;
 	}
 
-    int32_t State::Range(int32_t minInclude, uint32_t maxExclude) {
-        if (minInclude != maxExclude) {
-            Shuffle();
-            if (minInclude < maxExclude) {
-                minInclude += (m_seed[3] % (uint32_t)(maxExclude - minInclude));
-            }
-            else {
-                minInclude += -(m_seed[3] % (uint32_t)(minInclude - maxExclude));
-            }
+    int32_t State::Range(int32_t minInclude, int32_t maxExclude) {
+        if (minInclude > maxExclude)
+            std::swap(minInclude, maxExclude);
+
+        uint32_t diff = maxExclude - minInclude;
+        if (diff) {
+            return minInclude + (NextInt() % diff);
         }
         return minInclude;
     }
@@ -81,7 +81,7 @@ namespace VUtils::Random {
         float ze = Range(0.f, 1.f);
         float d = sqrtf(ze);
 
-        return Vector2(y * d, x * d);
+        return Vector2(x * d, y * d);
         /*
         uint32_t uVar1;
         uint32_t* seed;
@@ -115,7 +115,7 @@ namespace VUtils::Random {
 
         float vecX = sqrtf(1.0 - dist * dist);
 
-        return Vector3(cosf(rad) * vecX, dist, sinf(rad) * vecX);
+        return Vector3(cosf(rad) * vecX, sinf(rad) * vecX, dist);
     }
 
     Vector3 State::InsideUnitSphere() {
@@ -123,7 +123,7 @@ namespace VUtils::Random {
         auto vec = OnUnitSphere();
 
         // then bringing that point in by a random distance
-        float dist = powf(Next(), 1.f / 3.f);
+        float dist = powf(NextFloat(), 1.f / 3.f);
         return vec * dist;
     }
 

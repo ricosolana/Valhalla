@@ -80,16 +80,34 @@ int main(int argc, char **argv) {
     //    LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
     //}
 
-    VUtils::Random::SetSeed(69420);
-    auto seed = VUtils::Random::GetSeed();
-    //for (int i = 0; i < 5; i++) {
-    //    LOG(INFO) << "Rand [" << i << "]: "
-    //        << VUtils::Random::Range(0.0f, 420.0f);
-    //}
-
-    for (int i = 0; i < 5; i++) {
-        LOG(INFO) << "Rand [" << i << "]: "
-            << VUtils::Random::Range(0, 420);
+    VUtils::Random::State state(69420);
+    LOG(INFO) << ("Random.Range (0.0f, 420.f)");
+    for (int i = 0; i < 3; i++)
+    {
+        LOG(INFO) << (state.Range(0.0f, 420.0f));
+    }
+    LOG(INFO) << ("Random.Range (0, 420)");
+    for (int i = 0; i < 3; i++)
+    {
+        LOG(INFO) << (state.Range(0, 420));
+    }
+    LOG(INFO) << ("Random.insideUnitCircle");
+    for (int i = 0; i < 2; i++)
+    {
+        auto vec = state.GetRandomUnitCircle();
+        LOG(INFO) << vec.x << " " << vec.y;
+    }
+    LOG(INFO) << ("Random.insideUnitSphere");
+    for (int i = 0; i < 2; i++)
+    {
+        auto vec = state.InsideUnitSphere();
+        LOG(INFO) << vec.x << " " << vec.y << " " << vec.z;
+    }
+    LOG(INFO) << ("Random.onUnitSphere");
+    for (int i = 0; i < 2; i++)
+    {
+        auto vec = state.OnUnitSphere();
+        LOG(INFO) << vec.x << " " << vec.y << " " << vec.z;
     }
 
     return 0;
