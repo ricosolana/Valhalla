@@ -25,12 +25,12 @@
 
 namespace VUtils::Random {
 
-	State::State(int32_t seed) {
-		m_seed[0] = seed;
-		m_seed[1] = m_seed[0] * 0x6c078965 + 1;
-		m_seed[2] = m_seed[1] * 0x6c078965 + 1;
-		m_seed[3] = m_seed[2] * 0x6c078965 + 1;
-	}
+    State::State(int32_t seed) {
+        m_seed[0] = seed;
+        m_seed[1] = m_seed[0] * 0x6c078965 + 1;
+        m_seed[2] = m_seed[1] * 0x6c078965 + 1;
+        m_seed[3] = m_seed[2] * 0x6c078965 + 1;
+    }
 
     State::State(const State& other) {
         m_seed[0] = other.m_seed[0];
@@ -55,10 +55,10 @@ namespace VUtils::Random {
         return ((float)(NextInt() & 0x7FFFFF)) * 1.192093e-07;
     }
 
-	float State::Range(float minInclude, float maxExclude) {
+    float State::Range(float minInclude, float maxExclude) {
         float r = NextFloat();
         return (1.0f - r) * maxExclude + r * minInclude;
-	}
+    }
 
     int32_t State::Range(int32_t minInclude, int32_t maxExclude) {
         if (minInclude > maxExclude)
