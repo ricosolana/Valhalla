@@ -3,7 +3,8 @@
 #include "World.h"
 #include "VUtils.h"
 #include "Vector.h"
-#include "Heightmap.h"
+#include "HeightMap.h"
+#include "VUtilsRandom.h"
 
 namespace WorldGenerator {
 

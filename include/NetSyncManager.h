@@ -14,7 +14,7 @@ namespace NetSyncManager {
 	void OnNewPeer(NetPeer *peer);
     void OnPeerQuit(NetPeer *peer);
 
-
+    void Init();
 
 	//void ShutDown();
 

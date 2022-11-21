@@ -9,6 +9,7 @@
 #include "ServerSettings.h"
 #include "NetManager.h"
 #include "ChatManager.h"
+#include "NetSyncManager.h"
 
 using namespace std::chrono;
 
@@ -283,6 +284,7 @@ void VServer::Update(float delta) {
     }
 
 	NetManager::Update(delta);
+    NetSyncManager::Update(delta);
     CALL_EVENT(EVENT_HASH_Update, delta);
 	//VModManager::Event::OnUpdate(delta);
 }

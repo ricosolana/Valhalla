@@ -4,9 +4,13 @@
 #include "NetPeer.h"
 
 namespace ZoneSystem {
+    static constexpr float WATER_LEVEL = 30;
+
 	void OnNewPeer(NetPeer *peer);
 
 	Vector2i GetZoneCoords(const Vector3 &point);
+
+    Vector3 GetZonePos(const Vector2i& id);
 
 	void Init();
 

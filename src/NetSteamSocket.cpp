@@ -83,7 +83,7 @@ int SteamSocket::GetSendQueueSize() const {
 			num += (int)bytes.size();
 		}
 		SteamNetConnectionRealTimeStatus_t rt{};
-		if (SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
+		if (SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
 			num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
 		}
 

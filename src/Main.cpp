@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
     //    LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
     //}
 
+    /*
     VUtils::Random::State state(69420);
     LOG(INFO) << ("Random.Range (0.0f, 420.f)");
     for (int i = 0; i < 3; i++)
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
         LOG(INFO) << vec.x << " " << vec.y << " " << vec.z;
     }
 
-    return 0;
+    return 0;*/
 
 #ifndef _DEBUG
     try {

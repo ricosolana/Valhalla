@@ -116,7 +116,7 @@ add_executable(${PROJECT_NAME}
     
     "src/ZoneSystem.cpp" 
     "src/Vector.cpp" 
-    #"src/WorldGenerator.cpp" # temporarily broken
+    "src/WorldGenerator.cpp" # temporarily broken
     "src/VUtilsMath.cpp"
     "src/NetObject.cpp" 
 

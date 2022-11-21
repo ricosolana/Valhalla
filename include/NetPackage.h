@@ -204,55 +204,15 @@ public:
 
     template <typename T, typename... Types>
     static NetPackage Serialize(T var1, const Types&... var2) {
-        NetPackage pkg;
+        NetPackage pkg((sizeof(var1) + ... + sizeof(Types)));
+
         _Serialize(pkg, var1, var2...);
         return pkg;
     }
 
 
-
-    /*
-    // Final variadic parameter
-    template<class F>
-    static auto Deserialize(NetPackage &pkg) {
-        return std::tuple(pkg.Read<F>());
-    }
-
-    // Reads parameters from a package
-    // The marker will be modified
-    template<class F, class S, class...R>
-    static auto Deserialize(NetPackage &pkg) {
-        auto a(Deserialize<F>(pkg));
-        std::tuple<S, R...> b = Deserialize<S, R...>(pkg);
-        return std::tuple_cat(a, b);
-    }*/
-
-
-
-    // TODO this is new
-    // blank
-    //template<class... T>
-    //static std::tuple<T...> Deserialize(NetPackage& pkg);
-
     // https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
     // empty
-
-/*
-    //template<> //   doesnt work
-    static auto Deserialize(NetPackage&) {
-        //return std::make_tuple(); //std::tuple{};
-        return std::tuple{};
-    }*/
-
-    //template<class ... Types> std::enable_if_t<sizeof...(Types) == 0>
-    //static Deserialize(NetPackage &pkg) {}
-
-    // this works
-    //template<class...Ts, class NP>
-    //static auto Deserialize(NP& pkg)
-    //{
-    //    return std::tuple<Ts...>{pkg.template Read<Ts>()...};
-    //}
 
     // this is better
     template<class...Ts, class NP>
@@ -261,42 +221,4 @@ public:
         return {pkg.template Read<Ts>()...};
     }
 
-    // must unpack
-    // how to unpack types in place without a, b unpacking
-    //template<class T, class... Types>
-    //template<class T, class... Types>
-    //static auto Deserialize(NetPackage& pkg) {
-    //    auto t = std::tuple(pkg.Read<T>());
-    //    if constexpr (sizeof...(Types)) {
-    //        return std::tuple_cat(t, Deserialize<Types...>(pkg));
-    //    } else {
-    //        return t;
-    //    }
-    //}
-
-
-
-    /*
-    template <class... T>
-    struct DeserializeImpl;
-
-    template<>
-    struct DeserializeImpl<> {
-        auto operator()(NetPackage& pkg) const {
-            return std::tuple{};
-        }
-    };
-
-    template<class T, class ... Types>
-    struct DeserializeImpl<T, Types...> {
-        auto operator()(NetPackage& pkg) const {
-            return std::tuple_cat(
-                    std::make_tuple(pkg.Read<T>()), DeserializeImpl<Types...>()(pkg));
-        }
-    };
-
-    template<class... Types>
-    static auto Deserialize(NetPackage& pkg) {
-        return DeserializeImpl<Types...>()(pkg);
-    }*/
 };

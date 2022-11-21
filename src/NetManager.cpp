@@ -267,13 +267,8 @@ namespace NetManager {
             }
         }
 
-
-        NetPeer* peer;
-        {
-            auto ptr(std::make_unique<NetPeer>(std::unique_ptr<NetRpc>(rpc), uuid, name));
-            peer = ptr.get();
-            m_peers.push_back(std::move(ptr));
-        }
+        NetPeer* peer = new NetPeer(std::unique_ptr<NetRpc>(rpc), uuid, name);
+        m_peers.push_back(std::unique_ptr<NetPeer>(peer));
 
 		peer->m_pos = pos;
 
@@ -287,7 +282,7 @@ namespace NetManager {
 
 		SendPeerInfo(rpc);
 
-        //NetSyncManager::OnNewPeer(peer.get());
+        NetSyncManager::OnNewPeer(peer);
 		NetRouteManager::OnNewPeer(peer);
 		ZoneSystem::OnNewPeer(peer);
 	}
@@ -366,6 +361,7 @@ namespace NetManager {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					LOG(INFO) << "Cleaning up peer";
 					CALL_EVENT(EVENT_HASH_PeerQuit, itr->get());
+                    NetSyncManager::OnPeerQuit(itr->get());
 					itr = m_peers.erase(itr);
 				}
 				else {

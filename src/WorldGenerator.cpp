@@ -1,5 +1,6 @@
 #include "WorldGenerator.h"
 #include "VUtilsRandom.h"
+#include "HashUtils.h"
 
 namespace WorldGenerator {
 
@@ -14,7 +15,7 @@ namespace WorldGenerator {
 
 		River() {}
 
-		River(const River& other) = delete;
+		//River(const River& other) = delete;
 	};
 
 	struct RiverPoint {
@@ -28,7 +29,7 @@ namespace WorldGenerator {
 			w2 = p_w * p_w;
 		}
 
-		RiverPoint(const RiverPoint& other) = delete; // copy is deleteed because its not needed
+		//RiverPoint(const RiverPoint& other) = delete; // copy is deleteed because its not needed
 	};
 
 	static constexpr float m_waterTreshold = 0.05f;
@@ -46,7 +47,7 @@ namespace WorldGenerator {
 	std::vector<Vector2> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
-	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> m_riverPoints;
+	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
@@ -124,15 +125,17 @@ namespace WorldGenerator {
 	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1);
 	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit);
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-	void AddRiverPoint(const robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2& p, float r /* River river unused*/);
-	void AddRiverPoint(const robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
+    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints,
+                       const Vector2& p,
+                       float r);
+    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
 	bool InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r);
 	Vector2i GetRiverGrid(float wx, float wy);
 	void GetRiverWeight(float wx, float wy, float& weight, float& width);
 	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
 	void GenerateBiomes();
 	float WorldAngle(float wx, float wy);
-	float GetBaseHeight(float wx, float wy /*bool menuTerrain*/);
+	float GetBaseHeight(float wx, float wy);
 	float AddRivers(float wx, float wy, float h);
 	float GetHeight(float wx, float wy);
 	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
@@ -144,7 +147,7 @@ namespace WorldGenerator {
 	float GetEdgeHeight(float wx, float wy);
 	float GetOceanHeight(float wx, float wy);
 	float BaseHeightTilt(float wx, float wy);
-	float GetSnowMountainHeight(float wx, float wy, bool menu);
+	float GetSnowMountainHeight(float wx, float wy);
 	float GetDeepNorthHeight(float wx, float wy);
 
 
@@ -421,7 +424,7 @@ namespace WorldGenerator {
 
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers) {
 		//Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
-		robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> dictionary;
+		robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher> dictionary;
 		for (auto&& river : rivers) {
 			float num = river.widthMin / 8;
 			Vector2 normalized = (river.p1 - river.p0).Normalized();
@@ -456,7 +459,6 @@ namespace WorldGenerator {
 			auto&& find = m_riverPoints.find(keyValuePair.first);
 
 			if (find != m_riverPoints.end()) {
-				//std::vector<RiverPoint> list(find->second);
 				auto list(find->second);
 				list.insert(list.end(), keyValuePair.second.begin(), keyValuePair.second.end());
 				find->second = list; // assign to the iterator instead of rehashing the entire thing
@@ -470,9 +472,9 @@ namespace WorldGenerator {
 		}
 	}
 
-	void AddRiverPoint(const robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
+	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints,
 		const Vector2& p,
-		float r /* River river unused*/)
+		float r)
 	{
 		Vector2i riverGrid = GetRiverGrid(p.x, p.y);
 		int num = ceil(r / riverGridSize); // Mathf.CeilToInt(r / 64);
@@ -488,7 +490,7 @@ namespace WorldGenerator {
 		}
 	}
 
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
+	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
 		auto&& find = riverPoints.find(grid);
 		if (find != riverPoints.end()) {
 			find->second.push_back({ p, r });
@@ -899,7 +901,7 @@ namespace WorldGenerator {
 		case Heightmap::Biome::Swamp | Heightmap::Biome::Mountain: // (Heightmap::Biome)3:
 			break; // why is this here?
 		case Heightmap::Biome::Mountain:
-			return GetSnowMountainHeight(wx, wy, false) * 200.f;
+			return GetSnowMountainHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::BlackForest:
 			return GetForestHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::Plains:
@@ -940,7 +942,7 @@ namespace WorldGenerator {
 		Vector3 a = center;
 		for (int i = 0; i < num; i++)
 		{
-			Vector2 vector = state.insideUnitCircle * radius;
+			Vector2 vector = state.GetRandomUnitCircle() * radius;
 			Vector3 vector2 = center + Vector3(vector.x, 0, vector.y);
 			float height = GetHeight(vector2.x, vector2.z);
 			if (height < num3)

@@ -51,7 +51,7 @@ namespace NetSyncManager {
 
 	// forward declararing
 
-	void ResetSectorArray();
+	//void ResetSectorArray();
 	SyncPeer* GetPeer(OWNER_t uuid);
 	SyncPeer* GetPeer(NetPeer *netPeer);
 	SyncPeer* GetPeer(NetRpc *rpc);
@@ -99,7 +99,7 @@ namespace NetSyncManager {
 	static constexpr int SECTOR_WIDTH = 512;
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
-	std::vector<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
+	std::list<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
 
 
 
@@ -122,7 +122,7 @@ namespace NetSyncManager {
 	// Increments indefinitely for new ZDO id
 	uint32_t m_nextUid = 1;
 
-	std::vector<NetSync*> m_tempToSync;
+	//std::vector<NetSync*> m_tempToSync;
 	std::vector<NetSync*> m_tempToSyncDistant;
 	std::vector<NetSync*> m_tempNearObjects;
 	std::vector<NetID> m_tempRemoveList;
@@ -178,24 +178,28 @@ namespace NetSyncManager {
 
 	std::unique_ptr<SaveData> m_saveData;
 
+    void Init() {
+        NetRouteManager::Register(Routed_Hash::DestroyZDO, &RPC_DestroyZDO);
+        NetRouteManager::Register(Routed_Hash::RequestZDO, &RPC_RequestZDO);
+        //ResetSectorArray();
+    }
 
-
-	void ResetSectorArray() {
-		for (auto&& sector : m_objectsBySector)
-			sector.clear();
-		//m_objectsBySector = new List<ZDO>[this.m_width * this.m_width];
-		m_objectsByOutsideSector.clear();
-	}
+	//void ResetSectorArray() {
+	//	for (auto&& sector : m_objectsBySector)
+	//		sector.clear();
+	//	//m_objectsBySector = new List<ZDO>[this.m_width * this.m_width];
+	//	m_objectsByOutsideSector.clear();
+	//}
 
 	void Stop() {
 		//ZDOPool.Release(m_objectsByID);
 		m_objectsByID.clear();
-		m_tempToSync.clear();
+		//m_tempToSync.clear();
 		m_tempToSyncDistant.clear();
 		m_tempNearObjects.clear();
 		m_tempRemoveList.clear();
 		m_peers.clear();
-		ResetSectorArray();
+		//ResetSectorArray();
 	}
 
 	void PrepareSave() {
@@ -220,7 +224,7 @@ namespace NetSyncManager {
 		auto num = reader.Read<uint32_t>();
 		const auto num2 = reader.Read<int32_t>();
 		m_objectsByID.clear();
-		ResetSectorArray();
+		//ResetSectorArray();
 
 		LOG(INFO) << "Loading " << num2 << " zdos, data version:" << version;
 
@@ -362,23 +366,47 @@ namespace NetSyncManager {
 		
 		SendZDOToPeers2(dt);
         SendDestroyedZDOs();
+
+        // Send ZDOS:
+        //PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
+        //    for (auto&& peer : m_peers)
+        //        SendZDOs(peer.get(), false);
+        //});
 	}
 
 	void SendZDOToPeers2(float dt) {
-        PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
-            for (auto&& peer : m_peers)
-            SendZDOs(peer.get(), false);
-        });
-
-
 		if (m_peers.empty())
 			return;
 
-        static int m_nextSendPeer = -1;
-        static float m_sendTimer = 0;
+        //static int m_nextSendPeer = -1;
+        //static float m_sendTimer = 0;
 
+        // control flow examination:
+        // send to another peer every 50ms
+        // after that delay for 50ms
+        // why have the delay?
+        static auto itr = m_peers.begin();
 
+        // now iterate peers, but check whether the size decreased from last iteration
+        static auto lastCount = m_peers.size();
 
+        if (m_peers.size() < lastCount) {
+            // then itr might be invalid, so reassign
+            itr = m_peers.begin();
+        }
+
+        lastCount = m_peers.size();
+
+        PERIODIC_NOW(50ms, {
+            if (itr != m_peers.end()) {
+                SendZDOs(itr->get(), false);
+                ++itr;
+            } else {
+                itr = m_peers.begin();
+            }
+        });
+
+        /*
 		m_sendTimer += dt;
 		if (m_nextSendPeer < 0) {
 			if (m_sendTimer > 0.05f) {
@@ -393,7 +421,7 @@ namespace NetSyncManager {
 			m_nextSendPeer++;
 			if (m_nextSendPeer >= m_peers.size())
 				m_nextSendPeer = -1;
-		}
+		}*/
 	}
 
 	void FlushClientObjects() {
@@ -1076,7 +1104,7 @@ namespace NetSyncManager {
 	}
 
 	bool SendZDOs(SyncPeer* peer, bool flush) {
-		assert(false);
+		//assert(false);
 		int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
 		
 		// flushing forces a packet send
@@ -1088,12 +1116,13 @@ namespace NetSyncManager {
 		if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 			return false;
 
+        static std::vector<NetSync*> m_tempToSync;
 		m_tempToSync.clear();
 		CreateSyncList(peer, m_tempToSync);
 
 		// continue only if there are updated/invalid NetSyncs to send
-		//if (m_tempToSync.Count == 0 && peer->m_invalidSector.empty())
-		//	return false;
+		if (m_tempToSync.empty() && peer->m_invalidSector.empty())
+			return false;
 
 		/*
 		* NetSyncData packet structure:
@@ -1111,7 +1140,6 @@ namespace NetSyncManager {
 
         bool flagWritten = false;
 
-		//auto pkg(PKG());
 		NetPackage pkg;
 
 		pkg.Write(static_cast<int32_t>(peer->m_invalidSector.size()));
