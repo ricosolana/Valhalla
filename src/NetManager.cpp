@@ -268,9 +268,9 @@ namespace NetManager {
 
 		peer->m_pos = pos;
 
-		rpc->Register(NetHashes::Rpc::RefPos, &RPC_RefPos);
-		rpc->Register(NetHashes::Rpc::CharacterID, &RPC_CharacterID);
-		rpc->Register(NetHashes::Rpc::RemotePrint, &RPC_RemotePrint);
+		rpc->Register(NetHashes::Rpc::RefPos, RPC_RefPos);
+		rpc->Register(NetHashes::Rpc::CharacterID, RPC_CharacterID);
+		rpc->Register(NetHashes::Rpc::RemotePrint, RPC_RemotePrint);
 
 		// Admin commands
 		// Might be better to see if player has perms, then register instead of registering everytime
@@ -344,8 +344,8 @@ namespace NetManager {
 		while (auto opt = m_acceptor->Accept()) {
 			auto&& rpc = std::make_unique<NetRpc>(opt.value());
 						
-			rpc->Register(NetHashes::Rpc::Disconnect, &RPC_Disconnect);
-			rpc->Register(NetHashes::Rpc::ServerHandshake, &RPC_ServerHandshake);
+			rpc->Register(NetHashes::Rpc::Disconnect, RPC_Disconnect);
+			rpc->Register(NetHashes::Rpc::ServerHandshake, RPC_ServerHandshake);
 
 			m_joining.push_back(std::move(rpc));
 		}
@@ -364,7 +364,6 @@ namespace NetManager {
 
 		// Cleanup peers
 		{
-			// Remove stale peers
 			auto&& itr = m_peers.begin();
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {

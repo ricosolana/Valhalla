@@ -51,10 +51,14 @@ namespace fs = std::filesystem;
 
 using namespace std::chrono_literals;
 
-using BYTE_t = char;
+using BYTE_t = uint8_t; // char;
 using HASH_t = int32_t;
 using OWNER_t = int64_t;
 using BYTES_t = std::vector<BYTE_t>;
+//using CHARS_t = std::vector<char>;
+//using byte_fstream = std::basic_fstream<BYTE_t, std::char_traits<BYTE_t>>;
+//using byte_ifstream = std::basic_ifstream<BYTE_t, std::char_traits<BYTE_t>>;
+//using byte_ofstream = std::basic_ofstream<BYTE_t, std::char_traits<BYTE_t>>;
 
 static constexpr float PI = 3.141592653589f;
 

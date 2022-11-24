@@ -15,8 +15,10 @@ public:
     using MethodPtr = std::unique_ptr<IMethod<NetRpc*>>;
 
     template<class ...Args>
-    using FuncPtr = void(*)(NetRpc*, Args...);
-    //using FuncPtr = std::function<void(NetRpc*, Args...)>;
+    using FuncPtr = std::function<void(NetRpc*, Args...)>;
+
+	template<class ...Args>
+	using SFuncPtr = void(*)(NetRpc*, Args...);
 
 private:
 	std::chrono::steady_clock::time_point m_lastPing;
@@ -56,19 +58,33 @@ public:
 	}
 
 	template<class ...Args>
+	auto Register(HASH_t hash, SFuncPtr<Args...> f) {
+		return Register(hash, std::function(f));
+	}
+
+
+
+	template<class ...Args>
 	auto Register(const char* name, FuncPtr<Args...> f) {
 		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
+
+	template<class ...Args>
+	auto Register(const char* name, SFuncPtr<Args...> f) {
+		return Register(name, std::function(f));
+	}
+
+
 
 	template<class ...Args>
 	auto Register(std::string& name, FuncPtr<Args...> f) {
 		return Register(name.c_str(), f);
 	}
 
-
-
-    // inefficient
-    //void InvokeRaw(HASH_t hash, NetPackage params);
+	template<class ...Args>
+	auto Register(std::string& name, SFuncPtr<Args...> f) {
+		return Register(name, std::function(f));
+	}
 
 	/**
 		* @brief Invoke a remote function

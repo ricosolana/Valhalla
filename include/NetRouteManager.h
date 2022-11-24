@@ -49,7 +49,14 @@ namespace NetRouteManager {
 	// Must pass an IMethod created using new
 	void _Register(HASH_t hash, IMethod<OWNER_t>* method);
 
+	template<class ...Args>
+	using FuncPtr = std::function<void(OWNER_t, Args...)>;
 
+	template<class ...Args>
+	using SFuncPtr = void(*)(OWNER_t, Args...);
+
+	//enum ChatManager::Type;
+	//void Register(HASH_t, std::function<void(OWNER_t, Vector3, ChatManager::Type, std::string, std::string, std::string)>);
 
 	/**
 		* @brief Register a static method for routed remote invocation
@@ -57,41 +64,37 @@ namespace NetRouteManager {
 		* @param method ptr to a static function
 	*/
 	template<class ...Args>
-	auto Register(HASH_t hash, void(*f)(OWNER_t, Args...)) {
+	auto Register(HASH_t hash, FuncPtr<Args...> f) {
 		return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
 	}
 
 	template<class ...Args>
-	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
+	auto Register(HASH_t hash, SFuncPtr<Args...> f) {
+		return Register(hash, std::function(f));
+	}
+
+
+
+	template<class ...Args>
+	auto Register(const char* name, FuncPtr<Args...> f) {
 		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
 
 	template<class ...Args>
-	auto Register(std::string& name, void(*f)(OWNER_t, Args...)) {
+	auto Register(const char* name, SFuncPtr<Args...> f) {
+		return Register(name, std::function(f));
+	}
+
+
+
+	template<class ...Args>
+	auto Register(std::string& name, FuncPtr<Args...> f) {
 		return Register(name.c_str(), f);
 	}
 
-
-
-	/**
-		* @brief Register an instance method for routed remote invocation
-		* @param name function name to register
-		* @param object the object containing the member function
-		* @param method ptr to a member function
-	*/
-	template<class C, class ...Args>
-	auto Register(HASH_t hash, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return _Register(hash, object, new MethodImpl(object, f, EVENT_HASH_RouteIn ^ hash));
-	}
-
-	template<class C, class ...Args>
-	auto Register(const char* name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(VUtils::String::GetStableHashCode(name), object, f);
-	}
-
-	template<class C, class ...Args>
-	auto Register(std::string& name, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(name.c_str(), object, f);
+	template<class ...Args>
+	auto Register(std::string& name, SFuncPtr<Args...> f) {
+		return Register(name, std::function(f));
 	}
 
 

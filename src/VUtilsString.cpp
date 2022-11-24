@@ -66,7 +66,7 @@ namespace VUtils::String {
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int32_t GetUTF8Count(const BYTE_t*p) {
+    int32_t GetUTF8Count(const BYTE_t* p) {
         // leading bits:
         //   0: total 1 byte
         //   110: total 2 bytes (trailing 10xxxxxx)

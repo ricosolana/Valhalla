@@ -17,7 +17,7 @@ namespace VUtils::Resource {
         return root / path;
     }
 
-    std::ifstream GetInFile(const std::string &path) {
+    std::ifstream GetInFile(const std::string &path) {        
         return std::ifstream(GetPath(path), std::ios::binary);
     }
     
@@ -27,15 +27,15 @@ namespace VUtils::Resource {
 
     std::optional<BYTES_t> ReadFileBytes(const std::string &path) {
         auto file = GetInFile(path);
-
+        
         if (!file)
             return std::nullopt;
 
         // https://www.reddit.com/r/cpp_questions/comments/m93tjb/comment/grkst7r/?utm_source=share&utm_medium=web2x&context=3
 
         return BYTES_t(
-            std::istreambuf_iterator<BYTE_t>(file),
-            std::istreambuf_iterator<BYTE_t>());
+            std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>());
     }
 
     std::optional<std::string> ReadFileString(const std::string& path) {
@@ -45,8 +45,8 @@ namespace VUtils::Resource {
             return std::nullopt;
 
         return std::string(
-            std::istreambuf_iterator<BYTE_t>(file),
-            std::istreambuf_iterator<BYTE_t>());
+            std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>());
     }
 
     std::optional<std::vector<std::string>> ReadFileLines(const std::string& path) {

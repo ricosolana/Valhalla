@@ -7,11 +7,11 @@
 namespace ChatManager {
 
     void RPC_ChatMessage(OWNER_t sender, Vector3 position, Type type, std::string name, std::string text, std::string senderAccountId);
-    void WATCHER_RPC_ChatMessage(OWNER_t sender, Vector3 position, Type type, std::string name, std::string text, std::string senderAccountId);
 
     void Init() {
         //NetRouteManager::_Register(Routed_Hash::ChatMessage, &RPC_ChatMessage, &WATCHER_RPC_ChatMessage);
-        NetRouteManager::Register(NetHashes::Routed::ChatMessage, &RPC_ChatMessage);
+        NetRouteManager::Register(NetHashes::Routed::ChatMessage, RPC_ChatMessage);
+        //NetRouteManager::Register(NetHashes::Routed::ChatMessage, [](OWNER_t) -> void {});
     }
 
 

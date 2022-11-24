@@ -30,20 +30,20 @@ template<class T, class...V> class MethodImpl;
 
 // Package lambda invoker
 template<class T, class...Args>
-class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
-    using Fn = void(*)(T, Args...);
-//class MethodImpl<std::function<void(T, Args...)>> : public IMethod<T> {
-    //using Fn = std::function<void(T, Args...)>;
+//class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
+    //using Fn = void(*)(T, Args...);
+class MethodImpl<std::function<void(T, Args...)>> : public IMethod<T> {
+    using Fn = std::function<void(T, Args...)>;
 
-    const Fn lambda;
+    const Fn m_lambda;
     const HASH_t m_invokerHash;
     const HASH_t m_methodHash;
 
 public:
-    explicit MethodImpl(Fn lam,
+    explicit MethodImpl(const Fn &f,
                         HASH_t invokerHash, // TODO remove defaults
                         HASH_t methodHash)
-                        : lambda(lam),
+                        : m_lambda(f),
                           m_invokerHash(invokerHash), m_methodHash(methodHash) {}
 
     void Invoke(T t, NetPackage pkg) override {
@@ -55,7 +55,7 @@ public:
         auto result = CALL_EVENT_TUPLE(m_invokerHash ^ m_methodHash, tuple);
 
         if (result != EventStatus::CANCEL)
-            std::apply(lambda, tuple);
+            std::apply(m_lambda, tuple);
 
         // Post events
         CALL_EVENT_TUPLE(m_invokerHash ^ EVENT_HASH_POST, tuple);
@@ -65,7 +65,11 @@ public:
 
 // Specifying deduction guide
 template<class T, class ...Args>
-MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<void(*)(T, Args...)>;
+//MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<void(*)(T, Args...)>;
+MethodImpl(std::function<void(T, Args...)>, HASH_t, HASH_t) -> MethodImpl<std::function<void(T, Args...)>>;
+
+//template<class T, class ...Args>
+//MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<std::function<void(T, Args...)>>;
 
 
 
