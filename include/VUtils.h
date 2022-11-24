@@ -51,7 +51,7 @@ namespace fs = std::filesystem;
 
 using namespace std::chrono_literals;
 
-using BYTE_t = uint8_t;
+using BYTE_t = char;
 using HASH_t = int32_t;
 using OWNER_t = int64_t;
 using BYTES_t = std::vector<BYTE_t>;

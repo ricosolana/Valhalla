@@ -17,6 +17,7 @@ namespace ZoneSystem {
 	static constexpr int ACTIVE_AREA = 1;
 	static constexpr int ACTIVE_DISTANT_AREA = 1;
 	static constexpr int PGW_VERSION = 53;
+    static constexpr float ZONE_SIZE = 64;
 
     static const char* LOCATION_SPAWN = "StartTemple";
     static const char* LOCATION_EIKTHYR = "Eikthyrnir";
@@ -38,6 +39,7 @@ namespace ZoneSystem {
     static const char* KEY_MOD_BAT = "KilledBat";
     static const char* KEY_DISABLE_MAP = "nomap";
     static const char* KEY_DISABLE_PORTALS = "noportals";
+
 }
 
 

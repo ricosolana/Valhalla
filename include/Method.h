@@ -32,8 +32,8 @@ template<class T, class...V> class MethodImpl;
 template<class T, class...Args>
 class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
     using Fn = void(*)(T, Args...);
-
-    // using Fn = std::function<void(T, Args...)>;
+//class MethodImpl<std::function<void(T, Args...)>> : public IMethod<T> {
+    //using Fn = std::function<void(T, Args...)>;
 
     const Fn lambda;
     const HASH_t m_invokerHash;

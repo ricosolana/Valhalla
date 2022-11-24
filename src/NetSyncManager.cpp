@@ -179,8 +179,8 @@ namespace NetSyncManager {
 	std::unique_ptr<SaveData> m_saveData;
 
     void Init() {
-        NetRouteManager::Register(Routed_Hash::DestroyZDO, &RPC_DestroyZDO);
-        NetRouteManager::Register(Routed_Hash::RequestZDO, &RPC_RequestZDO);
+        NetRouteManager::Register(NetHashes::Routed::DestroyZDO, &RPC_DestroyZDO);
+        NetRouteManager::Register(NetHashes::Routed::RequestZDO, &RPC_RequestZDO);
         //ResetSectorArray();
     }
 
@@ -488,7 +488,7 @@ namespace NetSyncManager {
 			zpackage.Write(id);
 
 		m_destroySendList.clear();
-		NetRouteManager::Invoke(NetRouteManager::EVERYBODY, Routed_Hash::DestroyZDO, zpackage);
+		NetRouteManager::Invoke(NetRouteManager::EVERYBODY, NetHashes::Routed::DestroyZDO, zpackage);
 	}
 
 	void RPC_DestroyZDO(OWNER_t sender, NetPackage pkg) {
@@ -1181,14 +1181,14 @@ namespace NetSyncManager {
 		pkg.Write(NetID::NONE); // used as the null terminator
 
 		if (flagWritten)
-			peer->m_peer->m_rpc->Invoke(Rpc_Hash::ZDOData, pkg);
+			peer->m_peer->m_rpc->Invoke(NetHashes::Rpc::ZDOData, pkg);
 
 		return flagWritten;
 	}
 
 	void OnNewPeer(NetPeer *peer) {
 		m_peers.push_back(std::make_unique<SyncPeer>(peer));
-		peer->m_rpc->Register(Rpc_Hash::ZDOData, &RPC_ZDOData);
+		peer->m_rpc->Register(NetHashes::Rpc::ZDOData, &RPC_ZDOData);
 	}
 
     void OnPeerQuit(NetPeer* peer) {

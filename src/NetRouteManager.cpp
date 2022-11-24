@@ -41,14 +41,14 @@ namespace NetRouteManager {
                     //    }
                     //}
 
-                    peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+                    peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
 				}
 			}
 		}
 		else {
 			auto peer = NetManager::GetPeer(data.m_targetPeerID);
 			if (peer) {
-				peer->m_rpc->Invoke(Rpc_Hash::RoutedRPC, pkg);
+				peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
 			}
 		}
 	}
@@ -135,7 +135,7 @@ namespace NetRouteManager {
 	}
 
 	void OnNewPeer(NetPeer *peer) {
-		peer->m_rpc->Register(Rpc_Hash::RoutedRPC, &RPC_RoutedRPC);
+		peer->m_rpc->Register(NetHashes::Rpc::RoutedRPC, &RPC_RoutedRPC);
 	}
 
 	void OnPeerQuit(NetPeer *peer) {

@@ -15,6 +15,9 @@ namespace VUtils::Resource {
     // Returns the combined root directory with a path
     fs::path GetPath(const std::string &path);
 
+    std::ifstream GetInFile(const std::string& path);
+    std::ofstream GetOutFile(const std::string& path);
+
     std::optional<BYTES_t> ReadFileBytes(const std::string& path);
     std::optional<std::string> ReadFileString(const std::string& path);
     std::optional<std::vector<std::string>> ReadFileLines(const std::string& path);

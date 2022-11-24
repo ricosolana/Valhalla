@@ -50,7 +50,7 @@ namespace NetManager {
 
 
 	void RemotePrint(NetRpc* rpc, const std::string& s) {
-		rpc->Invoke(Rpc_Hash::RemotePrint, s);
+		rpc->Invoke(NetHashes::Rpc::RemotePrint, s);
 	}
 
 	//void Disconnect(NetPeer *peer) {
@@ -98,14 +98,6 @@ namespace NetManager {
 	}
 
 
-
-	void RPC_ServerHandshake(NetRpc* rpc) {
-		LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
-		//this.ClearPlayerData(peer);
-		//bool flag = !Valhalla()->m_serverPassword.empty();
-		//std::string salt = "Im opposing salt"; // must be 16 bytes
-		rpc->Invoke("ClientHandshake", m_hasPassword, m_salt);
-	}
 
 	void RPC_Disconnect(NetRpc* rpc) {
 		LOG(INFO) << "RPC_Disconnect";
@@ -188,20 +180,20 @@ namespace NetManager {
 
 			for (auto&& peer : m_peers) {
 				// this is the problem
-				peer->m_rpc->Invoke(Rpc_Hash::PlayerList, pkg);
+				peer->m_rpc->Invoke(NetHashes::Rpc::PlayerList, pkg);
 			}
 		}
 	}
 
 	void SendNetTime() {
 		for (auto&& peer : m_peers) {
-			peer->m_rpc->Invoke(Rpc_Hash::NetTime, (double)Valhalla()->Time());
+			peer->m_rpc->Invoke(NetHashes::Rpc::NetTime, (double)Valhalla()->Time());
 		}
 	}
 
-
-
-
+	void RPC_RemotePrint(NetRpc* rpc, std::string text) {
+		LOG(INFO) << text;
+	}
 
 
 
@@ -224,10 +216,14 @@ namespace NetManager {
 		pkg.Write(m_world->m_worldGenVersion);
 		pkg.Write((double)Valhalla()->Time());
 
-		rpc->Invoke(Rpc_Hash::PeerInfo, pkg);
+		rpc->Invoke(NetHashes::Rpc::PeerInfo, pkg);
 	}
 
+
+
 	void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
+		rpc->Unregister(NetHashes::Rpc::PeerInfo);
+
 		auto&& hostName = rpc->m_socket->GetHostName();
 
 		auto uuid = pkg.Read<OWNER_t>();
@@ -272,19 +268,33 @@ namespace NetManager {
 
 		peer->m_pos = pos;
 
-		rpc->Register(Rpc_Hash::RefPos, &RPC_RefPos);
-		rpc->Register(Rpc_Hash::CharacterID, &RPC_CharacterID);
-		rpc->Register(Rpc_Hash::Kick, &RPC_Kick);
-		rpc->Register(Rpc_Hash::Ban, &RPC_Ban);
-		rpc->Register(Rpc_Hash::Unban, &RPC_Unban);
-		rpc->Register(Rpc_Hash::Save, &RPC_Save);
-		rpc->Register(Rpc_Hash::PrintBanned, &RPC_PrintBanned);
+		rpc->Register(NetHashes::Rpc::RefPos, &RPC_RefPos);
+		rpc->Register(NetHashes::Rpc::CharacterID, &RPC_CharacterID);
+		rpc->Register(NetHashes::Rpc::RemotePrint, &RPC_RemotePrint);
+
+		// Admin commands
+		// Might be better to see if player has perms, then register instead of registering everytime
+		// Figure this out later, 
+		// Useless currently
+		//rpc->Register(NetHashes::Rpc::Kick, &RPC_Kick);
+		//rpc->Register(NetHashes::Rpc::Ban, &RPC_Ban);
+		//rpc->Register(NetHashes::Rpc::Unban, &RPC_Unban);
+		//rpc->Register(NetHashes::Rpc::Save, &RPC_Save);
+		//rpc->Register(NetHashes::Rpc::PrintBanned, &RPC_PrintBanned);
 
 		SendPeerInfo(rpc);
 
         NetSyncManager::OnNewPeer(peer);
 		NetRouteManager::OnNewPeer(peer);
 		ZoneSystem::OnNewPeer(peer);
+	}
+
+	void RPC_ServerHandshake(NetRpc* rpc) {
+		rpc->Unregister(NetHashes::Rpc::ServerHandshake);
+
+		LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
+		rpc->Register(NetHashes::Rpc::PeerInfo, &RPC_PeerInfo);
+		rpc->Invoke(NetHashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
 	}
 
 	// Retrieve a peer by its member Rpc
@@ -294,7 +304,7 @@ namespace NetManager {
 			if (peer->m_rpc.get() == rpc)
 				return peer.get();
 		}
-		throw std::runtime_error("Unable to find Peer attributing to Rpc");
+		throw std::runtime_error("Unable to find Rpc attached to peer");
 	}
 
 	// Return the peer or nullptr
@@ -333,10 +343,9 @@ namespace NetManager {
 		// Accept new connections into joining
 		while (auto opt = m_acceptor->Accept()) {
 			auto&& rpc = std::make_unique<NetRpc>(opt.value());
-
-			rpc->Register(Rpc_Hash::PeerInfo, &RPC_PeerInfo);
-			rpc->Register(Rpc_Hash::Disconnect, &RPC_Disconnect);
-			rpc->Register(Rpc_Hash::ServerHandshake, &RPC_ServerHandshake);
+						
+			rpc->Register(NetHashes::Rpc::Disconnect, &RPC_Disconnect);
+			rpc->Register(NetHashes::Rpc::ServerHandshake, &RPC_ServerHandshake);
 
 			m_joining.push_back(std::move(rpc));
 		}

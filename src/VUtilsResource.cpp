@@ -17,43 +17,40 @@ namespace VUtils::Resource {
         return root / path;
     }
 
-    //std::ifstream GetInFile(const fs::path &path, std::ios) {
-    //    return std::ifstream(GetPath(path), std::ios::nbinary);
-    //}
-    //
-    //std::ofstream GetOutFile(const fs::path& path) {
-    //    return std::ofstream(GetPath(path), std::ios::binary);
-    //}
+    std::ifstream GetInFile(const std::string &path) {
+        return std::ifstream(GetPath(path), std::ios::binary);
+    }
+    
+    std::ofstream GetOutFile(const std::string& path) {
+        return std::ofstream(GetPath(path), std::ios::binary);
+    }
 
     std::optional<BYTES_t> ReadFileBytes(const std::string &path) {
-        auto file = std::ifstream(GetPath(path), std::ios::binary);
+        auto file = GetInFile(path);
 
         if (!file)
             return std::nullopt;
 
-        // Stop eating new lines in binary mode!!!
-        file.unsetf(std::ios::skipws);
+        // https://www.reddit.com/r/cpp_questions/comments/m93tjb/comment/grkst7r/?utm_source=share&utm_medium=web2x&context=3
 
-        return BYTES_t(std::istream_iterator<BYTE_t>(file),
-                       std::istream_iterator<BYTE_t>());
+        return BYTES_t(
+            std::istreambuf_iterator<BYTE_t>(file),
+            std::istreambuf_iterator<BYTE_t>());
     }
 
     std::optional<std::string> ReadFileString(const std::string& path) {
-        auto file = std::ifstream(GetPath(path), std::ios::binary);
+        auto file = GetInFile(path);
 
         if (!file)
             return std::nullopt;
 
-        // Stop eating new lines in binary mode!!!
-        file.unsetf(std::ios::skipws);
-
         return std::string(
-            std::istream_iterator<BYTE_t>(file),
-            std::istream_iterator<BYTE_t>());
+            std::istreambuf_iterator<BYTE_t>(file),
+            std::istreambuf_iterator<BYTE_t>());
     }
 
     std::optional<std::vector<std::string>> ReadFileLines(const std::string& path) {
-        auto file = std::ifstream(GetPath(path));
+        auto file = GetInFile(path);
 
         if (!file)
             return std::nullopt;
@@ -71,8 +68,7 @@ namespace VUtils::Resource {
 
 
     bool WriteFileBytes(const std::string& path, const BYTE_t* buf, int size) {
-        //auto file = GetOutFile(path);
-        auto file = std::ofstream(GetPath(path), std::ios::binary);
+        auto file = GetOutFile(path);
 
         if (!file)
             return false;
@@ -86,8 +82,7 @@ namespace VUtils::Resource {
     }
 
     bool WriteFileBytes(const std::string& path, const BYTES_t& vec) {
-        //auto file = GetOutFile(path);
-        auto file = std::ofstream(GetPath(path), std::ios::binary);
+        auto file = GetOutFile(path);
 
         if (!file)
             return false;
@@ -101,8 +96,7 @@ namespace VUtils::Resource {
     }
 
     bool WriteFileString(const std::string& path, const std::string& str) {
-        //auto file = GetOutFile(path);
-        auto file = std::ofstream(GetPath(path), std::ios::binary);
+        auto file = GetOutFile(path);
 
         if (!file)
             return false;
@@ -116,7 +110,7 @@ namespace VUtils::Resource {
     }
 
     bool WriteFileLines(const std::string& path, const std::vector<std::string>& in) {
-        auto file = std::ofstream(GetPath(path));
+        auto file = GetOutFile(path);
 
         if (!file)
             return false;

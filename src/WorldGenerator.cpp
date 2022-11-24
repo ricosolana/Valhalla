@@ -1,6 +1,8 @@
 #include "WorldGenerator.h"
 #include "VUtilsRandom.h"
 #include "HashUtils.h"
+#include "ZoneSystem.h"
+#include "VUtilsResource.h"
 
 namespace WorldGenerator {
 
@@ -152,7 +154,7 @@ namespace WorldGenerator {
 
 
 
-	void Initialize(World world) {
+	void Init(World world) {
 		m_world = world;
 		m_version = m_world.m_worldGenVersion;
 
@@ -164,6 +166,8 @@ namespace WorldGenerator {
 		m_riverSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
 		m_streamSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
 		m_offset4 = (float) state.Range(-10000, 10000);
+
+		// TODO rename the geenrator functions not to 'FIND' but 'Generate' to be much more concise
 
 		Pregenerate();
 	}
@@ -811,14 +815,15 @@ namespace WorldGenerator {
 	// public
 	Heightmap::BiomeArea GetBiomeArea(const Vector3& point) {
 		auto&& biome = GetBiome(point);
-		auto&& biome2 = GetBiome(point - Vector3(-riverGridSize, 0, -riverGridSize));
-		auto&& biome3 = GetBiome(point - Vector3(riverGridSize, 0, -riverGridSize));
-		auto&& biome4 = GetBiome(point - Vector3(riverGridSize, 0, riverGridSize));
-		auto&& biome5 = GetBiome(point - Vector3(-riverGridSize, 0, riverGridSize));
-		auto&& biome6 = GetBiome(point - Vector3(-riverGridSize, 0, 0));
-		auto&& biome7 = GetBiome(point - Vector3(riverGridSize, 0, 0));
-		auto&& biome8 = GetBiome(point - Vector3(0, 0, -riverGridSize));
-		auto&& biome9 = GetBiome(point - Vector3(0, 0, riverGridSize));
+
+		auto&& biome2 = GetBiome(point - Vector3(-ZoneSystem::ZONE_SIZE, 0, -ZoneSystem::ZONE_SIZE));
+		auto&& biome3 = GetBiome(point - Vector3(ZoneSystem::ZONE_SIZE, 0, -ZoneSystem::ZONE_SIZE));
+		auto&& biome4 = GetBiome(point - Vector3(ZoneSystem::ZONE_SIZE, 0, ZoneSystem::ZONE_SIZE));
+		auto&& biome5 = GetBiome(point - Vector3(-ZoneSystem::ZONE_SIZE, 0, ZoneSystem::ZONE_SIZE));
+		auto&& biome6 = GetBiome(point - Vector3(-ZoneSystem::ZONE_SIZE, 0, 0));
+		auto&& biome7 = GetBiome(point - Vector3(ZoneSystem::ZONE_SIZE, 0, 0));
+		auto&& biome8 = GetBiome(point - Vector3(0, 0, -ZoneSystem::ZONE_SIZE));
+		auto&& biome9 = GetBiome(point - Vector3(0, 0, ZoneSystem::ZONE_SIZE));
 		if (biome == biome2
 			&& biome == biome3
 			&& biome == biome4
@@ -898,7 +903,7 @@ namespace WorldGenerator {
 			return GetMeadowsHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::Swamp:
 			return GetMarshHeight(wx, wy) * 200.f;
-		case Heightmap::Biome::Swamp | Heightmap::Biome::Mountain: // (Heightmap::Biome)3:
+		case Heightmap::Biome::Meadows | Heightmap::Biome::Swamp: //Heightmap::Biome::Swamp | Heightmap::Biome::Mountain: // (Heightmap::Biome)3:
 			break; // why is this here?
 		case Heightmap::Biome::Mountain:
 			return GetSnowMountainHeight(wx, wy) * 200.f;
@@ -936,8 +941,8 @@ namespace WorldGenerator {
 	// public
 	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection) {
 		int num = 10;
-		float num2 = -999999;
-		float num3 = 999999;
+		float num2 = std::numeric_limits<float>::min();
+		float num3 = std::numeric_limits<float>::max();
 		Vector3 b = center;
 		Vector3 a = center;
 		for (int i = 0; i < num; i++)

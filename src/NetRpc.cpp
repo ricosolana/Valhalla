@@ -19,6 +19,10 @@ void NetRpc::Register(HASH_t hash, MethodPtr method) {
 	m_methods[hash] = std::move(method);
 }
 
+void NetRpc::Unregister(HASH_t hash) {
+	m_methods.erase(hash);
+}
+
 //void NetRpc::InvokeRaw(HASH_t hash, NetPackage params) {
 //    if (!m_socket->Connected())
 //        return;

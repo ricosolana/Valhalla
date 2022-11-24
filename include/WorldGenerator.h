@@ -8,7 +8,7 @@
 
 namespace WorldGenerator {
 
-	void Initialize(World world);
+	void Init(World world);
 
 	bool InsideRiverGrid(const Vector2i &grid, const Vector2 &p, float r);
 

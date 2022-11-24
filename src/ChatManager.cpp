@@ -11,7 +11,7 @@ namespace ChatManager {
 
     void Init() {
         //NetRouteManager::_Register(Routed_Hash::ChatMessage, &RPC_ChatMessage, &WATCHER_RPC_ChatMessage);
-        NetRouteManager::Register(Routed_Hash::ChatMessage, &RPC_ChatMessage);
+        NetRouteManager::Register(NetHashes::Routed::ChatMessage, &RPC_ChatMessage);
     }
 
 

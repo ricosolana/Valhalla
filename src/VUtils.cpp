@@ -105,7 +105,7 @@ namespace VUtils {
 
 
     void GenerateBytes(BYTE_t* out, unsigned int count) {
-        RAND_bytes(out, count);
+        RAND_bytes((unsigned char*) out, count);
     }
 
     BYTES_t GenerateBytes(unsigned int count) {

@@ -1,0 +1,92 @@
+#Enable, Prefab name, Biome, Biome area, Quantity, Chance, Priority, Center first, Unique, Group, Min unique dist, Icon always, Icon placed, Random rotation, Slope rotation, Snap to water, Min terrain change, Max terrain change, In forest, Min forest threshold, Max forest threshold, Min dist, Max dist, Min altitude, Max altitude
+TRUE, StartTemple, Meadows, Median,1,100, True, True, False, ,0, True, False, False, False, False,0,3, True,1,5,0,10000,3,1000
+TRUE, Eikthyrnir, Meadows, Median,3,15, True, False, False, ,0, False, False, True, False, False,0,3, False,1,5,0,1000,1,1000
+TRUE, GoblinKing, Plains, Median,4,15, True, False, False, ,3000, False, False, True, False, False,0,4, False,1,5,0,0,1,1000
+TRUE, GDKing, BlackForest,6,4,15, True, False, False, ,3000, False, False, True, False, False,0,5, False,1,5,1000,7000,1,1000
+TRUE, Bonemass, Swamp,6,5,20, True, False, False, ,3000, False, False, True, False, False,0,4, False,1,5,2000,10000,0,2
+TRUE, SunkenCrypt4, Swamp, Median,400,15, True, False, False, ,64, False, False, True, False, False,0,4, False,0,1,0,0,0,2
+TRUE, Vendor_BlackForest, BlackForest, Median,10,10, True, False, True, ,512, False, True, True, False, False,0,2, False,0,1,1500,0,1,1000
+TRUE, Dragonqueen, Mountain, Median,3,10, True, False, False, ,3000, False, False, True, False, False,0,4, False,0,1,0,8000,150,500
+TRUE, StoneCircle, Meadows,7,25,5, False, False, False, ,200, False, False, True, False, False,0,3, False,1,5,0,0,1,1000
+TRUE, Greydwarf_camp1, BlackForest, Median,300,15, False, False, False, ,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Runestone_Greydwarfs, BlackForest,7,25,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,1,99,0,2000,1,1000
+TRUE, Grave1, Swamp,6,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,0.5,1000
+TRUE, SwampRuin1, Swamp,6,50,15, False, False, False, ,512, False, False, True, False, False,0,3, False,0,1,0,0,0,1000
+TRUE, SwampRuin2, Swamp,6,50,15, False, False, False, ,512, False, False, True, False, False,0,3, False,0,1,0,0,0,1000
+TRUE, FireHole, Swamp,6,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,0.5,1000
+TRUE, Runestone_Draugr, Swamp,-1,50,5, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,0.5,1000
+TRUE, Meteorite, AshLands,7,500,10, False, False, False, ,0, False, False, True, False, False,0,4, False,1,5,0,0,1,1000
+TRUE, Crypt2, BlackForest,-1,200,20, False, False, False, ,128, False, False, True, False, False,0,2, False,0,1,0,0,1,1000
+TRUE, Ruin1, BlackForest,-1,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Ruin2, BlackForest,-1,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, StoneHouse3, BlackForest,-1,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, StoneHouse4, BlackForest,-1,200,15, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Ruin3, Plains,-1,50,15, False, False, False, Goblintower,512, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, GoblinCamp2, Plains,-1,200,10, False, False, False, ,250, False, False, False, False, False,0,3, False,0,1,0,0,2,1000
+TRUE, StoneTower1, Plains,-1,50,10, False, False, False, Goblintower,512, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, StoneTower3, Plains,-1,50,10, False, False, False, Goblintower,512, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, StoneHenge1, Plains,-1,5,10, False, False, False, Stonehenge,1000, False, False, True, False, False,0,3, False,0,1,0,0,5,1000
+TRUE, StoneHenge2, Plains,-1,5,10, False, False, False, Stonehenge,1000, False, False, True, False, False,0,3, False,0,1,0,0,5,1000
+TRUE, StoneHenge3, Plains,-1,5,10, False, False, False, Stonehenge,1000, False, False, True, False, False,0,3, False,0,1,0,0,5,1000
+TRUE, StoneHenge4, Plains,-1,5,10, False, False, False, Stonehenge,1000, False, False, True, False, False,0,3, False,0,1,0,0,5,1000
+TRUE, StoneHenge5, Plains,-1,20,10, False, False, False, Stonehenge,500, False, False, True, False, False,0,3, False,0,1,0,0,2,1000
+TRUE, StoneHenge6, Plains,-1,20,10, False, False, False, Stonehenge,500, False, False, True, False, False,0,3, False,0,1,0,0,2,1000
+TRUE, WoodHouse1, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse2, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse3, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse4, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse5, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse6, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse7, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse8, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse9, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse10, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse11, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse12, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodHouse13, Meadows,7,20,15, False, False, False, ,0, False, False, True, False, False,0,4, False,0,1,0,0,1,1000
+TRUE, WoodFarm1, Meadows,7,10,15, False, False, False, woodvillage,128, False, False, True, False, False,0,4, False,0,1,500,2000,1,1000
+TRUE, WoodVillage1, Meadows,7,15,15, False, False, False, woodvillage,256, False, False, True, False, False,0,4, False,0,1,2000,10000,1,1000
+TRUE, TrollCave02, BlackForest, Median,250,20, False, False, False, ,256, False, False, False, True, False,5,10, False,0,1,0,0,3,1000
+TRUE, Dolmen01,9, Everything,100,10, False, False, False, ,0, False, False, True, False, False,0,2, False,0,1,0,0,1,1000
+TRUE, Dolmen02,9, Everything,100,10, False, False, False, ,0, False, False, True, False, False,0,2, False,0,1,0,0,1,1000
+TRUE, Dolmen03,9, Everything,50,10, False, False, False, ,0, False, False, True, False, False,0,2, False,0,1,0,0,1,1000
+TRUE, Crypt3, BlackForest, Everything,200,10, False, False, False, ,128, False, False, True, False, False,0,2, False,0,1,0,0,3,1000
+TRUE, Crypt4, BlackForest, Everything,200,10, False, False, False, ,128, False, False, True, False, False,0,2, False,0,1,0,0,1,1000
+TRUE, InfestedTree01, Swamp, Everything,700,10, False, False, False, ,0, False, False, True, False, False,0,3, False,0,1,0,0,-1,1000
+TRUE, SwampHut1, Swamp, Everything,50,10, False, False, False, Swamphut,128, False, False, True, False, False,0,3, False,0,1,0,0,-2,1000
+TRUE, SwampHut2, Swamp, Everything,50,10, False, False, False, Swamphut,128, False, False, True, False, False,0,3, False,0,1,0,0,2,1000
+TRUE, SwampHut3, Swamp, Everything,50,10, False, False, False, Swamphut,128, False, False, True, False, False,0,3, False,0,1,0,0,2,1000
+TRUE, SwampHut4, Swamp, Everything,50,10, False, False, False, Swamphut,128, False, False, True, False, False,0,3, False,0,1,0,0,-1,1000
+TRUE, SwampHut5, Swamp, Everything,25,10, False, False, False, Swamphut,128, False, False, True, False, False,0,3, False,0,1,0,0,-1,1000
+TRUE, SwampWell1, Swamp, Everything,25,10, False, False, False, ,1024, False, False, True, False, False,0,3, False,0,1,0,0,-1,1000
+TRUE, StoneTowerRuins04, Mountain, Everything,50,10, False, False, False, Mountainruin,128, False, False, True, True, False,6,40, False,0,1,0,0,150,1000
+TRUE, StoneTowerRuins05, Mountain, Everything,50,10, False, False, False, Mountainruin,128, False, False, True, True, False,6,40, False,0,1,0,0,150,1000
+TRUE, StoneTowerRuins03, BlackForest, Everything,80,10, False, False, False, Stonetowerruins,200, False, False, True, False, False,0,2, False,0,1,0,0,2,1000
+TRUE, StoneTowerRuins07, BlackForest, Everything,80,10, False, False, False, Stonetowerruins,200, False, False, True, False, False,0,2, False,0,1,0,0,2,1000
+TRUE, StoneTowerRuins08, BlackForest, Everything,80,10, False, False, False, Stonetowerruins,200, False, False, True, False, False,0,2, False,0,1,0,0,2,1000
+TRUE, StoneTowerRuins09, BlackForest, Everything,80,10, False, False, False, Stonetowerruins,200, False, False, True, False, False,0,2, False,0,1,0,0,2,1000
+TRUE, StoneTowerRuins10, BlackForest, Everything,80,10, False, False, False, Stonetowerruins,200, False, False, True, False, False,0,2, False,0,1,0,0,2,1000
+TRUE, ShipSetting01, Meadows, Everything,100,10, False, False, False, ,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, DrakeNest01, Mountain, Everything,200,10, False, False, False, ,100, False, False, True, False, False,0,3, False,0,1,0,10000,100,2000
+TRUE, Waymarker01, Mountain, Everything,50,10, False, False, False, ,0, False, False, True, False, False,0,2, False,0,1,0,0,100,1000
+TRUE, Waymarker02, Mountain, Everything,50,10, False, False, False, ,0, False, False, True, False, False,0,2, False,0,1,0,0,100,1000
+TRUE, AbandonedLogCabin02, Mountain, Everything,33,10, False, False, False, Abandonedcabin,128, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, AbandonedLogCabin03, Mountain, Everything,33,10, False, False, False, Abandonedcabin,128, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, AbandonedLogCabin04, Mountain, Everything,50,10, False, False, False, Abandonedcabin,128, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, MountainGrave01, Mountain, Everything,100,10, False, False, False, ,50, False, False, True, False, False,0,2, False,0,1,0,0,100,1000
+TRUE, DrakeLorestone, Mountain, Everything,50,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, MountainWell1, Mountain, Everything,25,10, False, False, False, ,256, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, ShipWreck01,282, Everything,25,10, False, False, False, Shipwreck,1024, False, False, True, False, False,0,10, False,0,1,0,0,-1,1
+TRUE, ShipWreck02,282, Everything,25,10, False, False, False, Shipwreck,1024, False, False, True, False, False,0,10, False,0,1,0,0,-1,1
+TRUE, ShipWreck03,282, Everything,25,10, False, False, False, Shipwreck,1024, False, False, True, False, False,0,10, False,0,1,0,0,-1,1
+TRUE, ShipWreck04,282, Everything,25,10, False, False, False, Shipwreck,1024, False, False, True, False, False,0,10, False,0,1,0,0,-1,1
+TRUE, Runestone_Meadows, Meadows, Everything,100,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Runestone_Boars, Meadows, Everything,50,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Runestone_Swamps, Swamp, Everything,100,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,0,1000
+TRUE, Runestone_Mountains, Mountain, Everything,100,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,100,1000
+TRUE, Runestone_BlackForest, BlackForest, Everything,50,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, Runestone_Plains, Plains, Everything,100,10, False, False, False, Runestones,128, False, False, True, False, False,0,3, False,0,1,0,0,1,1000
+TRUE, TarPit1, Plains, Median,100,0, False, False, False, tarpit,128, False, False, True, False, False,0,1.5, False,0,0,0,0,5,60
+TRUE, TarPit2, Plains, Median,100,0, False, False, False, tarpit,128, False, False, True, False, False,0,1.5, False,0,0,0,0,5,60
+TRUE, TarPit3, Plains, Median,100,0, False, False, False, tarpit,128, False, False, True, False, False,0,1.5, False,0,0,0,0,5,60
+TRUE, MountainCave02, Mountain, Everything,160,0, False, False, False, mountaincaves,200, False, False, False, True, False,0,40, False,0,0,0,0,100,5000

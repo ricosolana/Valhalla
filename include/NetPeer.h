@@ -12,6 +12,7 @@ public:
 	const OWNER_t m_uuid;
 	const std::string m_name;
 
+	// Constantly changing vars
 	Vector3 m_pos;
 	bool m_visibleOnMap = false;
 	NetID m_characterID = NetID::NONE;

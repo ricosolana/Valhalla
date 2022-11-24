@@ -44,11 +44,13 @@ namespace VUtils::Math {
 
 
 
-	// fractional brownian noise/motion?
+	// Fractional brownian noise
 	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain);
 
+	// Fractional brownian noise
 	float FbmMaxValue(int octaves, float gain);
 
+	// Fractional brownian noise
 	float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain);
 
 

@@ -43,6 +43,8 @@ public:
 
     void Register(HASH_t hash, MethodPtr method);
 
+	void Unregister(HASH_t hash);
+
 	/**
 		* @brief Register a static method for remote invocation
 		* @param name function name to register
@@ -51,11 +53,6 @@ public:
 	template<class ...Args>
 	auto Register(HASH_t hash, FuncPtr<Args...> f) {
 		return Register(hash, MethodPtr(new MethodImpl(f, EVENT_HASH_RpcIn, hash)));
-	}
-
-	template<class ...Args>
-	auto Register(Rpc_Hash hash, FuncPtr<Args...> f) { //Fn<Args...> f) {
-		return Register(static_cast<HASH_t>(hash), f);
 	}
 
 	template<class ...Args>
@@ -95,11 +92,6 @@ public:
 		NetPackage::_Serialize(pkg, params...); // serialize
 
 		SendPackage(std::move(pkg));
-	}
-
-	template <typename... Types>
-	void Invoke(Rpc_Hash hash, const Types&... params) {
-		Invoke(static_cast<HASH_t>(hash), params...);
 	}
 
 	template <typename... Types>

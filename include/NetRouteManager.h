@@ -62,11 +62,6 @@ namespace NetRouteManager {
 	}
 
 	template<class ...Args>
-	auto Register(Routed_Hash hash, void(*f)(OWNER_t, Args...)) {
-		return Register(static_cast<HASH_t>(hash), f);
-	}
-
-	template<class ...Args>
 	auto Register(const char* name, void(*f)(OWNER_t, Args...)) {
 		return Register(VUtils::String::GetStableHashCode(name), f);
 	}
@@ -87,11 +82,6 @@ namespace NetRouteManager {
 	template<class C, class ...Args>
 	auto Register(HASH_t hash, C* object, void(C::* f)(OWNER_t, Args...)) {
 		return _Register(hash, object, new MethodImpl(object, f, EVENT_HASH_RouteIn ^ hash));
-	}
-
-	template<class C, class ...Args>
-	auto Register(Routed_Hash hash, C* object, void(C::* f)(OWNER_t, Args...)) {
-		return Register(static_cast<HASH_t>(hash), object, f);
 	}
 
 	template<class C, class ...Args>
@@ -117,11 +107,6 @@ namespace NetRouteManager {
 	}
 
 	template <typename... Args>
-	void Invoke(OWNER_t target, const NetID& targetNetSync, Routed_Hash hash, const Args&... params) {
-		Invoke(target, targetNetSync, static_cast<HASH_t>(hash), params...);
-	}
-
-	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
 		Invoke(target, targetNetSync, VUtils::String::GetStableHashCode(name), params...);
 	}
@@ -141,11 +126,6 @@ namespace NetRouteManager {
 	template <typename... Args>
 	void Invoke(OWNER_t target, HASH_t hash, const Args&... params) {
 		Invoke(target, NetID::NONE, hash, params...);
-	}
-
-	template <typename... Args>
-	void Invoke(OWNER_t target, Routed_Hash hash, const Args&... params) {
-		Invoke(target, NetID::NONE, static_cast<HASH_t>(hash), params...);
 	}
 
 	template <typename... Args>

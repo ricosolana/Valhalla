@@ -18,6 +18,7 @@ int GetCurrentLuaLine(lua_State* L) {
     lua_Debug ar;
     lua_getstack(L, 1, &ar);
     lua_getinfo(L, "nSl", &ar);
+
     return ar.currentline;
 }
 
@@ -69,7 +70,7 @@ void VModManager::RunModInfoFrom(const std::string& dirname,
                     int &outApiVersion,
                     std::string& outEntry) {
     auto&& state = NewStateFrom(dirname + "/modInfo.lua");
-
+    //m_callbacks[7][0].m_func.
     auto modInfo = state["modInfo"];
 
     // required
@@ -100,7 +101,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     auto mod = std::make_unique<Mod>(name, version, apiVersion);
     auto ptr = mod.get();
 
-    
+
 
     static char errBuf[128] = "";
 

@@ -45,6 +45,8 @@ static constexpr HASH_t EVENT_HASH_PeerQuit = __H("PeerQuit");
 
 static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POST");
 
+int GetCurrentLuaLine(lua_State* L);
+
 class VModManager {
     friend VServer;
 
@@ -106,8 +108,9 @@ public:
 
             this->m_eventStatus = EventStatus::DEFAULT;
 
-            for (auto &&callback: callbacks) {
+            for (auto &&callback : callbacks) {
                 try {
+                    //auto dbg(GetDebugInfo(callback))
                     callback.m_func(params...);
                 } catch (const sol::error &e) {
                     LOG(ERROR) << e.what();
