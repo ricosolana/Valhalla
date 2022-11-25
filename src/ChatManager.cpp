@@ -3,6 +3,7 @@
 #include "VUtils.h"
 #include "NetRouteManager.h"
 #include "NetManager.h"
+#include <ranges>
 
 namespace ChatManager {
 
@@ -11,7 +12,12 @@ namespace ChatManager {
     void Init() {
         //NetRouteManager::_Register(Routed_Hash::ChatMessage, &RPC_ChatMessage, &WATCHER_RPC_ChatMessage);
         NetRouteManager::Register(NetHashes::Routed::ChatMessage, RPC_ChatMessage);
-        //NetRouteManager::Register(NetHashes::Routed::ChatMessage, [](OWNER_t) -> void {});
+        std::unordered_map<int, int> map;
+
+        //auto lam = [](OWNER_t, int) -> void {};
+        //NetRouteManager::Register(NetHashes::Routed::ChatMessage, 
+        //    std::function(lam)
+        //);
     }
 
 

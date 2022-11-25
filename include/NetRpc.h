@@ -101,8 +101,6 @@ public:
         if (CALL_EVENT(EVENT_HASH_RpcOut ^ hash, params...) == EventStatus::CANCEL)
             return;
 
-        //return InvokeRaw(hash, NetPackage::Serialize(params...));
-
 		NetPackage pkg; // TODO make into member to optimize; or make static
 		pkg.Write(hash);
 		NetPackage::_Serialize(pkg, params...); // serialize

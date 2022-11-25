@@ -443,7 +443,26 @@ namespace ZoneSystem {
 		return { x, y };
 	}
 
+	void RPC_DiscoverClosestLocation(OWNER_t sender, std::string name, Vector3 point, std::string pinName, int32_t pinType, bool showMap) {
+		LocationInstance locationInstance;
+		//if (FindClosestLocation(name, point, out locationInstance)) {
+		//	ZLog.Log("Found location of type " + name);
+		//	ZRoutedRpc.instance.InvokeRoutedRPC(sender, "DiscoverLocationRespons", new object[]
+		//		{
+		//			pinName,
+		//			pinType,
+		//			locationInstance.m_position,
+		//			showMap
+		//		});
+		//	return;
+		//}
+		//ZLog.LogWarning("Failed to find location of type " + name);
+	}
+
 	void Init() {
+
+		NetRouteManager::Register(NetHashes::Routed::GetClosestLocation, RPC_DiscoverClosestLocation);
+
 		//auto lines(VUtils::Resource::ReadFileLines("locations.csv"));
 		/*
 		auto fs(VUtils::Resource::GetInFile("locations.csv"));

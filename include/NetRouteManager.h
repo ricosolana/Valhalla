@@ -49,11 +49,15 @@ namespace NetRouteManager {
 	// Must pass an IMethod created using new
 	void _Register(HASH_t hash, IMethod<OWNER_t>* method);
 
+
+
 	template<class ...Args>
 	using FuncPtr = std::function<void(OWNER_t, Args...)>;
 
 	template<class ...Args>
 	using SFuncPtr = void(*)(OWNER_t, Args...);
+
+
 
 	//enum ChatManager::Type;
 	//void Register(HASH_t, std::function<void(OWNER_t, Vector3, ChatManager::Type, std::string, std::string, std::string)>);
@@ -63,9 +67,19 @@ namespace NetRouteManager {
 		* @param name function name to register
 		* @param method ptr to a static function
 	*/
+	//template<class ...Args>
+	//auto Register(HASH_t hash, FuncPtr<Args...> f) {
+	//	return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
+	//}
+
+	//template<class ...Args>
+	//auto Register(HASH_t, void(*)(OWNER_t, Args...)) {
+	//
+	//}
+
 	template<class ...Args>
-	auto Register(HASH_t hash, FuncPtr<Args...> f) {
-		return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
+	auto Register(HASH_t hash, std::function<void(OWNER_t, Args...)> f) {
+		// stuff ...
 	}
 
 	template<class ...Args>

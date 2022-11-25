@@ -131,7 +131,9 @@ add_executable(${PROJECT_NAME}
     "src/GameObject.cpp"
     "src/GameObjectManager.cpp"
     "src/VUtilsRandom.cpp"
- "include/Agent.h")
+    "src/Game.cpp"
+ 
+ "src/WorldManager.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

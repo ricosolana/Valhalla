@@ -10,6 +10,7 @@
 #include "NetManager.h"
 #include "ChatManager.h"
 #include "NetSyncManager.h"
+#include "WorldGenerator.h"
 
 using namespace std::chrono;
 
@@ -118,6 +119,7 @@ void VServer::Launch() {
     ModManager()->Init();
     NetManager::Init();
     ChatManager::Init();
+    WorldGenerator::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 

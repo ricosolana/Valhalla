@@ -112,17 +112,16 @@ namespace WorldGenerator {
 
 
 	// Forward declarations
-	void Pregenerate();
-	void FindMountains();
-	void FindLakes();
+	void Generate();
+	void GenerateMountains();
+	void GenerateLakes();
 	std::vector<Vector2> MergePoints(std::vector<Vector2>& points, float range);
 	int FindClosest(const std::vector<Vector2>& points, const Vector2& p, float maxDistance);
-	std::vector<River> PlaceStreams();
+	void GenerateStreams();
 	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2& start, float minLength, float maxLength, Vector2& end);
 	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2& p, float& starth);
-	std::vector<River> PlaceRivers();
-	int FindClosestRiverEnd(const std::vector<River>& rivers, const std::vector<Vector2>& points, const Vector2& p, float maxDistance, float heightLimit, float checkStep);
-	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2>& points, const Vector2& p, float maxDistance, float heightLimit, float checkStep);
+	void GenerateRivers();
+	int FindRandomRiverEnd(VUtils::Random::State& state, const Vector2& p, float maxDistance, float heightLimit, float checkStep);
 	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0);
 	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1);
 	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit);
@@ -135,10 +134,10 @@ namespace WorldGenerator {
 	Vector2i GetRiverGrid(float wx, float wy);
 	void GetRiverWeight(float wx, float wy, float& weight, float& width);
 	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
-	void GenerateBiomes();
 	float WorldAngle(float wx, float wy);
 	float GetBaseHeight(float wx, float wy);
 	float AddRivers(float wx, float wy, float h);
+
 	float GetHeight(float wx, float wy);
 	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
 	float GetMarshHeight(float wx, float wy);
@@ -167,19 +166,19 @@ namespace WorldGenerator {
 		m_streamSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
 		m_offset4 = (float) state.Range(-10000, 10000);
 
-		// TODO rename the geenrator functions not to 'FIND' but 'Generate' to be much more concise
+		// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
-		Pregenerate();
+		Generate();
 	}
 
-	void Pregenerate() {
-		FindMountains();
-		FindLakes();
-		m_rivers = PlaceRivers();
-		m_streams = PlaceStreams();
+	void Generate() {
+		GenerateMountains();
+		GenerateLakes();
+		GenerateRivers();
+		GenerateStreams();
 	}
 
-	void FindMountains() {
+	void GenerateMountains() {
 		std::vector<Vector2> list;
 		for (float num = -10000; num <= 10000; num += 128)
 		{
@@ -195,7 +194,7 @@ namespace WorldGenerator {
 		m_mountains = MergePoints(list, 800);
 	}
 
-	void FindLakes() {
+	void GenerateLakes() {
 		std::vector<Vector2> list;
 		for (float num = -10000; num <= 10000; num += 128)
 		{
@@ -242,7 +241,8 @@ namespace WorldGenerator {
 			{
 				//float num2 = p.Distance(points[i]); // not optimal
 				float num2 = p.SqDistance(points[i]);
-				if (num2 < maxDistance * maxDistance && num2 < num)
+				if (num2 < maxDistance * maxDistance 
+					&& num2 < num)
 				{
 					result = i;
 					num = num2;
@@ -252,9 +252,8 @@ namespace WorldGenerator {
 		return result;
 	}
 
-	std::vector<River> PlaceStreams() {
+	void GenerateStreams() {
 		VUtils::Random::State state(m_streamSeed);
-		std::vector<River> list;
 		int num = 0;
 		for (int i = 0; i < streams; i++) {
 			Vector2 vector;
@@ -271,16 +270,15 @@ namespace WorldGenerator {
 					river.center = vector3;
 					river.widthMax = 20;
 					river.widthMin = 20;
-					float num3 = river.p0.Distance(river.p1); // could be optimized
+					float num3 = river.p0.Distance(river.p1); // use sqdist?
 					river.curveWidth = num3 / 15;
 					river.curveWavelength = num3 / 20;
-					list.push_back(river); // use move / emplacer
+					m_streams.push_back(river); // use move / emplacer
 					num++;
 				}
 			}
 		}
-		RenderRivers(state, list);
-		return list;
+		RenderRivers(state, m_streams);
 	}
 
 	bool FindStreamEndPoint(VUtils::Random::State &state, int iterations, float minHeight, float maxHeight, const Vector2& start, float minLength, float maxLength, Vector2& end) {
@@ -318,18 +316,18 @@ namespace WorldGenerator {
 		return false;
 	}
 
-	std::vector<River> PlaceRivers() {
+	void GenerateRivers() {
 		VUtils::Random::State state(m_riverSeed);
 
-		std::vector<River> list;
+		//std::vector<River> list;
 		std::vector<Vector2> list2(m_lakes);
 
 		while (list2.size() > 1)
 		{
 			Vector2 vector = list2[0];
-			int num = FindRandomRiverEnd(state, list, m_lakes, vector, 2000, 0.4f, 128);
-			if (num == -1 && !HaveRiver(list, vector)) {
-				num = FindRandomRiverEnd(state, list, m_lakes, vector, 5000, 0.4f, 128);
+			int num = FindRandomRiverEnd(state, vector, 2000, 0.4f, 128);
+			if (num == -1 && !HaveRiver(m_rivers, vector)) {
+				num = FindRandomRiverEnd(state, vector, 5000, 0.4f, 128);
 			}
 
 			if (num != -1) {
@@ -342,42 +340,23 @@ namespace WorldGenerator {
 				float num2 = river.p0.Distance(river.p1);
 				river.curveWidth = num2 / 15;
 				river.curveWavelength = num2 / 20;
-				list.push_back(river);
+				m_rivers.push_back(river);
 			}
 			else
 			{
 				list2.erase(list2.begin());
 			}
 		}
-		RenderRivers(state, list);
-		return list;
+		RenderRivers(state, m_rivers);
 	}
 
-	int FindClosestRiverEnd(const std::vector<River>& rivers, const std::vector<Vector2>& points, const Vector2& p, float maxDistance, float heightLimit, float checkStep) {
-		int result = -1;
-		float num = 99999;
-		for (auto i = 0; i < points.size(); i++) {
-			if (!(points[i] == p)) {
-				float num2 = p.Distance(points[i]);
-				if (num2 < maxDistance && num2 < num
-					&& !HaveRiver(rivers, p, points[i])
-					&& IsRiverAllowed(p, points[i], checkStep, heightLimit))
-				{
-					result = i;
-					num = num2;
-				}
-			}
-		}
-		return result;
-	}
-
-	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2>& points, const Vector2& p, float maxDistance, float heightLimit, float checkStep) {
+	int FindRandomRiverEnd(VUtils::Random::State& state, const Vector2& p, float maxDistance, float heightLimit, float checkStep) {
 		std::vector<int> list;
-		for (int i = 0; i < points.size(); i++) {
-			if (!(points[i] == p)
-				&& p.Distance(points[i]) < maxDistance
-				&& !HaveRiver(rivers, p, points[i])
-				&& IsRiverAllowed(p, points[i], checkStep, heightLimit))
+		for (int i = 0; i < m_lakes.size(); i++) {
+			if (!(m_lakes[i] == p)
+				&& p.Distance(m_lakes[i]) < maxDistance
+				&& !HaveRiver(m_rivers, p, m_lakes[i])
+				&& IsRiverAllowed(p, m_lakes[i], checkStep, heightLimit))
 			{
 				list.push_back(i);
 			}
@@ -560,14 +539,6 @@ namespace WorldGenerator {
 			width = num / num2;
 		}
 	}
-
-	//void GenerateBiomes() {
-	//	int num = 400000000;
-	//	for (int i = 0; i < num; i++)
-	//	{
-	//		this.m_biomes[i] = Heightmap.Biome.Meadows;
-	//	}
-	//}
 
 
 

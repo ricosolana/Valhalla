@@ -325,7 +325,9 @@ namespace NetManager {
 		return nullptr;
 	}
 
-
+	void RPC_Ping(OWNER_t sender, float time) {
+		NetRouteManager::Invoke(sender, NetHashes::Routed::Pong, time);
+	}
 
 	void Init() {
 		m_acceptor = std::make_unique<AcceptorSteam>();
@@ -336,6 +338,7 @@ namespace NetManager {
 		m_world = std::make_unique<World>();
 
 		ZoneSystem::Init();
+		NetRouteManager::Register(NetHashes::Routed::Ping, RPC_Ping);
 	}
 
 	void Update(double delta) {

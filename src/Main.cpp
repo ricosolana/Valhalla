@@ -14,6 +14,7 @@
 #include "VUtilsResource.h"
 #include "VServer.h"
 #include "VUtilsRandom.h"
+#include "CompileSettings.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -30,7 +31,7 @@ INITIALIZE_EASYLOGGINGPP
 #define WHITE "\033[37m"
 #define GRAY "\033[90m"
 
-void initLogger() {
+void initLogger(bool colors) {
     el::Configurations loggerConfiguration;
 
     // https://github.com/amrayn/easyloggingpp#datetime-format-specifiers
@@ -39,16 +40,17 @@ void initLogger() {
     //std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     loggerConfiguration.set(el::Level::Info, el::ConfigurationType::Format, format);
-    loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, RED + format + RESET);
-    loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, RED + format + RESET);
-    loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, GOLD + format + RESET);
+    loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
+    loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
+    loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, (colors ? GOLD : "") + format + (colors ? RESET : ""));
     loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format, 
-        GOLD + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + RESET);
-    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, "log.txt");
+        (colors ? GOLD : "") + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + (colors ? RESET : ""));
+    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, LOGFILE_NAME);
 
     el::Helpers::setThreadName("main");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);
-    el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+    if (colors)
+        el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
     LOG(INFO) << "Logger is configured";
 }
 
@@ -61,14 +63,29 @@ static void on_interrupt(int num) {
 // Steam Documentation https://partner.steamgames.com/doc/sdk/api
 int main(int argc, char **argv) {
     OPTICK_THREAD("main");
-    initLogger();
 
     const char* root = "./data/";
+    bool colors = true;
+    bool backup_logs = true;
     for (int i = 1; i < argc-1; i++) {
         if (strcmp(argv[i], "-root") == 0) {
             if (i < argc) root = argv[++i];
         }
+        else if (strcmp(argv[i], "-colors") == 0) {
+            if (i < argc) colors = strcmp(argv[++i], "false") == 0 || strcmp(argv[i], "0") == 0 ? false : true;
+        }
+        else if (strcmp(argv[i], "-backup-logs") == 0) {
+            if (i < argc) backup_logs = strcmp(argv[++i], "false") == 0 || strcmp(argv[i], "0") == 0 ? false : true;
+        }
     }
+
+    // Copy any old file
+    if (backup_logs)
+        fs::copy_file(LOGFILE_NAME, 
+            std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME);
+
+    initLogger(colors);
+
     VUtils::Resource::SetRoot(root);
 
     signal(SIGINT, on_interrupt);

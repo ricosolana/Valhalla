@@ -603,7 +603,7 @@ void VModManager::Init() {
             }
         }
         catch (const std::exception& e) {
-            LOG(ERROR) << "Failed to load mod: " << e.what();
+            LOG(ERROR) << "Failed to load mod: " << e.what() << " (" << dir.path().c_str() << ")";
         }
     }
 

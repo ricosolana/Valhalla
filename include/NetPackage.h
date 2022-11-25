@@ -129,9 +129,11 @@ public:
         return out;
     }
 
+    // TODO reading signed type might cause issues
     template<typename T>
     T Read() requires std::same_as<T, NetPackage> {
         auto count = Read<int32_t>();
+
         NetPackage pkg(count);
         m_stream.Read(pkg.m_stream.m_buf, count);
         assert(pkg.m_stream.Length() == count);

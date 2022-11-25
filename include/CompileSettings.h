@@ -20,3 +20,6 @@ using namespace std::chrono_literals;
 
 // DO NOT CHANGE THIS VALUE!
 #define VALHEIM_APP_ID 892970
+
+// ELPP log file name
+#define LOGFILE_NAME "log.txt"

@@ -40,7 +40,7 @@ class MethodImpl<std::function<void(T, Args...)>> : public IMethod<T> {
     const HASH_t m_methodHash;
 
 public:
-    explicit MethodImpl(const Fn &f,
+    explicit MethodImpl(Fn f,
                         HASH_t invokerHash, // TODO remove defaults
                         HASH_t methodHash)
                         : m_lambda(f),
@@ -49,6 +49,10 @@ public:
     void Invoke(T t, NetPackage pkg) override {
         auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                     NetPackage::Deserialize<Args...>(pkg));
+
+        if (pkg.m_stream.Position() != pkg.m_stream.Length())
+            LOG(ERROR) << "Peer Rpc Invoke has more data than expected " 
+                << pkg.m_stream.Length() << "/" << pkg.m_stream.Position();
 
         // Pre events
         CALL_EVENT_TUPLE(m_invokerHash, tuple);
@@ -89,7 +93,7 @@ public:
 
         // Pass the rpc always
         results.push_back(sol::make_object(state, t));
-
+        
         for (auto&& pkgType : m_types) {
             switch (pkgType) {
                 case PkgType::BYTE_ARRAY:
