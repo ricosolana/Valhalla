@@ -117,9 +117,10 @@ void VServer::Launch() {
     this->LoadFiles();
 
     ModManager()->Init();
+    WorldManager::Init();
+    WorldGenerator::Init();
     NetManager::Init();
     ChatManager::Init();
-    WorldGenerator::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 

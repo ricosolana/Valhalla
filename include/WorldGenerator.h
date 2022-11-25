@@ -8,7 +8,7 @@
 
 namespace WorldGenerator {
 
-	void Init(World world);
+	void Init();
 
 	bool InsideRiverGrid(const Vector2i &grid, const Vector2 &p, float r);
 
@@ -19,8 +19,8 @@ namespace WorldGenerator {
 	Heightmap::Biome GetBiome(float wx, float wy);
 
 	float GetHeight(float wx, float wy);
-
-	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
+	float GetHeight(float wx, float wy, Color &color);
+	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy, Color& color);
 
 	bool InForest(const Vector3& pos);
 
@@ -30,7 +30,7 @@ namespace WorldGenerator {
 
 	int GetSeed();
 
-	static constexpr float worldSize = 10000;
+	static constexpr int32_t worldSize = 10000;
 
 	static constexpr float waterEdge = 10500;
 }

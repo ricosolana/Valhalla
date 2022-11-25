@@ -19,7 +19,10 @@ namespace NetManager {
 
 	std::vector<std::unique_ptr<NetRpc>> m_joining; // used to temporarily connecting peers (until PeerInfo)
 	std::vector<std::unique_ptr<NetPeer>> m_peers;
-	std::unique_ptr<World> m_world;
+
+	//std::unique_ptr<WorldManager::World> m_world;
+
+	World* m_world;
 
 	bool m_hasPassword = false;
 	std::string m_salt;
@@ -209,11 +212,13 @@ namespace NetManager {
 
 		// why does server need to send a position and name?
 
+
+
 		pkg.Write(m_world->m_name);
 		pkg.Write(m_world->m_seed);
 		pkg.Write(m_world->m_seedName);
 		pkg.Write(m_world->m_uid);
-		pkg.Write(m_world->m_worldGenVersion);
+		pkg.Write(VALHEIM_WORLDGEN_VERSION);
 		pkg.Write((double)Valhalla()->Time());
 
 		rpc->Invoke(NetHashes::Rpc::PeerInfo, pkg);
@@ -297,6 +302,8 @@ namespace NetManager {
 		rpc->Invoke(NetHashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
 	}
 
+
+
 	// Retrieve a peer by its member Rpc
 	// Will throw if peer by rpc is not found
 	NetPeer *GetPeer(NetRpc* rpc) {
@@ -335,7 +342,7 @@ namespace NetManager {
 
 		InitPassword();
 
-		m_world = std::make_unique<World>();
+		m_world = WorldManager::GetWorld();
 
 		ZoneSystem::Init();
 		NetRouteManager::Register(NetHashes::Routed::Ping, RPC_Ping);

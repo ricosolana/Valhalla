@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 
     initLogger(colors);
 
-    VUtils::Resource::SetRoot(root);
+    fs::current_path(root);
 
     signal(SIGINT, on_interrupt);
 

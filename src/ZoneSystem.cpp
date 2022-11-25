@@ -520,4 +520,64 @@ namespace ZoneSystem {
 		// inserts the blank dummy key
 		m_globalKeys.insert("");
 	}
+
+
+	void Load(NetPackage& reader, int32_t worldVersion) {
+		auto num = reader.Read<int32_t>();
+		for (int i = 0; i < num; i++) {
+			Vector2i item;
+			item.x = reader.Read<int32_t>();
+			item.y = reader.Read<int32_t>();
+			m_generatedZones.insert(item);
+		}
+
+		if (worldVersion >= 13) {
+			int num2 = reader.Read<int32_t>();
+			int num3 = (worldVersion >= 21) ? reader.Read<int32_t>() : 0;
+			if (num2 != VALHEIM_PGW_VERSION)
+				m_generatedZones.clear();
+
+			if (worldVersion >= 14) {
+				int num4 = reader.Read<int32_t>();
+				for (int j = 0; j < num4; j++) {
+					auto item2 = reader.Read<std::string>();
+					m_globalKeys.insert(item2);
+				}
+			}
+
+			if (worldVersion >= 18) {
+				if (worldVersion >= 20)
+					m_locationsGenerated = reader.Read<bool>();
+
+				auto num5 = reader.Read<int32_t>();
+				for (int k = 0; k < num5; k++) {
+					auto text = reader.ReadString();
+					Vector3 zero;
+					zero.x = reader.Read<float>();
+					zero.y = reader.Read<float>();
+					zero.z = reader.Read<float>();
+					bool generated = false;
+					if (worldVersion >= 19)
+						generated = reader.Read<bool>();
+
+					ZoneSystem::ZoneLocation location = GetLocation(text);
+					if (location)
+						RegisterLocation(location, zero, generated);
+					else
+						LOG(INFO) << "Failed to find location " << text;
+				}
+
+				LOG(INFO) << "Loaded " << num5 << " locations";
+
+				if (num2 != VALHEIM_PGW_VERSION) {
+					m_locationInstances.clear();
+					m_locationsGenerated = false;
+				}
+
+				if (num3 != m_locationVersion)
+					m_locationsGenerated = false;
+			}
+		}
+	}
+
 }

@@ -161,6 +161,15 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
 
+            resourceUtilsTable["ReadFileBytes"] = [](const std::string &path) { return VUtils::Resource::ReadFileBytes(path); };
+            resourceUtilsTable["ReadFileString"] = [](const std::string& path) { return VUtils::Resource::ReadFileString(path); };
+            resourceUtilsTable["ReadFileLines"] = [](const std::string& path) { return VUtils::Resource::ReadFileLines(path); };
+
+            resourceUtilsTable["WriteFileBytes"] = [](const std::string& path, const BYTES_t& bytes) { return VUtils::Resource::WriteFileBytes(path, bytes); };
+            resourceUtilsTable["WriteFileString"] = [](const std::string& path, const std::string& s) { return VUtils::Resource::WriteFileString(path, s); };
+            resourceUtilsTable["WriteFileLines"] = [](const std::string& path, const std::vector<std::string>& lines) { return VUtils::Resource::WriteFileLines(path, lines); };
+
+            /*
             resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<BYTES_t>(const std::string&)>(VUtils::Resource::ReadFileBytes);
             resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const std::string&)>(VUtils::Resource::ReadFileString);
             resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const std::string&)>(VUtils::Resource::ReadFileLines);
@@ -168,6 +177,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
             resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const std::string&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
             resourceUtilsTable["WriteFileString"] = sol::resolve<bool(const std::string&, const std::string&)>(VUtils::Resource::WriteFileString);
             resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const std::string&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
+            */
         }
     }
 
@@ -582,7 +592,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
 
 void VModManager::Init() {
     for (const auto& dir
-        : fs::directory_iterator(VUtils::Resource::GetPath("mods"))) {
+        : fs::directory_iterator("mods")) {
 
         try {
             if (dir.exists() && dir.is_directory()) {

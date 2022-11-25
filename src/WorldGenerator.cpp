@@ -15,7 +15,7 @@ namespace WorldGenerator {
 		float curveWidth;
 		float curveWavelength;
 
-		River() {}
+		//River() {}
 
 		//River(const River& other) = delete;
 	};
@@ -31,21 +31,23 @@ namespace WorldGenerator {
 			w2 = p_w * p_w;
 		}
 
-		//RiverPoint(const RiverPoint& other) = delete; // copy is deleteed because its not needed
+		//RiverPoint(const RiverPoint& other) = delete; // copy is deleted because its not needed
 	};
 
 	static constexpr float m_waterTreshold = 0.05f;
 
-	World m_world;
-	int m_version;
+	//std::unique_ptr<WorldManager::World> m_world;
+	
+	World* m_world;
+
+	//int m_version;
 	float m_offset0;
 	float m_offset1;
 	float m_offset2;
 	float m_offset3;
 	float m_offset4;
-	int m_riverSeed;
-	int m_streamSeed;
-	std::vector<Vector2> m_mountains;
+	int32_t m_riverSeed;
+	int32_t m_streamSeed;
 	std::vector<Vector2> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
@@ -74,7 +76,7 @@ namespace WorldGenerator {
 	static constexpr float	marshBiomeScale = 0.001f;
 	static constexpr float	minMarshNoise = 0.6f;
 	static constexpr float	minMarshDistance = 2000;
-	static constexpr float	maxMarshDistance = 8000;
+	static constexpr float	maxMarshDistance = 6000;
 	static constexpr float	minMarshHeight = 0.05f;
 	static constexpr float	maxMarshHeight = 0.25f;
 	// Heath is plains
@@ -86,7 +88,7 @@ namespace WorldGenerator {
 	// Darklands is mistlands
 	//	PROOF: not definite, but these values are nearby in usage
 	static constexpr float	darklandBiomeScale = 0.001f;
-	static constexpr float	minDarklandNoise = 0.5f;
+	static constexpr float	minDarklandNoise = 0.4f;
 	static constexpr float	minDarklandDistance = 6000;
 	static constexpr float	maxDarklandDistance = 10000;
 	// ocean
@@ -113,7 +115,8 @@ namespace WorldGenerator {
 
 	// Forward declarations
 	void Generate();
-	void GenerateMountains();
+
+	//void GenerateMountains();
 	void GenerateLakes();
 	std::vector<Vector2> MergePoints(std::vector<Vector2>& points, float range);
 	int FindClosest(const std::vector<Vector2>& points, const Vector2& p, float maxDistance);
@@ -132,14 +135,16 @@ namespace WorldGenerator {
     void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
 	bool InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r);
 	Vector2i GetRiverGrid(float wx, float wy);
-	void GetRiverWeight(float wx, float wy, float& weight, float& width);
+	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth);
 	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
 	float WorldAngle(float wx, float wy);
 	float GetBaseHeight(float wx, float wy);
 	float AddRivers(float wx, float wy, float h);
 
-	float GetHeight(float wx, float wy);
-	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
+	float GetGenerationHeight(float x, float y);
+
+	//float GetHeight(float wx, float wy, );
+	//float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
 	float GetMarshHeight(float wx, float wy);
 	float GetMeadowsHeight(float wx, float wy);
 	float GetForestHeight(float wx, float wy);
@@ -153,18 +158,19 @@ namespace WorldGenerator {
 
 
 
-	void Init(World world) {
-		m_world = world;
-		m_version = m_world.m_worldGenVersion;
+	void Init() {
+		//m_world = WorldManager::GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
 
-		VUtils::Random::State state(m_world.m_seed);
-		m_offset0 = (float) state.Range(-10000, 10000);
-		m_offset1 = (float) state.Range(-10000, 10000);
-		m_offset2 = (float) state.Range(-10000, 10000);
-		m_offset3 = (float) state.Range(-10000, 10000);
+		m_world = WorldManager::GetWorld();
+
+		VUtils::Random::State state(m_world->m_seed);
+		m_offset0 = state.Range(-worldSize, worldSize);
+		m_offset1 = state.Range(-worldSize, worldSize);
+		m_offset2 = state.Range(-worldSize, worldSize);
+		m_offset3 = state.Range(-worldSize, worldSize);
 		m_riverSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
 		m_streamSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
-		m_offset4 = (float) state.Range(-10000, 10000);
+		m_offset4 = state.Range(-worldSize, worldSize);
 
 		// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
@@ -172,35 +178,18 @@ namespace WorldGenerator {
 	}
 
 	void Generate() {
-		GenerateMountains();
 		GenerateLakes();
 		GenerateRivers();
 		GenerateStreams();
 	}
 
-	void GenerateMountains() {
-		std::vector<Vector2> list;
-		for (float num = -10000; num <= 10000; num += 128)
-		{
-			for (float num2 = -10000; num2 <= 10000; num2 += 128)
-			{
-				if (VUtils::Math::Magnitude(num2, num) <= 10000
-					&& GetBaseHeight(num2, num) > 0.45f)
-				{
-					list.push_back(Vector2(num2, num));
-				}
-			}
-		}
-		m_mountains = MergePoints(list, 800);
-	}
-
 	void GenerateLakes() {
 		std::vector<Vector2> list;
-		for (float num = -10000; num <= 10000; num += 128)
+		for (float num = -worldSize; num <= worldSize; num += 128)
 		{
-			for (float num2 = -10000; num2 <= 10000; num2 += 128)
+			for (float num2 = -worldSize; num2 <= worldSize; num2 += 128)
 			{
-				if (VUtils::Math::Magnitude(num2, num) <= 10000
+				if (VUtils::Math::Magnitude(num2, num) <= worldSize
 					&& GetBaseHeight(num2, num) < 0.05f)
 				{
 					list.push_back(Vector2(num2, num));
@@ -262,7 +251,7 @@ namespace WorldGenerator {
 			if (FindStreamStartPoint(state, 100, 26, 31, vector, num2)
 				&& FindStreamEndPoint(state, 100, 36, 44, vector, 80, 200, vector2)) {
 				Vector2 vector3 = (vector + vector2) * 0.5f;
-				float height = GetHeight(vector3.x, vector3.y);
+				float height = GetGenerationHeight(vector3.x, vector3.y);
 				if (height >= 26 && height <= 44) {
 					River river;
 					river.p0 = vector;
@@ -288,7 +277,7 @@ namespace WorldGenerator {
 			num2 -= num;
 			float f = state.Range(0.f, PI * 2.0f);
 			Vector2 vector = start + Vector2(sin(f), cos(f)) * num2;
-			float height = GetHeight(vector.x, vector.y);
+			float height = GetGenerationHeight(vector.x, vector.y);
 			if (height > minHeight && height < maxHeight)
 			{
 				end = vector;
@@ -301,9 +290,9 @@ namespace WorldGenerator {
 
 	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2& p, float& starth) {
 		for (int i = 0; i < iterations; i++) {
-			float num = state.Range(-10000.f, 10000.f);
-			float num2 = state.Range(-10000.f, 10000.f);
-			float height = GetHeight(num, num2);
+			auto num = state.Range((float) -worldSize, (float)worldSize);
+			auto num2 = state.Range((float) -worldSize, (float)worldSize);
+			auto height = GetGenerationHeight(num, num2);
 			if (height > minHeight && height < maxHeight)
 			{
 				p = Vector2(num, num2);
@@ -338,8 +327,8 @@ namespace WorldGenerator {
 				river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
 				river.widthMin = state.Range(minRiverWidth, river.widthMax);
 				float num2 = river.p0.Distance(river.p1);
-				river.curveWidth = num2 / 15;
-				river.curveWavelength = num2 / 20;
+				river.curveWidth = num2 / 15.f;
+				river.curveWavelength = num2 / 20.f;
 				m_rivers.push_back(river);
 			}
 			else
@@ -409,10 +398,12 @@ namespace WorldGenerator {
 		//Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
 		robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher> dictionary;
 		for (auto&& river : rivers) {
-			float num = river.widthMin / 8;
-			Vector2 normalized = (river.p1 - river.p0).Normalized();
-			Vector2 a(-normalized.y, normalized.x);
+
+			float num = river.widthMin / 8.f;
+			const Vector2 normalized = (river.p1 - river.p0).Normalized();
+			const Vector2 a(-normalized.y, normalized.x);
 			float num2 = river.p0.Distance(river.p1);
+
 			for (float num3 = 0; num3 <= num2; num3 += num) {
 				float num4 = num3 / river.curveWavelength;
 				float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
@@ -423,35 +414,9 @@ namespace WorldGenerator {
 		}
 
 		for (auto&& keyValuePair : dictionary) {
+			auto &&list = m_riverPoints[keyValuePair.first];
 
-			//WorldGenerator.RiverPoint[] collection;
-
-			//if (m_riverPoints.TryGetValue(keyValuePair.Key, out collection))
-			//{
-			//	std::vector<RiverPoint> list(collection);
-			//	list.AddRange(keyValuePair.Value);
-			//	m_riverPoints[keyValuePair.Key] = list.ToArray();
-			//}
-			//else
-			//{
-			//	WorldGenerator.RiverPoint[] value = keyValuePair.Value.ToArray();
-			//	m_riverPoints.Add(keyValuePair.Key, value);
-			//}
-
-
-			auto&& find = m_riverPoints.find(keyValuePair.first);
-
-			if (find != m_riverPoints.end()) {
-				auto list(find->second);
-				list.insert(list.end(), keyValuePair.second.begin(), keyValuePair.second.end());
-				find->second = list; // assign to the iterator instead of rehashing the entire thing
-			}
-			else {
-				//WorldGenerator.RiverPoint[] value = keyValuePair.Value.ToArray();
-				//auto value = keyValuePair.second;
-				m_riverPoints.insert({ keyValuePair.first, keyValuePair.second });
-				//m_riverPoints.Add(keyValuePair.Key, value);
-			}
+			list.insert(list.end(), keyValuePair.second.begin(), keyValuePair.second.end());
 		}
 	}
 
@@ -466,40 +431,30 @@ namespace WorldGenerator {
 			for (int j = riverGrid.x - num; j <= riverGrid.x + num; j++)
 			{
 				Vector2i grid(j, i);
-				if (InsideRiverGrid(grid, p, r)) {
+				if (InsideRiverGrid(grid, p, r))
 					AddRiverPoint(riverPoints, grid, p, r);
-				}
 			}
 		}
 	}
 
 	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
-		auto&& find = riverPoints.find(grid);
-		if (find != riverPoints.end()) {
-			find->second.push_back({ p, r });
-		}
-		else {
-			// add a single dummy new list with 1 pt
-			riverPoints.insert({ grid,
-				std::vector<RiverPoint> { {p, r} } });
-		}
+		riverPoints[grid].push_back({ p, r });
 	}
 
 	std::mutex m_mutRiverCache;
-
-	void GetRiverWeight(float wx, float wy, float& weight, float& width) {
+	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth) {
 		Vector2i riverGrid = GetRiverGrid(wx, wy);
 
 		std::scoped_lock<std::mutex> lock(m_mutRiverCache);
 		if (riverGrid == m_cachedRiverGrid) {
 			if (m_cachedRiverPoints) {
-				return GetWeight(*m_cachedRiverPoints, wx, wy, weight, width);
+				return GetWeight(*m_cachedRiverPoints, wx, wy, outWeight, outWidth);
 			}
 		}
 		else {
 			auto&& find = m_riverPoints.find(riverGrid);
 			if (find != m_riverPoints.end()) {
-				GetWeight(find->second, wx, wy, weight, width);
+				GetWeight(find->second, wx, wy, outWeight, outWidth);
 				m_cachedRiverGrid = riverGrid;
 				m_cachedRiverPoints = &find->second;
 				return;
@@ -509,16 +464,19 @@ namespace WorldGenerator {
 			m_cachedRiverPoints = nullptr;
 		}
 
-		weight = 0;
-		width = 0;
+		outWeight = 0;
+		outWidth = 0;
 	}
 
-	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width) {
+	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& outWeight, float& outWidth) {
+		
+		outWeight = 0;
+		outWidth = 0;
+
 		Vector2 b(wx, wy);
-		weight = 0;
-		width = 0;
 		float num = 0;
 		float num2 = 0;
+
 		for (auto&& riverPoint : points)
 		{
 			float num3 = (riverPoint.p - b).SqMagnitude();
@@ -526,18 +484,15 @@ namespace WorldGenerator {
 			{
 				float num4 = sqrt(num3);
 				float num5 = 1.f - num4 / riverPoint.w;
-				if (num5 > weight)
-				{
-					weight = num5;
-				}
+				outWeight = std::max(num5, outWeight);
+
 				num += riverPoint.w * num5;
 				num2 += num5;
 			}
 		}
+
 		if (num2 > 0.f)
-		{
-			width = num / num2;
-		}
+			outWidth = num / num2;		
 	}
 
 
@@ -552,9 +507,12 @@ namespace WorldGenerator {
 		wx += 100000 + m_offset0;
 		wy += 100000 + m_offset1;
 		float num3 = 0;
-		num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f) * VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f) * 1.0f;
-		num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f) * VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
-		num3 += VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f) * VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
+		num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f) 
+			* VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f) * 1.0f;
+		num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f) 
+			* VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
+		num3 += VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f) 
+			* VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
 		num3 -= 0.07f;
 		float num4 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.123f, wy * 0.002f * 0.25f + 0.15123f);
 		float num5 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.321f, wy * 0.002f * 0.25f + 0.231f);
@@ -564,12 +522,12 @@ namespace WorldGenerator {
 		num3 *= 1.f - num6;
 		if (num2 > 10000)
 		{
-			float t = VUtils::Math::LerpStep(10000, 10500, num2);
+			float t = VUtils::Math::LerpStep(10000, waterEdge, num2);
 			num3 = VUtils::Math::Lerp(num3, -0.2f, t);
 			float num7 = 10490;
 			if (num2 > num7)
 			{
-				float t2 = VUtils::Math::LerpStep(num7, 10500, num2);
+				float t2 = VUtils::Math::LerpStep(num7, waterEdge, num2);
 				num3 = VUtils::Math::Lerp(num3, -2, t2);
 			}
 		}
@@ -593,10 +551,9 @@ namespace WorldGenerator {
 		float num;
 		float v;
 		GetRiverWeight(wx, wy, num, v);
-		if (num <= 0.f)
-		{
+		if (num <= 0)
 			return h;
-		}
+
 		float t = VUtils::Math::LerpStep(20, 60, v);
 		float num2 = VUtils::Math::Lerp(0.14f, 0.12f, t);
 		float num3 = VUtils::Math::Lerp(0.139f, 0.128f, t);
@@ -640,9 +597,8 @@ namespace WorldGenerator {
 		float num4 = num2 - num3;
 		float num5 = VUtils::Math::Clamp01(baseHeight / 0.4f);
 		if (num4 > 0.f)
-		{
 			num2 -= num4 * (1.f - num5) * 0.75f;
-		}
+
 		num2 = AddRivers(wx2, wy2, num2);
 		num2 += VUtils::Math::PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.01f;
 		return num2 + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
@@ -662,6 +618,34 @@ namespace WorldGenerator {
 		return num + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 	}
 
+	float GetMistlandsHeight(float wx, float wy, Color& mask) {
+		float wx2 = wx;
+		float wy2 = wy;
+		float num = GetBaseHeight(wx, wy);
+		wx += 100000.f + m_offset3;
+		wy += 100000.f + m_offset3;
+		float num2 = VUtils::Math::PerlinNoise(wx * 0.02f * 0.7f, wy * 0.02f * 0.7f)
+			* VUtils::Math::PerlinNoise(wx * 0.04f * 0.7f, wy * 0.04f * 0.7f);
+		num2 += VUtils::Math::PerlinNoise(wx * 0.03f * 0.7f, wy * 0.03f * 0.7f)
+			* VUtils::Math::PerlinNoise(wx * 0.05f * 0.7f, wy * 0.05f * 0.7f) * num2 * 0.5f;
+		num2 = ((num2 > 0) ? std::pow(num2, 1.5f) : num2);
+		num += num2 * 0.4f;
+		num = AddRivers(wx2, wy2, num);
+		float num3 = VUtils::Math::Clamp01(num2 * 7.f);
+		num += VUtils::Math::PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.03f * num3;
+		num += VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.01f * num3;
+		float num4 = 1.f - num3 * 1.2f;
+		num4 -= 1.f - VUtils::Math::LerpStep(0.1f, 0.3f, num3);
+		float a = num + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.002f;
+		float num5 = num;
+		num5 *= 400.f;
+		num5 = std::ceil(num5);
+		num5 /= 400.f;
+		num = VUtils::Math::Lerp(a, num5, num3);
+		mask = Color{ 0, 0, 0, num4 };
+		return num;
+	}
+
 	float GetPlainsHeight(float wx, float wy) {
 		float wx2 = wx;
 		float wy2 = wy;
@@ -676,9 +660,8 @@ namespace WorldGenerator {
 		float num4 = num2 - num3;
 		float num5 = VUtils::Math::Clamp01(baseHeight / 0.4f);
 		if (num4 > 0.f)
-		{
 			num2 -= num4 * (1.f - num5) * 0.75f;
-		}
+
 		num2 = AddRivers(wx2, wy2, num2);
 		num2 += VUtils::Math::PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.01f;
 		return num2 + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
@@ -763,7 +746,10 @@ namespace WorldGenerator {
 	}
 
 
+
+	//
 	// public accessed methods:
+	//
 
 
 
@@ -780,10 +766,6 @@ namespace WorldGenerator {
 		return Vector2i(x, y);
 	}
 
-
-
-
-	// public
 	Heightmap::BiomeArea GetBiomeArea(const Vector3& point) {
 		auto&& biome = GetBiome(point);
 
@@ -824,7 +806,7 @@ namespace WorldGenerator {
 		if (VUtils::Math::Magnitude(wx, wy + ashlandsYOffset) > ashlandsMinDistance + num)
 			return Heightmap::Biome::AshLands;
 
-		if ((double)baseHeight <= 0.02)
+		if (baseHeight <= 0.02f)
 			return Heightmap::Biome::Ocean;
 
 		// top curve of world is mostly deep north
@@ -859,15 +841,27 @@ namespace WorldGenerator {
 		return Heightmap::Biome::Meadows;
 	}
 
-
-	// 
 	float GetHeight(float wx, float wy) {
+		Color dummy;
+		return GetHeight(wx, wy, dummy);
+	}
+
+	float GetHeight(float wx, float wy, Color &mask) {
 		auto biome = GetBiome(wx, wy);
-		return GetBiomeHeight(biome, wx, wy);
+		return GetBiomeHeight(biome, wx, wy, mask);
+	}
+
+	// Used only early during generation
+	float GetGenerationHeight(float wx, float wy) {
+		auto biome = GetBiome(wx, wy);
+		if (biome == Heightmap::Biome::Mistlands)
+			return GetForestHeight(wx, wy) * 200.f;
+		Color dummy;
+		return GetBiomeHeight(biome, wx, wy, dummy);
 	}
 
 	// public
-	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy) {
+	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy, Color &mask) {
 		switch (biome)
 		{
 		case Heightmap::Biome::Meadows:
@@ -889,13 +883,10 @@ namespace WorldGenerator {
 		case Heightmap::Biome::Ocean:
 			return GetOceanHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::Mistlands: // valheim doesnt correctly implement mistlands yet
-			return GetForestHeight(wx, wy) * 200.f;
+			return GetMistlandsHeight(wx, wy, mask) * 200.f;
 		default:
-			LOG(ERROR) << "Tried to retrieve biome height for unknown biome " << (int)biome;
-			//return 0.f;
-			break;
+			throw std::runtime_error("Invalid biome");
 		}
-		return 0.f;
 	}
 
 	// public
@@ -938,6 +929,6 @@ namespace WorldGenerator {
 
 	// public
 	int GetSeed() {
-		return m_world.m_seed;
+		return m_world->m_seed;
 	}
 }

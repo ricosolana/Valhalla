@@ -25,6 +25,9 @@
 
 namespace VUtils::Random {
 
+    State::State() 
+        : State(steady_clock::now().time_since_epoch().count()) {}
+
     State::State(int32_t seed) {
         m_seed[0] = seed;
         m_seed[1] = m_seed[0] * 0x6c078965 + 1;

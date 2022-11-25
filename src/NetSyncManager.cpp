@@ -263,22 +263,21 @@ namespace NetSyncManager {
 	}
 
 	void ReleaseLegacyZDOS() {
-		int removed = 0;
+		auto size = m_objectsByID.size();
 
 		for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
 			auto pgw = itr->second->Version();
-			if (pgw != 0 && pgw != ZoneSystem::PGW_VERSION) {
+			if (pgw != 0 && pgw != VALHEIM_PGW_VERSION) {
 				RemoveFromSector(itr->second.get(), itr->second->Sector());
 				//ZDOPool.Release(pair.second);
 				itr = m_objectsByID.erase(itr);
-				removed++;
 			}
 			else {
 				++itr;
 			}
 		}
 
-		LOG(INFO) << "Removed " << removed << " OLD generated ZDOS";
+		LOG(INFO) << "Removed " << (size - m_objectsByID.size()) << " OLD generated ZDOS";
 	}
 
 	void CapDeadZDOList() {

@@ -49,6 +49,11 @@ namespace fs = std::filesystem;
 
 
 
+struct Color {
+    float r, g, b, a;
+};
+
+
 using namespace std::chrono_literals;
 
 using BYTE_t = uint8_t; // char;

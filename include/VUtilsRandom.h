@@ -19,6 +19,7 @@ namespace VUtils::Random {
 		uint32_t NextInt();
 
 	public:
+		State();
 		State(int32_t seed);
 		State(const State& other); // copy construct
 
