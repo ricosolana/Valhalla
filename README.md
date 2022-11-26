@@ -1,3 +1,5 @@
+~~This project has been suspended until further notice. This is the more or less my own official server implementation after several previous (failed/abandoned) attempts to build a multiplayer server in C++ from the ground up. I have fulfilled several of my goals with this project: do stuff with Steam, Lua script functionality, powerful networking structure. This is definitly one of the biggest projects I've began on my own. I am calling it quits after realizing how complicated things will get. I have learnt a lot, and will return with another similar project in the future. I am providing a final release version cause why not. Happy Halloween!~~
+
 I am working on this project again. Must closely repair world generation to match the latest Valheim Mistlands update, and other stuff I am likely to miss. Some things I wanna refactor but not sure how exactly; I'll experiment with some designs. 
 
 World should be better integrated into WorldManager/Generator, ZoneLocation with ZoneSystem will be renamed ZoneFeature or ZoneArtifact (ZoneLocation is so terribly named). 
@@ -11,18 +13,6 @@ Working on World Generation! Next thing to test out will be getting ZoneFeatures
 I realize Lua scripting is also limited, and every feature I plan to implement has to be implemented in Lua too if functionality is to be bridged between native and Lua. IE custom modded worldgen or custom biomes idk how to implement. Well, biomes are stored simply as a enum bitmask, so not much expandable there without massive overhauling.
 
 So refactoring to keep things consistent and aligned in order to keep motivated
-
-
-
-~~This project has been suspended until further notice. This is the more or less my own official server implementation after several previous (failed/abandoned) attempts to build a multiplayer server in C++ from the ground up. 
-
-I have fulfilled several of my goals with this project: do stuff with Steam, Lua script functionality, powerful networking structure.
-
-This is definitly one of the biggest projects I've began on my own. I am calling it quits after realizing how complicated things will get.
-
-I have learnt a lot, and will return with another similar project in the future. I am providing a final release version cause why not. Happy Halloween!~~
-
-
 
 # Valhalla 
 
