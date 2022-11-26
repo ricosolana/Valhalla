@@ -171,7 +171,7 @@ void VServer::Launch() {
 			}
 		}
 		
-		Update(Delta());
+		Update();
 
 		// TODO adjust based on workload intensity
 		std::this_thread::sleep_for(1ms);
@@ -197,7 +197,7 @@ void VServer::Terminate() {
 
 
 
-void VServer::Update(float delta) {
+void VServer::Update() {
 	// This is important to processing RPC remote invocations
 
     if (m_rcon) {
@@ -286,9 +286,12 @@ void VServer::Update(float delta) {
         }
     }
 
-	NetManager::Update(delta);
-    NetSyncManager::Update(delta);
-    CALL_EVENT(EVENT_HASH_Update, delta);
+    if (!NetManager::GetPeers().empty())
+        m_netTime += Delta();
+    
+	NetManager::Update();
+    NetSyncManager::Update();
+    CALL_EVENT(EVENT_HASH_Update, Delta());
 	//VModManager::Event::OnUpdate(delta);
 }
 

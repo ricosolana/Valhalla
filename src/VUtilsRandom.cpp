@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <limits>
+#include <openssl/rand.h>
 #include "VUtilsRandom.h"
 
 // It seems someone already had a random implementation made
@@ -130,4 +131,40 @@ namespace VUtils::Random {
         return vec * dist;
     }
 
+
+
+
+
+
+    void GenerateBytes(BYTE_t* out, unsigned int count) {
+        RAND_bytes(out, count);
+    }
+
+    BYTES_t GenerateBytes(unsigned int count) {
+        BYTES_t result(count);
+
+        GenerateBytes(result.data(), count);
+
+        return result;
+    }
+
+    static const std::string charsAlphaNum = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ023456789";
+
+    OWNER_t GenerateUID() {
+        OWNER_t result;
+        GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
+        return result;
+    }
+
+    std::string GenerateAlphaNum(unsigned int count) {
+        std::string res;
+        res.resize(count);
+
+        VUtils::Random::State state;
+        for (unsigned int i = 0; i < count; i++) {
+            res[i] = charsAlphaNum[state.Range(0, charsAlphaNum.length())];
+        }
+
+        return res;
+    }
 }

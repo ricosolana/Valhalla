@@ -199,7 +199,7 @@ namespace ZoneSystem {
 
 
 	struct LocationInstance {
-		ZoneLocation m_location;
+		ZoneLocation *m_location;
 		Vector3 m_position;
 		bool m_placed;
 	};
@@ -211,7 +211,17 @@ namespace ZoneSystem {
 
 	robin_hood::unordered_set<Vector2i, HashUtils::Hasher> m_generatedZones;
 
-	//static const char* TEMPLE_START = "StartTemple";
+	std::vector<std::unique_ptr<ZoneLocation>> m_locations;
+
+	bool m_locationsGenerated = false;
+		
+	ZoneLocation *GetLocation(const std::string &name) {
+		for (auto&& zoneLocation : m_locations)
+			if (zoneLocation->m_prefabName == name)
+				return zoneLocation.get();
+
+		return nullptr;
+	}
 
 	void SendGlobalKeys(OWNER_t target) {
         LOG(INFO) << "Sending global keys to " << target;
@@ -223,8 +233,8 @@ namespace ZoneSystem {
 		
 		for (auto&& pair : m_locationInstances) {
 			auto&& loc = pair.second;
-			if (loc.m_location.m_iconAlways
-				|| (loc.m_location.m_iconPlaced && loc.m_placed))
+			if (loc.m_location->m_iconAlways
+				|| (loc.m_location->m_iconPlaced && loc.m_placed))
 			{
 				//icons[loc.m_position] = loc.m_location.m_prefabName;
 			}
@@ -240,7 +250,9 @@ namespace ZoneSystem {
 	}
 
 	void SendLocationIcons(OWNER_t target) {
-        LOG(INFO) << "Senging location icons to " << target;
+        LOG(INFO) << "Sending location icons to " << target;
+
+		assert(false);
 
 		NetPackage pkg;
 
@@ -251,7 +263,7 @@ namespace ZoneSystem {
 		// key
 		pkg.Write(Vector3{ 0, 40, 0 });
 		// value
-		pkg.Write(LOCATION_SPAWN);
+		//pkg.Write(LOCATION_SPAWN);
 
 		//tempIconList.Clear();
 		//GetLocationIcons(this.tempIconList);
@@ -286,14 +298,14 @@ namespace ZoneSystem {
 	}
 
 	// private
-	void RegisterLocation(ZoneLocation location, const Vector3 &pos, bool generated) {
+	void RegisterLocation(ZoneLocation *location, const Vector3 &pos, bool generated) {
 		auto zone = GetZoneCoords(pos);
 		if (m_locationInstances.contains(zone)) {
 			LOG(ERROR) << "Location already exist in zone " << zone.x << " " << zone.y;
 		}
 		else {
 			LocationInstance value;
-			value.m_location = std::move(location);
+			value.m_location = location;
 			value.m_position = pos;
 			value.m_placed = generated;
 			m_locationInstances[zone] = value;
@@ -305,9 +317,9 @@ namespace ZoneSystem {
     //  this is probably the most important thing to get implemented
     //  Next would be objects and better ZDO syncing
 	// private
-	void GenerateLocations(const ZoneLocation& location) {
-		VUtils::Random::State state(WorldGenerator::GetSeed() + VUtils::String::GetStableHashCode(location.m_prefabName));
-        const float locationRadius = std::max(location.m_exteriorRadius, location.m_interiorRadius);
+	void GenerateLocations(ZoneLocation *location) {
+		VUtils::Random::State state(WorldGenerator::GetSeed() + VUtils::String::GetStableHashCode(location->m_prefabName));
+        const float locationRadius = std::max(location->m_exteriorRadius, location->m_interiorRadius);
         unsigned int spawnedLocations = 0;
 
 		unsigned int errLocations = 0;
@@ -320,23 +332,23 @@ namespace ZoneSystem {
 		unsigned int errTerrainDelta = 0;
 
 		for (auto&& inst : m_locationInstances) {
-			if (inst.second.m_location.m_prefabName == location.m_prefabName)
+			if (inst.second.m_location->m_prefabName == location->m_prefabName)
 				spawnedLocations++;
 		}
 		if (spawnedLocations)
-			LOG(INFO) << "Old location found " << location.m_prefabName << " x " << spawnedLocations;
+			LOG(INFO) << "Old location found " << location->m_prefabName << " x " << spawnedLocations;
 
 
 
-		float range = location.m_centerFirst ? location.m_minDistance : 10000;
+		float range = location->m_centerFirst ? location->m_minDistance : 10000;
 
-		if (location.m_unique && spawnedLocations)
+		if (location->m_unique && spawnedLocations)
 			return;
 
-        const unsigned int spawnAttempts = location.m_prioritized ? 200000 : 100000;
-        for (unsigned int a=0; a < spawnAttempts && spawnedLocations < location.m_quantity; a++) {
+        const unsigned int spawnAttempts = location->m_prioritized ? 200000 : 100000;
+        for (unsigned int a=0; a < spawnAttempts && spawnedLocations < location->m_quantity; a++) {
 			Vector2i randomZone = GetRandomZone(state, range);
-			if (location.m_centerFirst)
+			if (location->m_centerFirst)
 				range++;
 
 			if (m_locationInstances.contains(randomZone))
@@ -344,7 +356,7 @@ namespace ZoneSystem {
 			else if (!IsZoneGenerated(randomZone)) {
 				Vector3 zonePos = GetZonePos(randomZone);
 				Heightmap::BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
-				if ((location.m_biomeArea & biomeArea) == (Heightmap::BiomeArea)0)
+				if ((location->m_biomeArea & biomeArea) == (Heightmap::BiomeArea)0)
 					errBiomeArea++;
 				else {
 					for (int i = 0; i < 20; i++) {
@@ -358,23 +370,23 @@ namespace ZoneSystem {
 
 
 						float magnitude = randomPointInZone.Magnitude();
-						if ((location.m_minDistance != 0 && magnitude < location.m_minDistance)
-                            || (location.m_maxDistance != 0 && magnitude > location.m_maxDistance))
+						if ((location->m_minDistance != 0 && magnitude < location->m_minDistance)
+                            || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance))
 							errCenterDistances++;
 						else {
 							auto biome = WorldGenerator::GetBiome(randomPointInZone);
-							if ((location.m_biome & biome) == Heightmap::Biome::None)
+							if ((location->m_biome & biome) == Heightmap::Biome::None)
 								errNoneBiomes++;
 							else {
 								randomPointInZone.y = WorldGenerator::GetHeight(randomPointInZone.x, randomPointInZone.z);
 								float waterDiff = randomPointInZone.y - WATER_LEVEL;
-								if (waterDiff < location.m_minAltitude || waterDiff > location.m_maxAltitude)
+								if (waterDiff < location->m_minAltitude || waterDiff > location->m_maxAltitude)
 									errAltitude++;
 								else {
-									if (location.m_inForest) {
+									if (location->m_inForest) {
 										float forestFactor = WorldGenerator::GetForestFactor(randomPointInZone);
-										if (forestFactor < location.m_forestTresholdMin
-                                            || forestFactor > location.m_forestTresholdMax) {
+										if (forestFactor < location->m_forestTresholdMin
+                                            || forestFactor > location->m_forestTresholdMax) {
 											errForestFactor++;
                                             continue;
 										}
@@ -382,18 +394,18 @@ namespace ZoneSystem {
 
 									float delta = 0;
 									Vector3 vector;
-									WorldGenerator::GetTerrainDelta(state, randomPointInZone, location.m_exteriorRadius, delta, vector);
-									if (delta > location.m_maxTerrainDelta
-                                        || delta < location.m_minTerrainDelta)
+									WorldGenerator::GetTerrainDelta(state, randomPointInZone, location->m_exteriorRadius, delta, vector);
+									if (delta > location->m_maxTerrainDelta
+                                        || delta < location->m_minTerrainDelta)
 										errTerrainDelta++;
 									else {
-										if (location.m_minDistanceFromSimilar <= 0 ) {
+										if (location->m_minDistanceFromSimilar <= 0 ) {
                                             bool locInRange = false;
 											for (auto&& inst : m_locationInstances) {
 												auto&& loc = inst.second.m_location;
-												if ((loc.m_prefabName == location.m_prefabName 
-													|| (!location.m_group.empty() && location.m_group == loc.m_group))
-													&& inst.second.m_position.Distance(randomPointInZone) < location.m_minDistanceFromSimilar)
+												if ((loc->m_prefabName == location->m_prefabName
+													|| (!location->m_group.empty() && location->m_group == loc->m_group))
+													&& inst.second.m_position.Distance(randomPointInZone) < location->m_minDistanceFromSimilar)
 												{
 													locInRange = true;
 													break;
@@ -416,8 +428,8 @@ namespace ZoneSystem {
 			}
 		}
 
-		if (spawnedLocations < location.m_quantity) {
-            LOG(ERROR) << "Failed to place all " << location.m_prefabName << ", placed " << spawnedLocations << "/" << location.m_quantity;
+		if (spawnedLocations < location->m_quantity) {
+            LOG(ERROR) << "Failed to place all " << location->m_prefabName << ", placed " << spawnedLocations << "/" << location->m_quantity;
 
             LOG(DEBUG) << "errLocations " << errLocations;
             LOG(DEBUG) << "errCenterDistances " << errCenterDistances;
@@ -551,7 +563,7 @@ namespace ZoneSystem {
 
 				auto num5 = reader.Read<int32_t>();
 				for (int k = 0; k < num5; k++) {
-					auto text = reader.ReadString();
+					auto text = reader.Read<std::string>();
 					Vector3 zero;
 					zero.x = reader.Read<float>();
 					zero.y = reader.Read<float>();
@@ -560,7 +572,7 @@ namespace ZoneSystem {
 					if (worldVersion >= 19)
 						generated = reader.Read<bool>();
 
-					ZoneSystem::ZoneLocation location = GetLocation(text);
+					auto location = GetLocation(text);
 					if (location)
 						RegisterLocation(location, zero, generated);
 					else

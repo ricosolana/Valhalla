@@ -55,7 +55,7 @@ namespace WorldGenerator {
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
-	//ReaderWriterLockSlim m_riverCacheLock; // c# lock mechanism?
+	//ReaderWriterLockSlim m_riverCacheLock; // for terrian builder?
 	//std::vector<Heightmap::Biome> m_biomes; // seems unused
 
 	static constexpr float	riverGridSize = 64;
@@ -76,7 +76,7 @@ namespace WorldGenerator {
 	static constexpr float	marshBiomeScale = 0.001f;
 	static constexpr float	minMarshNoise = 0.6f;
 	static constexpr float	minMarshDistance = 2000;
-	static constexpr float	maxMarshDistance = 6000;
+	/*static constexpr*/ float	maxMarshDistance = 6000;
 	static constexpr float	minMarshHeight = 0.05f;
 	static constexpr float	maxMarshHeight = 0.25f;
 	// Heath is plains
@@ -88,7 +88,7 @@ namespace WorldGenerator {
 	// Darklands is mistlands
 	//	PROOF: not definite, but these values are nearby in usage
 	static constexpr float	darklandBiomeScale = 0.001f;
-	static constexpr float	minDarklandNoise = 0.4f;
+	/*static constexpr*/ float	minDarklandNoise = 0.4f;
 	static constexpr float	minDarklandDistance = 6000;
 	static constexpr float	maxDarklandDistance = 10000;
 	// ocean
@@ -97,7 +97,7 @@ namespace WorldGenerator {
 	static constexpr float	oceanBiomeMaxNoise = 0.6f;
 	static constexpr float	oceanBiomeMinDistance = 1000;
 	static constexpr float	oceanBiomeMinDistanceBuffer = 256;
-	static constexpr float	m_minMountainDistance = 1000; // usually mutable because version changes this
+	/*static constexpr*/ float	m_minMountainDistance = 1000; // usually mutable because version changes this
 	static constexpr float	mountainBaseHeightMin = 0.4f;
 	static constexpr float	deepNorthMinDistance = 12000;
 	static constexpr float	deepNorthYOffset = 4000;
@@ -159,9 +159,15 @@ namespace WorldGenerator {
 
 
 	void Init() {
-		//m_world = WorldManager::GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
-
 		m_world = WorldManager::GetWorld();
+
+		if (m_world->m_worldGenVersion <= 0)
+			m_minMountainDistance = 1500;
+
+		if (m_world->m_worldGenVersion <= 1) {
+			minDarklandNoise = 0.5f;
+			maxMarshDistance = 8000;
+		}
 
 		VUtils::Random::State state(m_world->m_seed);
 		m_offset0 = state.Range(-worldSize, worldSize);

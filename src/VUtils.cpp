@@ -1,7 +1,5 @@
 #include <random>
 #include <limits>
-#include <openssl/rand.h>
-#include <openssl/md5.h>
 #include <zlib.h>
 
 #include "VUtils.h"
@@ -103,24 +101,4 @@ namespace VUtils {
     }
 
 
-
-    void GenerateBytes(BYTE_t* out, unsigned int count) {
-        RAND_bytes((unsigned char*) out, count);
-    }
-
-    BYTES_t GenerateBytes(unsigned int count) {
-        BYTES_t result(count);
-
-        GenerateBytes(result.data(), count);
-
-        return result;
-    }
-
-
-
-    OWNER_t GenerateUID() {
-        OWNER_t result;
-        GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
-        return result;
-    }
 }

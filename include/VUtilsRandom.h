@@ -3,9 +3,10 @@
 // reverse engineered implementation of Unity Random and associated functions
 // these are algorithms only, not steps, so shoo patent lawyers!
 
+#include <random>
+
 #include "VUtils.h"
 #include "Vector.h"
-#include <random>
 
 namespace VUtils::Random {
 
@@ -31,6 +32,10 @@ namespace VUtils::Random {
 		Vector3 OnUnitSphere();
 		Vector3 InsideUnitSphere();
 	};
+
+	OWNER_t GenerateUID();
+
+	std::string GenerateAlphaNum(unsigned int count);
 
 }
 

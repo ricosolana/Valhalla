@@ -57,9 +57,9 @@ namespace NetSyncManager {
 	SyncPeer* GetPeer(NetRpc *rpc);
 	//void UpdateStats(float dt);
 	//void SendZDOToPeers(float dt);
-	void SendZDOToPeers2(float dt);
+	void SendZDOToPeers2();
 	void FlushClientObjects(); // sends all zdos; the fast that they're labeled as objects here proves the point a better name is SyncObject?
-	void ReleaseZDOS(float dt);
+	void ReleaseZDOS();
 	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
 	void SendDestroyedZDOs();
@@ -267,7 +267,7 @@ namespace NetSyncManager {
 
 		for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
 			auto pgw = itr->second->Version();
-			if (pgw != 0 && pgw != VALHEIM_PGW_VERSION) {
+			if (pgw != 0 && pgw != Version::PGW) {
 				RemoveFromSector(itr->second.get(), itr->second->Sector());
 				//ZDOPool.Release(pair.second);
 				itr = m_objectsByID.erase(itr);
@@ -360,10 +360,10 @@ namespace NetSyncManager {
 		return nullptr;
 	}
 
-	void Update(float dt) {
-		ReleaseZDOS(dt);
+	void Update() {
+		ReleaseZDOS();
 		
-		SendZDOToPeers2(dt);
+		SendZDOToPeers2();
         SendDestroyedZDOs();
 
         // Send ZDOS:
@@ -373,7 +373,7 @@ namespace NetSyncManager {
         //});
 	}
 
-	void SendZDOToPeers2(float dt) {
+	void SendZDOToPeers2() {
 		if (m_peers.empty())
 			return;
 
@@ -428,15 +428,21 @@ namespace NetSyncManager {
 			SendAllZDOs(peer.get());
 	}
 
-	void ReleaseZDOS(float dt) {
-		static float m_releaseZDOTimer = 0;
-		m_releaseZDOTimer += dt;
-		if (m_releaseZDOTimer > 2) {
-			m_releaseZDOTimer = 0;
-			//ReleaseNearbyZDOS(NetManager::GetReferencePosition(), this.m_myid);
+	void ReleaseZDOS() {
+
+		PERIODIC_NOW(2s, {
 			for (auto&& zdopeer : m_peers)
 				ReleaseNearbyZDOS(zdopeer->m_peer->m_pos, zdopeer->m_peer->m_uuid);
-		}
+		});
+
+		//static float m_releaseZDOTimer = 0;
+		//m_releaseZDOTimer += dt;
+		//if (m_releaseZDOTimer > 2) {
+		//	m_releaseZDOTimer = 0;
+		//	//ReleaseNearbyZDOS(NetManager::GetReferencePosition(), this.m_myid);
+		//	for (auto&& zdopeer : m_peers)
+		//		ReleaseNearbyZDOS(zdopeer->m_peer->m_pos, zdopeer->m_peer->m_uuid);
+		//}
 	}
 
 	bool IsInPeerActiveArea(const Vector2i &sector, OWNER_t uid) {

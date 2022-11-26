@@ -134,7 +134,7 @@ namespace VUtils {
     // Returns nullopt on decompress failure
     std::optional<BYTES_t> Decompress(const BYTES_t& in);
 
-    OWNER_t GenerateUID();
+    
 }
 
 //namespace VUtils = VUtility;

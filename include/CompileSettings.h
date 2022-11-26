@@ -25,10 +25,19 @@ using namespace std::chrono_literals;
 //
 
 // Change on updates
-#define VALHEIM_VERSION "0.212.6"
+namespace Version {
+	// Valheim game version
+	static const char* GAME = "0.212.6";
 
-static constexpr int32_t VALHEIM_WORLD_VERSION = 29;
+	// 
+	static constexpr int32_t WORLD = 29;
 
-static constexpr int32_t VALHEIM_WORLDGEN_VERSION = 2;
+	// Used in WorldGenerator terrain
+	static constexpr int32_t WORLDGEN = 2;
 
-static constexpr int32_t VALHEIM_PGW_VERSION = 53;
+	// Used in ZDO
+	static constexpr int32_t PGW = 53;
+
+	// Used in ZoneSystem ZoneLocation-Prefabs
+	static constexpr int32_t FEATURE = 1;
+}

@@ -4,13 +4,14 @@
 #include "Task.h"
 #include "ServerSettings.h"
 #include "NetAcceptor.h"
+#include "VUtilsRandom.h"
 
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
 
 class VServer {
 private:
-	std::atomic_bool m_running = false;
+	std::atomic_bool m_running;
 
 	// perfect structure for this job
 	// https://stackoverflow.com/questions/2209224/vector-vs-list-in-stl
@@ -28,13 +29,17 @@ private:
 	steady_clock::time_point m_prevUpdate;
 	steady_clock::time_point m_nowUpdate;
 
+	double m_netTime;
+
 private:
 	void LoadFiles();
 
 public:
     VServer() 
-		: m_serverId(VUtils::GenerateUID()),
-		m_startTime(steady_clock::now()) {}
+		: m_serverId(VUtils::Random::GenerateUID()),
+		m_startTime(steady_clock::now()), 
+		m_running(false), 
+		m_netTime(0) {}
 
 	OWNER_t ID() const {
 		return m_serverId;
@@ -70,6 +75,12 @@ public:
 		return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
 	}
 
+	double NetTime() {
+		// returns active server time
+		// server is frozen as long as no players are online
+		return m_netTime;
+	}
+
 	Task& RunTask(Task::F f);
 	Task& RunTaskLater(Task::F f, std::chrono::milliseconds after);
 	Task& RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at);
@@ -78,7 +89,7 @@ public:
 	Task& RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
 
 private:
-	void Update(float delta);
+	void Update();
 };
 
 VServer* Valhalla();

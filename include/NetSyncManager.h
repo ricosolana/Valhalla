@@ -51,7 +51,7 @@ namespace NetSyncManager {
 
 	// called when registering joining peer
 
-	void Update(float dt);
+	void Update();
 
 	void MarkDestroyZDO(NetSync* zdo);
 

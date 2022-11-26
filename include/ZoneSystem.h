@@ -21,6 +21,7 @@ namespace ZoneSystem {
 	
     static constexpr float ZONE_SIZE = 64;
 
+    /*
     static const char* LOCATION_SPAWN = "StartTemple";
     static const char* LOCATION_EIKTHYR = "Eikthyrnir";
     static const char* LOCATION_MODER = "Dragonqueen";
@@ -40,7 +41,7 @@ namespace ZoneSystem {
     static const char* KEY_MOB_SURTLING = "killed_surtling";
     static const char* KEY_MOD_BAT = "KilledBat";
     static const char* KEY_DISABLE_MAP = "nomap";
-    static const char* KEY_DISABLE_PORTALS = "noportals";
+    static const char* KEY_DISABLE_PORTALS = "noportals";*/
 
 }
 

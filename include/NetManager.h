@@ -27,7 +27,7 @@ namespace NetManager {
 	void RemotePrint(NetRpc* rpc, const std::string &text);
 
 	void Init();
-	void Update(double delta);
+	void Update();
 	void Close();
 
 	NetPeer* GetPeer(NetRpc* rpc);

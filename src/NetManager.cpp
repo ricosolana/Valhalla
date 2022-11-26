@@ -8,6 +8,7 @@
 #include "World.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
+#include "VUtilsRandom.h"
 
 using namespace std::chrono;
 
@@ -33,10 +34,13 @@ namespace NetManager {
 		m_hasPassword = !Valhalla()->Settings().serverPassword.empty();
 
 		if (m_hasPassword) {
+			// better
+			m_salt = VUtils::Random::GenerateAlphaNum(16);
+
 			// Create random 16 byte salt
-			m_salt.resize(16);
-			RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
-			VUtils::String::FormatAscii(m_salt);
+			//m_salt.resize(16);
+			//RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
+			//VUtils::String::FormatAscii(m_salt);
 
 			const auto merge = Valhalla()->Settings().serverPassword + m_salt;
 
@@ -206,7 +210,7 @@ namespace NetManager {
 		//	(double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
 		NetPackage pkg;
 		pkg.Write(Valhalla()->ID());
-		pkg.Write(VALHEIM_VERSION);
+		pkg.Write(Version::GAME);
 		pkg.Write(Vector3()); // dummy
 		pkg.Write("Stranger"); // dummy
 
@@ -218,8 +222,8 @@ namespace NetManager {
 		pkg.Write(m_world->m_seed);
 		pkg.Write(m_world->m_seedName);
 		pkg.Write(m_world->m_uid);
-		pkg.Write(VALHEIM_WORLDGEN_VERSION);
-		pkg.Write((double)Valhalla()->Time());
+		pkg.Write(m_world->m_worldGenVersion);
+		pkg.Write(Valhalla()->NetTime());
 
 		rpc->Invoke(NetHashes::Rpc::PeerInfo, pkg);
 	}
@@ -234,7 +238,7 @@ namespace NetManager {
 		auto uuid = pkg.Read<OWNER_t>();
 		auto version = pkg.Read<std::string>();
 		LOG(INFO) << "Client " << hostName << " has version " << version;
-		if (version != VALHEIM_VERSION)
+		if (version != Version::GAME)
 			return rpc->SendError(ConnectionStatus::ErrorVersion);
 
 		auto pos = pkg.Read<Vector3>();
@@ -260,7 +264,7 @@ namespace NetManager {
         if (CALL_EVENT(EVENT_HASH_PeerConnect, rpc, uuid, name, version) == EventStatus::CANCEL)
 			return rpc->SendError(ConnectionStatus::ErrorBanned);
 
-		// Find the rpc and transfer
+		// Transfer the Rpc
         for (auto &&j: m_joining) {
             if (j.get() == rpc) {
                 j.release(); // NOLINT(bugprone-unused-return-value)
@@ -277,10 +281,7 @@ namespace NetManager {
 		rpc->Register(NetHashes::Rpc::CharacterID, RPC_CharacterID);
 		rpc->Register(NetHashes::Rpc::RemotePrint, RPC_RemotePrint);
 
-		// Admin commands
-		// Might be better to see if player has perms, then register instead of registering everytime
-		// Figure this out later, 
-		// Useless currently
+		// TODO use permissions for admin commands
 		//rpc->Register(NetHashes::Rpc::Kick, &RPC_Kick);
 		//rpc->Register(NetHashes::Rpc::Ban, &RPC_Ban);
 		//rpc->Register(NetHashes::Rpc::Unban, &RPC_Unban);
@@ -348,7 +349,7 @@ namespace NetManager {
 		NetRouteManager::Register(NetHashes::Routed::Ping, RPC_Ping);
 	}
 
-	void Update(double delta) {
+	void Update() {
 		OPTICK_EVENT();
 		// Accept new connections into joining
 		while (auto opt = m_acceptor->Accept()) {
