@@ -592,4 +592,36 @@ namespace ZoneSystem {
 		}
 	}
 
+	void SaveAsync(NetPackage &writer) {
+		writer.Write(m_tempGeneratedZonesSaveClone.Count);
+		foreach(Vector2i vector2i in this.m_tempGeneratedZonesSaveClone)
+		{
+			writer.Write(vector2i.x);
+			writer.Write(vector2i.y);
+		}
+		writer.Write(this.m_pgwVersion);
+		writer.Write(this.m_locationVersion);
+		writer.Write(this.m_tempGlobalKeysSaveClone.Count);
+		foreach(string value in this.m_tempGlobalKeysSaveClone)
+		{
+			writer.Write(value);
+		}
+		writer.Write(this.m_tempLocationsGeneratedSaveClone);
+		writer.Write(this.m_tempLocationsSaveClone.Count);
+		foreach(ZoneSystem.LocationInstance locationInstance in this.m_tempLocationsSaveClone)
+		{
+			writer.Write(locationInstance.m_location.m_prefabName);
+			writer.Write(locationInstance.m_position.x);
+			writer.Write(locationInstance.m_position.y);
+			writer.Write(locationInstance.m_position.z);
+			writer.Write(locationInstance.m_placed);
+		}
+		this.m_tempGeneratedZonesSaveClone.Clear();
+		this.m_tempGeneratedZonesSaveClone = null;
+		this.m_tempGlobalKeysSaveClone.Clear();
+		this.m_tempGlobalKeysSaveClone = null;
+		this.m_tempLocationsSaveClone.Clear();
+		this.m_tempLocationsSaveClone = null;
+	}
+
 }

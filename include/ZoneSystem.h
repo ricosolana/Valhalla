@@ -16,10 +16,14 @@ namespace ZoneSystem {
 
     void Load(NetPackage& pkg, int32_t worldVersion);
 
+    void SaveAsync(NetPackage& writer);
+
 	static constexpr int ACTIVE_AREA = 1;
 	static constexpr int ACTIVE_DISTANT_AREA = 1;
 	
     static constexpr float ZONE_SIZE = 64;
+
+
 
     /*
     static const char* LOCATION_SPAWN = "StartTemple";

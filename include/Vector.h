@@ -171,4 +171,6 @@ struct Vector3 {
 	Vector3 Normalized();
 
 	static const Vector3 ZERO;
+	static const Vector3 UP;
+	static const Vector3 DOWN;
 };

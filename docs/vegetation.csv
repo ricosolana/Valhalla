@@ -1,0 +1,123 @@
+m_biome,m_biomeArea,m_blockCheck,m_chanceToUseGroundTilt,m_enable,m_foldout,m_forcePlacement,m_forestTresholdMax,m_forestTresholdMin,m_groundOffset,m_groupRadius,m_groupSizeMax,m_groupSizeMin,m_inForest,m_max,m_maxAltitude,m_maxOceanDepth,m_maxTerrainDelta,m_maxTilt,m_maxVegetation,m_min,m_minAltitude,m_minOceanDepth,m_minTerrainDelta,m_minTilt,m_minVegetation,m_name,m_prefab.name,m_randTilt,m_scaleMax,m_scaleMin,m_snapToStaticSolid,m_snapToWater,m_terrainDeltaRadius
+873,7,False,0,True,False,False,1,0,0,20,3,3,False,3,-0.5,30,2,90,0,3,-2,2,0,0,0,rock 4,rock4_coast,15,1.2,0.6,False,False,0
+Plains,7,True,0,True,False,False,1,0,-3,0,1,1,False,10,1000,0,2,45,0,4,4,0,0,15,0,rock 4,rock4_heath,5,1,0.8,False,False,0
+Plains,7,True,0,True,False,False,1.1,0,-2,0,1,1,False,0.1,1000,0,2,30,0,0,0,0,0,0,0,branch deep forest,HeathRockPillar,15,1.3,0.8,False,False,0
+Plains,7,True,0,True,False,False,1.1,0,0,0,1,1,False,1,1000,0,2,20,0,0,0,0,0,0,0,branch deep forest,rock2_heath,20,1.5,1,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,5,1000,0,2,30,0,5,0,0,0,0,0,small fir,HugeRoot1,15,2,1,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,10,1000,0,2,25,0,10,1,0,0,0,0,small fir,SwampTree2_darkland,5,5,3,False,False,0
+Mountain,6,True,0,True,False,False,1,0,-5,0,1,1,False,2,1000,0,2,50,0,0,-1000,0,0,10,0,rock 4,rock3_mountain,0,1.5,1,False,False,0
+Mountain,6,True,0,False,False,False,1,0,-8,0,1,1,False,0.5,1000,0,2,45,0,0,-1000,0,0,0,0,rock 4,rock3_silver,0,1,1,False,False,0
+Mountain,6,True,0,True,False,True,1,0,-4,0,1,1,False,1,1000,0,3,30,0,1,120,0,0,0,0,rock 4,silvervein,0,1,1,False,False,9
+Mountain,6,True,0,True,False,False,1,0,-6,0,1,1,False,8,1000,0,2,80,0,5,-1000,0,0,30,0,rock 4,rock1_mountain,0,1.5,1,False,False,0
+Mountain,6,True,0,True,False,False,1,0,-5,0,1,1,False,8,1000,0,2,80,0,5,-1000,0,0,30,0,rock 4,rock2_mountain,0,1.5,1,False,False,0
+Swamp,7,True,0,True,False,False,1,0,0,0,1,1,False,20,1000,0,2,90,0,0,-1000,0,0,0,0,rock 4,Rock_4,0,2,1,False,False,0
+Swamp,7,True,0,True,False,False,1,0,-3,0,1,1,False,5,1000,0,2,90,0,0,0.5,0,0,0,0,rock 4,mudpile_beacon,0,2,1,False,False,0
+5,7,True,1,True,False,False,1,0,0,0,1,1,False,40,1000,0,2,90,0,10,-10,0,0,0,0,rock 4,Rock_4,0,2,1,False,False,0
+Plains,7,True,1,True,False,False,1,0,0,0,1,1,False,30,1000,0,2,90,0,5,-10,0,0,0,0,rock 4,Rock_4_plains,0,2,1,False,False,0
+5,7,True,1,True,False,False,1,0,-0.5,0,1,1,False,15,1000,0,2,90,0,0,-1000,0,0,0,0,rock 3,Rock_3,0,4,2,False,False,0
+BlackForest,7,True,0,True,False,False,1,0,-2,0,1,1,False,2,1000,0,2,45,0,1,4,0,0,5,0,rock 4,rock4_forest,5,1,0.8,False,False,0
+BlackForest,7,True,0,True,False,False,1,0,-2,0,1,1,False,1,1000,0,2,45,0,0,4,0,0,5,0,rock 4,rock4_copper,5,1,1,False,False,0
+BlackForest,7,True,1,True,False,False,1,0,-0.5,0,1,1,False,20,1.5,0,2,90,0,20,-0.6,0,0,0,0,flint,MineRock_Tin,0,1,1,False,False,0
+BlackForest,7,True,1,True,False,False,1,0,0,0,1,1,False,20,1000,0,2,45,0,20,-1000,0,0,0,0,rock 4,Rock_4,0,3,1,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,20,1000,0,2,45,0,20,0,0,0,0,0,rock 4,Rock_4,0,3,1,False,False,0
+BlackForest,7,True,0,True,False,False,1,0,0,0,1,1,False,15,1000,0,2,25,0,5,-1000,0,0,0,0,rock 3,Rock_3,0,6,3,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,15,1000,0,2,25,0,5,0,0,0,0,0,rock 3,Rock_3,0,6,3,False,False,0
+Swamp,7,True,0,True,False,False,1.1,0,0,0,1,1,False,10,5,0,2,90,0,10,-5,0,0,0,0,swamp_mist,vfx_swamp_mist,0,1,1,False,True,0
+Swamp,7,True,0,False,False,False,1.1,0,15,0,1,1,False,3,5,0,2,90,0,0,-5,0,0,0,0,swamp_mist,Crow,0,1,1,False,True,0
+384,7,True,0,False,False,False,1.1,0,0,0,1,1,False,2,5,0,2,90,0,2,-100,0,0,0,0,swamp_mist,vfx_ocean_clouds,0,1,1,False,True,0
+128,7,True,0,True,True,False,1.1,0,0,0,1,1,False,1,0,0,2,90,0,1,-1000,0,0,0,0,swamp_mist,vfx_edge_clouds,0,1,1,False,True,0
+Meadows,7,True,0.1,True,False,False,1.15,0,0,0,1,1,True,40,1000,2,2,30,0,40,0.2,0,0,0,0,firtree,Beech1,4,1.5,0.8,False,False,0
+Meadows,7,True,0.05,True,False,False,1.15,0,0,0,1,1,True,5,1000,2,2,30,0,5,0.2,0,0,0,0,firtree,Birch1,4,1,0.5,False,False,0
+Plains,7,True,0,True,False,False,0.8,0,0,0,1,1,True,30,1000,0,2,30,0,30,0.1,0,0,0,0,firtree,Birch1_aut,4,1,0.5,False,False,0
+Meadows,7,True,0.05,True,False,False,1.15,0,0,0,1,1,True,3,1000,2,2,30,0,0,0.2,0,0,0,0,firtree,Birch2,4,1,0.5,False,False,0
+Meadows,7,True,0,True,False,False,3,1,0,0,1,1,True,1,1000,2,2,20,0,0,0.5,0,0,0,0,firtree,Oak1,4,1,0.8,False,False,0
+Plains,7,True,0,True,False,False,0.8,0,0,0,1,1,True,10,1000,0,2,30,0,10,0.1,0,0,0,0,firtree,Birch2_aut,4,1.5,1,False,False,0
+BlackForest,7,True,0,True,False,False,1.1,0,0,0,1,1,False,5,1000,2,2,30,0,5,0.1,0,0,0,0,firtree,FirTree,4,2.5,2,False,False,0
+BlackForest,Edge,True,0,True,False,False,1.1,0,0,0,1,1,False,40,1000,2,2,30,0,40,0.1,0,0,0,0,firtree,FirTree,4,2.5,2,False,False,0
+BlackForest,6,True,0.05,True,False,False,1,0,0,0,1,1,False,60,1000,1.5,2,30,0,60,0.1,0,0,0,0,Pinetree 01,Pinetree_01,4,2.5,1,False,False,0
+Mistlands,6,True,0,False,False,False,1,0,0,0,1,1,False,5,1000,0,2,30,0,5,0.1,0,0,0,0,Pinetree 01,Pinetree_01,4,2.5,2,False,False,0
+None,7,True,0,False,False,False,1.1,0,0,0,1,1,True,20,1000,0,2,20,0,10,2,0,0,0,0,oak,acacitree,0,2,1,False,False,0
+Meadows,7,True,0,True,False,False,1.15,1.1,0,0,1,1,True,100,1000,0,2,30,0,100,1,0,0,0,0,small fir,Beech_small1,10,1.5,1,False,False,0
+Meadows,7,True,0,True,False,False,1.15,1.1,0,0,1,1,True,100,1000,0,2,30,0,100,1,0,0,0,0,small fir,Beech_small2,10,2,1,False,False,0
+Meadows,7,True,0,True,False,False,1,0,0,0,1,1,True,80,1000,0,2,30,0,80,1,0,0,0,0,small fir,Beech_small1,10,1.5,1,False,False,0
+Meadows,7,True,0,True,False,False,1,0,0,0,1,1,True,80,1000,0,2,30,0,80,1,0,0,0,0,small fir,Beech_small2,10,2,1,False,False,0
+Plains,7,True,0,True,False,False,1,0,0,15,20,8,False,3,1000,0,2,30,0,1,1,0,0,0,0,small fir,Bush02_en,0,1.5,0.5,False,False,0
+Plains,7,True,1,True,False,False,1,0,0,6,20,15,False,3,50,0,2,30,0,1,2,0,0,0,0,small fir,CloudberryBush,0,1,1,False,False,0
+Swamp,7,True,0.2,True,False,False,1.2,1.1,0,0,1,1,False,60,1000,0,2,25,0,60,0.5,0,0,0,0,small fir,FirTree_small_dead,5,0.8,0.3,False,False,0
+Swamp,7,True,0.2,True,False,False,1,0,0,0,1,1,False,40,1000,2,2,30,0,40,-0.5,0,0,0,0,small fir,SwampTree1,10,1.3,0.7,False,False,0
+Swamp,7,True,0.1,True,False,False,1,0,0,0,1,1,False,20,1000,2,2,35,0,10,-0.5,0,0,0,0,small fir,SwampTree2,5,2,1.5,False,False,0
+Swamp,7,True,0,True,False,False,1,0,0,0,1,1,False,3,1000,2,2,35,0,1,-0.5,0,0,0,0,small fir,SwampTree2_log,20,2,1.5,False,False,0
+Swamp,7,True,0,True,False,False,1,0,0,0,1,1,False,20,1000,0,2,25,0,20,0,0,0,0,0,small fir,Flies,0,1.5,0.5,False,False,0
+BlackForest,7,True,0,True,False,False,1.15,1.05,0,0,1,1,False,30,1000,0,2,30,0,30,0.5,0,0,0,0,small fir,FirTree_small,0,0.7,0.3,False,False,0
+Mountain,7,True,0,True,False,False,1.15,1.05,0,0,1,1,False,30,280,0,2,30,0,30,0,0,0,0,0,small fir,FirTree_small,0,0.7,0.3,False,False,0
+Mistlands,7,True,0,False,False,False,1.15,1.05,0,0,1,1,False,30,1000,0,2,30,0,30,0,0,0,0,0,small fir,FirTree_small_dead,0,0.7,0.3,False,False,0
+Mistlands,7,True,0,False,False,False,1.15,1.05,0,0,1,1,False,10,1000,0,2,30,0,10,0,0,0,0,0,small fir,vertical_web,20,1.2,0.8,False,False,0
+Mistlands,7,True,0,False,False,False,1.15,1.05,30,0,1,1,False,10,1000,0,2,30,0,10,0,0,0,0,0,small fir,horizontal_web,20,1.2,0.8,False,False,0
+Mistlands,7,True,0,False,False,False,1.15,1.05,0,0,1,1,False,5,1000,0,2,30,0,5,0,0,0,0,0,small fir,tunnel_web,10,1,0.8,False,False,0
+BlackForest,Edge,True,0,True,False,False,1.15,1.05,0,0,1,1,False,60,1000,0,2,30,0,60,0.5,0,0,0,0,small fir,FirTree_small,0,0.7,0.3,False,False,0
+BlackForest,7,True,1,True,False,False,1.15,1.05,0,0,1,1,False,6,1000,0,2,25,0,6,0,0,0,0,0,small fir,FirTree_oldLog,0,1.3,0.9,False,False,0
+Meadows,7,True,1,True,False,False,1,0,0,0,1,1,False,3,1000,2,2,20,0,1,0,0,0,0,0,stubbe,stubbe,0,1.2,0.8,False,False,0
+Swamp,7,True,1,True,False,False,1,0,0,0,1,1,False,4,1000,2,2,20,0,4,0,0,0,0,0,stubbe,stubbe,0,2,1,False,False,0
+Swamp,7,True,0,True,False,False,1,0,0,0,1,1,False,2,1000,0,2,20,0,2,0,0,0,0,0,stubbe,StatueEvil,0,1,1,False,False,0
+Meadows,7,True,1,True,False,False,1,0,0,0,1,1,False,4,1000,0,2,20,0,1,-1000,0,0,0,0,stubbe,FirTree_oldLog,0,1.2,1,False,False,0
+Swamp,7,True,1,True,False,False,1,0,0,0,1,1,False,6,1000,0,2,20,0,6,-1,0,0,0,0,stubbe,FirTree_oldLog,0,1.2,1,False,False,0
+BlackForest,7,True,1,True,False,False,1,0,0,0,1,1,False,15,1000,2,2,20,0,15,0,0,0,0,0,stubbe,stubbe,0,1.4,0.8,False,False,0
+Mistlands,7,True,1,False,False,False,1,0,0,0,1,1,False,15,1000,0,2,20,0,15,0,0,0,0,0,stubbe,stubbe,0,1.4,0.8,False,False,0
+Meadows,7,True,0,True,False,False,1.15,1,0,0,1,1,True,80,1000,0,2,90,0,60,1,0,0,0,0,bush01,Bush01,0,1.5,1,False,False,0
+Plains,7,True,0,True,False,False,1.15,1,0,0,1,1,True,80,1000,0,2,90,0,60,0,0,0,0,0,bush01,Bush01_heath,0,1,1,False,False,0
+Meadows,7,True,0,False,False,False,1.15,1,0,0,1,1,True,20,1000,0,2,90,0,20,-1000,0,0,0,0,shrub2,shrub_2,0,2,1.5,False,False,0
+Plains,7,True,0,True,False,False,1.15,1,0,0,1,1,True,20,1000,0,2,90,0,20,0,0,0,0,0,shrub2,shrub_2_heath,0,1,0.5,False,False,0
+Swamp,7,True,0,True,False,False,1.15,1,0,0,1,1,False,20,1000,2,2,90,0,20,0,0,0,0,0,shrub2,shrub_2_heath,0,1,0.5,False,False,0
+10,Median,True,0,True,False,False,1.15,1,0,4,5,2,False,2,1000,0,2,20,0,1,0,0,0,0,0,shrub2,Pickable_Thistle,20,1,0.5,False,False,0
+BlackForest,7,True,0,True,False,False,1.1,1,0,0,1,1,False,100,1000,0,2,90,0,100,1,0,0,0,0,shrub2,shrub_2,0,1,0.5,False,False,0
+BlackForest,Median,True,0,True,False,False,1.1,1,0,8,8,1,False,1,1000,2,2,90,0,1,1,0,0,0,0,shrub2,BlueberryBush,0,1,1,False,False,0
+Meadows,7,True,0,True,False,False,1.2,1,0,8,8,3,True,2,1000,0,2,45,0,1,1,0,0,0,0,shrub2,RaspberryBush,0,1,1,False,False,0
+11,7,True,0,True,False,False,1,0,0,5,6,3,True,2,1000,2,2,25,0,1,1,0,0,0,0,mushroom,Pickable_Mushroom,0,1.5,1,False,False,0
+Meadows,7,True,0,True,False,False,5,1.1,0,3,3,1,False,10,1000,0,2,15,0,8,1,0,0,0,0,dandelion,Pickable_Dandelion,0,1,1,False,False,0
+Meadows,7,True,0,False,False,False,0.9,0,0,0,1,1,True,10,1000,0,2,90,0,0,-1000,0,0,0,0,ormbunke,ormbunke_green_medium,0,1,0.75,False,False,0
+17,7,True,0,False,False,False,4,1.1,0,0,1,1,True,0.2,1000,0,2,90,0,0,-1000,0,0,0,0,runestone,Waystone,0,1,1,False,False,0
+Meadows,7,True,0,True,False,False,1,0,0,0,1,1,False,30,1,0,2,90,0,30,-2,0,0,0,0,flint,Pickable_Flint,0,1,1,False,False,0
+BlackForest,7,True,0,False,False,False,1,0,0,0,1,1,False,30,1000,0,2,90,0,30,-1000,0,0,0,0,flint,Pickable_Tin,0,1,1,False,False,0
+11,7,True,1,True,False,False,1.1,0,0,0,1,1,True,15,1000,0,2,90,0,15,0,0,0,0,0,branch,Pickable_Branch,0,1,1,False,False,0
+Plains,7,True,0,False,False,False,1.1,0,0,0,1,1,False,1,1000,0,2,45,0,0,-2,0,0,0,0,branch deep forest,HugeStone1,0,1,1,False,False,0
+Plains,7,True,0,False,False,False,1.1,0,0,0,1,1,False,0.2,1000,0,2,45,0,0,-10,0,0,0,0,branch deep forest,rockformation1,0,1,0.5,False,False,0
+Plains,7,True,0,False,False,False,1.1,0,0,0,1,1,False,4,1000,0,2,45,0,2,-2,0,0,0,0,branch deep forest,rock_a,0,4,2,False,False,0
+Swamp,6,True,0,False,False,False,1,0,0,0,1,1,False,5,1,0,2,90,0,5,-2,0,0,0,0,bog iron,Pickable_BogIronOre,0,1,1,False,False,0
+27,7,True,1,True,False,False,1,0,0,2,3,2,False,30,1000,0,2,90,0,30,0,0,0,22,0,stone,Pickable_Stone,0,1,1,False,False,0
+3,7,True,1,True,False,False,1,0,0,1,1,1,False,5,1000,0,2,90,0,5,-3,0,0,0,0,stone,Pickable_Stone,0,1,1,False,False,0
+Mountain,7,True,0,True,False,False,1.15,0,0,0,1,1,False,20,280,0,2,30,0,5,2,0,0,0,0,firtree,FirTree,0,3,1.5,False,False,0
+DeepNorth,7,True,0,True,False,False,1,0,0,0,1,1,True,20,-1,0,2,90,0,10,-1000,0,0,0,0,veg,ice1,0,1,1,False,True,0
+DeepNorth,7,True,0,True,False,False,1,0,-2,0,1,1,False,1,-1,0,2,90,0,0,-1000,0,0,0,0,veg,ice_rock1,0,1,1,False,True,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,20,1000,0,2,45,0,20,1,0,0,0,0,rock 4,Skull1,10,1,1,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,3,1000,0,2,45,0,0,1,0,0,0,0,rock 4,Skull2,5,1.2,0.8,False,False,0
+Mistlands,7,True,0,False,False,False,1,0,0,0,1,1,False,15,1000,0,2,90,0,15,-1000,0,0,0,0,veg,GlowingMushroom,5,1,1,False,False,0
+Mountain,Everything,True,1,True,False,False,1,0,0,1,1,1,False,15,1000,0,2,90,0,10,100,0,0,0,0,veg,MineRock_Obsidian,0,1,0.9,False,False,0
+Swamp,Everything,True,0,True,True,False,1,0,0,5,2,1,False,0.5,1000,0,2,25,0,0,0,0,0,0,0,veg,Pickable_SeedTurnip,0,1.5,1,False,False,0
+BlackForest,Everything,True,0,True,False,False,1,0,0,5,2,1,False,0.5,1000,0,2,25,0,0,1,0,0,0,0,veg,Pickable_SeedCarrot,0,1.5,1,False,False,0
+Plains,Everything,True,0,False,False,False,1,0,0,5,3,2,False,2,1000,0,2,25,0,0,2,0,0,0,0,veg,Pickable_Barley,0,1.5,1,False,False,0
+Ocean,Median,True,0,True,True,False,1,0,0,0,1,1,False,0.01,-30,0,2,90,0,0,-1000,0,0,0,0,veg,Leviathan,0,1,1,False,True,0
+Mistlands,Median,False,0,True,True,True,1.15,0,0,0,1,1,True,1,1000,0,0,99,1,1,1,0,0,0,0.1,Mist area,MistArea,0,1,1,False,False,0
+Mistlands,Edge,False,0,True,False,True,1,0,0,0,1,1,False,1,1000,0,0,99,1,1,1,0,0,0,0.1,Mist area _edge,MistArea_edge,0,1,1,False,False,0
+Mistlands,Everything,False,1,True,False,False,0,0,0,0,1,1,False,8,1000,0,55,50,0.1,8,1,0,4,25,0,cliff_mistlands1,cliff_mistlands1,0,1.2,0.6,False,False,4
+Mistlands,Everything,False,0,True,False,False,0,0,0,0,1,1,False,50,1000,0,55,99,0.1,50,1,0,3,0,0,cliff_mistlands2,cliff_mistlands2,15,1,0.5,False,False,4
+Mistlands,Everything,True,0.2,True,False,False,0,0,0,0,1,1,False,20,1000,0,4,30,0.1,20,0,0,0,0,0,rock_mistlands1,rock_mistlands1,15,3,1,False,False,2
+Mistlands,Everything,True,1,False,False,False,0,0,0,0,1,1,False,50,1000,0,2,20,1,50,0,0,0,0,0.1,rock_mistlands2,rock_mistlands2,0,1.2,0.8,False,False,4
+Mistlands,Everything,True,0,False,False,False,0,0,0,0,1,1,False,2,1000,0,2,20,1,1,1,0,0,0,0.1,skull,giant_skull,33,1,1,False,False,5
+Mistlands,Median,True,0,True,False,False,0,0,0,0,1,1,False,2,1000,0,3,30,0,1,1,0,0,0,0,giant_helmet1,giant_helmet1,33,1,1,False,False,5
+Mistlands,Median,True,0,True,False,False,0,0,-1,0,1,1,False,2,1000,0,3,30,0,1,1,0,0,0,0,giant_helmet2,giant_helmet2,33,1,1,False,False,5
+Mistlands,Median,True,0,True,False,False,0,0,0,0,1,1,False,2,1000,0,3,30,0,1,1,0,0,0,0,giant_sword1,giant_sword1,60,1,1,False,False,5
+Mistlands,Median,True,0,True,False,False,0,0,0,0,1,1,False,2,1000,0,3,30,0,1,1,0,0,0,0,giant_sword2,giant_sword2,60,1,1,False,False,5
+Mistlands,Everything,True,0,True,True,False,0,0,0,0,1,1,False,2,1000,0,2,10,1,1,1,0,0,0,0.3,ribs,giant_ribs,10,1,1,False,False,5
+Mistlands,Edge,False,0,False,False,True,0,0,0,0,1,1,False,4,1000,0,6,99,1,4,1,0,0,0,0.2,ml mist,vfx_mistlands_mist,0,1,1,False,False,0
+Mistlands,Everything,True,0,True,False,False,0,0,0,0,1,1,False,4,1000,0,6,45,1,2,1,0,0,0,0.2,ygga root,YggdrasilRoot,0,1.5,1,False,False,5
+Mistlands,Everything,False,0.1,True,False,False,0,0,0,0,1,1,False,2,1000,0,99,80,0.2,2,1,0,3,0,0,YggaShoot1,YggaShoot1,5,1.2,0.9,True,False,3
+Mistlands,Everything,False,0.1,True,False,False,0,0,0,0,1,1,False,2,1000,0,99,80,0.2,2,1,0,3,0,0,YggaShoot2,YggaShoot2,5,1.2,0.9,True,False,3
+Mistlands,Everything,False,0.1,True,False,False,0,0,0,0,1,1,False,2,1000,0,99,80,0.2,2,1,0,3,0,0,YggaShoot3,YggaShoot3,5,1.2,0.9,True,False,3
+Mistlands,Everything,False,0.1,True,False,False,4,1,0,0,1,1,True,3,1000,0,0,45,1,3,1,0,0,0,0.1,fir,YggaShoot1,5,0.9,0.8,True,False,0
+Mistlands,Everything,False,0.1,True,False,False,4,1,0,0,1,1,True,3,1000,0,0,45,1,3,1,0,0,0,0.1,fir,YggaShoot2,5,0.9,0.8,True,False,0
+Mistlands,Everything,False,0.1,True,False,False,4,1,0,0,1,1,True,3,1000,0,0,45,1,3,1,0,0,0,0.1,fir,YggaShoot3,5,0.9,0.8,True,False,0
+Mistlands,Everything,False,0.1,True,False,False,1,0,0,0,1,1,False,6,1000,0,0,45,0.2,6,1,0,0,0,0,YggaShoot_small1,YggaShoot_small1,5,2,1,True,False,0
+Mistlands,Everything,False,0.1,True,False,False,4,1,0,0,1,1,True,40,1000,0,0,45,2,40,1,0,0,0,0.1,YggaShoot_small1,YggaShoot_small1,5,2,1,True,False,0
+Mistlands,Everything,True,1,False,False,False,0,0,0,5,6,3,False,4,1000,0,0,60,2,2,1,0,0,0,0.1,bush,RaspberryBush,0,1,1,False,False,0
+Mistlands,Everything,False,1,True,False,False,0,0,0,5,3,1,False,2,2000,0,0,60,0.15,2,1,0,0,0,0,mushroom_magecap,Pickable_Mushroom_Magecap,0,1,1,True,False,0
+Mistlands,Everything,True,1,True,False,False,0,0,0,5,3,1,False,2,1000,0,0,60,1,1,1,0,0,0,0.1,mushroom_jotunpuffs,Pickable_Mushroom_JotunPuffs,0,1,1,False,False,0

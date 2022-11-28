@@ -14,15 +14,15 @@ namespace VUtils::Random {
 	private:
 		uint32_t m_seed[4];
 
-	private:
-		// Returns a random float from 0 to 1
-		float NextFloat();
-		uint32_t NextInt();
 
 	public:
 		State();
 		State(int32_t seed);
 		State(const State& other); // copy construct
+
+		// Returns a random float from 0 to 1
+		float NextFloat();
+		uint32_t NextInt();
 
 		float Range(float minInclude, float maxExclude);
 		int32_t Range(int32_t minInclude, int32_t maxExclude);
