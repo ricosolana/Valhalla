@@ -15,7 +15,7 @@ namespace ZoneSystem2 {
 	//void PrepareNetViews(GameObject root, std::vector<ZNetView> &views);
 	//void PrepareRandomSpawns(GameObject root, std::vector<RandomSpawn> &randomSpawns);
 	void PrepareSave();
-	void SaveASync(NetPackage& writer);
+	void SaveAsync(NetPackage& writer);
 	void Load(NetPackage& reader, int32_t version);
 	bool IsZoneLoaded(const Vector3& point);
 	bool IsZoneLoaded(const Vector2i& zoneID);

@@ -1,21 +1,24 @@
 #include "Stream.h"
 
-Stream::Stream() 
-    : m_pos(0) {}
+Stream::Stream() : m_pos(0) {}
 
-Stream::Stream(uint32_t count) 
-    : Stream() {
-    m_buf.reserve(count);
+Stream::Stream(const BYTE_t* data, uint32_t count) 
+    : m_pos(0) {
+    Write(data, count);
+    m_pos = 0;
+}
+
+Stream::Stream(uint32_t reserve) 
+    : m_pos(0) {
+    m_buf.reserve(reserve);
 }
 
 Stream::Stream(BYTES_t vec)
-    : Stream() {
+    : m_pos(0) {
     m_buf = std::move(vec);
 }
 
 Stream::Stream(const Stream &other) {
-    //this->m_buf = other.m_buf;
-    //this->m_pos = other.m_pos;
     *this = other;
 }
 

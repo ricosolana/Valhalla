@@ -226,15 +226,14 @@ namespace ZoneSystem2 {
     void SendLocationIcons(OWNER_t peer);
     void OnNewPeer(OWNER_t peerID);
     //void SetupLocations();
-    void ValidateVegetation();
+    //void ValidateVegetation();
     void Update();
     bool CreateGhostZones(const Vector3& refPoint);
     //bool CreateLocalZones(const Vector3& refPoint);
     //bool PokeLocalZone(const Vector2i& zoneID);
-    bool SpawnZone(const Vector2i& zoneID, SpawnMode mode, GameObject& root);
-    void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, SpawnMode mode, std::vector<GameObject> &spawnedObjects);
+    bool SpawnZone(const Vector2i& zoneID);
+    void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, std::vector<GameObject> &spawnedObjects);
     Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, SpawnMode mode, std::vector<GameObject> spawnedObjects);
     bool InsideClearArea(std::vector<ClearArea> areas, Vector3 point);
     ZoneLocation *GetLocation(int32_t hash);
     ZoneLocation *GetLocation(const std::string& name);
@@ -245,7 +244,8 @@ namespace ZoneSystem2 {
     //Vector2i GetRandomZone(float range);
     //Vector3 GetRandomPointInZone(const Vector2i& zone, float locationRadius);
     //Vector3 GetRandomPointInZone(float locationRadius);
-    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, SpawnMode mode, std::vector<GameObject> spawnedObjects);
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects);
+    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects);
     void RemoveUnplacedLocations(ZoneLocation *location);
     GameObject SpawnLocation(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rot, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
     void CreateLocationProxy(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
@@ -354,6 +354,8 @@ namespace ZoneSystem2 {
 
 
 
+    NetPackage m_worldSave;
+    /*
     robin_hood::unordered_set<Vector2i> m_tempGeneratedZonesSaveClone;
 
     robin_hood::unordered_set<std::string> m_tempGlobalKeysSaveClone;
@@ -361,7 +363,7 @@ namespace ZoneSystem2 {
     std::vector<LocationInstance> m_tempLocationsSaveClone;
 
     bool m_tempLocationsGeneratedSaveClone;
-
+    */
     // TODO not used for anything complex; just another reuse var...
     // make a local or static...
     std::vector<ClearArea> m_tempClearAreas;
@@ -410,7 +412,7 @@ namespace ZoneSystem2 {
         //LOG(INFO) << "Zonesystem Start " << Time.frameCount.ToString();
         LOG(INFO) << "ZoneSystem Start ";
         //SetupLocations();
-        ValidateVegetation();
+        //ValidateVegetation();
         //ZRoutedRpc instance = ZRoutedRpc.instance;
         //instance.m_onNewPeer = (Action<long>)Delegate.Combine(instance.m_onNewPeer, new Action<long>(OnNewPeer));
         NetRouteManager::Register("SetGlobalKey", RPC_SetGlobalKey);
@@ -554,66 +556,49 @@ namespace ZoneSystem2 {
     }*/
 
     // private
-    void ValidateVegetation() {
-        for (auto&& zoneVegetation : m_vegetation) {
-            if (zoneVegetation.m_enable
-                && zoneVegetation.m_prefab
-                && zoneVegetation.m_prefab.GetComponent<ZNetView>() == null) {
-                LOG(ERROR) << "Vegetation is missing ZNetView (" << zoneVegetation.m_name << ")";
-                //ZLog.LogError(std::string.Concat(new std::string[]{
-                //    "Vegetation ",
-                //    zoneVegetation.m_prefab.name,
-                //    " [ ",
-                //    zoneVegetation.m_name,
-                //    "] is missing ZNetView"
-                //    }));
-            }
-        }
-    }
+    //void ValidateVegetation() {
+    //    for (auto&& zoneVegetation : m_vegetation) {
+    //        if (zoneVegetation.m_enable
+    //            && zoneVegetation.m_prefab
+    //            && zoneVegetation.m_prefab.GetComponent<ZNetView>() == null) {
+    //            LOG(ERROR) << "Vegetation is missing ZNetView (" << zoneVegetation.m_name << ")";
+    //            //ZLog.LogError(std::string.Concat(new std::string[]{
+    //            //    "Vegetation ",
+    //            //    zoneVegetation.m_prefab.name,
+    //            //    " [ ",
+    //            //    zoneVegetation.m_name,
+    //            //    "] is missing ZNetView"
+    //            //    }));
+    //        }
+    //    }
+    //}
 
     // public
     void PrepareSave() {
-        //auto values(std::views::values(m_locationInstances));
-        //std::transform(m_locationInstances.begin(), m_locationInstances.end(),)
-
-        m_tempLocationsSaveClone.clear();
-
-        //std::vector<LocationInstance> m_tempLocationsSaveClone;
-        for (auto&& inst : m_locationInstances) m_tempLocationsSaveClone.push_back(inst.second);
-
-        m_tempGeneratedZonesSaveClone = robin_hood::unordered_set<Vector2i>(m_generatedZones);
-        m_tempGlobalKeysSaveClone = robin_hood::unordered_set<std::string>(m_globalKeys);
-        //m_tempLocationsSaveClone = std::vector<LocationInstance>(std::views::values(m_locationInstances));
-        m_tempLocationsGeneratedSaveClone = m_locationsGenerated;
+        m_worldSave.Write<int32_t>(m_generatedZones.size());
+        for (auto&& vec : m_generatedZones) {
+            m_worldSave.Write(vec);
+        }
+        m_worldSave.Write(Version::PGW);
+        m_worldSave.Write(m_locationVersion);
+        m_worldSave.Write<int32_t>(m_globalKeys.size());
+        for (auto&& key : m_globalKeys) {
+            m_worldSave.Write(key);
+        }
+        m_worldSave.Write(m_locationsGenerated);
+        m_worldSave.Write<int32_t>(m_locationInstances.size());
+        for (auto&& pair : m_locationInstances) {
+            auto&& inst = pair.second;
+            m_worldSave.Write(inst.m_location->m_prefabName);
+            m_worldSave.Write(inst.m_position);
+            m_worldSave.Write(inst.m_placed);
+        }
     }
 
     // public
-    void SaveASync(NetPackage &writer) {
-        writer.Write<int32_t>(m_tempGeneratedZonesSaveClone.size());
-        for (auto&& vector2i : m_tempGeneratedZonesSaveClone) {
-            writer.Write(vector2i.x);
-            writer.Write(vector2i.y);
-        }
-        writer.Write(Version::PGW);
-        writer.Write(m_locationVersion);
-        writer.Write<int32_t>(m_tempGlobalKeysSaveClone.size());
-        for (auto&& value : m_tempGlobalKeysSaveClone) {
-            writer.Write(value);
-        }
-        writer.Write(m_tempLocationsGeneratedSaveClone);
-        writer.Write<int32_t>(m_tempLocationsSaveClone.size());
-        for (auto&& locationInstance : m_tempLocationsSaveClone) {
-            writer.Write(locationInstance.m_location.m_prefabName);
-            writer.Write(locationInstance.m_position.x);
-            writer.Write(locationInstance.m_position.y);
-            writer.Write(locationInstance.m_position.z);
-            writer.Write(locationInstance.m_placed);
-        }
-
-        // free backup containers
-        m_tempGeneratedZonesSaveClone.clear();
-        m_tempGlobalKeysSaveClone.clear();
-        m_tempLocationsSaveClone.clear();
+    void SaveAsync(NetPackage &writer) {
+        writer.m_stream.Write(m_worldSave.m_stream.m_buf);
+        m_worldSave.m_stream.Clear();
     }
 
     // public
@@ -621,10 +606,7 @@ namespace ZoneSystem2 {
         m_generatedZones.clear();
         int32_t num = reader.Read<int32_t>();
         for (int32_t i = 0; i < num; i++) {
-            Vector2i item;
-            item.x = reader.Read<int32_t>();
-            item.y = reader.Read<int32_t>();
-            m_generatedZones.insert(item);
+            m_generatedZones.insert(reader.Read<Vector2i>());
         }
         if (version >= 13) {
             int32_t num2 = reader.Read<int32_t>();
@@ -647,15 +629,13 @@ namespace ZoneSystem2 {
                 m_locationInstances.clear();
                 int32_t num5 = reader.Read<int32_t>();
                 for (int32_t k = 0; k < num5; k++) {
-                    std::string text = reader.Read<std::string>();
-                    Vector3 zero;
-                    zero.x = reader.Read<float>();
-                    zero.y = reader.Read<float>();
-                    zero.z = reader.Read<float>();
+                    auto text = reader.Read<std::string>();
+                    auto zero = reader.Read<Vector3>();
+
                     bool generated = false;
-                    if (version >= 19) {
+                    if (version >= 19)
                         generated = reader.Read<bool>();
-                    }
+
                     auto&& location = GetLocation(text);
                     if (location) {
                         RegisterLocation(location, zero, generated);
@@ -680,15 +660,22 @@ namespace ZoneSystem2 {
 
     // private
     void Update() {
-        m_lastFixedTime = Time.fixedTime;
+        //m_lastFixedTime = Time.fixedTime;
         //if (ZNet.GetConnectionStatus() != ZNet.ConnectionStatus.Connected) {
         //    return;
         //}
 
+        PERIODIC_NOW(100ms, {
+            UpdateTTL(.1f);
+        
+            for (auto&& znetPeer : NetManager::GetPeers()) {
+                CreateGhostZones(znetPeer->m_pos);
+            }
+        });
 
-
+        /*
         //Terminal.m_testList["Time"] = Time.fixedTime.ToString("0.00") + " / " + TimeSinceStart().ToString("0.00");
-        m_updateTimer += Time.deltaTime;
+        //m_updateTimer += Time.deltaTime;
         if (m_updateTimer > 0.1f) {
             m_updateTimer = 0;
 
@@ -708,14 +695,13 @@ namespace ZoneSystem2 {
                     CreateGhostZones(znetPeer->m_pos);
                 }
             //}
-        }
+        }*/
     }
 
     // private
     bool CreateGhostZones(const Vector3& refPoint) {
         Vector2i zone = GetZone(refPoint);
-        GameObject gameObject;
-        if (!IsZoneGenerated(zone) && SpawnZone(zone, SpawnMode::Ghost, gameObject)) {
+        if (!IsZoneGenerated(zone) && SpawnZone(zone)) {
             return true;
         }
         int32_t num = m_activeArea + m_activeDistantArea;
@@ -723,7 +709,7 @@ namespace ZoneSystem2 {
             for (int32_t j = zone.x - num; j <= zone.x + num; j++) {
                 Vector2i zoneID(j, i);
                 GameObject gameObject2;
-                if (!IsZoneGenerated(zoneID) && SpawnZone(zoneID, SpawnMode::Ghost, gameObject2)) {
+                if (!IsZoneGenerated(zoneID) && SpawnZone(zoneID)) {
                     return true;
                 }
             }
@@ -795,47 +781,47 @@ namespace ZoneSystem2 {
     }*/
 
     // private
-    bool SpawnZone(const Vector2i& zoneID, SpawnMode mode, GameObject& root) {
+    // Only ever used in ghost mode
+    bool SpawnZone(const Vector2i& zoneID) { //GameObject& root*/) {
         Vector3 zonePos = GetZonePos(zoneID);
         Heightmap componentInChildren = m_zonePrefab.GetComponentInChildren<Heightmap>();
         if (!HeightmapBuilder.instance.IsTerrainReady(zonePos, componentInChildren.m_width, componentInChildren.m_scale, componentInChildren.m_isDistantLod, WorldGenerator.instance)) {
-            root = null;
+            //root = null;
             return false;
         }
-        root = UnityEngine.Object.Instantiate<GameObject>(m_zonePrefab, zonePos, Quaternion.identity);
-        if ((mode == ZoneSystem.SpawnMode.Ghost || mode == ZoneSystem.SpawnMode.Full) && !IsZoneGenerated(zoneID)) {
+        GameObject root = UnityEngine.Object.Instantiate<GameObject>(m_zonePrefab, zonePos, Quaternion::IDENTITY);
+        //if ((mode == SpawnMode::Ghost || mode == SpawnMode::Full) 
+            //&& !IsZoneGenerated(zoneID)) {
+
+        if (!IsZoneGenerated(zoneID)) {
             Heightmap componentInChildren2 = root.GetComponentInChildren<Heightmap>();
-            m_tempClearAreas.Clear();
-            m_tempSpawnedObjects.Clear();
+            m_tempClearAreas.clear();
+            m_tempSpawnedObjects.clear();
             PlaceLocations(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, mode, m_tempSpawnedObjects);
             PlaceVegetation(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, mode, m_tempSpawnedObjects);
-            PlaceZoneCtrl(zoneID, zonePos, mode, m_tempSpawnedObjects);
-            if (mode == ZoneSystem.SpawnMode.Ghost) {
+            PlaceZoneCtrl(zoneID, zonePos, m_tempSpawnedObjects);
+            //if (mode == SpawnMode::Ghost) {
                 for (auto&& obj : m_tempSpawnedObjects) {
-                    UnityEngine.Object.Destroy(obj);
+                    UnityEngine.Object.Destroy(obj); // unity-specific; must modify or remove/reconsiliate...
                 }
                 m_tempSpawnedObjects.clear();
                 UnityEngine.Object.Destroy(root);
-                root = null;
-            }
+                //root = null;
+            //}
             SetZoneGenerated(zoneID);
         }
         return true;
     }
 
     // private
-    void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, SpawnMode mode, std::vector<GameObject> &spawnedObjects) {
-        if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
-            if (mode == SpawnMode::Ghost) {
-                ZNetView.StartGhostInit();
-            }
-            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_zoneCtrlPrefab, zoneCenterPos, Quaternion.identity);
+    void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, std::vector<GameObject> &spawnedObjects) {
+            
+        //ZNetView.StartGhostInit(); // sets a priv var, but its never actually used; so redundant
+            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_zoneCtrlPrefab, zoneCenterPos, Quaternion::IDENTITY);
             gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(Version::PGW);
-            if (mode == SpawnMode::Ghost) {
-                spawnedObjects.push_back(gameObject);
-                ZNetView.FinishGhostInit();
-            }
-        }
+            spawnedObjects.push_back(gameObject); // unity only
+        //ZNetView.FinishGhostInit();
+        
     }
 
     // private
@@ -847,7 +833,7 @@ namespace ZoneSystem2 {
     }
 
     // private
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, SpawnMode mode, std::vector<GameObject> spawnedObjects) {
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects) {
         //UnityEngine.Random.State state = UnityEngine.Random.state;
 
         int32_t seed = WorldGenerator::GetSeed();
@@ -960,9 +946,10 @@ namespace ZoneSystem2 {
                                             }
                                             if (flag) {
                                                 if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
-                                                    if (mode == SpawnMode::Ghost) {
-                                                        ZNetView.StartGhostInit();
-                                                    }
+                                                    //if (mode == SpawnMode::Ghost) {
+                                                    //    ZNetView.StartGhostInit();
+                                                    //}
+
                                                     GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(zoneVegetation.m_prefab, vector2, rotation);
                                                     ZNetView component = gameObject.GetComponent<ZNetView>();
                                                     component.GetZDO().SetPGWVersion(m_pgwVersion);
@@ -974,9 +961,10 @@ namespace ZoneSystem2 {
                                                             collider.enabled = true;
                                                         }
                                                     }
+
                                                     if (mode == SpawnMode::Ghost) {
                                                         spawnedObjects.push_back(gameObject);
-                                                        ZNetView.FinishGhostInit();
+                                                        //ZNetView.FinishGhostInit(); // redundant
                                                     }
                                                 }
                                             }
@@ -1280,8 +1268,8 @@ namespace ZoneSystem2 {
         Transform parent, 
         Heightmap hmap, 
         std::vector<ClearArea> clearAreas, 
-        SpawnMode mode, 
-        std::vector<GameObject> spawnedObjects) 
+        //SpawnMode mode, 
+        std::vector<GameObject> &spawnedObjects) 
     {
 
         //GenerateLocationsIfNeeded();
@@ -1468,9 +1456,11 @@ namespace ZoneSystem2 {
                     Vector3 position2 = pos + rot * position;
                     Quaternion rotation = znetView2.gameObject.transform.rotation;
                     Quaternion rotation2 = rot * rotation;
-                    if (mode == SpawnMode::Ghost) {
-                        ZNetView.StartGhostInit();
-                    }
+
+                    //if (mode == SpawnMode::Ghost) {
+                    //    ZNetView.StartGhostInit(); // redundant; does practically nothing
+                    //}
+
                     GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(znetView2.gameObject, position2, rotation2);
                     gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(m_pgwVersion);
                     DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
@@ -1480,9 +1470,10 @@ namespace ZoneSystem2 {
                         }
                         component2.Generate(mode);
                     }
+
                     if (mode == SpawnMode::Ghost) {
                         spawnedGhostObjects.Add(gameObject);
-                        ZNetView.FinishGhostInit();
+                        //ZNetView.FinishGhostInit();
                     }
                 }
             }
@@ -1506,9 +1497,9 @@ namespace ZoneSystem2 {
 
     // private
     void CreateLocationProxy(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects) {
-        if (mode == SpawnMode::Ghost) {
-            ZNetView.StartGhostInit();
-        }
+        //if (mode == SpawnMode::Ghost) {
+        //    ZNetView.StartGhostInit();
+        //}
 
         GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_locationProxyPrefab, pos, rotation);
         LocationProxy component = gameObject.GetComponent<LocationProxy>();
@@ -1516,7 +1507,7 @@ namespace ZoneSystem2 {
         component.SetLocation(location.m_prefab.name, seed, spawnNow, Version::PGW);
         if (mode == ZoneSystem.SpawnMode.Ghost) {
             spawnedGhostObjects.push_back(gameObject);
-            ZNetView.FinishGhostInit();
+            //ZNetView.FinishGhostInit();
         }
     }
 

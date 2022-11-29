@@ -13,6 +13,7 @@ private: uint32_t m_pos; // read/write head offset from origin
 
 public:
 	Stream();
+	Stream(const BYTE_t* data, uint32_t count);
 	explicit Stream(uint32_t reserve);  // capacity
     explicit Stream(BYTES_t vec);       // assign
 	Stream(const Stream& other);        // copy

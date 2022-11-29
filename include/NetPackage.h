@@ -14,9 +14,8 @@
 #include "Quaternion.h"
 #include "NetID.h"
 
-template<typename E>
-concept EnumType = std::is_enum_v<E>;
-
+// TODO rename BinaryBuffer or DataBuffer or ByteBuffer
+//  maybe rename Stream to BinaryStream
 class NetPackage {
 private:
     void Write7BitEncodedInt(int32_t value);
@@ -33,7 +32,6 @@ public:
     explicit NetPackage(uint32_t reserve);                   // reserve initial memory
     NetPackage(const NetPackage& other) = default;  // copy
     NetPackage(NetPackage&& other) = default;       // move
-    //Package(std::string& base64);
 
 
 
@@ -59,10 +57,17 @@ public:
     void Write(const Vector2i &in);
     // Write Quaternion
     void Write(const Quaternion& in);
+    template<template<class> class T>
+    void Write(const T<std::string>& in) requires is_container<T<std::string>>::value {
+        Write(static_cast<uint32_t>(in.size()));
+        for (auto&& s : in) {
+            Write(s);
+        }
+    }
     // Write string vector as string array
-    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
+    //void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     // Write string set as string array
-    void Write(const robin_hood::unordered_set<std::string>& in);
+    //void Write(const robin_hood::unordered_set<std::string>& in);
     // Write primitive
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
@@ -70,9 +75,8 @@ public:
 
     // Enum overload; writes the enum underlying value
     // https://stackoverflow.com/questions/60524480/how-to-force-a-template-parameter-to-be-an-enum-or-enum-class
-    template<EnumType E>
-    void Write(E v) {
-        //std::to_underlying
+    template<typename E>
+    void Write(E v) requires std::is_enum_v<E> {
         using T = std::underlying_type_t<E>;
         Write(static_cast<T>(v));
     }
@@ -91,7 +95,7 @@ public:
         auto count = Read7BitEncodedInt();
 
         if (count < 0)
-            throw std::runtime_error("invalid string length");
+            throw std::runtime_error("negative count");
 
         if (count == 0)
             return "";
@@ -115,24 +119,24 @@ public:
     template<typename T>
     T Read() requires std::same_as<T, BYTES_t> {
         T out;
-        m_stream.Read(out, Read<int32_t>());
+        m_stream.Read(out, Read<uint32_t>());
         return out;
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, std::vector<std::string>> {
+    template<template<class> class T>
+    T<std::string> Read() requires is_container<T<std::string>>::value {
         T out;
-        auto count = Read<int32_t>();
+        auto count = Read<uint32_t>();
+
         while (count--) {
             out.push_back(Read<std::string>());
         }
         return out;
     }
 
-    // TODO reading signed type might cause issues
     template<typename T>
     T Read() requires std::same_as<T, NetPackage> {
-        auto count = Read<int32_t>();
+        auto count = Read<uint32_t>();
 
         NetPackage pkg(count);
         m_stream.Read(pkg.m_stream.m_buf, count);
@@ -161,8 +165,8 @@ public:
         return Quaternion{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
     }
 
-    template<EnumType E>
-    E Read() {
+    template<typename E>
+    E Read() requires std::is_enum_v<E> {
         return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
@@ -185,7 +189,17 @@ public:
 
     // Reads a string array from package
     // The target vector will be overwritten
-    void Read(std::vector<std::string>& out);
+    template<template<class> class T>
+    void Read(T<std::string>& out) requires is_container<T<std::string>>::value {
+        auto count = Read<uint32_t>();
+
+        out.clear();
+        out.reserve(count);
+
+        while (count--) {
+            out.push_back(Read<std::string>());
+        }
+    }
 
     // Reads a NetPackage from package
     // The target package will be overwritten
