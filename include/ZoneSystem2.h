@@ -42,8 +42,11 @@ namespace ZoneSystem2 {
 	bool FindFloor(const Vector3& p, float& height);
 	void GetGroundData(Vector3 &p, Vector3 &normal, Heightmap::Biome &biome, Heightmap::BiomeArea &biomeArea, Heightmap &hmap);
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
-	Vector2i GetZone(const Vector3& point);
-	Vector3 GetZonePos(const Vector2i& id);
+	
+
+	Vector2i WorldToZonePos(const Vector3& point);
+	Vector3 ZoneToWorldPos(const Vector2i& id);
+
 	bool SkipSaving();
 	// Used only for backups and
 	//float TimeSinceStart();

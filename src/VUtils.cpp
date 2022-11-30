@@ -3,6 +3,21 @@
 #include <zlib.h>
 
 #include "VUtils.h"
+#include "VUtilsMath.h"
+
+Color Color::Lerp(const Color& other, float t) {
+    //t = VUtils::Math::Clamp01(t);
+    return Color(
+        VUtils::Math::Lerp(r, other.r, t),
+        VUtils::Math::Lerp(g, other.g, t),
+        VUtils::Math::Lerp(b, other.b, t),
+        VUtils::Math::Lerp(a, other.a, t));
+}
+
+//const Color Color::BLACK = Color();
+//const Color Color::RED = Color(1, 0, 0);
+//const Color Color::GREEN = Color(0, 1, 0);
+//const Color Color::BLUE = Color(0, 0, 1);
 
 namespace VUtils {
 

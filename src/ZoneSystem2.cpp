@@ -1,9 +1,11 @@
 #include <ranges>
+#include <thread>
 
 #include "NetManager.h"
 #include "ZoneSystem2.h"
 #include "WorldGenerator.h"
 #include "NetScene.h"
+#include "HeightmapBuilder.h"
 
 namespace ZoneSystem2 {
 
@@ -244,8 +246,8 @@ namespace ZoneSystem2 {
     //Vector2i GetRandomZone(float range);
     //Vector3 GetRandomPointInZone(const Vector2i& zone, float locationRadius);
     //Vector3 GetRandomPointInZone(float locationRadius);
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects);
-    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects);
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects);
+    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects);
     void RemoveUnplacedLocations(ZoneLocation *location);
     GameObject SpawnLocation(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rot, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
     void CreateLocationProxy(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
@@ -700,7 +702,7 @@ namespace ZoneSystem2 {
 
     // private
     bool CreateGhostZones(const Vector3& refPoint) {
-        Vector2i zone = GetZone(refPoint);
+        Vector2i zone = WorldToZonePos(refPoint);
         if (!IsZoneGenerated(zone) && SpawnZone(zone)) {
             return true;
         }
@@ -756,7 +758,7 @@ namespace ZoneSystem2 {
 
     // public
     bool IsZoneLoaded(const Vector3& point) {
-        Vector2i zone = GetZone(point);
+        Vector2i zone = WorldToZonePos(point);
         return IsZoneLoaded(zone);
     }
 
@@ -783,9 +785,13 @@ namespace ZoneSystem2 {
     // private
     // Only ever used in ghost mode
     bool SpawnZone(const Vector2i& zoneID) { //GameObject& root*/) {
-        Vector3 zonePos = GetZonePos(zoneID);
+        Vector3 zonePos = WorldToZonePos(zoneID);
         Heightmap componentInChildren = m_zonePrefab.GetComponentInChildren<Heightmap>();
-        if (!HeightmapBuilder.instance.IsTerrainReady(zonePos, componentInChildren.m_width, componentInChildren.m_scale, componentInChildren.m_isDistantLod, WorldGenerator.instance)) {
+
+        // Waiting for the threadto finish
+        // A thread pool might be better
+        // other types arent needed
+        if (!HeightmapBuilder::IsTerrainReady(zonePos)) {
             //root = null;
             return false;
         }
@@ -797,8 +803,8 @@ namespace ZoneSystem2 {
             Heightmap componentInChildren2 = root.GetComponentInChildren<Heightmap>();
             m_tempClearAreas.clear();
             m_tempSpawnedObjects.clear();
-            PlaceLocations(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, mode, m_tempSpawnedObjects);
-            PlaceVegetation(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, mode, m_tempSpawnedObjects);
+            PlaceLocations(zoneID, zonePos, root.transform, m_tempClearAreas, m_tempSpawnedObjects);
+            PlaceVegetation(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, m_tempSpawnedObjects);
             PlaceZoneCtrl(zoneID, zonePos, m_tempSpawnedObjects);
             //if (mode == SpawnMode::Ghost) {
                 for (auto&& obj : m_tempSpawnedObjects) {
@@ -833,7 +839,7 @@ namespace ZoneSystem2 {
     }
 
     // private
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> clearAreas, std::vector<GameObject> &spawnedObjects) {
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects) {
         //UnityEngine.Random.State state = UnityEngine.Random.state;
 
         int32_t seed = WorldGenerator::GetSeed();
@@ -1266,8 +1272,7 @@ namespace ZoneSystem2 {
     void PlaceLocations(Vector2i zoneID, 
         Vector3 zoneCenterPos, 
         Transform parent, 
-        Heightmap hmap, 
-        std::vector<ClearArea> clearAreas, 
+        std::vector<ClearArea> &clearAreas, 
         //SpawnMode mode, 
         std::vector<GameObject> &spawnedObjects) 
     {
@@ -1769,10 +1774,29 @@ namespace ZoneSystem2 {
     }
 
     // public
-    void GetGroundData(Vector3 &p, Vector3 &normal, Heightmap::Biome &biome, Heightmap::BiomeArea &biomeArea, Heightmap &hmap) {
+    // if terrain is just heightmap,
+    // could easily create a wrapper and poll points where needed
+    Heightmap* GetGroundData(Vector3 &p, Vector3 &normal, Heightmap::Biome &biome, Heightmap::BiomeArea &biomeArea) {
         biome = Heightmap::Biome::None;
         biomeArea = Heightmap::BiomeArea::Everything;
-        hmap = null;
+        //hmap = null;
+
+        // test collision from point, casting downwards through terrain
+        
+        // If final result is completely linked to Heightmap, could just use heightmap
+        // should be simple enough,
+
+        // global heightmaps can be queried at the world--->zone then 
+        // get the relative point inside zone
+
+        Heightmap::GetAllHeightmaps();
+
+        // 'Terrain' gameobject is always hit 
+        //  Terrain is component though
+        // Terrain also exists as a Unity prefab builtin
+
+
+
         RaycastHit raycastHit;
         if (Physics.Raycast(p + Vector3::UP * 5000, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
             p.y = raycastHit.point.y;
@@ -1781,11 +1805,13 @@ namespace ZoneSystem2 {
             if (component) {
                 biome = component.GetBiome(raycastHit.point);
                 biomeArea = component.GetBiomeArea();
-                hmap = component;
+                //hmap = component;
+                return component;
             }
-            return;
-        }
-        normal = Vector3::UP;
+        } else 
+            normal = Vector3::UP;
+
+        return nullptr;
     }
 
     // private
@@ -1832,14 +1858,18 @@ namespace ZoneSystem2 {
     }
 
     // public
-    Vector2i GetZone(const Vector3& point) {
+    // this is world position to zone position
+    // formerly GetZone
+    Vector2i WorldToZonePos(const Vector3& point) {
         int32_t x = floor((point.x + m_zoneSize / 2) / m_zoneSize);
         int32_t y = floor((point.z + m_zoneSize / 2) / m_zoneSize);
         return Vector2i(x, y);
     }
 
     // public
-    Vector3 GetZonePos(const Vector2i& id) {
+    // zone position to ~world position
+    // GetZonePos
+    Vector3 ZoneToWorldPos(const Vector2i& id) {
         return Vector3(id.x * m_zoneSize, 0, id.y * m_zoneSize);
     }
 

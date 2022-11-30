@@ -11,8 +11,14 @@
 
 #include "CompileSettings.h"
 
-using namespace std::chrono;
 namespace fs = std::filesystem;
+using namespace std::chrono;
+using namespace std::chrono_literals;
+
+using BYTE_t = uint8_t; // Unsigned 8 bit
+using HASH_t = int32_t; // Used for RPC method hashing
+using OWNER_t = int64_t; // Should rename to UID
+using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 
 // Runs a static periodic task later
 #define PERIODIC_LATER(__period, __initial, ...) {\
@@ -51,19 +57,32 @@ namespace fs = std::filesystem;
 
 struct Color {
     float r, g, b, a;
+
+    constexpr Color() : r(0), g(0), b(0), a(1) {}
+    constexpr Color(float r, float g, float b) : r(r), g(g), b(b), a(1) {}
+    constexpr Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+
+    Color Lerp(const Color& other, float t);
 };
 
+struct Color32 {
+    BYTE_t r, g, b, a;
 
-using namespace std::chrono_literals;
+    constexpr Color32() : r(0), g(0), b(0), a(1) {}
+    constexpr Color32(BYTE_t r, BYTE_t g, BYTE_t b) : r(r), g(g), b(b), a(1) {}
+    constexpr Color32(BYTE_t r, BYTE_t g, BYTE_t b, BYTE_t a) : r(r), g(g), b(b), a(a) {}
 
-using BYTE_t = uint8_t; // char;
-using HASH_t = int32_t;
-using OWNER_t = int64_t;
-using BYTES_t = std::vector<BYTE_t>;
-//using CHARS_t = std::vector<char>;
-//using byte_fstream = std::basic_fstream<BYTE_t, std::char_traits<BYTE_t>>;
-//using byte_ifstream = std::basic_ifstream<BYTE_t, std::char_traits<BYTE_t>>;
-//using byte_ofstream = std::basic_ofstream<BYTE_t, std::char_traits<BYTE_t>>;
+    //Color Lerp(const Color& other, float t);
+};
+
+namespace Colors {
+    static constexpr Color BLACK = Color(0, 0, 0);
+    static constexpr Color RED = Color(1, 0, 0);
+    static constexpr Color GREEN = Color(0, 1, 0);
+    static constexpr Color BLUE = Color(0, 0, 1);
+}
+
+
 
 static constexpr float PI = 3.141592653589f;
 
