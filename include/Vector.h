@@ -53,6 +53,7 @@ struct Vector2 {
 		return VUtils::Math::SqDistance(x, y, other.x, other.y);
 	}
 
+
 	//normalize and returns this
 	Vector2 &Normalize();
 
@@ -150,6 +151,10 @@ struct Vector3 {
 	bool operator!=(const Vector3& other) const;
 
 
+
+	Vector3 Cross(const Vector3 &rhs) const {
+		return Vector3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+	}
 
 	float SqMagnitude() const {
 		return VUtils::Math::SqMagnitude(x, y, z);

@@ -58,23 +58,21 @@ private:
     Vector3 CalcNormal2(std::vector<Vector3> vertises, int32_t x, int32_t y);
     Vector3 CalcNormal(int32_t x, int32_t y);
     Vector3 CalcVertex(int32_t x, int32_t y);
-    Color GetBiomeColor(float ix, float iy);
     void RebuildCollisionMesh();
-    void RebuildRenderMesh();
-    void SmoothTerrain2(const Vector3& worldPos, float radius, bool square, float[] levelOnlyHeights, float power, bool playerModifiction);
+    void SmoothTerrain2(const Vector3& worldPos, float radius, float[] levelOnlyHeights, float power, bool playerModification);
     bool AtMaxWorldLevelDepth(const Vector3& worldPos);
     bool GetWorldBaseHeight(const Vector3& worldPos, float& height);
     bool GetWorldHeight(const Vector3& worldPos, float& height);
-    bool GetAverageWorldHeight(const Vector3& worldPos, float& radius, float height);
-    bool GetMinWorldHeight(const Vector3& worldPos, float& radius, float height);
-    bool GetMaxWorldHeight(const Vector3& worldPos, float& radius, float height);
+    bool GetAverageWorldHeight(const Vector3& worldPos, float radius, float &height);
+    bool GetMinWorldHeight(const Vector3& worldPos, float radius, float &height);
+    bool GetMaxWorldHeight(const Vector3& worldPos, float radius, float &height);
     void SmoothTerrain(const Vector3& worldPos, float radius, bool square, float intensity);
     float GetAvgHeight(int32_t cx, int32_t cy, int32_t w);
     float GroundHeight(const Vector3& point);
-    void FindObjectsToMove(Vector3 worldPos, float area, std::vector<Rigidbody> objects);
-    void PaintCleared(const Vector3& worldPos, float radius, TerrainModifier.PaintType paintType, bool heightCheck, bool apply);
+    void FindObjectsToMove(Vector3 worldPos, float area, std::vector<Rigidbody> &objects);
+    void PaintCleared(Vector3 worldPos, float radius, TerrainModifier.PaintType paintType, bool heightCheck, bool apply);
     void WorldToNormalizedHM(const Vector3& worldPos, float& x, float y);
-    void LevelTerrain(const Vector3& worldPos, float radius, bool square, float[] baseHeights, float[] levelOnly, bool playerModifiction);
+    void LevelTerrain(const Vector3& worldPos, float radius, bool square, float[] baseHeights, float[] levelOnly, bool playerModification);
 
 public:
 
@@ -96,7 +94,6 @@ public:
     bool CheckTerrainModIsContained(TerrainModifier modifier);
     bool TerrainVSModifier(TerrainModifier modifier);
 
-    static Color32 GetBiomeColor(Biome biome);
     static bool AtMaxLevelDepth(const Vector3& worldPos);
     static bool GetHeight(const Vector3& worldPos, float& height);
     static bool GetAverageHeight(const Vector3& worldPos, float& radius, float height);
@@ -104,7 +101,7 @@ public:
     float GetVegetationMask(const Vector3& worldPos);
     bool IsCleared(const Vector3& worldPos);
     bool IsCultivated(const Vector3& worldPos);
-    void WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t y);
+    void WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y);
     Color GetPaintMask(int32_t x, int32_t y);
     float GetHeight(int32_t x, int32_t y);
     float GetBaseHeight(int32_t x, int32_t y);
@@ -113,9 +110,8 @@ public:
 
     //static std::vector<Heightmap> GetAllHeightmaps();
     static robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>, HashUtils::Hasher> &GetAllHeightmaps();
-    static void GetAllHeightmaps(Biome biome, std::vector<Heightmap*> hmaps);
-    static Heightmap *FindHeightmap(const Vector3& point);
-    static void FindHeightmap(Vector3 point, float radius, std::vector<Heightmap> heightmaps);
+    static Heightmap *FindHeightmap(const Vector3& point); // terribly slow
+    static void FindHeightmap(const Vector3& point, float radius, std::vector<Heightmap*> &heightmaps);
     static Biome FindBiome(const Vector3& point);
     static bool HaveQueuedRebuild(const Vector3& point, float radius);
 
@@ -180,6 +176,8 @@ private:
     Mesh m_renderMesh;
 
     bool m_dirty;
+
+    Vector2i m_zone;
 
 
     // what should own heightmaps?

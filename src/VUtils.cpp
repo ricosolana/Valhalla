@@ -14,6 +14,14 @@ Color Color::Lerp(const Color& other, float t) {
         VUtils::Math::Lerp(a, other.a, t));
 }
 
+Color32 Color32::Lerp(const Color32 &other, float t) {
+    return Color32(
+        VUtils::Math::Lerp(r, other.r, t),
+        VUtils::Math::Lerp(g, other.g, t),
+        VUtils::Math::Lerp(b, other.b, t),
+        VUtils::Math::Lerp(a, other.a, t));
+}
+
 //const Color Color::BLACK = Color();
 //const Color Color::RED = Color(1, 0, 0);
 //const Color Color::GREEN = Color(0, 1, 0);

@@ -29,6 +29,8 @@ namespace VUtils::Math {
 
 
 
+
+
 	float Clamp(float value, float min, float max);
 
 	float Clamp01(float value);

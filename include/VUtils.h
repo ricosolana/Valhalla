@@ -73,6 +73,8 @@ struct Color32 {
     constexpr Color32(BYTE_t r, BYTE_t g, BYTE_t b, BYTE_t a) : r(r), g(g), b(b), a(a) {}
 
     //Color Lerp(const Color& other, float t);
+
+    Color32 Lerp(const Color32& other, float t);
 };
 
 namespace Colors {
