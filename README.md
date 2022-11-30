@@ -25,6 +25,11 @@ Now compatible with the Steam Valheim client.
     - Heightmap makes use of many special Unity features (Raycasting / Terrain physics) mainly for collision and height polling. Im figuring it should be easy to just query a point from the Heightmap float[]. 
     - Many parts are also for rendering the heightmap for the client, in terms of using hoe/cultivator to paint terrain. 
     - It turns out that the Mistlands update new vegetation reads the Heightmap, grabbing pixles from it to determine vegetation placement during (world?) generation. Why. Why should the server store textures? I understand that some kind of texture mask is required for things like farmed/unfarmed land, but this seems extensive... Clients use textures, not servers...
+    - I am really striving for these simple objectives atm:
+        - Be able to join as a client
+        - Join in at the spawn location (adhering with the Valheim worldgen seed)
+        - Placement of prefabs where possible.
+            - This might involve having to get the exact ZoneLocation prefab objects and each of the asubobject positions/rotations within a ZoneLocation. Then somehow spawning them (sending client packets and handling them server side, idk).
 
 11/14/2022 + TODO
  - Still planning to implement:
