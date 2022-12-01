@@ -614,8 +614,9 @@ void Heightmap::SmoothTerrain(const Vector3& worldPos, float radius, bool square
     }
 
     for (auto&& keyValuePair : list) {
-        float h = Mathf.Lerp(this->GetHeight(keyValuePair.Key.x, keyValuePair.Key.y), keyValuePair.Value, intensity);
-        this->SetHeight(keyValuePair.Key.x, keyValuePair.Key.y, h);
+        float h = VUtils::Math::Lerp(
+            this->GetHeight(keyValuePair.first.x, keyValuePair.first.y), keyValuePair.second, intensity);
+        this->SetHeight(keyValuePair.first.x, keyValuePair.first.y, h);
     }
 }
 
@@ -800,7 +801,7 @@ float Heightmap::GetBaseHeight(int32_t x, int32_t y) {
     if (x < 0 || y < 0 || x >= num || y >= num) {
         return 0;
     }
-    return this->m_buildData.m_baseHeights[y * num + x];
+    return this->m_buildData->m_baseHeights[y * num + x];
 }
 
 // public
