@@ -153,7 +153,7 @@ void VServer::Launch() {
 			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
 				auto ptr = itr->get();
 				if (ptr->at < now) {
-					if (ptr->period < 0ms) {
+					if (ptr->period == milliseconds::min()) { // if task cancelled
 						itr = m_tasks.erase(itr);
 					}
 					else {

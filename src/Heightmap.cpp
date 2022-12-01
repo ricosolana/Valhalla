@@ -35,32 +35,35 @@ void Heightmap::ForceGenerateAll() {
     }
 }
 
-// public
-void Heightmap::Poke(bool delayed) {
-    if (delayed) {
-        if (this->HaveQueuedRebuild()) {
-            base.CancelInvoke("Regenerate");
-        }
-        base.Invoke("Regenerate", 0.1f);
-        return;
+void Heightmap::CancelQueuedRegeneration() {
+    if (IsRegenerateQueued()) {
+        m_queuedRegenerateTask->Cancel();
+        m_queuedRegenerateTask = nullptr;
     }
-    this->Regenerate();
 }
 
 // public
-bool Heightmap::HaveQueuedRebuild() {
-    return base.IsInvoking("Regenerate");
+void Heightmap::QueueRegenerate() {
+    CancelQueuedRegeneration();
+
+    m_queuedRegenerateTask = &Valhalla()->RunTaskLater([this](Task&) {
+        Regenerate();
+    }, 100ms);
+}
+
+// public
+bool Heightmap::IsRegenerateQueued() {
+    return m_queuedRegenerateTask;
+    //return base.IsInvoking("Regenerate");
 }
 
 // public
 void Heightmap::Regenerate() {
-    if (HaveQueuedRebuild()) {
-        base.CancelInvoke("Regenerate");
-    }
+    CancelQueuedRegeneration();
+
     Generate();
     RebuildCollisionMesh();
     UpdateCornerDepths();
-    m_dirty = true;
 }
 
 // private
@@ -88,7 +91,7 @@ float[] Heightmap::GetOceanDepth() {
 float Heightmap::GetOceanDepthAll(const Vector3& worldPos) {
     auto&& heightmap = FindHeightmap(worldPos);
     if (heightmap) {
-        return heightmap.GetOceanDepth(worldPos);
+        return heightmap->GetOceanDepth(worldPos);
     }
     return 0;
 }
@@ -157,10 +160,12 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
 
 // public
 std::vector<Heightmap::Biome> Heightmap::GetBiomes() {
-    std::vector<Heightmap.Biome> list;
+    std::vector<Biome> list;
+    Biome mask = None;
     for (auto&& item : this->m_cornerBiomes) {
-        if (!list.Contains(item)) {
-            list.Add(item);
+        if ((mask & item) != item) {
+            list.push_back(item);
+            mask |= item;
         }
     }
     return list;
@@ -168,12 +173,17 @@ std::vector<Heightmap::Biome> Heightmap::GetBiomes() {
 
 // public
 bool Heightmap::HaveBiome(Heightmap::Biome biome) {
-    return (this->m_cornerBiomes[0] & biome) != Biome::None || (this->m_cornerBiomes[1] & biome) != Heightmap.Biome.None || (this->m_cornerBiomes[2] & biome) != Heightmap.Biome.None || (this->m_cornerBiomes[3] & biome) > Heightmap.Biome.None;
+    return (this->m_cornerBiomes[0] & biome) != Biome::None 
+        || (this->m_cornerBiomes[1] & biome) != Biome::None
+        || (this->m_cornerBiomes[2] & biome) != Biome::None
+        || (this->m_cornerBiomes[3] & biome) > Biome::None;
 }
 
 // public
 Heightmap::Biome Heightmap::GetBiome(const Vector3& point) {
-    if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] && this->m_cornerBiomes[0] == this->m_cornerBiomes[3]) {
+    if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] 
+        && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] 
+        && this->m_cornerBiomes[0] == this->m_cornerBiomes[3]) {
         return this->m_cornerBiomes[0];
     }
 

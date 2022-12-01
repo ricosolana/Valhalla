@@ -133,7 +133,7 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsRandom.cpp"
     "src/Game.cpp"
  
- "src/WorldManager.cpp" "include/ZoneSystem2.h" "src/ZoneSystem2.cpp" "include/HeightmapBuilder.h" "src/HeightmapBuilder.cpp" "src/Heightmap.cpp")
+ "src/WorldManager.cpp" "include/ZoneSystem2.h" "src/ZoneSystem2.cpp" "include/HeightmapBuilder.h" "src/HeightmapBuilder.cpp" "src/Heightmap.cpp" "include/HeightmapManager.h" "src/HeightmapManager.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

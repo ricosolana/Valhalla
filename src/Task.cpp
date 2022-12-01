@@ -7,5 +7,5 @@ bool Task::Repeats() {
 }
 
 void Task::Cancel() {
-	period = -1ms;
+	period = std::chrono::milliseconds::min();
 }

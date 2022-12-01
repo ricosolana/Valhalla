@@ -78,8 +78,8 @@ public:
 
     static void ForceGenerateAll();
 
-    void Poke(bool delayed);
-    bool HaveQueuedRebuild();
+    void QueueRegenerate();
+    bool IsRegenerateQueued();
     void Regenerate();
     std::array<float, 4> GetOceanDepth();
 
@@ -113,7 +113,7 @@ public:
     static Heightmap *FindHeightmap(const Vector3& point); // terribly slow
     static void FindHeightmap(const Vector3& point, float radius, std::vector<Heightmap*> &heightmaps);
     static Biome FindBiome(const Vector3& point);
-    static bool HaveQueuedRebuild(const Vector3& point, float radius);
+    static bool IsRegenerateQueued(const Vector3& point, float radius);
 
     void Clear();
     TerrainComp GetAndCreateTerrainCompiler();
@@ -147,6 +147,10 @@ public:
     //bool m_distantLodEditorHax;
 
 private:
+    void CancelQueuedRegeneration();
+    
+
+    Task *m_queuedRegenerateTask = nullptr;
 
     std::vector<float> m_heights;
 
@@ -175,7 +179,7 @@ private:
 
     Mesh m_renderMesh;
 
-    bool m_dirty;
+    //bool m_dirty;
 
     Vector2i m_zone;
 
