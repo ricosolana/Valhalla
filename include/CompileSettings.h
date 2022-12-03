@@ -24,9 +24,9 @@ using namespace std::chrono_literals;
 //	Includes game, worldgen, zdo, zonelocation, ...
 namespace Version {
 	// Valheim game version
-	static const char* GAME = "0.212.6";
+	static const char* GAME = "0.212.7";
 
-	// 
+	// worldgenerator
 	static constexpr int32_t WORLD = 29;
 
 	// Used in WorldGenerator terrain

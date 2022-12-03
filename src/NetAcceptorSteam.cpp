@@ -6,10 +6,11 @@
 AcceptorSteam::AcceptorSteam()
 	: m_port(Valhalla()->Settings().serverPort) {
 
-	if (SteamAPI_RestartAppIfNecessary(VALHEIM_APP_ID)) {
-		LOG(INFO) << "Restarting app through Steam";
-		exit(0);
-	}
+	// This forces the Valheim Client to startup for some reason
+	//if (SteamAPI_RestartAppIfNecessary(VALHEIM_APP_ID)) {
+	//	LOG(INFO) << "Restarting app through Steam";
+	//	exit(0);
+	//}
 
 	if (!SteamGameServer_Init(0, m_port, m_port + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
 		LOG(ERROR) << "Failed to init steam game server";

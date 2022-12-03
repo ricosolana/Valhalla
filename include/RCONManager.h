@@ -16,6 +16,4 @@ private:
 	void Init(std::string password, uint16_t port);
 	void UnInit();
 	void Update();
-
-
 };

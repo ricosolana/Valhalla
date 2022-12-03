@@ -148,7 +148,7 @@ void IValhalla::Start() {
 
     ModManager()->Init();
     WorldManager::Init();
-    WorldGenerator::Init();
+    //WorldGenerator::Init();
     NetManager::Init();
     ChatManager::Init();
 
@@ -158,6 +158,9 @@ void IValhalla::Start() {
     if (m_settings.rconEnabled) {
         m_rconManager = std::make_unique<RCONManager>();
         m_rconManager->Init(m_settings.rconPassword, m_settings.rconPort);
+    }
+    else {
+        LOG(INFO) << "RCON is disabled";
     }
 
 	m_prevUpdate = steady_clock::now();
