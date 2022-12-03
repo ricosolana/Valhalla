@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "ModManager.h"
 #include "VUtilsResource.h"
 #include "ServerSettings.h"
@@ -12,14 +12,25 @@
 #include "NetSyncManager.h"
 #include "WorldGenerator.h"
 
-using namespace std::chrono;
 
-std::unique_ptr<VServer> VServer_INSTANCE(std::make_unique<VServer>());
-VServer* Valhalla() {
-	return VServer_INSTANCE.get();
+
+std::atomic_bool ValhallaServer::m_running = false;
+std::list<std::unique_ptr<Task>> ValhallaServer::m_tasks;
+std::recursive_mutex ValhallaServer::m_taskMutex;
+ServerSettings ValhallaServer::m_settings;
+const OWNER_t ValhallaServer::m_serverID = VUtils::Random::GenerateUID();
+std::unique_ptr<RCONAcceptor> ValhallaServer::m_rcon;
+std::list<std::shared_ptr<RCONSocket>> ValhallaServer::m_rconSockets;
+const steady_clock::time_point ValhallaServer::m_startTime = steady_clock::now();
+steady_clock::time_point ValhallaServer::m_prevUpdate;
+steady_clock::time_point ValhallaServer::m_nowUpdate;
+double ValhallaServer::m_netTime = 0;
+
+
+
+bool ValhallaServer::IsPeerAllowed(NetRpc* rpc) {
+    rpc
 }
-
-
 
 void VServer::LoadFiles() {
     {
@@ -113,10 +124,14 @@ void VServer::LoadFiles() {
 
 
 
-void VServer::Launch() {
+void ValhallaServer::Init() {
+    m_startTime = steady_clock::now();
+    m_running = false;
+    m_netTime = 0;
+
     this->LoadFiles();
 
-    ModManager()->Init();
+    ModManager::Init();
     WorldManager::Init();
     WorldGenerator::Init();
     NetManager::Init();
@@ -178,7 +193,7 @@ void VServer::Launch() {
 	}
 
     // Cleanup 
-    ModManager()->UnInit();
+    ModManager::UnInit();
     NetManager::Close();
 
     {

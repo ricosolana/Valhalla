@@ -123,8 +123,6 @@ namespace WorldManager {
 		try {
 			auto metaPath = GetWorldMetaPath(m_world->m_name);
 
-			auto metaPath = GetWorldMetaPath(m_world->m_name);
-
 			//DateTime now2 = DateTime.Now;
 			auto now2(steady_clock::now());
 			bool flag = true;
@@ -138,11 +136,13 @@ namespace WorldManager {
 			//FileWriter fileWriter = new FileWriter(text, FileHelpers.FileHelperType.Binary, ZNet.m_world.m_fileSource);
 			//ZLog.Log("World save writing started");
 			//BinaryWriter binary = fileWriter.m_binary;
+
+			assert(false);
 			binary.Write(Version::WORLD);
-			binary.Write((double) m_netTime);
+			////binary.Write((double) m_netTime);
 			NetSyncManager::SaveAsync(binary);
 			ZoneSystem::SaveAsync(binary);
-			RandEventSystem::SaveAsync(binary);
+			////RandEventSystem::SaveAsync(binary);
 
 			VUtils::Resource::WriteFileBytes(text, binary.m_stream.m_buf);
 

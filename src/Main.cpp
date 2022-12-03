@@ -80,9 +80,12 @@ int main(int argc, char **argv) {
     }
 
     // Copy any old file
-    if (backup_logs)
-        fs::copy_file(LOGFILE_NAME, 
-            std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME);
+    
+    if (backup_logs) {
+        std::error_code ec;
+        fs::copy_file(LOGFILE_NAME,
+            std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME, ec);
+    }
 
     initLogger(colors);
 

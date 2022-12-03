@@ -100,98 +100,98 @@ namespace ZoneSystem {
 		//bool m_foldout;
 	};
 
-	ZoneLocation StartTemple = { "StartTemple", Heightmap::Meadows, (Heightmap::BiomeArea)2, 1, 100, true, true, false, "", 0, true, false, false, false, false, 0, 3, true, 1, 5, 0, 10000, 3, 1000 };
-	ZoneLocation Eikthyrnir = { "Eikthyrnir", Heightmap::Meadows, (Heightmap::BiomeArea)2, 3, 15, true, false, false, "", 0, false, false, true, false, false, 0, 3, false, 1, 5, 0, 1000, 1, 1000 };
-	ZoneLocation GoblinKing = { "GoblinKing", Heightmap::Plains, (Heightmap::BiomeArea)2, 4, 15, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 1, 5, 0, 0, 1, 1000 };
-	ZoneLocation GDKing = { "GDKing", Heightmap::BlackForest, (Heightmap::BiomeArea)6, 4, 15, true, false, false, "", 3000, false, false, true, false, false, 0, 5, false, 1, 5, 1000, 7000, 1, 1000 };
-	ZoneLocation Bonemass = { "Bonemass", Heightmap::Swamp, (Heightmap::BiomeArea)6, 5, 20, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 1, 5, 2000, 10000, 0, 2 };
-	ZoneLocation SunkenCrypt4 = { "SunkenCrypt4", Heightmap::Swamp, (Heightmap::BiomeArea)2, 400, 15, true, false, false, "", 64, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 0, 2 };
-	ZoneLocation Vendor_BlackForest = { "Vendor_BlackForest", Heightmap::BlackForest, (Heightmap::BiomeArea)2, 10, 10, true, false, false, "", 512, false, true, true, false, false, 0, 2, false, 0, 1, 1500, 0, 1, 1000 };
-	ZoneLocation Dragonqueen = { "Dragonqueen", Heightmap::Mountain, (Heightmap::BiomeArea)2, 3, 10, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 0, 1, 0, 8000, 150, 500 };
-	ZoneLocation StoneCircle = { "StoneCircle", Heightmap::Heightmap::Meadows, (Heightmap::BiomeArea)7, 25, 5, false, false, false, "", 200, false, false, true, false, false, 0, 3, false, 1, 5, 0, 0, 1, 1000 };
-	ZoneLocation Greydwarf_camp1 = { "Greydwarf_camp1", Heightmap::BlackForest, (Heightmap::BiomeArea)2, 300, 15, false, false, false, "", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Runestone_Greydwarfs = { "Runestone_Greydwarfs", Heightmap::BlackForest, (Heightmap::BiomeArea)7, 25, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 1, 99, 0, 2000, 1, 1000 };
-	ZoneLocation Grave1 = { "Grave1", Heightmap::Swamp, (Heightmap::BiomeArea)6, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
-	ZoneLocation SwampRuin1 = { "SwampRuin1", Heightmap::Swamp, (Heightmap::BiomeArea)6, 50, 15, false, false, false, "", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
-	ZoneLocation SwampRuin2 = { "SwampRuin2", Heightmap::Swamp, (Heightmap::BiomeArea)6, 50, 15, false, false, false, "", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
-	ZoneLocation FireHole = { "FireHole", Heightmap::Swamp, (Heightmap::BiomeArea)6, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
+	ZoneLocation StartTemple = { "StartTemple", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)2, 1, 100, true, true, false, "", 0, true, false, false, false, false, 0, 3, true, 1, 5, 0, 10000, 3, 1000 };
+	ZoneLocation Eikthyrnir = { "Eikthyrnir", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)2, 3, 15, true, false, false, "", 0, false, false, true, false, false, 0, 3, false, 1, 5, 0, 1000, 1, 1000 };
+	ZoneLocation GoblinKing = { "GoblinKing", Heightmap::Biome::Plains, (Heightmap::BiomeArea)2, 4, 15, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 1, 5, 0, 0, 1, 1000 };
+	ZoneLocation GDKing = { "GDKing", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)6, 4, 15, true, false, false, "", 3000, false, false, true, false, false, 0, 5, false, 1, 5, 1000, 7000, 1, 1000 };
+	ZoneLocation Bonemass = { "Bonemass", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)6, 5, 20, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 1, 5, 2000, 10000, 0, 2 };
+	ZoneLocation SunkenCrypt4 = { "SunkenCrypt4", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)2, 400, 15, true, false, false, "", 64, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 0, 2 };
+	ZoneLocation Vendor_BlackForest = { "Vendor_BlackForest", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)2, 10, 10, true, false, false, "", 512, false, true, true, false, false, 0, 2, false, 0, 1, 1500, 0, 1, 1000 };
+	ZoneLocation Dragonqueen = { "Dragonqueen", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)2, 3, 10, true, false, false, "", 3000, false, false, true, false, false, 0, 4, false, 0, 1, 0, 8000, 150, 500 };
+	ZoneLocation StoneCircle = { "StoneCircle", Heightmap::Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 25, 5, false, false, false, "", 200, false, false, true, false, false, 0, 3, false, 1, 5, 0, 0, 1, 1000 };
+	ZoneLocation Greydwarf_camp1 = { "Greydwarf_camp1", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)2, 300, 15, false, false, false, "", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Runestone_Greydwarfs = { "Runestone_Greydwarfs", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)7, 25, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 1, 99, 0, 2000, 1, 1000 };
+	ZoneLocation Grave1 = { "Grave1", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)6, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
+	ZoneLocation SwampRuin1 = { "SwampRuin1", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)6, 50, 15, false, false, false, "", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
+	ZoneLocation SwampRuin2 = { "SwampRuin2", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)6, 50, 15, false, false, false, "", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
+	ZoneLocation FireHole = { "FireHole", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)6, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
 	
-	ZoneLocation Runestone_Draugr = { "Runestone_Draugr", Heightmap::Swamp, (Heightmap::BiomeArea)-1, 50, 5, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
-	ZoneLocation Meteorite = { "Meteorite", Heightmap::AshLands, (Heightmap::BiomeArea)7, 500, 10, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 1, 5, 0, 0, 1, 1000 };
-	ZoneLocation Crypt2 = { "Crypt2", Heightmap::BlackForest, (Heightmap::BiomeArea)-1, 200, 20, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Ruin1 = { "Ruin1", Heightmap::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Ruin2 = { "Ruin2", Heightmap::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation StoneHouse3 = { "StoneHouse3", Heightmap::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation StoneHouse4 = { "StoneHouse4", Heightmap::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Ruin3 = { "Ruin3", Heightmap::Plains, (Heightmap::BiomeArea)-1, 50, 15, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation GoblinCamp2 = { "GoblinCamp2", Heightmap::Plains, (Heightmap::BiomeArea)-1, 200, 10, false, false, false, "", 250, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneTower1 = { "StoneTower1", Heightmap::Plains, (Heightmap::BiomeArea)-1, 50, 10, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation StoneTower3 = { "StoneTower3", Heightmap::Plains, (Heightmap::BiomeArea)-1, 50, 10, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation StoneHenge1 = { "StoneHenge1", Heightmap::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
-	ZoneLocation StoneHenge2 = { "StoneHenge2", Heightmap::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
-	ZoneLocation StoneHenge3 = { "StoneHenge3", Heightmap::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
-	ZoneLocation StoneHenge4 = { "StoneHenge4", Heightmap::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
-	ZoneLocation StoneHenge5 = { "StoneHenge5", Heightmap::Plains, (Heightmap::BiomeArea)-1, 20, 10, false, false, false, "Stonehenge", 500, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneHenge6 = {"StoneHenge6", Heightmap::Plains, (Heightmap::BiomeArea)-1, 20, 10, false, false, false, "Stonehenge", 500, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation WoodHouse1 = {"WoodHouse1", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse2 = {"WoodHouse2", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse3 = {"WoodHouse3", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse4 = {"WoodHouse4", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse5 = {"WoodHouse5", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse6 = {"WoodHouse6", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse7 = {"WoodHouse7", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse8 = {"WoodHouse8", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse9 = {"WoodHouse9", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse10 = {"WoodHouse10", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse11 = {"WoodHouse11", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse12 = {"WoodHouse12", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodHouse13 = {"WoodHouse13", Heightmap::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation WoodFarm1 = {"WoodFarm1", Heightmap::Meadows, (Heightmap::BiomeArea)7, 10, 15, false, false, false, "woodvillage", 128, false, false, true, false, false, 0, 4, false, 0, 1, 500, 2000, 1, 1000 };
-	ZoneLocation WoodVillage1 = {"WoodVillage1", Heightmap::Meadows, (Heightmap::BiomeArea)7, 15, 15, false, false, false, "woodvillage", 256, false, false, true, false, false, 0, 4, false, 0, 1, 2000, 10000, 1, 1000 };
-	ZoneLocation TrollCave02 = {"TrollCave02", Heightmap::BlackForest, (Heightmap::BiomeArea)2, 250, 20, false, false, false, """", 256, false, false, true, true, false, 5, 10, false, 0, 1, 0, 0, 3, 1000 };
+	ZoneLocation Runestone_Draugr = { "Runestone_Draugr", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)-1, 50, 5, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0.5, 1000 };
+	ZoneLocation Meteorite = { "Meteorite", Heightmap::Biome::AshLands, (Heightmap::BiomeArea)7, 500, 10, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 1, 5, 0, 0, 1, 1000 };
+	ZoneLocation Crypt2 = { "Crypt2", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)-1, 200, 20, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Ruin1 = { "Ruin1", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Ruin2 = { "Ruin2", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation StoneHouse3 = { "StoneHouse3", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation StoneHouse4 = { "StoneHouse4", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)-1, 200, 15, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Ruin3 = { "Ruin3", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 50, 15, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation GoblinCamp2 = { "GoblinCamp2", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 200, 10, false, false, false, "", 250, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneTower1 = { "StoneTower1", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 50, 10, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation StoneTower3 = { "StoneTower3", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 50, 10, false, false, false, "Goblintower", 512, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation StoneHenge1 = { "StoneHenge1", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
+	ZoneLocation StoneHenge2 = { "StoneHenge2", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
+	ZoneLocation StoneHenge3 = { "StoneHenge3", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
+	ZoneLocation StoneHenge4 = { "StoneHenge4", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 5, 10, false, false, false, "Stonehenge", 1000, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 5, 1000 };
+	ZoneLocation StoneHenge5 = { "StoneHenge5", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 20, 10, false, false, false, "Stonehenge", 500, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneHenge6 = {"StoneHenge6", Heightmap::Biome::Plains, (Heightmap::BiomeArea)-1, 20, 10, false, false, false, "Stonehenge", 500, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation WoodHouse1 = {"WoodHouse1", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse2 = {"WoodHouse2", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse3 = {"WoodHouse3", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse4 = {"WoodHouse4", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse5 = {"WoodHouse5", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse6 = {"WoodHouse6", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse7 = {"WoodHouse7", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse8 = {"WoodHouse8", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse9 = {"WoodHouse9", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse10 = {"WoodHouse10", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse11 = {"WoodHouse11", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse12 = {"WoodHouse12", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodHouse13 = {"WoodHouse13", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 20, 15, false, false, false, "", 0, false, false, true, false, false, 0, 4, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation WoodFarm1 = {"WoodFarm1", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 10, 15, false, false, false, "woodvillage", 128, false, false, true, false, false, 0, 4, false, 0, 1, 500, 2000, 1, 1000 };
+	ZoneLocation WoodVillage1 = {"WoodVillage1", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)7, 15, 15, false, false, false, "woodvillage", 256, false, false, true, false, false, 0, 4, false, 0, 1, 2000, 10000, 1, 1000 };
+	ZoneLocation TrollCave02 = {"TrollCave02", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)2, 250, 20, false, false, false, """", 256, false, false, true, true, false, 5, 10, false, 0, 1, 0, 0, 3, 1000 };
 	ZoneLocation Dolmen01 = {"Dolmen01", (Heightmap::Biome)9, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
 	ZoneLocation Dolmen02 = {"Dolmen02", (Heightmap::Biome)9, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
 	ZoneLocation Dolmen03 = {"Dolmen03", (Heightmap::Biome)9, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Crypt3 = {"Crypt3", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 3, 1000 };
-	ZoneLocation Crypt4 = {"Crypt4", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation InfestedTree01 = { "InfestedTree01", Heightmap::Swamp, (Heightmap::BiomeArea)3, 700, 10, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
-	ZoneLocation SwampHut1 = {"SwampHut1", Heightmap::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -2, 1000 };
-	ZoneLocation SwampHut2 = {"SwampHut2", Heightmap::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation SwampHut3 = {"SwampHut3", Heightmap::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation SwampHut4 = {"SwampHut4", Heightmap::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
-	ZoneLocation SwampHut5 = {"SwampHut5", Heightmap::Swamp, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
-	ZoneLocation SwampWell1 = {"SwampWell1", Heightmap::Swamp, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "", 1024, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
-	ZoneLocation StoneTowerRuins04 = {"StoneTowerRuins04", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Mountainruin", 128, false, false, true, true, false, 6, 40, false, 0, 1, 0, 0, 150, 1000 };
-	ZoneLocation StoneTowerRuins05 = {"StoneTowerRuins05", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Mountainruin", 128, false, false, true, false, false, 6, 40, false, 0, 1, 0, 0, 150, 1000 };
-	ZoneLocation StoneTowerRuins03 = {"StoneTowerRuins03", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneTowerRuins07 = {"StoneTowerRuins07", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneTowerRuins08 = {"StoneTowerRuins08", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneTowerRuins09 = {"StoneTowerRuins09", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation StoneTowerRuins10 = {"StoneTowerRuins10", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
-	ZoneLocation ShipSetting01 = {"ShipSetting01", Heightmap::Meadows, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation DrakeNest01 = {"DrakeNest01", Heightmap::Mountain, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 100, false, false, true, false, false, 0, 3, false, 0, 1, 0, 10000, 100, 2000 };
-	ZoneLocation Waymarker01 = {"Waymarker01", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation Waymarker02 = {"Waymarker02", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation AbandonedLogCabin02 = {"AbandonedLogCabin02", Heightmap::Mountain, (Heightmap::BiomeArea)3, 33, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation AbandonedLogCabin03 = {"AbandonedLogCabin03", Heightmap::Mountain, (Heightmap::BiomeArea)3, 33, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation AbandonedLogCabin04 = {"AbandonedLogCabin04", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation MountainGrave01 = {"MountainGrave01", Heightmap::Mountain, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 50, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation DrakeLorestone = {"DrakeLorestone", Heightmap::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation MountainWell1 = {"MountainWell1", Heightmap::Mountain, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "", 256, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation Crypt3 = {"Crypt3", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 3, 1000 };
+	ZoneLocation Crypt4 = {"Crypt4", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 128, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation InfestedTree01 = { "InfestedTree01", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 700, 10, false, false, false, "", 0, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
+	ZoneLocation SwampHut1 = {"SwampHut1", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -2, 1000 };
+	ZoneLocation SwampHut2 = {"SwampHut2", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation SwampHut3 = {"SwampHut3", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation SwampHut4 = {"SwampHut4", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
+	ZoneLocation SwampHut5 = {"SwampHut5", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Swamphut", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
+	ZoneLocation SwampWell1 = {"SwampWell1", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "", 1024, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, -1, 1000 };
+	ZoneLocation StoneTowerRuins04 = {"StoneTowerRuins04", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Mountainruin", 128, false, false, true, true, false, 6, 40, false, 0, 1, 0, 0, 150, 1000 };
+	ZoneLocation StoneTowerRuins05 = {"StoneTowerRuins05", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Mountainruin", 128, false, false, true, false, false, 6, 40, false, 0, 1, 0, 0, 150, 1000 };
+	ZoneLocation StoneTowerRuins03 = {"StoneTowerRuins03", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneTowerRuins07 = {"StoneTowerRuins07", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneTowerRuins08 = {"StoneTowerRuins08", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneTowerRuins09 = {"StoneTowerRuins09", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation StoneTowerRuins10 = {"StoneTowerRuins10", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 80, 10, false, false, false, "Stonetowerruins", 200, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 2, 1000 };
+	ZoneLocation ShipSetting01 = {"ShipSetting01", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation DrakeNest01 = {"DrakeNest01", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 200, 10, false, false, false, "", 100, false, false, true, false, false, 0, 3, false, 0, 1, 0, 10000, 100, 2000 };
+	ZoneLocation Waymarker01 = {"Waymarker01", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation Waymarker02 = {"Waymarker02", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "", 0, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation AbandonedLogCabin02 = {"AbandonedLogCabin02", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 33, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation AbandonedLogCabin03 = {"AbandonedLogCabin03", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 33, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation AbandonedLogCabin04 = {"AbandonedLogCabin04", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Abandonedcabin", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation MountainGrave01 = {"MountainGrave01", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "", 50, false, false, true, false, false, 0, 2, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation DrakeLorestone = {"DrakeLorestone", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation MountainWell1 = {"MountainWell1", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "", 256, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
 	ZoneLocation ShipWreck01 = {"ShipWreck01", (Heightmap::Biome)282, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Shipwreck", 1024, false, false, true, false, false, 0, 10, false, 0, 1, 0, 0, -1, 1 };
 	ZoneLocation ShipWreck02 = {"ShipWreck02", (Heightmap::Biome)282, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Shipwreck", 1024, false, false, true, false, false, 0, 10, false, 0, 1, 0, 0, -1, 1 };
 	ZoneLocation ShipWreck03 = {"ShipWreck03", (Heightmap::Biome)282, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Shipwreck", 1024, false, false, true, false, false, 0, 10, false, 0, 1, 0, 0, -1, 1 };
 	ZoneLocation ShipWreck04 = {"ShipWreck04", (Heightmap::Biome)282, (Heightmap::BiomeArea)3, 25, 10, false, false, false, "Shipwreck", 1024, false, false, true, false, false, 0, 10, false, 0, 1, 0, 0, -1, 1 };
-	ZoneLocation Runestone_Meadows = {"Runestone_Meadows", Heightmap::Meadows, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Runestone_Boars = {"Runestone_Boars", Heightmap::Meadows, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Runestone_Swamps = {"Runestone_Swamps", Heightmap::Swamp, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
-	ZoneLocation Runestone_Mountains = {"Runestone_Mountains", Heightmap::Mountain, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
-	ZoneLocation Runestone_BlackForest = {"Runestone_BlackForest", Heightmap::BlackForest, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation Runestone_Plains = {"Runestone_Plains", Heightmap::Plains, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
-	ZoneLocation TarPit1 = {"TarPit1", Heightmap::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
-	ZoneLocation TarPit2 = {"TarPit2", Heightmap::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
-	ZoneLocation TarPit3 = {"TarPit3", Heightmap::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
-	ZoneLocation MountainCave02 = {"MountainCave02", Heightmap::Mountain, (Heightmap::BiomeArea)3, 160, 0, false, false, false, "mountaincaves", 200, false, false, false, true, false, 0, 40, false, 0, 0, 0, 0, 100, 5000 };
+	ZoneLocation Runestone_Meadows = {"Runestone_Meadows", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Runestone_Boars = {"Runestone_Boars", Heightmap::Biome::Meadows, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Runestone_Swamps = {"Runestone_Swamps", Heightmap::Biome::Swamp, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 0, 1000 };
+	ZoneLocation Runestone_Mountains = {"Runestone_Mountains", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 100, 1000 };
+	ZoneLocation Runestone_BlackForest = {"Runestone_BlackForest", Heightmap::Biome::BlackForest, (Heightmap::BiomeArea)3, 50, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation Runestone_Plains = {"Runestone_Plains", Heightmap::Biome::Plains, (Heightmap::BiomeArea)3, 100, 10, false, false, false, "Runestones", 128, false, false, true, false, false, 0, 3, false, 0, 1, 0, 0, 1, 1000 };
+	ZoneLocation TarPit1 = {"TarPit1", Heightmap::Biome::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
+	ZoneLocation TarPit2 = {"TarPit2", Heightmap::Biome::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
+	ZoneLocation TarPit3 = {"TarPit3", Heightmap::Biome::Plains, (Heightmap::BiomeArea)2, 100, 0, false, false, false, "tarpit", 128, false, false, true, false, false, 0, 1.5, false, 0, 0, 0, 0, 5, 60 };
+	ZoneLocation MountainCave02 = {"MountainCave02", Heightmap::Biome::Mountain, (Heightmap::BiomeArea)3, 160, 0, false, false, false, "mountaincaves", 200, false, false, false, true, false, 0, 40, false, 0, 0, 0, 0, 100, 5000 };
 
 
 
@@ -355,8 +355,9 @@ namespace ZoneSystem {
 				errLocations++;
 			else if (!IsZoneGenerated(randomZone)) {
 				Vector3 zonePos = GetZonePos(randomZone);
-				Heightmap::BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
-				if ((location->m_biomeArea & biomeArea) == (Heightmap::BiomeArea)0)
+				BitMask<Heightmap::BiomeArea> biomeArea = WorldGenerator::GetBiomeArea(zonePos);
+				//if ((BitMask<location->m_biomeArea> & biomeArea) == (Heightmap::BiomeArea)0)
+				if (!biomeArea(location->m_biomeArea))
 					errBiomeArea++;
 				else {
 					for (int i = 0; i < 20; i++) {
@@ -374,8 +375,9 @@ namespace ZoneSystem {
                             || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance))
 							errCenterDistances++;
 						else {
-							auto biome = WorldGenerator::GetBiome(randomPointInZone);
-							if ((location->m_biome & biome) == Heightmap::Biome::None)
+							BitMask<Heightmap::Biome> biome = WorldGenerator::GetBiome(randomPointInZone);
+							//if ((location->m_biome & biome) == Heightmap::Biome::None)
+							if (!biome(location->m_biome))
 								errNoneBiomes++;
 							else {
 								randomPointInZone.y = WorldGenerator::GetHeight(randomPointInZone.x, randomPointInZone.z);
@@ -546,7 +548,7 @@ namespace ZoneSystem {
 		if (worldVersion >= 13) {
 			int num2 = reader.Read<int32_t>();
 			int num3 = (worldVersion >= 21) ? reader.Read<int32_t>() : 0;
-			if (num2 != VALHEIM_PGW_VERSION)
+			if (num2 != Version::PGW)
 				m_generatedZones.clear();
 
 			if (worldVersion >= 14) {
@@ -581,47 +583,47 @@ namespace ZoneSystem {
 
 				LOG(INFO) << "Loaded " << num5 << " locations";
 
-				if (num2 != VALHEIM_PGW_VERSION) {
+				if (num2 != Version::PGW) {
 					m_locationInstances.clear();
 					m_locationsGenerated = false;
 				}
 
-				if (num3 != m_locationVersion)
+				if (num3 != Version::FEATURE)
 					m_locationsGenerated = false;
 			}
 		}
 	}
 
 	void SaveAsync(NetPackage &writer) {
-		writer.Write(m_tempGeneratedZonesSaveClone.Count);
-		foreach(Vector2i vector2i in this.m_tempGeneratedZonesSaveClone)
-		{
-			writer.Write(vector2i.x);
-			writer.Write(vector2i.y);
-		}
-		writer.Write(this.m_pgwVersion);
-		writer.Write(this.m_locationVersion);
-		writer.Write(this.m_tempGlobalKeysSaveClone.Count);
-		foreach(string value in this.m_tempGlobalKeysSaveClone)
-		{
-			writer.Write(value);
-		}
-		writer.Write(this.m_tempLocationsGeneratedSaveClone);
-		writer.Write(this.m_tempLocationsSaveClone.Count);
-		foreach(ZoneSystem.LocationInstance locationInstance in this.m_tempLocationsSaveClone)
-		{
-			writer.Write(locationInstance.m_location.m_prefabName);
-			writer.Write(locationInstance.m_position.x);
-			writer.Write(locationInstance.m_position.y);
-			writer.Write(locationInstance.m_position.z);
-			writer.Write(locationInstance.m_placed);
-		}
-		this.m_tempGeneratedZonesSaveClone.Clear();
-		this.m_tempGeneratedZonesSaveClone = null;
-		this.m_tempGlobalKeysSaveClone.Clear();
-		this.m_tempGlobalKeysSaveClone = null;
-		this.m_tempLocationsSaveClone.Clear();
-		this.m_tempLocationsSaveClone = null;
+		//writer.Write(m_tempGeneratedZonesSaveClone.Count);
+		//foreach(Vector2i vector2i in this.m_tempGeneratedZonesSaveClone)
+		//{
+		//	writer.Write(vector2i.x);
+		//	writer.Write(vector2i.y);
+		//}
+		//writer.Write(this.m_pgwVersion);
+		//writer.Write(this.m_locationVersion);
+		//writer.Write(this.m_tempGlobalKeysSaveClone.Count);
+		//for each(string value in this.m_tempGlobalKeysSaveClone)
+		//{
+		//	writer.Write(value);
+		//}
+		//writer.Write(this.m_tempLocationsGeneratedSaveClone);
+		//writer.Write(this.m_tempLocationsSaveClone.Count);
+		//foreach(ZoneSystem.LocationInstance locationInstance in this.m_tempLocationsSaveClone)
+		//{
+		//	writer.Write(locationInstance.m_location.m_prefabName);
+		//	writer.Write(locationInstance.m_position.x);
+		//	writer.Write(locationInstance.m_position.y);
+		//	writer.Write(locationInstance.m_position.z);
+		//	writer.Write(locationInstance.m_placed);
+		//}
+		//this.m_tempGeneratedZonesSaveClone.Clear();
+		//this.m_tempGeneratedZonesSaveClone = null;
+		//this.m_tempGlobalKeysSaveClone.Clear();
+		//this.m_tempGlobalKeysSaveClone = null;
+		//this.m_tempLocationsSaveClone.Clear();
+		//this.m_tempLocationsSaveClone = null;
 	}
 
 }

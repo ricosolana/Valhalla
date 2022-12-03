@@ -133,11 +133,25 @@ struct is_container : std::integral_constant<bool, has_const_iterator<T>::value 
 
 
 
-enum class TestEnum {
-    APPLE = 0b01,
-    BANANA = 0b10,
-    ORANGE = 0b100
+template<typename T, typename V>
+struct has_value_type
+{
+private:
+    template<typename C> static char(&g(typename std::enable_if<
+        std::is_same<decltype(static_cast<V>(C::value_type)),
+        V>::value, void>::type*))[1];
+
+    template<typename C> static char(&g(...))[2];
+
+public:
+    static bool const value = sizeof(g<T>(0)) == 1;
+    typedef T type;
 };
+
+template<typename T, typename V>
+struct is_container_of : std::integral_constant<bool, is_container<T>::value && has_value_type<T, V>::value>
+{};
+
 
 
 
@@ -185,6 +199,10 @@ public:
         *this |= Mask(other);
         return *this;
     }
+
+
+
+    //BitMask
 
     
 

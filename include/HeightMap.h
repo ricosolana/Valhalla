@@ -3,6 +3,8 @@
 #include "Vector.h"
 #include "VUtils.h"
 #include "HashUtils.h"
+#include "VServer.h"
+#include "GameObject.h"
 
 //struct HeightmapBuilder::HMBuildData;
 
@@ -15,10 +17,15 @@ public:
         Dirt, Cultivate, Paved, Reset
     };
 };
-
 class Rigidbody {};
+class TerrainComp {};
+class Material {};
+class Texture2D {};
+class MeshCollider {};
+class Mesh {};
 
 
+class HMBuildData {};
 
 class Heightmap {
     friend class HeightmapManager;
@@ -57,6 +64,7 @@ public:
     };
 
     enum class BiomeArea : uint8_t {
+        None = 0,
         Edge = 1 << 0,
         Median = 1 << 1,
         Everything = Edge | Median,

@@ -9,50 +9,44 @@
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
 
-class VServer {
+class NetRpc;
+
+class ValhallaServer {
 private:
-	std::atomic_bool m_running;
+	static std::atomic_bool m_running;
 
-	// perfect structure for this job
-	// https://stackoverflow.com/questions/2209224/vector-vs-list-in-stl
-	std::list<std::unique_ptr<Task>> m_tasks;
+	static std::list<std::unique_ptr<Task>> m_tasks;
+	static std::recursive_mutex m_taskMutex;
 
-	std::recursive_mutex m_taskMutex;
+    static ServerSettings m_settings;
+	static const OWNER_t m_serverID; // generated at start
 
-    ServerSettings m_settings;
-	const OWNER_t m_serverId; // generated at start
+    static std::unique_ptr<RCONAcceptor> m_rcon;
+	static std::list<std::shared_ptr<RCONSocket>> m_rconSockets;
 
-    std::unique_ptr<RCONAcceptor> m_rcon;
-	std::list<std::shared_ptr<RCONSocket>> m_rconSockets;
+	static const steady_clock::time_point m_startTime;
+	static steady_clock::time_point m_prevUpdate;
+	static steady_clock::time_point m_nowUpdate;
 
-	const steady_clock::time_point m_startTime;
-	steady_clock::time_point m_prevUpdate;
-	steady_clock::time_point m_nowUpdate;
-
-	double m_netTime;
+	static double m_netTime;
 
 private:
-	void LoadFiles();
+	static void LoadFiles();
 
 public:
-    VServer() 
-		: m_serverId(VUtils::Random::GenerateUID()),
-		m_startTime(steady_clock::now()), 
-		m_running(false), 
-		m_netTime(0) {}
 
-	OWNER_t ID() const {
-		return m_serverId;
+	static OWNER_t ID() const {
+		return m_serverID;
 	}
 
-    const ServerSettings& Settings() const {
+	static const ServerSettings& Settings() const {
         return m_settings;
     }
 
 	robin_hood::unordered_set<std::string> m_banned;
 
-	void Launch();
-	void Terminate();
+	void Init();
+	void UnInit();
 
 	// Get the time in nanoseconds
 	auto Nanos() {
@@ -80,6 +74,8 @@ public:
 		// server is frozen as long as no players are online
 		return m_netTime;
 	}
+	
+	static bool IsPeerAllowed(NetRpc* rpc);
 
 	Task& RunTask(Task::F f);
 	Task& RunTaskLater(Task::F f, std::chrono::milliseconds after);

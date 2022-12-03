@@ -78,19 +78,19 @@ void NetPackage::Write(const Quaternion& in) {
      Write(in.w);
 }
 
-//void NetPackage::Write(const std::vector<std::string>& in) {
-//    Write(static_cast<int32_t>(in.size()));
-//    for (auto&& s : in) {
-//        Write(s);
-//    }
-//}
-//
-//void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
-//    Write(static_cast<int32_t>(in.size()));
-//    for (auto&& s : in) {
-//        Write(s);
-//    }
-//}
+void NetPackage::Write(const std::vector<std::string>& in) {
+    Write(static_cast<int32_t>(in.size()));
+    for (auto&& s : in) {
+        Write(s);
+    }
+}
+
+void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
+    Write(static_cast<int32_t>(in.size()));
+    for (auto&& s : in) {
+        Write(s);
+    }
+}
 
 
 

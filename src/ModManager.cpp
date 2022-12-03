@@ -9,10 +9,14 @@
 #include "NetRpc.h"
 #include "NetHashes.h"
 
-std::unique_ptr<VModManager> VModManager_INSTANCE = std::make_unique<VModManager>();
-VModManager* ModManager() {
-    return VModManager_INSTANCE.get();
-}
+
+
+// static definitions
+robin_hood::unordered_map<std::string, std::unique_ptr<ModManager::Mod>> ModManager::mods;
+robin_hood::unordered_map<HASH_t, std::vector<ModManager::EventHandler>> ModManager::m_callbacks;
+EventStatus ModManager::m_eventStatus;
+
+
 
 int GetCurrentLuaLine(lua_State* L) {
     lua_Debug ar;
@@ -55,16 +59,16 @@ sol::state NewStateFrom(const std::string& luaPath) {
 
 
 
-bool VModManager::EventHandlerSort(const EventHandler& a,
+bool ModManager::EventHandlerSort(const EventHandler& a,
     const EventHandler& b) {
     return a.m_priority < b.m_priority;
 }
 
-void VModManager::Mod::Throw(const char* msg) {
+void ModManager::Mod::Throw(const char* msg) {
     LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
 }
 
-void VModManager::RunModInfoFrom(const std::string& dirname,
+void ModManager::RunModInfoFrom(const std::string& dirname,
                     std::string& outName,
                     std::string& outVersion,
                     int &outApiVersion,
@@ -93,7 +97,7 @@ void VModManager::RunModInfoFrom(const std::string& dirname,
     outEntry = entry.value();
 }
 
-std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
+std::unique_ptr<ModManager::Mod> ModManager::PrepareModEnvironment(
         const std::string& name,
         const std::string& version,
         int apiVersion) {
@@ -248,7 +252,8 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
             static_cast<void (NetPackage::*)(const Vector3&)>(&NetPackage::Write),
             static_cast<void (NetPackage::*)(const Vector2i&)>(&NetPackage::Write),
             static_cast<void (NetPackage::*)(const Quaternion&)>(&NetPackage::Write),
-            static_cast<void (NetPackage::*)(const std::vector<std::string>&)>(&NetPackage::Write),
+            [](NetPackage& self, std::vector<std::string> in) { self.Write(in); },
+            //static_cast<void (NetPackage::*)(const std::vector<std::string>&)>(&NetPackage::Write),
             [ptr](NetPackage& self, PkgType pkgType, LUA_NUMBER val) {
                 switch (pkgType) {
                 case PkgType::INT8:
@@ -524,7 +529,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     auto apiTable = state["Valhalla"].get_or_create<sol::table>();
 
     apiTable["ServerVersion"] = SERVER_VERSION;
-    apiTable["ValheimVersion"] = VALHEIM_VERSION;
+    apiTable["ValheimVersion"] = Version::GAME;
     apiTable["Delta"] = []() { return Valhalla()->Delta(); };
     apiTable["ID"] = []() { return Valhalla()->ID(); };
     apiTable["Nanos"] = []() { return Valhalla()->Nanos(); };
@@ -536,7 +541,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // method overloading is easy
     // https://sol2.readthedocs.io/en/latest/api/overload.html
 
-    apiTable["OnEvent"] = [this, ptr](sol::this_state thisState, sol::variadic_args args) {
+    apiTable["OnEvent"] = [ptr](sol::this_state thisState, sol::variadic_args args) {
         // match incrementally
         //std::string name;
         HASH_t name = 0;
@@ -580,9 +585,9 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
     // Get information about the current event
     {
         auto thisEventTable = state["Event"].get_or_create<sol::table>();
-        thisEventTable["Cancel"] =          [this]() { m_eventStatus = EventStatus::CANCEL; };
-        thisEventTable["SetCancelled"] =    [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-        thisEventTable["cancelled"] =       [this]() { return m_eventStatus == EventStatus::CANCEL; };
+        thisEventTable["Cancel"] =          []() { m_eventStatus = EventStatus::CANCEL; };
+        thisEventTable["SetCancelled"] =    [](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        thisEventTable["cancelled"] =       []() { return m_eventStatus == EventStatus::CANCEL; };
     }
 
     return mod;
@@ -590,7 +595,7 @@ std::unique_ptr<VModManager::Mod> VModManager::PrepareModEnvironment(
 
 
 
-void VModManager::Init() {
+void ModManager::Init() {
     for (const auto& dir
         : fs::directory_iterator("mods")) {
 
@@ -622,10 +627,8 @@ void VModManager::Init() {
     CallEvent("Enable");
 }
 
-void VModManager::UnInit() {
+void ModManager::UnInit() {
     CallEvent("Disable");
     m_callbacks.clear();
     mods.clear();
-
-    VModManager_INSTANCE.reset();
 }

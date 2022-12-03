@@ -57,17 +57,35 @@ public:
     void Write(const Vector2i &in);
     // Write Quaternion
     void Write(const Quaternion& in);
-    template<template<class> class T>
-    void Write(const T<std::string>& in) requires is_container<T<std::string>>::value {
-        Write(static_cast<uint32_t>(in.size()));
-        for (auto&& s : in) {
-            Write(s);
-        }
-    }
+    
+    //template<class Container>
+    //typename std::enable_if<has_const_iterator<Container>::value,
+    //    void>::type
+
+    //template<class Container> requires is_container<Container>::value
+    
+    //template<class Container> requires is_container_of<Container, std::string>::value
+    //void Write(const Container& in) {
+    //    Write(static_cast<uint32_t>(in.size()));
+    //    for (auto&& s : in) {
+    //        //static_assert(std::is_same_v<decltype(s), std::string>);
+    //        Write(s);
+    //    }
+    //}
+
+
+    //template<template<class> class T>
+    //void Write(const T<std::string> &in) {
+    //    Write(static_cast<uint32_t>(in.size()));
+    //    for (auto&& s : in) {
+    //        Write(s);
+    //    }
+    //}
+    
     // Write string vector as string array
-    //void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
+    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
     // Write string set as string array
-    //void Write(const robin_hood::unordered_set<std::string>& in);
+    void Write(const robin_hood::unordered_set<std::string>& in);
     // Write primitive
     template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
@@ -123,16 +141,30 @@ public:
         return out;
     }
 
-    template<template<class> class T>
-    T<std::string> Read() requires is_container<T<std::string>>::value {
-        T out;
-        auto count = Read<uint32_t>();
+    //template<class Container>
+    //typename std::enable_if<has_const_iterator<Container>::value,
+    //    Container>::type
+    //template<class Container> requires is_container<Container>::value
+    //Container Read() {
+    //    Container out;
+    //    auto count = Read<uint32_t>();
+    //
+    //    while (count--) {
+    //        out.push_back(Read<std::string>());
+    //    }
+    //    return out;
+    //}
 
-        while (count--) {
-            out.push_back(Read<std::string>());
-        }
-        return out;
-    }
+    //template<template<class> class T>
+    //T<std::string> Read() requires is_container<T<std::string>>::value {
+    //    T out;
+    //    auto count = Read<uint32_t>();
+    //
+    //    while (count--) {
+    //        out.push_back(Read<std::string>());
+    //    }
+    //    return out;
+    //}
 
     template<typename T>
     T Read() requires std::same_as<T, NetPackage> {
@@ -189,17 +221,42 @@ public:
 
     // Reads a string array from package
     // The target vector will be overwritten
-    template<template<class> class T>
-    void Read(T<std::string>& out) requires is_container<T<std::string>>::value {
-        auto count = Read<uint32_t>();
+    ///template<class Container> requires is_container<Container>::value
+    //typename std::enable_if<has_const_iterator<Container>::value,
+        //void>::type
+    ///void Read(Container& out) {
+    ///    auto count = Read<uint32_t>();
+    ///
+    ///    out.clear();
+    ///    out.reserve(count);
+    ///
+    ///    while (count--) {
+    ///        out.push_back(Read<std::string>());
+    ///    }
+    ///}
 
-        out.clear();
-        out.reserve(count);
+    template<typename T>
+    T Read() requires std::same_as<T, std::vector<std::string>> {
+        T out;
+        auto count = Read<uint32_t>();
 
         while (count--) {
             out.push_back(Read<std::string>());
         }
+        return out;
     }
+
+    //template<template<class> class T>
+    //void Read(T<std::string>& out) requires is_container<T<std::string>>::value{
+    //    auto count = Read<uint32_t>();
+    //
+    //    out.clear();
+    //    out.reserve(count);
+    //
+    //    while (count--) {
+    //        out.push_back(Read<std::string>());
+    //    }
+    //}
 
     // Reads a NetPackage from package
     // The target package will be overwritten

@@ -874,8 +874,6 @@ namespace WorldGenerator {
 			return GetMeadowsHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::Swamp:
 			return GetMarshHeight(wx, wy) * 200.f;
-		case Heightmap::Biome::Meadows | Heightmap::Biome::Swamp: //Heightmap::Biome::Swamp | Heightmap::Biome::Mountain: // (Heightmap::Biome)3:
-			break; // why is this here?
 		case Heightmap::Biome::Mountain:
 			return GetSnowMountainHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::BlackForest:
@@ -888,11 +886,10 @@ namespace WorldGenerator {
 			return GetDeepNorthHeight(wx, wy) * 200.f;
 		case Heightmap::Biome::Ocean:
 			return GetOceanHeight(wx, wy) * 200.f;
-		case Heightmap::Biome::Mistlands: // valheim doesnt correctly implement mistlands yet
+		case Heightmap::Biome::Mistlands:
 			return GetMistlandsHeight(wx, wy, mask) * 200.f;
-		default:
-			throw std::runtime_error("Invalid biome");
 		}
+		return 0;
 	}
 
 	// public

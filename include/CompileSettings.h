@@ -20,11 +20,8 @@ using namespace std::chrono_literals;
 
 
 
-//
-// Valheim version settings
-//
-
-// Change on updates
+// Valheim latest versionings
+//	Includes game, worldgen, zdo, zonelocation, ...
 namespace Version {
 	// Valheim game version
 	static const char* GAME = "0.212.6";
