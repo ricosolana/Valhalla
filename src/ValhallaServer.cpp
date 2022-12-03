@@ -12,27 +12,33 @@
 #include "NetSyncManager.h"
 #include "WorldGenerator.h"
 
-
-
-std::atomic_bool ValhallaServer::m_running = false;
-std::list<std::unique_ptr<Task>> ValhallaServer::m_tasks;
-std::recursive_mutex ValhallaServer::m_taskMutex;
-ServerSettings ValhallaServer::m_settings;
-const OWNER_t ValhallaServer::m_serverID = VUtils::Random::GenerateUID();
-std::unique_ptr<RCONAcceptor> ValhallaServer::m_rcon;
-std::list<std::shared_ptr<RCONSocket>> ValhallaServer::m_rconSockets;
-const steady_clock::time_point ValhallaServer::m_startTime = steady_clock::now();
-steady_clock::time_point ValhallaServer::m_prevUpdate;
-steady_clock::time_point ValhallaServer::m_nowUpdate;
-double ValhallaServer::m_netTime = 0;
-
-
-
-bool ValhallaServer::IsPeerAllowed(NetRpc* rpc) {
-    rpc
+auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
+IValhalla* Valhalla() {
+    return VALHALLA_INSTANCE.get();
 }
 
-void VServer::LoadFiles() {
+
+
+//std::atomic_bool ValhallaServer::m_running = false;
+//std::list<std::unique_ptr<Task>> ValhallaServer::m_tasks;
+//std::recursive_mutex ValhallaServer::m_taskMutex;
+//ServerSettings ValhallaServer::m_settings;
+//const OWNER_t ValhallaServer::m_serverID = VUtils::Random::GenerateUID();
+//std::unique_ptr<RCONAcceptor> ValhallaServer::m_rcon;
+//std::list<std::shared_ptr<RCONSocket>> ValhallaServer::m_rconSockets;
+//const steady_clock::time_point ValhallaServer::m_startTime = steady_clock::now();
+//steady_clock::time_point ValhallaServer::m_prevUpdate;
+//steady_clock::time_point ValhallaServer::m_nowUpdate;
+//double ValhallaServer::m_netTime = 0;
+
+
+
+bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
+    //rpc
+    return false;
+}
+
+void IValhalla::LoadFiles() {
     {
         auto opt = VUtils::Resource::ReadFileLines("banned.txt");
         if (opt) {
@@ -122,16 +128,25 @@ void VServer::LoadFiles() {
     }
 }
 
-
-
-void ValhallaServer::Init() {
-    m_startTime = steady_clock::now();
+void IValhalla::Stop() {
     m_running = false;
-    m_netTime = 0;
+}
 
+void IValhalla::Start() {
+    assert(!m_running);
+
+    signal(SIGINT, [](int) {
+        Valhalla()->Stop();
+    });
+
+    m_running = false;
+    m_serverID = VUtils::Random::GenerateUID();
+    m_startTime = steady_clock::now();
+    m_netTime = 0;
+    
     this->LoadFiles();
 
-    ModManager::Init();
+    ModManager()->Init();
     WorldManager::Init();
     WorldGenerator::Init();
     NetManager::Init();
@@ -193,7 +208,7 @@ void ValhallaServer::Init() {
 	}
 
     // Cleanup 
-    ModManager::UnInit();
+    ModManager()->UnInit();
     NetManager::Close();
 
     {
@@ -204,15 +219,9 @@ void ValhallaServer::Init() {
     }
 }
 
-void VServer::Terminate() {
-	LOG(INFO) << "Terminating server";
-
-    m_running = false;
-}
 
 
-
-void VServer::Update() {
+void IValhalla::Update() {
 	// This is important to processing RPC remote invocations
 
     if (m_rcon) {
@@ -285,8 +294,8 @@ void VServer::Update() {
                         }
                     } else if ("stop" == args[0]) {
                         rconSocket->SendMsg("Stopping server...");
-                        RunTaskLater([this](Task &) {
-                            Terminate();
+                        RunTaskLater([this](Task&) {
+                            Stop();
                         }, 5s);
                     } else if ("quit" == args[0] || "exit" == args[0]) {
                         rconSocket->SendMsg("Closing Rcon connection...");
@@ -312,27 +321,27 @@ void VServer::Update() {
 
 
 
-Task& VServer::RunTask(Task::F f) {
+Task& IValhalla::RunTask(Task::F f) {
 	return RunTaskLater(std::move(f), 0ms);
 }
 
-Task& VServer::RunTaskLater(Task::F f, milliseconds after) {
+Task& IValhalla::RunTaskLater(Task::F f, milliseconds after) {
 	return RunTaskLaterRepeat(std::move(f), after, 0ms);
 }
 
-Task& VServer::RunTaskAt(Task::F f, steady_clock::time_point at) {
+Task& IValhalla::RunTaskAt(Task::F f, steady_clock::time_point at) {
 	return RunTaskAtRepeat(std::move(f), at, 0ms);
 }
 
-Task& VServer::RunTaskRepeat(Task::F f, milliseconds period) {
+Task& IValhalla::RunTaskRepeat(Task::F f, milliseconds period) {
 	return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
-Task& VServer::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
+Task& IValhalla::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
 	return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
 }
 
-Task& VServer::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
+Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
 	std::scoped_lock lock(m_taskMutex);
 	Task* task = new Task{std::move(f), at, period};
 	m_tasks.push_back(std::unique_ptr<Task>(task));

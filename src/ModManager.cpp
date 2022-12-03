@@ -4,17 +4,17 @@
 
 #include "ModManager.h"
 #include "NetManager.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "NetRpc.h"
 #include "NetHashes.h"
 
 
 
-// static definitions
-robin_hood::unordered_map<std::string, std::unique_ptr<ModManager::Mod>> ModManager::mods;
-robin_hood::unordered_map<HASH_t, std::vector<ModManager::EventHandler>> ModManager::m_callbacks;
-EventStatus ModManager::m_eventStatus;
+auto MOD_MANAGER_INSTANCE(std::make_unique<IModManager>());
+IModManager* ModManager() {
+    return MOD_MANAGER_INSTANCE.get();
+}
 
 
 
@@ -59,16 +59,16 @@ sol::state NewStateFrom(const std::string& luaPath) {
 
 
 
-bool ModManager::EventHandlerSort(const EventHandler& a,
+bool IModManager::EventHandlerSort(const EventHandler& a,
     const EventHandler& b) {
     return a.m_priority < b.m_priority;
 }
 
-void ModManager::Mod::Throw(const char* msg) {
+void IModManager::Mod::Throw(const char* msg) {
     LOG(ERROR) << m_name << " mod error, line " << GetCurrentLuaLine(m_state.lua_state()) << ", " << msg;
 }
 
-void ModManager::RunModInfoFrom(const std::string& dirname,
+void IModManager::RunModInfoFrom(const std::string& dirname,
                     std::string& outName,
                     std::string& outVersion,
                     int &outApiVersion,
@@ -97,7 +97,7 @@ void ModManager::RunModInfoFrom(const std::string& dirname,
     outEntry = entry.value();
 }
 
-std::unique_ptr<ModManager::Mod> ModManager::PrepareModEnvironment(
+std::unique_ptr<IModManager::Mod> IModManager::PrepareModEnvironment(
         const std::string& name,
         const std::string& version,
         int apiVersion) {
@@ -541,7 +541,7 @@ std::unique_ptr<ModManager::Mod> ModManager::PrepareModEnvironment(
     // method overloading is easy
     // https://sol2.readthedocs.io/en/latest/api/overload.html
 
-    apiTable["OnEvent"] = [ptr](sol::this_state thisState, sol::variadic_args args) {
+    apiTable["OnEvent"] = [this, ptr](sol::this_state thisState, sol::variadic_args args) {
         // match incrementally
         //std::string name;
         HASH_t name = 0;
@@ -585,9 +585,9 @@ std::unique_ptr<ModManager::Mod> ModManager::PrepareModEnvironment(
     // Get information about the current event
     {
         auto thisEventTable = state["Event"].get_or_create<sol::table>();
-        thisEventTable["Cancel"] =          []() { m_eventStatus = EventStatus::CANCEL; };
-        thisEventTable["SetCancelled"] =    [](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-        thisEventTable["cancelled"] =       []() { return m_eventStatus == EventStatus::CANCEL; };
+        thisEventTable["Cancel"] =          [this]() { m_eventStatus = EventStatus::CANCEL; };
+        thisEventTable["SetCancelled"] =    [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        thisEventTable["cancelled"] =       [this]() { return m_eventStatus == EventStatus::CANCEL; };
     }
 
     return mod;
@@ -595,7 +595,7 @@ std::unique_ptr<ModManager::Mod> ModManager::PrepareModEnvironment(
 
 
 
-void ModManager::Init() {
+void IModManager::Init() {
     for (const auto& dir
         : fs::directory_iterator("mods")) {
 
@@ -627,7 +627,7 @@ void ModManager::Init() {
     CallEvent("Enable");
 }
 
-void ModManager::UnInit() {
+void IModManager::UnInit() {
     CallEvent("Disable");
     m_callbacks.clear();
     mods.clear();

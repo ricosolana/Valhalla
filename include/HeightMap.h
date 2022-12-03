@@ -3,7 +3,7 @@
 #include "Vector.h"
 #include "VUtils.h"
 #include "HashUtils.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "GameObject.h"
 
 //struct HeightmapBuilder::HMBuildData;

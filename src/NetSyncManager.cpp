@@ -1,7 +1,7 @@
 #include <array>
 #include "NetSyncManager.h"
 #include "NetManager.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "NetHashes.h"
 #include "ZoneSystem.h"
 #include "NetRouteManager.h"

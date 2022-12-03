@@ -12,7 +12,7 @@
 
 #include "VUtils.h"
 #include "VUtilsResource.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "VUtilsRandom.h"
 #include "CompileSettings.h"
 
@@ -54,11 +54,12 @@ void initLogger(bool colors) {
     LOG(INFO) << "Logger is configured";
 }
 
-static void on_interrupt(int num) {
-    el::Helpers::setThreadName("kernal");
-    LOG(INFO) << "Interrupt caught";
-    Valhalla()->Terminate();
-}
+class ValhallaLauncher {
+public:
+    void Launch() {
+        Valhalla()->Start();
+    }
+};
 
 // Steam Documentation https://partner.steamgames.com/doc/sdk/api
 int main(int argc, char **argv) {
@@ -90,8 +91,6 @@ int main(int argc, char **argv) {
     initLogger(colors);
 
     fs::current_path(root);
-
-    signal(SIGINT, on_interrupt);
 
     LOG(INFO) << "Press ctrl+c to exit";
 
@@ -136,7 +135,8 @@ int main(int argc, char **argv) {
 #ifndef _DEBUG
     try {
 #endif
-        Valhalla()->Launch();
+        //Valhalla()->Launch();
+        ValhallaLauncher().Launch();
 #ifndef _DEBUG
     }
     catch (std::exception& e) {

@@ -11,42 +11,43 @@
 
 class NetRpc;
 
-class ValhallaServer {
-private:
-	static std::atomic_bool m_running;
-
-	static std::list<std::unique_ptr<Task>> m_tasks;
-	static std::recursive_mutex m_taskMutex;
-
-    static ServerSettings m_settings;
-	static const OWNER_t m_serverID; // generated at start
-
-    static std::unique_ptr<RCONAcceptor> m_rcon;
-	static std::list<std::shared_ptr<RCONSocket>> m_rconSockets;
-
-	static const steady_clock::time_point m_startTime;
-	static steady_clock::time_point m_prevUpdate;
-	static steady_clock::time_point m_nowUpdate;
-
-	static double m_netTime;
+class IValhalla {
+	friend class ValhallaLauncher;
 
 private:
-	static void LoadFiles();
+	std::atomic_bool m_running; // mostly const
+
+	std::list<std::unique_ptr<Task>> m_tasks;
+	std::recursive_mutex m_taskMutex;
+
+    ServerSettings m_settings;
+	OWNER_t m_serverID; // const
+
+    std::unique_ptr<RCONAcceptor> m_rcon;
+	std::list<std::shared_ptr<RCONSocket>> m_rconSockets;
+
+	steady_clock::time_point m_startTime; // const
+	steady_clock::time_point m_prevUpdate;
+	steady_clock::time_point m_nowUpdate;
+
+	double m_netTime;
+
+private:
+	void LoadFiles();
+
+	void Start();
+	void Stop();
 
 public:
-
-	static OWNER_t ID() const {
+	OWNER_t ID() const {
 		return m_serverID;
 	}
 
-	static const ServerSettings& Settings() const {
+	ServerSettings& Settings() {
         return m_settings;
     }
 
 	robin_hood::unordered_set<std::string> m_banned;
-
-	void Init();
-	void UnInit();
 
 	// Get the time in nanoseconds
 	auto Nanos() {
@@ -60,7 +61,7 @@ public:
 
 	// Get the time in seconds (Unity Time.time)
 	float Time() {
-		return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
+		return float((double) Nanos().count() / (double) duration_cast<nanoseconds>(1s).count());
 	}
 
 	// Get the elapsed time since last frame in seconds
@@ -75,7 +76,7 @@ public:
 		return m_netTime;
 	}
 	
-	static bool IsPeerAllowed(NetRpc* rpc);
+	bool IsPeerAllowed(NetRpc* rpc);
 
 	Task& RunTask(Task::F f);
 	Task& RunTaskLater(Task::F f, std::chrono::milliseconds after);
@@ -88,4 +89,4 @@ private:
 	void Update();
 };
 
-VServer* Valhalla();
+IValhalla* Valhalla();

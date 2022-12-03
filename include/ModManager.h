@@ -7,7 +7,7 @@
 #include "NetHashes.h"
 #include "Vector.h"
 #include "ChatManager.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 
 enum class PkgType {
     BYTE_ARRAY,
@@ -47,8 +47,8 @@ static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POS
 
 int GetCurrentLuaLine(lua_State* L);
 
-class ModManager {
-    friend VServer;
+class IModManager {
+    friend IValhalla;
 
     class Mod {
     public:
@@ -73,24 +73,24 @@ class ModManager {
     };
 
 private:
-    static robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
-    static robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
+    robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
+    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
-    static EventStatus m_eventStatus; // = EventStatus::DEFAULT;
+    EventStatus m_eventStatus; // = EventStatus::DEFAULT;
 
 private:
-    static void Init();
-    static void UnInit();
+    void Init();
+    void UnInit();
 
-    static void RunModInfoFrom(const std::string& dirname,
-                        std::string& outName,
-                        std::string& outVersion,
-                        int &outApiVersion,
-                        std::string& outEntry);
+    void RunModInfoFrom(const std::string& dirname,
+                 std::string& outName,
+                 std::string& outVersion,
+                 int &outApiVersion,
+                 std::string& outEntry);
 
-    static std::unique_ptr<Mod> PrepareModEnvironment(const std::string& name,
-                                               const std::string& version,
-                                               int apiVersion);
+    std::unique_ptr<Mod> PrepareModEnvironment(const std::string& name,
+                                        const std::string& version,
+                                        int apiVersion);
 
     static bool EventHandlerSort(const EventHandler &a,
                                  const EventHandler &b);
@@ -99,7 +99,7 @@ public:
     // Dispatch a event for capture by any registered mod event handlers
     // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    static EventStatus CallEvent(HASH_t name, const Args&... params) {
+    EventStatus CallEvent(HASH_t name, const Args&... params) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -121,12 +121,12 @@ public:
     }
 
     template <typename... Args>
-    static auto CallEvent(const char* name, const Args&... params) {
+    auto CallEvent(const char* name, const Args&... params) {
         return CallEvent(VUtils::String::GetStableHashCode(name), params...);
     }
 
     template <typename... Args>
-    static auto CallEvent(std::string& name, const Args&... params) {
+    auto CallEvent(std::string& name, const Args&... params) {
         return CallEvent(name.c_str(), params...);
     }
 
@@ -134,29 +134,29 @@ public:
 
 private:
     template<class Tuple, size_t... Is>
-    static auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
+    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
         return CallEvent(name, std::get<Is>(t)...);
     }
 
 public:
     template <class Tuple>
-    static auto CallEventTuple(HASH_t name, const Tuple& t) {
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
         return CallEventTupleImpl(name, t,
                                   std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 
     template <class Tuple>
-    static auto CallEventTuple(const char* name, const Tuple& t) {
+    auto CallEventTuple(const char* name, const Tuple& t) {
         return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
     }
 
     template <class Tuple>
-    static auto CallEventTuple(std::string& name, const Tuple& t) {
+    auto CallEventTuple(std::string& name, const Tuple& t) {
         return CallEventTuple(name.c_str(), t);
     }
 };
 
-//VModManager* ModManager();
+IModManager* ModManager();
 
-#define CALL_EVENT(name, ...) ModManager::CallEvent(name, ##__VA_ARGS__)
-#define CALL_EVENT_TUPLE(name, ...) ModManager::CallEventTuple(name, ##__VA_ARGS__)
+#define CALL_EVENT(name, ...) ModManager()->CallEvent(name, ##__VA_ARGS__)
+#define CALL_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple(name, ##__VA_ARGS__)

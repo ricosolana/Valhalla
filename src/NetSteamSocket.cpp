@@ -1,7 +1,7 @@
 #include "NetSocket.h"
 #include <isteamnetworkingsockets.h>
 #include <isteamnetworkingutils.h>
-#include "VServer.h"
+#include "ValhallaServer.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection hConn)
     : m_hConn(hConn) {

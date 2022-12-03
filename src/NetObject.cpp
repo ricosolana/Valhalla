@@ -1,5 +1,5 @@
 #include "NetObject.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 
 NetObject::NetObject() {
 	/*

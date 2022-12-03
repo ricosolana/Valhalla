@@ -2,7 +2,7 @@
 #pragma ide diagnostic ignored "misc-no-recursion"
 
 #include "NetSocket.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "VUtilsString.h"
 
 RCONSocket::RCONSocket(asio::ip::tcp::socket socket)

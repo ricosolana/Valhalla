@@ -1,7 +1,7 @@
 #include <optick.h>
 
 #include "NetRpc.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "NetManager.h"
 
 using namespace std::chrono;

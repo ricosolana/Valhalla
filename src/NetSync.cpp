@@ -2,7 +2,7 @@
 
 #include "NetSync.h"
 #include "NetSyncManager.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "NetID.h"
 #include "ZoneSystem.h"
 

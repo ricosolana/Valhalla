@@ -4,7 +4,7 @@
 
 #include "ModManager.h"
 #include "NetManager.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "World.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"

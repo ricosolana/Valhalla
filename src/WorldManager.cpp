@@ -2,7 +2,7 @@
 
 #include "VUtilsResource.h"
 #include "NetPackage.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "VUtilsRandom.h"
 #include "VUtilsString.h"
 #include "NetSyncManager.h"

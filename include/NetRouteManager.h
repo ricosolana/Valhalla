@@ -2,7 +2,7 @@
 
 #include "NetPeer.h"
 #include "Method.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 
 namespace NetRouteManager {
 	static constexpr OWNER_t EVERYBODY = 0;

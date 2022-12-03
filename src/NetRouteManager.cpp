@@ -3,7 +3,7 @@
 #include "NetRouteManager.h"
 #include "NetManager.h"
 #include "Method.h"
-#include "VServer.h"
+#include "ValhallaServer.h"
 #include "ZoneSystem.h"
 #include "NetSyncManager.h"
 #include "NetObject.h"
