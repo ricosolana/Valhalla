@@ -138,7 +138,7 @@ add_executable(${PROJECT_NAME}
      #"src/HeightmapBuilder.cpp" 
      #"src/Heightmap.cpp" 
      #"src/HeightmapManager.cpp"
-)
+ "include/RCONManager.h" "src/RCONManager.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

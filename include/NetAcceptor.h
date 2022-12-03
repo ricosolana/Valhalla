@@ -58,7 +58,7 @@ private:
     std::list<std::shared_ptr<RCONSocket>> m_connected;
 
 public:
-    RCONAcceptor();
+    RCONAcceptor(uint16_t port);
     ~RCONAcceptor() noexcept override;
 
     // Init listening and queueing any accepted connections

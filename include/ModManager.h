@@ -48,8 +48,9 @@ static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POS
 int GetCurrentLuaLine(lua_State* L);
 
 class IModManager {
-    friend IValhalla;
+    friend class IValhalla;
 
+private:
     class Mod {
     public:
         const std::string m_name;

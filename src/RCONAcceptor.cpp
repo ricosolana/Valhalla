@@ -3,11 +3,10 @@
 
 using asio::ip::tcp;
 
-RCONAcceptor::RCONAcceptor()
+RCONAcceptor::RCONAcceptor(uint16_t port)
     : m_ctx(),
     m_acceptor(m_ctx,
-               tcp::endpoint(tcp::v4(),
-                                    Valhalla()->Settings().rconPort)){}
+               tcp::endpoint(tcp::v4(), port)){}
 
 RCONAcceptor::~RCONAcceptor() noexcept {
     m_ctx.stop();
