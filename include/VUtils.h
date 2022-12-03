@@ -8,6 +8,8 @@
 #include <optick.h>
 #include <robin_hood.h>
 #include <easylogging++.h>
+#include <utility>
+#include <array>
 
 #include "CompileSettings.h"
 
@@ -128,6 +130,102 @@ struct has_begin_end
 template<typename T>
 struct is_container : std::integral_constant<bool, has_const_iterator<T>::value && has_begin_end<T>::beg_value && has_begin_end<T>::end_value>
 { };
+
+
+
+enum class TestEnum {
+    APPLE = 0b01,
+    BANANA = 0b10,
+    ORANGE = 0b100
+};
+
+
+
+template<typename Enum> requires std::is_enum_v<Enum>
+class BitMask {
+    //static_assert(std::is_integral_v<std::underlying_type_t<T>>, "Must be an integral enum");
+    //static_assert(std::is_enum<T>::value, "Must be an enum");
+    
+    using Type = std::underlying_type_t<Enum>;
+    using Mask = BitMask<Enum>;
+
+
+    // https://en.cppreference.com/w/cpp/utility/to_underlying
+    Type value;
+
+public:
+    constexpr BitMask() : value(0) {}
+    //BitMask(T value) : value(std::to_underlying(value)) {}
+
+    constexpr BitMask(Enum value) : value(static_cast<Type>(value)) {}
+
+    //BitMask(const BitMask& other) : value(other.value) {} // copy
+
+
+    
+
+
+
+    BitMask<Enum> operator|(const BitMask<Enum>& other) const {
+        return BitMask<Enum>(static_cast<Enum>(this->value | other.value));
+    }
+
+    BitMask<Enum> operator|(const Enum& other) const {
+        return *this | Mask(other);
+    }
+
+    
+
+    BitMask<Enum>& operator|=(const BitMask<Enum>& other) {
+        this->value |= other.value;
+        return *this;
+    }
+
+    BitMask<Enum>& operator|=(const Enum& other) {
+        *this |= Mask(other);
+        return *this;
+    }
+
+    
+
+    operator Enum() const {
+        return static_cast<Enum>(this->value);
+    }
+
+    operator Type() const {
+        return static_cast<Type>(this->value);
+    }
+
+
+
+    bool operator()(const Mask& other) const {
+        return (value & other.value) == other.value;
+    }
+
+    bool operator()(const Enum &other) const {
+        return (*this)(Mask(other));
+    }
+
+    bool operator==(const BitMask& other) const {
+        return *this == other.value;
+    }
+
+
+
+    // Returns the least significant bit shift or 0 if none
+    Type Shift() const {
+        unsigned int shift = 0;
+
+        unsigned int bits = static_cast<unsigned int>(this->value);
+        for (; bits; shift++) {
+            bits >>= 1;
+        }
+
+        return shift;
+    }
+
+    //operator |=
+};
 
 
 
