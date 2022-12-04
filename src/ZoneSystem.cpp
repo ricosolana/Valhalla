@@ -207,9 +207,9 @@ namespace ZoneSystem {
 	robin_hood::unordered_set<std::string> m_globalKeys;
 
 	// used for runestones/vegvisirs/boss temples/crypts/... any feature
-	robin_hood::unordered_map<Vector2i, LocationInstance, HashUtils::Hasher> m_locationInstances;
+	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
 
-	robin_hood::unordered_set<Vector2i, HashUtils::Hasher> m_generatedZones;
+	robin_hood::unordered_set<Vector2i> m_generatedZones;
 
 	std::vector<std::unique_ptr<ZoneLocation>> m_locations;
 

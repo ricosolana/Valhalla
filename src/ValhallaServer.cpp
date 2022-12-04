@@ -148,7 +148,7 @@ void IValhalla::Start() {
 
     ModManager()->Init();
     WorldManager::Init();
-    //WorldGenerator::Init();
+    WorldGenerator::Init();
     NetManager::Init();
     ChatManager::Init();
 

@@ -51,7 +51,7 @@ namespace WorldGenerator {
 	std::vector<Vector2> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
-	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher> m_riverPoints;
+	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
@@ -129,10 +129,10 @@ namespace WorldGenerator {
 	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1);
 	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit);
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints,
+    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
                        const Vector2& p,
                        float r);
-    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
+    void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
 	bool InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r);
 	Vector2i GetRiverGrid(float wx, float wy);
 	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth);
@@ -402,7 +402,7 @@ namespace WorldGenerator {
 
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers) {
 		//Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
-		robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher> dictionary;
+		robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> dictionary;
 		for (auto&& river : rivers) {
 
 			float num = river.widthMin / 8.f;
@@ -426,7 +426,7 @@ namespace WorldGenerator {
 		}
 	}
 
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints,
+	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
 		const Vector2& p,
 		float r)
 	{
@@ -443,7 +443,7 @@ namespace WorldGenerator {
 		}
 	}
 
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>, HashUtils::Hasher>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
+	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
 		riverPoints[grid].push_back({ p, r });
 	}
 

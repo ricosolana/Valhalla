@@ -64,7 +64,7 @@ public:
 // Steam Documentation https://partner.steamgames.com/doc/sdk/api
 int main(int argc, char **argv) {
     OPTICK_THREAD("main");
-
+    
     const char* root = "./data/";
     bool colors = true;
     bool backup_logs = true;

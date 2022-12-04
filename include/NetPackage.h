@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HashUtils.h"
+
 #include <vector>
 #include <string>
 #include <stdexcept>

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HashUtils.h"
+
 #include <robin_hood.h>
 #include <type_traits>
 #include <any>

@@ -1,4 +1,5 @@
 #include <array>
+
 #include "NetSyncManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
@@ -11,9 +12,9 @@ namespace NetSyncManager {
 
 	struct SyncPeer {
 		NetPeer* m_peer;
-		robin_hood::unordered_map<NetID, NetSync::Rev, HashUtils::Hasher> m_syncs;
-		robin_hood::unordered_set<NetID, HashUtils::Hasher> m_forceSend;
-		robin_hood::unordered_set<NetID, HashUtils::Hasher> m_invalidSector;
+		robin_hood::unordered_map<NetID, NetSync::Rev> m_syncs;
+		robin_hood::unordered_set<NetID> m_forceSend;
+		robin_hood::unordered_set<NetID> m_invalidSector;
 		int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
 		SyncPeer(NetPeer* peer) : m_peer(peer) {}
@@ -104,18 +105,18 @@ namespace NetSyncManager {
 
 
 	// so ensure with a bunch of asserts of something that all ZDO external references are removed once the zdo is popped from here
-    robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>, HashUtils::Hasher> m_objectsByID;    // primary lifetime container
+    robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>> m_objectsByID;    // primary lifetime container
 
 
 
     std::array<robin_hood::unordered_set<NetSync*>, SECTOR_WIDTH*SECTOR_WIDTH> m_objectsBySector;   // a bunch of objects
 	// TODO this might be essentially never used in game
-    robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher> m_objectsByOutsideSector;
+    robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>> m_objectsByOutsideSector;
 
 	//constexpr static int s00 = sizeof(m_objectsBySector);
 	//constexpr static int s01 = sizeof(robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher>);
 
-    robin_hood::unordered_map<NetID, OWNER_t, HashUtils::Hasher> m_deadZDOs;
+    robin_hood::unordered_map<NetID, OWNER_t> m_deadZDOs;
 	std::vector<NetSync*> tempSectorObjects;
 	std::vector<NetID> m_destroySendList;
 
@@ -130,7 +131,7 @@ namespace NetSyncManager {
 	struct SaveData {
 		uint32_t m_nextUid;
 		std::vector<NetSync> m_zdos; // ZDO stored as value for copy
-		robin_hood::unordered_map<NetID, OWNER_t, HashUtils::Hasher> m_deadZDOs;
+		robin_hood::unordered_map<NetID, OWNER_t> m_deadZDOs;
 
 		// Initialize
 		explicit SaveData(uint32_t nextUid)
