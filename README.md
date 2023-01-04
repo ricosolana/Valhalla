@@ -1,25 +1,24 @@
-~~This project has been suspended until further notice. This is the more or less my own official server implementation after several previous (failed/abandoned) attempts to build a multiplayer server in C++ from the ground up. I have fulfilled several of my goals with this project: do stuff with Steam, Lua script functionality, powerful networking structure. This is definitly one of the biggest projects I've began on my own. I am calling it quits after realizing how complicated things will get. I have learnt a lot, and will return with another similar project in the future. I am providing a final release version cause why not. Happy Halloween!~~
-
-I am working on this project again. Must closely repair world generation to match the latest Valheim Mistlands update, and other stuff I am likely to miss. Some things I wanna refactor but not sure how exactly; I'll experiment with some designs. 
-
-World should be better integrated into WorldManager/Generator, ZoneLocation with ZoneSystem will be renamed ZoneFeature or ZoneArtifact (ZoneLocation is so terribly named). 
-
-ZNet and Game have A LOT of misc. stuff stored in them that screws up their intended purpose. Global important things should be stored within ValhallaServer or their respective manager namespace. 
-
-Also some namespaces should be better as classes, or? IE NetRouteManager has some methods not intended for direct use externally.
-
-Working on World Generation! Next thing to test out will be getting ZoneFeatures to be generated in correct locations.
-
-I realize Lua scripting is also limited, and every feature I plan to implement has to be implemented in Lua too if functionality is to be bridged between native and Lua. IE custom modded worldgen or custom biomes idk how to implement. Well, biomes are stored simply as a enum bitmask, so not much expandable there without massive overhauling.
-
-So refactoring to keep things consistent and aligned in order to keep motivated
+Development will continue by next week (by 1/10/2023 hopefully).
 
 # Valhalla 
 
 ## Server
-Now compatible with the Steam Valheim client.
+This is an implementation of the Valheim Dedicated Server in C++.
+
+The server is currently very barebones and under heavy development. It is only capable of upholding a client connection (the server game state up to RPC_PeerInfo is fully implemented and keepalive pings are functional). Also Lua modding works (I might change it later as I learn new stuff and better techniques). This means that:
+  - No gameobjects are sent out to clients
+  - Any connected client cannot see other clients
+  - This server is essentially a proof of concept device (this might change in the future if the server reaches a point of functionality equal to the Dedicated Valheim Server). Play around with it if you are interested in the inner workings of Valheim.
+
+## Client
+No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+1/3/2023 + TODO
+Just a few notes and planning for how to continue this project. A look at the serverside plugin for Valheim shows some features that are crucial to general security and integrity of server tasks related to object spawning and physics (For instance, ZNetScene seemingly has zero player permission checks for RPC_SpawnObject).
+
+As for my previous TODO, the Heightmap will be challenging. It is also pretty crucial to the game as a whole, so I must figure something out. This is all really in the air at the moment; I am thinking on using an array for the heightmap. Unity probably does something similar anyways.
+
 11/30/2022 + TODO
  - Currently implementing Heightmap and related classes
     - Heightmap makes use of many special Unity features (Raycasting / Terrain physics) mainly for collision and height polling. Im figuring it should be easy to just query a point from the Heightmap float[]. 
