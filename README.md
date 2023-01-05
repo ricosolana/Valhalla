@@ -14,7 +14,7 @@ The server is currently very barebones and under heavy development. It is only c
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
-1/5/2023 + TODO
+### 1/5/2023 + TODO
 Some alternate thoughts on clients-side simulations:
  - Everything is Unity based, so recreating physics engine will be extremely challenging and time-consuming. 
  - The load of physics simulations could be performed by the client with the least latency as a slightly easier workaround— this only solves one problem, but this still puts the client in control of physics, which I am trying to avoid all together (must never trust the client!).
@@ -37,12 +37,12 @@ There are many interesting/odd/redundant/unused systems, such as SteamManager, a
 
 Gibber seems to be responsible for creating the particle fragments when a structure is broken, which I believe can be better defined by this https://link.springer.com/referenceworkentry/10.1007/3-540-31060-6_145. Gibber are basically particles or fragments. This confused me because Gibber reads/writes 2 ZNetView variables, which I think is kinda weird for something that really should be created only client-side as decorative. Well I seem to be wrong because RPC_CreateFragments exists. Purely for visual effects.
 
-1/3/2023 + TODO
+###1/3/2023 + TODO
 Just a few notes and planning for how to continue this project. A look at the serverside plugin for Valheim shows some features that are crucial to general security and integrity of server tasks related to object spawning and physics (For instance, ZNetScene seemingly has zero player permission checks for RPC_SpawnObject).
 
 As for my previous TODO, the Heightmap will be challenging. It is also pretty crucial to the game as a whole, so I must figure something out. This is all really in the air at the moment; I am thinking on using an array for the heightmap. Unity probably does something similar anyways.
 
-11/30/2022 + TODO
+###11/30/2022 + TODO
  - Currently implementing Heightmap and related classes
     - Heightmap makes use of many special Unity features (Raycasting / Terrain physics) mainly for collision and height polling. Im figuring it should be easy to just query a point from the Heightmap float[]. 
     - Many parts are also for rendering the heightmap for the client, in terms of using hoe/cultivator to paint terrain. 
@@ -53,7 +53,7 @@ As for my previous TODO, the Heightmap will be challenging. It is also pretty cr
         - Placement of prefabs where possible.
             - This might involve having to get the exact ZoneLocation prefab objects and each of the asubobject positions/rotations within a ZoneLocation. Then somehow spawning them (sending client packets and handling them server side, idk).
 
-11/14/2022 + TODO
+###11/14/2022 + TODO
  - Still planning to implement:
     - ZDO/ZDOMan system
     - ZNetView system for wrapping in-game ZDO object instances
@@ -66,7 +66,7 @@ As for my previous TODO, the Heightmap will be challenging. It is also pretty cr
         - ZDO prefab hash field
         - ZDO string field referring to prefabs by name
 
-10/24/2022 + TODO
+###10/24/2022 + TODO
  - Clients can now directly join without any patching. 
  
  - Limited Lua support. Lua Rpc/Routed/Sync callbacks will be prioritized next.
@@ -81,13 +81,13 @@ As for my previous TODO, the Heightmap will be challenging. It is also pretty cr
  
  - The client has too much control over deciding who should be the target of ZNetView calls. This can be easily solved by gating each client->client call by checking if the call is meant to be sent, and is well formed. This is one of the goals of this project.
 
-10/8/2022 + TODO
+###10/8/2022 + TODO
  - I plan on adding ZDO reading for the server and sending ZDOs. I dont know yet what ZDO controls player visibilty to others on join. Also, some kind of world generation. Valheim terrain generation is client side, as in the client is given the seed, and it generates the terrain. The exception is manually modified terrain, like with a hoe/pickaxe/cultivator.
  
  - Also the client ZRpc occasionally experiences a timeout. I'm not sure why yet, because data is still sent fine between the client and server until the timeout disconenct.
     
 
-10/7/2022 - The client can join and finally see the world, albeit is an ocean.
+###10/7/2022 - The client can join and finally see the world, albeit is an ocean.
 
 ![Ocean spawn image](/pics/ocean_spawn.jpg)
 
