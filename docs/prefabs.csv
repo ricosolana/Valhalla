@@ -1,3 +1,4 @@
+see https://valheim-modding.github.io/Jotunn/data/prefabs/prefab-list.html
 _eventzone_boss_base,UnityEngine.Transform
 _eventzone_boss_base,UnityEngine.SphereCollider
 _eventzone_boss_base,ZNetView
