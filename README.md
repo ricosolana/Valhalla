@@ -39,6 +39,8 @@ Gibber seems to be responsible for creating the particle fragments when a struct
 
 Plains used to be called Heathlands!
 
+Just a hunch but I feel that combat related FPS drops related to many players using AOE weapons near buildings is caused by RPC_CreateFragments. Many particles per building, being hit by multiple players, just maybe will cause stutters. Testing is required.
+
 ### 1/3/2023 + TODO
 Just a few notes and planning for how to continue this project. A look at the serverside plugin for Valheim shows some features that are crucial to general security and integrity of server tasks related to object spawning and physics (For instance, ZNetScene seemingly has zero player permission checks for RPC_SpawnObject).
 
