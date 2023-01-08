@@ -2,7 +2,6 @@
 
 #include "NetSocket.h"
 #include "NetRpc.h"
-#include "NetSync.h"
 #include "VUtils.h"
 
 struct NetPeer {

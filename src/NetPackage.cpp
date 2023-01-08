@@ -1,5 +1,4 @@
 #include "NetPackage.h"
-#include "NetSync.h"
 
 NetPackage::NetPackage(const BYTE_t* data, uint32_t count) 
     : m_stream(data, count) {}

@@ -74,7 +74,7 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
 #target_compile_definitions(WIN32 INTERFACE WIN32_LEAN_AND_MEAN)
 
-add_definitions(WIN32_LEAN_AND_MEAN)
+#add_definitions(WIN32_LEAN_AND_MEAN)
 
 ##########
 # Linking
@@ -119,7 +119,7 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsString.cpp"
     "src/VUtilsRandom.cpp"
     
-)
+ "src/NetID.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

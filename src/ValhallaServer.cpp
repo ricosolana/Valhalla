@@ -4,11 +4,9 @@
 #include <utility>
 
 #include "ValhallaServer.h"
-#include "ModManager.h"
 #include "VUtilsResource.h"
 #include "ServerSettings.h"
 #include "NetManager.h"
-#include "NetSyncManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -134,7 +132,6 @@ void IValhalla::Start() {
     
     this->LoadFiles();
 
-    ModManager()->Init();
     NetManager::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
@@ -183,7 +180,6 @@ void IValhalla::Start() {
 	}
 
     // Cleanup 
-    ModManager()->UnInit();
     NetManager::Close();
     {
         std::vector<std::string> banned;
@@ -202,8 +198,6 @@ void IValhalla::Update() {
         m_netTime += Delta();
     
 	NetManager::Update();
-    NetSyncManager::Update();
-    CALL_EVENT(EVENT_HASH_Update, Delta());
 	//VModManager::Event::OnUpdate(delta);
 }
 

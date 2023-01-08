@@ -54,7 +54,7 @@ public:
 	*/
 	template<class ...Args>
 	auto Register(HASH_t hash, FuncPtr<Args...> f) {
-		return Register(hash, MethodPtr(new MethodImpl(f, EVENT_HASH_RpcIn, hash)));
+		return Register(hash, MethodPtr(new MethodImpl(f, 0, hash)));
 	}
 
 	template<class ...Args>
@@ -98,9 +98,6 @@ public:
 		if (!m_socket->Connected())
 			return;
 		
-        if (CALL_EVENT(EVENT_HASH_RpcOut ^ hash, params...) == EventStatus::CANCEL)
-            return;
-
 		NetPackage pkg; // TODO make into member to optimize; or make static
 		pkg.Write(hash);
 		NetPackage::_Serialize(pkg, params...); // serialize

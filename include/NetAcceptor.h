@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <thread>
+#include <steam_gameserver.h>
 
 #include "NetSocket.h"
 

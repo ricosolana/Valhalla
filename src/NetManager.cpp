@@ -1,13 +1,11 @@
 #include <optick.h>
 #include <openssl/md5.h>
 #include <openssl/rand.h>
+#include <isteamgameserver.h>
 
-#include "ModManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
 #include "World.h"
-#include "ZoneSystem.h"
-#include "NetSyncManager.h"
 #include "VUtilsRandom.h"
 
 using namespace std::chrono;
@@ -260,10 +258,6 @@ namespace NetManager {
         if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
-		// Lua event
-        if (CALL_EVENT(EVENT_HASH_PeerConnect, rpc, uuid, name, version) == EventStatus::CANCEL)
-			return rpc->SendError(ConnectionStatus::ErrorBanned);
-
 		// Transfer the Rpc
         for (auto &&j: m_joining) {
             if (j.get() == rpc) {
@@ -281,18 +275,7 @@ namespace NetManager {
 		rpc->Register(NetHashes::Rpc::CharacterID, RPC_CharacterID);
 		rpc->Register(NetHashes::Rpc::RemotePrint, RPC_RemotePrint);
 
-		// TODO use permissions for admin commands
-		//rpc->Register(NetHashes::Rpc::Kick, &RPC_Kick);
-		//rpc->Register(NetHashes::Rpc::Ban, &RPC_Ban);
-		//rpc->Register(NetHashes::Rpc::Unban, &RPC_Unban);
-		//rpc->Register(NetHashes::Rpc::Save, &RPC_Save);
-		//rpc->Register(NetHashes::Rpc::PrintBanned, &RPC_PrintBanned);
-
 		SendPeerInfo(rpc);
-
-        NetSyncManager::OnNewPeer(peer);
-		NetRouteManager::OnNewPeer(peer);
-		ZoneSystem::OnNewPeer(peer);
 	}
 
 	void RPC_ServerHandshake(NetRpc* rpc) {
@@ -333,20 +316,13 @@ namespace NetManager {
 		return nullptr;
 	}
 
-	void RPC_Ping(OWNER_t sender, float time) {
-		NetRouteManager::Invoke(sender, NetHashes::Routed::Pong, time);
-	}
-
 	void Init() {
 		m_acceptor = std::make_unique<AcceptorSteam>();
 		m_acceptor->Listen();
 
 		InitPassword();
 
-		m_world = WorldManager::GetWorld();
-
-		ZoneSystem::Init();
-		NetRouteManager::Register(NetHashes::Routed::Ping, RPC_Ping);
+		m_world = new World{};
 	}
 
 	void Update() {
@@ -379,8 +355,6 @@ namespace NetManager {
 			while (itr != m_peers.end()) {
 				if (!(*itr)->m_rpc->m_socket->Connected()) {
 					LOG(INFO) << "Cleaning up peer";
-					CALL_EVENT(EVENT_HASH_PeerQuit, itr->get());
-                    NetSyncManager::OnPeerQuit(itr->get());
 					itr = m_peers.erase(itr);
 				}
 				else {
