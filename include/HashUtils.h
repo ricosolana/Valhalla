@@ -1,7 +1,5 @@
 #pragma once
 
-#include <concepts>
-#include <type_traits>
 #include "NetID.h"
 #include "Vector.h"
 

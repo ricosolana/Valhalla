@@ -1,10 +1,3 @@
-#ifdef _WIN32
-//#define _WIN32_WINNT 0x0A00
-//#define WIN32_LEAN_AND_MEAN
-//#define WIN32_LEAN_AND_MEAN
-//#include <asio.hpp>
-#endif
-
 // main.cpp
 #include <csignal>
 #include <optick.h>
@@ -80,8 +73,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Copy any old file
-    
+    // Copy any old file    
     if (backup_logs) {
         std::error_code ec;
         fs::copy_file(LOGFILE_NAME,

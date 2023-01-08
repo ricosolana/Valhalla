@@ -6,6 +6,8 @@
 # Winsock multiple includes errors:
 # - Locate Windows.h and remove the define section containing WIN32_LEAN_AND_MEAN
 # - Add an '#include <Winsock2.h>' replacing the above section
+# - Some stack overflow 'enthusiasts' dislike this method, however its the only one which worked for me, so yea..
+#   I will be removing asio anyways because I consider RCON to be semi-insecure and too extra/finicky, so the forbidden technique above isnt needed!
 
 ##########
 # Project
@@ -34,24 +36,13 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-#find_package(libssh CONFIG REQUIRED) # server is too complicated
-find_package(asio CONFIG REQUIRED)
-#find_package(c4core CONFIG REQUIRED)
-#find_package(ryml CONFIG REQUIRED)
-#find_package(easyloggingpp CONFIG REQUIRED) # somehow doesnt work
-#add_compile_definitions(SOL_NO_PRINT_ERRORS)
+
 remove_definitions(SOL_PRINT_ERRORS)
 
 #target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
-#target_compile_definitions(ssh INTERFACE WIN32_LEAN_AND_MEAN)
 
 # remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX)
-
-#set_target_properties(ryml::ryml PROPERTIES RYML_STANDALONE ON)
-#set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
-#    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-#)
 
 # ignore annoying msvc warnings
 if(WIN32)
@@ -80,7 +71,10 @@ endif ()
 # optick profiler
 CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 
+#target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
+#target_compile_definitions(WIN32 INTERFACE WIN32_LEAN_AND_MEAN)
 
+add_definitions(WIN32_LEAN_AND_MEAN)
 
 ##########
 # Linking
@@ -88,57 +82,44 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 add_executable(${PROJECT_NAME}
     "src/Main.cpp"
     "src/ValhallaServer.cpp"
-    "src/HashUtils.cpp"
+    
 
-     
-     
-    "src/Player.cpp"
-    "src/PlayerProfile.cpp"
+    
+    
     "src/Quaternion.cpp"
     "src/VUtilsResource.cpp"
-    "src/ModManager.cpp" 
+     
     
     
     "src/Stream.cpp"
     "src/Task.cpp"
     
     "src/VUtils.cpp"
-    "src/NetSync.cpp"
     
-    "src/NetSyncManager.cpp"
+    
+    
     
     "src/NetManager.cpp"
     "src/NetPeer.cpp" 
     "src/NetPackage.cpp"    
-    "src/NetRouteManager.cpp"
+    
     "src/NetRpc.cpp" 
     
     
-    "src/ZoneSystem.cpp" 
+     
     "src/Vector.cpp" 
-    "src/WorldGenerator.cpp" # temporarily broken
     "src/VUtilsMath.cpp"
-    "src/NetObject.cpp" 
+     
 
     "src/NetSteamSocket.cpp" 
     "src/NetAcceptorSteam.cpp"
-    "src/objects/Beehive.cpp"
-    #"src/NetScene.cpp" # temporarily broken
-    "src/ChatManager.cpp"
-    "src/RCONSocket.cpp"
-    "src/RCONAcceptor.cpp"
+    
+    
+    
     "src/VUtilsString.cpp"
-    "src/GameObject.cpp"
-    "src/GameObjectManager.cpp"
     "src/VUtilsRandom.cpp"
-    "src/Game.cpp"
- 
-     "src/WorldManager.cpp" 
-     #"src/ZoneSystem2.cpp" 
-     #"src/HeightmapBuilder.cpp" 
-     #"src/Heightmap.cpp" 
-     #"src/HeightmapManager.cpp"
- "include/RCONManager.h" "src/RCONManager.cpp")
+    
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -151,20 +132,16 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
-    robin_hood::robin_hood # not really needed, but this is c++ :>)
+    robin_hood::robin_hood
     ZLIB::ZLIB
     PUBLIC lua
     sol2
     yaml-cpp
-    #ssh
-    #PUBLIC c4core::c4core
-    #PRIVATE ryml::ryml
     easyloggingpp
     OptickCore
-    asio asio::asio
 )
 
-target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
+#target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
 
 
 ##########

@@ -5,7 +5,6 @@
 #include "ServerSettings.h"
 #include "NetAcceptor.h"
 #include "VUtilsRandom.h"
-#include "RCONManager.h"
 
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
@@ -29,8 +28,6 @@ private:
 	steady_clock::time_point m_nowUpdate;
 
 	double m_netTime;
-
-	std::unique_ptr<RCONManager> m_rconManager;
 
 private:
 	void LoadFiles();

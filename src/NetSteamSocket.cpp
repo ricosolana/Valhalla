@@ -1,6 +1,7 @@
-#include "NetSocket.h"
+#include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
-#include <isteamnetworkingutils.h>
+
+#include "NetSocket.h"
 #include "ValhallaServer.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection hConn)
@@ -75,6 +76,18 @@ std::optional<NetPackage> SteamSocket::Recv() {
 }
 
 
+
+std::string SteamSocket::GetHostName() const {
+    return std::to_string(m_steamNetId.GetSteamID64());
+}
+
+std::string SteamSocket::GetAddress() const {
+    return m_address;
+}
+
+bool SteamSocket::Connected() const {
+    return m_connected;
+}
 
 int SteamSocket::GetSendQueueSize() const {
 	if (Connected()) {

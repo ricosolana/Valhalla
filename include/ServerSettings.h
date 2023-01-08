@@ -23,10 +23,4 @@ struct ServerSettings {
 	unsigned int	zdoMaxCongestion;    // congestion rate
     unsigned int	zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
-
-    bool            rconEnabled;
-    uint16_t        rconPort;
-    std::string     rconPassword;
-    //uint32_t      rconDelay;              // delay in seconds between failed logins
-    std::vector<std::string> rconKeys;      // not part of protocol, just extra security measure
 };

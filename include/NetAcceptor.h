@@ -46,27 +46,3 @@ private:
 	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
 	STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
 };
-
-class RCONAcceptor : public IAcceptor {
-private:
-    asio::io_context m_ctx;
-    std::thread m_thread;
-    asio::ip::tcp::acceptor m_acceptor;
-
-    std::mutex m_mut;
-	// or test whether the client id has been assigned beyond -1
-    std::list<std::shared_ptr<RCONSocket>> m_connected;
-
-public:
-    RCONAcceptor(uint16_t port);
-    ~RCONAcceptor() noexcept override;
-
-    // Init listening and queueing any accepted connections
-    void Listen() override;
-
-    // Poll for a ready and newly accepted connection
-    std::optional<ISocket::Ptr> Accept() override;
-
-private:
-    void DoAccept();
-};

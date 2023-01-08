@@ -8,9 +8,7 @@
 #include "VUtilsResource.h"
 #include "ServerSettings.h"
 #include "NetManager.h"
-#include "ChatManager.h"
 #include "NetSyncManager.h"
-#include "WorldGenerator.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -86,11 +84,6 @@ void IValhalla::LoadFiles() {
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
     m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
-    m_settings.rconEnabled = loadNode["rcon-enabled"].as<bool>(false);
-    m_settings.rconPort = loadNode["rcon-port"].as<uint16_t>(25575);
-    m_settings.rconPassword = loadNode["rcon-password"].as<std::string>("");
-    m_settings.rconKeys = loadNode["rcon-keys"].as<std::vector<std::string>>(std::vector<std::string>());
-
     LOG(INFO) << "Server config loaded";
 
     if (createSettingsFile) {
@@ -114,11 +107,6 @@ void IValhalla::LoadFiles() {
         saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
-
-        saveNode["rcon-enabled"] = m_settings.rconEnabled;
-        saveNode["rcon-port"] = m_settings.rconPort;
-        saveNode["rcon-password"] = m_settings.rconPassword;
-        saveNode["rcon-keys"] = m_settings.rconKeys;
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -147,21 +135,9 @@ void IValhalla::Start() {
     this->LoadFiles();
 
     ModManager()->Init();
-    WorldManager::Init();
-    WorldGenerator::Init();
     NetManager::Init();
-    ChatManager::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
-
-    // Initialize rcon server
-    if (m_settings.rconEnabled) {
-        m_rconManager = std::make_unique<RCONManager>();
-        m_rconManager->Init(m_settings.rconPassword, m_settings.rconPort);
-    }
-    else {
-        LOG(INFO) << "RCON is disabled";
-    }
 
 	m_prevUpdate = steady_clock::now();
 	m_nowUpdate = steady_clock::now();
@@ -209,8 +185,6 @@ void IValhalla::Start() {
     // Cleanup 
     ModManager()->UnInit();
     NetManager::Close();
-    if (m_rconManager) m_rconManager->UnInit();
-
     {
         std::vector<std::string> banned;
         for (auto&& s : m_banned)
@@ -223,8 +197,6 @@ void IValhalla::Start() {
 
 void IValhalla::Update() {
 	// This is important to processing RPC remote invocations
-
-    if (m_rconManager) m_rconManager->Update();
 
     if (!NetManager::GetPeers().empty())
         m_netTime += Delta();
