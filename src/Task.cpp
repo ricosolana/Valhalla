@@ -3,9 +3,9 @@
 using namespace std::chrono_literals;
 
 bool Task::Repeats() {
-	return period > 0ms;
+    return period > 0ms;
 }
 
 void Task::Cancel() {
-	period = std::chrono::milliseconds::min();
+    period = std::chrono::milliseconds::min();
 }

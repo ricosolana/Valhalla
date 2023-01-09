@@ -8,9 +8,9 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
     : m_hConn(hConn) {
 
     // This constructor doesnt do anything special
-	SteamNetConnectionInfo_t info;
-	SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
-	m_steamNetId = info.m_identityRemote;
+    SteamNetConnectionInfo_t info;
+    SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
+    m_steamNetId = info.m_identityRemote;
 
     char buf[20];
     info.m_addrRemote.ToString(buf, sizeof(buf), false);
@@ -51,28 +51,28 @@ void SteamSocket::Close(bool flush) {
 
 void SteamSocket::Update() {
     OPTICK_EVENT();
-	SendQueued();
+    SendQueued();
 }
 
 void SteamSocket::Send(NetPackage pkg) {
-	if (pkg.m_stream.Length() == 0)
-		return;
+    if (pkg.m_stream.Length() == 0)
+        return;
 
     m_sendQueue.push_back(std::move(pkg.m_stream.m_buf));
 }
 
 std::optional<NetPackage> SteamSocket::Recv() {
     OPTICK_EVENT();
-	if (Connected()) {
+    if (Connected()) {
 #define MSG_COUNT 1
-		SteamNetworkingMessage_t* msg; // will point to allocated messages
-		if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
-			NetPackage pkg((BYTE_t*)msg->m_pData, msg->m_cbSize);
-			msg->Release();
-			return pkg;
-		}
-	}
-	return std::nullopt;
+        SteamNetworkingMessage_t* msg; // will point to allocated messages
+        if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
+            NetPackage pkg((BYTE_t*)msg->m_pData, msg->m_cbSize);
+            msg->Release();
+            return pkg;
+        }
+    }
+    return std::nullopt;
 }
 
 
@@ -90,29 +90,29 @@ bool SteamSocket::Connected() const {
 }
 
 int SteamSocket::GetSendQueueSize() const {
-	if (Connected()) {
-		int num = 0;
-		for (auto&& bytes : m_sendQueue) {
-			num += (int)bytes.size();
-		}
-		SteamNetConnectionRealTimeStatus_t rt{};
-		if (SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
-			num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
-		}
+    if (Connected()) {
+        int num = 0;
+        for (auto&& bytes : m_sendQueue) {
+            num += (int)bytes.size();
+        }
+        SteamNetConnectionRealTimeStatus_t rt{};
+        if (SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
+            num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
+        }
 
-		return num;
-	}
-	return -1;
+        return num;
+    }
+    return -1;
 }
 
 
 
 void SteamSocket::SendQueued() {
-	if (!Connected())
-		return;
+    if (!Connected())
+        return;
 
-	while (!m_sendQueue.empty()) {
-		auto&& front = m_sendQueue.front();
+    while (!m_sendQueue.empty()) {
+        auto&& front = m_sendQueue.front();
 
         // TODO use SendMessage(); does not copy message structure buffer
         //  But memory container must not be vector
@@ -128,10 +128,10 @@ void SteamSocket::SendQueued() {
 
         if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) != k_EResultOK) {
-			LOG(INFO) << "Failed to send data";
-			return;
-		}
+            LOG(INFO) << "Failed to send data";
+            return;
+        }
 
-		m_sendQueue.pop_front();
-	}
+        m_sendQueue.pop_front();
+    }
 }

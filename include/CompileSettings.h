@@ -21,20 +21,20 @@ using namespace std::chrono_literals;
 
 
 // Valheim latest versionings
-//	Includes game, worldgen, zdo, zonelocation, ...
+//    Includes game, worldgen, zdo, zonelocation, ...
 namespace Version {
-	// Valheim game version
-	static const char* GAME = "0.212.7";
+    // Valheim game version
+    static const char* GAME = "0.212.7";
 
-	// worldgenerator
-	static constexpr int32_t WORLD = 29;
+    // worldgenerator
+    static constexpr int32_t WORLD = 29;
 
-	// Used in WorldGenerator terrain
-	static constexpr int32_t WORLDGEN = 2;
+    // Used in WorldGenerator terrain
+    static constexpr int32_t WORLDGEN = 2;
 
-	// Used in ZDO
-	static constexpr int32_t PGW = 53;
+    // Used in ZDO
+    static constexpr int32_t PGW = 53;
 
-	// Used in ZoneSystem ZoneLocation-Prefabs
-	static constexpr int32_t FEATURE = 1;
+    // Used in ZoneSystem ZoneLocation-Prefabs
+    static constexpr int32_t FEATURE = 1;
 }

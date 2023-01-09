@@ -6,131 +6,131 @@
 #include "VUtils.h"
 
 namespace VUtils::Math {
-	float SqMagnitude(float x, float y) {
-		return x * x + y * y;
-	}
+    float SqMagnitude(float x, float y) {
+        return x * x + y * y;
+    }
 
-	float Magnitude(float x, float y) {
-		return sqrt(SqMagnitude(x, y));
-	}
+    float Magnitude(float x, float y) {
+        return sqrt(SqMagnitude(x, y));
+    }
 
-	float SqDistance(float x1, float y1, float x2, float y2) {
-		return SqMagnitude(x1 - x2, y1 - y2);
-	}
+    float SqDistance(float x1, float y1, float x2, float y2) {
+        return SqMagnitude(x1 - x2, y1 - y2);
+    }
 
-	float Distance(float x1, float y1, float x2, float y2) {
-		return SqDistance(x1, y1, x2, y2);
-	}
-
-
-
-
-	float SqMagnitude(float x, float y, float z) {
-		return x * x + y * y + z * z;
-	}
-
-	float Magnitude(float x, float y, float z) {
-		return sqrt(SqMagnitude(x, y, z));
-	}
-
-	float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
-		return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
-	}
-
-	float Distance(float x1, float y1, float z1, float x2, float y2, float z2) {
-		return SqDistance(x1, y1, z1, x2, y2, z2);
-	}
+    float Distance(float x1, float y1, float x2, float y2) {
+        return SqDistance(x1, y1, x2, y2);
+    }
 
 
 
 
+    float SqMagnitude(float x, float y, float z) {
+        return x * x + y * y + z * z;
+    }
 
+    float Magnitude(float x, float y, float z) {
+        return sqrt(SqMagnitude(x, y, z));
+    }
 
+    float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
+    }
 
-	float Clamp(float value, float min, float max) {
-		return std::min(std::max(value, min), max);
-	}
-
-	float Clamp01(float value)
-	{
-		bool flag = value < 0.f;
-		float result;
-		if (flag)
-		{
-			result = 0.f;
-		}
-		else
-		{
-			bool flag2 = value > 1.f;
-			if (flag2)
-			{
-				result = 1.f;
-			}
-			else
-			{
-				result = value;
-			}
-		}
-		return result;
-	}
-
-	float Lerp(float a, float b, float t)
-	{
-		return a + (b - a) * Clamp01(t);
-	}
-
-
-	float LerpStep(float l, float h, float v)
-	{
-		return Clamp01((v - l) / (h - l));
-	}
-
-	float SmoothStep(float p_Min, float p_Max, float p_X)
-	{
-		float num = Clamp01((p_X - p_Min) / (p_Max - p_Min));
-		return num * num * (3.f - 2.f * num);
-	}
-
-	double LerpStep(double l, double h, double v)
-	{
-		return Clamp01((v - l) / (h - l));
-	}
+    float Distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return SqDistance(x1, y1, z1, x2, y2, z2);
+    }
 
 
 
 
 
 
-	float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain) {
-		return Fbm(Vector2(p.x, p.z), octaves, lacunarity, gain);
-	}
 
-	float FbmMaxValue(int octaves, float gain)
-	{
-		float num = 0;
-		float num2 = 1;
-		for (int i = 0; i < octaves; i++)
-		{
-			num += num2;
-			num2 *= gain;
-		}
-		return num;
-	}
+    float Clamp(float value, float min, float max) {
+        return std::min(std::max(value, min), max);
+    }
 
-	float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain)
-	{
-		throw std::runtime_error("Not implemented");
-		float num = 0;
-		float num2 = 1;
-		Vector2 vector = p;
-		for (int i = 0; i < octaves; i++)
-		{
-			//num += num2 * Mathf.PerlinNoise(vector.x, vector.y);
-			num2 *= gain;
-			vector *= lacunarity;
-		}
-		return num;
-	}
+    float Clamp01(float value)
+    {
+        bool flag = value < 0.f;
+        float result;
+        if (flag)
+        {
+            result = 0.f;
+        }
+        else
+        {
+            bool flag2 = value > 1.f;
+            if (flag2)
+            {
+                result = 1.f;
+            }
+            else
+            {
+                result = value;
+            }
+        }
+        return result;
+    }
+
+    float Lerp(float a, float b, float t)
+    {
+        return a + (b - a) * Clamp01(t);
+    }
+
+
+    float LerpStep(float l, float h, float v)
+    {
+        return Clamp01((v - l) / (h - l));
+    }
+
+    float SmoothStep(float p_Min, float p_Max, float p_X)
+    {
+        float num = Clamp01((p_X - p_Min) / (p_Max - p_Min));
+        return num * num * (3.f - 2.f * num);
+    }
+
+    double LerpStep(double l, double h, double v)
+    {
+        return Clamp01((v - l) / (h - l));
+    }
+
+
+
+
+
+
+    float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain) {
+        return Fbm(Vector2(p.x, p.z), octaves, lacunarity, gain);
+    }
+
+    float FbmMaxValue(int octaves, float gain)
+    {
+        float num = 0;
+        float num2 = 1;
+        for (int i = 0; i < octaves; i++)
+        {
+            num += num2;
+            num2 *= gain;
+        }
+        return num;
+    }
+
+    float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain)
+    {
+        throw std::runtime_error("Not implemented");
+        float num = 0;
+        float num2 = 1;
+        Vector2 vector = p;
+        for (int i = 0; i < octaves; i++)
+        {
+            //num += num2 * Mathf.PerlinNoise(vector.x, vector.y);
+            num2 *= gain;
+            vector *= lacunarity;
+        }
+        return num;
+    }
 
 
 
@@ -148,7 +148,7 @@ namespace VUtils::Math {
         i = 0x5f3759df - (i >> 1);               // what the fuck? 
         y = *(float*)&i;
         y = y * (threehalfs - (x2 * y * y));   // 1st iteration
-        //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+        //    y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
 
         return y;
     }
@@ -163,13 +163,13 @@ namespace VUtils::Math {
 
 
     // Ease-in-out function
-	// t: [0, 1]
-	// https://www.desmos.com/calculator/tgpfii21pt
+    // t: [0, 1]
+    // https://www.desmos.com/calculator/tgpfii21pt
     static double myfade(float t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
     static double mylerp(float t, float a, float b) { return a + t * (b - a); }
     static double mygrad(int hash, float x, float y) {
-        int h = hash & 15;							// CONVERT LO 4 BITS OF HASH CODE
-        float u = h < 8 ? x : y,					// INTO 12 GRADIENT DIRECTIONS.
+        int h = hash & 15;                            // CONVERT LO 4 BITS OF HASH CODE
+        float u = h < 8 ? x : y,                    // INTO 12 GRADIENT DIRECTIONS.
             v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
@@ -206,37 +206,37 @@ namespace VUtils::Math {
     // type is casted to a float, idk whether statically, probably (bytes interpreted in place)
     float PerlinNoise(float x, float y) {
 
-		// Another alternative method (doing whatever to make it work smh..)
-		int32_t X = (int32_t)x & 0xFF;
-		int32_t Y = (int32_t)y & 0xFF;
-		
-		x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
-		y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
+        // Another alternative method (doing whatever to make it work smh..)
+        int32_t X = (int32_t)x & 0xFF;
+        int32_t Y = (int32_t)y & 0xFF;
+        
+        x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
+        y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
 
 
 
 
 
-		// Alternative method (using floor like the original Perlin impl)
-		//int X = (int)floor(x) & 0xFF;
-		//int Y = (int)floor(y) & 0xFF;
-		//
-		//x -= floor(x);                                // FIND RELATIVE X,Y,Z
-		//y -= floor(y);                                // OF POINT IN CUBE.
-		// END SECTION
+        // Alternative method (using floor like the original Perlin impl)
+        //int X = (int)floor(x) & 0xFF;
+        //int Y = (int)floor(y) & 0xFF;
+        //
+        //x -= floor(x);                                // FIND RELATIVE X,Y,Z
+        //y -= floor(y);                                // OF POINT IN CUBE.
+        // END SECTION
 
 
 
 
 
-		// Negatives are broken (method according to Unity/Ghidra)		
-		// Line 30, CVTTSD2SI (float to signed int truncation)
+        // Negatives are broken (method according to Unity/Ghidra)        
+        // Line 30, CVTTSD2SI (float to signed int truncation)
         //int32_t X = ((int32_t) x) & 0xFF;
         //int32_t Y = ((int32_t) y) & 0xFF;
-		//
+        //
         //x -= (float)((int32_t) x);                                // FIND RELATIVE X,Y,Z
         //y -= (float)((int32_t) y);                                // OF POINT IN CUBE.
-		// END SECTION
+        // END SECTION
 
 
 
@@ -250,9 +250,9 @@ namespace VUtils::Math {
         int BA = p[p[B + 0]];
         int AA = p[p[A + 0]];
 
-		// This is different from Ken perlins
-		// At Ghidra UnityEngine.Mathf.PerlinNoiseI line 40
-		//	the x and y have an upper bound of 1.0
+        // This is different from Ken perlins
+        // At Ghidra UnityEngine.Mathf.PerlinNoiseI line 40
+        //    the x and y have an upper bound of 1.0
         //double u = myfade(std::min(1.f, x));                                // COMPUTE FADE CURVES
         //double v = myfade(std::min(1.f, y));                                // FOR EACH OF X,Y,
         double u = myfade(x);
@@ -277,7 +277,7 @@ namespace VUtils::Math {
         //res += .69f;
         //res /= 1.483f;
 
-		return (res + .69f) / 1.483f;
+        return (res + .69f) / 1.483f;
 
         //return res;
     }

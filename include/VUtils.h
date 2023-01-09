@@ -50,7 +50,7 @@ using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
     static auto __last_run = __now;\
     auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
     if (__elapsed > __initial) {\
-		__last_run = steady_clock::time_point::max();\
+        __last_run = steady_clock::time_point::max();\
         { __VA_ARGS__ }\
     }\
 }

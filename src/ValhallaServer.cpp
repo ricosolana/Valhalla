@@ -71,11 +71,11 @@ void IValhalla::LoadFiles() {
     m_settings.worldSeedName = loadNode["world-seed-name"].as<std::string>("Some special seed");
     m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
 
-    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);		// enable whitelist
-    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(64);		// max allowed players
-    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);				// allow authed players only
-    m_settings.playerList = loadNode["player-list"].as<bool>(true);				// does not send player list to players
-    m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);		// prevent player join ping
+    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);        // enable whitelist
+    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(64);        // max allowed players
+    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                // allow authed players only
+    m_settings.playerList = loadNode["player-list"].as<bool>(true);                // does not send player list to players
+    m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
 
     m_settings.socketTimeout = milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
     m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
@@ -136,48 +136,48 @@ void IValhalla::Start() {
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
-	m_prevUpdate = steady_clock::now();
-	m_nowUpdate = steady_clock::now();
+    m_prevUpdate = steady_clock::now();
+    m_nowUpdate = steady_clock::now();
 
-	m_running = true;
-	while (m_running) {
-		OPTICK_FRAME("main");
+    m_running = true;
+    while (m_running) {
+        OPTICK_FRAME("main");
 
-		auto now = steady_clock::now();
-		auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+        auto now = steady_clock::now();
+        auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
 
-		m_prevUpdate = m_nowUpdate; // old state
-		m_nowUpdate = now; // new state
+        m_prevUpdate = m_nowUpdate; // old state
+        m_nowUpdate = now; // new state
 
-		// Mutex is scoped
-		{
-			std::scoped_lock lock(m_taskMutex);
-			for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
-				auto ptr = itr->get();
-				if (ptr->at < now) {
-					if (ptr->period == milliseconds::min()) { // if task cancelled
-						itr = m_tasks.erase(itr);
-					}
-					else {
-						ptr->function(*ptr);
-						if (ptr->Repeats()) {
-							ptr->at += ptr->period;
-							++itr;
-						}
-						else
-							itr = m_tasks.erase(itr);
-					}
-				}
-				else
-					++itr;
-			}
-		}
-		
-		Update();
+        // Mutex is scoped
+        {
+            std::scoped_lock lock(m_taskMutex);
+            for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
+                auto ptr = itr->get();
+                if (ptr->at < now) {
+                    if (ptr->period == milliseconds::min()) { // if task cancelled
+                        itr = m_tasks.erase(itr);
+                    }
+                    else {
+                        ptr->function(*ptr);
+                        if (ptr->Repeats()) {
+                            ptr->at += ptr->period;
+                            ++itr;
+                        }
+                        else
+                            itr = m_tasks.erase(itr);
+                    }
+                }
+                else
+                    ++itr;
+            }
+        }
+        
+        Update();
 
-		// TODO adjust based on workload intensity
-		std::this_thread::sleep_for(1ms);
-	}
+        // TODO adjust based on workload intensity
+        std::this_thread::sleep_for(1ms);
+    }
 
     // Cleanup 
     NetManager::Close();
@@ -192,40 +192,40 @@ void IValhalla::Start() {
 
 
 void IValhalla::Update() {
-	// This is important to processing RPC remote invocations
+    // This is important to processing RPC remote invocations
 
     if (!NetManager::GetPeers().empty())
         m_netTime += Delta();
     
-	NetManager::Update();
-	//VModManager::Event::OnUpdate(delta);
+    NetManager::Update();
+    //VModManager::Event::OnUpdate(delta);
 }
 
 
 
 Task& IValhalla::RunTask(Task::F f) {
-	return RunTaskLater(std::move(f), 0ms);
+    return RunTaskLater(std::move(f), 0ms);
 }
 
 Task& IValhalla::RunTaskLater(Task::F f, milliseconds after) {
-	return RunTaskLaterRepeat(std::move(f), after, 0ms);
+    return RunTaskLaterRepeat(std::move(f), after, 0ms);
 }
 
 Task& IValhalla::RunTaskAt(Task::F f, steady_clock::time_point at) {
-	return RunTaskAtRepeat(std::move(f), at, 0ms);
+    return RunTaskAtRepeat(std::move(f), at, 0ms);
 }
 
 Task& IValhalla::RunTaskRepeat(Task::F f, milliseconds period) {
-	return RunTaskLaterRepeat(std::move(f), 0ms, period);
+    return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
 Task& IValhalla::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
-	return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
+    return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
 }
 
 Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
-	std::scoped_lock lock(m_taskMutex);
-	Task* task = new Task{std::move(f), at, period};
-	m_tasks.push_back(std::unique_ptr<Task>(task));
-	return *task;
+    std::scoped_lock lock(m_taskMutex);
+    Task* task = new Task{std::move(f), at, period};
+    m_tasks.push_back(std::unique_ptr<Task>(task));
+    return *task;
 }

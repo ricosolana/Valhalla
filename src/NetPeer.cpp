@@ -2,16 +2,16 @@
 #include "NetManager.h"
 
 void NetPeer::Kick() {
-	LOG(INFO) << "Kicking " << m_name;
+    LOG(INFO) << "Kicking " << m_name;
 
-	SendDisconnect();
-	Disconnect();
+    SendDisconnect();
+    Disconnect();
 }
 
 void NetPeer::SendDisconnect() {
-	m_rpc->Invoke("Disconnect");
+    m_rpc->Invoke("Disconnect");
 }
 
 void NetPeer::Disconnect() {
-	m_rpc->m_socket->Close(true);
+    m_rpc->m_socket->Close(true);
 }

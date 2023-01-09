@@ -10,31 +10,31 @@
 
 namespace VUtils::Random {
 
-	class State {
-	private:
-		uint32_t m_seed[4];
+    class State {
+    private:
+        uint32_t m_seed[4];
 
 
-	public:
-		State();
-		State(int32_t seed);
-		State(const State& other); // copy construct
+    public:
+        State();
+        State(int32_t seed);
+        State(const State& other); // copy construct
 
-		// Returns a random float from 0 to 1
-		float NextFloat();
-		uint32_t NextInt();
+        // Returns a random float from 0 to 1
+        float NextFloat();
+        uint32_t NextInt();
 
-		float Range(float minInclude, float maxExclude);
-		int32_t Range(int32_t minInclude, int32_t maxExclude);
+        float Range(float minInclude, float maxExclude);
+        int32_t Range(int32_t minInclude, int32_t maxExclude);
 
-		Vector2 InsideUnitCircle();
-		Vector3 OnUnitSphere();
-		Vector3 InsideUnitSphere();
-	};
+        Vector2 InsideUnitCircle();
+        Vector3 OnUnitSphere();
+        Vector3 InsideUnitSphere();
+    };
 
-	OWNER_t GenerateUID();
+    OWNER_t GenerateUID();
 
-	std::string GenerateAlphaNum(unsigned int count);
+    std::string GenerateAlphaNum(unsigned int count);
 
 }
 
