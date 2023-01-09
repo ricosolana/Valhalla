@@ -27,8 +27,7 @@ namespace VUtils::Random {
 		float Range(float minInclude, float maxExclude);
 		int32_t Range(int32_t minInclude, int32_t maxExclude);
 
-		Vector2 GetRandomUnitCircle();
-
+		Vector2 InsideUnitCircle();
 		Vector3 OnUnitSphere();
 		Vector3 InsideUnitSphere();
 	};

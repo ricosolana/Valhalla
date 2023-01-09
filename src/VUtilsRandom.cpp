@@ -75,7 +75,7 @@ namespace VUtils::Random {
         return minInclude;
     }
 
-    Vector2 State::GetRandomUnitCircle() {
+    Vector2 State::InsideUnitCircle() {
 
         // get random 
         float rad = Range(0.f, PI * 2.f);

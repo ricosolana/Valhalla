@@ -64,18 +64,31 @@ void Stream::Read(std::vector<BYTE_t>& vec, uint32_t count) {
 
 
 void Stream::Write(const BYTE_t* buffer, uint32_t count) {
+
+    // this copies in place, without relocating bytes exceeding m_pos
+    // resize, ensuring capacity for copy operation
+    if (Length() < m_pos + count)
+        m_buf.resize(m_pos + count);
+    std::copy(buffer, buffer + count, m_buf.begin() + m_pos);
+
+
+    /*
+    // This old way made m_pos the end of the buffer, trashing all bytes after it
     // trim everything else away
     m_buf.resize(m_pos);
 
-    // add elements
-    m_buf.insert(m_buf.begin() + m_pos, buffer, buffer + count);
+    // push elements
+    //m_buf.insert(m_buf.begin() + m_pos, buffer, buffer + count);
+    m_buf.insert(m_buf.end(), buffer, buffer + count);
+    */
+
     m_pos += count;
 }
 
 
 
 void Stream::SetPos(uint32_t pos) {
-    if (pos > Length()) throw std::runtime_error("Position exceeds length");
+    if (pos > Length() + 1) throw std::runtime_error("Position exceeds length");
 
     m_pos = pos;
 }

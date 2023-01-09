@@ -205,11 +205,42 @@ namespace VUtils::Math {
 
     // type is casted to a float, idk whether statically, probably (bytes interpreted in place)
     float PerlinNoise(float x, float y) {
-        uint32_t X = (int32_t)x & 0xFF;
-        uint32_t Y = (int32_t)y & 0xFF;
 
-        x -= (int32_t)x;                                // FIND RELATIVE X,Y,Z
-        y -= (int32_t)y;                                // OF POINT IN CUBE.
+		// Another alternative method (doing whatever to make it work smh..)
+		int32_t X = (int32_t)x & 0xFF;
+		int32_t Y = (int32_t)y & 0xFF;
+		
+		x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
+		y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
+
+
+
+
+
+		// Alternative method (using floor like the original Perlin impl)
+		//int X = (int)floor(x) & 0xFF;
+		//int Y = (int)floor(y) & 0xFF;
+		//
+		//x -= floor(x);                                // FIND RELATIVE X,Y,Z
+		//y -= floor(y);                                // OF POINT IN CUBE.
+		// END SECTION
+
+
+
+
+
+		// Negatives are broken (method according to Unity/Ghidra)		
+		// Line 30, CVTTSD2SI (float to signed int truncation)
+        //int32_t X = ((int32_t) x) & 0xFF;
+        //int32_t Y = ((int32_t) y) & 0xFF;
+		//
+        //x -= (float)((int32_t) x);                                // FIND RELATIVE X,Y,Z
+        //y -= (float)((int32_t) y);                                // OF POINT IN CUBE.
+		// END SECTION
+
+
+
+
 
         int A = p[X] + Y; // , AA = p[A] + Z, AB = p[A + 1] + Z,      // HASH COORDINATES OF
         int B = p[X + 1] + Y; // , BA = p[B] + Z, BB = p[B + 1] + Z;      // THE 8 CUBE CORNERS,
@@ -219,8 +250,11 @@ namespace VUtils::Math {
         int BA = p[p[B + 0]];
         int AA = p[p[A + 0]];
 
-        //double u = fade(std::min(1.f, x));                                // COMPUTE FADE CURVES
-        //double v = fade(std::min(1.f, y));                                // FOR EACH OF X,Y,
+		// This is different from Ken perlins
+		// At Ghidra UnityEngine.Mathf.PerlinNoiseI line 40
+		//	the x and y have an upper bound of 1.0
+        //double u = myfade(std::min(1.f, x));                                // COMPUTE FADE CURVES
+        //double v = myfade(std::min(1.f, y));                                // FOR EACH OF X,Y,
         double u = myfade(x);
         double v = myfade(y);
 
@@ -240,10 +274,12 @@ namespace VUtils::Math {
 
         // (fVar1 + 0.69) / 1.483
 
-        res += .69f;
-        res /= 1.483f;
+        //res += .69f;
+        //res /= 1.483f;
 
-        return res;
+		return (res + .69f) / 1.483f;
+
+        //return res;
     }
 
 

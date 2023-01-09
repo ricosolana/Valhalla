@@ -22,15 +22,15 @@ public:
 	void operator=(const Stream& other);
 
 	// Read count bytes into the specified buffer
-	// Will throw if count exceeds end
+	// Throws if not enough bytes to read
 	void Read(BYTE_t* buffer, uint32_t count);
 	
 	// Read a single byte from the buffer
-	// Will throw if at end
+	// Throws if end of buffer is reached
 	BYTE_t Read();
 
 	// Reads count bytes overriding the specified vector
-	// Will throw if count exceeds end
+	// Throws if not enough bytes to read
 	void Read(std::vector<BYTE_t>& vec, uint32_t count);
 
 	// Reads count bytes overriding the specified string
@@ -41,19 +41,23 @@ public:
 	
 
 	// Write count bytes from the specified buffer
+	// Bytes are written in place, making space as necessary
 	void Write(const BYTE_t* buffer, uint32_t count);
 
 	// Write a single byte from the specified buffer
+	// Bytes are written in place, making space as necessary
 	auto Write(const BYTE_t value) {
 		return Write(&value, sizeof(value));
 	}
 
 	// Write count bytes from the specified vector
+	// Bytes are written in place, making space as necessary
 	auto Write(const std::vector<BYTE_t>& vec, uint32_t count) {
 		return Write(vec.data(), count);
 	}
 
 	// Write all bytes from the specified vector
+	// Bytes are written in place, making space as necessary
 	auto Write(const std::vector<BYTE_t>& vec) {
 		return Write(vec, static_cast<uint32_t>(vec.size()));
 	}
@@ -61,7 +65,7 @@ public:
 
 
 	// Gets all the data in the package
-	[[nodiscard]] BYTES_t Bytes() const {
+	BYTES_t Bytes() const {
 		return m_buf;
 	}
 
@@ -104,5 +108,5 @@ public:
 	}
 
 	// Sets the positino of this stream
-	void SetPos(uint32_t pos); 
+	void SetPos(uint32_t pos);
 };

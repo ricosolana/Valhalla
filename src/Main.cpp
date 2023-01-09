@@ -9,6 +9,8 @@
 #include "VUtilsRandom.h"
 #include "CompileSettings.h"
 
+#include "Tests.h"
+
 INITIALIZE_EASYLOGGINGPP
 
 // https://stackoverflow.com/a/17350413
@@ -58,6 +60,19 @@ public:
 int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
+
+#ifdef TRUE
+    fs::current_path("./data/tests/");
+    //Tests::Test_NetSync();
+    //Tests::Test_ResourceReadWrite();
+    //Tests::Test_Random();
+    Tests::Test_Perlin();
+
+    return 0;
+#endif
+
+
+
     const char* root = "./data/";
     bool colors = true;
     bool backup_logs = true;
@@ -85,6 +100,8 @@ int main(int argc, char **argv) {
     fs::current_path(root);
 
     LOG(INFO) << "Press ctrl+c to exit";
+
+
 
     //for (float i = 0; i < 2; i += .13f)
     //{

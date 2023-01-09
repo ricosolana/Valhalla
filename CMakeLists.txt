@@ -119,7 +119,9 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsString.cpp"
     "src/VUtilsRandom.cpp"
     
- "src/NetID.cpp")
+    "src/NetID.cpp"
+    "src/ZDO.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
