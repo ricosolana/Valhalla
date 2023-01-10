@@ -30,7 +30,7 @@ AcceptorSteam::AcceptorSteam()
     SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
     SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
     SteamGameServer()->SetPasswordProtected(!Valhalla()->Settings().serverPassword.empty());
-    SteamGameServer()->SetGameTags(Version::GAME);
+    SteamGameServer()->SetGameTags(VConstants::GAME);
     SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
     auto timeout = (float)Valhalla()->Settings().socketTimeout.count();

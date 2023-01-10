@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#ifdef TRUE
+#if FALSE
     fs::current_path("./data/tests/");
     //Tests::Test_NetSync();
     //Tests::Test_ResourceReadWrite();
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Copy any old file    
+    // Copy any old file
     if (backup_logs) {
         std::error_code ec;
         fs::copy_file(LOGFILE_NAME,
@@ -101,50 +101,9 @@ int main(int argc, char **argv) {
 
     LOG(INFO) << "Press ctrl+c to exit";
 
-
-
-    //for (float i = 0; i < 2; i += .13f)
-    //{
-    //    LOG(INFO) << "Perlin " << i << ", " << (i + .18f) << ": " << VUtils::Random::PerlinNoise(i, i + .18f);
-    //}
-
-    /*
-    VUtils::Random::State state(69420);
-    LOG(INFO) << ("Random.Range (0.0f, 420.f)");
-    for (int i = 0; i < 3; i++)
-    {
-        LOG(INFO) << (state.Range(0.0f, 420.0f));
-    }
-    LOG(INFO) << ("Random.Range (0, 420)");
-    for (int i = 0; i < 3; i++)
-    {
-        LOG(INFO) << (state.Range(0, 420));
-    }
-    LOG(INFO) << ("Random.insideUnitCircle");
-    for (int i = 0; i < 2; i++)
-    {
-        auto vec = state.GetRandomUnitCircle();
-        LOG(INFO) << vec.x << " " << vec.y;
-    }
-    LOG(INFO) << ("Random.insideUnitSphere");
-    for (int i = 0; i < 2; i++)
-    {
-        auto vec = state.InsideUnitSphere();
-        LOG(INFO) << vec.x << " " << vec.y << " " << vec.z;
-    }
-    LOG(INFO) << ("Random.onUnitSphere");
-    for (int i = 0; i < 2; i++)
-    {
-        auto vec = state.OnUnitSphere();
-        LOG(INFO) << vec.x << " " << vec.y << " " << vec.z;
-    }
-
-    return 0;*/
-
 #ifndef _DEBUG
     try {
 #endif
-        //Valhalla()->Launch();
         ValhallaLauncher().Launch();
 #ifndef _DEBUG
     }

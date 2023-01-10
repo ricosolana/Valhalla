@@ -7,24 +7,30 @@ using namespace std::chrono_literals;
 #define SERVER_VERSION "1.0.0-alpha"
 
 // Interval for RPC pinging
-#define RPC_PING_INTERVAL 1s
+// Should be inlined
+//#define RPC_PING_INTERVAL 1s
 
 // Enable AsyncQueue wait
 //#define USE_DEQUE_WAIT
 
 // DO NOT CHANGE THIS VALUE!
-#define VALHEIM_APP_ID 892970
+//#define VALHEIM_APP_ID 892970
 
 // ELPP log file name
 #define LOGFILE_NAME "log.txt"
 
-
+//#define DUMMY_PLAYERNAME "Stranger"
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...
-namespace Version {
+namespace VConstants {
+    // Valheim Steam app id
+    static constexpr int32_t APP_ID = 892970;
+
+    static const char* PLAYERNAME = "Stranger";
+
     // Valheim game version
-    static const char* GAME = "0.212.7";
+    static const char* GAME = "0.212.9";
 
     // worldgenerator
     static constexpr int32_t WORLD = 29;
@@ -37,4 +43,8 @@ namespace Version {
 
     // Used in ZoneSystem ZoneLocation-Prefabs
     static constexpr int32_t FEATURE = 1;
+
+    // Player version
+    // Used only in client
+    //static constexpr int32_t PLAYER = 37;
 }

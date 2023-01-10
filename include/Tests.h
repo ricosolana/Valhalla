@@ -17,7 +17,7 @@ namespace Tests {
 
         NetPackage savePkg; zdo.Save(savePkg); savePkg.m_stream.SetPos(0);
 
-        ZDO loadedZDO(savePkg, Version::PGW);
+        ZDO loadedZDO(savePkg, VConstants::PGW);
 
         assert(zdo.GetFloat(        "health"    ) == (float) 16.894);
         assert(zdo.GetInt(            "weight"    ) == (int) 435);

@@ -208,9 +208,9 @@ namespace NetManager {
         //    (double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
         NetPackage pkg;
         pkg.Write(Valhalla()->ID());
-        pkg.Write(Version::GAME);
+        pkg.Write(VConstants::GAME);
         pkg.Write(Vector3()); // dummy
-        pkg.Write("Stranger"); // dummy
+        pkg.Write(VConstants::PLAYERNAME); // dummy
 
         // why does server need to send a position and name?
 
@@ -236,7 +236,7 @@ namespace NetManager {
         auto uuid = pkg.Read<OWNER_t>();
         auto version = pkg.Read<std::string>();
         LOG(INFO) << "Client " << hostName << " has version " << version;
-        if (version != Version::GAME)
+        if (version != VConstants::GAME)
             return rpc->SendError(ConnectionStatus::ErrorVersion);
 
         auto pos = pkg.Read<Vector3>();
@@ -258,6 +258,8 @@ namespace NetManager {
         if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
             return rpc->SendError(ConnectionStatus::ErrorBanned);
 
+        // this is ugly
+        // but probably how it should be done
         // Transfer the Rpc
         for (auto &&j: m_joining) {
             if (j.get() == rpc) {
