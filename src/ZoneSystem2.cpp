@@ -12,7 +12,7 @@ namespace ZoneSystem2 {
     // Dummy forward declarations
     struct Location {};
     struct RandomSpawn {};
-    struct Transform {};
+    
 
 
 
@@ -233,10 +233,14 @@ namespace ZoneSystem2 {
     bool CreateGhostZones(const Vector3& refPoint);
     //bool CreateLocalZones(const Vector3& refPoint);
     //bool PokeLocalZone(const Vector2i& zoneID);
+
     bool SpawnZone(const Vector2i& zoneID);
     void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, std::vector<GameObject> &spawnedObjects);
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Heightmap hmap, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
+    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
+
     Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
-    bool InsideClearArea(std::vector<ClearArea> areas, Vector3 point);
+    bool InsideClearArea(const std::vector<ClearArea> &areas, const Vector3 &point);
     ZoneLocation *GetLocation(int32_t hash);
     ZoneLocation *GetLocation(const std::string& name);
     void ClearNonPlacedLocations();
@@ -246,8 +250,7 @@ namespace ZoneSystem2 {
     //Vector2i GetRandomZone(float range);
     //Vector3 GetRandomPointInZone(const Vector2i& zone, float locationRadius);
     //Vector3 GetRandomPointInZone(float locationRadius);
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects);
-    void PlaceLocations(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects);
+    
     void RemoveUnplacedLocations(ZoneLocation *location);
     GameObject SpawnLocation(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rot, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
     void CreateLocationProxy(ZoneLocation *location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject> &spawnedGhostObjects);
@@ -368,9 +371,7 @@ namespace ZoneSystem2 {
     */
     // TODO not used for anything complex; just another reuse var...
     // make a local or static...
-    std::vector<ClearArea> m_tempClearAreas;
 
-    std::vector<GameObject> m_tempSpawnedObjects;
 
 
 
@@ -785,27 +786,36 @@ namespace ZoneSystem2 {
     // private
     // Only ever used in ghost mode
     bool SpawnZone(const Vector2i& zoneID) { //GameObject& root*/) {
-        Vector3 zonePos = WorldToZonePos(zoneID);
         Heightmap componentInChildren = m_zonePrefab.GetComponentInChildren<Heightmap>();
 
         // Waiting for the threadto finish
         // A thread pool might be better
         // other types arent needed
-        if (!HeightmapBuilder::IsTerrainReady(zonePos)) {
+        if (!HeightmapBuilder::IsTerrainReady(zoneID)) {
             //root = null;
             return false;
         }
+
+        Vector3 zonePos = ZoneToWorldPos(zoneID);
+
         GameObject root = UnityEngine.Object.Instantiate<GameObject>(m_zonePrefab, zonePos, Quaternion::IDENTITY);
         //if ((mode == SpawnMode::Ghost || mode == SpawnMode::Full) 
             //&& !IsZoneGenerated(zoneID)) {
 
         if (!IsZoneGenerated(zoneID)) {
             Heightmap componentInChildren2 = root.GetComponentInChildren<Heightmap>();
-            m_tempClearAreas.clear();
-            m_tempSpawnedObjects.clear();
+
+            //static std::vector<ClearArea> m_tempClearAreas;
+            //static std::vector<GameObject> m_tempSpawnedObjects;
+            //m_tempClearAreas.clear();
+            //m_tempSpawnedObjects.clear();
+            
+            std::vector<ClearArea> m_tempClearAreas;
+            std::vector<GameObject> m_tempSpawnedObjects;
             PlaceLocations(zoneID, zonePos, root.transform, m_tempClearAreas, m_tempSpawnedObjects);
-            PlaceVegetation(zoneID, zonePos, root.transform, componentInChildren2, m_tempClearAreas, m_tempSpawnedObjects);
+            PlaceVegetation(zoneID, zonePos, componentInChildren2, m_tempClearAreas, m_tempSpawnedObjects);
             PlaceZoneCtrl(zoneID, zonePos, m_tempSpawnedObjects);
+
             //if (mode == SpawnMode::Ghost) {
                 for (auto&& obj : m_tempSpawnedObjects) {
                     UnityEngine.Object.Destroy(obj); // unity-specific; must modify or remove/reconsiliate...
@@ -822,7 +832,7 @@ namespace ZoneSystem2 {
     // private
     void PlaceZoneCtrl(Vector2i zoneID, Vector3 zoneCenterPos, std::vector<GameObject> &spawnedObjects) {
             
-        //ZNetView.StartGhostInit(); // sets a priv var, but its never actually used; so redundant
+        //ZNetView.StartGhostInit(); // sets a priv var, but its never actually used; redundant
             GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_zoneCtrlPrefab, zoneCenterPos, Quaternion::IDENTITY);
             gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(Version::PGW);
             spawnedObjects.push_back(gameObject); // unity only
@@ -839,7 +849,7 @@ namespace ZoneSystem2 {
     }
 
     // private
-    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Transform parent, Heightmap hmap, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects) {
+    void PlaceVegetation(Vector2i zoneID, Vector3 zoneCenterPos, Heightmap hmap, std::vector<ClearArea> &clearAreas, std::vector<GameObject> &spawnedObjects) {
         //UnityEngine.Random.State state = UnityEngine.Random.state;
 
         int32_t seed = WorldGenerator::GetSeed();
@@ -864,7 +874,9 @@ namespace ZoneSystem2 {
                 else {
                     num3 = state.Range((int32_t)zoneVegetation.m_min, (int32_t)zoneVegetation.m_max + 1);
                 }
-                bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
+
+                // flag should always be true, all vegetation seem to always have a NetView
+                //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
                 float num4 = cos(0.017453292f * zoneVegetation.m_maxTilt);
                 float num5 = cos(0.017453292f * zoneVegetation.m_minTilt);
                 float num6 = num - zoneVegetation.m_groupRadius;
@@ -881,21 +893,26 @@ namespace ZoneSystem2 {
 
                         Vector3 vector2 = (j == 0) ? vector 
                             : GetRandomPointInRadius(state, vector, zoneVegetation.m_groupRadius);
-                        float y = (float)state.Range(0, 360);
-                        float num10 = state.Range(zoneVegetation.m_scaleMin, zoneVegetation.m_scaleMax);
-                        float x = state.Range(-zoneVegetation.m_randTilt, zoneVegetation.m_randTilt);
-                        float z = state.Range(-zoneVegetation.m_randTilt, zoneVegetation.m_randTilt);
+
+                        // random rotations
+                        float rot_y = (float) state.Range(0, 360);
+                        float scale = state.Range(zoneVegetation.m_scaleMin, zoneVegetation.m_scaleMax);
+                        float rot_x = state.Range(-zoneVegetation.m_randTilt, zoneVegetation.m_randTilt);
+                        float rot_z = state.Range(-zoneVegetation.m_randTilt, zoneVegetation.m_randTilt);
+
                         if (!zoneVegetation.m_blockCheck 
                             || !IsBlocked(vector2)) {
 
                             Vector3 vector3;
                             Heightmap::Biome biome;
                             Heightmap::BiomeArea biomeArea;
-                            Heightmap heightmap;
-                            GetGroundData(vector2, vector3, biome, biomeArea, heightmap);
+                            Heightmap heightmap = GetGroundData(vector2, vector3, biome, biomeArea);
 
-                            if ((zoneVegetation.m_biome & biome) != Heightmap::Biome::None 
-                                && (zoneVegetation.m_biomeArea & biomeArea) != (Heightmap::BiomeArea)0) {
+                            if ((MakeBitMask(zoneVegetation.m_biome) & biome) != Heightmap::Biome::None
+                                && (MakeBitMask(zoneVegetation.m_biomeArea) & biomeArea) != Heightmap::BiomeArea::None) {
+
+                            //if ( (zoneVegetation.m_biome & biome) != Heightmap::Biome::None 
+                            //    && (zoneVegetation.m_biomeArea & biomeArea) != Heightmap::BiomeArea::None) {
 
                                 float y2;
                                 Vector3 vector4;
@@ -936,49 +953,82 @@ namespace ZoneSystem2 {
                                                 //goto IL_501;
                                             }
                                         }
+
+
                                         if (!InsideClearArea(clearAreas, vector2)) {
                                             if (zoneVegetation.m_snapToWater) {
                                                 vector2.y = m_waterLevel;
                                             }
                                             vector2.y += zoneVegetation.m_groundOffset;
                                             Quaternion rotation = Quaternion::IDENTITY;
-                                            if (zoneVegetation.m_chanceToUseGroundTilt > 0 
+
+
+
+                                            /*
+                                            * A large majority of the bottom portion is for
+                                            * setting a custom non-1 scale of the object
+                                            * it could be omitted for now to reduce complexity
+                                            */
+
+                                            // just omit this portion
+                                            // or any scale-specific parts
+
+                                            // Unity Quaternion Euler is not implemented in c#
+                                            // LooKRotation is also internal
+
+                                            if (zoneVegetation.m_chanceToUseGroundTilt > 0
                                                 && state.NextFloat() <= zoneVegetation.m_chanceToUseGroundTilt) {
-                                                Quaternion rotation2 = Quaternion.Euler(0f, y, 0f);
-                                                rotation = Quaternion.LookRotation(Vector3.Cross(vector3, rotation2 * Vector3.forward), vector3);
+                                                //Quaternion rotation2 = Quaternion::Euler(0.f, rot_y, 0.f);
+                                                //rotation = Quaternion.LookRotation(
+                                                //    vector3.Cross(rotation2 * Vector3::FORWARD),
+                                                //    vector3);
                                             }
                                             else {
-                                                rotation = Quaternion.Euler(x, y, z);
+                                                //rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                                             }
-                                            if (flag) {
-                                                if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
+
+
+
+                                            // temp for simplicity
+                                            rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
+
+
+
+                                            // has always been true in my minimal testing
+                                            //if (flag) {
+                                                // Always GHOST mode from ZoneSystem::Update CreateGhostZones call for all connected peers
+
+                                                //if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
                                                     //if (mode == SpawnMode::Ghost) {
                                                     //    ZNetView.StartGhostInit();
                                                     //}
-
+                                            
                                                     GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(zoneVegetation.m_prefab, vector2, rotation);
                                                     ZNetView component = gameObject.GetComponent<ZNetView>();
-                                                    component.GetZDO().SetPGWVersion(m_pgwVersion);
-                                                    if (num10 != gameObject.transform.localScale.x) {
-                                                        component.SetLocalScale(Vector3(num10, num10, num10));
-                                                        //for (auto&& collider : gameObject.GetComponentsInChildren<auto&&>()) {
+                                                    component.GetNetSync()->SetPGWVersion(Version::PGW);
+                                                    if (scale != gameObject.transform.localScale.x) {
+
+                                                        // this does set the Unity gameobject localscale
+                                                        component.SetLocalScale(Vector3(scale, scale, scale));
+
+                                                        // idk what this is doing (might be a unity gimmick)
                                                         for (auto&& collider : gameObject.GetComponentsInChildren<Collider>()) {
                                                             collider.enabled = false;
                                                             collider.enabled = true;
                                                         }
                                                     }
 
-                                                    if (mode == SpawnMode::Ghost) {
+                                                    //if (mode == SpawnMode::Ghost) {
                                                         spawnedObjects.push_back(gameObject);
                                                         //ZNetView.FinishGhostInit(); // redundant
-                                                    }
-                                                }
-                                            }
-                                            else {
-                                                GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(zoneVegetation.m_prefab, vector2, rotation);
-                                                gameObject2.transform.localScale = new Vector3(num10, num10, num10);
-                                                gameObject2.transform.SetParent(parent, true);
-                                            }
+                                                    //}
+                                                //}
+                                            //}
+                                            //else {
+                                            //    GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(zoneVegetation.m_prefab, vector2, rotation);
+                                            //    gameObject2.transform.localScale = new Vector3(num10, num10, num10);
+                                            //    gameObject2.transform.SetParent(parent, true);
+                                            //}
                                             flag2 = true;
                                         }
                                     }
@@ -1001,7 +1051,7 @@ namespace ZoneSystem2 {
     }
 
     // private
-    bool InsideClearArea(std::vector<ClearArea> areas, Vector3 point) {
+    bool InsideClearArea(const std::vector<ClearArea> &areas, const Vector3 &point) {
         for (auto&& clearArea : areas) {
             if (point.x > clearArea.m_center.x - clearArea.m_radius 
                 && point.x < clearArea.m_center.x + clearArea.m_radius 

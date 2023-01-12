@@ -134,7 +134,7 @@ add_executable(${PROJECT_NAME}
     "src/Game.cpp"
  
      "src/WorldManager.cpp" 
-     #"src/ZoneSystem2.cpp" 
+     "src/ZoneSystem2.cpp" 
      #"src/HeightmapBuilder.cpp" 
      #"src/Heightmap.cpp" 
      #"src/HeightmapManager.cpp"

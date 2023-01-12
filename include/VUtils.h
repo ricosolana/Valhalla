@@ -178,7 +178,14 @@ public:
     //BitMask(const BitMask& other) : value(other.value) {} // copy
 
 
-    
+
+    BitMask<Enum> operator&(const BitMask<Enum>& other) const {
+        return BitMask<Enum>(static_cast<Enum>(this->value & other.value));
+    }
+
+    BitMask<Enum> operator&(const Enum& other) const {
+        return *this & Mask(other);
+    }    
 
 
 
@@ -216,6 +223,10 @@ public:
         return static_cast<Type>(this->value);
     }
 
+    //operator bool() const {
+    //    return static_cast<std::underlying_type_t>(this->value) != 0;
+    //}
+
 
 
     bool operator()(const Mask& other) const {
@@ -246,6 +257,11 @@ public:
 
     //operator |=
 };
+
+template<typename Enum> requires std::is_enum_v<Enum>
+BitMask<Enum> MakeBitMask(Enum e) {
+    return BitMask<Enum>(e);
+}
 
 
 

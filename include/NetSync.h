@@ -44,61 +44,65 @@ public:
 
 private:
 	// https://stackoverflow.com/a/1122109
-	enum class MemberShift : uint8_t {
-		FLOAT = 0, // shift by 0 bits
+	enum class Ordinal : uint8_t {
+		FLOAT = 1, // position 1 (subtract 1 to get the shift; 1 - 1 = 0 shifts)
 		VECTOR3,
 		QUATERNION,
 		INT,
 		STRING,
 		LONG,
-		ARRAY, // shift by 6 bits
+		ARRAY, // shift by 7 - 1 = 6 bits
 	};
 
 	template<TrivialSyncType T>
-	constexpr MemberShift GetShift() {
+	constexpr Ordinal GetOrdinal() {
 		if constexpr (std::same_as<T, float>) {
-			return MemberShift::FLOAT;
+			return Ordinal::FLOAT;
 		}
 		else if constexpr (std::same_as<T, Vector3>) {
-			return MemberShift::VECTOR3;
+			return Ordinal::VECTOR3;
 		}
 		else if constexpr (std::same_as<T, Quaternion>) {
-			return MemberShift::QUATERNION;
+			return Ordinal::QUATERNION;
 		}
 		else if constexpr (std::same_as<T, int32_t>) {
-			return MemberShift::INT;
+			return Ordinal::INT;
 		}
 		else if constexpr (std::same_as<T, int64_t>) {
-			return MemberShift::LONG;
+			return Ordinal::LONG;
 		}
 		else if constexpr (std::same_as<T, std::string>) {
-			return MemberShift::STRING;
+			return Ordinal::STRING;
 		}
 		else { //if constexpr (std::same_as<T, BYTES_t>) {
-			return MemberShift::ARRAY;
+			return Ordinal::ARRAY;
 		}
+	}
+
+	template<TrivialSyncType T>
+	constexpr Ordinal GetOrdinalShift() {
+		return static_cast<std::underlying_type_t>(GetOrdinal<T>()) - 1;
 	}
 
 	template<TrivialSyncType T>
 	constexpr HASH_t ToShiftHash(HASH_t hash) {
-		auto shift = GetShift<T>();
-		auto tshift = static_cast<HASH_t>(shift);
+		auto shift = GetOrdinalShift<T>();
 
 		return (hash
-			+ (tshift * tshift)
-			^ tshift)
-			^ (tshift << tshift);
+			+ (shift * shift)
+			^ shift)
+			^ (shift << shift);
 	}
 
 	template<TrivialSyncType T>
 	constexpr HASH_t FromShiftHash(HASH_t hash) {
-		auto shift = GetShift<T>();
-		auto tshift = static_cast<HASH_t>(shift);
+		auto shift = GetOrdinalShift<T>();
+
 		return
 			((hash
-				^ (tshift << tshift))
-				^ tshift)
-			- (tshift * tshift);
+				^ (shift << shift))
+				^ shift)
+			- (shift * shift);
 	}
 
 	// Get the object by hash
@@ -107,12 +111,15 @@ private:
 	// Throws on type mismatch
 	template<TrivialSyncType T>
 	const T* _Get(HASH_t key) {
-		key = ToShiftHash<T>(key);
-		auto&& find = m_members.find(key);
-		if (find != m_members.end()) {
-			if (find->second.first != GetShift<T>())
-				throw std::invalid_argument("type mismatch");
-			return (T*)find->second.second;
+		auto ordinal = GetOrdinal<T>();
+		if (m_ordinalMask(ordinal)) {
+			key = ToShiftHash<T>(key);
+			auto&& find = m_members.find(key);
+			if (find != m_members.end()) {
+				if (find->second.first != ordinal)
+					throw std::invalid_argument("type mismatch");
+				return (T*)find->second.second;
+			}
 		}
 		return nullptr;
 	}
@@ -123,15 +130,15 @@ private:
 	// Throws on type mismatch
 	template<TrivialSyncType T>
 	void _Set(HASH_t key, const T& value) {
-		auto prefix = GetShift<T>();
+		//auto prefix = GetShift<T>();
+		auto ordinal = GetOrdinal<T>();
 		key = ToShiftHash<T>(key);
-		auto&& find = m_members.find(key);
-		if (find != m_members.end()) {
-			// test check if the var is the correct type
-			//		if not, a bad collision might of occurred while hashing
-			//		the algorithm might have to be adjusted in this case
+		if (m_ordinalMask(ordinal)) {
+			auto&& find = m_members.find(key);
+			assert(find != m_members.end());
+
 			if (prefix != find->second.first)
-				throw std::invalid_argument("type mismatch");
+				throw std::invalid_argument("type mismatch; possible hash collision?");
 
 			// reassign if changed
 			auto&& v = (T*)find->second.second;
@@ -140,37 +147,38 @@ private:
 			*v = value;
 		}
 		else {
-			m_members.insert({ key, std::make_pair(prefix, new T(value)) });
+			m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
 		}
 
-		m_dataMask |= (0b1 << static_cast<uint8_t>(GetShift<T>()));
+		m_dataMask |= (0b1 << GetOrdinalShift<T>());
 	}
 
-	void _Set(HASH_t key, const void* value, MemberShift prefix) {
+	void _Set(HASH_t key, const void* value, Ordinal prefix) {
 		switch (prefix) {
-			case MemberShift::FLOAT:		_Set(key, *(float*)			value); break;
-			case MemberShift::VECTOR3:		_Set(key, *(Vector3*)		value); break;
-			case MemberShift::QUATERNION:	_Set(key, *(Quaternion*)	value); break;
-			case MemberShift::INT:			_Set(key, *(int32_t*)		value); break;
-			case MemberShift::LONG:			_Set(key, *(int64_t*)		value); break;
-			case MemberShift::STRING:		_Set(key, *(std::string*)	value); break;
-			case MemberShift::ARRAY:		_Set(key, *(BYTES_t*)		value); break;
+			case Ordinal::FLOAT:		_Set(key, *(float*)			value); break;
+			case Ordinal::VECTOR3:		_Set(key, *(Vector3*)		value); break;
+			case Ordinal::QUATERNION:	_Set(key, *(Quaternion*)	value); break;
+			case Ordinal::INT:			_Set(key, *(int32_t*)		value); break;
+			case Ordinal::LONG:			_Set(key, *(int64_t*)		value); break;
+			case Ordinal::STRING:		_Set(key, *(std::string*)	value); break;
+			case Ordinal::ARRAY:		_Set(key, *(BYTES_t*)		value); break;
 			default:
 				throw std::invalid_argument("invalid type");
 		}
 	}
 
 private:
-	robin_hood::unordered_map<HASH_t, std::pair<MemberShift, void*>> m_members;
+	robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
 
 	bool m_persistent = false;	// set by ZNetView
 	bool m_distant = false;		// set by ZNetView
 	//int64_t m_timeCreated = 0;	// TerrainModifier (10000 ticks / ms) (union)?
-	int32_t m_pgwVersion = 0;	// 53 is the latest
+	
 	ObjectType m_type = ObjectType::Default; // set by ZNetView
 	HASH_t m_prefab = 0;
 	Quaternion m_rotation = Quaternion::IDENTITY;
-	uint8_t m_dataMask = 0;
+	//uint8_t m_dataMask = 0; // internal member used for zdo name map types
+	BitMask<Ordinal> m_ordinalMask;
 
 	Vector2i m_sector;
 	Vector3 m_position;			// position of the 
@@ -188,6 +196,7 @@ private:
 
 public:
 	Rev m_rev;
+	int32_t m_pgwVersion = 0;	// 53 is the latest
 
 public:
 	// Create ZDO with me (im owner)
@@ -295,9 +304,9 @@ public:
 		return m_distant;
 	}
 
-	[[nodiscard]] int32_t Version() const {
-		return m_pgwVersion;
-	}
+	//[[nodiscard]] int32_t Version() const {
+	//	return m_pgwVersion;
+	//}
 
 	[[nodiscard]] ObjectType Type() const {
 		return m_type;

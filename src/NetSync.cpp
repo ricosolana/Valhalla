@@ -214,6 +214,9 @@ NetSync::~NetSync() {
 // Trivial
 
 float NetSync::GetFloat(HASH_t key, float value) {
+	// potential optimization:
+	// if datamask does not contains the type, return default immediately so slower map is not checked
+	
 	return Get<float>(key, value);
 }
 

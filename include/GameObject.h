@@ -4,7 +4,12 @@
 #include "VUtils.h"
 #include "Vector.h"
 
+struct Transform {};
+
 class GameObject {
+public:
+	std::string name;
+	Transform transform;
 
 private:
 	Vector3 m_pos;

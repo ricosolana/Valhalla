@@ -139,6 +139,8 @@ struct Vector3 {
 
 	Vector3 operator*(float other) const;
 
+	//Vector3 operator*(const Quaternion &quat, const Vector3 &other) const;
+
 	Vector3& operator+=(const Vector3& other);
 	Vector3& operator-=(const Vector3& other);
 	Vector3& operator*=(const Vector3& other);
@@ -178,4 +180,5 @@ struct Vector3 {
 	static const Vector3 ZERO;
 	static const Vector3 UP;
 	static const Vector3 DOWN;
+	static const Vector3 FORWARD;
 };

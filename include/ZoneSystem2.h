@@ -40,7 +40,7 @@ namespace ZoneSystem2 {
 	bool GetSolidHeight(const Vector3& p, float& height, const Vector3& normal, GameObject go);
 	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
 	bool FindFloor(const Vector3& p, float& height);
-	void GetGroundData(Vector3 &p, Vector3 &normal, Heightmap::Biome &biome, Heightmap::BiomeArea &biomeArea, Heightmap &hmap);
+	Heightmap* GetGroundData(Vector3 &p, Vector3 &normal, Heightmap::Biome &biome, Heightmap::BiomeArea &biomeArea);
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
 	
 
