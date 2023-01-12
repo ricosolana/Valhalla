@@ -116,9 +116,10 @@ private:
 			key = ToShiftHash<T>(key);
 			auto&& find = m_members.find(key);
 			if (find != m_members.end()) {
-				if (find->second.first != ordinal)
-					throw std::invalid_argument("type mismatch");
-				return (T*)find->second.second;
+				// good programming and proper use will prevent this bad case
+				assert(find->second.first == ordinal);
+
+				return (T*) find->second.second;
 			}
 		}
 		return nullptr;
@@ -135,16 +136,21 @@ private:
 		key = ToShiftHash<T>(key);
 		if (m_ordinalMask(ordinal)) {
 			auto&& find = m_members.find(key);
-			assert(find != m_members.end());
+			if (find != m_members.end()) {
+				// good programming and proper use will prevent this bad case
+				assert(find->second.first == ordinal);
 
-			if (prefix != find->second.first)
-				throw std::invalid_argument("type mismatch; possible hash collision?");
-
-			// reassign if changed
-			auto&& v = (T*)find->second.second;
-			if (*v == value)
-				return;
-			*v = value;
+				// reassign if changed
+				auto&& v = (T*) find->second.second;
+				if (*v == value)
+					return;
+				*v = value;
+			}
+			else {
+				// TODO restructure this ugly double code part
+				// could use goto, but ehh..
+				m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
+			}
 		}
 		else {
 			m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
@@ -153,8 +159,8 @@ private:
 		m_dataMask |= (0b1 << GetOrdinalShift<T>());
 	}
 
-	void _Set(HASH_t key, const void* value, Ordinal prefix) {
-		switch (prefix) {
+	void _Set(HASH_t key, const void* value, Ordinal ordinal) {
+		switch (ordinal) {
 			case Ordinal::FLOAT:		_Set(key, *(float*)			value); break;
 			case Ordinal::VECTOR3:		_Set(key, *(Vector3*)		value); break;
 			case Ordinal::QUATERNION:	_Set(key, *(Quaternion*)	value); break;
@@ -163,7 +169,8 @@ private:
 			case Ordinal::STRING:		_Set(key, *(std::string*)	value); break;
 			case Ordinal::ARRAY:		_Set(key, *(BYTES_t*)		value); break;
 			default:
-				throw std::invalid_argument("invalid type");
+				// good programming and proper use will prevent this case
+				assert(false);
 		}
 	}
 
