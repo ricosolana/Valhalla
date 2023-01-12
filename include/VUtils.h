@@ -176,11 +176,29 @@ public:
     //BitMask(const BitMask& other) : value(other.value) {} // copy
 
 
+
+    // assignment operator overload
+    void operator=(const Mask& other) {
+        this->value = other.value;
+    }
+
+    void operator=(const Type& other) {
+        this->value = static_cast<Enum>(other);
+    }
+
+
     
+    BitMask<Enum> operator&(const Mask& other) const {
+        return BitMask<Enum>(static_cast<Enum>(this->value & other.value));
+    }
+
+    BitMask<Enum> operator&(const Enum& other) const {
+        return *this & Mask(other);
+    }
 
 
 
-    BitMask<Enum> operator|(const BitMask<Enum>& other) const {
+    BitMask<Enum> operator|(const Mask& other) const {
         return BitMask<Enum>(static_cast<Enum>(this->value | other.value));
     }
 
@@ -190,7 +208,7 @@ public:
 
     
 
-    BitMask<Enum>& operator|=(const BitMask<Enum>& other) {
+    BitMask<Enum>& operator|=(const Mask& other) {
         this->value |= other.value;
         return *this;
     }
@@ -224,7 +242,7 @@ public:
         return (*this)(Mask(other));
     }
 
-    bool operator==(const BitMask& other) const {
+    bool operator==(const Mask& other) const {
         return *this == other.value;
     }
 

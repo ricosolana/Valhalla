@@ -27,7 +27,7 @@ concept TrivialSyncType =
 // Currently 160 bytes
 class ZDO {
 public:
-    enum class ObjectType : int8_t {
+    enum class ObjectType : BYTE_t {
         Default,
         Prioritized,
         Solid,
@@ -44,61 +44,65 @@ public:
 
 private:
     // https://stackoverflow.com/a/1122109
-    enum class MemberShift : uint8_t {
-        FLOAT = 0, // shift by 0 bits
-        VECTOR3,
-        QUATERNION,
-        INT,
-        STRING,
-        LONG,
-        ARRAY, // shift by 6 bits
+    enum class Ordinal : uint8_t {
+        FLOAT = 1,  // 1 << (1 - 1) = 1
+        VECTOR3,    // 1 << (2 - 1) = 2
+        QUATERNION, // 1 << (3 - 1) = 4
+        INT,        // 1 << (4 - 1) = 8
+        STRING,     // 1 << (5 - 1) = 16
+        LONG = 7,   // 1 << (7 - 1) = 64
+        ARRAY,      // 1 << (8 - 1) = 128
     };
 
     template<TrivialSyncType T>
-    constexpr MemberShift GetShift() {
+    constexpr Ordinal GetOrdinal() {
         if constexpr (std::same_as<T, float>) {
-            return MemberShift::FLOAT;
+            return Ordinal::FLOAT;
         }
         else if constexpr (std::same_as<T, Vector3>) {
-            return MemberShift::VECTOR3;
+            return Ordinal::VECTOR3;
         }
         else if constexpr (std::same_as<T, Quaternion>) {
-            return MemberShift::QUATERNION;
+            return Ordinal::QUATERNION;
         }
         else if constexpr (std::same_as<T, int32_t>) {
-            return MemberShift::INT;
+            return Ordinal::INT;
         }
         else if constexpr (std::same_as<T, int64_t>) {
-            return MemberShift::LONG;
+            return Ordinal::LONG;
         }
         else if constexpr (std::same_as<T, std::string>) {
-            return MemberShift::STRING;
+            return Ordinal::STRING;
         }
         else { //if constexpr (std::same_as<T, BYTES_t>) {
-            return MemberShift::ARRAY;
+            return Ordinal::ARRAY;
         }
+    }
+
+    template<TrivialSyncType T>
+    constexpr Ordinal GetOrdinalShift() {
+        return static_cast<std::underlying_type_t>(GetOrdinal<T>()) - 1;
     }
 
     template<TrivialSyncType T>
     constexpr HASH_t ToShiftHash(HASH_t hash) {
-        auto shift = GetShift<T>();
-        auto tshift = static_cast<HASH_t>(shift);
+        auto shift = GetOrdinalShift<T>();
 
         return (hash
-            + (tshift * tshift)
-            ^ tshift)
-            ^ (tshift << tshift);
+            + (shift * shift)
+            ^ shift)
+            ^ (shift << shift);
     }
 
     template<TrivialSyncType T>
     constexpr HASH_t FromShiftHash(HASH_t hash) {
-        auto shift = GetShift<T>();
-        auto tshift = static_cast<HASH_t>(shift);
+        auto shift = GetOrdinalShift<T>();
+
         return
             ((hash
-                ^ (tshift << tshift))
-                ^ tshift)
-            - (tshift * tshift);
+                ^ (shift << shift))
+                ^ shift)
+            - (shift * shift);
     }
 
     // Get the object by hash
@@ -107,12 +111,16 @@ private:
     // Throws on type mismatch
     template<TrivialSyncType T>
     const T* _Get(HASH_t key) {
-        key = ToShiftHash<T>(key);
-        auto&& find = m_members.find(key);
-        if (find != m_members.end()) {
-            if (find->second.first != GetShift<T>())
-                throw std::invalid_argument("type mismatch");
-            return (T*)find->second.second;
+        auto ordinal = GetOrdinal<T>();
+        if (m_ordinalMask(ordinal)) {
+            key = ToShiftHash<T>(key);
+            auto&& find = m_members.find(key);
+            if (find != m_members.end()) {
+                // good programming and proper use will prevent this bad case
+                assert(find->second.first == ordinal);
+
+                return (T*)find->second.second;
+            }
         }
         return nullptr;
     }
@@ -123,54 +131,60 @@ private:
     // Throws on type mismatch
     template<TrivialSyncType T>
     void _Set(HASH_t key, const T& value) {
-        auto prefix = GetShift<T>();
+        //auto prefix = GetShift<T>();
+        auto ordinal = GetOrdinal<T>();
         key = ToShiftHash<T>(key);
-        auto&& find = m_members.find(key);
-        if (find != m_members.end()) {
-            // test check if the var is the correct type
-            //        if not, a bad collision might of occurred while hashing
-            //        the algorithm might have to be adjusted in this case
-            if (prefix != find->second.first)
-                throw std::invalid_argument("type mismatch");
+        if (m_ordinalMask(ordinal)) {
+            auto&& find = m_members.find(key);
+            if (find != m_members.end()) {
+                // good programming and proper use will prevent this bad case
+                assert(find->second.first == ordinal);
 
-            // reassign if changed
-            auto&& v = (T*)find->second.second;
-            if (*v == value)
-                return;
-            *v = value;
+                // reassign if changed
+                auto&& v = (T*)find->second.second;
+                if (*v == value)
+                    return;
+                *v = value;
+            }
+            else {
+                // TODO restructure this ugly double code part
+                // could use goto, but ehh..
+                m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
+            }
         }
         else {
-            m_members.insert({ key, std::make_pair(prefix, new T(value)) });
+            m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
         }
 
-        m_dataMask |= (0b1 << static_cast<uint8_t>(GetShift<T>()));
+        m_dataMask |= (0b1 << GetOrdinalShift<T>());
     }
 
-    void _Set(HASH_t key, const void* value, MemberShift prefix) {
-        switch (prefix) {
-        case MemberShift::FLOAT:        _Set(key, *(float*)value); break;
-        case MemberShift::VECTOR3:        _Set(key, *(Vector3*)value); break;
-        case MemberShift::QUATERNION:    _Set(key, *(Quaternion*)value); break;
-        case MemberShift::INT:            _Set(key, *(int32_t*)value); break;
-        case MemberShift::LONG:            _Set(key, *(int64_t*)value); break;
-        case MemberShift::STRING:        _Set(key, *(std::string*)value); break;
-        case MemberShift::ARRAY:        _Set(key, *(BYTES_t*)value); break;
+    void _Set(HASH_t key, const void* value, Ordinal ordinal) {
+        switch (ordinal) {
+        case Ordinal::FLOAT:		_Set(key, *(float*)         value); break;
+        case Ordinal::VECTOR3:		_Set(key, *(Vector3*)       value); break;
+        case Ordinal::QUATERNION:	_Set(key, *(Quaternion*)    value); break;
+        case Ordinal::INT:			_Set(key, *(int32_t*)       value); break;
+        case Ordinal::LONG:			_Set(key, *(int64_t*)       value); break;
+        case Ordinal::STRING:		_Set(key, *(std::string*)   value); break;
+        case Ordinal::ARRAY:		_Set(key, *(BYTES_t*)       value); break;
         default:
-            throw std::invalid_argument("invalid type");
+            // good programming and proper use will prevent this case
+            assert(false);
         }
     }
 
 private:    
-    robin_hood::unordered_map<HASH_t, std::pair<MemberShift, void*>> m_members;
+    robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
 
     bool m_persistent = false;    // set by ZNetView
     bool m_distant = false;        // set by ZNetView
     //int64_t m_timeCreated = 0;    // TerrainModifier (10000 ticks / ms) (union)?
-    int32_t m_pgwVersion = 0;    // 53 is the latest
+    
     ObjectType m_type = ObjectType::Default; // set by ZNetView
     HASH_t m_prefab = 0;
     Quaternion m_rotation = Quaternion::IDENTITY;
-    uint8_t m_dataMask = 0;
+    BitMask<Ordinal> m_ordinalMask;
 
     Vector2i m_sector;
     Vector3 m_position;            // position of the 
@@ -187,38 +201,64 @@ private:
     void FreeMembers();
 
     template<typename T>
-    void _TrySaveType(NetPackage& pkg) {
-        if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) {
+    bool _TryWriteType(NetPackage& pkg) {
+        //if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) {
+        if (m_ordinalMask(GetOrdinal<T>())) {
+            // Save structure per each type:
+            //  char: count
+            //      string: key
+            //      F V Q I L S A: value
+            //  char: null '\0' byte
+
             auto size_mark = pkg.m_stream.Position();
-            uint8_t size = 0;
-            pkg.Write(size); // seek forward 1 byte
+            BYTE_t count = 0;
+            pkg.Write(count); // seek forward 1 dummy byte (faster than iterating entire map beforehand)
             for (auto&& pair : m_members) {
-                if (pair.second.first != GetShift<T>())
+                // find the matching types
+                if (pair.second.first != GetOrdinal<T>())
                     continue;
-                size++;
                 pkg.Write(FromShiftHash<T>(pair.first));
-                pkg.Write(*(T*)pair.second.second);
+                pkg.Write(*(T*) pair.second.second);
+                count++;
             }
             auto end_mark = pkg.m_stream.Position();
             pkg.m_stream.SetPos(size_mark);
-            pkg.Write(size);
+            pkg.Write(count);
             pkg.m_stream.SetPos(end_mark);
+
+            return true;
         }
-        else pkg.Write((uint8_t)0);
+        return false;
+    }
+
+    template<typename T>
+    bool _TryReadType(NetPackage& pkg) {
+        auto count = pkg.Read<BYTE_t>();
+        if (count) {
+            while (count--) {
+                _Set(pkg.Read<HASH_t>(), pkg.Read<T>());
+            }
+            // TODO return condition might be redundant
+            return true;
+        }
+        return false;
     }
 
 public:
     Rev m_rev;
+    int32_t m_pgwVersion = 0;    // 53 is the latest
 
 public:
     // Create ZDO with me (im owner)
     ZDO();
 
     // Loading ZDO from disk package
-    ZDO(NetPackage reader, int version);
+    //ZDO(NetPackage reader, int version);
 
     // Save ZDO to the disk package
     void Save(NetPackage& writer);
+
+    void Load(NetPackage& reader, int32_t version);
 
 
     ZDO(const ZDO& other); // copy constructor
@@ -322,9 +362,9 @@ public:
         return m_distant;
     }
 
-    int32_t Version() const {
-        return m_pgwVersion;
-    }
+    //int32_t Version() const {
+    //    return m_pgwVersion;
+    //}
 
     ObjectType Type() const {
         return m_type;
