@@ -6,52 +6,95 @@
 namespace Tests {
 
     void Test_NetSync() {
-        ZDO zdo;
+
+        // Valheim-sourced Load tests
+        {
+            auto opt = VUtils::Resource::ReadFileBytes("zdo.sav");
+            assert(opt);
+
+            ZDO zdo;
+            NetPackage pkg(opt.value());
+            zdo.Load(pkg, VConstants::WORLD);
+
+            assert(zdo.GetFloat("health") == 3.1415926535f);
+            assert(zdo.GetInt("weight") == 435);
+            assert(zdo.GetInt("slot") == 3);
+            assert(zdo.GetString("name") == "byeorgssen");
+            assert(zdo.GetString("faction") == "player");
+            assert(zdo.GetInt("uid") == 189341389);
+        }
 
         // Set/Get tests
-        zdo.Set("health", (float) 16.894);
-        zdo.Set("weight", (int) 435);
-        zdo.Set("slot", (int) 3);
-        zdo.Set("name", "byeorgssen");
-        zdo.Set("faction", "player");
-        zdo.Set("uid", (HASH_t) 189347813489);
+        {
+            ZDO zdo;
 
-        assert(zdo.GetFloat(        "health"    ) == (float) 16.894);
-        assert(zdo.GetInt(          "weight"    ) == (int) 435);
-        assert(zdo.GetInt(          "slot"      ) == (int) 3);
-        assert(zdo.GetString(       "name"     ) == "byeorgssen");
-        assert(zdo.GetString(       "faction"  ) == "player");
-        assert(zdo.GetInt(          "uid"      ) == (HASH_t) 189347813489);
+            zdo.Set("health", 3.1415926535f);
+            zdo.Set("weight", 435);
+            zdo.Set("slot", 3);
+            zdo.Set("name", "byeorgssen");
+            zdo.Set("faction", "player");
+            zdo.Set("uid", 189341389);
 
-        auto h = zdo.GetFloat("health");
+            assert(zdo.GetFloat("health") == 3.1415926535f);
+            assert(zdo.GetInt("weight") == 435);
+            assert(zdo.GetInt("slot") == 3);
+            assert(zdo.GetString("name") == "byeorgssen");
+            assert(zdo.GetString("faction") == "player");
+            assert(zdo.GetInt("uid") == 189341389);
+        }
 
+        // Save/Load tests
+        {
+            ZDO zdo;
 
-        // Save/Load tests (virtualized disk package)
-        NetPackage pkg; zdo.Save(pkg); pkg.m_stream.SetPos(0);
+            zdo.Set("health", 3.1415926535f);
+            zdo.Set("weight", 435);
+            zdo.Set("slot", 3);
+            zdo.Set("name", "byeorgssen");
+            zdo.Set("faction", "player");
+            zdo.Set("uid", 189341389);
 
-        ZDO loadedZDO;
-        loadedZDO.Load(pkg, VConstants::WORLD);
+            
+            NetPackage pkg; 
+            zdo.Save(pkg); 
+            pkg.m_stream.SetPos(0);
 
-        assert(loadedZDO.GetFloat(  "health") == (float)16.894);
-        assert(loadedZDO.GetInt(    "weight") == (int)435);
-        assert(loadedZDO.GetInt(    "slot") == (int)3);
-        assert(loadedZDO.GetString( "name") == "byeorgssen");
-        assert(loadedZDO.GetString( "faction") == "player");
-        assert(loadedZDO.GetInt(    "uid") == (HASH_t)189347813489);
+            ZDO zdo2;
+            zdo2.Load(pkg, VConstants::WORLD);
 
+            assert(zdo2.GetFloat("health") == 3.1415926535f);
+            assert(zdo2.GetInt("weight") == 435);
+            assert(zdo2.GetInt("slot") == 3);
+            assert(zdo2.GetString("name") == "byeorgssen");
+            assert(zdo2.GetString("faction") == "player");
+            assert(zdo2.GetInt("uid") == 189341389);
+        }
 
+        // Serialize/Deserialize tests
+        {
+            ZDO zdo;
 
-        pkg.m_stream.Clear(); zdo.Serialize(pkg); pkg.m_stream.SetPos(0);
+            zdo.Set("health", 3.1415926535f);
+            zdo.Set("weight", 435);
+            zdo.Set("slot", 3);
+            zdo.Set("name", "byeorgssen");
+            zdo.Set("faction", "player");
+            zdo.Set("uid", 189341389);
 
-        ZDO deserializedZDO;
-        deserializedZDO.Deserialize(pkg);
+            NetPackage pkg;
+            zdo.Serialize(pkg);
+            pkg.m_stream.SetPos(0);
 
-        assert(deserializedZDO.GetFloat("health") == (float)16.894);
-        assert(deserializedZDO.GetInt("weight") == (int)435);
-        assert(deserializedZDO.GetInt("slot") == (int)3);
-        assert(deserializedZDO.GetString("name") == "byeorgssen");
-        assert(deserializedZDO.GetString("faction") == "player");
-        assert(deserializedZDO.GetInt("uid") == (HASH_t)189347813489);
+            ZDO zdo2;
+            zdo2.Deserialize(pkg);
+
+            assert(zdo2.GetFloat("health") == 3.1415926535f);
+            assert(zdo2.GetInt("weight") == 435);
+            assert(zdo2.GetInt("slot") == 3);
+            assert(zdo2.GetString("name") == "byeorgssen");
+            assert(zdo2.GetString("faction") == "player");
+            assert(zdo2.GetInt("uid") == 189341389);
+        }
     }
 
     void Test_ResourceReadWrite() {

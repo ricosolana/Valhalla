@@ -57,12 +57,12 @@ void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_rev.m_time);      static_assert(sizeof(Rev::m_time) == 8);
     pkg.Write(this->m_pgwVersion);      static_assert(sizeof(m_pgwVersion) == 4);
     pkg.Write(this->m_type);            static_assert(sizeof(m_type) == 1);
-    pkg.Write(this->m_distant);         
+    pkg.Write(this->m_distant);
     pkg.Write(this->m_prefab);
     pkg.Write(this->m_sector);
     pkg.Write(this->m_position);
     pkg.Write(this->m_rotation);
-
+    
     // Save uses 2 bytes for counts (char in c# is 2 bytes..)
     _TryWriteType<float, int16_t>(pkg);
     _TryWriteType<Vector3, int16_t>(pkg);
