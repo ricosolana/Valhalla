@@ -82,6 +82,7 @@ void Stream::Write(const BYTE_t* buffer, uint32_t count) {
     m_buf.insert(m_buf.end(), buffer, buffer + count);
     */
 
+    // BUG HERE I doubt it
     m_pos += count;
 }
 

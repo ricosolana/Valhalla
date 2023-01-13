@@ -61,12 +61,12 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if FALSE
+#if TRUE
     fs::current_path("./data/tests/");
-    //Tests::Test_NetSync();
+    Tests::Test_NetSync();
     //Tests::Test_ResourceReadWrite();
     //Tests::Test_Random();
-    Tests::Test_Perlin();
+    //Tests::Test_Perlin();
 
     return 0;
 #endif

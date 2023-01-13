@@ -15,23 +15,28 @@ namespace Tests {
         zdo.Set("faction", "player");
         zdo.Set("uid", (HASH_t) 189347813489);
 
+        assert(zdo.GetFloat(        "health"    ) == (float) 16.894);
+        assert(zdo.GetInt(          "weight"    ) == (int) 435);
+        assert(zdo.GetInt(          "slot"      ) == (int) 3);
+        assert(zdo.GetString(       "name"     ) == "byeorgssen");
+        assert(zdo.GetString(       "faction"  ) == "player");
+        assert(zdo.GetInt(          "uid"      ) == (HASH_t) 189347813489);
+
+        auto h = zdo.GetFloat("health");
+
+
+
         NetPackage savePkg; zdo.Save(savePkg); savePkg.m_stream.SetPos(0);
 
-        ZDO loadedZDO(savePkg, VConstants::PGW);
+        ZDO loadedZDO;
+        loadedZDO.Load(savePkg, VConstants::WORLD);
 
-        assert(zdo.GetFloat(        "health"    ) == (float) 16.894);
-        assert(zdo.GetInt(            "weight"    ) == (int) 435);
-        assert(zdo.GetInt(            "slot"        ) == (int) 3);
-        assert(zdo.GetString(        "name"        ) == "byeorgssen");
-        assert(zdo.GetString(        "faction"    ) == "player");
-        assert(zdo.GetInt(            "uid"        ) == (HASH_t) 189347813489);
-
-        assert(loadedZDO.GetFloat(    "health"    ) == (float) 16.894);
-        assert(loadedZDO.GetInt(    "weight"    ) == (int) 435);
-        assert(loadedZDO.GetInt(    "slot"        ) == (int) 3);
-        assert(loadedZDO.GetString(    "name"        ) == "byeorgssen");
-        assert(loadedZDO.GetString(    "faction"    ) == "player");
-        assert(loadedZDO.GetInt(    "uid"        ) == (HASH_t) 189347813489);
+        assert(loadedZDO.GetFloat(  "health") == (float)16.894);
+        assert(loadedZDO.GetInt(    "weight") == (int)435);
+        assert(loadedZDO.GetInt(    "slot") == (int)3);
+        assert(loadedZDO.GetString( "name") == "byeorgssen");
+        assert(loadedZDO.GetString( "faction") == "player");
+        assert(loadedZDO.GetInt(    "uid") == (HASH_t)189347813489);
     }
 
     void Test_ResourceReadWrite() {

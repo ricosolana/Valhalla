@@ -154,15 +154,11 @@ struct is_container_of : std::integral_constant<bool, is_container<T>::value && 
 
 
 
-
+#if FALSE
 template<typename Enum> requires std::is_enum_v<Enum>
-class BitMask {
-    //static_assert(std::is_integral_v<std::underlying_type_t<T>>, "Must be an integral enum");
-    //static_assert(std::is_enum<T>::value, "Must be an enum");
-    
+class BitMask {    
     using Type = std::underlying_type_t<Enum>;
     using Mask = BitMask<Enum>;
-
 
     // https://en.cppreference.com/w/cpp/utility/to_underlying
     Type value;
@@ -183,40 +179,53 @@ public:
     }
 
     void operator=(const Type& other) {
-        this->value = static_cast<Enum>(other);
+        this->value = static_cast<Type>(other);
     }
 
 
     
-    BitMask<Enum> operator&(const Mask& other) const {
+    Mask operator&(const Mask& other) const {
         return BitMask<Enum>(static_cast<Enum>(this->value & other.value));
     }
 
-    BitMask<Enum> operator&(const Enum& other) const {
+    Mask operator&(const Enum& other) const {
         return *this & Mask(other);
     }
 
 
 
-    BitMask<Enum> operator|(const Mask& other) const {
+    Mask operator|(const Mask& other) const {
         return BitMask<Enum>(static_cast<Enum>(this->value | other.value));
     }
 
-    BitMask<Enum> operator|(const Enum& other) const {
+    Mask operator|(const Enum& other) const {
         return *this | Mask(other);
     }
 
     
 
-    BitMask<Enum>& operator|=(const Mask& other) {
+    Mask& operator|=(const Mask& other) {
         this->value |= other.value;
         return *this;
     }
 
-    BitMask<Enum>& operator|=(const Enum& other) {
+    Mask& operator|=(const Enum& other) {
         *this |= Mask(other);
         return *this;
     }
+
+    Mask& operator|=(const Type& other) {
+        *this |= Mask(other);
+        return *this;
+    }
+
+
+
+    Mask operator<<(const Mask& other) {
+        //return *this |= M
+    }
+
+
 
 
 
@@ -262,6 +271,7 @@ public:
 
     //operator |=
 };
+#endif
 
 
 

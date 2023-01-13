@@ -44,49 +44,61 @@ public:
 
 private:
     // https://stackoverflow.com/a/1122109
-    enum class Ordinal : uint8_t {
-        FLOAT = 1,  // 1 << (1 - 1) = 1
-        VECTOR3,    // 1 << (2 - 1) = 2
-        QUATERNION, // 1 << (3 - 1) = 4
-        INT,        // 1 << (4 - 1) = 8
-        STRING,     // 1 << (5 - 1) = 16
-        LONG = 7,   // 1 << (7 - 1) = 64
-        ARRAY,      // 1 << (8 - 1) = 128
-    };
+    //enum class Ordinal : uint8_t {
+    //    FLOAT = 1,  // 1 << (1 - 1) = 1
+    //    VECTOR3,    // 1 << (2 - 1) = 2
+    //    QUATERNION, // 1 << (3 - 1) = 4
+    //    INT,        // 1 << (4 - 1) = 8
+    //    STRING,     // 1 << (5 - 1) = 16
+    //    LONG = 7,   // 1 << (7 - 1) = 64
+    //    ARRAY,      // 1 << (8 - 1) = 128
+    //};
+
+    using Ordinal = uint8_t;
+
+    static constexpr Ordinal ORD_FLOAT = 0;
+    static constexpr Ordinal ORD_VECTOR3 = 1;
+    static constexpr Ordinal ORD_QUATERNION = 2;
+    static constexpr Ordinal ORD_INT = 3;
+    static constexpr Ordinal ORD_STRING = 4;
+    static constexpr Ordinal ORD_LONG = 6;    
+    static constexpr Ordinal ORD_ARRAY = 7;
 
     template<TrivialSyncType T>
-    constexpr Ordinal GetOrdinal() {
+    static constexpr Ordinal GetOrdinal() {
         if constexpr (std::same_as<T, float>) {
-            return Ordinal::FLOAT;
+            return ORD_FLOAT;
         }
         else if constexpr (std::same_as<T, Vector3>) {
-            return Ordinal::VECTOR3;
+            return ORD_VECTOR3;
         }
         else if constexpr (std::same_as<T, Quaternion>) {
-            return Ordinal::QUATERNION;
+            return ORD_QUATERNION;
         }
         else if constexpr (std::same_as<T, int32_t>) {
-            return Ordinal::INT;
+            return ORD_INT;
         }
         else if constexpr (std::same_as<T, int64_t>) {
-            return Ordinal::LONG;
+            return ORD_LONG;
         }
         else if constexpr (std::same_as<T, std::string>) {
-            return Ordinal::STRING;
+            return ORD_STRING;
         }
-        else { //if constexpr (std::same_as<T, BYTES_t>) {
-            return Ordinal::ARRAY;
+        else {
+            return ORD_ARRAY;
         }
     }
 
     template<TrivialSyncType T>
-    constexpr Ordinal GetOrdinalShift() {
-        return static_cast<std::underlying_type_t>(GetOrdinal<T>()) - 1;
+    static constexpr Ordinal GetOrdinalMask() {
+        return 0b1 << GetOrdinal<T>();
     }
 
+
+
     template<TrivialSyncType T>
-    constexpr HASH_t ToShiftHash(HASH_t hash) {
-        auto shift = GetOrdinalShift<T>();
+    static constexpr HASH_t ToShiftHash(HASH_t hash) {
+        auto shift = GetOrdinal<T>();
 
         return (hash
             + (shift * shift)
@@ -95,8 +107,8 @@ private:
     }
 
     template<TrivialSyncType T>
-    constexpr HASH_t FromShiftHash(HASH_t hash) {
-        auto shift = GetOrdinalShift<T>();
+    static constexpr HASH_t FromShiftHash(HASH_t hash) {
+        auto shift = GetOrdinal<T>();
 
         return
             ((hash
@@ -110,16 +122,15 @@ private:
     // Returns null if not found 
     // Throws on type mismatch
     template<TrivialSyncType T>
-    const T* _Get(HASH_t key) {
-        auto ordinal = GetOrdinal<T>();
-        if (m_ordinalMask(ordinal)) {
+    const T* _Get(HASH_t key) const {
+        if (m_ordinalMask & GetOrdinalMask<T>()) {
             key = ToShiftHash<T>(key);
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
                 // good programming and proper use will prevent this bad case
-                assert(find->second.first == ordinal);
+                assert(find->second.first == GetOrdinal<T>());
 
-                return (T*)find->second.second;
+                return (T*) find->second.second;
             }
         }
         return nullptr;
@@ -131,17 +142,15 @@ private:
     // Throws on type mismatch
     template<TrivialSyncType T>
     void _Set(HASH_t key, const T& value) {
-        //auto prefix = GetShift<T>();
-        auto ordinal = GetOrdinal<T>();
         key = ToShiftHash<T>(key);
-        if (m_ordinalMask(ordinal)) {
+        if (m_ordinalMask & GetOrdinalMask<T>()) {
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
                 // good programming and proper use will prevent this bad case
-                assert(find->second.first == ordinal);
+                assert(find->second.first == GetOrdinal<T>());
 
                 // reassign if changed
-                auto&& v = (T*)find->second.second;
+                auto&& v = (T*) find->second.second;
                 if (*v == value)
                     return;
                 *v = value;
@@ -149,25 +158,24 @@ private:
             else {
                 // TODO restructure this ugly double code part
                 // could use goto, but ehh..
-                m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
+                m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
             }
         }
         else {
-            m_members.insert({ key, std::make_pair(ordinal, new T(value)) });
+            m_ordinalMask |= GetOrdinalMask<T>();
+            m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
         }
-
-        m_dataMask |= (0b1 << GetOrdinalShift<T>());
     }
 
     void _Set(HASH_t key, const void* value, Ordinal ordinal) {
         switch (ordinal) {
-        case Ordinal::FLOAT:		_Set(key, *(float*)         value); break;
-        case Ordinal::VECTOR3:		_Set(key, *(Vector3*)       value); break;
-        case Ordinal::QUATERNION:	_Set(key, *(Quaternion*)    value); break;
-        case Ordinal::INT:			_Set(key, *(int32_t*)       value); break;
-        case Ordinal::LONG:			_Set(key, *(int64_t*)       value); break;
-        case Ordinal::STRING:		_Set(key, *(std::string*)   value); break;
-        case Ordinal::ARRAY:		_Set(key, *(BYTES_t*)       value); break;
+        case ORD_FLOAT:		    _Set(key, *(float*)         value); break;
+        case ORD_VECTOR3:		_Set(key, *(Vector3*)       value); break;
+        case ORD_QUATERNION:	_Set(key, *(Quaternion*)    value); break;
+        case ORD_INT:			_Set(key, *(int32_t*)       value); break;
+        case ORD_LONG:			_Set(key, *(int64_t*)       value); break;
+        case ORD_STRING:		_Set(key, *(std::string*)   value); break;
+        case ORD_ARRAY:		    _Set(key, *(BYTES_t*)       value); break;
         default:
             // good programming and proper use will prevent this case
             assert(false);
@@ -184,7 +192,7 @@ private:
     ObjectType m_type = ObjectType::Default; // set by ZNetView
     HASH_t m_prefab = 0;
     Quaternion m_rotation = Quaternion::IDENTITY;
-    BitMask<Ordinal> m_ordinalMask;
+    Ordinal m_ordinalMask = 0; // bitfield denoting which map member types this ZDO contains
 
     Vector2i m_sector;
     Vector3 m_position;            // position of the 
@@ -200,43 +208,49 @@ private:
 
     void FreeMembers();
 
-    template<typename T>
-    bool _TryWriteType(NetPackage& pkg) {
-        //if ((m_dataMask >> static_cast<uint8_t>(GetShift<T>())) & 0b1) {
-        if (m_ordinalMask(GetOrdinal<T>())) {
+    template<typename T, typename CountType>
+    void _TryWriteType(NetPackage& pkg) const {
+        pkg.Write((CountType)0); // placeholder byte; also serves as 0 count when type T is absent
+        if (m_ordinalMask & GetOrdinalMask<T>()) {
             // Save structure per each type:
             //  char: count
             //      string: key
             //      F V Q I L S A: value
             //  char: null '\0' byte
-
-            auto size_mark = pkg.m_stream.Position();
-            BYTE_t count = 0;
-            pkg.Write(count); // seek forward 1 dummy byte (faster than iterating entire map beforehand)
+            CountType count = 0;
+            const auto size_mark = pkg.m_stream.Position() - sizeof(CountType);
             for (auto&& pair : m_members) {
-                // find the matching types
+                // skip any types not matching
                 if (pair.second.first != GetOrdinal<T>())
                     continue;
+
                 pkg.Write(FromShiftHash<T>(pair.first));
-                pkg.Write(*(T*) pair.second.second);
+                pkg.Write(*(T*)pair.second.second);
                 count++;
             }
+
+            // should be a hard exit fail so that the program can be fixed, in the case that
+            // zdos contain more than 127 members in the data map
+            assert(count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
+
             auto end_mark = pkg.m_stream.Position();
             pkg.m_stream.SetPos(size_mark);
             pkg.Write(count);
             pkg.m_stream.SetPos(end_mark);
-
-            return true;
         }
-        return false;
     }
 
-    template<typename T>
+    template<typename T, typename CountType>
     bool _TryReadType(NetPackage& pkg) {
-        auto count = pkg.Read<BYTE_t>();
+        auto count = pkg.Read<CountType>();
+        
+        assert(count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
         if (count) {
             while (count--) {
-                _Set(pkg.Read<HASH_t>(), pkg.Read<T>());
+                // ...fuck
+                // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
+                auto hash(pkg.Read<HASH_t>());
+                _Set(hash, pkg.Read<T>());
             }
             // TODO return condition might be redundant
             return true;
@@ -256,7 +270,7 @@ public:
     //ZDO(NetPackage reader, int version);
 
     // Save ZDO to the disk package
-    void Save(NetPackage& writer);
+    void Save(NetPackage& writer) const;
 
     void Load(NetPackage& reader, int32_t version);
 
@@ -269,24 +283,24 @@ public:
 
     template<TrivialSyncType T>
         requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
-    const T& Get(HASH_t key, const T& value) {
+    const T& Get(HASH_t key, const T& value) const {
         auto&& get = _Get<T>(key);
         if (get) return *get;
         return value;
     }
 
-    float GetFloat(HASH_t key, float value = 0);
-    int32_t GetInt(HASH_t key, int32_t value = 0);
-    int64_t GetLong(HASH_t key, int64_t value = 0);
-    const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value = Quaternion::IDENTITY);
-    const Vector3& GetVector3(HASH_t key, const Vector3& value);
-    const std::string& GetString(HASH_t key, const std::string& value = "");
-    const BYTES_t* GetBytes(HASH_t key /* no default */);
+    float GetFloat(HASH_t key, float value = 0) const;
+    int32_t GetInt(HASH_t key, int32_t value = 0) const;
+    int64_t GetLong(HASH_t key, int64_t value = 0) const;
+    const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value = Quaternion::IDENTITY) const;
+    const Vector3& GetVector3(HASH_t key, const Vector3& value) const;
+    const std::string& GetString(HASH_t key, const std::string& value = "") const;
+    const BYTES_t* GetBytes(HASH_t key /* no default */) const;
 
     // Special hash getters
 
-    bool GetBool(HASH_t key, bool value = false);
-    NetID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */);
+    bool GetBool(HASH_t key, bool value = false) const;
+    NetID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */) const;
 
 
 
@@ -298,18 +312,18 @@ public:
 
     // Trivial string getters
 
-    float GetFloat(const std::string& key, float value = 0);
-    int32_t GetInt(const std::string& key, int32_t value = 0);
-    int64_t GetLong(const std::string& key, int64_t value = 0);
-    const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value = Quaternion::IDENTITY);
-    const Vector3& GetVector3(const std::string& key, const Vector3& value);
-    const std::string& GetString(const std::string& key, const std::string& value = "");
+    float GetFloat(const std::string& key, float value = 0) const;
+    int32_t GetInt(const std::string& key, int32_t value = 0) const;
+    int64_t GetLong(const std::string& key, int64_t value = 0) const;
+    const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value = Quaternion::IDENTITY) const;
+    const Vector3& GetVector3(const std::string& key, const Vector3& value) const;
+    const std::string& GetString(const std::string& key, const std::string& value = "") const;
     const BYTES_t* GetBytes(const std::string& key /* no default */);
 
     // Special string getters
 
-    bool GetBool(const std::string& key, bool value = false);
-    NetID GetNetID(const std::string& key /* no default */);
+    bool GetBool(const std::string& key, bool value = false) const;
+    NetID GetNetID(const std::string& key /* no default */) const;
 
 
 
@@ -406,7 +420,6 @@ public:
 
 
 
-
     void SetPosition(const Vector3& pos);
 
     //bool Outdated(const Rev& min) const {
@@ -421,7 +434,7 @@ public:
 
 
     // Return whether the ZDO instance is self hosted or remotely hosted
-    bool Local();
+    bool Local() const;
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
@@ -433,6 +446,7 @@ public:
 
     // set the owner of the ZDO
     void SetOwner(OWNER_t owner) {
+        // only if the owner has changed, then revise it
         if (m_owner != owner) {
             m_owner = owner;
             m_rev.m_ownerRev++;
@@ -451,9 +465,9 @@ public:
         m_owner = 0;
     }
 
-    // Write ZDO to the network packet
-    void Serialize(NetPackage& pkg);
+    // Save ZDO to network packet
+    void Serialize(NetPackage& pkg) const;
 
-    // Load ZDO from the network packet
+    // Load ZDO from network packet
     void Deserialize(NetPackage& pkg);
 };

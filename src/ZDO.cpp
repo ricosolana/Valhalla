@@ -49,37 +49,31 @@ ZDO::ZDO() {
 
 
 
-void ZDO::Save(NetPackage& pkg) {
-    pkg.Write(this->m_rev.m_ownerRev);
-    pkg.Write(this->m_rev.m_dataRev);
-    pkg.Write(this->m_persistent);
+void ZDO::Save(NetPackage& pkg) const {
+    pkg.Write(this->m_rev.m_ownerRev);  static_assert(sizeof(Rev::m_ownerRev) == 4);
+    pkg.Write(this->m_rev.m_dataRev);   static_assert(sizeof(Rev::m_dataRev) == 4);
+    pkg.Write(this->m_persistent);      
     pkg.Write(this->m_owner);
-    pkg.Write(this->m_rev.m_time);
-    pkg.Write(this->m_pgwVersion);
-    pkg.Write(this->m_type);
-    pkg.Write(this->m_distant);
+    pkg.Write(this->m_rev.m_time);      static_assert(sizeof(Rev::m_time) == 8);
+    pkg.Write(this->m_pgwVersion);      static_assert(sizeof(m_pgwVersion) == 4);
+    pkg.Write(this->m_type);            static_assert(sizeof(m_type) == 1);
+    pkg.Write(this->m_distant);         
     pkg.Write(this->m_prefab);
     pkg.Write(this->m_sector);
     pkg.Write(this->m_position);
     pkg.Write(this->m_rotation);
 
-    if (!_TryWriteType<float>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<Vector3>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<Quaternion>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<int32_t>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<int64_t>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<std::string>(pkg))
-        pkg.Write((uint8_t)0);
-    if (!_TryWriteType<BYTES_t>(pkg))
-        pkg.Write((uint8_t)0);
+    // Save uses 2 bytes for counts (char in c# is 2 bytes..)
+    _TryWriteType<float, int16_t>(pkg);
+    _TryWriteType<Vector3, int16_t>(pkg);
+    _TryWriteType<Quaternion, int16_t>(pkg);
+    _TryWriteType<int32_t, int16_t>(pkg);
+    _TryWriteType<int64_t, int16_t>(pkg);
+    _TryWriteType<std::string, int16_t>(pkg);
+    _TryWriteType<BYTES_t, int16_t>(pkg);
 }
 
-void ZDO::Load(NetPackage& pkg, int32_t version) {
+void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     this->m_rev.m_ownerRev = pkg.Read<uint32_t>();
     this->m_rev.m_dataRev = pkg.Read<uint32_t>();
     this->m_persistent = pkg.Read<bool>();
@@ -87,36 +81,39 @@ void ZDO::Load(NetPackage& pkg, int32_t version) {
     this->m_rev.m_time = pkg.Read<int64_t>();
     this->m_pgwVersion = pkg.Read<int32_t>();
 
-    if (version >= 16 && version < 24)
+    if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
 
-    if (version >= 23)
+    if (worldVersion >= 23)
         this->m_type = pkg.Read<ObjectType>();
 
-    if (version >= 22)
+    if (worldVersion >= 22)
         this->m_distant = pkg.Read<bool>();
 
-    if (version < 13)
-        pkg.Read<uint16_t>(); // condensed 2 reads
+    if (worldVersion < 13)
+        pkg.Read<int16_t>(); // condensed 2 reads
 
-    if (version >= 17)
+    if (worldVersion >= 17)
         this->m_prefab = pkg.Read<HASH_t>();
 
     this->m_sector = pkg.Read<Vector2i>();
     this->m_position = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
-    _TryReadType<float>(pkg);
-    _TryReadType<Vector3>(pkg);
-    _TryReadType<Quaternion>(pkg);
-    _TryReadType<int32_t>(pkg);
-    _TryReadType<int64_t>(pkg);
-    _TryReadType<std::string>(pkg);
+    // Load uses 2 bytes for counts (char in c# is 2 bytes..)
+    // It of course has a weird encoding scheme according to UTF...
+    // But values 127 and lower are normal
+    _TryReadType<float, int16_t>(pkg);
+    _TryReadType<Vector3, int16_t>(pkg);
+    _TryReadType<Quaternion, int16_t>(pkg);
+    _TryReadType<int32_t, int16_t>(pkg);
+    _TryReadType<int64_t, int16_t>(pkg);
+    _TryReadType<std::string, int16_t>(pkg);
+    
+    if (worldVersion >= 27)
+        _TryReadType<BYTES_t, int16_t>(pkg);
 
-    if (version >= 27)
-        _TryReadType<BYTES_t>(pkg);
-
-    if (version < 17)
+    if (worldVersion < 17)
         this->m_prefab = GetInt("prefab", 0);
 }
 
@@ -165,41 +162,41 @@ ZDO::~ZDO() {
 
 // Trivial
 
-float ZDO::GetFloat(HASH_t key, float value) {
+float ZDO::GetFloat(HASH_t key, float value) const {
     return Get<float>(key, value);
 }
 
-int32_t ZDO::GetInt(HASH_t key, int32_t value) {
+int32_t ZDO::GetInt(HASH_t key, int32_t value) const {
     return Get<int32_t>(key, value);
 }
 
-int64_t ZDO::GetLong(HASH_t key, int64_t value) {
+int64_t ZDO::GetLong(HASH_t key, int64_t value) const {
     return Get<int64_t>(key, value);
 }
 
-const Quaternion& ZDO::GetQuaternion(HASH_t key, const Quaternion& value) {
+const Quaternion& ZDO::GetQuaternion(HASH_t key, const Quaternion& value) const {
     return Get<Quaternion>(key, value);
 }
 
-const Vector3& ZDO::GetVector3(HASH_t key, const Vector3& value) {
+const Vector3& ZDO::GetVector3(HASH_t key, const Vector3& value) const {
     return Get<Vector3>(key, value);
 }
 
-const std::string& ZDO::GetString(HASH_t key, const std::string& value) {
+const std::string& ZDO::GetString(HASH_t key, const std::string& value) const {
     return Get<std::string>(key, value);
 }
 
-const BYTES_t* ZDO::GetBytes(HASH_t key) {
+const BYTES_t* ZDO::GetBytes(HASH_t key) const {
     return _Get<BYTES_t>(key);
 }
 
 // Special
 
-bool ZDO::GetBool(HASH_t key, bool value) {
+bool ZDO::GetBool(HASH_t key, bool value) const {
     return GetInt(key, value ? 1 : 0);
 }
 
-NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
+NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
     auto k = GetLong(key.first);
     auto v = GetLong(key.second);
     if (k == 0 || v == 0)
@@ -219,27 +216,27 @@ NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) {
 
 // Trivial
 
-float ZDO::GetFloat(const std::string& key, float value) {
+float ZDO::GetFloat(const std::string& key, float value) const {
     return GetFloat(VUtils::String::GetStableHashCode(key), value);
 }
 
-int32_t ZDO::GetInt(const std::string& key, int32_t value) {
+int32_t ZDO::GetInt(const std::string& key, int32_t value) const {
     return GetInt(VUtils::String::GetStableHashCode(key), value);
 }
 
-int64_t ZDO::GetLong(const std::string& key, int64_t value) {
+int64_t ZDO::GetLong(const std::string& key, int64_t value) const {
     return GetLong(VUtils::String::GetStableHashCode(key), value);
 }
 
-const Quaternion& ZDO::GetQuaternion(const std::string& key, const Quaternion& value) {
+const Quaternion& ZDO::GetQuaternion(const std::string& key, const Quaternion& value) const {
     return GetQuaternion(VUtils::String::GetStableHashCode(key), value);
 }
 
-const Vector3& ZDO::GetVector3(const std::string& key, const Vector3& value) {
+const Vector3& ZDO::GetVector3(const std::string& key, const Vector3& value) const {
     return GetVector3(VUtils::String::GetStableHashCode(key), value);
 }
 
-const std::string& ZDO::GetString(const std::string& key, const std::string& value) {
+const std::string& ZDO::GetString(const std::string& key, const std::string& value) const {
     return GetString(VUtils::String::GetStableHashCode(key), value);
 }
 
@@ -249,11 +246,11 @@ const BYTES_t* ZDO::GetBytes(const std::string& key) {
 
 // Special
 
-bool ZDO::GetBool(const std::string& key, bool value) {
+bool ZDO::GetBool(const std::string& key, bool value) const {
     return GetBool(VUtils::String::GetStableHashCode(key), value);
 }
 
-NetID ZDO::GetNetID(const std::string& key) {
+NetID ZDO::GetNetID(const std::string& key) const {
     return GetNetID(ToHashPair(key));
 }
 
@@ -282,7 +279,7 @@ void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const NetID& value) {
 
 
 
-bool ZDO::Local() {
+bool ZDO::Local() const {
     return m_owner == Valhalla()->ID();
 }
 
@@ -315,13 +312,13 @@ void ZDO::FreeMembers() {
     for (auto&& m : m_members) {
         auto&& pair = m.second;
         switch (pair.first) {
-            case Ordinal::FLOAT:        delete (float*)         pair.second; break;
-            case Ordinal::VECTOR3:      delete (Vector3*)       pair.second; break;
-            case Ordinal::QUATERNION:   delete (Quaternion*)    pair.second; break;
-            case Ordinal::INT:          delete (int32_t*)       pair.second; break;
-            case Ordinal::LONG:         delete (int64_t*)       pair.second; break;
-            case Ordinal::STRING:       delete (std::string*)   pair.second; break;
-            case Ordinal::ARRAY:        delete (BYTES_t*)       pair.second; break;
+            case ORD_FLOAT:        delete (float*)         pair.second; break;
+            case ORD_VECTOR3:      delete (Vector3*)       pair.second; break;
+            case ORD_QUATERNION:   delete (Quaternion*)    pair.second; break;
+            case ORD_INT:          delete (int32_t*)       pair.second; break;
+            case ORD_LONG:         delete (int64_t*)       pair.second; break;
+            case ORD_STRING:       delete (std::string*)   pair.second; break;
+            case ORD_ARRAY:        delete (BYTES_t*)       pair.second; break;
         }
     }
 }
@@ -345,7 +342,7 @@ void ZDO::Invalidate() {
     FreeMembers();
 }
 
-void ZDO::Serialize(NetPackage& pkg) {
+void ZDO::Serialize(NetPackage& pkg) const {
     pkg.Write(m_persistent);
     pkg.Write(m_distant);
     static_assert(sizeof(Rev::m_time) == 8);
@@ -362,15 +359,15 @@ void ZDO::Serialize(NetPackage& pkg) {
     
     // Writing a signed/unsigned mask doesnt matter
     //  same when positive (for both)
-    pkg.Write((uint32_t)m_ordinalMask);
+    pkg.Write((uint32_t) m_ordinalMask);
 
-    _TryWriteType<float>(pkg);
-    _TryWriteType<Vector3>(pkg);
-    _TryWriteType<Quaternion>(pkg);
-    _TryWriteType<int32_t>(pkg);
-    _TryWriteType<int64_t>(pkg);
-    _TryWriteType<std::string>(pkg);
-    _TryWriteType<BYTES_t>(pkg);
+    _TryWriteType<float,            int8_t>(pkg);
+    _TryWriteType<Vector3,          int8_t>(pkg);
+    _TryWriteType<Quaternion,       int8_t>(pkg);
+    _TryWriteType<int32_t,          int8_t>(pkg);
+    _TryWriteType<int64_t,          int8_t>(pkg);
+    _TryWriteType<std::string,      int8_t>(pkg);
+    _TryWriteType<BYTES_t,          int8_t>(pkg);
 }
 
 void ZDO::Deserialize(NetPackage& pkg) {
@@ -385,20 +382,23 @@ void ZDO::Deserialize(NetPackage& pkg) {
     this->m_prefab = pkg.Read<HASH_t>();
     this->m_rotation = pkg.Read<Quaternion>();
     
-    this->m_ordinalMask = (uint8_t) pkg.Read<int32_t>();
+    //this->m_ordinalMask = (uint8_t) pkg.Read<int32_t>();
 
-    if (m_ordinalMask(GetOrdinal<float>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<Vector3>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<Quaternion>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<int32_t>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<int64_t>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<std::string>()))
-        _TryReadType<float>(pkg);
-    if (m_ordinalMask(GetOrdinal<BYTES_t>()))
-        _TryReadType<float>(pkg);
+    this->m_ordinalMask = (Ordinal) pkg.Read<uint32_t>();
+
+    // double check this; 
+    if (m_ordinalMask & GetOrdinalMask<float>())
+        _TryReadType<float,         int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<Vector3>())
+        _TryReadType<Vector3,       int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<Quaternion>())
+        _TryReadType<Quaternion,    int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<int32_t>())
+        _TryReadType<int32_t,       int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<int64_t>())
+        _TryReadType<int64_t,       int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<std::string>())
+        _TryReadType<std::string,   int8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
+        _TryReadType<BYTES_t,       int8_t>(pkg);
 }
