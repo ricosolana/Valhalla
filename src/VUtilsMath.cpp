@@ -207,13 +207,18 @@ namespace VUtils::Math {
     float PerlinNoise(float x, float y) {
 
         // Another alternative method (doing whatever to make it work smh..)
-        int32_t X = (int)floor(x) & 0xFF;
-        int32_t Y = (int)floor(y) & 0xFF;
+        //int32_t X = (uint32_t)floorf(x) & 0xFF;
+        //int32_t Y = (uint32_t)floorf(y) & 0xFF;
         
-        x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
-        y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
+        //x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
+        //y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
 
 
+        int X = (int)floorf(x) & 0xFF;
+        int Y = (int)floorf(y) & 0xFF;
+
+        x -= floorf(x);
+        y -= floorf(y);
 
 
 
@@ -255,6 +260,18 @@ namespace VUtils::Math {
         //    the x and y have an upper bound of 1.0
         //double u = myfade(std::min(1.f, x));                                // COMPUTE FADE CURVES
         //double v = myfade(std::min(1.f, y));                                // FOR EACH OF X,Y,
+        
+        //float fade_x = 1.0f;
+        //float fade_y = 1.0f;
+        //
+        //if (fade_x <= 1)
+        //    fade_x = x;
+        //if (fade_y <= 1)
+        //    fade_y = y;
+        //
+        //double u = myfade(fade_x);
+        //double v = myfade(fade_y);
+
         double u = myfade(x);
         double v = myfade(y);
 
@@ -282,5 +299,69 @@ namespace VUtils::Math {
         //return res;
     }
 
+
+
+    void BruteForcePerlinNoise(const float test_x, const float test_y, const float expected) {
+        // find the X and Y for the given x, y and final expected value
+
+
+
+        //for (int32_t Y = (test_y) - 2.f; Y < (test_y) + 2.f; Y++) {
+            //for (int32_t X = (test_x) - 2.f; X < (test_x) + 2.f; X++) {
+        for (int32_t Y = -257; Y < 257; Y++) {
+            for (int32_t X = -257; X < 257; X++) {
+                float x = test_x;
+                float y = test_y;
+
+                if (X < 0 || X > 255 || Y < 0 || Y > 255)
+                    continue;
+
+                //X &= 0xFF;
+                //Y &= 0xFF;
+
+                x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
+                y -= (float)((int32_t)y);                                // OF POINT IN CUBE.
+
+
+
+                int A = p[X] + Y; // , AA = p[A] + Z, AB = p[A + 1] + Z,      // HASH COORDINATES OF
+                int B = p[X + 1] + Y; // , BA = p[B] + Z, BB = p[B + 1] + Z;      // THE 8 CUBE CORNERS,
+
+                int BB = p[p[B + 1]];
+                int AB = p[p[A + 1]];
+                int BA = p[p[B + 0]];
+                int AA = p[p[A + 0]];
+
+                double u = myfade(x);
+                double v = myfade(y);
+
+                auto gradBB = mygrad(BB, x - 1, y - 1);
+                auto gradAB = mygrad(AB, x, y - 1);
+                auto gradBA = mygrad(BA, x - 1, y);
+                auto gradAA = mygrad(AA, x, y);
+
+                // now lerp the grads
+                // 2 x lerp, 1 y lerp
+
+                float res =
+                    mylerp(v,
+                        mylerp(u, gradAA, gradBA),
+                        mylerp(u, gradAB, gradBB)
+                    );
+
+                float calc = (res + .69f) / 1.483f;
+
+                static constexpr float EPS = 0.001f;
+                if ((calc - EPS < expected && calc + EPS > expected)) {
+
+                    // then print this good value
+                    LOG(INFO) << "got value, with X, Y: " << X << " " << Y;
+
+                }
+
+            }
+        }
+
+    }
 
 }

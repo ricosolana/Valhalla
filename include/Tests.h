@@ -53,7 +53,6 @@ namespace Tests {
             zdo.Set("name", "byeorgssen");
             zdo.Set("faction", "player");
             zdo.Set("uid", 189341389);
-
             
             NetPackage pkg; 
             zdo.Save(pkg); 
@@ -129,6 +128,11 @@ namespace Tests {
     }
 
     void Test_Perlin() {
+        // brute force tested
+        //VUtils::Math::BruteForcePerlinNoise(-1.1f, -1.1f, 0.597924829f);
+
+
+
         auto opt = VUtils::Resource::ReadFileLines("perlin_values.txt");
 
         assert(opt && "file not found");
