@@ -98,7 +98,7 @@ private:
 
     template<TrivialSyncType T>
     static constexpr HASH_t ToShiftHash(HASH_t hash) {
-        auto shift = GetOrdinal<T>();
+        constexpr auto shift = GetOrdinal<T>();
 
         return (hash
             + (shift * shift)
@@ -108,7 +108,7 @@ private:
 
     template<TrivialSyncType T>
     static constexpr HASH_t FromShiftHash(HASH_t hash) {
-        auto shift = GetOrdinal<T>();
+        constexpr auto shift = GetOrdinal<T>();
 
         return
             ((hash
@@ -210,15 +210,22 @@ private:
 
     template<typename T, typename CountType>
     void _TryWriteType(NetPackage& pkg) const {
-        pkg.Write((CountType)0); // placeholder byte; also serves as 0 count when type T is absent
+        // Load/Save use count char for every member (including 0 counts)
+        if constexpr (sizeof(CountType) == 2)
+            pkg.Write((CountType)0); // placeholder byte; also serves as 0 count when type T is absent
+
         if (m_ordinalMask & GetOrdinalMask<T>()) {
             // Save structure per each type:
             //  char: count
             //      string: key
             //      F V Q I L S A: value
             //  char: null '\0' byte
-            CountType count = 0;
+
+            if constexpr (sizeof(CountType) == 1)
+                pkg.Write((CountType)0); // placeholder byte; also serves as 0 count when type T is absent
+                        
             const auto size_mark = pkg.m_stream.Position() - sizeof(CountType);
+            CountType count = 0;            
             for (auto&& pair : m_members) {
                 // skip any types not matching
                 if (pair.second.first != GetOrdinal<T>())
@@ -233,7 +240,7 @@ private:
             // zdos contain more than 127 members in the data map
             assert(count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
 
-            auto end_mark = pkg.m_stream.Position();
+            const auto end_mark = pkg.m_stream.Position();
             pkg.m_stream.SetPos(size_mark);
             pkg.Write(count);
             pkg.m_stream.SetPos(end_mark);
@@ -241,21 +248,19 @@ private:
     }
 
     template<typename T, typename CountType>
-    bool _TryReadType(NetPackage& pkg) {
+    void _TryReadType(NetPackage& pkg) {
+
+
+
         auto count = pkg.Read<CountType>();
         
         assert(count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
-        if (count) {
-            while (count--) {
-                // ...fuck
-                // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-                auto hash(pkg.Read<HASH_t>());
-                _Set(hash, pkg.Read<T>());
-            }
-            // TODO return condition might be redundant
-            return true;
-        }
-        return false;
+        while (count--) {
+            // ...fuck
+            // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
+            auto hash(pkg.Read<HASH_t>());
+            _Set(hash, pkg.Read<T>());
+        }        
     }
 
 public:

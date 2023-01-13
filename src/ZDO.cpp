@@ -359,7 +359,7 @@ void ZDO::Serialize(NetPackage& pkg) const {
     
     // Writing a signed/unsigned mask doesnt matter
     //  same when positive (for both)
-    pkg.Write((uint32_t) m_ordinalMask);
+    pkg.Write((int32_t) m_ordinalMask);
 
     _TryWriteType<float,            int8_t>(pkg);
     _TryWriteType<Vector3,          int8_t>(pkg);
@@ -384,7 +384,7 @@ void ZDO::Deserialize(NetPackage& pkg) {
     
     //this->m_ordinalMask = (uint8_t) pkg.Read<int32_t>();
 
-    this->m_ordinalMask = (Ordinal) pkg.Read<uint32_t>();
+    this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
 
     // double check this; 
     if (m_ordinalMask & GetOrdinalMask<float>())

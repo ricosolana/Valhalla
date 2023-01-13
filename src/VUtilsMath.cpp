@@ -207,8 +207,8 @@ namespace VUtils::Math {
     float PerlinNoise(float x, float y) {
 
         // Another alternative method (doing whatever to make it work smh..)
-        int32_t X = (int32_t)x & 0xFF;
-        int32_t Y = (int32_t)y & 0xFF;
+        int32_t X = (int)floor(x) & 0xFF;
+        int32_t Y = (int)floor(y) & 0xFF;
         
         x -= (float)((int32_t)x);                                // FIND RELATIVE X,Y,Z
         y -= (float)((int32_t)y);                                // OF POINT IN CUBE.

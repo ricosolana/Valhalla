@@ -8,6 +8,7 @@ namespace Tests {
     void Test_NetSync() {
         ZDO zdo;
 
+        // Set/Get tests
         zdo.Set("health", (float) 16.894);
         zdo.Set("weight", (int) 435);
         zdo.Set("slot", (int) 3);
@@ -25,11 +26,11 @@ namespace Tests {
         auto h = zdo.GetFloat("health");
 
 
-
-        NetPackage savePkg; zdo.Save(savePkg); savePkg.m_stream.SetPos(0);
+        // Save/Load tests (virtualized disk package)
+        NetPackage pkg; zdo.Save(pkg); pkg.m_stream.SetPos(0);
 
         ZDO loadedZDO;
-        loadedZDO.Load(savePkg, VConstants::WORLD);
+        loadedZDO.Load(pkg, VConstants::WORLD);
 
         assert(loadedZDO.GetFloat(  "health") == (float)16.894);
         assert(loadedZDO.GetInt(    "weight") == (int)435);
@@ -37,6 +38,20 @@ namespace Tests {
         assert(loadedZDO.GetString( "name") == "byeorgssen");
         assert(loadedZDO.GetString( "faction") == "player");
         assert(loadedZDO.GetInt(    "uid") == (HASH_t)189347813489);
+
+
+
+        pkg.m_stream.Clear(); zdo.Serialize(pkg); pkg.m_stream.SetPos(0);
+
+        ZDO deserializedZDO;
+        deserializedZDO.Deserialize(pkg);
+
+        assert(deserializedZDO.GetFloat("health") == (float)16.894);
+        assert(deserializedZDO.GetInt("weight") == (int)435);
+        assert(deserializedZDO.GetInt("slot") == (int)3);
+        assert(deserializedZDO.GetString("name") == "byeorgssen");
+        assert(deserializedZDO.GetString("faction") == "player");
+        assert(deserializedZDO.GetInt("uid") == (HASH_t)189347813489);
     }
 
     void Test_ResourceReadWrite() {
@@ -83,7 +98,7 @@ namespace Tests {
         {
             for (float x = -1.1f; x < 1.1f; x += .1f) {
                 // Negative floats being truncated cause the mismatch
-                //if (x >= 0 && y >= 0)
+                if (x >= 0 && y >= 0)
                 {
                     float calc = VUtils::Math::PerlinNoise(x, y);
                     float other = std::stof(values[next]);
