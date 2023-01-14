@@ -1,13 +1,20 @@
+#include <stdint.h>
 
-undefined8 PerlinNoiseI(ulonglong bytes_x,ulonglong bytes_y)
+typedef uint64_t ulonglong;
+typedef int64_t longlong;
+typedef uint32_t uint;
+typedef uint32_t undefined4;
+typedef uint8_t undefined;
+typedef uint32_t uint;
+typedef uint64_t undefined8;
 
-{
+undefined8 PerlinNoiseI(ulonglong bytes_x, ulonglong bytes_y) {
   uint iy;
-  uint uVar1;
+  uint ix;
   longlong lVar2;
   longlong lVar3;
-  ulonglong uVar4;
-  uint wrap_y;
+  ulonglong X;
+  uint Y;
   undefined4 in_XMM0_Dc;
   undefined4 in_XMM0_Dd;
   undefined auVar5 [16];
@@ -33,17 +40,17 @@ undefined8 PerlinNoiseI(ulonglong bytes_x,ulonglong bytes_y)
   iy = (uint)y;
   
   // Wrap
-  wrap_y = iy & 0xff;
+  Y = iy & 0xff;
     
-  uVar1 = (uint)x;
-  uVar4 = (ulonglong)(uVar1 & 0xff);
+  ix = (uint)x;
+  X = (ulonglong)(ix & 0xff);
   
   // Relative space
-  y = y - (float)iy;
+  y -= (float)iy;
   
-  lVar2 = (longlong)(int)(*(int *)(&p1 + uVar4 * 4) + wrap_y);
-  lVar3 = (longlong)(int)(*(int *)(&p2 + uVar4 * 4) + wrap_y);
-  x = x - (float)uVar1;
+  lVar2 = (longlong)(int)(*(int *)(&p1 + X * 4) + Y);
+  lVar3 = (longlong)(int)(*(int *)(&p2 + X * 4) + Y);
+  x -= (float)ix;
   iy = *(uint *)(&p1 + (longlong)*(int *)(&p2 + lVar3 * 4) * 4);
   
   // wth is this?
@@ -53,7 +60,7 @@ undefined8 PerlinNoiseI(ulonglong bytes_x,ulonglong bytes_y)
   }
   
   // Compiler-decompiler spaghetti
-  uVar1 = iy & 0xf;
+  ix = iy & 0xf;
   fVar12 = x - 1.0;
   fVar7 = 1.0;
   if (y <= 1.0) {
@@ -61,12 +68,12 @@ undefined8 PerlinNoiseI(ulonglong bytes_x,ulonglong bytes_y)
   }
   fVar14 = ((fVar8 * 6.0 - 15.0) * fVar8 + 10.0) * fVar8 * fVar8 * fVar8;
   fVar8 = y - 1.0;
-  if (uVar1 < 8) {
+  if (ix < 8) {
     fVar11 = fVar12;
-    if (uVar1 < 4) {
+    if (ix < 4) {
       auVar5 = CONCAT412(in_XMM1_Dd,
                          CONCAT48(in_XMM1_Dc,bytes_y & 0xffffffff00000000 | (ulonglong)(uint)fVar8))
-               & (undefined  [16])0xffffffffffffffff;
+               & (undefined[16]) 0xffffffffffffffff;
     }
     else {
 LAB_18075f1a4:
@@ -75,45 +82,47 @@ LAB_18075f1a4:
   }
   else {
     fVar11 = fVar8;
-    if ((uVar1 - 0xc & 0xfffffffd) != 0) goto LAB_18075f1a4;
+    if ((ix - 0xc & 0xfffffffd) != 0) goto LAB_18075f1a4;
     auVar5 = CONCAT412(in_XMM0_Dd,
                        CONCAT48(in_XMM0_Dc,bytes_x & 0xffffffff00000000 | (ulonglong)(uint)fVar12))
-             & (undefined  [16])0xffffffffffffffff;
+             & (undefined[16]) 0xffffffffffffffff;
   }
   if ((iy & 1) != 0) {
+      // negation
     fVar11 = (float)((uint)fVar11 ^ 0x80000000);
   }
   if ((iy & 2) != 0) {
+      // negation
     auVar6 = auVar5 ^ (undefined  [16])0x80000000;
     auVar5 = CONCAT412(SUB164(auVar6 >> 0x60,0),
                        CONCAT48(SUB164(auVar6 >> 0x40,0),
                                 CONCAT44(SUB164(auVar5 >> 0x20,0),SUB164(auVar6,0))));
   }
   iy = *(uint *)(&p1 + (longlong)*(int *)(&p2 + lVar2 * 4) * 4);
-  uVar1 = iy & 0xf;
-  if (uVar1 < 8) {
+  ix = iy & 0xf;
+  if (ix < 8) {
     fVar9 = fVar8;
     fVar8 = x;
-    if (3 < uVar1) {
+    if (3 < ix) {
 LAB_18075f1ed:
       fVar9 = 0.0;
     }
   }
   else {
     fVar9 = x;
-    if ((uVar1 - 0xc & 0xfffffffd) != 0) goto LAB_18075f1ed;
+    if ((ix - 0xc & 0xfffffffd) != 0) goto LAB_18075f1ed;
   }
-  if ((iy & 1) != 0) {
+  if (iy & 1) {
     fVar8 = (float)((uint)fVar8 ^ 0x80000000);
   }
-  if ((iy & 2) != 0) {
+  if (iy & 2) {
     fVar9 = (float)((uint)fVar9 ^ 0x80000000);
   }
   iy = *(uint *)(&p1 + (longlong)*(int *)(&p1 + lVar3 * 4) * 4);
-  uVar1 = iy & 0xf;
-  if (uVar1 < 8) {
+  ix = iy & 0xf;
+  if (ix < 8) {
     fVar10 = y;
-    if (3 < uVar1) {
+    if (3 < ix) {
 LAB_18075f23e:
       fVar10 = 0.0;
     }
@@ -121,7 +130,7 @@ LAB_18075f23e:
   else {
     fVar10 = fVar12;
     fVar12 = y;
-    if ((uVar1 - 0xc & 0xfffffffd) != 0) goto LAB_18075f23e;
+    if ((ix - 0xc & 0xfffffffd) != 0) goto LAB_18075f23e;
   }
   if ((iy & 1) != 0) {
     fVar12 = (float)((uint)fVar12 ^ 0x80000000);
@@ -130,16 +139,16 @@ LAB_18075f23e:
     fVar10 = (float)((uint)fVar10 ^ 0x80000000);
   }
   iy = *(uint *)(&p1 + (longlong)*(int *)(&p1 + lVar2 * 4) * 4);
-  uVar1 = iy & 0xf;
-  if (uVar1 < 8) {
+  ix = iy & 0xf;
+  if (ix < 8) {
     fVar13 = y;
     y = x;
-    if (uVar1 < 4) goto LAB_18075f287;
+    if (ix < 4) goto LAB_18075f287;
   }
   else {
     fVar13 = x;
     x = y;
-    if ((uVar1 - 0xc & 0xfffffffd) == 0) goto LAB_18075f287;
+    if ((ix - 0xc & 0xfffffffd) == 0) goto LAB_18075f287;
   }
   fVar13 = 0.0;
   x = y;

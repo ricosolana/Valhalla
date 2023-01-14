@@ -50,11 +50,20 @@ static BYTE_t p[] = { 151,160,137,91,90,15,
 };
 
 float PerlinNoise(float x, float y) {
-    int X = (int)floorf(x) & 0xFF;
-    int Y = (int)floorf(y) & 0xFF;
+    x = fabsf(x);
+    y = fabsf(y);
 
-    x -= floorf(x);
-    y -= floorf(y);
+    int X = ((int) x) & 0xFF;
+    int Y = ((int) y) & 0xFF;
+
+
+
+    //x -= floorf(x);
+    //y -= floorf(y);
+    //x = 1 - x;
+    //y = 1 - y;
+    x -= (float)((int)x);
+    y -= (float)((int)y);
 
     int A = p[X] + Y;
     int B = p[X + 1] + Y;
@@ -64,8 +73,11 @@ float PerlinNoise(float x, float y) {
     int BA = p[p[B + 0]];
     int AA = p[p[A + 0]];
 
-    double u = myfade(x);
-    double v = myfade(y);
+
+    //double u = myfade(x);
+    //double v = myfade(y);
+    double u = myfade(x <= 1 ? x : 1);
+    double v = myfade(y <= 1 ? y : 1);
 
     auto gradBB = mygrad(BB, x - 1, y - 1);
     auto gradAB = mygrad(AB, x, y - 1);
