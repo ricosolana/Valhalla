@@ -57,7 +57,6 @@ namespace VUtils::Math {
 
 
 
-
     // fucky methods
 
     // Fast inverse square root
@@ -65,9 +64,6 @@ namespace VUtils::Math {
 
 
 
-
     // Perlin noise
     float PerlinNoise(float x, float y);
-
-    void BruteForcePerlinNoise(float x, float y, float expected);
 }
