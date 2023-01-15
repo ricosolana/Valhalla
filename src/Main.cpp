@@ -56,12 +56,11 @@ float PerlinNoise(float x, float y) {
     int X = ((int) x) & 0xFF;
     int Y = ((int) y) & 0xFF;
 
-
-
     //x -= floorf(x);
     //y -= floorf(y);
     //x = 1 - x;
     //y = 1 - y;
+
     x -= (float)((int)x);
     y -= (float)((int)y);
 
