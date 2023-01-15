@@ -151,8 +151,9 @@ namespace VUtils::Random {
     static const std::string charsAlphaNum = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ023456789";
 
     OWNER_t GenerateUID() {
-        OWNER_t result;
-        GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
+        OWNER_t result = 0;
+        while (!result)
+            GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
         return result;
     }
 

@@ -472,15 +472,17 @@ public:
     }
 
     // Claim ownership over this ZDO
-    void SetLocal();
+    bool SetLocal();
 
     // set the owner of the ZDO
-    void SetOwner(OWNER_t owner) {
+    bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
         if (m_owner != owner) {
             m_owner = owner;
             m_rev.m_ownerRev++;
+            return true;
         }
+        return false;
     }
 
     bool Valid() const {
@@ -501,3 +503,5 @@ public:
     // Load ZDO from network packet
     void Deserialize(NetPackage& pkg);
 };
+
+using NetSync = ZDO;

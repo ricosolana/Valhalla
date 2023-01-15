@@ -283,8 +283,10 @@ bool ZDO::Local() const {
     return m_owner == Valhalla()->ID();
 }
 
-void ZDO::SetLocal() {
-    SetOwner(Valhalla()->ID());
+bool ZDO::SetLocal() {
+    if (Local())
+        return false;
+    return SetOwner(Valhalla()->ID());
 }
 
 void ZDO::SetPosition(const Vector3& pos) {

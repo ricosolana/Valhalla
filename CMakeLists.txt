@@ -80,48 +80,36 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/Heightmap.cpp"
+    "src/HeightmapBuilder.cpp"
+    "src/HeightmapManager.cpp"
     "src/Main.cpp"
-    "src/ValhallaServer.cpp"
-    
-
-    
-    
+    "src/NetAcceptorSteam.cpp"
+    "src/NetID.cpp"
+    "src/NetManager.cpp"
+    "src/NetObject.cpp"
+    "src/NetPackage.cpp"
+    "src/NetPeer.cpp"
+    "src/NetRouteManager.cpp"
+    "src/NetRpc.cpp"
+    "src/NetScene.cpp"
+    "src/NetSteamSocket.cpp"
+    "src/NetSyncManager.cpp"
+    "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
-    "src/VUtilsResource.cpp"
-     
-    
-    
     "src/Stream.cpp"
     "src/Task.cpp"
-    
+    "src/ValhallaServer.cpp"
+    "src/Vector.cpp"
     "src/VUtils.cpp"
-    
-    
-    
-    
-    "src/NetManager.cpp"
-    "src/NetPeer.cpp" 
-    "src/NetPackage.cpp"    
-    
-    "src/NetRpc.cpp" 
-    
-    
-     
-    "src/Vector.cpp" 
     "src/VUtilsMath.cpp"
-     
-
-    "src/NetSteamSocket.cpp" 
-    "src/NetAcceptorSteam.cpp"
-    
-    
-    
-    "src/VUtilsString.cpp"
     "src/VUtilsRandom.cpp"
-    
-    "src/NetID.cpp"
+    "src/VUtilsResource.cpp"
+    "src/VUtilsString.cpp"
+    "src/WorldGenerator.cpp"
     "src/ZDO.cpp"
- )
+    "src/ZoneSystem.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
