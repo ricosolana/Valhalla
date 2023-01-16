@@ -5,22 +5,23 @@
 #include "HashUtils.h"
 #include "ValhallaServer.h"
 #include "GameObject.h"
+#include "TerrainModifier.h"
 
 //struct HeightmapBuilder::HMBuildData;
 
 class HeightmapManager;
 
 // dummy
-class TerrainModifier {
-public:
-    enum class PaintType {
-        Dirt, Cultivate, Paved, Reset
-    };
-};
+//class TerrainModifier {
+//public:
+//    enum class PaintType {
+//        Dirt, Cultivate, Paved, Reset
+//    };
+//};
 class Rigidbody {};
 class TerrainComp {};
 class Material {};
-class Texture2D {};
+//class Texture2D {};
 class MeshCollider {};
 class Mesh {};
 
@@ -29,8 +30,10 @@ class HMBuildData {};
 
 class Heightmap {
     friend class HeightmapManager;
+    friend class HMBuildData;
 
-    
+    using Heights_t = std::vector<float>;
+    using Mask_t = std::vector<Color>;
 
 public:
     static constexpr Color m_paintMaskDirt = Colors::RED;
@@ -70,21 +73,32 @@ public:
         Everything = Edge | Median,
     };
 
-private:
-    using Heights = std::array<float, (Heightmap::WIDTH + 1)* (Heightmap::WIDTH + 1)>;
+public:
+    Heightmap();
+    
 
-    void Awake();
-    void OnDestroy();
-    void OnEnable();
+private:
+    //friend class HeightmapManager;
+
+    //using Heights = std::array<float, (Heightmap::WIDTH + 1)* (Heightmap::WIDTH + 1)>;
+
+    
+
+    //void Awake();
+    //void OnDestroy();
+    //void OnEnable();
+
+
+
     void UpdateCornerDepths();
     void Initialize();
     void Generate();
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
-    void ApplyModifier(TerrainModifier modifier, Heights *levelOnly);
+    void ApplyModifier(TerrainModifier modifier, Heights_t *levelOnly);
     Vector3 CalcVertex(int32_t x, int32_t y);
     void RebuildCollisionMesh();
-    void SmoothTerrain2(const Vector3& worldPos, float radius, Heights* levelOnlyHeights, float power);
+    void SmoothTerrain2(const Vector3& worldPos, float radius, Heights_t* levelOnlyHeights, float power);
     bool AtMaxWorldLevelDepth(const Vector3& worldPos);
     bool GetWorldBaseHeight(const Vector3& worldPos, float& height);
     bool GetWorldHeight(const Vector3& worldPos, float& height);
@@ -97,7 +111,7 @@ private:
     void FindObjectsToMove(Vector3 worldPos, float area, std::vector<Rigidbody> &objects);
     void PaintCleared(Vector3 worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
     void WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y);
-    void LevelTerrain(const Vector3& worldPos, float radius, bool square, Heights* levelOnly);
+    void LevelTerrain(const Vector3& worldPos, float radius, bool square, Heights_t* levelOnly);
 
 public:
     Heightmap(Vector2i zone) : m_zone(zone) {}
@@ -115,11 +129,15 @@ public:
     Biome GetBiome(const Vector3& point);
     BiomeArea GetBiomeArea();
     bool IsBiomeEdge();
-    bool CheckTerrainModIsContained(TerrainModifier modifier);
+
+    // client command only
+    //bool CheckTerrainModIsContained(TerrainModifier modifier);
+
     bool TerrainVSModifier(TerrainModifier modifier);
 
     
-    
+    // Should use an array independent from paintmask
+    // only the alpha is used
     float GetVegetationMask(const Vector3& worldPos);
     bool IsCleared(const Vector3& worldPos);
     bool IsCultivated(const Vector3& worldPos);
@@ -159,13 +177,19 @@ private:
 
     //std::vector<float> m_heights;
 
-    Heights m_heights{};
+    //Heights m_heights{};
+
+    Heights_t m_heights;
 
     std::unique_ptr<HMBuildData> m_buildData;
 
-    Texture2D m_paintMask;
+    //Texture2D m_paintMask;
+    //std::vector<float>
+    //std::vector<TerrainModifier::PaintType> m_paintMask;
+    Mask_t m_paintMask;
 
-    Material m_materialInstance;
+    // seems to only be used for gpu texture sets
+    //Material m_materialInstance;
 
     MeshCollider m_collider;
 

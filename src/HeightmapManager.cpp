@@ -87,7 +87,7 @@ bool HeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, 
 
 
 // public static
-robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>, HashUtils::Hasher>& HeightmapManager::GetAllHeightmaps() {
+robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& HeightmapManager::GetAllHeightmaps() {
     return m_heightmaps;
 }
 

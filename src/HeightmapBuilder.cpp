@@ -1,9 +1,9 @@
 #include <mutex>
 
 #include "HeightmapBuilder.h"
-#include "AsyncDeque.h"
 #include "WorldGenerator.h"
 #include "HashUtils.h"
+#include "TerrainModifier.h"
 
 namespace HeightmapBuilder {
 
@@ -11,8 +11,8 @@ namespace HeightmapBuilder {
 
 
 
-    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>, HashUtils::Hasher> m_toBuild;
-    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>, HashUtils::Hasher> m_ready;
+    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_toBuild;
+    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_ready;
 
     std::thread m_builder;
 
@@ -96,7 +96,7 @@ namespace HeightmapBuilder {
                 Color color;
                 float value;
 
-                if (biome3 == biome && biome2 == biome && biome4 == biome) {
+                if (biome == biome2 && biome == biome3 && biome == biome4) {
                     value = WorldGenerator::GetBiomeHeight(biome, wx, wy, color);
                 }
                 else {
@@ -118,10 +118,17 @@ namespace HeightmapBuilder {
                 data->m_baseHeights[k * num + l] = value;
 
                 if (l < Heightmap::WIDTH && k < Heightmap::WIDTH) {
+                    //if (color.a > .5f) {
+                    //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
+                    //}
+                    //else if (color.g > .5f) {
+                    //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Cultivate;
+                    //}
                     data->m_baseMask[k * Heightmap::WIDTH + l] = color;
                 }
                 else {
                     data->m_baseMask[k * Heightmap::WIDTH + l] = Colors::BLACK;
+                    //data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
                 }
             }
         }
