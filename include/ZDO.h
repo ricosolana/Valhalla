@@ -493,8 +493,10 @@ public:
 
     void Invalidate();
 
+    // Should name better
     void Abandon() {
-        m_owner = 0;
+        //m_owner = 0;
+        SetOwner(0);
     }
 
     // Save ZDO to network packet

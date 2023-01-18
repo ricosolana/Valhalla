@@ -129,7 +129,7 @@ void Heightmap::Generate() {
         this->m_buildData = HeightmapBuilder::RequestTerrainBlocking(m_zone);
         std::copy(m_buildData->m_cornerBiomes.begin(), 
             m_buildData->m_cornerBiomes.end() + m_buildData->m_cornerBiomes.size(), 
-            m_cornerBiomes);
+            m_cornerBiomes.begin());
         //this->m_cornerBiomes = this->m_buildData->m_cornerBiomes;
     }
 

@@ -78,9 +78,9 @@ std::string NetObject::GetPrefabName() const {
 	return "";
 }
 
-void NetObject::Destroy() {
-	//ZNetScene.instance.Destroy(base.gameObject);
-}
+//void NetObject::Destroy() {
+//	//ZNetScene.instance.Destroy(base.gameObject);
+//}
 
 void NetObject::ResetNetSync() {
 	m_sync = nullptr;

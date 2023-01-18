@@ -9,11 +9,17 @@
 
 namespace ZoneSystem {
 
+    // I feel like zdos are what allows for objects to be created
+    // simple ZDO pool containing the most recent objects, which are frequently revised
+
+
     // Dummy forward declarations
     struct Location {};
     struct RandomSpawn {};
 
-
+    struct LocationProxy {
+        LocationProxy()
+    };
 
 
     // private
@@ -252,13 +258,16 @@ namespace ZoneSystem {
     //Vector3 GetRandomPointInZone(float locationRadius);
 
     void RemoveUnplacedLocations(ZoneLocation* location);
-    GameObject SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects);
+    GameObject SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, std::vector<GameObject>& spawnedGhostObjects);
     void CreateLocationProxy(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects);
     void RegisterLocation(ZoneLocation* location, const Vector3& pos, bool generated);
     bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
     void GetTerrainDelta(const Vector3& center, float& radius, float& delta, Vector3& slopeDirection);
     void UpdateTTL(float dt);
-    void SetZoneGenerated(const Vector2i& zoneID);
+
+    // inlined 
+    //void SetZoneGenerated(const Vector2i& zoneID);
+
     bool IsZoneGenerated(const Vector2i& zoneID);
     void RPC_SetGlobalKey(OWNER_t sender, std::string name);
     void RPC_RemoveGlobalKey(OWNER_t sender, std::string name);
@@ -351,7 +360,7 @@ namespace ZoneSystem {
 
     robin_hood::unordered_set<Vector2i> m_generatedZones;
 
-    bool m_locationsGenerated;
+    //bool m_locationsGenerated;
 
     robin_hood::unordered_map<Vector3, std::string> m_locationIcons;
 
@@ -406,6 +415,23 @@ namespace ZoneSystem {
         LOG(INFO) << "Zonesystem Awake " << Time.frameCount.ToString();
     }
     */
+
+    bool InActiveArea(const Vector2i& zone, const Vector3& refPoint) {
+        return InActiveArea(zone,
+            ZoneSystem::WorldToZonePos(refPoint));
+    }
+
+    bool InActiveArea(const Vector2i& zone, const Vector2i& refCenterZone) {
+        int num = ZoneSystem::ACTIVE_AREA - 1;
+        return zone.x >= refCenterZone.x - num
+            && zone.x <= refCenterZone.x + num
+            && zone.y <= refCenterZone.y + num
+            && zone.y >= refCenterZone.y - num;
+    }
+
+
+
+
 
     // private
     void Start() {
@@ -575,13 +601,13 @@ namespace ZoneSystem {
         for (auto&& vec : m_generatedZones) {
             m_worldSave.Write(vec);
         }
-        m_worldSave.Write(Version::PGW);
+        m_worldSave.Write(VConstants::PGW);
         m_worldSave.Write(m_locationVersion);
         m_worldSave.Write<int32_t>(m_globalKeys.size());
         for (auto&& key : m_globalKeys) {
             m_worldSave.Write(key);
         }
-        m_worldSave.Write(m_locationsGenerated);
+        m_worldSave.Write(true); // m_worldSave.Write(m_locationsGenerated);
         m_worldSave.Write<int32_t>(m_locationInstances.size());
         for (auto&& pair : m_locationInstances) {
             auto&& inst = pair.second;
@@ -607,7 +633,7 @@ namespace ZoneSystem {
         if (version >= 13) {
             int32_t num2 = reader.Read<int32_t>();
             int32_t num3 = (version >= 21) ? reader.Read<int32_t>() : 0;
-            if (num2 != Version::PGW) {
+            if (num2 != VConstants::PGW) {
                 m_generatedZones.clear();
             }
             if (version >= 14) {
@@ -619,9 +645,10 @@ namespace ZoneSystem {
                 }
             }
             if (version >= 18) {
-                if (version >= 20) {
-                    m_locationsGenerated = reader.Read<bool>();
-                }
+                // kinda dumb, ?
+                if (version >= 20) //m_locationsGenerated = reader.Read<bool>();
+                    reader.Read<bool>();
+                    
                 m_locationInstances.clear();
                 int32_t num5 = reader.Read<int32_t>();
                 for (int32_t k = 0; k < num5; k++) {
@@ -642,13 +669,13 @@ namespace ZoneSystem {
                     }
                 }
                 LOG(INFO) << "Loaded " << num5 << " locations";
-                if (num2 != Version::PGW) {
+                if (num2 != VConstants::PGW) {
                     m_locationInstances.clear();
-                    m_locationsGenerated = false;
+                    //m_locationsGenerated = false;
                 }
 
                 if (num3 != m_locationVersion) {
-                    m_locationsGenerated = false;
+                    //m_locationsGenerated = false;
                 }
             }
         }
@@ -812,8 +839,8 @@ namespace ZoneSystem {
             m_tempSpawnedObjects.clear();
             UnityEngine.Object.Destroy(root);
             //root = null;
-        //}
-            SetZoneGenerated(zoneID);
+
+            m_generatedZones.insert(zoneID);
         }
         return true;
     }
@@ -1111,29 +1138,28 @@ namespace ZoneSystem {
     }
 
     // public
-    // seems to never be called from within logs
-    /*
+    // call from within ZNet.init or earlier...
     void GenerateLocations() {
-        if (!Application.isPlaying) {
-            LOG(INFO) << "Setting up locations";
-            SetupLocations();
-        }
-        LOG(INFO) << "Generating locations";
-        DateTime now = DateTime.Now;
-        m_locationsGenerated = true;
-        UnityEngine.Random.State state = UnityEngine.Random.state;
+        auto now(steady_clock::now());
+
+        //m_locationsGenerated = true;
+
         CheckLocationDuplicates();
         ClearNonPlacedLocations();
-        for (auto&& zoneLocation : from a : m_locations
-            orderby a.m_prioritized descending
-            select a) {
-            if (zoneLocation.m_enable && zoneLocation.m_quantity != 0) {
-                GenerateLocations(zoneLocation);
-            }
+
+        // instead iterate locations
+        for (auto&& loc : m_locations) {
+            if (loc->m_prioritized)
+                GenerateLocations(loc.get());
         }
-        UnityEngine.Random.state = state;
-        LOG(INFO) << " Done generating locations, duration:" << (DateTime.Now - now).TotalMilliseconds.ToString() << " ms";
-    }*/
+
+        for (auto&& loc : m_locations) {
+            if (!loc->m_prioritized)
+                GenerateLocations(loc.get());
+        }
+
+        LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+    }
 
     // private
     int32_t CountNrOfLocation(ZoneLocation* location) {
@@ -1149,133 +1175,142 @@ namespace ZoneSystem {
         }
 
         return count;
-
-        //int32_t num = 0;
-        //using (robin_hood::unordered_map<Vector2i, ZoneSystem.LocationInstance>.ValueCollection.Enumerator enumerator = m_locationInstances.Values.GetEnumerator()) {
-        //    while (enumerator.MoveNext()) {
-        //        if (enumerator.Current.m_location.m_prefabName == location.m_prefabName) {
-        //            num++;
-        //        }
-        //    }
-        //}
-        //if (num > 0) {
-        //    LOG(INFO) << "Old location found " << location.m_prefabName << " x " << num.ToString();
-        //}
-        //return num;
     }
 
     // private
-    /*
-    void GenerateLocations(ZoneLocation location) {
-        DateTime now = DateTime.Now;
-        UnityEngine.Random.InitState(WorldGenerator::GetSeed() + location.m_prefabName.GetStableHashCode());
-        int32_t num = 0;
-        int32_t num2 = 0;
-        int32_t num3 = 0;
-        int32_t num4 = 0;
-        int32_t num5 = 0;
-        int32_t num6 = 0;
-        int32_t num7 = 0;
-        int32_t num8 = 0;
-        float locationRadius = Mathf.Max(location.m_exteriorRadius, location.m_interiorRadius);
-        int32_t num9 = location.m_prioritized ? 200000 : 100000;
-        int32_t num10 = 0;
-        int32_t num11 = CountNrOfLocation(location);
-        float num12 = 10000;
-        if (location.m_centerFirst) {
-            num12 = location.m_minDistance;
+    void GenerateLocations(ZoneLocation* location) {
+        VUtils::Random::State state(WorldGenerator::GetSeed() + VUtils::String::GetStableHashCode(location->m_prefabName));
+        const float locationRadius = std::max(location->m_exteriorRadius, location->m_interiorRadius);
+        unsigned int spawnedLocations = 0;
+
+        unsigned int errLocations = 0;
+        unsigned int errCenterDistances = 0;
+        unsigned int errNoneBiomes = 0;
+        unsigned int errBiomeArea = 0;
+        unsigned int errAltitude = 0;
+        unsigned int errForestFactor = 0;
+        unsigned int errSimilarLocation = 0;
+        unsigned int errTerrainDelta = 0;
+
+        for (auto&& inst : m_locationInstances) {
+            if (inst.second.m_location->m_prefabName == location->m_prefabName)
+                spawnedLocations++;
         }
-        if (location.m_unique && num11 > 0) {
+        if (spawnedLocations)
+            LOG(INFO) << "Old location found " << location->m_prefabName << " x " << spawnedLocations;
+
+        float range = location->m_centerFirst ? location->m_minDistance : 10000;
+
+        if (location->m_unique && spawnedLocations)
             return;
-        }
-        int32_t num13 = 0;
-        while (num13 < num9 && num11 < location.m_quantity) {
-            Vector2i randomZone = GetRandomZone(num12);
-            if (location.m_centerFirst) {
-                num12 += 1;
-            }
-            if (m_locationInstances.ContainsKey(randomZone)) {
-                num++;
-            }
+
+        const unsigned int spawnAttempts = location->m_prioritized ? 200000 : 100000;
+        for (unsigned int a = 0; a < spawnAttempts && spawnedLocations < location->m_quantity; a++) {
+            Vector2i randomZone = GetRandomZone(state, range);
+            if (location->m_centerFirst)
+                range++;
+
+            if (m_locationInstances.contains(randomZone))
+                errLocations++;
             else if (!IsZoneGenerated(randomZone)) {
-                Vector3 zonePos = GetZonePos(randomZone);
-                BiomeArea biomeArea = WorldGenerator.instance.GetBiomeArea(zonePos);
-                if ((location.m_biomeArea & biomeArea) == (Heightmap.BiomeArea)0) {
-                    num4++;
-                }
+                Vector3 zonePos = ZoneToWorldPos(randomZone);
+                Heightmap::BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
+                //if ((BitMask<location->m_biomeArea> & biomeArea) == (Heightmap::BiomeArea)0)
+                if (!(std::to_underlying(biomeArea) & std::to_underlying(location->m_biomeArea)))
+                    errBiomeArea++;
                 else {
-                    for (int32_t i = 0; i < 20; i++) {
-                        num10++;
-                        Vector3 randomPointInZone = GetRandomPointInZone(randomZone, locationRadius);
-                        float magnitude = randomPointInZone.magnitude;
-                        if (location.m_minDistance != 0f && magnitude < location.m_minDistance) {
-                            num2++;
-                        }
-                        else if (location.m_maxDistance != 0f && magnitude > location.m_maxDistance) {
-                            num2++;
-                        }
+                    for (int i = 0; i < 20; i++) {
+
+                        // generate point in zone
+                        float num = ZONE_SIZE / 2.f;
+                        float x = state.Range(-num + locationRadius, num - locationRadius);
+                        float z = state.Range(-num + locationRadius, num - locationRadius);
+                        Vector3 randomPointInZone = zonePos + Vector3(x, 0, z);
+
+
+
+                        float magnitude = randomPointInZone.Magnitude();
+                        if ((location->m_minDistance != 0 && magnitude < location->m_minDistance)
+                            || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance))
+                            errCenterDistances++;
                         else {
-                            Heightmap.Biome biome = WorldGenerator.instance.GetBiome(randomPointInZone);
-                            if ((location.m_biome & biome) == Heightmap.Biome.None) {
-                                num3++;
-                            }
+                            Heightmap::Biome biome = WorldGenerator::GetBiome(randomPointInZone);
+                            //if ((location->m_biome & biome) == Heightmap::Biome::None)
+                            if (!(std::to_underlying(biome) & std::to_underlying(location->m_biome)))
+                                errNoneBiomes++;
                             else {
-                                randomPointInZone.y = WorldGenerator.instance.GetHeight(randomPointInZone.x, randomPointInZone.z);
-                                float num14 = randomPointInZone.y - m_waterLevel;
-                                if (num14 < location.m_minAltitude || num14 > location.m_maxAltitude) {
-                                    num5++;
-                                }
+                                randomPointInZone.y = WorldGenerator::GetHeight(randomPointInZone.x, randomPointInZone.z);
+                                float waterDiff = randomPointInZone.y - WATER_LEVEL;
+                                if (waterDiff < location->m_minAltitude || waterDiff > location->m_maxAltitude)
+                                    errAltitude++;
                                 else {
-                                    if (location.m_inForest) {
-                                        float forestFactor = WorldGenerator.GetForestFactor(randomPointInZone);
-                                        if (forestFactor < location.m_forestTresholdMin || forestFactor > location.m_forestTresholdMax) {
-                                            num6++;
-                                            goto IL_27C;
+                                    if (location->m_inForest) {
+                                        float forestFactor = WorldGenerator::GetForestFactor(randomPointInZone);
+                                        if (forestFactor < location->m_forestTresholdMin
+                                            || forestFactor > location->m_forestTresholdMax) {
+                                            errForestFactor++;
+                                            continue;
                                         }
                                     }
-                                    float num15;
+
+                                    float delta = 0;
                                     Vector3 vector;
-                                    WorldGenerator.instance.GetTerrainDelta(randomPointInZone, location.m_exteriorRadius, num15, vector);
-                                    if (num15 > location.m_maxTerrainDelta || num15 < location.m_minTerrainDelta) {
-                                        num8++;
-                                    }
+                                    WorldGenerator::GetTerrainDelta(state, randomPointInZone, location->m_exteriorRadius, delta, vector);
+                                    if (delta > location->m_maxTerrainDelta
+                                        || delta < location->m_minTerrainDelta)
+                                        errTerrainDelta++;
                                     else {
-                                        if (location.m_minDistanceFromSimilar <= 0f || !HaveLocationInRange(location.m_prefabName, location.m_group, randomPointInZone, location.m_minDistanceFromSimilar)) {
-                                            RegisterLocation(location, randomPointInZone, false);
-                                            num11++;
-                                            break;
+                                        if (location->m_minDistanceFromSimilar <= 0) {
+                                            bool locInRange = false;
+                                            for (auto&& inst : m_locationInstances) {
+                                                auto&& loc = inst.second.m_location;
+                                                if ((loc->m_prefabName == location->m_prefabName
+                                                    || (!location->m_group.empty() && location->m_group == loc->m_group))
+                                                    && inst.second.m_position.Distance(randomPointInZone) < location->m_minDistanceFromSimilar)
+                                                {
+                                                    locInRange = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!locInRange) {
+                                                RegisterLocation(location, randomPointInZone, false);
+                                                spawnedLocations++;
+                                                break;
+                                            }
                                         }
-                                        num7++;
+                                        errSimilarLocation++;
                                     }
                                 }
                             }
                         }
-                    IL_27C:;
                     }
                 }
             }
-            num13++;
         }
-        if (num11 < location.m_quantity) {
-            ZLog.LogWarning(std::string.Concat(new std::string[]{
-                "Failed to place all ",
-                location.m_prefabName,
-                ", placed ",
-                num11.ToString(),
-                " of ",
-                location.m_quantity.ToString()
-                }));
-            ZLog.DevLog("errorLocationInZone " + num.ToString());
-            ZLog.DevLog("errorCenterDistance " + num2.ToString());
-            ZLog.DevLog("errorBiome " + num3.ToString());
-            ZLog.DevLog("errorBiomeArea " + num4.ToString());
-            ZLog.DevLog("errorAlt " + num5.ToString());
-            ZLog.DevLog("errorForest " + num6.ToString());
-            ZLog.DevLog("errorSimilar " + num7.ToString());
-            ZLog.DevLog("errorTerrainDelta " + num8.ToString());
+
+        if (spawnedLocations < location->m_quantity) {
+            LOG(ERROR) << "Failed to place all " << location->m_prefabName << ", placed " << spawnedLocations << "/" << location->m_quantity;
+
+            LOG(DEBUG) << "errLocations " << errLocations;
+            LOG(DEBUG) << "errCenterDistances " << errCenterDistances;
+            LOG(DEBUG) << "errNoneBiomes " << errNoneBiomes;
+            LOG(DEBUG) << "errBiomeArea " << errBiomeArea;
+            LOG(DEBUG) << "errAltitude " << errAltitude;
+            LOG(DEBUG) << "errForestFactor " << errForestFactor;
+            LOG(DEBUG) << "errSimilarLocation " << errSimilarLocation;
+            LOG(DEBUG) << "errTerrainDelta " << errTerrainDelta;
         }
-        DateTime.Now - now;
-    }*/
+    }
+
+    Vector2i GetRandomZone(VUtils::Random::State& state, float range) {
+        int num = (int32_t)range / (int32_t)ZONE_SIZE;
+        Vector2i vector2i;
+        do {
+            vector2i = Vector2i(state.Range(-num, num), state.Range(-num, num));
+        } while (ZoneToWorldPos(vector2i).Magnitude() >= 10000);
+        return vector2i;
+    }
 
     /*
         // private
@@ -1329,8 +1364,7 @@ namespace ZoneSystem {
             Vector3 vector;
             Heightmap::Biome biome = Heightmap::Biome::None;
             Heightmap::BiomeArea biomeArea;
-            Heightmap heightmap;
-            GetGroundData(position, vector, biome, biomeArea, heightmap);
+            Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
 
             if (locationInstance.m_location->m_snapToWater) {
                 position.y = m_waterLevel;
@@ -1339,6 +1373,7 @@ namespace ZoneSystem {
                 ClearArea item(position, locationInstance.m_location->m_exteriorRadius);
                 clearAreas.push_back(item);
             }
+
             Quaternion rot(Quaternion::IDENTITY);
             if (locationInstance.m_location->m_slopeRotation) {
                 float num;
@@ -1357,23 +1392,15 @@ namespace ZoneSystem {
             }
 
             int32_t seed = WorldGenerator::GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
-            SpawnLocation(locationInstance.m_location, seed, position, rot, mode, spawnedObjects);
+            SpawnLocation(locationInstance.m_location, seed, position, rot, spawnedObjects);
             locationInstance.m_placed = true;
             m_locationInstances[zoneID] = locationInstance;
 
             //TimeSpan timeSpan = DateTime.Now - now;
 
             LOG(INFO) << "Placed locations in zone "
-                << zoneID << " duration "
+                << zoneID.x << " " << zoneID.y << " duration "
                 << duration_cast<milliseconds>(steady_clock::now() - now).count();
-
-            //std::string[] array = new std::string[5];
-            //array[0] = "Placed locations in zone ";
-            //array[1] = zoneID.ToString();
-            //array[2] = "  duration ";
-            //array[3] = timeSpan.TotalMilliseconds.ToString();
-            //array[4] = " ms";
-            //LOG(INFO) << std::string.Concat(array);
 
             if (locationInstance.m_location->m_unique) {
                 RemoveUnplacedLocations(locationInstance.m_location);
@@ -1441,23 +1468,24 @@ namespace ZoneSystem {
     }*/
 
     // public
-    GameObject SpawnProxyLocation(int32_t hash, int32_t seed, const Vector3& pos, const Quaternion& rot) {
-        auto&& location = GetLocation(hash);
-        if (!location) {
-            LOG(ERROR) << "Missing location:" + hash;
-            return null;
-        }
-        std::vector<GameObject> spawnedGhostObjects;
-        return SpawnLocation(location, seed, pos, rot, SpawnMode::Client, spawnedGhostObjects);
-    }
+    // the client uses this
+    //GameObject SpawnProxyLocation(int32_t hash, int32_t seed, const Vector3& pos, const Quaternion& rot) {
+    //    auto&& location = GetLocation(hash);
+    //    if (!location) {
+    //        LOG(ERROR) << "Missing location:" + hash;
+    //        return null;
+    //    }
+    //    std::vector<GameObject> spawnedGhostObjects;
+    //    return SpawnLocation(location, seed, pos, rot, SpawnMode::Client, spawnedGhostObjects);
+    //}
 
     // private
-    GameObject SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects) {
-        location.m_prefab.transform.position = Vector3::ZERO;
-        location.m_prefab.transform.rotation = Quaternion::IDENTITY;
+    GameObject SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, std::vector<GameObject>& spawnedGhostObjects) {
+        location->m_prefab.transform.position = Vector3::ZERO;
+        location->m_prefab.transform.rotation = Quaternion::IDENTITY;
         //UnityEngine.Random.InitState(seed);
 
-        VUtils::Random::State state(seed);
+        
 
         Location component = location.m_prefab.GetComponent<Location>();
         bool flag = component && component.m_useCustomInteriorTransform && component.m_interiorTransform && component.m_generator;
@@ -1477,13 +1505,15 @@ namespace ZoneSystem {
             //LOG(ERROR) << ""
             ZLog.LogWarning(component.name + " & " + component.m_generator.name + " don't have matching m_useCustomInteriorTransform()! If one has it the other should as well!");
         }
-        if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
+        //if (mode == SpawnMode::Full || mode == SpawnMode::Ghost) {
             for (auto&& znetView : location.m_netViews) {
                 znetView.gameObject.SetActive(true);
             }
             //UnityEngine.Random.InitState(seed);
 
-            state = VUtils::Random::State(seed);
+            //state = VUtils::Random::State(seed);
+
+            VUtils::Random::State state(seed);
 
             for (auto&& randomSpawn : location.m_randomSpawns) {
                 randomSpawn.Randomize();
@@ -1511,36 +1541,38 @@ namespace ZoneSystem {
                         component2.Generate(mode);
                     }
 
-                    if (mode == SpawnMode::Ghost) {
+                    //if (mode == SpawnMode::Ghost) {
                         spawnedGhostObjects.Add(gameObject);
                         //ZNetView.FinishGhostInit();
-                    }
+                    //}
                 }
             }
             WearNTear.m_randomInitialDamage = false;
             CreateLocationProxy(location, seed, pos, rot, mode, spawnedGhostObjects);
             SnapToGround.SnappAll();
             return null;
-        }
-        UnityEngine.Random.InitState(seed);
-        for (auto&& randomSpawn2 : location.m_randomSpawns) {
-            randomSpawn2.Randomize();
-        }
-        for (auto&& znetView3 : location.m_netViews) {
-            znetView3.gameObject.SetActive(false);
-        }
-        GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(location.m_prefab, pos, rot);
-        gameObject2.SetActive(true);
-        SnapToGround.SnappAll();
-        return gameObject2;
+        //}
+        
+        //UnityEngine.Random.InitState(seed);
+        //for (auto&& randomSpawn2 : location.m_randomSpawns) {
+        //    randomSpawn2.Randomize();
+        //}
+        //for (auto&& znetView3 : location.m_netViews) {
+        //    znetView3.gameObject.SetActive(false);
+        //}
+        //GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(location.m_prefab, pos, rot);
+        //gameObject2.SetActive(true);
+        //SnapToGround.SnappAll();
+        //return gameObject2;
     }
 
+    // could be inlined...
     // private
     void CreateLocationProxy(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects) {
         //if (mode == SpawnMode::Ghost) {
         //    ZNetView.StartGhostInit();
         //}
-
+        
         GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_locationProxyPrefab, pos, rotation);
         LocationProxy component = gameObject.GetComponent<LocationProxy>();
         bool spawnNow = mode == ZoneSystem.SpawnMode.Full;
@@ -1909,10 +1941,11 @@ namespace ZoneSystem {
         return Vector3(id.x * m_zoneSize, 0, id.y * m_zoneSize);
     }
 
+    // inlined because 1 use only
     // private
-    void SetZoneGenerated(const Vector2i& zoneID) {
-        m_generatedZones.insert(zoneID);
-    }
+    //void SetZoneGenerated(const Vector2i& zoneID) {
+    //    m_generatedZones.insert(zoneID);
+    //}
 
     // private
     bool IsZoneGenerated(const Vector2i& zoneID) {

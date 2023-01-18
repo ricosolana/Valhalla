@@ -9,6 +9,11 @@
 #include "GameObject.h"
 
 namespace ZoneSystem {
+	// alternate names
+	//	coord, 
+	// ill just forget about this
+	//using ZonePoint = Vector2i;
+
 	// eventually redundant?
 	//void GenerateLocationsIfNeeded();
 	// 
@@ -19,6 +24,13 @@ namespace ZoneSystem {
 	void Load(NetPackage& reader, int32_t version);
 	bool IsZoneLoaded(const Vector3& point);
 	bool IsZoneLoaded(const Vector2i& zoneID);
+
+	// Vec2 is too ambigious, maybe use more refined 
+	//	zone coordinate type?
+	static bool InActiveArea(const Vector2i& zone, const Vector3& areaPoint);
+
+	static bool InActiveArea(const Vector2i& zone, const Vector2i& areaZone);
+
 
 	// client only because ZNet ref pos
 	//bool IsActiveAreaLoaded();

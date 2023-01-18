@@ -52,7 +52,7 @@ public:
 	//public void SetPersistent(bool persistent); // seems unused
 
 	std::string GetPrefabName() const;
-	void Destroy();
+	//void Destroy();
 
 	NetSync* GetNetSync() const {
 		return m_sync;
