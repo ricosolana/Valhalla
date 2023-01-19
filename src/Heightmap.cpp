@@ -465,9 +465,6 @@ bool Heightmap::GetWorldBaseHeight(const Vector3& worldPos, float& height) {
 
 // private
 bool Heightmap::GetWorldHeight(const Vector3& worldPos, float& height) {
-
-    assert(false);
-
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
@@ -476,17 +473,14 @@ bool Heightmap::GetWorldHeight(const Vector3& worldPos, float& height) {
         height = 0;
         return false;
     }
-    //height = this->m_heights[num2 * num3 + num] + base.transform.position.y;
 
-
+    height = this->m_heights[num2 * num3 + num];
 
     return true;
 }
 
 // private
 bool Heightmap::GetAverageWorldHeight(const Vector3& worldPos, float radius, float &height) {
-    assert(false);
-
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
@@ -509,7 +503,7 @@ bool Heightmap::GetAverageWorldHeight(const Vector3& worldPos, float radius, flo
         height = 0;
         return false;
     }
-    //height = (num6 / (float)num7) + base.transform.position.y;
+    height = num6 / (float)num7;
     return true;
 }
 
@@ -718,50 +712,44 @@ bool Heightmap::IsCultivated(const Vector3& worldPos) {
 
 // public
 void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
-    assert(false);
-
-    //Vector3 vector = worldPos - base.transform.position;
-    //x = floor(vector.x + 0.5f) + WIDTH / 2;
-    //y = floor(vector.z + 0.5f) + WIDTH / 2;
+    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    x = floor(vector.x + 0.5f) + WIDTH / 2;
+    y = floor(vector.z + 0.5f) + WIDTH / 2;
 }
 
 // private
 void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y) {
-    assert(false);
-
-    //float num = WIDTH;
-    //Vector3 vector = worldPos - base.transform.position;
-    //x = vector.x / num + 0.5f;
-    //y = vector.z / num + 0.5f;
+    float num = WIDTH;
+    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    x = vector.x / num + 0.5f;
+    y = vector.z / num + 0.5f;
 }
 
 // private
 void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square, 
     Heights_t* levelOnly) {
 
-    assert(false);
-
-    //int32_t num;
-    //int32_t num2;
-    //this->WorldToVertex(worldPos, num, num2);
-    //Vector3 vector = worldPos - base.transform.position;
-    //float num3 = radius;
-    //int32_t num4 = ceil(num3);
-    //int32_t num5 = WIDTH + 1;
-    //Vector2 a = Vector2(num, num2);
-    //for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
-    //    for (int32_t j = num - num4; j <= num + num4; j++) {
-    //        if ((square || a.Distance(Vector2(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
-    //            float num6 = vector.y;
-    //            if (levelOnly) {
-    //                float num7 = m_heights[i * num5 + j];
-    //                num6 = VUtils::Math::Clamp(num6, num7 - 8, num7 + 8);
-    //                (*levelOnly)[i * num5 + j] = num6;
-    //            }
-    //            this->SetHeight(j, i, num6);
-    //        }
-    //    }
-    //}
+    int32_t num;
+    int32_t num2;
+    this->WorldToVertex(worldPos, num, num2);
+    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    float num3 = radius;
+    int32_t num4 = ceil(num3);
+    int32_t num5 = WIDTH + 1;
+    Vector2 a = Vector2(num, num2);
+    for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
+        for (int32_t j = num - num4; j <= num + num4; j++) {
+            if ((square || a.Distance(Vector2(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
+                float num6 = vector.y;
+                if (levelOnly) {
+                    float num7 = m_heights[i * num5 + j];
+                    num6 = VUtils::Math::Clamp(num6, num7 - 8, num7 + 8);
+                    (*levelOnly)[i * num5 + j] = num6;
+                }
+                this->SetHeight(j, i, num6);
+            }
+        }
+    }
 }
 
 // public
@@ -803,9 +791,12 @@ void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
 bool Heightmap::IsPointInside(const Vector3& point, float radius) {
     throw std::runtime_error("not implemented");
 
-    //float num = (float)Heightmap::WIDTH * 0.5f;
-    //Vector3 position = base.transform.position;
-    //return point.x + radius >= position.x - num && point.x - radius <= position.x + num && point.z + radius >= position.z - num && point.z - radius <= position.z + num;
+    float num = (float)Heightmap::WIDTH * 0.5f;
+    Vector3 position = ZoneSystem::ZoneToWorldPos(this->m_zone);
+    return point.x + radius >= position.x - num 
+        && point.x - radius <= position.x + num 
+        && point.z + radius >= position.z - num 
+        && point.z - radius <= position.z + num;
 }
 
 // public
@@ -820,8 +811,6 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler() {
 
 // public
 Vector3 Heightmap::GetWorldPosition() {
-    throw std::runtime_error("not implemented");
-    //return Vector3(m_zone.x, m_zone.y);
-    //return this->m_bounds.center;
+    return ZoneSystem::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0, WIDTH/2.f);
 }
 

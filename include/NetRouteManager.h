@@ -67,6 +67,12 @@ namespace NetRouteManager {
 		* @param name function name to register
 		* @param method ptr to a static function
 	*/
+
+	template<typename F>
+	auto Register(HASH_t hash, F func) {
+		return _Register(hash, new MethodImpl(func));
+	}
+
 	//template<class ...Args>
 	//auto Register(HASH_t hash, FuncPtr<Args...> f) {
 	//	return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
@@ -77,14 +83,19 @@ namespace NetRouteManager {
 	//
 	//}
 
-	template<class ...Args>
-	auto Register(HASH_t hash, std::function<void(OWNER_t, Args...)> f) {
-		// stuff ...
-	}
+	//template<class ...Args>
+	//auto Register(HASH_t hash, std::function<void(OWNER_t, Args...)> f) {
+	//	// stuff ...
+	//}
 
-	template<class ...Args>
-	auto Register(HASH_t hash, SFuncPtr<Args...> f) {
-		return Register(hash, std::function(f));
+	//template<class ...Args>
+	//auto Register(HASH_t hash, SFuncPtr<Args...> f) {
+	//	return Register(hash, std::function(f));
+	//}
+
+	template<typename F>
+	auto Register(const std::string& name, F func) {
+		//_Register(VUtils::String::GetStableHashCode(name), )
 	}
 
 

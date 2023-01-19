@@ -51,8 +51,7 @@ bool HeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
 
 // public static
 bool HeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, float height) {
-    std::vector<Heightmap*> list;
-    FindHeightmap(worldPos, radius, list);
+    std::vector<Heightmap*> list = FindHeightmaps(worldPos, radius);
 
     float num = 0;
     int32_t num2 = 0;
@@ -64,18 +63,6 @@ bool HeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, 
             num2++;
         }
     }
-
-
-
-    //using (std::vector<Heightmap>.Enumerator enumerator = list.GetEnumerator()) {
-    //    while (enumerator.MoveNext()) {
-    //        float num3;
-    //        if (enumerator.Current.GetAverageWorldHeight(worldPos, radius, num3)) {
-    //            num += num3;
-    //            num2++;
-    //        }
-    //    }
-    //}
 
     if (num2 > 0) {
         height = num / (float)num2;
@@ -103,13 +90,15 @@ Heightmap* HeightmapManager::FindHeightmap(const Vector3& point) {
 }
 
 // public static
-void HeightmapManager::FindHeightmap(const Vector3& point, float radius, std::vector<Heightmap*>& heightmaps) {
+std::vector<Heightmap*> HeightmapManager::FindHeightmaps(const Vector3& point, float radius) {
+    std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
         if (heightmap->IsPointInside(point, radius)) {
             heightmaps.push_back(heightmap.get());
         }
     }
+    return heightmaps;
 }
 
 // public static
@@ -123,22 +112,18 @@ Heightmap::Biome HeightmapManager::FindBiome(const Vector3& point) {
 
 // public static
 bool HeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
-    //tempHmaps.clear();
-    std::vector<Heightmap*> heightmaps;
-    FindHeightmap(point, radius, heightmaps);
+    auto heightmaps = FindHeightmaps(point, radius);
     for (auto&& hmap : heightmaps) {
         if (hmap->IsRegenerateQueued())
             return true;
     }
-
-
-
-    //using (std::vector<Heightmap>.Enumerator enumerator = Heightmap.tempHmaps.GetEnumerator()) {
-    //    while (enumerator.MoveNext()) {
-    //        if (enumerator.Current.HaveQueuedRebuild()) {
-    //            return true;
-    //        }
-    //    }
-    //}
     return false;
+}
+
+Heightmap* HeightmapManager::CreateHeightmap(const Vector2i& zone) {
+    assert(!m_heightmaps.contains(zone) && "fix your code dummy");
+
+    auto h(new Heightmap(zone));
+    m_heightmaps[zone] = std::unique_ptr<Heightmap>(h);
+    return h;
 }

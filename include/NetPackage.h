@@ -296,4 +296,16 @@ public:
         return {pkg.template Read<Ts>()...};
     }
 
+    //template<class Tuple, size_t ...Is> // class Tuple>
+    //static Tuple Deserialize(NetPackage& pkg, std::index_sequence<Is...>)
+    //{
+    //    //std::tuple<int, char> tup;
+    //    //std::get<0>(tup)
+    //    //Tuple tuple;
+    //    //return {pkg.template Read<std::get<Is>(tuple)>()...};
+    //    //std::tuple_element_t<0, decltype(tup)> e;
+    //
+    //    return { pkg.template Read<std::tuple_element_t<Is, Tuple>>()...};
+    //}
+
 };

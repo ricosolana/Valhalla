@@ -212,21 +212,6 @@ private:
 
     Vector2i m_zone;
 
-
-    // what should own heightmaps?
-    // ie what object contains this 
-    //static std::vector<Heightmap> m_heightmaps;
-    
-
-    // used locally only; dumb
-    //static std::vector<Vector3> m_tempVertises;
-    //
-    //static std::vector<Vector2> m_tempUVs;
-    //
-    //static std::vector<int> m_tempIndices;
-    //
-    //static std::vector<Color32> m_tempColors;
-
 public:
 
 };
