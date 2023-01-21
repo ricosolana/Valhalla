@@ -4,9 +4,7 @@
 #include "Method.h"
 #include "ValhallaServer.h"
 
-namespace NetRouteManager {
-	static constexpr OWNER_t EVERYBODY = 0;
-
+class IManagerRoute {
 	struct Data {
 		OWNER_t m_msgID;
 		OWNER_t m_senderPeerID;
@@ -20,14 +18,14 @@ namespace NetRouteManager {
 		// Will unpack the package
 		explicit Data(NetPackage& pkg)
 			: m_msgID(pkg.Read<OWNER_t>()),
-              m_senderPeerID(pkg.Read<OWNER_t>()),
-              m_targetPeerID(pkg.Read<OWNER_t>()),
-              m_targetSync(pkg.Read<NetID>()),
-              m_methodHash(pkg.Read<HASH_t>()),
-              m_parameters(pkg.Read<NetPackage>())
+			m_senderPeerID(pkg.Read<OWNER_t>()),
+			m_targetPeerID(pkg.Read<OWNER_t>()),
+			m_targetSync(pkg.Read<NetID>()),
+			m_methodHash(pkg.Read<HASH_t>()),
+			m_parameters(pkg.Read<NetPackage>())
 		{}
 
-		void Serialize(NetPackage &pkg) const {
+		void Serialize(NetPackage& pkg) const {
 			pkg.Write(m_msgID);
 			pkg.Write(m_senderPeerID);
 			pkg.Write(m_targetPeerID);
@@ -37,27 +35,24 @@ namespace NetRouteManager {
 		}
 	};
 
+private:
+	static constexpr OWNER_t EVERYBODY = 0;
+
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<OWNER_t>>> m_methods;
+
+private:
 	// Called from NetManager
 	void OnNewPeer(NetPeer *peer);
-	void OnPeerQuit(NetPeer *peer);
 
 	// Internal use only by NetRouteManager
-	void _Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg);
-	void _HandleRoutedRPC(Data data);
+	void Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg);
+	void HandleRoutedRPC(Data data);
 
-	// Registers a RoutedRpc function
-	// Must pass an IMethod created using new
-	void _Register(HASH_t hash, IMethod<OWNER_t>* method);
+	void RouteRPC(const Data& data);
 
+	IManagerRoute() {}
 
-
-	template<class ...Args>
-	using FuncPtr = std::function<void(OWNER_t, Args...)>;
-
-	template<class ...Args>
-	using SFuncPtr = void(*)(OWNER_t, Args...);
-
-
+public:
 
 	//enum ChatManager::Type;
 	//void Register(HASH_t, std::function<void(OWNER_t, Vector3, ChatManager::Type, std::string, std::string, std::string)>);
@@ -67,59 +62,15 @@ namespace NetRouteManager {
 		* @param name function name to register
 		* @param method ptr to a static function
 	*/
-
 	template<typename F>
-	auto Register(HASH_t hash, F func) {
-		return _Register(hash, new MethodImpl(func));
+	void Register(HASH_t hash, F func) {
+		assert(!m_methods.contains(hash));
+		m_methods[hash] = std::unique_ptr<IMethod<OWNER_t>>(new MethodImpl(func));
 	}
-
-	//template<class ...Args>
-	//auto Register(HASH_t hash, FuncPtr<Args...> f) {
-	//	return _Register(hash, new MethodImpl(f, EVENT_HASH_RouteIn, hash));
-	//}
-
-	//template<class ...Args>
-	//auto Register(HASH_t, void(*)(OWNER_t, Args...)) {
-	//
-	//}
-
-	//template<class ...Args>
-	//auto Register(HASH_t hash, std::function<void(OWNER_t, Args...)> f) {
-	//	// stuff ...
-	//}
-
-	//template<class ...Args>
-	//auto Register(HASH_t hash, SFuncPtr<Args...> f) {
-	//	return Register(hash, std::function(f));
-	//}
 
 	template<typename F>
 	auto Register(const std::string& name, F func) {
-		//_Register(VUtils::String::GetStableHashCode(name), )
-	}
-
-
-
-	template<class ...Args>
-	auto Register(const char* name, FuncPtr<Args...> f) {
-		return Register(VUtils::String::GetStableHashCode(name), f);
-	}
-
-	template<class ...Args>
-	auto Register(const char* name, SFuncPtr<Args...> f) {
-		return Register(name, std::function(f));
-	}
-
-
-
-	template<class ...Args>
-	auto Register(std::string& name, FuncPtr<Args...> f) {
-		return Register(name.c_str(), f);
-	}
-
-	template<class ...Args>
-	auto Register(std::string& name, SFuncPtr<Args...> f) {
-		return Register(name, std::function(f));
+		return Register(VUtils::String::GetStableHashCode(name), func);
 	}
 
 
@@ -131,7 +82,7 @@ namespace NetRouteManager {
 	*/
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const Args&... params) {
-		_Invoke(target, targetNetSync, hash, NetPackage::Serialize(params...));
+		Invoke(target, targetNetSync, hash, NetPackage::Serialize(params...));
 	}
 
 	template <typename... Args>
@@ -166,3 +117,5 @@ namespace NetRouteManager {
 		Invoke(target, NetID::NONE, name.c_str(), params...);
 	}
 };
+
+IManagerRoute* RouteManager();

@@ -18,10 +18,6 @@ enum class ConnectionStatus : int32_t {
     MAX // 10
 };
 
-static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected", 
-    "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword", 
-    "ErrorAlreadyConnected", "ErrorBanned", "ErrorFull"};
-
 namespace NetManager {
     void RemotePrint(NetRpc* rpc, const std::string &text);
 

@@ -6,6 +6,12 @@
 
 using namespace std::chrono;
 
+static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
+    "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword",
+    "ErrorAlreadyConnected", "ErrorBanned", "ErrorFull" };
+
+
+
 NetRpc::NetRpc(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now()) {
 }
@@ -14,25 +20,15 @@ NetRpc::~NetRpc() {
     LOG(DEBUG) << "~NetRpc()";
 }
 
-void NetRpc::Register(HASH_t hash, MethodPtr method) {
-    assert(!m_methods.contains(hash));
-    m_methods[hash] = std::move(method);
-}
-
 void NetRpc::Unregister(HASH_t hash) {
+    assert(m_methods.contains(hash));
+
     m_methods.erase(hash);
 }
 
-//void NetRpc::InvokeRaw(HASH_t hash, NetPackage params) {
-//    if (!m_socket->Connected())
-//        return;
-//
-//    NetPackage pkg; // TODO make into member to optimize; or make static
-//    pkg.Write(hash);
-//    pkg.m_stream.Write(params.m_stream.m_buf);
-//
-//    SendPackage(std::move(pkg));
-//}
+void NetRpc::Unregister(const std::string& name) {
+    Unregister(VUtils::String::GetStableHashCode(name));
+}
 
 void NetRpc::Update() {
     OPTICK_EVENT();
@@ -44,7 +40,6 @@ void NetRpc::Update() {
 
     // Read packets
     while (auto opt = m_socket->Recv()) {
-        //assert(pkg && "Got null package and executing!");
         auto&& pkg = opt.value();
 
         auto hash = pkg.Read<HASH_t>();
@@ -61,9 +56,6 @@ void NetRpc::Update() {
             }
         }
         else {
-#ifdef RPC_DEBUG
-            std::string name = pkg->Read<std::string>();
-#endif
             auto&& find = m_methods.find(hash);
             if (find != m_methods.end()) {
                 find->second->Invoke(this, pkg);
@@ -79,6 +71,6 @@ void NetRpc::Update() {
 
 void NetRpc::SendError(ConnectionStatus status) {
     LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
-    Invoke("Error", status);
+    Invoke(NetHashes::Rpc::Error, status);
     m_socket->Close(true);
 }

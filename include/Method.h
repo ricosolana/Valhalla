@@ -20,6 +20,7 @@ public:
     // Invoke a function with variadic parameters
     // A copy of the package is made
     // You may perform a move on the package as needed
+    // TODO accept a different stream type, readonly, with referenced vector
     virtual void Invoke(T t, NetPackage pkg) = 0;
 };
 
@@ -49,6 +50,8 @@ public:
     explicit MethodImpl(F func)
                         : m_func(func) {}
 
+    // shouldnt pass around a vector in container
+    // wherre only pos/marker increases
     void Invoke(T t, NetPackage pkg) override {
 
         using VUtils::Traits;

@@ -11,19 +11,10 @@
 enum class ConnectionStatus;
 
 class NetRpc {
-public:
-    using MethodPtr = std::unique_ptr<IMethod<NetRpc*>>;
-
-    template<class ...Args>
-    using FuncPtr = std::function<void(NetRpc*, Args...)>;
-
-    template<class ...Args>
-    using SFuncPtr = void(*)(NetRpc*, Args...);
-
 private:
     std::chrono::steady_clock::time_point m_lastPing;
     
-    robin_hood::unordered_map<HASH_t, MethodPtr> m_methods;
+    robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
 private:
     void SendPackage(NetPackage pkg) const {
@@ -41,50 +32,28 @@ public:
 
     ~NetRpc();
 
+    /**
+        * @brief Register a static method for remote invocation
+        * @param name function name to register
+        * @param lambda
+    */
+    template<typename F>
+    void Register(HASH_t hash, F func) {
+        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(f));
+    }
 
-
-    void Register(HASH_t hash, MethodPtr method);
-
-    void Unregister(HASH_t hash);
+    template<typename F>
+    void Register(const std::string& name, F func) {
+        Register(VUtils::String::GetStableHashCode(name), func);
+    }
 
     /**
         * @brief Register a static method for remote invocation
         * @param name function name to register
-        * @param method ptr to a static function
     */
-    template<class ...Args>
-    auto Register(HASH_t hash, FuncPtr<Args...> f) {
-        return Register(hash, MethodPtr(new MethodImpl(f, 0, hash)));
-    }
+    void Unregister(HASH_t hash);
 
-    template<class ...Args>
-    auto Register(HASH_t hash, SFuncPtr<Args...> f) {
-        return Register(hash, std::function(f));
-    }
-
-
-
-    template<class ...Args>
-    auto Register(const char* name, FuncPtr<Args...> f) {
-        return Register(VUtils::String::GetStableHashCode(name), f);
-    }
-
-    template<class ...Args>
-    auto Register(const char* name, SFuncPtr<Args...> f) {
-        return Register(name, std::function(f));
-    }
-
-
-
-    template<class ...Args>
-    auto Register(std::string& name, FuncPtr<Args...> f) {
-        return Register(name.c_str(), f);
-    }
-
-    template<class ...Args>
-    auto Register(std::string& name, SFuncPtr<Args...> f) {
-        return Register(name, std::function(f));
-    }
+    void Unregister(const std::string& name);
 
     /**
         * @brief Invoke a remote function

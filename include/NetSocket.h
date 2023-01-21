@@ -23,6 +23,7 @@ public:
 
 
     // Terminates the connection
+    // If flush is set, socket wont close until a few seconds
     virtual void Close(bool flush) = 0;
 
 

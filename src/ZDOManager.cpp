@@ -1,13 +1,18 @@
 #include <array>
 
-#include "NetSyncManager.h"
+#include "ZDOManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
 #include "NetHashes.h"
 #include "ZoneSystem.h"
 #include "NetRouteManager.h"
 #include "HashUtils.h"
+#include "NetScene.h"
 
+auto MANAGER_ZDO(std::make_unique<IManagerZDO>());
+IManagerZDO* ZDOManager() {
+	return MANAGER_ZDO.get();
+}
 
 
 
@@ -64,10 +69,18 @@ struct SaveData {
 //std::unique_ptr<SaveData> m_saveData;
 
 void IManagerZDO::Init() {
-    NetRouteManager::Register(NetHashes::Routed::DestroyZDO, [](OWNER_t sender, NetPackage pkg) {
-		
+    RouteManager()->Register(NetHashes::Routed::DestroyZDO, [this](OWNER_t sender, NetPackage pkg) {
+		int num = pkg.Read<int32_t>();
+		for (int i = 0; i < num; i++) {
+			auto uid = pkg.Read<NetID>();
+			HandleDestroyedZDO(uid);
+		}
 	});
-    NetRouteManager::Register(NetHashes::Routed::RequestZDO, IManagerZDO::RPC_RequestZDO);
+	RouteManager()->Register(NetHashes::Routed::RequestZDO, [this](OWNER_t sender, NetID id) {
+		auto&& peer = GetPeer(sender);
+		if (peer)
+			peer->ForceSendNetSync(id);
+	});
     //ResetSectorArray();
 }
 
@@ -90,18 +103,20 @@ void IManagerZDO::Stop() {
 }
 
 void IManagerZDO::PrepareSave() {
-	auto now = steady_clock::now();
-	m_saveData = std::make_unique<SaveData>(m_nextUid);
-	auto elapsed = duration_cast<milliseconds>(steady_clock::now() - now).count();
-	LOG(INFO) << "Zdo save took " << elapsed << "ms";
-
-	m_saveData->m_deadZDOs = m_deadZDOs;
+	throw std::runtime_error("not implemented");
+	//auto now = steady_clock::now();
+	//m_saveData = std::make_unique<SaveData>(m_nextUid);
+	//auto elapsed = duration_cast<milliseconds>(steady_clock::now() - now).count();
+	//LOG(INFO) << "Zdo save took " << elapsed << "ms";
+	//
+	//m_saveData->m_deadZDOs = m_deadZDOs;
 }
 
 void IManagerZDO::SaveAsync(NetPackage &writer) {
-	m_saveData->Save(writer);
-	LOG(INFO) << "Saved " << m_saveData->m_zdos.size() << " zdos";
-	m_saveData.reset();
+	throw std::runtime_error("not implemented");
+	//m_saveData->Save(writer);
+	//LOG(INFO) << "Saved " << m_saveData->m_zdos.size() << " zdos";
+	//m_saveData.reset();
 }
 
 void IManagerZDO::Load(NetPackage& reader, int version) {
@@ -126,7 +141,7 @@ void IManagerZDO::Load(NetPackage& reader, int version) {
 		//zdo->Load(zpackage, version);
         zdo->Abandon();
 		AddToSector(zdo.get(), zdo->Sector());
-		if (zdo->ID().m_uuid == Valhalla()->ID()
+		if (zdo->ID().m_uuid == SERVER_ID
 			&& zdo->ID().m_id >= num)
 		{
 			num = zdo->ID().m_id + 1U;
@@ -139,7 +154,7 @@ void IManagerZDO::Load(NetPackage& reader, int version) {
 		auto key = reader.Read<NetID>();
 		auto value = reader.Read<OWNER_t>();
 		m_deadZDOs.insert({ key, value });
-		if (key.m_uuid == Valhalla()->ID() && key.m_id >= num) {
+		if (key.m_uuid == SERVER_ID && key.m_id >= num) {
 			num = key.m_id + 1U;
 		}
 	}
@@ -150,8 +165,12 @@ void IManagerZDO::Load(NetPackage& reader, int version) {
 }
 
 void IManagerZDO::ReleaseLegacyZDOS() {
-	auto size = m_objectsByID.size();
+	auto c1 = sizeof(m_objectsBySector);
+	auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, ((20000 / 64) + 1)* ((20000 / 64) + 1)>);
+	auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, 100000>);
 
+	auto size = m_objectsByID.size();
+	
 	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
 		auto pgw = itr->second->m_pgwVersion;
 		if (pgw != 0 && pgw != VConstants::PGW) {
@@ -260,6 +279,8 @@ void IManagerZDO::Update() {
     //});
 }
 
+// use this instead
+// https://github.com/redseiko/ComfyMods/tree/main/ReturnToSender
 void IManagerZDO::SendZDOToPeers2() {
 	if (m_peers.empty())
 		return;
@@ -384,15 +405,7 @@ void IManagerZDO::SendDestroyedZDOs() {
 		zpackage.Write(id);
 
 	m_destroySendList.clear();
-	NetRouteManager::Invoke(NetRouteManager::EVERYBODY, NetHashes::Routed::DestroyZDO, zpackage);
-}
-
-void IManagerZDO::RPC_DestroyZDO(OWNER_t sender, NetPackage pkg) {
-	int num = pkg.Read<int32_t>();
-	for (int i = 0; i < num; i++) {
-		auto uid = pkg.Read<NetID>();
-		HandleDestroyedZDO(uid);
-	}
+	RouteManager()-> Invoke(NetRouteManager::EVERYBODY, NetHashes::Routed::DestroyZDO, zpackage);
 }
 
 void IManagerZDO::HandleDestroyedZDO(const NetID &uid) {
@@ -402,8 +415,10 @@ void IManagerZDO::HandleDestroyedZDO(const NetID &uid) {
 	auto zdo = GetZDO(uid);
 	if (!zdo)
 		return;
+	
 
-	NetScene::OnZDODestroyed(zdo);
+
+	NetScene()->OnZDODestroyed(zdo);
 
 	//if (m_onZDODestroyed)
 	//	m_onZDODestroyed(zdo);
@@ -848,11 +863,6 @@ void RequestZDO(ZDOID id)
 		});
 }*/
 
-void IManagerZDO::RPC_RequestZDO(OWNER_t sender, NetID id) {
-	auto&& peer = GetPeer(sender);
-	if (peer)
-		peer->ForceSendNetSync(id);
-}
 
 //ZDOPeer *GetPeer(OWNER_t uid) {
 //	for (auto&& zdopeer : m_peers) {

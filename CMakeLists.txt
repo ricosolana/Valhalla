@@ -92,9 +92,9 @@ add_executable(${PROJECT_NAME}
     "src/NetPeer.cpp"
     "src/NetRouteManager.cpp"
     "src/NetRpc.cpp"
-    "src/NetScene.cpp"
+    
     "src/NetSteamSocket.cpp"
-    "src/NetSyncManager.cpp"
+    "src/ZDOManager.cpp"
     "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
     "src/Stream.cpp"

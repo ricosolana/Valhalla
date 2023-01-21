@@ -8,7 +8,7 @@ class NetPackage;
 class Stream {
     friend NetPackage;
 
-public: BYTES_t m_buf;
+public: BYTES_t m_buf; // TODO use a referenced vector
 private: uint32_t m_pos; // read/write head offset from origin
 
 public:

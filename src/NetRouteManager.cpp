@@ -5,140 +5,92 @@
 #include "Method.h"
 #include "ValhallaServer.h"
 #include "ZoneSystem.h"
-#include "NetSyncManager.h"
+#include "ZDOManager.h"
 #include "NetObject.h"
 
-namespace NetRouteManager {
+auto MANAGER_ROUTE(std::make_unique<IManagerRoute>());
+IManagerRoute* RouteManager() {
+	return MANAGER_ROUTE.get();
+}
 
-	// Method hash, pair<callback, watcher>
-	//robin_hood::unordered_map<HASH_t,
-		//std::pair<std::unique_ptr<IMethod<OWNER_t>>, std::unique_ptr<IMethod<OWNER_t>>>> m_methods;
+void IManagerRoute::RouteRPC(const Data& data) {
+	NetPackage pkg;
+	data.Serialize(pkg);
 
-    robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<OWNER_t>>> m_methods;
-
-	void _Register(HASH_t hash, IMethod<OWNER_t>* method) {
-        assert(!m_methods.contains(hash));
-		m_methods[hash] = std::unique_ptr<IMethod<OWNER_t>>(method);
-	}
-
-	void _RouteRPC(const Data& data) {
-		NetPackage pkg;
-		data.Serialize(pkg);
-
-		if (data.m_targetPeerID == EVERYBODY) {
-			for (auto&& peer : NetManager::GetPeers()) {
-				// send to everyone (except sender)
-				if (data.m_senderPeerID != peer->m_uuid) {
-
-
-                    // If the call was from this SERVER, no validation is necessary; data is valid
-                    //if (data.m_senderPeerID != SERVER_ID) {
-                    //    // Incur the watcher to validate the peers data
-                    //    auto &&find = m_methods.find(data.m_methodHash);
-                    //    if (find != m_methods.end() && find->second.second) {
-                    //        find->second.second->Invoke(data.m_targetPeerID, data.m_parameters,
-                    //                                    VUtils::GetStableHashCode("RoutingFilter"), data.m_methodHash);
-                    //    }
-                    //}
-
-                    peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
-				}
+	if (data.m_targetPeerID == EVERYBODY) {
+		for (auto&& peer : NetManager::GetPeers()) {
+			// send to everyone (except sender)
+			if (data.m_senderPeerID != peer->m_uuid) {
+                peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
 			}
+		}
+	}
+	else {
+		auto peer = NetManager::GetPeer(data.m_targetPeerID);
+		if (peer) {
+			peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
+		}
+	}
+}
+
+void IManagerRoute::HandleRoutedRPC(Data data) {
+	// If invocation was for RoutedRPC:
+	if (!data.m_targetSync) {
+		auto&& find = m_methods.find(data.m_methodHash);
+		if (find != m_methods.end()) {
+			find->second->Invoke(data.m_senderPeerID, std::move(data.m_parameters));
 		}
 		else {
-			auto peer = NetManager::GetPeer(data.m_targetPeerID);
-			if (peer) {
-				peer->m_rpc->Invoke(NetHashes::Rpc::RoutedRPC, pkg);
-			}
+			LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
 		}
 	}
+}
 
-	void _HandleRoutedRPC(Data data) {
-		// If invocation was for RoutedRPC:
-		if (data.m_targetSync) {
+void IManagerRoute::Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg) {
+	static OWNER_t m_rpcMsgID = 1;
 
-			/// Intended code implementation:
-			//auto sync = NetSyncManager::Get(data.m_targetSync);
-			//if (sync) {
-			//	auto obj = NetScene::Get(data.m_targetSync);
-			//	if (obj) {
-			//		obj->HandleRoutedRPC(data);
-			//	}
-			//}
-			
+	Data data;
+	data.m_msgID = SERVER_ID + m_rpcMsgID++;
+	data.m_senderPeerID = SERVER_ID;
+	data.m_targetPeerID = target;
+	data.m_targetSync = targetNetSync;
+	data.m_methodHash = hash;
+	data.m_parameters = pkg;
 
+	data.m_parameters.m_stream.SetPos(0);
 
-			//throw std::runtime_error("Not implemented");
-			//NetSync NetSync = NetSyncMan.instance.GetNetSync(data.m_targetSync);
-			//if (NetSync != null) {
-			//	ZNetView znetView = ZNetScene.instance.FindInstance(NetSync);
-			//	if (znetView != null) {
-			//		znetView.HandleRoutedRPC(data);
-			//	}
-			//}
-		}
-		else {
-			auto&& find = m_methods.find(data.m_methodHash);
-			if (find != m_methods.end()) {
-				find->second->Invoke(data.m_senderPeerID, std::move(data.m_parameters));
-			}
-			else {
-				LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
-			}
-		}
+	// Message destined to server or everyone
+	// When the server invokes an EVERYBODY call, the server still calls its own method
+	if (target == SERVER_ID
+		|| target == EVERYBODY) {
+		HandleRoutedRPC(data);
 	}
 
-	void RPC_RoutedRPC(NetRpc* rpc, NetPackage pkg) {
+    // No validation is necessary as server is the sender due to this Invoke function
+	if (target != SERVER_ID) {
+		RouteRPC(data);
+	}
+}
+
+void IManagerRoute::OnNewPeer(NetPeer *peer) {
+	peer->m_rpc->Register(NetHashes::Rpc::RoutedRPC, [this](NetRpc* rpc, NetPackage pkg) {
 		Data data(pkg);
 
-        // todo
-        // the pkg should have the sender as the peer id
-        // check to see the id matches
+		// todo
+		// the pkg should have the sender as the peer id
+		// check to see the id matches
 
-        // do not trust the client to provide their correct id
-        data.m_senderPeerID = NetManager::GetPeer(rpc)->m_uuid;
+		// do not trust the client to provide their correct id
+		data.m_senderPeerID = NetManager::GetPeer(rpc)->m_uuid;
 
 		// Server is the intended receiver (or EVERYONE)
 		if (data.m_targetPeerID == SERVER_ID
 			|| data.m_targetPeerID == EVERYBODY)
-			_HandleRoutedRPC(data);
+			HandleRoutedRPC(data);
 
 		// Server acts as a middleman
-        // Server may validate packet before forwarding it
+		// Server may validate packet before forwarding it
 		if (data.m_targetPeerID != SERVER_ID)
-			_RouteRPC(data);
-	}
-
-	void _Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg) {
-		static OWNER_t m_rpcMsgID = 1;
-
-		Data data;
-		data.m_msgID = SERVER_ID + m_rpcMsgID++;
-		data.m_senderPeerID = SERVER_ID;
-		data.m_targetPeerID = target;
-		data.m_targetSync = targetNetSync;
-		data.m_methodHash = hash;
-		data.m_parameters = pkg;
-
-		data.m_parameters.m_stream.SetPos(0);
-
-		// Message destined to server or everyone
-		if (target == SERVER_ID
-			|| target == EVERYBODY) {
-			_HandleRoutedRPC(data);
-		}
-
-        // No validation is necessary as server is the sender due to this Invoke function
-		if (target != SERVER_ID) {
-			_RouteRPC(data);
-		}
-	}
-
-	void OnNewPeer(NetPeer *peer) {
-		peer->m_rpc->Register(NetHashes::Rpc::RoutedRPC, &RPC_RoutedRPC);
-	}
-
-	void OnPeerQuit(NetPeer *peer) {
-		throw std::runtime_error("Not implemented");
-	}
+			RouteRPC(data);
+	});
 }

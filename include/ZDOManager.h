@@ -73,7 +73,6 @@ private:
 	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
 	void SendDestroyedZDOs();
-	void RPC_DestroyZDO(OWNER_t sender, NetPackage pkg);
 	void HandleDestroyedZDO(const NetID& uid);
 	void SendAllZDOs(SyncPeer* peer);
 	bool SendZDOs(SyncPeer* peer, bool flush);
@@ -88,8 +87,6 @@ private:
 	void FindDistantObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
-
-	void RPC_RequestZDO(OWNER_t sender, NetID id);
 
 	static constexpr int SECTOR_WIDTH = 512;
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
@@ -188,3 +185,5 @@ public:
 
 	//void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
 };
+
+IManagerZDO* ZDOManager();
