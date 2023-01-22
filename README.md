@@ -1,4 +1,14 @@
-Development will continue by next week (by 1/10/2023 hopefully).
+I severely overestimated the difficulty of this project, and might be able to have the server within a functioning state quite shortly. I just have to fix Git branches and stuff for the final product, and tidy-up any loose ends.
+
+The only thing I might have difficulty doing is getting the Location instance prefabs from the client so the server can correctly send LocationProxy and stuff. Additionally, the HeightMap might be fully implemented by now. I really done know why the zone generator used raycasts to determine height placement with a heightmap...
+
+ZNetScene and ZNetView are pretty much client only
+    an exception is during zone generation where server sends proxy locations to clients
+    as ghost objects (only exist primarily as zdos)
+    
+ZDOMan m_width seems to be much larger than the world size
+    according to a redditor, Valheim is 20000m in diameter. This equates to 20000m / 64 = 313 zones in diameter
+    m_width however, is 512. This value has probably gone ignored by the devs prior to them figuring out the perfect world size. This could be additionally proven by the ZDO-zone dictionary ('object by outside sector')
 
 # Valhalla 
 
