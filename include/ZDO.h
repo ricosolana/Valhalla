@@ -2,7 +2,6 @@
 
 #include <robin_hood.h>
 #include <type_traits>
-#include <any>
 
 #include "HashUtils.h"
 #include "Quaternion.h"
@@ -21,10 +20,10 @@ concept TrivialSyncType =
     || std::same_as<T, std::string>
     || std::same_as<T, BYTES_t>;
 
-// NetSync is 500+ bytes (with all 7 maps)
-// NetSync is 168 bytes (with 1 map only)
-// NetSync is 144 bytes (combined member map, reduced members)
-// Currently 160 bytes
+// 500+ bytes (7 maps)
+// 168 bytes (1 map)
+// 112 bytes (1 map, majorly reduced members; affecting functionality)
+// Currently 144 bytes
 class ZDO {
 public:
     enum class ObjectType : BYTE_t {
@@ -182,22 +181,46 @@ private:
         }
     }
 
-private:    
+public:
+    Rev m_rev;
+    //int32_t m_pgwVersion = 0;    // 53 is the latest      // Never used beyond world startup
+
+private:
     robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
+
+    Quaternion m_rotation = Quaternion::IDENTITY;
+    Vector3 m_position;            // position of the 
+    
+    //int e; // INSERT HERE
+    //uint8_t m_flags;                      // flags: persistent, distant, type (2 bits)
+    Ordinal m_ordinalMask = 0;
+    OWNER_t m_owner = 0;            // local or remote OWNER_t
+    //OWNER_t m_zdoid_userid = 0;
+    HASH_t m_prefab = 0;
+    
+    
+    //uint32_t m_zdoid_id = 0;
+
+
+
+    NetID m_id;                    // unique identifier; immutable through 'lifetime'
+    Vector2i m_sector;        // Redundant; is based directly off position
+    
+    ObjectType m_type = ObjectType::Default; // set by ZNetView
+
+    //Ordinal m_ordinalMask = 0; // bitfield denoting which map member types this ZDO contains
+
+
 
     bool m_persistent = false;    // set by ZNetView
     bool m_distant = false;        // set by ZNetView
-    //int64_t m_timeCreated = 0;    // TerrainModifier (10000 ticks / ms) (union)?
     
-    ObjectType m_type = ObjectType::Default; // set by ZNetView
-    HASH_t m_prefab = 0;
-    Quaternion m_rotation = Quaternion::IDENTITY;
-    Ordinal m_ordinalMask = 0; // bitfield denoting which map member types this ZDO contains
 
-    Vector2i m_sector;
-    Vector3 m_position;            // position of the 
-    NetID m_id;                    // unique identifier; immutable through 'lifetime'
-    OWNER_t m_owner = 0;            // local or remote OWNER_t
+
+
+
+
+    //int64_t m_timeCreated = 0;    // TerrainModifier (10000 ticks / ms) (union)?
 
     //uint32_t m_ownerRev = 0;    // could be rev structure
     //uint32_t m_dataRev = 0;    // could be rev structure
@@ -240,18 +263,10 @@ private:
                 assert(count <= 127 && "shit");
             }
 
-            
-
-            // should be a hard exit fail so that the program can be fixed, in the case that
-            // zdos contain more than 127 members in the data map
-            //assert(count >= 0 && count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
-
             const auto end_mark = pkg.m_stream.Position();
             pkg.m_stream.SetPos(size_mark);
 
             pkg.Write(count);
-            //if constexpr (sizeof(CountType) == 2)
-                //pkg.Write(0);
 
             pkg.m_stream.SetPos(end_mark);
         }
@@ -259,26 +274,10 @@ private:
 
     template<typename T, typename CountType>
     void _TryReadType(NetPackage& pkg) {
-
         auto count = pkg.Read<BYTE_t>();
 
-        assert(count <= 127);
+        assert(count <= 127);        
 
-        //if constexpr (sizeof(CountType) == 2) {
-        //    if (count > 127)
-        //        pkg.Read<BYTE_t>();
-        //}
-
-        //if (sizeof(CountType) == 2) {
-        //    
-        //    auto padding = pkg.Read<BYTE_t>();
-        //
-        //    if (true) {}
-        //}
-        
-        
-
-        //assert(count >= 0 && count <= 127 && "lazy days are over; please implement the UTF char encoder for ZPackage");
         while (count--) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
@@ -288,9 +287,7 @@ private:
         }
     }
 
-public:
-    Rev m_rev;
-    int32_t m_pgwVersion = 0;    // 53 is the latest
+
 
 public:
     // Create ZDO with me (im owner)
@@ -423,7 +420,8 @@ public:
     }
 
      const Vector2i& Sector() const {
-        return m_sector;
+        //return IZoneManager::WorldToZonePos(m_position);
+         return m_sector;
     }
 
     const NetID ID() const {

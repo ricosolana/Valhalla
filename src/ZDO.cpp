@@ -55,11 +55,11 @@ void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_persistent);      
     pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_time);      static_assert(sizeof(Rev::m_time) == 8);
-    pkg.Write(this->m_pgwVersion);      static_assert(sizeof(m_pgwVersion) == 4);
+    pkg.Write(VConstants::PGW);         //static_assert(sizeof(m_pgwVersion) == 4);
     pkg.Write(this->m_type);            static_assert(sizeof(m_type) == 1);
     pkg.Write(this->m_distant);
     pkg.Write(this->m_prefab);
-    pkg.Write(this->m_sector);
+    pkg.Write(this->m_sector);          //pkg.Write(IZoneManager::WorldToZonePos(this->m_position));
     pkg.Write(this->m_position);
     pkg.Write(this->m_rotation);
     
@@ -79,7 +79,7 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     this->m_persistent = pkg.Read<bool>();
     this->m_owner = pkg.Read<OWNER_t>();
     this->m_rev.m_time = pkg.Read<int64_t>();
-    this->m_pgwVersion = pkg.Read<int32_t>();
+    /*this->m_pgwVersion = */ pkg.Read<int32_t>();
 
     if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
@@ -96,7 +96,7 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     if (worldVersion >= 17)
         this->m_prefab = pkg.Read<HASH_t>();
 
-    this->m_sector = pkg.Read<Vector2i>();
+    /*this->m_sector = */ pkg.Read<Vector2i>();
     this->m_position = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
@@ -127,7 +127,6 @@ ZDO::ZDO(const ZDO& other) {
     this->m_type = other.m_type;
     this->m_prefab = other.m_prefab;
     this->m_rotation = other.m_rotation;
-    //this->m_dataMask = other.m_dataMask;
     this->m_ordinalMask = other.m_ordinalMask;
 
     this->m_sector = other.m_sector;
@@ -136,7 +135,7 @@ ZDO::ZDO(const ZDO& other) {
     this->m_owner = other.m_owner;
 
     this->m_rev = other.m_rev;
-    this->m_pgwVersion = other.m_pgwVersion;
+    //this->m_pgwVersion = other.m_pgwVersion;
 
     // Pool copy
     for (auto&& pair1 : other.m_members) {
@@ -332,7 +331,7 @@ void ZDO::Invalidate() {
     this->m_rev.m_time = 0;
     this->m_rev.m_ownerRev = 0;
     this->m_rev.m_dataRev = 0;
-    this->m_pgwVersion = 0;
+    //this->m_pgwVersion = 0;
     this->m_distant = false;
     //this->m_tempSortValue = 0;
     //this->m_tempHaveRevision = false;
@@ -349,7 +348,7 @@ void ZDO::Serialize(NetPackage& pkg) const {
     pkg.Write(m_distant);
     static_assert(sizeof(Rev::m_time) == 8);
     pkg.Write(m_rev.m_time);
-    pkg.Write(m_pgwVersion);
+    pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
     static_assert(sizeof(m_type) == 1);
     pkg.Write(m_type); // sbyte
     pkg.Write(m_prefab);
@@ -379,7 +378,7 @@ void ZDO::Deserialize(NetPackage& pkg) {
     this->m_persistent = pkg.Read<bool>();
     this->m_distant = pkg.Read<bool>();
     this->m_rev.m_time = pkg.Read<int64_t>();
-    this->m_pgwVersion = pkg.Read<int32_t>();
+    /*this->m_pgwVersion =*/ pkg.Read<int32_t>();
     this->m_type = pkg.Read<ObjectType>();
     this->m_prefab = pkg.Read<HASH_t>();
     this->m_rotation = pkg.Read<Quaternion>();

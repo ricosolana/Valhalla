@@ -3,8 +3,8 @@
 #include "VUtils.h"
 
 struct NetID {
-    // TODO make these private and use getters; 
-    //    could make this a friend class of the Hasher object
+    // TODO make this structure more efficient, currently padding takes up 1/4 of the size
+
     OWNER_t m_uuid;
     uint32_t m_id;
 

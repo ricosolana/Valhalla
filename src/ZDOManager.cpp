@@ -7,10 +7,9 @@
 #include "ZoneSystem.h"
 #include "NetRouteManager.h"
 #include "HashUtils.h"
-#include "NetScene.h"
 
-auto MANAGER_ZDO(std::make_unique<IManagerZDO>());
-IManagerZDO* ZDOManager() {
+auto MANAGER_ZDO(std::make_unique<IZDOManager>());
+IZDOManager* ZDOManager() {
 	return MANAGER_ZDO.get();
 }
 
@@ -68,20 +67,20 @@ struct SaveData {
 
 //std::unique_ptr<SaveData> m_saveData;
 
-void IManagerZDO::Init() {
-    RouteManager()->Register(NetHashes::Routed::DestroyZDO, [this](OWNER_t sender, NetPackage pkg) {
+void IZDOManager::Init() {
+	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](OWNER_t sender, NetPackage pkg) {
 		int num = pkg.Read<int32_t>();
 		for (int i = 0; i < num; i++) {
 			auto uid = pkg.Read<NetID>();
 			HandleDestroyedZDO(uid);
 		}
 	});
-	RouteManager()->Register(NetHashes::Routed::RequestZDO, [this](OWNER_t sender, NetID id) {
+	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](OWNER_t sender, NetID id) {
 		auto&& peer = GetPeer(sender);
-		if (peer)
-			peer->ForceSendNetSync(id);
+		if (peer) {
+			peer->ForceSendZDO(id);
+		}
 	});
-    //ResetSectorArray();
 }
 
 //void ResetSectorArray() {
@@ -91,18 +90,11 @@ void IManagerZDO::Init() {
 //	m_objectsByOutsideSector.clear();
 //}
 
-void IManagerZDO::Stop() {
-	//ZDOPool.Release(m_objectsByID);
+void IZDOManager::Stop() {
 	m_objectsByID.clear();
-	//m_tempToSync.clear();
-	//m_tempToSyncDistant.clear();
-	//m_tempNearObjects.clear();
-	//m_tempRemoveList.clear();
-	m_peers.clear();
-	//ResetSectorArray();
 }
 
-void IManagerZDO::PrepareSave() {
+void IZDOManager::PrepareSave() {
 	throw std::runtime_error("not implemented");
 	//auto now = steady_clock::now();
 	//m_saveData = std::make_unique<SaveData>(m_nextUid);
@@ -112,14 +104,14 @@ void IManagerZDO::PrepareSave() {
 	//m_saveData->m_deadZDOs = m_deadZDOs;
 }
 
-void IManagerZDO::SaveAsync(NetPackage &writer) {
+void IZDOManager::SaveAsync(NetPackage& writer) {
 	throw std::runtime_error("not implemented");
 	//m_saveData->Save(writer);
 	//LOG(INFO) << "Saved " << m_saveData->m_zdos.size() << " zdos";
 	//m_saveData.reset();
 }
 
-void IManagerZDO::Load(NetPackage& reader, int version) {
+void IZDOManager::Load(NetPackage& reader, int version) {
 	//m_saveData->Load(reader, version);
 
 	reader.Read<OWNER_t>(); // skip
@@ -136,10 +128,10 @@ void IManagerZDO::Load(NetPackage& reader, int version) {
 		//NetPackage zpackage = NetPackage(reader.Read<BYTES_t>());
 
 		auto zdo = std::make_unique<NetSync>(
-                NetPackage(reader.Read<BYTES_t>()), version);
+			NetPackage(reader.Read<BYTES_t>()), version);
 
 		//zdo->Load(zpackage, version);
-        zdo->Abandon();
+		zdo->Abandon();
 		AddToSector(zdo.get(), zdo->Sector());
 		if (zdo->ID().m_uuid == SERVER_ID
 			&& zdo->ID().m_id >= num)
@@ -160,17 +152,19 @@ void IManagerZDO::Load(NetPackage& reader, int version) {
 	}
 	CapDeadZDOList();
 	LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
-    ReleaseLegacyZDOS();
+	//ReleaseLegacyZDOS();
 	m_nextUid = num;
 }
 
-void IManagerZDO::ReleaseLegacyZDOS() {
-	auto c1 = sizeof(m_objectsBySector);
-	auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, ((20000 / 64) + 1)* ((20000 / 64) + 1)>);
-	auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, 100000>);
+// kinda dumb method?
+/*
+void IZDOManager::ReleaseLegacyZDOS() {
+	//auto c1 = sizeof(m_objectsBySector);
+	//auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, ((20000 / 64) + 1)* ((20000 / 64) + 1)>);
+	//auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, 100000>);
 
 	auto size = m_objectsByID.size();
-	
+
 	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
 		auto pgw = itr->second->m_pgwVersion;
 		if (pgw != 0 && pgw != VConstants::PGW) {
@@ -184,19 +178,22 @@ void IManagerZDO::ReleaseLegacyZDOS() {
 	}
 
 	LOG(INFO) << "Removed " << (size - m_objectsByID.size()) << " OLD generated ZDOS";
-}
+}*/
 
-void IManagerZDO::CapDeadZDOList() {
+void IZDOManager::CapDeadZDOList() {
 	for (auto&& itr = m_deadZDOs.begin(); itr != m_deadZDOs.end(); ) {
 		if (m_deadZDOs.size() > MAX_DEAD_OBJECTS) {
 			itr = m_deadZDOs.erase(itr);
 		}
+		else {
+			break;
+		}
 	}
 }
 
-NetSync* IManagerZDO::CreateNewZDO(const Vector3 &position) {
+NetSync* IZDOManager::CreateNewZDO(const Vector3& position) {
 	NetID zdoid;
-		
+
 	do {
 		zdoid = NetID(Valhalla()->ID(), m_nextUid++);
 	} while (GetZDO(zdoid));
@@ -204,12 +201,12 @@ NetSync* IManagerZDO::CreateNewZDO(const Vector3 &position) {
 	return CreateNewZDO(zdoid, position);
 }
 
-NetSync * IManagerZDO::CreateNewZDO(const NetID &uid, const Vector3 &position) {
+NetSync* IZDOManager::CreateNewZDO(const NetID& uid, const Vector3& position) {
 	return m_objectsByID.insert({ uid, std::make_unique<NetSync>() })
 		.first->second.get();
 }
 
-void IManagerZDO::AddToSector(NetSync *zdo, const Vector2i &sector) {
+void IZDOManager::AddToSector(NetSync* zdo, const Vector2i& sector) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		m_objectsBySector[num].insert(zdo);
@@ -220,7 +217,7 @@ void IManagerZDO::AddToSector(NetSync *zdo, const Vector2i &sector) {
 	}
 }
 
-void IManagerZDO::ZDOSectorInvalidated(NetSync* zdo) {
+void IZDOManager::ZDOSectorInvalidated(NetSync* zdo) {
 	for (auto&& zdopeer : m_peers) {
 		zdopeer->NetSyncSectorInvalidated(zdo);
 	}
@@ -235,7 +232,7 @@ void IManagerZDO::ZDOSectorInvalidated(NetSync* zdo) {
 // hashmap late game would use a lot of memory and be slower than array
 // array early game would use more memory than is currently needed, but no major performance loss
 // but the devs use an array in the end, so yea...
-void IManagerZDO::RemoveFromSector(NetSync* zdo, const Vector2i &sector) {
+void IZDOManager::RemoveFromSector(NetSync* zdo, const Vector2i& sector) {
 	int num = SectorToIndex(sector);
 	//std::vector<NetSync*> list;
 	// m_objectsByOutsideSector requires further testing to detemine whether it is ever used
@@ -253,11 +250,11 @@ void IManagerZDO::RemoveFromSector(NetSync* zdo, const Vector2i &sector) {
 		auto&& find = m_objectsByOutsideSector.find(sector);
 		if (find != m_objectsByOutsideSector.end())
 			find->second.erase(zdo);
-			//list.Remove(zdo);
+		//list.Remove(zdo);
 	}
 }
 
-NetSync * IManagerZDO::GetZDO(const NetID &id) {
+NetSync* IZDOManager::GetZDO(const NetID& id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -266,118 +263,57 @@ NetSync * IManagerZDO::GetZDO(const NetID &id) {
 	return nullptr;
 }
 
-void IManagerZDO::Update() {
-	ReleaseZDOS();
-		
-	SendZDOToPeers2();
-    SendDestroyedZDOs();
+void IZDOManager::Update() {
+	PERIODIC_NOW(2s, {
+	for (auto&& zdopeer : m_peers)
+		ReleaseNearbyZDOS(zdopeer->m_peer->m_pos, zdopeer->m_peer->m_uuid);
+		}
+	);
 
-    // Send ZDOS:
-    //PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
-    //    for (auto&& peer : m_peers)
-    //        SendZDOs(peer.get(), false);
-    //});
-}
+	// Send ZDOS:
+	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
+		for (auto&& peer : m_peers)
+			SendZDOs(peer.get(), false);
+		}
+	);
 
-// use this instead
-// https://github.com/redseiko/ComfyMods/tree/main/ReturnToSender
-void IManagerZDO::SendZDOToPeers2() {
-	if (m_peers.empty())
+	if (m_destroySendList.empty())
 		return;
 
-    //static int m_nextSendPeer = -1;
-    //static float m_sendTimer = 0;
+	NetPackage zpackage;
+	zpackage.Write((int32_t)m_destroySendList.size());
+	for (auto&& id : m_destroySendList)
+		zpackage.Write(id);
 
-    // control flow examination:
-    // send to another peer every 50ms
-    // after that delay for 50ms
-    // why have the delay?
-    static auto itr = m_peers.begin();
-
-    // now iterate peers, but check whether the size decreased from last iteration
-    static auto lastCount = m_peers.size();
-
-    if (m_peers.size() < lastCount) {
-        // then itr might be invalid, so reassign
-        itr = m_peers.begin();
-    }
-
-    lastCount = m_peers.size();
-
-    PERIODIC_NOW(50ms, {
-        if (itr != m_peers.end()) {
-            SendZDOs(itr->get(), false);
-            ++itr;
-        } else {
-            itr = m_peers.begin();
-        }
-    });
-
-    /*
-	m_sendTimer += dt;
-	if (m_nextSendPeer < 0) {
-		if (m_sendTimer > 0.05f) {
-			m_nextSendPeer = 0;
-			m_sendTimer = 0;
-		}
-	}
-	else {
-		if (m_nextSendPeer < m_peers.size())
-			SendZDOs(m_peers[m_nextSendPeer].get(), false);
-
-		m_nextSendPeer++;
-		if (m_nextSendPeer >= m_peers.size())
-			m_nextSendPeer = -1;
-	}*/
+	m_destroySendList.clear();
+	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, zpackage);
 }
 
-void IManagerZDO::FlushClientObjects() {
-	for (auto&& peer : m_peers)
-		SendAllZDOs(peer.get());
-}
-
-void IManagerZDO::ReleaseZDOS() {
-
-	PERIODIC_NOW(2s, {
-		for (auto&& zdopeer : m_peers)
-			ReleaseNearbyZDOS(zdopeer->m_peer->m_pos, zdopeer->m_peer->m_uuid);
-	});
-
-	//static float m_releaseZDOTimer = 0;
-	//m_releaseZDOTimer += dt;
-	//if (m_releaseZDOTimer > 2) {
-	//	m_releaseZDOTimer = 0;
-	//	//ReleaseNearbyZDOS(NetManager::GetReferencePosition(), this.m_myid);
-	//	for (auto&& zdopeer : m_peers)
-	//		ReleaseNearbyZDOS(zdopeer->m_peer->m_pos, zdopeer->m_peer->m_uuid);
-	//}
-}
-
-bool IManagerZDO::IsInPeerActiveArea(const Vector2i &sector, OWNER_t uid) {
+bool IZDOManager::IsInPeerActiveArea(const Vector2i& sector, OWNER_t uid) {
 	assert(uid != Valhalla()->ID() && "Shouldnt reach this point (server thinks its a peer?)");
 	//if (uid == Valhalla()->ID())
 		//return ZNetScene::InActiveArea(sector, NetManager::GetReferencePosition());
 
-	auto &&peer = NetManager::GetPeer(uid);
+	auto&& peer = NetManager::GetPeer(uid);
 	//return peer && ZNetScene::InActiveArea(sector, peer->m_pos);
 	throw std::runtime_error("not implemented");
 }
 
-void IManagerZDO::ReleaseNearbyZDOS(const Vector3 &refPosition, OWNER_t uid) {
+void IZDOManager::ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t uid) {
 	assert(false);
 
-	auto&& zone = ZoneSystem::WorldToZonePos(refPosition);
+	auto&& zone = IZoneManager::WorldToZonePos(refPosition);
 	//m_tempNearObjects.clear();
 
 	std::vector<NetSync*> m_tempNearObjects;
 
-	FindSectorObjects(zone, ZoneSystem::ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
+	FindSectorObjects(zone, IZoneManager::ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
 	for (auto&& zdo : m_tempNearObjects) {
 		if (zdo->Persists()) {
 			if (zdo->Owner() == uid) {
 				// Should always run based on the logic
 				//if (!ZNetScene::InActiveArea(zdo->Sector(), zone)) {
-					zdo->Abandon();
+				zdo->Abandon();
 				//}
 			}
 			// Should always fail to run because of the Server-ZNet ref-pos out of bounds
@@ -390,45 +326,23 @@ void IManagerZDO::ReleaseNearbyZDOS(const Vector3 &refPosition, OWNER_t uid) {
 	}
 }
 
-void IManagerZDO::MarkDestroyZDO(NetSync *zdo) {
+void IZDOManager::MarkDestroyZDO(NetSync* zdo) {
 	if (zdo->Local())
 		m_destroySendList.push_back(zdo->ID());
 }
 
-void IManagerZDO::SendDestroyedZDOs() {
-	if (m_destroySendList.empty())
-		return;
-
-	NetPackage zpackage;
-	zpackage.Write((int32_t)m_destroySendList.size());
-	for (auto &&id : m_destroySendList)
-		zpackage.Write(id);
-
-	m_destroySendList.clear();
-	RouteManager()-> Invoke(NetRouteManager::EVERYBODY, NetHashes::Routed::DestroyZDO, zpackage);
-}
-
-void IManagerZDO::HandleDestroyedZDO(const NetID &uid) {
-	if (uid.m_uuid == Valhalla()->ID() && uid.m_id >= m_nextUid)
+void IZDOManager::HandleDestroyedZDO(const NetID& uid) {
+	if (uid.m_uuid == SERVER_ID && uid.m_id >= m_nextUid)
 		m_nextUid = uid.m_uuid + 1;
 
 	auto zdo = GetZDO(uid);
 	if (!zdo)
 		return;
-	
-
-
-	NetScene()->OnZDODestroyed(zdo);
-
-	//if (m_onZDODestroyed)
-	//	m_onZDODestroyed(zdo);
-
-	//throw std::runtime_error("not implemented");
 
 	RemoveFromSector(zdo, zdo->Sector());
 	m_objectsByID.erase(zdo->ID());
-	//ZDOPool.Release(zdo);
-	for (auto &&zdopeer : m_peers) {
+
+	for (auto&& zdopeer : m_peers) {
 		zdopeer->m_syncs.erase(uid);
 	}
 
@@ -436,11 +350,11 @@ void IManagerZDO::HandleDestroyedZDO(const NetID &uid) {
 	m_deadZDOs[uid] = Valhalla()->Ticks(); // ticks;
 }
 
-void IManagerZDO::SendAllZDOs(SyncPeer *peer) {
+void IZDOManager::SendAllZDOs(SyncPeer* peer) {
 	while (SendZDOs(peer, true));
 }
 
-void IManagerZDO::FindSectorObjects(const Vector2i &sector, int area, int distantArea, std::vector<NetSync*> &sectorObjects, std::vector<NetSync*> *distantSectorObjects) {
+void IZDOManager::FindSectorObjects(const Vector2i& sector, int area, int distantArea, std::vector<NetSync*>& sectorObjects, std::vector<NetSync*>* distantSectorObjects) {
 	FindObjects(sector, sectorObjects);
 	for (int i = 1; i <= area; i++)
 	{
@@ -471,7 +385,7 @@ void IManagerZDO::FindSectorObjects(const Vector2i &sector, int area, int distan
 	}
 }
 
-void IManagerZDO::FindSectorObjects(Vector2i sector, int area, std::vector<NetSync*> &sectorObjects)
+void IZDOManager::FindSectorObjects(const Vector2i &sector, int area, std::vector<NetSync*>& sectorObjects)
 {
 	for (int i = sector.y - area; i <= sector.y + area; i++)
 	{
@@ -482,16 +396,14 @@ void IManagerZDO::FindSectorObjects(Vector2i sector, int area, std::vector<NetSy
 	}
 }
 
-void IManagerZDO::CreateSyncList(SyncPeer *peer, std::vector<NetSync*> &toSync) {
+void IZDOManager::CreateSyncList(SyncPeer* peer, std::vector<NetSync*>& toSync) {
 	Vector3 refPos = peer->m_peer->m_pos;
-	auto zone = ZoneSystem::WorldToZonePos(refPos);
-	//tempSectorObjects.clear();
-	//m_tempToSyncDistant.clear();
+	auto zone = IZoneManager::WorldToZonePos(refPos);
 
 	std::vector<NetSync*> tempSectorObjects;
 	std::vector<NetSync*> m_tempToSyncDistant;
 
-	FindSectorObjects(zone, ZoneSystem::ACTIVE_AREA, ZoneSystem::ACTIVE_DISTANT_AREA, 
+	FindSectorObjects(zone, IZoneManager::ACTIVE_AREA, IZoneManager::ACTIVE_DISTANT_AREA,
 		tempSectorObjects, &m_tempToSyncDistant);
 
 	for (auto&& zdo : tempSectorObjects) {
@@ -502,16 +414,16 @@ void IManagerZDO::CreateSyncList(SyncPeer *peer, std::vector<NetSync*> &toSync) 
 
 	ServerSortSendZDOS(toSync, refPos, peer);
 	if (toSync.size() < 10) {
-		for (auto &&zdo2 : m_tempToSyncDistant) {
+		for (auto&& zdo2 : m_tempToSyncDistant) {
 			if (peer->ShouldSend(zdo2)) {
 				toSync.push_back(zdo2);
 			}
 		}
 	}
-    AddForceSendZDOs(peer, toSync);
+	AddForceSendZDOs(peer, toSync);
 }
 
-void IManagerZDO::AddForceSendZDOs(SyncPeer *peer, std::vector<NetSync*> &syncList){
+void IZDOManager::AddForceSendZDOs(SyncPeer* peer, std::vector<NetSync*>& syncList) {
 	if (!peer->m_forceSend.empty()) {
 
 		//std::vector<NetID> m_tempRemoveList;
@@ -571,11 +483,11 @@ static int ServerSendCompare(ZDO *x, ZDO *y) {
 	}
 }*/
 
-void IManagerZDO::ServerSortSendZDOS(std::vector<NetSync*> &objects, const Vector3 &refPos, SyncPeer *peer) {
+void IZDOManager::ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, SyncPeer* peer) {
 	auto uuid = peer->m_peer->m_uuid;
 	//float time = Valhalla()->Time();
 	auto ticks = Valhalla()->Ticks();
-	std::sort(objects.begin(), objects.end(), [uuid, refPos, ticks] (const NetSync* x, const NetSync* y) {
+	std::sort(objects.begin(), objects.end(), [uuid, refPos, ticks](const NetSync* x, const NetSync* y) {
 
 		// zdos are sorted according to
 		// priority -> distance -> age ->
@@ -587,14 +499,14 @@ void IManagerZDO::ServerSortSendZDOS(std::vector<NetSync*> &objects, const Vecto
 				float age1 = VUtils::Math::Clamp(ticks - x->m_rev.m_time, 0, 100);
 				float age2 = VUtils::Math::Clamp(ticks - y->m_rev.m_time, 0, 100);
 				return x->Position().SqDistance(refPos) - age1 <
-						y->Position().SqDistance(refPos) - age2;
+					y->Position().SqDistance(refPos) - age2;
 			}
 			else
 				return x->Type() < y->Type();
 		}
 		else
 			return !flag ? true : false;
-	});
+		});
 }
 
 /*
@@ -675,11 +587,11 @@ void AddDistantObjects(ZDOPeer *peer, int maxItems, std::vector<ZDO*> &toSync) {
 		toSync.push_back(m_objectsByID[i]);
 	}
 
-	//for (auto &&itr = m_objectsByID.begin() + peer->m_sendIndex; 
+	//for (auto &&itr = m_objectsByID.begin() + peer->m_sendIndex;
 
 	// what is the point of performing a stream operation on a non-sequential guaranteed map?
 	// no order is ever maintained, so what is the purpose?
-	// 
+	//
 	IEnumerable<KeyValuePair<ZDOID, ZDO>> enumerable = m_objectsByID.Skip(peer.m_sendIndex).Take(maxItems);
 	peer.m_sendIndex += maxItems;
 	for (auto&& keyValuePair : enumerable)
@@ -700,10 +612,10 @@ int SectorToIndex(const Vector2i &s)
 	return num2 * SECTOR_WIDTH + num;
 }*/
 
-void IManagerZDO::FindObjects(const Vector2i &sector, std::vector<NetSync*> &objects) {
+void IZDOManager::FindObjects(const Vector2i& sector, std::vector<NetSync*>& objects) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
-		objects.insert(objects.end(), 
+		objects.insert(objects.end(),
 			m_objectsBySector[num].begin(), m_objectsBySector[num].end());
 	}
 	else {
@@ -715,7 +627,7 @@ void IManagerZDO::FindObjects(const Vector2i &sector, std::vector<NetSync*> &obj
 	}
 }
 
-void IManagerZDO::FindDistantObjects(const Vector2i &sector, std::vector<NetSync*> &objects) {
+void IZDOManager::FindDistantObjects(const Vector2i& sector, std::vector<NetSync*>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
@@ -736,21 +648,21 @@ void IManagerZDO::FindDistantObjects(const Vector2i &sector, std::vector<NetSync
 	}
 }
 
-void IManagerZDO::RemoveOrphanNonPersistentZDOS() {
+void IZDOManager::RemoveOrphanNonPersistentZDOS() {
 	for (auto&& keyValuePair : m_objectsByID) {
-		auto &&value = keyValuePair.second;
+		auto&& value = keyValuePair.second;
 		if (!value->Persists()
 			&& (!value->HasOwner() || !IsPeerConnected(value->Owner())))
 		{
-			auto &&uid = value->ID();
+			auto&& uid = value->ID();
 			LOG(INFO) << "Destroying abandoned non persistent zdo owner: " << value->Owner();
 			value->SetLocal();
-            MarkDestroyZDO(value.get());
+			MarkDestroyZDO(value.get());
 		}
 	}
 }
 
-bool IManagerZDO::IsPeerConnected(OWNER_t uid) {
+bool IZDOManager::IsPeerConnected(OWNER_t uid) {
 	// kinda dumb below for server?
 
 	// what is the purpose of this
@@ -786,9 +698,9 @@ void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> &zdos) {
 // this isnt particularly great, because portals are global and can be loaded at any time
 // portals could be stored in separate list for the better
 // This is really Unity-specific xue to coroutines and yields
-bool IManagerZDO::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int &index) {
+bool IZDOManager::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*>& zdos, int& index) {
 	auto stableHashCode = VUtils::String::GetStableHashCode(prefab);
-		
+
 	// Search through all sector objects for PREFAB
 	if (index >= m_objectsBySector.size()) {
 		for (auto&& pair : m_objectsByOutsideSector) {
@@ -799,8 +711,8 @@ bool IManagerZDO::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::
 				}
 			}
 		}
-			
-		for (auto &&it2 = zdos.begin(); it2 != zdos.end();) {
+
+		for (auto&& it2 = zdos.begin(); it2 != zdos.end();) {
 			if (!(*it2)->Valid())
 				it2 = zdos.erase(it2);
 			else
@@ -811,9 +723,9 @@ bool IManagerZDO::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::
 
 	// search through all 
 	for (int found = 0; index < m_objectsBySector.size(); index++) {
-		auto &&list2 = m_objectsBySector[index];
+		auto&& list2 = m_objectsBySector[index];
 
-		for (auto &&zdo2 : list2) {
+		for (auto&& zdo2 : list2) {
 			if (zdo2->PrefabHash() == stableHashCode) {
 				zdos.push_back(zdo2);
 			}
@@ -821,67 +733,20 @@ bool IManagerZDO::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::
 
 		if (++found > 400) {
 			break;
-		}			
+		}
 	}
 	return false;
 }
 
-// tacky name
-int IManagerZDO::NrOfObjects() {
-	return m_objectsByID.size();
-}
-
-/*
-int GetSentZDOs()
-{
-	return m_zdosSentLastSec;
-}
-
-int GetRecvZDOs()
-{
-	return m_zdosRecvLastSec;
-}
-
-void GetAverageStats(out float sentZdos, out float recvZdos)
-{
-	sentZdos = (float)this.m_zdosSentLastSec / 20f;
-	recvZdos = (float)this.m_zdosRecvLastSec / 20f;
-}
-
-// Token: 0x06000B8E RID: 2958 RVA: 0x000529D9 File Offset: 0x00050BD9
-int GetClientChangeQueue()
-{
-	return this.m_clientChangeQueue.Count;
-}
-
-// Token: 0x06000B8F RID: 2959 RVA: 0x000529E6 File Offset: 0x00050BE6
-void RequestZDO(ZDOID id)
-{
-	ZRoutedRpc.instance.InvokeRoutedRPC("RequestZDO", new object[]
-		{
-			id
-		});
-}*/
-
-
-//ZDOPeer *GetPeer(OWNER_t uid) {
-//	for (auto&& zdopeer : m_peers) {
-//		if (zdopeer.m_peer.m_uid == uid)
-//		{
-//			return zdopeer;
-//		}
-//	}
-//	return null;
-//}
 
 // Global send
-void IManagerZDO::ForceSendZDO(const NetID&id) {
+void IZDOManager::ForceSendZDO(const NetID& id) {
 	for (auto&& zdopeer : m_peers)
 		zdopeer->ForceSendNetSync(id);
 }
 
 // Single target by id
-void IManagerZDO::ForceSendZDO(OWNER_t peerID, const NetID&id) {
+void IZDOManager::ForceSendZDO(OWNER_t peerID, const NetID& id) {
 	auto&& peer = GetPeer(peerID);
 	if (peer)
 		peer->ForceSendNetSync(id);
@@ -915,17 +780,17 @@ void ClientChanged(const ZDOID &id){
 
 
 
-int IManagerZDO::SectorToIndex(const Vector2i &s) {
+int IZDOManager::SectorToIndex(const Vector2i& s) {
 	int x = s.x + SECTOR_WIDTH / 2;
 	int y = s.y + SECTOR_WIDTH / 2;
-	if (x < 0 || y < 0 
+	if (x < 0 || y < 0
 		|| x >= SECTOR_WIDTH || y >= SECTOR_WIDTH) {
 		return -1;
 	}
 	return y * SECTOR_WIDTH + x;
 }
 
-NetSync * IManagerZDO::GetNetSync(const NetID& id) {
+NetSync* IZDOManager::GetZDO(const NetID& id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -934,24 +799,20 @@ NetSync * IManagerZDO::GetNetSync(const NetID& id) {
 	return nullptr;
 }
 
-SyncPeer * IManagerZDO::GetPeer(OWNER_t uuid) {
+IZDOManager::SyncPeer* IZDOManager::GetPeer(OWNER_t uuid) {
 	for (auto&& peer : m_peers) {
 		if (peer->m_peer->m_uuid == uuid)
 			return peer.get();
 	}
-    throw std::runtime_error("");
+	throw std::runtime_error("");
 }
 
-SyncPeer* IManagerZDO::GetPeer(NetRpc* rpc) {
+IZDOManager::SyncPeer* IZDOManager::GetPeer(NetRpc* rpc) {
 	for (auto&& peer : m_peers) {
 		if (peer->m_peer->m_rpc.get() == rpc)
 			return peer.get();
 	}
-    throw std::runtime_error("");
-}
-
-SyncPeer* IManagerZDO::GetPeer(NetPeer *netpeer) {
-	return GetPeer(netpeer->m_rpc.get());
+	throw std::runtime_error("");
 }
 
 //NetSync *CreateNewNetSync(NetID uid, Vector3 position) {
@@ -963,7 +824,7 @@ SyncPeer* IManagerZDO::GetPeer(NetPeer *netpeer) {
 //	return nullptr;
 //}
 
-void IManagerZDO::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
+void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 	assert(false);
 
 	auto syncPeer = GetPeer(rpc);
@@ -978,9 +839,9 @@ void IManagerZDO::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 		}
 	}
 
-    auto ticks = Valhalla()->Ticks();
+	auto ticks = Valhalla()->Ticks();
 
-    static NetPackage des;
+	static NetPackage des;
 
 	for (;;) {
 		auto syncId = pkg.Read<NetID>(); // uid
@@ -994,19 +855,19 @@ void IManagerZDO::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 		auto owner = pkg.Read<OWNER_t>();		// owner
 		auto vec3 = pkg.Read<Vector3>();		// position
 		//auto zdoBytes = pkg.Read<NetPackage>();	// serialized data
-        //des = pkg.Read<NetPackage>();
-        pkg.Read(des);
-		
+		//des = pkg.Read<NetPackage>();
+		pkg.Read(des);
+
 		NetSync::Rev rev = { dataRev, ownerRev, ticks };
 
 		// if the zdo already existed (locally/remotely), compare revisions
 		bool flagCreated = false;
 		if (sync) {
-            // if the client data rev is not new, and they've reassigned the owner:
+			// if the client data rev is not new, and they've reassigned the owner:
 			if (dataRev <= sync->m_rev.m_dataRev) {
 				if (ownerRev > sync->m_rev.m_ownerRev) {
 					sync->m_rev.m_ownerRev = ownerRev;
-					syncPeer->m_syncs.insert({ syncId, rev });
+					syncPeer->m_zdos.insert({ syncId, rev });
 				}
 				continue;
 			}
@@ -1015,28 +876,28 @@ void IManagerZDO::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 			sync = CreateNewZDO(syncId, vec3);
 			flagCreated = true;
 		}
-			
+
 		sync->SetOwner(owner);
 		sync->m_rev = rev;
 		sync->SetPosition(vec3);
 		sync->Deserialize(des);
 
-		syncPeer->m_syncs[syncId] = rev;
+		syncPeer->m_zdos[syncId] = rev;
 
-        // If the ZDO was just created as a copy, but it was removed recently
+		// If the ZDO was just created as a copy, but it was removed recently
 		if (flagCreated && m_deadZDOs.contains(syncId)) {
 			sync->SetLocal();
-            MarkDestroyZDO(sync);
+			MarkDestroyZDO(sync);
 		}
 	}
 }
 
-bool IManagerZDO::SendZDOs(SyncPeer* peer, bool flush) {
+bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 	//assert(false);
 	int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
-		
+
 	// flushing forces a packet send
-    const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
+	const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
 	if (!flush && sendQueueSize > threshold)
 		return false;
 
@@ -1044,7 +905,7 @@ bool IManagerZDO::SendZDOs(SyncPeer* peer, bool flush) {
 	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 		return false;
 
-    static std::vector<NetSync*> m_tempToSync;
+	static std::vector<NetSync*> m_tempToSync;
 	m_tempToSync.clear();
 	CreateSyncList(peer, m_tempToSync);
 
@@ -1066,7 +927,7 @@ bool IManagerZDO::SendZDOs(SyncPeer* peer, bool flush) {
 	*    ] NetSyncID::null for termination
 	*/
 
-    bool flagWritten = false;
+	bool flagWritten = false;
 
 	NetPackage pkg;
 
@@ -1077,12 +938,12 @@ bool IManagerZDO::SendZDOs(SyncPeer* peer, bool flush) {
 		}
 
 		peer->m_invalidSector.clear();
-        flagWritten = true;
+		flagWritten = true;
 	}
 
 	//float time = Time.time;
 	auto ticks = Valhalla()->Ticks();
-		
+
 	unsigned currentTemp = 0;
 	while (currentTemp < m_tempToSync.size() && pkg.m_stream.Length() <= availableSpace)
 	{
@@ -1095,39 +956,40 @@ bool IManagerZDO::SendZDOs(SyncPeer* peer, bool flush) {
 		pkg.Write(sync->Owner());
 		pkg.Write(sync->Position());
 
-        // TODO could optimize
-        NetPackage syncPkg;
+		// TODO could optimize
+		NetPackage syncPkg;
 		sync->Serialize(syncPkg); // dump sync information onto packet
 		pkg.Write(syncPkg);
 
 		peer->m_syncs[sync->ID()] = NetSync::Rev{
-			sync->m_rev.m_dataRev, sync->m_rev.m_ownerRev, ticks};
+			sync->m_rev.m_dataRev, sync->m_rev.m_ownerRev, ticks };
 
 		currentTemp++;
-        flagWritten = true;
+		flagWritten = true;
 	}
 	pkg.Write(NetID::NONE); // used as the null terminator
 
 	if (flagWritten)
-		peer->m_peer->m_rpc->Invoke(NetHashes::Rpc::ZDOData, pkg);
+		peer->m_peer->m_rpc->Invoke(Hashes::Rpc::ZDOData, pkg);
 
 	return flagWritten;
 }
 
-void IManagerZDO::OnNewPeer(NetPeer *peer) {
+void IZDOManager::OnNewPeer(NetPeer* peer) {
 	m_peers.push_back(std::make_unique<SyncPeer>(peer));
-	peer->m_rpc->Register(NetHashes::Rpc::ZDOData, &RPC_ZDOData);
+	peer->m_rpc->Register(Hashes::Rpc::ZDOData, &RPC_ZDOData);
 }
 
-void IManagerZDO::OnPeerQuit(NetPeer* peer) {
-    // This is the kind of iteration removal I am trying to avoid
-    for (auto&& itr  = m_peers.begin(); itr!=m_peers.end(); ) {
-        if ((*itr)->m_peer == peer) {
-            RemoveOrphanNonPersistentZDOS();
-            itr = m_peers.erase(itr);
-            return;
-        } else {
-            ++itr;
-        }
-    }
+void IZDOManager::OnPeerQuit(NetPeer* peer) {
+	// This is the kind of iteration removal I am trying to avoid
+	for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
+		if ((*itr)->m_peer == peer) {
+			RemoveOrphanNonPersistentZDOS();
+			itr = m_peers.erase(itr);
+			return;
+		}
+		else {
+			++itr;
+		}
+	}
 }

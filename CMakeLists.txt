@@ -87,14 +87,13 @@ add_executable(${PROJECT_NAME}
     "src/NetAcceptorSteam.cpp"
     "src/NetID.cpp"
     "src/NetManager.cpp"
-    "src/NetObject.cpp"
+    
     "src/NetPackage.cpp"
     "src/NetPeer.cpp"
     "src/NetRouteManager.cpp"
     "src/NetRpc.cpp"
     
     "src/NetSteamSocket.cpp"
-    "src/ZDOManager.cpp"
     "src/PlayerProfile.cpp"
     "src/Quaternion.cpp"
     "src/Stream.cpp"
@@ -108,8 +107,9 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsString.cpp"
     "src/WorldGenerator.cpp"
     "src/ZDO.cpp"
+    "src/ZDOManager.cpp"
     "src/ZoneSystem.cpp"
- "include/TerrainModifier.h" "include/VUtilsTraits.h" "include/PrefabHashes.h")
+ "src/ObjectManager.cpp" "include/ZDOPeer.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

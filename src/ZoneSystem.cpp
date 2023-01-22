@@ -6,6 +6,7 @@
 #include "WorldGenerator.h"
 #include "HeightmapBuilder.h"
 #include "PrefabHashes.h"
+#include "ObjectManager.h"
 
 // I feel like zdos are what allows for objects to be created
 // simple ZDO pool containing the most recent objects, which are frequently revised
@@ -646,6 +647,7 @@ void IZoneManager::PlaceZoneCtrl(const Vector2i& zoneID, std::vector<GameObject>
     auto pos = ZoneToWorldPos(zoneID);
     // Create a zdo at that location
     // Idea: use the serialized zpackage prefab table to lookup zoneCtrl then instantiate
+    IObjectManager::PrefabTemplate
     Hashes::Objects::_ZoneCtrl
 
 
@@ -1227,47 +1229,6 @@ void IZoneManager::RemoveUnplacedLocations(ZoneLocation* location) {
     //ZLog.DevLog("Removed " + list.Count.ToString() + " unplaced locations of type " + location.m_prefabName);
     LOG(INFO) << "Removed " << list.size() << " unplaced locations of type " << location->m_prefabName;
 }
-
-// client only
-/*
-// public
-bool TestSpawnLocation(const std::string& name, const Vector3& pos, bool disableSave = true) {
-    ZoneLocation location = GetLocation(name);
-    if (location == null) {
-        LOG(INFO) << "Missing location:" << name;
-        global::Console.instance.Print("Missing location:" + name);
-        return false;
-    }
-    if (location.m_prefab == null) {
-        LOG(INFO) << "Missing prefab in location:" << name;
-        global::Console.instance.Print("Missing location:" + name);
-        return false;
-    }
-    float num = std::max(location.m_exteriorRadius, location.m_interiorRadius);
-    Vector2i zone = GetZone(pos);
-    Vector3 zonePos = GetZonePos(zone);
-    pos.x = VUtils::Math::Clamp(pos.x, zonePos.x - m_zoneSize / 2.f + num, zonePos.x + m_zoneSize / 2.f - num);
-    pos.z = VUtils::Math::Clamp(pos.z, zonePos.z - m_zoneSize / 2.f + num, zonePos.z + m_zoneSize / 2.f - num);
-    std::string[] array = new std::string[6];
-    array[0] = "radius ";
-    array[1] = num.ToString();
-    array[2] = "  ";
-    int32_t num2 = 3;
-    Vector3 vector = zonePos;
-    array[num2] = vector.ToString();
-    array[4] = " ";
-    int32_t num3 = 5;
-    vector = pos;
-    array[num3] = vector.ToString();
-    LOG(INFO) << std::string.Concat(array);
-    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "Location spawned, " + (disableSave ? "world saving DISABLED until restart" : "CAUTION! world saving is ENABLED, use normal location command to disable it!"), 0, null);
-
-    m_didZoneTest = disableSave;
-    float y = (float)UnityEngine.Random.Range(0, 16) * 22.5f;
-    std::vector<GameObject> spawnedGhostObjects;
-    SpawnLocation(location, UnityEngine.Random.Range(0, 99999), pos, Quaternion.Euler(0f, y, 0f), ZoneSystem.SpawnMode.Full, spawnedGhostObjects);
-    return true;
-}*/
 
 // public
 // the client uses this

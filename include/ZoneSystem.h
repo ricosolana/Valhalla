@@ -4,8 +4,6 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "HeightMap.h"
-#include "ZDO.h"
-#include "NetObject.h"
 #include "GameObject.h"
 
 class IZoneManager {

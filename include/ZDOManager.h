@@ -4,58 +4,13 @@
 
 #include "ZDO.h"
 #include "Vector.h"
-#include "NetPeer.h"
 
-//class NetSync;
-
-
+// Forward declaration
+class NetPeer;
+class ZDOPeer;
 
 class IZDOManager {
 	friend class SaveData;
-
-	struct SyncPeer {
-		NetPeer* m_peer;
-		robin_hood::unordered_map<NetID, NetSync::Rev> m_syncs;
-		robin_hood::unordered_set<NetID> m_forceSend;
-		robin_hood::unordered_set<NetID> m_invalidSector;
-		int m_sendIndex = 0; // used incrementally for which next zdos to send from index
-
-		SyncPeer(NetPeer* peer) : m_peer(peer) {}
-
-		void NetSyncSectorInvalidated(ZDO* zdo) {
-			throw std::runtime_error("not implemented");
-			//if (sync->m_owner == m_peer->m_uuid)
-			//	return;
-			//
-			//if (!ZoneSystem()->)
-			//auto&& find = m_syncs.find(zdo->GetNetID());
-			//if (find != m_syncs.end())
-			//
-			//if (m_syncs.contains(sync->m_uid) 
-			//	&& !ZNetScene.instance.InActiveArea(sync->GetSector(), m_peer->m_pos)) {
-			//	m_invalidSector.insert(sync.m_uid);
-			//	m_syncs.erase(sync->m_uid);
-			//}
-		}
-
-		void ForceSendNetSync(NetID id) {
-			m_forceSend.insert(id);
-		}
-
-		// Returns whether the sync is outdated
-		//	tests if the peer does not have a copy
-		//	tests if the zdo is outdated in owner and data
-		bool ShouldSend(NetSync* netSync) {
-			auto find = m_syncs.find(netSync->ID());
-
-			//return find == m_syncs.end() 
-			//	|| !netSync->Outdated(find->second);
-
-			return find == m_syncs.end()
-				|| netSync->m_rev.m_ownerRev > find->second.m_ownerRev
-				|| netSync->m_rev.m_dataRev > find->second.m_dataRev;
-		}
-	};
 
 private:
 	void OnNewPeer(NetPeer* peer);
@@ -67,24 +22,19 @@ private:
 
 	void Stop();
 
-	SyncPeer* GetPeer(OWNER_t uuid);
-	SyncPeer* GetPeer(NetPeer* netPeer);
-	SyncPeer* GetPeer(NetRpc* rpc);
+	ZDOPeer* GetPeer(OWNER_t uuid);
+	ZDOPeer* GetPeer(NetRpc* rpc);
 
-	void SendZDOToPeers2();
-	void FlushClientObjects(); // sends all zdos; the fast that they're labeled as objects here proves the point a better name is SyncObject?
-	void ReleaseZDOS();
 	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
-	void SendDestroyedZDOs();
 	void HandleDestroyedZDO(const NetID& uid);
-	void SendAllZDOs(SyncPeer* peer);
-	bool SendZDOs(SyncPeer* peer, bool flush);
+	void SendAllZDOs(ZDOPeer* peer);
+	bool SendZDOs(ZDOPeer* peer, bool flush);
 	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg);
-	void CreateSyncList(SyncPeer* peer, std::vector<NetSync*>& toSync);
-	void AddForceSendZDOs(SyncPeer* peer, std::vector<NetSync*>& syncList);
+	void CreateSyncList(ZDOPeer* peer, std::vector<NetSync*>& toSync);
+	void AddForceSendZDOs(ZDOPeer* peer, std::vector<NetSync*>& syncList);
 
-	void ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, SyncPeer* peer);
+	void ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, ZDOPeer* peer);
 
 	int SectorToIndex(const Vector2i& s);
 	void FindObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
@@ -95,7 +45,7 @@ private:
 	static constexpr int SECTOR_WIDTH = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
-	std::list<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
+	//std::list<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
 
 
 
@@ -129,7 +79,7 @@ public:
 
 	// This actually frees the zdos list
 	// They arent marked, theyre trashed
-	void ReleaseLegacyZDOS();
+	//void ReleaseLegacyZDOS();
 
 	void CapDeadZDOList();
 
@@ -167,27 +117,11 @@ public:
 	// basically, the coroutine thread is frozen in place
 	// its not real multithreading, but is confusing for no reason
 	// this can be refactored to have clearer intent
-	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> zdos, int& index);
-
-	// periodic stat logging
-	//int NrOfObjects();
-	//int GetSentZDOs();
-	//int GetRecvZDOs();
-
-	// seems to be client only for hud
-	//void GetAverageStats(out float sentZdos, out float recvZdos);
-	//int GetClientChangeQueue();
-	//void RequestZDO(ZDOID id);
+	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int& index);
 
 	void ForceSendZDO(const NetID& id);
 
 	void ForceSendZDO(OWNER_t peerID, const NetID& id);
-
-	//void ClientChanged(const NetID& id);
-
-	//std::function<void(NetSync*)> m_onZDODestroyed;
-
-	//void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
 };
 
 IZDOManager* ZDOManager();
