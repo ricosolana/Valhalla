@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
     "src/WorldGenerator.cpp"
     "src/ZDO.cpp"
     "src/ZoneSystem.cpp"
- "include/TerrainModifier.h" "include/VUtilsTraits.h")
+ "include/TerrainModifier.h" "include/VUtilsTraits.h" "include/PrefabHashes.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

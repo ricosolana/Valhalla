@@ -10,7 +10,7 @@
 
 
 
-class IManagerZDO {
+class IZDOManager {
 	friend class SaveData;
 
 	struct SyncPeer {
@@ -22,10 +22,14 @@ class IManagerZDO {
 
 		SyncPeer(NetPeer* peer) : m_peer(peer) {}
 
-		void NetSyncSectorInvalidated(NetSync* netSync) {
-			throw std::runtime_error("Not implemented");
+		void NetSyncSectorInvalidated(ZDO* zdo) {
+			throw std::runtime_error("not implemented");
 			//if (sync->m_owner == m_peer->m_uuid)
 			//	return;
+			//
+			//if (!ZoneSystem()->)
+			//auto&& find = m_syncs.find(zdo->GetNetID());
+			//if (find != m_syncs.end())
 			//
 			//if (m_syncs.contains(sync->m_uid) 
 			//	&& !ZNetScene.instance.InActiveArea(sync->GetSector(), m_peer->m_pos)) {
@@ -88,7 +92,7 @@ private:
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
-	static constexpr int SECTOR_WIDTH = 512;
+	static constexpr int SECTOR_WIDTH = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
 	std::list<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
@@ -96,7 +100,7 @@ private:
 
 
 	// so ensure with a bunch of asserts of something that all ZDO external references are removed once the zdo is popped from here
-	robin_hood::unordered_map<NetID, std::unique_ptr<NetSync>> m_objectsByID;    // primary lifetime container
+	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;    // primary lifetime container
 
 
 
@@ -186,4 +190,4 @@ public:
 	//void RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
 };
 
-IManagerZDO* ZDOManager();
+IZDOManager* ZDOManager();

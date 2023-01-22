@@ -4,7 +4,7 @@
 #include "Method.h"
 #include "ValhallaServer.h"
 
-class IManagerRoute {
+class IRouteManager {
 	struct Data {
 		OWNER_t m_msgID;
 		OWNER_t m_senderPeerID;
@@ -35,8 +35,10 @@ class IManagerRoute {
 		}
 	};
 
-private:
+public:
 	static constexpr OWNER_t EVERYBODY = 0;
+
+private:	
 
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<OWNER_t>>> m_methods;
 
@@ -118,4 +120,4 @@ public:
 	}
 };
 
-IManagerRoute* RouteManager();
+IRouteManager* RouteManager();

@@ -10,7 +10,7 @@
 * 
 */
 
-namespace NetHashes {
+namespace Hashes {
 
     namespace Rpc {
         //
