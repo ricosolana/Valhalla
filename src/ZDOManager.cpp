@@ -67,81 +67,44 @@ void IZDOManager::Init() {
 }
 
 void IZDOManager::Load(NetPackage& reader, int version) {
-	//m_saveData->Load(reader, version);
+	reader.Read<OWNER_t>(); // skip server id
+	auto nextUid = reader.Read<uint32_t>();
+	const auto count = reader.Read<int32_t>();
 
-	reader.Read<OWNER_t>(); // skip
-	auto num = reader.Read<uint32_t>();
-	const auto num2 = reader.Read<int32_t>();
-	m_objectsByID.clear();
+	LOG(INFO) << "Loading " << count << " zdos, data version:" << version;
 
-	LOG(INFO) << "Loading " << num2 << " zdos, data version:" << version;
-
-	//NetPackage zpackage;
-	for (int i = 0; i < num2; i++) {
-		//ZDO zdo = ZDOPool.Create(this);
-		//NetPackage zpackage = NetPackage(reader.Read<BYTES_t>());
-
-		auto zdo = std::make_unique<NetSync>(
+	for (int i = 0; i < count; i++) {
+		auto zdo = std::make_unique<ZDO>(
 			NetPackage(reader.Read<BYTES_t>()), version);
 
-		//zdo->Load(zpackage, version);
 		zdo->Abandon();
 		AddToSector(zdo.get(), zdo->Sector());
 		if (zdo->ID().m_uuid == SERVER_ID
-			&& zdo->ID().m_id >= num)
+			&& zdo->ID().m_id >= nextUid)
 		{
-			num = zdo->ID().m_id + 1U;
+			nextUid = zdo->ID().m_id + 1;
 		}
-		m_objectsByID.insert({ zdo->ID(), std::move(zdo) });
+		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
-	m_deadZDOs.clear();
-	auto num3 = reader.Read<int32_t>();
-	for (int j = 0; j < num3; j++) {
+
+	auto deadCount = reader.Read<int32_t>();
+	for (int j = 0; j < deadCount; j++) {
 		auto key = reader.Read<NetID>();
 		auto value = reader.Read<OWNER_t>();
-		m_deadZDOs.insert({ key, value });
-		if (key.m_uuid == SERVER_ID && key.m_id >= num) {
-			num = key.m_id + 1U;
+		m_deadZDOs[key] = value;
+		if (key.m_uuid == SERVER_ID && key.m_id >= nextUid) {
+			nextUid = key.m_id + 1;
 		}
 	}
 	CapDeadZDOList();
+	m_nextUid = nextUid;
+
 	LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
-	//ReleaseLegacyZDOS();
-	m_nextUid = num;
 }
 
-// kinda dumb method?
-/*
-void IZDOManager::ReleaseLegacyZDOS() {
-	//auto c1 = sizeof(m_objectsBySector);
-	//auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, ((20000 / 64) + 1)* ((20000 / 64) + 1)>);
-	//auto c2 = sizeof(std::array<robin_hood::unordered_set<ZDO*>, 100000>);
-
-	auto size = m_objectsByID.size();
-
-	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
-		auto pgw = itr->second->m_pgwVersion;
-		if (pgw != 0 && pgw != VConstants::PGW) {
-			RemoveFromSector(itr->second.get(), itr->second->Sector());
-			//ZDOPool.Release(pair.second);
-			itr = m_objectsByID.erase(itr);
-		}
-		else {
-			++itr;
-		}
-	}
-
-	LOG(INFO) << "Removed " << (size - m_objectsByID.size()) << " OLD generated ZDOS";
-}*/
-
 void IZDOManager::CapDeadZDOList() {
-	for (auto&& itr = m_deadZDOs.begin(); itr != m_deadZDOs.end(); ) {
-		if (m_deadZDOs.size() > MAX_DEAD_OBJECTS) {
-			itr = m_deadZDOs.erase(itr);
-		}
-		else {
-			break;
-		}
+	while (m_deadZDOs.size() > MAX_DEAD_OBJECTS) {
+		m_deadZDOs.erase(m_deadZDOs.begin());
 	}
 }
 
@@ -165,10 +128,6 @@ void IZDOManager::AddToSector(NetSync* zdo, const Vector2i& sector) {
 	if (num != -1) {
 		m_objectsBySector[num].insert(zdo);
 	}
-	else {
-		// inserts an empty vec if not present, then pushes
-		m_objectsByOutsideSector[sector].insert(zdo);
-	}
 }
 
 void IZDOManager::ZDOSectorInvalidated(NetSync* zdo) {
@@ -178,34 +137,10 @@ void IZDOManager::ZDOSectorInvalidated(NetSync* zdo) {
 	}
 }
 
-// this is where considering to use a map vs an array conflicts in their pros/cons
-// In Valheim, the world is limited. Unlike Minecraft (mostly), Valheim has an end of the world
-//	An array would be best later on when the world is large and fully explored
-//	A map would be best when the world is small and partial
-// TLDR; use array for late game assumptions
-//		 use map for early game
-// hashmap late game would use a lot of memory and be slower than array
-// array early game would use more memory than is currently needed, but no major performance loss
-// but the devs use an array in the end, so yea...
 void IZDOManager::RemoveFromSector(NetSync* zdo, const Vector2i& sector) {
 	int num = SectorToIndex(sector);
-	//std::vector<NetSync*> list;
-	// m_objectsByOutsideSector requires further testing to detemine whether it is ever used
 	if (num != -1) {
-		//m_objectsBySector[found]
-		// better to use set for this
 		m_objectsBySector[num].erase(zdo);
-		sizeof(m_objectsBySector);
-		//if (m_objectsBySector[num] != null)
-		//	m_objectsBySector[num].Remove(zdo);
-	}
-	else {
-		// 32 bytes:
-		//sizeof(std::vector<NetSync*>)
-		auto&& find = m_objectsByOutsideSector.find(sector);
-		if (find != m_objectsByOutsideSector.end())
-			find->second.erase(zdo);
-		//list.Remove(zdo);
 	}
 }
 
@@ -245,7 +180,7 @@ void IZDOManager::Update() {
 	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, zpackage);
 }
 
-bool IZDOManager::IsInPeerActiveArea(const Vector2i& sector, OWNER_t uid) {
+bool IZDOManager::IsInPeerActiveArea(const Vector2i& sector, OWNER_t uid) const {
 	assert(uid != Valhalla()->ID() && "Shouldnt reach this point (server thinks its a peer?)");
 	//if (uid == Valhalla()->ID())
 		//return ZNetScene::InActiveArea(sector, NetManager::GetReferencePosition());

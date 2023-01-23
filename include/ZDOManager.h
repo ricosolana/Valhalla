@@ -10,14 +10,31 @@ class NetPeer;
 class ZDOPeer;
 
 class IZDOManager {
+	static constexpr int SECTOR_WIDTH = 512; // The width of world in zones (the actual world is smaller than this at 315)
+	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
 private:
+	// Increments over the course of the game as ZDOs are created
+	uint32_t m_nextUid = 1;
+
+	// Responsible for managing ZDOs lifetimes
+	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;
+
+	// Contains ZDOs according to Zone
+	std::array<robin_hood::unordered_set<NetSync*>, (SECTOR_WIDTH * SECTOR_WIDTH)> m_objectsBySector;
+
+	// Primarily used in RPC_ZDOData
+	robin_hood::unordered_map<NetID, int64_t> m_deadZDOs;
+
+	// Contains recently destroyed ZDOs to be sent
+	std::vector<NetID> m_destroySendList;
+
+private:
+	void Init();
 	void OnNewPeer(NetPeer* peer);
 	void OnPeerQuit(NetPeer* peer);
 
-	void Init();	
-
-	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
+	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id) const;
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
 	void HandleDestroyedZDO(const NetID& uid);
 	void SendAllZDOs(ZDOPeer* peer);
@@ -25,6 +42,9 @@ private:
 	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg);
 	void CreateSyncList(ZDOPeer* peer, std::vector<NetSync*>& toSync);
 	void AddForceSendZDOs(ZDOPeer* peer, std::vector<NetSync*>& syncList);
+
+	NetSync* CreateNewZDO(const Vector3& position);
+	NetSync* CreateNewZDO(const NetID& uid, const Vector3& position);
 
 	void ServerSortSendZDOS(std::vector<NetSync*>& objects, const Vector3& refPos, ZDOPeer* peer);
 
@@ -34,32 +54,6 @@ private:
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
-	static constexpr int SECTOR_WIDTH = 512; // The width of world in zones (the actual world is smaller than this at 315)
-	static constexpr int MAX_DEAD_OBJECTS = 100000;
-
-	//std::list<std::unique_ptr<SyncPeer>> m_peers; // Peer lifetimes
-
-
-
-	// so ensure with a bunch of asserts of something that all ZDO external references are removed once the zdo is popped from here
-	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;    // primary lifetime container
-
-
-
-	std::array<robin_hood::unordered_set<NetSync*>, SECTOR_WIDTH* SECTOR_WIDTH> m_objectsBySector;   // a bunch of objects
-	// TODO this might be essentially never used in game
-	robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>> m_objectsByOutsideSector;
-
-	//constexpr static int s00 = sizeof(m_objectsBySector);
-	//constexpr static int s01 = sizeof(robin_hood::unordered_map<Vector2i, robin_hood::unordered_set<NetSync*>, HashUtils::Hasher>);
-
-	robin_hood::unordered_map<NetID, int64_t> m_deadZDOs;
-	//std::vector<NetSync*> tempSectorObjects;
-	std::vector<NetID> m_destroySendList;
-
-	// Increments indefinitely for new ZDO id
-	uint32_t m_nextUid = 1;
-
 public:
 	// Used when saving the world from disk
 	void Save(NetPackage& pkg);
@@ -68,10 +62,6 @@ public:
 	void Load(NetPackage& reader, int version);
 
 	void CapDeadZDOList();
-
-	NetSync* CreateNewZDO(const Vector3& position);
-
-	NetSync* CreateNewZDO(const NetID& uid, const Vector3& position);
 
 	// Sector Coords -> Sector Pitch
 	// Returns -1 on invalid sector
