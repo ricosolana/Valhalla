@@ -30,13 +30,16 @@ public:
 
 
 // Package lambda invoker
-template<class T, typename F> //, class...Args>
-//class MethodImpl<void(*)(T, Args...)> : public IMethod<T> {
-    //using Fn = void(*)(T, Args...);
-class MethodImpl //<std::function<void(T, Args...)>> 
+template<class T, typename F>
+class MethodImpl
     : public IMethod<T> 
 {
-    //using F = std::function<void(T, Args...)>;
+    using VUtils::Traits;
+    using args_type = typename func_traits<F>::args_type;
+
+    static_assert(std::is_same<T, std::tuple_element_t<0, args_type>>, "Lambda first type does not match declared type");
+
+
 
     template<class Tuple, size_t... Is>
     Tuple impl(NetPackage& pkg, std::index_sequence<Is...>) {
@@ -54,8 +57,7 @@ public:
     // wherre only pos/marker increases
     void Invoke(T t, NetPackage pkg) override {
 
-        using VUtils::Traits;
-        using args_type = typename func_traits<F>::args_type;
+        
 
         auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                     //NetPackage::Deserialize<Args...>(pkg));

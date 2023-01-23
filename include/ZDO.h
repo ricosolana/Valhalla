@@ -20,11 +20,17 @@ concept TrivialSyncType =
     || std::same_as<T, std::string>
     || std::same_as<T, BYTES_t>;
 
+class ZDOPeer;
+class IZDOManager;
+
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
 // 112 bytes (1 map, majorly reduced members; affecting functionality)
 // Currently 144 bytes
 class ZDO {
+    friend class ZDOPeer;
+    friend class IZDOManager;
+
 public:
     enum class ObjectType : BYTE_t {
         Default,

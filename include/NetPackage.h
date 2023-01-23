@@ -261,7 +261,7 @@ public:
     //}
 
     // Reads a NetPackage from package
-    // The target package will be overwritten
+    // The target package will be entirely overwritten
     void Read(NetPackage &out);
 
 

@@ -2,28 +2,20 @@
 
 #include <vector>
 
-#include "ZDO.h"
 #include "Vector.h"
+#include "ZDO.h"
 
 // Forward declaration
 class NetPeer;
 class ZDOPeer;
 
 class IZDOManager {
-	friend class SaveData;
 
 private:
 	void OnNewPeer(NetPeer* peer);
 	void OnPeerQuit(NetPeer* peer);
 
-	void Init();
-
-	//void ShutDown();
-
-	void Stop();
-
-	ZDOPeer* GetPeer(OWNER_t uuid);
-	ZDOPeer* GetPeer(NetRpc* rpc);
+	void Init();	
 
 	bool IsInPeerActiveArea(const Vector2i& sector, OWNER_t id);
 	void ReleaseNearbyZDOS(const Vector3& refPosition, OWNER_t id);
@@ -69,17 +61,11 @@ private:
 	uint32_t m_nextUid = 1;
 
 public:
-	void PrepareSave();
+	// Used when saving the world from disk
+	void Save(NetPackage& pkg);
 
-	// bwriter
-	void SaveAsync(NetPackage& writer);
-
-	// broader
+	// Used when loading the world from disk
 	void Load(NetPackage& reader, int version);
-
-	// This actually frees the zdos list
-	// They arent marked, theyre trashed
-	//void ReleaseLegacyZDOS();
 
 	void CapDeadZDOList();
 
@@ -120,8 +106,6 @@ public:
 	bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int& index);
 
 	void ForceSendZDO(const NetID& id);
-
-	void ForceSendZDO(OWNER_t peerID, const NetID& id);
 };
 
 IZDOManager* ZDOManager();

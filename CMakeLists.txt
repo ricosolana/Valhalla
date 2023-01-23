@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneSystem.cpp"
- "src/ObjectManager.cpp" "include/ZDOPeer.h")
+ "src/ObjectManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

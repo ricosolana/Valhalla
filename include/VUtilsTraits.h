@@ -7,6 +7,9 @@
 namespace VUtils {
     namespace Traits {
 
+        template<typename T>
+        using invoke = typename T::type;
+
         //template <int N>
         //using is_zero = invoke<std::conditional<(N == 0), true_, false_>>;
 
