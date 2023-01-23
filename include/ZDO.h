@@ -10,6 +10,8 @@
 #include "VUtilsString.h"
 #include "NetPackage.h"
 
+//struct PrefabZDO;
+
 template<typename T>
 concept TrivialSyncType = 
        std::same_as<T, float>
@@ -22,6 +24,7 @@ concept TrivialSyncType =
 
 class ZDOPeer;
 class IZDOManager;
+class IObjectManager;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -30,6 +33,7 @@ class IZDOManager;
 class ZDO {
     friend class ZDOPeer;
     friend class IZDOManager;
+    friend class IObjectManager;
 
 public:
     enum class ObjectType : BYTE_t {
@@ -42,7 +46,11 @@ public:
     struct Rev {
         uint32_t m_dataRev = 0;
         uint32_t m_ownerRev = 0;
-        int64_t m_time = 0;
+
+        union {
+            TICKS_t m_ticks;
+            float m_time;
+        };
     };
 
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
@@ -187,50 +195,20 @@ private:
         }
     }
 
-public:
-    Rev m_rev;
-    //int32_t m_pgwVersion = 0;    // 53 is the latest      // Never used beyond world startup
-
+public:     Rev m_rev;
+private:    robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
+private:    Quaternion m_rotation = Quaternion::IDENTITY;
+private:    Vector3 m_position;
+private:    Ordinal m_ordinalMask = 0;
+public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
+private:    HASH_t m_prefab = 0;
+public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
+private:    Vector2i m_sector;        // Redundant; is based directly off position
+public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
+public:     bool m_persistent = false;    // set by ZNetView
+public:     bool m_distant = false;        // set by ZNetView
+    
 private:
-    robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
-
-    Quaternion m_rotation = Quaternion::IDENTITY;
-    Vector3 m_position;            // position of the 
-    
-    //int e; // INSERT HERE
-    //uint8_t m_flags;                      // flags: persistent, distant, type (2 bits)
-    Ordinal m_ordinalMask = 0;
-    OWNER_t m_owner = 0;            // local or remote OWNER_t
-    //OWNER_t m_zdoid_userid = 0;
-    HASH_t m_prefab = 0;
-    
-    
-    //uint32_t m_zdoid_id = 0;
-
-
-
-    NetID m_id;                    // unique identifier; immutable through 'lifetime'
-    Vector2i m_sector;        // Redundant; is based directly off position
-    
-    ObjectType m_type = ObjectType::Default; // set by ZNetView
-
-    //Ordinal m_ordinalMask = 0; // bitfield denoting which map member types this ZDO contains
-
-
-
-    bool m_persistent = false;    // set by ZNetView
-    bool m_distant = false;        // set by ZNetView
-    
-
-
-
-
-
-    //int64_t m_timeCreated = 0;    // TerrainModifier (10000 ticks / ms) (union)?
-
-    //uint32_t m_ownerRev = 0;    // could be rev structure
-    //uint32_t m_dataRev = 0;    // could be rev structure
-
     void Revise() {
         m_rev.m_dataRev++;
     }
@@ -293,14 +271,10 @@ private:
         }
     }
 
-
+    ZDO(const NetID& id, const Vector3& pos)
+        : m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
 public:
-    // Create ZDO with me (im owner)
-    ZDO();
-
-    // Loading ZDO from disk package
-    //ZDO(NetPackage reader, int version);
 
     // Save ZDO to the disk package
     void Save(NetPackage& writer) const;

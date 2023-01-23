@@ -46,30 +46,35 @@ public:
 
     robin_hood::unordered_set<std::string> m_banned;
 
-    // Get the time in nanoseconds
+    // Get the time since the server started
+    // Updated once per frame
+    auto Elapsed() {
+        return m_nowUpdate - m_startTime;
+    }
+
     auto Nanos() {
-        return m_startTime - m_nowUpdate;
+        return duration_cast<nanoseconds>(Elapsed());
     }
 
     // Get the time in Ticks (C# DateTime.Ticks)
-    int64_t Ticks() {
-        return Nanos().count() / 100;
+    auto Ticks() {
+        return duration_cast<TICKS_t>(Nanos());
     }
 
     // Get the time in seconds (Unity Time.time)
     float Time() {
-        return float((double) Nanos().count() / (double) duration_cast<nanoseconds>(1s).count());
+        return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
     }
 
-    // Get the elapsed time since last frame in seconds
+    // Get the time in seconds since the last frame
     float Delta() {
         auto elapsed = m_nowUpdate - m_prevUpdate;
         return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
     }
 
+    // Returns game server time
+    // Will freeze as long as players are offline
     double NetTime() {
-        // returns active server time
-        // server is frozen as long as no players are online
         return m_netTime;
     }
     

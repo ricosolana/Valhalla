@@ -1,10 +1,10 @@
 #pragma once
 
-#include "World.h"
 #include "VUtils.h"
+#include "VUtilsRandom.h"
+#include "World.h"
 #include "Vector.h"
 #include "HeightMap.h"
-#include "VUtilsRandom.h"
 
 namespace WorldGenerator {
 

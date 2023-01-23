@@ -6,11 +6,9 @@
 #include "HeightMap.h"
 #include "GameObject.h"
 
+using ZoneID = Vector2i;
+
 class IZoneManager {
-
-
-
-
 	// All public vars, however a LOT of them are editor visible vars
 	//[HideInInspector]
 	std::vector<Heightmap::Biome> m_biomeFolded;
@@ -133,10 +131,10 @@ private:
 	//bool CreateLocalZones(const Vector3& refPoint);
 	//bool PokeLocalZone(const Vector2i& zoneID);
 
-	void SpawnZone(const Vector2i& zoneID);
-	void PlaceZoneCtrl(const Vector2i& zoneID, std::vector<GameObject>& spawnedObjects);
-	void PlaceVegetation(const Vector2i& zoneID, Heightmap* hmap, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
-	void PlaceLocations(const Vector2i& zoneID, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
+	void SpawnZone(const ZoneID& zone);
+	void PlaceZoneCtrl(const ZoneID& zone, std::vector<GameObject>& spawnedObjects);
+	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
+	void PlaceLocations(const ZoneID& zone, std::vector<ClearArea>& clearAreas, std::vector<GameObject>& spawnedObjects);
 
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
@@ -151,8 +149,8 @@ private:
 	//Vector3 GetRandomPointInZone(float locationRadius);
 
 	void RemoveUnplacedLocations(ZoneLocation* location);
-	GameObject SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, std::vector<GameObject>& spawnedGhostObjects);
-	void CreateLocationProxy(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects);
+	GameObject SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot, std::vector<GameObject>& spawnedGhostObjects);
+	void CreateLocationProxy(ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot, std::vector<GameObject>& spawnedGhostObjects);
 	void RegisterLocation(ZoneLocation* location, const Vector3& pos, bool generated);
 	bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
 	void GetTerrainDelta(const Vector3& center, float& radius, float& delta, Vector3& slopeDirection);

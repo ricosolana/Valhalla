@@ -7,20 +7,9 @@
 #include "HeightmapBuilder.h"
 #include "PrefabHashes.h"
 #include "ObjectManager.h"
-
-// I feel like zdos are what allows for objects to be created
-// simple ZDO pool containing the most recent objects, which are frequently revised
-
-
-// Dummy forward declarations
-
+#include "NetRouteManager.h"
 
 struct RandomSpawn {};
-
-struct LocationProxy {
-    //LocationProxy()
-};
-
 
 // private
 struct ZoneData {
@@ -45,171 +34,81 @@ struct Location {
     ClearArea m_clearArea;
 };
 
-// Is used externally, unknown whether this can be made private
-//[Serializable]
 struct ZoneVegetation {
-    // public
-    ZoneVegetation(const ZoneVegetation& other) {
-        // clone members
-    }
-
     std::string m_name = "veg";
-
     GameObject m_prefab;
-
     bool m_enable = true;
-
     float m_min = 0;
-
     float m_max = 10;
-
     bool m_forcePlacement = false;
-
     float m_scaleMin = 1;
-
     float m_scaleMax = 1;
-
     float m_randTilt = 0;
-
     float m_chanceToUseGroundTilt = 0;
-
-    //[BitMask(typeof(Heightmap.Biome))]
     Heightmap::Biome m_biome = Heightmap::Biome::None;
-
-    //[BitMask(typeof(Heightmap.BiomeArea))]
     Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
-
     bool m_blockCheck = true;
-
     bool m_snapToStaticSolid = false;
-
     float m_minAltitude = -1000;
-
     float m_maxAltitude = 1000;
-
     float m_minVegetation = 0;
-
     float m_maxVegetation = 0;
-
     float m_minOceanDepth = 0;
-
     float m_maxOceanDepth = 0;
-
     float m_minTilt = 0;
-
     float m_maxTilt = 90;
-
     float m_terrainDeltaRadius = 0;
-
     float m_maxTerrainDelta = 2;
-
     float m_minTerrainDelta = 0;
-
     bool m_snapToWater = false;
-
     float m_groundOffset = 0;
-
     int32_t m_groupSizeMin = 1;
-
     int32_t m_groupSizeMax = 1;
-
     float m_groupRadius = 0;
-
-    //[Header("Forest fractal 0-1 inside forest")]
     bool m_inForest = false;
-
     float m_forestTresholdMin = 0;
-
     float m_forestTresholdMax = 1;
 
     //[HideInInspector]
     bool m_foldout = false;
 };
 
-// is used externally
-//[Serializable]
 struct ZoneLocation {
-    //ZoneLocation(const ZoneLocation& other) {
-    //    // clone
-    //}
-
     bool m_enable = true;
-
     std::string m_prefabName;
-
-    //[BitMask(typeof(Heightmap.Biome))]
     Heightmap::Biome m_biome;
-
-    //[BitMask(typeof(Heightmap.BiomeArea))]
     Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
-
     int32_t m_quantity;
-
     bool m_prioritized;
-
     bool m_centerFirst;
-
     bool m_unique;
-
     std::string m_group = "";
-
     float m_minDistanceFromSimilar;
-
     bool m_iconAlways;
-
     bool m_iconPlaced;
-
     bool m_randomRotation = true;
-
     bool m_slopeRotation;
-
     bool m_snapToWater;
-
     float m_minTerrainDelta;
-
     float m_maxTerrainDelta = 2;
-
-    [Header("Forest fractal 0-1 inside forest")]
     bool m_inForest;
-
     float m_forestTresholdMin;
-
     float m_forestTresholdMax = 1;
-
-    [Space(10f)]
     float m_minDistance;
-
     float m_maxDistance;
-
     float m_minAltitude = -1000;
-
     float m_maxAltitude = 1000;
 
-    //[NonSerialized]
+    // All below are unsaved
+
     GameObject m_prefab;
-
-    //[NonSerialized]
     int32_t m_hash;
-
-    //[NonSerialized]
     Location m_location;
-
-    //[NonSerialized]
     float m_interiorRadius = 10;
-
-    //[NonSerialized]
     float m_exteriorRadius = 10;
-
-    //[NonSerialized]
     Vector3 m_interiorPosition;
-
-    //[NonSerialized]
     Vector3 m_generatorPosition;
-
-    //[NonSerialized]
     std::vector<ZNetView> m_netViews;
-
-    //[NonSerialized]
     std::vector<RandomSpawn> m_randomSpawns;
 
     //[HideInInspector]
@@ -252,27 +151,25 @@ bool IZoneManager::InActiveArea(const Vector2i& zone, const Vector2i& refCenterZ
 
 // private
 void IZoneManager::Init() {
-    //LOG(INFO) << "Zonesystem Start " << Time.frameCount.ToString();
-    LOG(INFO) << "ZoneSystem Start ";
-    //SetupLocations();
-    //ValidateVegetation();
-    //ZRoutedRpc instance = ZRoutedRpc.instance;
-    //instance.m_onNewPeer = (Action<long>)Delegate.Combine(instance.m_onNewPeer, new Action<long>(OnNewPeer));
+    LOG(INFO) << "Initializing ZoneManager";
+
     RouteManager()->Register("SetGlobalKey", [this](OWNER_t sender, std::string name) {
+        // TODO constraint check
         if (m_globalKeys.contains(name)) {
             return;
         }
         m_globalKeys.insert(name);
         SendGlobalKeys(IRouteManager::EVERYBODY);
     });
+
     RouteManager()->Register("RemoveGlobalKey", [this](OWNER_t sender, std::string name) {
+        // TODO constraint check
         if (!m_globalKeys.contains(name)) {
             return;
         }
         m_globalKeys.erase(name);
         SendGlobalKeys(IRouteManager::EVERYBODY);
     });
-    //m_startTime = (m_lastFixedTime = Time.fixedTime);
 }
 
 // public
@@ -647,7 +544,7 @@ void IZoneManager::PlaceZoneCtrl(const Vector2i& zoneID, std::vector<GameObject>
     auto pos = ZoneToWorldPos(zoneID);
     // Create a zdo at that location
     // Idea: use the serialized zpackage prefab table to lookup zoneCtrl then instantiate
-    IObjectManager::PrefabTemplate
+    ObjectManager()->Instantiate(Hashes::Objects::_ZoneCtrl, pos);
     Hashes::Objects::_ZoneCtrl
 
 
@@ -1243,11 +1140,10 @@ void IZoneManager::RemoveUnplacedLocations(ZoneLocation* location) {
 //}
 
 // private
-GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rot, std::vector<GameObject>& spawnedGhostObjects) {
+GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot, std::vector<GameObject>& spawnedGhostObjects) {
 
     throw std::runtime_error("not implemented");
 
-    /*
     location->m_prefab.transform.position = Vector3::ZERO;
     location->m_prefab.transform.rotation = Quaternion::IDENTITY;
     //UnityEngine.Random.InitState(seed);
@@ -1277,9 +1173,6 @@ GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, Vec
         for (auto&& znetView : location.m_netViews) {
             znetView.gameObject.SetActive(true);
         }
-        //UnityEngine.Random.InitState(seed);
-
-        //state = VUtils::Random::State(seed);
 
         VUtils::Random::State state(seed);
 
@@ -1319,7 +1212,7 @@ GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, Vec
         CreateLocationProxy(location, seed, pos, rot, mode, spawnedGhostObjects);
         SnapToGround.SnappAll();
         return null;
-    //}*/
+    //}
         
     //UnityEngine.Random.InitState(seed);
     //for (auto&& randomSpawn2 : location.m_randomSpawns) {
@@ -1336,19 +1229,12 @@ GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, Vec
 
 // could be inlined...
 // private
-void IZoneManager::CreateLocationProxy(ZoneLocation* location, int32_t seed, Vector3 pos, Quaternion rotation, SpawnMode mode, std::vector<GameObject>& spawnedGhostObjects) {
-    //if (mode == SpawnMode::Ghost) {
-    //    ZNetView.StartGhostInit();
-    //}
-        
-    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_locationProxyPrefab, pos, rotation);
+void IZoneManager::CreateLocationProxy(ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot, std::vector<GameObject>& spawnedGhostObjects) {
+    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(m_locationProxyPrefab, pos, rot);
     LocationProxy component = gameObject.GetComponent<LocationProxy>();
-    bool spawnNow = mode == ZoneSystem.SpawnMode.Full;
-    component.SetLocation(location.m_prefab.name, seed, spawnNow, Version::PGW);
-    //if (mode == ZoneSystem.SpawnMode.Ghost) {
-        spawnedGhostObjects.push_back(gameObject);
-        //ZNetView.FinishGhostInit();
-    //}
+    component.SetLocation(location.m_prefab.name, seed, false, VConstants::PGW);
+
+    spawnedGhostObjects.push_back(gameObject);
 }
 
 // private

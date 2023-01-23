@@ -1,10 +1,11 @@
 #include <functional>
 
 #include "ZDO.h"
-//#include "ZDOManager.h"
+#include "ZDOManager.h"
 #include "ValhallaServer.h"
 #include "NetID.h"
-//#include "ZoneSystem.h"
+#include "PrefabTemplate.h"
+#include "ZoneSystem.h"
 
 //constexpr std::pair<HASH_t, HASH_t> ToHashPair(const char* key) {
 //    //constexpr auto s = "hello" " " "world";
@@ -43,11 +44,20 @@ HASH_t ZDO::from_prefix(HASH_t hash, MemberShift pref) {
 
 
 
-ZDO::ZDO() {
-    this->m_owner = Valhalla()->ID();
+//ZDO::ZDO() {
+//    this->m_owner = Valhalla()->ID();
+//}
+
+/*
+ZDO::ZDO(PrefabZDO& prefab) {
+    this->m_distant = prefab.m_distant;
+    this->m_persistent = prefab.m_persistent;
+    this->m_prefab = prefab.m_hash;
+    this->m_type = prefab.m_type;
+    
+    this->Set
 }
-
-
+*/
 
 void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);  static_assert(sizeof(Rev::m_ownerRev) == 4);
@@ -291,22 +301,19 @@ bool ZDO::SetLocal() {
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_position != pos) {
         m_position = pos;
-        assert(false);
-        //SetSector(ZoneSystem::GetZoneCoords(m_position));
+        SetSector(IZoneManager::WorldToZonePos(m_position));
         if (Local())
             Revise();
     }
 }
 
 void ZDO::SetSector(const Vector2i& sector) {
-    if (m_sector == sector) {
-        return;
+    if (m_sector != sector) {
+        ZDOManager()->RemoveFromSector(this, m_sector);
+        m_sector = sector;
+        ZDOManager()->AddToSector(this, m_sector);
+        ZDOManager()->ZDOSectorInvalidated(this);
     }
-    assert(false);
-    //ZDOManager::RemoveFromSector(this, m_sector);
-    m_sector = sector;
-    //ZDOManager::AddToSector(this, m_sector);
-    //ZDOManager::ZDOSectorInvalidated(this);
 }
 
 void ZDO::FreeMembers() {

@@ -22,6 +22,12 @@ using HASH_t = int32_t; // Used for RPC method hashing
 using OWNER_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 
+using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
+
+//constexpr TICKS_t operator"" t(unsigned long long _Val) noexcept {
+//    return TICKS_t(_Val);
+//}
+
 // Runs a static periodic task later
 #define PERIODIC_LATER(__period, __initial, ...) {\
     auto __now = steady_clock::now();\
