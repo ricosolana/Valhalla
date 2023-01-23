@@ -600,13 +600,13 @@ void IZDOManager::ForceSendZDO(const NetID& id) {
 }
 
 int IZDOManager::SectorToIndex(const Vector2i& s) {
-	int x = s.x + SECTOR_WIDTH / 2;
-	int y = s.y + SECTOR_WIDTH / 2;
+	int x = s.x + WIDTH_IN_ZONES / 2;
+	int y = s.y + WIDTH_IN_ZONES / 2;
 	if (x < 0 || y < 0
-		|| x >= SECTOR_WIDTH || y >= SECTOR_WIDTH) {
+		|| x >= WIDTH_IN_ZONES || y >= WIDTH_IN_ZONES) {
 		return -1;
 	}
-	return y * SECTOR_WIDTH + x;
+	return y * WIDTH_IN_ZONES + x;
 }
 
 NetSync* IZDOManager::GetZDO(const NetID& id) {
