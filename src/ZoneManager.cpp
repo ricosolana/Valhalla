@@ -6,6 +6,8 @@
 #include "HeightmapBuilder.h"
 #include "PrefabManager.h"
 #include "RouteManager.h"
+#include "VUtilsResource.h"
+#include "Hashes.h"
 
 auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
@@ -23,102 +25,13 @@ struct ZoneData {
     float m_ttl;
 };
 
-struct ClearArea {
-    // public
-    ClearArea(const Vector3& p, float r) {
-        m_center = p;
-        m_radius = r;
-    }
-
-    Vector3 m_center;
-
-    float m_radius;
-};
-
 struct Location {
     ClearArea m_clearArea;
 };
 
-struct ZoneLocation {
-    bool m_enable = true;
-    std::string m_prefabName;
-    Heightmap::Biome m_biome;
-    Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
-    int32_t m_quantity;
-    bool m_prioritized;
-    bool m_centerFirst;
-    bool m_unique;
-    std::string m_group = "";
-    float m_minDistanceFromSimilar;
-    bool m_iconAlways;
-    bool m_iconPlaced;
-    bool m_randomRotation = true;
-    bool m_slopeRotation;
-    bool m_snapToWater;
-    float m_minTerrainDelta;
-    float m_maxTerrainDelta = 2;
-    bool m_inForest;
-    float m_forestTresholdMin;
-    float m_forestTresholdMax = 1;
-    float m_minDistance;
-    float m_maxDistance;
-    float m_minAltitude = -1000;
-    float m_maxAltitude = 1000;
 
-    // All below are unsaved
 
-    GameObject m_prefab;
-    int32_t m_hash;
-    Location m_location;
-    float m_interiorRadius = 10;
-    float m_exteriorRadius = 10;
-    Vector3 m_interiorPosition;
-    Vector3 m_generatorPosition;
-    std::vector<ZNetView> m_netViews;
-    std::vector<RandomSpawn> m_randomSpawns;
 
-    //[HideInInspector]
-    bool m_foldout;
-};
-
-struct ZoneVegetation {
-    std::string m_name = "veg";
-    GameObject m_prefab;
-    bool m_enable = true;
-    float m_min = 0;
-    float m_max = 10;
-    bool m_forcePlacement = false;
-    float m_scaleMin = 1;
-    float m_scaleMax = 1;
-    float m_randTilt = 0;
-    float m_chanceToUseGroundTilt = 0;
-    Heightmap::Biome m_biome = Heightmap::Biome::None;
-    Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
-    bool m_blockCheck = true;
-    bool m_snapToStaticSolid = false;
-    float m_minAltitude = -1000;
-    float m_maxAltitude = 1000;
-    float m_minVegetation = 0;
-    float m_maxVegetation = 0;
-    float m_minOceanDepth = 0;
-    float m_maxOceanDepth = 0;
-    float m_minTilt = 0;
-    float m_maxTilt = 90;
-    float m_terrainDeltaRadius = 0;
-    float m_maxTerrainDelta = 2;
-    float m_minTerrainDelta = 0;
-    bool m_snapToWater = false;
-    float m_groundOffset = 0;
-    int32_t m_groupSizeMin = 1;
-    int32_t m_groupSizeMax = 1;
-    float m_groupRadius = 0;
-    bool m_inForest = false;
-    float m_forestTresholdMin = 0;
-    float m_forestTresholdMax = 1;
-
-    //[HideInInspector]
-    bool m_foldout = false;
-};
 
 
 // can be private
@@ -128,12 +41,6 @@ struct LocationInstance {
     Vector3 m_position;
 
     bool m_placed;
-};
-
-enum SpawnMode {
-    Full,
-    Client,
-    Ghost
 };
 
 
@@ -158,6 +65,19 @@ bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone)
 // private
 void IZoneManager::Init() {
     LOG(INFO) << "Initializing ZoneManager";
+
+    // load ZoneLocations:
+    auto opt = VUtils::Resource::ReadFileBytes("zoneLocations.pkg");
+    if (!opt)
+        throw std::runtime_error("zoneLocations.pkg missing");
+
+    NetPackage pkg(opt.value());
+
+    auto count = pkg.Read<int32_t>();
+    while (count--) {
+        // TODO read zoneLocations from file
+
+    }
 
     RouteManager()->Register("SetGlobalKey", [this](OWNER_t sender, std::string name) {
         // TODO constraint check
@@ -325,7 +245,7 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
     // Wait for builder thread
     if (!(IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID))) {
-        auto componentInChildren2 = HeightmapManager::CreateHeightmap(zoneID);
+        auto componentInChildren2 = HeightmapManager()->CreateHeightmap(zoneID);
 
         std::vector<ClearArea> m_tempClearAreas;
         PlaceLocations(zoneID, m_tempClearAreas);
@@ -339,7 +259,7 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 // private
 void IZoneManager::PlaceZoneCtrl(const ZoneID& zoneID) {
     auto pos = ZoneToWorldPos(zoneID);
-    ObjectManager()->Instantiate(Hashes::Objects::_ZoneCtrl, pos);
+    ObjectManager()->Instantiate(Hashes::Object::_ZoneCtrl, pos);
 }
 
 // private
@@ -477,7 +397,7 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
                                         // TODO modify this later once Euler... implemented
                                         rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
 
-                                        auto zdo = ObjectManager()->Instantiate(zoneVegetation.m_prefab, vector2, rotation);
+                                        auto zdo = PrefabManager()->Instantiate(zoneVegetation.m_prefab, vector2, rotation);
 
                                         //if (scale != gameObject.transform.localScale.x) {
                                         //    // this does set the Unity gameobject localscale

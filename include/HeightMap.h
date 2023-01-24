@@ -8,13 +8,6 @@
 
 class IHeightmapManager;
 
-// dummy
-//class TerrainModifier {
-//public:
-//    enum class PaintType {
-//        Dirt, Cultivate, Paved, Reset
-//    };
-//};
 class Rigidbody {};
 class TerrainComp {};
 class Material {};
@@ -23,7 +16,7 @@ class MeshCollider {};
 class Mesh {};
 
 
-class HMBuildData {};
+class HMBuildData;
 
 class Heightmap {
     friend class IHeightmapManager;

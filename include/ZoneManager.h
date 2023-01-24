@@ -7,7 +7,87 @@
 
 using ZoneID = Vector2i;
 
+struct ZoneLocation {
+	std::string m_prefabName;
+	Heightmap::Biome m_biome;
+	Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
+	bool m_applyRandomDamage;
+	bool m_centerFirst;
+	bool m_clearArea;
+	bool m_useCustomInteriorTransform;
+
+	float m_exteriorRadius = 10;
+	float m_interiorRadius = 10;
+	float m_forestTresholdMin;
+	float m_forestTresholdMax = 1;
+	Vector3 m_interiorPosition;
+	Vector3 m_generatorPosition;
+	std::string m_group = "";
+	bool m_iconAlways;
+	bool m_iconPlaced;
+	bool m_inForest;
+	float m_minAltitude = -1000;
+	float m_maxAltitude = 1000;
+	float m_minDistance;
+	float m_maxDistance;
+	float m_minTerrainDelta;
+	float m_maxTerrainDelta = 2;
+	float m_minDistanceFromSimilar;
+	bool m_prioritized;
+	int32_t m_quantity;
+	bool m_randomRotation = true;
+	//std::vector<RandomSpawn> m_randomSpawns;
+	bool m_slopeRotation;
+	bool m_snapToWater;
+	bool m_unique;
+	std::vector<std::tuple<HASH_t, Vector3, Quaternion>> m_prefabs; // m_netViews;
+};
+
+struct ZoneVegetation {
+	std::string m_name = "veg";
+	GameObject m_prefab;
+	bool m_enable = true;
+	float m_min = 0;
+	float m_max = 10;
+	bool m_forcePlacement = false;
+	float m_scaleMin = 1;
+	float m_scaleMax = 1;
+	float m_randTilt = 0;
+	float m_chanceToUseGroundTilt = 0;
+	Heightmap::Biome m_biome = Heightmap::Biome::None;
+	Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
+	bool m_blockCheck = true;
+	bool m_snapToStaticSolid = false;
+	float m_minAltitude = -1000;
+	float m_maxAltitude = 1000;
+	float m_minVegetation = 0;
+	float m_maxVegetation = 0;
+	float m_minOceanDepth = 0;
+	float m_maxOceanDepth = 0;
+	float m_minTilt = 0;
+	float m_maxTilt = 90;
+	float m_terrainDeltaRadius = 0;
+	float m_maxTerrainDelta = 2;
+	float m_minTerrainDelta = 0;
+	bool m_snapToWater = false;
+	float m_groundOffset = 0;
+	int32_t m_groupSizeMin = 1;
+	int32_t m_groupSizeMax = 1;
+	float m_groupRadius = 0;
+	bool m_inForest = false;
+	float m_forestTresholdMin = 0;
+	float m_forestTresholdMax = 1;
+
+	//[HideInInspector]
+	bool m_foldout = false;
+};
+
 class IZoneManager {
+
+	struct ClearArea {
+		Vector3 m_center;
+		float m_radius;
+	};
 
 public:
 	static constexpr int NEAR_ACTIVE_AREA = 1;
