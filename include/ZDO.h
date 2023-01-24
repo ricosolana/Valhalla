@@ -10,8 +10,6 @@
 #include "VUtilsString.h"
 #include "NetPackage.h"
 
-//struct PrefabZDO;
-
 template<typename T>
 concept TrivialSyncType = 
        std::same_as<T, float>
@@ -24,7 +22,7 @@ concept TrivialSyncType =
 
 class ZDOPeer;
 class IZDOManager;
-class IObjectManager;
+class IPrefabManager;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -33,7 +31,7 @@ class IObjectManager;
 class ZDO {
     friend class ZDOPeer;
     friend class IZDOManager;
-    friend class IObjectManager;
+    friend class IPrefabManager;
 
 public:
     enum class ObjectType : BYTE_t {

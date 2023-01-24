@@ -1,16 +1,19 @@
 #include <robin_hood.h>
 
-#include "NetRouteManager.h"
+#include "RouteManager.h"
 #include "NetManager.h"
 #include "Method.h"
 #include "ValhallaServer.h"
-#include "ZoneSystem.h"
+#include "ZoneManager.h"
 #include "ZDOManager.h"
+#include "Hashes.h"
 
-auto MANAGER_ROUTE(std::make_unique<IRouteManager>()); // TODO stop constructing in global
+auto ROUTE_MANAGER(std::make_unique<IRouteManager>()); // TODO stop constructing in global
 IRouteManager* RouteManager() {
-	return MANAGER_ROUTE.get();
+	return ROUTE_MANAGER.get();
 }
+
+
 
 void IRouteManager::RouteRPC(const Data& data) {
 	NetPackage pkg;

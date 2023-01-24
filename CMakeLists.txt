@@ -90,7 +90,7 @@ add_executable(${PROJECT_NAME}
     
     "src/NetPackage.cpp"
     "src/NetPeer.cpp"
-    "src/NetRouteManager.cpp"
+    "src/RouteManager.cpp"
     "src/NetRpc.cpp"
     
     "src/NetSteamSocket.cpp"
@@ -108,8 +108,8 @@ add_executable(${PROJECT_NAME}
     "src/WorldGenerator.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
-    "src/ZoneSystem.cpp"
- "src/ObjectManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp" "include/PrefabTemplate.h")
+    "src/ZoneManager.cpp"
+ "src/PrefabManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp" "include/Prefab.h" "include/DungeonGenerator.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

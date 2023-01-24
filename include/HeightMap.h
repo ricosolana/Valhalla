@@ -4,12 +4,9 @@
 #include "VUtils.h"
 #include "HashUtils.h"
 #include "ValhallaServer.h"
-#include "GameObject.h"
 #include "TerrainModifier.h"
 
-//struct HeightmapBuilder::HMBuildData;
-
-class HeightmapManager;
+class IHeightmapManager;
 
 // dummy
 //class TerrainModifier {
@@ -29,7 +26,7 @@ class Mesh {};
 class HMBuildData {};
 
 class Heightmap {
-    friend class HeightmapManager;
+    friend class IHeightmapManager;
     friend class HMBuildData;
 
     using Heights_t = std::vector<float>;
@@ -155,8 +152,6 @@ public:
     Vector3 GetWorldPosition();
 
 public:
-
-    GameObject m_terrainCompilerPrefab;
 
     //int32_t m_width = 32;
 

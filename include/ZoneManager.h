@@ -4,7 +4,6 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "HeightMap.h"
-#include "GameObject.h"
 
 using ZoneID = Vector2i;
 
@@ -73,7 +72,7 @@ private:
 	//Vector3 GetRandomPointInZone(float locationRadius);
 
 	void RemoveUnplacedLocations(ZoneLocation* location);
-	GameObject SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
+	void SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
 	void CreateLocationProxy(ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
 	void RegisterLocation(ZoneLocation* location, const Vector3& pos, bool generated);
 	bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
@@ -90,9 +89,8 @@ public:
 	void Save(NetPackage& pkg);
 	void Load(NetPackage& reader, int32_t version);
 	bool IsZoneLoaded(const Vector3& point);
-	bool IsZoneLoaded(const Vector2i& zoneID);
+	bool IsZoneLoaded(const ZoneID& zoneID);
 
-	GameObject SpawnProxyLocation(int32_t hash, int32_t seed, const Vector3& pos, const Quaternion& rot);
 	bool GetLocationIcon(const std::string& name, Vector3& pos);
 	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> icons);
 	bool IsBlocked(const Vector3& p);
@@ -110,10 +108,10 @@ public:
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
 
 	static ZoneID WorldToZonePos(const Vector3& point);
-	static Vector3 ZoneToWorldPos(const Vector2i& id);
+	static Vector3 ZoneToWorldPos(const ZoneID& id);
 
-	static bool InActiveArea(const Vector2i& zone, const Vector3& areaPoint);
-	static bool InActiveArea(const Vector2i& zone, const Vector2i& areaZone);
+	static bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
+	static bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
 	void ResetGlobalKeys();
 

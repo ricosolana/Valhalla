@@ -1,13 +1,18 @@
-#include <ranges>
 #include <thread>
 
 #include "NetManager.h"
-#include "ZoneSystem.h"
+#include "ZoneManager.h"
 #include "WorldGenerator.h"
 #include "HeightmapBuilder.h"
-#include "PrefabHashes.h"
-#include "ObjectManager.h"
-#include "NetRouteManager.h"
+#include "PrefabManager.h"
+#include "RouteManager.h"
+
+auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
+IZoneManager* ZoneManager() {
+    return ZONE_MANAGER.get();
+}
+
+
 
 struct RandomSpawn {};
 
@@ -32,45 +37,6 @@ struct ClearArea {
 
 struct Location {
     ClearArea m_clearArea;
-};
-
-struct ZoneVegetation {
-    std::string m_name = "veg";
-    GameObject m_prefab;
-    bool m_enable = true;
-    float m_min = 0;
-    float m_max = 10;
-    bool m_forcePlacement = false;
-    float m_scaleMin = 1;
-    float m_scaleMax = 1;
-    float m_randTilt = 0;
-    float m_chanceToUseGroundTilt = 0;
-    Heightmap::Biome m_biome = Heightmap::Biome::None;
-    Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
-    bool m_blockCheck = true;
-    bool m_snapToStaticSolid = false;
-    float m_minAltitude = -1000;
-    float m_maxAltitude = 1000;
-    float m_minVegetation = 0;
-    float m_maxVegetation = 0;
-    float m_minOceanDepth = 0;
-    float m_maxOceanDepth = 0;
-    float m_minTilt = 0;
-    float m_maxTilt = 90;
-    float m_terrainDeltaRadius = 0;
-    float m_maxTerrainDelta = 2;
-    float m_minTerrainDelta = 0;
-    bool m_snapToWater = false;
-    float m_groundOffset = 0;
-    int32_t m_groupSizeMin = 1;
-    int32_t m_groupSizeMax = 1;
-    float m_groupRadius = 0;
-    bool m_inForest = false;
-    float m_forestTresholdMin = 0;
-    float m_forestTresholdMax = 1;
-
-    //[HideInInspector]
-    bool m_foldout = false;
 };
 
 struct ZoneLocation {
@@ -115,6 +81,46 @@ struct ZoneLocation {
     bool m_foldout;
 };
 
+struct ZoneVegetation {
+    std::string m_name = "veg";
+    GameObject m_prefab;
+    bool m_enable = true;
+    float m_min = 0;
+    float m_max = 10;
+    bool m_forcePlacement = false;
+    float m_scaleMin = 1;
+    float m_scaleMax = 1;
+    float m_randTilt = 0;
+    float m_chanceToUseGroundTilt = 0;
+    Heightmap::Biome m_biome = Heightmap::Biome::None;
+    Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
+    bool m_blockCheck = true;
+    bool m_snapToStaticSolid = false;
+    float m_minAltitude = -1000;
+    float m_maxAltitude = 1000;
+    float m_minVegetation = 0;
+    float m_maxVegetation = 0;
+    float m_minOceanDepth = 0;
+    float m_maxOceanDepth = 0;
+    float m_minTilt = 0;
+    float m_maxTilt = 90;
+    float m_terrainDeltaRadius = 0;
+    float m_maxTerrainDelta = 2;
+    float m_minTerrainDelta = 0;
+    bool m_snapToWater = false;
+    float m_groundOffset = 0;
+    int32_t m_groupSizeMin = 1;
+    int32_t m_groupSizeMax = 1;
+    float m_groupRadius = 0;
+    bool m_inForest = false;
+    float m_forestTresholdMin = 0;
+    float m_forestTresholdMax = 1;
+
+    //[HideInInspector]
+    bool m_foldout = false;
+};
+
+
 // can be private
 struct LocationInstance {
     ZoneLocation* m_location;
@@ -132,12 +138,12 @@ enum SpawnMode {
 
 
 
-bool IZoneManager::InActiveArea(const Vector2i& zone, const Vector3& refPoint) {
-    return InActiveArea(zone,
+bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3& refPoint) {
+    return ZonesOverlap(zone,
         WorldToZonePos(refPoint));
 }
 
-bool IZoneManager::InActiveArea(const Vector2i& zone, const Vector2i& refCenterZone) {
+bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone) {
     int num = NEAR_ACTIVE_AREA - 1;
     return zone.x >= refCenterZone.x - num
         && zone.x <= refCenterZone.x + num
@@ -839,20 +845,8 @@ void IZoneManager::RemoveUnplacedLocations(ZoneLocation* location) {
     LOG(INFO) << "Removed " << list.size() << " unplaced locations of type " << location->m_prefabName;
 }
 
-// public
-// the client uses this
-//GameObject SpawnProxyLocation(int32_t hash, int32_t seed, const Vector3& pos, const Quaternion& rot) {
-//    auto&& location = GetLocation(hash);
-//    if (!location) {
-//        LOG(ERROR) << "Missing location:" + hash;
-//        return null;
-//    }
-//    std::vector<GameObject> spawnedGhostObjects;
-//    return SpawnLocation(location, seed, pos, rot, SpawnMode::Client, spawnedGhostObjects);
-//}
-
 // private
-GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
 
     location->m_prefab.transform.position = Vector3::ZERO;
     location->m_prefab.transform.rotation = Quaternion::IDENTITY;
@@ -908,7 +902,6 @@ GameObject IZoneManager::SpawnLocation(ZoneLocation* location, int32_t seed, con
     WearNTear.m_randomInitialDamage = false;
     CreateLocationProxy(location, seed, pos, rot);
     SnapToGround.SnappAll();
-    return null;
 }
 
 // could be inlined...

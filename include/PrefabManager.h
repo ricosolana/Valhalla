@@ -4,14 +4,14 @@
 
 #include "VUtils.h"
 #include "WorldGenerator.h"
-#include "PrefabTemplate.h"
+#include "Prefab.h"
 
 class ZDO;
 
-class IObjectManager {
+class IPrefabManager {
 
 private:
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<PrefabZDO>> m_prefabs;
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 
 private:
 	void Init();
@@ -21,4 +21,4 @@ public:
 
 };
 
-IObjectManager* ObjectManager();
+IPrefabManager* PrefabManager();

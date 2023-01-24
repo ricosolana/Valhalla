@@ -9,11 +9,14 @@
 
 //static robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>, HashUtils::Hasher>
 
-
+auto HEIGHTMAP_MANAGER(std::make_unique<IHeightmapManager>());
+IHeightmapManager* HeightmapManager() {
+    return HEIGHTMAP_MANAGER.get();
+}
 
 
 // public static
-void HeightmapManager::ForceQueuedRegeneration() {
+void IHeightmapManager::ForceQueuedRegeneration() {
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
         if (heightmap->IsRegenerateQueued()) {
@@ -25,7 +28,7 @@ void HeightmapManager::ForceQueuedRegeneration() {
 }
 
 // public static 
-float HeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
+float IHeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
     auto&& heightmap = FindHeightmap(worldPos);
     if (heightmap) {
         return heightmap->GetOceanDepth(worldPos);
@@ -34,13 +37,13 @@ float HeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
 }
 
 // public static
-bool HeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
+bool IHeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
     auto heightmap = FindHeightmap(worldPos);
     return heightmap && heightmap->AtMaxWorldLevelDepth(worldPos);
 }
 
 // public static
-bool HeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
+bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
     auto heightmap = FindHeightmap(worldPos);
     if (heightmap && heightmap->GetWorldHeight(worldPos, height)) {
         return true;
@@ -50,7 +53,7 @@ bool HeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
 }
 
 // public static
-bool HeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, float height) {
+bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, float height) {
     std::vector<Heightmap*> list = FindHeightmaps(worldPos, radius);
 
     float num = 0;
@@ -74,12 +77,12 @@ bool HeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, 
 
 
 // public static
-robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& HeightmapManager::GetAllHeightmaps() {
+robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
     return m_heightmaps;
 }
 
 // public static
-Heightmap* HeightmapManager::FindHeightmap(const Vector3& point) {
+Heightmap* IHeightmapManager::FindHeightmap(const Vector3& point) {
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
         if (heightmap->IsPointInside(point, 0)) {
@@ -90,7 +93,7 @@ Heightmap* HeightmapManager::FindHeightmap(const Vector3& point) {
 }
 
 // public static
-std::vector<Heightmap*> HeightmapManager::FindHeightmaps(const Vector3& point, float radius) {
+std::vector<Heightmap*> IHeightmapManager::FindHeightmaps(const Vector3& point, float radius) {
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
@@ -102,7 +105,7 @@ std::vector<Heightmap*> HeightmapManager::FindHeightmaps(const Vector3& point, f
 }
 
 // public static
-Heightmap::Biome HeightmapManager::FindBiome(const Vector3& point) {
+Heightmap::Biome IHeightmapManager::FindBiome(const Vector3& point) {
     auto heightmap = FindHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
@@ -111,7 +114,7 @@ Heightmap::Biome HeightmapManager::FindBiome(const Vector3& point) {
 }
 
 // public static
-bool HeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
+bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
     auto heightmaps = FindHeightmaps(point, radius);
     for (auto&& hmap : heightmaps) {
         if (hmap->IsRegenerateQueued())
@@ -120,7 +123,7 @@ bool HeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
     return false;
 }
 
-Heightmap* HeightmapManager::CreateHeightmap(const Vector2i& zone) {
+Heightmap* IHeightmapManager::CreateHeightmap(const Vector2i& zone) {
     assert(!m_heightmaps.contains(zone) && "fix your code dummy");
 
     auto h(new Heightmap(zone));

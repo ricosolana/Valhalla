@@ -121,6 +121,7 @@ void IValhalla::Stop() {
 void IValhalla::Start() {
     assert(!m_running);
 
+    // Does not work properly in some circumstances
     signal(SIGINT, [](int) {
         Valhalla()->Stop();
     });

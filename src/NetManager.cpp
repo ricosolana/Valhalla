@@ -7,8 +7,11 @@
 #include "ValhallaServer.h"
 #include "World.h"
 #include "VUtilsRandom.h"
+#include "Hashes.h"
 
 using namespace std::chrono;
+
+// TODO use netmanager instance instead
 
 namespace NetManager {
     //double m_netTime = 2040;
@@ -55,7 +58,7 @@ namespace NetManager {
 
 
     void RemotePrint(NetRpc* rpc, const std::string& s) {
-        rpc->Invoke(NetHashes::Rpc::RemotePrint, s);
+        rpc->Invoke(Hashes::Rpc::RemotePrint, s);
     }
 
     //void Disconnect(NetPeer *peer) {
@@ -185,14 +188,14 @@ namespace NetManager {
 
             for (auto&& peer : m_peers) {
                 // this is the problem
-                peer->m_rpc->Invoke(NetHashes::Rpc::PlayerList, pkg);
+                peer->m_rpc->Invoke(Hashes::Rpc::PlayerList, pkg);
             }
         }
     }
 
     void SendNetTime() {
         for (auto&& peer : m_peers) {
-            peer->m_rpc->Invoke(NetHashes::Rpc::NetTime, (double)Valhalla()->Time());
+            peer->m_rpc->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->Time());
         }
     }
 
@@ -223,13 +226,13 @@ namespace NetManager {
         pkg.Write(m_world->m_worldGenVersion);
         pkg.Write(Valhalla()->NetTime());
 
-        rpc->Invoke(NetHashes::Rpc::PeerInfo, pkg);
+        rpc->Invoke(Hashes::Rpc::PeerInfo, pkg);
     }
 
 
 
     void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
-        rpc->Unregister(NetHashes::Rpc::PeerInfo);
+        rpc->Unregister(Hashes::Rpc::PeerInfo);
 
         auto&& hostName = rpc->m_socket->GetHostName();
 
@@ -273,19 +276,19 @@ namespace NetManager {
 
         peer->m_pos = pos;
 
-        rpc->Register(NetHashes::Rpc::RefPos, RPC_RefPos);
-        rpc->Register(NetHashes::Rpc::CharacterID, RPC_CharacterID);
-        rpc->Register(NetHashes::Rpc::RemotePrint, RPC_RemotePrint);
+        rpc->Register(Hashes::Rpc::RefPos, RPC_RefPos);
+        rpc->Register(Hashes::Rpc::CharacterID, RPC_CharacterID);
+        rpc->Register(Hashes::Rpc::RemotePrint, RPC_RemotePrint);
 
         SendPeerInfo(rpc);
     }
 
     void RPC_ServerHandshake(NetRpc* rpc) {
-        rpc->Unregister(NetHashes::Rpc::ServerHandshake);
+        rpc->Unregister(Hashes::Rpc::ServerHandshake);
 
         LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
-        rpc->Register(NetHashes::Rpc::PeerInfo, &RPC_PeerInfo);
-        rpc->Invoke(NetHashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
+        rpc->Register(Hashes::Rpc::PeerInfo, &RPC_PeerInfo);
+        rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
     }
 
 
@@ -333,8 +336,8 @@ namespace NetManager {
         while (auto opt = m_acceptor->Accept()) {
             auto&& rpc = std::make_unique<NetRpc>(opt.value());
                         
-            rpc->Register(NetHashes::Rpc::Disconnect, RPC_Disconnect);
-            rpc->Register(NetHashes::Rpc::ServerHandshake, RPC_ServerHandshake);
+            rpc->Register(Hashes::Rpc::Disconnect, RPC_Disconnect);
+            rpc->Register(Hashes::Rpc::ServerHandshake, RPC_ServerHandshake);
 
             m_joining.push_back(std::move(rpc));
         }

@@ -8,10 +8,10 @@
 // Forward declaration
 class NetPeer;
 class ZDOPeer;
-class IObjectManager;
+class IPrefabManager;
 
 class IZDOManager {
-	friend class IObjectManager;
+	friend class IPrefabManager;
 
 	static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;

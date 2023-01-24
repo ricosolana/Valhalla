@@ -3,16 +3,15 @@
 #include "ZDOManager.h"
 #include "NetManager.h"
 #include "ValhallaServer.h"
-#include "NetHashes.h"
-#include "ZoneSystem.h"
-#include "NetRouteManager.h"
+#include "Hashes.h"
+#include "ZoneManager.h"
+#include "RouteManager.h"
 #include "HashUtils.h"
 
-auto MANAGER_ZDO(std::make_unique<IZDOManager>());
+auto ZDO_MANAGER(std::make_unique<IZDOManager>());
 IZDOManager* ZDOManager() {
-	return MANAGER_ZDO.get();
+	return ZDO_MANAGER.get();
 }
-
 
 
 
@@ -193,19 +192,19 @@ void IZDOManager::ReleaseNearbyZDOS(const Vector3& refPosition, NetPeer* peer) {
 	auto&& zone = IZoneManager::WorldToZonePos(refPosition);
 
 	std::vector<ZDO*> m_tempNearObjects;
-	FindSectorObjects(zone, IZoneManager::ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
+	FindSectorObjects(zone, IZoneManager::NEAR_ACTIVE_AREA, 0, m_tempNearObjects, nullptr);
 
 	for (auto&& zdo : m_tempNearObjects) {
 		if (zdo->Persists()) {
 			if (zdo->Owner() == peer->m_uuid) {
 				// Should always run based on the logic
-				if (!IZoneManager::InActiveArea(zdo->Sector(), zone)) {
+				if (!IZoneManager::ZonesOverlap(zdo->Sector(), zone)) {
 					zdo->Abandon();
 				}
 			}
 			else {
-				if (!(zdo->HasOwner() && IZoneManager::InActiveArea(zdo->Sector(), peer->m_pos))
-					&& IZoneManager::InActiveArea(zdo->Sector(), zone)) {
+				if (!(zdo->HasOwner() && IZoneManager::ZonesOverlap(zdo->Sector(), peer->m_pos))
+					&& IZoneManager::ZonesOverlap(zdo->Sector(), zone)) {
 					
 					zdo->SetOwner(peer->m_uuid);
 				}
@@ -288,7 +287,7 @@ void IZDOManager::CreateSyncList(ZDOPeer* peer, std::vector<NetSync*>& toSync) {
 	std::vector<NetSync*> tempSectorObjects;
 	std::vector<NetSync*> m_tempToSyncDistant;
 
-	FindSectorObjects(zone, IZoneManager::ACTIVE_AREA, IZoneManager::ACTIVE_DISTANT_AREA,
+	FindSectorObjects(zone, IZoneManager::NEAR_ACTIVE_AREA, IZoneManager::DISTANT_ACTIVE_AREA,
 		tempSectorObjects, &m_tempToSyncDistant);
 
 	for (auto&& zdo : tempSectorObjects) {
