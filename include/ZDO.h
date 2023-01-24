@@ -9,6 +9,7 @@
 #include "VUtils.h"
 #include "VUtilsString.h"
 #include "NetPackage.h"
+#include "ZoneManager.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -23,6 +24,7 @@ concept TrivialSyncType =
 class ZDOPeer;
 class IZDOManager;
 class IPrefabManager;
+//class Prefab;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -200,6 +202,7 @@ private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;
 public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
 private:    HASH_t m_prefab = 0;
+//private:    Prefab* m_prefab; // TODO use this or Prefab* type?
 public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
 private:    Vector2i m_sector;        // Redundant; is based directly off position
 public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
