@@ -4,18 +4,27 @@
 #include "Quaternion.h"
 #include "ZDO.h"
 
-struct Prefab {
+class IPrefabManager;
+
+class Prefab {
+	friend class IPrefabManager;
+
+private:
+	Prefab() {}
+
+public:
 	//const HASH_t m_hash;
 	std::string m_name;
-
+	HASH_t m_hash = 0; // precomputed from m_name
 
 	// 7 6 5 4 3 2 1 0
 	// 0 0 0 0 D P T T
 	//uint8_t m_flags;
 
-	bool m_distant;
-	bool m_persistent;
-	ZDO::ObjectType m_type;
+	bool m_distant = false;
+	bool m_persistent = false;
+	ZDO::ObjectType m_type = ZDO::ObjectType::Default;
 
-	Vector3 m_localScale; // used by m_syncInitialScale; if scale is not {1, 1, 1}, then assume m_syncInitialScale is true
+	// if scale is not {1, 1, 1}, then assume m_syncInitialScale is true
+	Vector3 m_localScale;
 };
