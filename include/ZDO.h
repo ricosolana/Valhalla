@@ -271,11 +271,11 @@ private:
         }
     }
 
-    ZDO(const NetID& id, const Vector3& pos);
-        //: m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
-
 public:
-    ZDO() {}
+    ZDO() = default;
+
+    ZDO(const NetID& id, const Vector3& pos);
+    //: m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
     // Save ZDO to the disk package
     void Save(NetPackage& writer) const;

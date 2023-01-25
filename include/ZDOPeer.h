@@ -19,9 +19,10 @@ private:
 	robin_hood::unordered_set<NetID> m_invalidSector;
 	int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
-private:
+public:
 	ZDOPeer(NetPeer* peer);
 
+private:
 	void ZDOSectorInvalidated(ZDO* zdo);
 
 	void ForceSendZDO(NetID id) {

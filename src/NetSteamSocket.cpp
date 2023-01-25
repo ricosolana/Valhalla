@@ -89,10 +89,10 @@ bool SteamSocket::Connected() const {
     return m_connected;
 }
 
-int SteamSocket::GetSendQueueSize() const {
-    if (Connected()) {
-        int num = 0;
-        for (auto&& bytes : m_sendQueue) {
+unsigned int SteamSocket::GetSendQueueSize() const {
+    //if (Connected()) {
+        unsigned int num = 0;
+        for (auto&& bytes : m_sendQueue) { // this is inefficient
             num += (int)bytes.size();
         }
         SteamNetConnectionRealTimeStatus_t rt{};
@@ -101,8 +101,8 @@ int SteamSocket::GetSendQueueSize() const {
         }
 
         return num;
-    }
-    return -1;
+    //}
+    //return -1;
 }
 
 
@@ -116,15 +116,20 @@ void SteamSocket::SendQueued() {
 
         // TODO use SendMessage(); does not copy message structure buffer
         //  But memory container must not be vector
+        //  A vector can ONLY be used, given that ownership is handed over to steamlib, or i multithread this
+        //  
         // https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages
-        //auto msg = SteamNetworkingUtils()->AllocateMessage(0);
-        //msg->m_cbSize = front.size();
-        //msg->m_pData = front.data();
+        //SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
+        //msg->m_conn = m_hConn;          // set the intended recipient
+        //msg->m_pData = front.data();    // set the buffer
+        //msg->m_cbSize = front.size();   // set the buffer size
+        //msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
+        //msg->m_nUserData = reinterpret_cast<std::intptr_t>(&front); // send the destruction message data
         //msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
         //    msg-
         //};
-        //int64_t num = 0;
-        //SteamGameServerNetworkingSockets()->SendMessages(1, msg,);
+        //int64_t state = 0;
+        //SteamGameServerNetworkingSockets()->SendMessages(1, msg, );
 
         if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) != k_EResultOK) {

@@ -73,8 +73,9 @@ void IZDOManager::Load(NetPackage& reader, int version) {
 	LOG(INFO) << "Loading " << count << " zdos, data version:" << version;
 
 	for (int i = 0; i < count; i++) {
-		auto zdo = std::make_unique<ZDO>(
-			NetPackage(reader.Read<BYTES_t>()), version);
+		auto zdo = std::make_unique<ZDO>();
+		auto zdoPkg = reader.Read<NetPackage>();
+		zdo->Load(zdoPkg, version);
 
 		zdo->Abandon();
 		AddToSector(zdo.get(), zdo->Sector());
@@ -150,15 +151,6 @@ void IZDOManager::RemoveFromSector(ZDO* zdo, const Vector2i& sector) {
 	if (num != -1) {
 		m_objectsBySector[num].erase(zdo);
 	}
-}
-
-ZDO* IZDOManager::GetZDO(const NetID& id) {
-	if (id) {
-		auto&& find = m_objectsByID.find(id);
-		if (find != m_objectsByID.end())
-			return find->second.get();
-	}
-	return nullptr;
 }
 
 void IZDOManager::Update() {
@@ -681,10 +673,7 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 }
 
 bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
-	//assert(false);
-	int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
-	if (sendQueueSize < 0)
-		re
+	auto sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
 
 	// flushing forces a packet send
 	const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
@@ -763,7 +752,7 @@ bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 }
 
 void IZDOManager::OnNewPeer(NetPeer* peer) {
-	peer->m_zdoPeer = std::make_unique<ZDOPeer>();
+	peer->m_zdoPeer = std::make_unique<ZDOPeer>(peer);
 	peer->m_rpc->Register(Hashes::Rpc::ZDOData, [this](NetRpc* rpc, NetPackage pkg) {
 		RPC_ZDOData(rpc, pkg);
 	});

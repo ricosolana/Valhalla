@@ -49,13 +49,14 @@ public:
     // Get the address of this socket
     virtual std::string GetAddress() const = 0;
 
-    // Returns true if the socket is alive
-    // Expected to return false if the connection has been closed
+    // Returns whether the socket is connected
+    //  The return value is updated every frame, 
+    //  so calls might not reflect the actual 
+    //  state if called from mid-frame
     virtual bool Connected() const = 0;
 
     // Returns the size in bytes of packets queued for sending
-    // Returns -1 on failure
-    virtual int GetSendQueueSize() const = 0;
+    virtual unsigned int GetSendQueueSize() const = 0;
 };
 
 
@@ -84,7 +85,7 @@ public:
     std::string GetHostName() const override;
     std::string GetAddress() const override;
     bool Connected() const override;
-    int GetSendQueueSize() const override;
+    unsigned int GetSendQueueSize() const override;
 
 private:
     void SendQueued();
