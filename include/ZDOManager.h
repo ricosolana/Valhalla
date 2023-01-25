@@ -4,11 +4,11 @@
 
 #include "Vector.h"
 #include "ZDO.h"
+#include "ZDOPeer.h"
+#include "PrefabManager.h"
 
 // Forward declaration
 class NetPeer;
-class ZDOPeer;
-class IPrefabManager;
 
 class IZDOManager {
 	friend class IPrefabManager;
@@ -24,7 +24,7 @@ private:
 	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;
 
 	// Contains ZDOs according to Zone
-	std::array<robin_hood::unordered_set<NetSync*>, (WIDTH_IN_ZONES* WIDTH_IN_ZONES)> m_objectsBySector;
+	std::array<robin_hood::unordered_set<ZDO*>, (WIDTH_IN_ZONES* WIDTH_IN_ZONES)> m_objectsBySector;
 
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<NetID, TICKS_t> m_deadZDOs;
@@ -42,17 +42,17 @@ private:
 	void SendAllZDOs(ZDOPeer* peer);
 	bool SendZDOs(ZDOPeer* peer, bool flush);
 	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg);
-	void CreateSyncList(ZDOPeer* peer, std::vector<NetSync*>& toSync);
-	void AddForceSendZDOs(ZDOPeer* peer, std::vector<NetSync*>& syncList);
+	void CreateSyncList(ZDOPeer* peer, std::vector<ZDO*>& toSync);
+	void AddForceSendZDOs(ZDOPeer* peer, std::vector<ZDO*>& syncList);
 
 	ZDO* CreateZDO(const Vector3& position);
 	ZDO* CreateZDO(const NetID& uid, const Vector3& position);
 
-	void ServerSortSendZDOS(std::vector<NetSync*>& objects, ZDOPeer* peer);
+	void ServerSortSendZDOS(std::vector<ZDO*>& objects, ZDOPeer* peer);
 
 	static int SectorToIndex(const Vector2i& s);
-	void FindObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
-	void FindDistantObjects(const Vector2i& sector, std::vector<NetSync*>& objects);
+	void FindObjects(const Vector2i& sector, std::vector<ZDO*>& objects);
+	void FindDistantObjects(const Vector2i& sector, std::vector<ZDO*>& objects);
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
@@ -67,29 +67,29 @@ public:
 
 	// Sector Coords -> Sector Pitch
 	// Returns -1 on invalid sector
-	void AddToSector(NetSync* zdo, const Vector2i& sector);
+	void AddToSector(ZDO* zdo, const Vector2i& sector);
 
 	// used by zdo to self invalidate its sector
-	void ZDOSectorInvalidated(NetSync* zdo);
+	void ZDOSectorInvalidated(ZDO* zdo);
 
-	void RemoveFromSector(NetSync* zdo, const Vector2i& sector);
+	void RemoveFromSector(ZDO* zdo, const Vector2i& sector);
 
-	NetSync* GetZDO(const NetID& id);
+	ZDO* GetZDO(const NetID& id);
 
 	// called when registering joining peer
 
 	void Update();
 
-	void MarkDestroyZDO(NetSync* zdo);
+	void MarkDestroyZDO(ZDO* zdo);
 
 	void FindSectorObjects(const Vector2i& sector, int area, int distantArea,
-		std::vector<NetSync*>& sectorObjects, std::vector<NetSync*>* distantSectorObjects = nullptr);
+		std::vector<ZDO*>& sectorObjects, std::vector<ZDO*>* distantSectorObjects = nullptr);
 
-	void FindSectorObjects(const Vector2i& sector, int area, std::vector<NetSync*>& sectorObjects);
+	void FindSectorObjects(const Vector2i& sector, int area, std::vector<ZDO*>& sectorObjects);
 
 	//long GetMyID();
 
-	void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<NetSync*> zdos);
+	void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
 
 	// Used to get portals incrementally in a coroutine
 	// basically, the coroutine thread is frozen in place

@@ -19,11 +19,11 @@ IZoneManager* ZoneManager() {
 struct RandomSpawn {};
 
 // private
-struct ZoneData {
-    GameObject m_root;
-
-    float m_ttl;
-};
+//struct ZoneData {
+//    GameObject m_root;
+//
+//    float m_ttl;
+//};
 
 
 
@@ -293,7 +293,7 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
 // private
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
-        UpdateTTL(.1f);
+        //UpdateTTL(.1f);
 
         for (auto&& znetPeer : NetManager::GetPeers()) {
             CreateGhostZones(znetPeer->m_pos);
@@ -305,23 +305,12 @@ void IZoneManager::Update() {
 void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
     Vector2i zone = WorldToZonePos(refPoint);
 
-    int32_t num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
+    auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
     for (int32_t z = zone.y - num; z <= zone.y + num; z++) {
         for (int32_t x = zone.x - num; x <= zone.x + num; x++) {
             SpawnZone({x, z});
         }
     }
-}
-
-// public
-bool IZoneManager::IsZoneLoaded(const Vector3& point) {
-    auto zone = WorldToZonePos(point);
-    return IsZoneLoaded(zone);
-}
-
-// public
-bool IZoneManager::IsZoneLoaded(const ZoneID& zoneID) {
-    return m_zones.contains(zoneID);
 }
 
 void IZoneManager::SpawnZone(const ZoneID& zoneID) {
@@ -332,8 +321,9 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
     //  Heightmap
 
     // Wait for builder thread
-    if (!(IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID))) {
-        auto componentInChildren2 = HeightmapManager()->CreateHeightmap(zoneID);
+    //if (!(IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID))) {
+    if (!IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID)) {
+        auto componentInChildren2 = HeightmapManager()->GetOrCreateHeightmap(zoneID);
 
         std::vector<ClearArea> m_tempClearAreas;
         PlaceLocations(zoneID, m_tempClearAreas);
@@ -482,7 +472,7 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
 
 
 
-                                        // TODO modify this later once Euler... implemented
+                                        // TODO modify this later once Euler implemented
                                         rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
 
                                         auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, vector2, rotation);
@@ -965,25 +955,35 @@ bool IZoneManager::IsBlocked(const Vector3& p) {
 // used importantly for snapping and location/vegetation generation
 // public
 float IZoneManager::GetGroundHeight(const Vector3& p) {
-    Vector3 origin = p;
-    origin.y = 6000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(origin, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
-        return raycastHit.point.y;
-    }
-    return p.y;
+    Vector3 height = p;
+    Vector3 n;
+    Heightmap::Biome biome;
+    Heightmap::BiomeArea biomeArea;
+    GetGroundData(height, n, biome, biomeArea);
+
+    return height.y;
+
+    //Vector3 origin = p;
+    //origin.y = 6000;
+    //RaycastHit raycastHit;
+    //if (Physics.Raycast(origin, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
+    //    return raycastHit.point.y;
+    //}
+    //return p.y;
 }
 
 // public
+// this overload seems a lot more client-based in usage
 bool IZoneManager::GetGroundHeight(const Vector3& p, float& height) {
-    p.y = 6000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
-        height = raycastHit.point.y;
-        return true;
-    }
-    height = 0;
-    return false;
+    throw std::runtime_error("not implemented");
+    //p.y = 6000;
+    //RaycastHit raycastHit;
+    //if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
+    //    height = raycastHit.point.y;
+    //    return true;
+    //}
+    //height = 0;
+    //return false;
 }
 
 // ?? client only ??
@@ -1073,8 +1073,8 @@ bool IZoneManager::GetStaticSolidHeight(const Vector3& p, float& height, const V
 // if terrain is just heightmap,
 // could easily create a wrapper and poll points where needed
 Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Heightmap::Biome& biome, Heightmap::BiomeArea& biomeArea) {
-    biome = Heightmap::Biome::None;
-    biomeArea = Heightmap::BiomeArea::Everything;
+    //biome = Heightmap::Biome::None;
+    //biomeArea = Heightmap::BiomeArea::Everything;
     //hmap = null;
 
     // test collision from point, casting downwards through terrain
@@ -1087,7 +1087,7 @@ Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Heightmap::B
 
 
 
-    auto heightmap = HeightmapManager()->GetOrCreateHeightmap(p);
+    auto heightmap = HeightmapManager()->GetOrCreateHeightmap(WorldToZonePos(p));
 
     p.y = HeightmapManager()->GetHeight(p);
     biome = heightmap->GetBiome(p);

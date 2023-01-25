@@ -2,7 +2,9 @@
 
 #include <robin_hood.h>
 
-#include "ZDOManager.h"
+#include "ZDO.h"
+
+class IZDOManager;
 
 class ZDOPeer {
 	friend class IZDOManager;

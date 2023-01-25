@@ -152,7 +152,7 @@ void IZDOManager::RemoveFromSector(NetSync* zdo, const Vector2i& sector) {
 	}
 }
 
-NetSync* IZDOManager::GetZDO(const NetID& id) {
+ZDO* IZDOManager::GetZDO(const NetID& id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -626,9 +626,9 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 
 		while (invalid_sector_count--) {
 			auto id = pkg.Read<NetID>();
-			auto&& sync = GetZDO(id);
-			if (sync)
-				sync->InvalidateSector();
+			auto&& zdo = GetZDO(id);
+			if (zdo)
+				zdo->InvalidateSector();
 		}
 	}
 
@@ -762,7 +762,9 @@ bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 
 void IZDOManager::OnNewPeer(NetPeer* peer) {
 	peer->m_zdoPeer = std::make_unique<ZDOPeer>();
-	peer->m_rpc->Register(Hashes::Rpc::ZDOData, &RPC_ZDOData);
+	peer->m_rpc->Register(Hashes::Rpc::ZDOData, [this](NetRpc* rpc, NetPackage pkg) {
+		RPC_ZDOData(rpc, pkg);
+	});
 }
 
 void IZDOManager::OnPeerQuit(NetPeer* peer) {

@@ -5,8 +5,7 @@
 #include "VUtils.h"
 #include "WorldGenerator.h"
 #include "Prefab.h"
-
-class ZDO;
+#include "ZDO.h"
 
 class IPrefabManager {
 

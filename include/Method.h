@@ -34,8 +34,9 @@ template<class T, typename F>
 class MethodImpl
     : public IMethod<T> 
 {
-    using VUtils::Traits;
-    using args_type = typename func_traits<F>::args_type;
+    //using VUtils::Traits::func_traits;
+    //using args_type = typename func_traits<F>::args_type;
+    using args_type = typename VUtils::Traits::func_traits<F>::args_type;
 
     static_assert(std::is_same<T, std::tuple_element_t<0, args_type>>, "Lambda first type does not match declared type");
 

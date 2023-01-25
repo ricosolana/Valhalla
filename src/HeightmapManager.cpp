@@ -54,7 +54,7 @@ bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
 }
 
 float IHeightmapManager::GetHeight(const Vector3& worldPos) {
-    auto heightmap = GetOrCreateHeightmap(worldPos);
+    auto heightmap = GetOrCreateHeightmap(IZoneManager::WorldToZonePos(worldPos));
 
     float height = 0;
     if (heightmap->GetWorldHeight(worldPos, height)) {
@@ -93,7 +93,7 @@ robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManag
     return m_heightmaps;
 }
 
-Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector3& point) {
+Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //for (auto&& pair : m_heightmaps) {
     //    auto&& heightmap = pair.second;
     //    if (heightmap->IsPointInside(point, 0)) {
@@ -101,8 +101,7 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector3& point) {
     //    }
     //}
 
-    auto zone = IZoneManager::WorldToZonePos(point);
-    auto&& pair = m_heightmaps.insert({ zone, std::make_unique<Heightmap>() });
+    auto&& pair = m_heightmaps.insert({ zoneID, std::make_unique<Heightmap>() });
     if (pair.second) // if newly inserted
         pair.first->second->Regenerate();
 

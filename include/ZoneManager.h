@@ -5,6 +5,8 @@
 #include "Quaternion.h"
 #include "HeightMap.h"
 
+class Prefab;
+
 using ZoneID = Vector2i;
 
 class IZoneManager {
@@ -136,7 +138,7 @@ private:
 
 	robin_hood::unordered_map<Vector3, std::string> tempIconList;
 
-	robin_hood::unordered_map<Vector2i, ZoneData> m_zones;
+	//robin_hood::unordered_map<Vector2i, ZoneData> m_zones;
 
 	robin_hood::unordered_set<Vector2i> m_generatedZones;
 
@@ -185,8 +187,6 @@ public:
 
 	void Save(NetPackage& pkg);
 	void Load(NetPackage& reader, int32_t version);
-	bool IsZoneLoaded(const Vector3& point);
-	bool IsZoneLoaded(const ZoneID& zoneID);
 
 	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons);
 	bool IsBlocked(const Vector3& p);

@@ -36,7 +36,7 @@ public:
 	//static std::vector<Heightmap> GetAllHeightmaps();
 	robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
 
-	Heightmap* GetOrCreateHeightmap(const Vector3& point);
+	Heightmap* GetOrCreateHeightmap(const Vector2i& zoneID);
 
 	Heightmap* GetHeightmap(const Vector3& point); // terribly slow
 	std::vector<Heightmap*> GetHeightmaps(const Vector3& point, float radius);

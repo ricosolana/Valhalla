@@ -94,7 +94,7 @@ add_executable(${PROJECT_NAME}
     "src/NetRpc.cpp"
     
     "src/NetSteamSocket.cpp"
-    "src/PlayerProfile.cpp"
+    
     "src/Quaternion.cpp"
     "src/Stream.cpp"
     "src/Task.cpp"

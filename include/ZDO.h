@@ -9,7 +9,6 @@
 #include "VUtils.h"
 #include "VUtilsString.h"
 #include "NetPackage.h"
-#include "ZoneManager.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -276,6 +275,8 @@ private:
         //: m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
 public:
+    ZDO() {}
+
     // Save ZDO to the disk package
     void Save(NetPackage& writer) const;
 
@@ -483,5 +484,3 @@ public:
     // Load ZDO from network packet
     void Deserialize(NetPackage& pkg);
 };
-
-using NetSync = ZDO;

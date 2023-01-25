@@ -1,6 +1,6 @@
 #pragma once
 
-class Vector3;
+#include "Vector.h"
 
 struct Quaternion {
     static const Quaternion IDENTITY;

@@ -96,7 +96,7 @@ Quaternion FromEulerRad_Impl(
         quat.y = (cx * fVar1) - sx * fVar2;
         quat.z = cx * fVar3 + sx * fVar4;
 
-        return;
+        break;
     case 1:
         fVar3 = sy * sz;
         fVar1 = cy * sz;
@@ -107,7 +107,7 @@ Quaternion FromEulerRad_Impl(
         quat.y = (cx * fVar1) - sx * fVar2;
         quat.z = cx * fVar3 + sx * fVar4;
 
-        return;
+        break;
     case 2:
         fVar3 = sx * cz;
         fVar2 = -sx * sz;
@@ -119,7 +119,7 @@ Quaternion FromEulerRad_Impl(
         quat.y = (cy * fVar1 + sy * fVar3);
         quat.z = (cy * fVar3) - sy * fVar1;
 
-        return;
+        break;
     case 3:
         fVar1 = cx * sz;
         fVar2 = sx * sz;
@@ -129,7 +129,7 @@ Quaternion FromEulerRad_Impl(
         quat.y = cy * fVar1 + sy * fVar3;
         quat.z = (cy * fVar3) - sy * fVar1;
 
-        return;
+        break;
     case 4:
         fVar2 = sx * cy;
         fVar1 = cx * sy;
@@ -141,7 +141,7 @@ Quaternion FromEulerRad_Impl(
         quat.y = cz * cx + sz * fVar3;
         quat.z = cz * fVar2 + sz * fVar1;
 
-        return;
+        break;
     case 5:
         fVar2 = (sx * cy);
         fVar3 = ((cx * cy));
@@ -153,12 +153,12 @@ Quaternion FromEulerRad_Impl(
         quat.y = cz * cx + sz * fVar3;
         quat.z = cz * fVar2 + sz * fVar1;
 
-        return;
+        break;
     default:
-        return;
+        break;
     }
 
-
+    return quat;
 }
 
 Quaternion Quaternion::Euler(float x, float y, float z) {

@@ -12,7 +12,7 @@ namespace Tests {
             auto opt = VUtils::Resource::ReadFileBytes("zdo.sav");
             assert(opt);
 
-            ZDO zdo;
+            ZDO zdo();
             NetPackage pkg(opt.value());
             zdo.Load(pkg, VConstants::WORLD);
 

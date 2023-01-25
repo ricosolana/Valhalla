@@ -2,11 +2,10 @@
 
 #include <robin_hood.h>
 
+#include "VUtils.h"
 #include "Method.h"
 #include "NetSocket.h"
 #include "Task.h"
-#include "NetHashes.h"
-#include "VUtils.h"
 
 enum class ConnectionStatus;
 
@@ -39,7 +38,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(f));
+        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(func));
     }
 
     template<typename F>

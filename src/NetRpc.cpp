@@ -3,6 +3,7 @@
 #include "NetRpc.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
+#include "Hashes.h"
 
 using namespace std::chrono;
 
@@ -71,6 +72,6 @@ void NetRpc::Update() {
 
 void NetRpc::SendError(ConnectionStatus status) {
     LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
-    Invoke(NetHashes::Rpc::Error, status);
+    Invoke(Hashes::Rpc::Error, status);
     m_socket->Close(true);
 }
