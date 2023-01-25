@@ -10,6 +10,35 @@ const Quaternion Quaternion::IDENTITY = { 0, 0, 0, 1 };
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
+Vector3 Quaternion::operator*(const Vector3& other) const {
+    float dx = x * 2.f;
+    float dy = y * 2.f;
+    float dz = z * 2.f;
+
+    float xx = x * dx;
+    float yy = y * dy;
+    float zz = z * dz;
+
+    float xy = x * dy;
+    float xz = x * dz;
+    float yz = y * dz;
+
+    float wx = w * dx;
+    float wy = w * dy;
+    float wz = w * dz;
+
+    return { (1.f - (yy + zz)) * other.x + (xy - w) * other.y + (xz + wy) * other.z,
+        (xy + wz) * other.x + (1.f - (xx + zz)) * other.y + (yz - wx) * other.z,
+        (xz - wy) * other.x + (yz + wx) * other.y + (1.f - (xx + yy)) * other.z };
+}
+
+Quaternion Quaternion::operator*(const Quaternion &rhs) const {
+    return Quaternion(w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y, w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z, w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x, w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
+}
+
+
+
+
 bool Quaternion::operator==(const Quaternion& other) const {
     return x == other.x
         && y == other.y
