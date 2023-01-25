@@ -101,7 +101,7 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //    }
     //}
 
-    auto&& pair = m_heightmaps.insert({ zoneID, std::make_unique<Heightmap>() });
+    auto&& pair = m_heightmaps.insert({ zoneID, std::make_unique<Heightmap>(zoneID) });
     if (pair.second) // if newly inserted
         pair.first->second->Regenerate();
 
@@ -155,12 +155,12 @@ std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, f
 }
 
 // public static
-Heightmap::Biome IHeightmapManager::FindBiome(const Vector3& point) {
+Biome IHeightmapManager::FindBiome(const Vector3& point) {
     auto heightmap = GetHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
     }
-    return Heightmap::Biome::None;
+    return Biome::None;
 }
 
 // public static

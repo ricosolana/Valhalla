@@ -158,7 +158,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
 }
 
 // public
-std::vector<Heightmap::Biome> Heightmap::GetBiomes() {
+std::vector<Biome> Heightmap::GetBiomes() {
     std::vector<Biome> list;
     //Biome mask = None;
     auto mask = std::to_underlying(Biome::None);
@@ -174,7 +174,7 @@ std::vector<Heightmap::Biome> Heightmap::GetBiomes() {
 }
 
 // public
-bool Heightmap::HaveBiome(Heightmap::Biome biome) {
+bool Heightmap::HaveBiome(Biome biome) {
     return (std::to_underlying(m_cornerBiomes[0]) & std::to_underlying(biome))
         || (std::to_underlying(m_cornerBiomes[1]) & std::to_underlying(biome))
         || (std::to_underlying(m_cornerBiomes[2]) & std::to_underlying(biome))
@@ -182,7 +182,7 @@ bool Heightmap::HaveBiome(Heightmap::Biome biome) {
 }
 
 // public
-Heightmap::Biome Heightmap::GetBiome(const Vector3& point) {
+Biome Heightmap::GetBiome(const Vector3& point) {
     //if all biomes are the same, return same/any
     if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] 
         && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] 
@@ -242,7 +242,7 @@ Heightmap::Biome Heightmap::GetBiome(const Vector3& point) {
 }
 
 // public
-Heightmap::BiomeArea Heightmap::GetBiomeArea() {
+BiomeArea Heightmap::GetBiomeArea() {
     if (this->IsBiomeEdge()) {
         return BiomeArea::Edge;
     }
@@ -295,7 +295,7 @@ void Heightmap::ApplyModifiers() {
 }
 
 // private
-void Heightmap::ApplyModifier(TerrainModifier modifier, Heights_t* levelOnly) {
+void Heightmap::ApplyModifier(TerrainModifier modifier, HMBuildData::Heights_t* levelOnly) {
     assert(false);
 
     //if (modifier.m_level) {
@@ -397,7 +397,7 @@ void Heightmap::RebuildCollisionMesh() {
 
 // private
 void Heightmap::SmoothTerrain2(const Vector3& worldPos, float radius, 
-    Heights_t* levelOnlyHeights, float power) {
+    HMBuildData::Heights_t* levelOnlyHeights, float power) {
     
     assert(false);
 
@@ -729,7 +729,7 @@ void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y)
 
 // private
 void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square, 
-    Heights_t* levelOnly) {
+    HMBuildData::Heights_t* levelOnly) {
 
     int32_t num;
     int32_t num2;

@@ -276,9 +276,27 @@ namespace NetManager {
 
         peer->m_pos = pos;
 
-        rpc->Register(Hashes::Rpc::RefPos, RPC_RefPos);
-        rpc->Register(Hashes::Rpc::CharacterID, RPC_CharacterID);
-        rpc->Register(Hashes::Rpc::RemotePrint, RPC_RemotePrint);
+        //MethodImpl m([](NetRpc* rpc) {
+        //
+        //})
+
+        rpc->Register(Hashes::Rpc::RefPos, [](NetRpc* rpc, Vector3 pos, bool publicRefPos) {
+            auto&& peer = GetPeer(rpc);
+
+            peer->m_pos = pos;
+            peer->m_visibleOnMap = publicRefPos; // stupid name
+        });
+
+        rpc->Register(Hashes::Rpc::CharacterID, [](NetRpc* rpc, NetID characterID) {
+            auto&& peer = GetPeer(rpc);
+            peer->m_characterID = characterID;
+
+            LOG(INFO) << "Got CharacterID from " << peer->m_name << " : " << characterID.ToString();
+        });
+
+        rpc->Register(Hashes::Rpc::RemotePrint, [](NetRpc* rpc, std::string text) {
+            LOG(INFO) << text;
+        });
 
         SendPeerInfo(rpc);
     }
@@ -287,7 +305,11 @@ namespace NetManager {
         rpc->Unregister(Hashes::Rpc::ServerHandshake);
 
         LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
-        rpc->Register(Hashes::Rpc::PeerInfo, &RPC_PeerInfo);
+       
+        rpc->Register(Hashes::Rpc::PeerInfo, [](NetRpc* rpc, NetPackage pkg) {
+            RPC_PeerInfo(rpc, std::move(pkg));
+        });
+
         rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
     }
 
@@ -336,8 +358,22 @@ namespace NetManager {
         while (auto opt = m_acceptor->Accept()) {
             auto&& rpc = std::make_unique<NetRpc>(opt.value());
                         
-            rpc->Register(Hashes::Rpc::Disconnect, RPC_Disconnect);
-            rpc->Register(Hashes::Rpc::ServerHandshake, RPC_ServerHandshake);
+            rpc->Register(Hashes::Rpc::Disconnect, [](NetRpc* rpc) {
+                LOG(INFO) << "RPC_Disconnect";
+                rpc->m_socket->Close(true);
+            });
+
+            rpc->Register(Hashes::Rpc::ServerHandshake, [](NetRpc* rpc) {
+                rpc->Unregister(Hashes::Rpc::ServerHandshake);
+
+                LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
+
+                rpc->Register(Hashes::Rpc::PeerInfo, [](NetRpc* rpc, NetPackage pkg) {
+                    RPC_PeerInfo(rpc, std::move(pkg));
+                });
+
+                rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
+            });
 
             m_joining.push_back(std::move(rpc));
         }
@@ -410,7 +446,7 @@ namespace NetManager {
             try {
                 rpc->Update();
             }
-            catch (const std::range_error& e) {
+            catch (const std::range_error&) {
                 LOG(ERROR) << "Connecting peer provided malformed payload";
                 rpc->m_socket->Close(false);
             }

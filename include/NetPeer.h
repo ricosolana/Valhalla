@@ -5,7 +5,7 @@
 #include "NetRpc.h"
 #include "ZDOPeer.h"
 
-struct NetPeer {
+class NetPeer {
 public:
     std::unique_ptr<NetRpc> m_rpc;
     std::unique_ptr<ZDOPeer> m_zdoPeer;

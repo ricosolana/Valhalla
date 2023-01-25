@@ -95,7 +95,7 @@ public:
 	// basically, the coroutine thread is frozen in place
 	// its not real multithreading, but is confusing for no reason
 	// this can be refactored to have clearer intent
-	//bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*> &zdos, int& index);
+	//bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<ZDO*> &zdos, int& index);
 
 	void ForceSendZDO(const NetID& id);
 };

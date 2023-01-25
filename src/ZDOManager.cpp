@@ -107,7 +107,7 @@ void IZDOManager::CapDeadZDOList() {
 	}
 }
 
-NetSync* IZDOManager::CreateZDO(const Vector3& position) {
+ZDO* IZDOManager::CreateZDO(const Vector3& position) {
 	NetID zdoid;
 
 	do {
@@ -117,13 +117,13 @@ NetSync* IZDOManager::CreateZDO(const Vector3& position) {
 	return CreateZDO(zdoid, position);
 }
 
-NetSync* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
+ZDO* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
 	//		container or to the element whose key is equivalent...
 	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
-	auto&& ret = m_objectsByID.insert({ uid, std::make_unique<NetSync>(uid, position) })
+	auto&& ret = m_objectsByID.insert({ uid, std::make_unique<ZDO>(uid, position) })
 		.first->second.get();
 
 	AddToSector(ret, ret->m_sector);
@@ -131,21 +131,21 @@ NetSync* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
 	return ret;
 }
 
-void IZDOManager::AddToSector(NetSync* zdo, const Vector2i& sector) {
+void IZDOManager::AddToSector(ZDO* zdo, const Vector2i& sector) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		m_objectsBySector[num].insert(zdo);
 	}
 }
 
-void IZDOManager::ZDOSectorInvalidated(NetSync* zdo) {
+void IZDOManager::ZDOSectorInvalidated(ZDO* zdo) {
 	for (auto&& peer : NetManager::GetPeers()) {
 		auto &&zdopeer = peer->m_zdoPeer;
 		zdopeer->ZDOSectorInvalidated(zdo);
 	}
 }
 
-void IZDOManager::RemoveFromSector(NetSync* zdo, const Vector2i& sector) {
+void IZDOManager::RemoveFromSector(ZDO* zdo, const Vector2i& sector) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		m_objectsBySector[num].erase(zdo);
@@ -213,7 +213,7 @@ void IZDOManager::ReleaseNearbyZDOS(const Vector3& refPosition, NetPeer* peer) {
 	}
 }
 
-void IZDOManager::MarkDestroyZDO(NetSync* zdo) {
+void IZDOManager::MarkDestroyZDO(ZDO* zdo) {
 	if (zdo->Local())
 		m_destroySendList.push_back(zdo->ID());
 }
@@ -241,7 +241,7 @@ void IZDOManager::SendAllZDOs(ZDOPeer* peer) {
 	while (SendZDOs(peer, true));
 }
 
-void IZDOManager::FindSectorObjects(const Vector2i& sector, int area, int distantArea, std::vector<NetSync*>& sectorObjects, std::vector<NetSync*>* distantSectorObjects) {
+void IZDOManager::FindSectorObjects(const Vector2i& sector, int area, int distantArea, std::vector<ZDO*>& sectorObjects, std::vector<ZDO*>* distantSectorObjects) {
 	FindObjects(sector, sectorObjects);
 	for (int i = 1; i <= area; i++)
 	{
@@ -272,7 +272,7 @@ void IZDOManager::FindSectorObjects(const Vector2i& sector, int area, int distan
 	}
 }
 
-void IZDOManager::FindSectorObjects(const Vector2i &sector, int area, std::vector<NetSync*>& sectorObjects) {
+void IZDOManager::FindSectorObjects(const Vector2i &sector, int area, std::vector<ZDO*>& sectorObjects) {
 	for (int i = sector.y - area; i <= sector.y + area; i++) {
 		for (int j = sector.x - area; j <= sector.x + area; j++) {
 			FindObjects(Vector2i(j, i), sectorObjects);
@@ -280,12 +280,12 @@ void IZDOManager::FindSectorObjects(const Vector2i &sector, int area, std::vecto
 	}
 }
 
-void IZDOManager::CreateSyncList(ZDOPeer* peer, std::vector<NetSync*>& toSync) {
+void IZDOManager::CreateSyncList(ZDOPeer* peer, std::vector<ZDO*>& toSync) {
 	Vector3 refPos = peer->m_peer->m_pos;
 	auto zone = IZoneManager::WorldToZonePos(refPos);
 
-	std::vector<NetSync*> tempSectorObjects;
-	std::vector<NetSync*> m_tempToSyncDistant;
+	std::vector<ZDO*> tempSectorObjects;
+	std::vector<ZDO*> m_tempToSyncDistant;
 
 	FindSectorObjects(zone, IZoneManager::NEAR_ACTIVE_AREA, IZoneManager::DISTANT_ACTIVE_AREA,
 		tempSectorObjects, &m_tempToSyncDistant);
@@ -339,7 +339,7 @@ void IZDOManager::AddForceSendZDOs(ZDOPeer* peer, std::vector<ZDO*>& syncList) {
 	}
 }
 
-void IZDOManager::ServerSortSendZDOS(std::vector<NetSync*>& objects, ZDOPeer* peer) {
+void IZDOManager::ServerSortSendZDOS(std::vector<ZDO*>& objects, ZDOPeer* peer) {
 	auto uuid = peer->m_peer->m_uuid;
 	auto time = Valhalla()->Time();
 
@@ -347,15 +347,15 @@ void IZDOManager::ServerSortSendZDOS(std::vector<NetSync*>& objects, ZDOPeer* pe
 
 	auto&& zdos = peer->m_zdos;
 
-	std::sort(objects.begin(), objects.end(), [&zdos, uuid, pos, time](const NetSync* a, const NetSync* b) {
+	std::sort(objects.begin(), objects.end(), [&zdos, uuid, pos, time](const ZDO* a, const ZDO* b) {
 
 		// Sort in rough order of:
 		//	flag -> type/priority -> distance ASC -> age ASC
 
 		// https://www.reddit.com/r/valheim/comments/mga1iw/understanding_the_new_networking_mechanisms_from/
 
-		bool flag = a->Type() == NetSync::ObjectType::Prioritized && a->HasOwner() && a->Owner() != uuid;
-		bool flag2 = b->Type() == NetSync::ObjectType::Prioritized && b->HasOwner() && b->Owner() != uuid;
+		bool flag = a->Type() == ZDO::ObjectType::Prioritized && a->HasOwner() && a->Owner() != uuid;
+		bool flag2 = b->Type() == ZDO::ObjectType::Prioritized && b->HasOwner() && b->Owner() != uuid;
 
 		if (flag == flag2) {
 			if (a->Type() == b->Type()) {
@@ -484,7 +484,7 @@ int SectorToIndex(const Vector2i &s)
 	return num2 * SECTOR_WIDTH + num;
 }*/
 
-void IZDOManager::FindObjects(const Vector2i& sector, std::vector<NetSync*>& objects) {
+void IZDOManager::FindObjects(const Vector2i& sector, std::vector<ZDO*>& objects) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		objects.insert(objects.end(),
@@ -492,7 +492,7 @@ void IZDOManager::FindObjects(const Vector2i& sector, std::vector<NetSync*>& obj
 	}
 }
 
-void IZDOManager::FindDistantObjects(const Vector2i& sector, std::vector<NetSync*>& objects) {
+void IZDOManager::FindDistantObjects(const Vector2i& sector, std::vector<ZDO*>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
@@ -551,7 +551,7 @@ void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> &zdos) {
 // portals could be stored in separate list for the better
 // This is really Unity-specific xue to coroutines and yields
 /*
-bool IZDOManager::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<NetSync*>& zdos, int& index) {
+bool IZDOManager::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<ZDO*>& zdos, int& index) {
 	auto stableHashCode = VUtils::String::GetStableHashCode(prefab);
 
 	// Search through all sector objects for PREFAB
@@ -608,7 +608,7 @@ int IZDOManager::SectorToIndex(const Vector2i& s) {
 	return y * WIDTH_IN_ZONES + x;
 }
 
-NetSync* IZDOManager::GetZDO(const NetID& id) {
+ZDO* IZDOManager::GetZDO(const NetID& id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -626,7 +626,7 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 
 		while (invalid_sector_count--) {
 			auto id = pkg.Read<NetID>();
-			auto&& zdo = GetZDO(id);
+			ZDO* zdo = GetZDO(id);
 			if (zdo)
 				zdo->InvalidateSector();
 		}
@@ -637,7 +637,7 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 	static NetPackage des;
 
 	while (auto zdoid = pkg.Read<NetID>()) {
-		auto zdo = GetZDO(zdoid); // Dont do 2 lookups
+		ZDO* zdo = this->GetZDO(zdoid); // Dont do 2 lookups
 
 		auto ownerRev = pkg.Read<uint32_t>();	// owner revision
 		auto dataRev = pkg.Read<uint32_t>();	// data revision
@@ -646,7 +646,7 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 
 		pkg.Read(des);
 
-		NetSync::Rev rev = { dataRev, ownerRev, ticks };
+		ZDO::Rev rev = { dataRev, ownerRev, ticks };
 
 		// if the zdo already existed (locally/remotely), compare revisions
 		bool flagCreated = false;
@@ -683,6 +683,8 @@ void IZDOManager::RPC_ZDOData(NetRpc* rpc, NetPackage pkg) {
 bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 	//assert(false);
 	int sendQueueSize = peer->m_peer->m_rpc->m_socket->GetSendQueueSize();
+	if (sendQueueSize < 0)
+		re
 
 	// flushing forces a packet send
 	const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
@@ -693,7 +695,7 @@ bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 		return false;
 
-	static std::vector<NetSync*> m_tempToSync;
+	static std::vector<ZDO*> m_tempToSync;
 	m_tempToSync.clear();
 	CreateSyncList(peer, m_tempToSync);
 
@@ -746,7 +748,7 @@ bool IZDOManager::SendZDOs(ZDOPeer* peer, bool flush) {
 		sync->Serialize(syncPkg); // dump sync information onto packet
 		pkg.Write(syncPkg);
 
-		peer->m_zdos[sync->ID()] = NetSync::Rev {
+		peer->m_zdos[sync->ID()] = ZDO::Rev {
 			sync->m_rev.m_dataRev, sync->m_rev.m_ownerRev, ticks 
 		};
 

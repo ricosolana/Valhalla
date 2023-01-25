@@ -51,8 +51,6 @@ private:
 
 	void RouteRPC(const Data& data);
 
-	IRouteManager() {}
-
 public:
 
 	//enum ChatManager::Type;

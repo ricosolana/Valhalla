@@ -3,6 +3,7 @@
 #include <robin_hood.h>
 
 #include "VUtils.h"
+#include "VUtilsString.h"
 #include "Method.h"
 #include "NetSocket.h"
 #include "Task.h"

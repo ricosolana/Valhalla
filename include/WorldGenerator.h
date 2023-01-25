@@ -14,13 +14,13 @@ namespace WorldGenerator {
 
 	Vector2i GetRiverGrid(float wx, float wy);
 
-	Heightmap::BiomeArea GetBiomeArea(const Vector3& point);
-	Heightmap::Biome GetBiome(const Vector3& point);
-	Heightmap::Biome GetBiome(float wx, float wy);
+	BiomeArea GetBiomeArea(const Vector3& point);
+	Biome GetBiome(const Vector3& point);
+	Biome GetBiome(float wx, float wy);
 
 	float GetHeight(float wx, float wy);
 	float GetHeight(float wx, float wy, Color& color);
-	float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy, Color& color);
+	float GetBiomeHeight(Biome biome, float wx, float wy, Color& color);
 
 	bool InForest(const Vector3& pos);
 

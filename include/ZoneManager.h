@@ -4,6 +4,7 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "HeightMap.h"
+#include "HashUtils.h"
 
 class Prefab;
 
@@ -20,8 +21,8 @@ class IZoneManager {
 		//std::string m_prefabName;
 		const Prefab* m_prefab;
 
-		Heightmap::Biome m_biome;
-		Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
+		Biome m_biome;
+		BiomeArea m_biomeArea = BiomeArea::Everything;
 		bool m_applyRandomDamage;
 		bool m_centerFirst;
 		bool m_clearArea;
@@ -60,8 +61,8 @@ class IZoneManager {
 		//std::string m_prefabName;
 		const Prefab* m_prefab;
 
-		Heightmap::Biome m_biome = Heightmap::Biome::None;
-		Heightmap::BiomeArea m_biomeArea = Heightmap::BiomeArea::Everything;
+		Biome m_biome = Biome::None;
+		BiomeArea m_biomeArea = BiomeArea::Everything;
 		float m_min = 0;
 		float m_max = 10;
 		float m_minTilt = 0;
@@ -198,7 +199,7 @@ public:
 	//bool GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore);
 	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
 	//bool FindFloor(const Vector3& p, float& height);
-	Heightmap* GetGroundData(Vector3& p, Vector3& normal, Heightmap::Biome& biome, Heightmap::BiomeArea& biomeArea);
+	Heightmap* GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
 
 	static ZoneID WorldToZonePos(const Vector3& point);

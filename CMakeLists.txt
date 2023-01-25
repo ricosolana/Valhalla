@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneManager.cpp"
- "src/PrefabManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp" "include/Prefab.h" "include/DungeonGenerator.h")
+ "src/PrefabManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp" "include/Prefab.h" "include/DungeonGenerator.h" "include/Biome.h" "include/HMBuildData.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

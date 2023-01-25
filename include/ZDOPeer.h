@@ -3,8 +3,10 @@
 #include <robin_hood.h>
 
 #include "ZDO.h"
+#include "HashUtils.h"
 
 class IZDOManager;
+class NetPeer;
 
 class ZDOPeer {
 	friend class IZDOManager;

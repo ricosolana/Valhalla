@@ -67,8 +67,8 @@ void IZoneManager::Init() {
             auto prefabName = pkg.Read<std::string>();
 
             loc->m_prefab = PrefabManager()->GetPrefab(prefabName);
-            loc->m_biome = (Heightmap::Biome)pkg.Read<int32_t>();
-            loc->m_biomeArea = (Heightmap::BiomeArea)pkg.Read<int32_t>();
+            loc->m_biome = (Biome)pkg.Read<int32_t>();
+            loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
             loc->m_centerFirst = pkg.Read<bool>();
             loc->m_clearArea = pkg.Read<bool>();
@@ -129,8 +129,8 @@ void IZoneManager::Init() {
 
             veg->m_prefab = PrefabManager()->GetPrefab(prefabName);
             assert(veg->m_prefab && "missing vegetation prefab");
-            veg->m_biome = (Heightmap::Biome) pkg.Read<int32_t>();
-            veg->m_biomeArea = (Heightmap::BiomeArea) pkg.Read<int32_t>();
+            veg->m_biome = (Biome) pkg.Read<int32_t>();
+            veg->m_biomeArea = (BiomeArea) pkg.Read<int32_t>();
             veg->m_min = pkg.Read<float>();
             veg->m_max = pkg.Read<float>();
             veg->m_minTilt = pkg.Read<float>();
@@ -167,7 +167,7 @@ void IZoneManager::Init() {
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
     LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::LocationProxy);
 
-    RouteManager()->Register("SetGlobalKey", [this](OWNER_t sender, std::string name) {
+    RouteManager()->Register("SetGlobalKey", [this](NetPeer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.contains(name)) {
             return;
@@ -176,7 +176,7 @@ void IZoneManager::Init() {
         SendGlobalKeys(IRouteManager::EVERYBODY);
     });
 
-    RouteManager()->Register("RemoveGlobalKey", [this](OWNER_t sender, std::string name) {
+    RouteManager()->Register("RemoveGlobalKey", [this](NetPeer* peer, std::string name) {
         // TODO constraint check
         if (!m_globalKeys.contains(name)) {
             return;
@@ -402,8 +402,8 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
                         || !IsBlocked(vector2)) {
 
                         Vector3 vector3;
-                        Heightmap::Biome biome;
-                        Heightmap::BiomeArea biomeArea;
+                        Biome biome;
+                        BiomeArea biomeArea;
                         Heightmap *otherHeightmap = GetGroundData(vector2, vector3, biome, biomeArea);
 
                         if ((std::to_underlying(zoneVegetation->m_biome) & std::to_underlying(biome))
@@ -558,7 +558,7 @@ void IZoneManager::GenerateLocations() {
 
 // private
 void IZoneManager::GenerateLocations(const ZoneLocation* location) {
-    unsigned int spawnedLocations = 0;
+    int spawnedLocations = 0;
 
     // CountNrOfLocation: inlined
     for (auto&& inst : m_locationInstances) {
@@ -589,8 +589,8 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
 
-    const unsigned int spawnAttempts = location->m_prioritized ? 200000 : 100000;
-    for (unsigned int a = 0; a < spawnAttempts && spawnedLocations < location->m_quantity; a++) {
+    const int spawnAttempts = location->m_prioritized ? 200000 : 100000;
+    for (int a = 0; a < spawnAttempts && spawnedLocations < location->m_quantity; a++) {
         Vector2i randomZone = GetRandomZone(state, range);
         if (location->m_centerFirst)
             range++;
@@ -599,7 +599,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
             errLocations++;
         else {            
             Vector3 zonePos = ZoneToWorldPos(randomZone);
-            Heightmap::BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
+            BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
 
             if (std::to_underlying(location->m_biomeArea) & std::to_underlying(biomeArea))
                 errBiomeArea++;
@@ -618,7 +618,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                     if (magnitude > 0 && (magnitude < location->m_minDistance || magnitude > location->m_maxDistance))
                         errCenterDistances++;
                     else {
-                        Heightmap::Biome biome = WorldGenerator::GetBiome(randomPointInZone);
+                        Biome biome = WorldGenerator::GetBiome(randomPointInZone);
 
                         if (!(std::to_underlying(biome) & std::to_underlying(location->m_biome)))
                             errNoneBiomes++;
@@ -741,8 +741,8 @@ void IZoneManager::PlaceLocations(const Vector2i &zoneID,
 
         Vector3 position = locationInstance.m_position;
         Vector3 vector;
-        Heightmap::Biome biome = Heightmap::Biome::None;
-        Heightmap::BiomeArea biomeArea;
+        Biome biome = Biome::None;
+        BiomeArea biomeArea;
         Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
 
         if (locationInstance.m_location->m_snapToWater)
@@ -957,8 +957,8 @@ bool IZoneManager::IsBlocked(const Vector3& p) {
 float IZoneManager::GetGroundHeight(const Vector3& p) {
     Vector3 height = p;
     Vector3 n;
-    Heightmap::Biome biome;
-    Heightmap::BiomeArea biomeArea;
+    Biome biome;
+    BiomeArea biomeArea;
     GetGroundData(height, n, biome, biomeArea);
 
     return height.y;
@@ -1072,7 +1072,7 @@ bool IZoneManager::GetStaticSolidHeight(const Vector3& p, float& height, const V
 // public
 // if terrain is just heightmap,
 // could easily create a wrapper and poll points where needed
-Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Heightmap::Biome& biome, Heightmap::BiomeArea& biomeArea) {
+Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea) {
     //biome = Heightmap::Biome::None;
     //biomeArea = Heightmap::BiomeArea::Everything;
     //hmap = null;

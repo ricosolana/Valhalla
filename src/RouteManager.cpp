@@ -75,6 +75,9 @@ void IRouteManager::Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t ha
 }
 
 void IRouteManager::OnNewPeer(NetPeer *peer) {
+	//auto lam = [](int*) {};
+	//using T = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(lam)>::args_type>;
+
 	peer->m_rpc->Register(Hashes::Rpc::RoutedRPC, [this](NetRpc* rpc, NetPackage pkg) {
 		Data data(pkg);
 

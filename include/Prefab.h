@@ -4,15 +4,17 @@
 #include "Quaternion.h"
 #include "ZDO.h"
 
-class IPrefabManager;
+//class IPrefabManager;
 
 class Prefab {
-	friend class IPrefabManager;
+	//friend class IPrefabManager;
 
-private:
-	Prefab() {}
+//private:
+	//Prefab() = default;
 
 public:
+	Prefab() = default;
+
 	//const HASH_t m_hash;
 	std::string m_name;
 	HASH_t m_hash = 0; // precomputed from m_name

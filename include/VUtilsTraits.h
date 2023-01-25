@@ -50,6 +50,14 @@ namespace VUtils {
             using args_type = std::tuple<typename std::decay<Args>::type...>;
         };
 
+
+
+        // get type in lambda
+        //template <typename F>
+        //struct lam_nth_arg
+
+
+
         template <typename T>
         struct func_kind_info : func_kind_info<decltype(&T::operator())> {};
 
