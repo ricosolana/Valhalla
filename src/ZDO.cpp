@@ -4,8 +4,9 @@
 #include "ZDOManager.h"
 #include "ValhallaServer.h"
 #include "NetID.h"
-#include "PrefabTemplate.h"
-#include "ZoneSystem.h"
+#include "PrefabManager.h"
+#include "Prefab.h"
+#include "ZoneManager.h"
 
 //constexpr std::pair<HASH_t, HASH_t> ToHashPair(const char* key) {
 //    //constexpr auto s = "hello" " " "world";
@@ -42,10 +43,11 @@ HASH_t ZDO::from_prefix(HASH_t hash, MemberShift pref) {
 }
 */
 
-
+ZDO::ZDO(const NetID& id, const Vector3& pos)
+    : m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
 //ZDO::ZDO() {
-//    this->m_owner = Valhalla()->ID();
+    //this->m_owner = Valhalla()->ID();
 //}
 
 /*
@@ -59,14 +61,16 @@ ZDO::ZDO(PrefabZDO& prefab) {
 }
 */
 
+
+
 void ZDO::Save(NetPackage& pkg) const {
-    pkg.Write(this->m_rev.m_ownerRev);  static_assert(sizeof(Rev::m_ownerRev) == 4);
-    pkg.Write(this->m_rev.m_dataRev);   static_assert(sizeof(Rev::m_dataRev) == 4);
+    pkg.Write(this->m_rev.m_ownerRev);      static_assert(sizeof(Rev::m_ownerRev) == 4);
+    pkg.Write(this->m_rev.m_dataRev);       static_assert(sizeof(Rev::m_dataRev) == 4);
     pkg.Write(this->m_persistent);      
     pkg.Write(this->m_owner);
-    pkg.Write(this->m_rev.m_time);      static_assert(sizeof(Rev::m_time) == 8);
-    pkg.Write(VConstants::PGW);         //static_assert(sizeof(m_pgwVersion) == 4);
-    pkg.Write(this->m_type);            static_assert(sizeof(m_type) == 1);
+    pkg.Write(this->m_rev.m_ticks.count()); static_assert(sizeof(Rev::m_ticks) == 8);
+    pkg.Write(VConstants::PGW);             static_assert(sizeof(VConstants::PGW) == 4);
+    pkg.Write(this->m_type);                static_assert(sizeof(m_type) == 1);
     pkg.Write(this->m_distant);
     pkg.Write(this->m_prefab);
     pkg.Write(this->m_sector);          //pkg.Write(IZoneManager::WorldToZonePos(this->m_position));
@@ -130,28 +134,28 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
 
 
 // copy constructor
-ZDO::ZDO(const ZDO& other) {
-    // Member copy
-    this->m_persistent = other.m_persistent;
-    this->m_distant = other.m_distant;
-    this->m_type = other.m_type;
-    this->m_prefab = other.m_prefab;
-    this->m_rotation = other.m_rotation;
-    this->m_ordinalMask = other.m_ordinalMask;
-
-    this->m_sector = other.m_sector;
-    this->m_position = other.m_position;
-    this->m_id = other.m_id;
-    this->m_owner = other.m_owner;
-
-    this->m_rev = other.m_rev;
-    //this->m_pgwVersion = other.m_pgwVersion;
-
-    // Pool copy
-    for (auto&& pair1 : other.m_members) {
-        _Set(pair1.first, pair1.second.second, pair1.second.first);
-    }
-}
+//ZDO::ZDO(const ZDO& other) {
+//    // Member copy
+//    this->m_persistent = other.m_persistent;
+//    this->m_distant = other.m_distant;
+//    this->m_type = other.m_type;
+//    this->m_prefab = other.m_prefab;
+//    this->m_rotation = other.m_rotation;
+//    this->m_ordinalMask = other.m_ordinalMask;
+//
+//    this->m_sector = other.m_sector;
+//    this->m_position = other.m_position;
+//    this->m_id = other.m_id;
+//    this->m_owner = other.m_owner;
+//
+//    this->m_rev = other.m_rev;
+//    //this->m_pgwVersion = other.m_pgwVersion;
+//
+//    // Pool copy
+//    for (auto&& pair1 : other.m_members) {
+//        _Set(pair1.first, pair1.second.second, pair1.second.first);
+//    }
+//}
 
 
 
@@ -353,8 +357,8 @@ void ZDO::Invalidate() {
 void ZDO::Serialize(NetPackage& pkg) const {
     pkg.Write(m_persistent);
     pkg.Write(m_distant);
-    static_assert(sizeof(Rev::m_time) == 8);
-    pkg.Write(m_rev.m_time);
+    static_assert(sizeof(Rev::m_ticks) == 8);
+    pkg.Write(m_rev.m_ticks.count());
     pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
     static_assert(sizeof(m_type) == 1);
     pkg.Write(m_type); // sbyte
@@ -384,7 +388,7 @@ void ZDO::Deserialize(NetPackage& pkg) {
 
     this->m_persistent = pkg.Read<bool>();
     this->m_distant = pkg.Read<bool>();
-    this->m_rev.m_time = pkg.Read<int64_t>();
+    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
     /*this->m_pgwVersion =*/ pkg.Read<int32_t>();
     this->m_type = pkg.Read<ObjectType>();
     this->m_prefab = pkg.Read<HASH_t>();

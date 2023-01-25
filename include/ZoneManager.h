@@ -9,6 +9,12 @@ using ZoneID = Vector2i;
 
 class IZoneManager {
 	struct ZoneLocation {
+		struct Piece {
+			const Prefab* m_prefab;
+			Vector3 m_pos;
+			Quaternion m_rot = Quaternion::IDENTITY; // hmm
+		};
+
 		//std::string m_prefabName;
 		const Prefab* m_prefab;
 
@@ -43,7 +49,8 @@ class IZoneManager {
 		bool m_slopeRotation;
 		bool m_snapToWater;
 		bool m_unique;
-		std::vector<std::tuple<HASH_t, Vector3, Quaternion>> m_prefabs; // m_netViews;
+		//std::vector<std::tuple<HASH_t, Vector3, Quaternion>> m_prefabs; // m_netViews;
+		std::vector<Piece> m_pieces;
 	};
 
 	struct ZoneVegetation {
@@ -159,11 +166,8 @@ private:
 
 	void GenerateLocations();
 
-	//int32_t CountNrOfLocation(ZoneLocation* location);
 	void GenerateLocations(const ZoneLocation *location);
 	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
-	//Vector3 GetRandomPointInZone(const Vector2i& zone, float locationRadius);
-	//Vector3 GetRandomPointInZone(float locationRadius);
 
 	void RemoveUnplacedLocations(const ZoneLocation* location);
 	void SpawnLocation(const ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
@@ -171,7 +175,6 @@ private:
 	void RegisterLocation(const ZoneLocation* location, const Vector3& pos, bool generated);
 	bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
 	void GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
-	void UpdateTTL(float dt);
 
 	// inlined 
 	//void SetZoneGenerated(const Vector2i& zoneID);
@@ -185,19 +188,16 @@ public:
 	bool IsZoneLoaded(const Vector3& point);
 	bool IsZoneLoaded(const ZoneID& zoneID);
 
-	bool GetLocationIcon(const std::string& name, Vector3& pos);
-	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> icons);
+	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons);
 	bool IsBlocked(const Vector3& p);
-	float GetAverageGroundHeight(const Vector3& p, float radius);
 	float GetGroundHeight(const Vector3& p);
 	bool GetGroundHeight(const Vector3& p, float& height);
 	float GetSolidHeight(const Vector3& p);
-	bool GetSolidHeight(const Vector3& p, float& height, int32_t heightMargin = 1000);
-	bool GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore);
-	bool GetSolidHeight(const Vector3& p, float& height, const Vector3& normal);
-	bool GetSolidHeight(const Vector3& p, float& height, const Vector3& normal, GameObject go);
+	// ?? client only ??
+	//bool GetSolidHeight(const Vector3& p, float& height, int32_t heightMargin = 1000);
+	//bool GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore);
 	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
-	bool FindFloor(const Vector3& p, float& height);
+	//bool FindFloor(const Vector3& p, float& height);
 	Heightmap* GetGroundData(Vector3& p, Vector3& normal, Heightmap::Biome& biome, Heightmap::BiomeArea& biomeArea);
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
 
@@ -208,8 +208,6 @@ public:
 	static bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
 	void ResetGlobalKeys();
-
-
 };
 
 IZoneManager* ZoneManager();

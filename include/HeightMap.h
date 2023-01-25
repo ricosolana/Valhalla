@@ -64,7 +64,7 @@ public:
     };
 
 public:
-    Heightmap();
+    Heightmap(const Vector2i& zoneID);
     
 
 private:
@@ -81,7 +81,6 @@ private:
 
 
     void UpdateCornerDepths();
-    void Initialize();
     void Generate();
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();

@@ -272,18 +272,17 @@ private:
         }
     }
 
-    ZDO(const NetID& id, const Vector3& pos)
-        : m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
+    ZDO(const NetID& id, const Vector3& pos);
+        //: m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
 public:
-
     // Save ZDO to the disk package
     void Save(NetPackage& writer) const;
 
     void Load(NetPackage& reader, int32_t version);
 
 
-    ZDO(const ZDO& other); // copy constructor
+    //ZDO(const ZDO& other); // copy constructor
 
     ~ZDO();
 

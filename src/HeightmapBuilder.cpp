@@ -1,4 +1,5 @@
 #include <mutex>
+#include <future>
 
 #include "HeightmapBuilder.h"
 #include "WorldGenerator.h"
@@ -8,8 +9,6 @@
 namespace HeightmapBuilder {
 
     void Build(HMBuildData *data, const Vector2i &center);
-
-
 
     robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_toBuild;
     robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_ready;
@@ -50,7 +49,7 @@ namespace HeightmapBuilder {
                         std::scoped_lock<std::mutex> scoped(m_lock);
                         m_ready[center] = std::move(hmbuildData);
 
-                        // start dropping unpolled heightmaps (what a shame...)
+                        // start dropping uneaten heightmaps (poor heightmaps)
                         while (m_ready.size() > 16) {
                             m_ready.erase(m_ready.begin());
                         }
@@ -139,6 +138,8 @@ namespace HeightmapBuilder {
         std::unique_ptr<HMBuildData> hmbuildData;
         do {
             hmbuildData = RequestTerrain(zoneCoord);
+            if (!hmbuildData)
+                std::this_thread::sleep_for(1ms);
         } while (!hmbuildData);
         return hmbuildData;
     }

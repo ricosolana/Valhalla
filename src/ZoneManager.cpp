@@ -99,10 +99,12 @@ void IZoneManager::Init() {
 
             auto count = pkg.Read<int32_t>();
             while (count--) {
-                auto hash = pkg.Read<HASH_t>();
-                auto pos = pkg.Read<Vector3>();
-                auto rot = pkg.Read<Quaternion>();
-                loc->m_prefabs.push_back(std::make_tuple(hash, pos, rot));
+                ZoneLocation::Piece piece;
+                piece.m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>());
+                assert(piece.m_prefab && "missing location prefab");
+                piece.m_pos = pkg.Read<Vector3>();
+                piece.m_rot = pkg.Read<Quaternion>();
+                loc->m_pieces.push_back(piece);
             }
 
             m_locationsByHash[VUtils::String::GetStableHashCode(prefabName)] = std::move(loc);
@@ -126,6 +128,7 @@ void IZoneManager::Init() {
             auto prefabName = pkg.Read<std::string>();
 
             veg->m_prefab = PrefabManager()->GetPrefab(prefabName);
+            assert(veg->m_prefab && "missing vegetation prefab");
             veg->m_biome = (Heightmap::Biome) pkg.Read<int32_t>();
             veg->m_biomeArea = (Heightmap::BiomeArea) pkg.Read<int32_t>();
             veg->m_min = pkg.Read<float>();
@@ -161,7 +164,8 @@ void IZoneManager::Init() {
         }
     }
 
-
+    ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
+    LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::LocationProxy);
 
     RouteManager()->Register("SetGlobalKey", [this](OWNER_t sender, std::string name) {
         // TODO constraint check
@@ -481,14 +485,12 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
                                         // TODO modify this later once Euler... implemented
                                         rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
 
-                                        Prefab* prefab;
-                                        auto zdo = PrefabManager()->Instantiate(
-                                            VUtils::String::GetStableHashCode(zoneVegetation->m_prefab->m_name), vector2, rotation, &prefab);
+                                        auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, vector2, rotation);
 
                                         if (!zdo)
                                             throw std::runtime_error("zdo failed to instantiate; vegetation.pkg might be corrupt");
 
-                                        if (scale != prefab->m_localScale.x) {
+                                        if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                             // this does set the Unity gameobject localscale
                                             zdo->Set("scale", Vector3(scale, scale, scale));
 
@@ -535,12 +537,6 @@ IZoneManager::ZoneLocation* IZoneManager::GetLocation(int32_t hash) {
         return find->second.get();
 
     return nullptr;
-
-    //ZoneSystem.ZoneLocation result;
-    //if (m_locationsByHash.TryGetValue(hash, result)) {
-    //    return result;
-    //}
-    //return null;
 }
 
 // private
@@ -574,6 +570,7 @@ void IZoneManager::GenerateLocations() {
 void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     unsigned int spawnedLocations = 0;
 
+    // CountNrOfLocation: inlined
     for (auto&& inst : m_locationInstances) {
         if (inst.second.m_location == location) // better to compare locations itself rather than name
             spawnedLocations++;
@@ -619,7 +616,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
             else {
                 for (int i = 0; i < 20; i++) {
 
-                    // generate point in zone
+                    // GetRandomPointInZone(): inlined
                     float num = ZONE_SIZE / 2.f;
                     float x = state.Range(-num + locationRadius, num - locationRadius);
                     float z = state.Range(-num + locationRadius, num - locationRadius);
@@ -799,13 +796,13 @@ void IZoneManager::PlaceLocations(const Vector2i &zoneID,
             RemoveUnplacedLocations(locationInstance.m_location);
         }
         if (locationInstance.m_location->m_iconPlaced) {
-            SendLocationIcons(IManagerRoute::EVERYBODY);
+            SendLocationIcons(IRouteManager::EVERYBODY);
         }
     }
 }
 
 // private
-void IZoneManager::RemoveUnplacedLocations(ZoneLocation* location) {
+void IZoneManager::RemoveUnplacedLocations(const ZoneLocation* location) {
     std::vector<Vector2i> list;
     for (auto&& keyValuePair : m_locationInstances) {
         if (keyValuePair.second.m_location == location && !keyValuePair.second.m_placed) {
@@ -823,70 +820,76 @@ void IZoneManager::RemoveUnplacedLocations(ZoneLocation* location) {
 // private
 void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
 
-    location->m_prefab.transform.position = Vector3::ZERO;
-    location->m_prefab.transform.rotation = Quaternion::IDENTITY;
+    //location->m_prefab.transform.position = Vector3::ZERO;
+    //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
 
-    Location component = location.m_prefab.GetComponent<Location>();
-    bool flag = component && component.m_useCustomInteriorTransform && component.m_interiorTransform && component.m_generator;
+    //Location component = location.m_prefab.GetComponent<Location>();
+    //bool flag = component.m_useCustomInteriorTransform && component.m_interiorTransform && component.m_generator;
+    //bool flag = location->m_useCustomInteriorTransform && location->m_generatorPosition;
+    bool flag = false;
     if (flag) {
-        Vector2i zone = WorldToZonePos(pos);
-        Vector3 zonePos = ZoneToWorldPos(zone);
-        component.m_generator.transform.localPosition = Vector3::ZERO;
-        Vector3 vector = zonePos + location.m_interiorPosition + location.m_generatorPosition - pos;
-        Vector3 localPosition = (Matrix4x4.Rotate(Quaternion.Inverse(rot)) * Matrix4x4.Translate(vector)).GetColumn(3);
-        localPosition.y = component.m_interiorTransform.localPosition.y;
-        component.m_interiorTransform.localPosition = localPosition;
-        component.m_interiorTransform.localRotation = Quaternion.Inverse(rot);
+        LOG(ERROR) << "Trieed pre-initializing ZoneLocation Dungeon: " << location->m_prefab->m_name;
+        //Vector2i zone = WorldToZonePos(pos);
+        //Vector3 zonePos = ZoneToWorldPos(zone);
+        //component.m_generator.transform.localPosition = Vector3::ZERO;
+        //Vector3 vector = zonePos + location.m_interiorPosition + location.m_generatorPosition - pos;
+        //Vector3 localPosition = (Matrix4x4.Rotate(Quaternion.Inverse(rot)) * Matrix4x4.Translate(vector)).GetColumn(3);
+        //localPosition.y = component.m_interiorTransform.localPosition.y;
+        //component.m_interiorTransform.localPosition = localPosition;
+        //component.m_interiorTransform.localRotation = Quaternion.Inverse(rot);
     }
 
+    // Simple Unity precondition check
+    //  (not needed if I use perfect data)
     //if (component
     //    && component.m_generator
     //    && component.m_useCustomInteriorTransform != component.m_generator.m_useCustomInteriorTransform) {
     //    LOG(ERROR) << component.name << " & " + component.m_generator.name << " don't have matching m_useCustomInteriorTransform()! If one has it the other should as well!";
     //}
 
-    for (auto&& znetView : location.m_netViews) {
-        znetView.gameObject.SetActive(true);
-    }
+    //for (auto&& znetView : location.m_netViews) {
+    //    znetView.gameObject.SetActive(true);
+    //}
 
     VUtils::Random::State state(seed);
 
-    for (auto&& randomSpawn : location.m_randomSpawns) {
-        randomSpawn.Randomize();
-    }
+    //for (auto&& randomSpawn : location.m_randomSpawns) {
+        //randomSpawn.Randomize();
+    //}
 
-    WearNTear.m_randomInitialDamage = location.m_location.m_applyRandomDamage;
-    for (auto&& znetView2 : location.m_netViews) {
-        if (znetView2.gameObject.activeSelf) {
-            Vector3 position = znetView2.gameObject.transform.position;
+    //WearNTear.m_randomInitialDamage = location.m_location.m_applyRandomDamage;
+    //for (auto&& znetView2 : location.m_netViews) {
+    for (auto&& znetView2 : location->m_pieces) {
+        //if (znetView2.gameObject.activeSelf) {
+            Vector3 position = znetView2.m_pos;
             Vector3 position2 = pos + rot * position;
-            Quaternion rotation = znetView2.gameObject.transform.rotation;
+            Quaternion rotation = znetView2.m_rot;
             Quaternion rotation2 = rot * rotation;
 
-            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(znetView2.gameObject, position2, rotation2);
-            gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(m_pgwVersion);
-            DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
-            if (component2) {
-                if (flag) {
-                    component2.m_originalPosition = location.m_generatorPosition;
-                }
-                component2.Generate(mode);
-            }
-        }
+            PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation2);
+
+            //GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(znetView2.gameObject, position2, rotation2);
+            //gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(m_pgwVersion);
+            //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
+            //if (component2) {
+            //    if (flag) {
+            //        component2.m_originalPosition = location.m_generatorPosition;
+            //    }
+            //    component2.Generate(mode);
+            //}
+        //}
     }
-    WearNTear.m_randomInitialDamage = false;
+    //WearNTear.m_randomInitialDamage = false;
     CreateLocationProxy(location, seed, pos, rot);
-    SnapToGround.SnappAll();
+    //SnapToGround.SnappAll();
 }
 
 // could be inlined...
 // private
 void IZoneManager::CreateLocationProxy(const ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
-    auto 
-    auto zdo = PrefabManager()->Instantiate(Hashes::Object::LocationProxy, pos, rot);
+    auto zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
     
-    //int stableHashCode = location->m_prefab->name GetStableHashCode();
-    zdo->Set("location", locationHash);
+    zdo->Set("location", location->m_prefab->m_hash);
     zdo->Set("seed", seed);
 }
 
@@ -907,7 +910,7 @@ void IZoneManager::RegisterLocation(const ZoneLocation* location, const Vector3&
 // private
 bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius) {
     for (auto&& inst : m_locationInstances) {
-        if ((inst.second.m_location->m_prefabName == prefabName
+        if ((inst.second.m_location->m_prefab->m_name == prefabName
             || (!group.empty() && group == inst.second.m_location->m_group))
             && inst.second.m_position.Distance(p) < radius) {
             return true;
@@ -917,30 +920,13 @@ bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std:
 }
 
 // public
-bool IZoneManager::GetLocationIcon(const std::string& name, Vector3& pos) {
-    // iterate map looking
-    for (auto&& pair : m_locationInstances) {
-        auto&& loc = pair.second;
-        if ((loc.m_location->m_iconAlways
-            || (loc.m_location->m_iconPlaced && loc.m_placed))
-            && loc.m_location->m_prefabName == name) {
-            pos = loc.m_position;
-            return true;
-        }
-    }
-
-    pos = Vector3::ZERO;
-    return false;
-}
-
-// public
-void IZoneManager::GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> icons) {
+void IZoneManager::GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons) {
     for (auto&& pair : m_locationInstances) {
         auto&& loc = pair.second;
         if (loc.m_location->m_iconAlways
             || (loc.m_location->m_iconPlaced && loc.m_placed))
         {
-            icons[pair.second.m_position] = loc.m_location->m_prefabName;
+            icons[pair.second.m_position] = loc.m_location->m_prefab->m_name;
         }
     }
 }
@@ -970,21 +956,13 @@ void IZoneManager::GetTerrainDelta(const Vector3& center, float radius, float& d
 }
 
 // public
+// Used by ZoneVegetation placement for blocked check
 bool IZoneManager::IsBlocked(const Vector3& p) {
-    return Physics.Raycast(p + Vector3(0, 2000, 0), Vector3::DOWN, 10000, m_blockRayMask);
+    throw std::runtime_error("not implemented");
+    //return Physics.Raycast(p + Vector3(0, 2000, 0), Vector3::DOWN, 10000, m_blockRayMask);
 }
 
-// public
-float IZoneManager::GetAverageGroundHeight(const Vector3& p, float radius) {
-    Vector3 origin = p;
-    origin.y = 6000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(origin, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
-        return raycastHit.point.y;
-    }
-    return p.y;
-}
-
+// used importantly for snapping and location/vegetation generation
 // public
 float IZoneManager::GetGroundHeight(const Vector3& p) {
     Vector3 origin = p;
@@ -1008,104 +986,88 @@ bool IZoneManager::GetGroundHeight(const Vector3& p, float& height) {
     return false;
 }
 
+// ?? client only ??
 // public
-float IZoneManager::GetSolidHeight(const Vector3& p) {
-    Vector3 origin = p;
-    origin.y += 1000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(origin, Vector3::DOWN, raycastHit, 2000, m_solidRayMask)) {
-        return raycastHit.point.y;
-    }
-    return p.y;
-}
+//float IZoneManager::GetSolidHeight(const Vector3& p) {
+//    Vector3 origin = p;
+//    origin.y += 1000;
+//    RaycastHit raycastHit;
+//    if (Physics.Raycast(origin, Vector3::DOWN, raycastHit, 2000, m_solidRayMask)) {
+//        return raycastHit.point.y;
+//    }
+//    return p.y;
+//}
+//
+//// public
+//bool IZoneManager::GetSolidHeight(const Vector3& p, float& height, int32_t heightMargin = 1000) {
+//    p.y += (float)heightMargin;
+//    RaycastHit raycastHit;
+//    if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 2000, m_solidRayMask)
+//        && !raycastHit.collider.attachedRigidbody) {
+//        height = raycastHit.point.y;
+//        return true;
+//    }
+//    height = 0;
+//    return false;
+//}
+//
+//// public
+//bool IZoneManager::GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore) {
+//    height = p.y - 1000;
+//    p.y += 1000;
+//    int32_t num;
+//    if (radius <= 0) {
+//        num = Physics.RaycastNonAlloc(p, Vector3::DOWN, rayHits, 2000, m_solidRayMask);
+//    }
+//    else {
+//        num = Physics.SphereCastNonAlloc(p, radius, Vector3::DOWN, rayHits, 2000, m_solidRayMask);
+//    }
+//    bool result = false;
+//    for (int32_t i = 0; i < num; i++) {
+//        RaycastHit raycastHit = rayHits[i];
+//        Collider collider = raycastHit.collider;
+//        if (!(collider.attachedRigidbody != null)
+//            && (!(ignore != null) || !Utils.IsParent(collider.transform, ignore))) {
+//            if (raycastHit.point.y > height) {
+//                height = raycastHit.point.y;
+//            }
+//            result = true;
+//        }
+//    }
+//    return result;
+//}
 
-// public
-bool IZoneManager::GetSolidHeight(const Vector3& p, float& height, int32_t heightMargin = 1000) {
-    p.y += (float)heightMargin;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 2000, m_solidRayMask)
-        && !raycastHit.collider.attachedRigidbody) {
-        height = raycastHit.point.y;
-        return true;
-    }
-    height = 0;
-    return false;
-}
-
-// public
-bool IZoneManager::GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore) {
-    height = p.y - 1000;
-    p.y += 1000;
-    int32_t num;
-    if (radius <= 0) {
-        num = Physics.RaycastNonAlloc(p, Vector3::DOWN, rayHits, 2000, m_solidRayMask);
-    }
-    else {
-        num = Physics.SphereCastNonAlloc(p, radius, Vector3::DOWN, rayHits, 2000, m_solidRayMask);
-    }
-    bool result = false;
-    for (int32_t i = 0; i < num; i++) {
-        RaycastHit raycastHit = rayHits[i];
-        Collider collider = raycastHit.collider;
-        if (!(collider.attachedRigidbody != null)
-            && (!(ignore != null) || !Utils.IsParent(collider.transform, ignore))) {
-            if (raycastHit.point.y > height) {
-                height = raycastHit.point.y;
-            }
-            result = true;
-        }
-    }
-    return result;
-}
-
-// public
-bool IZoneManager::GetSolidHeight(const Vector3& p, float& height, const Vector3& normal) {
-    GameObject gameObject;
-    return GetSolidHeight(p, height, normal, gameObject);
-}
-
-// public
-bool IZoneManager::GetSolidHeight(const Vector3& p, float& height, const Vector3& normal, GameObject go) {
-    p.y += 1000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 2000, m_solidRayMask)
-        && !raycastHit.collider.attachedRigidbody) {
-        height = raycastHit.point.y;
-        normal = raycastHit.normal;
-        go = raycastHit.collider.gameObject;
-        return true;
-    }
-    height = 0;
-    normal = Vector3::ZERO;
-    go = null;
-    return false;
-}
-
+// only used by ZoneVegetation 
+//  Only if snapToStaticSolid, 
+//  only for Yggshoot and Magecap
 // public
 bool IZoneManager::GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal) {
-    p.y += 1000;
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 2000, m_staticSolidRayMask)
-        && !raycastHit.collider.attachedRigidbody) {
-        height = raycastHit.point.y;
-        normal = raycastHit.normal;
-        return true;
-    }
-    height = 0;
-    normal = Vector3::ZERO;
-    return false;
+    throw std::runtime_error("not implemented");
+    //p.y += 1000;
+    //RaycastHit raycastHit;
+    //if (Physics.Raycast(p, Vector3::DOWN, raycastHit, 2000, m_staticSolidRayMask)
+    //    && !raycastHit.collider.attachedRigidbody) {
+    //    height = raycastHit.point.y;
+    //    normal = raycastHit.normal;
+    //    return true;
+    //}
+    //height = 0;
+    //normal = Vector3::ZERO;
+    //return false;
 }
 
+// only used by BroodSpawner
+//      by client...
 // public
-bool IZoneManager::FindFloor(const Vector3& p, float& height) {
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p + Vector3::UP * 1, Vector3::DOWN, raycastHit, 1000, m_solidRayMask)) {
-        height = raycastHit.point.y;
-        return true;
-    }
-    height = 0;
-    return false;
-}
+//bool IZoneManager::FindFloor(const Vector3& p, float& height) {
+//    RaycastHit raycastHit;
+//    if (Physics.Raycast(p + Vector3::UP * 1, Vector3::DOWN, raycastHit, 1000, m_solidRayMask)) {
+//        height = raycastHit.point.y;
+//        return true;
+//    }
+//    height = 0;
+//    return false;
+//}
 
 // public
 // if terrain is just heightmap,
@@ -1123,45 +1085,41 @@ Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Heightmap::B
     // global heightmaps can be queried at the world--->zone then 
     // get the relative point inside zone
 
-    auto heightmap = HeightmapManager::FindHeightmap(p);
-    if (heightmap) {
-        HeightmapManager::GetHeight(p, p.y);
-        return heightmap;
-    }
 
 
+    auto heightmap = HeightmapManager()->GetOrCreateHeightmap(p);
 
-    RaycastHit raycastHit;
-    if (Physics.Raycast(p + Vector3::UP * 5000, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
-        p.y = raycastHit.point.y;
-        normal = raycastHit.normal;
-        Heightmap component = raycastHit.collider.GetComponent<Heightmap>();
-        if (component) {
-            biome = component.GetBiome(raycastHit.point);
-            biomeArea = component.GetBiomeArea();
-            //hmap = component;
-            return component;
-        }
-    }
-    else
-        normal = Vector3::UP;
+    p.y = HeightmapManager()->GetHeight(p);
+    biome = heightmap->GetBiome(p);
+    biomeArea = heightmap->GetBiomeArea();
 
-    return nullptr;
-}
+    return heightmap;
 
-// private
-void IZoneManager::UpdateTTL(float dt) {
-    for (auto&& keyValuePair : m_zones) {
-        keyValuePair.second.m_ttl += dt;
-    }
+    //if (heightmap) {
+    //    // normal is difficult to determine
+    //    biome = heightmap->
+    //    p.y = HeightmapManager()->GetHeight(p);
+    //    return heightmap;
+    //}
+    //
+    //return nullptr;
 
-    for (auto&& keyValuePair2 : m_zones) {
-        if (keyValuePair2.second.m_ttl > m_zoneTTL && !NetScene::HaveInstanceInSector(keyValuePair2.first)) {
-            UnityEngine.Object.Destroy(keyValuePair2.second.m_root);
-            m_zones.erase(keyValuePair2.first);
-            break;
-        }
-    }
+    //RaycastHit raycastHit;
+    //if (Physics.Raycast(p + Vector3::UP * 5000, Vector3::DOWN, raycastHit, 10000, m_terrainRayMask)) {
+    //    p.y = raycastHit.point.y;
+    //    normal = raycastHit.normal;
+    //    Heightmap component = raycastHit.collider.GetComponent<Heightmap>();
+    //    if (component) {
+    //        biome = component.GetBiome(raycastHit.point);
+    //        biomeArea = component.GetBiomeArea();
+    //        //hmap = component;
+    //        return component;
+    //    }
+    //}
+    //else
+    //    normal = Vector3::UP;
+    //
+    //return nullptr;
 }
 
 // public
@@ -1172,7 +1130,7 @@ bool IZoneManager::FindClosestLocation(const std::string& name, const Vector3& p
     for (auto&& pair : m_locationInstances) {
         auto&& loc = pair.second;
         float num2 = loc.m_position.Distance(point);
-        if (loc.m_location->m_prefabName == name && num2 < num) {
+        if (loc.m_location->m_prefab->m_name == name && num2 < num) {
             num = num2;
             closest = loc;
             result = true;
@@ -1186,8 +1144,8 @@ bool IZoneManager::FindClosestLocation(const std::string& name, const Vector3& p
 // this is world position to zone position
 // formerly GetZone
 Vector2i IZoneManager::WorldToZonePos(const Vector3& point) {
-    int32_t x = floor((point.x + m_zoneSize / 2) / m_zoneSize);
-    int32_t y = floor((point.z + ZONE_SIZE / 2) / m_zoneSize);
+    int32_t x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
+    int32_t y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
     return Vector2i(x, y);
 }
 
@@ -1195,7 +1153,7 @@ Vector2i IZoneManager::WorldToZonePos(const Vector3& point) {
 // zone position to ~world position
 // GetZonePos
 Vector3 IZoneManager::ZoneToWorldPos(const Vector2i& id) {
-    return Vector3(id.x * m_zoneSize, 0, id.y * m_zoneSize);
+    return Vector3(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
 }
 
 // inlined because 1 use only
@@ -1210,11 +1168,6 @@ bool IZoneManager::IsZoneGenerated(const Vector2i& zoneID) {
 }
 
 // public
-bool IZoneManager::SkipSaving() {
-    return m_error || m_didZoneTest;
-}
-
-// public
 //float TimeSinceStart() {
 //    return m_lastFixedTime - m_startTime;
 //}
@@ -1222,7 +1175,7 @@ bool IZoneManager::SkipSaving() {
 // public
 void IZoneManager::ResetGlobalKeys() {
     m_globalKeys.clear();
-    SendGlobalKeys(NetRouteManager::EVERYBODY);
+    SendGlobalKeys(IRouteManager::EVERYBODY);
 }
 
 // client terminal

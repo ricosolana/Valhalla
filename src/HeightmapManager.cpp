@@ -1,4 +1,5 @@
 #include "HeightmapManager.h"
+#include "ZoneManager.h"
 
 //static std::vector<float> 
 // only ever used locally
@@ -29,7 +30,7 @@ void IHeightmapManager::ForceQueuedRegeneration() {
 
 // public static 
 float IHeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
-    auto&& heightmap = FindHeightmap(worldPos);
+    auto&& heightmap = GetHeightmap(worldPos);
     if (heightmap) {
         return heightmap->GetOceanDepth(worldPos);
     }
@@ -38,13 +39,13 @@ float IHeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
 
 // public static
 bool IHeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
-    auto heightmap = FindHeightmap(worldPos);
+    auto heightmap = GetHeightmap(worldPos);
     return heightmap && heightmap->AtMaxWorldLevelDepth(worldPos);
 }
 
 // public static
 bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
-    auto heightmap = FindHeightmap(worldPos);
+    auto heightmap = GetHeightmap(worldPos);
     if (heightmap && heightmap->GetWorldHeight(worldPos, height)) {
         return true;
     }
@@ -52,9 +53,20 @@ bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
     return false;
 }
 
+float IHeightmapManager::GetHeight(const Vector3& worldPos) {
+    auto heightmap = GetOrCreateHeightmap(worldPos);
+
+    float height = 0;
+    if (heightmap->GetWorldHeight(worldPos, height)) {
+        return height;
+    }
+
+    throw std::runtime_error("something went wrong with Heightmap");
+}
+
 // public static
 bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, float height) {
-    std::vector<Heightmap*> list = FindHeightmaps(worldPos, radius);
+    std::vector<Heightmap*> list = GetHeightmaps(worldPos, radius);
 
     float num = 0;
     int32_t num2 = 0;
@@ -81,19 +93,58 @@ robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManag
     return m_heightmaps;
 }
 
+Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector3& point) {
+    //for (auto&& pair : m_heightmaps) {
+    //    auto&& heightmap = pair.second;
+    //    if (heightmap->IsPointInside(point, 0)) {
+    //        return heightmap.get();
+    //    }
+    //}
+
+    auto zone = IZoneManager::WorldToZonePos(point);
+    auto&& pair = m_heightmaps.insert({ zone, std::make_unique<Heightmap>() });
+    if (pair.second) // if newly inserted
+        pair.first->second->Regenerate();
+
+    return pair.first->second.get();
+    
+    //auto&& find = m_heightmaps.find(zone);
+    //if (find != m_heightmaps.end()) {
+    //    return find->second.get();
+    //}
+    //
+    //return m_heightmaps.insert()
+    //
+    //auto h(new Heightmap(zone));
+    //m_heightmaps[zone] = std::unique_ptr<Heightmap>(h);
+    //return h;
+    //
+    //auto heightmap = GetHeightmap(point);
+    //if (heightmap)
+    //    return heightmap;
+    //
+    //return CreateHeightmap(IZoneManager::WorldToZonePos(point));
+}
+
 // public static
-Heightmap* IHeightmapManager::FindHeightmap(const Vector3& point) {
-    for (auto&& pair : m_heightmaps) {
-        auto&& heightmap = pair.second;
-        if (heightmap->IsPointInside(point, 0)) {
-            return heightmap.get();
-        }
-    }
+Heightmap* IHeightmapManager::GetHeightmap(const Vector3& point) {
+    //for (auto&& pair : m_heightmaps) {
+    //    auto&& heightmap = pair.second;
+    //    if (heightmap->IsPointInside(point, 0)) {
+    //        return heightmap.get();
+    //    }
+    //}
+
+    auto zone = IZoneManager::WorldToZonePos(point);
+    auto&& find = m_heightmaps.find(zone);
+    if (find != m_heightmaps.end())
+        return find->second.get();
+
     return nullptr;
 }
 
 // public static
-std::vector<Heightmap*> IHeightmapManager::FindHeightmaps(const Vector3& point, float radius) {
+std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, float radius) {
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
@@ -106,7 +157,7 @@ std::vector<Heightmap*> IHeightmapManager::FindHeightmaps(const Vector3& point, 
 
 // public static
 Heightmap::Biome IHeightmapManager::FindBiome(const Vector3& point) {
-    auto heightmap = FindHeightmap(point);
+    auto heightmap = GetHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
     }
@@ -115,7 +166,7 @@ Heightmap::Biome IHeightmapManager::FindBiome(const Vector3& point) {
 
 // public static
 bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
-    auto heightmaps = FindHeightmaps(point, radius);
+    auto heightmaps = GetHeightmaps(point, radius);
     for (auto&& hmap : heightmaps) {
         if (hmap->IsRegenerateQueued())
             return true;
@@ -123,10 +174,10 @@ bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
     return false;
 }
 
-Heightmap* IHeightmapManager::CreateHeightmap(const Vector2i& zone) {
-    assert(!m_heightmaps.contains(zone) && "fix your code dummy");
-
-    auto h(new Heightmap(zone));
-    m_heightmaps[zone] = std::unique_ptr<Heightmap>(h);
-    return h;
-}
+//Heightmap* IHeightmapManager::CreateHeightmap(const Vector2i& zone) {
+//    assert(!m_heightmaps.contains(zone) && "fix your code dummy");
+//
+//    auto h(new Heightmap(zone));
+//    m_heightmaps[zone] = std::unique_ptr<Heightmap>(h);
+//    return h;
+//}

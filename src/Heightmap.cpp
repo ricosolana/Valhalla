@@ -1,6 +1,6 @@
 #include "HeightMap.h"
 #include "HeightmapBuilder.h"
-#include "ZoneSystem.h"
+#include "ZoneManager.h"
 #include "HeightmapManager.h"
 
 // private
@@ -24,6 +24,32 @@
 //    this->Initialize();
 //    Regenerate();
 //}
+
+// private
+// This is essentially a one-off function once constructed
+// so its use is kinda redundant continually in Generate()
+//void Heightmap::Initialize() {
+Heightmap::Heightmap(const Vector2i& zoneID) : m_zone(zoneID) {
+    int32_t num = WIDTH + 1;
+    int32_t num2 = num * num;
+    //if (this->m_heights.size() != num2) {
+        //this->m_heights.clear();
+        //for (int32_t i = 0; i < num2; i++) {
+            //this->m_heights.push_back(0);
+        //}
+
+    // Zero value-initialize
+    // https://stackoverflow.com/a/18295840
+    //std::fill(m_heights.begin(), m_heights.end(), 0);
+    m_heights.resize((Heightmap::WIDTH + 1) * (Heightmap::WIDTH + 1));
+
+    m_paintMask.resize(WIDTH * WIDTH);
+
+    //this->m_paintMask = new Texture2D(WIDTH, WIDTH);
+    //this->m_paintMask.wrapMode = TextureWrapMode.Clamp;
+    //this->m_materialInstance = new Material(this->m_material);
+    //this->m_materialInstance.SetTexture("_ClearedMaskTex", this->m_paintMask);
+}
 
 void Heightmap::CancelQueuedRegeneration() {
     if (IsRegenerateQueued()) {
@@ -52,7 +78,7 @@ void Heightmap::Regenerate() {
     CancelQueuedRegeneration();
 
     Generate();
-    RebuildCollisionMesh();
+    //RebuildCollisionMesh();
     UpdateCornerDepths();
 }
 
@@ -63,7 +89,7 @@ void Heightmap::UpdateCornerDepths() {
     m_oceanDepth[2] = GetHeight(WIDTH, 0);
     m_oceanDepth[3] = GetHeight(0, 0);
 
-    float num = ZoneSystem::WATER_LEVEL;
+    float num = IZoneManager::WATER_LEVEL;
 
     m_oceanDepth[0] = std::max(0.f, num - m_oceanDepth[0]);
     m_oceanDepth[1] = std::max(0.f, num - m_oceanDepth[1]);
@@ -92,31 +118,7 @@ float Heightmap::GetOceanDepth(const Vector3& worldPos) {
     return VUtils::Math::Lerp(a, b, t2);
 }
 
-// private
-// This is essentially a one-off function once constructed
-// so its use is kinda redundant continually in Generate()
-//void Heightmap::Initialize() {
-Heightmap::Heightmap() {
-    int32_t num = WIDTH + 1;
-    int32_t num2 = num * num;
-    //if (this->m_heights.size() != num2) {
-        //this->m_heights.clear();
-        //for (int32_t i = 0; i < num2; i++) {
-            //this->m_heights.push_back(0);
-        //}
 
-    // Zero value-initialize
-    // https://stackoverflow.com/a/18295840
-    //std::fill(m_heights.begin(), m_heights.end(), 0);
-    m_heights.resize((Heightmap::WIDTH + 1) * (Heightmap::WIDTH + 1));
-
-    m_paintMask.resize(WIDTH * WIDTH);
-
-    //this->m_paintMask = new Texture2D(WIDTH, WIDTH);
-    //this->m_paintMask.wrapMode = TextureWrapMode.Clamp;
-    //this->m_materialInstance = new Material(this->m_material);
-    //this->m_materialInstance.SetTexture("_ClearedMaskTex", this->m_paintMask);
-}
 
 // private
 void Heightmap::Generate() {
@@ -344,7 +346,7 @@ Vector3 Heightmap::CalcVertex(int32_t x, int32_t y) {
 
 // private
 void Heightmap::RebuildCollisionMesh() {
-    assert(false);
+    //assert(false);
     /*
     if (this->m_collisionMesh == nullptr) {
         this->m_collisionMesh = new Mesh();
@@ -712,7 +714,7 @@ bool Heightmap::IsCultivated(const Vector3& worldPos) {
 
 // public
 void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
-    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = floor(vector.x + 0.5f) + WIDTH / 2;
     y = floor(vector.z + 0.5f) + WIDTH / 2;
 }
@@ -720,7 +722,7 @@ void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
 // private
 void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y) {
     float num = WIDTH;
-    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = vector.x / num + 0.5f;
     y = vector.z / num + 0.5f;
 }
@@ -732,7 +734,7 @@ void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square,
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
-    Vector3 vector = worldPos - ZoneSystem::ZoneToWorldPos(this->m_zone);
+    Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     float num3 = radius;
     int32_t num4 = ceil(num3);
     int32_t num5 = WIDTH + 1;
@@ -789,10 +791,10 @@ void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
 
 // public
 bool Heightmap::IsPointInside(const Vector3& point, float radius) {
-    throw std::runtime_error("not implemented");
+    //throw std::runtime_error("not implemented");
 
     float num = (float)Heightmap::WIDTH * 0.5f;
-    Vector3 position = ZoneSystem::ZoneToWorldPos(this->m_zone);
+    Vector3 position = IZoneManager::ZoneToWorldPos(this->m_zone);
     return point.x + radius >= position.x - num 
         && point.x - radius <= position.x + num 
         && point.z + radius >= position.z - num 
@@ -811,6 +813,6 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler() {
 
 // public
 Vector3 Heightmap::GetWorldPosition() {
-    return ZoneSystem::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0, WIDTH/2.f);
+    return IZoneManager::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0, WIDTH/2.f);
 }
 
