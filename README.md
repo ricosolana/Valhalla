@@ -1,15 +1,3 @@
-I severely overestimated the difficulty of this project, and might be able to have the server within a functioning state quite shortly. I just have to fix Git branches and stuff for the final product, and tidy-up any loose ends.
-
-The only thing I might have difficulty doing is getting the Location instance prefabs from the client so the server can correctly send LocationProxy and stuff. Additionally, the HeightMap might be fully implemented by now. I really done know why the zone generator used raycasts to determine height placement with a heightmap...
-
-ZNetScene and ZNetView are pretty much client only
-    an exception is during zone generation where server sends proxy locations to clients
-    as ghost objects (only exist primarily as zdos)
-    
-ZDOMan m_width seems to be much larger than the world size
-    according to a redditor, Valheim is 20000m in diameter. This equates to 20000m / 64 = 313 zones in diameter
-    m_width however, is 512. This value has probably gone ignored by the devs prior to them figuring out the perfect world size. This could be additionally proven by the ZDO-zone dictionary ('object by outside sector')
-
 # Valhalla 
 
 ## Server
@@ -24,6 +12,27 @@ The server is currently very barebones and under heavy development. It is only c
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 1/25/2023 + TODO
+Latest progress:
+ - World loading fully works (a world.db file can be read and interpreted; world file emitting is untesting).
+ - World generation is fully implemented but untested (some undeniable caveats exist due to UnityEngine-specific features).
+ - Prefabs and structure generation will be a complete hit-or-miss (the *.pkg files in ./data).
+ - Lua modding has been disabled for the time being. 
+ - I was previously using asio for this project (for little experimental additions, such as RCON cli), but was having some Winsock errors (thanks Windows), so I decided to remove anything remotely out of scope to keep the project minimal with hopes of compiling. I have tested nothing extensively up to this point because I have been simply trying this whole month to get it to compile
+ - RPC's are now lambda only!
+ 
+My efforts in the coming weeks will be primarily to test ZDO dispersement along with ZoneLocation prefabs and ZoneVegetation. 
+
+I was looking into some Valheim mods mainly intended for network performance, and some stood out, with features such as:
+ - ZDO compression
+ - ZDO min/max send rates
+ - Using SendZDOsToPeers in ZDOMan (instead of the ...Peers2 one)
+ - Multithreaded steam message sending?
+
+I can easily implement the above with a few tweaks, except for the compression. There is no behaviour in the vanilla Valheim client to support receiving compressed packages, although the devs could have easily implemented this, as several mod authors have already done. They might/not do this in the future, so we will see eventually.
+
+Anyways thats the latest for now.
+ 
 ### 1/5/2023 + TODO
 Some alternate thoughts on clients-side simulations:
  - Everything is Unity based, so recreating physics engine will be extremely challenging and time-consuming. 
