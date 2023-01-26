@@ -7,6 +7,7 @@
 #include "VUtilsString.h"
 #include "ZDOManager.h"
 #include "ZoneManager.h"
+#include "NetManager.h"
 
 auto WORLD_MANAGER(std::make_unique<IWorldManager>());
 IWorldManager* WorldManager() {
@@ -14,8 +15,6 @@ IWorldManager* WorldManager() {
 }
 
 
-
-std::unique_ptr<World> m_world;
 
 World* IWorldManager::GetWorld() {
 	return m_world.get();
@@ -89,16 +88,13 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 				LOG(ERROR) << "Incompatible data version " << worldVersion;
 			}
 			else {
-				double netTime = 0;
 				if (worldVersion >= 4)
-					netTime = pkg.Read<double>();
+					Valhalla()->m_netTime = pkg.Read<double>();
 
 				ZDOManager()->Load(pkg, worldVersion);
 
 				if (worldVersion >= 12)
 					ZoneManager()->Load(pkg, worldVersion);
-
-				assert(false);
 
 				if (worldVersion >= 15) {
 					// inlined RandEventManager::Load
@@ -256,5 +252,7 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 }
 
 void IWorldManager::Init() {
+	LOG(INFO) << "Initializing WorldManager";
+
 	m_world = GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
 }

@@ -18,11 +18,7 @@ const Prefab* IPrefabManager::GetPrefab(HASH_t hash) {
 }
 
 void IPrefabManager::Init() {
-    // load valheim asset files
-
-    // the data below is pretty much all thats needed
-
-    // ZoneLocations will be completely different however
+    LOG(INFO) << "Initializing PrefabManager";
 
     auto opt = VUtils::Resource::ReadFileBytes("prefabs.pkg");
 
@@ -32,6 +28,7 @@ void IPrefabManager::Init() {
 
     NetPackage pkg(opt.value());
     auto count = pkg.Read<int32_t>();
+    LOG(INFO) << "Loading " <<  count << " prefabs";
     while (count--) {
         auto prefab = std::make_unique<Prefab>();
         prefab->m_name = pkg.Read<std::string>();

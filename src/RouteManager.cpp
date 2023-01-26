@@ -20,22 +20,24 @@ void IRouteManager::RouteRPC(const Data& data) {
 	data.Serialize(pkg);
 
 	if (data.m_targetPeerID == EVERYBODY) {
-		for (auto&& peer : NetManager::GetPeers()) {
+		auto&& peers = NetManager()->GetPeers();
+		for (auto&& pair : peers) {
+			auto&& peer = pair.second;
 			// send to everyone (except sender)
 			if (data.m_senderPeerID != peer->m_uuid) {
-                peer->m_rpc->Invoke(Hashes::Rpc::RoutedRPC, pkg);
+                peer->Invoke(Hashes::Rpc::RoutedRPC, pkg);
 			}
 		}
 	}
 	else {
-		auto peer = NetManager::GetPeer(data.m_targetPeerID);
+		auto peer = NetManager()->GetPeer(data.m_targetPeerID);
 		if (peer) {
-			peer->m_rpc->Invoke(Hashes::Rpc::RoutedRPC, pkg);
+			peer->Invoke(Hashes::Rpc::RoutedRPC, pkg);
 		}
 	}
 }
 
-void IRouteManager::HandleRoutedRPC(NetPeer* sender, Data data) {
+void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	// If invocation was for RoutedRPC:
 	if (!data.m_targetSync) {
 		auto&& find = m_methods.find(data.m_methodHash);
@@ -74,19 +76,11 @@ void IRouteManager::Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t ha
 	}
 }
 
-void IRouteManager::OnNewPeer(NetPeer *peer) {
-	//auto lam = [](int*) {};
-	//using T = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(lam)>::args_type>;
-
-	peer->m_rpc->Register(Hashes::Rpc::RoutedRPC, [this](NetRpc* rpc, NetPackage pkg) {
+void IRouteManager::OnNewPeer(Peer *peer) {
+	peer->Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, NetPackage pkg) {
 		Data data(pkg);
 
-		// todo
-		// the pkg should have the sender as the peer id
-		// check to see the id matches
-
-		// do not trust the client to provide their correct id
-		auto&& peer = NetManager::GetPeer(rpc);
+		// TODO constraint peer sender
 		data.m_senderPeerID = peer->m_uuid;
 
 		// Server is the intended receiver (or EVERYONE)

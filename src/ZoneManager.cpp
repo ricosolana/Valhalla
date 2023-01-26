@@ -2,7 +2,7 @@
 
 #include "NetManager.h"
 #include "ZoneManager.h"
-#include "WorldGenerator.h"
+#include "GeoManager.h"
 #include "HeightmapBuilder.h"
 #include "PrefabManager.h"
 #include "RouteManager.h"
@@ -61,6 +61,7 @@ void IZoneManager::Init() {
         NetPackage pkg(opt.value());
 
         auto count = pkg.Read<int32_t>();
+        LOG(INFO) << "Loading " << count << " ZoneLocations";
         while (count--) {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<ZoneLocation>();
@@ -122,6 +123,7 @@ void IZoneManager::Init() {
         NetPackage pkg(opt.value());
 
         auto count = pkg.Read<int32_t>();
+        LOG(INFO) << "Loading " << count << " ZoneVegetations";
         while (count--) {
             auto veg = std::make_unique<ZoneVegetation>();
 
@@ -167,7 +169,7 @@ void IZoneManager::Init() {
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
     LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::LocationProxy);
 
-    RouteManager()->Register("SetGlobalKey", [this](NetPeer* peer, std::string name) {
+    RouteManager()->Register("SetGlobalKey", [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.contains(name)) {
             return;
@@ -176,7 +178,7 @@ void IZoneManager::Init() {
         SendGlobalKeys(IRouteManager::EVERYBODY);
     });
 
-    RouteManager()->Register("RemoveGlobalKey", [this](NetPeer* peer, std::string name) {
+    RouteManager()->Register("RemoveGlobalKey", [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (!m_globalKeys.contains(name)) {
             return;
@@ -289,9 +291,10 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
         //UpdateTTL(.1f);
-
-        for (auto&& znetPeer : NetManager::GetPeers()) {
-            CreateGhostZones(znetPeer->m_pos);
+        auto&& peers = NetManager()->GetPeers();
+        for (auto&& pair : peers) {
+            auto&& peer = pair.second;
+            CreateGhostZones(peer->m_pos);
         }
     });
 }
@@ -346,7 +349,7 @@ Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const
 void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::vector<ClearArea>& clearAreas) {
     const Vector3 zoneCenterPos = ZoneToWorldPos(zoneID);
 
-    int32_t seed = WorldGenerator::GetSeed();
+    int32_t seed = GeoManager()->GetSeed();
     float num = ZONE_SIZE / 2.f;
     int32_t num2 = 1;
     for (auto&& zoneVegetation : m_vegetation) {
@@ -437,7 +440,7 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
                                         }
                                     }
                                     if (zoneVegetation->m_inForest) {
-                                        float forestFactor = WorldGenerator::GetForestFactor(vector2);
+                                        float forestFactor = GeoManager()->GetForestFactor(vector2);
                                         if (forestFactor < zoneVegetation->m_forestTresholdMin || forestFactor > zoneVegetation->m_forestTresholdMax) {
                                             continue;
                                             //goto IL_501;
@@ -579,7 +582,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     unsigned int errSimilarLocation = 0;
     unsigned int errTerrainDelta = 0;
 
-    VUtils::Random::State state(WorldGenerator::GetSeed() + VUtils::String::GetStableHashCode(location->m_prefab->m_name));
+    VUtils::Random::State state(GeoManager()->GetSeed() + VUtils::String::GetStableHashCode(location->m_prefab->m_name));
     const float locationRadius = std::max(location->m_exteriorRadius, location->m_interiorRadius);
 
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
@@ -594,7 +597,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
             errLocations++;
         else {            
             Vector3 zonePos = ZoneToWorldPos(randomZone);
-            BiomeArea biomeArea = WorldGenerator::GetBiomeArea(zonePos);
+            BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
             if (std::to_underlying(location->m_biomeArea) & std::to_underlying(biomeArea))
                 errBiomeArea++;
@@ -613,18 +616,18 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                     if (magnitude > 0 && (magnitude < location->m_minDistance || magnitude > location->m_maxDistance))
                         errCenterDistances++;
                     else {
-                        Biome biome = WorldGenerator::GetBiome(randomPointInZone);
+                        Biome biome = GeoManager()->GetBiome(randomPointInZone);
 
                         if (!(std::to_underlying(biome) & std::to_underlying(location->m_biome)))
                             errNoneBiomes++;
                         else {
-                            randomPointInZone.y = WorldGenerator::GetHeight(randomPointInZone.x, randomPointInZone.z);
+                            randomPointInZone.y = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z);
                             float waterDiff = randomPointInZone.y - WATER_LEVEL;
                             if (waterDiff < location->m_minAltitude || waterDiff > location->m_maxAltitude)
                                 errAltitude++;
                             else {
                                 if (location->m_inForest) {
-                                    float forestFactor = WorldGenerator::GetForestFactor(randomPointInZone);
+                                    float forestFactor = GeoManager()->GetForestFactor(randomPointInZone);
                                     if (forestFactor < location->m_forestTresholdMin || forestFactor > location->m_forestTresholdMax) {
                                         errForestFactor++;
                                         continue;
@@ -633,7 +636,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
                                 float delta = 0;
                                 Vector3 vector;
-                                WorldGenerator::GetTerrainDelta(state, randomPointInZone, location->m_exteriorRadius, delta, vector);
+                                GeoManager()->GetTerrainDelta(state, randomPointInZone, location->m_exteriorRadius, delta, vector);
                                 if (delta > location->m_maxTerrainDelta
                                     || delta < location->m_minTerrainDelta)
                                     errTerrainDelta++;
@@ -767,7 +770,7 @@ void IZoneManager::PlaceLocations(const Vector2i &zoneID,
         //    rot = Quaternion::Euler(0, (float)VUtils::Random::State().Range(0, 16) * 22.5f, 0);
         //}
 
-        int32_t seed = WorldGenerator::GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
+        int32_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         SpawnLocation(locationInstance.m_location, seed, position, rot);
         locationInstance.m_placed = true;
         m_locationInstances[zoneID] = locationInstance;

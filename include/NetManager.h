@@ -1,31 +1,20 @@
 #pragma once
 
-#include "NetPeer.h"
+#include "Peer.h"
 #include "NetAcceptor.h"
 #include "Vector.h"
-
-enum class ConnectionStatus : int32_t {
-    None,
-    Connecting,
-    Connected,
-    ErrorVersion,
-    ErrorDisconnected,
-    ErrorConnectFailed,
-    ErrorPassword,
-    ErrorAlreadyConnected,
-    ErrorBanned,
-    ErrorFull,
-    MAX // 10
-};
+#include "WorldManager.h"
+#include "NetRpc.h"
+#include "HashUtils.h"
 
 class INetManager {
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
-    std::vector<std::unique_ptr<NetRpc>> m_joining; // used to temporarily connecting peers (until PeerInfo)
-    std::vector<std::unique_ptr<NetPeer>> m_peers;
+    std::list<std::unique_ptr<NetRpc>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
+    robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>> m_peers;
 
-    World* m_world;
+    //World* m_world;
 
     bool m_hasPassword = false;
     std::string m_salt;
@@ -34,17 +23,13 @@ private:
 private:
     void InitPassword();
 
-    void RemotePrint(NetRpc* rpc, const std::string& s);
-
-    void Kick(NetPeer* peer);
-
     void Kick(const std::string& user);
 
     void Ban(const std::string& user);
 
     void Unban(const std::string& user);
 
-    void SendDisconnect(NetPeer* peer);
+    void SendDisconnect(Peer* peer);
 
     void SendDisconnect();
 
@@ -57,19 +42,14 @@ private:
     void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg);
 
 public:
-    void RemotePrint(NetRpc* rpc, const std::string& text);
-
     void Init();
     void Update();
     void Close();
 
-    NetPeer* GetPeer(NetRpc* rpc);
-    NetPeer* GetPeer(const std::string& name);
-    NetPeer* GetPeer(OWNER_t uuid);
+    Peer* GetPeer(const std::string& name);
+    Peer* GetPeer(OWNER_t uuid);
 
-    const std::vector<std::unique_ptr<NetPeer>>& GetPeers();
-
-    //static constexpr Vector3 REFERENCE_POS(1000000, 0, 1000000);
+    const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 };
 
 INetManager* NetManager();

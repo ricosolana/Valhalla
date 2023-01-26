@@ -3,7 +3,6 @@
 #include <robin_hood.h>
 
 #include "VUtils.h"
-#include "WorldGenerator.h"
 #include "Prefab.h"
 #include "ZDO.h"
 
@@ -12,11 +11,8 @@ class IPrefabManager {
 private:
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 
-private:
-	void Init();
-
 public:
-	// std::optional<std::pair<const Prefab*, ZDO*>>
+	void Init();
 
 	const Prefab* GetPrefab(HASH_t hash);
 

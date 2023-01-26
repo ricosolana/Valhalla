@@ -147,8 +147,6 @@ private:
 	robin_hood::unordered_set<std::string> m_globalKeys;
 
 private:
-	void Init();
-
 	void SendGlobalKeys(OWNER_t peer);
 	void SendLocationIcons(OWNER_t peer);
 	void OnNewPeer(OWNER_t peerID);
@@ -183,6 +181,7 @@ private:
 	bool IsZoneGenerated(const Vector2i& zoneID);
 
 public:
+	void Init();
 
 	void Save(NetPackage& pkg);
 	void Load(NetPackage& reader, int32_t version);

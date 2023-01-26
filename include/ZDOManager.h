@@ -4,11 +4,8 @@
 
 #include "Vector.h"
 #include "ZDO.h"
-#include "ZDOPeer.h"
+#include "Peer.h"
 #include "PrefabManager.h"
-
-// Forward declaration
-class NetPeer;
 
 class IZDOManager {
 	friend class IPrefabManager;
@@ -33,22 +30,20 @@ private:
 	std::vector<NetID> m_destroySendList;
 
 private:
-	void Init();
-	void OnNewPeer(NetPeer* peer);
-	void OnPeerQuit(NetPeer* peer);
+	void OnNewPeer(Peer* peer);
+	void OnPeerQuit(Peer* peer);
 
-	void ReleaseNearbyZDOS(const Vector3& refPosition, NetPeer* peer);
+	void ReleaseNearbyZDOS(const Vector3& refPosition, Peer* peer);
 	void HandleDestroyedZDO(const NetID& uid);
-	void SendAllZDOs(ZDOPeer* peer);
-	bool SendZDOs(ZDOPeer* peer, bool flush);
-	void RPC_ZDOData(NetRpc* rpc, NetPackage pkg);
-	void CreateSyncList(ZDOPeer* peer, std::vector<ZDO*>& toSync);
-	void AddForceSendZDOs(ZDOPeer* peer, std::vector<ZDO*>& syncList);
+	void SendAllZDOs(Peer* peer);
+	bool SendZDOs(Peer* peer, bool flush);
+	void CreateSyncList(Peer* peer, std::vector<ZDO*>& toSync);
+	void AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList);
 
 	ZDO* CreateZDO(const Vector3& position);
 	ZDO* CreateZDO(const NetID& uid, const Vector3& position);
 
-	void ServerSortSendZDOS(std::vector<ZDO*>& objects, ZDOPeer* peer);
+	void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
 
 	static int SectorToIndex(const Vector2i& s);
 	void FindObjects(const Vector2i& sector, std::vector<ZDO*>& objects);
@@ -57,6 +52,8 @@ private:
 	bool IsPeerConnected(OWNER_t uid);
 
 public:
+	void Init();
+
 	// Used when saving the world from disk
 	void Save(NetPackage& pkg);
 

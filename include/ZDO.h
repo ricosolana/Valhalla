@@ -20,7 +20,7 @@ concept TrivialSyncType =
     || std::same_as<T, std::string>
     || std::same_as<T, BYTES_t>;
 
-class ZDOPeer;
+class Peer;
 class IZDOManager;
 class IPrefabManager;
 //class Prefab;
@@ -30,7 +30,7 @@ class IPrefabManager;
 // 112 bytes (1 map, majorly reduced members; affecting functionality)
 // Currently 144 bytes
 class ZDO {
-    friend class ZDOPeer;
+    friend class Peer;
     friend class IZDOManager;
     friend class IPrefabManager;
 

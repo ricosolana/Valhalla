@@ -7,6 +7,8 @@
 #include "VUtilsResource.h"
 #include "ServerSettings.h"
 #include "NetManager.h"
+#include "ZoneManager.h"
+#include "ZDOManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -41,6 +43,15 @@ void IValhalla::LoadFiles() {
             auto&& banned = opt.value();
             for (auto &&s: banned)
                 m_banned.insert(std::move(s));
+        }
+    }
+
+    {
+        auto opt = VUtils::Resource::ReadFileLines("admin.txt");
+        if (opt) {
+            auto&& admin = opt.value();
+            for (auto&& s : admin)
+                m_admin.insert(std::move(s));
         }
     }
 
@@ -119,6 +130,8 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {
+    LOG(INFO) << "Starting Valhalla";
+
     assert(!m_running);
 
     // Does not work properly in some circumstances
@@ -133,6 +146,10 @@ void IValhalla::Start() {
     
     this->LoadFiles();
 
+    PrefabManager()->Init();
+    ZDOManager()->Init();
+    ZoneManager()->Init();
+    WorldManager()->Init();
     NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";

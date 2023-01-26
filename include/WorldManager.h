@@ -9,9 +9,14 @@ public:
     int32_t m_seed;
     OWNER_t m_uid;
     int32_t m_worldGenVersion;
+
+    //double m_netTime;
 };
 
 class IWorldManager {
+private:
+    std::unique_ptr<World> m_world;
+
 public:
     World* GetWorld();
 

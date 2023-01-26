@@ -88,8 +88,8 @@ add_executable(${PROJECT_NAME}
     "src/NetID.cpp"
     "src/NetManager.cpp"    
     "src/NetPackage.cpp"
-    "src/NetPeer.cpp"
-    "src/NetRpc.cpp"
+    "src/Peer.cpp"
+    
     "src/NetSteamSocket.cpp"
     "src/PrefabManager.cpp" 
     "src/Quaternion.cpp"
@@ -103,13 +103,13 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsRandom.cpp"
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
-    "src/WorldGenerator.cpp"
+    "src/GeoManager.cpp"
     "src/WorldManager.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
-    "src/ZDOPeer.cpp"
+    
     "src/ZoneManager.cpp"    
-)
+ "src/NetRpc.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

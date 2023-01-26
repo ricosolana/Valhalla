@@ -1,6 +1,6 @@
 #pragma once
 
-#include "NetPeer.h"
+#include "Peer.h"
 #include "Method.h"
 #include "ValhallaServer.h"
 
@@ -39,15 +39,15 @@ public:
 	static constexpr OWNER_t EVERYBODY = 0;
 
 private:	
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetPeer*>>> m_methods;
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 private:
 	// Called from NetManager
-	void OnNewPeer(NetPeer *peer);
+	void OnNewPeer(Peer *peer);
 
 	// Internal use only by NetRouteManager
 	void Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg);
-	void HandleRoutedRPC(NetPeer* peer, Data data);
+	void HandleRoutedRPC(Peer* peer, Data data);
 
 	void RouteRPC(const Data& data);
 
@@ -64,7 +64,7 @@ public:
 	template<typename F>
 	void Register(HASH_t hash, F func) {
 		assert(!m_methods.contains(hash));
-		m_methods[hash] = std::unique_ptr<IMethod<NetPeer*>>(new MethodImpl(func));
+		m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func));
 	}
 
 	template<typename F>

@@ -44,32 +44,16 @@ void INetManager::InitPassword() {
 
 
 
-
-void RemotePrint(NetRpc* rpc, const std::string& s) {
-    rpc->Invoke(Hashes::Rpc::RemotePrint, s);
-}
-
-//void Disconnect(NetPeer *peer) {
-//    //peer->m_rpc->m_socket->Close();
-//    peer->Disconnect();
-//}
-
-
-
-
-void INetManager::Kick(NetPeer *peer) {
-    if (!peer)
-        return;
-
-    peer->Kick();
-}
-
 void INetManager::Kick(const std::string& user) {
-    Kick(GetPeer(user));
+    auto&& peer = GetPeer(user);
+    if (peer)
+        peer->Kick();
 }
 
 void INetManager::Ban(const std::string& user) {
-    LOG(INFO) << "Banning " << user;
+    auto&& peer = GetPeer(user);
+    if (!peer)
+        return;
 
     Valhalla()->m_banned.insert(user);
 }
@@ -80,16 +64,16 @@ void INetManager::Unban(const std::string& user) {
     Valhalla()->m_banned.erase(user);
 }
 
-void INetManager::SendDisconnect(NetPeer *peer) {
-    LOG(INFO) << "Disconnect sent to " << peer->m_rpc->m_socket->GetHostName();
-    peer->m_rpc->Invoke("Disconnect");
+void INetManager::SendDisconnect(Peer *peer) {
+    LOG(INFO) << "Disconnect sent to " << peer->m_socket->GetHostName();
+    peer->Invoke("Disconnect");
 }
 
 void INetManager::SendDisconnect() {
     LOG(INFO) << "Sending disconnect msg";
 
-    for (auto&& peer : m_peers) {
-        SendDisconnect(peer.get());
+    for (auto&& pair : m_peers) {
+        SendDisconnect(pair.second.get());
     }
 }
 
@@ -100,9 +84,10 @@ void INetManager::SendPlayerList() {
         NetPackage pkg;
         pkg.Write((int)m_peers.size());
 
-        for (auto&& peer : m_peers) {
+        for (auto&& pair : m_peers) {
+            auto&& peer = pair.second;
             pkg.Write(peer->m_name);
-            pkg.Write(peer->m_rpc->m_socket->GetHostName());
+            pkg.Write(peer->m_socket->GetHostName());
             pkg.Write(peer->m_characterID);
             pkg.Write(peer->m_visibleOnMap);
             if (peer->m_visibleOnMap) {
@@ -110,16 +95,18 @@ void INetManager::SendPlayerList() {
             }
         }
 
-        for (auto&& peer : m_peers) {
+        for (auto&& pair : m_peers) {
+            auto&& peer = pair.second;
             // this is the problem
-            peer->m_rpc->Invoke(Hashes::Rpc::PlayerList, pkg);
+            peer->Invoke(Hashes::Rpc::PlayerList, pkg);
         }
     }
 }
 
 void INetManager::SendNetTime() {
-    for (auto&& peer : m_peers) {
-        peer->m_rpc->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->Time());
+    for (auto&& pair : m_peers) {
+        auto&& peer = pair.second;
+        peer->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->Time());
     }
 }
 
@@ -137,13 +124,13 @@ void INetManager::SendPeerInfo(NetRpc* rpc) {
 
     // why does server need to send a position and name?
 
+    auto world = WorldManager()->GetWorld();
 
-
-    pkg.Write(m_world->m_name);
-    pkg.Write(m_world->m_seed);
-    pkg.Write(m_world->m_seedName);
-    pkg.Write(m_world->m_uid);
-    pkg.Write(m_world->m_worldGenVersion);
+    pkg.Write(world->m_name);
+    pkg.Write(world->m_seed);
+    pkg.Write(world->m_seedName);
+    pkg.Write(world->m_uid);
+    pkg.Write(world->m_worldGenVersion);
     pkg.Write(Valhalla()->NetTime());
 
     rpc->Invoke(Hashes::Rpc::PeerInfo, pkg);
@@ -152,15 +139,13 @@ void INetManager::SendPeerInfo(NetRpc* rpc) {
 
 
 void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
-    rpc->Unregister(Hashes::Rpc::PeerInfo);
-
     auto&& hostName = rpc->m_socket->GetHostName();
 
     auto uuid = pkg.Read<OWNER_t>();
     auto version = pkg.Read<std::string>();
     LOG(INFO) << "Client " << hostName << " has version " << version;
     if (version != VConstants::GAME)
-        return rpc->SendError(ConnectionStatus::ErrorVersion);
+        return rpc->Close(ConnectionStatus::ErrorVersion);
 
     auto pos = pkg.Read<Vector3>();
     auto name = pkg.Read<std::string>();
@@ -169,102 +154,88 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
     if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
-        return rpc->SendError(ConnectionStatus::ErrorBanned);
+        return rpc->Close(ConnectionStatus::ErrorBanned);
 
     if (password != m_saltedPassword)
-        return rpc->SendError(ConnectionStatus::ErrorPassword);
+        return rpc->Close(ConnectionStatus::ErrorPassword);
 
     // if peer already connected
     if (GetPeer(uuid))
-        return rpc->SendError(ConnectionStatus::ErrorAlreadyConnected);
+        return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
     if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
-        return rpc->SendError(ConnectionStatus::ErrorBanned);
+        return rpc->Close(ConnectionStatus::ErrorBanned);
 
     // this is ugly
     // but probably how it should be done
     // Transfer the Rpc
-    for (auto &&j: m_joining) {
+    auto &&socket = rpc->m_socket;
+    for (auto &&j: m_rpcs) {
         if (j.get() == rpc) {
-            j.release(); // NOLINT(bugprone-unused-return-value)
+            j.reset();
             break;
         }
     }
 
-    NetPeer* peer = new NetPeer(std::unique_ptr<NetRpc>(rpc), uuid, name);
-    m_peers.push_back(std::unique_ptr<NetPeer>(peer));
-
-    peer->m_pos = pos;
-
+    auto peer(std::make_unique<Peer>(socket, uuid, name, pos));
 
     // Important
-    rpc->Register(Hashes::Rpc::RefPos, [this](NetRpc* rpc, Vector3 pos, bool publicRefPos) {
-        auto&& peer = GetPeer(rpc);
-
+    peer->Register(Hashes::Rpc::RefPos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
         peer->m_pos = pos;
         peer->m_visibleOnMap = publicRefPos; // stupid name
     });
 
     // Important
-    rpc->Register(Hashes::Rpc::CharacterID, [this](NetRpc* rpc, NetID characterID) {
-        auto&& peer = GetPeer(rpc);
+    peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, NetID characterID) {
         peer->m_characterID = characterID;
 
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " : " << characterID.ToString();
     });
 
     // Extras
-    rpc->Register(Hashes::Rpc::RemotePrint, [](NetRpc* rpc, std::string text) {
+    peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
         LOG(INFO) << text;
     });
 
-    rpc->Register(Hashes::Rpc::Kick, [this](NetRpc* rpc, std::string user) {
+    peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
         // TODO Permission check
         std::string msg = "Kicking user " + user;
-        RemotePrint(rpc, msg);
+        peer->RemotePrint(msg);
         Kick(user);
     });
 
-    rpc->Register(Hashes::Rpc::Ban, [this](NetRpc* rpc, std::string user) {
+    peer->Register(Hashes::Rpc::Ban, [this](Peer* peer, std::string user) {
         // TODO Permission check
-        RemotePrint(rpc, "Banning user " + user);
+        peer->RemotePrint("Banning user " + user);
         Ban(user);
     });
 
-    rpc->Register(Hashes::Rpc::Unban, [this](NetRpc* rpc, std::string user) {
-        RemotePrint(rpc, "Unbanning user " + user);
+    peer->Register(Hashes::Rpc::Unban, [this](Peer* peer, std::string user) {
+        peer->RemotePrint("Unbanning user " + user);
         Unban(user);
     });
     
-    rpc->Register(Hashes::Rpc::Save, [](NetRpc* rpc) {
+    peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
 
     });
 
-    rpc->Register(Hashes::Rpc::PrintBanned, [this](NetRpc* rpc) {
+    peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {
         std::string s = "Banned users";
-        //std::vector<std:
 
-        RemotePrint(rpc, s);
+        peer->RemotePrint(s);
     });
+
+    m_peers.insert({ peer->m_uuid, std::move(peer) });
 
     SendPeerInfo(rpc);
 }
 
 
 
-// Retrieve a peer by its member Rpc
-// Will throw if peer by rpc is not found
-NetPeer * INetManager::GetPeer(NetRpc* rpc) {
-    for (auto&& peer : m_peers) {
-        if (peer->m_rpc.get() == rpc)
-            return peer.get();
-    }
-    throw std::runtime_error("Unable to find Rpc attached to peer");
-}
-
 // Return the peer or nullptr
-NetPeer * INetManager::GetPeer(const std::string& name) {
-    for (auto&& peer : m_peers) {
+Peer * INetManager::GetPeer(const std::string& name) {
+    for (auto&& pair : m_peers) {
+        auto&& peer = pair.second;
         if (peer->m_name == name)
             return peer.get();
     }
@@ -272,21 +243,20 @@ NetPeer * INetManager::GetPeer(const std::string& name) {
 }
 
 // Return the peer or nullptr
-NetPeer * INetManager::GetPeer(OWNER_t uuid) {
-    for (auto&& peer : m_peers) {
-        if (peer->m_uuid == uuid)
-            return peer.get();
-    }
+Peer * INetManager::GetPeer(OWNER_t uuid) {
+    auto&& find = m_peers.find(uuid);
+    if (find != m_peers.end())
+        return find->second.get();
     return nullptr;
 }
 
 void INetManager::Init() {
+    LOG(INFO) << "Initializing NetManager";
+
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
 
     InitPassword();
-
-    m_world = new World{};
 }
 
 void INetManager::Update() {
@@ -301,8 +271,6 @@ void INetManager::Update() {
         });
 
         rpc->Register(Hashes::Rpc::ServerHandshake, [this](NetRpc* rpc) {
-            rpc->Unregister(Hashes::Rpc::ServerHandshake);
-
             LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
 
             rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, NetPackage pkg) {
@@ -312,15 +280,16 @@ void INetManager::Update() {
             rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
         });
 
-        m_joining.push_back(std::move(rpc));
+        m_rpcs.push_back(std::move(rpc));
     }
 
     // Cleanup joining
     {
-        auto&& itr = m_joining.begin();
-        while (itr != m_joining.end()) {
-            if (!(*itr && (*itr)->m_socket->Connected())) {
-                itr = m_joining.erase(itr);
+        auto&& itr = m_rpcs.begin();
+        while (itr != m_rpcs.end()) {
+            auto&& peer = itr->get();
+            if (!(peer && peer->m_socket->Connected())) {
+                itr = m_rpcs.erase(itr);
             } else {
                 ++itr;
             }
@@ -331,7 +300,10 @@ void INetManager::Update() {
     {
         auto&& itr = m_peers.begin();
         while (itr != m_peers.end()) {
-            if (!(*itr)->m_rpc->m_socket->Connected()) {
+            auto&& peer = itr->second;
+            assert(peer);
+
+            if (!peer->m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
                 itr = m_peers.erase(itr);
             }
@@ -349,7 +321,7 @@ void INetManager::Update() {
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {
-        for (auto&& rpc : m_joining) {
+        for (auto&& rpc : m_rpcs) {
             LOG(DEBUG) << "Rpc join pinging ";
             //auto pkg(PKG());
             NetPackage pkg;
@@ -358,30 +330,32 @@ void INetManager::Update() {
             rpc->m_socket->Send(pkg);
         }
 
-        for (auto&& peer : m_peers) {
+        for (auto&& pair : m_peers) {
+            auto&& peer = pair.second;
             LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
             NetPackage pkg;
             pkg.Write<HASH_t>(0);
             pkg.Write(true);
-            peer->m_rpc->m_socket->Send(pkg);
+            peer->m_socket->Send(pkg);
         }
     });
 
     // Update peers
-    for (auto&& peer : m_peers) {
+    for (auto&& pair : m_peers) {
+        auto&& peer = pair.second;
         try {
-            peer->m_rpc->Update();
+            peer->Update();
         }
         catch (const std::range_error& e) {
             LOG(ERROR) << "Peer provided malformed data: " << e.what();
-            peer->m_rpc->m_socket->Close(false);
+            peer->m_socket->Close(false);
         }
     }
 
     // Update joining (after peer update to avoid double updating any moved peer)
-    for (auto&& rpc : m_joining) {
+    for (auto&& rpc : m_rpcs) {
         try {
-            rpc->Update();
+            rpc->PollOne();
         }
         catch (const std::range_error&) {
             LOG(ERROR) << "Connecting peer provided malformed payload";
@@ -389,7 +363,6 @@ void INetManager::Update() {
         }
     }
 
-    //m_netTime += delta;
     SteamGameServer_RunCallbacks();
 }
 
@@ -397,6 +370,6 @@ void INetManager::Close() {
     m_acceptor.reset();
 }
 
-const std::vector<std::unique_ptr<NetPeer>>& INetManager::GetPeers() {
+const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& INetManager::GetPeers() {
     return m_peers;
 }

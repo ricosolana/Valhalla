@@ -10,9 +10,11 @@
 #define SERVER_SETTINGS Valhalla()->Settings()
 
 class NetRpc;
+class IWorldManager;
 
 class IValhalla {
     friend class ValhallaLauncher;
+    friend class IWorldManager;
 
 private:
     std::atomic_bool m_running; // mostly const
@@ -27,7 +29,7 @@ private:
     steady_clock::time_point m_prevUpdate;
     steady_clock::time_point m_nowUpdate;
 
-    double m_netTime;
+    double m_netTime = 2040;
 
 private:
     void LoadFiles();
@@ -45,6 +47,7 @@ public:
     }
 
     robin_hood::unordered_set<std::string> m_banned;
+    robin_hood::unordered_set<std::string> m_admin;
 
     // Get the time since the server started
     // Updated once per frame

@@ -8,12 +8,24 @@
 #include "NetSocket.h"
 #include "Task.h"
 
-enum class ConnectionStatus;
+enum class ConnectionStatus : int32_t {
+    None,
+    Connecting,
+    Connected,
+    ErrorVersion,
+    ErrorDisconnected,
+    ErrorConnectFailed,
+    ErrorPassword,
+    ErrorAlreadyConnected,
+    ErrorBanned,
+    ErrorFull,
+    MAX // 10
+};
 
 class NetRpc {
 private:
     std::chrono::steady_clock::time_point m_lastPing;
-    
+
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
 private:
@@ -25,12 +37,11 @@ public:
     ISocket::Ptr m_socket;
 
 public:
-    explicit NetRpc(ISocket::Ptr socket);
+    explicit NetRpc(ISocket::Ptr socket) 
+        : m_socket(std::move(socket)), m_lastPing(steady_clock::now()) {}
 
     NetRpc(const NetRpc& other) = delete; // copy
     NetRpc(NetRpc&& other) = delete; // move
-
-    ~NetRpc();
 
     /**
         * @brief Register a static method for remote invocation
@@ -48,14 +59,6 @@ public:
     }
 
     /**
-        * @brief Register a static method for remote invocation
-        * @param name function name to register
-    */
-    void Unregister(HASH_t hash);
-
-    void Unregister(const std::string& name);
-
-    /**
         * @brief Invoke a remote function
         * @param name function name to invoke
         * @param ...types function parameters
@@ -64,9 +67,8 @@ public:
     // https://stackoverflow.com/a/6361619
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
-        if (!m_socket->Connected())
-            return;
-        
+        assert(m_socket && m_socket->Connected());
+
         NetPackage pkg; // TODO make into member to optimize; or make static
         pkg.Write(hash);
         NetPackage::_Serialize(pkg, params...); // serialize
@@ -80,12 +82,12 @@ public:
     }
 
     template <typename... Types>
-    void Invoke(std::string &name, const Types&... params) {
+    void Invoke(std::string& name, const Types&... params) {
         Invoke(name.c_str(), params...);
     }
 
-    // Call every frame
-    void Update();
+public:
+    void Close(ConnectionStatus status);
 
-    void SendError(ConnectionStatus status);
+    void PollOne();
 };

@@ -2,7 +2,7 @@
 #include <future>
 
 #include "HeightmapBuilder.h"
-#include "WorldGenerator.h"
+#include "GeoManager.h"
 #include "HashUtils.h"
 #include "TerrainModifier.h"
 
@@ -74,12 +74,14 @@ namespace HeightmapBuilder {
         const int32_t num2 = num * num;
         auto vector = center + Vector2i((float)Heightmap::WIDTH * -0.5f, (float)Heightmap::WIDTH * -0.5f);
 
+        auto GEO(GeoManager());
+
         //WorldGenerator worldGen = data.m_worldGen;
         //data.m_cornerBiomes = new Heightmap.Biome[4];
-        data->m_cornerBiomes[0] = WorldGenerator::GetBiome(vector.x, vector.y);
-        data->m_cornerBiomes[1] = WorldGenerator::GetBiome(vector.x + Heightmap::WIDTH, vector.y);
-        data->m_cornerBiomes[2] = WorldGenerator::GetBiome(vector.x, vector.y + (float)Heightmap::WIDTH);
-        data->m_cornerBiomes[3] = WorldGenerator::GetBiome(vector.x + Heightmap::WIDTH, vector.y + Heightmap::WIDTH);
+        data->m_cornerBiomes[0] = GEO->GetBiome(vector.x, vector.y);
+        data->m_cornerBiomes[1] = GEO->GetBiome(vector.x + Heightmap::WIDTH, vector.y);
+        data->m_cornerBiomes[2] = GEO->GetBiome(vector.x, vector.y + (float)Heightmap::WIDTH);
+        data->m_cornerBiomes[3] = GEO->GetBiome(vector.x + Heightmap::WIDTH, vector.y + Heightmap::WIDTH);
 
         auto biome = data->m_cornerBiomes[0];
         auto biome2 = data->m_cornerBiomes[1];
@@ -96,14 +98,14 @@ namespace HeightmapBuilder {
                 float value;
 
                 if (biome == biome2 && biome == biome3 && biome == biome4) {
-                    value = WorldGenerator::GetBiomeHeight(biome, wx, wy, color);
+                    value = GEO->GetBiomeHeight(biome, wx, wy, color);
                 }
                 else {
                     Color colors[4];
-                    float biomeHeight = WorldGenerator::GetBiomeHeight(biome, wx, wy, colors[0]);
-                    float biomeHeight2 = WorldGenerator::GetBiomeHeight(biome2, wx, wy, colors[1]);
-                    float biomeHeight3 = WorldGenerator::GetBiomeHeight(biome3, wx, wy, colors[2]);
-                    float biomeHeight4 = WorldGenerator::GetBiomeHeight(biome4, wx, wy, colors[3]);
+                    float biomeHeight = GEO->GetBiomeHeight(biome, wx, wy, colors[0]);
+                    float biomeHeight2 = GEO->GetBiomeHeight(biome2, wx, wy, colors[1]);
+                    float biomeHeight3 = GEO->GetBiomeHeight(biome3, wx, wy, colors[2]);
+                    float biomeHeight4 = GEO->GetBiomeHeight(biome4, wx, wy, colors[3]);
 
                     float a = VUtils::Math::Lerp(biomeHeight, biomeHeight2, t2);
                     float b = VUtils::Math::Lerp(biomeHeight3, biomeHeight4, t2);
