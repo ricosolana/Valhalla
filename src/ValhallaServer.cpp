@@ -133,7 +133,7 @@ void IValhalla::Start() {
     
     this->LoadFiles();
 
-    NetManager::Init();
+    NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
@@ -181,7 +181,7 @@ void IValhalla::Start() {
     }
 
     // Cleanup 
-    NetManager::Close();
+    NetManager()->Close();
     {
         std::vector<std::string> banned;
         for (auto&& s : m_banned)
@@ -195,11 +195,10 @@ void IValhalla::Start() {
 void IValhalla::Update() {
     // This is important to processing RPC remote invocations
 
-    if (!NetManager::GetPeers().empty())
+    if (!NetManager()->GetPeers().empty())
         m_netTime += Delta();
     
-    NetManager::Update();
-    //VModManager::Event::OnUpdate(delta);
+    NetManager()->Update();
 }
 
 

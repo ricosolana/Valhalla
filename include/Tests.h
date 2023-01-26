@@ -7,7 +7,7 @@
 namespace Tests {
 
     void Test_World() {
-        //WorldManager()->GetOrCreateWorldMeta("privUWorld");
+        WorldManager()->GetOrCreateWorldMeta("privUWorld");
         WorldManager()->LoadWorldDB("02129");
     }
 
