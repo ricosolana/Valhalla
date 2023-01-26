@@ -11,6 +11,8 @@ class Prefab;
 using ZoneID = Vector2i;
 
 class IZoneManager {
+
+	// Rename this to ZoneFeature
 	struct ZoneLocation {
 		struct Piece {
 			const Prefab* m_prefab;
@@ -56,6 +58,7 @@ class IZoneManager {
 		std::vector<Piece> m_pieces;
 	};
 
+	// Rename this to VegetationFeature
 	struct ZoneVegetation {
 		//std::string m_name = "veg";
 		//std::string m_prefabName;
@@ -93,14 +96,10 @@ class IZoneManager {
 		float m_maxVegetation = 0;
 	};
 
-	// can be private
+	// Rename this
 	struct LocationInstance {
 		const ZoneLocation *m_location;
 		Vector3 m_position;
-
-		// hmm; since locations position are pregenerated, 
-		// then spawned once zone is loaded
-		// this is needed
 		bool m_placed; 		
 	};
 
@@ -175,7 +174,6 @@ private:
 	void RemoveUnplacedLocations(const ZoneLocation* location);
 	void SpawnLocation(const ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
 	void CreateLocationProxy(const ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
-	void RegisterLocation(const ZoneLocation* location, const Vector3& pos, bool generated);
 	bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
 	void GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
 

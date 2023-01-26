@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 #include "VUtilsRandom.h"
-#include "World.h"
+#include "WorldManager.h"
 #include "Vector.h"
 #include "HeightMap.h"
 

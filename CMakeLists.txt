@@ -86,16 +86,14 @@ add_executable(${PROJECT_NAME}
     "src/Main.cpp"
     "src/NetAcceptorSteam.cpp"
     "src/NetID.cpp"
-    "src/NetManager.cpp"
-    
+    "src/NetManager.cpp"    
     "src/NetPackage.cpp"
     "src/NetPeer.cpp"
-    "src/RouteManager.cpp"
     "src/NetRpc.cpp"
-    
     "src/NetSteamSocket.cpp"
-    
+    "src/PrefabManager.cpp" 
     "src/Quaternion.cpp"
+    "src/RouteManager.cpp"
     "src/Stream.cpp"
     "src/Task.cpp"
     "src/ValhallaServer.cpp"
@@ -106,10 +104,12 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
     "src/WorldGenerator.cpp"
+    "src/WorldManager.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
-    "src/ZoneManager.cpp"
- "src/PrefabManager.cpp" "include/ZDOPeer.h" "src/ZDOPeer.cpp" "include/Prefab.h" "include/DungeonGenerator.h" "include/Biome.h" "include/HMBuildData.h")
+    "src/ZDOPeer.cpp"
+    "src/ZoneManager.cpp"    
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

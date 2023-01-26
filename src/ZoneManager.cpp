@@ -234,17 +234,18 @@ void IZoneManager::Save(NetPackage& pkg) {
 
 // public
 void IZoneManager::Load(NetPackage& reader, int32_t version) {
-    m_generatedZones.clear();
     int32_t num = reader.Read<int32_t>();
     for (int32_t i = 0; i < num; i++) {
         m_generatedZones.insert(reader.Read<Vector2i>());
     }
+
     if (version >= 13) {
-        int32_t num2 = reader.Read<int32_t>();
-        int32_t num3 = (version >= 21) ? reader.Read<int32_t>() : 0;
-        if (num2 != VConstants::PGW) {
-            m_generatedZones.clear();
+        int32_t pgw = reader.Read<int32_t>();
+        int32_t ver = (version >= 21) ? reader.Read<int32_t>() : 0;
+        if (pgw != VConstants::PGW) {
+            throw std::runtime_error("incompatible PGW version");
         }
+
         if (version >= 14) {
             m_globalKeys.clear();
             int32_t num4 = reader.Read<int32_t>();
@@ -253,37 +254,35 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
                 m_globalKeys.insert(item2);
             }
         }
+
         if (version >= 18) {
             // kinda dumb, ?
             if (version >= 20) //m_locationsGenerated = reader.Read<bool>();
                 reader.Read<bool>();
                     
             m_locationInstances.clear();
-            int32_t num5 = reader.Read<int32_t>();
-            for (int32_t k = 0; k < num5; k++) {
-                auto text = reader.Read<std::string>();
-                auto zero = reader.Read<Vector3>();
+            auto count = reader.Read<int32_t>();
+            for (int32_t i = 0; i < count; i++) {
 
-                bool generated = false;
-                if (version >= 19)
-                    generated = reader.Read<bool>();
+                auto text = reader.Read<std::string>();
+                auto pos = reader.Read<Vector3>();
+                bool placed = version >= 19 ? reader.Read<bool>() : false;
 
                 auto&& location = GetLocation(text);
                 if (location) {
-                    RegisterLocation(location, zero, generated);
+                    m_locationInstances.insert({ WorldToZonePos(pos), { location, pos, placed } });
                 }
                 else {
                     LOG(ERROR) << "Failed to find location " << text;
-                    //ZLog.DevLog("Failed to find location " + text);
                 }
             }
-            LOG(INFO) << "Loaded " << num5 << " locations";
-            if (num2 != VConstants::PGW) {
-                m_locationInstances.clear();
-                //m_locationsGenerated = false;
-            }
 
-            if (num3 != VConstants::LOCATION) {
+            LOG(INFO) << "Loaded " << count << " ZoneLocation instances";
+            //if (pgw != VConstants::PGW) {
+                //m_locationInstances.clear();
+            //}
+
+            if (ver != VConstants::LOCATION) {
                 //m_locationsGenerated = false;
             }
         }
@@ -344,7 +343,7 @@ void IZoneManager::PlaceZoneCtrl(const ZoneID& zoneID) {
 Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius) {
     float f = state.NextFloat() * PI * 2.f;
     float num = state.Range(0.f, radius);
-    return center + Vector3(sin(f) * num, 0, cos(f) * num);
+    return center + Vector3(sin(f) * num, 0.f, cos(f) * num);
 }
 
 // private
@@ -383,7 +382,7 @@ void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::ve
             for (int32_t i = 0; i < num7; i++) {
 
                 Vector3 vector(state.Range(zoneCenterPos.x - num6, zoneCenterPos.x + num6),
-                    0, state.Range(zoneCenterPos.z - num6, zoneCenterPos.z + num6));
+                    0.f, state.Range(zoneCenterPos.z - num6, zoneCenterPos.z + num6));
 
                 int32_t num9 = state.Range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
                 bool flag2 = false;
@@ -610,7 +609,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                     float num = ZONE_SIZE / 2.f;
                     float x = state.Range(-num + locationRadius, num - locationRadius);
                     float z = state.Range(-num + locationRadius, num - locationRadius);
-                    Vector3 randomPointInZone = zonePos + Vector3(x, 0, z);
+                    Vector3 randomPointInZone = zonePos + Vector3(x, 0.f, z);
 
 
 
@@ -661,7 +660,8 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                                         }
 
                                         if (!locInRange) {
-                                            RegisterLocation(location, randomPointInZone, false);
+                                            m_locationInstances.insert({ 
+                                                WorldToZonePos(randomPointInZone), { location, randomPointInZone, false }});
                                             spawnedLocations++;
                                             break;
                                         }
@@ -758,7 +758,7 @@ void IZoneManager::PlaceLocations(const Vector2i &zoneID,
             float num;
             Vector3 vector2;
             GetTerrainDelta(position, locationInstance.m_location->m_exteriorRadius, num, vector2);
-            Vector3 forward(vector2.x, 0, vector2.z);
+            Vector3 forward(vector2.x, 0.f, vector2.z);
             forward.Normalize();
             rot = Quaternion::LookRotation(forward);
             assert(false);
@@ -884,20 +884,6 @@ void IZoneManager::CreateLocationProxy(const ZoneLocation* location, int32_t see
 }
 
 // private
-void IZoneManager::RegisterLocation(const ZoneLocation* location, const Vector3& pos, bool generated) {
-    auto zone = WorldToZonePos(pos);
-    if (m_locationInstances.contains(zone)) {
-        LOG(ERROR) << "Location already exist in zone " << zone.x << " " << zone.y;
-        return;
-    }
-    LocationInstance value;
-    value.m_location = location;
-    value.m_position = pos;
-    value.m_placed = generated;
-    m_locationInstances.insert({ zone, value }); // TODO optimize
-}
-
-// private
 bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius) {
     for (auto&& inst : m_locationInstances) {
         if ((inst.second.m_location->m_prefab->m_name == prefabName
@@ -930,7 +916,7 @@ void IZoneManager::GetTerrainDelta(const Vector3& center, float radius, float& d
     VUtils::Random::State state;
     for (int32_t i = 0; i < 10; i++) {
         Vector2 vector = state.InsideUnitCircle() * radius;
-        Vector3 vector2 = center + Vector3(vector.x, 0, vector.y);
+        Vector3 vector2 = center + Vector3(vector.x, 0.f, vector.y);
         float groundHeight = GetGroundHeight(vector2);
         if (groundHeight < num3) {
             num3 = groundHeight;

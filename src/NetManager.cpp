@@ -5,7 +5,7 @@
 
 #include "NetManager.h"
 #include "ValhallaServer.h"
-#include "World.h"
+#include "WorldManager.h"
 #include "VUtilsRandom.h"
 #include "Hashes.h"
 

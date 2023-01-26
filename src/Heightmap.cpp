@@ -337,11 +337,11 @@ bool Heightmap::TerrainVSModifier(TerrainModifier modifier) {
 // private
 Vector3 Heightmap::CalcVertex(int32_t x, int32_t y) {
     int32_t num = WIDTH + 1;
-    Vector3 a = Vector3((float)WIDTH * -0.5f, 0, (float)WIDTH * -0.5f);
+    Vector3 a = Vector3((float)WIDTH * -0.5f, 0.f, (float)WIDTH * -0.5f);
 
     // Poll heightmap height at x,z
     float y2 = this->m_heights[y * num + x];
-    return a + Vector3(x, y2, y);
+    return a + Vector3((float)x, y2, (float)y);
 }
 
 // private
@@ -688,7 +688,7 @@ void Heightmap::PaintCleared(Vector3 worldPos, float radius,
 float Heightmap::GetVegetationMask(const Vector3& worldPos) {
     int32_t x;
     int32_t y;
-    this->WorldToVertex(worldPos - Vector3(.5f, 0, .5f), x, y);
+    this->WorldToVertex(worldPos - Vector3(.5f, 0.f, .5f), x, y);
 
 
     // USE A DIFFERENT MASK OF ONLY ALPHA-TEX FLOATS
@@ -699,7 +699,7 @@ float Heightmap::GetVegetationMask(const Vector3& worldPos) {
 bool Heightmap::IsCleared(const Vector3& worldPos) {
     int32_t x;
     int32_t y;
-    this->WorldToVertex(worldPos - Vector3(.5f, 0, .5f), x, y);
+    this->WorldToVertex(worldPos - Vector3(.5f, 0.f, .5f), x, y);
     auto&& pixel = this->m_paintMask[y * WIDTH + x];
     return pixel.r > 0.5f || pixel.g > 0.5f || pixel.b > 0.5f;
 }
@@ -813,6 +813,6 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler() {
 
 // public
 Vector3 Heightmap::GetWorldPosition() {
-    return IZoneManager::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0, WIDTH/2.f);
+    return IZoneManager::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0.f, WIDTH/2.f);
 }
 
