@@ -39,10 +39,10 @@ namespace VConstants {
     static constexpr int32_t WORLDGEN = 2;
 
     // Used in ZDO
-    static constexpr int32_t PGW = 53;
+    static constexpr int32_t PGW = 99;
 
     // Used in ZoneSystem ZoneLocation-Prefabs
-    static constexpr int32_t LOCATION = 1;
+    static constexpr int32_t LOCATION = 26;
 
     // Player version
     // Used only in client

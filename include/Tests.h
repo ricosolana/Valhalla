@@ -2,10 +2,16 @@
 
 #include "ZDO.h"
 #include "NetPackage.h"
+#include "WorldManager.h"
 
 namespace Tests {
 
-    void Test_NetSync() {
+    void Test_World() {
+        //WorldManager()->GetOrCreateWorldMeta("privUWorld");
+        WorldManager()->LoadWorldDB("02129");
+    }
+
+    void Test_ZDO() {
 
         // Valheim-sourced Load tests
         {

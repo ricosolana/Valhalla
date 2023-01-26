@@ -74,6 +74,7 @@ void IZDOManager::Load(NetPackage& reader, int version) {
 
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
+		zdo->m_id = reader.Read<NetID>();
 		auto zdoPkg = reader.Read<NetPackage>();
 		zdo->Load(zdoPkg, version);
 

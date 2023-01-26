@@ -181,22 +181,33 @@ public:
 
     template<typename T>
     T Read() requires std::same_as<T, NetID> {
-        return NetID(Read<OWNER_t>(), Read<uint32_t>());
+        auto a(Read<OWNER_t>());
+        auto b(Read<uint32_t>());
+        return NetID(a, b);
     }
 
     template<typename T>
     T Read() requires std::same_as<T, Vector3> {
-        return Vector3{ Read<float>(), Read<float>(), Read<float>() };
+        auto a(Read<float>());
+        auto b(Read<float>());
+        auto c(Read<float>());
+        return Vector3{ a, b, c };
     }
 
     template<typename T>
     T Read() requires std::same_as<T, Vector2i> {
-        return Vector2i{ Read<int32_t>(), Read<int32_t>()};
+        auto a(Read<int32_t>());
+        auto b(Read<int32_t>());
+        return Vector2i{ a, b };
     }
 
     template<typename T>
     T Read() requires std::same_as<T, Quaternion> {
-        return Quaternion{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
+        auto a(Read<float>());
+        auto b(Read<float>());
+        auto c(Read<float>());
+        auto d(Read<float>());
+        return Quaternion{ a, b, c, d };
     }
 
     template<typename E>

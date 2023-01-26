@@ -22,7 +22,7 @@ World* IWorldManager::GetWorld() {
 }
 
 fs::path IWorldManager::GetWorldsPath() {
-	return "worlds";
+	return "./worlds";
 }
 
 fs::path IWorldManager::GetWorldMetaPath(const std::string& name) {
@@ -70,13 +70,14 @@ void IWorldManager::SaveWorldMeta(World* world) {
 	//metaWriter.Write(writer);
 }
 
-void IWorldManager::LoadWorldDB() {
-	LOG(INFO) << "Loading world: " << m_world->m_name;
-	auto dbpath = GetWorldDBPath(m_world->m_name);
+void IWorldManager::LoadWorldDB(const std::string &name) {
+	LOG(INFO) << "Loading world: " << name;
+	auto dbpath = GetWorldDBPath(name);
 
 	auto&& opt = VUtils::Resource::ReadFileBytes(dbpath);
 
 	if (!opt) {
+		//throw std::runtime_error("world db missing");
 		LOG(INFO) << "missing " << dbpath;
 	}
 	else {
@@ -122,14 +123,14 @@ void IWorldManager::LoadWorldDB() {
 			}
 		}
 		catch (const std::exception& e) {
-			LOG(ERROR) << "Unable to load world";
+			LOG(ERROR) << "Unable to load world: " << e.what();
 		}
 	}
 }
 
 
 
-void IWorldManager::SaveWorldDB() {
+void IWorldManager::SaveWorldDB(const std::string& name) {
 	auto now(steady_clock::now());
 	try {
 		auto metaPath = GetWorldMetaPath(m_world->m_name);
@@ -174,7 +175,7 @@ void IWorldManager::SaveWorldDB() {
 
 
 
-		SaveWorldMeta(m_world.get());
+		//SaveWorldMeta(m_world.get());
 		//ZNet.m_world.SaveWorldMetaData(now, out flag2, out fileWriter2);
 
 
@@ -247,9 +248,9 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 		world->m_seed = VUtils::String::GetStableHashCode(seedName);
 		world->m_uid = VUtils::Random::GenerateUID();
 		world->m_worldGenVersion = VConstants::WORLDGEN;
-	}
 
-	SaveWorldMeta(world.get());
+		SaveWorldMeta(world.get());
+	}
 
 	return world;
 }

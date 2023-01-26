@@ -23,9 +23,9 @@ public:
 
     void SaveWorldMeta(World* world);
 
-    void LoadWorldDB();
+    void LoadWorldDB(const std::string& name);
 
-    void SaveWorldDB();
+    void SaveWorldDB(const std::string& name);
 
     std::unique_ptr<World> GetOrCreateWorldMeta(const std::string& name);
 

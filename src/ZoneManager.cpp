@@ -234,24 +234,22 @@ void IZoneManager::Save(NetPackage& pkg) {
 
 // public
 void IZoneManager::Load(NetPackage& reader, int32_t version) {
-    int32_t num = reader.Read<int32_t>();
-    for (int32_t i = 0; i < num; i++) {
+    auto countZones = reader.Read<int32_t>();
+    while (countZones--) {
         m_generatedZones.insert(reader.Read<Vector2i>());
     }
 
     if (version >= 13) {
-        int32_t pgw = reader.Read<int32_t>();
-        int32_t ver = (version >= 21) ? reader.Read<int32_t>() : 0;
-        if (pgw != VConstants::PGW) {
+        int32_t pgwVersion = reader.Read<int32_t>(); // 99
+        int32_t locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
+        if (pgwVersion != VConstants::PGW) {
             throw std::runtime_error("incompatible PGW version");
         }
 
         if (version >= 14) {
-            m_globalKeys.clear();
-            int32_t num4 = reader.Read<int32_t>();
-            for (int32_t j = 0; j < num4; j++) {
-                std::string item2 = reader.Read<std::string>();
-                m_globalKeys.insert(item2);
+            int32_t countKeys = reader.Read<int32_t>();
+            while (countKeys--) {
+                m_globalKeys.insert(reader.Read<std::string>());
             }
         }
 
@@ -259,30 +257,28 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
             // kinda dumb, ?
             if (version >= 20) //m_locationsGenerated = reader.Read<bool>();
                 reader.Read<bool>();
-                    
-            m_locationInstances.clear();
-            auto count = reader.Read<int32_t>();
-            for (int32_t i = 0; i < count; i++) {
-
+            
+            const auto countLocations = reader.Read<int32_t>();
+            for (int32_t i = 0; i < countLocations; i++) {
                 auto text = reader.Read<std::string>();
                 auto pos = reader.Read<Vector3>();
                 bool placed = version >= 19 ? reader.Read<bool>() : false;
 
                 auto&& location = GetLocation(text);
                 if (location) {
-                    m_locationInstances.insert({ WorldToZonePos(pos), { location, pos, placed } });
+                    m_locationInstances[WorldToZonePos(pos)] = {location, pos, placed};
                 }
                 else {
                     LOG(ERROR) << "Failed to find location " << text;
                 }
             }
 
-            LOG(INFO) << "Loaded " << count << " ZoneLocation instances";
+            LOG(INFO) << "Loaded " << countLocations << " ZoneLocation instances";
             //if (pgw != VConstants::PGW) {
                 //m_locationInstances.clear();
             //}
 
-            if (ver != VConstants::LOCATION) {
+            if (locationVersion != VConstants::LOCATION) {
                 //m_locationsGenerated = false;
             }
         }
