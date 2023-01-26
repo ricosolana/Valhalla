@@ -3,10 +3,11 @@
 ## Server
 This is an implementation of the Valheim Dedicated Server in C++.
 
-The server is currently very barebones and under heavy development. It is only capable of upholding a client connection (the server game state up to RPC_PeerInfo is fully implemented and keepalive pings are functional). Also Lua modding works (I might change it later as I learn new stuff and better techniques). This means that:
-  - No gameobjects are sent out to clients
-  - Any connected client cannot see other clients
-  - This server is essentially a proof of concept device (this might change in the future if the server reaches a point of functionality equal to the Dedicated Valheim Server). Play around with it if you are interested in the inner workings of Valheim.
+The server is in a currently non-production ready state, however feel free to play around with it.
+
+The goal is to soon have a server with somewhat functional location generation, the ability to see other players in game, and support for loading already existing worlds in the Valheim format. 
+
+A lot of the inner-workings of Valheim are completely client-side, leaving things such as ZDO dispersement, prefabs part of world generation, and smart networking to the server. These are the things Valhalla must implement.
 
 ## Client
 No longer being developed. Graphics programming is not my thing :(
@@ -20,6 +21,7 @@ Latest progress:
  - Lua modding has been disabled for the time being. 
  - I was previously using asio for this project (for little experimental additions, such as RCON cli), but was having some Winsock errors (thanks Windows), so I decided to remove anything remotely out of scope to keep the project minimal with hopes of compiling. I have tested nothing extensively up to this point because I have been simply trying this whole month to get it to compile
  - RPC's are now lambda only!
+ - I dont fully understand LocationProxy.
  
 My efforts in the coming weeks will be primarily to test ZDO dispersement along with ZoneLocation prefabs and ZoneVegetation. 
 
