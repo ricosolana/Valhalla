@@ -169,15 +169,15 @@ bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterati
 void IGeoManager::GenerateRivers() {
 	VUtils::Random::State state(m_riverSeed);
 
-	std::vector<River> list;
-	std::vector<Vector2> list2(m_lakes);
+	//std::vector<River> list;
+	std::vector<Vector2> list2(m_lakes); // TODO use list
 
 	while (list2.size() > 1)
 	{
-		Vector2 vector = list2[0];
-		int num = FindRandomRiverEnd(state, list, m_lakes, vector, 2000, 0.4f, 128);
+		auto&& vector = list2[0];
+		int num = FindRandomRiverEnd(state, m_rivers, m_lakes, vector, 2000, 0.4f, 128);
 		if (num == -1 && !HaveRiver(m_rivers, vector)) {
-			num = FindRandomRiverEnd(state, list, m_lakes, vector, 5000, 0.4f, 128);
+			num = FindRandomRiverEnd(state, m_rivers, m_lakes, vector, 5000, 0.4f, 128);
 		}
 
 		if (num != -1) {
@@ -623,8 +623,8 @@ bool IGeoManager::InsideRiverGrid(const Vector2i& grid, const Vector2& p, float 
 }
 
 Vector2i IGeoManager::GetRiverGrid(float wx, float wy) {
-	auto x = (int32_t)((wx + riverGridSize * .5f) / riverGridSize);
-	auto y = (int32_t)((wy + riverGridSize * .5f) / riverGridSize);
+	auto x = (int32_t)std::floorf((wx + riverGridSize * .5f) / riverGridSize);
+	auto y = (int32_t)std::floorf((wy + riverGridSize * .5f) / riverGridSize);
 	return Vector2i(x, y);
 }
 
