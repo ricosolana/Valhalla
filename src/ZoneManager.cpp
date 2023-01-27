@@ -60,6 +60,12 @@ void IZoneManager::Init() {
 
         NetPackage pkg(opt.value());
 
+        pkg.Read<std::string>(); // date
+        std::string ver = pkg.Read<std::string>();
+        LOG(INFO) << "zoneLocations.pkg has game version " << ver;
+        if (ver != VConstants::GAME)
+            LOG(ERROR) << "zoneLocations.pkg uses different game version than server";
+
         int32_t count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneLocations";
         for (int i=0; i < count; i++) {
@@ -94,7 +100,8 @@ void IZoneManager::Init() {
             loc->m_minTerrainDelta = pkg.Read<float>();
             loc->m_maxTerrainDelta = pkg.Read<float>();
             loc->m_minDistanceFromSimilar = pkg.Read<float>();
-            loc->m_prioritized = pkg.Read<bool>();
+            //loc->m_prioritized = pkg.Read<bool>();
+            loc->m_spawnAttempts = pkg.Read<int32_t>();
             loc->m_quantity = pkg.Read<int32_t>();
             loc->m_randomRotation = pkg.Read<bool>();
             loc->m_slopeRotation = pkg.Read<bool>();
@@ -113,7 +120,10 @@ void IZoneManager::Init() {
 
             //m_locationsByHash[VUtils::String::GetStableHashCode(prefabName)] = std::move(loc);
 
-            m_locationsByHash[loc->m_hash] = std::move(loc);
+            m_locationsByHash[loc->m_hash] = loc.get();
+            m_locations.push_back(std::move(loc));
+
+            //m_locationsByHash[loc->m_hash] = std::move(loc);
 
             //m_locations.push_back(std::move(loc));
         }
@@ -126,6 +136,12 @@ void IZoneManager::Init() {
             throw std::runtime_error("vegetation.pkg missing");
 
         NetPackage pkg(opt.value());
+
+        pkg.Read<std::string>(); // date
+        std::string ver = pkg.Read<std::string>();
+        LOG(INFO) << "zoneVegetation.pkg has game version " << ver;
+        if (ver != VConstants::GAME)
+            LOG(ERROR) << "zoneVegetation.pkg uses different game version than server";
 
         auto count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneVegetations";
@@ -527,16 +543,16 @@ bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Ve
 }
 
 // private
-IZoneManager::ZoneLocation* IZoneManager::GetLocation(int32_t hash) {
+const IZoneManager::ZoneLocation* IZoneManager::GetLocation(HASH_t hash) {
     auto&& find = m_locationsByHash.find(hash);
     if (find != m_locationsByHash.end())
-        return find->second.get();
+        return find->second;
 
     return nullptr;
 }
 
 // private
-IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& name) {
+const IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& name) {
     return GetLocation(VUtils::String::GetStableHashCode(name));
 }
 
@@ -545,18 +561,9 @@ IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& name) {
 void IZoneManager::GenerateLocations() {
     auto now(steady_clock::now());
 
-    // Generate prioritized locations first
-    for (auto&& pair : m_locationsByHash) {
-        auto&& loc = pair.second;
-        if (loc->m_prioritized)
-            GenerateLocations(loc.get());
-    }
-
-    // Then generate unprioritized locations
-    for (auto&& pair : m_locationsByHash) {
-        auto&& loc = pair.second;
-        if (!loc->m_prioritized)
-            GenerateLocations(loc.get());
+    // Already presorted by priority
+    for (auto&& loc : m_locations) {
+        GenerateLocations(loc.get());
     }
 
     LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
@@ -595,8 +602,9 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
 
-    const int spawnAttempts = location->m_prioritized ? 200000 : 100000;
-    for (int a = 0; a < spawnAttempts && spawnedLocations < location->m_quantity; a++) {
+    //const int spawnAttempts = location->m_prioritized ? 200000 : 100000;
+
+    for (int a = 0; a < location->m_spawnAttempts && spawnedLocations < location->m_quantity; a++) {
         Vector2i randomZone = GetRandomZone(state, range);
         if (location->m_centerFirst)
             range++;

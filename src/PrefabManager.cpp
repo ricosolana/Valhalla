@@ -27,6 +27,13 @@ void IPrefabManager::Init() {
     }
 
     NetPackage pkg(opt.value());
+
+    pkg.Read<std::string>(); // date
+    std::string ver = pkg.Read<std::string>();
+    LOG(INFO) << "prefabs.pkg has game version " << ver;
+    if (ver != VConstants::GAME)
+        LOG(ERROR) << "prefabs.pkg uses different game version than server";
+
     auto count = pkg.Read<int32_t>();
     LOG(INFO) << "Loading " <<  count << " prefabs";
     while (count--) {

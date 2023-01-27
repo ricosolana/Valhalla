@@ -11,6 +11,8 @@ class Prefab;
 
 using ZoneID = Vector2i;
 
+// TODO rename Location to Feature, as this better describes
+//	its purpose
 class IZoneManager {
 	friend class INetManager;
 
@@ -50,7 +52,8 @@ class IZoneManager {
 		float m_minTerrainDelta;
 		float m_maxTerrainDelta = 2;
 		float m_minDistanceFromSimilar;
-		bool m_prioritized;
+		//bool m_prioritized;
+		int32_t m_spawnAttempts; // 200000 or 100000 depending on priority
 		int32_t m_quantity;
 		bool m_randomRotation = true;
 		//std::vector<RandomSpawn> m_randomSpawns;
@@ -124,9 +127,11 @@ private:
 	float ZONE_TTL = 4;
 	float ZONE_TTS = 4;
 
-	std::vector<std::unique_ptr<ZoneVegetation>> m_vegetation;
+	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
 
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<ZoneLocation>> m_locationsByHash;
+	// All active ZoneLocations, sorted by priority
+	std::vector<std::unique_ptr<const ZoneLocation>> m_locations;
+	robin_hood::unordered_map<HASH_t, const ZoneLocation*> m_locationsByHash;
 
 	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
 
@@ -151,8 +156,8 @@ private:
 
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
-	ZoneLocation* GetLocation(int32_t hash);
-	ZoneLocation* GetLocation(const std::string& name);
+	const ZoneLocation* GetLocation(int32_t hash);
+	const ZoneLocation* GetLocation(const std::string& name);
 
 	void GenerateLocations(const ZoneLocation *location);
 	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
