@@ -9,6 +9,7 @@
 
 class IZDOManager {
 	friend class IPrefabManager;
+	friend class INetManager;
 
 	static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;

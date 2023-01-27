@@ -60,14 +60,17 @@ void IZoneManager::Init() {
 
         NetPackage pkg(opt.value());
 
-        auto count = pkg.Read<int32_t>();
+        int32_t count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneLocations";
-        while (count--) {
+        for (int i=0; i < count; i++) {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<ZoneLocation>();
-            auto prefabName = pkg.Read<std::string>();
+            loc->m_name = pkg.Read<std::string>();
+            loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
 
-            loc->m_prefab = PrefabManager()->GetPrefab(prefabName);
+            //loc->m_prefab = PrefabManager()->GetPrefab(prefabName);
+            //assert(loc->m_prefab && "missing zonelocation prefab");
+
             loc->m_biome = (Biome)pkg.Read<int32_t>();
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
@@ -98,17 +101,19 @@ void IZoneManager::Init() {
             loc->m_snapToWater = pkg.Read<bool>();
             loc->m_unique = pkg.Read<bool>();
 
-            auto count = pkg.Read<int32_t>();
-            while (count--) {
+            auto views = pkg.Read<int32_t>();
+            for (int j=0; j < views; j++) {
                 ZoneLocation::Piece piece;
                 piece.m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>());
-                assert(piece.m_prefab && "missing location prefab");
+                assert(piece.m_prefab && "missing location sub prefab");
                 piece.m_pos = pkg.Read<Vector3>();
                 piece.m_rot = pkg.Read<Quaternion>();
                 loc->m_pieces.push_back(piece);
             }
 
-            m_locationsByHash[VUtils::String::GetStableHashCode(prefabName)] = std::move(loc);
+            //m_locationsByHash[VUtils::String::GetStableHashCode(prefabName)] = std::move(loc);
+
+            m_locationsByHash[loc->m_hash] = std::move(loc);
 
             //m_locations.push_back(std::move(loc));
         }
@@ -124,7 +129,8 @@ void IZoneManager::Init() {
 
         auto count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneVegetations";
-        while (count--) {
+        //while (count--) {
+        for (int i=0; i < count; i++) {
             auto veg = std::make_unique<ZoneVegetation>();
 
             auto prefabName = pkg.Read<std::string>();
@@ -196,10 +202,12 @@ void IZoneManager::SendGlobalKeys(OWNER_t peer) {
 // private
 void IZoneManager::SendLocationIcons(OWNER_t peer) {
     NetPackage zpackage;
-    tempIconList.clear();
-    GetLocationIcons(tempIconList);
-    zpackage.Write<int32_t>(tempIconList.size());
-    for (auto&& keyValuePair : tempIconList) {
+
+    robin_hood::unordered_map<Vector3, std::string> icons;
+    GetLocationIcons(icons);
+
+    zpackage.Write<int32_t>(icons.size());
+    for (auto&& keyValuePair : icons) {
         zpackage.Write(keyValuePair.first);
         zpackage.Write(keyValuePair.second);
     }
@@ -208,10 +216,10 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 }
 
 // private
-void IZoneManager::OnNewPeer(OWNER_t peerID) {
+void IZoneManager::OnNewPeer(Peer* peer) {
     LOG(INFO) << "Server: New peer connected,sending global keys";
-    SendGlobalKeys(peerID);
-    SendLocationIcons(peerID);
+    SendGlobalKeys(peer->m_uuid);
+    SendLocationIcons(peer->m_uuid);
 }
 
 // public
@@ -228,7 +236,7 @@ void IZoneManager::Save(NetPackage& pkg) {
     pkg.Write((int32_t)m_locationInstances.size());
     for (auto&& pair : m_locationInstances) {
         auto&& inst = pair.second;
-        pkg.Write(inst.m_location->m_prefab->m_name);
+        pkg.Write(inst.m_location->m_name);
         pkg.Write(inst.m_position);
         pkg.Write(inst.m_placed);
     }
@@ -582,7 +590,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     unsigned int errSimilarLocation = 0;
     unsigned int errTerrainDelta = 0;
 
-    VUtils::Random::State state(GeoManager()->GetSeed() + VUtils::String::GetStableHashCode(location->m_prefab->m_name));
+    VUtils::Random::State state(GeoManager()->GetSeed() + location->m_hash);
     const float locationRadius = std::max(location->m_exteriorRadius, location->m_interiorRadius);
 
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
@@ -649,7 +657,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                                             auto&& loc = inst.second.m_location;
 
                                             // Try to find the same ZoneLocation or any ZoneLocation with the same group
-                                            if ((loc->m_prefab == location->m_prefab
+                                            if ((loc == location
                                                 || (!location->m_group.empty() && location->m_group == loc->m_group))
                                                 && inst.second.m_position.Distance(randomPointInZone) < location->m_minDistanceFromSimilar)
                                             {
@@ -676,7 +684,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     }
 
     if (spawnedLocations < location->m_quantity) {
-        LOG(ERROR) << "Failed to place all " << location->m_prefab->m_name << ", placed " << spawnedLocations << "/" << location->m_quantity;
+        LOG(ERROR) << "Failed to place all " << location->m_name << ", placed " << spawnedLocations << "/" << location->m_quantity;
 
         LOG(ERROR) << "errLocations " << errLocations;
         LOG(ERROR) << "errCenterDistances " << errCenterDistances;
@@ -803,7 +811,7 @@ void IZoneManager::RemoveUnplacedLocations(const ZoneLocation* location) {
         m_locationInstances.erase(key);
     }
 
-    LOG(INFO) << "Removed " << list.size() << " unplaced locations of type " << location->m_prefab->m_name;
+    LOG(INFO) << "Removed " << list.size() << " unplaced locations of type " << location->m_name;
 }
 
 // private
@@ -817,7 +825,7 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, con
     //bool flag = location->m_useCustomInteriorTransform && location->m_generatorPosition;
     bool flag = false;
     if (flag) {
-        LOG(ERROR) << "Trieed pre-initializing ZoneLocation Dungeon: " << location->m_prefab->m_name;
+        LOG(ERROR) << "Trieed pre-initializing ZoneLocation Dungeon: " << location->m_name;
         //Vector2i zone = WorldToZonePos(pos);
         //Vector3 zonePos = ZoneToWorldPos(zone);
         //component.m_generator.transform.localPosition = Vector3::ZERO;
@@ -878,14 +886,14 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, con
 void IZoneManager::CreateLocationProxy(const ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
     auto zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
     
-    zdo->Set("location", location->m_prefab->m_hash);
+    zdo->Set("location", location->m_hash);
     zdo->Set("seed", seed);
 }
 
 // private
 bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius) {
     for (auto&& inst : m_locationInstances) {
-        if ((inst.second.m_location->m_prefab->m_name == prefabName
+        if ((inst.second.m_location->m_name == prefabName
             || (!group.empty() && group == inst.second.m_location->m_group))
             && inst.second.m_position.Distance(p) < radius) {
             return true;
@@ -895,13 +903,14 @@ bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std:
 }
 
 // public
+// TODO make this batch update every time a new location is added or whatever
 void IZoneManager::GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons) {
     for (auto&& pair : m_locationInstances) {
         auto&& loc = pair.second;
         if (loc.m_location->m_iconAlways
             || (loc.m_location->m_iconPlaced && loc.m_placed))
         {
-            icons[pair.second.m_position] = loc.m_location->m_prefab->m_name;
+            icons[pair.second.m_position] = loc.m_location->m_name;
         }
     }
 }
@@ -1115,7 +1124,7 @@ bool IZoneManager::FindClosestLocation(const std::string& name, const Vector3& p
     for (auto&& pair : m_locationInstances) {
         auto&& loc = pair.second;
         float num2 = loc.m_position.Distance(point);
-        if (loc.m_location->m_prefab->m_name == name && num2 < num) {
+        if (loc.m_location->m_name == name && num2 < num) {
             num = num2;
             closest = loc;
             result = true;

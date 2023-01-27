@@ -8,6 +8,9 @@
 #include "WorldManager.h"
 #include "VUtilsRandom.h"
 #include "Hashes.h"
+#include "ZDOManager.h"
+#include "RouteManager.h"
+#include "ZoneManager.h"
 
 using namespace std::chrono;
 
@@ -112,7 +115,7 @@ void INetManager::SendNetTime() {
 
 
 
-void INetManager::SendPeerInfo(NetRpc* rpc) {
+void INetManager::SendPeerInfo(Peer* peer) {
     //auto now(steady_clock::now());
     //double netTime =
     //    (double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
@@ -133,7 +136,7 @@ void INetManager::SendPeerInfo(NetRpc* rpc) {
     pkg.Write(world->m_worldGenVersion);
     pkg.Write(Valhalla()->NetTime());
 
-    rpc->Invoke(Hashes::Rpc::PeerInfo, pkg);
+    peer->Invoke(Hashes::Rpc::PeerInfo, pkg);
 }
 
 
@@ -166,18 +169,22 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
         return rpc->Close(ConnectionStatus::ErrorBanned);
 
-    // this is ugly
-    // but probably how it should be done
-    // Transfer the Rpc
-    auto &&socket = rpc->m_socket;
-    for (auto &&j: m_rpcs) {
-        if (j.get() == rpc) {
-            j.reset();
-            break;
-        }
-    }
+    // If the 
+    //auto socket = rpc->m_socket;
+    //// Destroy the rpc
+    //for (auto &&j: m_rpcs) {
+    //    if (j.get() == rpc) {
+    //        //j.reset(); // DO NOT CALL DESTRUCTOR (will cause weirdness)
+    //        j.release();
+    //        break;
+    //    }
+    //}
 
-    auto peer(std::make_unique<Peer>(socket, uuid, name, pos));
+    //rpc = nullptr;
+
+    auto peer(std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos));
+
+    assert(!rpc->m_socket);
 
     // Important
     peer->Register(Hashes::Rpc::RefPos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
@@ -225,9 +232,13 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
         peer->RemotePrint(s);
     });
 
-    m_peers.insert({ peer->m_uuid, std::move(peer) });
+    SendPeerInfo(peer.get());
 
-    SendPeerInfo(rpc);
+    ZDOManager()->OnNewPeer(peer.get());
+    RouteManager()->OnNewPeer(peer.get());
+    ZoneManager()->OnNewPeer(peer.get());
+
+    m_peers.insert({ peer->m_uuid, std::move(peer) });
 }
 
 
@@ -261,7 +272,8 @@ void INetManager::Init() {
 
 void INetManager::Update() {
     OPTICK_EVENT();
-    // Accept new connections into joining
+
+    // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
         auto&& rpc = std::make_unique<NetRpc>(opt.value());
                         
@@ -283,12 +295,13 @@ void INetManager::Update() {
         m_rpcs.push_back(std::move(rpc));
     }
 
-    // Cleanup joining
+    // Cleanup
     {
         auto&& itr = m_rpcs.begin();
         while (itr != m_rpcs.end()) {
-            auto&& peer = itr->get();
-            if (!(peer && peer->m_socket->Connected())) {
+            auto&& rpc = itr->get();
+            assert(rpc);
+            if (!(rpc->m_socket && rpc->m_socket->Connected())) {
                 itr = m_rpcs.erase(itr);
             } else {
                 ++itr;
@@ -296,7 +309,6 @@ void INetManager::Update() {
         }
     }
 
-    // Cleanup peers
     {
         auto&& itr = m_peers.begin();
         while (itr != m_peers.end()) {

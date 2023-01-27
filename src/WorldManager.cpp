@@ -224,6 +224,8 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 				world->m_seed = zpackage.Read<int32_t>();
 				world->m_uid = zpackage.Read<OWNER_t>();
 				world->m_worldGenVersion = worldVersion >= 26 ? zpackage.Read<int32_t>() : 0;
+				LOG(INFO) << "Loaded world '" << world->m_name << "' with seed " <<
+					world->m_seed << " (" << world->m_seedName << ")";
 				success = true;
 			}
 			catch (const std::range_error& e) {

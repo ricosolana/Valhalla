@@ -1,7 +1,9 @@
 #include "NetRpc.h"
 #include "Hashes.h"
 
-void /* IMethod<INetRpc*>* */ NetRpc::PollOne() {
+void NetRpc::PollOne() {
+    m_socket->Update();
+
     auto opt = m_socket->Recv();
     if (!opt)
         return;
@@ -17,7 +19,7 @@ void /* IMethod<INetRpc*>* */ NetRpc::PollOne() {
             pkg.m_stream.Clear();
             pkg.Write<HASH_t>(0);
             pkg.Write<bool>(false);
-            SendPackage(std::move(pkg));
+            m_socket->Send(std::move(pkg));
         }
         else {
             m_lastPing = now;

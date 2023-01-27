@@ -5,6 +5,8 @@
 #include "ValhallaServer.h"
 
 class IRouteManager {
+	friend class INetManager;
+
 	struct Data {
 		OWNER_t m_msgID;
 		OWNER_t m_senderPeerID;

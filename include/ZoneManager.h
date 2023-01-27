@@ -5,12 +5,14 @@
 #include "Quaternion.h"
 #include "HeightMap.h"
 #include "HashUtils.h"
+#include "Peer.h"
 
 class Prefab;
 
 using ZoneID = Vector2i;
 
 class IZoneManager {
+	friend class INetManager;
 
 	// Rename this to ZoneFeature
 	struct ZoneLocation {
@@ -20,8 +22,9 @@ class IZoneManager {
 			Quaternion m_rot = Quaternion::IDENTITY; // hmm
 		};
 
-		//std::string m_prefabName;
-		const Prefab* m_prefab;
+		std::string m_name;
+		HASH_t m_hash;
+		//const Prefab* m_prefab;
 
 		Biome m_biome;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
@@ -121,24 +124,11 @@ private:
 	float ZONE_TTL = 4;
 	float ZONE_TTS = 4;
 
-	std::vector<std::string> m_locationScenes;
-
 	std::vector<std::unique_ptr<ZoneVegetation>> m_vegetation;
-
-	//std::vector<std::unique_ptr<ZoneLocation>> m_locations;
 
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<ZoneLocation>> m_locationsByHash;
 
-	//[HideInInspector]
 	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
-
-
-
-	// Private vars
-
-	robin_hood::unordered_map<Vector3, std::string> tempIconList;
-
-	//robin_hood::unordered_map<Vector2i, ZoneData> m_zones;
 
 	robin_hood::unordered_set<Vector2i> m_generatedZones;
 
@@ -149,7 +139,7 @@ private:
 private:
 	void SendGlobalKeys(OWNER_t peer);
 	void SendLocationIcons(OWNER_t peer);
-	void OnNewPeer(OWNER_t peerID);
+	void OnNewPeer(Peer* peer);
 
 	void Update();
 	void CreateGhostZones(const Vector3& refPoint);
@@ -163,8 +153,6 @@ private:
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
 	ZoneLocation* GetLocation(int32_t hash);
 	ZoneLocation* GetLocation(const std::string& name);
-
-	void GenerateLocations();
 
 	void GenerateLocations(const ZoneLocation *location);
 	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
@@ -181,6 +169,8 @@ private:
 	bool IsZoneGenerated(const Vector2i& zoneID);
 
 public:
+	void GenerateLocations();
+
 	void Init();
 
 	void Save(NetPackage& pkg);

@@ -14,6 +14,7 @@ void IGeoManager::Init() {
 	LOG(INFO) << "Initializing GeoManager";
 
 	m_world = WorldManager()->GetWorld();
+	assert(m_world);
 
 	if (m_world->m_worldGenVersion <= 0)
 		m_minMountainDistance = 1500;
@@ -168,15 +169,15 @@ bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterati
 void IGeoManager::GenerateRivers() {
 	VUtils::Random::State state(m_riverSeed);
 
-	//std::vector<River> list;
+	std::vector<River> list;
 	std::vector<Vector2> list2(m_lakes);
 
 	while (list2.size() > 1)
 	{
 		Vector2 vector = list2[0];
-		int num = FindRandomRiverEnd(state, vector, 2000, 0.4f, 128);
+		int num = FindRandomRiverEnd(state, list, m_lakes, vector, 2000, 0.4f, 128);
 		if (num == -1 && !HaveRiver(m_rivers, vector)) {
-			num = FindRandomRiverEnd(state, vector, 5000, 0.4f, 128);
+			num = FindRandomRiverEnd(state, list, m_lakes, vector, 5000, 0.4f, 128);
 		}
 
 		if (num != -1) {
@@ -199,13 +200,15 @@ void IGeoManager::GenerateRivers() {
 	RenderRivers(state, m_rivers);
 }
 
-int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const Vector2& p, float maxDistance, float heightLimit, float checkStep) {
+int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2> &points, 
+	const Vector2& p, float maxDistance, float heightLimit, float checkStep) const {
+
 	std::vector<int> list;
-	for (int i = 0; i < m_lakes.size(); i++) {
-		if (!(m_lakes[i] == p)
-			&& p.Distance(m_lakes[i]) < maxDistance
-			&& !HaveRiver(m_rivers, p, m_lakes[i])
-			&& IsRiverAllowed(p, m_lakes[i], checkStep, heightLimit))
+	for (int i = 0; i < points.size(); i++) {
+		if (!(points[i] == p)
+			&& p.Distance(points[i]) < maxDistance
+			&& !HaveRiver(rivers, p, points[i])
+			&& IsRiverAllowed(p, points[i], checkStep, heightLimit))
 		{
 			list.push_back(i);
 		}
@@ -217,7 +220,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const Vector2&
 	return list[state.Range(0, list.size())];
 }
 
-bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0) {
+bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0) const {
 	for (auto&& river : rivers) {
 		if (river.p0 == p0 || river.p1 == p0) {
 			return true;
@@ -226,7 +229,7 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0)
 	return false;
 }
 
-bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1) {
+bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1) const {
 	for (auto&& river : rivers)
 	{
 		if ((river.p0 == p0 && river.p1 == p1)
@@ -238,7 +241,7 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0,
 	return false;
 }
 
-bool IGeoManager::IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit) {
+bool IGeoManager::IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit) const {
 	float num = p0.Distance(p1);
 	Vector2 normalized = (p1 - p0).Normalized();
 	bool flag = true;
@@ -361,7 +364,7 @@ float IGeoManager::WorldAngle(float wx, float wy) {
 	return sin(atan2(wx, wy) * 20.f);
 }
 
-float IGeoManager::GetBaseHeight(float wx, float wy) {
+float IGeoManager::GetBaseHeight(float wx, float wy) const {
 	//float num2 = VUtils.Length(wx, wy);
 	float num2 = VUtils::Math::Magnitude(wx, wy);
 	wx += 100000 + m_offset0;

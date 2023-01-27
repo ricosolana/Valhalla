@@ -37,7 +37,7 @@ private:
 
     void SendNetTime();
 
-    void SendPeerInfo(NetRpc* rpc);
+    void SendPeerInfo(Peer *peer);
 
     void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg);
 

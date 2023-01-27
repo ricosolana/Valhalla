@@ -118,10 +118,11 @@ private:
 	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2& start, float minLength, float maxLength, Vector2& end);
 	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2& p, float& starth);
 	void GenerateRivers();
-	int FindRandomRiverEnd(VUtils::Random::State& state, const Vector2& p, float maxDistance, float heightLimit, float checkStep);
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0);
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1);
-	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit);
+	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2>& points, 
+		const Vector2& p, float maxDistance, float heightLimit, float checkStep) const;
+	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0) const;
+	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1) const;
+	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit) const;
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
 	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
 		const Vector2& p,
@@ -133,7 +134,7 @@ private:
 	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth);
 	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
 	float WorldAngle(float wx, float wy);
-	float GetBaseHeight(float wx, float wy);
+	float GetBaseHeight(float wx, float wy) const;
 	float AddRivers(float wx, float wy, float h);
 
 	float GetGenerationHeight(float x, float y);

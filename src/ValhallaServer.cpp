@@ -9,6 +9,7 @@
 #include "NetManager.h"
 #include "ZoneManager.h"
 #include "ZDOManager.h"
+#include "GeoManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -148,8 +149,10 @@ void IValhalla::Start() {
 
     PrefabManager()->Init();
     ZDOManager()->Init();
-    ZoneManager()->Init();
     WorldManager()->Init();
+    ZoneManager()->Init();
+    GeoManager()->Init();
+    ZoneManager()->GenerateLocations();
     NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";

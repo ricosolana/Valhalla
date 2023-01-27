@@ -28,11 +28,6 @@ private:
 
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
-private:
-    void SendPackage(NetPackage pkg) const {
-        m_socket->Send(std::move(pkg));
-    }
-
 public:
     ISocket::Ptr m_socket;
 
@@ -42,6 +37,10 @@ public:
 
     NetRpc(const NetRpc& other) = delete; // copy
     NetRpc(NetRpc&& other) = delete; // move
+
+    ~NetRpc() {
+        LOG(INFO) << "~NetRpc()";
+    }
 
     /**
         * @brief Register a static method for remote invocation
@@ -73,7 +72,7 @@ public:
         pkg.Write(hash);
         NetPackage::_Serialize(pkg, params...); // serialize
 
-        SendPackage(std::move(pkg));
+        m_socket->Send(std::move(pkg));
     }
 
     template <typename... Types>
@@ -86,7 +85,6 @@ public:
         Invoke(name.c_str(), params...);
     }
 
-public:
     void Close(ConnectionStatus status);
 
     void PollOne();
