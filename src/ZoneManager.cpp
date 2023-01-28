@@ -696,7 +696,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     }
 
     if (spawnedLocations < location->m_quantity) {
-        LOG(ERROR) << "Failed to place all " << location->m_name << ", placed " << spawnedLocations << "/" << location->m_quantity;
+        LOG(WARNING) << "Failed to place all " << location->m_name << ", placed " << spawnedLocations << "/" << location->m_quantity;
 
         //LOG(ERROR) << "errLocations " << errLocations;
         //LOG(ERROR) << "errCenterDistances " << errCenterDistances;
