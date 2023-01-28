@@ -154,6 +154,8 @@ private:
 	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, std::vector<ClearArea>& clearAreas);
 	void PlaceLocations(const ZoneID& zone, std::vector<ClearArea>& clearAreas);
 
+	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
+	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
 	const ZoneLocation* GetLocation(int32_t hash);
