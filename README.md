@@ -15,7 +15,9 @@ No longer being developed. Graphics programming is not my thing :(
 ## Progress
 ### 1/27/2023 + TODO
  - WorldGenerator (renamed GeoManager) seems yields results similar to Valheim
- - ZoneLocation generation seems broken (`Failed to place all InfestedTree01, placed 0/700`). I will experiment with it until results are as expected.
+ - Generation is more stable now, but still inaccurate compared to the Unity implementation. 
+ 
+![Comparative generation console results](/pics/generation-console.jpg)
 
 There was a patch released for Valheim today (0.213.3), and I have yet to see whether anything with world generation was changed (I doubt it). Most of the fixes seem to be client-side networking (Playfab too) and some new buildings/hats being added (I'll have to update prefabs list).
 
