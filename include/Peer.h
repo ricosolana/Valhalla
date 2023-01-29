@@ -85,4 +85,6 @@ public:
     void Kick(const std::string& reason);
     void SendDisconnect();
     void Disconnect();
+
+    //void Message();
 };

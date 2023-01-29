@@ -23,10 +23,13 @@ private:
 private:
     void InitPassword();
 
+    // Kick a player by name
     void Kick(const std::string& user);
 
+    // Ban a player by name
     void Ban(const std::string& user);
 
+    // Unban a player by name
     void Unban(const std::string& user);
 
     void SendDisconnect(Peer* peer);

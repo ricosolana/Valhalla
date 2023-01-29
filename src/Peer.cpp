@@ -3,6 +3,7 @@
 #include "ValhallaServer.h"
 #include "ZoneManager.h"
 #include "Hashes.h"
+#include "RouteManager.h"
 
 void Peer::Update() {
     OPTICK_EVENT();
@@ -45,6 +46,10 @@ void Peer::Update() {
 
 
 
+void Peer::RemotePrint(const std::string& msg) {
+    Invoke(Hashes::Rpc::RemotePrint, msg);
+}
+
 void Peer::Kick(bool now) {
     LOG(INFO) << "Kicking " << m_name;
 
@@ -68,9 +73,15 @@ void Peer::Disconnect() {
     m_socket->Close(true);
 }
 
-void Peer::RemotePrint(const std::string& msg) {
-    Invoke(Hashes::Rpc::RemotePrint, msg);
-}
+//void Peer::Message() {
+//    RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
+//            localPlayer.GetHeadPoint(),
+//            2,
+//            localPlayer.GetPlayerName(),
+//            text,
+//            PrivilegeManager.GetNetworkUserId()
+//        );
+//}
 
 
 

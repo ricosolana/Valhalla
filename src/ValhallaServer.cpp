@@ -10,6 +10,8 @@
 #include "ZoneManager.h"
 #include "ZDOManager.h"
 #include "GeoManager.h"
+#include "RouteManager.h"
+#include "Hashes.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -94,6 +96,8 @@ void IValhalla::LoadFiles() {
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
     m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
+    m_settings.saveInterval = seconds(loadNode["save-interval"].as<unsigned int>(1800));
+
     LOG(INFO) << "Server config loaded";
 
     if (createSettingsFile) {
@@ -117,6 +121,8 @@ void IValhalla::LoadFiles() {
         saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
+
+        saveNode["save-interval"] = m_settings.saveInterval.count();
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -219,6 +225,25 @@ void IValhalla::Update() {
         m_netTime += Delta();
     
     NetManager()->Update();
+
+    ZDOManager()->Update();
+
+    PERIODIC_NOW(10s, {
+        Broadcast(MessageType::Center, "bruh");
+    });
+
+
+
+    /*
+    // save warming message
+    PERIODIC_LATER(SERVER_SETTINGS.saveInterval, SERVER_SETTINGS.saveInterval, {
+        LOG(INFO) << "World saving in 30s";
+        Broadcast(MessageType::Center, "$msg_worldsavewarning 30s");
+    });
+
+    PERIODIC_LATER(SERVER_SETTINGS.saveInterval, SERVER_SETTINGS.saveInterval + 30s, {
+        WorldManager()->SaveWorldDB(WorldManager()->GetWorld()->m_name);
+    });*/
 }
 
 
@@ -248,4 +273,8 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
     Task* task = new Task{std::move(f), at, period};
     m_tasks.push_back(std::unique_ptr<Task>(task));
     return *task;
+}
+
+void IValhalla::Broadcast(MessageType type, const std::string& text) {
+    RouteManager()->Invoke(Hashes::Routed::ShowMessage, type, text);
 }

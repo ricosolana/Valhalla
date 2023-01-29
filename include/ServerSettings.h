@@ -23,4 +23,6 @@ struct ServerSettings {
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
+
+    seconds saveInterval;
 };

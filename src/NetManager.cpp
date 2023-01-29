@@ -182,9 +182,15 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     //rpc = nullptr;
 
-    auto peer(std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos));
+    //auto peer(std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos));
+    //auto peer = new Peer(std::move(rpc->m_socket), uuid, name, pos);
+    //m_peers.insert({ peer->m_uuid, std::move(peer) });
 
-    assert(!rpc->m_socket);
+    assert(!m_peers.contains(uuid));
+    Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
+    
+    assert(rpc->m_socket == nullptr);
+    rpc = nullptr;
 
     // Important
     peer->Register(Hashes::Rpc::RefPos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
@@ -232,13 +238,13 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
         peer->RemotePrint(s);
     });
 
-    SendPeerInfo(peer.get());
+    SendPeerInfo(peer);
 
-    ZDOManager()->OnNewPeer(peer.get());
-    RouteManager()->OnNewPeer(peer.get());
-    ZoneManager()->OnNewPeer(peer.get());
+    ZDOManager()->OnNewPeer(peer);
+    RouteManager()->OnNewPeer(peer);
+    ZoneManager()->OnNewPeer(peer);
 
-    m_peers.insert({ peer->m_uuid, std::move(peer) });
+    //m_peers.insert({ peer->m_uuid, std::move(peer) });
 }
 
 
@@ -295,6 +301,10 @@ void INetManager::Update() {
         m_rpcs.push_back(std::move(rpc));
     }
 
+
+
+    SteamGameServer_RunCallbacks();
+
     // Cleanup
     {
         auto&& itr = m_rpcs.begin();
@@ -303,7 +313,8 @@ void INetManager::Update() {
             assert(rpc);
             if (!(rpc->m_socket && rpc->m_socket->Connected())) {
                 itr = m_rpcs.erase(itr);
-            } else {
+            }
+            else {
                 ++itr;
             }
         }
@@ -317,6 +328,11 @@ void INetManager::Update() {
 
             if (!peer->m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
+
+                // no longer needed
+                //RouteManager()->
+
+                ZDOManager()->OnPeerQuit(peer.get());
                 itr = m_peers.erase(itr);
             }
             else {
@@ -325,11 +341,13 @@ void INetManager::Update() {
         }
     }
 
+
+
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
         SendNetTime();
         SendPlayerList();
-    });        
+    });
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {
@@ -374,8 +392,6 @@ void INetManager::Update() {
             rpc->m_socket->Close(false);
         }
     }
-
-    SteamGameServer_RunCallbacks();
 }
 
 void INetManager::Close() {

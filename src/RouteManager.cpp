@@ -45,7 +45,9 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 			find->second->Invoke(sender, std::move(data.m_parameters));
 		}
 		else {
-			LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
+			// Due to the way Valhiem manages it RoutedRPC's, 
+			//	the server will receive its own self-invoked RoutedRPC calls
+			//LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
 		}
 	}
 }
@@ -54,7 +56,8 @@ void IRouteManager::Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t ha
 	static OWNER_t m_rpcMsgID = 1;
 
 	Data data;
-	data.m_msgID = SERVER_ID + m_rpcMsgID++;
+	//data.m_msgID = SERVER_ID + m_rpcMsgID++;
+	data.m_msgID = m_rpcMsgID++;
 	data.m_senderPeerID = SERVER_ID;
 	data.m_targetPeerID = target;
 	data.m_targetSync = targetNetSync;

@@ -158,7 +158,7 @@ private:
 	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
-	const ZoneLocation* GetLocation(int32_t hash);
+	const ZoneLocation* GetLocation(HASH_t hash);
 	const ZoneLocation* GetLocation(const std::string& name);
 
 	void GenerateLocations(const ZoneLocation *location);

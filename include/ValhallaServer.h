@@ -9,6 +9,11 @@
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
 
+enum class MessageType : int32_t {
+    TopLeft = 1,
+    Center
+};
+
 class NetRpc;
 class IWorldManager;
 
@@ -89,6 +94,8 @@ public:
     Task& RunTaskRepeat(Task::F f, std::chrono::milliseconds period);
     Task& RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period);
     Task& RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
+
+    void Broadcast(MessageType type, const std::string &text);
 
 private:
     void Update();

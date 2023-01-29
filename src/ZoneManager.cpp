@@ -228,7 +228,7 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
         zpackage.Write(keyValuePair.second);
     }
 
-    RouteManager()->Invoke(peer, "LocationIcons", zpackage);
+    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, zpackage);
 }
 
 // private
@@ -563,7 +563,8 @@ void IZoneManager::GenerateLocations() {
 
     // Already presorted by priority
     for (auto&& loc : m_locations) {
-        GenerateLocations(loc.get());
+        if (loc->m_name == "StartTemple") // TEMPORARY, REMOVE LATER ONCE GENERATION IS STABLE
+            GenerateLocations(loc.get());
     }
 
     LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
@@ -630,9 +631,11 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
                     float magnitude = randomPointInZone.Magnitude();
                     //if (magnitude > 0 && (magnitude < location->m_minDistance || magnitude > location->m_maxDistance))
-                    if ((location->m_minDistance != 0 && magnitude < location->m_minDistance) 
-                        || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance))
+                    if ((location->m_minDistance != 0 && magnitude < location->m_minDistance)
+                        || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance)) {
+                        //assert(location->m_minDistance || location->m_maxDistance);
                         errCenterDistances++;
+                    } 
                     else {
                         Biome biome = GeoManager()->GetBiome(randomPointInZone);
 
@@ -660,9 +663,9 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                                     errTerrainDelta++;
                                 else {
                                     //if (location->m_minDistanceFromSimilar <= 0) {
-                                    if (location->m_minDistanceFromSimilar 
+                                    if (location->m_minDistanceFromSimilar <= 0
                                         || !HaveLocationInRange(location, randomPointInZone)) {
-
+                                        //assert(location->m_minDistanceFromSimilar <= 0);
                                         // HaveLocationInRange: inlined
                                         //bool locInRange = false;
                                         //for (auto&& inst : m_locationInstances) {
@@ -770,7 +773,7 @@ Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) 
     }*/
 
     // private
-void IZoneManager::PlaceLocations(const Vector2i &zoneID,
+void IZoneManager::PlaceLocations(const ZoneID &zoneID,
     std::vector<ClearArea>& clearAreas)
 {
     auto now(steady_clock::now());

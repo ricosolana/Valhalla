@@ -55,9 +55,6 @@ private:
 
 public:
 
-	//enum ChatManager::Type;
-	//void Register(HASH_t, std::function<void(OWNER_t, Vector3, ChatManager::Type, std::string, std::string, std::string)>);
-
 	/**
 		* @brief Register a static method for routed remote invocation
 		* @param name function name to register
@@ -76,21 +73,19 @@ public:
 
 
 
-	/**
-		* @brief Invoke a routed function bound to a peer with sub zdo
-		* @param name function name
-		* @param ...types function parameters
-	*/
+	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const Args&... params) {
 		Invoke(target, targetNetSync, hash, NetPackage::Serialize(params...));
 	}
 
+	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
 		Invoke(target, targetNetSync, VUtils::String::GetStableHashCode(name), params...);
 	}
 
+	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void Invoke(OWNER_t target, const NetID& targetNetSync, std::string& name, const Args&... params) {
 		Invoke(target, targetNetSync, name.c_str(), params...);
@@ -98,25 +93,44 @@ public:
 
 
 
-	/**
-		* @brief Invoke a routed function bound to a peer
-		* @param name function name
-		* @param ...types function parameters
-	*/
+	// Invoke a routed function bound to a peer
 	template <typename... Args>
 	void Invoke(OWNER_t target, HASH_t hash, const Args&... params) {
 		Invoke(target, NetID::NONE, hash, params...);
 	}
 
+	// Invoke a routed function bound to a peer
 	template <typename... Args>
 	void Invoke(OWNER_t target, const char* name, const Args&... params) {
 		Invoke(target, NetID::NONE, VUtils::String::GetStableHashCode(name), params...);
 	}
 
+	// Invoke a routed function bound to a peer
 	template <typename... Args>
 	void Invoke(OWNER_t target, std::string& name, const Args&... params) {
 		Invoke(target, NetID::NONE, name.c_str(), params...);
 	}
+
+
+
+	// Invoke a routed function targeted to all peers
+	template <typename... Args>
+	void Invoke(HASH_t hash, const Args&... params) {
+		Invoke(EVERYBODY, hash, params...);
+	}
+
+	// Invoke a routed function targeted to all peers
+	template <typename... Args>
+	void Invoke(const char* name, const Args&... params) {
+		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), params...);
+	}
+
+	// Invoke a routed function targeted to all peers
+	template <typename... Args>
+	void Invoke(std::string& name, const Args&... params) {
+		Invoke(EVERYBODY, name.c_str(), params...);
+	}
+
 };
 
 IRouteManager* RouteManager();
