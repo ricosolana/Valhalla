@@ -150,11 +150,35 @@ namespace VUtils::Random {
 
     static const std::string charsAlphaNum = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ023456789";
 
+    /*
+        Valheim GenerateUID method has a sliced probabilistic range:
+        return object.GetHashCode .. UnityEngine.Random.Range(1, int.MaxValue);
+
+        [INT_MIN + 1, INT_MAX + INT_MAX)
+        [-2147483648 + 1, 2147483647 + 2147483647)
+        [0xFFFFFFFF80000001, 00000000FFFFFFFE)
+
+        [0x1, 0x00000000FFFFFFFE) U [0xFFFFFFFF80000001, 0xFFFFFFFFFFFFFFFF]
+
+        [0x1, 0x00000000FFFFFFFD] U [0xFFFFFFFF80000001, 0xFFFFFFFFFFFFFFFF]
+
+        unsigned:
+        [1, 4294967293] U [18446744071562067969, 18446744073709551615]
+
+        signed:
+        [-2,147,483,647, +4,294,967,293]
+    */
     OWNER_t GenerateUID() {
-        OWNER_t result = 0;
-        while (!result)
-            GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
-        return result;
+
+        State state;
+        return (int64_t) state.Range(
+            std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()) +
+            (int64_t) state.Range(1, std::numeric_limits<int32_t>::max());
+
+        //OWNER_t result = 0;
+        //while (!result)
+        //    GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
+        //return result;
     }
 
     std::string GenerateAlphaNum(unsigned int count) {
