@@ -723,7 +723,7 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 					if (ownerRev > zdo->m_rev.m_ownerRev) {
 						zdo->m_owner = owner;
 						zdo->m_rev.m_ownerRev = ownerRev;
-						peer->m_zdos.insert({ zdoid, rev });
+						peer->m_zdos[zdoid] = rev;
 					}
 					continue;
 				}
