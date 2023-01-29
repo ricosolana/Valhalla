@@ -4,7 +4,7 @@
 
 using namespace std::chrono_literals;
 
-#define SERVER_VERSION "1.0.0-alpha"
+#define SERVER_VERSION "v1.0.2"
 
 // Interval for RPC pinging
 // Should be inlined

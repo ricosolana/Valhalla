@@ -212,11 +212,14 @@ void IZoneManager::Init() {
 
 // private
 void IZoneManager::SendGlobalKeys(OWNER_t peer) {
+    LOG(INFO) << "Sending global keys to " << peer;
     RouteManager()->Invoke(peer, "GlobalKeys", m_globalKeys);
 }
 
 // private
 void IZoneManager::SendLocationIcons(OWNER_t peer) {
+    LOG(INFO) << "Sending location icons to " << peer;
+
     NetPackage zpackage;
 
     robin_hood::unordered_map<Vector3, std::string> icons;
@@ -233,7 +236,6 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 
 // private
 void IZoneManager::OnNewPeer(Peer* peer) {
-    LOG(INFO) << "Server: New peer connected,sending global keys";
     SendGlobalKeys(peer->m_uuid);
     SendLocationIcons(peer->m_uuid);
 }

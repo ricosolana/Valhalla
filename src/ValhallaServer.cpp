@@ -137,8 +137,8 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {
-    LOG(INFO) << "Starting Valhalla";
-
+    LOG(INFO) << "Starting Valhalla " << SERVER_VERSION << " for (Valheim " << VConstants::GAME << ")";
+    
     assert(!m_running);
 
     // Does not work properly in some circumstances
@@ -227,6 +227,8 @@ void IValhalla::Update() {
     NetManager()->Update();
 
     ZDOManager()->Update();
+
+    //ZoneManager()->Update(); // untested
 
     PERIODIC_NOW(10s, {
         Broadcast(MessageType::Center, "bruh");
