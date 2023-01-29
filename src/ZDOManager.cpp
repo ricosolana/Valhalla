@@ -721,6 +721,7 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				// if the client data rev is not new, and they've reassigned the owner:
 				if (dataRev <= zdo->m_rev.m_dataRev) {
 					if (ownerRev > zdo->m_rev.m_ownerRev) {
+						zdo->m_owner = owner;
 						zdo->m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos.insert({ zdoid, rev });
 					}
