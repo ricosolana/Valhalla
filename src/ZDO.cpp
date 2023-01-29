@@ -61,7 +61,7 @@ ZDO::ZDO(PrefabZDO& prefab) {
 }
 */
 
-
+//size_t s = sizeof(ZDO);
 
 void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);      static_assert(sizeof(Rev::m_ownerRev) == 4);
@@ -156,12 +156,6 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
 //        _Set(pair1.first, pair1.second.second, pair1.second.first);
 //    }
 //}
-
-
-
-ZDO::~ZDO() {
-    FreeMembers();
-}
 
 
 
@@ -320,10 +314,6 @@ void ZDO::SetSector(const Vector2i& sector) {
     }
 }
 
-void ZDO::FreeMembers() {
-    m_members.clear();
-}
-
 void ZDO::Invalidate() {
     this->m_id = ZDOID::NONE;
     this->m_persistent = false;
@@ -340,7 +330,7 @@ void ZDO::Invalidate() {
     this->m_position = Vector3::ZERO;
     this->m_rotation = Quaternion::IDENTITY;
 
-    FreeMembers();
+    m_members.clear();
 }
 
 void ZDO::Serialize(NetPackage& pkg) const {

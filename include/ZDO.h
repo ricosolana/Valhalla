@@ -323,8 +323,6 @@ private:
         m_rev.m_dataRev++;
     }
 
-    void FreeMembers();
-
     template<typename T, typename CountType>
     void _TryWriteType(NetPackage& pkg) const {
         // Load/Save use count char for every member (including 0 counts)
@@ -388,9 +386,6 @@ public:
     void Load(NetPackage& reader, int32_t version);
 
 
-    //ZDO(const ZDO& other); // copy constructor
-
-    ~ZDO();
 
     // Trivial hash getters
 
