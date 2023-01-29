@@ -55,6 +55,7 @@ public:
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
+
     // https://stackoverflow.com/a/1122109
     //enum class Ordinal : uint8_t {
     //    FLOAT = 1,  // 1 << (1 - 1) = 1
@@ -75,6 +76,8 @@ private:
     static constexpr Ordinal ORD_STRING = 4;
     static constexpr Ordinal ORD_LONG = 6;    
     static constexpr Ordinal ORD_ARRAY = 7;
+
+
 
     template<TrivialSyncType T>
     static constexpr Ordinal GetOrdinal() {
@@ -129,6 +132,130 @@ private:
             - (shift * shift);
     }
 
+
+
+    class Ord {
+    private:
+        // Allocated bytes of [Ordinal, member...]
+        //  First byte is Ordinal
+        //  Remaining allocation is type
+        
+        BYTE_t* m_contiguous;
+
+        static_assert(sizeof(*m_contiguous) == 1);
+
+        Ordinal* _Ordinal() {
+            return (Ordinal*)m_contiguous;
+        }
+
+        const Ordinal* _Ordinal() const {
+            return (Ordinal*)m_contiguous;
+        }
+
+        template<TrivialSyncType T>
+        T* _Member() {
+            return (T*)(m_contiguous + sizeof(Ordinal));
+        }
+
+        template<TrivialSyncType T>
+        const T* _Member() const {
+            return (T*)(m_contiguous + sizeof(Ordinal));
+        }
+
+    public:
+        template<TrivialSyncType T>
+        Ord(const T &type) {
+            this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(T));
+
+            *this->_Ordinal() = GetOrdinal<T>();
+
+            // https://stackoverflow.com/questions/2494471/c-is-it-possible-to-call-a-constructor-directly-without-new
+            new (this->_Member<T>()) T(type);
+
+            //*this->_Member<T>() = type;
+
+            //*(m_contiguous) = GetOrdinal<T>();
+            //*(T*)Member() = type;
+            
+            //*(reinterpret_cast<T*>(m_contiguous + 1u)) = type;
+        }
+
+        Ord(const Ord& other) = delete;
+
+        //Ord(Ord&& other) = delete;
+
+        Ord(Ord&& other) {
+            this->m_contiguous = other.m_contiguous;
+            other.m_contiguous = nullptr;
+        }
+
+        ~Ord() {
+            if (!m_contiguous)
+                return;
+
+            switch (*_Ordinal()) {
+                case ORD_FLOAT: break;
+                case ORD_VECTOR3: break;
+                case ORD_QUATERNION: break;
+                case ORD_INT: break;
+                case ORD_LONG: break;
+                //case ORD_STRING: reinterpret_cast<std::string*>(m_contiguous + 1U)->~basic_string(); break;
+                //case ORD_ARRAY: reinterpret_cast<BYTES_t*>(m_contiguous + 1U)->~vector(); break;
+                case ORD_STRING: _Member<std::string>()->~basic_string(); break;
+                case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
+            }
+
+            free(m_contiguous);
+        }
+
+
+
+        template<TrivialSyncType T>
+        bool IsType() const {
+            return *_Ordinal() == GetOrdinal<T>();
+        }
+
+        template<TrivialSyncType T>
+        void AssertType() const {
+            assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
+            if (!IsType<T>())
+                throw std::invalid_argument("type has collision; bad algo or peer zdo is malicious");
+        }
+
+        // Reassign the underlying member value
+        //  Will throw if a 
+        template<TrivialSyncType T>
+        void Set(const T& type) {
+            AssertType<T>();
+
+            // reassignment in place
+            //*((T*)(this->m_contiguous + 1u)) = type;
+            *_Member<T>() = type;
+        }
+
+        template<TrivialSyncType T>
+        const T* Get() const {
+            AssertType<T>();
+
+            //return (T*)(m_contiguous + 1u);
+
+            return _Member<T>();
+        }
+
+        template<TrivialSyncType T>
+        bool Write(NetPackage& pkg, HASH_t hash) const {
+            if (!IsType<T>())
+                return false;
+
+            pkg.Write(FromShiftHash<T>(hash));
+            //pkg.Write(*(T*)(m_contiguous + 1));
+            pkg.Write(*_Member<T>());
+            return true;
+        }
+    };
+
+
+
     // Get the object by hash
     // No copies are made (even for primitives)
     // Returns null if not found 
@@ -140,9 +267,11 @@ private:
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
                 // good programming and proper use will prevent this bad case
-                assert(find->second.first == GetOrdinal<T>());
+                //assert(find->second.first == GetOrdinal<T>());
 
-                return (T*) find->second.second;
+                //return (T*) find->second.second;
+
+                return find->second.Get<T>();
             }
         }
         return nullptr;
@@ -167,27 +296,32 @@ private:
                 // There is a possibility of type collisions
                 // So check during runtime
                 // IE, a client could exploit this to cause UB
-                assert(find->second.first == GetOrdinal<T>() && "type-hash collision");
-                if (find->second.first != GetOrdinal<T>())
-                    throw std::invalid_argument("type-hash collision")
+                //assert(find->second.first == GetOrdinal<T>() && "type-hash collision");
+                //if (find->second.first != GetOrdinal<T>())
+                    //throw std::invalid_argument("type-hash collision")
+
+                find->second.Set<T>(value);
 
                 // Reassign
-                auto&& v = (T*) find->second.second;
+                //auto&& v = (T*) find->second.second;
 
-                // TODO should large byte arrays be checked? or strings?
+                // TODO should large byte arrays be compared? or strings?
                 //if (*v == value)
                     //return;
-                *v = value;
+                //*v = value;
             }
             else {
                 // TODO restructure this ugly double code part
                 // could use goto, but ehh..
-                m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
+                //m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
+                m_members.insert({ key, Ord(value) });
             }
         }
         else {
             m_ordinalMask |= GetOrdinalMask<T>();
-            m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
+            //m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
+
+            m_members.insert({ key, Ord(value) });
         }
     }
 
@@ -206,8 +340,10 @@ private:
         }
     }
 
+
+
 public:     Rev m_rev;
-private:    robin_hood::unordered_map<HASH_t, std::pair<Ordinal, void*>> m_members;
+private:    robin_hood::unordered_map<HASH_t, Ord> m_members;
 private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;
@@ -249,12 +385,18 @@ private:
             BYTE_t count = 0;
             for (auto&& pair : m_members) {
                 // skip any types not matching
-                if (pair.second.first != GetOrdinal<T>())
-                    continue;
+                //if (pair.second.first != GetOrdinal<T>())
+                    //continue;
 
-                pkg.Write(FromShiftHash<T>(pair.first));
-                pkg.Write(*(T*)pair.second.second);
-                count++;
+                if (pair.second.Write<T>(pkg, pair.first))
+                    count++;
+
+                //if (!pair.second.IsType<T>())
+                //    continue;
+                //
+                //pkg.Write(FromShiftHash<T>(pair.first));
+                //pkg.Write(*(T*)pair.second.second);
+                //count++;
 
                 assert(count <= 127 && "shit");
             }

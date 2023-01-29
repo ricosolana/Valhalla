@@ -321,18 +321,20 @@ void ZDO::SetSector(const Vector2i& sector) {
 }
 
 void ZDO::FreeMembers() {
-    for (auto&& m : m_members) {
-        auto&& pair = m.second;
-        switch (pair.first) {
-            case ORD_FLOAT:        delete (float*)         pair.second; break;
-            case ORD_VECTOR3:      delete (Vector3*)       pair.second; break;
-            case ORD_QUATERNION:   delete (Quaternion*)    pair.second; break;
-            case ORD_INT:          delete (int32_t*)       pair.second; break;
-            case ORD_LONG:         delete (int64_t*)       pair.second; break;
-            case ORD_STRING:       delete (std::string*)   pair.second; break;
-            case ORD_ARRAY:        delete (BYTES_t*)       pair.second; break;
-        }
-    }
+    m_members.clear();
+
+    //for (auto&& m : m_members) {
+    //    auto&& pair = m.second;
+    //    switch (pair.first) {
+    //        case ORD_FLOAT:        delete (float*)         pair.second; break;
+    //        case ORD_VECTOR3:      delete (Vector3*)       pair.second; break;
+    //        case ORD_QUATERNION:   delete (Quaternion*)    pair.second; break;
+    //        case ORD_INT:          delete (int32_t*)       pair.second; break;
+    //        case ORD_LONG:         delete (int64_t*)       pair.second; break;
+    //        case ORD_STRING:       delete (std::string*)   pair.second; break;
+    //        case ORD_ARRAY:        delete (BYTES_t*)       pair.second; break;
+    //    }
+    //}
 }
 
 void ZDO::Invalidate() {
