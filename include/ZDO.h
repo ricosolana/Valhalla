@@ -155,16 +155,28 @@ private:
     template<TrivialSyncType T>
     void _Set(HASH_t key, const T& value) {
         key = ToShiftHash<T>(key);
+
+        // Quickly check whether type is in map
         if (m_ordinalMask & GetOrdinalMask<T>()) {
+
+            // Check whether the exact hash is in map
+            //  If map contains, assumed a value reassignment (of same type)
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
-                // good programming and proper use will prevent this bad case
-                assert(find->second.first == GetOrdinal<T>());
 
-                // reassign if changed
+                // There is a possibility of type collisions
+                // So check during runtime
+                // IE, a client could exploit this to cause UB
+                assert(find->second.first == GetOrdinal<T>() && "type-hash collision");
+                if (find->second.first != GetOrdinal<T>())
+                    throw std::invalid_argument("type-hash collision")
+
+                // Reassign
                 auto&& v = (T*) find->second.second;
-                if (*v == value)
-                    return;
+
+                // TODO should large byte arrays be checked? or strings?
+                //if (*v == value)
+                    //return;
                 *v = value;
             }
             else {
