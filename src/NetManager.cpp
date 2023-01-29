@@ -123,7 +123,7 @@ void INetManager::SendPeerInfo(Peer* peer) {
     pkg.Write(Valhalla()->ID());
     pkg.Write(VConstants::GAME);
     pkg.Write(Vector3()); // dummy
-    pkg.Write(VConstants::PLAYERNAME); // dummy
+    pkg.Write(""); // dummy
 
     // why does server need to send a position and name?
 

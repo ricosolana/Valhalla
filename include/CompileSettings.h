@@ -27,7 +27,7 @@ namespace VConstants {
     // Valheim Steam app id
     static constexpr int32_t APP_ID = 892970;
 
-    static const char* PLAYERNAME = "Stranger";
+    //static const char* PLAYERNAME = "Stranger";
 
     // Valheim game version
     static const char* GAME = "0.212.9";
