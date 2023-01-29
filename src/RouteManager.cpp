@@ -52,7 +52,7 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	}
 }
 
-void IRouteManager::Invoke(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg) {
+void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg) {
 	static OWNER_t m_rpcMsgID = 1;
 
 	Data data;

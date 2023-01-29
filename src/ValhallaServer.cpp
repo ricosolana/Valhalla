@@ -227,7 +227,7 @@ void IValhalla::Update() {
     NetManager()->Update();
 
     ZDOManager()->Update();
-
+    
     //ZoneManager()->Update(); // untested
 
     PERIODIC_NOW(10s, {
@@ -278,5 +278,5 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
 }
 
 void IValhalla::Broadcast(MessageType type, const std::string& text) {
-    RouteManager()->Invoke(Hashes::Routed::ShowMessage, type, text);
+    RouteManager()->InvokeAll(Hashes::Routed::ShowMessage, type, text);
 }
