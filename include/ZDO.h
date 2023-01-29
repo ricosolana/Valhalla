@@ -171,20 +171,11 @@ private:
 
             // https://stackoverflow.com/questions/2494471/c-is-it-possible-to-call-a-constructor-directly-without-new
             new (this->_Member<T>()) T(type);
-
-            //*this->_Member<T>() = type;
-
-            //*(m_contiguous) = GetOrdinal<T>();
-            //*(T*)Member() = type;
-            
-            //*(reinterpret_cast<T*>(m_contiguous + 1u)) = type;
         }
 
         Ord(const Ord& other) = delete;
 
-        //Ord(Ord&& other) = delete;
-
-        Ord(Ord&& other) {
+        Ord(Ord&& other) noexcept {
             this->m_contiguous = other.m_contiguous;
             other.m_contiguous = nullptr;
         }
@@ -199,8 +190,6 @@ private:
                 case ORD_QUATERNION: break;
                 case ORD_INT: break;
                 case ORD_LONG: break;
-                //case ORD_STRING: reinterpret_cast<std::string*>(m_contiguous + 1U)->~basic_string(); break;
-                //case ORD_ARRAY: reinterpret_cast<BYTES_t*>(m_contiguous + 1U)->~vector(); break;
                 case ORD_STRING: _Member<std::string>()->~basic_string(); break;
                 case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
             }
@@ -215,6 +204,8 @@ private:
             return *_Ordinal() == GetOrdinal<T>();
         }
 
+        // Ensure the underlying type matches
+        //  Will throw on type mismatch
         template<TrivialSyncType T>
         void AssertType() const {
             assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
@@ -223,32 +214,31 @@ private:
         }
 
         // Reassign the underlying member value
-        //  Will throw if a 
+        //  Will throw on type mismatch
         template<TrivialSyncType T>
         void Set(const T& type) {
             AssertType<T>();
 
-            // reassignment in place
-            //*((T*)(this->m_contiguous + 1u)) = type;
             *_Member<T>() = type;
         }
 
+        // Get the underlying member
+        //  Will throw on type mismatch
         template<TrivialSyncType T>
         const T* Get() const {
             AssertType<T>();
 
-            //return (T*)(m_contiguous + 1u);
-
             return _Member<T>();
         }
 
+        // Used when saving or serializing internal ZDO information
+        //  Returns whether write was successful (if type match)
         template<TrivialSyncType T>
         bool Write(NetPackage& pkg, HASH_t hash) const {
             if (!IsType<T>())
                 return false;
 
             pkg.Write(FromShiftHash<T>(hash));
-            //pkg.Write(*(T*)(m_contiguous + 1));
             pkg.Write(*_Member<T>());
             return true;
         }
@@ -266,11 +256,6 @@ private:
             key = ToShiftHash<T>(key);
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
-                // good programming and proper use will prevent this bad case
-                //assert(find->second.first == GetOrdinal<T>());
-
-                //return (T*) find->second.second;
-
                 return find->second.Get<T>();
             }
         }
@@ -292,37 +277,14 @@ private:
             //  If map contains, assumed a value reassignment (of same type)
             auto&& find = m_members.find(key);
             if (find != m_members.end()) {
-
-                // There is a possibility of type collisions
-                // So check during runtime
-                // IE, a client could exploit this to cause UB
-                //assert(find->second.first == GetOrdinal<T>() && "type-hash collision");
-                //if (find->second.first != GetOrdinal<T>())
-                    //throw std::invalid_argument("type-hash collision")
-
                 find->second.Set<T>(value);
-
-                // Reassign
-                //auto&& v = (T*) find->second.second;
-
-                // TODO should large byte arrays be compared? or strings?
-                //if (*v == value)
-                    //return;
-                //*v = value;
-            }
-            else {
-                // TODO restructure this ugly double code part
-                // could use goto, but ehh..
-                //m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
-                m_members.insert({ key, Ord(value) });
+                return;
             }
         }
         else {
             m_ordinalMask |= GetOrdinalMask<T>();
-            //m_members.insert({ key, std::make_pair(GetOrdinal<T>(), new T(value)) });
-
-            m_members.insert({ key, Ord(value) });
         }
+        m_members.insert({ key, Ord(value) });
     }
 
     void _Set(HASH_t key, const void* value, Ordinal ordinal) {
@@ -384,19 +346,8 @@ private:
             const auto size_mark = pkg.m_stream.Position() - sizeof(BYTE_t);
             BYTE_t count = 0;
             for (auto&& pair : m_members) {
-                // skip any types not matching
-                //if (pair.second.first != GetOrdinal<T>())
-                    //continue;
-
                 if (pair.second.Write<T>(pkg, pair.first))
                     count++;
-
-                //if (!pair.second.IsType<T>())
-                //    continue;
-                //
-                //pkg.Write(FromShiftHash<T>(pair.first));
-                //pkg.Write(*(T*)pair.second.second);
-                //count++;
 
                 assert(count <= 127 && "shit");
             }
