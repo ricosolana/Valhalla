@@ -13,6 +13,17 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 1/28/2023 + TODO
+ - World seed loading works (.fwl only)
+ - Initial spawn location placement ("StartTemple") is accurate (I think?)
+ - ZDOs appear to work!
+
+I am very close to getting ZoneLocation generation to correctly work. So far, the starting spawn location and a hundful of other locations are correctly placed in the world (only positional, nothing appears though).
+
+As you can see, ZDO's (sort of) work! I may have intentionally or unintentionally cloned my character:
+
+![cloned player in world](/pics/zdo-demonstrate.jpg)
+
 ### 1/27/2023 + TODO
  - WorldGenerator (renamed GeoManager) seems yields results similar to Valheim
  - Generation is more stable now, but still inaccurate compared to the Unity implementation. 
