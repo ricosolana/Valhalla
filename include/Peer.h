@@ -36,7 +36,7 @@ private:
 
     void ZDOSectorInvalidated(ZDO* zdo);
     void ForceSendZDO(const NetID& id);
-    bool ShouldSend(ZDO* zdo);
+    bool IsOutdatedZDO(ZDO* zdo);
 
 public:
     Peer(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos)

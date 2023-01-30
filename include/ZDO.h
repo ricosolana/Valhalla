@@ -476,13 +476,13 @@ public:
     //int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
     //int32_t m_tempCreatedAt = -1; // ^
 
-    bool Persists() const {
-        return m_persistent;
-    }
-
-    bool Distant() const {
-        return m_distant;
-    }
+    //bool Persists() const {
+    //    return m_persistent;
+    //}
+    //
+    //bool Distant() const {
+    //    return m_distant;
+    //}
 
     //int32_t Version() const {
     //    return m_pgwVersion;

@@ -16,38 +16,6 @@ IZoneManager* ZoneManager() {
 
 
 
-struct RandomSpawn {};
-
-// private
-//struct ZoneData {
-//    GameObject m_root;
-//
-//    float m_ttl;
-//};
-
-
-
-
-
-
-
-bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3& refPoint) {
-    return ZonesOverlap(zone,
-        WorldToZonePos(refPoint));
-}
-
-bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone) {
-    int num = NEAR_ACTIVE_AREA - 1;
-    return zone.x >= refCenterZone.x - num
-        && zone.x <= refCenterZone.x + num
-        && zone.y <= refCenterZone.y + num
-        && zone.y >= refCenterZone.y - num;
-}
-
-
-
-
-
 // private
 void IZoneManager::Init() {
     LOG(INFO) << "Initializing ZoneManager";
@@ -191,23 +159,56 @@ void IZoneManager::Init() {
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
     LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::LocationProxy);
 
-    RouteManager()->Register("SetGlobalKey", [this](Peer* peer, std::string name) {
+    if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
+        throw std::runtime_error("Some crucial ZoneManager prefabs failed to load");
+
+    RouteManager()->Register(Hashes::Routed::SetGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
-        if (m_globalKeys.contains(name)) {
-            return;
-        }
-        m_globalKeys.insert(name);
-        SendGlobalKeys(IRouteManager::EVERYBODY);
+        if (m_globalKeys.insert(name).second)
+            SendGlobalKeys(IRouteManager::EVERYBODY); // Notify clients
     });
 
-    RouteManager()->Register("RemoveGlobalKey", [this](Peer* peer, std::string name) {
+    RouteManager()->Register(Hashes::Routed::RemoveGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
-        if (!m_globalKeys.contains(name)) {
-            return;
-        }
-        m_globalKeys.erase(name);
-        SendGlobalKeys(IRouteManager::EVERYBODY);
+        if (m_globalKeys.erase(name))
+            SendGlobalKeys(IRouteManager::EVERYBODY); // Notify clients
     });
+
+    RouteManager()->Register(Hashes::Routed::DiscoverLocation, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
+        LocationInstance inst;
+        if (FindClosestLocation(locationName, point, inst)) {
+            LOG(INFO) << "Found location: '" << locationName << "'";
+            RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::DiscoverLocationCallback, pinName, pinType, inst.m_position, showMap);
+        }
+        else {
+            LOG(INFO) << "Failed to find location: '" << locationName << "'";
+        }
+    });
+}
+
+// private
+void IZoneManager::OnNewPeer(Peer* peer) {
+    SendGlobalKeys(peer->m_uuid);
+    SendLocationIcons(peer->m_uuid);
+}
+
+bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3& refPoint) {
+    return ZonesOverlap(zone,
+        WorldToZonePos(refPoint));
+}
+
+bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone) {
+    int num = NEAR_ACTIVE_AREA - 1;
+    return zone.x >= refCenterZone.x - num
+        && zone.x <= refCenterZone.x + num
+        && zone.y <= refCenterZone.y + num
+        && zone.y >= refCenterZone.y - num;
+}
+
+bool IZoneManager::IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid) {
+    auto&& peer = NetManager()->GetPeer(uid);
+    if (peer) return IZoneManager::ZonesOverlap(zone, peer->m_pos);
+    return false;
 }
 
 // private
@@ -232,12 +233,6 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
     }
 
     RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, zpackage);
-}
-
-// private
-void IZoneManager::OnNewPeer(Peer* peer) {
-    SendGlobalKeys(peer->m_uuid);
-    SendLocationIcons(peer->m_uuid);
 }
 
 // public
@@ -327,7 +322,7 @@ void IZoneManager::Update() {
 
 // private
 void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
-    Vector2i zone = WorldToZonePos(refPoint);
+    auto zone = WorldToZonePos(refPoint);
 
     auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
     for (int32_t z = zone.y - num; z <= zone.y + num; z++) {
@@ -343,17 +338,21 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
     // _root object is ZonePrefab, Components:
     //  WaterVolume
     //  Heightmap
+    // 
+    //  *note: ZonePrefab does NOT contain ZDO, nor ZNetView, unline _ZoneCtrl (which does)
+
+
 
     // Wait for builder thread
-    //if (!(IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID))) {
-
     if (!IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID)) {
         auto heightmap = HeightmapManager()->GetOrCreateHeightmap(zoneID);
 
         std::vector<ClearArea> m_tempClearAreas;
         PlaceLocations(zoneID, m_tempClearAreas);
         //PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
-        PlaceZoneCtrl(zoneID);
+
+        if (SERVER_SETTINGS.naturalSpawning)
+            PlaceZoneCtrl(zoneID);
 
         m_generatedZones.insert(zoneID);
     }
@@ -361,8 +360,10 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
 // private
 void IZoneManager::PlaceZoneCtrl(const ZoneID& zoneID) {
+    // ZoneCtrl is basically a player controlled natural mob spawner
+    //  - SpawnSystem
     auto pos = ZoneToWorldPos(zoneID);
-    PrefabManager()->Instantiate(Hashes::Object::_ZoneCtrl, pos);
+    PrefabManager()->Instantiate(ZONE_CTRL_PREFAB, pos);
 }
 
 // private
@@ -373,7 +374,7 @@ Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const
 }
 
 // private
-void IZoneManager::PlaceVegetation(const ZoneID&zoneID, Heightmap *hmap, std::vector<ClearArea>& clearAreas) {
+void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::vector<ClearArea>& clearAreas) {
     const Vector3 zoneCenterPos = ZoneToWorldPos(zoneID);
 
     int32_t seed = GeoManager()->GetSeed();
@@ -566,7 +567,7 @@ void IZoneManager::GenerateLocations() {
 
     // Already presorted by priority
     for (auto&& loc : m_locations) {
-        if (loc->m_name == "StartTemple") // TEMPORARY, REMOVE LATER ONCE GENERATION IS STABLE
+        if (loc->m_name == "StartTemple") // TODO this is temporary for debug, so remove later
             GenerateLocations(loc.get());
     }
 
@@ -583,15 +584,6 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
             spawnedLocations++;
     }
 
-    // Haldor is unique
-    // Yet he should be spawned throughout the map
-    // This logic is contradictory to his own behaviour
-    // Why is there just 1 attempt to spawn haldor?
-    //  Actually this function is called once per ZoneLocation, so it actually makes sense
-    //      so redundant...
-    //if (location->m_unique && spawnedLocations)
-        //return;
-
     unsigned int errLocations = 0;
     unsigned int errCenterDistances = 0;
     unsigned int errNoneBiomes = 0;
@@ -605,8 +597,6 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     const float locationRadius = std::max(location->m_exteriorRadius, location->m_interiorRadius);
 
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
-
-    //const int spawnAttempts = location->m_prioritized ? 200000 : 100000;
 
     for (int a = 0; a < location->m_spawnAttempts && spawnedLocations < location->m_quantity; a++) {
         Vector2i randomZone = GetRandomZone(state, range);
@@ -623,20 +613,11 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                 errBiomeArea++;
             else {
                 for (int i = 0; i < 20; i++) {
-
-                    // GetRandomPointInZone(): inlined
-                    //float num = ZONE_SIZE / 2.f;
-                    //float x = state.Range(-num + locationRadius, num - locationRadius);
-                    //float z = state.Range(-num + locationRadius, num - locationRadius);
-                    //Vector3 randomPointInZone = ZoneToWorldPos(randomZone) + Vector3(x, 0.f, z);
-
                     auto randomPointInZone = GetRandomPointInZone(state, randomZone, locationRadius);
 
                     float magnitude = randomPointInZone.Magnitude();
-                    //if (magnitude > 0 && (magnitude < location->m_minDistance || magnitude > location->m_maxDistance))
                     if ((location->m_minDistance != 0 && magnitude < location->m_minDistance)
                         || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance)) {
-                        //assert(location->m_minDistance || location->m_maxDistance);
                         errCenterDistances++;
                     } 
                     else {
@@ -665,31 +646,13 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                                     || delta < location->m_minTerrainDelta)
                                     errTerrainDelta++;
                                 else {
-                                    //if (location->m_minDistanceFromSimilar <= 0) {
                                     if (location->m_minDistanceFromSimilar <= 0
                                         || !HaveLocationInRange(location, randomPointInZone)) {
-                                        //assert(location->m_minDistanceFromSimilar <= 0);
-                                        // HaveLocationInRange: inlined
-                                        //bool locInRange = false;
-                                        //for (auto&& inst : m_locationInstances) {
-                                        //    auto&& loc = inst.second.m_location;
-                                        //
-                                        //    // Try to find the same ZoneLocation or any ZoneLocation with the same group
-                                        //    if ((loc == location
-                                        //        || (!location->m_group.empty() && location->m_group == loc->m_group))
-                                        //        && inst.second.m_position.Distance(randomPointInZone) < location->m_minDistanceFromSimilar)
-                                        //    {
-                                        //        locInRange = true;
-                                        //        break;
-                                        //    }
-                                        //}
+                                        auto zone = WorldToZonePos(randomPointInZone);
 
-                                        //if (!locInRange) {
-                                            m_locationInstances.insert({ 
-                                                WorldToZonePos(randomPointInZone), { location, randomPointInZone, false }});
-                                            spawnedLocations++;
-                                            break;
-                                        //}
+                                        m_locationInstances[zone] = { location, randomPointInZone, false };
+                                        spawnedLocations++;
+                                        break;
                                     }
                                     errSimilarLocation++;
                                 }
@@ -740,42 +703,14 @@ Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) 
     int num = (int32_t)range / (int32_t)ZONE_SIZE;
     Vector2i vector2i;
     do {
-        float x = state.Range(-num, num); // evaluation order might have been causing ugs
+        float x = state.Range(-num, num);
         float y = state.Range(-num, num);
-        //vector2i = Vector2i(state.Range(-num, num), state.Range(-num, num));
         vector2i = Vector2i(x, y);
     } while (ZoneToWorldPos(vector2i).Magnitude() >= 10000);
     return vector2i;
 }
 
-/*
-    // private
-    Vector2i GetRandomZone(float range) {
-        int32_t num = (int32_t)range / (int32_t)m_zoneSize;
-        Vector2i vector2i;
-        do {
-            vector2i = new Vector2i(UnityEngine.Random.Range(-num, num), UnityEngine.Random.Range(-num, num));
-        } while (GetZonePos(vector2i).magnitude >= 10000);
-        return vector2i;
-    }
-    // private
-    Vector3 GetRandomPointInZone(const Vector2i& zone, float locationRadius) {
-        Vector3 zonePos = GetZonePos(zone);
-        float num = m_zoneSize / 2f;
-        float x = UnityEngine.Random.Range(-num + locationRadius, num - locationRadius);
-        float z = UnityEngine.Random.Range(-num + locationRadius, num - locationRadius);
-        return zonePos + new Vector3(x, 0f, z);
-    }
-    // private
-    Vector3 GetRandomPointInZone(float locationRadius) {
-        Vector3 point = new Vector3(UnityEngine.Random.Range(-10000f, 10000f), 0f, UnityEngine.Random.Range(-10000f, 10000f));
-        Vector2i zone = GetZone(point);
-        Vector3 zonePos = GetZonePos(zone);
-        float num = m_zoneSize / 2f;
-        return new Vector3(UnityEngine.Random.Range(zonePos.x - num + locationRadius, zonePos.x + num - locationRadius), 0f, UnityEngine.Random.Range(zonePos.z - num + locationRadius, zonePos.z + num - locationRadius));
-    }*/
-
-    // private
+// private
 void IZoneManager::PlaceLocations(const ZoneID &zoneID,
     std::vector<ClearArea>& clearAreas)
 {
@@ -789,10 +724,10 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
         }
 
         Vector3 position = locationInstance.m_position;
-        Vector3 vector;
-        Biome biome = Biome::None;
-        BiomeArea biomeArea;
-        Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
+        //Vector3 vector;
+        //Biome biome;
+        //BiomeArea biomeArea;
+        //Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
 
         // m_snapToWater is Mistlands only
         if (locationInstance.m_location->m_snapToWater)
@@ -800,8 +735,6 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
 
         if (locationInstance.m_location->m_clearArea)
             clearAreas.push_back({position, locationInstance.m_location->m_exteriorRadius });
-
-        //assert(false);
 
         Quaternion rot(Quaternion::IDENTITY);
 
@@ -823,20 +756,16 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
         //    rot = Quaternion::Euler(0, (float)VUtils::Random::State().Range(0, 16) * 22.5f, 0);
         //}
 
-        int32_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
+        HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         SpawnLocation(locationInstance.m_location, seed, position, rot);
         locationInstance.m_placed = true;
-        m_locationInstances[zoneID] = locationInstance;
 
-        //TimeSpan timeSpan = DateTime.Now - now;
-
-        LOG(INFO) << "Placed locations in zone "
-            << zoneID.x << " " << zoneID.y << " duration "
-            << duration_cast<milliseconds>(steady_clock::now() - now).count();
+        LOG(INFO) << "Placed '" << locationInstance.m_location->m_name << "' in zone (" << zoneID.x << ", " << zoneID.y << ") at height " << position.y;
 
         if (locationInstance.m_location->m_unique) {
             RemoveUnplacedLocations(locationInstance.m_location);
         }
+
         if (locationInstance.m_location->m_iconPlaced) {
             SendLocationIcons(IRouteManager::EVERYBODY);
         }
@@ -845,22 +774,20 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
 
 // private
 void IZoneManager::RemoveUnplacedLocations(const ZoneLocation* location) {
-    std::vector<Vector2i> list;
-    for (auto&& keyValuePair : m_locationInstances) {
-        if (keyValuePair.second.m_location == location && !keyValuePair.second.m_placed) {
-            list.push_back(keyValuePair.first);
+    int count = 0;
+    for (auto&& itr = m_locationInstances.begin(); itr != m_locationInstances.end();) {
+        if (itr->second.m_location == location) {
+            itr = m_locationInstances.erase(itr);
+            count++;
         }
+        else ++itr;
     }
 
-    for (auto&& key : list) {
-        m_locationInstances.erase(key);
-    }
-
-    LOG(INFO) << "Removed " << list.size() << " unplaced locations of type " << location->m_name;
+    LOG(INFO) << "Removed " << count << " unplaced '" << location->m_name << "'";
 }
 
 // private
-void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
 
     //location->m_prefab.transform.position = Vector3::ZERO;
     //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
@@ -870,7 +797,7 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, con
     //bool flag = location->m_useCustomInteriorTransform && location->m_generatorPosition;
     bool flag = false;
     if (flag) {
-        LOG(ERROR) << "Trieed pre-initializing ZoneLocation Dungeon: " << location->m_name;
+        LOG(ERROR) << "Tried pre-initializing ZoneLocation Dungeon: " << location->m_name;
         //Vector2i zone = WorldToZonePos(pos);
         //Vector3 zonePos = ZoneToWorldPos(zone);
         //component.m_generator.transform.localPosition = Vector3::ZERO;
@@ -901,49 +828,34 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, con
 
     //WearNTear.m_randomInitialDamage = location.m_location.m_applyRandomDamage;
     //for (auto&& znetView2 : location.m_netViews) {
-    for (auto&& znetView2 : location->m_pieces) {
-        //if (znetView2.gameObject.activeSelf) {
-            Vector3 position = znetView2.m_pos;
-            Vector3 position2 = pos + rot * position;
-            Quaternion rotation = znetView2.m_rot;
-            Quaternion rotation2 = rot * rotation;
+    for (auto&& piece : location->m_pieces) {
+        PrefabManager()->Instantiate(piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
 
-            PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation2);
-
-            // This is only for dungeon room generation, which is too complex for now
-            //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
-            //if (component2) {
-            //    if (flag) {
-            //        component2.m_originalPosition = location.m_generatorPosition;
-            //    }
-            //    component2.Generate(mode);
-            //}
+        // Dungeon generation is too complex
+        //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
+        //if (component2) {
+        //    if (flag) {
+        //        component2.m_originalPosition = location.m_generatorPosition;
+        //    }
+        //    component2.Generate(mode);
         //}
     }
     //WearNTear.m_randomInitialDamage = false;
+
+    // https://www.reddit.com/r/valheim/comments/xns70u/comment/ipv77ca/?utm_source=share&utm_medium=web2x&context=3
+    // https://www.reddit.com/r/valheim/comments/r6mv1q/comment/hmutgdl/?utm_source=share&utm_medium=web2x&context=3
+    // LocationProxy are client-side generated models that are static
     CreateLocationProxy(location, seed, pos, rot);
     //SnapToGround.SnappAll();
 }
 
 // could be inlined...
 // private
-void IZoneManager::CreateLocationProxy(const ZoneLocation* location, int32_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
     auto zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
     
     zdo->Set("location", location->m_hash);
     zdo->Set("seed", seed);
-}
-
-// private
-bool IZoneManager::HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius) {
-    for (auto&& inst : m_locationInstances) {
-        if ((inst.second.m_location->m_name == prefabName
-            || (!group.empty() && group == inst.second.m_location->m_group))
-            && inst.second.m_position.Distance(p) < radius) {
-            return true;
-        }
-    }
-    return false;
 }
 
 // public
@@ -1190,7 +1102,7 @@ Vector2i IZoneManager::WorldToZonePos(const Vector3& point) {
 // public
 // zone position to ~world position
 // GetZonePos
-Vector3 IZoneManager::ZoneToWorldPos(const Vector2i& id) {
+Vector3 IZoneManager::ZoneToWorldPos(const ZoneID& id) {
     return Vector3(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
 }
 
@@ -1201,7 +1113,7 @@ Vector3 IZoneManager::ZoneToWorldPos(const Vector2i& id) {
 //}
 
 // private
-bool IZoneManager::IsZoneGenerated(const Vector2i& zoneID) {
+bool IZoneManager::IsZoneGenerated(const ZoneID& zoneID) {
     return m_generatedZones.contains(zoneID);
 }
 

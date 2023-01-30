@@ -6,6 +6,7 @@
 #include "ZDO.h"
 #include "Peer.h"
 #include "PrefabManager.h"
+#include "ZoneManager.h"
 
 class IZDOManager {
 	friend class IPrefabManager;
@@ -34,7 +35,7 @@ private:
 	void OnNewPeer(Peer* peer);
 	void OnPeerQuit(Peer* peer);
 
-	void ReleaseNearbyZDOS(const Vector3& refPosition, Peer* peer);
+	void ReleaseNearbyZDOS(Peer* peer);
 	void HandleDestroyedZDO(const NetID& uid);
 	void SendAllZDOs(Peer* peer);
 	bool SendZDOs(Peer* peer, bool flush);
@@ -46,9 +47,10 @@ private:
 
 	void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
 
-	static int SectorToIndex(const Vector2i& s);
-	void FindObjects(const Vector2i& sector, std::vector<ZDO*>& objects);
-	void FindDistantObjects(const Vector2i& sector, std::vector<ZDO*>& objects);
+	// Performs a coordinate to pitch conversion
+	int SectorToIndex(const ZoneID& s) const;
+	void FindObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
+	void FindDistantObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
@@ -65,12 +67,12 @@ public:
 
 	// Sector Coords -> Sector Pitch
 	// Returns -1 on invalid sector
-	void AddToSector(ZDO* zdo, const Vector2i& sector);
+	void AddToSector(ZDO* zdo, const ZoneID& sector);
 
 	// used by zdo to self invalidate its sector
 	void ZDOSectorInvalidated(ZDO* zdo);
 
-	void RemoveFromSector(ZDO* zdo, const Vector2i& sector);
+	void RemoveFromSector(ZDO* zdo, const ZoneID& sector);
 
 	ZDO* GetZDO(const NetID& id);
 
@@ -80,12 +82,10 @@ public:
 
 	void MarkDestroyZDO(ZDO* zdo);
 
-	void FindSectorObjects(const Vector2i& sector, int area, int distantArea,
+	void FindSectorObjects(const ZoneID& sector, int area, int distantArea,
 		std::vector<ZDO*>& sectorObjects, std::vector<ZDO*>* distantSectorObjects = nullptr);
 
 	void FindSectorObjects(const Vector2i& sector, int area, std::vector<ZDO*>& sectorObjects);
-
-	//long GetMyID();
 
 	void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
 

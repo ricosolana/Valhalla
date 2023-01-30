@@ -100,7 +100,7 @@ void Peer::ForceSendZDO(const NetID &id) {
     m_forceSend.insert(id);
 }
 
-bool Peer::ShouldSend(ZDO* zdo) {
+bool Peer::IsOutdatedZDO(ZDO* zdo) {
     auto find = m_zdos.find(zdo->ID());
 
     return find == m_zdos.end()

@@ -93,11 +93,14 @@ void IValhalla::LoadFiles() {
     m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
 
     m_settings.socketTimeout = milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
+
     m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
     m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
     m_settings.saveInterval = seconds(loadNode["save-interval"].as<unsigned int>(1800));
+
+    m_settings.naturalSpawning = loadNode["natural-spawning"].as<bool>(true);
 
     LOG(INFO) << "Server config loaded";
 
@@ -119,11 +122,14 @@ void IValhalla::LoadFiles() {
         saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
 
         saveNode["socket-timeout"] = m_settings.socketTimeout.count();
+
         saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
 
         saveNode["save-interval"] = m_settings.saveInterval.count();
+
+        saveNode["natural-spawning"] = m_settings.naturalSpawning;
 
         YAML::Emitter out;
         out.SetIndent(4);

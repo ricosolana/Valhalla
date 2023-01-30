@@ -126,21 +126,23 @@ public:
 	static constexpr float WATER_LEVEL = 30;
 
 private:
-	//float ZONE_TTL = 4;
-	//float ZONE_TTS = 4;
-
-	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
-
-	// All active ZoneLocations, sorted by priority
+	// All templated ZoneLocations, sorted by priority
 	std::vector<std::unique_ptr<const ZoneLocation>> m_locations;
 	robin_hood::unordered_map<HASH_t, const ZoneLocation*> m_locationsByHash;
 
+	// All templated ZoneVegetation
+	// Generally unimplemented ATM
+	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
+
+	// The generated ZoneLocations per world
 	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
 
+	// Which Zones have already been generated (locations and vegetation placed)
 	robin_hood::unordered_set<Vector2i> m_generatedZones;
 
-	robin_hood::unordered_map<Vector3, std::string> m_locationIcons;
-
+	// Game-state global keys
+	// Used only by client (and saved on the server for syncing to other clients)
+	// TODO They dont really belong here, but I'm just following Valheim
 	robin_hood::unordered_set<std::string> m_globalKeys;
 
 private:
@@ -166,9 +168,8 @@ private:
 	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
 
 	void RemoveUnplacedLocations(const ZoneLocation* location);
-	void SpawnLocation(const ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
-	void CreateLocationProxy(const ZoneLocation* location, int32_t seed, const Vector3 &pos, const Quaternion &rot);
-	bool HaveLocationInRange(const std::string& prefabName, const std::string& group, const Vector3& p, float radius);
+	void SpawnLocation(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
+	void CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
 	void GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
 
 	// inlined 
@@ -202,8 +203,10 @@ public:
 	static ZoneID WorldToZonePos(const Vector3& point);
 	static Vector3 ZoneToWorldPos(const ZoneID& id);
 
-	static bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
-	static bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
+	bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
+	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
+
+	bool IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid);
 
 	void ResetGlobalKeys();
 };

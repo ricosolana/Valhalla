@@ -25,4 +25,6 @@ struct ServerSettings {
     milliseconds    zdoSendInterval;
 
     seconds saveInterval;
+
+    bool naturalSpawning;
 };

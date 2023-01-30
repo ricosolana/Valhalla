@@ -81,7 +81,7 @@ namespace Hashes {
         static constexpr HASH_t LocationIcons = __H("LocationIcons");
         static constexpr HASH_t ShowMessage = __H("ShowMessage");
         static constexpr HASH_t SetEvent = __H("SetEvent");
-        static constexpr HASH_t GetLocationCallback = __H("DiscoverLocationRespons");
+        static constexpr HASH_t DiscoverLocationCallback = __H("DiscoverLocationRespons");
 
 
 
@@ -106,7 +106,7 @@ namespace Hashes {
         // Server
         //
 
-        static constexpr HASH_t GetClosestLocation = __H("DiscoverClosestLocation");
+        static constexpr HASH_t DiscoverLocation = __H("DiscoverClosestLocation");
     }
 
 

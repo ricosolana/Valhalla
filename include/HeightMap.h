@@ -45,7 +45,7 @@ private:
 
     //using Heights = std::array<float, (Heightmap::WIDTH + 1)* (Heightmap::WIDTH + 1)>;
 
-    
+    static constexpr int E_WIDTH = IZoneManager::ZONE_SIZE + 1;
 
     //void Awake();
     //void OnDestroy();
@@ -104,8 +104,20 @@ public:
     bool IsCleared(const Vector3& worldPos);
     bool IsCultivated(const Vector3& worldPos);
     void WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y);
+
+    // Get the underlying color mask in paint array
+    //  x, y must be within [0, 63]
+    //  otherwise 0 is returned
     Color GetPaintMask(int32_t x, int32_t y);
+
+    // Get the underlying height in heights array
+    //  x, y must be within [0, 63]
+    //  otherwise 0 is returned
     float GetHeight(int32_t x, int32_t y);
+
+    // Get the underlying height in builder heights array
+    //  x, y must be within [0, 63]
+    //  otherwise 0 is returned
     float GetBaseHeight(int32_t x, int32_t y);
     void SetHeight(int32_t x, int32_t y, float h);
     bool IsPointInside(const Vector3& point, float radius = 0);
@@ -114,7 +126,7 @@ public:
 
     TerrainComp GetAndCreateTerrainCompiler();
     
-    Vector3 GetWorldPosition();
+    //Vector3 GetWorldPosition();
 
 public:
 

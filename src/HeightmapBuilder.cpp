@@ -10,7 +10,7 @@ namespace HeightmapBuilder {
 
     void Build(HMBuildData *data, const ZoneID &center);
 
-    robin_hood::unordered_map<ZoneID, std::unique_ptr<HMBuildData>> m_toBuild;
+    robin_hood::unordered_set<ZoneID> m_toBuild;
     robin_hood::unordered_map<ZoneID, std::unique_ptr<HMBuildData>> m_ready;
 
     std::thread m_builder;
@@ -29,30 +29,32 @@ namespace HeightmapBuilder {
 
             LOG(INFO) << "Builder started";
             while (!m_stop) {
-                bool flag;
+                bool buildMore;
                 {
                     std::scoped_lock<std::mutex> scoped(m_lock);
-                    flag = !m_toBuild.empty();
+                    buildMore = !m_toBuild.empty();
                 }
 
-                if (flag) {
-                    std::unique_ptr<HMBuildData> hmbuildData;
+                if (buildMore) {
                     Vector2i center;
                     {
                         std::scoped_lock<std::mutex> scoped(m_lock);
+
                         auto&& begin = m_toBuild.begin();
-                        hmbuildData = std::move(begin->second);
-                        center = begin->first;
+
+                        center = *begin;
                         m_toBuild.erase(begin);
                     }
 
-                    Build(hmbuildData.get(), center);
+                    auto data(std::make_unique<HMBuildData>());
+                    Build(data.get(), center);
 
                     {
                         std::scoped_lock<std::mutex> scoped(m_lock);
-                        m_ready[center] = std::move(hmbuildData);
+                        m_ready[center] = std::move(data);
 
                         // start dropping uneaten heightmaps (poor heightmaps)
+                        // not really necessary? Why dorp heightmaps?
                         while (m_ready.size() > 16) {
                             m_ready.erase(m_ready.begin());
                         }
@@ -147,8 +149,7 @@ namespace HeightmapBuilder {
         std::unique_ptr<HMBuildData> hmbuildData;
         do {
             hmbuildData = RequestTerrain(zone);
-            if (!hmbuildData)
-                std::this_thread::sleep_for(1ms);
+            if (!hmbuildData) std::this_thread::sleep_for(1ms); // sleep instead of spinlock
         } while (!hmbuildData);
         return hmbuildData;
     }
@@ -167,7 +168,7 @@ namespace HeightmapBuilder {
         }
 
         // Will not insert if absent, which is intended
-        m_toBuild.insert({ zone, std::make_unique<HMBuildData>() });
+        m_toBuild.insert(zone);
         
         return nullptr;
     }
@@ -180,9 +181,7 @@ namespace HeightmapBuilder {
             return true;
 
         // Will not insert if absent, which is intended
-        auto&& pair = m_toBuild.insert({ zone, nullptr });
-        if (pair.second)
-            pair.first->second = std::make_unique<HMBuildData>();
+        m_toBuild.insert(zone);
 
         return false;
     }

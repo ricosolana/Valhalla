@@ -46,7 +46,7 @@ void IPrefabManager::Init() {
         if (pkg.Read<bool>()) // sync initial scale
             prefab->m_localScale = pkg.Read<Vector3>();
         else {
-            prefab->m_localScale = { 1, 1, 1 };
+            prefab->m_localScale = Vector3(1, 1, 1);
         }
 
         m_prefabs.insert({
