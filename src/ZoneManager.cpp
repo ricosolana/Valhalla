@@ -346,12 +346,13 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
     // Wait for builder thread
     //if (!(IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID))) {
+
     if (!IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID)) {
-        auto componentInChildren2 = HeightmapManager()->GetOrCreateHeightmap(zoneID);
+        auto heightmap = HeightmapManager()->GetOrCreateHeightmap(zoneID);
 
         std::vector<ClearArea> m_tempClearAreas;
         PlaceLocations(zoneID, m_tempClearAreas);
-        PlaceVegetation(zoneID, componentInChildren2, m_tempClearAreas);
+        //PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
         PlaceZoneCtrl(zoneID);
 
         m_generatedZones.insert(zoneID);
@@ -793,27 +794,30 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
         BiomeArea biomeArea;
         Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
 
+        // m_snapToWater is Mistlands only
         if (locationInstance.m_location->m_snapToWater)
             position.y = WATER_LEVEL;
 
         if (locationInstance.m_location->m_clearArea)
             clearAreas.push_back({position, locationInstance.m_location->m_exteriorRadius });
 
-        assert(false);
+        //assert(false);
 
         Quaternion rot(Quaternion::IDENTITY);
-        if (locationInstance.m_location->m_slopeRotation) {
-            float num;
-            Vector3 vector2;
-            GetTerrainDelta(position, locationInstance.m_location->m_exteriorRadius, num, vector2);
-            Vector3 forward(vector2.x, 0.f, vector2.z);
-            forward.Normalize();
-            rot = Quaternion::LookRotation(forward);
-            assert(false);
-            //Vector3 eulerAngles = rot.eulerAngles;
-            //eulerAngles.y = round(eulerAngles.y / 22.5f) * 22.5f;
-            //rot.eulerAngles = eulerAngles;
-        }
+
+        // slopeRotation is Mistlands only
+        //if (locationInstance.m_location->m_slopeRotation) {
+        //    float num;
+        //    Vector3 vector2;
+        //    GetTerrainDelta(position, locationInstance.m_location->m_exteriorRadius, num, vector2);
+        //    Vector3 forward(vector2.x, 0.f, vector2.z);
+        //    forward.Normalize();
+        //    rot = Quaternion::LookRotation(forward);
+        //    assert(false);
+        //    //Vector3 eulerAngles = rot.eulerAngles;
+        //    //eulerAngles.y = round(eulerAngles.y / 22.5f) * 22.5f;
+        //    //rot.eulerAngles = eulerAngles;
+        //}
         //else if (locationInstance.m_location.m_randomRotation) {
         //    //rot = Quaternion::Euler(0, (float)UnityEngine.Random.Range(0, 16) * 22.5f, 0);
         //    rot = Quaternion::Euler(0, (float)VUtils::Random::State().Range(0, 16) * 22.5f, 0);
@@ -906,8 +910,7 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, int32_t seed, con
 
             PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation2);
 
-            //GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(znetView2.gameObject, position2, rotation2);
-            //gameObject.GetComponent<ZNetView>().GetZDO().SetPGWVersion(m_pgwVersion);
+            // This is only for dungeon room generation, which is too complex for now
             //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();
             //if (component2) {
             //    if (flag) {

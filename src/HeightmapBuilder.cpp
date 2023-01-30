@@ -8,10 +8,10 @@
 
 namespace HeightmapBuilder {
 
-    void Build(HMBuildData *data, const Vector2i &center);
+    void Build(HMBuildData *data, const ZoneID &center);
 
-    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_toBuild;
-    robin_hood::unordered_map<Vector2i, std::unique_ptr<HMBuildData>> m_ready;
+    robin_hood::unordered_map<ZoneID, std::unique_ptr<HMBuildData>> m_toBuild;
+    robin_hood::unordered_map<ZoneID, std::unique_ptr<HMBuildData>> m_ready;
 
     std::thread m_builder;
 
@@ -24,6 +24,9 @@ namespace HeightmapBuilder {
     // public
     void Init() {
         m_builder = std::thread([]() {
+            OPTICK_THREAD("HMBuilder");
+            el::Helpers::setThreadName("HMBuilder");
+
             LOG(INFO) << "Builder started";
             while (!m_stop) {
                 bool flag;
@@ -69,31 +72,35 @@ namespace HeightmapBuilder {
 
 
     // private
-    void Build(HMBuildData *data, const Vector2i& center) {
-        const int32_t num = Heightmap::WIDTH + 1;
-        const int32_t num2 = num * num;
-        auto vector = center + Vector2i((float)Heightmap::WIDTH * -0.5f, (float)Heightmap::WIDTH * -0.5f);
+    void Build(HMBuildData *data, const ZoneID& center) {
+        constexpr int num = IZoneManager::ZONE_SIZE + 1;
+        constexpr int num2 = num * num;
+        constexpr int num3 = IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE;
+        auto vector = center + Vector2i((float)IZoneManager::ZONE_SIZE * -0.5f, (float)IZoneManager::ZONE_SIZE * -0.5f);
 
         auto GEO(GeoManager());
 
         //WorldGenerator worldGen = data.m_worldGen;
         //data.m_cornerBiomes = new Heightmap.Biome[4];
         data->m_cornerBiomes[0] = GEO->GetBiome(vector.x, vector.y);
-        data->m_cornerBiomes[1] = GEO->GetBiome(vector.x + Heightmap::WIDTH, vector.y);
-        data->m_cornerBiomes[2] = GEO->GetBiome(vector.x, vector.y + (float)Heightmap::WIDTH);
-        data->m_cornerBiomes[3] = GEO->GetBiome(vector.x + Heightmap::WIDTH, vector.y + Heightmap::WIDTH);
+        data->m_cornerBiomes[1] = GEO->GetBiome(vector.x + IZoneManager::ZONE_SIZE, vector.y);
+        data->m_cornerBiomes[2] = GEO->GetBiome(vector.x, vector.y + (float)IZoneManager::ZONE_SIZE);
+        data->m_cornerBiomes[3] = GEO->GetBiome(vector.x + IZoneManager::ZONE_SIZE, vector.y + IZoneManager::ZONE_SIZE);
 
         auto biome = data->m_cornerBiomes[0];
         auto biome2 = data->m_cornerBiomes[1];
         auto biome3 = data->m_cornerBiomes[2];
         auto biome4 = data->m_cornerBiomes[3];
 
+        data->m_baseHeights.resize(num2);
+        data->m_baseMask.resize(num3);
+
         for (int32_t k = 0; k < num; k++) {
             float wy = vector.y + (float)k;
-            float t = VUtils::Math::SmoothStep(0, 1, (float)k / (float)Heightmap::WIDTH);
+            float t = VUtils::Math::SmoothStep(0, 1, (float)k / (float)IZoneManager::ZONE_SIZE);
             for (int32_t l = 0; l < num; l++) {
                 float wx = vector.x + (float)l;
-                float t2 = VUtils::Math::SmoothStep(0, 1, (float)l / (float)Heightmap::WIDTH);
+                float t2 = VUtils::Math::SmoothStep(0, 1, (float)l / (float)IZoneManager::ZONE_SIZE);
                 Color color;
                 float value;
 
@@ -118,17 +125,17 @@ namespace HeightmapBuilder {
 
                 data->m_baseHeights[k * num + l] = value;
 
-                if (l < Heightmap::WIDTH && k < Heightmap::WIDTH) {
+                if (l < IZoneManager::ZONE_SIZE && k < IZoneManager::ZONE_SIZE) {
                     //if (color.a > .5f) {
                     //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
                     //}
                     //else if (color.g > .5f) {
                     //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Cultivate;
                     //}
-                    data->m_baseMask[k * Heightmap::WIDTH + l] = color;
+                    data->m_baseMask[k * IZoneManager::ZONE_SIZE + l] = color;
                 }
                 else {
-                    data->m_baseMask[k * Heightmap::WIDTH + l] = Colors::BLACK;
+                    //data->m_baseMask[k * IZoneManager::ZONE_SIZE + l] = Colors::BLACK;
                     //data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
                 }
             }
@@ -136,10 +143,10 @@ namespace HeightmapBuilder {
     }
 
     // public
-    std::unique_ptr<HMBuildData> RequestTerrainBlocking(const Vector2i& zoneCoord) {
+    std::unique_ptr<HMBuildData> RequestTerrainBlocking(const ZoneID& zone) {
         std::unique_ptr<HMBuildData> hmbuildData;
         do {
-            hmbuildData = RequestTerrain(zoneCoord);
+            hmbuildData = RequestTerrain(zone);
             if (!hmbuildData)
                 std::this_thread::sleep_for(1ms);
         } while (!hmbuildData);
@@ -150,9 +157,9 @@ namespace HeightmapBuilder {
     // This is never externally wtf?
     // This entire multithreaded (single thread really) chunkbuilder is not even used
     // for its intended purpose
-    std::unique_ptr<HMBuildData> RequestTerrain(const Vector2i& zoneCoord) {
+    std::unique_ptr<HMBuildData> RequestTerrain(const ZoneID& zone) {
         std::scoped_lock<std::mutex> scoped(m_lock);
-        auto&& find = m_ready.find(zoneCoord);
+        auto&& find = m_ready.find(zone);
         if (find != m_ready.end()) {
             std::unique_ptr<HMBuildData> data = std::move(find->second);
             m_ready.erase(find);
@@ -160,19 +167,22 @@ namespace HeightmapBuilder {
         }
 
         // Will not insert if absent, which is intended
-        m_toBuild.insert({ zoneCoord, std::make_unique<HMBuildData>() });
+        m_toBuild.insert({ zone, std::make_unique<HMBuildData>() });
         
         return nullptr;
     }
 
     // public
-    bool IsTerrainReady(const Vector2i& zoneCoord) {
+    bool IsTerrainReady(const ZoneID& zone) {
         std::scoped_lock<std::mutex> scoped(m_lock);
-        if (m_ready.contains(zoneCoord))
+
+        if (m_ready.contains(zone))
             return true;
 
         // Will not insert if absent, which is intended
-        m_toBuild.insert({ zoneCoord, std::make_unique<HMBuildData>() });
+        auto&& pair = m_toBuild.insert({ zone, nullptr });
+        if (pair.second)
+            pair.first->second = std::make_unique<HMBuildData>();
 
         return false;
     }

@@ -3,11 +3,13 @@
 #include "VUtils.h"
 #include "Vector.h"
 #include "Quaternion.h"
-#include "HeightMap.h"
 #include "HashUtils.h"
 #include "Peer.h"
+#include "Biome.h"
+#include "VUtilsRandom.h"
 
 class Prefab;
+class Heightmap;
 
 using ZoneID = Vector2i;
 
@@ -124,8 +126,8 @@ public:
 	static constexpr float WATER_LEVEL = 30;
 
 private:
-	float ZONE_TTL = 4;
-	float ZONE_TTS = 4;
+	//float ZONE_TTL = 4;
+	//float ZONE_TTS = 4;
 
 	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
 
@@ -146,7 +148,6 @@ private:
 	void SendLocationIcons(OWNER_t peer);
 	void OnNewPeer(Peer* peer);
 
-	void Update();
 	void CreateGhostZones(const Vector3& refPoint);
 
 	void SpawnZone(const ZoneID& zone);
@@ -179,6 +180,8 @@ public:
 	void GenerateLocations();
 
 	void Init();
+
+	void Update();
 
 	void Save(NetPackage& pkg);
 	void Load(NetPackage& reader, int32_t version);

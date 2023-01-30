@@ -12,6 +12,7 @@
 #include "GeoManager.h"
 #include "RouteManager.h"
 #include "Hashes.h"
+#include "HeightmapBuilder.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -160,6 +161,7 @@ void IValhalla::Start() {
     GeoManager()->Init();
     ZoneManager()->GenerateLocations();
     NetManager()->Init();
+    HeightmapBuilder::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
@@ -208,6 +210,7 @@ void IValhalla::Start() {
 
     // Cleanup 
     NetManager()->Close();
+    HeightmapBuilder::Uninit();
     {
         std::vector<std::string> banned;
         for (auto&& s : m_banned)
@@ -228,7 +231,7 @@ void IValhalla::Update() {
 
     ZDOManager()->Update();
     
-    //ZoneManager()->Update(); // untested
+    ZoneManager()->Update(); // untested
 
     //PERIODIC_NOW(10s, {
     //    Broadcast(MessageType::Center, "bruh");

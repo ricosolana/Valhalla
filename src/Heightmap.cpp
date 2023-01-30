@@ -29,8 +29,9 @@
 // This is essentially a one-off function once constructed
 // so its use is kinda redundant continually in Generate()
 //void Heightmap::Initialize() {
-Heightmap::Heightmap(const Vector2i& zoneID) : m_zone(zoneID) {
-    int32_t num = WIDTH + 1;
+Heightmap::Heightmap(const ZoneID& zoneID) 
+    : m_zone(zoneID) {
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     int32_t num2 = num * num;
     //if (this->m_heights.size() != num2) {
         //this->m_heights.clear();
@@ -41,9 +42,9 @@ Heightmap::Heightmap(const Vector2i& zoneID) : m_zone(zoneID) {
     // Zero value-initialize
     // https://stackoverflow.com/a/18295840
     //std::fill(m_heights.begin(), m_heights.end(), 0);
-    m_heights.resize((Heightmap::WIDTH + 1) * (Heightmap::WIDTH + 1));
+    m_heights.resize((IZoneManager::ZONE_SIZE + 1) * (IZoneManager::ZONE_SIZE + 1));
 
-    m_paintMask.resize(WIDTH * WIDTH);
+    m_paintMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
 
     //this->m_paintMask = new Texture2D(WIDTH, WIDTH);
     //this->m_paintMask.wrapMode = TextureWrapMode.Clamp;
@@ -84,9 +85,9 @@ void Heightmap::Regenerate() {
 
 // private
 void Heightmap::UpdateCornerDepths() {
-    m_oceanDepth[0] = GetHeight(0, WIDTH);
-    m_oceanDepth[1] = GetHeight(WIDTH, WIDTH);
-    m_oceanDepth[2] = GetHeight(WIDTH, 0);
+    m_oceanDepth[0] = GetHeight(0, IZoneManager::ZONE_SIZE);
+    m_oceanDepth[1] = GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE);
+    m_oceanDepth[2] = GetHeight(IZoneManager::ZONE_SIZE, 0);
     m_oceanDepth[3] = GetHeight(0, 0);
 
     float num = IZoneManager::WATER_LEVEL;
@@ -111,8 +112,8 @@ float Heightmap::GetOceanDepth(const Vector3& worldPos) {
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
 
-    float t = (float)num / (float)WIDTH;
-    float t2 = (float)num2 / (float)WIDTH;
+    float t = (float)num / (float)IZoneManager::ZONE_SIZE;
+    float t2 = (float)num2 / (float)IZoneManager::ZONE_SIZE;
     float a = VUtils::Math::Lerp(this->m_oceanDepth[3], this->m_oceanDepth[2], t);
     float b = VUtils::Math::Lerp(this->m_oceanDepth[0], this->m_oceanDepth[1], t);
     return VUtils::Math::Lerp(a, b, t2);
@@ -123,15 +124,18 @@ float Heightmap::GetOceanDepth(const Vector3& worldPos) {
 // private
 void Heightmap::Generate() {
     //this->Initialize();
-    int32_t num = WIDTH + 1;
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     int32_t num2 = num * num;
     //Vector3 position; // = m_zone;
 
     if (this->m_buildData == nullptr) {
         this->m_buildData = HeightmapBuilder::RequestTerrainBlocking(m_zone);
-        std::copy(m_buildData->m_cornerBiomes.begin(), 
-            m_buildData->m_cornerBiomes.end() + m_buildData->m_cornerBiomes.size(), 
-            m_cornerBiomes.begin());
+
+        m_cornerBiomes = m_buildData->m_cornerBiomes;
+
+        //std::copy(m_buildData->m_cornerBiomes.begin(), 
+        //    m_buildData->m_cornerBiomes.end(), 
+        //    m_cornerBiomes.begin());
         //this->m_cornerBiomes = this->m_buildData->m_cornerBiomes;
     }
 
@@ -145,7 +149,7 @@ void Heightmap::Generate() {
     this->m_paintMask = this->m_buildData->m_baseMask;
 
     //this->m_paintMask.SetPixels(this->m_buildData->m_baseMask);
-    this->ApplyModifiers();
+    //this->ApplyModifiers();
 }
 
 // private
@@ -336,8 +340,8 @@ bool Heightmap::TerrainVSModifier(TerrainModifier modifier) {
 
 // private
 Vector3 Heightmap::CalcVertex(int32_t x, int32_t y) {
-    int32_t num = WIDTH + 1;
-    Vector3 a = Vector3((float)WIDTH * -0.5f, 0.f, (float)WIDTH * -0.5f);
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
+    Vector3 a = Vector3((float)IZoneManager::ZONE_SIZE * -0.5f, 0.f, (float)IZoneManager::ZONE_SIZE * -0.5f);
 
     // Poll heightmap height at x,z
     float y2 = this->m_heights[y * num + x];
@@ -455,7 +459,7 @@ bool Heightmap::GetWorldBaseHeight(const Vector3& worldPos, float& height) {
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
-    int32_t num3 = WIDTH + 1;
+    int32_t num3 = IZoneManager::ZONE_SIZE + 1;
     if (num < 0 || num2 < 0 || num >= num3 || num2 >= num3) {
         height = 0;
         return false;
@@ -470,7 +474,7 @@ bool Heightmap::GetWorldHeight(const Vector3& worldPos, float& height) {
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
-    int32_t num3 = WIDTH + 1;
+    int32_t num3 = IZoneManager::ZONE_SIZE + 1;
     if (num < 0 || num2 < 0 || num >= num3 || num2 >= num3) {
         height = 0;
         return false;
@@ -489,7 +493,7 @@ bool Heightmap::GetAverageWorldHeight(const Vector3& worldPos, float radius, flo
     float num3 = radius;
     int32_t num4 = ceil(num3);
     Vector2 a = Vector2(num, num2);
-    int32_t num5 = WIDTH + 1;
+    int32_t num5 = IZoneManager::ZONE_SIZE + 1;
     float num6 = 0;
     int32_t num7 = 0;
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
@@ -517,7 +521,7 @@ bool Heightmap::GetMinWorldHeight(const Vector3& worldPos, float radius, float &
     float num3 = radius;
     int32_t num4 = ceil(num3);
     Vector2 a = Vector2(num, num2);
-    int32_t num5 = WIDTH + 1;
+    int32_t num5 = IZoneManager::ZONE_SIZE + 1;
     height = 99999;
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
@@ -541,7 +545,7 @@ bool Heightmap::GetMaxWorldHeight(const Vector3& worldPos, float radius, float &
     float num3 = radius;
     int32_t num4 = ceil(num3);
     Vector2 a = Vector2(num, num2);
-    int32_t num5 = WIDTH + 1;
+    int32_t num5 = IZoneManager::ZONE_SIZE + 1;
     height = -99999;
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
@@ -572,7 +576,7 @@ void Heightmap::SmoothTerrain(const Vector3& worldPos, float radius, bool square
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
             if ((square || a.Distance(Vector2(j, i)) <= num3) 
-                && j != 0 && i != 0 && j != WIDTH && i != WIDTH) {
+                && j != 0 && i != 0 && j != IZoneManager::ZONE_SIZE && i != IZoneManager::ZONE_SIZE) {
                 list.push_back(std::make_pair(Vector2i(j, i), this->GetAvgHeight(j, i, 1)));
             }
         }
@@ -587,7 +591,7 @@ void Heightmap::SmoothTerrain(const Vector3& worldPos, float radius, bool square
 
 // private
 float Heightmap::GetAvgHeight(int32_t cx, int32_t cy, int32_t w) {
-    int32_t num = WIDTH + 1;
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     float num2 = 0;
     int32_t num3 = 0;
 
@@ -692,7 +696,7 @@ float Heightmap::GetVegetationMask(const Vector3& worldPos) {
 
 
     // USE A DIFFERENT MASK OF ONLY ALPHA-TEX FLOATS
-    return this->m_paintMask[y*WIDTH + x].a;
+    return this->m_paintMask[y* IZoneManager::ZONE_SIZE + x].a;
 }
 
 // public
@@ -700,7 +704,7 @@ bool Heightmap::IsCleared(const Vector3& worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos - Vector3(.5f, 0.f, .5f), x, y);
-    auto&& pixel = this->m_paintMask[y * WIDTH + x];
+    auto&& pixel = this->m_paintMask[y * IZoneManager::ZONE_SIZE + x];
     return pixel.r > 0.5f || pixel.g > 0.5f || pixel.b > 0.5f;
 }
 
@@ -709,19 +713,19 @@ bool Heightmap::IsCultivated(const Vector3& worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
-    return this->m_paintMask[y * WIDTH + x].g > 0.5f;
+    return this->m_paintMask[y * IZoneManager::ZONE_SIZE + x].g > 0.5f;
 }
 
 // public
 void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
     Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x = floor(vector.x + 0.5f) + WIDTH / 2;
-    y = floor(vector.z + 0.5f) + WIDTH / 2;
+    x = floor(vector.x + 0.5f) + IZoneManager::ZONE_SIZE / 2;
+    y = floor(vector.z + 0.5f) + IZoneManager::ZONE_SIZE / 2;
 }
 
 // private
 void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y) {
-    float num = WIDTH;
+    float num = IZoneManager::ZONE_SIZE;
     Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = vector.x / num + 0.5f;
     y = vector.z / num + 0.5f;
@@ -737,7 +741,7 @@ void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square,
     Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     float num3 = radius;
     int32_t num4 = ceil(num3);
-    int32_t num5 = WIDTH + 1;
+    int32_t num5 = IZoneManager::ZONE_SIZE + 1;
     Vector2 a = Vector2(num, num2);
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
@@ -756,15 +760,15 @@ void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square,
 
 // public
 Color Heightmap::GetPaintMask(int32_t x, int32_t y) {
-    if (x < 0 || y < 0 || x >= WIDTH || y >= WIDTH) {
+    if (x < 0 || y < 0 || x >= IZoneManager::ZONE_SIZE || y >= IZoneManager::ZONE_SIZE) {
         return Colors::BLACK;
     }
-    return this->m_paintMask[y * WIDTH + x];
+    return this->m_paintMask[y * IZoneManager::ZONE_SIZE + x];
 }
 
 // public
 float Heightmap::GetHeight(int32_t x, int32_t y) {
-    int32_t num = WIDTH + 1;
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     if (x < 0 || y < 0 || x >= num || y >= num) {
         return 0;
     }
@@ -773,7 +777,7 @@ float Heightmap::GetHeight(int32_t x, int32_t y) {
 
 // public
 float Heightmap::GetBaseHeight(int32_t x, int32_t y) {
-    int32_t num = WIDTH + 1;
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     if (x < 0 || y < 0 || x >= num || y >= num) {
         return 0;
     }
@@ -782,7 +786,7 @@ float Heightmap::GetBaseHeight(int32_t x, int32_t y) {
 
 // public
 void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
-    int32_t num = WIDTH + 1;
+    int32_t num = IZoneManager::ZONE_SIZE + 1;
     if (x < 0 || y < 0 || x >= num || y >= num) {
         return;
     }
@@ -793,7 +797,7 @@ void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
 bool Heightmap::IsPointInside(const Vector3& point, float radius) {
     //throw std::runtime_error("not implemented");
 
-    float num = (float)Heightmap::WIDTH * 0.5f;
+    float num = (float)IZoneManager::ZONE_SIZE * 0.5f;
     Vector3 position = IZoneManager::ZoneToWorldPos(this->m_zone);
     return point.x + radius >= position.x - num 
         && point.x - radius <= position.x + num 
@@ -813,6 +817,6 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler() {
 
 // public
 Vector3 Heightmap::GetWorldPosition() {
-    return IZoneManager::ZoneToWorldPos(this->m_zone) + Vector3(WIDTH/2.f, 0.f, WIDTH/2.f);
+    return IZoneManager::ZoneToWorldPos(this->m_zone) + Vector3(IZoneManager::ZONE_SIZE /2.f, 0.f, IZoneManager::ZONE_SIZE /2.f);
 }
 

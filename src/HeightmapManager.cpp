@@ -101,9 +101,13 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //    }
     //}
 
-    auto&& pair = m_heightmaps.insert({ zoneID, std::make_unique<Heightmap>(zoneID) });
-    if (pair.second) // if newly inserted
+    auto&& pair = m_heightmaps.insert({ zoneID, nullptr });
+    if (pair.second) { // if newly inserted
+        pair.first->second = std::make_unique<Heightmap>(zoneID);
         pair.first->second->Regenerate();
+    }
+
+    assert(pair.first->second);
 
     return pair.first->second.get();
     

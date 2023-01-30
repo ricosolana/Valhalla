@@ -6,6 +6,7 @@
 #include "ValhallaServer.h"
 #include "TerrainModifier.h"
 #include "HMBuildData.h"
+#include "ZoneManager.h"
 
 class IHeightmapManager;
 
@@ -28,7 +29,7 @@ public:
     static constexpr Color m_paintMaskPaved = Colors::BLUE;
     static constexpr Color m_paintMaskNothing = Colors::BLACK;
 
-    static constexpr int WIDTH = 64;
+    //static constexpr int WIDTH = 64;
 
     static constexpr float m_levelMaxDelta = 8;
 
@@ -75,7 +76,7 @@ private:
     void LevelTerrain(const Vector3& worldPos, float radius, bool square, HMBuildData::Heights_t* levelOnly);
 
 public:
-    Heightmap(const Vector2i& zone);
+    Heightmap(const ZoneID& zone);
 
     void QueueRegenerate();
     bool IsRegenerateQueued();
@@ -117,16 +118,7 @@ public:
 
 public:
 
-    //int32_t m_width = 32;
-
-    //float m_scale = 1;
-
     Material m_material;
-
-
-    //bool m_isDistantLod;
-
-    //bool m_distantLodEditorHax;
 
 private:
     void CancelQueuedRegeneration();
@@ -134,25 +126,13 @@ private:
 
     Task *m_queuedRegenerateTask = nullptr;
 
-    //std::vector<float> m_heights;
-
-    //Heights m_heights{};
-
     HMBuildData::Heights_t m_heights;
 
     std::unique_ptr<HMBuildData> m_buildData;
 
-    //Texture2D m_paintMask;
-    //std::vector<float>
-    //std::vector<TerrainModifier::PaintType> m_paintMask;
     HMBuildData::Mask_t m_paintMask;
 
-    // seems to only be used for gpu texture sets
-    //Material m_materialInstance;
-
     MeshCollider m_collider;
-
-    //float m_oceanDepth[4] = { 0 };
 
     std::array<float, 4> m_oceanDepth{};
 
@@ -167,12 +147,7 @@ private:
 
     Mesh m_renderMesh;
 
-    //bool m_dirty;
-
-    Vector2i m_zone;
-
-public:
-
+    ZoneID m_zone;
 };
 
 
