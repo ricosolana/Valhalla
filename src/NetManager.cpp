@@ -277,7 +277,7 @@ void INetManager::Init() {
 }
 
 void INetManager::Update() {
-    OPTICK_EVENT();
+    OPTICK_CATEGORY("NetManagerUpdate", Optick::Category::Network);    
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {

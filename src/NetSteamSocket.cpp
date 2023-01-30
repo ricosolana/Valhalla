@@ -111,6 +111,8 @@ void SteamSocket::SendQueued() {
     if (!Connected())
         return;
 
+    //OPTICK_CATEGORY("SocketUpdate", Optick::Category::Network);
+
     while (!m_sendQueue.empty()) {
         auto&& front = m_sendQueue.front();
 

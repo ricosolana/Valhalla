@@ -686,6 +686,7 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 
 void IZDOManager::OnNewPeer(Peer* peer) {
 	peer->Register(Hashes::Rpc::ZDOData, [this](Peer* peer, NetPackage pkg) {
+		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
 		{
 			// TODO check constraints

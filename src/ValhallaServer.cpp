@@ -230,11 +230,13 @@ void IValhalla::Update() {
     
     //ZoneManager()->Update(); // untested
 
-    PERIODIC_NOW(10s, {
-        Broadcast(MessageType::Center, "bruh");
+    //PERIODIC_NOW(10s, {
+    //    Broadcast(MessageType::Center, "bruh");
+    //});
+
+    PERIODIC_NOW(120s, {
+        LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
-
-
 
     /*
     // save warming message
