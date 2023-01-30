@@ -320,7 +320,7 @@ void IZDOManager::AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList) {
 	for (auto&& itr = peer->m_forceSend.begin(); itr != peer->m_forceSend.end();) {
 		auto&& zdoid = *itr;
 		auto zdo = GetZDO(zdoid);
-		if (zdo && peer->ShouldSend(zdo)) {
+		if (zdo && peer->IsOutdatedZDO(zdo)) {
 			syncList.insert(syncList.begin(), zdo);
 			++itr;
 		}
