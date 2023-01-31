@@ -65,6 +65,12 @@ namespace VUtils::String {
         return modif;
     }
 
+    std::string ToAscii(const std::string& in) {
+        std::string ret = in;
+        FormatAscii(ret); 
+        return ret;
+    }
+
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
     int32_t GetUTF8Count(const BYTE_t* p) {
         // leading bits:

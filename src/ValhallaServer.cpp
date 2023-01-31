@@ -77,20 +77,23 @@ void IValhalla::LoadFiles() {
         }
     }
 
-    m_settings.serverName = loadNode["server-name"].as<std::string>("My server");
+    m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>("My server"));
+    if (m_settings.serverName.empty()) m_settings.serverName = "My server";
     m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
     m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
     m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
-    m_settings.worldName = loadNode["world-name"].as<std::string>("Dedicated world");
+    m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>("Dedicated world"));
+    if (m_settings.worldName.empty()) m_settings.worldName = "Dedicated world";
     m_settings.worldSeedName = loadNode["world-seed-name"].as<std::string>("Some special seed");
     m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
 
-    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);        // enable whitelist
-    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(64);        // max allowed players
-    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                // allow authed players only
-    m_settings.playerList = loadNode["player-list"].as<bool>(true);                // does not send player list to players
+    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
+    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(10);                 // max allowed players
+    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
+    m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
     m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
+    m_settings.playerForceVisible = loadNode["player-force-visible"].as<bool>(false);   // force players to be visible on map
 
     m_settings.socketTimeout = milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
 
@@ -98,9 +101,11 @@ void IValhalla::LoadFiles() {
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
     m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
 
-    m_settings.saveInterval = seconds(loadNode["save-interval"].as<unsigned int>(1800));
+    m_settings.autoSaveInterval = seconds(loadNode["auto-save-interval"].as<unsigned int>(1800));
+    m_settings.saveWorld = loadNode["save-world"].as<bool>(true);
 
     m_settings.naturalSpawning = loadNode["natural-spawning"].as<bool>(true);
+    m_settings.generateWorld = loadNode["generate-world"].as<bool>(true);
 
     LOG(INFO) << "Server config loaded";
 
@@ -127,9 +132,11 @@ void IValhalla::LoadFiles() {
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
 
-        saveNode["save-interval"] = m_settings.saveInterval.count();
+        saveNode["auto-save-interval"] = m_settings.autoSaveInterval.count();
+        saveNode["saveWorld"] = m_settings.saveWorld;
 
         saveNode["natural-spawning"] = m_settings.naturalSpawning;
+        saveNode["generate-world"] = m_settings.generateWorld;
 
         YAML::Emitter out;
         out.SetIndent(4);

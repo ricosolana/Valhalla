@@ -53,6 +53,11 @@ namespace VUtils::String {
     // Returns whether any modification was done
     bool FormatAscii(std::string &in);
 
+    // C# Encoding.ASCII.GetString equivalent:
+    // bytes greater than 127 get turned to literal '?' (63)
+    // Returns a transformed string
+    std::string ToAscii(const std::string& in);
+
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding
     int32_t GetUTF8Count(const BYTE_t *p);

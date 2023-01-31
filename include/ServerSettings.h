@@ -18,13 +18,16 @@ struct ServerSettings {
     bool            playerAuth;
     bool            playerList;
     bool            playerArrivePing;
+    bool            playerForceVisible;
 
     milliseconds    socketTimeout;          // ms
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
 
-    seconds saveInterval;
+    seconds autoSaveInterval;   // set to 0 to disable
+    bool saveWorld;
 
     bool naturalSpawning;
+    bool generateWorld;
 };
