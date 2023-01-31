@@ -155,8 +155,12 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     auto password = pkg.Read<std::string>();
     auto ticket = pkg.Read<BYTES_t>(); // read in the dummy ticket
 
-    auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-    if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
+    if (SERVER_SETTINGS.playerAuth) {
+        auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
+        if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
+            return rpc->Close(ConnectionStatus::ErrorBanned);
+    }
+
     if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
         return rpc->Close(ConnectionStatus::ErrorBanned);
 
@@ -189,6 +193,9 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     //auto peer(std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos));
     //auto peer = new Peer(std::move(rpc->m_socket), uuid, name, pos);
     //m_peers.insert({ peer->m_uuid, std::move(peer) });
+    // if too many players online
+    if (m_peers.size() >= SERVER_SETTINGS.playerMax)
+        return rpc->Close(ConnectionStatus::ErrorFull);
 
     assert(!m_peers.contains(uuid));
     Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
