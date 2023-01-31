@@ -41,24 +41,18 @@ bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
 }
 
 void IValhalla::LoadFiles() {
-    {
-        auto opt = VUtils::Resource::ReadFileLines("banned.txt");
-        if (opt) {
-            auto&& banned = opt.value();
-            for (auto &&s: banned)
-                m_banned.insert(std::move(s));
-        }
+    if (auto opt = VUtils::Resource::ReadFileLines("blacklist.txt")) {
+        m_blacklist.emplace(opt->begin(), opt->end());
     }
 
-    {
-        auto opt = VUtils::Resource::ReadFileLines("admin.txt");
-        if (opt) {
-            auto&& admin = opt.value();
-            for (auto&& s : admin)
-                m_admin.insert(std::move(s));
-        }
+    if (auto opt = VUtils::Resource::ReadFileLines("whitelist.txt")) {
+        m_whitelist.emplace(opt->begin(), opt->end());
     }
-
+    
+    if (auto opt = VUtils::Resource::ReadFileLines("admin.txt")) {
+        m_admin.emplace(opt->begin(), opt->end());
+    }
+    
     YAML::Node loadNode;
     bool createSettingsFile = false;
     {
