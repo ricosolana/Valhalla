@@ -58,13 +58,13 @@ void INetManager::Ban(const std::string& user) {
     if (!peer)
         return;
 
-    Valhalla()->m_banned.insert(user);
+    Valhalla()->m_blacklist.insert(user);
 }
 
 void INetManager::Unban(const std::string& user) {
     LOG(INFO) << "Unbanning " << user;
 
-    Valhalla()->m_banned.erase(user);
+    Valhalla()->m_blacklist.erase(user);
 }
 
 void INetManager::SendDisconnect(Peer *peer) {

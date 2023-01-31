@@ -51,8 +51,9 @@ public:
         return m_settings;
     }
 
-    robin_hood::unordered_set<std::string> m_banned;
+    robin_hood::unordered_set<std::string> m_blacklist;
     robin_hood::unordered_set<std::string> m_admin;
+    robin_hood::unordered_set<std::string> m_whitelist;
 
     // Get the time since the server started
     // Updated once per frame
