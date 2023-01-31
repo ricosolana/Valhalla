@@ -13,6 +13,16 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 1/30/2023 + TODO
+ - Fixed major oversight on ZoneLocation pkg (was causing incorrect ZoneLocation spawning)
+ - ZoneLocation spawning fully works (still working on LocationInstance generation)
+
+ZoneLocations are finally placed correctly in the world. There might be some inconsistencies with height, but it seems fairly consistent so far. I will have to test the other ZoneLocations, but I must first fix the generation algorithm.
+
+Anyways, here it the correct placement (finally):
+
+![Spawn](/pics/zonelocations-instantiation.jpg)
+
 ### 1/28/2023 + TODO
  - World seed loading works (.fwl only)
  - Initial spawn location placement ("StartTemple") is accurate (I think?)
