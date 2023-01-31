@@ -177,22 +177,6 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
         return rpc->Close(ConnectionStatus::ErrorFull);
     }
 
-    // If the 
-    //auto socket = rpc->m_socket;
-    //// Destroy the rpc
-    //for (auto &&j: m_rpcs) {
-    //    if (j.get() == rpc) {
-    //        //j.reset(); // DO NOT CALL DESTRUCTOR (will cause weirdness)
-    //        j.release();
-    //        break;
-    //    }
-    //}
-
-    //rpc = nullptr;
-
-    //auto peer(std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos));
-    //auto peer = new Peer(std::move(rpc->m_socket), uuid, name, pos);
-    //m_peers.insert({ peer->m_uuid, std::move(peer) });
     // if too many players online
     if (m_peers.size() >= SERVER_SETTINGS.playerMax)
         return rpc->Close(ConnectionStatus::ErrorFull);
@@ -218,7 +202,8 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     // Extras
     peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
-        LOG(INFO) << text;
+        // TODO limitation check
+        LOG(INFO) << text << " (" << peer->m_name << " " << peer->)";
     });
 
     peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
