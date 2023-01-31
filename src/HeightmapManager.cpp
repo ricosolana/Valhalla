@@ -131,14 +131,10 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
 
 // public static
 Heightmap* IHeightmapManager::GetHeightmap(const Vector3& point) {
-    //for (auto&& pair : m_heightmaps) {
-    //    auto&& heightmap = pair.second;
-    //    if (heightmap->IsPointInside(point, 0)) {
-    //        return heightmap.get();
-    //    }
-    //}
+    return GetHeightmap(IZoneManager::WorldToZonePos(point));
+}
 
-    auto zone = IZoneManager::WorldToZonePos(point);
+Heightmap* IHeightmapManager::GetHeightmap(const ZoneID& zone) {
     auto&& find = m_heightmaps.find(zone);
     if (find != m_heightmaps.end())
         return find->second.get();

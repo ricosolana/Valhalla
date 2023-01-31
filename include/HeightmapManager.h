@@ -33,6 +33,7 @@ public:
 	Heightmap* GetOrCreateHeightmap(const Vector2i& zoneID);
 
 	Heightmap* GetHeightmap(const Vector3& point); // terribly slow
+	Heightmap* GetHeightmap(const ZoneID& zone);
 	std::vector<Heightmap*> GetHeightmaps(const Vector3& point, float radius);
 	Biome FindBiome(const Vector3& point);
 	bool IsRegenerateQueued(const Vector3& point, float radius);

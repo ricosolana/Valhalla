@@ -165,9 +165,9 @@ void IValhalla::Start() {
     WorldManager()->Init();
     ZoneManager()->Init();
     GeoManager()->Init();
+    HeightmapBuilder::Init();
     ZoneManager()->GenerateLocations();
     NetManager()->Init();
-    HeightmapBuilder::Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 

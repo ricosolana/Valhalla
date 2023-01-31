@@ -76,14 +76,14 @@ Quaternion FromEulerRad_Impl(
     // zero out the w component
     quat.w = 0;
 
-    sx = sinf(vec.x * .5f);
-    cx = cosf(vec.x * .5f);
+    sx = std::sinf(vec.x * .5f);
+    cx = std::cosf(vec.x * .5f);
 
-    sy = sinf(vec.y * .5f);
-    cy = cosf(vec.y * .5f);
+    sy = std::sinf(vec.y * .5f);
+    cy = std::cosf(vec.y * .5f);
 
-    sz = sinf(vec.z * .5f);
-    cz = cosf(vec.z * .5f);
+    sz = std::sinf(vec.z * .5f);
+    cz = std::cosf(vec.z * .5f);
 
     switch (dims) {
     case 0:
