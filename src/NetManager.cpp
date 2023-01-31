@@ -93,7 +93,7 @@ void INetManager::SendPlayerList() {
             pkg.Write(peer->m_socket->GetHostName());
             pkg.Write(peer->m_characterID);
             pkg.Write(peer->m_visibleOnMap);
-            if (peer->m_visibleOnMap) {
+            if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
                 pkg.Write(peer->m_pos);
             }
         }
