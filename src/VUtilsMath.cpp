@@ -164,7 +164,7 @@ namespace VUtils::Math {
     // Ease-in-out function
     // t: [0, 1]
     // https://www.desmos.com/calculator/tgpfii21pt
-    static double myfade(float t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
+    static double myfade(float t) { return t * t * t * (t * (t * 6.f - 15.f) + 10.f); }
     static double mylerp(float t, float a, float b) { return a + t * (b - a); }
     static double mygrad(int hash, float x, float y) {
         int h = hash & 15;                            // CONVERT LO 4 BITS OF HASH CODE
@@ -172,6 +172,8 @@ namespace VUtils::Math {
             v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
+
+
 
     static BYTE_t p[] = { 151,160,137,91,90,15,
         131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
@@ -203,6 +205,7 @@ namespace VUtils::Math {
     };
 
     // type is casted to a float, idk whether statically, probably (bytes interpreted in place)
+    
     float PerlinNoise(float x, float y) {
         x = fabs(x);
         y = fabs(y);
@@ -238,4 +241,49 @@ namespace VUtils::Math {
         return (res + .69f) / 1.483f;
     }
 
+    /*
+    static double d_myfade(double t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
+    static double d_mylerp(double t, double a, double b) { return a + t * (b - a); }
+    static double d_mygrad(int hash, double x, double y) {
+        int h = hash & 15;                            // CONVERT LO 4 BITS OF HASH CODE
+        float u = h < 8 ? x : y,                    // INTO 12 GRADIENT DIRECTIONS.
+            v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
+        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+    }
+
+    double PerlinNoise(double x, double y) {
+        x = abs(x);
+        y = abs(y);
+
+        int X = (int)x & 0xFF;
+        int Y = (int)y & 0xFF;
+
+        x -= (int)x;
+        y -= (int)y;
+
+        int A = p[X] + Y;
+        int B = p[X + 1] + Y;
+
+        int BB = p[p[B + 1]];
+        int AB = p[p[A + 1]];
+        int BA = p[p[B + 0]];
+        int AA = p[p[A + 0]];
+
+        double u = d_myfade(x);
+        double v = d_myfade(y);
+
+        auto gradBB = d_mygrad(BB, x - 1, y - 1);
+        auto gradAB = d_mygrad(AB, x, y - 1);
+        auto gradBA = d_mygrad(BA, x - 1, y);
+        auto gradAA = d_mygrad(AA, x, y);
+
+        float res =
+            d_mylerp(v,
+                d_mylerp(u, gradAA, gradBA),
+                d_mylerp(u, gradAB, gradBB)
+            );
+
+        return ((res + .69) / 1.483);
+    }
+    */
 }

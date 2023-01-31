@@ -565,18 +565,50 @@ const IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& n
 void IZoneManager::GenerateLocations() {
     auto now(steady_clock::now());
 
-    // Already presorted by priority
+    // Already presorted by priority (assumed)
     for (auto&& loc : m_locations) {
-        if (loc->m_name == "StartTemple") // TODO this is temporary for debug, so remove later
+        //if (loc->m_name == "StartTemple") // TODO this is temporary for debug, so remove later
             GenerateLocations(loc.get());
     }
 
     LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
 }
 
+bool is_number(const std::string& s)
+{
+    return !s.empty() && std::find_if(s.begin(),
+        s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
 // private
 void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     int spawnedLocations = 0;
+
+    /// open the loc trace
+    auto&& opt = VUtils::Resource::ReadFileLines("locationTraces/" + location->m_name + ".trace");
+
+    assert(opt);
+    size_t traceIndex = 0;
+    auto&& trace = opt.value();
+    int last_trace_a = 0;
+    int last_trace_i = 0;
+
+    auto&& ASSERT_TRACE = [&traceIndex, &trace, &last_trace_a, &last_trace_i, location](const std::string& key) {
+        auto&& expect = trace[traceIndex];
+        if (expect.starts_with("a:"))
+            last_trace_a = std::stoi(expect.substr(2));
+        else if (expect.starts_with("i:"))
+            last_trace_i = std::stoi(expect.substr(2));
+
+        if (trace[traceIndex] != key) {
+            LOG(ERROR) << "Location: " << location->m_name << " (" << location->m_hash << ")";
+            LOG(ERROR) << "a: " << last_trace_a << ", i: " << last_trace_i << " expected: " << expect << ", got : " << key;
+
+            int erer = 0;
+        }
+
+        traceIndex++;
+    };
 
     // CountNrOfLocation: inlined
     for (auto&& inst : m_locationInstances) {
@@ -599,52 +631,74 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
     float range = location->m_centerFirst ? location->m_minDistance : 10000;
 
     for (int a = 0; a < location->m_spawnAttempts && spawnedLocations < location->m_quantity; a++) {
+        ASSERT_TRACE(std::string("a:") + std::to_string(a));
+        
         Vector2i randomZone = GetRandomZone(state, range);
         if (location->m_centerFirst)
             range++;
 
-        if (m_locationInstances.contains(randomZone))
+        if (m_locationInstances.contains(randomZone)) {
             errLocations++;
-        else {            
+            ASSERT_TRACE("ContainsKey");
+        }
+        else {
+            ASSERT_TRACE("IsZoneGenerated");
+
             Vector3 zonePos = ZoneToWorldPos(randomZone);
             BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
-            if (!(std::to_underlying(location->m_biomeArea) & std::to_underlying(biomeArea)))
+            if (!(std::to_underlying(location->m_biomeArea) & std::to_underlying(biomeArea))) {
                 errBiomeArea++;
+                ASSERT_TRACE("biomeArea");
+            }
             else {
                 for (int i = 0; i < 20; i++) {
+                    ASSERT_TRACE(std::string("i:") + std::to_string(i));
+
                     auto randomPointInZone = GetRandomPointInZone(state, randomZone, locationRadius);
 
                     float magnitude = randomPointInZone.Magnitude();
-                    if ((location->m_minDistance != 0 && magnitude < location->m_minDistance)
-                        || (location->m_maxDistance != 0 && magnitude > location->m_maxDistance)) {
+                    if (location->m_minDistance != 0 && magnitude < location->m_minDistance) {
                         errCenterDistances++;
+                        ASSERT_TRACE("m_minDistance");
                     } 
+                    else if (location->m_maxDistance != 0 && magnitude > location->m_maxDistance) {
+                        errCenterDistances++;
+                        ASSERT_TRACE("m_maxDistance");
+                    }
                     else {
                         Biome biome = GeoManager()->GetBiome(randomPointInZone);
 
-                        if (!(std::to_underlying(biome) & std::to_underlying(location->m_biome)))
+                        if (!(std::to_underlying(biome) & std::to_underlying(location->m_biome))) {
                             errNoneBiomes++;
+                            ASSERT_TRACE("m_biome");
+                        }
                         else {
                             randomPointInZone.y = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z);
                             float waterDiff = randomPointInZone.y - WATER_LEVEL;
-                            if (waterDiff < location->m_minAltitude || waterDiff > location->m_maxAltitude)
+                            if (waterDiff < location->m_minAltitude || waterDiff > location->m_maxAltitude) {
                                 errAltitude++;
+                                ASSERT_TRACE("altitude");
+                            }
                             else {
                                 if (location->m_inForest) {
                                     float forestFactor = GeoManager()->GetForestFactor(randomPointInZone);
                                     if (forestFactor < location->m_forestTresholdMin || forestFactor > location->m_forestTresholdMax) {
                                         errForestFactor++;
+                                        ASSERT_TRACE("forestFactor");
                                         continue;
                                     }
+                                    ASSERT_TRACE("noForestFactor");
                                 }
 
                                 float delta = 0;
                                 Vector3 vector;
                                 GeoManager()->GetTerrainDelta(state, randomPointInZone, location->m_exteriorRadius, delta, vector);
                                 if (delta > location->m_maxTerrainDelta
-                                    || delta < location->m_minTerrainDelta)
+                                    || delta < location->m_minTerrainDelta) {
                                     errTerrainDelta++;
+                                    ASSERT_TRACE("terrainDelta");
+                                }
                                 else {
                                     if (location->m_minDistanceFromSimilar <= 0
                                         || !HaveLocationInRange(location, randomPointInZone)) {
@@ -652,9 +706,11 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
                                         m_locationInstances[zone] = { location, randomPointInZone, false };
                                         spawnedLocations++;
+                                        ASSERT_TRACE("register");
                                         break;
                                     }
                                     errSimilarLocation++;
+                                    ASSERT_TRACE("noRegister");
                                 }
                             }
                         }

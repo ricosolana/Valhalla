@@ -367,21 +367,52 @@ float IGeoManager::WorldAngle(float wx, float wy) {
 float IGeoManager::GetBaseHeight(float wx, float wy) const {
 	//float num2 = VUtils.Length(wx, wy);
 	float num2 = VUtils::Math::Magnitude(wx, wy);
-	wx += 100000 + m_offset0;
-	wy += 100000 + m_offset1;
+	wx += 100000.f + m_offset0;
+	wy += 100000.f + m_offset1;
 	float num3 = 0;
 	num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f)
 		* VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f) * 1.0f;
-	num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f)
-		* VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
-	num3 += VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f)
-		* VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
+	num3 += (VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f)
+		* VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f);
+	num3 += (VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f)
+		* VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3);
+
+	{
+		//volatile float n3a_p1 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f);
+		//volatile float n3a_p2 = VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f);
+		//num3 = n3a_p1 * n3a_p2;
+		//
+		//volatile float n3b_p1 = VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f);
+		//volatile float n3b_p2 = VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f);
+		//volatile float n3b_p = n3b_p1 * n3b_p2;
+		//volatile float n3b_r = n3b_p * num3;
+		//volatile float n3b_m = n3b_r * .9f;
+		//num3 = num3 + n3b_m;
+
+		///num3 += VUtils::Math::PerlinNoise(wx * 0.002 * 0.5, wy * 0.002 * 0.5)
+		///	* VUtils::Math::PerlinNoise(wx * 0.003 * 0.5, wy * 0.003 * 0.5) * 1.0;
+		///num3 += (VUtils::Math::PerlinNoise(wx * 0.002 * 1.0, wy * 0.002f * 1.0)
+		///	* VUtils::Math::PerlinNoise(wx * 0.003 * 1.0, wy * 0.003f * 1.0) * num3 * 0.9);
+		///num3 += (VUtils::Math::PerlinNoise(wx * 0.005 * 1.0, wy * 0.005 * 1.0)
+		///	* VUtils::Math::PerlinNoise(wx * 0.010 * 1.0, wy * 0.010 * 1.0) * 0.5 * num3);
+		///
+		///float num3f = num3;
+
+		////float num3_a = VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f)
+		////	* VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
+		////num3 += num3_a;
+
+		//float num3_b = VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f)
+		//	* VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
+		//num3 = num3 + num3_b;
+	}
+
 	num3 -= 0.07f;
 	float num4 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.123f, wy * 0.002f * 0.25f + 0.15123f);
 	float num5 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.321f, wy * 0.002f * 0.25f + 0.231f);
-	float v = abs(num4 - num5);
+	float v = std::fabsf(num4 - num5);
 	float num6 = 1.f - VUtils::Math::LerpStep(0.02f, 0.12f, v);
-	num6 *= VUtils::Math::SmoothStep(744, 1000, num2);
+	num6 *= VUtils::Math::SmoothStep(744.f, 1000.f, num2);
 	num3 *= 1.f - num6;
 	if (num2 > 10000)
 	{
@@ -391,13 +422,13 @@ float IGeoManager::GetBaseHeight(float wx, float wy) const {
 		if (num2 > num7)
 		{
 			float t2 = VUtils::Math::LerpStep(num7, waterEdge, num2);
-			num3 = VUtils::Math::Lerp(num3, -2, t2);
+			num3 = VUtils::Math::Lerp(num3, -2.f, t2);
 		}
 	}
 
 	if (num2 < m_minMountainDistance && num3 > 0.28f)
 	{
-		float t3 = VUtils::Math::Clamp01((num3 - 0.28f) / 0.099999994f);
+		float t3 = VUtils::Math::Clamp01((num3 - 0.28f) / .1f);
 
 		num3 = VUtils::Math::Lerp(
 			VUtils::Math::Lerp(0.28f, 0.38f, t3),
@@ -491,7 +522,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
 		* VUtils::Math::PerlinNoise(wx * 0.04f * 0.7f, wy * 0.04f * 0.7f);
 	num2 += VUtils::Math::PerlinNoise(wx * 0.03f * 0.7f, wy * 0.03f * 0.7f)
 		* VUtils::Math::PerlinNoise(wx * 0.05f * 0.7f, wy * 0.05f * 0.7f) * num2 * 0.5f;
-	num2 = ((num2 > 0) ? std::pow(num2, 1.5f) : num2);
+	num2 = ((num2 > 0) ? std::pow((double)num2, 1.5) : num2);
 	num += num2 * 0.4f;
 	num = AddRivers(wx2, wy2, num);
 	float num3 = VUtils::Math::Clamp01(num2 * 7.f);

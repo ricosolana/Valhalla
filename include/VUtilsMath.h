@@ -66,4 +66,6 @@ namespace VUtils::Math {
 
     // Perlin noise
     float PerlinNoise(float x, float y);
+
+    //double PerlinNoise(double x, double y);
 }
