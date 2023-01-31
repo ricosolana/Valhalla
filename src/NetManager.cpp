@@ -157,6 +157,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
     if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
+    if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
         return rpc->Close(ConnectionStatus::ErrorBanned);
 
     if (password != m_saltedPassword)
@@ -166,8 +167,11 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     if (GetPeer(uuid))
         return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
-    if (Valhalla()->m_banned.contains(rpc->m_socket->GetHostName()))
-        return rpc->Close(ConnectionStatus::ErrorBanned);
+    // if whitelist enabled
+    if (SERVER_SETTINGS.playerWhitelist
+        && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
+        return rpc->Close(ConnectionStatus::ErrorFull);
+    }
 
     // If the 
     //auto socket = rpc->m_socket;
