@@ -3,21 +3,22 @@
 #include "VUtils.h"
 
 struct ServerSettings {
-
-    std::string        serverName;
+    std::string     serverName;
     uint16_t        serverPort;
-    std::string        serverPassword;
+    std::string     serverPassword;
     bool            serverPublic;
 
-    std::string        worldName;
-    std::string        worldSeedName;
-    HASH_t            worldSeed;
+    std::string     worldName;
+    std::string     worldSeed;
+    //HASH_t          worldSeed;
+    bool            worldSave;
+    seconds         worldSaveInterval;   // set to 0 to disable
 
     bool            playerWhitelist;
     unsigned int    playerMax;
     bool            playerAuth;
     bool            playerList;
-    bool            playerArrivePing;
+    //bool            playerArrivePing;
     bool            playerForceVisible;
 
     milliseconds    socketTimeout;          // ms
@@ -25,9 +26,7 @@ struct ServerSettings {
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
 
-    seconds autoSaveInterval;   // set to 0 to disable
-    bool saveWorld;
-
-    bool naturalSpawning;
-    bool generateWorld;
+    bool            spawningCreatures;
+    bool            spawningLocations;
+    bool            spawningVegetation;
 };

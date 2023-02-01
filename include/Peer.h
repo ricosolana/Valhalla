@@ -13,7 +13,6 @@ class Peer {
     friend class INetManager;
 
 private:
-    ISocket::Ptr m_socket;
     std::chrono::steady_clock::time_point m_lastPing;
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
@@ -23,6 +22,8 @@ private:
     int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
 public:
+    ISocket::Ptr m_socket;
+
     const OWNER_t m_uuid;
     const std::string m_name;
 

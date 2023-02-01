@@ -21,20 +21,6 @@ IValhalla* Valhalla() {
 
 
 
-//std::atomic_bool ValhallaServer::m_running = false;
-//std::list<std::unique_ptr<Task>> ValhallaServer::m_tasks;
-//std::recursive_mutex ValhallaServer::m_taskMutex;
-//ServerSettings ValhallaServer::m_settings;
-//const OWNER_t ValhallaServer::m_serverID = VUtils::Random::GenerateUID();
-//std::unique_ptr<RCONAcceptor> ValhallaServer::m_rcon;
-//std::list<std::shared_ptr<RCONSocket>> ValhallaServer::m_rconSockets;
-//const steady_clock::time_point ValhallaServer::m_startTime = steady_clock::now();
-//steady_clock::time_point ValhallaServer::m_prevUpdate;
-//steady_clock::time_point ValhallaServer::m_nowUpdate;
-//double ValhallaServer::m_netTime = 0;
-
-
-
 bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
     //rpc
     return false;
@@ -71,35 +57,36 @@ void IValhalla::LoadFiles() {
         }
     }
 
-    m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>("My server"));
+    m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
     if (m_settings.serverName.empty()) m_settings.serverName = "My server";
     m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
     m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
     m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
-    m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>("Dedicated world"));
+    m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
     if (m_settings.worldName.empty()) m_settings.worldName = "Dedicated world";
-    m_settings.worldSeedName = loadNode["world-seed-name"].as<std::string>("Some special seed");
-    m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
+    m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
+    if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
+    //m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
+    m_settings.worldSave = loadNode["world-save"].as<bool>(false);
+    m_settings.worldSaveInterval = seconds(std::max(loadNode["world-save-interval-s"].as<int>(1800), 60));
 
     m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
-    m_settings.playerMax = loadNode["player-max"].as<unsigned int>(10);                 // max allowed players
+    m_settings.playerMax = std::max(loadNode["player-max"].as<int>(10), 1);                 // max allowed players
     m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
     m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
-    m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
-    m_settings.playerForceVisible = loadNode["player-force-visible"].as<bool>(false);   // force players to be visible on map
+    //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
+    m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
 
-    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout"].as<unsigned int>(30000)); // player timeout in milliseconds
+    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout-ms"].as<unsigned int>(30000)); // player timeout in milliseconds
 
     m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
-    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval"].as<unsigned int>(50)); // player timeout in milliseconds
-
-    m_settings.autoSaveInterval = seconds(loadNode["auto-save-interval"].as<unsigned int>(1800));
-    m_settings.saveWorld = loadNode["save-world"].as<bool>(true);
-
-    m_settings.naturalSpawning = loadNode["natural-spawning"].as<bool>(true);
-    m_settings.generateWorld = loadNode["generate-world"].as<bool>(true);
+    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50)); // player timeout in milliseconds
+        
+    m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
+    m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
+    m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
 
     LOG(INFO) << "Server config loaded";
 
@@ -113,24 +100,26 @@ void IValhalla::LoadFiles() {
 
         saveNode["world-name"] = m_settings.worldName;
         saveNode["world-seed"] = m_settings.worldSeed;
+        saveNode["world-save"] = m_settings.worldSave;
+        saveNode["world-save-interval-s"] = m_settings.worldSaveInterval;
+        //saveNode["world-seed"] = m_settings.worldSeed;
 
         saveNode["player-whitelist"] = m_settings.playerWhitelist;
         saveNode["player-max"] = m_settings.playerMax;
         saveNode["player-auth"] = m_settings.playerAuth;
         saveNode["player-list"] = m_settings.playerList;
-        saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
+        saveNode["player-map-visible"] = m_settings.playerForceVisible;
+        //saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
 
-        saveNode["socket-timeout"] = m_settings.socketTimeout.count();
+        saveNode["socket-timeout-ms"] = m_settings.socketTimeout.count();
 
         saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
-        saveNode["zdo-send-interval"] = m_settings.zdoSendInterval.count();
+        saveNode["zdo-send-interval-ms"] = m_settings.zdoSendInterval.count();
 
-        saveNode["auto-save-interval"] = m_settings.autoSaveInterval.count();
-        saveNode["saveWorld"] = m_settings.saveWorld;
-
-        saveNode["natural-spawning"] = m_settings.naturalSpawning;
-        saveNode["generate-world"] = m_settings.generateWorld;
+        saveNode["spawning-creatures"] = m_settings.spawningCreatures;
+        saveNode["spawning-locations"] = m_settings.spawningLocations;
+        saveNode["spawning-vegetation"] = m_settings.spawningVegetation;
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -151,6 +140,7 @@ void IValhalla::Start() {
 
     // Does not work properly in some circumstances
     signal(SIGINT, [](int) {
+        LOG(WARNING) << "Interrupt caught, stopping server";
         Valhalla()->Stop();
     });
 
@@ -220,7 +210,7 @@ void IValhalla::Start() {
     HeightmapBuilder::Uninit();
     {
         std::vector<std::string> banned;
-        for (auto&& s : m_banned)
+        for (auto&& s : m_blacklist)
             banned.push_back(std::move(s));
         VUtils::Resource::WriteFileLines("banned.txt", banned);
     }
@@ -244,20 +234,21 @@ void IValhalla::Update() {
     //    Broadcast(MessageType::Center, "bruh");
     //});
 
-    PERIODIC_NOW(120s, {
+    PERIODIC_NOW(180s, {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
-    /*
-    // save warming message
-    PERIODIC_LATER(SERVER_SETTINGS.saveInterval, SERVER_SETTINGS.saveInterval, {
-        LOG(INFO) << "World saving in 30s";
-        Broadcast(MessageType::Center, "$msg_worldsavewarning 30s");
-    });
+    if (SERVER_SETTINGS.worldSave) {
+        // save warming message
+        PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval, {
+            LOG(INFO) << "World saving in 30s";
+            Broadcast(MessageType::Center, "$msg_worldsavewarning 30s");
+        });
 
-    PERIODIC_LATER(SERVER_SETTINGS.saveInterval, SERVER_SETTINGS.saveInterval + 30s, {
-        WorldManager()->SaveWorldDB(WorldManager()->GetWorld()->m_name);
-    });*/
+        PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval + 30s, {
+            WorldManager()->SaveWorldDB(WorldManager()->GetWorld()->m_name);
+        });
+    }
 }
 
 

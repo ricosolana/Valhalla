@@ -203,7 +203,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     // Extras
     peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
         // TODO limitation check
-        LOG(INFO) << text << " (" << peer->m_name << " " << peer->)";
+        LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
     });
 
     peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
@@ -342,7 +342,8 @@ void INetManager::Update() {
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
         SendNetTime();
-        SendPlayerList();
+        if (SERVER_SETTINGS.playerList)
+            SendPlayerList();
     });
 
     // Send periodic pings (1s)

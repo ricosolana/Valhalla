@@ -1,3 +1,5 @@
+#include <future>
+
 #include "WorldManager.h"
 #include "VUtils.h"
 #include "VUtilsResource.h"
@@ -126,77 +128,70 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 
 
 
-void IWorldManager::SaveWorldDB(const std::string& name) {
-	auto now(steady_clock::now());
-	try {
-		auto metaPath = GetWorldMetaPath(m_world->m_name);
+NetPackage IWorldManager::SaveWorldDB() {
+	NetPackage binary;
 
-		//DateTime now2 = DateTime.Now;
-		auto now2(steady_clock::now());
-		bool flag = true;
-		auto dbpath3 = GetWorldDBPath(m_world->m_name);
-		auto text = flag ? (dbpath3.string() + ".new") : dbpath3;
-		auto oldFile = dbpath3.string() + ".old";
-		LOG(INFO) << "World saving";
+	assert(false);
+	binary.Write(VConstants::WORLD);
+	binary.Write(Valhalla()->NetTime());
+	ZDOManager()->Save(binary);
+	ZoneManager()->Save(binary);
 
-		NetPackage binary;
-
-		//FileWriter fileWriter = new FileWriter(text, FileHelpers.FileHelperType.Binary, ZNet.m_world.m_fileSource);
-		//ZLog.Log("World save writing started");
-		//BinaryWriter binary = fileWriter.m_binary;
-
-		assert(false);
-		binary.Write(VConstants::WORLD);
-		binary.Write(Valhalla()->NetTime());
-		ZDOManager()->Save(binary);
-		ZoneManager()->Save(binary);
-
-
-		// Temporary inlined RandEventSystem::SaveAsync:
-		//RandEventSystem::SaveAsync(binary);
-		binary.Write((float)0);
-		binary.Write("");
-		binary.Write((float)0);
-		binary.Write(Vector3());
-
-
-
-		VUtils::Resource::WriteFileBytes(text, binary.m_stream.m_buf);
-
-		LOG(INFO) << "World save writing finishing";
-
-		//ZLog.Log("World save writing finished");
-		//bool flag2;
-		//FileWriter fileWriter2;
-
-
-
-		//SaveWorldMeta(m_world.get());
-		//ZNet.m_world.SaveWorldMetaData(now, out flag2, out fileWriter2);
-
-
-		//  move dbpath3 to oldFile
-		//	move text to dbpath3
-		//if (flag)
-			//FileHelpers.ReplaceOldFile(dbpath3, text, oldFile, ZNet.m_world.m_fileSource);
-
-		// The current file is now the old file
-		fs::rename(dbpath3, oldFile);
-
-		// Save the new file 
-		fs::rename(text, dbpath3);
-
-		LOG(INFO) << "World saved ( " << duration_cast<milliseconds>(steady_clock::now() - now2).count() << "ms )";
-		//now2 = DateTime.Now;
-		//if (ZNet.ConsiderAutoBackup(dbpath3, ZNet.m_world.m_fileSource, now))
-			//ZLog.Log("World auto backup saved ( " + (DateTime.Now - now2).ToString() + "ms )");			
-	}
-	catch (const std::exception& ex) {
-		LOG(ERROR) << "Error saving world! " << ex.what();
-	}
+	// Temporary inlined RandEventSystem::SaveAsync:
+	//RandEventSystem::SaveAsync(binary);
+	binary.Write((float)0);
+	binary.Write("");
+	binary.Write((float)0);
+	binary.Write(Vector3());
 }
 
+void IWorldManager::SaveWorld(const std::string& name, bool sync) {
+	auto now(steady_clock::now());
 
+	LOG(INFO) << "World saving";
+
+	auto path = GetWorldDBPath(m_world->m_name);
+
+	static NetPackage binary;
+	binary = SaveWorldDB();
+
+	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+
+	m_saveThread = std::thread([path]() {
+		el::Helpers::setThreadName("save");
+
+		auto now(steady_clock::now());
+
+		// backup the old file
+		if (fs::exists(path)) {
+			if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
+				auto compressed = VUtils::CompressGz(*oldSave);
+				if (!compressed) {
+					LOG(ERROR) << "Failed to compress world backup " << path;
+					return;
+				}
+
+				auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+				auto backup = path.string() + std::to_string(ms) + ".gz";
+				if (VUtils::Resource::WriteFileBytes(backup, *compressed))
+					LOG(INFO) << "Saved world backup as '" << backup << "'";
+				else
+					LOG(ERROR) << "Failed to save world backup to " << backup;
+			}
+			else {
+				LOG(ERROR) << "Failed to load old world for backup";
+			}
+		}
+
+		if (!VUtils::Resource::WriteFileBytes(path, binary.m_stream.m_buf))
+			LOG(ERROR) << "Failed to save world";
+		else
+			LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+	});
+
+	if (sync)
+		m_saveThread.join();
+}
 
 
 

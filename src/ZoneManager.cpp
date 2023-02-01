@@ -373,10 +373,14 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
         assert(heightmap);
 
         std::vector<ClearArea> m_tempClearAreas;
-        PlaceLocations(zoneID, m_tempClearAreas);
+
+        if (SERVER_SETTINGS.spawnLocations)
+            PlaceLocations(zoneID, m_tempClearAreas);
+
+        if (SERVER_SETTINGS.spawnVegetation)
         PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
 
-        if (SERVER_SETTINGS.naturalSpawning)
+        if (SERVER_SETTINGS.spawnCreatures)
             PlaceZoneCtrl(zoneID);
 
         m_generatedZones.insert(zoneID);

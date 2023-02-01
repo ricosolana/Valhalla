@@ -16,6 +16,7 @@ public:
 class IWorldManager {
 private:
     std::unique_ptr<World> m_world;
+    std::thread m_saveThread;
 
 public:
     World* GetWorld();
@@ -30,7 +31,9 @@ public:
 
     void LoadWorldDB(const std::string& name);
 
-    void SaveWorldDB(const std::string& name);
+    NetPackage SaveWorldDB();
+
+    void SaveWorld(const std::string& name, bool sync);
 
     std::unique_ptr<World> GetOrCreateWorldMeta(const std::string& name);
 
