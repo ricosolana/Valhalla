@@ -87,7 +87,6 @@ void IZDOManager::Load(NetPackage& reader, int version) {
 		zdo->Load(zdoPkg, version);
 
 		zdo->Abandon();
-		AddToSector(zdo.get(), zdo->Sector());
 		if (zdo->ID().m_uuid == SERVER_ID
 			&& zdo->ID().m_id >= nextUid)
 		{
@@ -136,32 +135,33 @@ ZDO* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
 	auto&& ret = m_objectsByID.insert({ uid, std::make_unique<ZDO>(uid, position) })
 		.first->second.get();
 
-	AddToSector(ret, ret->m_sector);
+	//AddToSector(ret, ret->m_sector);
 
 	return ret;
 }
 
-void IZDOManager::AddToSector(ZDO* zdo, const ZoneID& sector) {
-	int num = SectorToIndex(sector);
-	if (num != -1) {
-		m_objectsBySector[num].insert(zdo);
-	}
-}
+//void IZDOManager::AddToSector(ZDO* zdo, const ZoneID& sector) {
+//	int num = SectorToIndex(sector);
+//	if (num != -1) {
+//		m_objectsBySector[num].insert(zdo);
+//	}
+//}
 
+/*
 void IZDOManager::ZDOSectorInvalidated(ZDO* zdo) {
 	auto&& peers = NetManager()->GetPeers();
 	for (auto&& pair : peers) {
 		auto&& peer = pair.second;
 		peer->ZDOSectorInvalidated(zdo);
 	}
-}
+}*/
 
-void IZDOManager::RemoveFromSector(ZDO* zdo, const Vector2i& sector) {
-	int num = SectorToIndex(sector);
-	if (num != -1) {
-		m_objectsBySector[num].erase(zdo);
-	}
-}
+//void IZDOManager::RemoveFromSector(ZDO* zdo, const Vector2i& sector) {
+//	int num = SectorToIndex(sector);
+//	if (num != -1) {
+//		m_objectsBySector[num].erase(zdo);
+//	}
+//}
 
 void IZDOManager::Update() {
 	auto&& peers = NetManager()->GetPeers();
@@ -237,7 +237,6 @@ void IZDOManager::HandleDestroyedZDO(const NetID& uid) {
 	if (!zdo)
 		return;
 
-	RemoveFromSector(zdo, zdo->Sector());
 	m_objectsByID.erase(zdo->ID());
 
 	auto&& peers = NetManager()->GetPeers();
@@ -534,23 +533,16 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 	if (m_tempToSync.empty() && peer->m_invalidSector.empty())
 		return false;
 
-	bool flagWritten = false;
+	static NetPackage pkg;
+	pkg.m_stream.Clear();
 
-	NetPackage pkg;
+	pkg.Write(peer->m_invalidSector);
 
-	pkg.Write((int32_t) peer->m_invalidSector.size());
-	if (!peer->m_invalidSector.empty()) {
-		for (auto&& id : peer->m_invalidSector) {
-			pkg.Write(id);
-		}
+	const auto time = Valhalla()->Time();
 
-		peer->m_invalidSector.clear();
-		flagWritten = true;
-	}
-
-	auto ticks = Valhalla()->Ticks(); // TOOD this was Time.time (float)
-
-	for (int i=0; i < m_tempToSync.size() && pkg.m_stream.Length() <= availableSpace; i++)  {
+	for (int i=0; i < m_tempToSync.size() 
+		&& pkg.m_stream.Length() <= availableSpace; i++)  
+	{
 		auto sync = m_tempToSync[i];
 		peer->m_forceSend.erase(sync->ID());
 
@@ -561,22 +553,31 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 		pkg.Write(sync->Position());
 
 		// TODO could optimize
-		NetPackage syncPkg;
-		sync->Serialize(syncPkg); // dump sync information onto packet
-		pkg.Write(syncPkg);
+
+		pkg.NestedWrite([sync]() {
+			sync->Serialize(pkg);
+		});
+
+		//NetPackage syncPkg;
+		//sync->Serialize(syncPkg);
+		//pkg.Write(syncPkg);
 
 		peer->m_zdos[sync->ID()] = ZDO::Rev {
-			sync->m_rev.m_dataRev, sync->m_rev.m_ownerRev, ticks 
+			.m_dataRev = sync->m_rev.m_dataRev, 
+			.m_ownerRev = sync->m_rev.m_ownerRev, 
+			.m_time = time
 		};
-
-		flagWritten = true;
 	}
-	pkg.Write(NetID::NONE); // used as the null terminator
+	pkg.Write(NetID::NONE); // null terminator
 
-	if (flagWritten)
+	if (!peer->m_invalidSector.empty() || !m_tempToSync.empty()) {
 		peer->Invoke(Hashes::Rpc::ZDOData, pkg);
+		peer->m_invalidSector.clear();
 
-	return flagWritten;
+		return true;
+	}
+
+	return false;
 }
 
 void IZDOManager::OnNewPeer(Peer* peer) {
@@ -590,6 +591,10 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			while (invalid_sector_count--) {
 				auto id = pkg.Read<NetID>();
 				ZDO* zdo = GetZDO(id);
+
+				// Instead, remove from last valid sector
+				// then notify clients
+
 				if (zdo)
 					zdo->InvalidateSector();
 			}

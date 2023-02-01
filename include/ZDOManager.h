@@ -11,6 +11,13 @@
 class IZDOManager {
 	friend class IPrefabManager;
 	friend class INetManager;
+	friend class ZDO;
+
+	friend void AddToSector(ZDO* zdo);
+	friend void RemoveFromSector(ZDO* zdo);
+	
+	//friend void SetMovedPosition(ZDO* zdo, const Vector3& pos);
+	//friend void InvalidateSector(ZDO* zdo);
 
 	static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
@@ -54,6 +61,8 @@ private:
 	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
+	//void MoveToZone(ZDO* zdo, const ZoneID& zone);
+
 public:
 	void Init();
 
@@ -67,12 +76,12 @@ public:
 
 	// Sector Coords -> Sector Pitch
 	// Returns -1 on invalid sector
-	void AddToSector(ZDO* zdo, const ZoneID& sector);
+	
 
 	// used by zdo to self invalidate its sector
-	void ZDOSectorInvalidated(ZDO* zdo);
+	//void ZDOSectorInvalidated(ZDO* zdo);
 
-	void RemoveFromSector(ZDO* zdo, const ZoneID& sector);
+	
 
 	ZDO* GetZDO(const NetID& id);
 

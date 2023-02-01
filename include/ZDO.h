@@ -34,6 +34,8 @@ class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
 
+    friend void SetMovedPosition(ZDO* zdo, const Vector3& pos);
+
 public:
     enum class ObjectType : BYTE_t {
         Default,
@@ -55,7 +57,6 @@ public:
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
-
     // https://stackoverflow.com/a/1122109
     //enum class Ordinal : uint8_t {
     //    FLOAT = 1,  // 1 << (1 - 1) = 1
@@ -313,11 +314,11 @@ public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
 private:    HASH_t m_prefab = 0;
 //private:    Prefab* m_prefab; // TODO use this or Prefab* type?
 public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
-private:    Vector2i m_sector;        // Redundant; is based directly off position
+//private:    Vector2i m_sector;        // Redundant; is based directly off position
 public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
 public:     bool m_persistent = false;    // set by ZNetView
 public:     bool m_distant = false;        // set by ZNetView
-    
+          
 private:
     void Revise() {
         m_rev.m_dataRev++;
@@ -376,19 +377,19 @@ private:
 
 public:
     ZDO() = default;
+    ~ZDO();
 
+    // ZDOManager constructor
     ZDO(const NetID& id, const Vector3& pos);
-    //: m_id(id), m_position(pos), m_sector(IZoneManager::WorldToZonePos(pos)) {}
 
-    // Save ZDO to the disk package
+public:
+    // Save ZDO to disk
     void Save(NetPackage& writer) const;
 
+    // Load ZDO from disk
     void Load(NetPackage& reader, int32_t version);
 
-
-
     // Trivial hash getters
-
     template<TrivialSyncType T>
         requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
     const T& Get(HASH_t key, const T& value) const {
@@ -500,10 +501,7 @@ public:
         return m_rotation;
     }
 
-     const Vector2i& Sector() const {
-        //return IZoneManager::WorldToZonePos(m_position);
-         return m_sector;
-    }
+    Vector2i Sector() const;
 
     const NetID ID() const {
         return m_id;
@@ -521,11 +519,12 @@ public:
         return m_position;
     }
 
-    void InvalidateSector() {
-        this->SetSector(Vector2i(-100000, -10000));
-    }
+    void InvalidateSector();
 
-    void SetSector(const Vector2i& sector);
+    //    this->SetSector(Vector2i(-100000, -100000));
+    //}
+
+    //void SetSector(const Vector2i& sector);
 
 
 
@@ -569,8 +568,6 @@ public:
             return true;
         return false;
     }
-
-    void Invalidate();
 
     // Should name better
     void Abandon() {

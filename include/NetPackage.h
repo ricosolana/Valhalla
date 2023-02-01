@@ -15,6 +15,7 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "NetID.h"
+#include "VUtilsTraits.h"
 
 // TODO rename BinaryBuffer or DataBuffer or ByteBuffer
 //  maybe rename Stream to BinaryStream
@@ -35,6 +36,35 @@ public:
     NetPackage(const NetPackage& other) = default;  // copy construct
     NetPackage(NetPackage&& other) = default;       // move construct
     NetPackage& operator=(const NetPackage& other); // copy assign
+
+
+
+    // More efficient way to write a sub array/package organized type
+    template<typename F>
+        requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
+    //requires std::is_lvalue_reference_v<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>> 
+        //std::same_as<NetPackage, std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>>
+    void NestedWrite(F func) {
+        //using args_type = typename VUtils::Traits::func_traits<F>::args_type;
+
+        //static_assert(std::tuple_size<args_type>{} == 2, "Lambda must contain 2 parameters");
+
+        //static_assert(std::same_as<decltype(NetPackage&), std::tuple_element_t<0, args_type>>::value, "First arg must be NetPackage&");
+
+        //static_assert(std::same_as<decltype(NetPackage&), std::tuple_element_t<1, args_type>>::value, "First arg must be NetPackage&");
+        
+        const auto start = m_stream.Position();
+        int32_t count = 0;
+        Write(count);
+
+        // call func...
+        func();
+
+        const auto end = m_stream.Position();
+        m_stream.SetPos(start);
+        Write(count);
+        m_stream.SetPos(end);
+    }
 
 
 
