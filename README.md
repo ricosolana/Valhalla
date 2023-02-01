@@ -13,6 +13,13 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 2/1/2023 + TODO
+ - Pregenerated worlds work (will seem to work perfectly assuming area is loaded)
+
+ZDO's are spawned in correctly and matching the client placed objects. There are still some issues, such as ghost players (something to do with ZDO's not being released). Everything seems functional, because the client is really the one doing the heavy lifting. With these results, I am sure theres something incorrect with the serialize algorithm I used to dump prefabs (since ZoneLocations are skewed weirdly). Anyways, heres the pregenerated world results:
+
+![Pregenerated example with ghost player](/pics/pregenerated.jpg)
+
 ### 1/30/2023 + TODO
  - Fixed major oversight on ZoneLocation pkg (was causing incorrect ZoneLocation spawning)
  - ZoneLocation spawning fully works (still working on LocationInstance generation)
