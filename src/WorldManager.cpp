@@ -82,7 +82,7 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 		LOG(INFO) << "missing " << dbpath;
 	}
 	else {
-		try {
+		//try {
 			NetPackage pkg(opt.value());
 
 			auto worldVersion = pkg.Read<int32_t>();
@@ -119,10 +119,10 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 					}
 				}
 			}
-		}
-		catch (const std::exception& e) {
-			LOG(ERROR) << "Unable to load world: " << e.what();
-		}
+		//}
+		//catch (const std::exception& e) {
+		//	LOG(ERROR) << "Unable to load world: " << e.what();
+		//}
 	}
 }
 
@@ -131,7 +131,6 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 NetPackage IWorldManager::SaveWorldDB() {
 	NetPackage binary;
 
-	assert(false);
 	binary.Write(VConstants::WORLD);
 	binary.Write(Valhalla()->NetTime());
 	ZDOManager()->Save(binary);
@@ -143,9 +142,16 @@ NetPackage IWorldManager::SaveWorldDB() {
 	binary.Write("");
 	binary.Write((float)0);
 	binary.Write(Vector3());
+
+	return binary;
 }
 
-void IWorldManager::SaveWorld(const std::string& name, bool sync) {
+void IWorldManager::SaveWorld(bool sync) {
+	if (m_saveThread.joinable()) {
+		LOG(WARNING) << "Save thread is still active, joining...";
+		m_saveThread.join();
+	}
+
 	auto now(steady_clock::now());
 
 	LOG(INFO) << "World saving";
@@ -252,4 +258,6 @@ void IWorldManager::Init() {
 	LOG(INFO) << "Initializing WorldManager";
 
 	m_world = GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
+
+	LoadWorldDB(m_world->m_name);
 }

@@ -16,7 +16,8 @@ IZDOManager* ZDOManager() {
 
 
 void IZDOManager::Save(NetPackage& pkg) {
-	pkg.Write(Valhalla()->ID());
+	//pkg.Write(Valhalla()->ID());
+	pkg.Write<OWNER_t>(0);
 	pkg.Write(m_nextUid);
 	
 	// Write zdos (persistent)
@@ -25,14 +26,17 @@ void IZDOManager::Save(NetPackage& pkg) {
 	int32_t count = 0;	
 	pkg.Write(count);
 
-	NetPackage alivePkg;
-	for (auto&& sectorObjects : m_objectsBySector) {
-		for (auto &&zdo : sectorObjects) {
-			if (zdo->m_persistent) {
-				zdo->Save(alivePkg);
-				pkg.Write(alivePkg);
-				alivePkg.m_stream.Clear();
-				count++;
+	{
+		NetPackage zdoPkg;
+		for (auto&& sectorObjects : m_objectsBySector) {
+			for (auto&& zdo : sectorObjects) {
+				if (zdo->m_persistent) {
+					pkg.Write(zdo->ID());
+					zdo->Save(zdoPkg);
+					pkg.Write(zdoPkg);
+					zdoPkg.m_stream.Clear();
+					count++;
+				}
 			}
 		}
 	}
@@ -46,7 +50,9 @@ void IZDOManager::Save(NetPackage& pkg) {
 	pkg.Write((int32_t)m_deadZDOs.size());
 	for (auto&& dead : m_deadZDOs) {
 		pkg.Write(dead.first);
-		pkg.Write(dead.second.count());
+		auto t = dead.second.count();
+		static_assert(sizeof(t) == 8);
+		pkg.Write(t);
 	}
 }
 

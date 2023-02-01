@@ -2,6 +2,8 @@
 
 #include "VUtils.h"
 
+class NetPackage;
+
 class World {
 public:
     std::string m_name;
@@ -9,8 +11,6 @@ public:
     int32_t m_seed;
     OWNER_t m_uid;
     int32_t m_worldGenVersion;
-
-    //double m_netTime;
 };
 
 class IWorldManager {
@@ -33,7 +33,7 @@ public:
 
     NetPackage SaveWorldDB();
 
-    void SaveWorld(const std::string& name, bool sync);
+    void SaveWorld(bool sync);
 
     std::unique_ptr<World> GetOrCreateWorldMeta(const std::string& name);
 

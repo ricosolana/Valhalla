@@ -123,10 +123,11 @@ void NetPackage::Read(NetPackage &out) {
 
 
 void NetPackage::Write7BitEncodedInt(int32_t in) {
-    m_stream.m_buf.reserve(m_stream.m_buf.size() + 4);
+    //m_stream.m_buf.reserve(m_stream.m_buf.size() + 4);
+
     uint32_t num;
     for (num = (uint32_t) in; num >= 128U; num >>= 7)
-        Write((BYTE_t)(num | 0x7F));
+        Write((BYTE_t)(num | 128U));
 
     Write((BYTE_t) num);
 }

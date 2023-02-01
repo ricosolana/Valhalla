@@ -225,7 +225,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     });
     
     peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
-
+        WorldManager()->SaveWorld(true);
     });
 
     peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {

@@ -234,11 +234,11 @@ private:
         // Used when saving or serializing internal ZDO information
         //  Returns whether write was successful (if type match)
         template<TrivialSyncType T>
-        bool Write(NetPackage& pkg, HASH_t hash) const {
+        bool Write(NetPackage& pkg, HASH_t shiftHash) const {
             if (!IsType<T>())
                 return false;
 
-            pkg.Write(FromShiftHash<T>(hash));
+            pkg.Write(FromShiftHash<T>(shiftHash));
             pkg.Write(*_Member<T>());
             return true;
         }
@@ -350,22 +350,22 @@ private:
                 assert(count <= 127 && "shit");
             }
 
-            const auto end_mark = pkg.m_stream.Position();
-            pkg.m_stream.SetPos(size_mark);
-
-            pkg.Write(count);
-
-            pkg.m_stream.SetPos(end_mark);
+            if (count) {
+                const auto end_mark = pkg.m_stream.Position();
+                pkg.m_stream.SetPos(size_mark);
+                pkg.Write(count);
+                pkg.m_stream.SetPos(end_mark);
+            }
         }
     }
 
     template<typename T, typename CountType>
     void _TryReadType(NetPackage& pkg) {
-        auto count = pkg.Read<BYTE_t>();
+        const auto count = pkg.Read<BYTE_t>();
 
         assert(count <= 127);        
 
-        while (count--) {
+        for (int i=0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
             auto hash(pkg.Read<HASH_t>());

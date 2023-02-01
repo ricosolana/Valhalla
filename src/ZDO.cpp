@@ -67,7 +67,7 @@ void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);      static_assert(sizeof(Rev::m_ownerRev) == 4);
     pkg.Write(this->m_rev.m_dataRev);       static_assert(sizeof(Rev::m_dataRev) == 4);
     pkg.Write(this->m_persistent);      
-    pkg.Write(this->m_owner);
+    pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticks.count()); static_assert(sizeof(Rev::m_ticks) == 8);
     pkg.Write(VConstants::PGW);             static_assert(sizeof(VConstants::PGW) == 4);
     pkg.Write(this->m_type);                static_assert(sizeof(m_type) == 1);
@@ -91,7 +91,8 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     this->m_rev.m_ownerRev = pkg.Read<uint32_t>();
     this->m_rev.m_dataRev = pkg.Read<uint32_t>();
     this->m_persistent = pkg.Read<bool>();
-    this->m_owner = pkg.Read<OWNER_t>();
+    //this->m_owner = pkg.Read<OWNER_t>();
+    pkg.Read<OWNER_t>(); // unused owner
     this->m_rev.m_time = pkg.Read<int64_t>();
     /*this->m_pgwVersion = */ pkg.Read<int32_t>();
 

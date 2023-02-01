@@ -374,13 +374,13 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
         std::vector<ClearArea> m_tempClearAreas;
 
-        if (SERVER_SETTINGS.spawnLocations)
+        if (SERVER_SETTINGS.spawningLocations)
             PlaceLocations(zoneID, m_tempClearAreas);
 
-        if (SERVER_SETTINGS.spawnVegetation)
-        PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
+        if (SERVER_SETTINGS.spawningVegetation)
+            PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
 
-        if (SERVER_SETTINGS.spawnCreatures)
+        if (SERVER_SETTINGS.spawningCreatures)
             PlaceZoneCtrl(zoneID);
 
         m_generatedZones.insert(zoneID);
@@ -596,7 +596,7 @@ void IZoneManager::GenerateLocations() {
     // Already presorted by priority
     for (auto&& loc : m_locations) {
         //if (loc->m_name == "StartTemple") // TODO this is temporary for debug, so remove later
-            GenerateLocations(loc.get());
+        GenerateLocations(loc.get());
     }
 
     LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
