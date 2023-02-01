@@ -11,8 +11,6 @@ struct NetID {
     explicit NetID();
     explicit NetID(int64_t userID, uint32_t id);
 
-    std::string ToString();
-
     bool operator==(const NetID& other) const;
     bool operator!=(const NetID& other) const;
 

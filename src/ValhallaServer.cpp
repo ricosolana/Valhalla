@@ -153,11 +153,11 @@ void IValhalla::Start() {
 
     PrefabManager()->Init();
     ZDOManager()->Init();
-    WorldManager()->Init();
     ZoneManager()->Init();
+    bool dbLoaded = WorldManager()->Init();
     GeoManager()->Init();
-    HeightmapBuilder::Init();
-    if (m_settings.spawningLocations) ZoneManager()->GenerateLocations();
+    HeightmapBuilder::Init(); // TODO use class instance
+    if (m_settings.spawningLocations && !dbLoaded) ZoneManager()->GenerateLocations();
     NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";

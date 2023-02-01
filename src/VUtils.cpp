@@ -35,13 +35,7 @@ namespace VUtils {
 
         BYTES_t out;
 
-        z_stream zs;
-        zs.zalloc = Z_NULL;
-        zs.zfree = Z_NULL;
-        zs.opaque = Z_NULL;
-        zs.avail_in = (uInt) inSize;
-        zs.next_in = (Bytef*) in;
-        zs.next_out = (Bytef*) out.data();
+        z_stream zs{};
 
         // possible init errors are:
         //  - invalid param (can be fixed at compile time)
@@ -52,11 +46,18 @@ namespace VUtils {
             return std::nullopt;
 
         // Set output buffer size to an upper bound compressed size
+        // Might throw if out of memory (unlikely)
         out.resize(deflateBound(&zs, inSize));
 
+        zs.avail_in = (uInt) inSize;
+        zs.next_in = (Bytef*) in;
+        zs.next_out = (Bytef*) out.data();
         zs.avail_out = out.size();
 
-        assert(deflate(&zs, Z_FINISH) == Z_STREAM_END);
+        auto r = deflate(&zs, Z_FINISH);
+        if (r != Z_STREAM_END) {
+            return std::nullopt;
+        }
 
         out.resize(zs.total_out);
 

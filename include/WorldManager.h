@@ -31,13 +31,15 @@ public:
 
     void LoadWorldDB(const std::string& name);
 
+    void BackupWorldDB(const std::string& name);
+
     NetPackage SaveWorldDB();
 
     void SaveWorld(bool sync);
 
     std::unique_ptr<World> GetOrCreateWorldMeta(const std::string& name);
 
-    void Init();
+    bool Init();
 };
 
 IWorldManager* WorldManager();

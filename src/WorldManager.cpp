@@ -78,55 +78,73 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 	auto&& opt = VUtils::Resource::ReadFileBytes(dbpath);
 
 	if (!opt) {
-		//throw std::runtime_error("world db missing");
-		LOG(INFO) << "missing " << dbpath;
+		throw std::runtime_error("world db missing");
 	}
 	else {
-		//try {
-			NetPackage pkg(opt.value());
+		NetPackage pkg(opt.value());
 
-			auto worldVersion = pkg.Read<int32_t>();
-			if (worldVersion != VConstants::WORLD) {
-				LOG(ERROR) << "Incompatible data version " << worldVersion;
-			}
-			else {
-				if (worldVersion >= 4)
-					Valhalla()->m_netTime = pkg.Read<double>();
+		auto worldVersion = pkg.Read<int32_t>();
+		if (worldVersion != VConstants::WORLD) {
+			LOG(ERROR) << "Incompatible data version " << worldVersion;
+		}
+		else {
+			if (worldVersion >= 4)
+				Valhalla()->m_netTime = pkg.Read<double>();
 
-				ZDOManager()->Load(pkg, worldVersion);
+			ZDOManager()->Load(pkg, worldVersion);
 
-				if (worldVersion >= 12)
-					ZoneManager()->Load(pkg, worldVersion);
+			if (worldVersion >= 12)
+				ZoneManager()->Load(pkg, worldVersion);
 
-				if (worldVersion >= 15) {
-					// inlined RandEventManager::Load
-					//RandEventManager::Load(pkg, worldVersion);
+			if (worldVersion >= 15) {
+				// inlined RandEventManager::Load
+				//RandEventManager::Load(pkg, worldVersion);
 
-					auto eventTimer = pkg.Read<float>();
-					if (worldVersion >= 25) {
-						auto text = pkg.Read<std::string>();
-						auto time = pkg.Read<float>();
-						Vector3 pos = pkg.Read<Vector3>();
+				auto eventTimer = pkg.Read<float>();
+				if (worldVersion >= 25) {
+					auto text = pkg.Read<std::string>();
+					auto time = pkg.Read<float>();
+					Vector3 pos = pkg.Read<Vector3>();
 
-						//if (!text.empty()) {
-						//	this.SetRandomEventByName(text, pos);
-						//	if (this.m_randomEvent != null)
-						//	{
-						//		this.m_randomEvent.m_time = time;
-						//		this.m_randomEvent.m_pos = pos;
-						//	}
-						//}
-					}
+					//if (!text.empty()) {
+					//	this.SetRandomEventByName(text, pos);
+					//	if (this.m_randomEvent != null)
+					//	{
+					//		this.m_randomEvent.m_time = time;
+					//		this.m_randomEvent.m_pos = pos;
+					//	}
+					//}
 				}
 			}
-		//}
-		//catch (const std::exception& e) {
-		//	LOG(ERROR) << "Unable to load world: " << e.what();
-		//}
+		}
 	}
 }
 
 
+
+void IWorldManager::BackupWorldDB(const std::string& name) {
+	auto path = GetWorldDBPath(name);
+
+	if (fs::exists(path)) {
+		if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
+			auto compressed = VUtils::CompressGz(*oldSave);
+			if (!compressed) {
+				LOG(ERROR) << "Failed to compress world backup " << path;
+				return;
+			}
+
+			auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+			auto backup = path.string() + std::to_string(ms) + ".gz";
+			if (VUtils::Resource::WriteFileBytes(backup, *compressed))
+				LOG(INFO) << "Saved world backup as '" << backup << "'";
+			else
+				LOG(ERROR) << "Failed to save world backup to " << backup;
+		}
+		else {
+			LOG(ERROR) << "Failed to load old world for backup";
+		}
+	}
+}
 
 NetPackage IWorldManager::SaveWorldDB() {
 	NetPackage binary;
@@ -227,9 +245,10 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 				world->m_worldGenVersion = worldVersion >= 26 ? zpackage.Read<int32_t>() : 0;
 				LOG(INFO) << "Loaded world '" << world->m_name << "' with seed " <<
 					world->m_seed << " (" << world->m_seedName << ")";
+
 				success = true;
 			}
-			catch (const std::range_error& e) {
+			catch (const std::range_error&) {
 				LOG(ERROR) << "World is corrupted or unsupported " << name;
 			}
 		}
@@ -254,10 +273,18 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 	return world;
 }
 
-void IWorldManager::Init() {
+bool IWorldManager::Init() {
 	LOG(INFO) << "Initializing WorldManager";
 
 	m_world = GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
 
-	LoadWorldDB(m_world->m_name);
+	try {
+		LoadWorldDB(m_world->m_name);
+		return true;
+	}
+	catch (const std::exception& e) {
+		LOG(ERROR) << e.what();
+	}
+
+	return false;
 }

@@ -20,156 +20,157 @@
 //  maybe rename Stream to BinaryStream
 class NetPackage {
 private:
-    void Write7BitEncodedInt(int32_t value);
-    int Read7BitEncodedInt();
+    void Write7BitEncodedInt(uint32_t value);
+    uint32_t Read7BitEncodedInt();
 
 public:
     Stream m_stream;
 
     NetPackage() = default;
     NetPackage(const BYTE_t* data, uint32_t count); // raw bytes constructor
-    explicit NetPackage(BYTES_t &&vec);                      // assign vector constructor
-    explicit NetPackage(const BYTES_t& vec);                 // copy vector constructor
+    explicit NetPackage(BYTES_t &&vec);             // assign vector constructor
+    explicit NetPackage(const BYTES_t& vec);        // copy vector constructor
     NetPackage(const BYTES_t& vec, uint32_t count); // vector count constructor
-    explicit NetPackage(uint32_t reserve);                   // reserve initial memory
-    NetPackage(const NetPackage& other) = default;  // copy
-    NetPackage(NetPackage&& other) = default;       // move
+    explicit NetPackage(uint32_t reserve);          // reserve initial memory
+    NetPackage(const NetPackage& other) = default;  // copy construct
+    NetPackage(NetPackage&& other) = default;       // move construct
+    NetPackage& operator=(const NetPackage& other); // copy assign
 
 
 
-    NetPackage& operator=(const NetPackage& other);
-
-
-
-    // Write length-pointer data as byte array
+    // Writes a BYTE_t* as byte array of length
+    //  uint32_t:   size
+    //  BYTES_t:    data
     void Write(const BYTE_t* in, uint32_t count);
-    // Write length-vector as byte array
-    void Write(const BYTES_t &in, uint32_t count);            // Write array
-    // Write vector as byte array
+
+    // Writes a BYTES_t* as byte array of length
+    //  uint32_t:   size
+    //  BYTES_t:    data
+    void Write(const BYTES_t &in, uint32_t count);
+
+    // Writes a BYTE_t* as byte array
+    //  uint32_t:   size
+    //  BYTES_t:    data
     void Write(const BYTES_t &in);
-    // Write Package as byte array
+
+    // Writes a NetPackage as byte array
+    //  uint32_t:   size
+    //  BYTES_t:    data
     void Write(const NetPackage &in);
-    // Write string
+
+    // Writes a string
     void Write(const std::string& in);
-    // Write NetID
-    void Write(const NetID &id);
-    // Write Vector3
+    // Writes a ZDOID
+    //  12 bytes total are written:
+    //  int64_t:    owner (8 bytes)
+    //  uint32_t:   uid (4 bytes)
+    void Write(const ZDOID &id);
+
+    // Writes a Vector3
+    //  12 bytes total are written:
+    //  float: x (4 bytes)
+    //  float: y (4 bytes)
+    //  float: z (4 bytes)
     void Write(const Vector3 &in);
-    // Write Vector2i
+
+    // Writes a Vector2i
+    //  8 bytes total are written:
+    //  int32_t: x (4 bytes)
+    //  int32_t: y (4 bytes)
     void Write(const Vector2i &in);
-    // Write Quaternion
+
+    // Writes a Quaternion
+    //  16 bytes total are written:
+    //  float: x (4 bytes)
+    //  float: y (4 bytes)
+    //  float: z (4 bytes)
+    //  float: w (4 bytes)
     void Write(const Quaternion& in);
     
-    //template<class Container>
-    //typename std::enable_if<has_const_iterator<Container>::value,
-    //    void>::type
-
-    //template<class Container> requires is_container<Container>::value
+    // Writes a container of supported types
+    //  uint32_t:   size
+    //  T...:       value_type
+    template<typename Iterable> requires 
+        (is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+    void Write(const Iterable& in) {
+        Write<int32_t>(in.size());
+        for (auto&& v : in) {
+            Write(v);
+        }
+    }
     
-    //template<class Container> requires is_container_of<Container, std::string>::value
-    //void Write(const Container& in) {
-    //    Write(static_cast<uint32_t>(in.size()));
-    //    for (auto&& s : in) {
-    //        //static_assert(std::is_same_v<decltype(s), std::string>);
-    //        Write(s);
-    //    }
-    //}
-
-
-    //template<template<class> class T>
-    //void Write(const T<std::string> &in) {
-    //    Write(static_cast<uint32_t>(in.size()));
-    //    for (auto&& s : in) {
-    //        Write(s);
-    //    }
-    //}
+    // Writes a primitive type
+    template<typename T> requires std::is_fundamental_v<T>
+    void Write(const T &in) { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
     
-    // Write string vector as string array
-    void Write(const std::vector<std::string>& in);     // Write string array (NetRpc)
-    // Write string set as string array
-    void Write(const robin_hood::unordered_set<std::string>& in);
-    // Write primitive
-    template<typename T> void Write(const T &in) requires std::is_fundamental_v<T> { m_stream.Write(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
-
-    
-
-    // Enum overload; writes the enum underlying value
-    // https://stackoverflow.com/questions/60524480/how-to-force-a-template-parameter-to-be-an-enum-or-enum-class
-    template<typename E>
-    void Write(E v) requires std::is_enum_v<E> {
+    // Writes an enum
+    //  Bytes written depend on the underlying value
+    template<typename E> requires std::is_enum_v<E>
+    void Write(E v) {
         using T = std::underlying_type_t<E>;
         Write(static_cast<T>(v));
     }
 
 
 
-    template<typename T>
-    T Read() requires std::is_fundamental_v<T> {
+    //  Reads a primitive type
+    template<typename T> requires std::is_fundamental_v<T>
+    T Read() {
         T out;
         m_stream.Read(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, std::string> {
+    // Reads a string
+    template<typename T> requires std::same_as<T, std::string>
+    T Read() {
         auto count = Read7BitEncodedInt();
-
-        if (count < 0)
-            throw std::runtime_error("negative count");
-
         if (count == 0)
             return "";
+
+        if (m_stream.Position() + count > m_stream.Length()) 
+            throw std::range_error("NetPackage::Read<std::string>() length exceeded");
         
         std::string s;
-        //m_stream.Read(s, byteCount);
 
-
-
-        if (m_stream.Position() + count > m_stream.Length()) throw std::range_error("NetPackage::Read<std::string>() length exceeded");
         s.insert(s.end(),
             m_stream.m_buf.begin() + m_stream.m_pos,
             m_stream.m_buf.begin() + m_stream.m_pos + count);
+
         m_stream.m_pos += count;
-
-
 
         return s;
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, BYTES_t> {
+    // Reads a byte array
+    //  uint32_t:   size
+    //  BYTES_t:    data
+    template<typename T> requires std::same_as<T, BYTES_t>
+    T Read() {
         T out;
         m_stream.Read(out, Read<uint32_t>());
         return out;
     }
 
-    //template<class Container>
-    //typename std::enable_if<has_const_iterator<Container>::value,
-    //    Container>::type
-    //template<class Container> requires is_container<Container>::value
-    //Container Read() {
-    //    Container out;
-    //    auto count = Read<uint32_t>();
-    //
-    //    while (count--) {
-    //        out.push_back(Read<std::string>());
-    //    }
-    //    return out;
-    //}
+    // Reads a container of supported types
+    //  uint32_t:   size
+    //  T...:       value_type
+    template<typename Iterable> requires (is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+    Iterable Read() {
+        Iterable out;
+        auto count = Read<uint32_t>();
+    
+        while (count--) {
+            out.insert(Read<Iterable::value_type>());
+        }
+        return out;
+    }
 
-    //template<template<class> class T>
-    //T<std::string> Read() requires is_container<T<std::string>>::value {
-    //    T out;
-    //    auto count = Read<uint32_t>();
-    //
-    //    while (count--) {
-    //        out.push_back(Read<std::string>());
-    //    }
-    //    return out;
-    //}
-
-    template<typename T>
-    T Read() requires std::same_as<T, NetPackage> {
+    // Reads a NetPackage
+    //  uint32_t:   size
+    //  BYTES_t:    data
+    template<typename T> requires std::same_as<T, NetPackage>
+    T Read() {
         auto count = Read<uint32_t>();
 
         NetPackage pkg(count);
@@ -179,30 +180,49 @@ public:
         return pkg;
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, NetID> {
-        auto a(Read<OWNER_t>());
+    // Reads a ZDOID
+    //  12 bytes total are read:
+    //  int64_t:    owner (8 bytes)
+    //  uint32_t:   uid (4 bytes)
+    template<typename T> requires std::same_as<T, ZDOID>
+    T Read() {
+        auto a(Read<int64_t>());
         auto b(Read<uint32_t>());
-        return NetID(a, b);
+        return ZDOID(a, b);
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, Vector3> {
+    // Reads a Vector3
+    //  12 bytes total are read:
+    //  float: x (4 bytes)
+    //  float: y (4 bytes)
+    //  float: z (4 bytes)
+    template<typename T> requires std::same_as<T, Vector3>
+    T Read() {
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
         return Vector3{ a, b, c };
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, Vector2i> {
+    // Reads a Vector2i
+    //  8 bytes total are read:
+    //  int32_t: x (4 bytes)
+    //  int32_t: y (4 bytes)
+    template<typename T> requires std::same_as<T, Vector2i>
+    T Read() {
         auto a(Read<int32_t>());
         auto b(Read<int32_t>());
         return Vector2i{ a, b };
     }
 
-    template<typename T>
-    T Read() requires std::same_as<T, Quaternion> {
+    // Reads a Quaternion
+    //  16 bytes total are read:
+    //  float: x (4 bytes)
+    //  float: y (4 bytes)
+    //  float: z (4 bytes)
+    //  float: w (4 bytes)
+    template<typename T> requires std::same_as<T, Quaternion>
+    T Read() {
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
@@ -210,66 +230,16 @@ public:
         return Quaternion{ a, b, c, d };
     }
 
-    template<typename E>
-    E Read() requires std::is_enum_v<E> {
+    // Reads an enum type
+    //  Bytes read depend on the underlying value
+    template<typename E> requires std::is_enum_v<E>
+    E Read() {
         return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
-
-
-    //template<typename T>
-    //T Read() requires std::same_as<T, Player> {
-    //
-    //
-    //
-    //
-    //    return PlayerProfile{ Read<float>(), Read<float>(), Read<float>(), Read<float>() };
-    //}
-
-
-
-    // Reads a byte array from package
+    // Reads a byte array 
     // The target vector be overwritten
     void Read(BYTES_t& out);
-
-    // Reads a string array from package
-    // The target vector will be overwritten
-    ///template<class Container> requires is_container<Container>::value
-    //typename std::enable_if<has_const_iterator<Container>::value,
-        //void>::type
-    ///void Read(Container& out) {
-    ///    auto count = Read<uint32_t>();
-    ///
-    ///    out.clear();
-    ///    out.reserve(count);
-    ///
-    ///    while (count--) {
-    ///        out.push_back(Read<std::string>());
-    ///    }
-    ///}
-
-    template<typename T>
-    T Read() requires std::same_as<T, std::vector<std::string>> {
-        T out;
-        auto count = Read<uint32_t>();
-
-        while (count--) {
-            out.push_back(Read<std::string>());
-        }
-        return out;
-    }
-
-    //template<template<class> class T>
-    //void Read(T<std::string>& out) requires is_container<T<std::string>>::value{
-    //    auto count = Read<uint32_t>();
-    //
-    //    out.clear();
-    //    out.reserve(count);
-    //
-    //    while (count--) {
-    //        out.push_back(Read<std::string>());
-    //    }
-    //}
 
     // Reads a NetPackage from package
     // The target package will be entirely overwritten
@@ -277,6 +247,7 @@ public:
 
 
 
+public:
     // Empty template
     static void _Serialize(NetPackage &pkg) {}
 
@@ -288,6 +259,7 @@ public:
         _Serialize(pkg, var2...);
     }
 
+    // Serialize variadic types to a NetPackage
     template <typename T, typename... Types>
     static NetPackage Serialize(T var1, const Types&... var2) {
         NetPackage pkg((sizeof(var1) + ... + sizeof(Types)));
@@ -296,27 +268,9 @@ public:
         return pkg;
     }
 
-
-    // https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
-    // empty
-
-    // this is better
+    // Deserialize a NetPackage to a tuple of types
     template<class...Ts, class NP>
-    static std::tuple<Ts...> Deserialize(NP& pkg)
-    {
+    static std::tuple<Ts...> Deserialize(NP& pkg) {
         return {pkg.template Read<Ts>()...};
     }
-
-    //template<class Tuple, size_t ...Is> // class Tuple>
-    //static Tuple Deserialize(NetPackage& pkg, std::index_sequence<Is...>)
-    //{
-    //    //std::tuple<int, char> tup;
-    //    //std::get<0>(tup)
-    //    //Tuple tuple;
-    //    //return {pkg.template Read<std::get<Is>(tuple)>()...};
-    //    //std::tuple_element_t<0, decltype(tup)> e;
-    //
-    //    return { pkg.template Read<std::tuple_element_t<Is, Tuple>>()...};
-    //}
-
 };

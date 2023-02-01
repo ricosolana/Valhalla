@@ -197,7 +197,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, NetID characterID) {
         peer->m_characterID = characterID;
 
-        LOG(INFO) << "Got CharacterID from " << peer->m_name << " : " << characterID.ToString();
+        LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
     });
 
     // Extras

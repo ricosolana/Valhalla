@@ -259,12 +259,12 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 
 // public
 void IZoneManager::Save(NetPackage& pkg) {
-    pkg.Write((int32_t)m_generatedZones.size());
+    pkg.Write<int32_t>(m_generatedZones.size());
     for (auto&& vec : m_generatedZones) {
         pkg.Write(vec);
     }
-    pkg.Write(VConstants::PGW);
-    pkg.Write(VConstants::LOCATION);
+    pkg.Write<int32_t>(VConstants::PGW);
+    pkg.Write<int32_t>(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
 
     pkg.Write(true); // m_worldSave.Write(m_locationsGenerated);
@@ -279,32 +279,31 @@ void IZoneManager::Save(NetPackage& pkg) {
 
 // public
 void IZoneManager::Load(NetPackage& reader, int32_t version) {
-    auto countZones = reader.Read<int32_t>();
-    while (countZones--) {
+    const auto countZones = reader.Read<int32_t>();
+    for (int i=0; i < countZones; i++) {
         m_generatedZones.insert(reader.Read<Vector2i>());
     }
 
     if (version >= 13) {
-        int32_t pgwVersion = reader.Read<int32_t>(); // 99
-        int32_t locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
+        const auto pgwVersion = reader.Read<int32_t>(); // 99
+        const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
         if (pgwVersion != VConstants::PGW) {
             throw std::runtime_error("incompatible PGW version");
         }
 
         if (version >= 14) {
-            int32_t countKeys = reader.Read<int32_t>();
-            while (countKeys--) {
+            const auto countKeys = reader.Read<int32_t>();
+            for (int i=0; i < countKeys; i++) {
                 m_globalKeys.insert(reader.Read<std::string>());
             }
         }
 
         if (version >= 18) {
-            // kinda dumb, ?
-            if (version >= 20) //m_locationsGenerated = reader.Read<bool>();
-                reader.Read<bool>();
+            if (version >= 20)
+                reader.Read<bool>(); // m_locationsGenerated
             
             const auto countLocations = reader.Read<int32_t>();
-            for (int32_t i = 0; i < countLocations; i++) {
+            for (int i = 0; i < countLocations; i++) {
                 auto text = reader.Read<std::string>();
                 auto pos = reader.Read<Vector3>();
                 bool placed = version >= 19 ? reader.Read<bool>() : false;
@@ -323,6 +322,7 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
                 //m_locationInstances.clear();
             //}
 
+            // this would completely regenerate locations across modified patches
             if (locationVersion != VConstants::LOCATION) {
                 //m_locationsGenerated = false;
             }

@@ -5,8 +5,28 @@
 #include "WorldManager.h"
 
 namespace Tests {
+    
+    void Test_ContainerTPL() {
+        //constexpr int has = is_container<std::vector<int>>::value;
+        //constexpr int has = is_container<int>::value;
+        //
+        //constexpr int has = is_container_of<int, int>::value;
+        //constexpr int has1 = is_container_of<std::vector<int>, int>::value;
+        //
+        //constexpr int has2 = has_value_type<std::vector<int>, int>::value;
+
+        //std::indirectly_readable_traits<std::vector<int>>::
+
+        //constexpr int i = has_value_type<int>::value;
+        //constexpr int i = has_value_type<std::vector<int>>::value;
+
+        //std::iter_value_t<int>
+
+    }
 
     void Test_World() {
+        WorldManager()->BackupWorldDB("world");
+
         WorldManager()->GetOrCreateWorldMeta("privUWorld");
         WorldManager()->LoadWorldDB("02129");
     }

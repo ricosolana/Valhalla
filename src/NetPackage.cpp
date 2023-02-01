@@ -34,7 +34,8 @@ void NetPackage::Write(const BYTES_t &in, uint32_t count) {
 }
 
 void NetPackage::Write(const BYTES_t& in) {
-    Write(in.data(), static_cast<uint32_t>(in.size()));
+    assert(in.size() < std::numeric_limits<int32_t>::max());
+    Write(in.data(), in.size());
 }
 
 void NetPackage::Write(const NetPackage& in) {
@@ -42,19 +43,17 @@ void NetPackage::Write(const NetPackage& in) {
 }
 
 void NetPackage::Write(const std::string& in) {
-    int byteCount = static_cast<int>(in.length());
+    assert(in.size() < std::numeric_limits<int32_t>::max());
 
-    assert(byteCount >= 0);
-
+    uint32_t byteCount = in.length();
     Write7BitEncodedInt(byteCount);
-
     if (byteCount == 0)
         return;
 
     m_stream.Write(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
 }
 
-void NetPackage::Write(const NetID& in) {
+void NetPackage::Write(const ZDOID& in) {
     Write(in.m_uuid);
     Write(in.m_id);
 }
@@ -77,44 +76,11 @@ void NetPackage::Write(const Quaternion& in) {
      Write(in.w);
 }
 
-void NetPackage::Write(const std::vector<std::string>& in) {
-    Write(static_cast<int32_t>(in.size()));
-    for (auto&& s : in) {
-        Write(s);
-    }
-}
-
-void NetPackage::Write(const robin_hood::unordered_set<std::string>& in) {
-    Write(static_cast<int32_t>(in.size()));
-    for (auto&& s : in) {
-        Write(s);
-    }
-}
-
-
-
-//void NetPackage::From(const BYTE_t* data, uint32_t count) {
-//    m_stream.Clear();
-//    m_stream.Write(data, count);
-//    m_stream.SetPos(0);
-//}
-
 
 
 void NetPackage::Read(BYTES_t& out) {
     m_stream.Read(out, Read<uint32_t>());
 }
-
-/*
-void NetPackage::Read(std::vector<std::string>& out) {
-    auto count = Read<int32_t>();
-    out.reserve(count);
-    
-    out.clear();
-    while (count--) {
-        out.push_back(Read<std::string>());
-    }
-}*/
 
 void NetPackage::Read(NetPackage &out) {
     out = NetPackage(Read<BYTES_t>());
@@ -122,22 +88,19 @@ void NetPackage::Read(NetPackage &out) {
 
 
 
-void NetPackage::Write7BitEncodedInt(int32_t in) {
-    //m_stream.m_buf.reserve(m_stream.m_buf.size() + 4);
+void NetPackage::Write7BitEncodedInt(uint32_t in) {
+    for (; in >= 128U; in >>= 7)
+        Write((BYTE_t)(in | 128U));
 
-    uint32_t num;
-    for (num = (uint32_t) in; num >= 128U; num >>= 7)
-        Write((BYTE_t)(num | 128U));
-
-    Write((BYTE_t) num);
+    Write((BYTE_t) in);
 }
 
-int NetPackage::Read7BitEncodedInt() {
-    int out = 0;
-    int num2 = 0;
+uint32_t NetPackage::Read7BitEncodedInt() {
+    uint32_t out = 0;
+    uint32_t num2 = 0;
     while (num2 != 35) {
         auto b = Read<BYTE_t>();
-        out |= (int)(b & 127) << num2;
+        out |= (uint32_t)(b & 127) << num2;
         num2 += 7;
         if ((b & 128) == 0)
         {
