@@ -16,9 +16,6 @@ class IZDOManager {
 	friend void AddToSector(ZDO* zdo);
 	friend void RemoveFromSector(ZDO* zdo);
 	
-	//friend void SetMovedPosition(ZDO* zdo, const Vector3& pos);
-	//friend void InvalidateSector(ZDO* zdo);
-
 	static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
@@ -93,9 +90,9 @@ public:
 	void FindSectorObjects(const ZoneID& sector, int area, int distantArea,
 		std::vector<ZDO*>& sectorObjects, std::vector<ZDO*>* distantSectorObjects = nullptr);
 
-	void FindSectorObjects(const Vector2i& sector, int area, std::vector<ZDO*>& sectorObjects);
+	void FindSectorObjects(const ZoneID& sector, int area, std::vector<ZDO*>& sectorObjects);
 
-	void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
+	//void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
 
 	// Used to get portals incrementally in a coroutine
 	// basically, the coroutine thread is frozen in place

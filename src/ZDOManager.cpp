@@ -386,7 +386,7 @@ void IZDOManager::FindObjects(const ZoneID& sector, std::vector<ZDO*>& objects) 
 	}
 }
 
-void IZDOManager::FindDistantObjects(const Vector2i& sector, std::vector<ZDO*>& objects) {
+void IZDOManager::FindDistantObjects(const ZoneID& sector, std::vector<ZDO*>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
