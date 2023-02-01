@@ -58,7 +58,6 @@ private:
 	int SectorToIndex(const ZoneID& s) const;
 	void FindObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
 	void FindDistantObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
-	void RemoveOrphanNonPersistentZDOS();
 	bool IsPeerConnected(OWNER_t uid);
 
 	//void MoveToZone(ZDO* zdo, const ZoneID& zone);

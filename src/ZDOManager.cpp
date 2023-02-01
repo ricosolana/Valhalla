@@ -398,20 +398,6 @@ void IZDOManager::FindDistantObjects(const Vector2i& sector, std::vector<ZDO*>& 
 	}
 }
 
-void IZDOManager::RemoveOrphanNonPersistentZDOS() {
-	for (auto&& pair : m_objectsByID) {
-		auto&& zdo = pair.second;
-		if (!zdo->m_persistent
-			&& (!zdo->HasOwner() || !IsPeerConnected(zdo->Owner())))
-		{
-			auto&& uid = zdo->ID();
-			LOG(INFO) << "Destroying abandoned non persistent zdo (" << zdo->m_prefab << " " << zdo->Owner() << ")";
-			zdo->SetLocal();
-			MarkDestroyZDO(zdo.get());
-		}
-	}
-}
-
 bool IZDOManager::IsPeerConnected(OWNER_t uid) {
 	// kinda dumb below for server?
 
@@ -652,5 +638,15 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 
 void IZDOManager::OnPeerQuit(Peer* peer) {
 	// This is the kind of iteration removal I am trying to avoid
-	RemoveOrphanNonPersistentZDOS();
+	for (auto&& pair : m_objectsByID) {
+		auto&& zdo = pair.second;
+		if (!zdo->m_persistent
+			&& (!zdo->HasOwner() || zdo->Owner() == peer->m_uuid))
+		{
+			auto&& uid = zdo->ID();
+			LOG(INFO) << "Destroying abandoned non persistent zdo (" << zdo->m_prefab << " " << zdo->Owner() << ")";
+			zdo->SetLocal();
+			MarkDestroyZDO(zdo.get());
+		}
+	}
 }
