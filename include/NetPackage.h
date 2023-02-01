@@ -62,6 +62,8 @@ public:
 
         const auto end = m_stream.Position();
         m_stream.SetPos(start);
+        count = end - start - sizeof(count);
+        assert(count >= 0);
         Write(count);
         m_stream.SetPos(end);
     }
