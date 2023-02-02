@@ -182,35 +182,40 @@ void IWorldManager::SaveWorld(bool sync) {
 	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
 
 	m_saveThread = std::thread([path]() {
-		el::Helpers::setThreadName("save");
+		try {
+			el::Helpers::setThreadName("save");
 
-		auto now(steady_clock::now());
+			auto now(steady_clock::now());
 
-		// backup the old file
-		if (fs::exists(path)) {
-			if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
-				auto compressed = VUtils::CompressGz(*oldSave);
-				if (!compressed) {
-					LOG(ERROR) << "Failed to compress world backup " << path;
-					return;
+			// backup the old file
+			if (fs::exists(path)) {
+				if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
+					auto compressed = VUtils::CompressGz(*oldSave);
+					if (!compressed) {
+						LOG(WARNING) << "Failed to compress world backup " << path;
+						return;
+					}
+
+					auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+					auto backup = path.string().substr(0, path.string().length() - 3) + "-" + std::to_string(ms) + "db.gz";
+					if (VUtils::Resource::WriteFileBytes(backup, *compressed))
+						LOG(INFO) << "Saved world backup as '" << backup << "'";
+					else
+						LOG(WARNING) << "Failed to save world backup to " << backup;
 				}
+				else {
+					LOG(WARNING) << "Failed to load old world for backup";
+				}
+			}
 
-				auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-				auto backup = path.string() + std::to_string(ms) + ".gz";
-				if (VUtils::Resource::WriteFileBytes(backup, *compressed))
-					LOG(INFO) << "Saved world backup as '" << backup << "'";
-				else
-					LOG(ERROR) << "Failed to save world backup to " << backup;
-			}
-			else {
-				LOG(ERROR) << "Failed to load old world for backup";
-			}
+			if (!VUtils::Resource::WriteFileBytes(path, binary.m_stream.m_buf))
+				LOG(WARNING) << "Failed to save world";
+			else
+				LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
 		}
-
-		if (!VUtils::Resource::WriteFileBytes(path, binary.m_stream.m_buf))
-			LOG(ERROR) << "Failed to save world";
-		else
-			LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+		catch (const std::exception& e) {
+			LOG(ERROR) << "Severe error while saving world: " << e.what();
+		}
 	});
 
 	if (sync)

@@ -49,7 +49,10 @@ void INetManager::InitPassword() {
 
 bool INetManager::Kick(std::string user, const std::string &reason) {
     auto&& peer = GetPeer(user);
-    if (!peer) peer = GetPeer(std::stoll(user));
+    try {
+        if (!peer) peer = GetPeer(std::stoll(user));
+    }
+    catch (std::exception&) {}
 
     if (peer) {
         user = peer->m_socket->GetHostName();
@@ -59,7 +62,7 @@ bool INetManager::Kick(std::string user, const std::string &reason) {
     else {
         auto peers = GetPeers(user);
 
-        for (auto&& p : peers) {
+        for (auto&& peer : peers) {
             user = peer->m_socket->GetHostName();
             peer->Kick(reason);
         }
@@ -72,25 +75,31 @@ bool INetManager::Kick(std::string user, const std::string &reason) {
 }
 
 bool INetManager::Ban(std::string user, const std::string& reason) {
-    auto&& peer = GetPeer(user);
-    if (!peer) peer = GetPeer(std::stoll(user));
+    {
+        auto&& peer = GetPeer(user);
+        try {
+            if (!peer) peer = GetPeer(std::stoll(user));
+        }
+        catch (std::exception&) {}
 
-    if (peer) {
-        user = peer->m_socket->GetHostName();
-        peer->Kick(reason);
-        return true;
-    } else {
-        auto peers = GetPeers(user);
-
-        for (auto&& p : peers) {
+        if (peer) {
             user = peer->m_socket->GetHostName();
             peer->Kick(reason);
-        }
-
-        if (!peers.empty())
+            Valhalla()->m_blacklist.insert(user);
             return true;
+        }
     }
 
+    auto peers = GetPeers(user);
+
+    for (auto&& peer : peers) {
+        user = peer->m_socket->GetHostName();
+        peer->Kick(reason);
+    }
+
+    if (!peers.empty())
+        return true;
+    
     Valhalla()->m_blacklist.insert(user);
     return false;
 }
@@ -362,7 +371,7 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
             sub1++, sub2++) 
         {
             if (*sub2 == "*") continue;
-            if (sub2 != sub1) {
+            if (*sub2 != *sub1) {
                 match = false;
                 break;
             }

@@ -73,7 +73,14 @@ public:
 
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
-        assert(m_socket && m_socket->Connected());
+        // Can still fail during mid-frame Close() calls
+        //assert(m_socket && m_socket->Connected());
+
+        if (!m_socket->Connected())
+            return;
+
+        static NetPackage pkg; // TODO make into member to optimize; or make static
+        pkg.m_stream.Clear();
 
         NetPackage pkg; // TODO make into member to optimize; or make static
         pkg.Write(hash);
