@@ -46,7 +46,7 @@ namespace VUtils::String {
 
     HASH_t GetStableHashCode(const std::string_view& s);
 
-    std::vector<std::string_view> Split(const std::string &s, const std::string &delim);
+    std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
 
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)

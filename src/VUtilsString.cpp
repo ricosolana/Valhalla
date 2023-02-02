@@ -36,7 +36,7 @@ namespace VUtils::String {
         return num + num2 * 1566083941;
     }
 
-    std::vector<std::string_view> Split(const std::string& s, const std::string &delim) {
+    std::vector<std::string_view> Split(std::string_view s, const std::string &delim) {
         std::string_view remaining(s);
         std::vector<std::string_view> result;
         int pos = 0;

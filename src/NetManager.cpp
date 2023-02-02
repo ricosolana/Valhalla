@@ -47,24 +47,56 @@ void INetManager::InitPassword() {
 
 
 
-void INetManager::Kick(const std::string& user) {
+bool INetManager::Kick(std::string user, const std::string &reason) {
     auto&& peer = GetPeer(user);
-    if (peer)
-        peer->Kick();
+    if (!peer) peer = GetPeer(std::stoll(user));
+
+    if (peer) {
+        user = peer->m_socket->GetHostName();
+        peer->Kick(reason);
+        return true;
+    }
+    else {
+        auto peers = GetPeers(user);
+
+        for (auto&& p : peers) {
+            user = peer->m_socket->GetHostName();
+            peer->Kick(reason);
+        }
+
+        if (!peers.empty())
+            return true;
+    }
+
+    return false;
 }
 
-void INetManager::Ban(const std::string& user) {
+bool INetManager::Ban(std::string user, const std::string& reason) {
     auto&& peer = GetPeer(user);
-    if (!peer)
-        return;
+    if (!peer) peer = GetPeer(std::stoll(user));
+
+    if (peer) {
+        user = peer->m_socket->GetHostName();
+        peer->Kick(reason);
+        return true;
+    } else {
+        auto peers = GetPeers(user);
+
+        for (auto&& p : peers) {
+            user = peer->m_socket->GetHostName();
+            peer->Kick(reason);
+        }
+
+        if (!peers.empty())
+            return true;
+    }
 
     Valhalla()->m_blacklist.insert(user);
+    return false;
 }
 
-void INetManager::Unban(const std::string& user) {
-    LOG(INFO) << "Unbanning " << user;
-
-    Valhalla()->m_blacklist.erase(user);
+bool INetManager::Unban(const std::string& user) {
+    return Valhalla()->m_blacklist.erase(user);
 }
 
 void INetManager::SendDisconnect(Peer *peer) {
@@ -201,37 +233,87 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     });
 
     // Extras
-    peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
-        // TODO limitation check
-        LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
-    });
+    //  Vanilla client has no means to doing this
+    //peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
+    //    // TODO limitation check
+    //    LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
+    //});
 
     peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
-        // TODO Permission check
-        std::string msg = "Kicking user " + user;
-        peer->RemotePrint(msg);
-        Kick(user);
+        if (!peer->m_admin)
+            return peer->RemotePrint("You are not admin");
+
+        auto split = VUtils::String::Split(user, " ");
+
+        if (Kick(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
+            peer->RemotePrint("Kicked '" + user + "'");
+        }
+        else {
+            peer->RemotePrint("Player not found");
+        }
     });
 
     peer->Register(Hashes::Rpc::Ban, [this](Peer* peer, std::string user) {
-        // TODO Permission check
-        peer->RemotePrint("Banning user " + user);
-        Ban(user);
+        if (!peer->m_admin)
+            return peer->Message("You are not admin", TalkerType::Normal);
+            //return peer->RemotePrint("You are not admin");
+
+        auto split = VUtils::String::Split(user, " ");
+
+        if (Ban(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
+            peer->RemotePrint("Banned '" + user + "'");
+        }
+        else {
+            peer->RemotePrint("Player not found");
+        }
     });
 
     peer->Register(Hashes::Rpc::Unban, [this](Peer* peer, std::string user) {
-        peer->RemotePrint("Unbanning user " + user);
-        Unban(user);
+        if (!peer->m_admin)
+            return peer->RemotePrint("You are not admin");
+
+        if (Unban(user)) {
+            peer->RemotePrint("Unbanned '" + user + "'");
+        }
+        else {
+            peer->RemotePrint("Player is not banned");
+        }
     });
     
     peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
+        if (!peer->m_admin)
+            return peer->RemotePrint("You are not admin");
+
         WorldManager()->SaveWorld(true);
+
+        peer->RemotePrint("Saved the world");
     });
 
     peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {
-        std::string s = "Banned users";
+        if (!peer->m_admin)
+            return peer->RemotePrint("You are not admin");
 
-        peer->RemotePrint(s);
+        if (Valhalla()->m_blacklist.empty())
+            peer->RemotePrint("Banned users: (none)");
+        else {
+            peer->RemotePrint("Banned users:");
+            for (auto&& banned : Valhalla()->m_blacklist) {
+                peer->RemotePrint(banned);
+            }
+        }
+
+        if (!SERVER_SETTINGS.playerWhitelist)
+            peer->RemotePrint("Whitelist is disabled");
+        else {
+            if (Valhalla()->m_whitelist.empty())
+                peer->RemotePrint("Whitelisted users: (none)");
+            else {
+                peer->RemotePrint("Whitelisted users:");
+                for (auto&& banned : Valhalla()->m_whitelist) {
+                    peer->RemotePrint(banned);
+                }
+            }
+        }
     });
 
     SendPeerInfo(peer);
@@ -239,8 +321,6 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     ZDOManager()->OnNewPeer(peer);
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
-
-    //m_peers.insert({ peer->m_uuid, std::move(peer) });
 }
 
 
@@ -262,6 +342,41 @@ Peer * INetManager::GetPeer(OWNER_t uuid) {
         return find->second.get();
     return nullptr;
 }
+
+std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
+    auto addrSplit = VUtils::String::Split(addr, ".");
+
+    std::vector<Peer*> peers;
+
+    for (auto&& pair : m_peers) {
+        auto&& peer = pair.second;
+
+        // use wildcards too
+        std::string p = peer->m_socket->GetAddress();
+        auto peerSplit = VUtils::String::Split(p, ".");
+
+        bool match = true;
+
+        for (auto&& sub1 = peerSplit.begin(), sub2 = addrSplit.begin(); 
+            sub1 != peerSplit.end() && sub2 != addrSplit.end();
+            sub1++, sub2++) 
+        {
+            if (*sub2 == "*") continue;
+            if (sub2 != sub1) {
+                match = false;
+                break;
+            }
+        }
+
+        if (match)
+            peers.push_back(peer.get());
+
+        //if (peer->m_socket->GetAddress() == buf)
+            //return peer.get();
+    }
+    return peers;
+}
+
 
 void INetManager::Init() {
     LOG(INFO) << "Initializing NetManager";

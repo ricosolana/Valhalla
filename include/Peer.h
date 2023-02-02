@@ -8,6 +8,14 @@
 class IZDOManager;
 class INetManager;
 
+enum class TalkerType : int32_t
+{
+    Whisper,
+    Normal,
+    Shout,
+    Ping
+};
+
 class Peer {
     friend class IZDOManager;
     friend class INetManager;
@@ -28,6 +36,7 @@ public:
 
     const OWNER_t m_uuid;
     const std::string m_name;
+    bool m_admin = false;
 
     // Constantly changing vars
     Vector3 m_pos;
@@ -85,9 +94,9 @@ public:
 
     void RemotePrint(const std::string& msg);
     void Kick(bool now = false);
-    void Kick(const std::string& reason);
+    void Kick(std::string reason);
     void SendDisconnect();
     void Disconnect();
 
-    //void Message();
+    void Message(const std::string& text, TalkerType type);
 };

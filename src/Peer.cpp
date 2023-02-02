@@ -57,12 +57,16 @@ void Peer::Kick(bool now) {
     m_socket->Close(now);
 }
 
-void Peer::Kick(const std::string& reason) {
+void Peer::Kick(std::string reason) {
+    if (reason.empty()) reason = "being not fun";
+
     LOG(INFO) << "Kicking " << m_name << " for: " << reason;
 
-    //RemotePrint(reason)
+    RemotePrint("kick: " + reason);
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, MessageType::Center, "kick: " + reason);
+    
     SendDisconnect();
-    Disconnect();    
+    Disconnect();
 }
 
 void Peer::SendDisconnect() {
@@ -73,15 +77,17 @@ void Peer::Disconnect() {
     m_socket->Close(true);
 }
 
-//void Peer::Message() {
-//    RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
-//            localPlayer.GetHeadPoint(),
-//            2,
-//            localPlayer.GetPlayerName(),
-//            text,
-//            PrivilegeManager.GetNetworkUserId()
-//        );
-//}
+
+
+void Peer::Message(const std::string& text, TalkerType type) {
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
+        m_pos,
+        type,
+        "[<color=yellow><b>SERVER</b></color>",
+        text,
+        ""
+    );
+}
 
 
 

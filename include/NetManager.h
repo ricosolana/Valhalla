@@ -24,13 +24,13 @@ private:
     void InitPassword();
 
     // Kick a player by name
-    void Kick(const std::string& user);
+    bool Kick(std::string user, const std::string& reason);
 
     // Ban a player by name
-    void Ban(const std::string& user);
+    bool Ban(std::string user, const std::string& reason);
 
     // Unban a player by name
-    void Unban(const std::string& user);
+    bool Unban(const std::string& user);
 
     void SendDisconnect(Peer* peer);
 
@@ -51,6 +51,7 @@ public:
 
     Peer* GetPeer(const std::string& name);
     Peer* GetPeer(OWNER_t uuid);
+    std::vector<Peer*> GetPeers(const std::string &addr);
 
     const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 };
