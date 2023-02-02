@@ -153,9 +153,9 @@ private:
 	void CreateGhostZones(const Vector3& refPoint);
 
 	void SpawnZone(const ZoneID& zone);
-	void PlaceZoneCtrl(const ZoneID& zone);
+	std::vector<ClearArea> PlaceLocations(const ZoneID& zone);
 	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, std::vector<ClearArea>& clearAreas);
-	void PlaceLocations(const ZoneID& zone, std::vector<ClearArea>& clearAreas);
+	void PlaceZoneCtrl(const ZoneID& zone);
 
 	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
 	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
@@ -170,7 +170,7 @@ private:
 	void RemoveUnplacedLocations(const ZoneLocation* location);
 	void SpawnLocation(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
 	void CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
-	void GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
 
 	// inlined 
 	//void SetZoneGenerated(const Vector2i& zoneID);

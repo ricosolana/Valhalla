@@ -372,10 +372,10 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
         assert(heightmap);
 
-        std::vector<ClearArea> m_tempClearAreas;
+        static std::vector<ClearArea> m_tempClearAreas;
 
         if (SERVER_SETTINGS.spawningLocations)
-            PlaceLocations(zoneID, m_tempClearAreas);
+            m_tempClearAreas = PlaceLocations(zoneID);
 
         if (SERVER_SETTINGS.spawningVegetation)
             PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
@@ -426,8 +426,8 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::v
 
             // flag should always be true, all vegetation seem to always have a NetView
             //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
-            float num4 = std::cosf((PI / 180.f) * zoneVegetation->m_maxTilt);
-            float num5 = std::cosf((PI / 180.f) * zoneVegetation->m_minTilt);
+            float num4 = std::cosf(zoneVegetation->m_maxTilt * PI / 180.f);
+            float num5 = std::cosf(zoneVegetation->m_minTilt * PI / 180.f);
             float num6 = ZONE_SIZE * .5f - zoneVegetation->m_groupRadius;
             int32_t num7 = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
             int32_t num8 = 0;
@@ -492,7 +492,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::v
                                     if (zoneVegetation->m_terrainDeltaRadius > 0) {
                                         float num12;
                                         Vector3 vector5;
-                                        GetTerrainDelta(vector2, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
+                                        GetTerrainDelta(state, vector2, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
                                         if (num12 > zoneVegetation->m_maxTerrainDelta || num12 < zoneVegetation->m_minTerrainDelta) {
                                             continue;
                                         }
@@ -531,10 +531,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::v
                                         // TODO modify this later once Euler implemented
                                         rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
 
-                                        auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, vector2, rotation);
-
-                                        if (!zdo)
-                                            throw std::runtime_error("zdo failed to instantiate; vegetation.pkg might be corrupt");
+                                        auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, vector2 + Vector3(0, 3, 0), rotation);
 
                                         if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                             // this does set the Unity gameobject localscale
@@ -739,10 +736,11 @@ Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) 
 }
 
 // private
-void IZoneManager::PlaceLocations(const ZoneID &zoneID,
-    std::vector<ClearArea>& clearAreas)
+std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &zoneID)
 {
     auto now(steady_clock::now());
+
+    std::vector<ClearArea> clearAreas;
 
     auto&& find = m_locationInstances.find(zoneID);
     if (find != m_locationInstances.end()) {
@@ -798,6 +796,8 @@ void IZoneManager::PlaceLocations(const ZoneID &zoneID,
             SendLocationIcons(IRouteManager::EVERYBODY);
         }
     }
+
+    return clearAreas;
 }
 
 // private
@@ -901,12 +901,11 @@ void IZoneManager::GetLocationIcons(robin_hood::unordered_map<Vector3, std::stri
 }
 
 // private
-void IZoneManager::GetTerrainDelta(const Vector3& center, float radius, float& delta, Vector3& slopeDirection) {
+void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection) {
     float num2 = std::numeric_limits<float>::min();
     float num3 = std::numeric_limits<float>::max();
     Vector3 b = center;
     Vector3 a = center;
-    VUtils::Random::State state;
     for (int32_t i = 0; i < 10; i++) {
         Vector2 vector = state.InsideUnitCircle() * radius;
         Vector3 vector2 = center + Vector3(vector.x, 0.f, vector.y);
