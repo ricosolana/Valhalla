@@ -858,6 +858,7 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
     //for (auto&& znetView2 : location.m_netViews) {
     for (auto&& piece : location->m_pieces) {
         PrefabManager()->Instantiate(piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+        //PrefabManager()->Instantiate(piece.m_prefab, pos + piece.m_pos, piece.m_rot);
 
         // Dungeon generation is too complex
         //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();

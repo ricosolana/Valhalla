@@ -10,26 +10,26 @@ const Quaternion Quaternion::IDENTITY = { 0, 0, 0, 1 };
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
-Vector3 Quaternion::operator*(const Vector3& other) const {
-    float dx = x * 2.f;
-    float dy = y * 2.f;
-    float dz = z * 2.f;
+Vector3 Quaternion::operator*(const Vector3& point) const {
+    float x2 = x * 2.f;
+    float y2 = y * 2.f;
+    float z2 = z * 2.f;
 
-    float xx = x * dx;
-    float yy = y * dy;
-    float zz = z * dz;
+    float x2s = x * x2;
+    float y2s = y * y2;
+    float z2s = z * z2;
 
-    float xy = x * dy;
-    float xz = x * dz;
-    float yz = y * dz;
+    float xy2 = x * y2;
+    float xz2 = x * z2;
+    float yz2 = y * z2;
 
-    float wx = w * dx;
-    float wy = w * dy;
-    float wz = w * dz;
+    float wx2 = w * x2;
+    float wy2 = w * y2;
+    float wz2 = w * z2;
 
-    return { (1.f - (yy + zz)) * other.x + (xy - w) * other.y + (xz + wy) * other.z,
-        (xy + wz) * other.x + (1.f - (xx + zz)) * other.y + (yz - wx) * other.z,
-        (xz - wy) * other.x + (yz + wx) * other.y + (1.f - (xx + yy)) * other.z };
+    return {    (1.f - (y2s + z2s)) * point.x   + (xy2 - wz2) * point.y             + (xz2 + wy2) * point.z,
+                (xy2 + wz2) * point.x           + (1.f - (x2s + z2s)) * point.y     + (yz2 - wx2) * point.z,
+                (xz2 - wy2) * point.x           + (yz2 + wx2) * point.y             + (1.f - (x2s + y2s)) * point.z };
 }
 
 Quaternion Quaternion::operator*(const Quaternion &rhs) const {

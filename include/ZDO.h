@@ -27,7 +27,7 @@ class IPrefabManager;
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
 // 112 bytes (1 map, majorly reduced members; affecting functionality)
-// Currently 144 bytes
+// Currently 160 bytes
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
