@@ -108,7 +108,7 @@ class IZoneManager {
 	struct LocationInstance {
 		const ZoneLocation *m_location;
 		Vector3 m_position;
-		bool m_placed; 		
+		//bool m_placed; // not needed, assuming locations are placed only once during zone spawn (when player enters a new zone)
 	};
 
 	struct ClearArea {

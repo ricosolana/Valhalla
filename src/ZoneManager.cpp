@@ -259,10 +259,12 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 
 // public
 void IZoneManager::Save(NetPackage& pkg) {
-    pkg.Write<int32_t>(m_generatedZones.size());
-    for (auto&& vec : m_generatedZones) {
-        pkg.Write(vec);
-    }
+    //pkg.Write<int32_t>(m_generatedZones.size());
+    //for (auto&& vec : m_generatedZones) {
+    //    pkg.Write(vec);
+    //}
+    pkg.Write(m_generatedZones);
+
     pkg.Write<int32_t>(VConstants::PGW);
     pkg.Write<int32_t>(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
@@ -273,7 +275,8 @@ void IZoneManager::Save(NetPackage& pkg) {
         auto&& inst = pair.second;
         pkg.Write(inst.m_location->m_name);
         pkg.Write(inst.m_position);
-        pkg.Write(inst.m_placed);
+        //pkg.Write(inst.m_placed);
+        pkg.Write(m_generatedZones.contains(WorldToZonePos(inst.m_position)));
     }
 }
 
@@ -299,18 +302,17 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
         }
 
         if (version >= 18) {
-            if (version >= 20)
-                reader.Read<bool>(); // m_locationsGenerated
+            if (version >= 20) reader.Read<bool>(); // m_locationsGenerated
             
             const auto countLocations = reader.Read<int32_t>();
             for (int i = 0; i < countLocations; i++) {
                 auto text = reader.Read<std::string>();
                 auto pos = reader.Read<Vector3>();
-                bool placed = version >= 19 ? reader.Read<bool>() : false;
+                if (version >= 19) reader.Read<bool>(); // m_placed
 
                 auto&& location = GetLocation(text);
                 if (location) {
-                    m_locationInstances[WorldToZonePos(pos)] = {location, pos, placed};
+                    m_locationInstances[WorldToZonePos(pos)] = { location, pos};
                 }
                 else {
                     LOG(ERROR) << "Failed to find location " << text;
@@ -675,7 +677,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
                                         || !HaveLocationInRange(location, randomPointInZone)) {
                                         auto zone = WorldToZonePos(randomPointInZone);
 
-                                        m_locationInstances[zone] = { location, randomPointInZone, false };
+                                        m_locationInstances[zone] = { location, randomPointInZone };
                                         spawnedLocations++;
                                         break;
                                     }
@@ -745,9 +747,13 @@ std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &
     auto&& find = m_locationInstances.find(zoneID);
     if (find != m_locationInstances.end()) {
         auto&& locationInstance = find->second;
-        if (locationInstance.m_placed) {
-            return;
-        }
+
+        //assert(!locationInstance.m_placed);
+
+        // Should ALWAYS be false
+        //if (locationInstance.m_placed) {
+        //    return;
+        //}
 
         Vector3 position = locationInstance.m_position;
         //Vector3 vector;
@@ -784,7 +790,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &
 
         HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         SpawnLocation(locationInstance.m_location, seed, position, rot);
-        locationInstance.m_placed = true;
+        //locationInstance.m_placed = true;
 
         LOG(INFO) << "Placed '" << locationInstance.m_location->m_name << "' in zone (" << zoneID.x << ", " << zoneID.y << ") at height " << position.y;
 
@@ -892,8 +898,9 @@ void IZoneManager::CreateLocationProxy(const ZoneLocation* location, HASH_t seed
 void IZoneManager::GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons) {
     for (auto&& pair : m_locationInstances) {
         auto&& loc = pair.second;
+        auto zone = WorldToZonePos(loc.m_position);
         if (loc.m_location->m_iconAlways
-            || (loc.m_location->m_iconPlaced && loc.m_placed))
+            || (loc.m_location->m_iconPlaced && m_generatedZones.contains(zone)))
         {
             icons[pair.second.m_position] = loc.m_location->m_name;
         }
