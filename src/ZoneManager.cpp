@@ -599,7 +599,7 @@ void IZoneManager::GenerateLocations() {
         GenerateLocations(loc.get());
     }
 
-    LOG(INFO) << "Location generation took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+    LOG(INFO) << "Location generation took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
 }
 
 // private

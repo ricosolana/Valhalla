@@ -9,45 +9,6 @@
 #include "ZoneManager.h"
 #include "NetManager.h"
 
-void AddToSector(ZDO* zdo) {
-    static auto MAN(ZDOManager());
-    int num = MAN->SectorToIndex(zdo->Sector());
-    if (num != -1) {
-        MAN->m_objectsBySector[num].insert(zdo);
-    }
-}
-
-void RemoveFromSector(ZDO* zdo) {
-    static auto MAN(ZDOManager());
-    int num = MAN->SectorToIndex(zdo->Sector());
-    if (num != -1) {
-        MAN->m_objectsBySector[num].erase(zdo);
-    }
-}
-
-/*
-void SetMovedPosition(ZDO* zdo, const Vector3& pos) {
-    // Remove from old sector
-    RemoveFromSector(zdo);
-
-    // Set new position
-    zdo->m_position = pos;
-
-    // Add to new sector
-    AddToSector(zdo);
-}
-*/
-
-
-//constexpr std::pair<HASH_t, HASH_t> ToHashPair(const char* key) {
-//    //constexpr auto s = "hello" " " "world";
-//
-//    return std::make_pair(
-//        VUtils::GetStableHashCode(key " "),
-//        VUtils::GetStableHashCode(key " ")
-//    );
-//}
-
 std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     return std::make_pair(
         VUtils::String::GetStableHashCode(std::string(key + "_u")),
@@ -55,50 +16,9 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     );
 }
 
-
-/*
-HASH_t ZDO::ToShiftHash(HASH_t hash, MemberShift pref) {
-    auto tshift = static_cast<HASH_t>(pref);
-    return (hash
-        + (tshift * tshift)
-            ^ tshift)
-                ^ (tshift << tshift);
-}
-HASH_t ZDO::from_prefix(HASH_t hash, MemberShift pref) {
-    auto tshift = static_cast<HASH_t>(pref);
-    return
-        ((hash
-            ^ (tshift << tshift))
-                ^ tshift)
-                    - (tshift * tshift);
-}
-*/
-
 ZDO::ZDO(const NetID& id, const Vector3& pos)
     : m_id(id), m_position(pos) {
-    AddToSector(this);
 }
-
-ZDO::~ZDO() {
-    RemoveFromSector(this);
-}
-
-//ZDO::ZDO() {
-    //this->m_owner = Valhalla()->ID();
-//}
-
-/*
-ZDO::ZDO(PrefabZDO& prefab) {
-    this->m_distant = prefab.m_distant;
-    this->m_persistent = prefab.m_persistent;
-    this->m_prefab = prefab.m_hash;
-    this->m_type = prefab.m_type;
-    
-    this->Set
-}
-*/
-
-//size_t s = sizeof(ZDO);
 
 void ZDO::Save(NetPackage& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);      static_assert(sizeof(Rev::m_ownerRev) == 4);
@@ -152,7 +72,7 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     this->m_position = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
-    AddToSector(this);
+    //AddToSector(this);
 
     // Load uses 2 bytes for counts (char in c# is 2 bytes..)
     // It of course has a weird encoding scheme according to UTF...
@@ -170,32 +90,6 @@ void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
     if (worldVersion < 17)
         this->m_prefab = GetInt("prefab", 0);
 }
-
-
-
-// copy constructor
-//ZDO::ZDO(const ZDO& other) {
-//    // Member copy
-//    this->m_persistent = other.m_persistent;
-//    this->m_distant = other.m_distant;
-//    this->m_type = other.m_type;
-//    this->m_prefab = other.m_prefab;
-//    this->m_rotation = other.m_rotation;
-//    this->m_ordinalMask = other.m_ordinalMask;
-//
-//    this->m_sector = other.m_sector;
-//    this->m_position = other.m_position;
-//    this->m_id = other.m_id;
-//    this->m_owner = other.m_owner;
-//
-//    this->m_rev = other.m_rev;
-//    //this->m_pgwVersion = other.m_pgwVersion;
-//
-//    // Pool copy
-//    for (auto&& pair1 : other.m_members) {
-//        _Set(pair1.first, pair1.second.second, pair1.second.first);
-//    }
-//}
 
 
 
@@ -338,33 +232,9 @@ bool ZDO::SetLocal() {
 
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_position != pos) {
-        //SetMovedPosition(this, pos);
-
-        
-
-        //static auto MAN(ZDOManager());
-
-        //auto oldZone(IZoneManager::WorldToZonePos(this->m_position));
-        //auto newZone(IZoneManager::WorldToZonePos(pos));
-        //
-        //MAN->AddToSector(this, oldZone);
-        //MAN->RemoveFromSector(this, newZone);
-
-        //// erase old sector
-        //auto oldIdx = MAN->SectorToIndex(IZoneManager::WorldToZonePos(m_position));
-        //assert(oldIdx != -1);
-        //MAN->m_objectsBySector[oldIdx].erase(this);
-        //
-        //// insert new sector
-        //auto newIdx = MAN->SectorToIndex(IZoneManager::WorldToZonePos(pos));
-        //assert(newIdx != -1);
-        //MAN->m_objectsBySector[newIdx].insert(this);
-
-        ///MAN->ZDOSectorInvalidated(this);
-
-        InvalidateSector();
+        ZDOManager()->InvalidateSector(this);
         this->m_position = pos;
-        AddToSector(this);
+        ZDOManager()->AddToSector(this);
 
         if (Local())
             Revise();
@@ -373,16 +243,6 @@ void ZDO::SetPosition(const Vector3& pos) {
 
 ZoneID ZDO::Sector() const {
     return IZoneManager::WorldToZonePos(m_position);
-}
-
-void ZDO::InvalidateSector() {
-    RemoveFromSector(this);
-    
-    auto&& peers = NetManager()->GetPeers();
-    for (auto&& pair : peers) {
-        auto&& peer = pair.second;
-        peer->ZDOSectorInvalidated(this);
-    }
 }
 
 void ZDO::Serialize(NetPackage& pkg) const {
