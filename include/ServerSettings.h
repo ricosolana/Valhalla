@@ -14,13 +14,14 @@ struct ServerSettings {
     bool            worldSave;
     seconds         worldSaveInterval;   // set to 0 to disable
 
+    bool            playerAutoPassword;
     bool            playerWhitelist;
     unsigned int    playerMax;
     bool            playerAuth;
     bool            playerList;
     //bool            playerArrivePing;
     bool            playerForceVisible;
-
+    
     milliseconds    socketTimeout;          // ms
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate

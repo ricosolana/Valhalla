@@ -31,6 +31,8 @@ private:
 public:
     ISocket::Ptr m_socket;
 
+    bool m_skipPassword = false;
+
 public:
     explicit NetRpc(ISocket::Ptr socket) 
         : m_socket(std::move(socket)), m_lastPing(steady_clock::now()) {}

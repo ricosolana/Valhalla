@@ -1,6 +1,7 @@
 #include <optick.h>
 #include <yaml-cpp/yaml.h>
 
+#include <stdlib.h>
 #include <utility>
 
 #include "ValhallaServer.h"
@@ -27,18 +28,6 @@ bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
 }
 
 void IValhalla::LoadFiles() {
-    if (auto opt = VUtils::Resource::ReadFileLines("blacklist.txt")) {
-        m_blacklist.insert(opt->begin(), opt->end());
-    }
-
-    if (auto opt = VUtils::Resource::ReadFileLines("whitelist.txt")) {
-        m_whitelist.insert(opt->begin(), opt->end());
-    }
-    
-    if (auto opt = VUtils::Resource::ReadFileLines("admin.txt")) {
-        m_admin.insert(opt->begin(), opt->end());
-    }
-    
     YAML::Node loadNode;
     bool createSettingsFile = false;
     {
@@ -71,6 +60,7 @@ void IValhalla::LoadFiles() {
     m_settings.worldSave = loadNode["world-save"].as<bool>(false);
     m_settings.worldSaveInterval = seconds(std::max(loadNode["world-save-interval-s"].as<int>(1800), 60));
 
+    m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
     m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
     m_settings.playerMax = std::max(loadNode["player-max"].as<int>(10), 1);                 // max allowed players
     m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
@@ -87,7 +77,7 @@ void IValhalla::LoadFiles() {
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
     m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
-
+    
     LOG(INFO) << "Server config loaded";
 
     if (createSettingsFile) {
@@ -104,6 +94,7 @@ void IValhalla::LoadFiles() {
         saveNode["world-save-interval-s"] = m_settings.worldSaveInterval.count();
         //saveNode["world-seed"] = m_settings.worldSeed;
 
+        saveNode["player-auto-password"] = m_settings.playerAutoPassword;
         saveNode["player-whitelist"] = m_settings.playerWhitelist;
         saveNode["player-max"] = m_settings.playerMax;
         saveNode["player-auth"] = m_settings.playerAuth;
@@ -127,6 +118,26 @@ void IValhalla::LoadFiles() {
 
         VUtils::Resource::WriteFileString("server.yml", out.c_str());
     }
+
+    if (auto opt = VUtils::Resource::ReadFileLines("blacklist.txt")) {
+        m_blacklist.insert(opt->begin(), opt->end());
+    }
+
+    if (m_settings.playerWhitelist)
+        if (auto opt = VUtils::Resource::ReadFileLines("whitelist.txt")) {
+            m_whitelist.insert(opt->begin(), opt->end());
+        }
+
+    if (auto opt = VUtils::Resource::ReadFileLines("admin.txt")) {
+        m_admin.insert(opt->begin(), opt->end());
+    }
+
+    if (m_settings.playerAutoPassword)
+        if (auto opt = VUtils::Resource::ReadFileLines("bypass.txt")) {
+            m_bypass.insert(opt->begin(), opt->end());
+        }
+
+
 }
 
 void IValhalla::Stop() {
@@ -161,6 +172,26 @@ void IValhalla::Start() {
     NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+
+    // Basically, allow players who have already logged in before, unless the password has changed
+    if (m_settings.playerAutoPassword) {
+        const char* prevPassword = getenv("valhalla-prev-password");
+
+        // Clear the allow list on password change
+        if (prevPassword && m_settings.serverPassword != prevPassword) {
+            m_bypass.clear();
+        }
+
+        // Put the env
+        std::string kv = "valhalla-prev-password=" + m_settings.serverPassword;
+        if (putenv(kv.c_str())) {
+            char* msg = strerror(errno);
+            LOG(ERROR) << "Failed to set env: " << msg;
+        }
+        else {
+            LOG(INFO) << "Player auto password is enabled";
+        }
+    }
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();

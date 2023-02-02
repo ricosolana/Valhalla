@@ -205,8 +205,19 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
         return rpc->Close(ConnectionStatus::ErrorBanned);
 
-    if (password != m_saltedPassword)
+
+
+    if (SERVER_SETTINGS.playerAutoPassword) {
+        if (!rpc->m_skipPassword) {        
+            if (password != m_saltedPassword)
+                return rpc->Close(ConnectionStatus::ErrorPassword);
+
+            Valhalla()->m_bypass.insert(rpc->m_socket->GetHostName());
+        }
+    } else if (password != m_saltedPassword)
         return rpc->Close(ConnectionStatus::ErrorPassword);
+
+
 
     // if peer already connected
     if (GetPeer(uuid))
@@ -225,6 +236,17 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
     assert(!m_peers.contains(uuid));
     Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
     
+    //Valhalla()->RunTaskLater()
+    if (SERVER_SETTINGS.playerAutoPassword) {
+        peer->m_magicLogin = rpc->m_skipPassword;
+        //peer->m_nextMagicLogin = !rpc->m_skipPassword
+
+        //if (rpc->m_skipPassword)
+        //    
+        //    //peer->ShowMessage("You were automagically logged in");
+        //else peer->ShowMessage("You will now automagically log in after joining");
+    }
+
     assert(rpc->m_socket == nullptr);
     rpc = nullptr;
 
@@ -236,6 +258,15 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     // Important
     peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, NetID characterID) {
+        if (!peer->m_characterID) {
+            if (peer->m_magicLogin) {
+                peer->ShowMessage("You were automagically logged in");
+            }
+            else {
+                peer->ShowMessage("You will automagically log be logged in from now on");
+            }
+        }
+
         peer->m_characterID = characterID;
 
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
@@ -250,76 +281,75 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->RemotePrint("You are not admin");
+            return peer->Message("You are not admin");
 
         auto split = VUtils::String::Split(user, " ");
 
         if (Kick(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
-            peer->RemotePrint("Kicked '" + user + "'");
+            peer->Message("Kicked '" + user + "'");
         }
         else {
-            peer->RemotePrint("Player not found");
+            peer->Message("Player not found");
         }
     });
 
     peer->Register(Hashes::Rpc::Ban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin", TalkerType::Normal);
-            //return peer->RemotePrint("You are not admin");
+            return peer->Message("You are not admin");
 
         auto split = VUtils::String::Split(user, " ");
 
         if (Ban(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
-            peer->RemotePrint("Banned '" + user + "'");
+            peer->Message("Banned '" + user + "'");
         }
         else {
-            peer->RemotePrint("Player not found");
+            peer->Message("Player not found");
         }
     });
 
     peer->Register(Hashes::Rpc::Unban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->RemotePrint("You are not admin");
+            return peer->Message("You are not admin");
 
         if (Unban(user)) {
-            peer->RemotePrint("Unbanned '" + user + "'");
+            peer->Message("Unbanned '" + user + "'");
         }
         else {
-            peer->RemotePrint("Player is not banned");
+            peer->Message("Player is not banned");
         }
     });
     
     peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
         if (!peer->m_admin)
-            return peer->RemotePrint("You are not admin");
+            return peer->Message("You are not admin");
 
         WorldManager()->SaveWorld(true);
 
-        peer->RemotePrint("Saved the world");
+        peer->Message("Saved the world");
     });
 
     peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {
         if (!peer->m_admin)
-            return peer->RemotePrint("You are not admin");
+            return peer->Message("You are not admin");
 
         if (Valhalla()->m_blacklist.empty())
-            peer->RemotePrint("Banned users: (none)");
+            peer->Message("Banned users: (none)");
         else {
-            peer->RemotePrint("Banned users:");
+            peer->Message("Banned users:");
             for (auto&& banned : Valhalla()->m_blacklist) {
-                peer->RemotePrint(banned);
+                peer->Message(banned);
             }
         }
 
         if (!SERVER_SETTINGS.playerWhitelist)
-            peer->RemotePrint("Whitelist is disabled");
+            peer->Message("Whitelist is disabled");
         else {
             if (Valhalla()->m_whitelist.empty())
-                peer->RemotePrint("Whitelisted users: (none)");
+                peer->Message("Whitelisted users: (none)");
             else {
-                peer->RemotePrint("Whitelisted users:");
+                peer->Message("Whitelisted users:");
                 for (auto&& banned : Valhalla()->m_whitelist) {
-                    peer->RemotePrint(banned);
+                    peer->Message(banned);
                 }
             }
         }
@@ -415,7 +445,12 @@ void INetManager::Update() {
                 RPC_PeerInfo(rpc, std::move(pkg));
             });
 
-            rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
+            if (SERVER_SETTINGS.playerAutoPassword && Valhalla()->m_bypass.contains(rpc->m_socket->GetHostName())) {
+                rpc->m_skipPassword = true;
+                rpc->Invoke(Hashes::Rpc::ClientHandshake, false, "");
+            }
+            else
+                rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
         });
 
         m_rpcs.push_back(std::move(rpc));
@@ -423,43 +458,7 @@ void INetManager::Update() {
 
 
 
-    SteamGameServer_RunCallbacks();
 
-    // Cleanup
-    {
-        auto&& itr = m_rpcs.begin();
-        while (itr != m_rpcs.end()) {
-            auto&& rpc = itr->get();
-            assert(rpc);
-            if (!(rpc->m_socket && rpc->m_socket->Connected())) {
-                itr = m_rpcs.erase(itr);
-            }
-            else {
-                ++itr;
-            }
-        }
-    }
-
-    {
-        auto&& itr = m_peers.begin();
-        while (itr != m_peers.end()) {
-            auto&& peer = itr->second;
-            assert(peer);
-
-            if (!peer->m_socket->Connected()) {
-                LOG(INFO) << "Cleaning up peer";
-
-                // no longer needed
-                //RouteManager()->
-
-                ZDOManager()->OnPeerQuit(peer.get());
-                itr = m_peers.erase(itr);
-            }
-            else {
-                ++itr;
-            }
-        }
-    }
 
 
 
@@ -511,6 +510,41 @@ void INetManager::Update() {
         catch (const std::range_error&) {
             LOG(ERROR) << "Connecting peer provided malformed payload";
             rpc->m_socket->Close(false);
+        }
+    }
+
+    SteamGameServer_RunCallbacks();
+
+    // Cleanup
+    {
+        auto&& itr = m_rpcs.begin();
+        while (itr != m_rpcs.end()) {
+            auto&& rpc = itr->get();
+            assert(rpc);
+            if (!(rpc->m_socket && rpc->m_socket->Connected())) {
+                itr = m_rpcs.erase(itr);
+            }
+            else {
+                ++itr;
+            }
+        }
+    }
+
+    {
+        auto&& itr = m_peers.begin();
+        while (itr != m_peers.end()) {
+            auto&& peer = itr->second;
+            assert(peer);
+
+            if (!peer->m_socket->Connected()) {
+                LOG(INFO) << "Cleaning up peer";
+
+                ZDOManager()->OnPeerQuit(peer.get());
+                itr = m_peers.erase(itr);
+            }
+            else {
+                ++itr;
+            }
         }
     }
 }

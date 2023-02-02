@@ -83,10 +83,14 @@ void Peer::Message(const std::string& text, TalkerType type) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
         m_pos,
         type,
-        "[<color=yellow><b>SERVER</b></color>",
+        "<color=yellow><b>SERVER</b></color>",
         text,
         ""
     );
+}
+
+void Peer::ShowMessage(const std::string& text, MessageType type) {
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, type, text);
 }
 
 

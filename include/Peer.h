@@ -4,6 +4,7 @@
 #include "NetSocket.h"
 #include "Method.h"
 #include "ZDO.h"
+#include "ValhallaServer.h"
 
 class IZDOManager;
 class INetManager;
@@ -37,6 +38,8 @@ public:
     const OWNER_t m_uuid;
     const std::string m_name;
     bool m_admin = false;
+    bool m_magicLogin = false;
+    //bool m_nextMagicLogin = false;
 
     // Constantly changing vars
     Vector3 m_pos;
@@ -82,7 +85,6 @@ public:
         static NetPackage pkg; // TODO make into member to optimize; or make static
         pkg.m_stream.Clear();
 
-        NetPackage pkg; // TODO make into member to optimize; or make static
         pkg.Write(hash);
         NetPackage::_Serialize(pkg, params...); // serialize
 
@@ -105,5 +107,9 @@ public:
     void SendDisconnect();
     void Disconnect();
 
-    void Message(const std::string& text, TalkerType type);
+    // Send a chat message
+    void Message(const std::string& text, TalkerType type = TalkerType::Normal);
+
+    // Send a screen popup message
+    void ShowMessage(const std::string& text, MessageType type = MessageType::TopLeft);
 };
