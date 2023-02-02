@@ -197,7 +197,7 @@ void IWorldManager::SaveWorld(bool sync) {
 					}
 
 					auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-					auto backup = path.string().substr(0, path.string().length() - 3) + "-" + std::to_string(ms) + "db.gz";
+					auto backup = path.string().substr(0, path.string().length() - 3) + "-" + std::to_string(ms) + ".db.gz";
 					if (VUtils::Resource::WriteFileBytes(backup, *compressed))
 						LOG(INFO) << "Saved world backup as '" << backup << "'";
 					else

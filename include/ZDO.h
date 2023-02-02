@@ -20,7 +20,6 @@ concept TrivialSyncType =
     || std::same_as<T, std::string>
     || std::same_as<T, BYTES_t>;
 
-class Peer;
 class IZDOManager;
 class IPrefabManager;
 //class Prefab;
@@ -30,11 +29,8 @@ class IPrefabManager;
 // 112 bytes (1 map, majorly reduced members; affecting functionality)
 // Currently 144 bytes
 class ZDO {
-    friend class Peer;
     friend class IZDOManager;
     friend class IPrefabManager;
-
-    friend void SetMovedPosition(ZDO* zdo, const Vector3& pos);
 
 public:
     enum class ObjectType : BYTE_t {
@@ -377,7 +373,6 @@ private:
 
 public:
     ZDO() = default;
-    ~ZDO();
 
     // ZDOManager constructor
     ZDO(const NetID& id, const Vector3& pos);
@@ -519,7 +514,7 @@ public:
         return m_position;
     }
 
-    void InvalidateSector();
+    //void InvalidateSector();
 
     //    this->SetSector(Vector2i(-100000, -100000));
     //}

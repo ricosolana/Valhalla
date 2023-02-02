@@ -21,8 +21,6 @@ class Peer {
     friend class IZDOManager;
     friend class INetManager;
 
-    friend void ZDO::InvalidateSector();
-
 private:
     std::chrono::steady_clock::time_point m_lastPing;
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
