@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     
     "src/ZoneManager.cpp"    
- "src/NetRpc.cpp")
+ "src/NetRpc.cpp" "include/VUtilsMathf.h" "src/VUtilsMathf.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

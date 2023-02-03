@@ -33,10 +33,6 @@ namespace VUtils::Math {
 
     float Clamp(float value, float min, float max);
 
-    float Clamp01(float value);
-
-    float Lerp(float a, float b, float t);
-
     // Linear interpolation
     float LerpStep(float l, float h, float v);
 

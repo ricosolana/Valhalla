@@ -152,7 +152,7 @@ private:
 
 	void CreateGhostZones(const Vector3& refPoint);
 
-	void SpawnZone(const ZoneID& zone);
+	bool SpawnZone(const ZoneID& zone);
 	std::vector<ClearArea> PlaceLocations(const ZoneID& zone);
 	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, std::vector<ClearArea>& clearAreas);
 	void PlaceZoneCtrl(const ZoneID& zone);
@@ -175,7 +175,7 @@ private:
 	// inlined 
 	//void SetZoneGenerated(const Vector2i& zoneID);
 
-	bool IsZoneGenerated(const Vector2i& zoneID);
+	bool IsZoneGenerated(const ZoneID& zoneID);
 
 public:
 	void GenerateLocations();

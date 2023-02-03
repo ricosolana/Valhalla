@@ -61,7 +61,7 @@ float IHeightmapManager::GetHeight(const Vector3& worldPos) {
         return height;
     }
 
-    throw std::runtime_error("something went wrong with Heightmap");
+    throw std::runtime_error("Unexpected: Failed to get guaranteed heightmap at position (should not see this)");
 }
 
 // public static

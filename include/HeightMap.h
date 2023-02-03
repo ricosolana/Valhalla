@@ -40,12 +40,14 @@ public:
     //11/30/2022 11:24:44: m_scale: 1
     //11/30/2022 11:24:44: m_distantLodEditorHax: False
 
+    static constexpr int E_WIDTH = IZoneManager::ZONE_SIZE + 1;
+
 private:
     //friend class HeightmapManager;
 
     //using Heights = std::array<float, (Heightmap::WIDTH + 1)* (Heightmap::WIDTH + 1)>;
 
-    static constexpr int E_WIDTH = IZoneManager::ZONE_SIZE + 1;
+    
 
     //void Awake();
     //void OnDestroy();
@@ -63,7 +65,7 @@ private:
     void SmoothTerrain2(const Vector3& worldPos, float radius, HMBuildData::Heights_t* levelOnlyHeights, float power);
     bool AtMaxWorldLevelDepth(const Vector3& worldPos);
     bool GetWorldBaseHeight(const Vector3& worldPos, float& height);
-    bool GetWorldHeight(const Vector3& worldPos, float& height);
+    
     bool GetAverageWorldHeight(const Vector3& worldPos, float radius, float &height);
     bool GetMinWorldHeight(const Vector3& worldPos, float radius, float &height);
     bool GetMaxWorldHeight(const Vector3& worldPos, float radius, float &height);
@@ -103,6 +105,9 @@ public:
     float GetVegetationMask(const Vector3& worldPos);
     bool IsCleared(const Vector3& worldPos);
     bool IsCultivated(const Vector3& worldPos);
+
+    // Get the relative vertex of a world position to this heightmap
+    //  Heightmap is treated as the center
     void WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y);
 
     // Get the underlying color mask in paint array
@@ -114,6 +119,10 @@ public:
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
     float GetHeight(int32_t x, int32_t y);
+
+    // Get the underlying height in heights array at world position
+    //  Returns false if the position outside of this heightmap
+    bool GetWorldHeight(const Vector3& worldPos, float& height);
 
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]

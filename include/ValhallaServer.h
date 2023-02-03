@@ -34,7 +34,7 @@ private:
     steady_clock::time_point m_prevUpdate;
     steady_clock::time_point m_nowUpdate;
 
-    double m_netTime = 2040;
+    double m_netTime;
 
 private:
     void LoadFiles();

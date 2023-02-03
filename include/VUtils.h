@@ -337,6 +337,7 @@ namespace VUtils {
     // Returns nullopt on decompress failure
     std::optional<BYTES_t> Decompress(const BYTES_t& in);
 
+    // Returns the smallest 1-value bitshift
     template<typename Enum> requires std::is_enum_v<Enum>
     constexpr uint8_t GetShift(Enum value) {
         uint8_t shift = 0;

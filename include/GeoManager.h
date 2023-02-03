@@ -161,11 +161,24 @@ public:
 	Vector2i GetRiverGrid(float wx, float wy);
 
 	BiomeArea GetBiomeArea(const Vector3& point);
-	Biome GetBiome(const Vector3& point);
-	Biome GetBiome(float wx, float wy);
 
-	float GetHeight(float wx, float wy);
-	float GetHeight(float wx, float wy, Color& color);
+	// Get the biome at world coordinates
+	Biome GetBiome(const Vector3& point);
+
+	// Get the biome at world coordinates
+	Biome GetBiome(float x, float z);
+
+	// Get all the biomes within a radius
+	//Biome GetBiomes(float x, float y, float radius)
+
+	// Get all the corner biomes within this zone
+	Biome GetBiomes(float x, float y);
+
+	// Get the terrain height at world coordinates
+	float GetHeight(float x, float z);
+
+	// Get the terrain height at world coordinates, with mistlands color mask
+	float GetHeight(float x, float z, Color& color);
 	float GetBiomeHeight(Biome biome, float wx, float wy, Color& color);
 
 	bool InForest(const Vector3& pos);

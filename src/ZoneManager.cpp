@@ -32,7 +32,7 @@ void IZoneManager::Init() {
         std::string ver = pkg.Read<std::string>();
         LOG(INFO) << "zoneLocations.pkg has game version " << ver;
         if (ver != VConstants::GAME)
-            LOG(ERROR) << "zoneLocations.pkg uses different game version than server";
+            LOG(WARNING) << "zoneLocations.pkg uses different game version than server";
 
         int32_t count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneLocations";
@@ -90,8 +90,6 @@ void IZoneManager::Init() {
                 auto hash = pkg.Read<HASH_t>();
 
                 piece.m_prefab = PrefabManager()->GetPrefab(hash);
-                //assert(piece.m_prefab && "missing location sub prefab");
-
                 if (!piece.m_prefab) {
                     LOG(ERROR) << "ZoneLocation znetview missing prefab '" << loc->m_name << "' " << hash;
                     throw std::runtime_error("znetview missing prefab");
@@ -259,23 +257,16 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 
 // public
 void IZoneManager::Save(NetPackage& pkg) {
-    //pkg.Write<int32_t>(m_generatedZones.size());
-    //for (auto&& vec : m_generatedZones) {
-    //    pkg.Write(vec);
-    //}
     pkg.Write(m_generatedZones);
-
     pkg.Write<int32_t>(VConstants::PGW);
     pkg.Write<int32_t>(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
-
-    pkg.Write(true); // m_worldSave.Write(m_locationsGenerated);
-    pkg.Write((int32_t)m_locationInstances.size());
+    pkg.Write<bool>(true); // m_worldSave.Write(m_locationsGenerated);
+    pkg.Write<int32_t>(m_locationInstances.size());
     for (auto&& pair : m_locationInstances) {
         auto&& inst = pair.second;
         pkg.Write(inst.m_location->m_name);
         pkg.Write(inst.m_position);
-        //pkg.Write(inst.m_placed);
         pkg.Write(m_generatedZones.contains(WorldToZonePos(inst.m_position)));
     }
 }
@@ -299,43 +290,44 @@ void IZoneManager::Load(NetPackage& reader, int32_t version) {
             for (int i=0; i < countKeys; i++) {
                 m_globalKeys.insert(reader.Read<std::string>());
             }
-        }
 
-        if (version >= 18) {
-            if (version >= 20) reader.Read<bool>(); // m_locationsGenerated
-            
-            const auto countLocations = reader.Read<int32_t>();
-            for (int i = 0; i < countLocations; i++) {
-                auto text = reader.Read<std::string>();
-                auto pos = reader.Read<Vector3>();
-                if (version >= 19) reader.Read<bool>(); // m_placed
+            if (version >= 18) {
+                if (version >= 20) reader.Read<bool>(); // m_locationsGenerated
 
-                auto&& location = GetLocation(text);
-                if (location) {
-                    m_locationInstances[WorldToZonePos(pos)] = { location, pos};
+                const auto countLocations = reader.Read<int32_t>();
+                for (int i = 0; i < countLocations; i++) {
+                    auto text = reader.Read<std::string>();
+                    auto pos = reader.Read<Vector3>();
+                    if (version >= 19) reader.Read<bool>(); // m_placed
+
+                    auto&& location = GetLocation(text);
+                    if (location) {
+                        m_locationInstances[WorldToZonePos(pos)] = { location, pos };
+                    }
+                    else {
+                        LOG(ERROR) << "Failed to find location " << text;
+                    }
                 }
-                else {
-                    LOG(ERROR) << "Failed to find location " << text;
+
+                LOG(INFO) << "Loaded " << countLocations << " ZoneLocation instances";
+                //if (pgw != VConstants::PGW) {
+                    //m_locationInstances.clear();
+                //}
+
+                // this would completely regenerate locations across modified patches
+                if (locationVersion != VConstants::LOCATION) {
+                    //m_locationsGenerated = false;
                 }
             }
-
-            LOG(INFO) << "Loaded " << countLocations << " ZoneLocation instances";
-            //if (pgw != VConstants::PGW) {
-                //m_locationInstances.clear();
-            //}
-
-            // this would completely regenerate locations across modified patches
-            if (locationVersion != VConstants::LOCATION) {
-                //m_locationsGenerated = false;
-            }
         }
+
+
     }
 }
 
 // private
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
-        //UpdateTTL(.1f);
         auto&& peers = NetManager()->GetPeers();
         for (auto&& pair : peers) {
             auto&& peer = pair.second;
@@ -344,19 +336,29 @@ void IZoneManager::Update() {
     });
 }
 
-// private
+// Rename?
 void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
-    auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
-    for (int32_t z = zone.y - num; z <= zone.y + num; z++) {
-        for (int32_t x = zone.x - num; x <= zone.x + num; x++) {
-            SpawnZone({x, z});
+    // Prioritize center zone
+    if (!SpawnZone(zone)) {
+
+        // If spawning fails, spawn other neighboring zones
+        auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
+        for (int z = zone.y - num; z <= zone.y + num; z++) {
+            for (int x = zone.x - num; x <= zone.x + num; x++) {
+
+                // Skip center zone
+                if (x == zone.x && z == zone.y)
+                    continue;
+
+                SpawnZone({ x, z });
+            }
         }
     }
 }
 
-void IZoneManager::SpawnZone(const ZoneID& zoneID) {
+bool IZoneManager::SpawnZone(const ZoneID& zoneID) {
     //Heightmap componentInChildren = m_zonePrefab.GetComponentInChildren<Heightmap>();
 
     // _root object is ZonePrefab, Components:
@@ -386,7 +388,10 @@ void IZoneManager::SpawnZone(const ZoneID& zoneID) {
             PlaceZoneCtrl(zoneID);
 
         m_generatedZones.insert(zoneID);
+
+        return true;
     }
+    return false;
 }
 
 // private
@@ -405,13 +410,25 @@ Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const
 }
 
 // private
-void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::vector<ClearArea>& clearAreas) {
-    const Vector3 zoneCenterPos = ZoneToWorldPos(zoneID);
+void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, std::vector<ClearArea>& clearAreas) {
+    const Vector3 center = ZoneToWorldPos(zoneID);
 
     const auto seed = GeoManager()->GetSeed();
 
+    //Biome biomes = GeoManager()->GetBiomes(center.x, center.z);
+
     for (auto&& zoneVegetation : m_vegetation) {
-        if (hmap->HaveBiome(zoneVegetation->m_biome)) {
+
+        // This ultimately serves as a large precheck, assuming heightmap were being used (which it no longer seems good)
+        //if (heightmap->HaveBiome(zoneVegetation->m_biome)) 
+        {
+
+        // quick precheck
+        //if ((std::to_underlying(biomes) & std::to_underlying(zoneVegetation->m_biome)) 
+            //== std::to_underlying(zoneVegetation->m_biome)) {
+
+            // TODO make unique per vegetation instance
+            // this state will be the same for all same vegetation within a given zone, in a given world
             VUtils::Random::State state(
                 seed + zoneID.x * 4271 + zoneID.y * 9187 + zoneVegetation->m_prefab->m_hash
             );
@@ -423,28 +440,28 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::v
                 }
             }
             else {
-                num3 = state.Range((int32_t)zoneVegetation->m_min, (int32_t)zoneVegetation->m_max + 1);
+                num3 = state.Range((int32_t) zoneVegetation->m_min, (int32_t) zoneVegetation->m_max + 1);
             }
 
             // flag should always be true, all vegetation seem to always have a NetView
             //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
-            float num4 = std::cosf(zoneVegetation->m_maxTilt * PI / 180.f);
-            float num5 = std::cosf(zoneVegetation->m_minTilt * PI / 180.f);
+            float maxTilt = std::cosf(zoneVegetation->m_maxTilt * PI / 180.f);
+            float minTilt = std::cosf(zoneVegetation->m_minTilt * PI / 180.f);
             float num6 = ZONE_SIZE * .5f - zoneVegetation->m_groupRadius;
-            int32_t num7 = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
-            int32_t num8 = 0;
-            for (int32_t i = 0; i < num7; i++) {
-                float vx = state.Range(zoneCenterPos.x - num6, zoneCenterPos.x + num6);
-                float vz = state.Range(zoneCenterPos.z - num6, zoneCenterPos.z + num6);
+            const int spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
+            int32_t numSpawned = 0;
+            for (int i = 0; i < spawnAttempts; i++) {
+                float vx = state.Range(center.x - num6, center.x + num6);
+                float vz = state.Range(center.z - num6, center.z + num6);
 
-                Vector3 vector(vx, 0.f, vz);
+                Vector3 basePos(vx, 0., vz);
 
-                auto groupCount = state.Range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
+                const auto groupCount = state.Range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
                 bool generated = false;
                 for (int32_t j = 0; j < groupCount; j++) {
 
-                    Vector3 vector2 = (j == 0) ? vector
-                        : GetRandomPointInRadius(state, vector, zoneVegetation->m_groupRadius);
+                    Vector3 pos = (j == 0) ? basePos
+                        : GetRandomPointInRadius(state, basePos, zoneVegetation->m_groupRadius);
 
                     // random rotations
                     float rot_y = (float) state.Range(0, 360);
@@ -456,103 +473,110 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap *hmap, std::v
                         //|| !IsBlocked(vector2)) // no unity   \_(^.^)_/
                     {
 
-                        Vector3 vector3;
+                        Vector3 normal;
                         Biome biome;
                         BiomeArea biomeArea;
-                        Heightmap *otherHeightmap = GetGroundData(vector2, vector3, biome, biomeArea);
+                        Heightmap *otherHeightmap = GetGroundData(pos, normal, biome, biomeArea);
 
-                        if ((std::to_underlying(zoneVegetation->m_biome) & std::to_underlying(biome))
-                            && (std::to_underlying(zoneVegetation->m_biomeArea) & std::to_underlying(biomeArea))) {
+                        //Biome biome = GeoManager()->GetBiome(vector2);
+                        //BiomeArea biomeArea = GeoManager()->GetBiomeArea(vector2);
 
-                            // pretty much mistlands only vegetation
-                            //float y2 = 0;
-                            //Vector3 vector4;
-                            //if (zoneVegetation->m_snapToStaticSolid && GetStaticSolidHeight(vector2, y2, vector4)) {
-                            //    vector2.y = y2;
-                            //    vector3 = vector4;
-                            //}
+                        if (!((std::to_underlying(zoneVegetation->m_biome) & std::to_underlying(biome))
+                            && (std::to_underlying(zoneVegetation->m_biomeArea) & std::to_underlying(biomeArea))))
+                            continue;
 
-                            float waterDiff = vector2.y - WATER_LEVEL;
-                            if (waterDiff >= zoneVegetation->m_minAltitude && waterDiff <= zoneVegetation->m_maxAltitude) {
+                        // Mistlands only
+                        //float y2 = 0;
+                        //Vector3 vector4;
+                        //if (zoneVegetation->m_snapToStaticSolid && GetStaticSolidHeight(vector2, y2, vector4)) {
+                        //    vector2.y = y2;
+                        //    vector3 = vector4;
+                        //}
 
-                                if (zoneVegetation->m_minVegetation != zoneVegetation->m_maxVegetation) {
-                                    float vegetationMask = otherHeightmap->GetVegetationMask(vector2);
-                                    if (vegetationMask > zoneVegetation->m_maxVegetation || vegetationMask < zoneVegetation->m_minVegetation) {
-                                        continue;
-                                    }
+                        float waterDiff = pos.y - WATER_LEVEL;
+                        if (waterDiff < zoneVegetation->m_minAltitude || waterDiff > zoneVegetation->m_maxAltitude)
+                            continue;
+
+                        // Mistlands only
+                        if (zoneVegetation->m_minVegetation != zoneVegetation->m_maxVegetation) {
+                            float vegetationMask = otherHeightmap->GetVegetationMask(pos);
+                            if (vegetationMask > zoneVegetation->m_maxVegetation || vegetationMask < zoneVegetation->m_minVegetation) {
+                                continue;
+                            }
+                        }
+
+                        if (zoneVegetation->m_minOceanDepth != zoneVegetation->m_maxOceanDepth) {
+                            float oceanDepth = otherHeightmap->GetOceanDepth(pos);
+                            if (oceanDepth < zoneVegetation->m_minOceanDepth || oceanDepth > zoneVegetation->m_maxOceanDepth) {
+                                continue;
+                            }
+                        }
+
+                        //if (normal.y >= maxTilt && normal.y <= minTilt) 
+                        {
+
+                            if (zoneVegetation->m_terrainDeltaRadius > 0) {
+                                float num12;
+                                Vector3 vector5;
+                                GetTerrainDelta(state, pos, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
+                                if (num12 > zoneVegetation->m_maxTerrainDelta || num12 < zoneVegetation->m_minTerrainDelta) {
+                                    continue;
+                                }
+                            }
+
+                            if (zoneVegetation->m_inForest) {
+                                float forestFactor = GeoManager()->GetForestFactor(pos);
+                                if (forestFactor < zoneVegetation->m_forestTresholdMin || forestFactor > zoneVegetation->m_forestTresholdMax) {
+                                    continue;
+                                }
+                            }
+
+                            if (!InsideClearArea(clearAreas, pos)) {
+                                if (zoneVegetation->m_snapToWater)
+                                    pos.y = WATER_LEVEL;
+
+                                pos.y += zoneVegetation->m_groundOffset;
+                                Quaternion rotation = Quaternion::IDENTITY;
+
+
+
+                                if (zoneVegetation->m_chanceToUseGroundTilt > 0
+                                    && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
+                                    //Quaternion rotation2 = Quaternion::Euler(0.f, rot_y, 0.f);
+                                    //rotation = Quaternion.LookRotation(
+                                    //    vector3.Cross(rotation2 * Vector3::FORWARD),
+                                    //    vector3);
+                                }
+                                else {
+                                    //rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                                 }
 
-                                if (zoneVegetation->m_minOceanDepth != zoneVegetation->m_maxOceanDepth) {
-                                    float oceanDepth = otherHeightmap->GetOceanDepth(vector2);
-                                    if (oceanDepth < zoneVegetation->m_minOceanDepth || oceanDepth > zoneVegetation->m_maxOceanDepth) {
-                                        continue;
-                                    }
+
+
+                                // TODO modify this later once Euler implemented
+                                ///rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
+
+                                // hardcoded for now
+                                rotation = Quaternion(0, 1, 0, 0);
+
+                                auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
+
+                                if (scale != zoneVegetation->m_prefab->m_localScale.x) {
+                                    // this does set the Unity gameobject localscale
+                                    zdo->Set("scale", Vector3(scale, scale, scale));
                                 }
 
-                                if (vector3.y >= num4 && vector3.y <= num5) {
-
-                                    if (zoneVegetation->m_terrainDeltaRadius > 0) {
-                                        float num12;
-                                        Vector3 vector5;
-                                        GetTerrainDelta(state, vector2, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
-                                        if (num12 > zoneVegetation->m_maxTerrainDelta || num12 < zoneVegetation->m_minTerrainDelta) {
-                                            continue;
-                                        }
-                                    }
-
-                                    if (zoneVegetation->m_inForest) {
-                                        float forestFactor = GeoManager()->GetForestFactor(vector2);
-                                        if (forestFactor < zoneVegetation->m_forestTresholdMin || forestFactor > zoneVegetation->m_forestTresholdMax) {
-                                            continue;
-                                        }
-                                    }
-
-
-                                    if (!InsideClearArea(clearAreas, vector2)) {
-                                        if (zoneVegetation->m_snapToWater)
-                                            vector2.y = WATER_LEVEL;
-
-                                        vector2.y += zoneVegetation->m_groundOffset;
-                                        Quaternion rotation = Quaternion::IDENTITY;
-
-
-
-                                        if (zoneVegetation->m_chanceToUseGroundTilt > 0
-                                            && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
-                                            //Quaternion rotation2 = Quaternion::Euler(0.f, rot_y, 0.f);
-                                            //rotation = Quaternion.LookRotation(
-                                            //    vector3.Cross(rotation2 * Vector3::FORWARD),
-                                            //    vector3);
-                                        }
-                                        else {
-                                            //rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
-                                        }
-
-
-
-                                        // TODO modify this later once Euler implemented
-                                        rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
-
-                                        auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, vector2 + Vector3(0, 3, 0), rotation);
-
-                                        if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                            // this does set the Unity gameobject localscale
-                                            zdo->Set("scale", Vector3(scale, scale, scale));
-                                        }
-
-                                        generated = true;
-                                    }
-                                }
+                                generated = true;
                             }
                         }
                     }
                 }
 
                 if (generated) {
-                    num8++;
+                    numSpawned++;
                 }
 
-                if (num8 >= num3) {
+                if (numSpawned >= num3) {
                     break;
                 }
             }
@@ -632,7 +656,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation* location) {
 
         if (m_locationInstances.contains(randomZone))
             errLocations++;
-        else {            
+        else {
             Vector3 zonePos = ZoneToWorldPos(randomZone);
             BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
@@ -913,7 +937,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& 
     float num3 = std::numeric_limits<float>::max();
     Vector3 b = center;
     Vector3 a = center;
-    for (int32_t i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         Vector2 vector = state.InsideUnitCircle() * radius;
         Vector3 vector2 = center + Vector3(vector.x, 0.f, vector.y);
         float groundHeight = GetGroundHeight(vector2);
@@ -940,13 +964,15 @@ bool IZoneManager::IsBlocked(const Vector3& p) {
 // used importantly for snapping and location/vegetation generation
 // public
 float IZoneManager::GetGroundHeight(const Vector3& p) {
-    Vector3 height = p;
-    Vector3 n;
-    Biome biome;
-    BiomeArea biomeArea;
-    GetGroundData(height, n, biome, biomeArea);
+    return GeoManager()->GetHeight(p.x, p.z);
 
-    return height.y;
+    //Vector3 height = p;
+    //Vector3 n;
+    //Biome biome;
+    //BiomeArea biomeArea;
+    //GetGroundData(height, n, biome, biomeArea);
+    //
+    //return height.y;
 
     //Vector3 origin = p;
     //origin.y = 6000;
@@ -1074,12 +1100,23 @@ Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome
 
     //auto heightmap = HeightmapManager()->GetOrCreateHeightmap(WorldToZonePos(p));
 
-    auto heightmap = HeightmapManager()->GetHeightmap(p);
-    assert(heightmap && "Only call this method when Heightmap is definetly generated");
+    //auto heightmap = HeightmapManager()->GetHeightmap(p);
+    //assert(heightmap && "Only call this method when Heightmap is definetly generated");
 
-    p.y = HeightmapManager()->GetHeight(p);
-    biome = heightmap->GetBiome(p);
-    biomeArea = heightmap->GetBiomeArea();
+    auto heightmap = HeightmapManager()->GetOrCreateHeightmap(WorldToZonePos(p));
+
+    //assert(heightmap->GetWorldHeight(p, p.y) && "Should not see this error");
+
+    //p.y =  HeightmapManager()->GetHeight(p);
+
+    //heightmap->GetWorldHeight(p, p.y);
+
+    p.y = GeoManager()->GetHeight(p.x, p.z);
+    biome = GeoManager()->GetBiome(p.x, p.z);
+    biomeArea = GeoManager()->GetBiomeArea(p);
+
+    //biome = heightmap->GetBiome(p);
+    //biomeArea = heightmap->GetBiomeArea();
 
     return heightmap;
 

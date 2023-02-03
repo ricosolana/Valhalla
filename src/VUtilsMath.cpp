@@ -4,6 +4,7 @@
 #include "VUtilsMath.h"
 #include "Vector.h"
 #include "VUtils.h"
+#include "VUtilsMathf.h"
 
 namespace VUtils::Math {
     float SqMagnitude(float x, float y) {
@@ -51,49 +52,19 @@ namespace VUtils::Math {
         return std::min(std::max(value, min), max);
     }
 
-    float Clamp01(float value)
-    {
-        bool flag = value < 0.f;
-        float result;
-        if (flag)
-        {
-            result = 0.f;
-        }
-        else
-        {
-            bool flag2 = value > 1.f;
-            if (flag2)
-            {
-                result = 1.f;
-            }
-            else
-            {
-                result = value;
-            }
-        }
-        return result;
+
+
+    float LerpStep(float l, float h, float v) {
+        return Mathf::Clamp01((v - l) / (h - l));
     }
 
-    float Lerp(float a, float b, float t)
-    {
-        return a + (b - a) * Clamp01(t);
-    }
-
-
-    float LerpStep(float l, float h, float v)
-    {
-        return Clamp01((v - l) / (h - l));
-    }
-
-    float SmoothStep(float p_Min, float p_Max, float p_X)
-    {
-        float num = Clamp01((p_X - p_Min) / (p_Max - p_Min));
+    float SmoothStep(float p_Min, float p_Max, float p_X) {
+        float num = Mathf::Clamp01((p_X - p_Min) / (p_Max - p_Min));
         return num * num * (3.f - 2.f * num);
     }
 
-    double LerpStep(double l, double h, double v)
-    {
-        return Clamp01((v - l) / (h - l));
+    double LerpStep(double l, double h, double v) {
+        return Mathf::Clamp01((v - l) / (h - l));
     }
 
 
@@ -105,8 +76,7 @@ namespace VUtils::Math {
         return Fbm(Vector2(p.x, p.z), octaves, lacunarity, gain);
     }
 
-    float FbmMaxValue(int octaves, float gain)
-    {
+    float FbmMaxValue(int octaves, float gain) {
         float num = 0;
         float num2 = 1;
         for (int i = 0; i < octaves; i++)
@@ -117,8 +87,7 @@ namespace VUtils::Math {
         return num;
     }
 
-    float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain)
-    {
+    float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain) {
         float num = 0;
         float num2 = 1;
         Vector2 vector = p;

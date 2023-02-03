@@ -149,17 +149,16 @@ void IValhalla::Start() {
     
     assert(!m_running);
 
+    m_running = false;
+    m_serverID = VUtils::Random::GenerateUID();
+    m_startTime = steady_clock::now();
+
     // Does not work properly in some circumstances
     signal(SIGINT, [](int) {
         LOG(WARNING) << "Interrupt caught, stopping server";
         Valhalla()->Stop();
     });
 
-    m_running = false;
-    m_serverID = VUtils::Random::GenerateUID();
-    m_startTime = steady_clock::now();
-    m_netTime = 0;
-    
     this->LoadFiles();
 
     PrefabManager()->Init();
@@ -170,6 +169,8 @@ void IValhalla::Start() {
     HeightmapBuilder::Init(); // TODO use class instance
     if (m_settings.spawningLocations && !dbLoaded) ZoneManager()->GenerateLocations();
     NetManager()->Init();
+
+    m_netTime = 2040;
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 

@@ -5,6 +5,7 @@
 #include "GeoManager.h"
 #include "HashUtils.h"
 #include "TerrainModifier.h"
+#include "VUtilsMathf.h"
 
 namespace HeightmapBuilder {
 
@@ -74,71 +75,60 @@ namespace HeightmapBuilder {
 
 
     // private
-    void Build(HMBuildData *data, const ZoneID& center) {
-        constexpr int num = IZoneManager::ZONE_SIZE + 1;
-        constexpr int num2 = num * num;
-        constexpr int num3 = IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE;
-        auto vector = center + Vector2i((float)IZoneManager::ZONE_SIZE * -0.5f, (float)IZoneManager::ZONE_SIZE * -0.5f);
+    void Build(HMBuildData *data, const ZoneID& zone) {
+        auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
 
         auto GEO(GeoManager());
 
         //WorldGenerator worldGen = data.m_worldGen;
         //data.m_cornerBiomes = new Heightmap.Biome[4];
-        data->m_cornerBiomes[0] = GEO->GetBiome(vector.x, vector.y);
-        data->m_cornerBiomes[1] = GEO->GetBiome(vector.x + IZoneManager::ZONE_SIZE, vector.y);
-        data->m_cornerBiomes[2] = GEO->GetBiome(vector.x, vector.y + (float)IZoneManager::ZONE_SIZE);
-        data->m_cornerBiomes[3] = GEO->GetBiome(vector.x + IZoneManager::ZONE_SIZE, vector.y + IZoneManager::ZONE_SIZE);
+        data->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.y);
+        data->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.y);
+        data->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.y + (float)IZoneManager::ZONE_SIZE);
+        data->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.y + IZoneManager::ZONE_SIZE);
 
-        auto biome = data->m_cornerBiomes[0];
-        auto biome2 = data->m_cornerBiomes[1];
-        auto biome3 = data->m_cornerBiomes[2];
-        auto biome4 = data->m_cornerBiomes[3];
+        const auto biome1 = data->m_cornerBiomes[0];
+        const auto biome2 = data->m_cornerBiomes[1];
+        const auto biome3 = data->m_cornerBiomes[2];
+        const auto biome4 = data->m_cornerBiomes[3];
 
-        data->m_baseHeights.resize(num2);
-        data->m_baseMask.resize(num3);
+        data->m_baseHeights.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
+        data->m_baseMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
 
-        for (int32_t k = 0; k < num; k++) {
-            float wy = vector.y + (float)k;
-            float t = VUtils::Math::SmoothStep(0, 1, (float)k / (float)IZoneManager::ZONE_SIZE);
-            for (int32_t l = 0; l < num; l++) {
-                float wx = vector.x + (float)l;
-                float t2 = VUtils::Math::SmoothStep(0, 1, (float)l / (float)IZoneManager::ZONE_SIZE);
+        for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
+            const float world_y = baseWorldPos.y + ry;
+            const float ty = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::ZONE_SIZE);
+
+            for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
+                const float world_x = baseWorldPos.x + rx;
+                const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::ZONE_SIZE);
+
                 Color color;
-                float value;
-
-                if (biome == biome2 && biome == biome3 && biome == biome4) {
-                    value = GEO->GetBiomeHeight(biome, wx, wy, color);
+                float height;
+                if (biome1 == biome2 && biome1 == biome3 && biome1 == biome4) {
+                    height = GEO->GetBiomeHeight(biome1, world_x, world_y, color);
                 }
                 else {
                     Color colors[4];
-                    float biomeHeight = GEO->GetBiomeHeight(biome, wx, wy, colors[0]);
-                    float biomeHeight2 = GEO->GetBiomeHeight(biome2, wx, wy, colors[1]);
-                    float biomeHeight3 = GEO->GetBiomeHeight(biome3, wx, wy, colors[2]);
-                    float biomeHeight4 = GEO->GetBiomeHeight(biome4, wx, wy, colors[3]);
+                    float biomeHeight1 = GEO->GetBiomeHeight(biome1, world_x, world_y, colors[0]);
+                    float biomeHeight2 = GEO->GetBiomeHeight(biome2, world_x, world_y, colors[1]);
+                    float biomeHeight3 = GEO->GetBiomeHeight(biome3, world_x, world_y, colors[2]);
+                    float biomeHeight4 = GEO->GetBiomeHeight(biome4, world_x, world_y, colors[3]);
 
-                    float a = VUtils::Math::Lerp(biomeHeight, biomeHeight2, t2);
-                    float b = VUtils::Math::Lerp(biomeHeight3, biomeHeight4, t2);
-                    value = VUtils::Math::Lerp(a, b, t);
+                    Color c1 = colors[0].Lerp(colors[1], tx);
+                    Color c2 = colors[2].Lerp(colors[3], tx);
+                    color = c1.Lerp(c2, ty);
 
-                    Color a2 = colors[0].Lerp(colors[1], t2);
-                    Color b2 = colors[2].Lerp(colors[3], t2);
-                    color = a2.Lerp(b2, t);
+                    float h1 = VUtils::Mathf::Lerp(biomeHeight1, biomeHeight2, tx);
+                    float h2 = VUtils::Mathf::Lerp(biomeHeight3, biomeHeight4, tx);
+                    height = VUtils::Mathf::Lerp(h1, h2, ty);
                 }
 
-                data->m_baseHeights[k * num + l] = value;
+                data->m_baseHeights[ry * Heightmap::E_WIDTH + rx] = height;
 
-                if (l < IZoneManager::ZONE_SIZE && k < IZoneManager::ZONE_SIZE) {
-                    //if (color.a > .5f) {
-                    //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
-                    //}
-                    //else if (color.g > .5f) {
-                    //    data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Cultivate;
-                    //}
-                    data->m_baseMask[k * IZoneManager::ZONE_SIZE + l] = color;
-                }
-                else {
-                    //data->m_baseMask[k * IZoneManager::ZONE_SIZE + l] = Colors::BLACK;
-                    //data->m_baseMask[k * Heightmap::WIDTH + l] = TerrainModifier::PaintType::Reset;
+                // color mask is a bit smaller, so check bounds
+                if (rx < IZoneManager::ZONE_SIZE && ry < IZoneManager::ZONE_SIZE) {
+                    data->m_baseMask[ry * IZoneManager::ZONE_SIZE + rx] = color;
                 }
             }
         }

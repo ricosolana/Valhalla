@@ -2,6 +2,7 @@
 #include "HeightmapBuilder.h"
 #include "ZoneManager.h"
 #include "HeightmapManager.h"
+#include "VUtilsMathf.h"
 
 // private
 //void Heightmap::Awake() {
@@ -68,12 +69,10 @@ void Heightmap::UpdateCornerDepths() {
     m_oceanDepth[2] = GetHeight(IZoneManager::ZONE_SIZE, 0);
     m_oceanDepth[3] = GetHeight(0, 0);
 
-    float num = IZoneManager::WATER_LEVEL;
-
-    m_oceanDepth[0] = std::max(0.f, num - m_oceanDepth[0]);
-    m_oceanDepth[1] = std::max(0.f, num - m_oceanDepth[1]);
-    m_oceanDepth[2] = std::max(0.f, num - m_oceanDepth[2]);
-    m_oceanDepth[3] = std::max(0.f, num - m_oceanDepth[3]);
+    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[0]);
+    m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[1]);
+    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[2]);
+    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[3]);
 }
 
 // public
@@ -89,11 +88,11 @@ float Heightmap::GetOceanDepth(const Vector3& worldPos) {
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
 
-    float t = (float)num / (float)IZoneManager::ZONE_SIZE;
-    float t2 = (float)num2 / (float)IZoneManager::ZONE_SIZE;
-    float a = VUtils::Math::Lerp(this->m_oceanDepth[3], this->m_oceanDepth[2], t);
-    float b = VUtils::Math::Lerp(this->m_oceanDepth[0], this->m_oceanDepth[1], t);
-    return VUtils::Math::Lerp(a, b, t2);
+    float t = (float)num / IZoneManager::ZONE_SIZE;
+    float t2 = (float)num2 / IZoneManager::ZONE_SIZE;
+    float a = VUtils::Mathf::Lerp(this->m_oceanDepth[3], this->m_oceanDepth[2], t);
+    float b = VUtils::Mathf::Lerp(this->m_oceanDepth[0], this->m_oceanDepth[1], t);
+    return VUtils::Mathf::Lerp(a, b, t2);
 }
 
 
@@ -109,19 +108,6 @@ void Heightmap::Generate() {
     this->m_paintMask = this->m_buildData->m_baseMask;
 
     //this->ApplyModifiers();
-}
-
-// private
-float Heightmap::Distance(float x, float y, float rx, float ry) {
-    float num = x - rx;
-    float num2 = y - ry;
-
-    // hyperbola
-    // (sqrt(2) - sqrt(x ^ 2 + y ^ 2)) ^ 3
-
-    float num3 = std::sqrtf(num * num + num2 * num2);
-    float num4 = 1.4142135f - num3;
-    return num4 * num4 * num4;
 }
 
 // public
@@ -148,6 +134,18 @@ bool Heightmap::HaveBiome(Biome biome) {
         || (std::to_underlying(m_cornerBiomes[3]) & std::to_underlying(biome));
 }
 
+// private
+float Heightmap::Distance(float x, float y, float rx, float ry) {
+    float num = x - rx;
+    float num2 = y - ry;
+
+    // (sqrt(2) - sqrt(x ^ 2 + y ^ 2)) ^ 3
+    // https://www.math3d.org/sL5gEdMjk
+
+    float num4 = std::sqrtf(2) - VUtils::Math::Magnitude(num, num2);
+    return num4 * num4 * num4;
+}
+
 // public
 Biome Heightmap::GetBiome(const Vector3& point) {
     //if all biomes are the same, return same/any
@@ -161,13 +159,18 @@ Biome Heightmap::GetBiome(const Vector3& point) {
     float z = point.z;
     this->WorldToNormalizedHM(point, x, z);
 
-    // Bitshift weight table
+    // Bitshift biome weight table
     std::array<float, 9> tempBiomeWeights{};
+    assert(m_cornerBiomes[0] != Biome::None
+        && m_cornerBiomes[1] != Biome::None
+        && m_cornerBiomes[2] != Biome::None
+        && m_cornerBiomes[3] != Biome::None && "Got Biome::None biome");
 
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[0])] += this->Distance(x, z, 0, 0);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[1])] += this->Distance(x, z, 1, 0);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[2])] += this->Distance(x, z, 0, 1);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[3])] += this->Distance(x, z, 1, 1);
+    // subtract 1 from index because Biome::None is not counted
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[0]) - 1] += this->Distance(x, z, 0, 0);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[1]) - 1] += this->Distance(x, z, 1, 0);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[2]) - 1] += this->Distance(x, z, 0, 1);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[3]) - 1] += this->Distance(x, z, 1, 1);
 
     Biome biome = Biome::None;
     float weight = std::numeric_limits<float>::min();
@@ -520,7 +523,7 @@ void Heightmap::SmoothTerrain(const Vector3& worldPos, float radius, bool square
     }
 
     for (auto&& pair : list) {
-        float h = VUtils::Math::Lerp(
+        float h = VUtils::Mathf::Lerp(
             this->GetHeight(pair.first.x, pair.first.y), pair.second, intensity);
         this->SetHeight(pair.first.x, pair.first.y, h);
     }
@@ -664,10 +667,9 @@ void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
 
 // private
 void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y) {
-    float num = IZoneManager::ZONE_SIZE;
     Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x = vector.x / num + 0.5f;
-    y = vector.z / num + 0.5f;
+    x = vector.x / IZoneManager::ZONE_SIZE + 0.5f;
+    y = vector.z / IZoneManager::ZONE_SIZE + 0.5f;
 }
 
 // private

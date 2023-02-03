@@ -2,6 +2,7 @@
 #include "VUtilsRandom.h"
 #include "HashUtils.h"
 #include "ZoneManager.h"
+#include "VUtilsMathf.h"
 
 auto GEO_MANAGER(std::make_unique<IGeoManager>());
 IGeoManager* GeoManager() {
@@ -379,28 +380,28 @@ float IGeoManager::GetBaseHeight(float wx, float wy) const {
 	num3 -= 0.07f;
 	float num4 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.123f, wy * 0.002f * 0.25f + 0.15123f);
 	float num5 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.321f, wy * 0.002f * 0.25f + 0.231f);
-	float v = abs(num4 - num5);
+	float v = std::abs(num4 - num5);
 	float num6 = 1.f - VUtils::Math::LerpStep(0.02f, 0.12f, v);
 	num6 *= VUtils::Math::SmoothStep(744, 1000, num2);
 	num3 *= 1.f - num6;
 	if (num2 > 10000)
 	{
 		float t = VUtils::Math::LerpStep(10000, waterEdge, num2);
-		num3 = VUtils::Math::Lerp(num3, -0.2f, t);
+		num3 = VUtils::Mathf::Lerp(num3, -0.2f, t);
 		float num7 = 10490;
 		if (num2 > num7)
 		{
 			float t2 = VUtils::Math::LerpStep(num7, waterEdge, num2);
-			num3 = VUtils::Math::Lerp(num3, -2, t2);
+			num3 = VUtils::Mathf::Lerp(num3, -2, t2);
 		}
 	}
 
 	if (num2 < m_minMountainDistance && num3 > 0.28f)
 	{
-		float t3 = VUtils::Math::Clamp01((num3 - 0.28f) / 0.099999994f);
+		float t3 = VUtils::Mathf::Clamp01((num3 - 0.28f) / 0.099999994f);
 
-		num3 = VUtils::Math::Lerp(
-			VUtils::Math::Lerp(0.28f, 0.38f, t3),
+		num3 = VUtils::Mathf::Lerp(
+			VUtils::Mathf::Lerp(0.28f, 0.38f, t3),
 			num3,
 			VUtils::Math::LerpStep(m_minMountainDistance - 400.f, m_minMountainDistance, num2)
 		);
@@ -418,16 +419,16 @@ float IGeoManager::AddRivers(float wx, float wy, float h) {
 		return h;
 
 	float t = VUtils::Math::LerpStep(20, 60, v);
-	float num2 = VUtils::Math::Lerp(0.14f, 0.12f, t);
-	float num3 = VUtils::Math::Lerp(0.139f, 0.128f, t);
+	float num2 = VUtils::Mathf::Lerp(0.14f, 0.12f, t);
+	float num3 = VUtils::Mathf::Lerp(0.139f, 0.128f, t);
 	if (h > num2)
 	{
-		h = VUtils::Math::Lerp(h, num2, num);
+		h = VUtils::Mathf::Lerp(h, num2, num);
 	}
 	if (h > num3)
 	{
 		float t2 = VUtils::Math::LerpStep(0.85f, 1, num);
-		h = VUtils::Math::Lerp(h, num3, t2);
+		h = VUtils::Mathf::Lerp(h, num3, t2);
 	}
 	return h;
 }
@@ -458,7 +459,7 @@ float IGeoManager::GetMeadowsHeight(float wx, float wy) {
 	num2 += num * 0.1f;
 	float num3 = 0.15f;
 	float num4 = num2 - num3;
-	float num5 = VUtils::Math::Clamp01(baseHeight / 0.4f);
+	float num5 = VUtils::Mathf::Clamp01(baseHeight / 0.4f);
 	if (num4 > 0.f)
 		num2 -= num4 * (1.f - num5) * 0.75f;
 
@@ -494,7 +495,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
 	num2 = ((num2 > 0) ? std::pow(num2, 1.5f) : num2);
 	num += num2 * 0.4f;
 	num = AddRivers(wx2, wy2, num);
-	float num3 = VUtils::Math::Clamp01(num2 * 7.f);
+	float num3 = VUtils::Mathf::Clamp01(num2 * 7.f);
 	num += VUtils::Math::PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.03f * num3;
 	num += VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.01f * num3;
 	float num4 = 1.f - num3 * 1.2f;
@@ -504,7 +505,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
 	num5 *= 400.f;
 	num5 = std::ceil(num5);
 	num5 /= 400.f;
-	num = VUtils::Math::Lerp(a, num5, num3);
+	num = VUtils::Mathf::Lerp(a, num5, num3);
 	mask = Color{ 0, 0, 0, num4 };
 	return num;
 }
@@ -521,7 +522,7 @@ float IGeoManager::GetPlainsHeight(float wx, float wy) {
 	num2 += num * 0.1f;
 	float num3 = 0.15f;
 	float num4 = num2 - num3;
-	float num5 = VUtils::Math::Clamp01(baseHeight / 0.4f);
+	float num5 = VUtils::Mathf::Clamp01(baseHeight / 0.4f);
 	if (num4 > 0.f)
 		num2 -= num4 * (1.f - num5) * 0.75f;
 
@@ -555,7 +556,7 @@ float IGeoManager::GetEdgeHeight(float wx, float wy) {
 	}
 	float t = VUtils::Math::LerpStep(10000, 10100, magnitude);
 	float num3 = GetBaseHeight(wx, wy);
-	num3 = VUtils::Math::Lerp(num3, 0, t);
+	num3 = VUtils::Mathf::Lerp(num3, 0, t);
 	return AddRivers(wx, wy, num3);
 }
 
@@ -671,7 +672,7 @@ Biome IGeoManager::GetBiome(float wx, float wy) {
 	if (baseHeight <= 0.02f)
 		return Biome::Ocean;
 
-	// top curve of world is mostly deep north
+	// top curve of world is deep north
 	if (VUtils::Math::Magnitude(wx, wy + deepNorthYOffset) > deepNorthMinDistance + num) {
 		if (baseHeight > mountainBaseHeightMin)
 			return Biome::Mountain;
@@ -701,6 +702,16 @@ Biome IGeoManager::GetBiome(float wx, float wy) {
 		return Biome::BlackForest;
 
 	return Biome::Meadows;
+}
+
+Biome IGeoManager::GetBiomes(float x, float z) {
+	//ZoneID zone = IZoneManager::WorldToZonePos(Vector3(x, 0., z));
+	//Vector3 center = IZoneManager::ZoneToWorldPos(zone) + ;
+	return Biome(std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
+		|| std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
+		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
+		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
+		|| std::to_underlying(GetBiome(x, z)));
 }
 
 float IGeoManager::GetHeight(float wx, float wy) {
