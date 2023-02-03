@@ -18,7 +18,7 @@ No longer being developed. Graphics programming is not my thing :(
 
 Vegetation now generates throughout the world, and correctly too according to biome. A few things to note: vegetation placement currently does not match an equal Valheim-generated world vegetation, but comes somewhat close with results appearing similar to that of a Valheim world (I do not have a major solution to this, but I will work-around this caveat by implementing some simple radius checks for vegetation, because they are frequently crammed together), also, vegetation heights are sometimes slightly above ground, but StaticPhysics in the client will fix this.
 
-![Vegetation generation](/pics/pregenerated.jpg)
+![Vegetation generation](/pics/natural-generation.jpg)
 
 You can see in the left of the image how the small trees are in the open clearing, where this never happens in Valheim as far as I know. 
 
