@@ -5,7 +5,7 @@
 #include "HashUtils.h"
 #include "ValhallaServer.h"
 #include "TerrainModifier.h"
-#include "HMBuildData.h"
+//#include "HMBuildData.h"
 #include "ZoneManager.h"
 
 class IHeightmapManager;
@@ -17,11 +17,19 @@ class Material {};
 class MeshCollider {};
 class Mesh {};
 
+class BaseHeightmap {
+public:
+    using Heights_t = std::vector<float>;
+    using Mask_t = std::vector<Color>;
 
+public:
+    std::array<Biome, 4> m_cornerBiomes;
+    Heights_t m_baseHeights;
+    Mask_t m_baseMask;
+};
 
 class Heightmap {
     friend class IHeightmapManager;
-    friend class HMBuildData;
 
 public:
     static constexpr Color m_paintMaskDirt = Colors::RED;
@@ -55,14 +63,15 @@ private:
 
 
 
-    void UpdateCornerDepths();
-    void Generate();
+    //void UpdateCornerDepths();
+    //void Generate();
+
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
-    void ApplyModifier(TerrainModifier modifier, HMBuildData::Heights_t *levelOnly);
+    void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
     Vector3 CalcVertex(int32_t x, int32_t y);
     void RebuildCollisionMesh();
-    void SmoothTerrain2(const Vector3& worldPos, float radius, HMBuildData::Heights_t* levelOnlyHeights, float power);
+    void SmoothTerrain2(const Vector3& worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
     bool AtMaxWorldLevelDepth(const Vector3& worldPos);
     bool GetWorldBaseHeight(const Vector3& worldPos, float& height);
     
@@ -75,13 +84,13 @@ private:
     void FindObjectsToMove(Vector3 worldPos, float area, std::vector<Rigidbody> &objects);
     void PaintCleared(Vector3 worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
     void WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y);
-    void LevelTerrain(const Vector3& worldPos, float radius, bool square, HMBuildData::Heights_t* levelOnly);
+    void LevelTerrain(const Vector3& worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
 
 public:
-    Heightmap(const ZoneID& zone);
+    Heightmap(const ZoneID& zone, std::unique_ptr<BaseHeightmap> base);
 
-    void QueueRegenerate();
-    bool IsRegenerateQueued();
+    //void QueueRegenerate();
+    //bool IsRegenerateQueued();
     void Regenerate();
     std::array<float, 4> &GetOceanDepth();
 
@@ -142,16 +151,15 @@ public:
     Material m_material;
 
 private:
-    void CancelQueuedRegeneration();
+    //void CancelQueuedRegeneration();
     
 
-    Task *m_queuedRegenerateTask = nullptr;
+    //Task *m_queuedRegenerateTask = nullptr;
 
-    HMBuildData::Heights_t m_heights;
+    const std::unique_ptr<BaseHeightmap> m_base;
+    BaseHeightmap::Heights_t m_heights;
 
-    std::unique_ptr<HMBuildData> m_buildData;
-
-    HMBuildData::Mask_t m_paintMask;
+    BaseHeightmap::Mask_t m_paintMask;
 
     MeshCollider m_collider;
 
@@ -168,7 +176,5 @@ private:
 
     Mesh m_renderMesh;
 
-    ZoneID m_zone;
+    const ZoneID m_zone;
 };
-
-

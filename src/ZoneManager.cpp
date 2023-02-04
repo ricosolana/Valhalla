@@ -367,37 +367,32 @@ bool IZoneManager::SpawnZone(const ZoneID& zone) {
     // 
     //  *note: ZonePrefab does NOT contain ZDO, nor ZNetView, unline _ZoneCtrl (which does)
 
-
-
     // Wait for builder thread
-    if (!IsZoneGenerated(zone) && HeightmapBuilder::IsTerrainReady(zone)) {
-        auto heightmap = HeightmapManager()->GetOrCreateHeightmap(zone);
-        // TODO HeightmapBuilder to retrieve prepared heightmaps instead of returning builddata
-        //if (auto heightmap = HeightmapBuilder::RequestTerrain(zoneID)) {
+    if (!IsZoneGenerated(zone)) {
+        if (auto heightmap = HeightmapBuilder()->PollHeightmap(zone)) {
             static std::vector<ClearArea> m_tempClearAreas;
 
             if (SERVER_SETTINGS.spawningLocations)
                 m_tempClearAreas = PlaceLocations(zone);
 
             if (SERVER_SETTINGS.spawningVegetation)
-                PlaceVegetation(zone, heightmap, m_tempClearAreas);
+                PlaceVegetation(zone, heightmap.get(), m_tempClearAreas);
 
             if (SERVER_SETTINGS.spawningCreatures)
                 PlaceZoneCtrl(zone);
 
             m_generatedZones.insert(zone);
-
             return true;
-        //}
+        }
     }
     return false;
 }
 
 // private
-void IZoneManager::PlaceZoneCtrl(const ZoneID& zoneID) {
+void IZoneManager::PlaceZoneCtrl(const ZoneID& zone) {
     // ZoneCtrl is basically a player controlled natural mob spawner
     //  - SpawnSystem
-    auto pos = ZoneToWorldPos(zoneID);
+    auto pos = ZoneToWorldPos(zone);
     PrefabManager()->Instantiate(ZONE_CTRL_PREFAB, pos);
 }
 
@@ -474,7 +469,9 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
                     {
                         auto biome = heightmap->GetBiome(pos);
                         auto biomeArea = heightmap->GetBiomeArea();
-                        pos.y = GeoManager()->GetHeight(pos.x, pos.z);
+                        //pos.y = GeoManager()->GetHeight(pos.x, pos.z);
+                        if (!heightmap->GetWorldHeight(pos, pos.y))
+                            throw std::runtime_error("Heightmap failed to compute height within bounds");
 
                         //Vector3 normal;
                         //Biome biome;

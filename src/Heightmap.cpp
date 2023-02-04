@@ -30,16 +30,20 @@
 // This is essentially a one-off function once constructed
 // so its use is kinda redundant continually in Generate()
 //void Heightmap::Initialize() {
-Heightmap::Heightmap(const ZoneID& zoneID) 
-    : m_zone(zoneID) {}
+Heightmap::Heightmap(const ZoneID& zoneID, std::unique_ptr<BaseHeightmap> base)
+    : m_zone(zoneID), m_base(std::move(base)) {
+    Regenerate();
+}
 
+/*
 void Heightmap::CancelQueuedRegeneration() {
     if (IsRegenerateQueued()) {
         m_queuedRegenerateTask->Cancel();
         m_queuedRegenerateTask = nullptr;
     }
-}
+}*/
 
+/*
 // public
 void Heightmap::QueueRegenerate() {
     CancelQueuedRegeneration();
@@ -52,16 +56,27 @@ void Heightmap::QueueRegenerate() {
 // public
 bool Heightmap::IsRegenerateQueued() {
     return m_queuedRegenerateTask;
-}
+}*/
 
 // public
+// Used to be the Regenerate() method
 void Heightmap::Regenerate() {
-    CancelQueuedRegeneration();
+    //CancelQueuedRegeneration();
 
-    Generate();
-    UpdateCornerDepths();
+    //Generate();
+    //UpdateCornerDepths();
+
+    m_cornerBiomes = m_base->m_cornerBiomes;
+    this->m_heights = m_base->m_baseHeights;
+    this->m_paintMask = m_base->m_baseMask;
+
+    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, IZoneManager::ZONE_SIZE));
+    m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE));
+    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::ZONE_SIZE, 0));
+    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, 0));
 }
 
+/*
 // private
 void Heightmap::UpdateCornerDepths() {
     m_oceanDepth[0] = GetHeight(0, IZoneManager::ZONE_SIZE);
@@ -73,7 +88,7 @@ void Heightmap::UpdateCornerDepths() {
     m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[1]);
     m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[2]);
     m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[3]);
-}
+}*/
 
 // public
 std::array<float, 4>& Heightmap::GetOceanDepth() {
@@ -96,19 +111,19 @@ float Heightmap::GetOceanDepth(const Vector3& worldPos) {
 }
 
 
-
+/*
 // private
 void Heightmap::Generate() {
-    if (this->m_buildData == nullptr) {
-        this->m_buildData = HeightmapBuilder::RequestTerrainBlocking(m_zone);
-        m_cornerBiomes = m_buildData->m_cornerBiomes;
-    }
+    //if (this->m_buildData == nullptr) {
+    //    this->m_buildData = HeightmapBuilder::RequestTerrainBlocking(m_zone);
+    //    m_cornerBiomes = m_buildData->m_cornerBiomes;
+    //}
 
-    this->m_heights = this->m_buildData->m_baseHeights;
-    this->m_paintMask = this->m_buildData->m_baseMask;
+    this->m_heights = this->m_base->m_baseHeights;
+    this->m_paintMask = this->m_base->m_baseMask;
 
     //this->ApplyModifiers();
-}
+}*/
 
 // public
 std::vector<Biome> Heightmap::GetBiomes() {
@@ -241,7 +256,7 @@ void Heightmap::ApplyModifiers() {
 }
 
 // private
-void Heightmap::ApplyModifier(TerrainModifier modifier, HMBuildData::Heights_t* levelOnly) {
+void Heightmap::ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t* levelOnly) {
     assert(false);
 
     //if (modifier.m_level) {
@@ -343,7 +358,7 @@ void Heightmap::RebuildCollisionMesh() {
 
 // private
 void Heightmap::SmoothTerrain2(const Vector3& worldPos, float radius, 
-    HMBuildData::Heights_t* levelOnlyHeights, float power) {
+    BaseHeightmap::Heights_t* levelOnlyHeights, float power) {
     
     assert(false);
 
@@ -405,7 +420,7 @@ bool Heightmap::GetWorldBaseHeight(const Vector3& worldPos, float& height) {
         return false;
     }
 
-    height = this->m_buildData->m_baseHeights[y * E_WIDTH + x];
+    height = this->m_base->m_baseHeights[y * E_WIDTH + x];
     return true;
 }
 
@@ -675,7 +690,7 @@ void Heightmap::WorldToNormalizedHM(const Vector3& worldPos, float& x, float &y)
 
 // private
 void Heightmap::LevelTerrain(const Vector3& worldPos, float radius, bool square, 
-    HMBuildData::Heights_t* levelOnly) {
+    BaseHeightmap::Heights_t* levelOnly) {
 
     int32_t num;
     int32_t num2;
@@ -721,7 +736,7 @@ float Heightmap::GetBaseHeight(int32_t x, int32_t y) {
     if (x < 0 || y < 0 || x >= E_WIDTH || y >= E_WIDTH) {
         return 0;
     }
-    return this->m_buildData->m_baseHeights[y * E_WIDTH + x];
+    return this->m_base->m_baseHeights[y * E_WIDTH + x];
 }
 
 // public

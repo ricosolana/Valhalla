@@ -18,14 +18,15 @@ IHeightmapManager* HeightmapManager() {
 
 // public static
 void IHeightmapManager::ForceQueuedRegeneration() {
-    for (auto&& pair : m_heightmaps) {
-        auto&& heightmap = pair.second;
-        if (heightmap->IsRegenerateQueued()) {
-            LOG(INFO) << "Force generating hmap " << heightmap->m_zone.x << " " << heightmap->m_zone.y;
-            //LOG(INFO) << "Force generating hmap " << heightmap.transform.position.ToString();
-            heightmap->Regenerate();
-        }
-    }
+    assert(false);
+    //for (auto&& pair : m_heightmaps) {
+    //    auto&& heightmap = pair.second;
+    //    if (heightmap->IsRegenerateQueued()) {
+    //        LOG(INFO) << "Force generating hmap " << heightmap->m_zone.x << " " << heightmap->m_zone.y;
+    //        //LOG(INFO) << "Force generating hmap " << heightmap.transform.position.ToString();
+    //        heightmap->Regenerate();
+    //    }
+    //}
 }
 
 // public static 
@@ -101,15 +102,17 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //    }
     //}
 
-    auto&& pair = m_heightmaps.insert({ zoneID, nullptr });
-    if (pair.second) { // if newly inserted
-        pair.first->second = std::make_unique<Heightmap>(zoneID);
-        pair.first->second->Regenerate();
-    }
+    throw std::runtime_error("do not use");
 
-    assert(pair.first->second);
-
-    return pair.first->second.get();
+    ////auto&& pair = m_heightmaps.insert({ zoneID, nullptr });
+    ////if (pair.second) { // if newly inserted
+    ////    pair.first->second = std::make_unique<Heightmap>(zoneID);
+    ////    pair.first->second->Regenerate();
+    ////}
+    ////
+    ////assert(pair.first->second);
+    ////
+    ////return pair.first->second.get();
     
     //auto&& find = m_heightmaps.find(zone);
     //if (find != m_heightmaps.end()) {
@@ -165,12 +168,14 @@ Biome IHeightmapManager::FindBiome(const Vector3& point) {
 
 // public static
 bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
-    auto heightmaps = GetHeightmaps(point, radius);
-    for (auto&& hmap : heightmaps) {
-        if (hmap->IsRegenerateQueued())
-            return true;
-    }
+    assert(false);
     return false;
+    //auto heightmaps = GetHeightmaps(point, radius);
+    //for (auto&& hmap : heightmaps) {
+    //    if (hmap->IsRegenerateQueued())
+    //        return true;
+    //}
+    //return false;
 }
 
 //Heightmap* IHeightmapManager::CreateHeightmap(const Vector2i& zone) {

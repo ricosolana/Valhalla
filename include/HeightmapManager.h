@@ -7,6 +7,7 @@
 #include "Biome.h"
 
 
+
 class IHeightmapManager {
 	robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>> m_heightmaps;
 

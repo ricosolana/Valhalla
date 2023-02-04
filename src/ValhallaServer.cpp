@@ -166,7 +166,7 @@ void IValhalla::Start() {
     ZoneManager()->Init();
     bool worldDBLoaded = WorldManager()->Init();
     GeoManager()->Init();
-    HeightmapBuilder::Init(); // TODO use class instance
+    HeightmapBuilder()->Init();
     if (!worldDBLoaded) ZoneManager()->GenerateLocations();
     NetManager()->Init();
 
@@ -239,7 +239,7 @@ void IValhalla::Start() {
 
     // Cleanup 
     NetManager()->Close();
-    HeightmapBuilder::Uninit();
+    HeightmapBuilder()->Uninit();
 
     {
         std::vector<std::string> blacklist;
