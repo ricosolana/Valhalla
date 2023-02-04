@@ -56,9 +56,9 @@ namespace HeightmapBuilder {
 
                         // start dropping uneaten heightmaps (poor heightmaps)
                         // not really necessary? Why dorp heightmaps?
-                        while (m_ready.size() > 16) {
-                            m_ready.erase(m_ready.begin());
-                        }
+                        //while (m_ready.size() > 16) {
+                        //    m_ready.erase(m_ready.begin());
+                        //}
                     }
                 }
                 std::this_thread::sleep_for(1ms);
@@ -82,10 +82,10 @@ namespace HeightmapBuilder {
 
         //WorldGenerator worldGen = data.m_worldGen;
         //data.m_cornerBiomes = new Heightmap.Biome[4];
-        data->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.y);
-        data->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.y);
-        data->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.y + (float)IZoneManager::ZONE_SIZE);
-        data->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.y + IZoneManager::ZONE_SIZE);
+        data->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z);
+        data->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z);
+        data->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::ZONE_SIZE);
+        data->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z + IZoneManager::ZONE_SIZE);
 
         const auto biome1 = data->m_cornerBiomes[0];
         const auto biome2 = data->m_cornerBiomes[1];
@@ -96,7 +96,7 @@ namespace HeightmapBuilder {
         data->m_baseMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
 
         for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
-            const float world_y = baseWorldPos.y + ry;
+            const float world_y = baseWorldPos.z + ry;
             const float ty = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::ZONE_SIZE);
 
             for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {

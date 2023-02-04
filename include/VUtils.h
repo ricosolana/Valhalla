@@ -340,7 +340,7 @@ namespace VUtils {
     // Returns the smallest 1-value bitshift
     template<typename Enum> requires std::is_enum_v<Enum>
     constexpr uint8_t GetShift(Enum value) {
-        uint8_t shift = 0;
+        uint8_t shift = -1;
 
         auto bits = std::to_underlying(value);
         for (; bits; shift++) {

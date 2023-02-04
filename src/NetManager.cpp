@@ -150,7 +150,7 @@ void INetManager::SendPlayerList() {
 void INetManager::SendNetTime() {
     for (auto&& pair : m_peers) {
         auto&& peer = pair.second;
-        peer->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->Time());
+        peer->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->NetTime());
     }
 }
 
@@ -204,6 +204,16 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
 
     if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
         return rpc->Close(ConnectionStatus::ErrorBanned);
+
+    // allow ascii only (no spaces)
+    for (auto ch : name) {
+        if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) {
+            LOG(INFO) << "Player has illegal name character: " << (int)ch;
+            return rpc->Close(ConnectionStatus::ErrorDisconnected);
+        }
+    }
+
+    //if (VUtils::String::ToAscii(name) != name || name.contains(' ') || )
 
 
 

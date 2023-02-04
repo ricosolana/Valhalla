@@ -614,15 +614,25 @@ const IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& n
 // public
 // call from within ZNet.init or earlier...
 void IZoneManager::GenerateLocations() {
-    auto now(steady_clock::now());
+    // Crucially important Location
+    auto&& spawnLoc = m_locationsByHash.find(VUtils::String::GetStableHashCode("StartTemple"));
+    if (spawnLoc == m_locationsByHash.end())
+        throw std::runtime_error("unable to find StartTemple");
 
-    // Already presorted by priority
-    for (auto&& loc : m_locations) {
-        //if (loc->m_name == "StartTemple") // TODO this is temporary for debug, so remove later
-        GenerateLocations(loc.get());
+    if (!SERVER_SETTINGS.spawningLocations) {
+        LOG(WARNING) << "Location generation is disabled";
+        GenerateLocations(spawnLoc->second);
     }
+    else {
+        auto now(steady_clock::now());
 
-    LOG(INFO) << "Location generation took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
+        // Already presorted by priority
+        for (auto&& loc : m_locations) {
+            GenerateLocations(loc.get());
+        }
+
+        LOG(INFO) << "Location generation took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
+    }
 }
 
 // private
@@ -1112,11 +1122,11 @@ Heightmap* IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome
     //heightmap->GetWorldHeight(p, p.y);
 
     p.y = GeoManager()->GetHeight(p.x, p.z);
-    biome = GeoManager()->GetBiome(p.x, p.z);
-    biomeArea = GeoManager()->GetBiomeArea(p);
+    //biome = GeoManager()->GetBiome(p.x, p.z);
+    //biomeArea = GeoManager()->GetBiomeArea(p);
 
-    //biome = heightmap->GetBiome(p);
-    //biomeArea = heightmap->GetBiomeArea();
+    biome = heightmap->GetBiome(p);
+    biomeArea = heightmap->GetBiomeArea();
 
     return heightmap;
 

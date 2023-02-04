@@ -160,17 +160,18 @@ Biome Heightmap::GetBiome(const Vector3& point) {
     this->WorldToNormalizedHM(point, x, z);
 
     // Bitshift biome weight table
-    std::array<float, 9> tempBiomeWeights{};
+    // TODO re-normalize biome shifts to use all perfectly allocated ones (since n7 is skipped in enum)
+    std::array<float, 10> tempBiomeWeights{};
     assert(m_cornerBiomes[0] != Biome::None
         && m_cornerBiomes[1] != Biome::None
         && m_cornerBiomes[2] != Biome::None
         && m_cornerBiomes[3] != Biome::None && "Got Biome::None biome");
 
     // subtract 1 from index because Biome::None is not counted
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[0]) - 1] += this->Distance(x, z, 0, 0);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[1]) - 1] += this->Distance(x, z, 1, 0);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[2]) - 1] += this->Distance(x, z, 0, 1);
-    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[3]) - 1] += this->Distance(x, z, 1, 1);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[0])] += this->Distance(x, z, 0, 0);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[1])] += this->Distance(x, z, 1, 0);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[2])] += this->Distance(x, z, 0, 1);
+    tempBiomeWeights[VUtils::GetShift(m_cornerBiomes[3])] += this->Distance(x, z, 1, 1);
 
     Biome biome = Biome::None;
     float weight = std::numeric_limits<float>::min();

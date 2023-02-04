@@ -164,10 +164,10 @@ void IValhalla::Start() {
     PrefabManager()->Init();
     ZDOManager()->Init();
     ZoneManager()->Init();
-    bool dbLoaded = WorldManager()->Init();
+    bool worldDBLoaded = WorldManager()->Init();
     GeoManager()->Init();
     HeightmapBuilder::Init(); // TODO use class instance
-    if (m_settings.spawningLocations && !dbLoaded) ZoneManager()->GenerateLocations();
+    if (!worldDBLoaded) ZoneManager()->GenerateLocations();
     NetManager()->Init();
 
     m_netTime = 2040;
