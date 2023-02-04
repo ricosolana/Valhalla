@@ -86,14 +86,14 @@ const char* stateToString(ESteamNetworkingConnectionState state) {
     static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connected", "ClosedByPeer", "ProblemDetectedLocally",
         "FinWait", "Linger", "Dead"
     };
-    if (state >= 0 && state <= 5) {
+    if (state >= 0) {
         return messages[state];
     }
     return messages[5 + (-state)];
 }
 
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-    LOG(INFO) << "NetConnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
+    LOG(DEBUG) << "NetConnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
         && data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)

@@ -25,11 +25,12 @@ namespace HeightmapBuilder {
     // public
     void Init() {
         m_builder = std::thread([]() {
-            OPTICK_THREAD("HMBuilder");
+            //OPTICK_THREAD("HMBuilder");
             el::Helpers::setThreadName("HMBuilder");
 
             LOG(INFO) << "Builder started";
             while (!m_stop) {
+                //OPTICK_FRAME("BuilderThread");
                 bool buildMore;
                 {
                     std::scoped_lock<std::mutex> scoped(m_lock);
@@ -54,14 +55,23 @@ namespace HeightmapBuilder {
                         std::scoped_lock<std::mutex> scoped(m_lock);
                         m_ready[center] = std::move(data);
 
+                        //static auto prev(steady_clock::now());
+                        //auto now(steady_clock::now());
+                        //if (now - prev > 1min && m_ready.size() > 32) {
+                        //    m_ready.clear();
+                        //    prev = now;
+                        //}
+
+                        
+
                         // start dropping uneaten heightmaps (poor heightmaps)
                         // not really necessary? Why dorp heightmaps?
                         //while (m_ready.size() > 16) {
                         //    m_ready.erase(m_ready.begin());
                         //}
                     }
-                }
-                std::this_thread::sleep_for(1ms);
+                }  
+                    std::this_thread::sleep_for(1ms);
             }
         });
     }
@@ -76,6 +86,8 @@ namespace HeightmapBuilder {
 
     // private
     void Build(HMBuildData *data, const ZoneID& zone) {
+        //OPTICK_EVENT();
+
         auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
 
         auto GEO(GeoManager());

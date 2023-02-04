@@ -358,7 +358,7 @@ void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
     }
 }
 
-bool IZoneManager::SpawnZone(const ZoneID& zoneID) {
+bool IZoneManager::SpawnZone(const ZoneID& zone) {
     //Heightmap componentInChildren = m_zonePrefab.GetComponentInChildren<Heightmap>();
 
     // _root object is ZonePrefab, Components:
@@ -370,26 +370,25 @@ bool IZoneManager::SpawnZone(const ZoneID& zoneID) {
 
 
     // Wait for builder thread
-    if (!IsZoneGenerated(zoneID) && HeightmapBuilder::IsTerrainReady(zoneID)) {
-        auto heightmap = HeightmapManager()->GetOrCreateHeightmap(zoneID);
-        //auto heightmap = HeightmapManager()->GetHeightmap(zoneID);
+    if (!IsZoneGenerated(zone) && HeightmapBuilder::IsTerrainReady(zone)) {
+        auto heightmap = HeightmapManager()->GetOrCreateHeightmap(zone);
+        // TODO HeightmapBuilder to retrieve prepared heightmaps instead of returning builddata
+        //if (auto heightmap = HeightmapBuilder::RequestTerrain(zoneID)) {
+            static std::vector<ClearArea> m_tempClearAreas;
 
-        assert(heightmap);
+            if (SERVER_SETTINGS.spawningLocations)
+                m_tempClearAreas = PlaceLocations(zone);
 
-        static std::vector<ClearArea> m_tempClearAreas;
+            if (SERVER_SETTINGS.spawningVegetation)
+                PlaceVegetation(zone, heightmap, m_tempClearAreas);
 
-        if (SERVER_SETTINGS.spawningLocations)
-            m_tempClearAreas = PlaceLocations(zoneID);
+            if (SERVER_SETTINGS.spawningCreatures)
+                PlaceZoneCtrl(zone);
 
-        if (SERVER_SETTINGS.spawningVegetation)
-            PlaceVegetation(zoneID, heightmap, m_tempClearAreas);
+            m_generatedZones.insert(zone);
 
-        if (SERVER_SETTINGS.spawningCreatures)
-            PlaceZoneCtrl(zoneID);
-
-        m_generatedZones.insert(zoneID);
-
-        return true;
+            return true;
+        //}
     }
     return false;
 }
@@ -469,14 +468,18 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
                     float rot_x = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
                     float rot_z = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
 
+                    // Use a method similar to clear area with rectangular regions
                     //if (!zoneVegetation->m_blockCheck
                         //|| !IsBlocked(vector2)) // no unity   \_(^.^)_/
                     {
+                        auto biome = heightmap->GetBiome(pos);
+                        auto biomeArea = heightmap->GetBiomeArea();
+                        pos.y = GeoManager()->GetHeight(pos.x, pos.z);
 
-                        Vector3 normal;
-                        Biome biome;
-                        BiomeArea biomeArea;
-                        Heightmap *otherHeightmap = GetGroundData(pos, normal, biome, biomeArea);
+                        //Vector3 normal;
+                        //Biome biome;
+                        //BiomeArea biomeArea;
+                        //Heightmap *otherHeightmap = GetGroundData(pos, normal, biome, biomeArea);
 
                         //Biome biome = GeoManager()->GetBiome(vector2);
                         //BiomeArea biomeArea = GeoManager()->GetBiomeArea(vector2);
@@ -499,14 +502,14 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
 
                         // Mistlands only
                         if (zoneVegetation->m_minVegetation != zoneVegetation->m_maxVegetation) {
-                            float vegetationMask = otherHeightmap->GetVegetationMask(pos);
+                            float vegetationMask = heightmap->GetVegetationMask(pos);
                             if (vegetationMask > zoneVegetation->m_maxVegetation || vegetationMask < zoneVegetation->m_minVegetation) {
                                 continue;
                             }
                         }
 
                         if (zoneVegetation->m_minOceanDepth != zoneVegetation->m_maxOceanDepth) {
-                            float oceanDepth = otherHeightmap->GetOceanDepth(pos);
+                            float oceanDepth = heightmap->GetOceanDepth(pos);
                             if (oceanDepth < zoneVegetation->m_minOceanDepth || oceanDepth > zoneVegetation->m_maxOceanDepth) {
                                 continue;
                             }

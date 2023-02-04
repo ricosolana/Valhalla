@@ -71,6 +71,9 @@ std::optional<NetPackage> SteamSocket::Recv() {
             msg->Release();
             return pkg;
         }
+        else {
+            LOG(DEBUG) << "Failed to receive message";
+        }
     }
     return std::nullopt;
 }
@@ -135,7 +138,7 @@ void SteamSocket::SendQueued() {
 
         if (SteamGameServerNetworkingSockets()->SendMessageToConnection(
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) != k_EResultOK) {
-            LOG(INFO) << "Failed to send data";
+            LOG(DEBUG) << "Failed to send message";
             return;
         }
 

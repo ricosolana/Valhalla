@@ -41,7 +41,7 @@ public:
     NetRpc(NetRpc&& other) = delete; // move
 
     ~NetRpc() {
-        LOG(INFO) << "~NetRpc()";
+        LOG(DEBUG) << "~NetRpc()";
     }
 
     /**
@@ -68,7 +68,9 @@ public:
     // https://stackoverflow.com/a/6361619
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
-        assert(m_socket && m_socket->Connected());
+        //assert(m_socket && m_socket->Connected());
+        if (!m_socket->Connected())
+            return;
 
         NetPackage pkg; // TODO make into member to optimize; or make static
         pkg.Write(hash);

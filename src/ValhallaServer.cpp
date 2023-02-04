@@ -277,6 +277,10 @@ void IValhalla::Update() {
     
     ZoneManager()->Update(); // untested
 
+    PERIODIC_NOW(1s, {
+        LOG(INFO) << "server update";
+    });
+
     //PERIODIC_NOW(10s, {
     //    Broadcast(MessageType::Center, "bruh");
     //});
