@@ -46,8 +46,13 @@ void IValhalla::LoadFiles() {
         }
     }
 
+    // TODO:
+    // consider moving extraneous features into a separate lua mod group
+    //  to not pollute the primary base server code
+    //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
+
     m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
-    if (m_settings.serverName.empty()) m_settings.serverName = "My server";
+    if (m_settings.serverName.empty()) m_settings.serverName = "Valhalla server";
     m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
     m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
     m_settings.serverPublic = loadNode["server-public"].as<bool>(false);

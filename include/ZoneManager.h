@@ -74,6 +74,7 @@ class IZoneManager {
 
 		Biome m_biome = Biome::None;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
+		float m_radius = 0; // My custom impl
 		float m_min = 0;
 		float m_max = 10;
 		float m_minTilt = 0;
@@ -113,7 +114,7 @@ class IZoneManager {
 
 	struct ClearArea {
 		Vector3 m_center;
-		float m_radius;
+		float m_semiWidth;
 	};
 
 	const Prefab* LOCATION_PROXY_PREFAB = nullptr;
@@ -154,13 +155,14 @@ private:
 
 	bool SpawnZone(const ZoneID& zone);
 	std::vector<ClearArea> PlaceLocations(const ZoneID& zone);
-	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, std::vector<ClearArea>& clearAreas);
+	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, const std::vector<ClearArea>& clearAreas);
 	void PlaceZoneCtrl(const ZoneID& zone);
 
 	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
 	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
+	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& point, float radius);
 	const ZoneLocation* GetLocation(HASH_t hash);
 	const ZoneLocation* GetLocation(const std::string& name);
 

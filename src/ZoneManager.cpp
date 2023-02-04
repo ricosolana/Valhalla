@@ -143,6 +143,7 @@ void IZoneManager::Init() {
 
             veg->m_biome = (Biome) pkg.Read<int32_t>();
             veg->m_biomeArea = (BiomeArea) pkg.Read<int32_t>();
+            veg->m_radius = pkg.Read<float>();
             veg->m_min = pkg.Read<float>();
             veg->m_max = pkg.Read<float>();
             veg->m_minTilt = pkg.Read<float>();
@@ -404,17 +405,19 @@ Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const
 }
 
 // private
-void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, std::vector<ClearArea>& clearAreas) {
+void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, const std::vector<ClearArea>& clearAreas) {
     const Vector3 center = ZoneToWorldPos(zoneID);
 
     const auto seed = GeoManager()->GetSeed();
 
     //Biome biomes = GeoManager()->GetBiomes(center.x, center.z);
 
+    std::vector<ClearArea> placedAreas;
+
     for (auto&& zoneVegetation : m_vegetation) {
 
         // This ultimately serves as a large precheck, assuming heightmap were being used (which it no longer seems good)
-        //if (heightmap->HaveBiome(zoneVegetation->m_biome)) 
+        if (heightmap->HaveBiome(zoneVegetation->m_biome)) 
         {
 
         // quick precheck
@@ -531,7 +534,9 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
                                 }
                             }
 
-                            if (!InsideClearArea(clearAreas, pos)) {
+                            if (!InsideClearArea(clearAreas, pos) 
+                                && !OverlapsClearArea(placedAreas, pos, zoneVegetation->m_radius)) // custom
+                            {
                                 if (zoneVegetation->m_snapToWater)
                                     pos.y = WATER_LEVEL;
 
@@ -561,6 +566,11 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
 
                                 auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
 
+                                // basically any solid objects cannot be overlapped
+                                //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
+                                if (zoneVegetation->m_radius > 0)
+                                    placedAreas.push_back({ pos, zoneVegetation->m_radius });
+
                                 if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                     // this does set the Unity gameobject localscale
                                     zdo->Set("scale", Vector3(scale, scale, scale));
@@ -587,12 +597,24 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap* heightmap, s
 // private
 bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point) {
     for (auto&& clearArea : areas) {
-        if (point.x > clearArea.m_center.x - clearArea.m_radius
-            && point.x < clearArea.m_center.x + clearArea.m_radius
-            && point.z > clearArea.m_center.z - clearArea.m_radius
-            && point.z < clearArea.m_center.z + clearArea.m_radius) {
+        if (point.x > clearArea.m_center.x - clearArea.m_semiWidth
+            && point.x < clearArea.m_center.x + clearArea.m_semiWidth
+            && point.z > clearArea.m_center.z - clearArea.m_semiWidth
+            && point.z < clearArea.m_center.z + clearArea.m_semiWidth) {
             return true;
         }
+    }
+    return false;
+}
+
+bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& point, float radius) {
+    for (auto&& area : areas) {
+
+        float d = VUtils::Math::SqDistance(point.x, point.z, area.m_center.x, area.m_center.z);
+        float rd = area.m_semiWidth + radius;
+
+        if (d < rd * rd)
+            return true;
     }
     return false;
 }
