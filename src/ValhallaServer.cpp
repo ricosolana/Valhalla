@@ -64,6 +64,7 @@ void IValhalla::LoadFiles() {
     //m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
     m_settings.worldSave = loadNode["world-save"].as<bool>(false);
     m_settings.worldSaveInterval = seconds(std::max(loadNode["world-save-interval-s"].as<int>(1800), 60));
+    m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
     m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
     m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
@@ -97,6 +98,7 @@ void IValhalla::LoadFiles() {
         saveNode["world-seed"] = m_settings.worldSeed;
         saveNode["world-save"] = m_settings.worldSave;
         saveNode["world-save-interval-s"] = m_settings.worldSaveInterval.count();
+        saveNode["world-modern"] = m_settings.worldModern;
         //saveNode["world-seed"] = m_settings.worldSeed;
 
         saveNode["player-auto-password"] = m_settings.playerAutoPassword;
@@ -169,10 +171,10 @@ void IValhalla::Start() {
     PrefabManager()->Init();
     ZDOManager()->Init();
     ZoneManager()->Init();
-    bool worldDBLoaded = WorldManager()->Init();
+    WorldManager()->Init();
     GeoManager()->Init();
     HeightmapBuilder()->Init();
-    if (!worldDBLoaded) ZoneManager()->GenerateLocations();
+    ZoneManager()->GenerateLocations();
     NetManager()->Init();
 
     m_netTime = 2040;
@@ -243,29 +245,14 @@ void IValhalla::Start() {
     }
 
     // Cleanup 
-    NetManager()->Close();
+    NetManager()->Uninit();
     HeightmapBuilder()->Uninit();
+    WorldManager()->WriteFileWorldDB(true);
 
-    {
-        std::vector<std::string> blacklist;
-        for (auto&& s : m_blacklist)
-            blacklist.push_back(std::move(s));
-        VUtils::Resource::WriteFileLines("blacklist.txt", blacklist);
-    }
-
-    {
-        std::vector<std::string> whitelist;
-        for (auto&& s : m_blacklist)
-            whitelist.push_back(std::move(s));
-        VUtils::Resource::WriteFileLines("whitelist.txt", whitelist);
-    }
-
-    {
-        std::vector<std::string> admin;
-        for (auto&& s : m_blacklist)
-            admin.push_back(std::move(s));
-        VUtils::Resource::WriteFileLines("admin.txt", admin);
-    }
+    VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);
+    VUtils::Resource::WriteFileLines("blacklist.txt", m_whitelist);
+    VUtils::Resource::WriteFileLines("blacklist.txt", m_admin);
+    VUtils::Resource::WriteFileLines("blacklist.txt", m_bypass);
 }
 
 
@@ -277,18 +264,8 @@ void IValhalla::Update() {
         m_netTime += Delta();
     
     NetManager()->Update();
-
-    ZDOManager()->Update();
-    
-    ZoneManager()->Update(); // untested
-
-    PERIODIC_NOW(1s, {
-        LOG(INFO) << "server update";
-    });
-
-    //PERIODIC_NOW(10s, {
-    //    Broadcast(MessageType::Center, "bruh");
-    //});
+    ZDOManager()->Update();    
+    ZoneManager()->Update();
 
     PERIODIC_NOW(180s, {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
@@ -302,7 +279,7 @@ void IValhalla::Update() {
         });
 
         PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval + 30s, {
-            WorldManager()->SaveWorld(false);
+            WorldManager()->WriteFileWorldDB(false);
         });
     }
 }

@@ -260,10 +260,10 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
 // public
 void IZoneManager::Save(DataWriter& pkg) {
     pkg.Write(m_generatedZones);
-    pkg.Write<int32_t>(VConstants::PGW);
-    pkg.Write<int32_t>(VConstants::LOCATION);
+    pkg.Write(VConstants::PGW);
+    pkg.Write(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
-    pkg.Write<bool>(true); // m_worldSave.Write(m_locationsGenerated);
+    pkg.Write(true); // m_worldSave.Write(m_locationsGenerated);
     pkg.Write<int32_t>(m_locationInstances.size());
     for (auto&& pair : m_locationInstances) {
         auto&& inst = pair.second;
@@ -275,23 +275,25 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    const auto countZones = reader.Read<int32_t>();
-    for (int i=0; i < countZones; i++) {
-        m_generatedZones.insert(reader.Read<Vector2i>());
-    }
+    m_generatedZones = reader.Read<robin_hood::unordered_set<Vector2i>>();
+
+    //const auto countZones = reader.Read<int32_t>();
+    //for (int i=0; i < countZones; i++) {
+    //    m_generatedZones.insert(reader.Read<Vector2i>());
+    //}
 
     if (version >= 13) {
         const auto pgwVersion = reader.Read<int32_t>(); // 99
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
-        if (pgwVersion != VConstants::PGW) {
-            throw std::runtime_error("incompatible PGW version");
-        }
+        if (pgwVersion != VConstants::PGW)
+            LOG(WARNING) << "Loading unsupported pgw version";
 
         if (version >= 14) {
-            const auto countKeys = reader.Read<int32_t>();
-            for (int i=0; i < countKeys; i++) {
-                m_globalKeys.insert(reader.Read<std::string>());
-            }
+            m_globalKeys = reader.Read<robin_hood::unordered_set<std::string>>();
+            //const auto countKeys = reader.Read<int32_t>();
+            //for (int i=0; i < countKeys; i++) {
+            //    m_globalKeys.insert(reader.Read<std::string>());
+            //}
 
             if (version >= 18) {
                 if (version >= 20) reader.Read<bool>(); // m_locationsGenerated
@@ -312,9 +314,9 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                 }
 
                 LOG(INFO) << "Loaded " << countLocations << " ZoneLocation instances";
-                //if (pgw != VConstants::PGW) {
-                    //m_locationInstances.clear();
-                //}
+                if (pgwVersion != VConstants::PGW) {
+                  m_locationInstances.clear();
+                }
 
                 // this would completely regenerate locations across modified patches
                 if (locationVersion != VConstants::LOCATION) {
@@ -637,7 +639,12 @@ const IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& n
 // public
 // call from within ZNet.init or earlier...
 void IZoneManager::GenerateLocations() {
+    // Will be empty if world failed to load
+    if (!m_locationInstances.empty())
+        return;
+
     // Crucially important Location
+    // So check that it exists period
     auto&& spawnLoc = m_locationsByHash.find(VUtils::String::GetStableHashCode("StartTemple"));
     if (spawnLoc == m_locationsByHash.end())
         throw std::runtime_error("unable to find StartTemple");

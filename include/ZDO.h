@@ -206,9 +206,9 @@ private:
         //  Will throw on type mismatch
         template<TrivialSyncType T>
         void AssertType() const {
-            assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
+            //assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
             if (!IsType<T>())
-                throw std::invalid_argument("type has collision; bad algo or peer zdo is malicious");
+                throw VUtils::data_error("zdo typemask mismatch");
         }
 
         // Reassign the underlying member value
@@ -302,16 +302,14 @@ private:
 
 
 
-public:     Rev m_rev;
+public:     Rev m_rev = {};
 private:    robin_hood::unordered_map<HASH_t, Ord> m_members;
 private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;
 public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
 private:    HASH_t m_prefab = 0;
-//private:    Prefab* m_prefab; // TODO use this or Prefab* type?
 public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
-//private:    Vector2i m_sector;        // Redundant; is based directly off position
 public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
 public:     bool m_persistent = false;    // set by ZNetView
 public:     bool m_distant = false;        // set by ZNetView
@@ -361,6 +359,7 @@ private:
     void _TryReadType(DataReader& reader) {
         const auto count = reader.Read<BYTE_t>();
 
+        // The ZDO's which use many members are dungeons... (rooms index...)
         assert(count <= 127); // TODO add try-catch (or better, handle utf8 correctly)
 
         for (int i=0; i < count; i++) {
@@ -383,7 +382,8 @@ public:
     void Save(DataWriter& writer) const;
 
     // Load ZDO from disk
-    void Load(DataReader& reader, int32_t version);
+    //  Returns whether this ZDO is modern
+    bool Load(DataReader& reader, int32_t version);
 
     // Trivial hash getters
     template<TrivialSyncType T>

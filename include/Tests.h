@@ -24,10 +24,10 @@ namespace Tests {
     }
 
     void Test_World() {
-        WorldManager()->BackupWorldDB("world");
+        WorldManager()->BackupFileWorldDB("world");
 
-        WorldManager()->GetOrCreateWorldMeta("privUWorld");
-        WorldManager()->LoadWorldDB("02129");
+        auto world = WorldManager()->GetWorld("privUWorld");
+        WorldManager()->LoadFileWorldDB("02129");
     }
 
     void Test_ZDO() {

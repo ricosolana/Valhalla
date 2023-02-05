@@ -336,7 +336,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         if (!peer->m_admin)
             return peer->Message("You are not admin");
 
-        WorldManager()->SaveWorld(true);
+        WorldManager()->WriteFileWorldDB(true);
 
         peer->Message("Saved the world");
     });
@@ -560,7 +560,7 @@ void INetManager::Update() {
     }
 }
 
-void INetManager::Close() {
+void INetManager::Uninit() {
     m_acceptor.reset();
 }
 

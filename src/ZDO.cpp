@@ -44,14 +44,14 @@ void ZDO::Save(DataWriter& pkg) const {
     _TryWriteType<BYTES_t, int16_t>(pkg);
 }
 
-void ZDO::Load(DataReader& pkg, int32_t worldVersion) {
-    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();
-    this->m_rev.m_dataRev = pkg.Read<uint32_t>();
+bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
+    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO this isnt necessary?
+    this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // TODO this isnt necessary?
     this->m_persistent = pkg.Read<bool>();
     //this->m_owner = pkg.Read<OWNER_t>();
     pkg.Read<OWNER_t>(); // unused owner
     this->m_rev.m_time = pkg.Read<int64_t>();
-    /*this->m_pgwVersion = */ pkg.Read<int32_t>();
+    bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
@@ -89,6 +89,8 @@ void ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion < 17)
         this->m_prefab = GetInt("prefab", 0);
+
+    return modern;
 }
 
 

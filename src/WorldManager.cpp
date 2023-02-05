@@ -17,73 +17,142 @@ IWorldManager* WorldManager() {
 
 
 
+World::World(const std::string& name) {
+	std::string seedName = VUtils::Random::GenerateAlphaNum(10);
+
+	m_name = name;
+	m_seedName = seedName;
+	m_seed = VUtils::String::GetStableHashCode(seedName);
+	m_uid = VUtils::Random::GenerateUID();
+	m_worldGenVersion = VConstants::WORLDGEN;
+}
+
+World::World(DataReader reader) {
+	reader = reader.SubRead();
+
+	auto worldVersion = reader.Read<int32_t>();
+
+	if (worldVersion != VConstants::WORLD)
+		LOG(WARNING) << "Loading unsupported world version: " << worldVersion;
+
+	m_name = reader.Read<std::string>();
+	m_seedName = reader.Read<std::string>();
+	//m_seed = reader.Read<int32_t>();
+	reader.Read<HASH_t>();
+	m_seed = VUtils::String::GetStableHashCode(m_seedName);
+	m_uid = reader.Read<OWNER_t>();
+	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
+}
+
+BYTES_t World::SaveMeta() {
+	BYTES_t bytes;
+	DataWriter writer(bytes);
+	writer.SubWrite([&writer, this]() {
+		writer.Write(VConstants::WORLD);
+		writer.Write(m_name);
+		writer.Write(m_seedName);
+		//writer.Write(m_seed);
+		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
+		writer.Write(m_uid);
+		writer.Write(m_worldGenVersion);
+		});
+
+	return bytes;
+}
+
+void World::WriteFileMeta() {
+	// Create folders (throw otherwise)
+	fs::create_directories(WorldManager()->GetWorldsPath());
+
+	// Create .old (backup of original .fwl)
+	//auto metaPath = GetWorldMetaPath(m_name);
+	auto metaPath = WorldManager()->GetWorldMetaPath(m_name);
+
+	// Backup file if exists (no throw)
+	//std::error_code ec;
+	//fs::rename(metaPath, metaPath.string() + ".old", ec);
+
+	BYTES_t bytes = SaveMeta();
+
+	// create fwl
+	if (!VUtils::Resource::WriteFileBytes(metaPath, bytes))
+		LOG(ERROR) << "Failed to write world meta file";
+}
+
+
+
 World* IWorldManager::GetWorld() {
 	return m_world.get();
 }
 
-fs::path IWorldManager::GetWorldsPath() {
+
+
+fs::path IWorldManager::GetWorldsPath() const {
 	return "./worlds";
 }
 
-fs::path IWorldManager::GetWorldMetaPath(const std::string& name) {
+fs::path IWorldManager::GetWorldMetaPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".fwl");
 }
 
-fs::path IWorldManager::GetWorldDBPath(const std::string& name) {
+fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".db");
 }
 
-//void SaveWorldMetaData(DateTime backupTimestamp) {
-//	bool flag = false;
-//	FileWriter fileWriter;
-//	SaveWorldMetaData(backupTimestamp, out flag, out fileWriter);
-//}
 
-void IWorldManager::SaveWorldMeta(World* world) {
 
-	// Create folders (throw otherwise)
-	fs::create_directories(GetWorldsPath());
+std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
+	// load world from file
 
-	// Create .old (backup of original .fwl)
-	auto metaPath = GetWorldMetaPath(world->m_name);
+	auto opt = VUtils::Resource::ReadFileBytes(GetWorldMetaPath(name));
 
-	// Backup file if exists (no throw)
-	std::error_code ec;
-	fs::rename(metaPath, metaPath.string() + ".old", ec);
+	std::unique_ptr<World> world;
 
-	BYTES_t bytes;
-	DataWriter writer(bytes);
-	writer.SubWrite([&writer, world]() {
-		writer.Write(VConstants::WORLD);
-		writer.Write(world->m_name);
-		writer.Write(world->m_seedName);
-		writer.Write(world->m_seed);
-		writer.Write(world->m_uid);
-		writer.Write(world->m_worldGenVersion);
-	});
+	if (opt) {
+		try {
+			world = std::make_unique<World>(DataReader(opt.value()));
+		}
+		catch (const VUtils::data_error& e) {
+			LOG(ERROR) << "Failed to load world meta: " << e.what();
+		}
+	}
 
-	// create fwl
-	if (!VUtils::Resource::WriteFileBytes(metaPath, bytes))
-		LOG(ERROR) << "Failed to write world meta";
+	if (!world) {
+		LOG(INFO) << "Creating a new world meta";
+		world = std::make_unique<World>(name);
+
+		try {
+			world->WriteFileMeta();
+		}
+		catch (const std::exception& e) {
+			LOG(ERROR) << "Failed to write world meta: " << e.what();
+		}
+	}
+
+	LOG(INFO) << "Loaded world meta with seed " 
+		<< world->m_seedName << " (" << world->m_seed << ")";
+
+	return world;
 }
 
-void IWorldManager::LoadWorldDB(const std::string &name) {
-	LOG(INFO) << "Loading world: " << name;
+
+
+void IWorldManager::LoadFileWorldDB(const std::string &name) const {
+	LOG(INFO) << "Loading world '" << name << "'";
 	auto dbpath = GetWorldDBPath(name);
 
 	auto&& opt = VUtils::Resource::ReadFileBytes(dbpath);
 
-	if (!opt) {
-		throw std::runtime_error("world db missing");
-	}
-	else {
-		DataReader reader(opt.value());
+	if (opt) {
+		try {
+			DataReader reader(opt.value());
 
-		auto worldVersion = reader.Read<int32_t>();
-		if (worldVersion != VConstants::WORLD) {
-			LOG(ERROR) << "Unsupported world version " << worldVersion;
-		}
-		else {
+			auto worldVersion = reader.Read<int32_t>();
+			LOG(INFO) << "Loading world version '" << worldVersion << "'";
+
+			if (worldVersion != VConstants::WORLD)
+				LOG(WARNING) << "Version is unsupported";
+
 			if (worldVersion >= 4)
 				Valhalla()->m_netTime = reader.Read<double>();
 
@@ -112,13 +181,15 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 					//}
 				}
 			}
+		} catch (const VUtils::data_error& e) {
+			LOG(ERROR) << "Failed to load world: " << e.what();
 		}
 	}
 }
 
 
 
-void IWorldManager::BackupWorldDB(const std::string& name) {
+void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 	auto path = GetWorldDBPath(name);
 
 	if (fs::exists(path)) {
@@ -142,7 +213,7 @@ void IWorldManager::BackupWorldDB(const std::string& name) {
 	}
 }
 
-BYTES_t IWorldManager::SaveWorldDB() {
+BYTES_t IWorldManager::SaveWorldDB() const {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 	
@@ -161,7 +232,7 @@ BYTES_t IWorldManager::SaveWorldDB() {
 	return bytes;
 }
 
-void IWorldManager::SaveWorld(bool sync) {
+void IWorldManager::WriteFileWorldDB(bool sync) {
 	if (m_saveThread.joinable()) {
 		LOG(WARNING) << "Save thread is still active, joining...";
 		m_saveThread.join();
@@ -221,72 +292,12 @@ void IWorldManager::SaveWorld(bool sync) {
 
 
 
-std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& name) {
-	// load world from file
 
-	auto opt = VUtils::Resource::ReadFileBytes(GetWorldMetaPath(name));
 
-	auto world(std::make_unique<World>());
-
-	bool success = false;
-
-	if (opt) {
-		DataReader binary(opt.value());
-		auto zpackage = binary.SubRead();
-
-		auto worldVersion = zpackage.Read<int32_t>();
-		if (worldVersion != VConstants::WORLD) {
-			LOG(ERROR) << "Incompatible world version " << worldVersion;
-		}
-		else {
-			try {
-				world->m_name = zpackage.Read<std::string>();
-				world->m_seedName = zpackage.Read<std::string>();
-				world->m_seed = zpackage.Read<int32_t>();
-				world->m_uid = zpackage.Read<OWNER_t>();
-				world->m_worldGenVersion = worldVersion >= 26 ? zpackage.Read<int32_t>() : 0;
-				LOG(INFO) << "Loaded world '" << world->m_name << "' with seed " <<
-					world->m_seed << " (" << world->m_seedName << ")";
-
-				success = true;
-			}
-			catch (const std::range_error&) {
-				LOG(ERROR) << "World is corrupted or unsupported " << name;
-			}
-		}
-	}
-	else {
-		LOG(INFO) << "Creating a new world";
-	}
-
-	// set default world
-	if (!success) {
-		std::string seedName = VUtils::Random::GenerateAlphaNum(10);
-
-		world->m_name = name;
-		world->m_seedName = seedName;
-		world->m_seed = VUtils::String::GetStableHashCode(seedName);
-		world->m_uid = VUtils::Random::GenerateUID();
-		world->m_worldGenVersion = VConstants::WORLDGEN;
-
-		SaveWorldMeta(world.get());
-	}
-
-	return world;
-}
-
-bool IWorldManager::Init() {
+void IWorldManager::Init() {
 	LOG(INFO) << "Initializing WorldManager";
 
-	m_world = GetOrCreateWorldMeta(SERVER_SETTINGS.worldName);
+	m_world = GetWorld(SERVER_SETTINGS.worldName);
 
-	try {
-		LoadWorldDB(m_world->m_name);
-		return true;
-	}
-	catch (const std::exception& e) {
-		LOG(ERROR) << e.what();
-	}
-
-	return false;
+	LoadFileWorldDB(m_world->m_name);
 }

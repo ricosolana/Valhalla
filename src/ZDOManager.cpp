@@ -106,7 +106,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	auto nextUid = reader.Read<uint32_t>();
 	const auto count = reader.Read<int32_t>();
 
-	LOG(INFO) << "Loading " << count << " zdos, data version:" << version;
+	int32_t purgeCount = 0;
 
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
@@ -114,9 +114,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		auto zdoBytes = reader.Read<BYTES_t>();
 
 		DataReader zdoReader(zdoBytes);
-		zdo->Load(zdoReader, version);
-
-		AddToSector(zdo.get());
+		bool modern = zdo->Load(zdoReader, version);
 
 		zdo->Abandon();
 		if (zdo->ID().m_uuid == SERVER_ID
@@ -124,7 +122,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		{
 			nextUid = zdo->ID().m_id + 1;
 		}
-		m_objectsByID[zdo->ID()] = std::move(zdo);
+
+		if (modern || !SERVER_SETTINGS.worldModern) {
+			AddToSector(zdo.get());
+			m_objectsByID[zdo->ID()] = std::move(zdo);
+		}
+		else purgeCount++;
 	}
 
 	auto deadCount = reader.Read<int32_t>();
@@ -136,9 +139,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			nextUid = key.m_id + 1;
 		}
 	}
+
 	CapDeadZDOList();
 	m_nextUid = nextUid;
 
+	LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
+	LOG(INFO) << "Purged " << purgeCount << " old zdos";
 	LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
 }
 
@@ -149,13 +155,18 @@ void IZDOManager::CapDeadZDOList() {
 }
 
 ZDO* IZDOManager::CreateZDO(const Vector3& position) {
-	NetID zdoid;
+	for(;;) {
+		NetID zdoid = NetID(Valhalla()->ID(), m_nextUid++);
+		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
+		if (!pair.second) // if insert failed, keep looping
+			continue;
 
-	do {
-		zdoid = NetID(Valhalla()->ID(), m_nextUid++);
-	} while (GetZDO(zdoid));
+		auto&& zdo = pair.first->second;
 
-	return CreateZDO(zdoid, position);
+		zdo = std::make_unique<ZDO>(zdoid, position);
+		AddToSector(zdo.get());
+		return zdo.get();
+	}
 }
 
 ZDO* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
@@ -164,13 +175,40 @@ ZDO* IZDOManager::CreateZDO(const NetID& uid, const Vector3& position) {
 	//		pointing either to the newly inserted element in the 
 	//		container or to the element whose key is equivalent...
 	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
-	auto&& ret = m_objectsByID.insert({ uid, std::make_unique<ZDO>(uid, position) })
-		.first->second.get();
 
-	AddToSector(ret);
+	auto&& pair = m_objectsByID.insert({ uid, nullptr });
+	if (!pair.second) // if insert failed, throw
+		throw VUtils::data_error("zdo id already exists");
 
-	return ret;
+	auto&& zdo = pair.first->second;
+
+	zdo = std::make_unique<ZDO>(uid, position);
+	AddToSector(zdo.get());
+	return zdo.get();
 }
+
+ZDO* IZDOManager::GetZDO(const NetID& id) {
+	if (id) {
+		auto&& find = m_objectsByID.find(id);
+		if (find != m_objectsByID.end())
+			return find->second.get();
+	}
+	return nullptr;
+}
+
+std::pair<ZDO*, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3& def) {
+	auto&& pair = m_objectsByID.insert({ id, nullptr });
+
+	auto&& zdo = pair.first->second;
+	if (!pair.second) // if new insert failed, return it
+		return { zdo.get(), false };
+
+	zdo = std::make_unique<ZDO>(id, def);
+	AddToSector(zdo.get());
+	return { zdo.get(), true };
+}
+
+
 
 void IZDOManager::Update() {
 	auto&& peers = NetManager()->GetPeers();
@@ -485,15 +523,6 @@ int IZDOManager::SectorToIndex(const ZoneID& s) const {
 	return y * WIDTH_IN_ZONES + x;
 }
 
-ZDO* IZDOManager::GetZDO(const NetID& id) {
-	if (id) {
-		auto&& find = m_objectsByID.find(id);
-		if (find != m_objectsByID.end())
-			return find->second.get();
-	}
-	return nullptr;
-}
-
 bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 	auto sendQueueSize = peer->m_socket->GetSendQueueSize();
 
@@ -572,12 +601,12 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 		auto time = Valhalla()->Time();
 
 		while (auto zdoid = reader.Read<NetID>()) {
-			ZDO* zdo = this->GetZDO(zdoid);				// TODO use only 1 lookup total (use a null insert)
-
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
 			auto owner = reader.Read<OWNER_t>();		// owner
-			auto vec3 = reader.Read<Vector3>();			// position
+			auto pos = reader.Read<Vector3>();			// position
+
+			auto des = reader.SubRead();				// dont move this
 
 			ZDO::Rev rev = { 
 				.m_dataRev = dataRev, 
@@ -585,9 +614,11 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				.m_time = time 
 			};
 
-			// if the zdo already existed (locally/remotely), compare revisions
-			bool flagCreated = false;
-			if (zdo) {
+			auto &&pair = this->GetOrCreateZDO(zdoid, pos);
+
+			auto &&zdo = pair.first;
+			auto &&created = pair.second;
+			if (!created) {
 				// if the client data rev is not new, and they've reassigned the owner:
 				if (dataRev <= zdo->m_rev.m_dataRev) {
 					if (ownerRev > zdo->m_rev.m_ownerRev) {
@@ -598,17 +629,13 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 					continue;
 				}
 			}
-			else {
-				zdo = CreateZDO(zdoid, vec3); // 2 lookups is wasteful
-				flagCreated = true;
-			}
 
 			zdo->m_owner = owner;
 			zdo->m_rev = rev;
-			zdo->SetPosition(vec3);
 
-			auto des = reader.SubRead();
-			zdo->Deserialize(des);
+			// Only set position if ZDO has previously existed
+			if (!created)
+				zdo->SetPosition(pos);
 
 			peer->m_zdos[zdoid] = {
 				.m_dataRev = zdo->m_rev.m_dataRev,
@@ -616,8 +643,10 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				.m_time = time
 			};
 
-			// If the ZDO was just created as a copy, but it was removed recently
-			if (flagCreated && m_deadZDOs.contains(zdoid)) {
+			zdo->Deserialize(des);
+
+			// If the ZDO was created, but it was removed recently
+			if (created && m_deadZDOs.contains(zdoid)) {
 				zdo->SetLocal();
 				m_destroySendList.push_back(zdo->ID());
 			}

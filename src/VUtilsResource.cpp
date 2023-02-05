@@ -51,6 +51,7 @@ namespace VUtils::Resource {
             std::istreambuf_iterator<char>());
     }
 
+    /*
     std::optional<std::vector<std::string>> ReadFileLines(const fs::path& path) {
         //auto file = GetInFile(path);
         std::ifstream file(path, std::ios::binary);
@@ -66,7 +67,7 @@ namespace VUtils::Resource {
         }
 
         return out;
-    }
+    }*/
 
 
 
@@ -116,6 +117,7 @@ namespace VUtils::Resource {
         return true;
     }
 
+    /*
     bool WriteFileLines(const fs::path& path, const std::vector<std::string>& in) {
         //auto file = GetOutFile(path);
 
@@ -131,6 +133,6 @@ namespace VUtils::Resource {
         file.close();
 
         return true;
-    }
+    }*/
 
 }

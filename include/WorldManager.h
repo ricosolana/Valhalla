@@ -4,13 +4,25 @@
 #include "DataReader.h"
 #include "DataWriter.h"
 
+class IWorldManager;
+
 class World {
+    friend class IWorldManager;
+
 public:
     std::string m_name;
     std::string m_seedName;
-    int32_t m_seed;
+    HASH_t m_seed;
     OWNER_t m_uid;
     int32_t m_worldGenVersion;
+
+public:
+    World(const std::string& name);
+    World(DataReader reader);
+
+public:
+    BYTES_t SaveMeta();
+    void WriteFileMeta();
 };
 
 class IWorldManager {
@@ -21,25 +33,19 @@ private:
 public:
     World* GetWorld();
 
-    fs::path GetWorldsPath();
+    fs::path GetWorldsPath() const;
+    fs::path GetWorldMetaPath(const std::string& name) const;
+    fs::path GetWorldDBPath(const std::string& name) const;
 
-    fs::path GetWorldMetaPath(const std::string& name);
+    std::unique_ptr<World> GetWorld(const std::string& name) const;
 
-    fs::path GetWorldDBPath(const std::string& name);
+    BYTES_t SaveWorldDB() const;
+    void LoadFileWorldDB(const std::string& name) const;
+    void BackupFileWorldDB(const std::string& name) const;
 
-    void SaveWorldMeta(World* world);
+    void WriteFileWorldDB(bool sync);
 
-    void LoadWorldDB(const std::string& name);
-
-    void BackupWorldDB(const std::string& name);
-
-    BYTES_t SaveWorldDB();
-
-    void SaveWorld(bool sync);
-
-    std::unique_ptr<World> GetOrCreateWorldMeta(const std::string& name);
-
-    bool Init();
+    void Init();
 };
 
 IWorldManager* WorldManager();

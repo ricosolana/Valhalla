@@ -15,14 +15,18 @@ No longer being developed. Graphics programming is not my thing :(
 ## Progress
 ### 2/5/2023 + TODO
 
-The server seems mostly playable. I am currently making structural changes that will make things more readable and hopefully safe. Generation seems nice, with the exception of mistlands (mist everywhere) and mountains partly.
+Ive made many changes, primarily to NetPackage to make it more specifically read or write oriented in certain scenarios. 
+
+I've identified a relatively major bug related to ZDOs. Since UTF-8 isnt completely handled, UTF-8 encoded counts up to 127 are supported. It turns out that dungeon locations set many ZDO members, more than this limit. I found this out while trying to load a large older world. It seems that I will have to fully enter the world of character encoding...
+
+~~The server seems mostly playable. I am currently making structural changes that will make things more readable and hopefully safe. Generation seems nice, with the exception of mistlands (mist everywhere) and mountains partly.~~
 
 ### 2/3/2023 + TODO
  - Vegetation naturally generated at semi-correct height and fine dispersement
 
 Vegetation now generates throughout the world, and correctly too according to biome. A few things to note: vegetation placement currently does not match an equal Valheim-generated world vegetation, but comes somewhat close with results appearing similar to that of a Valheim world (I do not have a major solution to this, but I will work-around this caveat by implementing some simple radius checks for vegetation, because they are frequently crammed together), also, vegetation heights are sometimes slightly above ground, but StaticPhysics in the client will fix this.
 
-![Vegetation generation](/pics/natural-generation.jpg)
+![Vegetation generation](/docs/pics/natural-generation.jpg)
 
 You can see in the left of the image how the small trees are in the open clearing, where this never happens in Valheim as far as I know. 
 
@@ -31,7 +35,7 @@ You can see in the left of the image how the small trees are in the open clearin
 
 ZDO's are spawned in correctly and matching the client placed objects. There are still some issues, such as ghost players (something to do with ZDO's not being released). Everything seems functional, because the client is really the one doing the heavy lifting. With these results, I am sure theres something incorrect with the serialize algorithm I used to dump prefabs (since ZoneLocations are skewed weirdly). Anyways, heres the pregenerated world results:
 
-![Pregenerated example with ghost player](/pics/pregenerated.jpg)
+![Pregenerated example with ghost player](/docs/pics/pregenerated.jpg)
 
 ### 1/30/2023 + TODO
  - Fixed major oversight on ZoneLocation pkg (was causing incorrect ZoneLocation spawning)
@@ -41,7 +45,7 @@ ZoneLocations are finally placed correctly in the world. There might be some inc
 
 Anyways, here it the correct placement (finally):
 
-![Spawn](/pics/zonelocations-instantiation.jpg)
+![Spawn](/docs/pics/zonelocations-instantiation.jpg)
 
 ### 1/28/2023 + TODO
  - World seed loading works (.fwl only)
@@ -52,13 +56,13 @@ I am very close to getting ZoneLocation generation to correctly work. So far, th
 
 As you can see, ZDO's (sort of) work! I may have intentionally or unintentionally cloned my character:
 
-![cloned player in world](/pics/zdo-demonstrate.jpg)
+![cloned player in world](/docs/pics/zdo-demonstrate.jpg)
 
 ### 1/27/2023 + TODO
  - WorldGenerator (renamed GeoManager) seems yields results similar to Valheim
  - Generation is more stable now, but still inaccurate compared to the Unity implementation. 
  
-![Comparative generation console results](/pics/generation-console.jpg)
+![Comparative generation console results](/docs/pics/generation-console.jpg)
 
 There was a patch released for Valheim today (0.213.3), and I have yet to see whether anything with world generation was changed (I doubt it). Most of the fixes seem to be client-side networking (Playfab too) and some new buildings/hats being added (I'll have to update prefabs list).
 
@@ -163,7 +167,7 @@ As for my previous TODO, the Heightmap will be challenging. It is also pretty cr
 
 ### 10/7/2022 - The client can join and finally see the world, albeit is an ocean.
 
-![Ocean spawn image](/pics/ocean_spawn.jpg)
+![Ocean spawn image](/docs/pics/ocean_spawn.jpg)
 
 ## Building
 Install vcpkg:

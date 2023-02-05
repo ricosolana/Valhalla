@@ -88,6 +88,11 @@ public:
 
 	ZDO* GetZDO(const NetID& id);
 
+	// Get a ZDO by id
+	//	The ZDO will be created if its ID does not exist
+	//	Returns the ZDO and a bool if newly created
+	std::pair<ZDO*, bool> GetOrCreateZDO(const NetID& id, const Vector3& def);
+
 	// called when registering joining peer
 
 	void Update();

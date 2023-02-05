@@ -47,7 +47,7 @@ private:
 public:
     void Init();
     void Update();
-    void Close();
+    void Uninit();
 
     Peer* GetPeer(const std::string& name);
     Peer* GetPeer(OWNER_t uuid);

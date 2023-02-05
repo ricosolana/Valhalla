@@ -12,7 +12,8 @@ struct ServerSettings {
     std::string     worldSeed;
     //HASH_t          worldSeed;
     bool            worldSave;
-    seconds         worldSaveInterval;   // set to 0 to disable
+    seconds         worldSaveInterval;  // set to 0 to disable
+    bool            worldModern;        // whether to purge old objects on load
 
     bool            playerAutoPassword;
     bool            playerWhitelist;

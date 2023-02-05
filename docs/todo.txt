@@ -1,0 +1,58 @@
+todo:
+    - high priority: add full utf-8 char encoding and decoding for full Valheim c# compat
+        current asystem is lazy and will only work with single bytes up to count 127, beyond that is special encoding...
+    
+    - fix server shutdown routines
+        - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
+            - save world, 
+            - proper cleanup / disposal of managers
+    
+    - have method to get normal vector of heightmap at position
+    
+    - consolidate all player notification messages into one method
+        showMessage, chatMessage, RemotePrint...
+    
+    - use bitshift for Biome type (instead of mask)
+
+    - send zdos more/less often/more depending on network load and per-client latency
+
+    - modify RouteManager to not have so much peer indirection
+        (stop with ints...)
+    
+    - option for setting zone area distance in config
+        
+    - optimize zdo padding more?
+        experiment with member offsets...
+        masks for bool types
+        
+    - idea for unloading/destroying/reconciliating inactive zdos in world:
+        - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
+        
+    - mods?
+        compress
+        
+finished:
+    - restructure netpackage 
+        - rename + make underlying stream use a ptr vec...
+        - stream in many cases should be read only, like reading data incrementally, without copying when sub packages need making
+
+    - prevent players spaces or non-ascii from joining
+        or just invalid names
+        or normalize the name (condense code points, dont just remove)
+
+    - tweak vegetation rocks overlap radius
+        perhaps too large, because black forest looks somewhat sparse compared to normal
+    
+    - work on vegetation overlap prevention
+
+    - add option to immediately allow once-passworded users whove joined before
+    - print a message to player on login whether auto logged in
+        yes
+    
+    - locations appear to be offset by 1/2 of their width (along 1 axis), probably due to the way unity derives the final object position from instantiations in accordance with scale
+    
+    - check if ban command sends spaces
+        it only sends the first split text...
+        
+    - try using Heightmap:: Biome and BiomeArea methods again, instead of geo (might be causing post-smoothing biome problems)
+        it seems to have worked!

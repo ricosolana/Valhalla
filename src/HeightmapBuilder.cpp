@@ -68,8 +68,8 @@ void IHeightmapBuilder::Init() {
 
 void IHeightmapBuilder::Uninit() {
     m_stop = true;
-    assert(m_builder.joinable());
-    m_builder.join();
+    if (m_builder.joinable())
+        m_builder.join();
 }
 
 
