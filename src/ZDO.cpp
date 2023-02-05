@@ -20,7 +20,7 @@ ZDO::ZDO(const NetID& id, const Vector3& pos)
     : m_id(id), m_position(pos) {
 }
 
-void ZDO::Save(NetPackage& pkg) const {
+void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);      static_assert(sizeof(Rev::m_ownerRev) == 4);
     pkg.Write(this->m_rev.m_dataRev);       static_assert(sizeof(Rev::m_dataRev) == 4);
     pkg.Write(this->m_persistent);      
@@ -44,7 +44,7 @@ void ZDO::Save(NetPackage& pkg) const {
     _TryWriteType<BYTES_t, int16_t>(pkg);
 }
 
-void ZDO::Load(NetPackage& pkg, int32_t worldVersion) {
+void ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     this->m_rev.m_ownerRev = pkg.Read<uint32_t>();
     this->m_rev.m_dataRev = pkg.Read<uint32_t>();
     this->m_persistent = pkg.Read<bool>();
@@ -245,7 +245,7 @@ ZoneID ZDO::Sector() const {
     return IZoneManager::WorldToZonePos(m_position);
 }
 
-void ZDO::Serialize(NetPackage& pkg) const {
+void ZDO::Serialize(DataWriter& pkg) const {
     pkg.Write(m_persistent);
     pkg.Write(m_distant);
     static_assert(sizeof(Rev::m_ticks) == 8);
@@ -273,7 +273,7 @@ void ZDO::Serialize(NetPackage& pkg) const {
     _TryWriteType<BYTES_t,          int8_t>(pkg);
 }
 
-void ZDO::Deserialize(NetPackage& pkg) {
+void ZDO::Deserialize(DataReader& pkg) {
     // Since the data is arriving from the client, must assert things
     // Filter the client inputs
 

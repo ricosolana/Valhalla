@@ -96,100 +96,6 @@ namespace Colors {
 
 static constexpr float PI = 3.141592653589f;
 
-class compress_error : public std::runtime_error {
-    using runtime_error::runtime_error;
-};
-
-/*
-template<typename T>
-struct has_const_iterator
-{
-private:
-    typedef char                      yes;
-    typedef struct { char array[2]; } no;
-
-    template<typename C> static yes test(typename C::const_iterator*);
-    template<typename C> static no  test(...);
-public:
-    static const bool value = sizeof(test<T>(0)) == sizeof(yes);
-    typedef T type;
-};
-
-template <typename T>
-struct has_begin_end
-{
-    template<typename C> static char (&f(typename std::enable_if<
-            std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::begin)),
-                    typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
-
-    template<typename C> static char (&f(...))[2];
-
-    template<typename C> static char (&g(typename std::enable_if<
-            std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::end)),
-                    typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
-
-    template<typename C> static char (&g(...))[2];
-
-    static bool const beg_value = sizeof(f<T>(0)) == 1;
-    static bool const end_value = sizeof(g<T>(0)) == 1;
-};
-
-template<typename T>
-struct is_container : std::integral_constant<bool, has_const_iterator<T>::value && has_begin_end<T>::beg_value && has_begin_end<T>::end_value>
-{ };
-*/
-
-
-/*
-template<typename T, typename V>
-struct has_value_type
-{
-private:
-    template<typename C> static char(&g(typename std::enable_if<
-        std::is_same<decltype(static_cast<V>(C::value_type)),
-        V>::value, void>::type*))[1];
-
-    template<typename C> static char(&g(...))[2];
-
-public:
-    static bool const value = sizeof(g<T>(0)) == 1;
-    typedef T type;
-};
-
-template<typename Container, typename Type>
-struct is_container_of : std::integral_constant<bool, is_container<Container>::value && has_value_type<Container, Type>::value>
-{};*/
-
-
-
-template <typename T, typename = void>
-struct is_iterable : std::false_type {};
-
-// this gets used only when we can call std::begin() and std::end() on that type
-template <typename T>
-struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())),
-    decltype(std::end(std::declval<T>()))
->
-> : std::true_type {};
-
-// Here is a helper:
-template <typename T>
-constexpr bool is_iterable_v = is_iterable<T>::value;
-
-
-
-template <typename T, typename = void>
-struct has_value_type : std::false_type {};
-
-template <typename T>
-struct has_value_type<T, std::void_t<typename T::value_type
->
-> : std::true_type {};
-
-// Here is a helper:
-template <typename T>
-constexpr bool has_value_type_v = has_value_type<T>::value;
-
 
 
 #if FALSE
@@ -314,6 +220,14 @@ public:
 
 
 namespace VUtils {
+
+    class compress_error : public std::runtime_error {
+        using runtime_error::runtime_error;
+    };
+
+    class data_error : public std::runtime_error {
+        using runtime_error::runtime_error;
+    };
 
     // Compress a byte array with a specified length and compression level
     // Stores the compressed contents into 'out' array

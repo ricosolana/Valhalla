@@ -5,9 +5,9 @@
 #include <type_traits>
 #include <concepts>
 
-#include "NetPackage.h"
 #include "VUtils.h"
 #include "VUtilsTraits.h"
+#include "DataReader.h"
 
 /* https://godbolt.org/z/MMGsa8rhr
 * to implement deduction guides
@@ -23,7 +23,7 @@ public:
     // A copy of the package is made
     // You may perform a move on the package as needed
     // TODO accept a different stream type, readonly, with referenced vector
-    virtual void Invoke(T t, NetPackage pkg) = 0;
+    virtual void Invoke(T t, DataReader reader) = 0;
 };
 
 // Base forward declaration
@@ -47,23 +47,11 @@ class MethodImpl
 
 
     template<class Tuple, size_t... Is> //requires (sizeof...(Is))
-    auto impl_tail(NetPackage& pkg, std::index_sequence<Is...>) {
+    auto impl_tail(DataReader& pkg, std::index_sequence<Is...>) {
         //using Tail = std::tuple<std::tuple_element_t<Is + 1, Tuple>...>;
-        return NetPackage::Deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(pkg);
+        return DataReader::Deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(pkg);
         //return NetPackage::Deserialize<Tail>(pkg);
     }
-
-    //template < std::size_t... Ns, typename... Ts >
-    //auto tail_impl(std::index_sequence<Ns...>, std::tuple<Ts...> t)
-    //{
-    //    return  std::make_tuple(std::get<Ns + 1u>(t)...);
-    //}
-    //
-    //template < typename... Ts >
-    //auto tail(std::tuple<Ts...> t)
-    //{
-    //    return  tail_impl(std::make_index_sequence<sizeof...(Ts) - 1u>(), t);
-    //}
 
 private:
     const F m_func;
@@ -74,18 +62,18 @@ public:
 
     // shouldnt pass around a vector in container
     // wherre only pos/marker increases
-    void Invoke(T t, NetPackage pkg) override {
+    void Invoke(T t, DataReader reader) override {
 
         
 
         auto tuple = std::tuple_cat(std::forward_as_tuple(t),
                                     //NetPackage::Deserialize<Args...>(pkg));
-                                    impl_tail<args_type>(pkg,
+                                    impl_tail<args_type>(reader,
                                         (std::make_index_sequence < std::tuple_size<args_type>{} - 1> {})));
 
-        if (pkg.m_stream.Position() != pkg.m_stream.Length())
+        if (reader.Position() != reader.Length())
             LOG(ERROR) << "Peer Rpc Invoke has more data than expected " 
-                << pkg.m_stream.Length() << "/" << pkg.m_stream.Position();
+                << reader.Length() << "/" << reader.Position();
 
         std::apply(m_func, tuple);
     }
@@ -96,23 +84,3 @@ MethodImpl(F) ->  MethodImpl<
     std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, 
     F
 >;
-
-// Specifying deduction guide
-//template<class T, class ...Args>
-////MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<void(*)(T, Args...)>;
-//MethodImpl(std::function<void(T, Args...)>, HASH_t, HASH_t) -> MethodImpl<std::function<void(T, Args...)>>;
-
-//template<class T, class ...Args>
-//MethodImpl(void(*)(T, Args...), HASH_t, HASH_t) -> MethodImpl<std::function<void(T, Args...)>>;
-
-
-
-
-//template<class T, class ...Args>
-//MethodImpl(sol::function, std::vector<PkgType>) -> MethodImpl<T>;
-
-
-
-
-
-

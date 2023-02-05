@@ -3,7 +3,6 @@
 #include "WorldManager.h"
 #include "VUtils.h"
 #include "VUtilsResource.h"
-#include "NetPackage.h"
 #include "ValhallaServer.h"
 #include "VUtilsRandom.h"
 #include "VUtilsString.h"
@@ -41,34 +40,31 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) {
 //}
 
 void IWorldManager::SaveWorldMeta(World* world) {
-	//auto dbpath = GetWorldDBPath(world->m_name);
 
-	NetPackage pkg;
-
-	pkg.Write(VConstants::WORLD);
-	pkg.Write(world->m_name);
-	pkg.Write(world->m_seedName);
-	pkg.Write(world->m_seed);
-	pkg.Write(world->m_uid);
-	pkg.Write(world->m_worldGenVersion);
-
+	// Create folders (throw otherwise)
 	fs::create_directories(GetWorldsPath());
 
 	// Create .old (backup of original .fwl)
 	auto metaPath = GetWorldMetaPath(world->m_name);
 
+	// Backup file if exists (no throw)
 	std::error_code ec;
 	fs::rename(metaPath, metaPath.string() + ".old", ec);
 
-	NetPackage fileWriter;
-	fileWriter.Write(pkg);
+	BYTES_t bytes;
+	DataWriter writer(bytes);
+	writer.SubWrite([&writer, world]() {
+		writer.Write(VConstants::WORLD);
+		writer.Write(world->m_name);
+		writer.Write(world->m_seedName);
+		writer.Write(world->m_seed);
+		writer.Write(world->m_uid);
+		writer.Write(world->m_worldGenVersion);
+	});
 
 	// create fwl
-	VUtils::Resource::WriteFileBytes(metaPath, fileWriter.m_stream.m_buf);
-
-	//ZNet.ConsiderAutoBackup(metaPath, this.m_fileSource, now);
-
-	//metaWriter.Write(writer);
+	if (!VUtils::Resource::WriteFileBytes(metaPath, bytes))
+		LOG(ERROR) << "Failed to write world meta";
 }
 
 void IWorldManager::LoadWorldDB(const std::string &name) {
@@ -81,30 +77,30 @@ void IWorldManager::LoadWorldDB(const std::string &name) {
 		throw std::runtime_error("world db missing");
 	}
 	else {
-		NetPackage pkg(opt.value());
+		DataReader reader(opt.value());
 
-		auto worldVersion = pkg.Read<int32_t>();
+		auto worldVersion = reader.Read<int32_t>();
 		if (worldVersion != VConstants::WORLD) {
-			LOG(ERROR) << "Incompatible data version " << worldVersion;
+			LOG(ERROR) << "Unsupported world version " << worldVersion;
 		}
 		else {
 			if (worldVersion >= 4)
-				Valhalla()->m_netTime = pkg.Read<double>();
+				Valhalla()->m_netTime = reader.Read<double>();
 
-			ZDOManager()->Load(pkg, worldVersion);
+			ZDOManager()->Load(reader, worldVersion);
 
 			if (worldVersion >= 12)
-				ZoneManager()->Load(pkg, worldVersion);
+				ZoneManager()->Load(reader, worldVersion);
 
 			if (worldVersion >= 15) {
 				// inlined RandEventManager::Load
 				//RandEventManager::Load(pkg, worldVersion);
 
-				auto eventTimer = pkg.Read<float>();
+				auto eventTimer = reader.Read<float>();
 				if (worldVersion >= 25) {
-					auto text = pkg.Read<std::string>();
-					auto time = pkg.Read<float>();
-					Vector3 pos = pkg.Read<Vector3>();
+					auto text = reader.Read<std::string>();
+					auto time = reader.Read<float>();
+					Vector3 pos = reader.Read<Vector3>();
 
 					//if (!text.empty()) {
 					//	this.SetRandomEventByName(text, pos);
@@ -146,22 +142,23 @@ void IWorldManager::BackupWorldDB(const std::string& name) {
 	}
 }
 
-NetPackage IWorldManager::SaveWorldDB() {
-	NetPackage binary;
-
-	binary.Write(VConstants::WORLD);
-	binary.Write(Valhalla()->NetTime());
-	ZDOManager()->Save(binary);
-	ZoneManager()->Save(binary);
-
+BYTES_t IWorldManager::SaveWorldDB() {
+	BYTES_t bytes;
+	DataWriter writer(bytes);
+	
+	writer.Write(VConstants::WORLD);
+	writer.Write(Valhalla()->NetTime());
+	ZDOManager()->Save(writer);
+	ZoneManager()->Save(writer);
+	
 	// Temporary inlined RandEventSystem::SaveAsync:
 	//RandEventSystem::SaveAsync(binary);
-	binary.Write((float)0);
-	binary.Write("");
-	binary.Write((float)0);
-	binary.Write(Vector3());
-
-	return binary;
+	writer.Write((float)0);
+	writer.Write("");
+	writer.Write((float)0);
+	writer.Write(Vector3());
+	
+	return bytes;
 }
 
 void IWorldManager::SaveWorld(bool sync) {
@@ -176,8 +173,8 @@ void IWorldManager::SaveWorld(bool sync) {
 
 	auto path = GetWorldDBPath(m_world->m_name);
 
-	static NetPackage binary;
-	binary = SaveWorldDB();
+	static BYTES_t bytes;
+	bytes = SaveWorldDB();
 
 	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
 
@@ -208,7 +205,7 @@ void IWorldManager::SaveWorld(bool sync) {
 				}
 			}
 
-			if (!VUtils::Resource::WriteFileBytes(path, binary.m_stream.m_buf))
+			if (!VUtils::Resource::WriteFileBytes(path, bytes))
 				LOG(WARNING) << "Failed to save world";
 			else
 				LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
@@ -234,8 +231,8 @@ std::unique_ptr<World> IWorldManager::GetOrCreateWorldMeta(const std::string& na
 	bool success = false;
 
 	if (opt) {
-		NetPackage binary(opt.value());
-		auto zpackage = binary.Read<NetPackage>();
+		DataReader binary(opt.value());
+		auto zpackage = binary.SubRead();
 
 		auto worldVersion = zpackage.Read<int32_t>();
 		if (worldVersion != VConstants::WORLD) {

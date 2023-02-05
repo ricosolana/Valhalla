@@ -4,7 +4,10 @@
 #include <thread>
 #include <steam_gameserver.h>
 
+#include <robin_hood.h>
+
 #include "NetSocket.h"
+
 
 class IAcceptor {
 public:

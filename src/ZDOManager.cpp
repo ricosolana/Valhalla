@@ -42,36 +42,36 @@ void IZDOManager::InvalidateSector(ZDO* zdo) {
 
 
 
-void IZDOManager::Save(NetPackage& pkg) {
+void IZDOManager::Save(DataWriter& pkg) {
 	//pkg.Write(Valhalla()->ID());
 	pkg.Write<OWNER_t>(0);
 	pkg.Write(m_nextUid);
 	
 	// Write zdos (persistent)
-	const auto start = pkg.m_stream.Position();
+	const auto start = pkg.Position();
 
 	int32_t count = 0;	
 	pkg.Write(count);
 
 	{
-		NetPackage zdoPkg;
+		//NetPackage zdoPkg;
 		for (auto&& sectorObjects : m_objectsBySector) {
-			for (auto&& zdo : sectorObjects) {
+			for (auto zdo : sectorObjects) {
 				if (zdo->m_persistent) {
 					pkg.Write(zdo->ID());
-					zdo->Save(zdoPkg);
-					pkg.Write(zdoPkg);
-					zdoPkg.m_stream.Clear();
+					pkg.SubWrite([zdo, &pkg]() {
+						zdo->Save(pkg);
+					});
 					count++;
 				}
 			}
 		}
 	}
 
-	const auto end = pkg.m_stream.Position();
-	pkg.m_stream.SetPos(start);
+	const auto end = pkg.Position();
+	pkg.SetPos(start);
 	pkg.Write(count);
-	pkg.m_stream.SetPos(end);
+	pkg.SetPos(end);
 
 	// Write dead zdos
 	pkg.Write((int32_t)m_deadZDOs.size());
@@ -86,11 +86,12 @@ void IZDOManager::Save(NetPackage& pkg) {
 void IZDOManager::Init() {
 	LOG(INFO) << "Initializing ZDOManager";
 
-	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, NetPackage pkg) {
+	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, BYTES_t bytes) {
 		// TODO constraint check
-		auto num = pkg.Read<uint32_t>();
+		DataReader reader(bytes);
+		auto num = reader.Read<uint32_t>();
 		while (num--) {
-			auto uid = pkg.Read<NetID>();
+			auto uid = reader.Read<NetID>();
 			HandleDestroyedZDO(uid);
 		}
 	});
@@ -100,7 +101,7 @@ void IZDOManager::Init() {
 	});
 }
 
-void IZDOManager::Load(NetPackage& reader, int version) {
+void IZDOManager::Load(DataReader& reader, int version) {
 	reader.Read<OWNER_t>(); // skip server id
 	auto nextUid = reader.Read<uint32_t>();
 	const auto count = reader.Read<int32_t>();
@@ -110,8 +111,10 @@ void IZDOManager::Load(NetPackage& reader, int version) {
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 		zdo->m_id = reader.Read<NetID>();
-		auto zdoPkg = reader.Read<NetPackage>();
-		zdo->Load(zdoPkg, version);
+		auto zdoBytes = reader.Read<BYTES_t>();
+
+		DataReader zdoReader(zdoBytes);
+		zdo->Load(zdoReader, version);
 
 		AddToSector(zdo.get());
 
@@ -187,16 +190,18 @@ void IZDOManager::Update() {
 		}
 	});
 
+
+
 	if (m_destroySendList.empty())
 		return;
 
-	NetPackage zpackage;
-	zpackage.Write((int32_t)m_destroySendList.size());
-	for (auto&& id : m_destroySendList)
-		zpackage.Write(id);
+	static BYTES_t bytes; bytes.clear();
+
+	DataWriter writer(bytes);
+	writer.Write(m_destroySendList);
 
 	m_destroySendList.clear();
-	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, zpackage);
+	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, bytes);
 }
 
 
@@ -501,35 +506,34 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 		return false;
 
-	static std::vector<ZDO*> m_tempToSync;
-	m_tempToSync.clear();
+	static std::vector<ZDO*> m_tempToSync; m_tempToSync.clear();
 	CreateSyncList(peer, m_tempToSync);
 
 	// continue only if there are updated/invalid NetSyncs to send
 	if (m_tempToSync.empty() && peer->m_invalidSector.empty())
 		return false;
 
-	static NetPackage pkg;
-	pkg.m_stream.Clear();
+	static BYTES_t bytes; bytes.clear();
+	DataWriter writer(bytes);
 
-	pkg.Write(peer->m_invalidSector);
+	writer.Write(peer->m_invalidSector);
 
 	const auto time = Valhalla()->Time();
 
 	for (int i=0; i < m_tempToSync.size() 
-		&& pkg.m_stream.Length() <= availableSpace; i++)  
+		&& static_cast<uint32_t>(writer.Length()) <= availableSpace; i++)
 	{
 		auto sync = m_tempToSync[i];
 		peer->m_forceSend.erase(sync->ID());
 
-		pkg.Write(sync->ID());
-		pkg.Write(sync->m_rev.m_ownerRev);
-		pkg.Write(sync->m_rev.m_dataRev);
-		pkg.Write(sync->Owner());
-		pkg.Write(sync->Position());
+		writer.Write(sync->ID());
+		writer.Write(sync->m_rev.m_ownerRev);
+		writer.Write(sync->m_rev.m_dataRev);
+		writer.Write(sync->Owner());
+		writer.Write(sync->Position());
 
-		pkg.NestedWrite([sync]() {
-			sync->Serialize(pkg);
+		writer.SubWrite([sync, &writer]() {
+			sync->Serialize(writer);
 		});
 
 		peer->m_zdos[sync->ID()] = ZDO::Rev {
@@ -538,10 +542,10 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 			.m_time = time
 		};
 	}
-	pkg.Write(NetID::NONE); // null terminator
+	writer.Write(NetID::NONE); // null terminator
 
 	if (!peer->m_invalidSector.empty() || !m_tempToSync.empty()) {
-		peer->Invoke(Hashes::Rpc::ZDOData, pkg);
+		peer->Invoke(Hashes::Rpc::ZDOData, bytes);
 		peer->m_invalidSector.clear();
 
 		return true;
@@ -551,38 +555,35 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 }
 
 void IZDOManager::OnNewPeer(Peer* peer) {
-	peer->Register(Hashes::Rpc::ZDOData, [this](Peer* peer, NetPackage pkg) {
+	peer->Register(Hashes::Rpc::ZDOData, [this](Peer* peer, BYTES_t bytes) {
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
+		DataReader reader(bytes);
+
 		{
-			// TODO check constraints
-			auto invalid_sector_count = pkg.Read<uint32_t>(); // invalid sector count
-
-			while (invalid_sector_count--) {
-				auto id = pkg.Read<NetID>();
+			auto invalidSectors = reader.Read<std::vector<NetID>>();
+			for (auto&& id : invalidSectors) {
 				ZDO* zdo = GetZDO(id);
-
-				// Instead, remove from last valid sector
-				// then notify clients
 
 				if (zdo) InvalidateSector(zdo);
 			}
 		}
 
-		auto ticks = Valhalla()->Ticks();
+		auto time = Valhalla()->Time();
 
-		while (auto zdoid = pkg.Read<NetID>()) {
-			ZDO* zdo = this->GetZDO(zdoid); // Dont do 2 lookups
+		while (auto zdoid = reader.Read<NetID>()) {
+			ZDO* zdo = this->GetZDO(zdoid);				// TODO use only 1 lookup total (use a null insert)
 
-			auto ownerRev = pkg.Read<uint32_t>();	// owner revision
-			auto dataRev = pkg.Read<uint32_t>();	// data revision
-			auto owner = pkg.Read<OWNER_t>();		// owner
-			auto vec3 = pkg.Read<Vector3>();		// position
+			auto ownerRev = reader.Read<uint32_t>();	// owner revision
+			auto dataRev = reader.Read<uint32_t>();		// data revision
+			auto owner = reader.Read<OWNER_t>();		// owner
+			auto vec3 = reader.Read<Vector3>();			// position
 
-			static NetPackage des;
-			pkg.Read(des);
-
-			ZDO::Rev rev = { dataRev, ownerRev, ticks };
+			ZDO::Rev rev = { 
+				.m_dataRev = dataRev, 
+				.m_ownerRev = ownerRev, 
+				.m_time = time 
+			};
 
 			// if the zdo already existed (locally/remotely), compare revisions
 			bool flagCreated = false;
@@ -605,9 +606,15 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			zdo->m_owner = owner;
 			zdo->m_rev = rev;
 			zdo->SetPosition(vec3);
+
+			auto des = reader.SubRead();
 			zdo->Deserialize(des);
 
-			peer->m_zdos[zdoid] = rev;
+			peer->m_zdos[zdoid] = {
+				.m_dataRev = zdo->m_rev.m_dataRev,
+				.m_ownerRev = zdo->m_rev.m_ownerRev,
+				.m_time = time
+			};
 
 			// If the ZDO was just created as a copy, but it was removed recently
 			if (flagCreated && m_deadZDOs.contains(zdoid)) {

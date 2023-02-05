@@ -70,10 +70,10 @@ public:
 	void Init();
 
 	// Used when saving the world from disk
-	void Save(NetPackage& pkg);
+	void Save(DataWriter& writer);
 
 	// Used when loading the world from disk
-	void Load(NetPackage& reader, int version);
+	void Load(DataReader& reader, int version);
 
 	void CapDeadZDOList();
 

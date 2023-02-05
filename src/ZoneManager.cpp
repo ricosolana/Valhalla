@@ -26,7 +26,7 @@ void IZoneManager::Init() {
         if (!opt)
             throw std::runtime_error("zoneLocations.pkg missing");
 
-        NetPackage pkg(opt.value());
+        DataReader pkg(opt.value());
 
         pkg.Read<std::string>(); // date
         std::string ver = pkg.Read<std::string>();
@@ -117,7 +117,7 @@ void IZoneManager::Init() {
         if (!opt)
             throw std::runtime_error("vegetation.pkg missing");
 
-        NetPackage pkg(opt.value());
+        DataReader pkg(opt.value());
 
         pkg.Read<std::string>(); // date
         std::string ver = pkg.Read<std::string>();
@@ -242,22 +242,23 @@ void IZoneManager::SendGlobalKeys(OWNER_t peer) {
 void IZoneManager::SendLocationIcons(OWNER_t peer) {
     LOG(INFO) << "Sending location icons to " << peer;
 
-    NetPackage zpackage;
+    BYTES_t bytes;
+    DataWriter writer(bytes);
 
     robin_hood::unordered_map<Vector3, std::string> icons;
     GetLocationIcons(icons);
 
-    zpackage.Write<int32_t>(icons.size());
+    writer.Write<int32_t>(icons.size());
     for (auto&& keyValuePair : icons) {
-        zpackage.Write(keyValuePair.first);
-        zpackage.Write(keyValuePair.second);
+        writer.Write(keyValuePair.first);
+        writer.Write(keyValuePair.second);
     }
 
-    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, zpackage);
+    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, bytes);
 }
 
 // public
-void IZoneManager::Save(NetPackage& pkg) {
+void IZoneManager::Save(DataWriter& pkg) {
     pkg.Write(m_generatedZones);
     pkg.Write<int32_t>(VConstants::PGW);
     pkg.Write<int32_t>(VConstants::LOCATION);
@@ -273,7 +274,7 @@ void IZoneManager::Save(NetPackage& pkg) {
 }
 
 // public
-void IZoneManager::Load(NetPackage& reader, int32_t version) {
+void IZoneManager::Load(DataReader& reader, int32_t version) {
     const auto countZones = reader.Read<int32_t>();
     for (int i=0; i < countZones; i++) {
         m_generatedZones.insert(reader.Read<Vector2i>());

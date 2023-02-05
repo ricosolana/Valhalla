@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ZDO.h"
-#include "NetPackage.h"
 #include "WorldManager.h"
 
 namespace Tests {
@@ -39,7 +38,8 @@ namespace Tests {
             assert(opt);
 
             ZDO zdo;
-            NetPackage pkg(opt.value());
+            BYTES_t bytes;
+            DataReader pkg(opt.value());
             zdo.Load(pkg, VConstants::WORLD);
 
             assert(zdo.GetFloat("health") == 3.1415926535f);
@@ -80,12 +80,16 @@ namespace Tests {
             zdo.Set("faction", "player");
             zdo.Set("uid", 189341389);
             
-            NetPackage pkg; 
-            zdo.Save(pkg); 
-            pkg.m_stream.SetPos(0);
+            BYTES_t bytes;
+            {
+                DataWriter pkg(bytes);
+                zdo.Save(pkg);
+                pkg.SetPos(0);
+            }
 
             ZDO zdo2;
-            zdo2.Load(pkg, VConstants::WORLD);
+            DataReader reader(bytes);
+            zdo2.Load(reader, VConstants::WORLD);
 
             assert(zdo2.GetFloat("health") == 3.1415926535f);
             assert(zdo2.GetInt("weight") == 435);
@@ -106,12 +110,14 @@ namespace Tests {
             zdo.Set("faction", "player");
             zdo.Set("uid", 189341389);
 
-            NetPackage pkg;
-            zdo.Serialize(pkg);
-            pkg.m_stream.SetPos(0);
+            BYTES_t bytes;
+            DataWriter writer(bytes);
+            zdo.Serialize(writer);
+            writer.SetPos(0);
 
+            DataReader reader(bytes);
             ZDO zdo2;
-            zdo2.Deserialize(pkg);
+            zdo2.Deserialize(reader);
 
             assert(zdo2.GetFloat("health") == 3.1415926535f);
             assert(zdo2.GetInt("weight") == 435);

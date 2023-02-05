@@ -42,7 +42,7 @@ private:
 
     void SendPeerInfo(Peer *peer);
 
-    void RPC_PeerInfo(NetRpc* rpc, NetPackage pkg);
+    void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
 public:
     void Init();

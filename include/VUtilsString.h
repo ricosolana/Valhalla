@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
+#include "VUtilsTraits.h"
 
 #define __H(str) VUtils::String::GetStableHashCode(str)
 
@@ -26,7 +27,7 @@ namespace VUtils::String {
     }
 
     // Join a container consisting of strings separated by delimiter
-    template<typename T> requires is_iterable_v<T>
+    template<typename T> requires VUtils::Traits::is_iterable_v<T>
     std::string Join(const char* delimiter, T container) {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
@@ -37,7 +38,7 @@ namespace VUtils::String {
     }
 
     // Join a container consisting of strings separated by delimiter
-    template<typename T> requires is_iterable_v<T>
+    template<typename T> requires VUtils::Traits::is_iterable_v<T>
     std::string Join(std::string &delimiter, T container) {
         return Join(delimiter.c_str(), container);
     }

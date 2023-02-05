@@ -20,6 +20,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 }
 
 SteamSocket::~SteamSocket() {
+    LOG(DEBUG) << "~SteamSocket()";
     Close(true);
 }
 
@@ -54,20 +55,21 @@ void SteamSocket::Update() {
     SendQueued();
 }
 
-void SteamSocket::Send(NetPackage pkg) {
-    if (pkg.m_stream.Length() == 0)
-        return;
-
-    m_sendQueue.push_back(std::move(pkg.m_stream.m_buf));
+void SteamSocket::Send(BYTES_t bytes) {
+    if (!bytes.empty())
+        m_sendQueue.push_back(std::move(bytes));
 }
 
-std::optional<NetPackage> SteamSocket::Recv() {
+std::optional<BYTES_t> SteamSocket::Recv() {
     OPTICK_EVENT();
     if (Connected()) {
 #define MSG_COUNT 1
         SteamNetworkingMessage_t* msg; // will point to allocated messages
         if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
-            NetPackage pkg((BYTE_t*)msg->m_pData, msg->m_cbSize);
+            BYTES_t pkg; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
+            pkg.insert(pkg.begin(), 
+                reinterpret_cast<BYTE_t*>(msg->m_pData), 
+                reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
             msg->Release();
             return pkg;
         }
@@ -131,7 +133,7 @@ void SteamSocket::SendQueued() {
         //msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
         //msg->m_nUserData = reinterpret_cast<std::intptr_t>(&front); // send the destruction message data
         //msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
-        //    msg-
+        //    
         //};
         //int64_t state = 0;
         //SteamGameServerNetworkingSockets()->SendMessages(1, msg, );
