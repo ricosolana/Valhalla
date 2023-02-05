@@ -80,13 +80,13 @@ public:
         if (!m_socket->Connected())
             return;
 
-        static NetPackage pkg; // TODO make into member to optimize; or make static
-        pkg.m_stream.Clear();
+        static BYTES_t bytes; bytes.clear();
+        DataWriter writer(bytes);
 
-        pkg.Write(hash);
-        NetPackage::_Serialize(pkg, params...); // serialize
+        writer.Write(hash);
+        DataWriter::_Serialize(writer, params...); // serialize
 
-        m_socket->Send(std::move(pkg));
+        m_socket->Send(std::move(bytes));
     }
 
     template <typename... Types>

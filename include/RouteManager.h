@@ -3,6 +3,8 @@
 #include "Peer.h"
 #include "Method.h"
 #include "ValhallaServer.h"
+#include "DataReader.h"
+#include "DataWriter.h"
 
 class IRouteManager {
 	friend class INetManager;
@@ -13,27 +15,32 @@ class IRouteManager {
 		OWNER_t m_targetPeerID;
 		NetID m_targetSync;
 		HASH_t m_methodHash;
-		NetPackage m_parameters;
+		BYTES_t m_parameters;
+		//NetPackage m_parameters;
+		//union m_parameters {
+		//	DataReader m_reader;
+		//	DataWriter
+		//};
 
 		Data() : m_msgID(0), m_senderPeerID(0), m_targetPeerID(0), m_methodHash(0) {}
 
 		// Will unpack the package
-		explicit Data(NetPackage& pkg)
-			: m_msgID(pkg.Read<OWNER_t>()),
-			m_senderPeerID(pkg.Read<OWNER_t>()),
-			m_targetPeerID(pkg.Read<OWNER_t>()),
-			m_targetSync(pkg.Read<NetID>()),
-			m_methodHash(pkg.Read<HASH_t>()),
-			m_parameters(pkg.Read<NetPackage>())
+		explicit Data(DataReader reader)
+			: m_msgID(reader.Read<OWNER_t>()),
+			m_senderPeerID(reader.Read<OWNER_t>()),
+			m_targetPeerID(reader.Read<OWNER_t>()),
+			m_targetSync(reader.Read<NetID>()),
+			m_methodHash(reader.Read<HASH_t>()),
+			m_parameters(reader.Read<BYTES_t>())
 		{}
 
-		void Serialize(NetPackage& pkg) const {
-			pkg.Write(m_msgID);
-			pkg.Write(m_senderPeerID);
-			pkg.Write(m_targetPeerID);
-			pkg.Write(m_targetSync);
-			pkg.Write(m_methodHash);
-			pkg.Write(m_parameters);
+		void Serialize(DataWriter writer) const {
+			writer.Write(m_msgID);
+			writer.Write(m_senderPeerID);
+			writer.Write(m_targetPeerID);
+			writer.Write(m_targetSync);
+			writer.Write(m_methodHash);
+			writer.Write(m_parameters);
 		}
 	};
 
@@ -48,7 +55,7 @@ private:
 	void OnNewPeer(Peer *peer);
 
 	// Internal use only by NetRouteManager
-	void InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg);
+	void InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, BYTES_t params);
 	void HandleRoutedRPC(Peer* peer, Data data);
 
 	void RouteRPC(const Data& data);
@@ -76,19 +83,19 @@ public:
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const Args&... params) {
-		InvokeImpl(target, targetNetSync, hash, NetPackage::Serialize(params...));
+		InvokeImpl(target, targetNetSync, hash, DataWriter::Serialize(params...));
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(OWNER_t target, const NetID& targetNetSync, const char* name, const Args&... params) {
-		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), NetPackage::Serialize(params...));
+		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), DataWriter::Serialize(params...));
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(OWNER_t target, const NetID& targetNetSync, std::string& name, const Args&... params) {
-		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), NetPackage::Serialize(params...));
+		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), DataWriter::Serialize(params...));
 	}
 
 

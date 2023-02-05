@@ -16,8 +16,8 @@ IRouteManager* RouteManager() {
 
 
 void IRouteManager::RouteRPC(const Data& data) {
-	NetPackage pkg;
-	data.Serialize(pkg);
+	static BYTES_t bytes; bytes.clear();
+	data.Serialize(DataWriter(bytes));
 
 	if (data.m_targetPeerID == EVERYBODY) {
 		auto&& peers = NetManager()->GetPeers();
@@ -25,14 +25,14 @@ void IRouteManager::RouteRPC(const Data& data) {
 			auto&& peer = pair.second;
 			// send to everyone (except sender)
 			if (data.m_senderPeerID != peer->m_uuid) {
-                peer->Invoke(Hashes::Rpc::RoutedRPC, pkg);
+                peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 	}
 	else {
 		auto peer = NetManager()->GetPeer(data.m_targetPeerID);
 		if (peer) {
-			peer->Invoke(Hashes::Rpc::RoutedRPC, pkg);
+			peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 		}
 	}
 }
@@ -52,7 +52,7 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	}
 }
 
-void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, const NetPackage& pkg) {
+void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, BYTES_t params) {
 	static OWNER_t m_rpcMsgID = 1;
 
 	Data data;
@@ -62,9 +62,7 @@ void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_
 	data.m_targetPeerID = target;
 	data.m_targetSync = targetNetSync;
 	data.m_methodHash = hash;
-	data.m_parameters = pkg;
-
-	data.m_parameters.m_stream.SetPos(0);
+	data.m_parameters = std::move(params);
 
 	// Message destined to server or everyone
 	// When the server invokes an EVERYBODY call, the server still calls its own method
@@ -80,8 +78,8 @@ void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_
 }
 
 void IRouteManager::OnNewPeer(Peer *peer) {
-	peer->Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, NetPackage pkg) {
-		Data data(pkg);
+	peer->Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, BYTES_t bytes) {
+		Data data = Data(DataReader(bytes));
 
 		// TODO constraint peer sender
 		data.m_senderPeerID = peer->m_uuid;

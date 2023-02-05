@@ -8,7 +8,8 @@
 #include "Vector.h"
 #include "VUtils.h"
 #include "VUtilsString.h"
-#include "NetPackage.h"
+#include "DataWriter.h"
+#include "DataReader.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -231,12 +232,12 @@ private:
         // Used when saving or serializing internal ZDO information
         //  Returns whether write was successful (if type match)
         template<TrivialSyncType T>
-        bool Write(NetPackage& pkg, HASH_t shiftHash) const {
+        bool Write(DataWriter& writer, HASH_t shiftHash) const {
             if (!IsType<T>())
                 return false;
 
-            pkg.Write(FromShiftHash<T>(shiftHash));
-            pkg.Write(*_Member<T>());
+            writer.Write(FromShiftHash<T>(shiftHash));
+            writer.Write(*_Member<T>());
             return true;
         }
     };
@@ -321,12 +322,12 @@ private:
     }
 
     template<typename T, typename CountType>
-    void _TryWriteType(NetPackage& pkg) const {
+    void _TryWriteType(DataWriter& writer) const {
         // Load/Save use count char for every member (including 0 counts)
         //assert(false && "fix me please; c# BinaryWriter::Write(char) writes a dynamic amount of bytes");
 
         if constexpr (sizeof(CountType) == 2)
-            pkg.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent        
+            writer.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent        
 
         if (m_ordinalMask & GetOrdinalMask<T>()) {
             // Save structure per each type:
@@ -336,37 +337,37 @@ private:
             //  char: null '\0' byte
 
             if constexpr (sizeof(CountType) == 1)
-                pkg.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent
+                writer.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent
                         
-            const auto size_mark = pkg.m_stream.Position() - sizeof(BYTE_t);
+            const auto size_mark = writer.Position() - sizeof(BYTE_t);
             BYTE_t count = 0;
             for (auto&& pair : m_members) {
-                if (pair.second.Write<T>(pkg, pair.first))
+                if (pair.second.Write<T>(writer, pair.first))
                     count++;
 
-                assert(count <= 127 && "shit");
+                assert(count <= 127 && "shit"); // TODO add a try-catch
             }
 
             if (count) {
-                const auto end_mark = pkg.m_stream.Position();
-                pkg.m_stream.SetPos(size_mark);
-                pkg.Write(count);
-                pkg.m_stream.SetPos(end_mark);
+                const auto end_mark = writer.Position();
+                writer.SetPos(size_mark);
+                writer.Write(count);
+                writer.SetPos(end_mark);
             }
         }
     }
 
     template<typename T, typename CountType>
-    void _TryReadType(NetPackage& pkg) {
-        const auto count = pkg.Read<BYTE_t>();
+    void _TryReadType(DataReader& reader) {
+        const auto count = reader.Read<BYTE_t>();
 
-        assert(count <= 127);        
+        assert(count <= 127); // TODO add try-catch (or better, handle utf8 correctly)
 
         for (int i=0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-            auto hash(pkg.Read<HASH_t>());
-            auto type(pkg.Read<T>());
+            auto hash(reader.Read<HASH_t>());
+            auto type(reader.Read<T>());
             _Set(hash, type);
         }
     }
@@ -379,10 +380,10 @@ public:
 
 public:
     // Save ZDO to disk
-    void Save(NetPackage& writer) const;
+    void Save(DataWriter& writer) const;
 
     // Load ZDO from disk
-    void Load(NetPackage& reader, int32_t version);
+    void Load(DataReader& reader, int32_t version);
 
     // Trivial hash getters
     template<TrivialSyncType T>
@@ -571,8 +572,8 @@ public:
     }
 
     // Save ZDO to network packet
-    void Serialize(NetPackage& pkg) const;
+    void Serialize(DataWriter& pkg) const;
 
     // Load ZDO from network packet
-    void Deserialize(NetPackage& pkg);
+    void Deserialize(DataReader& pkg);
 };

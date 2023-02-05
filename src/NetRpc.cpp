@@ -10,16 +10,19 @@ void NetRpc::PollOne() {
 
     auto now(steady_clock::now());
 
-    auto&& pkg = opt.value();
+    auto&& bytes = opt.value();
+
+    DataReader pkg(bytes);
 
     auto hash = pkg.Read<HASH_t>();
     if (hash == 0) {
         if (pkg.Read<bool>()) {
             // Reply to the server with a pong
-            pkg.m_stream.Clear();
-            pkg.Write<HASH_t>(0);
-            pkg.Write<bool>(false);
-            m_socket->Send(std::move(pkg));
+            bytes.clear();
+            DataWriter writer(bytes);
+            writer.Write<HASH_t>(0);
+            writer.Write<bool>(false);
+            m_socket->Send(std::move(bytes));
         }
         else {
             m_lastPing = now;
@@ -29,7 +32,6 @@ void NetRpc::PollOne() {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             find->second->Invoke(this, pkg);
-            m_methods.erase(find);
         }
     }
 }

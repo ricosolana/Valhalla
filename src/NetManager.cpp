@@ -125,24 +125,25 @@ void INetManager::SendDisconnect() {
 
 void INetManager::SendPlayerList() {
     if (!m_peers.empty()) {
-        NetPackage pkg;
-        pkg.Write((int)m_peers.size());
+        static BYTES_t bytes; bytes.clear();
+        DataWriter writer(bytes);
+        writer.Write((int)m_peers.size());
 
         for (auto&& pair : m_peers) {
             auto&& peer = pair.second;
-            pkg.Write(peer->m_name);
-            pkg.Write(peer->m_socket->GetHostName());
-            pkg.Write(peer->m_characterID);
-            pkg.Write(peer->m_visibleOnMap);
+            writer.Write(peer->m_name);
+            writer.Write(peer->m_socket->GetHostName());
+            writer.Write(peer->m_characterID);
+            writer.Write(peer->m_visibleOnMap);
             if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
-                pkg.Write(peer->m_pos);
+                writer.Write(peer->m_pos);
             }
         }
 
         for (auto&& pair : m_peers) {
             auto&& peer = pair.second;
             // this is the problem
-            peer->Invoke(Hashes::Rpc::PlayerList, pkg);
+            peer->Invoke(Hashes::Rpc::PlayerList, bytes);
         }
     }
 }
@@ -160,41 +161,43 @@ void INetManager::SendPeerInfo(Peer* peer) {
     //auto now(steady_clock::now());
     //double netTime =
     //    (double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
-    NetPackage pkg;
-    pkg.Write(Valhalla()->ID());
-    pkg.Write(VConstants::GAME);
-    pkg.Write(Vector3()); // dummy
-    pkg.Write(""); // dummy
+    static BYTES_t bytes; bytes.clear();
+    DataWriter writer(bytes);
+
+    writer.Write(Valhalla()->ID());
+    writer.Write(VConstants::GAME);
+    writer.Write(Vector3()); // dummy
+    writer.Write(""); // dummy
 
     // why does server need to send a position and name?
 
     auto world = WorldManager()->GetWorld();
 
-    pkg.Write(world->m_name);
-    pkg.Write(world->m_seed);
-    pkg.Write(world->m_seedName);
-    pkg.Write(world->m_uid);
-    pkg.Write(world->m_worldGenVersion);
-    pkg.Write(Valhalla()->NetTime());
+    writer.Write(world->m_name);
+    writer.Write(world->m_seed);
+    writer.Write(world->m_seedName);
+    writer.Write(world->m_uid);
+    writer.Write(world->m_worldGenVersion);
+    writer.Write(Valhalla()->NetTime());
 
-    peer->Invoke(Hashes::Rpc::PeerInfo, pkg);
+    peer->Invoke(Hashes::Rpc::PeerInfo, bytes);
 }
 
 
 
-void INetManager::RPC_PeerInfo(NetRpc* rpc, NetPackage pkg) {
-    auto&& hostName = rpc->m_socket->GetHostName();
+void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
+    DataReader reader(bytes);
 
-    auto uuid = pkg.Read<OWNER_t>();
-    auto version = pkg.Read<std::string>();
-    LOG(INFO) << "Client " << hostName << " has version " << version;
+    auto uuid = reader.Read<OWNER_t>();
+    auto version = reader.Read<std::string>();
+    LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
     if (version != VConstants::GAME)
         return rpc->Close(ConnectionStatus::ErrorVersion);
 
-    auto pos = pkg.Read<Vector3>();
-    auto name = pkg.Read<std::string>();
-    auto password = pkg.Read<std::string>();
-    auto ticket = pkg.Read<BYTES_t>(); // read in the dummy ticket
+    auto pos = reader.Read<Vector3>();
+    auto name = reader.Read<std::string>();
+    auto password = reader.Read<std::string>();
+    auto ticket = reader.Read<BYTES_t>(); // read in the dummy ticket
 
     if (SERVER_SETTINGS.playerAuth) {
         auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
@@ -451,7 +454,7 @@ void INetManager::Update() {
         rpc->Register(Hashes::Rpc::ServerHandshake, [this](NetRpc* rpc) {
             LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
 
-            rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, NetPackage pkg) {
+            rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, BYTES_t pkg) {
                 RPC_PeerInfo(rpc, std::move(pkg));
             });
 
@@ -481,22 +484,24 @@ void INetManager::Update() {
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {
+        BYTES_t bytes;
         for (auto&& rpc : m_rpcs) {
+            bytes.clear();
             LOG(DEBUG) << "Rpc join pinging ";
-            //auto pkg(PKG());
-            NetPackage pkg;
-            pkg.Write<HASH_t>(0);
-            pkg.Write(true);
-            rpc->m_socket->Send(pkg);
+            DataWriter writer(bytes);
+            writer.Write<HASH_t>(0);
+            writer.Write(true);
+            rpc->m_socket->Send(bytes);
         }
 
         for (auto&& pair : m_peers) {
+            bytes.clear();
             auto&& peer = pair.second;
             LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
-            NetPackage pkg;
-            pkg.Write<HASH_t>(0);
-            pkg.Write(true);
-            peer->m_socket->Send(pkg);
+            DataWriter writer(bytes);
+            writer.Write<HASH_t>(0);
+            writer.Write(true);
+            peer->m_socket->Send(bytes);
         }
     });
 

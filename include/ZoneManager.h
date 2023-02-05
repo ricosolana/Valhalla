@@ -186,8 +186,8 @@ public:
 
 	void Update();
 
-	void Save(NetPackage& pkg);
-	void Load(NetPackage& reader, int32_t version);
+	void Save(DataWriter& pkg);
+	void Load(DataReader& reader, int32_t version);
 
 	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons);
 	bool IsBlocked(const Vector3& p);

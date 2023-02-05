@@ -87,14 +87,14 @@ add_executable(${PROJECT_NAME}
     "src/NetAcceptorSteam.cpp"
     "src/NetID.cpp"
     "src/NetManager.cpp"    
-    "src/NetPackage.cpp"
+    
     "src/Peer.cpp"
     
     "src/NetSteamSocket.cpp"
     "src/PrefabManager.cpp" 
     "src/Quaternion.cpp"
     "src/RouteManager.cpp"
-    "src/Stream.cpp"
+    
     "src/Task.cpp"
     "src/ValhallaServer.cpp"
     "src/Vector.cpp"
@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     
     "src/ZoneManager.cpp"    
- "src/NetRpc.cpp" "include/VUtilsMathf.h" "src/VUtilsMathf.cpp")
+ "src/NetRpc.cpp" "include/VUtilsMathf.h" "src/VUtilsMathf.cpp" "include/DataReader.h" "src/DataReader.cpp" "include/DataWriter.h" "src/DataWriter.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

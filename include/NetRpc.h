@@ -7,6 +7,7 @@
 #include "Method.h"
 #include "NetSocket.h"
 #include "Task.h"
+#include "DataWriter.h"
 
 enum class ConnectionStatus : int32_t {
     None,
@@ -72,11 +73,13 @@ public:
         if (!m_socket->Connected())
             return;
 
-        NetPackage pkg; // TODO make into member to optimize; or make static
-        pkg.Write(hash);
-        NetPackage::_Serialize(pkg, params...); // serialize
+        static BYTES_t bytes; bytes.clear();
+        DataWriter writer(bytes);
 
-        m_socket->Send(std::move(pkg));
+        writer.Write(hash);
+        DataWriter::_Serialize(writer, params...); // serialize
+
+        m_socket->Send(std::move(bytes));
     }
 
     template <typename... Types>

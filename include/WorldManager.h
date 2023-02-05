@@ -1,8 +1,8 @@
 #pragma once
 
 #include "VUtils.h"
-
-class NetPackage;
+#include "DataReader.h"
+#include "DataWriter.h"
 
 class World {
 public:
@@ -33,7 +33,7 @@ public:
 
     void BackupWorldDB(const std::string& name);
 
-    NetPackage SaveWorldDB();
+    BYTES_t SaveWorldDB();
 
     void SaveWorld(bool sync);
 
