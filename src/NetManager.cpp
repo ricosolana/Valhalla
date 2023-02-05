@@ -485,22 +485,18 @@ void INetManager::Update() {
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {
         BYTES_t bytes;
+        DataWriter writer(bytes);
+        writer.Write<HASH_t>(0);
+        writer.Write(true);
+
         for (auto&& rpc : m_rpcs) {
-            bytes.clear();
             LOG(DEBUG) << "Rpc join pinging ";
-            DataWriter writer(bytes);
-            writer.Write<HASH_t>(0);
-            writer.Write(true);
             rpc->m_socket->Send(bytes);
         }
 
         for (auto&& pair : m_peers) {
-            bytes.clear();
             auto&& peer = pair.second;
             LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
-            DataWriter writer(bytes);
-            writer.Write<HASH_t>(0);
-            writer.Write(true);
             peer->m_socket->Send(bytes);
         }
     });
@@ -511,8 +507,8 @@ void INetManager::Update() {
         try {
             peer->Update();
         }
-        catch (const std::range_error& e) {
-            LOG(ERROR) << "Peer provided malformed data: " << e.what();
+        catch (const VUtils::data_error& e) {
+            LOG(ERROR) << "Peer provided bad data: " << e.what();
             peer->m_socket->Close(false);
         }
     }
@@ -522,8 +518,8 @@ void INetManager::Update() {
         try {
             rpc->PollOne();
         }
-        catch (const std::range_error&) {
-            LOG(ERROR) << "Connecting peer provided malformed payload";
+        catch (const VUtils::data_error& e) {
+            LOG(ERROR) << "Peer provided bad data: " << e.what();
             rpc->m_socket->Close(false);
         }
     }

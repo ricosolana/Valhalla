@@ -74,9 +74,6 @@ public:
 
     // Returns the length of this stream
     int32_t Length() const {
-        //if (m_provider->size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-            //throw std::runtime_error("int32_t size exceeded");
-
         return static_cast<int32_t>(m_provider.get().size());
     }
 
@@ -100,7 +97,7 @@ public:
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
     //requires std::is_lvalue_reference_v<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>> 
         //std::same_as<NetPackage, std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>>
-    void NestedWrite(F func) {
+    void SubWrite(F func) {
         //using args_type = typename VUtils::Traits::func_traits<F>::args_type;
 
         //static_assert(std::tuple_size<args_type>{} == 2, "Lambda must contain 2 parameters");
@@ -177,7 +174,7 @@ public:
     //  uint32_t:   size
     //  T...:       value_type
     template<typename Iterable> requires
-        (is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+        (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
         void Write(const Iterable& in) {
         Write<int32_t>(in.size());
         for (auto&& v : in) {

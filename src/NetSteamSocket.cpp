@@ -20,6 +20,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 }
 
 SteamSocket::~SteamSocket() {
+    LOG(DEBUG) << "~SteamSocket()";
     Close(true);
 }
 
@@ -67,8 +68,8 @@ std::optional<BYTES_t> SteamSocket::Recv() {
         if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
             BYTES_t pkg; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
             pkg.insert(pkg.begin(), 
-                reinterpret_cast<decltype(pkg)::value_type>(msg->m_pData), 
-                reinterpret_cast<decltype(pkg)::value_type>(msg->m_pData) + msg->m_cbSize);
+                reinterpret_cast<BYTE_t*>(msg->m_pData), 
+                reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
             msg->Release();
             return pkg;
         }

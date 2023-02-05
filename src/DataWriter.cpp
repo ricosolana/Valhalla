@@ -5,10 +5,10 @@ void DataWriter::WriteBytes(const BYTE_t* buffer, int32_t count) {
     // this copies in place, without relocating bytes exceeding m_pos
     // resize, ensuring capacity for copy operation
     if (count < 0) 
-        throw std::runtime_error("negative count");
+        throw VUtils::data_error("negative count");
 
     if (static_cast<size_t>(m_pos) + static_cast<size_t>(count) > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-        throw std::runtime_error("int32_t size exceeded");
+        throw VUtils::data_error("int32_t size exceeded");
 
     if (Length() < m_pos + count)
         m_provider.get().resize(m_pos + count);
@@ -30,10 +30,10 @@ void DataWriter::WriteBytes(const BYTE_t* buffer, int32_t count) {
 
 void DataWriter::SetPos(int32_t pos) {
     if (pos < 0)
-        throw std::runtime_error("negative pos");
+        throw VUtils::data_error("negative pos");
 
     if (pos > Length() + 1)
-        throw std::runtime_error("position exceeds length");
+        throw VUtils::data_error("position exceeds length");
 
     m_pos = pos;
 }
@@ -51,7 +51,7 @@ void DataWriter::Write(const BYTES_t& in, int32_t count) {
 
 void DataWriter::Write(const BYTES_t& in) {
     if (in.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-        throw std::runtime_error("int32_t size exceeded");
+        throw VUtils::data_error("int32_t size exceeded");
 
     Write(in.data(), static_cast<int32_t>(in.size()));
 }
@@ -63,7 +63,7 @@ void DataWriter::Write(const BYTES_t& in) {
 void DataWriter::Write(const std::string& in) {
     auto length = in.length();
     if (length > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-        throw std::runtime_error("int32_t size exceeded");
+        throw VUtils::data_error("int32_t size exceeded");
 
     auto byteCount = static_cast<int32_t>(length);
 

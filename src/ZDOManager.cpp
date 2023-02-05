@@ -59,7 +59,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 			for (auto zdo : sectorObjects) {
 				if (zdo->m_persistent) {
 					pkg.Write(zdo->ID());
-					pkg.NestedWrite([zdo, &pkg]() {
+					pkg.SubWrite([zdo, &pkg]() {
 						zdo->Save(pkg);
 					});
 					count++;
@@ -506,8 +506,7 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 		return false;
 
-	static std::vector<ZDO*> m_tempToSync;
-	m_tempToSync.clear();
+	static std::vector<ZDO*> m_tempToSync; m_tempToSync.clear();
 	CreateSyncList(peer, m_tempToSync);
 
 	// continue only if there are updated/invalid NetSyncs to send
@@ -522,7 +521,7 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 	const auto time = Valhalla()->Time();
 
 	for (int i=0; i < m_tempToSync.size() 
-		&& writer.Length() <= availableSpace; i++)
+		&& static_cast<uint32_t>(writer.Length()) <= availableSpace; i++)
 	{
 		auto sync = m_tempToSync[i];
 		peer->m_forceSend.erase(sync->ID());
@@ -533,7 +532,7 @@ bool IZDOManager::SendZDOs(Peer* peer, bool flush) {
 		writer.Write(sync->Owner());
 		writer.Write(sync->Position());
 
-		writer.NestedWrite([sync, &writer]() {
+		writer.SubWrite([sync, &writer]() {
 			sync->Serialize(writer);
 		});
 
@@ -570,17 +569,21 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			}
 		}
 
-		auto ticks = Valhalla()->Ticks();
+		auto time = Valhalla()->Time();
 
 		while (auto zdoid = reader.Read<NetID>()) {
-			ZDO* zdo = this->GetZDO(zdoid); // Dont do 2 lookups
+			ZDO* zdo = this->GetZDO(zdoid);				// TODO use only 1 lookup total (use a null insert)
 
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
-			auto dataRev = reader.Read<uint32_t>();	// data revision
+			auto dataRev = reader.Read<uint32_t>();		// data revision
 			auto owner = reader.Read<OWNER_t>();		// owner
-			auto vec3 = reader.Read<Vector3>();		// position
+			auto vec3 = reader.Read<Vector3>();			// position
 
-			ZDO::Rev rev = { dataRev, ownerRev, ticks };
+			ZDO::Rev rev = { 
+				.m_dataRev = dataRev, 
+				.m_ownerRev = ownerRev, 
+				.m_time = time 
+			};
 
 			// if the zdo already existed (locally/remotely), compare revisions
 			bool flagCreated = false;
@@ -604,10 +607,14 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			zdo->m_rev = rev;
 			zdo->SetPosition(vec3);
 
-			auto des = reader.Sub();
+			auto des = reader.SubRead();
 			zdo->Deserialize(des);
 
-			peer->m_zdos[zdoid] = rev;
+			peer->m_zdos[zdoid] = {
+				.m_dataRev = zdo->m_rev.m_dataRev,
+				.m_ownerRev = zdo->m_rev.m_ownerRev,
+				.m_time = time
+			};
 
 			// If the ZDO was just created as a copy, but it was removed recently
 			if (flagCreated && m_deadZDOs.contains(zdoid)) {

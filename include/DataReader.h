@@ -4,6 +4,7 @@
 #include "NetID.h"
 #include "Vector.h"
 #include "Quaternion.h"
+#include "VUtilsTraits.h"
 
 class DataReader {
 public:
@@ -39,7 +40,7 @@ private:
                 return out;
             }
         }
-        throw std::runtime_error("bad encoded int");
+        throw VUtils::data_error("bad encoded int");
     }
 
 public:
@@ -49,9 +50,11 @@ public:
         SetPos(pos);
     }
 
-    DataReader Sub() {
+    DataReader SubRead() {
         auto count = Read<int32_t>();
-        return DataReader(m_provider.get(), Position());
+        auto other = DataReader(m_provider.get(), Position());
+        this->SetPos(m_pos + count);
+        return other;
     }
 
     // Gets all the data in the package
@@ -75,9 +78,6 @@ public:
     // Returns the length of this stream
     int32_t Length() const {
         auto size = m_provider.get().size();
-        //if (size > static_cast<decltype(size)>(std::numeric_limits<int32_t>::max()))
-            //throw std::runtime_error("int32_t size exceeded");
-
         return static_cast<int32_t>(size);
     }
 
@@ -106,7 +106,7 @@ public:
             return "";
 
         if (m_pos + count > Length())
-            throw std::runtime_error("NetPackage::Read<std::string>() length exceeded");
+            throw VUtils::data_error("count exceeds length");
 
         std::string s;
 
@@ -133,12 +133,12 @@ public:
     //  uint32_t:   size
     //  T...:       value_type
     template<typename Iterable> 
-        requires (is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+        requires (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
         Iterable Read() {
         const auto count = Read<int32_t>();
 
         if (count < 0)
-            throw std::runtime_error("negative count");
+            throw VUtils::data_error("negative count");
 
         Iterable out;
 

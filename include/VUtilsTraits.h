@@ -81,5 +81,38 @@ namespace VUtils {
 
         template <typename F>
         using is_void_result = std::is_void<typename func_traits<F>::result_type>;
+
+
+
+
+
+        template <typename T, typename = void>
+        struct is_iterable : std::false_type {};
+
+        // this gets used only when we can call std::begin() and std::end() on that type
+        template <typename T>
+        struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())),
+            decltype(std::end(std::declval<T>()))
+        >
+        > : std::true_type {};
+
+        // Here is a helper:
+        template <typename T>
+        constexpr bool is_iterable_v = is_iterable<T>::value;
+
+
+
+        template <typename T, typename = void>
+        struct has_value_type : std::false_type {};
+
+        template <typename T>
+        struct has_value_type<T, std::void_t<typename T::value_type
+        >
+        > : std::true_type {};
+
+        // Here is a helper:
+        template <typename T>
+        constexpr bool has_value_type_v = has_value_type<T>::value;
+
     }
 }
