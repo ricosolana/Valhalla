@@ -13,6 +13,10 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 2/5/2023 + TODO
+
+The server seems mostly playable. I am currently making structural changes that will make things more readable and hopefully safe. Generation seems nice, with the exception of mistlands (mist everywhere) and mountains partly.
+
 ### 2/3/2023 + TODO
  - Vegetation naturally generated at semi-correct height and fine dispersement
 
