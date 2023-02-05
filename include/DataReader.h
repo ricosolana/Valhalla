@@ -134,8 +134,7 @@ public:
     //  T...:       value_type
     template<typename Iterable> 
         requires (is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
-        Iterable Read() 
-    {
+        Iterable Read() {
         const auto count = Read<int32_t>();
 
         if (count < 0)
@@ -144,7 +143,8 @@ public:
         Iterable out;
 
         for (int32_t i=0; i < count; i++) {
-            out.insert(out.end(), Read<Iterable::value_type>());
+            auto type = Read<typename Iterable::value_type>();
+            out.insert(out.end(), type);
         }
 
         return out;

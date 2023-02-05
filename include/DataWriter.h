@@ -93,7 +93,7 @@ public:
     }
 
     // Sets the positino of this stream
-    void SetPos(uint32_t pos);
+    void SetPos(int32_t pos);
 
 public:
     template<typename F>

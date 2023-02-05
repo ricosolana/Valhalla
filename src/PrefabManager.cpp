@@ -1,7 +1,6 @@
 #include "PrefabManager.h"
 #include "ZDOManager.h"
 #include "VUtilsResource.h"
-#include "NetPackage.h"
 
 auto PREFAB_MANAGER(std::make_unique<IPrefabManager>());
 IPrefabManager* PrefabManager() {
@@ -26,7 +25,7 @@ void IPrefabManager::Init() {
         throw std::runtime_error("prefabs.pkg missing");
     }
 
-    NetPackage pkg(opt.value());
+    DataReader pkg(opt.value());
 
     pkg.Read<std::string>(); // date
     std::string ver = pkg.Read<std::string>();

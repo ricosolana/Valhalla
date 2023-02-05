@@ -28,6 +28,16 @@ void DataWriter::WriteBytes(const BYTE_t* buffer, int32_t count) {
     m_pos += count;
 }
 
+void DataWriter::SetPos(int32_t pos) {
+    if (pos < 0)
+        throw std::runtime_error("negative pos");
+
+    if (pos > Length() + 1)
+        throw std::runtime_error("position exceeds length");
+
+    m_pos = pos;
+}
+
 
 
 void DataWriter::Write(const BYTE_t* in, int32_t count) {

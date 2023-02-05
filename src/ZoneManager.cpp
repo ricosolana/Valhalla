@@ -254,7 +254,7 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
         writer.Write(keyValuePair.second);
     }
 
-    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, writer);
+    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, bytes);
 }
 
 // public

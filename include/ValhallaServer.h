@@ -1,6 +1,9 @@
 #pragma once
 
 #include <thread>
+
+#include <robin_hood.h>
+
 #include "Task.h"
 #include "ServerSettings.h"
 #include "NetAcceptor.h"
