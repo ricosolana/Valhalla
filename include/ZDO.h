@@ -347,8 +347,8 @@ private:
 
                 if constexpr (sizeof(CountType) == 2) {
                     auto&& vec = writer.m_provider.get();
-                    int extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
-                    if (extraCount > 1) {
+                    auto extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
+                    if (extraCount) {
                         assert(count >= 0x80);
                         // make room for utf8 bytes
                         vec.insert(vec.begin() + size_mark, extraCount, 0);
