@@ -41,7 +41,7 @@ namespace VUtils::Resource {
 
         return out;
     }
-    
+        
     bool WriteFileBytes(const fs::path& path, const BYTE_t* buf, int size);
     bool WriteFileBytes(const fs::path& path, const BYTES_t& buffer);
     bool WriteFileString(const fs::path& path, const std::string& str);

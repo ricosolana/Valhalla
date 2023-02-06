@@ -126,22 +126,22 @@ void IValhalla::LoadFiles() {
         VUtils::Resource::WriteFileString("server.yml", out.c_str());
     }
 
-    if (auto opt = VUtils::Resource::ReadFileLines("blacklist.txt")) {
-        m_blacklist.insert(opt->begin(), opt->end());
+    if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_blacklist)>("blacklist.txt")) {
+        m_blacklist = *opt;
     }
 
     if (m_settings.playerWhitelist)
-        if (auto opt = VUtils::Resource::ReadFileLines("whitelist.txt")) {
-            m_whitelist.insert(opt->begin(), opt->end());
+        if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_whitelist)>("whitelist.txt")) {
+            m_whitelist = *opt;
         }
 
-    if (auto opt = VUtils::Resource::ReadFileLines("admin.txt")) {
-        m_admin.insert(opt->begin(), opt->end());
+    if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_admin)>("admin.txt")) {
+        m_admin = *opt;
     }
 
     if (m_settings.playerAutoPassword)
-        if (auto opt = VUtils::Resource::ReadFileLines("bypass.txt")) {
-            m_bypass.insert(opt->begin(), opt->end());
+        if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_bypass)>("bypass.txt")) {
+            m_bypass = *opt;
         }
 
 
@@ -152,7 +152,7 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {
-    LOG(INFO) << "Starting Valhalla " << SERVER_VERSION << " for (Valheim " << VConstants::GAME << ")";
+    LOG(INFO) << "Starting Valhalla " << SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
     
     assert(!m_running);
 
@@ -168,6 +168,8 @@ void IValhalla::Start() {
 
     this->LoadFiles();
 
+    m_netTime = 2040;
+
     PrefabManager()->Init();
     ZDOManager()->Init();
     ZoneManager()->Init();
@@ -176,8 +178,6 @@ void IValhalla::Start() {
     HeightmapBuilder()->Init();
     ZoneManager()->GenerateLocations();
     NetManager()->Init();
-
-    m_netTime = 2040;
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
@@ -250,9 +250,9 @@ void IValhalla::Start() {
     WorldManager()->WriteFileWorldDB(true);
 
     VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFileLines("blacklist.txt", m_whitelist);
-    VUtils::Resource::WriteFileLines("blacklist.txt", m_admin);
-    VUtils::Resource::WriteFileLines("blacklist.txt", m_bypass);
+    VUtils::Resource::WriteFileLines("whitelsit.txt", m_whitelist);
+    VUtils::Resource::WriteFileLines("admin.txt", m_admin);
+    VUtils::Resource::WriteFileLines("bypass.txt", m_bypass);
 }
 
 

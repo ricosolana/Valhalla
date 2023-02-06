@@ -68,10 +68,11 @@ void IZDOManager::Save(DataWriter& pkg) {
 		}
 	}
 
-	const auto end = pkg.Position();
+	//const auto end = pkg.Position();
 	pkg.SetPos(start);
 	pkg.Write(count);
-	pkg.SetPos(end);
+	//pkg.SetPos(end);
+	pkg.SetPos(pkg.m_provider.get().size());
 
 	// Write dead zdos
 	pkg.Write((int32_t)m_deadZDOs.size());
