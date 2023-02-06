@@ -1,7 +1,4 @@
 todo:
-    - world saving apparently broken
-        loading however is fully supported
-
     - implement portals
     
     - fix server shutdown routines
@@ -34,6 +31,9 @@ todo:
         compress
         
 finished:
+    - world saving apparently broken (loading however is fully supported)
+        was skipping utf-8 that had 3 total encoded byte sizes instead of the expected 2 -> 3 bytes
+
     - high priority: add full utf-8 char encoding and decoding for full Valheim c# compat
         current asystem is lazy and will only work with single bytes up to count 127, beyond that is special encoding...
 
