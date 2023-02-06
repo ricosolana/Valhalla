@@ -194,6 +194,8 @@ public:
         Write(static_cast<T>(v));
     }
 
+    void WriteChar(uint16_t i);
+
 
 
     // Empty template

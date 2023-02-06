@@ -72,7 +72,7 @@ namespace VUtils::String {
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int32_t GetUTF8Count(const BYTE_t* p) {
+    int GetUTF8CodeCount(const BYTE_t* p) {
         // leading bits:
         //   0: total 1 byte
         //   110: total 2 bytes (trailing 10xxxxxx)
@@ -119,4 +119,18 @@ namespace VUtils::String {
         }
         return count;
     }
+
+
+    unsigned int GetUTF8ByteCount(uint16_t i) {
+        if (i < 0x80) {
+            return 1;
+        }
+        else if (i < 0x0800) {
+            return 2;
+        }
+        //else if (i < 0x010000) {
+            return 3;
+        //}
+    }
+
 }

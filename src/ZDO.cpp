@@ -35,13 +35,13 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rotation);
     
     // Save uses 2 bytes for counts (char in c# is 2 bytes..)
-    _TryWriteType<float, int16_t>(pkg);
-    _TryWriteType<Vector3, int16_t>(pkg);
-    _TryWriteType<Quaternion, int16_t>(pkg);
-    _TryWriteType<int32_t, int16_t>(pkg);
-    _TryWriteType<int64_t, int16_t>(pkg);
-    _TryWriteType<std::string, int16_t>(pkg);
-    _TryWriteType<BYTES_t, int16_t>(pkg);
+    _TryWriteType<float,        uint16_t>(pkg);
+    _TryWriteType<Vector3,      uint16_t>(pkg);
+    _TryWriteType<Quaternion,   uint16_t>(pkg);
+    _TryWriteType<int32_t,      uint16_t>(pkg);
+    _TryWriteType<int64_t,      uint16_t>(pkg);
+    _TryWriteType<std::string,  uint16_t>(pkg);
+    _TryWriteType<BYTES_t,      uint16_t>(pkg);
 }
 
 bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
@@ -62,8 +62,12 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 22)
         this->m_distant = pkg.Read<bool>();
 
-    if (worldVersion < 13)
-        pkg.Read<int16_t>(); // condensed 2 reads
+    if (worldVersion < 13) {
+        //assert(false, "c# char is utf8, NYI");
+        //pkg.Read<int16_t>(); // condensed 2 reads
+        pkg.ReadChar();
+        pkg.ReadChar();
+    }
 
     if (worldVersion >= 17)
         this->m_prefab = pkg.Read<HASH_t>();
@@ -77,12 +81,12 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     // Load uses 2 bytes for counts (char in c# is 2 bytes..)
     // It of course has a weird encoding scheme according to UTF...
     // But values 127 and lower are normal
-    _TryReadType<float, int16_t>(pkg);
-    _TryReadType<Vector3, int16_t>(pkg);
-    _TryReadType<Quaternion, int16_t>(pkg);
-    _TryReadType<int32_t, int16_t>(pkg);
-    _TryReadType<int64_t, int16_t>(pkg);
-    _TryReadType<std::string, int16_t>(pkg);
+    _TryReadType<float,         uint16_t>(pkg);
+    _TryReadType<Vector3,       uint16_t>(pkg);
+    _TryReadType<Quaternion,    uint16_t>(pkg);
+    _TryReadType<int32_t,       uint16_t>(pkg);
+    _TryReadType<int64_t,       uint16_t>(pkg);
+    _TryReadType<std::string,   uint16_t>(pkg);
     
     if (worldVersion >= 27)
         _TryReadType<BYTES_t, int16_t>(pkg);
@@ -266,13 +270,13 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //  same when positive (for both)
     pkg.Write((int32_t) m_ordinalMask);
 
-    _TryWriteType<float,            int8_t>(pkg);
-    _TryWriteType<Vector3,          int8_t>(pkg);
-    _TryWriteType<Quaternion,       int8_t>(pkg);
-    _TryWriteType<int32_t,          int8_t>(pkg);
-    _TryWriteType<int64_t,          int8_t>(pkg);
-    _TryWriteType<std::string,      int8_t>(pkg);
-    _TryWriteType<BYTES_t,          int8_t>(pkg);
+    _TryWriteType<float,            uint8_t>(pkg);
+    _TryWriteType<Vector3,          uint8_t>(pkg);
+    _TryWriteType<Quaternion,       uint8_t>(pkg);
+    _TryWriteType<int32_t,          uint8_t>(pkg);
+    _TryWriteType<int64_t,          uint8_t>(pkg);
+    _TryWriteType<std::string,      uint8_t>(pkg);
+    _TryWriteType<BYTES_t,          uint8_t>(pkg);
 }
 
 void ZDO::Deserialize(DataReader& pkg) {
@@ -293,17 +297,17 @@ void ZDO::Deserialize(DataReader& pkg) {
 
     // double check this; 
     if (m_ordinalMask & GetOrdinalMask<float>())
-        _TryReadType<float,         int8_t>(pkg);
+        _TryReadType<float,         uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<Vector3>())
-        _TryReadType<Vector3,       int8_t>(pkg);
+        _TryReadType<Vector3,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<Quaternion>())
-        _TryReadType<Quaternion,    int8_t>(pkg);
+        _TryReadType<Quaternion,    uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<int32_t>())
-        _TryReadType<int32_t,       int8_t>(pkg);
+        _TryReadType<int32_t,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<int64_t>())
-        _TryReadType<int64_t,       int8_t>(pkg);
+        _TryReadType<int64_t,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<std::string>())
-        _TryReadType<std::string,   int8_t>(pkg);
+        _TryReadType<std::string,   uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
-        _TryReadType<BYTES_t,       int8_t>(pkg);
+        _TryReadType<BYTES_t,       uint8_t>(pkg);
 }

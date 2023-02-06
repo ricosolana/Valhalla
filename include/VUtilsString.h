@@ -61,5 +61,9 @@ namespace VUtils::String {
 
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding
-    int32_t GetUTF8Count(const BYTE_t *p);
+    int GetUTF8CodeCount(const BYTE_t *p);
+
+    // Gets the unicode byte count needed to encode uint16_t or C# char 
+    //  Returns 1, 2 or 3
+    unsigned int GetUTF8ByteCount(uint16_t i);
 }

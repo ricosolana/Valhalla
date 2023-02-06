@@ -321,11 +321,8 @@ private:
 
     template<typename T, typename CountType>
     void _TryWriteType(DataWriter& writer) const {
-        // Load/Save use count char for every member (including 0 counts)
-        //assert(false && "fix me please; c# BinaryWriter::Write(char) writes a dynamic amount of bytes");
-
         if constexpr (sizeof(CountType) == 2)
-            writer.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent        
+            writer.Write((BYTE_t)0); // placeholder byte; iffy for c# char (2 bytes .. encoded to max 3)
 
         if (m_ordinalMask & GetOrdinalMask<T>()) {
             // Save structure per each type:
@@ -335,32 +332,53 @@ private:
             //  char: null '\0' byte
 
             if constexpr (sizeof(CountType) == 1)
-                writer.Write((BYTE_t)0); // placeholder byte; also serves as 0 count when type T is absent
+                writer.Write((BYTE_t)0); // placeholder byte; also 0 byte
                         
             const auto size_mark = writer.Position() - sizeof(BYTE_t);
-            BYTE_t count = 0;
+            CountType count = 0;
             for (auto&& pair : m_members) {
                 if (pair.second.Write<T>(writer, pair.first))
                     count++;
-
-                assert(count <= 127 && "shit"); // TODO add a try-catch
             }
 
             if (count) {
-                const auto end_mark = writer.Position();
+                auto end_mark = writer.Position();
                 writer.SetPos(size_mark);
-                writer.Write(count);
+
+                if constexpr (sizeof(CountType) == 2) {
+                    auto&& vec = writer.m_provider.get();
+                    int extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
+                    if (extraCount > 1) {
+                        assert(count >= 0x80);
+                        // make room for utf8 bytes
+                        vec.insert(vec.begin() + size_mark, extraCount, 0);
+                        writer.WriteChar(count);
+                        end_mark += extraCount;
+                    } else {
+                        assert(count < 0x80);
+                        writer.Write(count); // basic write in place
+                    }
+                }
+                else {
+                    writer.Write(count);
+                }
+
                 writer.SetPos(end_mark);
+
+
             }
         }
     }
 
     template<typename T, typename CountType>
     void _TryReadType(DataReader& reader) {
-        const auto count = reader.Read<BYTE_t>();
+
+        CountType count = sizeof(CountType) == 2 ? reader.ReadChar() : reader.Read<BYTE_t>();
+
+        //const auto count = reader.ReadChar();
 
         // The ZDO's which use many members are dungeons... (rooms index...)
-        assert(count <= 127); // TODO add try-catch (or better, handle utf8 correctly)
+        //assert(count <= 127); // TODO add try-catch (or better, handle utf8 correctly)
 
         for (int i=0; i < count; i++) {
             // ...fuck

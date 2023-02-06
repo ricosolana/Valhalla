@@ -2,10 +2,11 @@
 
 #include "ZDO.h"
 #include "WorldManager.h"
+#include "DataWriter.h"
 
 namespace Tests {
-    
-    void Test_ContainerTPL() {
+   
+    void Test_DataBuffer() {
         //constexpr int has = is_container<std::vector<int>>::value;
         //constexpr int has = is_container<int>::value;
         //
@@ -20,6 +21,18 @@ namespace Tests {
         //constexpr int i = has_value_type<std::vector<int>>::value;
 
         //std::iter_value_t<int>
+
+        BYTES_t bytes;
+        DataWriter writer(bytes);
+
+        //int count = 1114111;
+        //int count = 111111;
+
+        int count = 0xFFF1;
+
+        writer.WriteChar(count);
+
+        assert(count == DataReader(bytes).ReadChar());
 
     }
 

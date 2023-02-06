@@ -223,6 +223,12 @@ public:
         return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
+    // Read a UTF-8 encoded C# char
+    //  max of 3 bytes are readable,
+    //  into a 2 byte c# char
+    //  no validation is performed
+    uint16_t ReadChar();
+
     // Reads a byte array 
     // The target vector be overwritten
     //void Read(BYTES_t& out);

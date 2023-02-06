@@ -38,6 +38,28 @@ void DataWriter::SetPos(int32_t pos) {
     m_pos = pos;
 }
 
+void DataWriter::WriteChar(uint16_t i) {
+    // simplest case
+    if (i < 0x80) {
+        Write<BYTE_t>(i);
+    }
+    else if (i < 0x0800) {
+        Write<BYTE_t>(((i >> 6) & 0x1F) | 0xC0);
+        Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
+    }
+    else if (i < 0x010000) {
+        Write<BYTE_t>(((i >> 12) & 0x0F) | 0xE0);
+        Write<BYTE_t>(((i >> 6) & 0x3F) | 0x80);
+        Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
+    }
+    //else if (i < 0x110000) {
+    //    Write<BYTE_t>(((i >> 18) & 0x07) | 0xF0);
+    //    Write<BYTE_t>(((i >> 12) & 0x3F) | 0x80);
+    //    Write<BYTE_t>(((i >> 6) & 0x3F) | 0x80);
+    //    Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
+    //}
+}
+
 
 
 void DataWriter::Write(const BYTE_t* in, int32_t count) {

@@ -13,7 +13,7 @@ AcceptorSteam::AcceptorSteam()
     //}
 
     if (!SteamGameServer_Init(0, m_port, m_port + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
-        LOG(ERROR) << "Failed to init steam game server";
+        LOG(ERROR) << "Failed to init steam game server (steam_appid.txt missing?)";
         exit(0);
     }
 

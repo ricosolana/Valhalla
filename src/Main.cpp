@@ -63,8 +63,9 @@ int main(int argc, char **argv) {
 
 #if FALSE
     fs::current_path("./data/tests/");
+    Tests::Test_DataBuffer();
     //Tests::Test_World();
-    Tests::Test_ZDO();
+    //Tests::Test_ZDO();
     //Tests::Test_ResourceReadWrite();
     //Tests::Test_Random();
     //Tests::Test_Perlin();

@@ -32,8 +32,8 @@ World::World(DataReader reader) {
 
 	auto worldVersion = reader.Read<int32_t>();
 
-	if (worldVersion != VConstants::WORLD)
-		LOG(WARNING) << "Loading unsupported world version: " << worldVersion;
+	//if (worldVersion != VConstants::WORLD)
+		//LOG(WARNING) << "Loading unsupported world meta version: " << worldVersion;
 
 	m_name = reader.Read<std::string>();
 	m_seedName = reader.Read<std::string>();
@@ -143,18 +143,25 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 
 	auto&& opt = VUtils::Resource::ReadFileBytes(dbpath);
 
+	auto now(steady_clock::now());
+
 	if (opt) {
 		try {
 			DataReader reader(opt.value());
 
 			auto worldVersion = reader.Read<int32_t>();
-			LOG(INFO) << "Loading world version '" << worldVersion << "'";
-
-			if (worldVersion != VConstants::WORLD)
-				LOG(WARNING) << "Version is unsupported";
+			if (worldVersion != VConstants::WORLD) {
+				LOG(WARNING) << "Loading unsupported world version " << worldVersion;
+				if (!SERVER_SETTINGS.worldModern)
+					LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
+			}
+			else
+				LOG(INFO) << "Loading world version " << worldVersion;
 
 			if (worldVersion >= 4)
 				Valhalla()->m_netTime = reader.Read<double>();
+
+
 
 			ZDOManager()->Load(reader, worldVersion);
 
@@ -185,6 +192,8 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 			LOG(ERROR) << "Failed to load world: " << e.what();
 		}
 	}
+
+	LOG(INFO) << "World loading took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
 }
 
 
