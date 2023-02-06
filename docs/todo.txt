@@ -1,6 +1,8 @@
 todo:
-    - high priority: add full utf-8 char encoding and decoding for full Valheim c# compat
-        current asystem is lazy and will only work with single bytes up to count 127, beyond that is special encoding...
+    - world saving apparently broken
+        loading however is fully supported
+
+    - implement portals
     
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
@@ -32,6 +34,9 @@ todo:
         compress
         
 finished:
+    - high priority: add full utf-8 char encoding and decoding for full Valheim c# compat
+        current asystem is lazy and will only work with single bytes up to count 127, beyond that is special encoding...
+
     - restructure netpackage 
         - rename + make underlying stream use a ptr vec...
         - stream in many cases should be read only, like reading data incrementally, without copying when sub packages need making
