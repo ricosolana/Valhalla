@@ -88,6 +88,7 @@ add_executable(${PROJECT_NAME}
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
     "src/Main.cpp"
+    "src/ModManager.cpp"
     "src/NetAcceptorSteam.cpp"
     "src/NetID.cpp"
     "src/NetManager.cpp"
@@ -110,7 +111,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneManager.cpp"
-)
+ )
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

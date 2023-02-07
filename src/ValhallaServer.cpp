@@ -14,6 +14,7 @@
 #include "RouteManager.h"
 #include "Hashes.h"
 #include "HeightmapBuilder.h"
+#include "ModManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
