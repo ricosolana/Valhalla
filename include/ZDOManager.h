@@ -16,7 +16,7 @@ class IZDOManager {
 	//friend void AddToSector(ZDO* zdo);
 	//friend void RemoveFromSector(ZDO* zdo);
 	
-	static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
+	//static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	static constexpr int MAX_DEAD_OBJECTS = 100000;
 
 private:
@@ -27,7 +27,8 @@ private:
 	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;
 
 	// Contains ZDOs according to Zone
-	std::array<robin_hood::unordered_set<ZDO*>, (WIDTH_IN_ZONES* WIDTH_IN_ZONES)> m_objectsBySector;
+	std::array<robin_hood::unordered_set<ZDO*>, 
+		(IZoneManager::WORLD_SIZE_IN_ZONES* IZoneManager::WORLD_SIZE_IN_ZONES)> m_objectsBySector;
 
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<NetID, TICKS_t> m_deadZDOs;
@@ -60,7 +61,7 @@ private:
 	//void MoveToZone(ZDO* zdo, const ZoneID& zone);
 
 	// Insert a ZDO into zone (internal)
-	void AddToSector(ZDO* zdo);
+	bool AddToSector(ZDO* zdo);
 	// Remove a zdo from a zone (internal)
 	void RemoveFromSector(ZDO* zdo);
 	// Relay a ZDO sector change to clients (internal)

@@ -15,11 +15,14 @@ IZDOManager* ZDOManager() {
 
 
 
-void IZDOManager::AddToSector(ZDO* zdo) {
+bool IZDOManager::AddToSector(ZDO* zdo) {
 	int num = SectorToIndex(zdo->Sector());
 	if (num != -1) {
-		m_objectsBySector[num].insert(zdo);
+		auto&& pair = m_objectsBySector[num].insert(zdo);
+		assert(pair.second);
+		return true;
 	}
+	return false;
 }
 
 void IZDOManager::RemoveFromSector(ZDO* zdo) {
@@ -47,41 +50,45 @@ void IZDOManager::Save(DataWriter& pkg) {
 	pkg.Write<OWNER_t>(0);
 	pkg.Write(m_nextUid);
 	
-	// Write zdos (persistent)
-	const auto start = pkg.Position();
-
-	int32_t count = 0;	
-	pkg.Write(count);
-
 	{
-		//NetPackage zdoPkg;
-		for (auto&& sectorObjects : m_objectsBySector) {
-			for (auto zdo : sectorObjects) {
-				if (zdo->m_persistent) {
-					pkg.Write(zdo->ID());
-					pkg.SubWrite([zdo, &pkg]() {
-						zdo->Save(pkg);
-					});
-					count++;
+		// Write zdos (persistent)
+		const auto start = pkg.Position();
+
+		int32_t count = 0;
+		pkg.Write(count);
+
+		{
+			//NetPackage zdoPkg;
+			for (auto&& sectorObjects : m_objectsBySector) {
+				for (auto zdo : sectorObjects) {
+					if (zdo->m_persistent) {
+						pkg.Write(zdo->ID());
+						pkg.SubWrite([zdo, &pkg]() {
+							zdo->Save(pkg);
+							});
+						count++;
+					}
 				}
 			}
 		}
+
+		//const auto end = pkg.Position();
+		pkg.SetPos(start);
+		pkg.Write(count);
+		//pkg.SetPos(end);
+		pkg.SetPos(pkg.m_provider.get().size());
 	}
-	
-	//const auto end = pkg.Position();
-	pkg.SetPos(start);
-	pkg.Write(count);
-	//pkg.SetPos(end);
-	pkg.SetPos(pkg.m_provider.get().size());
+
+	pkg.Write<int32_t>(0);
 
 	// Write dead zdos
-	pkg.Write((int32_t)m_deadZDOs.size());
-	for (auto&& dead : m_deadZDOs) {
-		pkg.Write(dead.first);
-		auto t = dead.second.count();
-		static_assert(sizeof(t) == 8);
-		pkg.Write(t);
-	}
+	//pkg.Write((int32_t)m_deadZDOs.size());
+	//for (auto&& dead : m_deadZDOs) {
+	//	pkg.Write(dead.first);
+	//	auto t = dead.second.count();
+	//	static_assert(sizeof(t) == 8);
+	//	pkg.Write(t);
+	//}
 }
 
 void IZDOManager::Init() {
@@ -131,25 +138,30 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		else purgeCount++;
 	}
 
+
+
 	auto deadCount = reader.Read<int32_t>();
 	for (int j = 0; j < deadCount; j++) {
 		auto key = reader.Read<NetID>();
 		auto value = TICKS_t(reader.Read<int64_t>());
-		m_deadZDOs[key] = value;
-		if (key.m_uuid == SERVER_ID && key.m_id >= nextUid) {
-			nextUid = key.m_id + 1;
-		}
+		//m_deadZDOs[key] = value;
+		//if (key.m_uuid == SERVER_ID && key.m_id >= nextUid) {
+		//	nextUid = key.m_id + 1;
+		//}
 	}
 
-	CapDeadZDOList();
+	//CapDeadZDOList();
+
 	m_nextUid = nextUid;
 
 	LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
 	LOG(INFO) << "Purged " << purgeCount << " old zdos";
-	LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
+	//LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
 }
 
 void IZDOManager::CapDeadZDOList() {
+	// sort by age, deleting old
+
 	while (m_deadZDOs.size() > MAX_DEAD_OBJECTS) {
 		m_deadZDOs.erase(m_deadZDOs.begin());
 	}
@@ -515,13 +527,13 @@ void IZDOManager::ForceSendZDO(const NetID& id) {
 }
 
 int IZDOManager::SectorToIndex(const ZoneID& s) const {
-	int x = s.x + WIDTH_IN_ZONES / 2;
-	int y = s.y + WIDTH_IN_ZONES / 2;
+	int x = s.x + IZoneManager::WORLD_SIZE_IN_ZONES / 2;
+	int y = s.y + IZoneManager::WORLD_SIZE_IN_ZONES / 2;
 	if (x < 0 || y < 0
-		|| x >= WIDTH_IN_ZONES || y >= WIDTH_IN_ZONES) {
+		|| x >= IZoneManager::WORLD_SIZE_IN_ZONES || y >= IZoneManager::WORLD_SIZE_IN_ZONES) {
 		return -1;
 	}
-	return y * WIDTH_IN_ZONES + x;
+	return y * IZoneManager::WORLD_SIZE_IN_ZONES + x;
 }
 
 bool IZDOManager::SendZDOs(Peer* peer, bool flush) {

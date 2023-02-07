@@ -88,7 +88,7 @@ void IValhalla::LoadFiles() {
 
     if (createSettingsFile) {
         YAML::Node saveNode;
-
+        
         saveNode["server-name"] = m_settings.serverName;
         saveNode["server-port"] = m_settings.serverPort;
         saveNode["server-password"] = m_settings.serverPassword;

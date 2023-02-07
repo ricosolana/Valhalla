@@ -19,14 +19,19 @@ public:
 
 	bool AtMaxLevelDepth(const Vector3& worldPos);
 
+	//Vector3 GetNormal(const Vector3& pos);
+
 	// Get the heightmap height at position
 	//	Will only succeed given the heightmap exists
-	bool GetHeight(const Vector3& worldPos, float& height);
+	// TODO make this return the height, or throw if out of bounds of entire square world
+	//bool GetHeight(const Vector3& worldPos, float& height);
 	//bool GetAverageHeight(const Vector3& worldPos, float radius, float &height);
+
+	
 
 	// Get the heightmap height at position,
 	//	The heightmap will be created if it does not exist
-	float GetHeight(const Vector3& worldPos);
+	//float GetHeight(const Vector3& worldPos);
 
 	//static std::vector<Heightmap> GetAllHeightmaps();
 	robin_hood::unordered_map<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();

@@ -125,6 +125,7 @@ public:
 	static constexpr int DISTANT_ACTIVE_AREA = 2;
 	static constexpr int ZONE_SIZE = 64;
 	static constexpr float WATER_LEVEL = 30;
+	static constexpr int WORLD_SIZE_IN_ZONES = 312;
 
 private:
 	// All templated ZoneLocations, sorted by priority

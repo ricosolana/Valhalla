@@ -372,7 +372,9 @@ bool IZoneManager::SpawnZone(const ZoneID& zone) {
     //  *note: ZonePrefab does NOT contain ZDO, nor ZNetView, unline _ZoneCtrl (which does)
 
     // Wait for builder thread
-    if (!IsZoneGenerated(zone)) {
+    if ((zone.x > -WORLD_SIZE_IN_ZONES/2 && zone.y > -WORLD_SIZE_IN_ZONES/2
+        && zone.x < WORLD_SIZE_IN_ZONES/2 && zone.y < WORLD_SIZE_IN_ZONES/2)
+        && !IsZoneGenerated(zone)) {
         if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
             static std::vector<ClearArea> m_tempClearAreas;
 

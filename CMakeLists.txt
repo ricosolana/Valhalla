@@ -80,36 +80,37 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/DataReader.cpp"
+    "src/DataWriter.cpp"
+    "src/EventManager.cpp"
+    "src/GeoManager.cpp"
     "src/Heightmap.cpp"
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
     "src/Main.cpp"
     "src/NetAcceptorSteam.cpp"
     "src/NetID.cpp"
-    "src/NetManager.cpp"    
-    
-    "src/Peer.cpp"
-    
+    "src/NetManager.cpp"
+    "src/NetRpc.cpp"
     "src/NetSteamSocket.cpp"
-    "src/PrefabManager.cpp" 
+    "src/Peer.cpp"
+    "src/PrefabManager.cpp"
     "src/Quaternion.cpp"
     "src/RouteManager.cpp"
-    
     "src/Task.cpp"
     "src/ValhallaServer.cpp"
     "src/Vector.cpp"
     "src/VUtils.cpp"
     "src/VUtilsMath.cpp"
+    "src/VUtilsMathf.cpp"
     "src/VUtilsRandom.cpp"
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
-    "src/GeoManager.cpp"
     "src/WorldManager.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
-    
-    "src/ZoneManager.cpp"    
- "src/NetRpc.cpp" "include/VUtilsMathf.h" "src/VUtilsMathf.cpp" "include/DataReader.h" "src/DataReader.cpp" "include/DataWriter.h" "src/DataWriter.cpp" "include/DataStream.h")
+    "src/ZoneManager.cpp"
+)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -1,4 +1,8 @@
 todo:
+    - implement quaternion euler fully
+    
+    - implement quaternion lookdirection fully
+
     - vegetation pkg values might need tweaking
         swamp trees are kinda not distributed?
 

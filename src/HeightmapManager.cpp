@@ -42,6 +42,12 @@ bool IHeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
     return heightmap.AtMaxWorldLevelDepth(worldPos);
 }
 
+/*
+Vector3 IHeightmapManager::GetNormal(const Vector3& pos) {
+
+}*/
+
+/*
 // public static
 bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
     auto&& heightmap = GetHeightmap(worldPos);
@@ -60,8 +66,13 @@ float IHeightmapManager::GetHeight(const Vector3& worldPos) {
         return height;
     }
 
-    throw std::runtime_error("Unexpected: Failed to get guaranteed heightmap at position (should not see this)");
+    assert(false);
+
+    //throw std::runtime_error("Unexpected: Failed to get guaranteed heightmap at position (should not see this)");
+    LOG(ERROR) << "Failed to get guaranteed heightmap at position";
+    exit(0);
 }
+*/
 
 /*
 // public static
