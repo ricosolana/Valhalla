@@ -1,12 +1,32 @@
 todo:
+    - vegetation pkg values might need tweaking
+        swamp trees are kinda not distributed?
+
+    - cleanup used heightmaps after time
+
+    - fix mistlands mist distribution
+        literally a blanket
+
+    - fix zdo-specific world saving
+        primarily related to object-specific saves apparently, like container, terrain modifier?...
+   
+    - calc server memory consumption
+        zdos primarily...
+        
+    - test reducing world size to 313
+        also add constraints when near edge of world
+        so index bounds issues wont happen
+   
     - implement portals
     
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
             - proper cleanup / disposal of managers
-    
-    - have method to get normal vector of heightmap at position
+       
+    - block WNT packets?
+        cause particles to spawn on screen likely causing lagg if many 
+        
     
     - consolidate all player notification messages into one method
         showMessage, chatMessage, RemotePrint...
@@ -31,6 +51,11 @@ todo:
         compress
         
 finished:
+    - have method to get normal vector of heightmap at position
+        consider using 4-pt normal for more acc normals if simple and fast enough
+        
+        but simple 2-pt normals work fine
+
     - world saving apparently broken (loading however is fully supported)
         was skipping utf-8 that had 3 total encoded byte sizes instead of the expected 2 -> 3 bytes
 

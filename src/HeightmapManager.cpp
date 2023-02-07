@@ -1,5 +1,6 @@
 #include "HeightmapManager.h"
 #include "ZoneManager.h"
+#include "HeightmapBuilder.h"
 
 //static std::vector<float> 
 // only ever used locally
@@ -32,22 +33,19 @@ void IHeightmapManager::ForceQueuedRegeneration() {
 // public static 
 float IHeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
-    if (heightmap) {
-        return heightmap->GetOceanDepth(worldPos);
-    }
-    return 0;
+    return heightmap.GetOceanDepth(worldPos);
 }
 
 // public static
 bool IHeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
-    auto heightmap = GetHeightmap(worldPos);
-    return heightmap && heightmap->AtMaxWorldLevelDepth(worldPos);
+    auto&& heightmap = GetHeightmap(worldPos);
+    return heightmap.AtMaxWorldLevelDepth(worldPos);
 }
 
 // public static
 bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
-    auto heightmap = GetHeightmap(worldPos);
-    if (heightmap && heightmap->GetWorldHeight(worldPos, height)) {
+    auto&& heightmap = GetHeightmap(worldPos);
+    if (heightmap.GetWorldHeight(worldPos, height)) {
         return true;
     }
     height = 0;
@@ -55,26 +53,27 @@ bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
 }
 
 float IHeightmapManager::GetHeight(const Vector3& worldPos) {
-    auto heightmap = GetOrCreateHeightmap(IZoneManager::WorldToZonePos(worldPos));
+    auto&& heightmap = GetHeightmap(IZoneManager::WorldToZonePos(worldPos));
 
     float height = 0;
-    if (heightmap->GetWorldHeight(worldPos, height)) {
+    if (heightmap.GetWorldHeight(worldPos, height)) {
         return height;
     }
 
     throw std::runtime_error("Unexpected: Failed to get guaranteed heightmap at position (should not see this)");
 }
 
+/*
 // public static
-bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius, float height) {
-    std::vector<Heightmap*> list = GetHeightmaps(worldPos, radius);
+bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float radius, float &height) {
+    auto heightmaps = GetHeightmaps(worldPos, radius);
 
     float num = 0;
     int32_t num2 = 0;
 
-    for (auto&& hmap : list) {
+    for (auto&& heightmap : heightmaps) {
         float num3;
-        if (hmap->GetAverageWorldHeight(worldPos, radius, num3)) {
+        if (heightmap.GetAverageWorldHeight(worldPos, radius, num3)) {
             num += num3;
             num2++;
         }
@@ -87,13 +86,14 @@ bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float& radius,
     height = 0;
     return false;
 }
-
+*/
 
 // public static
 robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
     return m_heightmaps;
 }
 
+/*
 Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //for (auto&& pair : m_heightmaps) {
     //    auto&& heightmap = pair.second;
@@ -130,23 +130,36 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //    return heightmap;
     //
     //return CreateHeightmap(IZoneManager::WorldToZonePos(point));
+}*/
+
+Heightmap* IHeightmapManager::PollHeightmap(const ZoneID& zone) {
+    auto&& insert = m_heightmaps.insert({ zone, nullptr });
+    if (!insert.first->second) // if heightmap is null, try polling it
+        insert.first->second = HeightmapBuilder()->PollHeightmap(zone);
+
+    return insert.first->second.get();
 }
 
 // public static
-Heightmap* IHeightmapManager::GetHeightmap(const Vector3& point) {
+Heightmap& IHeightmapManager::GetHeightmap(const Vector3& point) {
     return GetHeightmap(IZoneManager::WorldToZonePos(point));
 }
 
-Heightmap* IHeightmapManager::GetHeightmap(const ZoneID& zone) {
-    auto&& find = m_heightmaps.find(zone);
-    if (find != m_heightmaps.end())
-        return find->second.get();
+Heightmap& IHeightmapManager::GetHeightmap(const ZoneID& zone) {
+    auto&& insert = m_heightmaps.insert({ zone, nullptr });
 
-    return nullptr;
+    while (!insert.first->second) { // if heightmap is null, try polling it
+        insert.first->second = HeightmapBuilder()->PollHeightmap(zone);
+        if (!insert.first->second) // small optimize
+            std::this_thread::sleep_for(1ms);
+    }
+
+    return *insert.first->second;
 }
 
 // public static
 std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, float radius) {
+    throw std::runtime_error("not implemented");
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
         auto&& heightmap = pair.second;
@@ -157,14 +170,15 @@ std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, f
     return heightmaps;
 }
 
+/*
 // public static
 Biome IHeightmapManager::FindBiome(const Vector3& point) {
-    auto heightmap = GetHeightmap(point);
+    auto &&heightmap = GetHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
     }
     return Biome::None;
-}
+}*/
 
 // public static
 bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {

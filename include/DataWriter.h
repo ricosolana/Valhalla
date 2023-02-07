@@ -5,33 +5,24 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "VUtilsTraits.h"
+#include "DataStream.h"
 
-class DataWriter {
-public:
-    std::reference_wrapper<BYTES_t> m_provider;
-    int32_t m_pos;
-
+class DataWriter : public DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteBytes(const BYTE_t* buffer, int32_t count);
-
-    // Write a single byte from the specified buffer
-    // Bytes are written in place, making space as necessary
-    //auto Write(const BYTE_t value) {
-    //    return Write(&value, sizeof(value));
-    //}
+    void WriteBytes(const BYTE_t* buffer, size_t count);
 
     // Write count bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteBytes(const BYTES_t& vec, int32_t count) {
+    auto WriteBytes(const BYTES_t& vec, size_t count) {
         return WriteBytes(vec.data(), count);
     }
 
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
     auto WriteBytes(const BYTES_t& vec) {
-        return WriteBytes(vec, static_cast<int32_t>(vec.size()));
+        return WriteBytes(vec, vec.size());
     }
 
     void Write7BitEncodedInt(int32_t value) {
@@ -43,69 +34,23 @@ private:
     }
 
 public:
-    DataWriter(BYTES_t& bytes) : m_provider(bytes), m_pos(0) {}
+    DataWriter(BYTES_t& bytes) : DataStream(bytes) {}
 
-    // Gets all the data in the package
-    //BYTES_t Bytes() const {
-    //    return *m_provider;
-    //}
-
-    // Gets all the data in the package
-    //void Bytes(BYTES_t &out) const {
-    //    out = *m_buf;
-    //}
-
-    //BYTES_t Remaining() {
-    //    BYTES_t res;
-    //    Read(res, m_provider->size() - m_pos);
-    //    return res;
-    //}
-
-
-
-    // Reset the marker and length members
-    // No array shrinking is performed
+    // Clears the underlying container and resets position
     void Clear() {
         m_pos = 0;
         m_provider.get().clear();
     }
 
-
-
-    // Returns the length of this stream
-    int32_t Length() const {
-        return static_cast<int32_t>(m_provider.get().size());
-    }
-
     // Sets the length of this stream
-    void SetLength(uint32_t length) {
-        m_provider.get().resize(length);
-    }
-
-
-
-    // Returns the position of this stream
-    int32_t Position() const {
-        return m_pos;
-    }
-
-    // Sets the positino of this stream
-    void SetPos(int32_t pos);
+    //void SetLength(uint32_t length) {
+    //    m_provider.get().resize(length);
+    //}
 
 public:
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
-    //requires std::is_lvalue_reference_v<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>> 
-        //std::same_as<NetPackage, std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>>
     void SubWrite(F func) {
-        //using args_type = typename VUtils::Traits::func_traits<F>::args_type;
-
-        //static_assert(std::tuple_size<args_type>{} == 2, "Lambda must contain 2 parameters");
-
-        //static_assert(std::same_as<decltype(NetPackage&), std::tuple_element_t<0, args_type>>::value, "First arg must be NetPackage&");
-
-        //static_assert(std::same_as<decltype(NetPackage&), std::tuple_element_t<1, args_type>>::value, "First arg must be NetPackage&");
-
         const auto start = Position();
         int32_t count = 0;
         Write(count);
@@ -124,12 +69,12 @@ public:
     // Writes a BYTE_t* as byte array of length
     //  uint32_t:   size
     //  BYTES_t:    data
-    void Write(const BYTE_t* in, int32_t count);
+    void Write(const BYTE_t* in, size_t count);
 
     // Writes a BYTES_t* as byte array of length
     //  uint32_t:   size
     //  BYTES_t:    data
-    void Write(const BYTES_t& in, int32_t count);
+    void Write(const BYTES_t& in, size_t count);
 
     // Writes a BYTE_t* as byte array
     //  uint32_t:   size
@@ -176,7 +121,9 @@ public:
     template<typename Iterable> requires
         (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
         void Write(const Iterable& in) {
-        Write<int32_t>(in.size());
+        size_t size = in.size();
+        Assert31U(size);
+        Write(static_cast<int32_t>(size));
         for (auto&& v : in) {
             Write(v);
         }
@@ -209,7 +156,7 @@ public:
         _Serialize(pkg, var2...);
     }
 
-    // Serialize variadic types to a NetPackage
+    // Serialize variadic types to an array
     template <typename T, typename... Types>
     static BYTES_t Serialize(T var1, const Types&... var2) {
         BYTES_t bytes; bytes.reserve((sizeof(var1) + ... + sizeof(Types)));

@@ -1,14 +1,8 @@
 #include "DataReader.h"
 
-void DataReader::ReadBytes(BYTE_t* buffer, int32_t count) {
-    if (count < 0) 
-        throw VUtils::data_error("negative count");
-
-    if (static_cast<size_t>(m_pos) + static_cast<size_t>(count) > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-        throw VUtils::data_error("int32_t size exceeded");
-
-    if (m_pos + count > Length()) 
-        throw VUtils::data_error("read exceeds length");
+void DataReader::ReadBytes(BYTE_t* buffer, size_t count) {
+    Assert31U(count);
+    AssertOffset(count);
 
     // read into 'buffer'
     std::copy(m_provider.get().begin() + m_pos,
@@ -24,32 +18,14 @@ void DataReader::ReadBytes(BYTE_t* buffer, int32_t count) {
 //    return b;
 //}
 
-void DataReader::ReadBytes(std::vector<BYTE_t>& vec, int32_t count) {
-    if (count < 0) 
-        throw VUtils::data_error("negative count");
+void DataReader::ReadBytes(BYTES_t& vec, size_t count) {
+    Assert31U(count);
+    AssertOffset(count);
 
-    if (static_cast<size_t>(m_pos) + static_cast<size_t>(count) > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-        throw VUtils::data_error("int32_t size exceeded");
-
-    if (m_pos + count > Length()) 
-        throw VUtils::data_error("read exceeds length");
-
-    vec.clear();
-    vec.insert(vec.begin(),
-        m_provider.get().begin() + m_pos,
+    vec = BYTES_t(m_provider.get().begin() + m_pos,
         m_provider.get().begin() + m_pos + count);
 
     m_pos += count;
-}
-
-void DataReader::SetPos(int32_t pos) {
-    if (pos < 0) 
-        throw VUtils::data_error("negative pos");
-
-    if (pos > Length() + 1) 
-        throw VUtils::data_error("position exceeds length");
-
-    m_pos = pos;
 }
 
 uint16_t DataReader::ReadChar() {

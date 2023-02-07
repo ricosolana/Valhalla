@@ -155,7 +155,7 @@ private:
 
 	bool SpawnZone(const ZoneID& zone);
 	std::vector<ClearArea> PlaceLocations(const ZoneID& zone);
-	void PlaceVegetation(const ZoneID& zone, Heightmap* hmap, const std::vector<ClearArea>& clearAreas);
+	void PlaceVegetation(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 	void PlaceZoneCtrl(const ZoneID& zone);
 
 	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
@@ -199,7 +199,7 @@ public:
 	//bool GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore);
 	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
 	//bool FindFloor(const Vector3& p, float& height);
-	Heightmap* GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
+	Heightmap& GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
 	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
 
 	static ZoneID WorldToZonePos(const Vector3& point);
@@ -211,6 +211,8 @@ public:
 	bool IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid);
 
 	void ResetGlobalKeys();
+
+	//bool GetWorldNormal(const Vector3& worldPos, Vector3& normal);
 };
 
 IZoneManager* ZoneManager();

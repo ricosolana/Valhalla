@@ -89,6 +89,8 @@ private:
 public:
     Heightmap(const ZoneID& zone, std::unique_ptr<BaseHeightmap> base);
 
+    //Heightmap(const Heightmap& other) = delete; // delete copy
+
     //void QueueRegenerate();
     //bool IsRegenerateQueued();
     void Regenerate();
@@ -140,6 +142,8 @@ public:
     void SetHeight(int32_t x, int32_t y, float h);
     bool IsPointInside(const Vector3& point, float radius = 0);
 
+
+    bool GetWorldNormal(const Vector3& worldPos, Vector3& normal);
 
 
     TerrainComp GetAndCreateTerrainCompiler();

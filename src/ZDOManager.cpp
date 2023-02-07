@@ -67,7 +67,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 			}
 		}
 	}
-
+	
 	//const auto end = pkg.Position();
 	pkg.SetPos(start);
 	pkg.Write(count);

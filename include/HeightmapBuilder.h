@@ -20,7 +20,7 @@ private:
 public:
     void Init();
     void Uninit();
-
+    
     std::unique_ptr<Heightmap> PollHeightmap(const ZoneID& zone);
 
     //std::unique_ptr<HMBuildData> RequestTerrainBlocking(const ZoneID& zone);

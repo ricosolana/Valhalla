@@ -42,7 +42,8 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	if (!data.m_targetSync) {
 		auto&& find = m_methods.find(data.m_methodHash);
 		if (find != m_methods.end()) {
-			find->second->Invoke(sender, std::move(data.m_parameters));
+			DataReader reader(data.m_parameters);
+			find->second->Invoke(sender, reader);
 		}
 		else {
 			// Due to the way Valhiem manages it RoutedRPC's, 

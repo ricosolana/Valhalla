@@ -424,6 +424,41 @@ bool Heightmap::GetWorldBaseHeight(const Vector3& worldPos, float& height) {
     return true;
 }
 
+
+bool Heightmap::GetWorldNormal(const Vector3& worldPos, Vector3& normal) {
+    //float y;
+    Vector3 a = worldPos;
+    if (!GetWorldHeight(worldPos, a.y))
+        return false;
+
+    //float y1;
+    Vector3 b = worldPos + Vector3(1, 0, 0);
+    if (!GetWorldHeight(b, b.y)) {
+        b = worldPos + Vector3(-1, 0, 0);
+        GetWorldHeight(b, b.y);
+    }
+
+    Vector3 c = worldPos + Vector3(0, 0, 1);
+    if (!GetWorldHeight(c, c.y)) {
+        c = worldPos + Vector3(0, 0, -1);
+        GetWorldHeight(c, c.y);
+    }
+
+    //return cross prod
+
+    // make vectors locally relative
+    b -= a;
+    c -= a;
+
+    normal = b.Cross(c).Normalize();
+
+    // if it points below the horizon
+    if (normal.y < 0)
+        normal *= -1; // flip it back up
+
+    return true;
+}
+
 // private
 bool Heightmap::GetWorldHeight(const Vector3& worldPos, float& height) {
     int32_t x;
@@ -677,8 +712,8 @@ bool Heightmap::IsCultivated(const Vector3& worldPos) {
 // public
 void Heightmap::WorldToVertex(const Vector3& worldPos, int32_t& x, int32_t &y) {
     Vector3 vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x = floor(vector.x + 0.5f) + IZoneManager::ZONE_SIZE / 2;
-    y = floor(vector.z + 0.5f) + IZoneManager::ZONE_SIZE / 2;
+    x = floor(vector.x + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
+    y = floor(vector.z + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
 }
 
 // private
