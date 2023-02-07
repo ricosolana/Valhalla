@@ -3,20 +3,11 @@ todo:
     
     - implement quaternion lookdirection fully
 
-    - vegetation pkg values might need tweaking
-        swamp trees are kinda not distributed?
-
     - cleanup used heightmaps after time
-
-    - fix mistlands mist distribution
-        literally a blanket
 
     - fix zdo-specific world saving
         primarily related to object-specific saves apparently, like container, terrain modifier?...
    
-    - calc server memory consumption
-        zdos primarily...
-        
     - test reducing world size to 313
         also add constraints when near edge of world
         so index bounds issues wont happen
@@ -28,9 +19,17 @@ todo:
             - save world, 
             - proper cleanup / disposal of managers
        
+    - calc server memory consumption
+        zdos primarily...
+       
     - block WNT packets?
         cause particles to spawn on screen likely causing lagg if many 
         
+    - fix mistlands mist distribution
+        literally a blanket
+        
+    - vegetation pkg values might need tweaking
+        swamp trees are kinda not distributed?
     
     - consolidate all player notification messages into one method
         showMessage, chatMessage, RemotePrint...

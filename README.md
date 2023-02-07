@@ -13,6 +13,16 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 2/7/2023 + TODO
+
+Ive implemented several generation fixes, such as heightmap normals, primitive char-utf8 stream read/write support, and completely overhauled the netpackage system into two seperate portions (reader + writer).
+
+Some of the features in Valheim are kinda miscellaneously handled on the side, such as portal linking, bed sleep/awake, among a variad of other things that dont really have a particular fitting in the server. Because of this and in general, I will be reintegrating Lua modding functionality over the next few days. 
+
+A bit ago I removed many subsystems to make the server work (because of weird compile errors I just couldnt fix). One of these was the mod manager, and the last commit featuring it is here https://github.com/PeriodicSeizures/Valhalla/tree/57c6d19a853f3154061bdaf316672f4bedc25f12/src. I plan to approach things differently this time around. Instead of creating a Lua vm for every script, I want them to be able to communicate with each other, so they might have the same Lua instance. I have not gone too deep into what sol provides, but I've read there are sol::environments that provide a virtual space for use within a single script? I am not sure.
+
+Also another Valheim update was released today.
+
 ### 2/5/2023 + TODO
 
 Ive made many changes, primarily to NetPackage to make it more specifically read or write oriented in certain scenarios. 
