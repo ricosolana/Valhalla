@@ -102,6 +102,9 @@ public:
 
         Iterable out;
 
+        if constexpr (std::is_same_v<Iterable, std::vector<std::string>>)
+            out.reserve(count);
+
         for (int32_t i=0; i < count; i++) {
             assert(i >= 0);
             auto type = Read<typename Iterable::value_type>();

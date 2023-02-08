@@ -43,3 +43,7 @@ Valhalla.OnEvent("RpcIn", "CompressedZDOData", function(rpc, pkg)
 
     pkg.buf = VUtils.Decompress(pkg.buf)
 end)
+
+Valhalla.OnEvent("Enable", function()
+    print("Compress mod Enable()")
+end)

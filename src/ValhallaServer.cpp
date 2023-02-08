@@ -32,7 +32,7 @@ void IValhalla::LoadFiles() {
     YAML::Node loadNode;
     bool createSettingsFile = false;
     {
-        if (auto&& opt = VUtils::Resource::ReadFileString("server.yml")) {
+        if (auto opt = VUtils::Resource::ReadFileString("server.yml")) {
             try {
                 loadNode = YAML::Load(opt.value());
             }
@@ -176,8 +176,10 @@ void IValhalla::Start() {
     ZoneManager()->Init();
     WorldManager()->Init();
     GeoManager()->Init();
-    HeightmapBuilder()->Init();
     ZoneManager()->GenerateLocations();
+    ModManager()->Init();
+
+    HeightmapBuilder()->Init();
     NetManager()->Init();
 
     LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
@@ -248,6 +250,9 @@ void IValhalla::Start() {
     // Cleanup 
     NetManager()->Uninit();
     HeightmapBuilder()->Uninit();
+
+    ModManager()->Uninit();
+
     WorldManager()->WriteFileWorldDB(true);
 
     VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);

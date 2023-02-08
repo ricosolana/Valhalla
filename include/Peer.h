@@ -9,6 +9,9 @@
 class IZDOManager;
 class INetManager;
 
+// TODO merge player message types all in one
+// MessageType: 
+
 enum class TalkerType : int32_t
 {
     Whisper,
@@ -16,6 +19,8 @@ enum class TalkerType : int32_t
     Shout,
     Ping
 };
+
+
 
 class Peer {
     friend class IZDOManager;
@@ -25,10 +30,11 @@ private:
     std::chrono::steady_clock::time_point m_lastPing;
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
+public:
     robin_hood::unordered_map<NetID, ZDO::Rev> m_zdos;
     robin_hood::unordered_set<NetID> m_forceSend;
     robin_hood::unordered_set<NetID> m_invalidSector;
-    int m_sendIndex = 0; // used incrementally for which next zdos to send from index
+    //int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
 public:
     ISocket::Ptr m_socket;

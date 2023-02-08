@@ -31,7 +31,7 @@ void IPrefabManager::Init() {
     std::string ver = pkg.Read<std::string>();
     LOG(INFO) << "prefabs.pkg has game version " << ver;
     if (ver != VConstants::GAME)
-        LOG(ERROR) << "prefabs.pkg uses different game version than server";
+        LOG(WARNING) << "prefabs.pkg uses different game version than server";
 
     auto count = pkg.Read<int32_t>();
     LOG(INFO) << "Loading " <<  count << " prefabs";
@@ -66,19 +66,15 @@ ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaterni
             *outPrefab = prefab.get();
 
         return zdo;
-
-        //return std::make_optional<std::pair<const Prefab*, ZDO*>>({ prefab.get(), zdo });
     }
 
     return nullptr;
-
-    //return std::nullopt;
 }
 
 ZDO* IPrefabManager::Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot) {
     assert(prefab);
     
-    auto zdo = ZDOManager()->CreateZDO(pos);
+    auto zdo = ZDOManager()->AddZDO(pos);
     zdo->m_distant = prefab->m_distant;
     zdo->m_persistent = prefab->m_persistent;
     zdo->m_type = prefab->m_type;

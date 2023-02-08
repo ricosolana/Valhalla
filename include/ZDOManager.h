@@ -36,29 +36,13 @@ private:
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<NetID> m_destroySendList;
 
+	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
+
 private:
+	// Called when an authenticated peer joins (internal)
 	void OnNewPeer(Peer* peer);
+	// Called when an authenticated peer leaves (internal)
 	void OnPeerQuit(Peer* peer);
-
-	void ReleaseNearbyZDOS(Peer* peer);
-	void HandleDestroyedZDO(const NetID& uid);
-	void SendAllZDOs(Peer* peer);
-	bool SendZDOs(Peer* peer, bool flush);
-	void CreateSyncList(Peer* peer, std::vector<ZDO*>& toSync);
-	void AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList);
-
-	ZDO* CreateZDO(const Vector3& position);
-	ZDO* CreateZDO(const NetID& uid, const Vector3& position);
-
-	void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
-
-	// Performs a coordinate to pitch conversion
-	int SectorToIndex(const ZoneID& s) const;
-	void FindObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
-	void FindDistantObjects(const ZoneID& sector, std::vector<ZDO*>& objects);
-	bool IsPeerConnected(OWNER_t uid);
-
-	//void MoveToZone(ZDO* zdo, const ZoneID& zone);
 
 	// Insert a ZDO into zone (internal)
 	bool AddToSector(ZDO* zdo);
@@ -66,6 +50,27 @@ private:
 	void RemoveFromSector(ZDO* zdo);
 	// Relay a ZDO sector change to clients (internal)
 	void InvalidateSector(ZDO* zdo);
+
+	//void CapDeadZDOList();
+
+	void ReleaseNearbyZDOS(Peer* peer);
+	void HandleDestroyedZDO(const NetID& uid);
+	void SendAllZDOs(Peer* peer);
+	bool SendZDOs(Peer* peer, bool flush);
+	std::list<ZDO*> CreateSyncList(Peer* peer);
+	//void AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList);
+
+	ZDO* AddZDO(const Vector3& position);
+	ZDO* AddZDO(const NetID& uid, const Vector3& position);
+	ZDO* AddZDO(std::unique_ptr<ZDO> &zdo);
+
+	//void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
+	
+	// Performs a coordinate to pitch conversion
+	int SectorToIndex(const ZoneID& s) const;
+
+	void FindObjects(const ZoneID& sector, std::list<ZDO*>& objects);
+	void FindDistantObjects(const ZoneID& sector, std::list<ZDO*>& objects);
 
 public:
 	void Init();
@@ -75,15 +80,6 @@ public:
 
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
-
-	void CapDeadZDOList();
-
-	// Sector Coords -> Sector Pitch
-	// Returns -1 on invalid sector
-	
-
-	// used by zdo to self invalidate its sector
-	//void ZDOSectorInvalidated(ZDO* zdo);
 
 	
 
@@ -98,12 +94,12 @@ public:
 
 	void Update();
 
-	//void DestroyZDO(ZDO* zdo);
-
 	void FindSectorObjects(const ZoneID& sector, int area, int distantArea,
-		std::vector<ZDO*>& sectorObjects, std::vector<ZDO*>* distantSectorObjects = nullptr);
+		std::list<ZDO*>& sectorObjects, std::list<ZDO*>* distantSectorObjects = nullptr);
 
-	void FindSectorObjects(const ZoneID& sector, int area, std::vector<ZDO*>& sectorObjects);
+	void FindSectorObjects(const ZoneID& sector, int area, std::list<ZDO*>& sectorObjects);
+
+	std::list<ZDO*> GetZDOs(HASH_t prefabHash);
 
 	//void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
 

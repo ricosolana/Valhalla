@@ -123,7 +123,7 @@ void IZoneManager::Init() {
         std::string ver = pkg.Read<std::string>();
         LOG(INFO) << "zoneVegetation.pkg has game version " << ver;
         if (ver != VConstants::GAME)
-            LOG(ERROR) << "zoneVegetation.pkg uses different game version than server";
+            LOG(WARNING) << "zoneVegetation.pkg uses different game version than server";
 
         auto count = pkg.Read<int32_t>();
         LOG(INFO) << "Loading " << count << " ZoneVegetations";
