@@ -134,6 +134,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		if (modern || !SERVER_SETTINGS.worldModern) {
 			AddToSector(zdo.get());
+			m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;
@@ -170,13 +171,18 @@ void IZDOManager::CapDeadZDOList() {
 }*/
 
 ZDO* IZDOManager::AddZDO(const Vector3& position) {
-	auto ptr(std::make_unique<ZDO>());
+	NetID zdoid = NetID(Valhalla()->ID(), 0);
 	for(;;) {
-		NetID zdoid = NetID(Valhalla()->ID(), m_nextUid++);
-		if (auto zdo = AddZDO(ptr)) {
-			zdo->m_id = zdoid;
-			return zdo;
-		}
+		zdoid.m_id = m_nextUid++;
+		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
+		if (!pair.second) // if insert failed, keep looping
+			continue;
+
+		auto&& zdo = pair.first->second;
+
+		zdo = std::make_unique<ZDO>(zdoid, position);
+		AddToSector(zdo.get());
+		return zdo.get();
 	}
 }
 
@@ -187,25 +193,16 @@ ZDO* IZDOManager::AddZDO(const NetID& uid, const Vector3& position) {
 	//		container or to the element whose key is equivalent...
 	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
 
-	auto ptr(std::make_unique<ZDO>(uid, position));
-	auto zdo = AddZDO(ptr);
-	if (!zdo) {
-		throw std::runtime_error("zdo with id already exists");
-	}
-
-	return zdo;
-}
-
-ZDO* IZDOManager::AddZDO(std::unique_ptr<ZDO> &zdo) {
-	auto&& pair = m_objectsByID.insert({ zdo->ID(), nullptr});
+	auto&& pair = m_objectsByID.insert({ uid, nullptr });
 	if (!pair.second) // if insert failed, throw
-		return nullptr;
-		//throw VUtils::data_error("zdo id already exists");
+		throw VUtils::data_error("zdo id already exists");
+
+	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
 
 	AddToSector(zdo.get());
 	m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
-	pair.first->second = std::move(zdo);
-	return pair.first->second.get();
+
+	return zdo.get();
 }
 
 ZDO* IZDOManager::GetZDO(const NetID& id) {

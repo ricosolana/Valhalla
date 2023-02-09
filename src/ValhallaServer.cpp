@@ -277,6 +277,10 @@ void IValhalla::Update() {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
+    //PERIODIC_NOW(1s, {
+    //    LOG(INFO) << "update";
+    //});
+
     if (SERVER_SETTINGS.worldSave) {
         // save warming message
         PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval, {

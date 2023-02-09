@@ -14,6 +14,7 @@
 #include "ValhallaServer.h"
 #include "NetSocket.h"
 #include "ZDOManager.h"
+#include "Method.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
@@ -36,8 +37,15 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
 
     outEntry = loadNode["entry"].as<std::string>();
 
-    return std::make_unique<Mod>(
-        loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals()));
+    auto mod(std::make_unique<Mod>(
+        loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals())));
+
+    mod->m_version = loadNode["version"].as<std::string>("");
+    mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
+    mod->m_description = loadNode["description"].as<std::string>("");
+    mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
+
+    return mod;
 }
 
 void IModManager::LoadModEntry(Mod* mod) {
@@ -86,6 +94,10 @@ void IModManager::LoadModEntry(Mod* mod) {
         resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
     }
 
+    env.new_usertype<IMethod<Peer*>>("IMethod",
+        "Invoke", &IMethod<Peer*>::Invoke
+    );
+
     env.new_usertype<Peer>("Peer",
         "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
         "Kick", static_cast<void (Peer::*)(std::string)>(&Peer::Kick),
@@ -96,7 +108,168 @@ void IModManager::LoadModEntry(Mod* mod) {
         "name", &Peer::m_name,
         "visibleOnMap", &Peer::m_visibleOnMap,
         "pos", &Peer::m_pos,
-        "uuid", &Peer::m_uuid);
+        "uuid", &Peer::m_uuid,
+        "Invoke", [this, mod](Peer& self, sol::variadic_args args) {
+            auto&& tostring(m_state["tostring"]);
+
+            BYTES_t bytes;
+            DataWriter params(bytes);
+            for (int i = 0; i < args.size(); i++) {
+                auto&& arg = args[i];
+                auto&& type = arg.get_type();
+
+                if (i == 0) {
+                    if (type == sol::type::string) {
+                        params.Write(VUtils::String::GetStableHashCode(arg.as<std::string>()));
+                    }
+                    else if (type == sol::type::number) {
+                        params.Write(arg.as<HASH_t>());
+                    }
+                    else {
+                        sol::object o = tostring(arg);
+                        auto result = o.as<std::string>();
+                        return mod->Error(std::string("Expected string or number, got: ") + result);
+
+                        //snprintf(errBuf, sizeof(errBuf), "arg %d; expected string or number, got: %s", i, result.c_str());
+                        //return ptr->Throw(errBuf);
+                    }
+                }
+                else {
+                    // strict assumptions:
+                    // Every first number is assumed to be the PkgType, and the next to be the object
+                    if (type == sol::type::number) {
+                        DataType dataType = arg.as<DataType>();
+
+                        // bounds check end of array for pairs
+                        if (i + 1 < args.size()) {
+                            auto&& obj = args[++i];
+
+                            if (obj.get_type() != sol::type::number) {
+                                sol::object o = tostring(obj);
+                                auto result = o.as<std::string>();
+                                return mod->Error("arg " + std::to_string(i) + "; expected number immediately after PkgType, got: " + result);
+                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected number immediately after PkgType, got: %s", i, result.c_str());
+                                //return ptr->Throw(errBuf);
+                            }
+
+                            switch (dataType) {
+                            case DataType::INT8:
+                                params.Write(obj.as<int8_t>());
+                                break;
+                            case DataType::INT16:
+                                params.Write(obj.as<int16_t>());
+                                break;
+                            case DataType::INT32:
+                                params.Write(obj.as<int32_t>());
+                                break;
+                            case DataType::INT64:
+                                params.Write(obj.as<int64_t>());
+                                break;
+                            case DataType::FLOAT:
+                                params.Write(obj.as<float>());
+                                break;
+                            case DataType::DOUBLE:
+                                params.Write(obj.as<double>());
+                                break;
+                            default:
+                                //snprintf(errBuf, sizeof(errBuf), "arg %d; invalid PkgType enum, got: %d", i, static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
+                                //return ptr->Throw(errBuf);
+                                return mod->Error("arg " + std::to_string(i) + "; invalid PkgType enum, got: " + std::to_string(std::to_underlying(dataType)));
+                            }
+                        }
+                        else {
+                            //snprintf(errBuf, sizeof(errBuf), "arg %d; unknown number type", i);
+                            //return ptr->Throw(errBuf);
+                            return mod->Error("arg " + std::to_string(i) + "; unknown number type");
+                        }
+                    }
+                    else {
+                        if (type == sol::type::string) {
+                            params.Write(arg.as<std::string>());
+                        }
+                        else if (type == sol::type::boolean) {
+                            params.Write(arg.as<bool>());
+                        }
+                        else {
+                            if (arg.is<BYTES_t>()) {
+                                params.Write(arg.as<BYTES_t>());
+                            }
+                            else if (arg.is<NetID>()) {
+                                params.Write(arg.as<NetID>());
+                            }
+                            else if (arg.is<Vector3>()) {
+                                params.Write(arg.as<Vector3>());
+                            }
+                            else if (arg.is<Vector2i>()) {
+                                params.Write(arg.as<Vector2i>());
+                            }
+                            else if (arg.is<Quaternion>()) {
+                                params.Write(arg.as<Quaternion>());
+                            }
+                            else if (arg.is<std::vector<std::string>>()) {
+                                params.Write(arg.as<std::vector<std::string>>());
+                            }
+                            else {
+                                sol::object o = tostring(arg);
+                                auto result = o.as<std::string>();
+                                mod->Error("arg " + std::to_string(i) + "; expected serializable type, got: " + result);
+                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected serializable type, got: %s", i, result.c_str());
+                                //return ptr->Throw(errBuf);
+                            }
+                        }
+                    }
+                }
+            }
+
+            self.m_socket->Send(std::move(bytes));
+        },
+
+        "Register", [mod](Peer& self, sol::variadic_args args) {
+            HASH_t name = 0;
+            std::vector<DataType> types;
+
+            for (int i = 0; i < args.size(); i++) {
+                auto&& arg = args[i];
+                auto&& type = arg.get_type();
+
+                if (i == 0) {
+                    if (type == sol::type::string) {
+                        name = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                    }
+                    else if (type == sol::type::number) {
+                        name = arg.as<HASH_t>();
+                    }
+                    else {
+                        return mod->Error("first param must be a string or numeric hash");
+                    }
+                }
+                else if (i + 1 < args.size()) {
+                    // grab middle pkgtypes
+                    if (type == sol::type::number) {
+                        types.push_back(arg.as<DataType>());
+                    }
+                    else {
+                        return mod->Error("middle params must be of DataType (numeric enum)");
+                    }
+                }
+                else {
+                    if (type == sol::type::function) {
+                        auto callback = arg.as<sol::function>();
+
+                        //assert(false);
+                        //self.Register(name, 
+                            //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
+                        self.Register(name, std::move(callback), std::move(types));
+                    }
+                    else {
+                        return mod->Error("fast param must be a function");
+                    }
+                }
+            }
+        },
+        "socket", sol::property([](Peer& self) { return self.m_socket; }),
+        "GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+    );
 
     env.new_enum("DataType",
         "bytes",    DataType::BYTES,
@@ -116,6 +289,7 @@ void IModManager::LoadModEntry(Mod* mod) {
     );
 
     env.new_usertype<DataWriter>("DataWriter",
+        sol::constructors<DataWriter(BYTES_t&)>(),
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
         "Write", sol::overload(
@@ -150,16 +324,17 @@ void IModManager::LoadModEntry(Mod* mod) {
                     self.Write<double>(val);
                     break;
                 default:
-                    LOG(ERROR) << "invalid PkgType enum, got: " << std::to_underlying(type);
+                    return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
                 }
             })
     );
 
     // Package read/write types
     env.new_usertype<DataReader>("DataReader",
+        sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
-        "Read", [](sol::this_state state, DataReader& self, DataType type) {
+        "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
                 return sol::make_object(state, self.Read<BYTES_t>());
@@ -190,9 +365,9 @@ void IModManager::LoadModEntry(Mod* mod) {
             case DataType::DOUBLE:
                 return sol::make_object(state, self.Read<double>());
             default:
-                LOG(WARNING) << "invalid DataType enum, got: " << std::to_underlying(type);
-                return sol::make_object(state, sol::nil);
+                mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
             }
+            return sol::make_object(state, sol::nil);
         }
     );
 
@@ -275,8 +450,7 @@ void IModManager::LoadModEntry(Mod* mod) {
                 else if (type == sol::type::number)
                     hash = arg.as<HASH_t>();
                 else {
-                    LOG(WARNING) << "LUA starting parameters must be string or hash";
-                    return;
+                    return mod->Error("LUA starting parameters must be string or hash");
                 }
 
                 cbHash ^= hash;
@@ -295,13 +469,34 @@ void IModManager::LoadModEntry(Mod* mod) {
                     });
                 }
                 else {
-                    LOG(WARNING) << "LUA last param must be a function";
-                    return;
+                    return mod->Error("LUA last param must be a function");
                 }
             }
         }
     };
 
+    {
+        auto thisTable = env["this"].get_or_create<sol::table>();
+
+        {
+            auto thisModTable = thisTable["mod"].get_or_create<sol::table>();
+
+            thisModTable["name"] = mod->m_name;
+            thisModTable["version"] = mod->m_version;
+            thisModTable["apiVersion"] = mod->m_apiVersion;
+            thisModTable["description"] = mod->m_description;
+            thisModTable["authors"] = mod->m_authors;
+        }
+
+        {
+            auto thisEventTable = thisTable["event"].get_or_create<sol::table>();
+
+            thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
+            thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+            thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
+        }
+
+    }
 }
 
 void IModManager::Init() {

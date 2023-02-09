@@ -34,10 +34,13 @@ void Peer::Update() {
             }
         }
         else {
-            auto&& find = m_methods.find(hash);
-            if (find != m_methods.end()) {
-                find->second->Invoke(this, pkg);
-            }
+            if (auto method = GetMethod(hash))
+                method->Invoke(this, pkg);
+
+            //auto&& find = m_methods.find(hash);
+            //if (find != m_methods.end()) {
+            //    find->second->Invoke(this, pkg);
+            //}
         }
     }
 
@@ -45,6 +48,19 @@ void Peer::Update() {
         LOG(INFO) << "Client RPC timeout";
         m_socket->Close(false);
     }
+}
+
+IMethod<Peer*>* Peer::GetMethod(const std::string& name) {
+    return GetMethod(VUtils::String::GetStableHashCode(name));
+}
+
+IMethod<Peer*>* Peer::GetMethod(HASH_t hash) {
+    auto&& find = m_methods.find(hash);
+    if (find != m_methods.end()) {
+        return find->second.get();
+        //find->second->Invoke(this, pkg);
+    }
+    return nullptr;
 }
 
 

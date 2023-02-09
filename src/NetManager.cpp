@@ -216,8 +216,6 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     }
 
-    //if (VUtils::String::ToAscii(name) != name || name.contains(' ') || )
-
 
 
     if (SERVER_SETTINGS.playerAutoPassword) {
@@ -233,7 +231,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
 
     // if peer already connected
-    if (GetPeer(uuid))
+    if (m_peers.contains(uuid))
         return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
     // if whitelist enabled
@@ -246,21 +244,29 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     if (m_peers.size() >= SERVER_SETTINGS.playerMax)
         return rpc->Close(ConnectionStatus::ErrorFull);
 
-    assert(!m_peers.contains(uuid));
-    Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
+    Peer* peer;
+
+    {
+        auto ptr(std::make_unique<Peer>(rpc->m_socket, uuid, name, pos));
+
+        peer = ptr.get();
+
+        if (ModManager()->CallEvent(VUtils::String::GetStableHashCode("PeerInfo"), peer) == EventStatus::CANCEL) {
+            return rpc->Close(ConnectionStatus::ErrorBanned);
+        }
+
+        m_peers.insert({ uuid, std::move(ptr) });
+    }
+
+    
+    //Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
+
     
     //Valhalla()->RunTaskLater()
     if (SERVER_SETTINGS.playerAutoPassword) {
         peer->m_magicLogin = rpc->m_skipPassword;
-        //peer->m_nextMagicLogin = !rpc->m_skipPassword
-
-        //if (rpc->m_skipPassword)
-        //    
-        //    //peer->ShowMessage("You were automagically logged in");
-        //else peer->ShowMessage("You will now automagically log in after joining");
     }
 
-    assert(rpc->m_socket == nullptr);
     rpc = nullptr;
 
     // Important

@@ -70,7 +70,7 @@ public:
 	template<typename F>
 	void Register(HASH_t hash, F func) {
 		assert(!m_methods.contains(hash));
-		m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func));
+		m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RouteIn, hash));
 	}
 
 	template<typename F>

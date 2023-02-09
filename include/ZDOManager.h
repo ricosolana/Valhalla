@@ -62,7 +62,6 @@ private:
 
 	ZDO* AddZDO(const Vector3& position);
 	ZDO* AddZDO(const NetID& uid, const Vector3& position);
-	ZDO* AddZDO(std::unique_ptr<ZDO> &zdo);
 
 	//void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
 	

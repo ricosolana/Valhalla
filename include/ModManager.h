@@ -48,9 +48,26 @@ class IModManager {
         std::string m_name;
         sol::environment m_env;
 
+        std::string m_version;
+        std::string m_apiVersion;
+        std::string m_description;
+        std::list<std::string> m_authors;
+
         Mod(std::string name,
             sol::environment env) 
             : m_name(name), m_env(std::move(env)) {}
+
+        void Error(const std::string& s) {
+            LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
+        }
+
+        int GetCurrentLine() {
+            lua_Debug ar;
+            lua_getstack(m_env.lua_state(), 1, &ar);
+            lua_getinfo(m_env.lua_state(), "nSl", &ar);
+
+            return ar.currentline;
+        }
     };
 
     struct EventHandler {
@@ -73,7 +90,7 @@ private:
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
 
-    void LoadModEntry(Mod* mod);
+    void LoadModEntry(Mod* mod);    
 
 public:
     void Init();
@@ -81,9 +98,9 @@ public:
     void Uninit();
 
     // Dispatch a event for capture by any registered mod event handlers
-// Returns whether the event-delegate is cancelled
+    // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    EventStatus CallEvent(HASH_t name, const Args&... params) {
+    EventStatus CallEvent(HASH_t name, Args... params) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -94,7 +111,6 @@ public:
 
             for (auto&& callback : callbacks) {
                 try {
-                    //auto dbg(GetDebugInfo(callback))
                     callback.m_func(params...);
                 }
                 catch (const sol::error& e) {
@@ -106,13 +122,13 @@ public:
     }
 
     template <typename... Args>
-    auto CallEvent(const char* name, const Args&... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), params...);
+    auto CallEvent(const char* name, Args... params) {
+        return CallEvent(VUtils::String::GetStableHashCode(name), std::move(params)...);
     }
 
     template <typename... Args>
-    auto CallEvent(std::string& name, const Args&... params) {
-        return CallEvent(name.c_str(), params...);
+    auto CallEvent(std::string& name, Args... params) {
+        return CallEvent(name.c_str(), std::move(params)...);
     }
 
 

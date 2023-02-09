@@ -5,6 +5,7 @@
 #include "Method.h"
 #include "ZDO.h"
 #include "ValhallaServer.h"
+#include "ModManager.h"
 
 class IZDOManager;
 class INetManager;
@@ -70,12 +71,20 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func));
+        m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash)); // TODO use make_unique
+        //m_methods[hash] = std::make_unique<MethodImpl<Peer*>>(func, EVENT_HASH_RpcIn, hash);
     }
 
     template<typename F>
     void Register(const std::string& name, F func) {
         Register(VUtils::String::GetStableHashCode(name), func);
+    }
+
+    void Register(HASH_t hash, sol::function func, std::vector<DataType> types) {
+        //std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
+
+        m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
+            //std::unique_ptr<IMethod<Peer*>>(new MethodImplLua(std::move(func), std::move(types)));
     }
 
     template <typename... Types>
@@ -104,6 +113,9 @@ public:
     void Invoke(std::string& name, const Types&... params) {
         Invoke(name.c_str(), params...);
     }
+
+    IMethod<Peer*>* GetMethod(const std::string& name);
+    IMethod<Peer*>* GetMethod(HASH_t hash);
 
     void RemotePrint(const std::string& msg);
     void Kick(bool now = false);

@@ -52,7 +52,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(func));
+        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash));
     }
 
     template<typename F>
