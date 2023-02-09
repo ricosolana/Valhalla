@@ -88,30 +88,45 @@ public:
     }
 
     template <typename... Types>
-    void Invoke(HASH_t hash, const Types&... params) {
+    void Invoke(HASH_t hash, Types&&... params) {
         // Can still fail during mid-frame Close() calls
         //assert(m_socket && m_socket->Connected());
 
         if (!m_socket->Connected())
             return;
 
+        if (ModManager()->CallEvent(EVENT_HASH_RpcOut ^ hash, this, params...) == EventStatus::CANCEL)
+            return;
+
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
 
         writer.Write(hash);
-        DataWriter::_Serialize(writer, params...); // serialize
+        DataWriter::_Serialize(writer, std::forward<Types>(params)...); // serialize
 
         m_socket->Send(std::move(bytes));
     }
 
     template <typename... Types>
-    void Invoke(const char* name, Types... params) {
-        Invoke(VUtils::String::GetStableHashCode(name), std::move(params)...);
+    void Invoke(const char* name, Types&&... params) {
+        Invoke(VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
     template <typename... Types>
-    void Invoke(std::string& name, const Types&... params) {
-        Invoke(name.c_str(), params...);
+    void Invoke(std::string& name, Types&&... params) {
+        Invoke(name.c_str(), std::forward<Types>(params)...);
+    }
+
+
+
+    void InvokeSelf(HASH_t hash, DataReader reader) {
+        if (auto method = GetMethod(hash))
+            method->Invoke(this, reader);
+    }
+
+    void InvokeSelf(const std::string& name, DataReader reader) {
+        if (auto method = GetMethod(name))
+            method->Invoke(this, reader);
     }
 
     IMethod<Peer*>* GetMethod(const std::string& name);

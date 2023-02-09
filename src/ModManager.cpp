@@ -94,9 +94,9 @@ void IModManager::LoadModEntry(Mod* mod) {
         resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
     }
 
-    env.new_usertype<IMethod<Peer*>>("IMethod",
-        "Invoke", &IMethod<Peer*>::Invoke
-    );
+    //env.new_usertype<IMethod<Peer*>>("IMethod",
+    //    "Invoke", &IMethod<Peer*>::Invoke
+    //);
 
     env.new_usertype<Peer>("Peer",
         "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
@@ -108,7 +108,10 @@ void IModManager::LoadModEntry(Mod* mod) {
         "name", &Peer::m_name,
         "visibleOnMap", &Peer::m_visibleOnMap,
         "pos", &Peer::m_pos,
-        "uuid", &Peer::m_uuid,
+        "uuid", &Peer::m_uuid, // sol::property([](Peer& self) { return std::to_string(self.m_uuid); }), 
+        "InvokeSelf", sol::overload(
+            static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
+            static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
         "Invoke", [this, mod](Peer& self, sol::variadic_args args) {
             auto&& tostring(m_state["tostring"]);
 
@@ -225,7 +228,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         },
 
         "Register", [mod](Peer& self, sol::variadic_args args) {
-            HASH_t name = 0;
+            HASH_t hash = 0;
             std::vector<DataType> types;
 
             for (int i = 0; i < args.size(); i++) {
@@ -234,10 +237,11 @@ void IModManager::LoadModEntry(Mod* mod) {
 
                 if (i == 0) {
                     if (type == sol::type::string) {
-                        name = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                        auto name = arg.as<std::string>();
+                        hash = VUtils::String::GetStableHashCode(name);
                     }
                     else if (type == sol::type::number) {
-                        name = arg.as<HASH_t>();
+                        hash = arg.as<HASH_t>();
                     }
                     else {
                         return mod->Error("first param must be a string or numeric hash");
@@ -249,7 +253,7 @@ void IModManager::LoadModEntry(Mod* mod) {
                         types.push_back(arg.as<DataType>());
                     }
                     else {
-                        return mod->Error("middle params must be of DataType (numeric enum)");
+                        return mod->Error("middle params must be a numeric enum");
                     }
                 }
                 else {
@@ -259,16 +263,16 @@ void IModManager::LoadModEntry(Mod* mod) {
                         //assert(false);
                         //self.Register(name, 
                             //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
-                        self.Register(name, std::move(callback), std::move(types));
+                        self.Register(hash, std::move(callback), std::move(types));
                     }
                     else {
-                        return mod->Error("fast param must be a function");
+                        return mod->Error("last param must be a function");
                     }
                 }
             }
         },
-        "socket", sol::property([](Peer& self) { return self.m_socket; }),
-        "GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+        "socket", sol::property([](Peer& self) { return self.m_socket; })
+        //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
     );
 
     env.new_enum("DataType",
@@ -373,6 +377,7 @@ void IModManager::LoadModEntry(Mod* mod) {
 
     env.new_usertype<NetID>("NetID",
         "uuid", &NetID::m_uuid,
+        //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
         "id", &NetID::m_id
     );
 
@@ -499,8 +504,45 @@ void IModManager::LoadModEntry(Mod* mod) {
     }
 }
 
+
+
+inline void my_panic(sol::optional<std::string> maybe_msg) {
+    LOG(ERROR) << "Lua is in a panic state and will now abort() the application";
+    if (maybe_msg) {
+        const std::string& msg = maybe_msg.value();
+        LOG(ERROR) << "\terror message: " << msg;
+    }
+    // When this function exits, Lua will exhibit default behavior and abort()
+}
+
+int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
+    // L is the lua state, which you can wrap in a state_view if necessary
+    // maybe_exception will contain exception, if it exists
+    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
+    LOG(ERROR) << "An exception occurred in a function, here's what it says ";
+    if (maybe_exception) {
+        LOG(ERROR) << "(straight from the exception): ";
+        const std::exception& ex = *maybe_exception;
+        LOG(ERROR) << ex.what();
+    }
+    else {
+        LOG(ERROR) << "(from the description parameter): ";
+        LOG(ERROR) << description;
+    }
+
+    // you must push 1 element onto the stack to be
+    // transported through as the error object in Lua
+    // note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
+    // so we push a single string (in our case, the description of the error)
+    return sol::stack::push(L, description);
+}
+
 void IModManager::Init() {
     LOG(INFO) << "Initializing ModManager";
+
+    m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
+
+    m_state.set_exception_handler(&my_exception_handler);
 
     m_state.open_libraries(
         sol::lib::base,
@@ -512,6 +554,8 @@ void IModManager::Init() {
         sol::lib::table,
         sol::lib::utf8
     );
+
+    
 
     for (const auto& dir
         : fs::directory_iterator("mods")) {
@@ -530,7 +574,7 @@ void IModManager::Init() {
 
                 auto path(fs::path("mods") / dirname / (entry + ".lua"));
                 if (auto opt = VUtils::Resource::ReadFileString(path))
-                    m_state.script(opt.value(), mod->m_env);
+                    m_state.safe_script(opt.value(), mod->m_env);
                 else
                     throw std::runtime_error(std::string("unable to open file ") + path.string());
 

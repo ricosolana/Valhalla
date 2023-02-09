@@ -1,4 +1,6 @@
 // main.cpp
+#define SOL_ALL_SAFETIES_ON 1
+
 #include <csignal>
 #include <optick.h>
 #include <easylogging++.h>

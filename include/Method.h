@@ -160,7 +160,7 @@ class MethodImplLua : public IMethod<T> {
 
 public:
     explicit MethodImplLua(sol::function func, std::vector<DataType> types)
-        : m_func(std::move(func)), m_types(std::move(types)) {}
+        : m_func(func), m_types(std::move(types)) {}
 
     void Invoke(T t, DataReader reader) override {
         sol::variadic_results results;
@@ -214,7 +214,7 @@ public:
                 break;
             case DataType::INT64:
                 // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<uint64_t>()));
+                results.push_back(sol::make_object(state, reader.Read<int64_t>()));
                 break;
             case DataType::FLOAT:
                 // Primitive: number
@@ -229,10 +229,11 @@ public:
             }
         }
 
-        m_func(results);
+        //m_func(results);
 
         //auto args(sol::as_args(results));
         //m_func(args);
+        m_func(sol::as_args(results));
     }
 };
 

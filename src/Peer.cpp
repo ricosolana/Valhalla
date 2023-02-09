@@ -15,13 +15,13 @@ void Peer::Update() {
 
     // Read packets
     while (auto opt = m_socket->Recv()) {
+
         auto&& bytes = opt.value();
+        DataReader reader(bytes);
 
-        DataReader pkg(bytes);
-
-        auto hash = pkg.Read<HASH_t>();
+        auto hash = reader.Read<HASH_t>();
         if (hash == 0) {
-            if (pkg.Read<bool>()) {
+            if (reader.Read<bool>()) {
                 // Reply to the server with a pong
                 bytes.clear();
                 DataWriter writer(bytes);
@@ -34,8 +34,9 @@ void Peer::Update() {
             }
         }
         else {
-            if (auto method = GetMethod(hash))
-                method->Invoke(this, pkg);
+            InvokeSelf(hash, reader);
+            //if (auto method = GetMethod(hash))
+            //    method->Invoke(this, reader);
 
             //auto&& find = m_methods.find(hash);
             //if (find != m_methods.end()) {

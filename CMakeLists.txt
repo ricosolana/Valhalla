@@ -37,6 +37,8 @@ find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 
+add_compile_definitions(SOL_PRINT_ERRORS)
+
 #remove_definitions(SOL_PRINT_ERRORS)
 
 #target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)

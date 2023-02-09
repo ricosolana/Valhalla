@@ -72,7 +72,7 @@ class IModManager {
 
     struct EventHandler {
         Mod* m_mod;
-        sol::function m_func;
+        sol::protected_function m_func;
         int m_priority;
 
         EventHandler(Mod* mod, sol::function func, int priority)
@@ -97,10 +97,8 @@ public:
 
     void Uninit();
 
-    // Dispatch a event for capture by any registered mod event handlers
-    // Returns whether the event-delegate is cancelled
-    template <typename... Args>
-    EventStatus CallEvent(HASH_t name, Args... params) {
+    template <class Tuple>
+    auto CallEventTuple(HASH_t name, Tuple&& t) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -111,7 +109,11 @@ public:
 
             for (auto&& callback : callbacks) {
                 try {
-                    callback.m_func(params...);
+                    sol::protected_function_result result = std::apply(callback.m_func, t);
+                    if (!result.valid()) {
+                        sol::error error = result;
+                        LOG(ERROR) << error.what();
+                    }
                 }
                 catch (const sol::error& e) {
                     LOG(ERROR) << e.what();
@@ -121,39 +123,21 @@ public:
         return m_eventStatus;
     }
 
+    template <class Tuple>
+    auto CallEventTuple(const std::string& name, Tuple&& t) {
+        return CallEventTuple(VUtils::String::GetStableHashCode(name), std::forward<Tuple>(t));
+    }
+
+    // Dispatch a event for capture by any registered mod event handlers
+    // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    auto CallEvent(const char* name, Args... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), std::move(params)...);
+    EventStatus CallEvent(HASH_t name, Args&&... params) {
+        return CallEventTuple(name, std::forward_as_tuple(params...));
     }
 
     template <typename... Args>
-    auto CallEvent(std::string& name, Args... params) {
-        return CallEvent(name.c_str(), std::move(params)...);
-    }
-
-
-
-private:
-    template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
-        return CallEvent(name, std::get<Is>(t)...);
-    }
-
-public:
-    template <class Tuple>
-    auto CallEventTuple(HASH_t name, const Tuple& t) {
-        return CallEventTupleImpl(name, t,
-            std::make_index_sequence < std::tuple_size<Tuple>{} > {});
-    }
-
-    template <class Tuple>
-    auto CallEventTuple(const char* name, const Tuple& t) {
-        return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
-    }
-
-    template <class Tuple>
-    auto CallEventTuple(std::string& name, const Tuple& t) {
-        return CallEventTuple(name.c_str(), t);
+    auto CallEvent(const std::string& name, Args&&... params) {
+        return CallEventTuple(name, std::forward_as_tuple(params...));
     }
 
 };
