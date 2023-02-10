@@ -340,6 +340,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
         
+        // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
         "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
@@ -377,10 +378,13 @@ void IModManager::LoadModEntry(Mod* mod) {
         }
     );
 
-    env.new_usertype<NetID>("NetID",
-        "uuid", &NetID::m_uuid,
+    env.new_usertype<ZDOID>("ZDOID",
+        sol::constructors<ZDOID(), NetID(OWNER_t userID, uint32_t id)>(),
+        "uuid", &ZDOID::m_uuid,
         //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
-        "id", &NetID::m_id
+        "id", &ZDOID::m_id,
+        //"NONE", []() { return ZDOID::NONE; }
+        "none", sol::property([]() {return ZDOID::NONE;  })
     );
 
     env.new_usertype<Vector3>("Vector3",
@@ -426,25 +430,78 @@ void IModManager::LoadModEntry(Mod* mod) {
     );
 
     env.new_usertype<ZDO>("ZDO",
+        "id", &ZDO::m_id,
+        "owner", &ZDO::m_owner,
+        "SetLocal", &ZDO::SetLocal,
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
         //"GetLong", &ZDO::GetLong,
         //"GetQuaternion", &ZDO::GetQuaternion,
         //"GetVector3", &ZDO::GetVector3,
-        "GetString", static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+        "GetString", sol::overload(
+            static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+            static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
+        ),
         //"GetBytes", &ZDO::GetBytes,
         //"GetBool", &ZDO::GetBool,
-        "GetZDOID", [](sol::state_view state, ZDO& self, const std::string& key) { 
-            auto zdoid = self.GetNetID(key);
-            if (zdoid)
-                return sol::make_object(state, zdoid); 
-            return sol::make_object(state, nullptr);
-        },
-        //static_cast<NetID (ZDO::*)(const std::string&) const>(&ZDO::GetNetID), 
+        "GetZDOID", static_cast<ZDOID (ZDO::*)(const std::string&) const>(&ZDO::GetNetID), //sol::overload(
+            //[](sol::state_view state, ZDO& self, const std::string& key) {
+            //    auto zdoid = self.GetNetID(key);
+            //    if (zdoid)
+            //        return sol::make_object(state, zdoid); 
+            //    return sol::make_object(state, sol::lua_nil);
+            //},
+            ///[](sol::state_view state, ZDO& self, const std::pair<HASH_t, HASH_t>& pair) {
+            ///    auto zdoid = self.GetNetID(pair);
+            ///    if (zdoid)
+            ///        return sol::make_object(state, zdoid);
+            ///    return sol::make_object(state, sol::lua_nil);
+            ///},
+            ////[](sol::state_view state, ZDO& self, HASH_t a, HASH_t b) {
+            ////    auto zdoid = self.GetNetID(std::make_pair(a, b));
+            ////    if (zdoid)
+            ////        return sol::make_object(state, zdoid);
+            ////    return sol::make_object(state, sol::lua_nil);
+            ////}
+            //[](sol::state_view state, ZDO& self, const sol::tie<HASH_t, HASH_t> &pair) {
+            //    auto zdoid = self.GetNetID(std::make_pair(a, b));
+            //    if (zdoid)
+            //        return sol::make_object(state, zdoid);
+            //    return sol::make_object(state, sol::lua_nil);
+            //}
+        //),
+
+        //"Set", [this, mod](ZDO& self, sol::variadic_args args) {
+        //    for (int i = 0; i < args.size(); i++) {
+        //        // set based on types
+        //        auto&& key = args[i];
+        //        auto&& value = args[i + 1];
+        //
+        //        // hash
+        //        if (key.get_type() == sol::type::number) {
+        //
+        //        }
+        //        else if (key.get_type() == sol::type::string) {
+        //
+        //        }
+        //        else {
+        //            mod->Error("received incorrect type for key");
+        //        }
+        //
+        //    }
+        //}
 
         "Set", sol::overload(
-            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set)
+            [](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
+        
+            //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
+            [](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); }
+            // string
+            //static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
+            // zdoid
+            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
         )
 
     );
@@ -461,7 +518,10 @@ void IModManager::LoadModEntry(Mod* mod) {
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
     auto zdoApiTable = env["ZDOManager"].get_or_create<sol::table>();
+    zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
+    zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
+    zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
 
 

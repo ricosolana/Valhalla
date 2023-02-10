@@ -144,11 +144,10 @@ bool ZDO::GetBool(HASH_t key, bool value) const {
 }
 
 NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
-    auto k = GetLong(key.first);
-    auto v = GetLong(key.second);
-    if (k == 0 || v == 0)
-        return NetID::NONE;
-    return NetID(k, (uint32_t)v);
+    auto k = GetLong(key.first, 0);
+    auto v = GetLong(key.second, 0);
+
+    return NetID(k, v);
 }
 
 

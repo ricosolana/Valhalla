@@ -9,7 +9,7 @@ struct NetID {
     uint32_t m_id;
 
     explicit NetID();
-    explicit NetID(int64_t userID, uint32_t id);
+    explicit NetID(OWNER_t userID, uint32_t id);
 
     bool operator==(const NetID& other) const;
     bool operator!=(const NetID& other) const;

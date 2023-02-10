@@ -55,12 +55,12 @@ namespace Tests {
             DataReader pkg(opt.value());
             zdo.Load(pkg, VConstants::WORLD);
 
-            assert(zdo.GetFloat("health") == 3.1415926535f);
-            assert(zdo.GetInt("weight") == 435);
-            assert(zdo.GetInt("slot") == 3);
-            assert(zdo.GetString("name") == "byeorgssen");
-            assert(zdo.GetString("faction") == "player");
-            assert(zdo.GetInt("uid") == 189341389);
+            assert(zdo.GetFloat("health", 0) == 3.1415926535f);
+            assert(zdo.GetInt("weight", 0) == 435);
+            assert(zdo.GetInt("slot", 0) == 3);
+            assert(zdo.GetString("name", "") == "byeorgssen");
+            assert(zdo.GetString("faction", "") == "player");
+            assert(zdo.GetInt("uid", 0) == 189341389);
         }
 
         // Set/Get tests
@@ -74,12 +74,12 @@ namespace Tests {
             zdo.Set("faction", "player");
             zdo.Set("uid", 189341389);
 
-            assert(zdo.GetFloat("health") == 3.1415926535f);
-            assert(zdo.GetInt("weight") == 435);
-            assert(zdo.GetInt("slot") == 3);
-            assert(zdo.GetString("name") == "byeorgssen");
-            assert(zdo.GetString("faction") == "player");
-            assert(zdo.GetInt("uid") == 189341389);
+            assert(zdo.GetFloat("health", 0) == 3.1415926535f);
+            assert(zdo.GetInt("weight", 0) == 435);
+            assert(zdo.GetInt("slot", 0) == 3);
+            assert(zdo.GetString("name", "") == "byeorgssen");
+            assert(zdo.GetString("faction", "") == "player");
+            assert(zdo.GetInt("uid", 0) == 189341389);
         }
 
         // Save/Load tests
@@ -104,12 +104,12 @@ namespace Tests {
             DataReader reader(bytes);
             zdo2.Load(reader, VConstants::WORLD);
 
-            assert(zdo2.GetFloat("health") == 3.1415926535f);
-            assert(zdo2.GetInt("weight") == 435);
-            assert(zdo2.GetInt("slot") == 3);
-            assert(zdo2.GetString("name") == "byeorgssen");
-            assert(zdo2.GetString("faction") == "player");
-            assert(zdo2.GetInt("uid") == 189341389);
+            assert(zdo2.GetFloat("health", 0) == 3.1415926535f);
+            assert(zdo2.GetInt("weight", 0) == 435);
+            assert(zdo2.GetInt("slot", 0) == 3);
+            assert(zdo2.GetString("name", "") == "byeorgssen");
+            assert(zdo2.GetString("faction", "") == "player");
+            assert(zdo2.GetInt("uid", 0) == 189341389);
         }
 
         // Serialize/Deserialize tests
@@ -132,12 +132,12 @@ namespace Tests {
             ZDO zdo2;
             zdo2.Deserialize(reader);
 
-            assert(zdo2.GetFloat("health") == 3.1415926535f);
-            assert(zdo2.GetInt("weight") == 435);
-            assert(zdo2.GetInt("slot") == 3);
-            assert(zdo2.GetString("name") == "byeorgssen");
-            assert(zdo2.GetString("faction") == "player");
-            assert(zdo2.GetInt("uid") == 189341389);
+            assert(zdo2.GetFloat("health", 0) == 3.1415926535f);
+            assert(zdo2.GetInt("weight", 0) == 435);
+            assert(zdo2.GetInt("slot", 0) == 3);
+            assert(zdo2.GetString("name", "") == "byeorgssen");
+            assert(zdo2.GetString("faction", "") == "player");
+            assert(zdo2.GetInt("uid", 0) == 189341389);
         }
     }
 

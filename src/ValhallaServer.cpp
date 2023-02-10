@@ -277,8 +277,8 @@ void IValhalla::Update() {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
-    PERIODIC_NOW(50ms, {
-        ModManager()->CallEvent("FixedUpdate");
+    PERIODIC_NOW(1s, {
+        ModManager()->CallEvent("PeriodUpdate");
     })
 
     //PERIODIC_NOW(1s, {

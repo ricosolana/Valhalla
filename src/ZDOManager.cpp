@@ -200,7 +200,7 @@ ZDO* IZDOManager::AddZDO(const NetID& uid, const Vector3& position) {
 	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
 
 	AddToSector(zdo.get());
-	m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
+	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 
 	return zdo.get();
 }
@@ -223,7 +223,7 @@ std::pair<ZDO*, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3
 
 	zdo = std::make_unique<ZDO>(id, def);
 	AddToSector(zdo.get());
-	m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
+	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 	return { zdo.get(), true };
 }
 
@@ -728,11 +728,19 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 
 			zdo->Deserialize(des);
 
-			// If the ZDO was created, but it was removed recently
-			if (created && m_deadZDOs.contains(zdoid)) {
-				zdo->SetLocal();
-				m_destroySendList.push_back(zdo->ID());
+			if (created) {
+				m_objectsByPrefab[zdo->PrefabHash()].insert(zdo);
+				if (m_deadZDOs.contains(zdoid)) {
+					zdo->SetLocal();
+					m_destroySendList.push_back(zdo->ID());
+				}
 			}
+
+			// If the ZDO was created, but it was removed recently
+			//if (created && m_deadZDOs.contains(zdoid)) {
+			//	zdo->SetLocal();
+			//	m_destroySendList.push_back(zdo->ID());
+			//}
 		}
 	});		
 }
