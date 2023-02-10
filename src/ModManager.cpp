@@ -379,7 +379,7 @@ void IModManager::LoadModEntry(Mod* mod) {
     );
 
     env.new_usertype<ZDOID>("ZDOID",
-        sol::constructors<ZDOID(), NetID(OWNER_t userID, uint32_t id)>(),
+        sol::constructors<NetID(OWNER_t userID, uint32_t id)>(),
         "uuid", &ZDOID::m_uuid,
         //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
         "id", &ZDOID::m_id,
