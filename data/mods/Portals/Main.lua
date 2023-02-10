@@ -6,7 +6,7 @@
 --]]
 
 local PORTAL = VUtils.String.GetStableHashCode("portal_wood")
-local TARGET = ZDOManager.HashZDOID("target") -- VUtils.String.GetStableHashCode("target") -- use special zdoid hash
+--local (TARGETa, TARGETb) = ZDOManager.HashZDOID("target") -- VUtils.String.GetStableHashCode("target") -- use special zdoid hash
 local TAG = VUtils.String.GetStableHashCode("tag")
 
 Valhalla.OnEvent("PeriodUpdate", function()
@@ -20,19 +20,22 @@ Valhalla.OnEvent("PeriodUpdate", function()
         
         print("zdo1.owner " .. tostring(zdo1.owner))
 
-		local target1 = zdo1:GetZDOID(TARGET)
+		--local target1 = zdo1:GetZDOID(TARGETa, TARGETb)
+        local target1 = zdo1:GetZDOID("target")
 		local tag1 = zdo1:GetString(TAG, "")
 
         print("target1.uuid " .. tostring(target1.uuid))
         print("target1.id " .. tostring(target1.id))
 
 		-- if portal has a set target
-		if target1 then
+		--if target1 ~= ZDOID.new() then
+        --if target1 then
+        if target1 ~= ZDOID.none then
             print("has target")
 			local zdo2 = ZDOManager.GetZDO(target1)
-            local tag2 = zdo2:GetString(TAG, "")
+            --local tag2 = zdo2:GetString(TAG, "")
             
-            print("zdo2 tag " .. tag2)
+            --print("zdo2 tag " .. tag2)
 
 			-- if portal target doesnt exist or different tags,
 			-- then reset immediately
@@ -41,7 +44,7 @@ Valhalla.OnEvent("PeriodUpdate", function()
             
 				zdo1:SetLocal()
 
-				zdo1:Set(TARGET, ZDOID.NONE);
+				zdo1:Set("target", ZDOID.new());
 				ZDOManager.ForceSendZDO(zdo1.id);
                 
                 print("reset portal...")
@@ -53,28 +56,32 @@ Valhalla.OnEvent("PeriodUpdate", function()
                 print("i2 " .. tostring(i1))
 
 				-- ignore k1 iterated portal
-				if i2 == i1 then do break end end -- continue
+				--if i2 == i1 then do break end end -- continue
+                
+                -- skip checker portal
+                local zdo2 = portals[i2]
+                
+                if i2 ~= i1 and zdo1:GetZDOID("target") == ZDOID.none then
+                    local tag2 = zdo2:GetString(TAG, "")
+                    
+                    --print("target1.uuid " .. tostring(target1.uuid))
+                    --print("target1.id " .. tostring(target1.id))
+                    
+                    print("zdo2 tag " .. tag2)
 
-				local zdo2 = portals[i2]
-				local tag2 = zdo2:GetString(TAG, "")
-                
-                --print("target1.uuid " .. tostring(target1.uuid))
-                --print("target1.id " .. tostring(target1.id))
-                
-                print("zdo2 tag " .. tag2)
-
-				-- link portals with same tag
-				if tag1 == tag2 then
-                    print("linking portals")
-                
-					zdo1:SetLocal()
-					zdo2:SetLocal()
-					zdo1:Set(TARGET, zdo2.id);
-					zdo2:Set(TARGET, zdo1.id);
-					ZDOManager.ForceSendZDO(zdo1.id);
-					ZDOManager.ForceSendZDO(zdo2.id);
-				end
-			end			
+                    -- link portals with same tag
+                    if tag1 == tag2 then
+                        print("linking portals")
+                    
+                        zdo1:SetLocal()
+                        zdo2:SetLocal()
+                        zdo1:Set("target", zdo2.id);
+                        zdo2:Set("target", zdo1.id);
+                        ZDOManager.ForceSendZDO(zdo1.id);
+                        ZDOManager.ForceSendZDO(zdo2.id);
+                    end
+                end
+			end
 		end
 	end
 end)
