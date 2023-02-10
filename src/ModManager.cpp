@@ -339,7 +339,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
-        //"Clear", &DataReader::Clear,
+        
         "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
@@ -423,6 +423,30 @@ void IModManager::LoadModEntry(Mod* mod) {
         "GetAddress", &ISocket::GetAddress,
         "GetHostName", &ISocket::GetHostName,
         "GetSendQueueSize", &ISocket::GetSendQueueSize
+    );
+
+    env.new_usertype<ZDO>("ZDO",
+        //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
+        //"GetInt", &ZDO::GetInt,
+        //"GetLong", &ZDO::GetLong,
+        //"GetQuaternion", &ZDO::GetQuaternion,
+        //"GetVector3", &ZDO::GetVector3,
+        "GetString", static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+        //"GetBytes", &ZDO::GetBytes,
+        //"GetBool", &ZDO::GetBool,
+        "GetZDOID", [](sol::state_view state, ZDO& self, const std::string& key) { 
+            auto zdoid = self.GetNetID(key);
+            if (zdoid)
+                return sol::make_object(state, zdoid); 
+            return sol::make_object(state, nullptr);
+        },
+        //static_cast<NetID (ZDO::*)(const std::string&) const>(&ZDO::GetNetID), 
+
+        "Set", sol::overload(
+            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set)
+        )
+
     );
 
 

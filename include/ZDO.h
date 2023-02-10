@@ -190,6 +190,8 @@ private:
                 case ORD_LONG: break;
                 case ORD_STRING: _Member<std::string>()->~basic_string(); break;
                 case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
+                default:
+                    assert(false && "reached impossible case");
             }
 
             free(m_contiguous);
@@ -412,12 +414,12 @@ public:
         return value;
     }
 
-    float GetFloat(HASH_t key, float value = 0) const;
-    int32_t GetInt(HASH_t key, int32_t value = 0) const;
-    int64_t GetLong(HASH_t key, int64_t value = 0) const;
-    const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value = Quaternion::IDENTITY) const;
+    float GetFloat(HASH_t key, float value) const;
+    int32_t GetInt(HASH_t key, int32_t value) const;
+    int64_t GetLong(HASH_t key, int64_t value) const;
+    const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value) const;
     const Vector3& GetVector3(HASH_t key, const Vector3& value) const;
-    const std::string& GetString(HASH_t key, const std::string& value = "") const;
+    const std::string& GetString(HASH_t key, const std::string& value) const;
     const BYTES_t* GetBytes(HASH_t key /* no default */) const;
 
     // Special hash getters
@@ -435,17 +437,17 @@ public:
 
     // Trivial string getters
 
-    float GetFloat(const std::string& key, float value = 0) const;
-    int32_t GetInt(const std::string& key, int32_t value = 0) const;
-    int64_t GetLong(const std::string& key, int64_t value = 0) const;
-    const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value = Quaternion::IDENTITY) const;
+    float GetFloat(const std::string& key, float value) const;
+    int32_t GetInt(const std::string& key, int32_t value) const;
+    int64_t GetLong(const std::string& key, int64_t value) const;
+    const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value) const;
     const Vector3& GetVector3(const std::string& key, const Vector3& value) const;
-    const std::string& GetString(const std::string& key, const std::string& value = "") const;
+    const std::string& GetString(const std::string& key, const std::string& value) const;
     const BYTES_t* GetBytes(const std::string& key /* no default */);
 
     // Special string getters
 
-    bool GetBool(const std::string& key, bool value = false) const;
+    bool GetBool(const std::string& key, bool value) const;
     NetID GetNetID(const std::string& key /* no default */) const;
 
 

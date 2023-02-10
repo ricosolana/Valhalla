@@ -283,12 +283,12 @@ void ZDO::Deserialize(DataReader& pkg) {
     // Since the data is arriving from the client, must assert things
     // Filter the client inputs
 
-    this->m_persistent = pkg.Read<bool>();
-    this->m_distant = pkg.Read<bool>();
-    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
+    this->m_persistent = pkg.Read<bool>();                  // TODO remove; prefab-const
+    this->m_distant = pkg.Read<bool>();                     // TODO remove; prefab-const
+    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());     
     /*this->m_pgwVersion =*/ pkg.Read<int32_t>();
-    this->m_type = pkg.Read<ObjectType>();
-    this->m_prefab = pkg.Read<HASH_t>();
+    this->m_type = pkg.Read<ObjectType>();                  // TODO remove; prefab-const
+    this->m_prefab = pkg.Read<HASH_t>();                    // TODO assign only first when created
     this->m_rotation = pkg.Read<Quaternion>();
     
     //this->m_ordinalMask = (uint8_t) pkg.Read<int32_t>();
