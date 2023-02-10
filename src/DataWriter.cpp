@@ -1,4 +1,5 @@
 #include "DataWriter.h"
+#include "VUtilsString.h"
 
 void DataWriter::WriteBytes(const BYTE_t* buffer, size_t count) {
     Assert31U(count);
@@ -69,6 +70,8 @@ void DataWriter::Write(const BYTES_t& in) {
 void DataWriter::Write(const std::string& in) {
     auto length = in.length();
     //Assert31U(length);
+
+    //auto byteCount = static_cast<int32_t>(VUtils::String::GetUTF8ByteCount());
 
     auto byteCount = static_cast<int32_t>(length);
 

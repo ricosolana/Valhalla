@@ -133,4 +133,26 @@ namespace VUtils::String {
         //}
     }
 
+    unsigned int GetUTF8ByteCount(const std::u32string& s) {
+        assert(false);
+
+        int count = 0;
+        int index = 0;
+        for (; count < s.length();) {
+            uint8_t ch = s[index];
+            if (ch < 0x80) {
+                count += 1;
+            }
+            else if (ch < 0x0800) {
+                count += 2;
+            }
+            else if (i < 0x010000) {
+                count += 3;
+            }
+
+        }
+
+        return count;
+    }
+
 }

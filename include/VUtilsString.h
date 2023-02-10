@@ -66,4 +66,6 @@ namespace VUtils::String {
     // Gets the unicode byte count needed to encode uint16_t or C# char 
     //  Returns 1, 2 or 3
     unsigned int GetUTF8ByteCount(uint16_t i);
+
+    //unsigned int GetUTF8ByteCount(const std::string& s);
 }
