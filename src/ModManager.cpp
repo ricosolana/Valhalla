@@ -296,6 +296,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         sol::constructors<DataWriter(BYTES_t&)>(),
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
+        "Clear", &DataWriter::Clear,
         "Write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
@@ -336,8 +337,9 @@ void IModManager::LoadModEntry(Mod* mod) {
     // Package read/write types
     env.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
-        "provider", &DataWriter::m_provider,
-        "pos", &DataWriter::m_pos,
+        "provider", &DataReader::m_provider,
+        "pos", &DataReader::m_pos,
+        //"Clear", &DataReader::Clear,
         "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:

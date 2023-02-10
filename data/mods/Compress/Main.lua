@@ -13,27 +13,42 @@
 --local compressedZdoDataHash = VUtils.GetStableHashCode("CompressedZDOData")
 local peers = {}
 
-local RPC_CompressedZDOData = function(peer, bytes)
+local RPC_CompressedZDOData = function(peer, compressed)
     print("Got CompressedZDOData")
 
     -- now forward to RPC_ZDOData
-    print("type of peer: " .. type(peer))
+    --print("type of peer: " .. type(peer))
 
     --local method = peers[peer]
     --print("type of method: " .. typeof(method))
 
-    if peers[peer.uuid] ~= nil then
-        print("forwarding decompressed ZDOs internally")
-        local decompressed = VUtils.Decompress(bytes);
+    --if peers[peer.uuid] ~= nil then
+        --print("Decompressing ZDOs from peer...")
+
+        --local reader = DataReader.new(pkg)
+
+        print("Reading compressed buffer...")
+
+        --local compressed = reader:Read(DataType.bytes)
+
+        print("Decompressing buffer...")
+
+        local decompressed = VUtils.Decompress(compressed);
         --if decompressed ~= nil then
-            local reader = DataReader.new(decompressed)
-            print("forwarding...")
-            peer:InvokeSelf("ZDOData", decompressed);
+            --local reader = DataReader.new(decompressed)
+            print("forwarding decompressed ZDOs from peer...")
+
+            compressed:clear() -- sol container clear
+            local writer = DataWriter.new(compressed);
+            writer:Write(decompressed)
+
+            peer:InvokeSelf("ZDOData", DataReader.new(compressed));
             --method:Invoke(peer, VUtils.Decompress(bytes))
+            print("ZDOs internally forwarded!")
         --end
-    else
-        print("Peer is not using compression")
-    end
+    --else
+    --    print("Peer is not using compression")
+    --end
 end
 
 local RPC_CompressHandshake = function(peer, enabled)
@@ -84,16 +99,19 @@ end)
 
 -- delegate to replace call
 Valhalla.OnEvent("RpcOut", "ZDOData", function(peer, bytes)
+    print("Caught ZDOData before send")
+
     local uuid = peer.uuid
-    print("peer uuid type: " .. type(uuid))
-    print("Caught outbound ZDOData " .. tostring(uuid))
     if peers[uuid] ~= nil then
-        print("Invoking CompressedZDOData")
+        print("Compressing...")
+
         this.event.Cancel()
         local compressed = VUtils.Compress(bytes)
         --if compressed ~= nil then
             peer:Invoke("CompressedZDOData", compressed)
         --end
+
+        print("invoked CompressedZDOData")
     end
 end)
 
