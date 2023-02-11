@@ -13,6 +13,18 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 2/11/2023 + TODO
+
+![Vegetation rotations](/docs/pics/experimental-rotationsgeneration.jpg)
+
+I am playing around with vegetation rotations using some implementations of Unity.Quaternion methods Ive found online. I'm surprised anyone has done this.
+
+Mistland 'cliffs' are finally cliffs, and not jagged spires pointing straight up. I also have a hunch as to why mist is placed everywhere (and trees are not placed as frequently), and it has to do with world generation and preworld generation. Since the mistlands update, a major feature was added uniquely for the mistlands, and its a vegetation color map. I dont really understand how it works, but it basically determines what vegetation is allowed where. I think my implementation of this is inaccurate or completley incorrect. I'll have to do more testing.
+
+I have also implemented rather intricate lua modding functionality, where I've created two mods making use of the api for example. Valheim portals linking doesnt really fit in, so I created a mod for it. I also created a ZDO networking compression mod based on the Comfy Valheim server implementation. It needs more testing though.
+
+What I plan on doing next is focusing on location generation, and primarily dungeons next, which seems daunting. Also fixing the mist blanketing the mistlands.
+
 ### 2/7/2023 + TODO
 
 Ive implemented several generation fixes, such as heightmap normals, primitive char-utf8 stream read/write support, and completely overhauled the netpackage system into two seperate portions (reader + writer).
