@@ -6,6 +6,45 @@
 
 namespace Tests {
    
+    void Test_Quaternion() {
+        auto opt = VUtils::Resource::ReadFileLines("euler_values.txt");
+
+        assert(opt && "file not found");
+
+        auto&& values = opt.value();
+        int index = 0;
+
+        for (float z = 0; z < 360; z += 45)
+        {
+            for (float y = 0; y < 360; y += 30)
+            {
+                for (float x = 0; x < 360; x += 10)
+                {
+                    auto calc = Quaternion::Euler(x, y, z);
+                    auto expect = Quaternion(
+                        std::stof(values[index + 0]),
+                        std::stof(values[index + 1]),
+                        std::stof(values[index + 2]),
+                        std::stof(values[index + 3])
+                    );
+
+                    index += 4;
+
+                    //if (y < 180 || x < 60)
+                        //continue;
+
+                    static constexpr float EPS = 0.0001f;
+                    assert((calc.x - EPS < expect.x && calc.x + EPS > expect.x));
+                    assert((calc.y - EPS < expect.y && calc.y + EPS > expect.y));
+                    assert((calc.z - EPS < expect.z && calc.z + EPS > expect.z));
+                    assert((calc.w - EPS < expect.w && calc.w + EPS > expect.w));
+
+                    
+                }
+            }
+        }
+    }
+
     void Test_DataBuffer() {
         //constexpr int has = is_container<std::vector<int>>::value;
         //constexpr int has = is_container<int>::value;

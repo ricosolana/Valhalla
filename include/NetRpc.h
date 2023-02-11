@@ -20,6 +20,8 @@ enum class ConnectionStatus : int32_t {
     ErrorAlreadyConnected,
     ErrorBanned,
     ErrorFull,
+    ErrorPlatformExcluded,
+    ErrorCrossplayPrivilege,
     MAX // 10
 };
 

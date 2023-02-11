@@ -57,10 +57,8 @@ bool Quaternion::operator!=(const Quaternion & other) const {
 
 
 Quaternion FromEulerRad_Impl(
-    const Vector3& vec,
+    const Vector3& refVec,
     int dims) {
-
-    Quaternion quat = Quaternion::IDENTITY;
 
     float sx;
     float cx;
@@ -71,98 +69,169 @@ Quaternion FromEulerRad_Impl(
     float fVar2;
     float fVar3;
     float fVar4;
-    float cz;
+    float fVar5;
 
-    // zero out the w component
-    quat.w = 0;
+    cx = refVec.x * 0.5;
+    sx = sinf(cx);
+    cx = cosf(cx);
 
-    sx = std::sinf(vec.x * .5f);
-    cx = std::cosf(vec.x * .5f);
+    cy = refVec.y * 0.5;
+    sy = sinf(cy);
+    cy = cosf(cy);
 
-    sy = std::sinf(vec.y * .5f);
-    cy = std::cosf(vec.y * .5f);
-
-    sz = std::sinf(vec.z * .5f);
-    cz = std::cosf(vec.z * .5f);
+    fVar2 = refVec.z * 0.5;
+    sz = sinf(fVar2);
+    fVar2 = cosf(fVar2);
 
     switch (dims) {
     case 0:
-        fVar4 = ((cy * cz));
-        fVar2 = (sy * cz);
-        fVar1 = (cy * sz);
-        fVar3 = -sy * sz;
+        fVar5 = ((cy * fVar2 - 0.0) - sy * 0.0) - sz * 0.0;
+        fVar3 = (sy * fVar2 + cy * 0.0 + sz * 0.0) - 0.0;
+        fVar1 = (cy * sz + fVar2 * 0.0 + sy * 0.0) - 0.0;
+        fVar4 = (fVar2 * 0.0 + cy * 0.0 + 0.0) - sy * sz;
 
-        quat.x = cx * fVar4 - sx * fVar3;
-        quat.y = (cx * fVar1) - sx * fVar2;
-        quat.z = cx * fVar3 + sx * fVar4;
+        fVar2 = (cx * fVar4 + sx * fVar5 + fVar3 * 0.0) - fVar1 * 0.0;
+        sz = (cx * fVar1 + fVar5 * 0.0 + fVar4 * 0.0) - sx * fVar3;
+        cx = ((cx * fVar5 - sx * fVar4) - fVar3 * 0.0) - fVar1 * 0.0;
 
-        break;
+        return Quaternion(
+            cx, sz, fVar2, 0
+        );
+
+        //break;
     case 1:
-        fVar3 = sy * sz;
-        fVar1 = cy * sz;
-        fVar4 = cy * cz;
-        fVar2 = sy * cz;
+        fVar4 = (fVar2 * 0.0 + cy * 0.0 + sy * sz) - 0.0;
+        fVar1 = (cy * sz + fVar2 * 0.0 + 0.0) - sy * 0.0;
+        fVar5 = ((cy * fVar2 - 0.0) - sy * 0.0) - sz * 0.0;
+        fVar3 = (sy * fVar2 + cy * 0.0 + 0.0) - sz * 0.0;
 
-        quat.x = cx * fVar4 - sx * fVar3;
-        quat.y = (cx * fVar1) - sx * fVar2;
-        quat.z = cx * fVar3 + sx * fVar4;
+        fVar2 = (cx * fVar4 + sx * fVar5 + fVar3 * 0.0) - fVar1 * 0.0;
+        sz = (cx * fVar1 + fVar5 * 0.0 + fVar4 * 0.0) - sx * fVar3;
+        cx = ((cx * fVar5 - sx * fVar4) - fVar3 * 0.0) - fVar1 * 0.0;
 
-        break;
+        return Quaternion(
+            cx, sz, fVar2, 0
+        );
+
+        //break;
     case 2:
-        fVar3 = sx * cz;
-        fVar2 = -sx * sz;
-        fVar1 = cx * sz;
+        fVar4 = (sx * fVar2 + cx * 0.0 + sz * 0.0) - 0.0;
+        fVar3 = (fVar2 * 0.0 + cx * 0.0 + 0.0) - sx * sz;
+        fVar1 = (cx * sz + fVar2 * 0.0 + sx * 0.0) - 0.0;
+        cx = ((cx * fVar2 - sx * 0.0) - 0.0) - sz * 0.0;
+        sz = fVar3 * 0.0;
+        sx = cx * 0.0;
 
-        cx = cx * cz;
+        fVar2 = (cy * fVar4 + sx + sz) - sy * fVar1;
+        cx = ((cy * cx - fVar4 * 0.0) - sy * fVar3) - fVar1 * 0.0;
+        sz = (cy * fVar1 + sx + sy * fVar4) - sz;
 
-        quat.x = (cy * cx) - sy * fVar2;
-        quat.y = (cy * fVar1 + sy * fVar3);
-        quat.z = (cy * fVar3) - sy * fVar1;
+        return Quaternion(
+            cx, sz, fVar2, 0
+        );
 
-        break;
+        //break;
     case 3:
-        fVar1 = cx * sz;
-        fVar2 = sx * sz;
-        fVar3 = sx * cz;
+        fVar1 = (cx * sz + fVar2 * 0.0 + 0.0) - sx * 0.0;
+        fVar3 = (fVar2 * 0.0 + cx * 0.0 + sx * sz) - 0.0;
+        fVar4 = (sx * fVar2 + cx * 0.0 + 0.0) - sz * 0.0;
+        cx = ((cx * fVar2 - sx * 0.0) - 0.0) - sz * 0.0;
+        sz = fVar3 * 0.0;
+        sx = cx * 0.0;
 
-        quat.x = (cy * cx * cz) - sy * fVar2;
-        quat.y = cy * fVar1 + sy * fVar3;
-        quat.z = (cy * fVar3) - sy * fVar1;
+        fVar2 = (cy * fVar4 + sx + sz) - sy * fVar1;
+        cx = ((cy * cx - fVar4 * 0.0) - sy * fVar3) - fVar1 * 0.0;
+        sz = (cy * fVar1 + sx + sy * fVar4) - sz;
 
-        break;
+        return Quaternion(
+            cx, sz, fVar2, 0
+        );
+
+        //(Quaternion)CONCAT412(cx, CONCAT48(sz, (ulonglong)(uint)fVar2))
+
+        //break;
     case 4:
-        fVar2 = sx * cy;
-        fVar1 = cx * sy;
-        fVar3 = cx * cy;
+        fVar3 = (sx * cy + cx * 0.0 + sy * 0.0) - 0.0;
+        fVar1 = (cx * sy + cy * 0.0 + sx * 0.0) - 0.0;
+        fVar4 = ((cx * cy - sx * 0.0) - sy * 0.0) - 0.0;
+        cx = (cy * 0.0 + cx * 0.0 + 0.0) - sx * sy;
+        sx = fVar1 * 0.0;
+        sy = fVar3 * 0.0;
 
-        cx = -sx * sy;
+        return Quaternion(
+            ((fVar2 * fVar4 - sy) - sx) - sz * cx,
+            (fVar2 * cx + sz * fVar4 + sy) - sx,
+            (fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0,
+            0
+        );
 
-        quat.x = (cz * fVar3) - sz * cx;
-        quat.y = cz * cx + sz * fVar3;
-        quat.z = cz * fVar2 + sz * fVar1;
-
-        break;
+        //*quatMemBuf = (Quaternion)
+        //    CONCAT412(((fVar2 * fVar4 - sy) - sx) - sz * cx,
+        //        CONCAT48((fVar2 * cx + sz * fVar4 + sy) - sx,
+        //            (ulonglong)
+        //            (uint)((fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0)));
+        //return quatMemBuf;
     case 5:
-        fVar2 = (sx * cy);
-        fVar3 = ((cx * cy));
-        fVar1 = (cx * sy);
+        fVar3 = (sx * cy + cx * 0.0 + 0.0) - sy * 0.0;
+        fVar4 = ((cx * cy - sx * 0.0) - sy * 0.0) - 0.0;
+        fVar1 = (cx * sy + cy * 0.0 + 0.0) - sx * 0.0;
+        cx = (cy * 0.0 + cx * 0.0 + sx * sy) - 0.0;
+        sx = fVar1 * 0.0;
+        sy = fVar3 * 0.0;
 
-        cx = (sx * sy);
+        return Quaternion(
+            ((fVar2 * fVar4 - sy) - sx) - sz * cx,
+            (fVar2 * cx + sz * fVar4 + sy) - sx,
+            (fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0,
+            0
+        );
 
-        quat.x = (cz * fVar3) - sz * cx;
-        quat.y = cz * cx + sz * fVar3;
-        quat.z = cz * fVar2 + sz * fVar1;
-
-        break;
+        //*quatMemBuf = (Quaternion)
+        //    CONCAT412(((fVar2 * fVar4 - sy) - sx) - sz * cx,
+        //        CONCAT48((fVar2 * cx + sz * fVar4 + sy) - sx,
+        //            (ulonglong)
+        //            (uint)((fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0)))
+        //    ;
     default:
-        break;
+        return Quaternion(0, 0, 0, 0);
+        //goto switchD_180752161_caseD_6;
     }
-
-    return quat;
+    //*quatMemBuf = (Quaternion)CONCAT412(cx, CONCAT48(sz, (ulonglong)(uint)fVar2));
+//switchD_180752161_caseD_6:
+    //return quatMemBuf;
 }
 
+// https://stackoverflow.com/questions/12088610/conversion-between-euler-quaternion-like-in-unity3d-engine
 Quaternion Quaternion::Euler(float x, float y, float z) {
-    return FromEulerRad_Impl(Vector3(x, y, z) * (PI / 180.f), 4);
+    // float yaw, float pitch, float roll
+
+    //Vector3 vec(x * 0.017453292f, y * 0.017453292f, z * 0.017453292f);
+    //return FromEulerRad_Impl(Vector3(x, y, z) * (PI / 180.f), 4);
+    //return FromEulerRad_Impl(vec, 4);
+        
+    // degrees to radians
+    y *= 0.017453292f;
+    x *= 0.017453292f;
+    z *= 0.017453292f;
+
+    float rollOver2 = z * 0.5f;
+    float sinRollOver2 = sin(rollOver2);
+    float cosRollOver2 = cos(rollOver2);
+    float pitchOver2 = x * 0.5f;
+    float sinPitchOver2 = sin(pitchOver2);
+    float cosPitchOver2 = cos(pitchOver2);
+    float yawOver2 = y * 0.5f;
+    float sinYawOver2 = sin(yawOver2);
+    float cosYawOver2 = cos(yawOver2);
+
+    Quaternion result = Quaternion::IDENTITY;
+
+    result.w = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2;
+    result.x = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
+    result.y = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
+    result.z = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
+
+    return result;
 }
 
 Quaternion Quaternion::LookRotation(Vector3 forward, Vector3 upwards) {
