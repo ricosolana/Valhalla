@@ -251,15 +251,15 @@ Quaternion Quaternion::LookRotation(Vector3 forward, Vector3 up) {
         Vector3 vector2 = up.Cross(vector).Normalized();
         Vector3 vector3 = vector.Cross(vector2);
 
-        double m00 = vector2.x;
-        double m01 = vector2.y;
-        double m02 = vector2.z;
-        double m10 = vector3.x;
-        double m11 = vector3.y;
-        double m12 = vector3.z;
-        double m20 = vector.x;
-        double m21 = vector.y;
-        double m22 = vector.z;
+        auto m00 = vector2.x;
+        auto m01 = vector2.y;
+        auto m02 = vector2.z;
+        auto m10 = vector3.x;
+        auto m11 = vector3.y;
+        auto m12 = vector3.z;
+        auto m20 = vector.x;
+        auto m21 = vector.y;
+        auto m22 = vector.z;
 
         //float m00 = right.x;
         //float m01 = right.y;
@@ -271,7 +271,7 @@ Quaternion Quaternion::LookRotation(Vector3 forward, Vector3 up) {
         //float m21 = forward.y;
         //float m22 = forward.z;
 
-        double num8 = (m00 + m11) + m22;
+        auto num8 = (m00 + m11) + m22;
         Quaternion quaternion = Quaternion::IDENTITY;
         if (num8 > 0)
         {

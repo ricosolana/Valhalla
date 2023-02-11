@@ -63,9 +63,9 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if TRUE
+#if FALSE
     fs::current_path("./data/tests/");
-    Tests::Test_QuaternionLook();
+    //Tests::Test_QuaternionLook();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
     //Tests::Test_ZDO();

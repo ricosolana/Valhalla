@@ -295,7 +295,7 @@ Vector3& Vector3::Normalize() {
         *this *= VUtils::Math::FISQRT(sqmagnitude);
     }
     else {
-        //*this = Vector3::ZERO;
+        *this = Vector3::ZERO;
         throw std::runtime_error("cannot normalize zero vector");
     }
     return *this;
