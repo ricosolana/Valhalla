@@ -15,7 +15,7 @@ No longer being developed. Graphics programming is not my thing :(
 ## Progress
 ### 2/11/2023 + TODO
 
-![Vegetation rotations](/docs/pics/experimental-rotationsgeneration.jpg)
+![Vegetation rotations](/docs/pics/experimental-rotations.jpg)
 
 I am playing around with vegetation rotations using some implementations of Unity.Quaternion methods Ive found online. I'm surprised anyone has done this.
 
