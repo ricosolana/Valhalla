@@ -552,10 +552,11 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
 
                             if (zoneVegetation->m_chanceToUseGroundTilt > 0
                                 && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
-                                //Quaternion rotation2 = Quaternion::Euler(0.f, rot_y, 0.f);
-                                //rotation = Quaternion.LookRotation(
-                                //    vector3.Cross(rotation2 * Vector3::FORWARD),
-                                //    vector3);
+                                auto rotation2 = Quaternion::Euler(0, rot_y, 0);
+                                rotation = Quaternion::LookRotation(
+                                    normal.Cross(rotation2 * Vector3::FORWARD),
+                                    normal
+                                );
                             }
                             else {
                                 rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
@@ -567,7 +568,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                             ///rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
 
                             // hardcoded for now
-                            rotation = Quaternion(0, 1, 0, 0);
+                            //rotation = Quaternion(0, 1, 0, 0);
 
                             auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
 

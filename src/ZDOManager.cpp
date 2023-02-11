@@ -113,7 +113,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	const auto count = reader.Read<int32_t>();
 	if (count < 0)
 		throw std::runtime_error("count must be positive");
-		throw std::runtime_error("count must be positive");
 
 	int purgeCount = 0;
 

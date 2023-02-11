@@ -196,6 +196,7 @@ Vector2i Vector2i::Normalized() {
 const Vector3 Vector3::ZERO(0, 0, 0);
 const Vector3 Vector3::UP(0, 1, 0);
 const Vector3 Vector3::DOWN(0, -1, 0);
+const Vector3 Vector3::FORWARD(0, 0, 1);
 
 Vector3& Vector3::operator=(const Vector3& other) {
     x = other.x;

@@ -180,4 +180,5 @@ struct Vector3 {
     static const Vector3 ZERO;
     static const Vector3 UP;
     static const Vector3 DOWN;
+    static const Vector3 FORWARD;
 };
