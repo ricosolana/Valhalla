@@ -1,19 +1,26 @@
 todo:
+    - test whether players work right near edge of world, or zdos...
+        vegetation is not placed near edge of world, this might be why
+        
+        instead of square zone checks, check radially (within bounds of circular world)
+
     - implement quaternion euler fully
     
     - implement quaternion lookdirection fully
+        so that prefabs are rotated correctly on worldgen
+
+    - fix mistlands mist distribution
+        literally a blanket
 
     - cleanup used heightmaps after time
-
+    
     - fix zdo-specific world saving
         primarily related to object-specific saves apparently, like container, terrain modifier?...
    
     - test reducing world size to 313
         also add constraints when near edge of world
         so index bounds issues wont happen
-   
-    - implement portals
-    
+      
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
@@ -22,21 +29,18 @@ todo:
     - calc server memory consumption
         zdos primarily...
        
-    - block WNT packets?
-        cause particles to spawn on screen likely causing lagg if many 
-        
-    - fix mistlands mist distribution
-        literally a blanket
-        
     - vegetation pkg values might need tweaking
         swamp trees are kinda not distributed?
-    
+        
+    - block WNT packets?
+        cause particles to spawn on screen likely causing lagg if many 
+            
     - consolidate all player notification messages into one method
         showMessage, chatMessage, RemotePrint...
-    
-    - use bitshift for Biome type (instead of mask)
 
     - send zdos more/less often/more depending on network load and per-client latency
+    
+    - use bitshift for Biome type (instead of mask)
 
     - modify RouteManager to not have so much peer indirection
         (stop with ints...)
@@ -50,10 +54,15 @@ todo:
     - idea for unloading/destroying/reconciliating inactive zdos in world:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
-    - mods?
-        compress
+
         
 finished:
+    - implement portals
+        portals now link together with the help of a lua mod 
+        
+    - mods?
+        comfy compress mod implemented
+
     - have method to get normal vector of heightmap at position
         consider using 4-pt normal for more acc normals if simple and fast enough
         

@@ -108,16 +108,17 @@ public:
             this->m_eventStatus = EventStatus::DEFAULT;
 
             for (auto&& callback : callbacks) {
-                try {
+                //try {
                     sol::protected_function_result result = std::apply(callback.m_func, t);
                     if (!result.valid()) {
                         sol::error error = result;
-                        LOG(ERROR) << error.what();
+                        //LOG(ERROR) << error.what();
+                        callback.m_mod->Error(error.what());
                     }
-                }
-                catch (const sol::error& e) {
-                    LOG(ERROR) << e.what();
-                }
+                //}
+                //catch (const sol::error& e) {
+                //    LOG(ERROR) << e.what();
+                //}
             }
         }
         return m_eventStatus;

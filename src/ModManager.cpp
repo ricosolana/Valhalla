@@ -341,6 +341,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         "pos", &DataReader::m_pos,
         
         // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
+        //  instead of this verbose nightmare
         "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
@@ -384,10 +385,11 @@ void IModManager::LoadModEntry(Mod* mod) {
         //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
         "id", &ZDOID::m_id,
         //"NONE", []() { return ZDOID::NONE; }
-        "none", sol::property([]() {return ZDOID::NONE;  })
+        "none", sol::property([]() { return ZDOID::NONE; })
     );
 
     env.new_usertype<Vector3>("Vector3",
+        sol::constructors<Vector3(), Vector3(float, float, float)>(),
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z,
@@ -396,11 +398,12 @@ void IModManager::LoadModEntry(Mod* mod) {
         "Normalize", &Vector3::Normalize,
         "Normalized", &Vector3::Normalized,
         "SqDistance", &Vector3::SqDistance,
-        "SqMagnitude", &Vector3::SqMagnitude
-        //"ZERO", &Vector3::ZERO
+        "SqMagnitude", &Vector3::SqMagnitude,
+        "zero", sol::property([]() { return Vector3::ZERO; })
     );
 
     env.new_usertype<Vector2i>("Vector2i",
+        sol::constructors<Vector2i(), Vector2i(int32_t, int32_t)>(),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
         "Distance", &Vector2i::Distance,
@@ -408,16 +411,17 @@ void IModManager::LoadModEntry(Mod* mod) {
         "Normalize", &Vector2i::Normalize,
         "Normalized", &Vector2i::Normalized,
         "SqDistance", &Vector2i::SqDistance,
-        "SqMagnitude", &Vector2i::SqMagnitude
-        //"ZERO", &Vector2i::ZERO
+        "SqMagnitude", &Vector2i::SqMagnitude,
+        "zero", sol::property([]() { return Vector2i::ZERO; })
     );
 
     env.new_usertype<Quaternion>("Quaternion",
+        sol::constructors<Quaternion(float, float, float, float)>(),
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
-        "w", &Quaternion::w
-        //"IDENTITY", &Quaternion::IDENTITY
+        "w", &Quaternion::w,
+        "identity", sol::property([]() { return Quaternion::IDENTITY; })
     );
 
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
@@ -521,7 +525,7 @@ void IModManager::LoadModEntry(Mod* mod) {
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
-    zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
+    //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
 
 
@@ -585,6 +589,12 @@ void IModManager::LoadModEntry(Mod* mod) {
             thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
             thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
             thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
+        }
+
+        {
+            auto thisConfigTable = thisTable["config"].get_or_create<sol::table>();
+
+            // TODO use yamlcpp to get and set config values...
         }
 
     }
