@@ -2,6 +2,12 @@
     Vanilla portal mod to connect portals together throughout gameplay
 
     Created by crzi for use on the C++ Valhalla server
+
+    I never knew this, but tags are not fully unique
+        Once a portal is paired with another with a certain tag,
+        another pair of portals can be paired with the same tag as the first pair
+
+        my code below also exhibits this, (un)fortunately? so.
 --]]
 
 local PORTAL = VUtils.String.GetStableHashCode("portal_wood")
@@ -34,10 +40,6 @@ Valhalla.OnEvent("PeriodUpdate", function()
                 if i2 ~= i1 then
                     
                     local zdo2 = portals[i2]
-
-                    --if zdo1:GetZDOID("target") == ZDOID.none then
-                        -- if portal tar
-                    --end
 
                     local target2 = zdo2:GetZDOID("target")
 
