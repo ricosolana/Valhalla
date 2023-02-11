@@ -504,6 +504,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                         continue;
 
                     // Mistlands only
+                    // TODO might be affecting mist (probably is? just a hunch)
                     if (zoneVegetation->m_minVegetation != zoneVegetation->m_maxVegetation) {
                         float vegetationMask = otherHeightmap.GetVegetationMask(pos);
                         if (vegetationMask > zoneVegetation->m_maxVegetation || vegetationMask < zoneVegetation->m_minVegetation) {
@@ -557,7 +558,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                                 //    vector3);
                             }
                             else {
-                                //rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
+                                rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                             }
 
 

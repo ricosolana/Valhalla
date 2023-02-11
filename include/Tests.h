@@ -6,7 +6,48 @@
 
 namespace Tests {
    
-    void Test_Quaternion() {
+    void Test_QuaternionLook() {
+        auto opt = VUtils::Resource::ReadFileLines("lookrotation_values.txt");
+
+        assert(opt && "file not found");
+
+        auto&& values = opt.value();
+        int index = 0;
+
+        for (float z = -1; z < 1; z += .05f)
+        {
+            for (float y = -1; y < 1; y += .05f)
+            {
+                for (float x = -1; x < 1; x += .05f)
+                {
+                    auto vec = Vector3(x, y, z);
+                    if (vec.Magnitude() <= 0.0001f)
+                        continue;
+
+                    auto calc = Quaternion::LookRotation(Vector3(x, y, z));
+                    auto expect = Quaternion(
+                        std::stof(values[index + 0]),
+                        std::stof(values[index + 1]),
+                        std::stof(values[index + 2]),
+                        std::stof(values[index + 3])
+                    );
+
+                    index += 4;
+
+                    //if (y < 180 || x < 60)
+                        //continue;
+
+                    static constexpr float EPS = 0.0001f;
+                    assert((calc.x - EPS < expect.x&& calc.x + EPS > expect.x));
+                    assert((calc.y - EPS < expect.y&& calc.y + EPS > expect.y));
+                    assert((calc.z - EPS < expect.z&& calc.z + EPS > expect.z));
+                    assert((calc.w - EPS < expect.w&& calc.w + EPS > expect.w));
+                }
+            }
+        }
+    }
+
+    void Test_QuaternionEuler() {
         auto opt = VUtils::Resource::ReadFileLines("euler_values.txt");
 
         assert(opt && "file not found");

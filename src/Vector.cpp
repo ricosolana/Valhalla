@@ -271,13 +271,32 @@ Vector3& Vector3::Normalize() {
     // its also the same as multiplying by the inverse length
 
     // also the same as multiplying by the inverse sqrt length
-    auto sqmagnitude = SqMagnitude();
 
+    //double sqmagnitude = ((double)x * (double)x) + ((double)y * (double)y) + ((double)z * (double)z);
+    //if (sqmagnitude > std::numeric_limits<double>::epsilon()) {
+    //    //*this *= VUtils::Math::FISQRT(sqmagnitude);
+    //
+    //    //if (sqmagnitude + std::numeric_limits<float>::epsilon() > )
+    //    *this *= (1.0 / std::sqrt(sqmagnitude));
+    //
+    //    if (std::abs(x) <= std::numeric_limits<float>::epsilon() * 2.f)
+    //        x = 0;
+    //    if (std::abs(y) <= std::numeric_limits<float>::epsilon() * 2.f)
+    //        y = 0;
+    //    if (std::abs(z) <= std::numeric_limits<float>::epsilon() * 2.f)
+    //        z = 0;
+    //}
+    //else {
+    //    *this = Vector3::ZERO;
+    //}
+
+    auto sqmagnitude = SqMagnitude();
     if (sqmagnitude > 1E-05f * 1E-05f * 1E-05f) {
         *this *= VUtils::Math::FISQRT(sqmagnitude);
     }
     else {
-        *this = Vector3::ZERO;
+        //*this = Vector3::ZERO;
+        throw std::runtime_error("cannot normalize zero vector");
     }
     return *this;
 }

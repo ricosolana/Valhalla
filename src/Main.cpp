@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
 #if TRUE
     fs::current_path("./data/tests/");
-    Tests::Test_Quaternion();
+    Tests::Test_QuaternionLook();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
     //Tests::Test_ZDO();
