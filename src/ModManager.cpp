@@ -68,6 +68,23 @@ void IModManager::LoadModEntry(Mod* mod) {
         LOG(INFO) << "[" << mod->m_name << "] " << s;
     };
 
+    env.new_enum("DataType",
+        "bytes", DataType::BYTES,
+        "string", DataType::STRING,
+        "zdoid", DataType::ZDOID,
+        "vector3", DataType::VECTOR3,
+        "vector2i", DataType::VECTOR2i,
+        "quaternion", DataType::QUATERNION,
+        "strings", DataType::STRINGS,
+        "bool", DataType::BOOL,
+        "byte", DataType::INT8, "int8", DataType::INT8,
+        "short", DataType::INT16, "int16", DataType::INT16,
+        "int", DataType::INT32, "int32", DataType::INT32, "hash", DataType::INT32,
+        "long", DataType::INT64, "int64", DataType::INT64,
+        "float", DataType::FLOAT,
+        "double", DataType::DOUBLE
+    );
+
     auto utilsTable = env["VUtils"].get_or_create<sol::table>();
 
     utilsTable["Compress"] = sol::overload(
@@ -227,7 +244,7 @@ void IModManager::LoadModEntry(Mod* mod) {
             self.m_socket->Send(std::move(bytes));
         },
 
-        "Register", [mod](Peer *self, sol::variadic_args args) {
+        "Register", [mod](Peer &self, sol::variadic_args args) {
             HASH_t hash = 0;
             std::vector<DataType> types;
 
@@ -263,7 +280,7 @@ void IModManager::LoadModEntry(Mod* mod) {
                         //assert(false);
                         //self.Register(name, 
                             //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
-                        self->Register(hash, std::move(callback), std::move(types));
+                        self.Register(hash, std::move(callback), std::move(types));
                     }
                     else {
                         return mod->Error("last param must be a function");
@@ -273,23 +290,6 @@ void IModManager::LoadModEntry(Mod* mod) {
         },
         "socket", sol::property([](Peer& self) { return self.m_socket; })
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
-    );
-
-    env.new_enum("DataType",
-        "bytes",    DataType::BYTES,
-        "string",   DataType::STRING,
-        "zdoid",    DataType::ZDOID,
-        "vector3",     DataType::VECTOR3,
-        "vector2i",    DataType::VECTOR2i,
-        "quaternion",     DataType::QUATERNION,
-        "strings",  DataType::STRINGS,
-        "bool",     DataType::BOOL,
-        "byte",     DataType::INT8,         "int8", DataType::INT8,
-        "short",    DataType::INT16,        "int16", DataType::INT16,
-        "int",      DataType::INT32,        "int32", DataType::INT32,       "hash", DataType::INT32,
-        "long",     DataType::INT64,        "int64", DataType::INT64,       
-        "float",    DataType::FLOAT,
-        "double",   DataType::DOUBLE
     );
 
     env.new_usertype<DataWriter>("DataWriter",
