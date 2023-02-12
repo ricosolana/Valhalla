@@ -62,4 +62,11 @@ namespace VUtils::Math {
 
     // Perlin noise
     float PerlinNoise(float x, float y);
+
+
+
+    float YawFromDirection(const Vector3 &dir);
+
+    // Wrap degrees
+    float FixDegAngle(float p_Angle);
 }

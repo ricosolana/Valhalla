@@ -21,4 +21,26 @@ namespace VUtils::Mathf {
     float Lerp(float a, float b, float t) {
         return a + (b - a) * Mathf::Clamp01(t);
     }
+
+    float Round(float f)
+    {
+        const float r = round(f); // Result is round-half-away-from-zero
+        const float d = r - f; // Difference
+
+        // Result is not half, RHAFZ result same as RHTE
+        if ((d != 0.5f) && (d != -0.5f))
+        {
+            return r;
+        }
+
+        // Check if RHAFZ result is even, then RHAFZ result same as RHTE
+        if (fmod(r, 2.0f) == 0.0f)
+        {
+            return r;
+        }
+
+        // Switch to even value
+        return f - d;
+    }
+
 }

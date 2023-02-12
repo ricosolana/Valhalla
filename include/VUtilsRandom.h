@@ -23,6 +23,7 @@ namespace VUtils::Random {
         // Returns a random float from 0 to 1
         float NextFloat();
         uint32_t NextInt();
+        float Value() { return NextFloat(); }
 
         float Range(float minInclude, float maxExclude);
         int32_t Range(int32_t minInclude, int32_t maxExclude);

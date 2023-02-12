@@ -207,4 +207,20 @@ namespace VUtils::Math {
         return (res + .69f) / 1.483f;
     }
 
+
+    float YawFromDirection(const Vector3 &dir) {
+        float num = std::atan2(dir.x, dir.z);
+        return FixDegAngle(57.29578f * num);
+    }
+
+    float FixDegAngle(float p_Angle) {
+        while (p_Angle >= 360)
+            p_Angle -= 360;
+
+        while (p_Angle < 0)
+            p_Angle += 360;
+
+        return p_Angle;
+    }
+
 }

@@ -113,7 +113,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneManager.cpp"
- )
+  "src/DungeonGenerator.cpp" "include/DungeonManager.h" "include/Room.h" "src/Room.cpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

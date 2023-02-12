@@ -8,4 +8,7 @@ namespace VUtils::Mathf {
 
     float Lerp(float a, float b, float t);
 
+    // Bankers rounding
+    float Round(float f);
+
 }
