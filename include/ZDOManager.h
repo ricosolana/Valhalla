@@ -28,7 +28,7 @@ private:
 
 	// Contains ZDOs according to Zone
 	std::array<robin_hood::unordered_set<ZDO*>, 
-		(IZoneManager::WORLD_SIZE_IN_ZONES* IZoneManager::WORLD_SIZE_IN_ZONES)> m_objectsBySector;
+		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector; // takes up around 5MB; could be around 72 bytes with map
 
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<NetID, TICKS_t> m_deadZDOs;

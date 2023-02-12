@@ -593,13 +593,23 @@ void IZDOManager::ForceSendZDO(const NetID& id) {
 }
 
 int IZDOManager::SectorToIndex(const ZoneID& s) const {
-	int x = s.x + IZoneManager::WORLD_SIZE_IN_ZONES / 2;
-	int y = s.y + IZoneManager::WORLD_SIZE_IN_ZONES / 2;
-	if (x < 0 || y < 0
-		|| x >= IZoneManager::WORLD_SIZE_IN_ZONES || y >= IZoneManager::WORLD_SIZE_IN_ZONES) {
+	//static constexpr size_t sz = sizeof(m_objectsBySector); // 5MB
+
+	//static constexpr size_t sz1 = sizeof(robin_hood::unordered_map<ZoneID, decltype(m_objectsBySector)::value_type>);
+
+	if (s.x * s.x + s.y * s.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
 		return -1;
-	}
-	return y * IZoneManager::WORLD_SIZE_IN_ZONES + x;
+
+	int x = s.x + IZoneManager::WORLD_RADIUS_IN_ZONES;
+	int y = s.y + IZoneManager::WORLD_RADIUS_IN_ZONES;
+	//if (x < 0 || y < 0
+	//	|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
+	//	return -1;
+	//}
+
+	assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES&& y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
+
+	return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
 }
 
 bool IZDOManager::SendZDOs(Peer* peer, bool flush) {

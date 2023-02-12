@@ -4,11 +4,6 @@ todo:
         
         instead of square zone checks, check radially (within bounds of circular world)
 
-    - implement quaternion euler fully
-    
-    - implement quaternion lookdirection fully
-        so that prefabs are rotated correctly on worldgen
-
     - fix mistlands mist distribution
         literally a blanket
 
@@ -57,6 +52,11 @@ todo:
 
         
 finished:
+    - implement quaternion euler fully
+    
+    - implement quaternion lookdirection fully
+        so that prefabs are rotated correctly on worldgen
+
     - implement portals
         portals now link together with the help of a lua mod 
         
