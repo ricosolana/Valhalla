@@ -64,6 +64,8 @@ public:
         m_name(name), m_uuid(uuid), m_pos(pos)
     {}
 
+    Peer(const Peer& peer) = delete;
+
     /**
         * @brief Register a static method for remote invocation
         * @param name function name to register

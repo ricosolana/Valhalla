@@ -227,7 +227,7 @@ void IModManager::LoadModEntry(Mod* mod) {
             self.m_socket->Send(std::move(bytes));
         },
 
-        "Register", [mod](Peer& self, sol::variadic_args args) {
+        "Register", [mod](Peer *self, sol::variadic_args args) {
             HASH_t hash = 0;
             std::vector<DataType> types;
 
@@ -263,7 +263,7 @@ void IModManager::LoadModEntry(Mod* mod) {
                         //assert(false);
                         //self.Register(name, 
                             //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
-                        self.Register(hash, std::move(callback), std::move(types));
+                        self->Register(hash, std::move(callback), std::move(types));
                     }
                     else {
                         return mod->Error("last param must be a function");

@@ -58,7 +58,7 @@ class IModManager {
             : m_name(name), m_env(std::move(env)) {}
 
         void Error(const std::string& s) {
-            LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
+            LOG(ERROR) << "mod [" << m_name << "]: " << s; // << " (L" << GetCurrentLine() << ")";
         }
 
         int GetCurrentLine() {
@@ -97,8 +97,8 @@ public:
 
     void Uninit();
 
-    template <class Tuple>
-    auto CallEventTuple(HASH_t name, Tuple&& t) {
+    template <typename... Args>
+    EventStatus CallEvent(HASH_t name, const Args&... params) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -108,37 +108,51 @@ public:
             this->m_eventStatus = EventStatus::DEFAULT;
 
             for (auto&& callback : callbacks) {
-                //try {
-                    sol::protected_function_result result = std::apply(callback.m_func, t);
-                    if (!result.valid()) {
-                        sol::error error = result;
-                        //LOG(ERROR) << error.what();
-                        callback.m_mod->Error(error.what());
-                    }
-                //}
-                //catch (const sol::error& e) {
-                //    LOG(ERROR) << e.what();
-                //}
+                try {
+                    //auto dbg(GetDebugInfo(callback))
+                    callback.m_func(params...);
+                }
+                catch (const sol::error& e) {
+                    LOG(ERROR) << e.what();
+                }
             }
         }
         return m_eventStatus;
     }
 
+    template <typename... Args>
+    auto CallEvent(const char* name, const Args&... params) {
+        return CallEvent(VUtils::String::GetStableHashCode(name), params...);
+    }
+
+    template <typename... Args>
+    auto CallEvent(std::string& name, const Args&... params) {
+        return CallEvent(name.c_str(), params...);
+    }
+
+
+
+private:
+    template<class Tuple, size_t... Is>
+    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
+        return CallEvent(name, std::get<Is>(t)...);
+    }
+
+public:
     template <class Tuple>
-    auto CallEventTuple(const std::string& name, Tuple&& t) {
-        return CallEventTuple(VUtils::String::GetStableHashCode(name), std::forward<Tuple>(t));
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
+        return CallEventTupleImpl(name, t,
+            std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 
-    // Dispatch a event for capture by any registered mod event handlers
-    // Returns whether the event-delegate is cancelled
-    template <typename... Args>
-    EventStatus CallEvent(HASH_t name, Args&&... params) {
-        return CallEventTuple(name, std::forward_as_tuple(params...));
+    template <class Tuple>
+    auto CallEventTuple(const char* name, const Tuple& t) {
+        return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
     }
 
-    template <typename... Args>
-    auto CallEvent(const std::string& name, Args&&... params) {
-        return CallEventTuple(name, std::forward_as_tuple(params...));
+    template <class Tuple>
+    auto CallEventTuple(std::string& name, const Tuple& t) {
+        return CallEventTuple(name.c_str(), t);
     }
 
 };
