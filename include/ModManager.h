@@ -87,9 +87,10 @@ private:
     EventStatus m_eventStatus;
 
 private:
-    void LoadAPI();
-
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
+
+    void LoadAPI();
+    void LoadMod(Mod* mod);
 
 public:
     void Init();

@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if TRUE
+#if FALSE
     fs::current_path("./data/tests/");
 
     Tests::Test_PeerLuaConnect();

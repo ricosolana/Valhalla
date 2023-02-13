@@ -50,8 +50,10 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     return mod;
 }
 
-struct IMethodWrapper {
-
+struct MethodSig {
+    //std::string m_name;
+    HASH_t m_hash;
+    std::vector<DataType> m_types;
 };
 
 void IModManager::LoadAPI() {
@@ -102,7 +104,11 @@ void IModManager::LoadAPI() {
     //    "Invoke", &IMethod<Peer*>::Invoke
     //);
 
-    m_state.new_usertype
+    m_state.new_usertype<MethodSig>("MethodSig",
+        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
+        //"hash", &MethodRepr::m_name,
+        //"types", &MethodRepr::m_types
+    );
 
     m_state.new_usertype<Peer>("Peer",
         "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
@@ -118,134 +124,78 @@ void IModManager::LoadAPI() {
         "InvokeSelf", sol::overload(
             static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        "Invoke", [](sol::this_environment te, Peer& self, sol::variadic_args args) {
-            sol::environment& env = te;
-            auto&& tostring(env["tostring"]);
+        "Invoke", [](Peer& self, MethodSig repr, sol::variadic_args args) {
+            if (args.size() != repr.m_types.size())
+                throw std::runtime_error("incorrect number of args");
 
             BYTES_t bytes;
             DataWriter params(bytes);
+
+            params.Write(repr.m_hash);
+
             for (int i = 0; i < args.size(); i++) {
                 auto&& arg = args[i];
-                auto&& type = arg.get_type();
+                auto argType = arg.get_type();
+                DataType expectType = repr.m_types[i];
 
-                if (i == 0) {
-                    if (type == sol::type::string) {
-                        params.Write(VUtils::String::GetStableHashCode(arg.as<std::string>()));
+                if (argType == sol::type::number) {
+                    switch (expectType) {
+                    case DataType::INT8:
+                        params.Write(arg.as<int8_t>());
+                        break;
+                    case DataType::INT16:
+                        params.Write(arg.as<int16_t>());
+                        break;
+                    case DataType::INT32:
+                        params.Write(arg.as<int32_t>());
+                        break;
+                    case DataType::INT64:
+                        params.Write(arg.as<int64_t>());
+                        break;
+                    case DataType::FLOAT:
+                        params.Write(arg.as<float>());
+                        break;
+                    case DataType::DOUBLE:
+                        params.Write(arg.as<double>());
+                        break;
+                    default:
+                        throw std::runtime_error("incorrect type at position (or bad DataType?)");
                     }
-                    else if (type == sol::type::number) {
-                        params.Write(arg.as<HASH_t>());
-                    }
-                    else {
-                        sol::object o = tostring(arg);
-                        auto result = o.as<std::string>();
-
-                        throw std::runtime_error(std::string("expected string or number, got: ") + result);
-
-                        //return mod->Error(std::string("Expected string or number, got: ") + result);
-
-                        //snprintf(errBuf, sizeof(errBuf), "arg %d; expected string or number, got: %s", i, result.c_str());
-                        //return ptr->Throw(errBuf);
-                    }
+                }
+                else if (argType == sol::type::string && expectType == DataType::STRING) {
+                    params.Write(arg.as<std::string>());
+                }
+                else if (argType == sol::type::boolean && expectType == DataType::BOOL) {
+                    params.Write(arg.as<bool>());
+                }
+                else if (arg.is<BYTES_t>() && expectType == DataType::BYTES) {
+                    params.Write(arg.as<BYTES_t>());
+                }
+                else if (arg.is<NetID>() && expectType == DataType::ZDOID) {
+                    params.Write(arg.as<NetID>());
+                }
+                else if (arg.is<Vector3>() && expectType == DataType::VECTOR3) {
+                    params.Write(arg.as<Vector3>());
+                }
+                else if (arg.is<Vector2i>() && expectType == DataType::VECTOR2i) {
+                    params.Write(arg.as<Vector2i>());
+                }
+                else if (arg.is<Quaternion>() && expectType == DataType::QUATERNION) {
+                    params.Write(arg.as<Quaternion>());
+                }
+                else if (arg.is<std::vector<std::string>>() && expectType == DataType::STRINGS) {
+                    params.Write(arg.as<std::vector<std::string>>());
                 }
                 else {
-                    // strict assumptions:
-                    // Every first number is assumed to be the PkgType, and the next to be the object
-                    if (type == sol::type::number) {
-                        DataType dataType = arg.as<DataType>();
-
-                        // bounds check end of array for pairs
-                        if (i + 1 < args.size()) {
-                            auto&& obj = args[++i];
-
-                            if (obj.get_type() != sol::type::number) {
-                                sol::object o = tostring(obj);
-                                auto result = o.as<std::string>();
-
-                                throw std::runtime_error("expected number immediately after DataType");
-
-                                //return mod->Error("arg " + std::to_string(i) + "; expected number immediately after PkgType, got: " + result);
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected number immediately after PkgType, got: %s", i, result.c_str());
-                                //return ptr->Throw(errBuf);
-                            }
-
-                            switch (dataType) {
-                            case DataType::INT8:
-                                params.Write(obj.as<int8_t>());
-                                break;
-                            case DataType::INT16:
-                                params.Write(obj.as<int16_t>());
-                                break;
-                            case DataType::INT32:
-                                params.Write(obj.as<int32_t>());
-                                break;
-                            case DataType::INT64:
-                                params.Write(obj.as<int64_t>());
-                                break;
-                            case DataType::FLOAT:
-                                params.Write(obj.as<float>());
-                                break;
-                            case DataType::DOUBLE:
-                                params.Write(obj.as<double>());
-                                break;
-                            default:
-                                throw std::runtime_error("expected valid DataType");
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; invalid PkgType enum, got: %d", i, static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
-                                //return ptr->Throw(errBuf);
-                                ///return mod->Error("arg " + std::to_string(i) + "; invalid PkgType enum, got: " + std::to_string(std::to_underlying(dataType)));
-                            }
-                        }
-                        else {
-                            throw std::runtime_error("unknown number type");
-                            //snprintf(errBuf, sizeof(errBuf), "arg %d; unknown number type", i);
-                            //return ptr->Throw(errBuf);
-                            ///return mod->Error("arg " + std::to_string(i) + "; unknown number type");
-                        }
-                    }
-                    else {
-                        if (type == sol::type::string) {
-                            params.Write(arg.as<std::string>());
-                        }
-                        else if (type == sol::type::boolean) {
-                            params.Write(arg.as<bool>());
-                        }
-                        else {
-                            if (arg.is<BYTES_t>()) {
-                                params.Write(arg.as<BYTES_t>());
-                            }
-                            else if (arg.is<NetID>()) {
-                                params.Write(arg.as<NetID>());
-                            }
-                            else if (arg.is<Vector3>()) {
-                                params.Write(arg.as<Vector3>());
-                            }
-                            else if (arg.is<Vector2i>()) {
-                                params.Write(arg.as<Vector2i>());
-                            }
-                            else if (arg.is<Quaternion>()) {
-                                params.Write(arg.as<Quaternion>());
-                            }
-                            else if (arg.is<std::vector<std::string>>()) {
-                                params.Write(arg.as<std::vector<std::string>>());
-                            }
-                            else {
-                                throw std::runtime_error("expected serializeable type");
-
-                                sol::object o = tostring(arg);
-                                auto result = o.as<std::string>();
-                                ///mod->Error("arg " + std::to_string(i) + "; expected serializable type, got: " + result);
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected serializable type, got: %s", i, result.c_str());
-                                //return ptr->Throw(errBuf);
-                            }
-                        }
-                    }
-                }
+                    throw std::runtime_error("unsupported type, or incorrect type at position");
+                }                
             }
 
             self.m_socket->Send(std::move(bytes));
         },
 
-        "Register", [](Peer& self, std::string name, sol::function func, sol::variadic_args types) {
-            self.Register(VUtils::String::GetStableHashCode(name), func, std::vector<DataType>(types.begin(), types.end()));
+        "Register", [](Peer& self, MethodSig repr, sol::function func) {
+            self.Register(repr.m_hash, func, repr.m_types);
         },
         "socket", sol::property([](Peer& self) { return self.m_socket; })
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
@@ -358,7 +308,8 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<NetID>("NetID",
         "uuid", &NetID::m_uuid,
-        "id", &NetID::m_id
+        "id", &NetID::m_id,
+        "none", sol::property([]() { return ZDOID::NONE; })
     );
 
     m_state.new_usertype<Vector3>("Vector3",
@@ -370,8 +321,8 @@ void IModManager::LoadAPI() {
         "Normalize", &Vector3::Normalize,
         "Normalized", &Vector3::Normalized,
         "SqDistance", &Vector3::SqDistance,
-        "SqMagnitude", &Vector3::SqMagnitude
-        //"ZERO", &Vector3::ZERO
+        "SqMagnitude", &Vector3::SqMagnitude,
+        "zero", sol::property([]() { return Vector3::ZERO; })
     );
 
     m_state.new_usertype<Vector2i>("Vector2i",
@@ -382,16 +333,16 @@ void IModManager::LoadAPI() {
         "Normalize", &Vector2i::Normalize,
         "Normalized", &Vector2i::Normalized,
         "SqDistance", &Vector2i::SqDistance,
-        "SqMagnitude", &Vector2i::SqMagnitude
-        //"ZERO", &Vector2i::ZERO
+        "SqMagnitude", &Vector2i::SqMagnitude,
+        "zero", sol::property([]() { return Vector2i::ZERO; })
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
-        "w", &Quaternion::w
-        //"IDENTITY", &Quaternion::IDENTITY
+        "w", &Quaternion::w,
+        "identity", sol::property([]() { return Quaternion::IDENTITY; })
     );
 
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
@@ -401,6 +352,84 @@ void IModManager::LoadAPI() {
         "GetAddress", &ISocket::GetAddress,
         "GetHostName", &ISocket::GetHostName,
         "GetSendQueueSize", &ISocket::GetSendQueueSize
+    );
+
+    m_state.new_usertype<ZDO>("ZDO",
+        "id", &ZDO::m_id,
+        "owner", &ZDO::m_owner,
+        "SetLocal", &ZDO::SetLocal,
+        //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
+        //"GetInt", &ZDO::GetInt,
+        //"GetLong", &ZDO::GetLong,
+        //"GetQuaternion", &ZDO::GetQuaternion,
+        //"GetVector3", &ZDO::GetVector3,
+        "GetString", sol::overload(
+            static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+            static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
+        ),
+        //"GetBytes", &ZDO::GetBytes,
+        //"GetBool", &ZDO::GetBool,
+        "GetZDOID", static_cast<ZDOID(ZDO::*)(const std::string&) const>(&ZDO::GetNetID), //sol::overload(
+        //[](sol::state_view state, ZDO& self, const std::string& key) {
+        //    auto zdoid = self.GetNetID(key);
+        //    if (zdoid)
+        //        return sol::make_object(state, zdoid); 
+        //    return sol::make_object(state, sol::lua_nil);
+        //},
+        ///[](sol::state_view state, ZDO& self, const std::pair<HASH_t, HASH_t>& pair) {
+        ///    auto zdoid = self.GetNetID(pair);
+        ///    if (zdoid)
+        ///        return sol::make_object(state, zdoid);
+        ///    return sol::make_object(state, sol::lua_nil);
+        ///},
+        ////[](sol::state_view state, ZDO& self, HASH_t a, HASH_t b) {
+        ////    auto zdoid = self.GetNetID(std::make_pair(a, b));
+        ////    if (zdoid)
+        ////        return sol::make_object(state, zdoid);
+        ////    return sol::make_object(state, sol::lua_nil);
+        ////}
+        //[](sol::state_view state, ZDO& self, const sol::tie<HASH_t, HASH_t> &pair) {
+        //    auto zdoid = self.GetNetID(std::make_pair(a, b));
+        //    if (zdoid)
+        //        return sol::make_object(state, zdoid);
+        //    return sol::make_object(state, sol::lua_nil);
+        //}
+    //),
+
+    //"Set", [this, mod](ZDO& self, sol::variadic_args args) {
+    //    for (int i = 0; i < args.size(); i++) {
+    //        // set based on types
+    //        auto&& key = args[i];
+    //        auto&& value = args[i + 1];
+    //
+    //        // hash
+    //        if (key.get_type() == sol::type::number) {
+    //
+    //        }
+    //        else if (key.get_type() == sol::type::string) {
+    //
+    //        }
+    //        else {
+    //            mod->Error("received incorrect type for key");
+    //        }
+    //
+    //    }
+    //}
+
+        "Set", sol::overload(
+            // TODO use static_cast or resolve
+            [](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
+
+            //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
+            [](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); }
+            // string
+            //static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
+            // zdoid
+            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
+        )
+
     );
 
 
@@ -415,7 +444,10 @@ void IModManager::LoadAPI() {
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
+    zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
+    zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
+    //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
 
 
@@ -435,6 +467,7 @@ void IModManager::LoadAPI() {
                 else if (type == sol::type::number)
                     hash = arg.as<HASH_t>();
                 else {
+                    throw std::runtime_error("initial params must be string or hash");
                     //return mod->Error("LUA starting parameters must be string or hash");
                 }
 
@@ -443,23 +476,23 @@ void IModManager::LoadAPI() {
             else {
                 if (type == sol::type::function) {
                     auto&& vec = m_callbacks[cbHash];
-                    vec.emplace_back(
-                        arg.as<sol::function>(),
-                        priority
-                    );
+                    
+                    vec.emplace_back(arg.as<sol::function>(), priority);
                     std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
                         const EventHandler& b) {
                             return a.m_priority < b.m_priority;
-                        });
+                        }
+                    );
                 }
                 else {
                     //return mod->Error("LUA last param must be a function");
-                    throw std::runtime_error("last param must be a function");
+                    throw std::runtime_error("final param must be a function");
                 }
             }
         }
     };
 
+    // TODO use properties for immutability
     m_state.new_usertype<Mod>("Mod",
         "name", &Mod::m_name,
         "version", &Mod::m_version,
@@ -468,28 +501,18 @@ void IModManager::LoadAPI() {
         "authors", &Mod::m_authors
     );
 
-    /*
     {
-        auto thisTable = env["this"].get_or_create<sol::table>();
+        auto thisEventTable = m_state["event"].get_or_create<sol::table>();
 
-        {
-            auto thisModTable = thisTable["mod"].get_or_create<sol::table>();
+        thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
+        thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
+    }
+}
 
-            thisModTable["name"] = mod->m_name;
-            thisModTable["version"] = mod->m_version;
-            thisModTable["apiVersion"] = mod->m_apiVersion;
-            thisModTable["description"] = mod->m_description;
-            thisModTable["authors"] = mod->m_authors;
-        }
-
-        {
-            auto thisEventTable = thisTable["event"].get_or_create<sol::table>();
-
-            thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
-            thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-            thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
-        }
-    }*/
+void IModManager::LoadMod(Mod* mod) {
+    auto&& env = mod->m_env;
+    env["this"] = mod;
 }
 
 
@@ -561,12 +584,9 @@ void IModManager::Init() {
                 auto path(fs::path("mods") / dirname / (entry + ".lua"));
                 if (auto opt = VUtils::Resource::ReadFileString(path)) {
                     sol::load_result script = m_state.load(*opt);
-
+                    LoadMod(mod.get());
                     
                     m_state.safe_script(opt.value(), mod->m_env);
-                    //sol::function f = script;
-                    //mod->m_env.set_on(f);
-                    //f();
                 }
                 else
                     throw std::runtime_error(std::string("unable to open file ") + path.string());
