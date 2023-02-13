@@ -66,6 +66,8 @@ int main(int argc, char **argv) {
 #if FALSE
     fs::current_path("./data/tests/");
     //Tests::Test_QuaternionLook();
+
+    //Tests::Test_PeerLuaConnect();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
     //Tests::Test_ZDO();
@@ -73,7 +75,7 @@ int main(int argc, char **argv) {
     //Tests::Test_Random();
     //Tests::Test_Perlin();
 
-    LOG(INFO) << "All tests passeed!";
+    LOG(INFO) << "All tests passed!";
 
     return 0;
 #endif

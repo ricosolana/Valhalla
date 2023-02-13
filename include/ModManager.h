@@ -58,7 +58,7 @@ class IModManager {
             : m_name(name), m_env(std::move(env)) {}
 
         void Error(const std::string& s) {
-            LOG(ERROR) << "mod [" << m_name << "]: " << s; // << " (L" << GetCurrentLine() << ")";
+            LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
         }
 
         int GetCurrentLine() {
@@ -71,12 +71,11 @@ class IModManager {
     };
 
     struct EventHandler {
-        Mod* m_mod;
         sol::protected_function m_func;
         int m_priority;
 
-        EventHandler(Mod* mod, sol::function func, int priority)
-            : m_mod(mod), m_func(func), m_priority(priority) {}
+        EventHandler(sol::function func, int priority)
+            : m_func(func), m_priority(priority) {}
     };
 
 private:
@@ -90,15 +89,16 @@ private:
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
 
-    void LoadModEntry(Mod* mod);    
+    void LoadAPI();
+    void LoadMod(Mod* mod);
 
 public:
     void Init();
 
     void Uninit();
 
-    template <typename... Args>
-    EventStatus CallEvent(HASH_t name, const Args&... params) {
+    template <class Tuple>
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -109,8 +109,11 @@ public:
 
             for (auto&& callback : callbacks) {
                 try {
-                    //auto dbg(GetDebugInfo(callback))
-                    callback.m_func(params...);
+                    sol::protected_function_result result = std::apply(callback.m_func, t);
+                    if (!result.valid()) {
+                        sol::error error = result;
+                        LOG(ERROR) << error.what();
+                    }
                 }
                 catch (const sol::error& e) {
                     LOG(ERROR) << e.what();
@@ -120,39 +123,21 @@ public:
         return m_eventStatus;
     }
 
-    template <typename... Args>
-    auto CallEvent(const char* name, const Args&... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), params...);
-    }
-
-    template <typename... Args>
-    auto CallEvent(std::string& name, const Args&... params) {
-        return CallEvent(name.c_str(), params...);
-    }
-
-
-
-private:
-    template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
-        return CallEvent(name, std::get<Is>(t)...);
-    }
-
-public:
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, const Tuple& t) {
-        return CallEventTupleImpl(name, t,
-            std::make_index_sequence < std::tuple_size<Tuple>{} > {});
-    }
-
-    template <class Tuple>
-    auto CallEventTuple(const char* name, const Tuple& t) {
+    auto CallEventTuple(const std::string& name, const Tuple& t) {
         return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
     }
 
-    template <class Tuple>
-    auto CallEventTuple(std::string& name, const Tuple& t) {
-        return CallEventTuple(name.c_str(), t);
+    // Dispatch a event for capture by any registered mod event handlers
+    // Returns whether the event-delegate is cancelled
+    template <typename... Args>
+    EventStatus CallEvent(HASH_t name, const Args&... params) {
+        return CallEventTuple(name, std::make_tuple(params...));
+    }
+
+    template <typename... Args>
+    auto CallEvent(const std::string& name, const Args&... params) {
+        return CallEventTuple(name, std::make_tuple(params...));
     }
 
 };

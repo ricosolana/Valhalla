@@ -18,11 +18,15 @@ Valhalla.OnEvent("PeerInfo", function(peer)
 
     print("Registering vha")
 
-    peer.Register("vha",
-        DataType.string, DataType.strings,
+    peer:Register(
+        MethodSig.new("vha", DataType.string, DataType.strings),
         RPC_vha
     )
 
     print("Registered vha")
 
+end)
+
+Valhalla.OnEvent("Enable", function()
+    print(this.name .. " enabled")
 end)
