@@ -40,6 +40,8 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     auto mod(std::make_unique<Mod>(
         loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals())));
 
+    //mod->m_env["_G"] = mod->m_env;
+
     mod->m_version = loadNode["version"].as<std::string>("");
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
     mod->m_description = loadNode["description"].as<std::string>("");
@@ -575,8 +577,15 @@ void IModManager::Init() {
                 LoadModEntry(mod.get());
 
                 auto path(fs::path("mods") / dirname / (entry + ".lua"));
-                if (auto opt = VUtils::Resource::ReadFileString(path))
-                    m_state.safe_script(opt.value(), mod->m_env);
+                if (auto opt = VUtils::Resource::ReadFileString(path)) {
+                    sol::load_result script = m_state.load(*opt);
+
+                    
+                    //m_state.safe_script(opt.value(), mod->m_env);
+                    sol::function f = script;
+                    mod->m_env.set_on(f);
+                    f();
+                }
                 else
                     throw std::runtime_error(std::string("unable to open file ") + path.string());
 
