@@ -133,7 +133,7 @@ public:
         // category catch
         //ModManager()->CallEventTuple(m_categoryHash, tuple);
         // specific catch
-        if (ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash, tuple) != EventStatus::CANCEL);
+        if (ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash, tuple) != EventStatus::CANCEL)
             std::apply(m_func, tuple);
 
         // Postfix

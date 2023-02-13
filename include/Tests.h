@@ -3,9 +3,21 @@
 #include "ZDO.h"
 #include "WorldManager.h"
 #include "DataWriter.h"
+#include "NetManager.h"
 
 namespace Tests {
    
+    void Test_PeerLuaConnect() {
+        Peer ref(nullptr, 123456789, "eikthyr", Vector3::ZERO);
+
+        Peer* peer = &ref;
+
+        // tests a fake player
+        ModManager()->Init();
+
+        ModManager()->CallEvent(VUtils::String::GetStableHashCode("PeerInfo"), peer);
+    }
+
     void Test_DataBuffer() {
         //constexpr int has = is_container<std::vector<int>>::value;
         //constexpr int has = is_container<int>::value;

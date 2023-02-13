@@ -63,9 +63,11 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if FALSE
+#if TRUE
     fs::current_path("./data/tests/");
-    Tests::Test_DataBuffer();
+
+    Tests::Test_PeerLuaConnect();
+    //Tests::Test_DataBuffer();
     //Tests::Test_World();
     //Tests::Test_ZDO();
     //Tests::Test_ResourceReadWrite();

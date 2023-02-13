@@ -40,7 +40,7 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     auto mod(std::make_unique<Mod>(
         loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals())));
 
-    //mod->m_env["_G"] = mod->m_env;
+    mod->m_env["_G"] = mod->m_env;
 
     mod->m_version = loadNode["version"].as<std::string>("");
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
@@ -50,14 +50,15 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     return mod;
 }
 
-void IModManager::LoadModEntry(Mod* mod) {
+struct IMethodWrapper {
 
-    // load all mods from file
+};
 
-    auto&& env = mod->m_env;
+void IModManager::LoadAPI() {
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
+        sol::state_view state = ts;
 
-    env["print"] = [this, mod](sol::variadic_args args) {
-        auto&& tostring(m_state["tostring"]);
+        auto&& tostring(state["tostring"]);
 
         std::string s;
         int idx = 0;
@@ -67,10 +68,11 @@ void IModManager::LoadModEntry(Mod* mod) {
             s += tostring(arg);
         }
 
-        LOG(INFO) << "[" << mod->m_name << "] " << s;
+        //LOG(INFO) << "[" << mod->m_name << "] " << s;
+        LOG(INFO) << "[mod] " << s;
     };
 
-    auto utilsTable = env["VUtils"].get_or_create<sol::table>();
+    auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
 
     utilsTable["Compress"] = sol::overload(
         sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
@@ -87,7 +89,7 @@ void IModManager::LoadModEntry(Mod* mod) {
 
     {
         auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
-                
+
         resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
         resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
         resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
@@ -100,7 +102,9 @@ void IModManager::LoadModEntry(Mod* mod) {
     //    "Invoke", &IMethod<Peer*>::Invoke
     //);
 
-    env.new_usertype<Peer>("Peer",
+    m_state.new_usertype
+
+    m_state.new_usertype<Peer>("Peer",
         "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
         "Kick", static_cast<void (Peer::*)(std::string)>(&Peer::Kick),
         "Disconnect", &Peer::Disconnect,
@@ -114,8 +118,9 @@ void IModManager::LoadModEntry(Mod* mod) {
         "InvokeSelf", sol::overload(
             static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        "Invoke", [this, mod](Peer& self, sol::variadic_args args) {
-            auto&& tostring(m_state["tostring"]);
+        "Invoke", [](sol::this_environment te, Peer& self, sol::variadic_args args) {
+            sol::environment& env = te;
+            auto&& tostring(env["tostring"]);
 
             BYTES_t bytes;
             DataWriter params(bytes);
@@ -133,7 +138,10 @@ void IModManager::LoadModEntry(Mod* mod) {
                     else {
                         sol::object o = tostring(arg);
                         auto result = o.as<std::string>();
-                        return mod->Error(std::string("Expected string or number, got: ") + result);
+
+                        throw std::runtime_error(std::string("expected string or number, got: ") + result);
+
+                        //return mod->Error(std::string("Expected string or number, got: ") + result);
 
                         //snprintf(errBuf, sizeof(errBuf), "arg %d; expected string or number, got: %s", i, result.c_str());
                         //return ptr->Throw(errBuf);
@@ -152,7 +160,10 @@ void IModManager::LoadModEntry(Mod* mod) {
                             if (obj.get_type() != sol::type::number) {
                                 sol::object o = tostring(obj);
                                 auto result = o.as<std::string>();
-                                return mod->Error("arg " + std::to_string(i) + "; expected number immediately after PkgType, got: " + result);
+
+                                throw std::runtime_error("expected number immediately after DataType");
+
+                                //return mod->Error("arg " + std::to_string(i) + "; expected number immediately after PkgType, got: " + result);
                                 //snprintf(errBuf, sizeof(errBuf), "arg %d; expected number immediately after PkgType, got: %s", i, result.c_str());
                                 //return ptr->Throw(errBuf);
                             }
@@ -177,15 +188,17 @@ void IModManager::LoadModEntry(Mod* mod) {
                                 params.Write(obj.as<double>());
                                 break;
                             default:
+                                throw std::runtime_error("expected valid DataType");
                                 //snprintf(errBuf, sizeof(errBuf), "arg %d; invalid PkgType enum, got: %d", i, static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
                                 //return ptr->Throw(errBuf);
-                                return mod->Error("arg " + std::to_string(i) + "; invalid PkgType enum, got: " + std::to_string(std::to_underlying(dataType)));
+                                ///return mod->Error("arg " + std::to_string(i) + "; invalid PkgType enum, got: " + std::to_string(std::to_underlying(dataType)));
                             }
                         }
                         else {
+                            throw std::runtime_error("unknown number type");
                             //snprintf(errBuf, sizeof(errBuf), "arg %d; unknown number type", i);
                             //return ptr->Throw(errBuf);
-                            return mod->Error("arg " + std::to_string(i) + "; unknown number type");
+                            ///return mod->Error("arg " + std::to_string(i) + "; unknown number type");
                         }
                     }
                     else {
@@ -215,9 +228,11 @@ void IModManager::LoadModEntry(Mod* mod) {
                                 params.Write(arg.as<std::vector<std::string>>());
                             }
                             else {
+                                throw std::runtime_error("expected serializeable type");
+
                                 sol::object o = tostring(arg);
                                 auto result = o.as<std::string>();
-                                mod->Error("arg " + std::to_string(i) + "; expected serializable type, got: " + result);
+                                ///mod->Error("arg " + std::to_string(i) + "; expected serializable type, got: " + result);
                                 //snprintf(errBuf, sizeof(errBuf), "arg %d; expected serializable type, got: %s", i, result.c_str());
                                 //return ptr->Throw(errBuf);
                             }
@@ -229,72 +244,31 @@ void IModManager::LoadModEntry(Mod* mod) {
             self.m_socket->Send(std::move(bytes));
         },
 
-        "Register", [mod](Peer& self, sol::variadic_args args) {
-            HASH_t hash = 0;
-            std::vector<DataType> types;
-
-            for (int i = 0; i < args.size(); i++) {
-                auto&& arg = args[i];
-                auto&& type = arg.get_type();
-
-                if (i == 0) {
-                    if (type == sol::type::string) {
-                        auto name = arg.as<std::string>();
-                        hash = VUtils::String::GetStableHashCode(name);
-                    }
-                    else if (type == sol::type::number) {
-                        hash = arg.as<HASH_t>();
-                    }
-                    else {
-                        return mod->Error("first param must be a string or numeric hash");
-                    }
-                }
-                else if (i + 1 < args.size()) {
-                    // grab middle pkgtypes
-                    if (type == sol::type::number) {
-                        types.push_back(arg.as<DataType>());
-                    }
-                    else {
-                        return mod->Error("middle params must be a numeric enum");
-                    }
-                }
-                else {
-                    if (type == sol::type::function) {
-                        auto callback = arg.as<sol::function>();
-
-                        //assert(false);
-                        //self.Register(name, 
-                            //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
-                        self.Register(hash, std::move(callback), std::move(types));
-                    }
-                    else {
-                        return mod->Error("last param must be a function");
-                    }
-                }
-            }
+        "Register", [](Peer& self, std::string name, sol::function func, sol::variadic_args types) {
+            self.Register(VUtils::String::GetStableHashCode(name), func, std::vector<DataType>(types.begin(), types.end()));
         },
         "socket", sol::property([](Peer& self) { return self.m_socket; })
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
     );
 
-    env.new_enum("DataType",
-        "bytes",    DataType::BYTES,
-        "string",   DataType::STRING,
-        "zdoid",    DataType::ZDOID,
-        "vector3",     DataType::VECTOR3,
-        "vector2i",    DataType::VECTOR2i,
-        "quaternion",     DataType::QUATERNION,
-        "strings",  DataType::STRINGS,
-        "bool",     DataType::BOOL,
-        "byte",     DataType::INT8,         "int8", DataType::INT8,
-        "short",    DataType::INT16,        "int16", DataType::INT16,
-        "int",      DataType::INT32,        "int32", DataType::INT32,       "hash", DataType::INT32,
-        "long",     DataType::INT64,        "int64", DataType::INT64,       
-        "float",    DataType::FLOAT,
-        "double",   DataType::DOUBLE
+    m_state.new_enum("DataType",
+        "bytes", DataType::BYTES,
+        "string", DataType::STRING,
+        "zdoid", DataType::ZDOID,
+        "vector3", DataType::VECTOR3,
+        "vector2i", DataType::VECTOR2i,
+        "quaternion", DataType::QUATERNION,
+        "strings", DataType::STRINGS,
+        "bool", DataType::BOOL,
+        "byte", DataType::INT8, "int8", DataType::INT8,
+        "short", DataType::INT16, "int16", DataType::INT16,
+        "int", DataType::INT32, "int32", DataType::INT32, "hash", DataType::INT32,
+        "long", DataType::INT64, "int64", DataType::INT64,
+        "float", DataType::FLOAT,
+        "double", DataType::DOUBLE
     );
 
-    env.new_usertype<DataWriter>("DataWriter",
+    m_state.new_usertype<DataWriter>("DataWriter",
         sol::constructors<DataWriter(BYTES_t&)>(),
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
@@ -309,8 +283,9 @@ void IModManager::LoadModEntry(Mod* mod) {
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
-            [](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
-            [mod](DataWriter& self, DataType type, LUA_NUMBER val) {
+            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+            //[](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
+            [](DataWriter& self, DataType type, LUA_NUMBER val) {
                 switch (type) {
                 case DataType::INT8:
                     self.Write<int8_t>(val);
@@ -331,18 +306,19 @@ void IModManager::LoadModEntry(Mod* mod) {
                     self.Write<double>(val);
                     break;
                 default:
-                    return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
+                    throw std::runtime_error("invalid DataType");
+                    //return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
                 }
-            })
+            }
+        )
     );
 
     // Package read/write types
-    env.new_usertype<DataReader>("DataReader",
+    m_state.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
-        //"Clear", &DataReader::Clear,
-        "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
+        "Read", [](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
                 return sol::make_object(state, self.Read<BYTES_t>());
@@ -373,19 +349,19 @@ void IModManager::LoadModEntry(Mod* mod) {
             case DataType::DOUBLE:
                 return sol::make_object(state, self.Read<double>());
             default:
-                mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
+                throw std::runtime_error("invalid DataType");
+                //mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
             }
-            return sol::make_object(state, sol::nil);
+            //return sol::make_object(state, sol::nil);
         }
     );
 
-    env.new_usertype<NetID>("NetID",
+    m_state.new_usertype<NetID>("NetID",
         "uuid", &NetID::m_uuid,
-        //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
         "id", &NetID::m_id
     );
 
-    env.new_usertype<Vector3>("Vector3",
+    m_state.new_usertype<Vector3>("Vector3",
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z,
@@ -398,7 +374,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         //"ZERO", &Vector3::ZERO
     );
 
-    env.new_usertype<Vector2i>("Vector2i",
+    m_state.new_usertype<Vector2i>("Vector2i",
         "x", &Vector2i::x,
         "y", &Vector2i::y,
         "Distance", &Vector2i::Distance,
@@ -410,7 +386,7 @@ void IModManager::LoadModEntry(Mod* mod) {
         //"ZERO", &Vector2i::ZERO
     );
 
-    env.new_usertype<Quaternion>("Quaternion",
+    m_state.new_usertype<Quaternion>("Quaternion",
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
@@ -419,7 +395,7 @@ void IModManager::LoadModEntry(Mod* mod) {
     );
 
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
-    env.new_usertype<ISocket>("ISocket",
+    m_state.new_usertype<ISocket>("ISocket",
         "Close", &ISocket::Close,
         "Connected", &ISocket::Connected,
         "GetAddress", &ISocket::GetAddress,
@@ -429,7 +405,7 @@ void IModManager::LoadModEntry(Mod* mod) {
 
 
 
-    auto apiTable = env["Valhalla"].get_or_create<sol::table>();
+    auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
     apiTable["ServerVersion"] = SERVER_VERSION;
     apiTable["ValheimVersion"] = VConstants::GAME;
     apiTable["Delta"] = []() { return Valhalla()->Delta(); };
@@ -438,12 +414,12 @@ void IModManager::LoadModEntry(Mod* mod) {
     apiTable["Ticks"] = []() { return Valhalla()->Ticks(); };
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
-    auto zdoApiTable = env["ZDOManager"].get_or_create<sol::table>();
+    auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
 
 
 
-    apiTable["OnEvent"] = [this, mod](sol::this_state thisState, sol::variadic_args args) {
+    apiTable["OnEvent"] = [this](sol::variadic_args args) {
         // match incrementally
         //std::string name;
         HASH_t cbHash = 0;
@@ -459,7 +435,7 @@ void IModManager::LoadModEntry(Mod* mod) {
                 else if (type == sol::type::number)
                     hash = arg.as<HASH_t>();
                 else {
-                    return mod->Error("LUA starting parameters must be string or hash");
+                    //return mod->Error("LUA starting parameters must be string or hash");
                 }
 
                 cbHash ^= hash;
@@ -467,23 +443,32 @@ void IModManager::LoadModEntry(Mod* mod) {
             else {
                 if (type == sol::type::function) {
                     auto&& vec = m_callbacks[cbHash];
-                    vec.emplace_back( 
-                        mod, 
-                        arg.as<sol::function>(), 
+                    vec.emplace_back(
+                        arg.as<sol::function>(),
                         priority
                     );
                     std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
                         const EventHandler& b) {
-                        return a.m_priority < b.m_priority;
-                    });
+                            return a.m_priority < b.m_priority;
+                        });
                 }
                 else {
-                    return mod->Error("LUA last param must be a function");
+                    //return mod->Error("LUA last param must be a function");
+                    throw std::runtime_error("last param must be a function");
                 }
             }
         }
     };
 
+    m_state.new_usertype<Mod>("Mod",
+        "name", &Mod::m_name,
+        "version", &Mod::m_version,
+        "apiVersion", &Mod::m_apiVersion,
+        "description", &Mod::m_description,
+        "authors", &Mod::m_authors
+    );
+
+    /*
     {
         auto thisTable = env["this"].get_or_create<sol::table>();
 
@@ -504,8 +489,7 @@ void IModManager::LoadModEntry(Mod* mod) {
             thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
             thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
         }
-
-    }
+    }*/
 }
 
 
@@ -559,7 +543,7 @@ void IModManager::Init() {
         sol::lib::utf8
     );
 
-    
+    LoadAPI();
 
     for (const auto& dir
         : fs::directory_iterator("mods")) {
@@ -574,17 +558,15 @@ void IModManager::Init() {
                 std::string entry;
                 auto mod = LoadModInfo(dirname, entry);
 
-                LoadModEntry(mod.get());
-
                 auto path(fs::path("mods") / dirname / (entry + ".lua"));
                 if (auto opt = VUtils::Resource::ReadFileString(path)) {
                     sol::load_result script = m_state.load(*opt);
 
                     
-                    //m_state.safe_script(opt.value(), mod->m_env);
-                    sol::function f = script;
-                    mod->m_env.set_on(f);
-                    f();
+                    m_state.safe_script(opt.value(), mod->m_env);
+                    //sol::function f = script;
+                    //mod->m_env.set_on(f);
+                    //f();
                 }
                 else
                     throw std::runtime_error(std::string("unable to open file ") + path.string());

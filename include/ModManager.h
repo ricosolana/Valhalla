@@ -71,12 +71,11 @@ class IModManager {
     };
 
     struct EventHandler {
-        Mod* m_mod;
         sol::protected_function m_func;
         int m_priority;
 
-        EventHandler(Mod* mod, sol::function func, int priority)
-            : m_mod(mod), m_func(func), m_priority(priority) {}
+        EventHandler(sol::function func, int priority)
+            : m_func(func), m_priority(priority) {}
     };
 
 private:
@@ -88,9 +87,9 @@ private:
     EventStatus m_eventStatus;
 
 private:
-    std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
+    void LoadAPI();
 
-    void LoadModEntry(Mod* mod);    
+    std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
 
 public:
     void Init();
