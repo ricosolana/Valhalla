@@ -54,7 +54,7 @@ Valhalla.OnEvent("RpcOut", "ZDOData", function(peer, bytes)
     if peers[uuid] ~= nil then
         event.Cancel() -- To prevent normal packet from being sent
         local compressed = VUtils.Compress(bytes)
-        peer:Invoke("CompressedZDOData", compressed)
+        peer:Invoke(SIG_CompressedZDOData, compressed)
     end
 end)
 
