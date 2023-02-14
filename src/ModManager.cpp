@@ -106,24 +106,38 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<MethodSig>("MethodSig",
         sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
-        //"hash", &MethodRepr::m_name,
-        //"types", &MethodRepr::m_types
+    );
+
+    m_state.new_enum("MsgType",
+        "whisper", MsgType::WHISPER,
+        "normal", MsgType::NORMAL,
+        "console", MsgType::CONSOLE,
+        "corner", MsgType::CORNER,
+        "center", MsgType::CENTER
     );
 
     m_state.new_usertype<Peer>("Peer",
-        "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
-        "Kick", static_cast<void (Peer::*)(std::string)>(&Peer::Kick),
-        "Disconnect", &Peer::Disconnect,
-        //"Invoke", []() {},
-        //"Register", &Peer::Register,
-        "characterID", &Peer::m_characterID,
-        "name", &Peer::m_name,
+        // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
-        "pos", &Peer::m_pos,
-        "uuid", &Peer::m_uuid, // sol::property([](Peer& self) { return std::to_string(self.m_uuid); }), 
+        "admin", &Peer::m_admin,
+        "characterID", sol::property([](Peer& self) { return self.m_characterID; }),
+        "name", sol::property([](Peer& self) { return self.m_name; }), 
+        "pos", sol::property([](Peer& self) { return self.m_pos; }), 
+        "uuid", sol::property([](Peer& self) { return self.m_uuid; }), 
+        "socket", sol::property([](Peer& self) { return self.m_socket; }),
+        // member functions
+        "Kick", sol::resolve<void()>(&Peer::Kick),
+        "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
+        "Message", sol::overload(
+            sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
+            sol::resolve<void(const std::string&)>(&Peer::Message)),
+        "Disconnect", &Peer::Disconnect,
         "InvokeSelf", sol::overload(
             static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
+        "Register", [](Peer& self, MethodSig repr, sol::function func) {
+            self.Register(repr.m_hash, func, repr.m_types);
+        },
         "Invoke", [](Peer& self, MethodSig repr, sol::variadic_args args) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("incorrect number of args");
@@ -192,12 +206,8 @@ void IModManager::LoadAPI() {
             }
 
             self.m_socket->Send(std::move(bytes));
-        },
+        }
 
-        "Register", [](Peer& self, MethodSig repr, sol::function func) {
-            self.Register(repr.m_hash, func, repr.m_types);
-        },
-        "socket", sol::property([](Peer& self) { return self.m_socket; })
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
     );
 
@@ -450,7 +460,8 @@ void IModManager::LoadAPI() {
 
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
-    zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
+    zdoApiTable["GetZDOs"] = [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); };
+    zdoApiTable["GetZDOs"] = [](const Vector3& pos, float radius, HASH_t prefabHash) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefabHash); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 

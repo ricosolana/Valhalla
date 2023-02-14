@@ -99,18 +99,40 @@ void Peer::Disconnect() {
 
 
 
-void Peer::Message(const std::string& text, TalkerType type) {
+void Peer::SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
-        m_pos,
+        pos, //Vector3(10000, 10000, 10000),
         type,
-        "<color=yellow><b>SERVER</b></color>",
+        senderName, //"<color=yellow><b>SERVER</b></color>",
         text,
-        ""
+        senderID //""
     );
 }
 
 void Peer::ShowMessage(const std::string& text, MessageType type) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, type, text);
+}
+
+void Peer::Message(const std::string& text, MsgType type) {
+    switch (type) {
+    case MsgType::WHISPER:
+        SendChatMessage(text, TalkerType::Whisper, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        break;
+    case MsgType::NORMAL:
+        SendChatMessage(text, TalkerType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        break;
+    case MsgType::CONSOLE:
+        RemotePrint(text);
+        break;
+    case MsgType::CORNER:
+        ShowMessage(text, MessageType::TopLeft);
+        break;
+    case MsgType::CENTER:
+        ShowMessage(text, MessageType::Center);
+        break;
+    default:
+        throw std::runtime_error("bad enum type");
+    }
 }
 
 

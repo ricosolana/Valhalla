@@ -68,7 +68,10 @@ void Heightmap::Regenerate() {
 
     m_cornerBiomes = m_base->m_cornerBiomes;
     this->m_heights = m_base->m_baseHeights;
-    this->m_paintMask = m_base->m_baseMask;
+
+    this->m_paintMask.resize(m_base->m_vegMask.size());
+    for (int i=0; i < m_base->m_vegMask.size(); i++)
+        this->m_paintMask[i].a = m_base->m_vegMask[i];
 
     m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, IZoneManager::ZONE_SIZE));
     m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE));
@@ -695,6 +698,10 @@ bool Heightmap::IsCleared(const Vector3& worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos - Vector3(.5f, 0.f, .5f), x, y);
+    
+    // mode is clamp
+    x = std::clamp(x, 0, IZoneManager::ZONE_SIZE - 1);
+    y = std::clamp(y, 0, IZoneManager::ZONE_SIZE - 1);
 
     auto&& pixel = this->m_paintMask[y * IZoneManager::ZONE_SIZE + x];
     return pixel.r > 0.5f || pixel.g > 0.5f || pixel.b > 0.5f;

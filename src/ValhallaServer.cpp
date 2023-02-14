@@ -269,6 +269,8 @@ void IValhalla::Update() {
     if (!NetManager()->GetPeers().empty())
         m_netTime += Delta();
     
+    ModManager()->CallEvent(EVENT_HASH_Update);
+
     NetManager()->Update();
     ZDOManager()->Update();    
     ZoneManager()->Update();

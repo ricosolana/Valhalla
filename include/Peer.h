@@ -11,10 +11,17 @@ class IZDOManager;
 class INetManager;
 
 // TODO merge player message types all in one
-// MessageType: 
+enum class MsgType {
+    WHISPER,
+    NORMAL,
+    //Shout,
+    //Ping,
+    CONSOLE,
+    CORNER,
+    CENTER
+};
 
-enum class TalkerType : int32_t
-{
+enum class TalkerType : int32_t {
     Whisper,
     Normal,
     Shout,
@@ -35,7 +42,6 @@ public:
     robin_hood::unordered_map<NetID, ZDO::Rev> m_zdos;
     robin_hood::unordered_set<NetID> m_forceSend;
     robin_hood::unordered_set<NetID> m_invalidSector;
-    //int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
 public:
     ISocket::Ptr m_socket;
@@ -135,13 +141,22 @@ public:
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
     void RemotePrint(const std::string& msg);
-    void Kick(bool now = false);
+    void Kick(bool now);
+    void Kick() { Kick(false); }
     void Kick(std::string reason);
     void SendDisconnect();
     void Disconnect();
 
     // Send a chat message
-    void Message(const std::string& text, TalkerType type = TalkerType::Normal);
+    //void SendChatMessage(const std::string& text, TalkerType type = TalkerType::Normal);
+
+    void SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID);
+
+    void Message(const std::string& text, MsgType type);
+    void Message(const std::string& text) {
+        Message(text, MsgType::NORMAL);
+    }
+
 
     // Send a screen popup message
     void ShowMessage(const std::string& text, MessageType type = MessageType::TopLeft);

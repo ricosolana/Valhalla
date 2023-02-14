@@ -30,13 +30,14 @@ private:
 	std::array<robin_hood::unordered_set<ZDO*>, 
 		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector; // takes up around 5MB; could be around 72 bytes with map
 
+	// Contains ZDOs according to prefab
+	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
+
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<NetID, TICKS_t> m_deadZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<NetID> m_destroySendList;
-
-	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
 
 private:
 	// Called when an authenticated peer joins (internal)
@@ -51,28 +52,21 @@ private:
 	// Relay a ZDO sector change to clients (internal)
 	void InvalidateSector(ZDO* zdo);
 
-	//void CapDeadZDOList();
-
 	void ReleaseNearbyZDOS(Peer* peer);
 	void HandleDestroyedZDO(const NetID& uid);
 	void SendAllZDOs(Peer* peer);
 	bool SendZDOs(Peer* peer, bool flush);
 	std::list<ZDO*> CreateSyncList(Peer* peer);
-	//void AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList);
 
 	ZDO* AddZDO(const Vector3& position);
 	ZDO* AddZDO(const NetID& uid, const Vector3& position);
-
-	//void ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer);
-	
+		
 	// Performs a coordinate to pitch conversion
 	int SectorToIndex(const ZoneID& s) const;
 
-	void FindObjects(const ZoneID& sector, std::list<ZDO*>& objects);
-	void FindDistantObjects(const ZoneID& sector, std::list<ZDO*>& objects);
-
 public:
 	void Init();
+	void Update();
 
 	// Used when saving the world from disk
 	void Save(DataWriter& writer);
@@ -80,33 +74,32 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	
-
-	ZDO* GetZDO(const NetID& id);
-
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
 	std::pair<ZDO*, bool> GetOrCreateZDO(const NetID& id, const Vector3& def);
 
-	// called when registering joining peer
+	// Get a ZDO by id
+	ZDO* GetZDO(const NetID& id);
 
-	void Update();
+	// Get all ZDOs strictly within a zone
+	void GetZDOs_Zone(const ZoneID& zone, std::list<ZDO*>& out);
+	// Get all ZDOs strictly within neighboring zones
+	void GetZDOs_NeighborZones(const ZoneID& zone, std::list<ZDO*>& out);
+	// Get all ZDOs strictly within distant zones
+	void GetZDOs_DistantZones(const ZoneID& zone, std::list<ZDO*>& out);
+	// Get all ZDOs strictly within a zone, its neighboring zones, and its distant zones
+	void GetZDOs_ActiveZones(const ZoneID& zone, std::list<ZDO*>& out, std::list<ZDO*>& outDistant);
 
-	void FindSectorObjects(const ZoneID& sector, int area, int distantArea,
-		std::list<ZDO*>& sectorObjects, std::list<ZDO*>* distantSectorObjects = nullptr);
+	// Get all ZDOs strictly within a zone that are distant flagged
+	void GetZDOs_Distant(const ZoneID& sector, std::list<ZDO*>& objects);
 
-	void FindSectorObjects(const ZoneID& sector, int area, std::list<ZDO*>& sectorObjects);
-
-	std::list<ZDO*> GetZDOs(HASH_t prefabHash);
-
-	//void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> zdos);
-
-	// Used to get portals incrementally in a coroutine
-	// basically, the coroutine thread is frozen in place
-	// its not real multithreading, but is confusing for no reason
-	// this can be refactored to have clearer intent
-	//bool GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<ZDO*> &zdos, int& index);
+	// Get all ZDOs strictly by prefab
+	std::list<ZDO*> GetZDOs_Prefab(HASH_t prefabHash);
+	// Get all ZDOs strictly within a radius
+	std::list<ZDO*> GetZDOs_Radius(const Vector3& pos, float radius);
+	// Get all ZDOs strictly within a radius by prefab
+	std::list<ZDO*> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
 	void ForceSendZDO(const NetID& id);
 };

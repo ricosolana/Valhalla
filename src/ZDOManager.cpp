@@ -160,15 +160,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	//LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
 }
 
-/*
-void IZDOManager::CapDeadZDOList() {
-	// sort by age, deleting old
-
-	while (m_deadZDOs.size() > MAX_DEAD_OBJECTS) {
-		m_deadZDOs.erase(m_deadZDOs.begin());
-	}
-}*/
-
 ZDO* IZDOManager::AddZDO(const Vector3& position) {
 	NetID zdoid = NetID(Valhalla()->ID(), 0);
 	for(;;) {
@@ -222,7 +213,6 @@ std::pair<ZDO*, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3
 
 	zdo = std::make_unique<ZDO>(id, def);
 	AddToSector(zdo.get());
-	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 	return { zdo.get(), true };
 }
 
@@ -246,7 +236,12 @@ void IZDOManager::Update() {
 		}
 	});
 
-
+	PERIODIC_NOW(1min, {
+		size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
+		
+		float kb = bytes / 1000.f;
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << kb << "kb)";
+	});
 
 	if (m_destroySendList.empty())
 		return;
@@ -266,7 +261,8 @@ void IZDOManager::ReleaseNearbyZDOS(Peer* peer) {
 	auto&& zone = IZoneManager::WorldToZonePos(peer->m_pos);
 
 	std::list<ZDO*> m_tempNearObjects;
-	FindSectorObjects(zone, IZoneManager::NEAR_ACTIVE_AREA, 0, m_tempNearObjects);
+	GetZDOs_Zone(zone, m_tempNearObjects); // get zdos: zone, nearby
+	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
 	for (auto&& zdo : m_tempNearObjects) {
 		if (zdo->m_persistent) {
@@ -278,7 +274,6 @@ void IZDOManager::ReleaseNearbyZDOS(Peer* peer) {
 				}
 			}
 			else {
-
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
 				if (!(zdo->HasOwner() && ZoneManager()->IsInPeerActiveArea(zdo->Sector(), zdo->m_owner))
@@ -319,42 +314,40 @@ void IZDOManager::SendAllZDOs(Peer* peer) {
 	while (SendZDOs(peer, true));
 }
 
-void IZDOManager::FindSectorObjects(const ZoneID& sector, int area, int distantArea, std::list<ZDO*>& sectorObjects, std::list<ZDO*>* distantSectorObjects) {
-	FindObjects(sector, sectorObjects);
-	for (int i = 1; i <= area; i++)
-	{
-		for (int j = sector.x - i; j <= sector.x + i; j++)
-		{
-			FindObjects(Vector2i(j, sector.y - i), sectorObjects);
-			FindObjects(Vector2i(j, sector.y + i), sectorObjects);
-		}
-		for (int k = sector.y - i + 1; k <= sector.y + i - 1; k++)
-		{
-			FindObjects(Vector2i(sector.x - i, k), sectorObjects);
-			FindObjects(Vector2i(sector.x + i, k), sectorObjects);
-		}
-	}
+void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<ZDO*>& out, std::list<ZDO*>& outDistant) {
+	// Add ZDOs from immediate sector
+	GetZDOs_Zone(zone, out);
 
-	auto&& objects = (distantSectorObjects) ? *distantSectorObjects : sectorObjects;
-	for (int l = area + 1; l <= area + distantArea; l++)
-	{
-		for (int m = sector.x - l; m <= sector.x + l; m++)
-		{
-			FindDistantObjects(Vector2i(m, sector.y - l), objects);
-			FindDistantObjects(Vector2i(m, sector.y + l), objects);
-		}
-		for (int n = sector.y - l + 1; n <= sector.y + l - 1; n++)
-		{
-			FindDistantObjects(Vector2i(sector.x - l, n), objects);
-			FindDistantObjects(Vector2i(sector.x + l, n), objects);
+	// Add ZDOs from nearby zones
+	GetZDOs_NeighborZones(zone, out);
+
+	// Add ZDOs from distant zones
+	GetZDOs_DistantZones(zone, outDistant);
+}
+
+void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<ZDO*>& sectorObjects) {
+	for (auto z = zone.y - IZoneManager::NEAR_ACTIVE_AREA; z <= zone.y + IZoneManager::NEAR_ACTIVE_AREA; z++) {
+		for (auto x = zone.x - IZoneManager::NEAR_ACTIVE_AREA; x <= zone.x + IZoneManager::NEAR_ACTIVE_AREA; x++) {
+			auto current = ZoneID(x, z);
+			// Skip the center zone
+			if (current == zone)
+				continue;
+			GetZDOs_Zone(current, sectorObjects);
 		}
 	}
 }
 
-void IZDOManager::FindSectorObjects(const ZoneID &sector, int area, std::list<ZDO*>& sectorObjects) {
-	for (int i = sector.y - area; i <= sector.y + area; i++) {
-		for (int j = sector.x - area; j <= sector.x + area; j++) {
-			FindObjects(Vector2i(j, i), sectorObjects);
+void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<ZDO*>& out) {
+	for (auto r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
+		r <= IZoneManager::NEAR_ACTIVE_AREA + IZoneManager::DISTANT_ACTIVE_AREA; 
+		r++) {
+		for (auto x = zone.x - r; x <= zone.x + r; x++) {
+			GetZDOs_Distant({ x, zone.y - r }, out);
+			GetZDOs_Distant({ x, zone.y + r }, out);
+		}
+		for (auto y = zone.y - r + 1; y <= zone.y + r - 1; y++) {
+			GetZDOs_Distant({ zone.x - r, y }, out);
+			GetZDOs_Distant({ zone.x + r, y }, out);
 		}
 	}
 }
@@ -365,8 +358,7 @@ std::list<ZDO*> IZDOManager::CreateSyncList(Peer* peer) {
 	// Gather all updated ZDO's
 	std::list<ZDO*> tempSectorObjects;
 	std::list<ZDO*> m_tempToSyncDistant;
-	FindSectorObjects(zone, IZoneManager::NEAR_ACTIVE_AREA, IZoneManager::DISTANT_ACTIVE_AREA,
-		tempSectorObjects, &m_tempToSyncDistant);
+	GetZDOs_ActiveZones(zone, tempSectorObjects, m_tempToSyncDistant);
 
 	std::list<ZDO*> result;
 
@@ -435,65 +427,7 @@ std::list<ZDO*> IZDOManager::CreateSyncList(Peer* peer) {
 	return result;
 }
 
-/*
-void IZDOManager::AddForceSendZDOs(Peer* peer, std::vector<ZDO*>& syncList) {
-	for (auto&& itr = peer->m_forceSend.begin(); itr != peer->m_forceSend.end();) {
-		auto&& zdoid = *itr;
-		auto zdo = GetZDO(zdoid);
-		if (zdo && peer->IsOutdatedZDO(zdo)) {
-			syncList.insert(syncList.begin(), zdo);
-			++itr;
-		}
-		else {
-			itr = peer->m_forceSend.erase(itr);
-		}
-	}
-}
-
-void IZDOManager::ServerSortSendZDOS(std::vector<ZDO*>& objects, Peer* peer) {
-	auto uuid = peer->m_uuid;
-	auto time = Valhalla()->Time();
-
-	auto&& pos = peer->m_pos;
-
-	auto&& zdos = peer->m_zdos;
-
-	std::sort(objects.begin(), objects.end(), [&zdos, uuid, pos, time](const ZDO* a, const ZDO* b) {
-
-		// Sort in rough order of:
-		//	flag -> type/priority -> distance ASC -> age ASC
-
-		// https://www.reddit.com/r/valheim/comments/mga1iw/understanding_the_new_networking_mechanisms_from/
-
-		bool flag = a->Type() == ZDO::ObjectType::Prioritized && a->HasOwner() && a->Owner() != uuid;
-		bool flag2 = b->Type() == ZDO::ObjectType::Prioritized && b->HasOwner() && b->Owner() != uuid;
-
-		if (flag == flag2) {
-			if (a->Type() == b->Type()) {
-				float sub1 = zdos.contains(a->m_id) ? std::clamp(time - a->m_rev.m_time, 0.f, 100.f) * 1.5f
-					: 150;
-				float sub2 = zdos.contains(b->m_id) ? std::clamp(time - b->m_rev.m_time, 0.f, 100.f) * 1.5f
-					: 150;
-
-				//float sub1 = zdos.contains(a->m_id) ? VUtils::Math::Clamp(duration_cast<seconds>(ticks - a->m_rev.m_ticks), 0, 100) * 1.5f 
-				//	: 150;
-				//float sub2 = zdos.contains(b->m_id) ? VUtils::Math::Clamp(duration_cast<seconds>(ticks - b->m_rev.m_ticks), 0, 100) * 1.5f 
-				//	: 150;
-
-				return a->Position().SqDistance(pos) - sub1 <
-					b->Position().SqDistance(pos) - sub2;
-			}
-			else
-				return a->Type() < b->Type();
-		}
-		else {
-			return !flag ? true : false;
-		}
-	});
-}
-*/
-
-void IZDOManager::FindObjects(const ZoneID& sector, std::list<ZDO*>& objects) {
+void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<ZDO*>& objects) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& obj = m_objectsBySector[num];
@@ -502,7 +436,7 @@ void IZDOManager::FindObjects(const ZoneID& sector, std::list<ZDO*>& objects) {
 	}
 }
 
-void IZDOManager::FindDistantObjects(const ZoneID& sector, std::list<ZDO*>& objects) {
+void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<ZDO*>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
@@ -514,66 +448,7 @@ void IZDOManager::FindDistantObjects(const ZoneID& sector, std::list<ZDO*>& obje
 	}
 }
 
-// this seems to be unused (might have been the earlier method for portal connecting, but the devs realized that
-//	iterating a few thousand zdos every frame isnt ideal)
-/*
-void GetAllZDOsWithPrefab(const std::string& prefab, std::vector<ZDO*> &zdos) {
-	int stableHashCode = VUtils::GetStableHashCode(prefab);
-	for (auto&& pair: m_objectsByID) {
-		auto zdo = pair.second;
-		if (zdo->m_prefab == stableHashCode) {
-			zdos.push_back(zdo);
-		}
-	}
-}*/
-
-// this is used only to get portal objects in world
-// also since portals are treated as zdos (NOT AS PORTALS), they are in the same huge list
-// this isnt particularly great, because portals are global and can be loaded at any time
-// portals could be stored in separate list for the better
-// This is really Unity-specific xue to coroutines and yields
-/*
-bool IZDOManager::GetAllZDOsWithPrefabIterative(const std::string& prefab, std::vector<ZDO*>& zdos, int& index) {
-	auto stableHashCode = VUtils::String::GetStableHashCode(prefab);
-
-	// Search through all sector objects for PREFAB
-	if (index >= m_objectsBySector.size()) {
-		for (auto&& pair : m_objectsByOutsideSector) {
-			auto&& list = pair.second;
-			for (auto&& zdo : list) {
-				if (zdo->PrefabHash() == stableHashCode) {
-					zdos.push_back(zdo);
-				}
-			}
-		}
-
-		for (auto&& it2 = zdos.begin(); it2 != zdos.end();) {
-			if (!(*it2)->Valid())
-				it2 = zdos.erase(it2);
-			else
-				++it2;
-		}
-		return true;
-	}
-
-	// search through all 
-	for (int found = 0; index < m_objectsBySector.size(); index++) {
-		auto&& list2 = m_objectsBySector[index];
-
-		for (auto&& zdo2 : list2) {
-			if (zdo2->PrefabHash() == stableHashCode) {
-				zdos.push_back(zdo2);
-			}
-		}
-
-		if (++found > 400) {
-			break;
-		}
-	}
-	return false;
-}*/
-
-std::list<ZDO*> IZDOManager::GetZDOs(HASH_t prefabHash) {
+std::list<ZDO*> IZDOManager::GetZDOs_Prefab(HASH_t prefabHash) {
 	std::list<ZDO*> out;
 	auto&& zdos = m_objectsByPrefab.find(prefabHash);
 	if (zdos != m_objectsByPrefab.end())
@@ -581,6 +456,57 @@ std::list<ZDO*> IZDOManager::GetZDOs(HASH_t prefabHash) {
 			zdos->second.begin(),
 			zdos->second.end()
 		);
+	return out;
+}
+
+std::list<ZDO*> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius) {
+	std::list<ZDO*> out;
+
+	auto zone = IZoneManager::WorldToZonePos(pos);
+
+	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
+	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
+
+	for (auto z=minZone.y; z < maxZone.y; z++) {
+		for (auto x = minZone.x; x < maxZone.x; x++) {
+			//FindObjects({ x, z }, out);
+			int num = SectorToIndex({x, z});
+			if (num != -1) {
+				auto&& objects = m_objectsBySector[num];
+				for (auto&& obj : objects) {
+					if (obj->m_position.SqDistance(pos) <= radius * radius)
+						out.push_back(obj);
+				}
+			}
+		}
+	}
+
+	return out;
+}
+
+std::list<ZDO*> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
+	std::list<ZDO*> out;
+
+	auto zone = IZoneManager::WorldToZonePos(pos);
+
+	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
+	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
+
+	for (auto z = minZone.y; z < maxZone.y; z++) {
+		for (auto x = minZone.x; x < maxZone.x; x++) {
+			//FindObjects({ x, z }, out);
+			int num = SectorToIndex({ x, z });
+			if (num != -1) {
+				auto&& objects = m_objectsBySector[num];
+				for (auto&& obj : objects) {
+					if (obj->m_prefab == prefabHash 
+						&& obj->m_position.SqDistance(pos) <= radius * radius)
+						out.push_back(obj);
+				}
+			}
+		}
+	}
+
 	return out;
 }
 
@@ -593,10 +519,6 @@ void IZDOManager::ForceSendZDO(const NetID& id) {
 }
 
 int IZDOManager::SectorToIndex(const ZoneID& s) const {
-	//static constexpr size_t sz = sizeof(m_objectsBySector); // 5MB
-
-	//static constexpr size_t sz1 = sizeof(robin_hood::unordered_map<ZoneID, decltype(m_objectsBySector)::value_type>);
-
 	if (s.x * s.x + s.y * s.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
 		return -1;
 

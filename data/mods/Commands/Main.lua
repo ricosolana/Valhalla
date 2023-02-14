@@ -14,7 +14,7 @@ local RPC_vha = function(peer, cmd, args)
     print("Got command " .. cmd)
 end
 
-Valhalla.OnEvent("PeerInfo", function(peer)
+Valhalla.OnEvent("Join", function(peer)
 
     print("Registering vha")
 

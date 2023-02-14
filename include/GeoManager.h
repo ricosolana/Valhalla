@@ -144,7 +144,7 @@ private:
 	float GetMarshHeight(float wx, float wy);
 	float GetMeadowsHeight(float wx, float wy);
 	float GetForestHeight(float wx, float wy);
-	float GetMistlandsHeight(float wx, float wy, Color& mask);
+	float GetMistlandsHeight(float wx, float wy, float& mask);
 	float GetPlainsHeight(float wx, float wy);
 	float GetAshlandsHeight(float wx, float wy);
 	float GetEdgeHeight(float wx, float wy);
@@ -178,8 +178,8 @@ public:
 	float GetHeight(float x, float z);
 
 	// Get the terrain height at world coordinates, with mistlands color mask
-	float GetHeight(float x, float z, Color& color);
-	float GetBiomeHeight(Biome biome, float wx, float wy, Color& color);
+	float GetHeight(float x, float z, float& mask);
+	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
 
 	bool InForest(const Vector3& pos);
 

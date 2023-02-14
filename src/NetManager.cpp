@@ -251,13 +251,14 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
         peer = ptr.get();
 
-        if (ModManager()->CallEvent(VUtils::String::GetStableHashCode("PeerInfo"), peer) == EventStatus::CANCEL) {
+        if (ModManager()->CallEvent(EVENT_HASH_Join, peer) == EventStatus::CANCEL) {
             return rpc->Close(ConnectionStatus::ErrorBanned);
         }
 
         m_peers.insert({ uuid, std::move(ptr) });
     }
 
+    peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
     
     //Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
 
@@ -556,6 +557,7 @@ void INetManager::Update() {
             if (!peer->m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
 
+                ModManager()->CallEvent(EVENT_HASH_Quit, peer.get());
                 ZDOManager()->OnPeerQuit(peer.get());
                 itr = m_peers.erase(itr);
             }
