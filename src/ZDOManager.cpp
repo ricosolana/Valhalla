@@ -639,6 +639,9 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				// if the client data rev is not new, and they've reassigned the owner:
 				if (dataRev <= zdo->m_rev.m_dataRev) {
 					if (ownerRev > zdo->m_rev.m_ownerRev) {
+						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
+							//*zdo = copy; // if zdo modification was to be cancelled
+
 						zdo->m_owner = owner;
 						zdo->m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos[zdoid] = rev;
@@ -646,6 +649,9 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 					continue;
 				}
 			}
+
+			// Create a copy of ZDO prior to any modifications
+			ZDO copy(*zdo);
 
 			zdo->m_owner = owner;
 			zdo->m_rev = rev;
@@ -663,18 +669,18 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			zdo->Deserialize(des);
 
 			if (created) {
-				m_objectsByPrefab[zdo->PrefabHash()].insert(zdo);
 				if (m_deadZDOs.contains(zdoid)) {
 					zdo->SetLocal();
 					m_destroySendList.push_back(zdo->ID());
 				}
+				else {
+					m_objectsByPrefab[zdo->PrefabHash()].insert(zdo);
+				}
 			}
-
-			// If the ZDO was created, but it was removed recently
-			//if (created && m_deadZDOs.contains(zdoid)) {
-			//	zdo->SetLocal();
-			//	m_destroySendList.push_back(zdo->ID());
-			//}
+			else {
+				if (ModManager()->CallEvent("ZDOChange", &copy, zdo) == EventStatus::CANCEL)
+					*zdo = copy; // if zdo modification was to be cancelled
+			}
 		}
 	});		
 }

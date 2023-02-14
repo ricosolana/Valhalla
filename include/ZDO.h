@@ -171,7 +171,22 @@ private:
             new (this->_Member<T>()) T(type);
         }
 
-        Ord(const Ord& other) = delete;
+        Ord(const Ord& other) {
+            const auto ord = *other._Ordinal();
+            switch (ord) {
+            case ORD_FLOAT:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(float));          *_Member<float>() = *other._Member<float>(); break;
+            case ORD_VECTOR3:       this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Vector3));        *_Member<Vector3>() = *other._Member<Vector3>(); break;
+            case ORD_QUATERNION:    this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Quaternion));     *_Member<Quaternion>() = *other._Member<Quaternion>(); break;
+            case ORD_INT:           this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int32_t));        *_Member<int32_t>() = *other._Member<int32_t>(); break;
+            case ORD_LONG:          this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int64_t));        *_Member<int64_t>() = *other._Member<int64_t>(); break;
+            case ORD_STRING:        this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(std::string));    new (this->_Member<std::string>()) std::string(*other._Member<std::string>()); break;
+            case ORD_ARRAY:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(BYTES_t));        new (this->_Member<BYTES_t>()) BYTES_t(*other._Member<BYTES_t>()); break;
+            default:
+                assert(false && "reached impossible case");
+            }
+
+            *this->_Ordinal() = ord;
+        }
 
         Ord(Ord&& other) noexcept {
             this->m_contiguous = other.m_contiguous;
@@ -396,6 +411,8 @@ public:
 
     // ZDOManager constructor
     ZDO(const NetID& id, const Vector3& pos);
+
+    ZDO(const ZDO& other) = default;
 
 public:
     // Save ZDO to disk
