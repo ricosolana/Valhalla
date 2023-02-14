@@ -460,8 +460,11 @@ void IModManager::LoadAPI() {
 
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
-    zdoApiTable["GetZDOs"] = [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); };
-    zdoApiTable["GetZDOs"] = [](const Vector3& pos, float radius, HASH_t prefabHash) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefabHash); };
+    zdoApiTable["GetZDOs"] = sol::overload(
+        [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
+        [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
+        [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); }
+    );
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 

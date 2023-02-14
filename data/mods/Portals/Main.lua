@@ -14,7 +14,7 @@ local PORTAL = VUtils.String.GetStableHashCode("portal_wood")
 --local (TARGETa, TARGETb) = ZDOManager.HashZDOID("target") -- VUtils.String.GetStableHashCode("target") -- use special zdoid hash
 local TAG = VUtils.String.GetStableHashCode("tag")
 
-Valhalla.OnEvent("PeriodUpdate", function()    
+Valhalla.OnEvent("PeriodUpdate", function()
 	local portals = ZDOManager.GetZDOs(PORTAL)
 
 	for i1=1, #portals do
