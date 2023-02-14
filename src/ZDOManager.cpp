@@ -634,39 +634,43 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				.m_time = time 
 			};
 
-			try {
-				auto&& pair = this->GetOrCreateZDO(zdoid, pos);
+			
+			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
 
-				//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
-				//if (pair.second) // if newly inserted
-				//	pair.first->second = std::make_unique<ZDO>(zdoid, pos);
-				//ZDO *zdo = pair.
+			//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
+			//if (pair.second) // if newly inserted
+			//	pair.first->second = std::make_unique<ZDO>(zdoid, pos);
+			//ZDO *zdo = pair.
 
-				auto&& zdo = pair.first;
-				auto&& created = pair.second;
+			auto&& zdo = pair.first;
+			auto&& created = pair.second;
 
-				//auto&& pair = m_objectsByID.find(zdoid);
+			//auto&& pair = m_objectsByID.find(zdoid);
+						
+			//auto created = pair == m_objectsByID.end();
+			if (!created) {
+				//auto&& zdo = pair->second;
+				//auto&& zdo = 
+				// if the client data rev is not new, and they've reassigned the owner:
+				if (dataRev <= zdo->m_rev.m_dataRev) {
+					if (ownerRev > zdo->m_rev.m_ownerRev) {
+						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
+							//*zdo = copy; // if zdo modification was to be cancelled
 
-				//auto created = pair == m_objectsByID.end();
-				if (!created) {
-					//auto&& zdo = pair->second;
-					//auto&& zdo = 
-					// if the client data rev is not new, and they've reassigned the owner:
-					if (dataRev <= zdo->m_rev.m_dataRev) {
-						if (ownerRev > zdo->m_rev.m_ownerRev) {
-							//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
-								//*zdo = copy; // if zdo modification was to be cancelled
-
-							zdo->m_owner = owner;
-							zdo->m_rev.m_ownerRev = ownerRev;
-							peer->m_zdos[zdoid] = rev;
-						}
-						continue;
+						zdo->m_owner = owner;
+						zdo->m_rev.m_ownerRev = ownerRev;
+						peer->m_zdos[zdoid] = rev;
 					}
+					continue;
 				}
+			}
 
+			// Also used as restore point if this ZDO breaks during deserialization
+			ZDO copy(*zdo);
+
+			try {
 				// Create a copy of ZDO prior to any modifications
-				ZDO copy(*zdo);
+				
 
 				//static std::unique_ptr<ZDO> zdo; // = std::make_unique<ZDO>(zdoid, pos);
 
@@ -705,7 +709,9 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 			}
 			catch (const VUtils::data_error& e) {
 				// erase the zdo from map
-				EraseZDO(zdoid);
+				if (created) // if the zdo was just created, throw it away
+					EraseZDO(zdoid);
+				else *zdo = copy; // else, back up the zdo to a prior revision
 
 				std::rethrow_exception(std::make_exception_ptr(e));
 			}

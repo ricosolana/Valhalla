@@ -515,7 +515,7 @@ void INetManager::Update() {
             peer->Update();
         }
         catch (const VUtils::data_error& e) {
-            LOG(ERROR) << "Peer provided bad data: " << e.what();
+            LOG(ERROR) << "Peer error: " << e.what();
             peer->m_socket->Close(false);
         }
     }
@@ -526,7 +526,7 @@ void INetManager::Update() {
             rpc->PollOne();
         }
         catch (const VUtils::data_error& e) {
-            LOG(ERROR) << "Peer provided bad data: " << e.what();
+            LOG(ERROR) << "NetRPC error: " << e.what();
             rpc->m_socket->Close(false);
         }
     }

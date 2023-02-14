@@ -1,21 +1,17 @@
 todo:
-    - test whether players work right near edge of world, or zdos...
-        vegetation is not placed near edge of world, this might be why
-        
-        instead of square zone checks, check radially (within bounds of circular world)
+    - ZDO restore / reconciliation to prevent illegal modification by malicious clients
 
     - fix mistlands mist distribution
         literally a blanket
+        possibly vegetation mask broken?
+        is vegetation being correctly skipped or placed as needed?
 
     - cleanup used heightmaps after time
+        or could generate everything
     
     - fix zdo-specific world saving
         primarily related to object-specific saves apparently, like container, terrain modifier?...
-   
-    - test reducing world size to 313
-        also add constraints when near edge of world
-        so index bounds issues wont happen
-      
+
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
@@ -23,6 +19,8 @@ todo:
        
     - calc server memory consumption
         zdos primarily...
+        estimated based on sizeof(ZDO) and number of zdos
+            not entirely accurate because zdos themselves allocate memory,
        
     - vegetation pkg values might need tweaking
         swamp trees are kinda not distributed?
@@ -52,10 +50,20 @@ todo:
 
         
 finished:
+    - test whether players work right near edge of world, or zdos...
+        vegetation is not placed near edge of world, this might be why
+        
+        instead of square zone checks, check radially (within bounds of circular world)
+        
+    - test reducing world size to 313
+        also add constraints when near edge of world
+        so index bounds issues wont happen
+
     - implement quaternion euler fully
     
     - implement quaternion lookdirection fully
         so that prefabs are rotated correctly on worldgen
+        broken in cases where an axis is zero or near zero
 
     - implement portals
         portals now link together with the help of a lua mod 
