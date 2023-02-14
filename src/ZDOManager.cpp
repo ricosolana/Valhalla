@@ -23,12 +23,12 @@ void IZDOManager::Init() {
 		DataReader reader(bytes);
 		auto destroyed = reader.Read<std::list<NetID>>();
 		for (auto&& uid : destroyed)
-			HandleDestroyedZDO(uid);
+			EraseZDO(uid);
 		});
 
 	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, NetID id) {
 		peer->ForceSendZDO(id);
-		});
+	});
 }
 
 void IZDOManager::Update() {
@@ -38,7 +38,7 @@ void IZDOManager::Update() {
 	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
 		for (auto&& pair : peers) {
 			auto&& peer = pair.second;
-			ReleaseNearbyZDOS(peer.get());
+			AssignOrReleaseZDOs(peer.get());
 		}
 	});
 
@@ -117,7 +117,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 			//NetPackage zdoPkg;
 			for (auto&& sectorObjects : m_objectsBySector) {
 				for (auto zdo : sectorObjects) {
-					if (zdo->m_persistent) {
+					if (zdo->m_prefab->m_persistent) {
 						pkg.Write(zdo->ID());
 						pkg.SubWrite([zdo, &pkg]() {
 							zdo->Save(pkg);
@@ -175,7 +175,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		if (modern || !SERVER_SETTINGS.worldModern) {
 			AddToSector(zdo.get());
-			m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
+			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;
@@ -246,21 +246,22 @@ ZDO* IZDOManager::GetZDO(const NetID& id) {
 	return nullptr;
 }
 
+
+
 std::pair<ZDO*, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3& def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
-
+	
 	auto&& zdo = pair.first->second;
 	if (!pair.second) // if new insert failed, return it
 		return { zdo.get(), false };
 
 	zdo = std::make_unique<ZDO>(id, def);
-	AddToSector(zdo.get());
 	return { zdo.get(), true };
 }
 
 
 
-void IZDOManager::ReleaseNearbyZDOS(Peer* peer) {
+void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 	auto&& zone = IZoneManager::WorldToZonePos(peer->m_pos);
 
 	std::list<ZDO*> m_tempNearObjects;
@@ -268,7 +269,7 @@ void IZDOManager::ReleaseNearbyZDOS(Peer* peer) {
 	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
 	for (auto&& zdo : m_tempNearObjects) {
-		if (zdo->m_persistent) {
+		if (zdo->m_prefab->m_persistent) {
 			if (zdo->Owner() == peer->m_uuid) {
 				
 				// If owner-peer no longer in area, make it unclaimed
@@ -289,7 +290,7 @@ void IZDOManager::ReleaseNearbyZDOS(Peer* peer) {
 	}
 }
 
-void IZDOManager::HandleDestroyedZDO(const NetID& uid) {
+void IZDOManager::EraseZDO(const NetID& uid) {
 	if (uid.m_uuid == SERVER_ID && uid.m_id >= m_nextUid)
 		m_nextUid = uid.m_uuid + 1;
 
@@ -299,8 +300,10 @@ void IZDOManager::HandleDestroyedZDO(const NetID& uid) {
 			return;
 
 		RemoveFromSector(zdo);
-		auto&& find = m_objectsByPrefab.find(zdo->m_prefab); // .erase(zdo->)
-		if (find != m_objectsByPrefab.end()) find->second.erase(zdo);
+		if (zdo->m_prefab) {
+			auto&& find = m_objectsByPrefab.find(zdo->m_prefab->m_hash); // .erase(zdo->)
+			if (find != m_objectsByPrefab.end()) find->second.erase(zdo);
+		}
 		m_objectsByID.erase(zdo->ID());
 	}
 
@@ -384,11 +387,11 @@ std::list<ZDO*> IZDOManager::CreateSyncList(Peer* peer) {
 
 		// https://www.reddit.com/r/valheim/comments/mga1iw/understanding_the_new_networking_mechanisms_from/
 
-		bool flag = a->Type() == ZDO::ObjectType::Prioritized && a->HasOwner() && a->Owner() != peer->m_uuid;
-		bool flag2 = b->Type() == ZDO::ObjectType::Prioritized && b->HasOwner() && b->Owner() != peer->m_uuid;
+		bool flag = a->GetPrefab()->m_type == ZDO::ObjectType::Prioritized && a->HasOwner() && a->Owner() != peer->m_uuid;
+		bool flag2 = b->GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b->HasOwner() && b->Owner() != peer->m_uuid;
 
 		if (flag == flag2) {
-			if (a->Type() == b->Type()) {
+			if (a->GetPrefab()->m_type == b->GetPrefab()->m_type) {
 				float sub1 = peer->m_zdos.contains(a->m_id) ? std::clamp(time - a->m_rev.m_time, 0.f, 100.f) * 1.5f
 					: 150;
 				float sub2 = peer->m_zdos.contains(b->m_id) ? std::clamp(time - b->m_rev.m_time, 0.f, 100.f) * 1.5f
@@ -398,7 +401,7 @@ std::list<ZDO*> IZDOManager::CreateSyncList(Peer* peer) {
 					b->Position().SqDistance(peer->m_pos) - sub2;
 			}
 			else
-				return a->Type() < b->Type();
+				return a->GetPrefab()->m_type < b->GetPrefab()->m_type;
 		}
 		else {
 			return !flag ? true : false;
@@ -445,7 +448,7 @@ void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<ZDO*>& objects
 		auto&& list = m_objectsBySector[num];
 
 		for (auto&& zdo : list) {
-			if (zdo->m_distant)
+			if (zdo->GetPrefab()->m_distant)
 				objects.push_back(zdo);
 		}
 	}
@@ -502,7 +505,7 @@ std::list<ZDO*> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radi
 			if (num != -1) {
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
-					if (obj->m_prefab == prefabHash 
+					if (obj->m_prefab->m_hash == prefabHash 
 						&& obj->m_position.SqDistance(pos) <= radius * radius)
 						out.push_back(obj);
 				}
@@ -631,55 +634,80 @@ void IZDOManager::OnNewPeer(Peer* peer) {
 				.m_time = time 
 			};
 
-			auto &&pair = this->GetOrCreateZDO(zdoid, pos);
+			try {
+				auto&& pair = this->GetOrCreateZDO(zdoid, pos);
 
-			auto &&zdo = pair.first;
-			auto &&created = pair.second;
-			if (!created) {
-				// if the client data rev is not new, and they've reassigned the owner:
-				if (dataRev <= zdo->m_rev.m_dataRev) {
-					if (ownerRev > zdo->m_rev.m_ownerRev) {
-						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
-							//*zdo = copy; // if zdo modification was to be cancelled
+				//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
+				//if (pair.second) // if newly inserted
+				//	pair.first->second = std::make_unique<ZDO>(zdoid, pos);
+				//ZDO *zdo = pair.
 
-						zdo->m_owner = owner;
-						zdo->m_rev.m_ownerRev = ownerRev;
-						peer->m_zdos[zdoid] = rev;
+				auto&& zdo = pair.first;
+				auto&& created = pair.second;
+
+				//auto&& pair = m_objectsByID.find(zdoid);
+
+				//auto created = pair == m_objectsByID.end();
+				if (!created) {
+					//auto&& zdo = pair->second;
+					//auto&& zdo = 
+					// if the client data rev is not new, and they've reassigned the owner:
+					if (dataRev <= zdo->m_rev.m_dataRev) {
+						if (ownerRev > zdo->m_rev.m_ownerRev) {
+							//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
+								//*zdo = copy; // if zdo modification was to be cancelled
+
+							zdo->m_owner = owner;
+							zdo->m_rev.m_ownerRev = ownerRev;
+							peer->m_zdos[zdoid] = rev;
+						}
+						continue;
 					}
-					continue;
 				}
-			}
 
-			// Create a copy of ZDO prior to any modifications
-			ZDO copy(*zdo);
+				// Create a copy of ZDO prior to any modifications
+				ZDO copy(*zdo);
 
-			zdo->m_owner = owner;
-			zdo->m_rev = rev;
+				//static std::unique_ptr<ZDO> zdo; // = std::make_unique<ZDO>(zdoid, pos);
 
-			// Only set position if ZDO has previously existed
-			if (!created)
-				zdo->SetPosition(pos);
+				//auto zdo = std::make_unique<ZDO>(zdoid, pos);
 
-			peer->m_zdos[zdoid] = {
-				.m_dataRev = zdo->m_rev.m_dataRev,
-				.m_ownerRev = zdo->m_rev.m_ownerRev,
-				.m_time = time
-			};
 
-			zdo->Deserialize(des);
+				zdo->m_owner = owner;
+				zdo->m_rev = rev;
 
-			if (created) {
-				if (m_deadZDOs.contains(zdoid)) {
-					zdo->SetLocal();
-					m_destroySendList.push_back(zdo->ID());
+				// Only set position if ZDO has previously existed
+				if (!created)
+					zdo->SetPosition(pos);
+
+				peer->m_zdos[zdoid] = {
+					.m_dataRev = zdo->m_rev.m_dataRev,
+					.m_ownerRev = zdo->m_rev.m_ownerRev,
+					.m_time = time
+				};
+
+				zdo->Deserialize(des);
+
+				if (created) {
+					AddToSector(zdo);
+					if (m_deadZDOs.contains(zdoid)) {
+						zdo->SetLocal();
+						m_destroySendList.push_back(zdo->ID());
+					}
+					else {
+						m_objectsByPrefab[zdo->GetPrefab()->m_hash].insert(zdo);
+					}
 				}
 				else {
-					m_objectsByPrefab[zdo->PrefabHash()].insert(zdo);
+					if (ModManager()->CallEvent("ZDOChange", &copy, zdo) == EventStatus::CANCEL)
+						*zdo = copy; // if zdo modification was to be cancelled
 				}
 			}
-			else {
-				if (ModManager()->CallEvent("ZDOChange", &copy, zdo) == EventStatus::CANCEL)
-					*zdo = copy; // if zdo modification was to be cancelled
+			catch (const VUtils::data_error& e) {
+				// erase the zdo from map
+				EraseZDO(zdoid);
+
+				std::rethrow_exception(std::make_exception_ptr(e));
 			}
 		}
 	});		
@@ -689,7 +717,8 @@ void IZDOManager::OnPeerQuit(Peer* peer) {
 	// This is the kind of iteration removal I am trying to avoid
 	for (auto&& pair : m_objectsByID) {
 		auto&& zdo = pair.second;
-		if (!zdo->m_persistent
+		// If ZDO prefab is not assigned (because bad prefab hash)
+		if (!zdo->GetPrefab() || !zdo->GetPrefab()->m_persistent
 			&& (!zdo->HasOwner() || zdo->Owner() == peer->m_uuid))
 		{
 			auto&& uid = zdo->ID();

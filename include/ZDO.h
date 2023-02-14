@@ -23,7 +23,7 @@ concept TrivialSyncType =
 
 class IZDOManager;
 class IPrefabManager;
-//class Prefab;
+class Prefab;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -325,11 +325,12 @@ private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;
 public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
-private:    HASH_t m_prefab = 0;
+//private:    HASH_t m_prefab = 0;
+private:    const Prefab* m_prefab = nullptr;
 public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
-public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
-public:     bool m_persistent = false;    // set by ZNetView
-public:     bool m_distant = false;        // set by ZNetView
+//public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
+//public:     bool m_persistent = false;    // set by ZNetView
+//public:     bool m_distant = false;        // set by ZNetView
           
 private:
     void Revise() {
@@ -522,11 +523,12 @@ public:
     //    return m_pgwVersion;
     //}
 
-    ObjectType Type() const {
-        return m_type;
-    }
+    //ObjectType Type() const {
+    //    return m_type;
+    //}
+    //
 
-    HASH_t PrefabHash() const {
+    const Prefab* GetPrefab() const {
         return m_prefab;
     }
 

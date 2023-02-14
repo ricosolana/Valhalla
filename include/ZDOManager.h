@@ -52,8 +52,8 @@ private:
 	// Relay a ZDO sector change to clients (internal)
 	void InvalidateSector(ZDO* zdo);
 
-	void ReleaseNearbyZDOS(Peer* peer);
-	void HandleDestroyedZDO(const NetID& uid);
+	void AssignOrReleaseZDOs(Peer* peer);
+	void EraseZDO(const NetID& uid);
 	void SendAllZDOs(Peer* peer);
 	bool SendZDOs(Peer* peer, bool flush);
 	std::list<ZDO*> CreateSyncList(Peer* peer);
@@ -73,6 +73,8 @@ public:
 
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
+
+	//decltype(m_objectsByID)::const_iterator GetZDOItr(const NetID& id, const Vector3& def);
 
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist

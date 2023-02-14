@@ -75,11 +75,12 @@ ZDO* IPrefabManager::Instantiate(const Prefab* prefab, const Vector3& pos, const
     assert(prefab);
     
     auto zdo = ZDOManager()->AddZDO(pos);
-    zdo->m_distant = prefab->m_distant;
-    zdo->m_persistent = prefab->m_persistent;
-    zdo->m_type = prefab->m_type;
+    //zdo->m_distant = prefab->m_distant;
+    //zdo->m_persistent = prefab->m_persistent;
+    //zdo->m_type = prefab->m_type;
     zdo->m_rotation = rot;
-    zdo->m_prefab = prefab->m_hash;
+    //zdo->m_prefab = prefab->m_hash;
+    zdo->m_prefab = prefab;
 
     if (prefab->m_localScale != Vector3(1, 1, 1))
         zdo->Set("scale", prefab->m_localScale);
