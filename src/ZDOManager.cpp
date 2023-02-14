@@ -15,6 +15,62 @@ IZDOManager* ZDOManager() {
 
 
 
+void IZDOManager::Init() {
+	LOG(INFO) << "Initializing ZDOManager";
+
+	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, BYTES_t bytes) {
+		// TODO constraint check
+		DataReader reader(bytes);
+		auto destroyed = reader.Read<std::list<NetID>>();
+		for (auto&& uid : destroyed)
+			HandleDestroyedZDO(uid);
+		});
+
+	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, NetID id) {
+		peer->ForceSendZDO(id);
+		});
+}
+
+void IZDOManager::Update() {
+	auto&& peers = NetManager()->GetPeers();
+
+	// Occasionally release ZDOs
+	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
+		for (auto&& pair : peers) {
+			auto&& peer = pair.second;
+			ReleaseNearbyZDOS(peer.get());
+		}
+	});
+
+	// Send ZDOS:
+	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
+		for (auto&& pair : peers) {
+			auto&& peer = pair.second;
+			SendZDOs(peer.get(), false);
+		}
+	});
+
+	PERIODIC_NOW(1min, {
+		//size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
+		size_t bytes = m_objectsByID.size() * sizeof(ZDO);
+		
+		float kb = bytes / 1000.f;
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << kb << "kb)";
+	});
+
+	if (m_destroySendList.empty())
+		return;
+
+	static BYTES_t bytes; bytes.clear();
+
+	DataWriter writer(bytes);
+	writer.Write(m_destroySendList);
+
+	m_destroySendList.clear();
+	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, bytes);
+}
+
+
 bool IZDOManager::AddToSector(ZDO* zdo) {
 	int num = SectorToIndex(zdo->Sector());
 	if (num != -1) {
@@ -91,21 +147,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 	//}
 }
 
-void IZDOManager::Init() {
-	LOG(INFO) << "Initializing ZDOManager";
 
-	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, BYTES_t bytes) {
-		// TODO constraint check
-		DataReader reader(bytes);
-		auto destroyed = reader.Read<std::list<NetID>>();
-		for (auto&& uid : destroyed)
-			HandleDestroyedZDO(uid);
-	});
-	
-	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, NetID id) {
-		peer->ForceSendZDO(id);
-	});
-}
 
 void IZDOManager::Load(DataReader& reader, int version) {
 	reader.Read<OWNER_t>(); // skip server id
@@ -214,45 +256,6 @@ std::pair<ZDO*, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3
 	zdo = std::make_unique<ZDO>(id, def);
 	AddToSector(zdo.get());
 	return { zdo.get(), true };
-}
-
-
-
-void IZDOManager::Update() {
-	auto&& peers = NetManager()->GetPeers();
-
-	PERIODIC_NOW(2s, {
-		for (auto&& pair : peers) {
-			auto&& peer = pair.second;
-			ReleaseNearbyZDOS(peer.get());
-		}
-	});
-
-	// Send ZDOS:
-	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
-		for (auto&& pair : peers) {
-			auto&& peer = pair.second;
-			SendZDOs(peer.get(), false);
-		}
-	});
-
-	PERIODIC_NOW(1min, {
-		size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
-		
-		float kb = bytes / 1000.f;
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << kb << "kb)";
-	});
-
-	if (m_destroySendList.empty())
-		return;
-
-	static BYTES_t bytes; bytes.clear();
-
-	DataWriter writer(bytes);
-	writer.Write(m_destroySendList);
-
-	m_destroySendList.clear();
-	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, bytes);
 }
 
 

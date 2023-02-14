@@ -27,6 +27,7 @@ struct ServerSettings {
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
+    milliseconds    zdoAssignInterval;
 
     bool            spawningCreatures;
     bool            spawningLocations;
