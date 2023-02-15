@@ -25,6 +25,12 @@ void IRouteManager::RouteRPC(const Data& data) {
 			auto&& peer = pair.second;
 			// send to everyone (except sender)
 			if (data.m_senderPeerID != peer->m_uuid) {
+
+				// TODO try to unpack route args, regardless of zdo or peer target
+				//	(because param passing is same/trivial between both, fortunately)
+				//if (data.m_senderPeerID != SERVER_ID)
+					//ModManager()->CallEvent(EVENT_HASH_Routed, data);
+
                 peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
@@ -46,7 +52,7 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 			find->second->Invoke(sender, reader);
 		}
 		else {
-			// Due to the way Valhiem manages it RoutedRPC's, 
+			// Due to the way Valheim manages it RoutedRPC's, 
 			//	the server will receive its own self-invoked RoutedRPC calls
 			//LOG(INFO) << "Client tried invoking unknown RoutedRPC: " << data.m_methodHash;
 		}

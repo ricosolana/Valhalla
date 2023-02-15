@@ -9,18 +9,14 @@
 class IRouteManager {
 	friend class INetManager;
 
+public:
 	struct Data {
-		OWNER_t m_msgID;
+		OWNER_t m_msgID; // TODO this is never utilized
 		OWNER_t m_senderPeerID;
 		OWNER_t m_targetPeerID;
 		NetID m_targetSync;
 		HASH_t m_methodHash;
 		BYTES_t m_parameters;
-		//NetPackage m_parameters;
-		//union m_parameters {
-		//	DataReader m_reader;
-		//	DataWriter
-		//};
 
 		Data() : m_msgID(0), m_senderPeerID(0), m_targetPeerID(0), m_methodHash(0) {}
 
@@ -44,7 +40,6 @@ class IRouteManager {
 		}
 	};
 
-public:
 	static constexpr OWNER_t EVERYBODY = 0;
 
 private:	

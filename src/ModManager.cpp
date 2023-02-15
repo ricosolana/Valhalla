@@ -16,6 +16,7 @@
 #include "ZDOManager.h"
 #include "Method.h"
 #include "objects/Ward.h"
+#include "RouteManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
@@ -87,6 +88,7 @@ void IModManager::LoadAPI() {
     );
     utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
     utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+    utilsTable["CreateBytes"] = []() { return BYTES_t(); };
 
     {
         auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
@@ -138,12 +140,14 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const std::string&)>(&Peer::Message)),
         "Disconnect", &Peer::Disconnect,
         "InvokeSelf", sol::overload(
-            static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
-            static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        "Register", [](Peer& self, MethodSig repr, sol::function func) {
+            sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
+            sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
+            //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
+            //static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
+        "Register", [](Peer& self, const MethodSig &repr, sol::function func) {
             self.Register(repr.m_hash, func, repr.m_types);
         },
-        "Invoke", [](Peer& self, MethodSig repr, sol::variadic_args args) {
+        "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("incorrect number of args");
 
@@ -531,6 +535,14 @@ void IModManager::LoadAPI() {
         "apiVersion", &Mod::m_apiVersion,
         "description", &Mod::m_description,
         "authors", &Mod::m_authors
+    );
+
+    m_state.new_usertype<IRouteManager::Data>("RouteData",
+        "sender", &IRouteManager::Data::m_senderPeerID,
+        "target", &IRouteManager::Data::m_targetPeerID,
+        "targetZDO", &IRouteManager::Data::m_targetSync,
+        "method", &IRouteManager::Data::m_methodHash,
+        "params", &IRouteManager::Data::m_parameters
     );
 
     {

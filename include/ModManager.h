@@ -29,14 +29,16 @@ enum class EventStatus {
     CANCEL,
 };
 
-static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");
-static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");
-static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");
-static constexpr HASH_t EVENT_HASH_Update = __H("Update");
+static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
+static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
+static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
+static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
+static constexpr HASH_t EVENT_HASH_Routed = __H("Routed");      // Server relays a message from peer to peer
+static constexpr HASH_t EVENT_HASH_Update = __H("Update");      
 static constexpr HASH_t EVENT_HASH_Join = __H("Join");
 static constexpr HASH_t EVENT_HASH_Quit = __H("Quit");
 
-static constexpr HASH_t EVENT_HASH_POST = VUtils::String::GetStableHashCode("POST");
+static constexpr HASH_t EVENT_HASH_POST = __H("POST");
 
 //int GetCurrentLuaLine(lua_State* L);
 
