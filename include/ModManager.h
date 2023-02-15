@@ -95,7 +95,7 @@ public:
     void Uninit();
 
     template <class... Args>
-    auto CallEvent(HASH_t name, const Args&... params) {
+    auto CallEvent(HASH_t name, Args&&... params) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -104,10 +104,20 @@ public:
 
             this->m_eventStatus = EventStatus::DEFAULT;
 
+            // TODO is this faster or...? fix
+            auto&& lua_params = m_state.create_table_with("value", sol::make_reference(m_state, params))...;
+
             for (auto&& callback : callbacks) {
                 try {
                     //sol::protected_function_result result = std::apply(callback.m_func, t);
-                    sol::protected_function_result result = callback.m_func(params...);
+                    
+                    // Pass each type in a proxy reference (will be variadic unpacked to function)
+                    //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
+
+                    // Pass a single param to function with reference types
+                    //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
+
+                    sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
                     if (!result.valid()) {
                         sol::error error = result;
                         LOG(ERROR) << error.what();
@@ -122,8 +132,8 @@ public:
     }
 
     template <typename... Args>
-    auto CallEvent(const std::string& name, const Args&... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), params...);
+    auto CallEvent(const std::string& name, Args&&... params) {
+        return CallEvent(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
     }
 
 private:
@@ -137,14 +147,14 @@ public:
     // Returns whether the event-delegate is cancelled
     template <class Tuple>
     EventStatus CallEventTuple(HASH_t name, const Tuple& t) {
-        return CallEventTupleImpl(name, 
-            t, 
+        return CallEventTupleImpl(name,
+            t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 
     template <class Tuple>
     auto CallEventTuple(const std::string& name, const Tuple& t) {
-        return CallEventTupleImpl(VUtils::String::GetStableHashCode(name), 
+        return CallEventTupleImpl(VUtils::String::GetStableHashCode(name),
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
