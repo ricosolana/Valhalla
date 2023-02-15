@@ -1,6 +1,4 @@
 todo:
-    - fix log file backups (naming + compress to different directory)
-
     - fix zdos on save:
         chests Resetting
         Terrain Resetting
@@ -11,12 +9,7 @@ todo:
         Beds Resetting
         - determine the underlying cause for this
         - why does loading a valid world world, but saving->loading a world breaks things? there must be something that the original server does on save per zdo object
-    
-    - mod event error handler
-        disable mod on errors
-
-    - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
-    
+   
     - trying to get a way to represent zdo-components (members) without convoluting everything
         - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
         - whether the object is a:
@@ -29,10 +22,15 @@ todo:
             - CharacterDrop (killed entities drop)
             - Humanoid
             - MonsterAI
-            
-
+   
+    - fix server shutdown routines
+        - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
+            - save world, 
+            - proper cleanup / disposal of managers
+   
+    - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
+    
     - ZDO restore / reconciliation to prevent illegal modification by malicious clients
-        - 
         
     - ZDO based item assign 
         Container::RPC_TakeAllRespons
@@ -40,8 +38,7 @@ todo:
         - Player death causes entire inventory to be moved to tombstone
             this is clientside, as usual
         - detect events via incoming updated zdos
-        
-
+    
     - fix mistlands mist distribution
         literally a blanket
         possibly vegetation mask broken?
@@ -49,15 +46,7 @@ todo:
 
     - cleanup used heightmaps after time
         or could generate everything
-    
-    - fix zdo-specific world saving
-        primarily related to object-specific saves apparently, like container, terrain modifier?...
-
-    - fix server shutdown routines
-        - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
-            - save world, 
-            - proper cleanup / disposal of managers
-       
+          
     - calc server memory consumption
         zdos primarily...
         estimated based on sizeof(ZDO) and number of zdos
@@ -68,10 +57,7 @@ todo:
         
     - block WNT packets?
         cause particles to spawn on screen likely causing lagg if many 
-            
-    - consolidate all player notification messages into one method
-        showMessage, chatMessage, RemotePrint...
-
+    
     - send zdos more/less often/more depending on network load and per-client latency
     
     - use bitshift for Biome type (instead of mask)
@@ -88,9 +74,16 @@ todo:
     - idea for unloading/destroying/reconciliating inactive zdos in world:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
-
-        
 finished:
+    - consolidate all player notification messages into one method
+        single useful Message(msg, type)
+
+    - mod event error handler
+        mod callback disabled if any error
+
+    - fix log file backups
+        compressed to /logs
+
     - test whether players work right near edge of world, or zdos...
         vegetation is not placed near edge of world, this might be why
         

@@ -258,7 +258,7 @@ void IValhalla::Start() {
     WorldManager()->WriteFileWorldDB(true);
 
     VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFileLines("whitelsit.txt", m_whitelist);
+    VUtils::Resource::WriteFileLines("whitelist.txt", m_whitelist);
     VUtils::Resource::WriteFileLines("admin.txt", m_admin);
     VUtils::Resource::WriteFileLines("bypass.txt", m_bypass);
 }
