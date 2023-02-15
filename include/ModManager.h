@@ -104,8 +104,11 @@ public:
 
             this->m_eventStatus = EventStatus::DEFAULT;
 
-            // TODO is this faster or...? fix
-            auto&& lua_params = m_state.create_table_with("value", sol::make_reference(m_state, params))...;
+            // Multiple tables
+            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
+
+            // Single table
+            //auto&& lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
 
             for (auto&& callback : callbacks) {
                 try {
@@ -117,7 +120,10 @@ public:
                     // Pass a single param to function with reference types
                     //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
 
-                    sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
+                    //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
+
+                    // TODO test whether the values in table are mutable (whether reassignments directly affect 'params' vararg)
+                    sol::protected_function_result result = std::apply(callback.m_func, lutup);
                     if (!result.valid()) {
                         sol::error error = result;
                         LOG(ERROR) << error.what();
