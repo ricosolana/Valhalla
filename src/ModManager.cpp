@@ -15,6 +15,7 @@
 #include "NetSocket.h"
 #include "ZDOManager.h"
 #include "Method.h"
+#include "objects/Ward.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
@@ -46,6 +47,10 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
     mod->m_description = loadNode["description"].as<std::string>("");
     mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
+
+    if (this->mods.contains(mod->m_name)) {
+        throw std::runtime_error("mod with duplicate name");
+    }
 
     return mod;
 }
@@ -373,15 +378,25 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<ZDO>("ZDO",
         "id", &ZDO::m_id,
         "owner", &ZDO::m_owner,
+        "prefab", sol::property([](ZDO& self) { return self.GetPrefab(); }),
+        "pos", sol::property(
+            [](ZDO& self) { return self.Position(); },
+            [](ZDO& self, const Vector3& pos) { self.SetPosition(pos); }
+        ),
         "SetLocal", &ZDO::SetLocal,
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
-        //"GetLong", &ZDO::GetLong,
+        "GetLong", sol::overload(
+            sol::resolve<int64_t (HASH_t, int64_t) const>(&ZDO::GetLong),
+            sol::resolve<int64_t (const std::string&, int64_t) const>(&ZDO::GetLong)
+        ),
         //"GetQuaternion", &ZDO::GetQuaternion,
         //"GetVector3", &ZDO::GetVector3,
         "GetString", sol::overload(
-            static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
-            static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
+            sol::resolve<const std::string& (const std::string&, const std::string&) const>(&ZDO::GetString),
+            sol::resolve<const std::string& (HASH_t, const std::string&) const>(&ZDO::GetString)
+            //static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+            //static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
         ),
         //"GetBytes", &ZDO::GetBytes,
         //"GetBool", &ZDO::GetBool,
@@ -487,7 +502,6 @@ void IModManager::LoadAPI() {
                     hash = arg.as<HASH_t>();
                 else {
                     throw std::runtime_error("initial params must be string or hash");
-                    //return mod->Error("LUA starting parameters must be string or hash");
                 }
 
                 cbHash ^= hash;
@@ -504,7 +518,6 @@ void IModManager::LoadAPI() {
                     );
                 }
                 else {
-                    //return mod->Error("LUA last param must be a function");
                     throw std::runtime_error("final param must be a function");
                 }
             }

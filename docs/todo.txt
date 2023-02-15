@@ -1,5 +1,30 @@
 todo:
+    - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
+    
+    - trying to get a way to represent zdo-components (members) without convoluting everything
+        - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
+        - whether the object is a:
+            - Piece (Buildable/Placeable by player)
+            - ItemDrop (Dropped Ground Item)
+            - CraftingStation
+            - WearNTear (Structural support / durability)
+            - Pickable (Seasoning vegetation / goblin totem poles / Respawnable stuff)
+            - DropOnDestroyed (destroyed objects drop)
+            - CharacterDrop (killed entities drop)
+            - Humanoid
+            - MonsterAI
+            
+
     - ZDO restore / reconciliation to prevent illegal modification by malicious clients
+        - 
+        
+    - ZDO based item assign 
+        Container::RPC_TakeAllRespons
+            appears to insert all items in inventory to local player
+        - Player death causes entire inventory to be moved to tombstone
+            this is clientside, as usual
+        - detect events via incoming updated zdos
+        
 
     - fix mistlands mist distribution
         literally a blanket

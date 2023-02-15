@@ -113,7 +113,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneManager.cpp"
-  )
+   "include/objects/Ward.h" "include/objects/Object.h")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
