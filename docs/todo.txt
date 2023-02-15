@@ -1,4 +1,18 @@
 todo:
+    - fix zdos on save:
+        chests Resetting
+        Terrain Resetting
+        Rocks Resetting
+        Wards disabling
+        Signs Resetting
+        Fermenter Resetting
+        Beds Resetting
+        - determine the underlying cause for this
+        - why does loading a valid world world, but saving->loading a world breaks things? there must be something that the original server does on save per zdo object
+    
+    - mod event error handler
+        disable mod on errors
+
     - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
     
     - trying to get a way to represent zdo-components (members) without convoluting everything

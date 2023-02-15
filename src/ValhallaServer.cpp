@@ -59,7 +59,7 @@ void IValhalla::LoadFiles() {
     m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
     m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
-    if (m_settings.worldName.empty()) m_settings.worldName = "Dedicated world";
+    if (m_settings.worldName.empty()) m_settings.worldName = "world";
     m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
     if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
     //m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
