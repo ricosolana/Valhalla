@@ -95,7 +95,7 @@ public:
     void Uninit();
 
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, const Tuple& t) {
+    auto CallEventTuple(HASH_t name, Tuple&& t) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -121,22 +121,21 @@ public:
     }
 
     template <class Tuple>
-    auto CallEventTuple(const std::string& name, const Tuple& t) {
-        return CallEventTuple(VUtils::String::GetStableHashCode(name), t);
+    auto CallEventTuple(const std::string& name, Tuple&& t) {
+        return CallEventTuple(VUtils::String::GetStableHashCode(name), std::forward<Tuple>(t));
     }
 
     // Dispatch a event for capture by any registered mod event handlers
     // Returns whether the event-delegate is cancelled
     template <typename... Args>
-    EventStatus CallEvent(HASH_t name, const Args&... params) {
-        return CallEventTuple(name, std::make_tuple(params...));
+    EventStatus CallEvent(HASH_t name, Args&&... params) {
+        return CallEventTuple(name, std::forward_as_tuple(params...));
     }
 
     template <typename... Args>
-    auto CallEvent(const std::string& name, const Args&... params) {
-        return CallEventTuple(name, std::make_tuple(params...));
+    auto CallEvent(const std::string& name, Args&&... params) {
+        return CallEventTuple(name, std::forward_as_tuple(params...));
     }
-
 };
 
 IModManager* ModManager();
