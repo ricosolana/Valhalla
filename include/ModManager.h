@@ -113,8 +113,9 @@ public:
             // Single table
             //auto&& lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
 
-            for (auto&& callback : callbacks) {
-                try {
+            for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
+            //for (auto&& callback : callbacks) {
+                //try {
                     //sol::protected_function_result result = std::apply(callback.m_func, t);
                     
                     // Pass each type in a proxy reference (will be variadic unpacked to function)
@@ -126,15 +127,21 @@ public:
                     //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
 
                     // TODO test whether the values in table are mutable (whether reassignments directly affect 'params' vararg)
-                    sol::protected_function_result result = std::apply(callback.m_func, lutup);
-                    if (!result.valid()) {
-                        sol::error error = result;
-                        LOG(ERROR) << error.what();
-                    }
+
+                sol::protected_function_result result = std::apply(itr->m_func, lutup);
+                if (!result.valid()) {
+                    sol::error error = result;
+                    LOG(ERROR) << error.what();
+
+                    LOG(ERROR) << "Disabling callback...";
+                    itr = callbacks.erase(itr);
                 }
-                catch (const sol::error& e) {
-                    LOG(ERROR) << e.what();
-                }
+                else
+                    ++itr;
+                //}
+                //catch (const sol::error& e) {
+                //    LOG(ERROR) << e.what();
+                //}
             }
         }
         return m_eventStatus;

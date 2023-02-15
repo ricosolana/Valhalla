@@ -1,4 +1,6 @@
 todo:
+    - fix log file backups (naming + compress to different directory)
+
     - fix zdos on save:
         chests Resetting
         Terrain Resetting
