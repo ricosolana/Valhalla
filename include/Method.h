@@ -128,7 +128,7 @@ public:
         if (reader.Position() != reader.Length())
             LOG(WARNING) << "Peer Rpc Invoke has more data than expected "
             << reader.Length() << "/" << reader.Position();
-
+        
         // Prefix
         // category catch
         //ModManager()->CallEventTuple(m_categoryHash, tuple);
