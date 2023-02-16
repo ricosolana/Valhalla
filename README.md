@@ -3,14 +3,29 @@
 ## Server
 This is an implementation of the Valheim Dedicated Server in C++.
 
-The server is in a currently non-production ready state, however feel free to play around with it.
+Current state of the server:
+ - Mostly accurate heightmap
+ - World loading (experimental legacy world loading)
+ - World saving (partly broken ZDOs)
+ - Vegetation generation
+ - Location generation (no dungeons yet :(
+ - Creature spawning
+ - LUA modding (no documentation yet, I'm lazy)
+ - ZDO synchronization
+ - Players can see other
+ - Server customizability beyond Valheim defaults
 
-The goal is to soon have a server with somewhat functional location generation, the ability to see other players in game, and support for loading already existing worlds in the Valheim format. 
+The server is in a currently in a semi-functional state and should **NOT** be used for anything serious, however feel free to play around with it.
 
-A lot of the inner-workings of Valheim are completely client-side, leaving things such as ZDO dispersement, prefabs part of world generation, and smart networking to the server. These are the things Valhalla must implement.
+## Usage
+Command line arguments (all optional):
+ - `-root [path]`: Sets the working directory
+ - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
+ - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
+ 
+All other settings are set in the `server.yml`. If it seems empty, try removing it and another will generate with defaults.
 
-## Client
-No longer being developed. Graphics programming is not my thing :(
+Properly shutdown the server by using ctrl+c.
 
 ## Progress
 ### 2/15/2023 + TODO
