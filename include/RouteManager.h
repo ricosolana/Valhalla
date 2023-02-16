@@ -11,32 +11,32 @@ class IRouteManager {
 
 public:
 	struct Data {
-		OWNER_t m_msgID; // TODO this is never utilized
-		OWNER_t m_senderPeerID;
-		OWNER_t m_targetPeerID;
-		NetID m_targetSync;
-		HASH_t m_methodHash;
-		BYTES_t m_parameters;
+		//OWNER_t m_msgID; // TODO this is never utilized
+		OWNER_t m_sender;
+		OWNER_t m_target;
+		NetID m_targetZDO;
+		HASH_t m_method;
+		BYTES_t m_params;
 
-		Data() : m_msgID(0), m_senderPeerID(0), m_targetPeerID(0), m_methodHash(0) {}
+		Data() : m_sender(0), m_target(0), m_method(0) {}
 
 		// Will unpack the package
-		explicit Data(DataReader reader)
-			: m_msgID(reader.Read<OWNER_t>()),
-			m_senderPeerID(reader.Read<OWNER_t>()),
-			m_targetPeerID(reader.Read<OWNER_t>()),
-			m_targetSync(reader.Read<NetID>()),
-			m_methodHash(reader.Read<HASH_t>()),
-			m_parameters(reader.Read<BYTES_t>())
-		{}
+		explicit Data(DataReader reader) {
+			reader.Read<int64_t>(); // msgID
+			m_sender = reader.Read<OWNER_t>();
+			m_target = reader.Read<OWNER_t>();
+			m_targetZDO = reader.Read<NetID>();
+			m_method = reader.Read<HASH_t>();
+			m_params = reader.Read<BYTES_t>();
+		}
 
 		void Serialize(DataWriter writer) const {
-			writer.Write(m_msgID);
-			writer.Write(m_senderPeerID);
-			writer.Write(m_targetPeerID);
-			writer.Write(m_targetSync);
-			writer.Write(m_methodHash);
-			writer.Write(m_parameters);
+			writer.Write<int64_t>(0);
+			writer.Write(m_sender);
+			writer.Write(m_target);
+			writer.Write(m_targetZDO);
+			writer.Write(m_method);
+			writer.Write(m_params);
 		}
 	};
 

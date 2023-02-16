@@ -19,12 +19,12 @@ void IRouteManager::RouteRPC(const Data& data) {
 	static BYTES_t bytes; bytes.clear();
 	data.Serialize(DataWriter(bytes));
 
-	if (data.m_targetPeerID == EVERYBODY) {
+	if (data.m_target == EVERYBODY) {
 		auto&& peers = NetManager()->GetPeers();
 		for (auto&& pair : peers) {
 			auto&& peer = pair.second;
 			// send to everyone (except sender)
-			if (data.m_senderPeerID != peer->m_uuid) {
+			if (data.m_sender != peer->m_uuid) {
 
 				// TODO try to unpack route args, regardless of zdo or peer target
 				//	(because param passing is same/trivial between both, fortunately)
@@ -36,7 +36,7 @@ void IRouteManager::RouteRPC(const Data& data) {
 		}
 	}
 	else {
-		auto peer = NetManager()->GetPeer(data.m_targetPeerID);
+		auto peer = NetManager()->GetPeer(data.m_target);
 		if (peer) {
 			peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 		}
@@ -45,10 +45,10 @@ void IRouteManager::RouteRPC(const Data& data) {
 
 void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	// If invocation was for RoutedRPC:
-	if (!data.m_targetSync) {
-		auto&& find = m_methods.find(data.m_methodHash);
+	if (!data.m_target) {
+		auto&& find = m_methods.find(data.m_method);
 		if (find != m_methods.end()) {
-			DataReader reader(data.m_parameters);
+			DataReader reader(data.m_params);
 			find->second->Invoke(sender, reader);
 		}
 		else {
@@ -60,16 +60,13 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 }
 
 void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, BYTES_t params) {
-	static OWNER_t m_rpcMsgID = 1;
-
 	Data data;
-	//data.m_msgID = SERVER_ID + m_rpcMsgID++;
-	data.m_msgID = m_rpcMsgID++;
-	data.m_senderPeerID = SERVER_ID;
-	data.m_targetPeerID = target;
-	data.m_targetSync = targetNetSync;
-	data.m_methodHash = hash;
-	data.m_parameters = std::move(params);
+
+	data.m_sender = SERVER_ID;
+	data.m_target = target;
+	data.m_targetZDO = targetNetSync;
+	data.m_method = hash;
+	data.m_params = std::move(params);
 
 	// Message destined to server or everyone
 	// When the server invokes an EVERYBODY call, the server still calls its own method
@@ -89,16 +86,16 @@ void IRouteManager::OnNewPeer(Peer *peer) {
 		Data data = Data(DataReader(bytes));
 
 		// TODO constraint peer sender
-		data.m_senderPeerID = peer->m_uuid;
+		data.m_sender = peer->m_uuid;
 
 		// Server is the intended receiver (or EVERYONE)
-		if (data.m_targetPeerID == SERVER_ID
-			|| data.m_targetPeerID == EVERYBODY)
+		if (data.m_target == SERVER_ID
+			|| data.m_target == EVERYBODY)
 			HandleRoutedRPC(peer, data);
 
 		// Server acts as a middleman
 		// Server may validate packet before forwarding it
-		if (data.m_targetPeerID != SERVER_ID)
+		if (data.m_target != SERVER_ID)
 			RouteRPC(data);
 	});
 }

@@ -538,11 +538,11 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<IRouteManager::Data>("RouteData",
-        "sender", &IRouteManager::Data::m_senderPeerID,
-        "target", &IRouteManager::Data::m_targetPeerID,
-        "targetZDO", &IRouteManager::Data::m_targetSync,
-        "method", &IRouteManager::Data::m_methodHash,
-        "params", &IRouteManager::Data::m_parameters
+        "sender", &IRouteManager::Data::m_sender,
+        "target", &IRouteManager::Data::m_target,
+        "targetZDO", &IRouteManager::Data::m_targetZDO,
+        "method", &IRouteManager::Data::m_method,
+        "params", &IRouteManager::Data::m_params
     );
 
     {
