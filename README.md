@@ -3,16 +3,47 @@
 ## Server
 This is an implementation of the Valheim Dedicated Server in C++.
 
-The server is in a currently non-production ready state, however feel free to play around with it.
+Current state of the server:
+ - Mostly accurate heightmap
+ - World loading (experimental legacy world loading)
+ - World saving (partly broken ZDOs)
+ - Vegetation generation
+ - Location generation (no dungeons yet :(
+ - Creature spawning
+ - LUA modding (no documentation yet, I'm lazy)
+ - ZDO synchronization
+ - Players can see other
+ - Server customizability beyond Valheim defaults
 
-The goal is to soon have a server with somewhat functional location generation, the ability to see other players in game, and support for loading already existing worlds in the Valheim format. 
+The server is in a currently in a semi-functional state and should **NOT** be used for anything serious, however feel free to play around with it.
 
-A lot of the inner-workings of Valheim are completely client-side, leaving things such as ZDO dispersement, prefabs part of world generation, and smart networking to the server. These are the things Valhalla must implement.
+## Usage
+Command line arguments (all optional):
+ - `-root [path]`: Sets the working directory
+ - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
+ - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
+ 
+All other settings are set in the `server.yml`. If it seems empty, try removing it and another will generate with defaults.
 
-## Client
-No longer being developed. Graphics programming is not my thing :(
+Properly shutdown the server by using ctrl+c.
 
 ## Progress
+### 2/15/2023 + TODO
+
+Development might slow down for the next few weeks, but I have some things in mind regarding world saving. World loading seems to work flawlessly, but world saving appears to be problematic. Several areas regarding ZDOs might involve more than ZDO serialization, and the affected parts of this are:
+ - Chests (Container): Completely emptied
+ - Terrain (TerrainComp): Deleted / Missing?
+ - Rocks (MineRock): Completely reset to original state
+ - Wards (PrivateArea): Seem to be disabled, and possibly missing owner (but permitted are not reset)
+ - Beds (Bed): Claimee cleared, and appears non-interactive upon clicking
+ - Signs (Sign): Completely cleared
+ - Fermenter (Fermenter): Completely reset
+ - One-time spawners (SpawnPrefab?): Completely reset (IE Greydwarf houses will respawn mobs around them on reload when player approaches
+
+These are some things I have noticed to be broken, along with their descriptions. This is just an observation, and no in-depth experimenting has been carried out. There could be more, or I might have misunderstood some occurrences. For some reason, a Windows Update seemed to have broken Dnspy debugging with Valheim. I have not tried in over a week, so it might be different now, but I'm not too optimistic... Debugging has really helped me solve issues like this in the past, so I hope it will work again soon.
+
+I've also worked on the Lua API a bit, and would like to try out documentation one day, just to start explaining things in the API. I will do this only once most of the functions are set-in-stone and the design seems stable and solid enough (mostly). The whole point of this project/server is easy customizability, something the Valheim Dedicated server does not have. I feel like mods break the game, and are a hassle to deal with... Quality of life mods make sense, but client-side anticheats do not...
+
 ### 2/11/2023 + TODO
 
 ![Vegetation rotations](/docs/pics/experimental-rotations.jpg)
