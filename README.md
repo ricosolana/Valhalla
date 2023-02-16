@@ -13,6 +13,22 @@ A lot of the inner-workings of Valheim are completely client-side, leaving thing
 No longer being developed. Graphics programming is not my thing :(
 
 ## Progress
+### 2/15/2023 + TODO
+
+Development might slow down for the next few weeks, but I have some things in mind regarding world saving. World loading seems to work flawlessly, but world saving appears to be problematic. Several areas regarding ZDOs might involve more than ZDO serialization, and the affected parts of this are:
+ - Chests (Container): Completely emptied
+ - Terrain (TerrainComp): Deleted / Missing?
+ - Rocks (MineRock): Completely reset to original state
+ - Wards (PrivateArea): Seem to be disabled, and possibly missing owner (but permitted are not reset)
+ - Beds (Bed): Claimee cleared, and appears non-interactive upon clicking
+ - Signs (Sign): Completely cleared
+ - Fermenter (Fermenter): Completely reset
+ - One-time spawners (SpawnPrefab?): Completely reset (IE Greydwarf houses will respawn mobs around them on reload when player approaches
+
+These are some things I have noticed to be broken, along with their descriptions. This is just an observation, and no in-depth experimenting has been carried out. There could be more, or I might have misunderstood some occurrences. For some reason, a Windows Update seemed to have broken Dnspy debugging with Valheim. I have not tried in over a week, so it might be different now, but I'm not too optimistic... Debugging has really helped me solve issues like this in the past, so I hope it will work again soon.
+
+I've also worked on the Lua API a bit, and would like to try out documentation one day, just to start explaining things in the API. I will do this only once most of the functions are set-in-stone and the design seems stable and solid enough (mostly). The whole point of this project/server is easy customizability, something the Valheim Dedicated server does not have. I feel like mods break the game, and are a hassle to deal with... Quality of life mods make sense, but client-side anticheats do not...
+
 ### 2/11/2023 + TODO
 
 ![Vegetation rotations](/docs/pics/experimental-rotations.jpg)
