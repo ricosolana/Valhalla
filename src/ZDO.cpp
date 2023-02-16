@@ -271,13 +271,24 @@ void ZDO::Serialize(DataWriter& pkg) const {
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticks) == 8);
 
+#ifndef RUN_TESTS
     assert(m_prefab);
     pkg.Write(m_prefab->m_persistent);
     pkg.Write(m_prefab->m_distant);
+#else
+    pkg.Write(false);
+    pkg.Write(false);
+#endif
+
     pkg.Write(m_rev.m_ticks.count());
     pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
+#ifndef RUN_TESTS
     pkg.Write(m_prefab->m_type); // sbyte
     pkg.Write(m_prefab->m_hash);
+#else
+    pkg.Write(ObjectType::Default); // sbyte
+    pkg.Write<HASH_t>(0);
+#endif
     pkg.Write(m_rotation);
 
     // sections organized like this:
@@ -311,6 +322,7 @@ void ZDO::Deserialize(DataReader& pkg) {
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<ObjectType>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();
+#ifndef RUN_TESTS
     if (!m_prefab && !(this->m_prefab = PrefabManager()->GetPrefab(prefabHash))) {
         // If the prefab is initially being assigned and the prefab entry does not exist, throw
         //  (client exception, since clients fault)
@@ -319,6 +331,7 @@ void ZDO::Deserialize(DataReader& pkg) {
     }
 
     assert(m_prefab);
+#endif
 
     this->m_rotation = pkg.Read<Quaternion>();    
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();

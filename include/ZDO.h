@@ -107,31 +107,62 @@ private:
         return 0b1 << GetOrdinal<T>();
     }
 
-
-
+#ifdef RUN_TESTS // hmm
+public:
+#endif
     template<TrivialSyncType T>
     static constexpr HASH_t ToShiftHash(HASH_t hash) {
-        constexpr auto shift = GetOrdinal<T>();
+        auto shift = GetOrdinal<T>() + 7; // [7, 14]
 
-        return (hash
-            + (shift * shift)
-            ^ shift)
-            ^ (shift << shift);
+        // create key
+        shift ^= shift << 2;
+        shift ^= shift << 3;
+        shift ^= shift << 4;
+        shift <<= shift - 4;
+        //shift ^= hash;
+        
+        // mutate hash
+        hash ^= shift << (shift - 3);
+        hash ^= shift << (shift + 4);
+        hash ^= (hash >> 8) & 0xFF;
+        hash ^= (hash >> 24) & 0xFF;
+        hash ^= shift;
+
+        return hash;
+
+        //return (hash
+        //    ^ shift)
+        //    ^ (shift << (shift + 3));
     }
 
     template<TrivialSyncType T>
     static constexpr HASH_t FromShiftHash(HASH_t hash) {
-        constexpr auto shift = GetOrdinal<T>();
+        auto shift = GetOrdinal<T>() + 7;
 
-        return
-            ((hash
-                ^ (shift << shift))
-                ^ shift)
-            - (shift * shift);
+        // create key
+        shift ^= shift << 2;
+        shift ^= shift << 3;
+        shift ^= shift << 4;
+        shift <<= shift - 4;
+        //shift ^= hash;
+
+        // reverse hash
+        hash ^= shift;
+        hash ^= (hash >> 24) & 0xFF;
+        hash ^= (hash >> 8) & 0xFF;
+        hash ^= shift << (shift + 4);
+        hash ^= shift << (shift - 3);
+
+        return hash;
+
+        //return
+        //    ((hash
+        //        ^ (shift << (shift + 3)))
+        //        ^ shift);
     }
 
 
-
+private:
     class Ord {
     private:
         // Allocated bytes of [Ordinal, member...]
@@ -299,7 +330,7 @@ private:
         else {
             m_ordinalMask |= GetOrdinalMask<T>();
         }
-        m_members.insert({ key, Ord(value) });
+        assert(m_members.insert({ key, Ord(value) }).second); // It must be uniquely inserted
     }
 
     void _Set(HASH_t key, const void* value, Ordinal ordinal) {
@@ -374,11 +405,11 @@ private:
                         end_mark += extraCount;
                     } else {
                         assert(count < 0x80);
-                        writer.Write(count); // basic write in place
+                        writer.Write((BYTE_t)count); // basic write in place
                     }
                 }
                 else {
-                    writer.Write(count);
+                    writer.Write((BYTE_t)count);
                 }
 
                 writer.SetPos(end_mark);
