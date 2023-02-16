@@ -23,13 +23,23 @@ ZDO::ZDO(const NetID& id, const Vector3& pos)
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
-    pkg.Write(this->m_prefab->m_persistent);      
+#ifdef RUN_TESTS
+    pkg.Write(false);
+#else
+    pkg.Write(this->m_prefab->m_persistent);
+#endif
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticks.count());
     pkg.Write(VConstants::PGW);
+#ifdef RUN_TESTS
+    pkg.Write(ObjectType::Default);
+    pkg.Write(false);
+    pkg.Write<HASH_t>(0);
+#else
     pkg.Write(this->m_prefab->m_type);
     pkg.Write(this->m_prefab->m_distant);
     pkg.Write(this->m_prefab->m_hash);
+#endif
     pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_position));
     pkg.Write(this->m_position);
     pkg.Write(this->m_rotation);
@@ -70,8 +80,11 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     }
 
     if (worldVersion >= 17)
-        if (!(this->m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>())))
+        if (!(this->m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>()))) {
+#ifndef RUN_TESTS
             throw std::runtime_error("unknown zdo prefab");
+#endif
+        }
 
     /*this->m_sector = */ pkg.Read<Vector2i>();
     this->m_position = pkg.Read<Vector3>();

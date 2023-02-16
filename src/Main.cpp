@@ -10,6 +10,7 @@
 #include "ValhallaServer.h"
 #include "VUtilsRandom.h"
 #include "CompileSettings.h"
+#include "PrefabManager.h"
 
 #include "Tests.h"
 
@@ -64,14 +65,14 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if FALSE
+#ifdef RUN_TESTS
     fs::current_path("./data/tests/");
     //Tests::Test_QuaternionLook();
 
     //Tests::Test_PeerLuaConnect();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
-    //Tests::Test_ZDO();
+    Tests::Test_ZDO();
     //Tests::Test_ResourceReadWrite();
     //Tests::Test_Random();
     //Tests::Test_Perlin();
