@@ -466,7 +466,21 @@ void IModManager::LoadAPI() {
 
     );
 
+    //m_state.new_usertype<ObjectView>("ObjectView",
+    //    sol::constructors<ObjectView(ZDO*)>(),
+    //    "zdo", &ObjectView::m_zdo
+    //);
 
+    m_state.new_usertype<Ward>("Ward",
+        sol::constructors<Ward(ZDO*)>(),
+        "zdo", &Ward::m_zdo,
+        "creator", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
+        "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
+        "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
+        "IsPermitted", &Ward::IsPermitted
+    );
+
+    //Ward *ward = new Ward();
 
     auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
     apiTable["ServerVersion"] = SERVER_VERSION;
