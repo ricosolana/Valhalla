@@ -1,14 +1,5 @@
 todo:
-    - fix zdos on save:
-        chests Resetting
-        Terrain Resetting
-        Rocks Resetting
-        Wards disabling
-        Signs Resetting
-        Fermenter Resetting
-        Beds Resetting
-        - determine the underlying cause for this
-        - why does loading a valid world world, but saving->loading a world breaks things? there must be something that the original server does on save per zdo object
+    - Use 64bit hash for ZDO map (mutated-only) so that collisions become nearly impossible
    
     - trying to get a way to represent zdo-components (members) without convoluting everything
         - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
@@ -75,6 +66,20 @@ todo:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
 finished:
+    - Container::inUse wrongly named zdo hash
+        typo
+
+    - fix zdos on save:
+        chests Resetting
+        Terrain Resetting
+        Rocks Resetting
+        Wards disabling
+        Signs Resetting
+        Fermenter Resetting
+        Beds Resetting
+        
+        - ZDO save -> write issue fixed
+
     - consolidate all player notification messages into one method
         single useful Message(msg, type)
 

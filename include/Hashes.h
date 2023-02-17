@@ -386,7 +386,7 @@ namespace Hashes {
         };
 
         enum class Container_ZDO : HASH_t {
-            IN_USE = __H("inUse"),
+            IN_USE = __H("InUse"),
             ITEMS = __H("items"),
         };
 

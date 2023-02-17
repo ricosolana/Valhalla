@@ -378,7 +378,6 @@ private:
             //  char: count
             //      string: key
             //      F V Q I L S A: value
-            //  char: null '\0' byte
 
             if constexpr (sizeof(CountType) == 1)
                 writer.Write((BYTE_t)0); // placeholder byte; also 0 byte
@@ -409,7 +408,7 @@ private:
                     }
                 }
                 else {
-                    writer.Write((BYTE_t)count);
+                    writer.Write(count);
                 }
 
                 writer.SetPos(end_mark);
