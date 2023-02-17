@@ -65,6 +65,8 @@ private:
     //    ARRAY,      // 1 << (8 - 1) = 128
     //};
 
+    using SHIFTHASH_t = uint64_t;
+
     using Ordinal = uint8_t;
 
     static constexpr Ordinal ORD_FLOAT = 0;
@@ -111,54 +113,38 @@ private:
 public:
 #endif
     template<TrivialSyncType T>
-    static constexpr HASH_t ToShiftHash(HASH_t hash) {
-        auto shift = GetOrdinal<T>() + 7; // [7, 14]
+    static constexpr SHIFTHASH_t ToShiftHash(HASH_t hash) {
+        size_t key = std::hash<Ordinal>{}(GetOrdinal<T>());
+                
+        auto mut = static_cast<SHIFTHASH_t>(hash);
 
-        // create key
-        shift ^= shift << 2;
-        shift ^= shift << 3;
-        shift ^= shift << 4;
-        shift <<= shift - 4;
-        //shift ^= hash;
-        
-        // mutate hash
-        hash ^= shift << (shift - 3);
-        hash ^= shift << (shift + 4);
-        hash ^= (hash >> 8) & 0xFF;
-        hash ^= (hash >> 24) & 0xFF;
-        hash ^= shift;
+        // mutate deterministically so that this process is reversible
+        mut ^= key;
+        mut ^= ((key >> 0) & 0xFF) << 56;
+        //mut ^= ((mut >> 7) & 0xFF) << 28;
+        mut ^= ((key >> 14) & 0xFF) << 14;
+        //mut ^= ((mut >> 28) & 0xFF) << 7;
+        mut ^= ((key >> 56) & 0xFF) << 0;
+        mut ^= key;
 
-        return hash;
-
-        //return (hash
-        //    ^ shift)
-        //    ^ (shift << (shift + 3));
+        return mut;
     }
 
     template<TrivialSyncType T>
-    static constexpr HASH_t FromShiftHash(HASH_t hash) {
-        auto shift = GetOrdinal<T>() + 7;
+    static constexpr HASH_t FromShiftHash(SHIFTHASH_t hash) {
+        size_t key = std::hash<Ordinal>{}(GetOrdinal<T>());
 
-        // create key
-        shift ^= shift << 2;
-        shift ^= shift << 3;
-        shift ^= shift << 4;
-        shift <<= shift - 4;
-        //shift ^= hash;
+        auto mut = static_cast<SHIFTHASH_t>(hash);
 
-        // reverse hash
-        hash ^= shift;
-        hash ^= (hash >> 24) & 0xFF;
-        hash ^= (hash >> 8) & 0xFF;
-        hash ^= shift << (shift + 4);
-        hash ^= shift << (shift - 3);
-
-        return hash;
-
-        //return
-        //    ((hash
-        //        ^ (shift << (shift + 3)))
-        //        ^ shift);
+        mut ^= key;
+        mut ^= ((key >> 56) & 0xFF) << 0;
+        //mut ^= ((mut >> 28) & 0xFF) << 7;
+        mut ^= ((key >> 14) & 0xFF) << 14;
+        //mut ^= ((mut >> 7) & 0xFF) << 28;
+        mut ^= ((key >> 0) & 0xFF) << 56;
+        mut ^= key;
+        
+        return static_cast<HASH_t>(mut & 0xFFFFFFFF);
     }
 
 
@@ -280,7 +266,7 @@ private:
         // Used when saving or serializing internal ZDO information
         //  Returns whether write was successful (if type match)
         template<TrivialSyncType T>
-        bool Write(DataWriter& writer, HASH_t shiftHash) const {
+        bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
             if (!IsType<T>())
                 return false;
 
@@ -299,8 +285,8 @@ private:
     template<TrivialSyncType T>
     const T* _Get(HASH_t key) const {
         if (m_ordinalMask & GetOrdinalMask<T>()) {
-            key = ToShiftHash<T>(key);
-            auto&& find = m_members.find(key);
+            auto mut = ToShiftHash<T>(key);
+            auto&& find = m_members.find(mut);
             if (find != m_members.end()) {
                 return find->second.Get<T>();
             }
@@ -314,14 +300,14 @@ private:
     // Throws on type mismatch
     template<TrivialSyncType T>
     void _Set(HASH_t key, const T& value) {
-        key = ToShiftHash<T>(key);
+        auto mut = ToShiftHash<T>(key);
 
         // Quickly check whether type is in map
         if (m_ordinalMask & GetOrdinalMask<T>()) {
 
             // Check whether the exact hash is in map
             //  If map contains, assumed a value reassignment (of same type)
-            auto&& find = m_members.find(key);
+            auto&& find = m_members.find(mut);
             if (find != m_members.end()) {
                 find->second.Set<T>(value);
                 return;
@@ -330,7 +316,8 @@ private:
         else {
             m_ordinalMask |= GetOrdinalMask<T>();
         }
-        assert(m_members.insert({ key, Ord(value) }).second); // It must be uniquely inserted
+        bool insert = m_members.insert({ mut, Ord(value) }).second;
+        assert(insert); // It must be uniquely inserted
     }
 
     void _Set(HASH_t key, const void* value, Ordinal ordinal) {
@@ -351,7 +338,7 @@ private:
 
 
 public:     Rev m_rev = {};
-private:    robin_hood::unordered_map<HASH_t, Ord> m_members;
+private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;

@@ -141,13 +141,13 @@ namespace Tests {
         {
             {
 #ifdef RUN_TESTS
-                const HASH_t hash1 = 0b1101010001001111010101;
+                const HASH_t hash1 = 14516234;
                 assert(ZDO::FromShiftHash<float>(ZDO::ToShiftHash<float>(hash1)) == hash1);
 
-                const HASH_t hash2 = 0b0010100101011101011011;
+                const HASH_t hash2 = 56827231;
                 assert(ZDO::FromShiftHash<int>(ZDO::ToShiftHash<int>(hash2)) == hash2);
 
-                const HASH_t hash3 = 0b0101010100101011010001;
+                const HASH_t hash3 = 906582783;
                 assert(ZDO::FromShiftHash<std::string>(ZDO::ToShiftHash<std::string>(hash3)) == hash3);
 #endif
             }
