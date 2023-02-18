@@ -7,6 +7,7 @@
 #include <cassert>
 #include <utility>
 #include <array>
+#include <filesystem>
 
 #include <optick.h>
 #include <easylogging++.h>

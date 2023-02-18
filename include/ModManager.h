@@ -3,8 +3,8 @@
 #include <sol/sol.hpp>
 #include <robin_hood.h>
 
-#include "VUtilsString.h"
 #include "VUtils.h"
+#include "VUtilsString.h"
 
 enum class DataType {
     BYTES,
@@ -49,7 +49,7 @@ class IModManager {
         sol::environment m_env;
 
         fs::path m_entry;
-        fs::file_time_type m_lastModified;
+        //fs::file_time_type m_lastModified;
 
         std::string m_version;
         std::string m_apiVersion;
@@ -60,7 +60,7 @@ class IModManager {
             sol::environment env,
             fs::path entry) 
             : m_name(name), m_env(std::move(env)), 
-            m_entry(entry), m_lastModified(fs::last_write_time(entry)) {}
+            m_entry(entry)/*, m_lastModified(fs::last_write_time(entry))*/ {}
 
         void Error(const std::string& s) {
             LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
