@@ -292,51 +292,40 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 
 	if (SERVER_SETTINGS.zdoSmartAssign) {
 
-		// Get all peers far from each other, along with the closest peer distance
-		std::list<std::pair<Peer*, float>> peers;
+		float minSqDist = std::numeric_limits<float>::max();
+		Vector3 closestPos;
+
+		// get the distance to the closest peer
 		for (auto&& pair : NetManager()->GetPeers()) {
 			auto&& otherPeer = pair.second;
 
-			// Only if the peers are within the same active zones
+			if (otherPeer.get() == peer)
+				continue;
+
 			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer->m_uuid))
 				continue;
 
-			// Only add the current peer if they are not near ANY other peers
-			float minSqDist = std::numeric_limits<float>::max();
-			//for (auto&& pair2 : peers) {
-			for (auto&& itr = peers.begin(); itr != peers.end(); ) {
-				auto&& peer2 = itr->first;
-				minSqDist = std::min(minSqDist, peer2->m_pos.SqDistance(peer->m_pos));
+			float sqDist = otherPeer->m_pos.SqDistance(peer->m_pos);
+			if (sqDist < minSqDist) {
+				minSqDist = sqDist;
+				closestPos = otherPeer->m_pos;
 
-				// Do not add the pair of peers if they are close
-				if (minSqDist < 12 * 12)
-					itr = peers.erase(itr);
-				else {
-					itr->second = minSqDist;
-					++itr;
+				if (minSqDist <= 12 * 12) {
+					break;
 				}
 			}
-
-			if (minSqDist > 12 * 12)
-				peers.push_back({ otherPeer.get(), minSqDist });
 		}
 
-		// reassign zdo-owners nearby to peers
-		for (auto&& otherPair : peers) {
-
-			// Skip this peer
-			if (otherPair.first == peer)
-				continue;
-
+		if (minSqDist != std::numeric_limits<float>::max() 
+			&& minSqDist > 12 * 12) {
 			// Get zdos immediate to this peer
 			auto zdos = GetZDOs_Radius(peer->m_pos,
-				std::sqrt(otherPair.second) * 0.5f - 2.f);
+				std::sqrt(minSqDist) * 0.5f - 2.f);
 
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
 				if (zdo->m_prefab->HasFlag(Prefab::Flag::Persistent)
-					//&& zdo->m_owner != peer->m_uuid // Ensure the ZDO is not assigned to me
-					&& zdo->m_position.SqDistance(otherPair.first->m_pos) > 12 * 12 // Ensure the ZDO is far from the other player
+					&& zdo->m_position.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo->SetOwner(peer->m_uuid);
 				}

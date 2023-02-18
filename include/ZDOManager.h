@@ -53,6 +53,8 @@ private:
 	void InvalidateSector(ZDO* zdo);
 
 	void AssignOrReleaseZDOs(Peer* peer);
+	//void SmartAssignZDOs();
+
 	void EraseZDO(const NetID& uid);
 	void SendAllZDOs(Peer* peer);
 	bool SendZDOs(Peer* peer, bool flush);
