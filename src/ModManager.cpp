@@ -520,7 +520,7 @@ void IModManager::LoadAPI() {
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
         [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); }
     );
-    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
+    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
 
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };

@@ -473,8 +473,8 @@ std::list<ZDO*> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius) {
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
 	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
 
-	for (auto z=minZone.y; z < maxZone.y; z++) {
-		for (auto x = minZone.x; x < maxZone.x; x++) {
+	for (auto z=minZone.y; z <= maxZone.y; z++) {
+		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			//FindObjects({ x, z }, out);
 			int num = SectorToIndex({x, z});
 			if (num != -1) {
@@ -498,8 +498,8 @@ std::list<ZDO*> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radi
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
 	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
 
-	for (auto z = minZone.y; z < maxZone.y; z++) {
-		for (auto x = minZone.x; x < maxZone.x; x++) {
+	for (auto z = minZone.y; z <= maxZone.y; z++) {
+		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			//FindObjects({ x, z }, out);
 			int num = SectorToIndex({ x, z });
 			if (num != -1) {
@@ -520,8 +520,8 @@ ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t p
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
 	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
 
-	for (auto z = minZone.y; z < maxZone.y; z++) {
-		for (auto x = minZone.x; x < maxZone.x; x++) {
+	for (auto z = minZone.y; z <= maxZone.y; z++) {
+		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			//FindObjects({ x, z }, out);
 			int num = SectorToIndex({ x, z });
 			if (num != -1) {

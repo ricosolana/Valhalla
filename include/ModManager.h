@@ -108,7 +108,7 @@ public:
             this->m_eventStatus = EventStatus::DEFAULT;
 
             // Multiple tables
-            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
+            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_object(m_state, std::ref(params)))...);
 
             // Single table
             //auto&& lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
