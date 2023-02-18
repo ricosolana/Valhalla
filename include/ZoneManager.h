@@ -215,6 +215,10 @@ public:
 
 	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
 
+	//bool IsPeerNearby(const Vector3& pos, OWNER_t uid) {
+	//	return IsPeerNearby(WorldToZonePos(pos), uid);
+	//}
+
 	void ResetGlobalKeys();
 
 	//bool GetWorldNormal(const Vector3& worldPos, Vector3& normal);
