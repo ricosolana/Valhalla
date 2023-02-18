@@ -26,7 +26,7 @@ void ZDO::Save(DataWriter& pkg) const {
 #ifdef RUN_TESTS
     pkg.Write(false);
 #else
-    pkg.Write(this->m_prefab->m_persistent);
+    pkg.Write(this->m_prefab->HasFlag(Prefab::Flag::Persistent));
 #endif
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticks.count());
@@ -37,7 +37,7 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write<HASH_t>(0);
 #else
     pkg.Write(this->m_prefab->m_type);
-    pkg.Write(this->m_prefab->m_distant);
+    pkg.Write(this->m_prefab->HasFlag(Prefab::Flag::Persistent));
     pkg.Write(this->m_prefab->m_hash);
 #endif
     pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_position));
@@ -266,15 +266,15 @@ ZoneID ZDO::Sector() const {
 }
 
 void ZDO::Serialize(DataWriter& pkg) const {
-    static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_persistent) == 1);
-    static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
+    //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_persistent) == 1);
+    //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticks) == 8);
 
 #ifndef RUN_TESTS
     assert(m_prefab);
-    pkg.Write(m_prefab->m_persistent);
-    pkg.Write(m_prefab->m_distant);
+    pkg.Write(m_prefab->HasFlag(Prefab::Flag::Persistent));
+    pkg.Write(m_prefab->HasFlag(Prefab::Flag::Distant));
 #else
     pkg.Write(false);
     pkg.Write(false);

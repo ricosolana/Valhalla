@@ -103,6 +103,8 @@ public:
 	// Get all ZDOs strictly within a radius by prefab
 	std::list<ZDO*> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
+	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
+
 	void ForceSendZDO(const NetID& id);
 };
 

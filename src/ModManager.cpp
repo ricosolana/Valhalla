@@ -379,10 +379,27 @@ void IModManager::LoadAPI() {
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
+    //m_state.new_enum("PrefabFlag",
+    //
+    //)
+
+    m_state.new_usertype<Prefab>("Prefab",
+        "name", &Prefab::m_name,
+        "hash", &Prefab::m_hash
+        //"flags", &Prefab::m_flags,
+        //"HasFlag", 
+    );
+
+    auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();
+    prefabApiTable["GetPrefab"] = sol::overload(
+        [](const std::string& name) { return PrefabManager()->GetPrefab(name); },
+        [](HASH_t hash) { return PrefabManager()->GetPrefab(hash); }
+    );
+
     m_state.new_usertype<ZDO>("ZDO",
         "id", &ZDO::m_id,
         "owner", &ZDO::m_owner,
-        "prefab", sol::property([](ZDO& self) { return self.GetPrefab(); }),
+        "prefab", sol::property(&ZDO::GetPrefab),
         "pos", sol::property(
             [](ZDO& self) { return self.Position(); },
             [](ZDO& self, const Vector3& pos) { self.SetPosition(pos); }
@@ -471,15 +488,20 @@ void IModManager::LoadAPI() {
     //    "zdo", &ObjectView::m_zdo
     //);
 
-    m_state.new_usertype<Ward>("Ward",
-        sol::constructors<Ward(ZDO*)>(),
-        "zdo", &Ward::m_zdo,
-        "creator", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
-        "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
-        "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
-        "IsPermitted", &Ward::IsPermitted
-    );
+    {
+        auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
+        viewsTable.new_usertype<Ward>("Ward",
+            sol::constructors<Ward(ZDO*)>(),
+            "zdo", &Ward::m_zdo,
+            "creator", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
+            "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
+            "AddPermitted", &Ward::AddPermitted,
+            "RemovePermitted", &Ward::RemovePermitted,
+            "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
+            "IsPermitted", &Ward::IsPermitted
+        );
+    }
     //Ward *ward = new Ward();
 
     auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
@@ -498,6 +520,8 @@ void IModManager::LoadAPI() {
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
         [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); }
     );
+    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
+
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 

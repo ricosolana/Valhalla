@@ -2364,7 +2364,7 @@ namespace Hashes {
         static constexpr HASH_t ShieldSilver = -1248409586;
         static constexpr HASH_t ShieldWood = 897989326;
         static constexpr HASH_t ShieldWoodTower = 1729114779;
-        static constexpr HASH_t ship_construction = -1245442852; // seems unused
+        static constexpr HASH_t ship_construction = -1245442852; // seems to be an unused prefab (literally ship being constructed, spawns a ship after a while)
         static constexpr HASH_t shipwreck_karve_bottomboards = 121363955;
         static constexpr HASH_t shipwreck_karve_bow = -2111136205;
         static constexpr HASH_t shipwreck_karve_chest = -759801912;

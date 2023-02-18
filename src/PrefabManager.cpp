@@ -39,14 +39,20 @@ void IPrefabManager::Init() {
         auto prefab = std::make_unique<Prefab>();
         prefab->m_name = pkg.Read<std::string>();
         prefab->m_hash = VUtils::String::GetStableHashCode(prefab->m_name);
-        prefab->m_distant = pkg.Read<bool>();
-        prefab->m_persistent = pkg.Read<bool>();
         prefab->m_type = (ZDO::ObjectType)pkg.Read<int32_t>();
-        if (pkg.Read<bool>()) // sync initial scale
-            prefab->m_localScale = pkg.Read<Vector3>();
-        else {
-            prefab->m_localScale = Vector3(1, 1, 1);
-        }
+
+        prefab->m_localScale = pkg.Read<Vector3>();
+
+        prefab->m_flags = pkg.Read<uint64_t>();
+
+        //prefab->m_distant = pkg.Read<bool>();
+        //prefab->m_persistent = pkg.Read<bool>();
+        //prefab->m_type = (ZDO::ObjectType)pkg.Read<int32_t>();
+        //if (pkg.Read<bool>()) // sync initial scale
+        //    prefab->m_localScale = pkg.Read<Vector3>();
+        //else {
+        //    prefab->m_localScale = Vector3(1, 1, 1);
+        //}
 
         m_prefabs.insert({
             VUtils::String::GetStableHashCode(prefab->m_name),
@@ -82,7 +88,7 @@ ZDO* IPrefabManager::Instantiate(const Prefab* prefab, const Vector3& pos, const
     //zdo->m_prefab = prefab->m_hash;
     zdo->m_prefab = prefab;
 
-    if (prefab->m_localScale != Vector3(1, 1, 1))
+    if (prefab->HasFlag(Prefab::Flag::SyncInitialScale))
         zdo->Set("scale", prefab->m_localScale);
 
     return zdo;
