@@ -280,6 +280,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
+				// TODO remove HasOwner check
 				if (!(zdo->HasOwner() && ZoneManager()->IsPeerNearby(zdo->Sector(), zdo->m_owner))
 					&& ZoneManager()->ZonesOverlap(zdo->Sector(), zone)) {
 					
@@ -288,6 +289,44 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 			}
 		}
 	}
+
+	ZDO* peerZDO = GetZDO(peer->m_characterID);
+	if (peerZDO) {
+
+		// reassign zdo-owners for nearby peers in radius of 12 who are not near any other peers
+		for (auto&& pair : NetManager()->GetPeers()) {
+			auto&& other = pair.second;
+
+			if (peer == other.get())
+				continue;
+
+			ZDO* otherZDO = GetZDO(other->m_characterID);
+			if (otherZDO) {
+				auto sqDist = peerZDO->m_position.SqDistance(otherZDO->m_position);
+
+				// Skip if player is close to another player
+				if (sqDist > 12 * 12) {
+
+					// Get zdos immediate to this peer
+					auto zdos = GetZDOs_Radius(peerZDO->m_position, std::sqrt(sqDist) * 0.8f - 2.f);
+
+					// Basically reassign zdos from another owner to me instead
+					for (auto&& zdo : zdos) {
+						if (zdo->m_prefab->HasFlag(Prefab::Flag::Persistent)
+							//&& zdo->HasOwner() // ensure it has an owner
+							&& zdo->m_owner != peer->m_uuid // Ensure the ZDO is not assigned to me
+							&& zdo->m_position.SqDistance(otherZDO->m_position) > 12 * 12 // Ensure the ZDO is far from the other player
+							) { 
+							zdo->SetOwner(peer->m_uuid);
+						}
+					}
+
+				}
+
+			}
+		}
+	}
+
 }
 
 void IZDOManager::EraseZDO(const NetID& uid) {

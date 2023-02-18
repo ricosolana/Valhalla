@@ -228,6 +228,7 @@ bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone)
 
 bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
     auto&& peer = NetManager()->GetPeer(uid);
+    assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer) return ZonesOverlap(zone, peer->m_pos);
     return false;
 }
