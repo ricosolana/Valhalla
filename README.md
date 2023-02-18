@@ -28,6 +28,14 @@ All other settings are set in the `server.yml`. If it seems empty, try removing 
 Properly shutdown the server by using ctrl+c.
 
 ## Progress
+### 2/18/2023 + TODO
+
+World saving is fixed (I was wrongly writing a utf8 char instead of byte for ZDO members, hence turning map member-data into garbage). 
+
+I would like to address networking next, more specifically, client-side processing and latency issues caused by it for other clients. The zdo-owner manages physics, packets, and processing for that ZDO. Clients in Valheim take control of every object within 4 zones in radius around them. Clients who are not the owner, who for instance, attack something, that data has to travel to the server, to the owner-client, then back to the server, then to the initial client. That is pretty lengthy. There is no need for this when the owner is 55m away in a house afk, and other players are doing whatever, dealing with 125ms latency and throttling due to limited bandwidth. 
+
+I will test out some applications to doing this and see how well it works. I am using Clumsy latency simulator https://github.com/jagt/clumsy for replicating realistic situations with poor latency. It so far works well, and will give a good demonstration when I test high latencies and ways to accomodate against it. I could also assign the least laggy player with being the owner, only if the current owner has very poor latency. I am not fully sure which approach is best, but this is a start.
+
 ### 2/15/2023 + TODO
 
 Development might slow down for the next few weeks, but I have some things in mind regarding world saving. World loading seems to work flawlessly, but world saving appears to be problematic. Several areas regarding ZDOs might involve more than ZDO serialization, and the affected parts of this are:
