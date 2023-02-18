@@ -54,8 +54,12 @@ public:
     //  state if called from mid-frame
     virtual bool Connected() const = 0;
 
+
+
     // Returns the size in bytes of packets queued for sending
     virtual unsigned int GetSendQueueSize() const = 0;
+
+    virtual unsigned int GetPing() const = 0;
 };
 
 
@@ -84,7 +88,9 @@ public:
     std::string GetHostName() const override;
     std::string GetAddress() const override;
     bool Connected() const override;
+
     unsigned int GetSendQueueSize() const override;
+    unsigned int GetPing() const override;
 
 private:
     void SendQueued();

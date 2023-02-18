@@ -100,6 +100,9 @@ public:
 	std::list<ZDO*> GetZDOs_Prefab(HASH_t prefabHash);
 	// Get all ZDOs strictly within a radius
 	std::list<ZDO*> GetZDOs_Radius(const Vector3& pos, float radius);
+	// Gets all ZDOs strictly within a sqradius
+	//std::list<ZDO*> GetZDOs_SqRadius(const Vector3& pos, float sqradius);
+	
 	// Get all ZDOs strictly within a radius by prefab
 	std::list<ZDO*> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
