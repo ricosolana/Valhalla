@@ -280,7 +280,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
-				if (!(zdo->HasOwner() && ZoneManager()->IsInPeerActiveArea(zdo->Sector(), zdo->m_owner))
+				if (!(zdo->HasOwner() && ZoneManager()->IsPeerNearby(zdo->Sector(), zdo->m_owner))
 					&& ZoneManager()->ZonesOverlap(zdo->Sector(), zone)) {
 					
 					zdo->SetOwner(peer->m_uuid);
@@ -304,7 +304,7 @@ void IZDOManager::EraseZDO(const NetID& uid) {
 			auto&& find = m_objectsByPrefab.find(zdo->m_prefab->m_hash); // .erase(zdo->)
 			if (find != m_objectsByPrefab.end()) find->second.erase(zdo);
 		}
-		m_objectsByID.erase(zdo->ID());
+		m_objectsByID.erase(zdo->m_id);
 	}
 
 	auto&& peers = NetManager()->GetPeers();
@@ -338,6 +338,7 @@ void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<ZDO*>& sec
 			// Skip the center zone
 			if (current == zone)
 				continue;
+
 			GetZDOs_Zone(current, sectorObjects);
 		}
 	}

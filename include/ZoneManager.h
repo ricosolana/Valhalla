@@ -213,7 +213,7 @@ public:
 	bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
 	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
-	bool IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid);
+	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
 
 	void ResetGlobalKeys();
 
