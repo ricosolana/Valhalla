@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
             //std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME, ec);
     }
 
-    LOG(INFO) << "Press ctrl+c to exit";
+    
 
 #ifndef _DEBUG
     try {

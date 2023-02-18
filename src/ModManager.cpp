@@ -23,24 +23,25 @@ IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
 
-std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& folderName,
-    std::string& outEntry) {
+std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& folderName) {
 
     YAML::Node loadNode;
 
-    auto path = fs::path("mods") / folderName / "modInfo.yml";
+    auto modPath = fs::path("mods") / folderName;
+    auto modInfoPath = modPath / "modInfo.yml";
 
-    if (auto opt = VUtils::Resource::ReadFileString(path)) {
+    if (auto opt = VUtils::Resource::ReadFileString(modInfoPath)) {
         loadNode = YAML::Load(opt.value());
     }
     else {
-        throw std::runtime_error(std::string("unable to open ") + path.string());
+        throw std::runtime_error(std::string("unable to open ") + modInfoPath.string());
     }
 
-    outEntry = loadNode["entry"].as<std::string>();
-
     auto mod(std::make_unique<Mod>(
-        loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals())));
+        loadNode["name"].as<std::string>(), 
+        sol::environment(m_state, sol::create, m_state.globals()), 
+        modPath / (loadNode["entry"].as<std::string>() + ".lua"))
+    );
 
     mod->m_env["_G"] = mod->m_env;
 
@@ -49,7 +50,7 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     mod->m_description = loadNode["description"].as<std::string>("");
     mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
 
-    if (this->mods.contains(mod->m_name)) {
+    if (this->m_mods.contains(mod->m_name)) {
         throw std::runtime_error("mod with duplicate name");
     }
 
@@ -666,10 +667,9 @@ void IModManager::Init() {
                 if (dirname.starts_with("--"))
                     continue;
 
-                std::string entry;
-                auto mod = LoadModInfo(dirname, entry);
+                auto mod = LoadModInfo(dirname);
 
-                auto path(fs::path("mods") / dirname / (entry + ".lua"));
+                auto path(mod->m_entry);
                 if (auto opt = VUtils::Resource::ReadFileString(path)) {
                     sol::load_result script = m_state.load(*opt);
                     LoadMod(mod.get());
@@ -681,7 +681,7 @@ void IModManager::Init() {
 
                 LOG(INFO) << "Loaded mod '" << mod->m_name << "'";
 
-                mods.insert({ mod->m_name, std::move(mod) });
+                m_mods.insert({ mod->m_name, std::move(mod) });
             }
         }
         catch (const std::exception& e) {
@@ -689,7 +689,7 @@ void IModManager::Init() {
         }
     }
 
-    LOG(INFO) << "Loaded " << mods.size() << " mods";
+    LOG(INFO) << "Loaded " << m_mods.size() << " mods";
 
     CallEvent("Enable");
 }
@@ -697,5 +697,42 @@ void IModManager::Init() {
 void IModManager::Uninit() {
     CallEvent("Disable");
     m_callbacks.clear();
-    mods.clear();
+    m_mods.clear();
+}
+
+void IModManager::Update() {
+    // Was testing out runtime script reloading, but it seems dangerous
+    /*
+    //PERIODIC_NOW(1s, {
+        for (auto&& pair : m_mods) {
+            auto&& mod = pair.second;
+            auto last = fs::last_write_time(mod->m_entry);
+            if (last != mod->m_lastModified) {
+                // reload the mod
+
+                // first release all callbacks
+                for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+                    auto&& callbacks = itr->second;
+                    for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+                        if (sol::get_environment(itr1->m_func)["this"].get<sol::table>().as<Mod*>() == mod.get()) {
+                            // then erase it
+                            itr1 = callbacks.erase(itr1);
+                        }
+                        else
+                            ++itr;
+                    }
+
+                    if (callbacks.empty())
+                        itr = m_callbacks.erase(itr);
+                    else
+                        ++itr;
+                }
+                mod->m_env.deref
+                mod->m_lastModified = last;
+                m_state.collect_gc();
+            }
+        }
+    //});
+    */
+    ModManager()->CallEvent(EVENT_HASH_Update);
 }

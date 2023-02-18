@@ -163,12 +163,6 @@ void IValhalla::Start() {
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
 
-    // Does not work properly in some circumstances
-    signal(SIGINT, [](int) {
-        LOG(WARNING) << "Interrupt caught, stopping server";
-        Valhalla()->Stop();
-    });
-
     this->LoadFiles();
 
     m_netTime = 2040;
@@ -208,6 +202,12 @@ void IValhalla::Start() {
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
+
+    LOG(INFO) << "Press ctrl+c to exit";
+    signal(SIGINT, [](int) {
+        LOG(WARNING) << "Interrupt caught, stopping server";
+        Valhalla()->Stop();
+    });
 
     m_running = true;
     while (m_running) {
@@ -271,6 +271,8 @@ void IValhalla::Update() {
     if (!NetManager()->GetPeers().empty())
         m_netTime += Delta();
     
+
+
     ModManager()->CallEvent(EVENT_HASH_Update);
 
     NetManager()->Update();

@@ -48,14 +48,19 @@ class IModManager {
         std::string m_name;
         sol::environment m_env;
 
+        fs::path m_entry;
+        fs::file_time_type m_lastModified;
+
         std::string m_version;
         std::string m_apiVersion;
         std::string m_description;
         std::list<std::string> m_authors;
 
         Mod(std::string name,
-            sol::environment env) 
-            : m_name(name), m_env(std::move(env)) {}
+            sol::environment env,
+            fs::path entry) 
+            : m_name(name), m_env(std::move(env)), 
+            m_entry(entry), m_lastModified(fs::last_write_time(entry)) {}
 
         void Error(const std::string& s) {
             LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
@@ -81,21 +86,21 @@ class IModManager {
 private:
     sol::state m_state;
 
-    robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> mods;
+    robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
     robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
     EventStatus m_eventStatus;
 
 private:
-    std::unique_ptr<Mod> LoadModInfo(const std::string &folderName, std::string& outEntry);
+    std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);
 
     void LoadAPI();
     void LoadMod(Mod* mod);
 
 public:
     void Init();
-
     void Uninit();
+    void Update();
 
     template <class... Args>
     auto CallEvent(HASH_t name, Args&&... params) {
