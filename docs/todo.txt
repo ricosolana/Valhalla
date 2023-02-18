@@ -1,19 +1,16 @@
 todo:
-    - Use 64bit hash for ZDO map (mutated-only) so that collisions become nearly impossible
-   
-    - trying to get a way to represent zdo-components (members) without convoluting everything
-        - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
-        - whether the object is a:
-            - Piece (Buildable/Placeable by player)
-            - ItemDrop (Dropped Ground Item)
-            - CraftingStation
-            - WearNTear (Structural support / durability)
-            - Pickable (Seasoning vegetation / goblin totem poles / Respawnable stuff)
-            - DropOnDestroyed (destroyed objects drop)
-            - CharacterDrop (killed entities drop)
-            - Humanoid
-            - MonsterAI
-   
+    - fix general-Valheim latency issues (regarding client-side processing)
+        theres no real good fix to this without changing the core networking and mechanics of the game
+        
+        Possible solutions:
+            - reassign zdos to the nearest player 
+            - reassign zdos radially to players, except in overlaps
+            
+        Biggest caveats/important aspects/most frequent annoyances:
+            - COMBAT (Parrying especially) / Pickable/PickableItem under another zone-client is annoying, and most always laggy,
+                so, likely reassign owners during these situations:
+                    combat might be partially fixed by reassigning to the nearest player, only when players are fa apart from each other, and depends on distance of zdo-enemy in question
+    
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
@@ -66,6 +63,21 @@ todo:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
 finished:
+    - trying to get a way to represent zdo-components (members) without convoluting everything
+        - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
+        - whether the object is a:
+            - Piece (Buildable/Placeable by player)
+            - ItemDrop (Dropped Ground Item)
+            - CraftingStation
+            - WearNTear (Structural support / durability)
+            - Pickable (Seasoning vegetation / goblin totem poles / Respawnable stuff)
+            - DropOnDestroyed (destroyed objects drop)
+            - CharacterDrop (killed entities drop)
+            - Humanoid
+            - MonsterAI
+
+    - Use 64bit hash for ZDO map (mutated-only) so that collisions become nearly impossible
+
     - Container::inUse wrongly named zdo hash
         typo
 
