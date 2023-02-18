@@ -298,7 +298,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 			continue;
 
 		// Only if the peers are within the same active zones
-		if (ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(other->m_pos), peer->m_uuid))
+		if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(other->m_pos), peer->m_uuid))
 			continue;
 
 		auto sqDist = peer->m_pos.SqDistance(other->m_pos);
