@@ -290,38 +290,59 @@ void IZDOManager::AssignOrReleaseZDOs(Peer* peer) {
 		}
 	}
 
-	// reassign zdo-owners for nearby peers in radius of 12 who are not near any other peers
-	for (auto&& pair : NetManager()->GetPeers()) {
-		auto&& other = pair.second;
+	if (SERVER_SETTINGS.zdoSmartAssign) {
 
-		if (peer == other.get())
-			continue;
+		// Get all peers far from each other, along with the closest peer distance
+		std::list<std::pair<Peer*, float>> peers;
+		for (auto&& pair : NetManager()->GetPeers()) {
+			auto&& otherPeer = pair.second;
 
-		// Only if the peers are within the same active zones
-		if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(other->m_pos), peer->m_uuid))
-			continue;
+			// Only if the peers are within the same active zones
+			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer->m_uuid))
+				continue;
 
-		auto sqDist = peer->m_pos.SqDistance(other->m_pos);
+			// Only add the current peer if they are not near ANY other peers
+			float minSqDist = std::numeric_limits<float>::max();
+			//for (auto&& pair2 : peers) {
+			for (auto&& itr = peers.begin(); itr != peers.end(); ) {
+				auto&& peer2 = itr->first;
+				minSqDist = std::min(minSqDist, peer2->m_pos.SqDistance(peer->m_pos));
 
-		// Skip if player is close to another player
-		if (sqDist > 12 * 12) {
+				// Do not add the pair of peers if they are close
+				if (minSqDist < 12 * 12)
+					itr = peers.erase(itr);
+				else {
+					itr->second = minSqDist;
+					++itr;
+				}
+			}
+
+			if (minSqDist > 12 * 12)
+				peers.push_back({ otherPeer.get(), minSqDist });
+		}
+
+		// reassign zdo-owners nearby to peers
+		for (auto&& otherPair : peers) {
+
+			// Skip this peer
+			if (otherPair.first == peer)
+				continue;
 
 			// Get zdos immediate to this peer
-			auto zdos = GetZDOs_Radius(peer->m_pos, std::sqrt(sqDist) * 0.8f - 2.f);
+			auto zdos = GetZDOs_Radius(peer->m_pos,
+				std::sqrt(otherPair.second) * 0.5f - 2.f);
 
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
 				if (zdo->m_prefab->HasFlag(Prefab::Flag::Persistent)
-					&& zdo->m_owner != peer->m_uuid // Ensure the ZDO is not assigned to me
-					&& zdo->m_position.SqDistance(other->m_pos) > 12 * 12 // Ensure the ZDO is far from the other player
-					) { 
+					//&& zdo->m_owner != peer->m_uuid // Ensure the ZDO is not assigned to me
+					&& zdo->m_position.SqDistance(otherPair.first->m_pos) > 12 * 12 // Ensure the ZDO is far from the other player
+					) {
 					zdo->SetOwner(peer->m_uuid);
 				}
 			}
-
 		}
 	}
-
 
 }
 
@@ -590,12 +611,12 @@ int IZDOManager::SectorToIndex(const ZoneID& s) const {
 
 	int x = s.x + IZoneManager::WORLD_RADIUS_IN_ZONES;
 	int y = s.y + IZoneManager::WORLD_RADIUS_IN_ZONES;
-	//if (x < 0 || y < 0
-	//	|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
-	//	return -1;
-	//}
+	if (x < 0 || y < 0
+		|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
+		return -1;
+	}
 
-	assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES&& y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
+	assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES && y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
 
 	return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
 }

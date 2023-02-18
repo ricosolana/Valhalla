@@ -79,9 +79,10 @@ void IValhalla::LoadFiles() {
 
     m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
-    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50)); // player timeout in milliseconds
-    m_settings.zdoAssignInterval = milliseconds(loadNode["zdo-assign-interval-s"].as<unsigned int>(2));
-        
+    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50));
+    m_settings.zdoAssignInterval = seconds(std::max(loadNode["zdo-assign-interval-s"].as<unsigned int>(2), 1U));
+    m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(true);
+
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
     m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
@@ -117,6 +118,7 @@ void IValhalla::LoadFiles() {
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval-ms"] = m_settings.zdoSendInterval.count();
         saveNode["zdo-assign-interval-s"] = m_settings.zdoAssignInterval.count();
+        saveNode["zdo-smart-assign"] = m_settings.zdoSmartAssign;
 
         saveNode["spawning-creatures"] = m_settings.spawningCreatures;
         saveNode["spawning-locations"] = m_settings.spawningLocations;
