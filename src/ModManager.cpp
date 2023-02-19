@@ -16,6 +16,7 @@
 #include "ZDOManager.h"
 #include "Method.h"
 #include "objects/Ward.h"
+#include "objects/Portal.h"
 #include "RouteManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
@@ -380,15 +381,45 @@ void IModManager::LoadAPI() {
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
-    //m_state.new_enum("PrefabFlag",
-    //
-    //)
+    m_state.new_enum("PrefabFlag",
+        "scale", Prefab::Flag::SyncInitialScale,
+        "far", Prefab::Flag::Distant,
+        "persist", Prefab::Flag::Persistent,
+        "piece", Prefab::Flag::Piece,
+        "bed", Prefab::Flag::Bed,
+        "door", Prefab::Flag::Door,
+        "chair", Prefab::Flag::Chair,
+        "ship", Prefab::Flag::Ship,
+        "fish", Prefab::Flag::Fish,
+        "plant", Prefab::Flag::Plant,
+        "armature", Prefab::Flag::ArmorStand,
+        "item", Prefab::Flag::ItemDrop,
+        "pickable", Prefab::Flag::Pickable,
+        "pickableItem", Prefab::Flag::PickableItem,
+        "cooking", Prefab::Flag::CookingStation,
+        "crafting", Prefab::Flag::CraftingStation,
+        "smelting", Prefab::Flag::Smelter,
+        "burning", Prefab::Flag::Fireplace,
+        "support", Prefab::Flag::WearNTear,
+        "breakable", Prefab::Flag::Destructible,
+        "attach", Prefab::Flag::ItemStand,
+        "animal", Prefab::Flag::AnimalAI,
+        "monster", Prefab::Flag::MonsterAI,
+        "tame", Prefab::Flag::Tameable,
+        "breed", Prefab::Flag::Procreation,
+        "rock", Prefab::Flag::MineRock,
+        "rock5", Prefab::Flag::MineRock5,
+        "tree", Prefab::Flag::TreeBase,
+        "log", Prefab::Flag::TreeLog,
+        "sfx", Prefab::Flag::SFX,
+        "vfx", Prefab::Flag::VFX,
+        "aoe", Prefab::Flag::AOE
+    );
 
     m_state.new_usertype<Prefab>("Prefab",
         "name", &Prefab::m_name,
-        "hash", &Prefab::m_hash
-        //"flags", &Prefab::m_flags,
-        //"HasFlag", 
+        "hash", &Prefab::m_hash,
+        "HasFlag", &Prefab::HasFlag
     );
 
     auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();
@@ -484,11 +515,6 @@ void IModManager::LoadAPI() {
 
     );
 
-    //m_state.new_usertype<ObjectView>("ObjectView",
-    //    sol::constructors<ObjectView(ZDO*)>(),
-    //    "zdo", &ObjectView::m_zdo
-    //);
-
     {
         auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
@@ -502,8 +528,15 @@ void IModManager::LoadAPI() {
             "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
             "IsPermitted", &Ward::IsPermitted
         );
+
+        viewsTable.new_usertype<Portal>("Portal",
+            sol::constructors<Portal(ZDO*)>(),
+            "zdo", &Portal::m_zdo,
+            "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
+            "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
+            "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
+        );
     }
-    //Ward *ward = new Ward();
 
     auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
     apiTable["ServerVersion"] = SERVER_VERSION;

@@ -459,7 +459,7 @@ public:
 
     // Special hash getters
 
-    bool GetBool(HASH_t key, bool value = false) const;
+    bool GetBool(HASH_t key, bool value) const;
     NetID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */) const;
 
 

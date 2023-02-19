@@ -9,11 +9,7 @@
 class Ward {
 public:
 	ZDO* m_zdo;
-
-	Ward(ZDO* zdo) : m_zdo(zdo) {
-		//if (m_zdo->GetPrefab()) // do a test to make sure this object has component PrivateArea
-		// or is ward-like 
-	}
+	Ward(ZDO* zdo) : m_zdo(zdo) {}
 
 	const std::string& GetCreatorName() {
 		return m_zdo->GetString(Hashes::ZDO::PrivateArea::CREATOR, "");
