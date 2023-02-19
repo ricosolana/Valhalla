@@ -17,7 +17,9 @@
 #include "Method.h"
 #include "objects/Ward.h"
 #include "objects/Portal.h"
+#include "objects/Player.h"
 #include "RouteManager.h"
+#include "NetManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
@@ -555,9 +557,11 @@ void IModManager::LoadAPI() {
         [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); }
     );
     zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
-
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
+
+    auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();
+    netApiTable["GetPeer"] = [](OWNER_t uuid) { return NetManager()->GetPeer(uuid); };
 
 
 

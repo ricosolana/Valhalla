@@ -4,6 +4,7 @@
 #include "ZoneManager.h"
 #include "Hashes.h"
 #include "RouteManager.h"
+#include "ZDOManager.h"
 
 void Peer::Update() {
     OPTICK_EVENT();
@@ -133,6 +134,10 @@ void Peer::Message(const std::string& text, MsgType type) {
     default:
         throw std::runtime_error("bad enum type");
     }
+}
+
+ZDO* Peer::GetZDO() {
+    return ZDOManager()->GetZDO(m_characterID);
 }
 
 

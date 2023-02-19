@@ -8,11 +8,11 @@ public:
     ZDO* m_zdo;
     Piece(ZDO* zdo) : m_zdo(zdo) {}
 
-	std::string GetCreator() {
-		return m_zdo->GetString(Hashes::ZDO::Piece::CREATOR, "");
+	PLAYER_ID_t GetCreator() {
+		return m_zdo->GetLong(Hashes::ZDO::Piece::CREATOR, 0);
 	}
 
-	void SetCreator(const std::string& name) {
-		m_zdo->Set(Hashes::ZDO::Piece::CREATOR, name);
+	void SetCreator(PLAYER_ID_t id) {
+		m_zdo->Set(Hashes::ZDO::Piece::CREATOR, id);
 	}
 };

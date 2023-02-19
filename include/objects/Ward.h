@@ -3,6 +3,9 @@
 #include <robin_hood.h>
 
 #include "Hashes.h"
+#include "Peer.h"
+#include "Piece.h"
+#include "Player.h"
 
 // prefab: guard_stone
 // component: PrivateArea
@@ -21,8 +24,8 @@ public:
 	
 	// So insecure, since any player can change their player id to act as another players identity
 	// TODO use steam-id instead 
-	robin_hood::unordered_map<OWNER_t, std::string> GetPermitted() {
-		robin_hood::unordered_map<OWNER_t, std::string> list;
+	robin_hood::unordered_map<PLAYER_ID_t, std::string> GetPermitted() {
+		robin_hood::unordered_map<PLAYER_ID_t, std::string> list;
 
 		auto count = m_zdo->GetInt(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, 0);
 		for (int i = 0; i < count; i++) {
@@ -36,7 +39,7 @@ public:
 		return list;
 	}
 
-	void SetPermitted(const robin_hood::unordered_map<OWNER_t, std::string> &users) {
+	void SetPermitted(const robin_hood::unordered_map<PLAYER_ID_t, std::string> &users) {
 		m_zdo->Set(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, static_cast<int32_t>(users.size()));
 		int i = 0;
 		for (auto&& pair : users) {
@@ -46,13 +49,13 @@ public:
 		}
 	}
 
-	void AddPermitted(OWNER_t id, const std::string& name) {
+	void AddPermitted(PLAYER_ID_t id, const std::string& name) {
 		auto map = GetPermitted();
 		map[id] = name;
 		SetPermitted(map);
 	}
 
-	void RemovePermitted(OWNER_t id) {
+	void RemovePermitted(PLAYER_ID_t id) {
 		auto map = GetPermitted();
 		map.erase(id);
 		SetPermitted(map);
@@ -66,8 +69,12 @@ public:
 		return m_zdo->GetBool(Hashes::ZDO::PrivateArea::ENABLED, false);
 	}
 
-	bool IsPermitted(OWNER_t id) {
+	bool IsPermitted(PLAYER_ID_t id) {
 		return GetPermitted().contains(id);
 	}
 
+	void SetCreator(Peer* peer) {
+		SetCreatorName(peer->m_name);
+		//Piece(m_zdo).SetCreator(Player().);
+	}
 };

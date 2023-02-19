@@ -21,6 +21,7 @@ using namespace std::chrono_literals;
 using BYTE_t = uint8_t; // Unsigned 8 bit
 using HASH_t = int32_t; // Used for RPC method hashing
 using OWNER_t = int64_t; // Should rename to UID
+using PLAYER_ID_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 
 using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;

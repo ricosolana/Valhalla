@@ -160,4 +160,9 @@ public:
 
     // Send a screen popup message
     void ShowMessage(const std::string& text, MessageType type = MessageType::TopLeft);
+
+
+    // Get the character ZDO
+    //  Nullable
+    ZDO* GetZDO();
 };
