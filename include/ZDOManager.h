@@ -41,26 +41,26 @@ private:
 
 private:
 	// Called when an authenticated peer joins (internal)
-	void OnNewPeer(Peer* peer);
+	void OnNewPeer(Peer& peer);
 	// Called when an authenticated peer leaves (internal)
-	void OnPeerQuit(Peer* peer);
+	void OnPeerQuit(Peer& peer);
 
 	// Insert a ZDO into zone (internal)
-	bool AddToSector(ZDO* zdo);
+	bool AddToSector(ZDO& zdo);
 	// Remove a zdo from a zone (internal)
-	void RemoveFromSector(ZDO* zdo);
+	void RemoveFromSector(ZDO& zdo);
 	// Relay a ZDO sector change to clients (internal)
-	void InvalidateSector(ZDO* zdo);
+	void InvalidateSector(ZDO& zdo);
 
-	void AssignOrReleaseZDOs(Peer* peer);
+	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
 
-	void SendAllZDOs(Peer* peer);
-	bool SendZDOs(Peer* peer, bool flush);
-	std::list<ZDO*> CreateSyncList(Peer* peer);
 	void EraseZDO(const ZDOID& uid);
+	void SendAllZDOs(Peer& peer);
+	bool SendZDOs(Peer& peer, bool flush);
+	std::list<std::reference_wrapper<ZDO>> CreateSyncList(Peer& peer);
 
-	ZDO* AddZDO(const Vector3& position);
+	ZDO& AddZDO(const Vector3& position);
 	ZDO& AddZDO(const ZDOID& uid, const Vector3& position);
 		
 	// Performs a coordinate to pitch conversion
@@ -81,32 +81,33 @@ public:
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
-	std::pair<ZDO*, bool> GetOrCreateZDO(const NetID& id, const Vector3& def);
+	std::pair<ZDO&, bool> GetOrCreateZDO(const ZDOID& id, const Vector3& def);
 
 	// Get a ZDO by id
-	ZDO* GetZDO(const NetID& id);
+	//	TODO use optional<reference>
+	ZDO* GetZDO(const ZDOID& id);
 
 	// Get all ZDOs strictly within a zone
-	void GetZDOs_Zone(const ZoneID& zone, std::list<ZDO*>& out);
+	void GetZDOs_Zone(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out);
 	// Get all ZDOs strictly within neighboring zones
-	void GetZDOs_NeighborZones(const ZoneID& zone, std::list<ZDO*>& out);
+	void GetZDOs_NeighborZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out);
 	// Get all ZDOs strictly within distant zones
-	void GetZDOs_DistantZones(const ZoneID& zone, std::list<ZDO*>& out);
+	void GetZDOs_DistantZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out);
 	// Get all ZDOs strictly within a zone, its neighboring zones, and its distant zones
-	void GetZDOs_ActiveZones(const ZoneID& zone, std::list<ZDO*>& out, std::list<ZDO*>& outDistant);
+	void GetZDOs_ActiveZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out, std::list<std::reference_wrapper<ZDO>>& outDistant);
 
 	// Get all ZDOs strictly within a zone that are distant flagged
-	void GetZDOs_Distant(const ZoneID& sector, std::list<ZDO*>& objects);
+	void GetZDOs_Distant(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects);
 
 	// Get all ZDOs strictly by prefab
-	std::list<ZDO*> GetZDOs_Prefab(HASH_t prefabHash);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs_Prefab(HASH_t prefabHash);
 	// Get all ZDOs strictly within a radius
-	std::list<ZDO*> GetZDOs_Radius(const Vector3& pos, float radius);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs_Radius(const Vector3& pos, float radius);
 	// Gets all ZDOs strictly within a sqradius
 	//std::list<ZDO*> GetZDOs_SqRadius(const Vector3& pos, float sqradius);
 	
 	// Get all ZDOs strictly within a radius by prefab
-	std::list<ZDO*> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
 	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 

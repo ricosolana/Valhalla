@@ -252,9 +252,9 @@ bool ZDO::SetLocal() {
 
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_position != pos) {
-        ZDOManager()->InvalidateSector(this);
+        ZDOManager()->InvalidateSector(*this);
         this->m_position = pos;
-        ZDOManager()->AddToSector(this);
+        ZDOManager()->AddToSector(*this);
 
         if (Local())
             Revise();

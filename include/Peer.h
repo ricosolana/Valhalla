@@ -60,9 +60,9 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO* zdo);
+    void ZDOSectorInvalidated(ZDO& zdo);
     void ForceSendZDO(const NetID& id);
-    bool IsOutdatedZDO(ZDO* zdo);
+    bool IsOutdatedZDO(ZDO& zdo);
 
 public:
     Peer(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos)

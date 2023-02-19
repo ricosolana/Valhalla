@@ -21,7 +21,7 @@ public:
 	}
 
 	ZDO* Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY, const Prefab** outPrefab = nullptr);
-	ZDO* Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY);
+	ZDO& Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY);
 
 };
 

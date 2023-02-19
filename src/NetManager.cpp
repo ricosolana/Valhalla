@@ -377,7 +377,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
     SendPeerInfo(peer);
 
-    ZDOManager()->OnNewPeer(peer);
+    ZDOManager()->OnNewPeer(*peer);
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
 }
@@ -558,7 +558,7 @@ void INetManager::Update() {
                 LOG(INFO) << "Cleaning up peer";
 
                 ModManager()->CallEvent(EVENT_HASH_Quit, peer.get());
-                ZDOManager()->OnPeerQuit(peer.get());
+                ZDOManager()->OnPeerQuit(*peer.get());
                 itr = m_peers.erase(itr);
             }
             else {

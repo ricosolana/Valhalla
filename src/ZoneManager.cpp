@@ -573,7 +573,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                             // hardcoded for now
                             //rotation = Quaternion(0, 1, 0, 0);
 
-                            auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
+                            auto &&zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -582,7 +582,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                 // this does set the Unity gameobject localscale
-                                zdo->Set("scale", Vector3(scale, scale, scale));
+                                zdo.Set("scale", Vector3(scale, scale, scale));
                             }
 
                             generated = true;
@@ -956,10 +956,10 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
 // could be inlined...
 // private
 void IZoneManager::CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
-    auto zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
+    auto &&zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
     
-    zdo->Set("location", location->m_hash);
-    zdo->Set("seed", seed);
+    zdo.Set("location", location->m_hash);
+    zdo.Set("seed", seed);
 }
 
 // public

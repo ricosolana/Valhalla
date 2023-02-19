@@ -142,13 +142,13 @@ ZDO* Peer::GetZDO() {
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO* zdo) {
-    if (zdo->m_owner == m_uuid)
+void Peer::ZDOSectorInvalidated(ZDO& zdo) {
+    if (zdo.m_owner == m_uuid)
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo->Sector(), m_pos)) {
-        if (m_zdos.erase(zdo->ID())) {
-            m_invalidSector.insert(zdo->ID());
+    if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {
+        if (m_zdos.erase(zdo.ID())) {
+            m_invalidSector.insert(zdo.ID());
         }
     }
 }
@@ -157,10 +157,10 @@ void Peer::ForceSendZDO(const NetID &id) {
     m_forceSend.insert(id);
 }
 
-bool Peer::IsOutdatedZDO(ZDO* zdo) {
-    auto find = m_zdos.find(zdo->ID());
+bool Peer::IsOutdatedZDO(ZDO& zdo) {
+    auto find = m_zdos.find(zdo.ID());
 
     return find == m_zdos.end()
-        || zdo->m_rev.m_ownerRev > find->second.m_ownerRev
-        || zdo->m_rev.m_dataRev > find->second.m_dataRev;
+        || zdo.m_rev.m_ownerRev > find->second.m_ownerRev
+        || zdo.m_rev.m_dataRev > find->second.m_dataRev;
 }
