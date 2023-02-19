@@ -24,7 +24,7 @@ private:
 	uint32_t m_nextUid = 1;
 
 	// Responsible for managing ZDOs lifetimes
-	robin_hood::unordered_map<NetID, std::unique_ptr<ZDO>> m_objectsByID;
+	robin_hood::unordered_map<ZDOID, std::unique_ptr<ZDO>> m_objectsByID;
 
 	// Contains ZDOs according to Zone
 	std::array<robin_hood::unordered_set<ZDO*>, 
@@ -34,10 +34,10 @@ private:
 	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
 
 	// Primarily used in RPC_ZDOData
-	robin_hood::unordered_map<NetID, TICKS_t> m_deadZDOs;
+	robin_hood::unordered_map<ZDOID, TICKS_t> m_deadZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
-	std::vector<NetID> m_destroySendList;
+	std::vector<ZDOID> m_destroySendList;
 
 private:
 	// Called when an authenticated peer joins (internal)
@@ -55,16 +55,16 @@ private:
 	void AssignOrReleaseZDOs(Peer* peer);
 	//void SmartAssignZDOs();
 
-	void EraseZDO(const NetID& uid);
 	void SendAllZDOs(Peer* peer);
 	bool SendZDOs(Peer* peer, bool flush);
 	std::list<ZDO*> CreateSyncList(Peer* peer);
+	void EraseZDO(const ZDOID& uid);
 
 	ZDO* AddZDO(const Vector3& position);
-	ZDO* AddZDO(const NetID& uid, const Vector3& position);
+	ZDO& AddZDO(const ZDOID& uid, const Vector3& position);
 		
 	// Performs a coordinate to pitch conversion
-	int SectorToIndex(const ZoneID& s) const;
+	int SectorToIndex(const ZoneID& zone) const;
 
 public:
 	void Init();
@@ -110,7 +110,7 @@ public:
 
 	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
-	void ForceSendZDO(const NetID& id);
+	void ForceSendZDO(const ZDOID& id);
 };
 
 IZDOManager* ZDOManager();
