@@ -153,7 +153,7 @@ void Peer::ZDOSectorInvalidated(ZDO& zdo) {
     }
 }
 
-void Peer::ForceSendZDO(const NetID &id) {
+void Peer::ForceSendZDO(const ZDOID &id) {
     m_forceSend.insert(id);
 }
 

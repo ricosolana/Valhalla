@@ -773,8 +773,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				if (created) {
 					AddToSector(zdo);
 					if (m_deadZDOs.contains(zdoid)) {
-						zdo.SetLocal();
-						m_destroySendList.push_back(zdo.m_id);
+						DestroyZDO(zdo, false);
 					}
 					else {
 						m_objectsByPrefab[zdo.GetPrefab()->m_hash].insert(&zdo);
@@ -800,15 +799,20 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 void IZDOManager::OnPeerQuit(Peer& peer) {
 	// This is the kind of iteration removal I am trying to avoid
 	for (auto&& pair : m_objectsByID) {
-		auto&& zdo = pair.second;
+		auto&& zdo = *pair.second.get();
 		// If ZDO prefab is not assigned (because bad prefab hash)
-		if (!zdo->GetPrefab() || !zdo->GetPrefab()->HasFlag(Prefab::Flag::Persistent)
-			&& (!zdo->HasOwner() || zdo->Owner() == peer.m_uuid))
+		if (!zdo.GetPrefab() || !zdo.GetPrefab()->HasFlag(Prefab::Flag::Persistent)
+			&& (!zdo.HasOwner() || zdo.Owner() == peer.m_uuid))
 		{
-			auto&& uid = zdo->ID();
-			LOG(INFO) << "Destroying abandoned non persistent zdo (" << zdo->m_prefab << " " << zdo->Owner() << ")";
-			zdo->SetLocal();
-			m_destroySendList.push_back(zdo->ID());
+			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << " " << zdo.Owner() << ")";
+			DestroyZDO(zdo, false); // TODO could destroy immediate
 		}
 	}
+}
+
+void IZDOManager::DestroyZDO(ZDO& zdo, bool immediate) {
+	zdo.SetLocal();
+	m_destroySendList.push_back(zdo.m_id);
+	if (immediate)
+		EraseZDO(zdo.m_id);
 }

@@ -112,6 +112,8 @@ public:
 	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
 	void ForceSendZDO(const ZDOID& id);
+
+	void DestroyZDO(ZDO& zdo, bool immediate);
 };
 
 IZDOManager* ZDOManager();
