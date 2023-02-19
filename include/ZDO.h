@@ -288,6 +288,7 @@ private:
             default:
                 assert(false && "reached impossible case");
             }
+            return 0;
         }
     };
 

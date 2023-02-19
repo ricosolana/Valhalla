@@ -50,7 +50,6 @@ public:
     const std::string m_name;
     bool m_admin = false;
     bool m_magicLogin = false;
-    //bool m_nextMagicLogin = false;
 
     // Constantly changing vars
     Vector3 m_pos;

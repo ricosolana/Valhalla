@@ -18,6 +18,11 @@ local RPC_vha = function(peer, cmd, args)
     
     print("Got command " .. cmd)
     
+    print("args: " .. #args)
+    for i=1, #args do
+        print(" - " .. args[i])
+    end
+    
     if cmd == "claim" then
         if #args == 1 then
             local radius = tonumber(args[1]) or 32
@@ -25,18 +30,20 @@ local RPC_vha = function(peer, cmd, args)
             local zdos = ZDOManager.GetZDOs(peer.pos, radius, WARD_PREFAB)
             
             for i=1, #zdos do
-                Views.Ward.new(zdos[i]).creator = peer.name
+                Views.Ward.new(zdos[i]).creator = peer
             end
             
+            peer:Message("claimed " .. #zdos .. " wards", MsgType.console)
+            
         else
-            peer.Message("missing radius", MsgType.console)
+            peer:Message("missing radius", MsgType.console)
         end
     elseif cmd == "op" then
         if #args == 1 then
             local p = NetManager.GetPeer(args[1])
             if p then p.admin = not p.admin end
         else
-            peer.Message("missing player to op", MsgType.console)
+            peer:Message("missing player to op", MsgType.console)
         end
     end
 end

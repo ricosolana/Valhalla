@@ -11,15 +11,15 @@
 // component: PrivateArea
 class Ward {
 public:
-	ZDO* m_zdo;
-	Ward(ZDO* zdo) : m_zdo(zdo) {}
+	ZDO& m_zdo;
+	Ward(ZDO& zdo) : m_zdo(zdo) {}
 
 	const std::string& GetCreatorName() {
-		return m_zdo->GetString(Hashes::ZDO::PrivateArea::CREATOR, "");
+		return m_zdo.GetString(Hashes::ZDO::PrivateArea::CREATOR, "");
 	}
 
 	void SetCreatorName(const std::string& name) {
-		m_zdo->Set(Hashes::ZDO::PrivateArea::CREATOR, name);
+		m_zdo.Set(Hashes::ZDO::PrivateArea::CREATOR, name);
 	}
 	
 	// So insecure, since any player can change their player id to act as another players identity
@@ -27,10 +27,10 @@ public:
 	robin_hood::unordered_map<PLAYER_ID_t, std::string> GetPermitted() {
 		robin_hood::unordered_map<PLAYER_ID_t, std::string> list;
 
-		auto count = m_zdo->GetInt(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, 0);
+		auto count = m_zdo.GetInt(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, 0);
 		for (int i = 0; i < count; i++) {
-			auto id = m_zdo->GetLong("pu_id" + std::to_string(i), 0);
-			auto name = m_zdo->GetString("pu_name" + std::to_string(i), "");
+			auto id = m_zdo.GetLong("pu_id" + std::to_string(i), 0);
+			auto name = m_zdo.GetString("pu_name" + std::to_string(i), "");
 			if (id) {
 				list[id] = name;
 			}
@@ -40,11 +40,11 @@ public:
 	}
 
 	void SetPermitted(const robin_hood::unordered_map<PLAYER_ID_t, std::string> &users) {
-		m_zdo->Set(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, static_cast<int32_t>(users.size()));
+		m_zdo.Set(Hashes::ZDO::PrivateArea::PERMITTED_COUNT, static_cast<int32_t>(users.size()));
 		int i = 0;
 		for (auto&& pair : users) {
-			m_zdo->Set("pu_id" + std::to_string(i), pair.first);
-			m_zdo->Set("pu_name" + std::to_string(i), pair.second);
+			m_zdo.Set("pu_id" + std::to_string(i), pair.first);
+			m_zdo.Set("pu_name" + std::to_string(i), pair.second);
 			i++;
 		}
 	}
@@ -62,19 +62,26 @@ public:
 	}
 
 	void SetEnabled(bool enable) {
-		m_zdo->Set(Hashes::ZDO::PrivateArea::ENABLED, enable);
+		m_zdo.Set(Hashes::ZDO::PrivateArea::ENABLED, enable);
 	}
 
 	bool IsEnabled() {
-		return m_zdo->GetBool(Hashes::ZDO::PrivateArea::ENABLED, false);
+		return m_zdo.GetBool(Hashes::ZDO::PrivateArea::ENABLED, false);
 	}
 
 	bool IsPermitted(PLAYER_ID_t id) {
 		return GetPermitted().contains(id);
 	}
 
-	void SetCreator(Peer* peer) {
-		SetCreatorName(peer->m_name);
-		//Piece(m_zdo).SetCreator(Player().);
+	void SetCreator(Peer& peer) {
+		SetCreatorName(peer.m_name);
+		auto&& zdo = peer.GetZDO();
+		if (zdo) {
+			Piece(m_zdo).SetCreator(Player(*zdo).GetID());
+		}
+	}
+
+	bool IsAllowed(PLAYER_ID_t id) {
+		return Piece(m_zdo).GetCreator() == id || IsPermitted(id);
 	}
 };

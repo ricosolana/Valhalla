@@ -515,22 +515,26 @@ void IModManager::LoadAPI() {
     );
 
     {
+        // References will be unwrapped to pointers / visa-versa
+        //  Pointers being dereferenced to a T& type is automatic if the function accepts a reference
+        // https://sol2.readthedocs.io/en/latest/functions.html#functions-and-argument-passing
+
         auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
         viewsTable.new_usertype<Ward>("Ward",
-            sol::constructors<Ward(ZDO*)>(),
-            "zdo", &Ward::m_zdo,
-            "creator", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got null ZDO"); return Ward(*zdo); }),
+            "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
             "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
             "AddPermitted", &Ward::AddPermitted,
             "RemovePermitted", &Ward::RemovePermitted,
             "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
-            "IsPermitted", &Ward::IsPermitted
+            "IsPermitted", &Ward::IsPermitted,
+            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("got null Peer"); return self.SetCreator(*peer); }),
+            "IsAllowed", &Ward::IsAllowed
         );
 
         viewsTable.new_usertype<Portal>("Portal",
-            sol::constructors<Portal(ZDO*)>(),
-            "zdo", &Portal::m_zdo,
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got nullptr ZDO"); return Portal(*zdo); }),
             "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
             "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
             "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
