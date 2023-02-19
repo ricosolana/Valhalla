@@ -501,16 +501,16 @@ void IModManager::LoadAPI() {
         //}
 
         "Set", sol::overload(
-            [](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
+            ///[](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
         
             //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
-            [](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); }
+            ///[](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); },
             // string
-            //static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
             //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
             // zdoid
             //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
-            //static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
+            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
         )
 
     );

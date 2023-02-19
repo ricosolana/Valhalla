@@ -649,7 +649,7 @@ namespace Hashes {
         namespace TeleportWorld {
             static constexpr HASH_t AUTHOR = __H("tagauthor");
             static constexpr HASH_t TAG = __H("tag");
-            static constexpr HASH_t TARGET = __H("target");
+            //static constexpr HASH_t TARGET = __H("target");
         };
 
         namespace TerrainComp {

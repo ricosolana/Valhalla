@@ -11,54 +11,53 @@
 --]]
 
 local PORTAL = VUtils.String.GetStableHashCode("portal_wood")
---local (TARGETa, TARGETb) = ZDOManager.HashZDOID("target") -- VUtils.String.GetStableHashCode("target") -- use special zdoid hash
-local TAG = VUtils.String.GetStableHashCode("tag")
 
 Valhalla.OnEvent("PeriodUpdate", function()
-	local portals = ZDOManager.GetZDOs(PORTAL)
+	local portalZdos = ZDOManager.GetZDOs(PORTAL)
 
-	for i1=1, #portals do
-		local zdo1 = portals[i1]
+	for i1=1, #portalZdos do
+		local portalZdo1 = portalZdos[i1]
+        local portal1 = Views.Portal.new(portalZdo1)
         
-        local target1 = zdo1:GetZDOID("target")
-		local tag1 = zdo1:GetString(TAG, "")
-
+        local target1 = portal1.target
+		local tag1 = portal1.tag
+        
 		-- if target portal assigned
         if target1 ~= ZDOID.none then
-			local zdo2 = ZDOManager.GetZDO(target1)
+			local portalZdo2 = ZDOManager.GetZDO(target1)
+            local portal2 = Views.Portal.new(portalZdo2)
 
 			-- if target is missing from world, reset target
-			if not zdo2 or zdo2:GetString(TAG, "") ~= tag1 then
-				zdo1:SetLocal()
+			if not portalZdo2 or portal2.tag ~= tag1 then
+				portalZdo1:SetLocal()
 
-				zdo1:Set("target", ZDOID.none);
-				ZDOManager.ForceSendZDO(zdo1.id);
+				portal1.target = ZDOID.none
+				ZDOManager.ForceSendZDO(portalZdo1.id);
 			end
 		else 
-			-- find other portals with the same tag
-			for i2=i1, #portals do
+			-- find other portalZdos with the same tag
+			for i2=i1, #portalZdos do
                 if i2 ~= i1 then
                     
-                    local zdo2 = portals[i2]
-
-                    local target2 = zdo2:GetZDOID("target")
-
+                    local portalZdo2 = portalZdos[i2]
+                    local portal2 = Views.Portal.new(portalZdo2)
+                    
                     -- connect unlinked portals
-                    if target2 == ZDOID.none then
+                    if portal2.target == ZDOID.none then
 
-                        local tag2 = zdo2:GetString(TAG, "")
+                        local tag2 = portal2.tag
 
                         -- link if same tag
-                        if tag1 == tag2 then
+                        if tag1 == portal2.tag then
 
                             print("linking portals")
                     
-                            zdo1:SetLocal()
-                            zdo2:SetLocal()
-                            zdo1:Set("target", zdo2.id);
-                            zdo2:Set("target", zdo1.id);
-                            ZDOManager.ForceSendZDO(zdo1.id);
-                            ZDOManager.ForceSendZDO(zdo2.id);
+                            portalZdo1:SetLocal()
+                            portalZdo2:SetLocal()
+                            portal1.target = portalZdo2.id
+                            portal2.target = portalZdo1.id
+                            ZDOManager.ForceSendZDO(portalZdo1.id);
+                            ZDOManager.ForceSendZDO(portalZdo2.id);
                         
                             break -- prevent portals from forming more than 1 link
                         end

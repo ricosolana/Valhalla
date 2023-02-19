@@ -13,15 +13,16 @@ public:
     }
 
 	void SetTag(const std::string& tag) {
-		m_zdo->SetString(Hashes::ZDO::TeleportWorld::TAG, tag);
+		m_zdo->Set(Hashes::ZDO::TeleportWorld::TAG, tag);
 	}
 
 	ZDOID GetTarget() {
-		return m_zdo->GetZDOID(Hashes::ZDO::TeleportWorld::TARGET);
+		//return m_zdo->GetNetID(Hashes::ZDO::TeleportWorld::TARGET);
+		return m_zdo->GetNetID("target");
 	}
 
 	void SetTarget(const ZDOID& target) {
-		m_zdo->SetZDOID(Hashes::ZDO::TeleportWorld::TARGET, target);
+		m_zdo->Set("target", target);
 	}
 
 	std::string GetAuthor() {
@@ -29,6 +30,6 @@ public:
 	}
 
 	void SetAuthor(const std::string& author) {
-		return m_zdo->SetString(Hashes::ZDO::TeleportWorld::AUTHOR, author);
+		m_zdo->Set(Hashes::ZDO::TeleportWorld::AUTHOR, author);
 	}
 };
