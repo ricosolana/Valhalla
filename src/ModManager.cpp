@@ -60,12 +60,6 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     return mod;
 }
 
-struct MethodSig {
-    //std::string m_name;
-    HASH_t m_hash;
-    std::vector<DataType> m_types;
-};
-
 void IModManager::LoadAPI() {
     m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
         sol::state_view state = ts;
@@ -148,9 +142,12 @@ void IModManager::LoadAPI() {
             sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             //static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        "Register", [](Peer& self, const MethodSig &repr, sol::function func) {
-            self.Register(repr.m_hash, func, repr.m_types);
-        },
+        //"Register", [](Peer& self, const MethodSig &repr, sol::function func) {
+        //    self.Register(repr.m_hash, func, repr.m_types);
+        //},
+
+        // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
+        "Register", static_cast<void (Peer::*)(MethodSig, sol::function)>(&Peer::Register),
         "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("incorrect number of args");

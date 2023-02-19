@@ -160,7 +160,8 @@ class MethodImplLua : public IMethod<T> {
 
 public:
     explicit MethodImplLua(sol::function func, std::vector<DataType> types)
-        : m_func(func), m_types(std::move(types)) {}
+        : m_func(func), 
+        m_types(types) {}
 
     void Invoke(T t, DataReader reader) override {
         sol::variadic_results results;

@@ -2,6 +2,7 @@
 
 #include <robin_hood.h>
 #include <type_traits>
+#include <algorithm>
 
 #include "HashUtils.h"
 #include "Quaternion.h"
@@ -273,6 +274,20 @@ private:
             writer.Write(FromShiftHash<T>(shiftHash));
             writer.Write(*_Member<T>());
             return true;
+        }
+
+        size_t GetTotalAlloc() {
+            switch (*_Ordinal()) {
+            case ORD_FLOAT: return sizeof(Ordinal) + sizeof(float);
+            case ORD_VECTOR3: return sizeof(Ordinal) + sizeof(Vector3);
+            case ORD_QUATERNION: return sizeof(Ordinal) + sizeof(Quaternion);
+            case ORD_INT: return sizeof(Ordinal) + sizeof(int32_t);
+            case ORD_LONG: return sizeof(Ordinal) + sizeof(int64_t);
+            case ORD_STRING: return sizeof(Ordinal) + sizeof(std::string) + _Member<std::string>()->capacity();
+            case ORD_ARRAY: return sizeof(Ordinal) + sizeof(BYTES_t) + _Member<BYTES_t>()->capacity();
+            default:
+                assert(false && "reached impossible case");
+            }
         }
     };
 
@@ -625,6 +640,12 @@ public:
     void Abandon() {
         //m_owner = 0;
         SetOwner(0);
+    }
+
+    size_t GetTotalAlloc() {
+        size_t size = 0;
+        for (auto&& pair : m_members) size += pair.second.GetTotalAlloc();
+        return size;
     }
 
     // Save ZDO to network packet

@@ -88,11 +88,13 @@ public:
         Register(VUtils::String::GetStableHashCode(name), func);
     }
 
-    void Register(HASH_t hash, sol::function func, std::vector<DataType> types) {
-        //std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
+    //void Register(HASH_t hash, sol::function &&func, std::vector<DataType> &&types) {
+    //    m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(
+    //        std::forward<decltype(func)>(func), std::forward<decltype(types)>(types));
+    //}
 
-        m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
-            //std::unique_ptr<IMethod<Peer*>>(new MethodImplLua(std::move(func), std::move(types)));
+    void Register(MethodSig sig, sol::function func) {
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
     template <typename... Types>

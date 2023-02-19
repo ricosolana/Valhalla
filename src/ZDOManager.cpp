@@ -53,9 +53,11 @@ void IZDOManager::Update() {
 	PERIODIC_NOW(1min, {
 		//size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
 		size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-		
-		float kb = bytes / 1000.f;
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << kb << "kb)";
+		for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
+
+		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000.f) << "kb)";
+
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000000.f) << "Mb)";
 	});
 
 	if (m_destroySendList.empty())

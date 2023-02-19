@@ -29,6 +29,12 @@ enum class EventStatus {
     CANCEL,
 };
 
+struct MethodSig {
+    //std::string m_name;
+    HASH_t m_hash;
+    std::vector<DataType> m_types;
+};
+
 static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
 static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
 static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
