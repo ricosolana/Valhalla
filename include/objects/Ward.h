@@ -12,7 +12,10 @@
 class Ward {
 public:
 	std::reference_wrapper<ZDO> m_zdo;
-	Ward(ZDO& zdo) : m_zdo(zdo) {}
+	Ward(ZDO& zdo) : m_zdo(zdo) {
+		if (zdo.GetPrefab()->m_hash != Hashes::Object::guard_stone)
+			throw std::runtime_error("not a ward");
+	}
 
 	const std::string& GetCreatorName() {
 		return m_zdo.get().GetString(Hashes::ZDO::PrivateArea::CREATOR, "");
