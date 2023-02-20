@@ -559,6 +559,12 @@ void INetManager::Update() {
 
                 ModManager()->CallEvent(EVENT_HASH_Quit, peer.get());
                 ZDOManager()->OnPeerQuit(*peer.get());
+
+                if (peer->m_admin)
+                    Valhalla()->m_admin.insert(peer->m_socket->GetHostName());
+                else 
+                    Valhalla()->m_admin.erase(peer->m_socket->GetHostName());
+
                 itr = m_peers.erase(itr);
             }
             else {

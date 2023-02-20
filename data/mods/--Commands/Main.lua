@@ -12,7 +12,7 @@
 
 local WARD_PREFAB = VUtils.String.GetStableHashCode("guard_stone")
 
-local RPC_vha = function(peer, cmd, args)
+local RPC_vs = function(peer, cmd, args)
 
     if not peer.admin then return end
     
@@ -36,29 +36,33 @@ local RPC_vha = function(peer, cmd, args)
             peer:Message("claimed " .. #zdos .. " wards", MsgType.console)
             
         else
-            peer:Message("missing radius", MsgType.console)
+            peer:Message("radius arg missing", MsgType.console)
         end
     elseif cmd == "op" then
         if #args == 1 then
             local p = NetManager.GetPeer(args[1])
-            if p then p.admin = not p.admin end
+            if p then 
+                p.admin = not p.admin 
+                
+                peer:Message((p.admin and {"opped"} or {"deopped"})[1] .. " " .. p.name)
+            else
+                peer:Message("player not found")
+            end
         else
-            peer:Message("missing player to op", MsgType.console)
+            peer:Message("player arg missing", MsgType.console)
         end
     end
 end
 
 Valhalla.OnEvent("Join", function(peer)
-
-    print("Registering vha")
+    print("Registering command vs")
 
     peer.value:Register(
-        MethodSig.new("vha", DataType.string, DataType.strings),
-        RPC_vha
+        MethodSig.new("vs", DataType.string, DataType.strings),
+        RPC_vs
     )
 
-    print("Registered vha")
-
+    print("Registered command vs")
 end)
 
 Valhalla.OnEvent("Enable", function()

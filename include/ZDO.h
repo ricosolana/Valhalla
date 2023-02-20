@@ -382,14 +382,16 @@ private:
 
 
 
-public:     Rev m_rev = {};
-private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
-private:    Quaternion m_rotation = Quaternion::IDENTITY;
-private:    Vector3 m_position;
-private:    Ordinal m_ordinalMask = 0;
-public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
+public:     OWNER_t m_owner = 0;
 private:    const Prefab* m_prefab = nullptr;
+private:    Quaternion m_rotation = Quaternion::IDENTITY;
+private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
+private:    Ordinal m_ordinalMask = 0;
+private:    Vector3 m_position;
+
+public:     Rev m_rev = {};
 public:     NetID m_id;
+
 
 private:
     void Revise() {
@@ -607,7 +609,6 @@ public:
     //ObjectType Type() const {
     //    return m_type;
     //}
-    //
 
     const Prefab* GetPrefab() const {
         return m_prefab;
@@ -635,27 +636,7 @@ public:
         return m_position;
     }
 
-    //void InvalidateSector();
-
-    //    this->SetSector(Vector2i(-100000, -100000));
-    //}
-
-    //void SetSector(const Vector2i& sector);
-
-
-
     void SetPosition(const Vector3& pos);
-
-    //bool Outdated(const Rev& min) const {
-    //    return min.m_dataRev > m_rev.m_dataRev
-    //        || min.m_ownerRev > m_rev.m_ownerRev;
-    //}
-
-
-
-    //friend void NetSyncManager::RPC_NetSyncData(NetRpc* rpc, NetPackage pkg);
-
-
 
     // Return whether the ZDO instance is self hosted or remotely hosted
     bool Local() const;
@@ -687,7 +668,6 @@ public:
 
     // Should name better
     void Abandon() {
-        //m_owner = 0;
         SetOwner(0);
     }
 
