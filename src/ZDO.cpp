@@ -149,7 +149,7 @@ const std::string& ZDO::GetString(HASH_t key, const std::string& value) const {
 }
 
 const BYTES_t* ZDO::GetBytes(HASH_t key) const {
-    return _Get<BYTES_t>(key);
+    return Get<BYTES_t>(key);
 }
 
 // Special

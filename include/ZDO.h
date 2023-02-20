@@ -52,20 +52,48 @@ public:
         };
     };
 
+    template<TrivialSyncType T>
+    class ProxyMember {
+        friend class ZDO;
+
+    private:
+        ZDO& m_zdo; // The ZDO to which this member belongs
+        T* m_member;
+
+    private:
+        ProxyMember(ZDO& zdo) : m_zdo(zdo), m_member(nullptr) {}
+        ProxyMember(ZDO& zdo, T& member) : m_zdo(zdo), m_member(&member) {}
+
+    public:
+        bool valid() const {
+            return m_member != nullptr;
+        }
+
+        const T& value() const {
+            if (valid())
+                return *this->m_member;
+            else
+                throw std::runtime_error("cannot retrieve T& from null");
+        }
+
+        void operator=(const T& other) {
+            if (valid()) {
+                // Only revise if types are unequal (if an actual noticeable change will happen)
+                if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>) 
+                    || *this->m_member != other) {
+                    *this->m_member = other;
+                    m_zdo.Revise();
+                }
+            }
+            else {
+                throw std::runtime_error("cannot reassign null type");
+            }
+        }
+    };
+
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
-    // https://stackoverflow.com/a/1122109
-    //enum class Ordinal : uint8_t {
-    //    FLOAT = 1,  // 1 << (1 - 1) = 1
-    //    VECTOR3,    // 1 << (2 - 1) = 2
-    //    QUATERNION, // 1 << (3 - 1) = 4
-    //    INT,        // 1 << (4 - 1) = 8
-    //    STRING,     // 1 << (5 - 1) = 16
-    //    LONG = 7,   // 1 << (7 - 1) = 64
-    //    ARRAY,      // 1 << (8 - 1) = 128
-    //};
-
     using SHIFTHASH_t = uint64_t;
 
     using Ordinal = uint8_t;
@@ -247,12 +275,30 @@ private:
         }
 
         // Reassign the underlying member value
+        //  Returns whether the previous value was modified
         //  Will throw on type mismatch
         template<TrivialSyncType T>
-        void Set(const T& type) {
+        bool Set(const T& type) {
             AssertType<T>();
 
-            *_Member<T>() = type;
+            // if fairly trivial 
+            //  not BYTES or string because equality operator for them is O(N)
+            if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>)
+                || *_Member<T>() != type) {
+                *_Member<T>() = type;
+                return true;
+            }
+
+            return false;
+        }
+
+        // Get the underlying member
+        //  Will throw on type mismatch
+        template<TrivialSyncType T>
+        T* Get() {
+            AssertType<T>();
+
+            return _Member<T>();
         }
 
         // Get the underlying member
@@ -294,28 +340,11 @@ private:
 
 
 
-    // Get the object by hash
-    // No copies are made (even for primitives)
-    // Returns null if not found 
-    // Throws on type mismatch
+    // Set the object by hash (Internal use only; does not revise ZDO on changes)
+    //  Returns whether the previous value was modified
+    //  Throws on type mismatch
     template<TrivialSyncType T>
-    const T* _Get(HASH_t key) const {
-        if (m_ordinalMask & GetOrdinalMask<T>()) {
-            auto mut = ToShiftHash<T>(key);
-            auto&& find = m_members.find(mut);
-            if (find != m_members.end()) {
-                return find->second.Get<T>();
-            }
-        }
-        return nullptr;
-    }
-
-    // Set the object by hash
-    // If the hash already exists (assuming type matches), type assignment operator is used
-    // Otherwise, a copy is made of the value and allocated
-    // Throws on type mismatch
-    template<TrivialSyncType T>
-    void _Set(HASH_t key, const T& value) {
+    bool _Set(HASH_t key, const T& value) {
         auto mut = ToShiftHash<T>(key);
 
         // Quickly check whether type is in map
@@ -325,8 +354,7 @@ private:
             //  If map contains, assumed a value reassignment (of same type)
             auto&& find = m_members.find(mut);
             if (find != m_members.end()) {
-                find->second.Set<T>(value);
-                return;
+                return find->second.Set<T>(value);
             }
         }
         else {
@@ -334,17 +362,18 @@ private:
         }
         bool insert = m_members.insert({ mut, Ord(value) }).second;
         assert(insert); // It must be uniquely inserted
+        return true;
     }
 
-    void _Set(HASH_t key, const void* value, Ordinal ordinal) {
+    bool _Set(HASH_t key, const void* value, Ordinal ordinal) {
         switch (ordinal) {
-        case ORD_FLOAT:		    _Set(key, *(float*)         value); break;
-        case ORD_VECTOR3:		_Set(key, *(Vector3*)       value); break;
-        case ORD_QUATERNION:	_Set(key, *(Quaternion*)    value); break;
-        case ORD_INT:			_Set(key, *(int32_t*)       value); break;
-        case ORD_LONG:			_Set(key, *(int64_t*)       value); break;
-        case ORD_STRING:		_Set(key, *(std::string*)   value); break;
-        case ORD_ARRAY:		    _Set(key, *(BYTES_t*)       value); break;
+        case ORD_FLOAT:		    return _Set(key, *(float*)         value);
+        case ORD_VECTOR3:		return _Set(key, *(Vector3*)       value);
+        case ORD_QUATERNION:	return _Set(key, *(Quaternion*)    value);
+        case ORD_INT:			return _Set(key, *(int32_t*)       value);
+        case ORD_LONG:			return _Set(key, *(int64_t*)       value);
+        case ORD_STRING:		return _Set(key, *(std::string*)   value);
+        case ORD_ARRAY:		    return _Set(key, *(BYTES_t*)       value);
         default:
             // good programming and proper use will prevent this case
             assert(false);
@@ -359,13 +388,9 @@ private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    Vector3 m_position;
 private:    Ordinal m_ordinalMask = 0;
 public:     OWNER_t m_owner = 0;            // local or remote OWNER_t
-//private:    HASH_t m_prefab = 0;
 private:    const Prefab* m_prefab = nullptr;
-public:     NetID m_id;                    // unique identifier; immutable through 'lifetime'
-//public:     ObjectType m_type = ObjectType::Default; // set by ZNetView
-//public:     bool m_persistent = false;    // set by ZNetView
-//public:     bool m_distant = false;        // set by ZNetView
-          
+public:     NetID m_id;
+
 private:
     void Revise() {
         m_rev.m_dataRev++;
@@ -423,13 +448,7 @@ private:
 
     template<typename T, typename CountType>
     void _TryReadType(DataReader& reader) {
-
         CountType count = sizeof(CountType) == 2 ? reader.ReadChar() : reader.Read<BYTE_t>();
-
-        //const auto count = reader.ReadChar();
-
-        // The ZDO's which use many members are dungeons... (rooms index...)
-        //assert(count <= 127); // TODO add try-catch (or better, handle utf8 correctly)
 
         for (int i=0; i < count; i++) {
             // ...fuck
@@ -456,11 +475,41 @@ public:
     //  Returns whether this ZDO is modern
     bool Load(DataReader& reader, int32_t version);
 
+    // Get a member by hash
+    //  Returns a mutable proxy to the object with changes accurately reflected
+    //  Throws on type mismatch
+    template<TrivialSyncType T>
+    ProxyMember<T> ProxyGet(HASH_t key) {
+        if (m_ordinalMask & GetOrdinalMask<T>()) {
+            auto mut = ToShiftHash<T>(key);
+            auto&& find = m_members.find(mut);
+            if (find != m_members.end()) {
+                return ProxyMember<T>(*this, *find->second.Get<T>());
+            }
+        }
+        return ProxyMember<T>(*this);
+    }
+
+    // Get a member by hash
+    //  Returns null if absent 
+    //  Throws on type mismatch
+    template<TrivialSyncType T>
+    const T* Get(HASH_t key) const {
+        if (m_ordinalMask & GetOrdinalMask<T>()) {
+            auto mut = ToShiftHash<T>(key);
+            auto&& find = m_members.find(mut);
+            if (find != m_members.end()) {
+                return find->second.Get<T>();
+            }
+        }
+        return nullptr;
+    }
+
     // Trivial hash getters
     template<TrivialSyncType T>
-        requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
+        //requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
     const T& Get(HASH_t key, const T& value) const {
-        auto&& get = _Get<T>(key);
+        auto&& get = Get<T>(key);
         if (get) return *get;
         return value;
     }
@@ -507,9 +556,8 @@ public:
 
     template<TrivialSyncType T>
     void Set(HASH_t key, const T& value) {
-        _Set(key, value);
-
-        Revise();
+        if (_Set(key, value))
+            Revise();
     }
 
     // Special hash setters
