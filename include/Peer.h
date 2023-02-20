@@ -166,4 +166,10 @@ public:
     // Get the character ZDO
     //  Nullable
     ZDO* GetZDO();
+
+    void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);
+
+    void Teleport(const Vector3& pos) {
+        Teleport(pos, Quaternion::IDENTITY, false);
+    }
 };

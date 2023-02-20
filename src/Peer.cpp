@@ -140,6 +140,14 @@ ZDO* Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
+void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::Teleport,
+        pos,
+        rot,
+        animation
+    );
+}
+
 
 
 void Peer::ZDOSectorInvalidated(ZDO& zdo) {

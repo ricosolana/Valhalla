@@ -1,16 +1,12 @@
 todo:
-    - fix general-Valheim latency issues (regarding client-side processing)
-        theres no real good fix to this without changing the core networking and mechanics of the game
+    - boat-lagg fix (important or not?)
+        when a player (owner) temporarily stops sending packets, the boat will be much ahead, causing other players to be in the previous position.
+        a possible idea would be to identify any instantaneous change in position, not impulse or integral velocity (since position in this sense is a simple sudden change due to lagg spike)
         
-        Possible solutions:
-            - reassign zdos to the nearest player 
-            - reassign zdos radially to players, except in overlaps
-            
-        Biggest caveats/important aspects/most frequent annoyances:
-            - COMBAT (Parrying especially) / Pickable/PickableItem under another zone-client is annoying, and most always laggy,
-                so, likely reassign owners during these situations:
-                    combat might be partially fixed by reassigning to the nearest player, only when players are fa apart from each other, and depends on distance of zdo-enemy in question
-    
+        could try resetting player-owner, setting position, then setting owner back (hmm, must experiment because this abuses the particular code of ZSyncTransform--- I am not sure how the client might respond to this). This must be carried out over several frames, not all at once...
+        
+        Player.Teleport does work, but it is a whole slow sequence. It does not actually teleport the player instantaneously because it is meant for slow loading areas from long distance portal travels. The above ZSyncTransform idea is the best bet at something to tp the player instantaneousy, but possibly finicky and buggy. must test...
+
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
@@ -63,6 +59,18 @@ todo:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
 finished:
+    - fix general-Valheim latency issues (regarding client-side processing)
+        theres no real good fix to this without changing the core networking and mechanics of the game
+        
+        Possible solutions:
+            - reassign zdos to the nearest player 
+            - reassign zdos radially to players, except in overlaps
+            
+        Biggest caveats/important aspects/most frequent annoyances:
+            - COMBAT (Parrying especially) / Pickable/PickableItem under another zone-client is annoying, and most always laggy,
+                so, likely reassign owners during these situations:
+                    combat might be partially fixed by reassigning to the nearest player, only when players are fa apart from each other, and depends on distance of zdo-enemy in question
+
     - trying to get a way to represent zdo-components (members) without convoluting everything
         - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
         - whether the object is a:

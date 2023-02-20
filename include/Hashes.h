@@ -82,6 +82,7 @@ namespace Hashes {
         static constexpr HASH_t ShowMessage = __H("ShowMessage");
         static constexpr HASH_t SetEvent = __H("SetEvent");
         static constexpr HASH_t DiscoverLocationCallback = __H("DiscoverLocationRespons");
+        static constexpr HASH_t Teleport = __H("RPC_TeleportPlayer");
 
 
 

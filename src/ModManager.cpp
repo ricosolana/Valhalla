@@ -298,6 +298,10 @@ void IModManager::LoadAPI() {
         "Message", sol::overload(
             sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
             sol::resolve<void(const std::string&)>(&Peer::Message)),
+        "Teleport", sol::overload(
+            sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
+            sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
+        ),
         "Disconnect", &Peer::Disconnect,
         "InvokeSelf", sol::overload(
             sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
@@ -560,14 +564,23 @@ void IModManager::LoadAPI() {
     zdoApiTable["GetZDOs"] = sol::overload(
         [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
-        [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); }
+        [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs_Radius(pos, radius, cond); }
     );
+    //    sol::overload(
+    //    [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
+    //    [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
+    //    [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); },
+    //    [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs_FlagRadius(pos, radius, flag); }
+    //);
     zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
     auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();
-    netApiTable["GetPeer"] = [](OWNER_t uuid) { return NetManager()->GetPeer(uuid); };
+    netApiTable["GetPeer"] = sol::overload(
+        [](OWNER_t uuid) { return NetManager()->GetPeer(uuid); },
+        [](const std::string& name) { return NetManager()->GetPeer(name); }
+    );
 
 
 

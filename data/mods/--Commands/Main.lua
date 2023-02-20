@@ -44,12 +44,36 @@ local RPC_vs = function(peer, cmd, args)
             if p then 
                 p.admin = not p.admin 
                 
-                peer:Message((p.admin and {"opped"} or {"deopped"})[1] .. " " .. p.name)
+                if p.admin then
+                    peer:Message("opped " .. p.name)
+                else
+                    peer:Message("deopped " .. p.name)
+                end                
             else
-                peer:Message("player not found")
+                peer:Message("player not found", MsgType.console)
             end
         else
             peer:Message("player arg missing", MsgType.console)
+        end
+    elseif cmd == "tp" then
+        if #args == 1 then
+            -- tp to the player-arg
+            local p = NetManager.GetPeer(args[1])
+            if p then 
+                peer:Teleport(p.pos)
+            else
+                peer:Message("player not found ", MsgType.console)
+            end
+        elseif #args == 2 then
+            local p1 = NetManager.GetPeer(args[1])
+            local p2 = NetManager.GetPeer(args[2])
+            if p1 and p2 then 
+                p1:Teleport(p2.pos)
+            else
+                peer:Message("players not found ", MsgType.console)
+            end
+        else
+            peer:Message("expected 1 or 2 args", MsgType.console)
         end
     end
 end
