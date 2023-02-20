@@ -34,10 +34,10 @@ find_package(OpenSSL REQUIRED)
 find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
-find_package(sol2 CONFIG REQUIRED)
+#find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 
-add_compile_definitions(SOL_PRINT_ERRORS)
+#add_compile_definitions(SOL_PRINT_ERRORS)
 
 #remove_definitions(SOL_PRINT_ERRORS)
 
@@ -113,11 +113,14 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZoneManager.cpp"
-   "include/objects/Ward.h" "include/objects/Piece.h" "include/objects/Portal.h" "include/objects/Player.h" "include/objects/Sign.h")
+)
+
+set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMAPI_SOURCE_DIR}
+    ${SOL2_ROOT_DIR}/include
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
@@ -129,7 +132,7 @@ target_link_libraries(${PROJECT_NAME}
     robin_hood::robin_hood
     ZLIB::ZLIB
     PUBLIC lua
-    sol2
+    #sol2
     yaml-cpp
     easyloggingpp
     OptickCore

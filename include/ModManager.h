@@ -55,6 +55,7 @@ class IModManager {
         sol::environment m_env;
 
         fs::path m_entry;
+        bool m_reload;
         //fs::file_time_type m_lastModified;
 
         std::string m_version;
@@ -63,9 +64,9 @@ class IModManager {
         std::list<std::string> m_authors;
 
         Mod(std::string name,
-            sol::environment env,
+            //sol::environment env,
             fs::path entry) 
-            : m_name(name), m_env(std::move(env)), 
+            : m_name(name),// m_env(std::move(env)), 
             m_entry(entry)/*, m_lastModified(fs::last_write_time(entry))*/ {}
 
         void Error(const std::string& s) {
@@ -82,11 +83,12 @@ class IModManager {
     };
 
     struct EventHandler {
+        std::reference_wrapper<Mod> m_mod;
         sol::protected_function m_func;
         int m_priority;
 
-        EventHandler(sol::function func, int priority)
-            : m_func(func), m_priority(priority) {}
+        EventHandler(Mod& mod, sol::function func, int priority)
+            : m_mod(mod), m_func(func), m_priority(priority) {}
     };
 
 private:
@@ -95,13 +97,14 @@ private:
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
     robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
-    EventStatus m_eventStatus;
+    EventStatus m_eventStatus = EventStatus::DEFAULT;
+    bool m_reload = false;
 
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);
 
     void LoadAPI();
-    void LoadMod(Mod* mod);
+    void LoadMod(Mod& mod);
 
 public:
     void Init();

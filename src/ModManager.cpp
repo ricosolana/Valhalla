@@ -42,11 +42,11 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
 
     auto mod(std::make_unique<Mod>(
         loadNode["name"].as<std::string>(), 
-        sol::environment(m_state, sol::create, m_state.globals()), 
+        //sol::environment(m_state, sol::create, m_state.globals()),
         modPath / (loadNode["entry"].as<std::string>() + ".lua"))
     );
 
-    mod->m_env["_G"] = mod->m_env;
+    //mod->m_env["_G"] = mod->m_env;
 
     mod->m_version = loadNode["version"].as<std::string>("");
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
@@ -582,13 +582,54 @@ void IModManager::LoadAPI() {
         [](const std::string& name) { return NetManager()->GetPeer(name); }
     );
 
+    auto modApiTable = m_state["ModManager"].get_or_create<sol::table>();
+    modApiTable["GetMod"] = [this](const std::string& name) {
+        auto&& find = m_mods.find(name);
+        if (find != m_mods.end())
+            return find->second.get();
+        return static_cast<Mod*>(nullptr);
+    };
 
 
-    apiTable["OnEvent"] = [this](sol::variadic_args args) {
+
+    apiTable["OnEvent"] = [this](sol::this_environment te, sol::variadic_args args) {
+        sol::environment& env = te;
         // match incrementally
         //std::string name;
         HASH_t cbHash = 0;
         int priority = 0;
+
+        for (int i = 0; i < args.size(); i++) {
+            auto&& arg = args[i];
+            auto&& type = arg.get_type();
+
+            if (type != sol::type::function) {
+                HASH_t hash;
+                if (type == sol::type::string)
+                    hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                else if (type == sol::type::number)
+                    hash = arg.as<HASH_t>();
+                else
+                    continue;
+                    //throw std::runtime_error("initial params must be string or hash");
+
+                cbHash ^= hash;
+            }
+            else {
+                auto&& vec = m_callbacks[cbHash];
+
+                Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+                assert(mod);
+
+                vec.emplace_back(*mod, arg.as<sol::function>(), priority);
+                std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
+                    const EventHandler& b) {
+                        return a.m_priority < b.m_priority;
+                    }
+                );
+            }
+        }
+
         for (int i = 0; i < args.size(); i++) {
             auto&& arg = args[i];
             auto&& type = arg.get_type();
@@ -609,7 +650,10 @@ void IModManager::LoadAPI() {
                 if (type == sol::type::function) {
                     auto&& vec = m_callbacks[cbHash];
                     
-                    vec.emplace_back(arg.as<sol::function>(), priority);
+                    Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+                    assert(mod);
+
+                    vec.emplace_back(*mod, arg.as<sol::function>(), priority);
                     std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
                         const EventHandler& b) {
                             return a.m_priority < b.m_priority;
@@ -629,7 +673,11 @@ void IModManager::LoadAPI() {
         "version", &Mod::m_version,
         "apiVersion", &Mod::m_apiVersion,
         "description", &Mod::m_description,
-        "authors", &Mod::m_authors
+        "authors", &Mod::m_authors,
+        "Reload", [this](Mod& self) {
+            self.m_reload = true;
+            m_reload = true;
+        }
     );
 
     m_state.new_usertype<IRouteManager::Data>("RouteData",
@@ -649,15 +697,25 @@ void IModManager::LoadAPI() {
     }
 }
 
-void IModManager::LoadMod(Mod* mod) {
-    auto&& env = mod->m_env;
-    env["this"] = mod;
+void IModManager::LoadMod(Mod& mod) {
+    auto path(mod.m_entry);
+    if (auto opt = VUtils::Resource::ReadFileString(path)) {
+        auto&& env = mod.m_env;
+        env = sol::environment(m_state, sol::create, m_state.globals());
 
-    {
-        //auto configTable = thisTable["config"].get_or_create<sol::table>();
+        env["_G"] = env;
+        env["this"] = mod;
 
-        // TODO use yamlcpp to get and set config values...
+        {
+            //auto configTable = thisTable["config"].get_or_create<sol::table>();
+
+            // TODO use yamlcpp for config...
+        }
+
+        m_state.safe_script(opt.value(), env);
     }
+    else
+        throw std::runtime_error(std::string("unable to open file ") + path.string());
 }
 
 
@@ -724,16 +782,7 @@ void IModManager::Init() {
                     continue;
 
                 auto mod = LoadModInfo(dirname);
-
-                auto path(mod->m_entry);
-                if (auto opt = VUtils::Resource::ReadFileString(path)) {
-                    sol::load_result script = m_state.load(*opt);
-                    LoadMod(mod.get());
-                    
-                    m_state.safe_script(opt.value(), mod->m_env);
-                }
-                else
-                    throw std::runtime_error(std::string("unable to open file ") + path.string());
+                LoadMod(*mod.get());
 
                 LOG(INFO) << "Loaded mod '" << mod->m_name << "'";
 
@@ -757,38 +806,39 @@ void IModManager::Uninit() {
 }
 
 void IModManager::Update() {
-    // Was testing out runtime script reloading, but it seems dangerous
-    /*
-    //PERIODIC_NOW(1s, {
-        for (auto&& pair : m_mods) {
-            auto&& mod = pair.second;
-            auto last = fs::last_write_time(mod->m_entry);
-            if (last != mod->m_lastModified) {
-                // reload the mod
+    ModManager()->CallEvent(EVENT_HASH_Update);
 
-                // first release all callbacks
-                for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-                    auto&& callbacks = itr->second;
-                    for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-                        if (sol::get_environment(itr1->m_func)["this"].get<sol::table>().as<Mod*>() == mod.get()) {
-                            // then erase it
-                            itr1 = callbacks.erase(itr1);
-                        }
-                        else
-                            ++itr;
-                    }
-
-                    if (callbacks.empty())
-                        itr = m_callbacks.erase(itr);
-                    else
-                        ++itr;
+    if (m_reload) {
+        // first release all callbacks associated with the mod
+        for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+            auto&& callbacks = itr->second;
+            for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+                if (itr1->m_mod.get().m_reload) {
+                    itr1 = callbacks.erase(itr1);
                 }
-                mod->m_env.deref
-                mod->m_lastModified = last;
-                m_state.collect_gc();
+                else
+                    ++itr;
+            }
+
+            // Pop callback set for tidy
+            if (callbacks.empty())
+                itr = m_callbacks.erase(itr);
+            else
+                ++itr;
+        }
+
+        for (auto&& pair : m_mods) {
+            auto&& mod = *pair.second.get();
+            if (mod.m_reload) {
+                LOG(INFO) << "Reloading mod " << mod.m_name;
+                mod.m_env.reset();
+                LoadMod(mod);
+                mod.m_reload = false;
             }
         }
-    //});
-    */
-    ModManager()->CallEvent(EVENT_HASH_Update);
+
+        m_state.collect_gc();
+
+        m_reload = false;
+    }
 }

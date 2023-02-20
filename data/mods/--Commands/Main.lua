@@ -75,6 +75,20 @@ local RPC_vs = function(peer, cmd, args)
         else
             peer:Message("expected 1 or 2 args", MsgType.console)
         end
+    elseif cmd == "reload" then
+        if #args == 0 then
+            this:Reload()
+            peer:Message("reloading self")
+        elseif #args == 1 then
+            local mod = ModManager.GetMod(args[1])
+            if mod then
+                mod:Reload()
+                peer:Message("reloading mod " .. mod.name, MsgType.console)
+            else
+                peer:Message("mod not found", MsgType.console)
+            end
+        end
+        
     end
 end
 
