@@ -519,32 +519,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Prefab(HASH_t prefab
 	return out;
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius) {
-	std::list<std::reference_wrapper<ZDO>> out;
-
-	auto zone = IZoneManager::WorldToZonePos(pos);
-
-	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
-	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
-
-	for (auto z=minZone.y; z <= maxZone.y; z++) {
-		for (auto x = minZone.x; x <= maxZone.x; x++) {
-			//FindObjects({ x, z }, out);
-			int num = SectorToIndex({x, z});
-			if (num != -1) {
-				auto&& objects = m_objectsBySector[num];
-				for (auto&& obj : objects) {
-					if (obj->m_position.SqDistance(pos) <= radius * radius)
-						out.push_back(*obj);
-				}
-			}
-		}
-	}
-
-	return out;
-}
-
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	auto zone = IZoneManager::WorldToZonePos(pos);
@@ -559,8 +534,8 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_PrefabRadius(const V
 			if (num != -1) {
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
-					if (obj->m_prefab->m_hash == prefabHash 
-						&& obj->m_position.SqDistance(pos) <= radius * radius)
+					if (obj->m_position.SqDistance(pos) <= radius * radius
+						&& (!cond || cond(*obj)))
 						out.push_back(*obj);
 				}
 			}
@@ -569,6 +544,24 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_PrefabRadius(const V
 
 	return out;
 }
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius) {
+	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>());
+}
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
+	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) { 
+		return zdo.m_prefab->m_hash == prefabHash;
+	}));
+}
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_FlagRadius(const Vector3& pos, float radius, Prefab::Flag flag) {
+	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
+		return zdo.m_prefab->HasFlag(flag);
+	}));
+}
+
+
 
 ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));

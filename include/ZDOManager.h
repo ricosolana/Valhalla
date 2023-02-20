@@ -101,18 +101,27 @@ public:
 
 	// Get all ZDOs strictly by prefab
 	std::list<std::reference_wrapper<ZDO>> GetZDOs_Prefab(HASH_t prefabHash);
+
+
+
+	// Get all ZDOs strictly within a radius based on a condition
+	std::list<std::reference_wrapper<ZDO>> GetZDOs_Radius(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond);
+
 	// Get all ZDOs strictly within a radius
 	std::list<std::reference_wrapper<ZDO>> GetZDOs_Radius(const Vector3& pos, float radius);
-	// Gets all ZDOs strictly within a sqradius
-	//std::list<ZDO*> GetZDOs_SqRadius(const Vector3& pos, float sqradius);
-	
+		
 	// Get all ZDOs strictly within a radius by prefab
 	std::list<std::reference_wrapper<ZDO>> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
+	std::list<std::reference_wrapper<ZDO>> GetZDOs_FlagRadius(const Vector3& pos, float radius, Prefab::Flag flag);
+
+
+
 	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
 
-	void ForceSendZDO(const ZDOID& id);
 
+
+	void ForceSendZDO(const ZDOID& id);
 	void DestroyZDO(ZDO& zdo, bool immediate);
 };
 
