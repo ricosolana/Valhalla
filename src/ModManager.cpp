@@ -563,15 +563,12 @@ void IModManager::LoadAPI() {
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = sol::overload(
         [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
-        [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
-        [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs_Radius(pos, radius, cond); }
+        [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
+        [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
+        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("got null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
-    //    sol::overload(
-    //    [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
-    //    [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs_Radius(pos, radius); },
-    //    [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs_PrefabRadius(pos, radius, prefab); },
-    //    [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs_FlagRadius(pos, radius, flag); }
-    //);
+
     zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
@@ -592,13 +589,15 @@ void IModManager::LoadAPI() {
 
 
 
-    apiTable["OnEvent"] = [this](sol::this_environment te, sol::variadic_args args) {
+    apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {
         sol::environment& env = te;
         // match incrementally
         //std::string name;
         HASH_t cbHash = 0;
+        sol::function func;
         int priority = 0;
 
+        /*
         for (int i = 0; i < args.size(); i++) {
             auto&& arg = args[i];
             auto&& type = arg.get_type();
@@ -628,18 +627,21 @@ void IModManager::LoadAPI() {
                     }
                 );
             }
-        }
+        }*/
+
+        // If priority is present (will be at end)
+        const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
 
         for (int i = 0; i < args.size(); i++) {
             auto&& arg = args[i];
             auto&& type = arg.get_type();
 
-            if (i + 1 < args.size()) {
+            if (i + offset < args.size()) {
                 HASH_t hash;
                 if (type == sol::type::string)
                     hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
                 else if (type == sol::type::number)
-                    hash = arg.as<HASH_t>();
+                    hash = arg; // .as<HASH_t>();
                 else {
                     throw std::runtime_error("initial params must be string or hash");
                 }
@@ -647,24 +649,29 @@ void IModManager::LoadAPI() {
                 cbHash ^= hash;
             }
             else {
-                if (type == sol::type::function) {
-                    auto&& vec = m_callbacks[cbHash];
-                    
-                    Mod* mod = env["this"].get<sol::table>().as<Mod*>();
-                    assert(mod);
-
-                    vec.emplace_back(*mod, arg.as<sol::function>(), priority);
-                    std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-                        const EventHandler& b) {
-                            return a.m_priority < b.m_priority;
-                        }
-                    );
+                if (i == args.size() - offset && type == sol::type::function) {
+                    func = arg;
+                }
+                else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
+                    priority = arg;
                 }
                 else {
-                    throw std::runtime_error("final param must be a function");
+                    throw std::runtime_error("final param must be a function or priority");
                 }
             }
         }
+
+        auto&& vec = m_callbacks[cbHash];
+
+        Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+        assert(mod);
+
+        vec.emplace_back(*mod, func, priority);
+        std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
+            const EventHandler& b) {
+                return a.m_priority < b.m_priority;
+            }
+        );
     };
 
     // TODO use properties for immutability

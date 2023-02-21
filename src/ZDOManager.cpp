@@ -320,7 +320,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		if (minSqDist != std::numeric_limits<float>::max() 
 			&& minSqDist > 12 * 12) {
 			// Get zdos immediate to this peer
-			auto zdos = GetZDOs_Radius(peer.m_pos,
+			auto zdos = GetZDOs(peer.m_pos,
 				std::sqrt(minSqDist) * 0.5f - 2.f);
 
 			// Basically reassign zdos from another owner to me instead
@@ -519,7 +519,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Prefab(HASH_t prefab
 	return out;
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	auto zone = IZoneManager::WorldToZonePos(pos);
@@ -543,22 +543,6 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3
 	}
 
 	return out;
-}
-
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Radius(const Vector3& pos, float radius) {
-	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>());
-}
-
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
-	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) { 
-		return zdo.m_prefab->m_hash == prefabHash;
-	}));
-}
-
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_FlagRadius(const Vector3& pos, float radius, Prefab::Flag flag) {
-	return GetZDOs_Radius(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
-		return zdo.m_prefab->HasFlag(flag);
-	}));
 }
 
 

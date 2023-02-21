@@ -105,15 +105,25 @@ public:
 
 
 	// Get all ZDOs strictly within a radius based on a condition
-	std::list<std::reference_wrapper<ZDO>> GetZDOs_Radius(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond);
 
 	// Get all ZDOs strictly within a radius
-	std::list<std::reference_wrapper<ZDO>> GetZDOs_Radius(const Vector3& pos, float radius);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius) {
+		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>());
+	}
 		
 	// Get all ZDOs strictly within a radius by prefab
-	std::list<std::reference_wrapper<ZDO>> GetZDOs_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, const Prefab& prefab) {
+		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
+			return zdo.m_prefab == &prefab;
+		}));
+	}
 
-	std::list<std::reference_wrapper<ZDO>> GetZDOs_FlagRadius(const Vector3& pos, float radius, Prefab::Flag flag);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, Prefab::Flag flag) {
+		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
+			return zdo.m_prefab->HasFlag(flag);
+		}));
+	}
 
 
 
