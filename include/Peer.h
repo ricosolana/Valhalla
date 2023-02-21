@@ -33,6 +33,7 @@ enum class TalkerType : int32_t {
 class Peer {
     friend class IZDOManager;
     friend class INetManager;
+    friend class IModManager;
 
 private:
     std::chrono::steady_clock::time_point m_lastPing;

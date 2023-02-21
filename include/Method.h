@@ -155,6 +155,9 @@ MethodImpl(F, HASH_t, HASH_t) -> MethodImpl<
 // Lua callbacks
 template<class T>
 class MethodImplLua : public IMethod<T> {
+    friend class IModManager;
+
+private:
     sol::function m_func;
     std::vector<DataType> m_types;
 

@@ -55,7 +55,7 @@ class IModManager {
         sol::environment m_env;
 
         fs::path m_entry;
-        bool m_reload;
+        //bool m_reload;
         //fs::file_time_type m_lastModified;
 
         std::string m_version;
@@ -98,7 +98,7 @@ private:
     robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
 
     EventStatus m_eventStatus = EventStatus::DEFAULT;
-    bool m_reload = false;
+    //bool m_reload = false;
 
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);

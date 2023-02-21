@@ -680,11 +680,11 @@ void IModManager::LoadAPI() {
         "version", &Mod::m_version,
         "apiVersion", &Mod::m_apiVersion,
         "description", &Mod::m_description,
-        "authors", &Mod::m_authors,
-        "Reload", [this](Mod& self) {
-            self.m_reload = true;
-            m_reload = true;
-        }
+        "authors", &Mod::m_authors
+        //"Reload", [this](Mod& self) {
+        //    self.m_reload = true;
+        //    m_reload = true;
+        //}
     );
 
     m_state.new_usertype<IRouteManager::Data>("RouteData",
@@ -815,6 +815,7 @@ void IModManager::Uninit() {
 void IModManager::Update() {
     ModManager()->CallEvent(EVENT_HASH_Update);
 
+    /*
     if (m_reload) {
         // first release all callbacks associated with the mod
         for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
@@ -838,6 +839,17 @@ void IModManager::Update() {
             auto&& mod = *pair.second.get();
             if (mod.m_reload) {
                 LOG(INFO) << "Reloading mod " << mod.m_name;
+
+                for (auto&& pair : NetManager()->GetPeers()) {
+                    auto&& peer = pair.second;
+                    for (auto&& pair1 : peer->m_methods) {
+                        auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
+                        //if (method)
+                            //method->m_func = 
+                    }
+                    //if (auto method = peer->GetMethod()
+                }
+
                 mod.m_env.reset();
                 LoadMod(mod);
                 mod.m_reload = false;
@@ -847,5 +859,5 @@ void IModManager::Update() {
         m_state.collect_gc();
 
         m_reload = false;
-    }
+    }*/
 }
