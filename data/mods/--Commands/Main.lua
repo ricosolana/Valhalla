@@ -2,7 +2,9 @@
     Command mod to illustrate RPC handler
 --]]
 
-local WARD_PREFAB = VUtils.String.GetStableHashCode('guard_stone')
+--local WARD_PREFAB = VUtils.String.GetStableHashCode('guard_stone')
+
+local WARD_PREFAB = PrefabManager.GetPrefab('guard_stone')
 
 local RPC_vs = function(peer, cmd, args)
 
@@ -16,20 +18,16 @@ local RPC_vs = function(peer, cmd, args)
     end
     
     if cmd == 'claim' then
-        if #args == 1 then
-            local radius = tonumber(args[1]) or 32
-            
-            local zdos = ZDOManager.GetZDOs(peer.pos, radius, WARD_PREFAB)
-            
-            for i=1, #zdos do
-                Views.Ward.new(zdos[i]).creator = peer
-            end
-            
-            peer:Message('claimed ' .. #zdos .. ' wards', MsgType.console)
-            
-        else
-            peer:Message('radius arg missing', MsgType.console)
+        local radius = (#args == 1 and tonumber(args[1])) or 32
+        --local radius = #args ~= 1 and 32 or (true and tonumber(args[1]))
+        
+        local zdos = ZDOManager.GetZDOs(peer.pos, radius, WARD_PREFAB)
+        
+        for i=1, #zdos do
+            Views.Ward.new(zdos[i]).creator = peer
         end
+        
+        peer:Message('claimed ' .. #zdos .. ' wards within radius ' .. radius, MsgType.console)
     elseif cmd == 'op' then
         if #args == 1 then
             local p = NetManager.GetPeer(args[1])
@@ -92,7 +90,7 @@ local RPC_vs = function(peer, cmd, args)
             -- abandon to the player-arg
             local p = NetManager.GetPeer(args[1])
             if p then 
-                local zdo = peer:GetZDO()
+                local zdo = peer.zdo
                 if zdo then
                     zdo:Abandon()
                 end
@@ -107,7 +105,7 @@ local RPC_vs = function(peer, cmd, args)
             -- abandon to the player-arg
             local p = NetManager.GetPeer(args[1])
             if p then 
-                local zdo = peer:GetZDO()
+                local zdo = peer.zdo
                 if zdo then
                     zdo.owner = p.uuid
                 end
