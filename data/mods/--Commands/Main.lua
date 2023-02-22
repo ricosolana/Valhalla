@@ -92,7 +92,7 @@ local RPC_vs = function(peer, cmd, args)
             -- abandon to the player-arg
             local p = NetManager.GetPeer(args[1])
             if p then 
-                local zdo = peer:GetZDO()
+                local zdo = p:GetZDO()
                 if zdo then
                     zdo:Abandon()
                 end
@@ -107,7 +107,7 @@ local RPC_vs = function(peer, cmd, args)
             -- abandon to the player-arg
             local p = NetManager.GetPeer(args[1])
             if p then 
-                local zdo = peer:GetZDO()
+                local zdo = p:GetZDO()
                 if zdo then
                     zdo.owner = p.uuid
                 end

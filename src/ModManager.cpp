@@ -442,6 +442,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<ZDO>("ZDO",
+        sol::no_constructor,
         "id", sol::property(&ZDO::ID),
         "owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
         "SetLocal", &ZDO::SetLocal,
