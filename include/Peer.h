@@ -173,4 +173,10 @@ public:
     void Teleport(const Vector3& pos) {
         Teleport(pos, Quaternion::IDENTITY, false);
     }
+
+    void MoveTo(const Vector3& pos, const Quaternion& rot);
+
+    void MoveTo(const Vector3& pos) {
+        MoveTo(pos, Quaternion::IDENTITY);
+    }
 };

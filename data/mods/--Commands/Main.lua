@@ -67,6 +67,56 @@ local RPC_vs = function(peer, cmd, args)
         else
             peer:Message('expected 1 or 2 args', MsgType.console)
         end
+    elseif cmd == 'moveto' then
+        if #args == 1 then
+            -- tp to the player-arg
+            local p = NetManager.GetPeer(args[1])
+            if p then 
+                peer:MoveTo(p.pos)
+            else
+                peer:Message('player not found ', MsgType.console)
+            end
+        elseif #args == 2 then
+            local p1 = NetManager.GetPeer(args[1])
+            local p2 = NetManager.GetPeer(args[2])
+            if p1 and p2 then 
+                p1:MoveTo(p2.pos)
+            else
+                peer:Message('players not found ', MsgType.console)
+            end
+        else
+            peer:Message('expected 1 or 2 args', MsgType.console)
+        end
+    elseif cmd == 'abandon' then
+        if #args == 1 then
+            -- abandon to the player-arg
+            local p = NetManager.GetPeer(args[1])
+            if p then 
+                local zdo = peer:GetZDO()
+                if zdo then
+                    zdo:Abandon()
+                end
+            else
+                peer:Message('player not found ', MsgType.console)
+            end
+        else
+            peer:Message('expected 1 arg', MsgType.console)
+        end
+    elseif cmd == 'reclaim' then
+        if #args == 1 then
+            -- abandon to the player-arg
+            local p = NetManager.GetPeer(args[1])
+            if p then 
+                local zdo = peer:GetZDO()
+                if zdo then
+                    zdo.owner = p.uuid
+                end
+            else
+                peer:Message('player not found ', MsgType.console)
+            end
+        else
+            peer:Message('expected 1 arg', MsgType.console)
+        end        
     end
 end
 

@@ -287,11 +287,12 @@ void IModManager::LoadAPI() {
         // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
         "admin", &Peer::m_admin,
-        "characterID", sol::property([](Peer& self) { return self.m_characterID; }),
-        "name", sol::property([](Peer& self) { return self.m_name; }), 
-        "pos", sol::property([](Peer& self) { return self.m_pos; }), 
-        "uuid", sol::property([](Peer& self) { return self.m_uuid; }), 
-        "socket", sol::property([](Peer& self) { return self.m_socket; }),
+        "characterID", sol::property(&Peer::m_characterID),
+        "name", sol::property(&Peer::m_name),
+        "pos", sol::property(&Peer::m_pos),
+        "uuid", sol::property(&Peer::m_uuid),
+        "socket", sol::property(&Peer::m_socket),
+        "zdo", sol::property(&Peer::GetZDO),
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),
         "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
@@ -301,6 +302,10 @@ void IModManager::LoadAPI() {
         "Teleport", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
+        ),
+        "MoveTo", sol::overload(
+            sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
+            sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
         ),
         "Disconnect", &Peer::Disconnect,
         "InvokeSelf", sol::overload(
@@ -437,14 +442,13 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<ZDO>("ZDO",
-        "id", &ZDO::m_id,
-        "owner", &ZDO::m_owner,
-        "prefab", sol::property(&ZDO::GetPrefab),
-        "pos", sol::property(
-            [](ZDO& self) { return self.Position(); },
-            [](ZDO& self, const Vector3& pos) { self.SetPosition(pos); }
-        ),
+        "id", sol::property(&ZDO::ID),
+        "owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
         "SetLocal", &ZDO::SetLocal,
+        "Abandon", &ZDO::Abandon,
+        "prefab", sol::property(&ZDO::GetPrefab),
+        "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
+        "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
         "GetLong", sol::overload(

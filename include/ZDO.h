@@ -382,7 +382,7 @@ private:
 
 
 
-public:     OWNER_t m_owner = 0;
+private:     OWNER_t m_owner = 0;
 private:    const Prefab* m_prefab = nullptr;
 private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
@@ -390,7 +390,7 @@ private:    Ordinal m_ordinalMask = 0;
 private:    Vector3 m_position;
 
 public:     Rev m_rev = {};
-public:     NetID m_id;
+private:     NetID m_id;
 
 
 private:
@@ -669,6 +669,13 @@ public:
     // Should name better
     void Abandon() {
         SetOwner(0);
+    }
+
+    void SetRotation(const Quaternion& rot) {
+        if (rot != m_rotation) {
+            m_rotation = rot;
+            Revise();
+        }
     }
 
     size_t GetTotalAlloc() {

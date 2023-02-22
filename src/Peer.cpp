@@ -148,10 +148,46 @@ void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
     );
 }
 
+void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
+    // hackish method to possibly move a player instantaneously
+    if (auto zdo = GetZDO()) {
+        zdo->Abandon();
+        //zdo->SetPosition(pos);
+        //zdo->SetRotation(rot);
+
+        auto uuid = m_uuid;
+
+        Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {
+            if (auto peer = NetManager()->GetPeer(uuid)) {
+                if (auto zdo = peer->GetZDO()) {
+                    zdo->Abandon();
+                    zdo->SetPosition(pos);
+                    zdo->SetRotation(rot);
+                    Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {
+                        if (auto peer = NetManager()->GetPeer(uuid)) {
+                            if (auto zdo = peer->GetZDO()) {
+                                zdo->SetOwner(peer->m_uuid);
+                                //zdo->SetPosition(pos);
+                                //zdo->SetRotation(rot);
+                            }
+                        }
+                        // TODO these values must be tweaked to be as low as possible
+                        //  This moveto method is so spontaneous it sometimes works
+                        //  sometimes it doesnt
+                        //  I have no clue why... something related to the client not
+                        //      abandoning its zdo
+                    }, milliseconds(500 + peer->m_socket->GetPing() * 2));
+                }
+            }
+        }, milliseconds(500 + m_socket->GetPing() * 2));
+        //, milliseconds(std::max(80U, m_socket->GetPing() * 2)));
+    }
+}
+
 
 
 void Peer::ZDOSectorInvalidated(ZDO& zdo) {
-    if (zdo.m_owner == m_uuid)
+    if (zdo.Owner() == m_uuid)
         return;
 
     if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {
