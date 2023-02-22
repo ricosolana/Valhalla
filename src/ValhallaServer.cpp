@@ -275,7 +275,7 @@ void IValhalla::Update() {
     
     ModManager()->Update();
     NetManager()->Update();
-    ZDOManager()->Update();    
+    ZDOManager()->Update();
     ZoneManager()->Update();
 
     PERIODIC_NOW(180s, {

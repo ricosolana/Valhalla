@@ -287,11 +287,11 @@ void IModManager::LoadAPI() {
         // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
         "admin", &Peer::m_admin,
-        "characterID", sol::property(&Peer::m_characterID),
-        "name", sol::property(&Peer::m_name),
-        "pos", sol::property(&Peer::m_pos),
-        "uuid", sol::property(&Peer::m_uuid),
-        "socket", sol::property(&Peer::m_socket),
+        "characterID", sol::property([](Peer& self) { return self.m_characterID; }),
+        "name", sol::property([](Peer& self) { return self.m_name; }),
+        "pos", &Peer::m_pos,
+        "uuid", sol::property([](Peer& self) { return self.m_uuid; }),
+        "socket", sol::property([](Peer& self) { return self.m_socket; }),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),

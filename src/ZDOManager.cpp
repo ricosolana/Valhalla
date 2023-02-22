@@ -633,8 +633,8 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		writer.Write(zdo.m_id);
 		writer.Write(zdo.m_rev.m_ownerRev);
 		writer.Write(zdo.m_rev.m_dataRev);
-		writer.Write(zdo.Owner());
-		writer.Write(zdo.Position());
+		writer.Write(zdo.m_owner);
+		writer.Write(zdo.m_position);
 
 		writer.SubWrite([zdo, &writer]() {
 			zdo.Serialize(writer);
@@ -704,10 +704,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						
 			//auto created = pair == m_objectsByID.end();
 			if (!created) {
-				//auto&& zdo = pair->second;
-				//auto&& zdo = 
-				// if the client data rev is not new, and they've reassigned the owner:
+				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
+				//	(because the data will be the same, or at the worst case, it will be outdated)
 				if (dataRev <= zdo.m_rev.m_dataRev) {
+
+					// If the owner has changed, keep a copy
 					if (ownerRev > zdo.m_rev.m_ownerRev) {
 						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
 							//*zdo = copy; // if zdo modification was to be cancelled
