@@ -24,9 +24,12 @@ struct ServerSettings {
     bool            playerForceVisible;
     
     milliseconds    socketTimeout;          // ms
+
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
+    seconds         zdoAssignInterval;
+    bool            zdoSmartAssign;     // experimental feature that attempts to reduce lagg
 
     bool            spawningCreatures;
     bool            spawningLocations;

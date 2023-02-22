@@ -128,7 +128,7 @@ public:
         if (reader.Position() != reader.Length())
             LOG(WARNING) << "Peer Rpc Invoke has more data than expected "
             << reader.Length() << "/" << reader.Position();
-
+        
         // Prefix
         // category catch
         //ModManager()->CallEventTuple(m_categoryHash, tuple);
@@ -155,12 +155,16 @@ MethodImpl(F, HASH_t, HASH_t) -> MethodImpl<
 // Lua callbacks
 template<class T>
 class MethodImplLua : public IMethod<T> {
+    friend class IModManager;
+
+private:
     sol::function m_func;
     std::vector<DataType> m_types;
 
 public:
     explicit MethodImplLua(sol::function func, std::vector<DataType> types)
-        : m_func(func), m_types(std::move(types)) {}
+        : m_func(func), 
+        m_types(types) {}
 
     void Invoke(T t, DataReader reader) override {
         sol::variadic_results results;

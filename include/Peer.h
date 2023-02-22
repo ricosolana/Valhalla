@@ -11,10 +11,17 @@ class IZDOManager;
 class INetManager;
 
 // TODO merge player message types all in one
-// MessageType: 
+enum class MsgType {
+    WHISPER,
+    NORMAL,
+    //Shout,
+    //Ping,
+    CONSOLE,
+    CORNER,
+    CENTER
+};
 
-enum class TalkerType : int32_t
-{
+enum class TalkerType : int32_t {
     Whisper,
     Normal,
     Shout,
@@ -26,6 +33,7 @@ enum class TalkerType : int32_t
 class Peer {
     friend class IZDOManager;
     friend class INetManager;
+    friend class IModManager;
 
 private:
     std::chrono::steady_clock::time_point m_lastPing;
@@ -35,7 +43,6 @@ public:
     robin_hood::unordered_map<NetID, ZDO::Rev> m_zdos;
     robin_hood::unordered_set<NetID> m_forceSend;
     robin_hood::unordered_set<NetID> m_invalidSector;
-    //int m_sendIndex = 0; // used incrementally for which next zdos to send from index
 
 public:
     ISocket::Ptr m_socket;
@@ -44,7 +51,6 @@ public:
     const std::string m_name;
     bool m_admin = false;
     bool m_magicLogin = false;
-    //bool m_nextMagicLogin = false;
 
     // Constantly changing vars
     Vector3 m_pos;
@@ -54,15 +60,17 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO* zdo);
+    void ZDOSectorInvalidated(ZDO& zdo);
     void ForceSendZDO(const NetID& id);
-    bool IsOutdatedZDO(ZDO* zdo);
+    bool IsOutdatedZDO(ZDO& zdo);
 
 public:
     Peer(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos)
         : m_socket(std::move(socket)), m_lastPing(steady_clock::now()), 
         m_name(name), m_uuid(uuid), m_pos(pos)
     {}
+
+    Peer(const Peer& peer) = delete;
 
     /**
         * @brief Register a static method for remote invocation
@@ -80,11 +88,13 @@ public:
         Register(VUtils::String::GetStableHashCode(name), func);
     }
 
-    void Register(HASH_t hash, sol::function func, std::vector<DataType> types) {
-        //std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
+    //void Register(HASH_t hash, sol::function &&func, std::vector<DataType> &&types) {
+    //    m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(
+    //        std::forward<decltype(func)>(func), std::forward<decltype(types)>(types));
+    //}
 
-        m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(std::move(func), std::move(types));
-            //std::unique_ptr<IMethod<Peer*>>(new MethodImplLua(std::move(func), std::move(types)));
+    void Register(MethodSig sig, sol::function func) {
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
     template <typename... Types>
@@ -133,14 +143,40 @@ public:
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
     void RemotePrint(const std::string& msg);
-    void Kick(bool now = false);
+    void Kick(bool now);
+    void Kick() { Kick(false); }
     void Kick(std::string reason);
     void SendDisconnect();
     void Disconnect();
 
     // Send a chat message
-    void Message(const std::string& text, TalkerType type = TalkerType::Normal);
+    //void SendChatMessage(const std::string& text, TalkerType type = TalkerType::Normal);
+
+    void SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID);
+
+    void Message(const std::string& text, MsgType type);
+    void Message(const std::string& text) {
+        Message(text, MsgType::NORMAL);
+    }
+
 
     // Send a screen popup message
     void ShowMessage(const std::string& text, MessageType type = MessageType::TopLeft);
+
+
+    // Get the character ZDO
+    //  Nullable
+    ZDO* GetZDO();
+
+    void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);
+
+    void Teleport(const Vector3& pos) {
+        Teleport(pos, Quaternion::IDENTITY, false);
+    }
+
+    void MoveTo(const Vector3& pos, const Quaternion& rot);
+
+    void MoveTo(const Vector3& pos) {
+        MoveTo(pos, Quaternion::IDENTITY);
+    }
 };

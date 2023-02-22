@@ -15,284 +15,113 @@
 #include "NetSocket.h"
 #include "ZDOManager.h"
 #include "Method.h"
+#include "objects/Ward.h"
+#include "objects/Portal.h"
+#include "objects/Player.h"
+#include "RouteManager.h"
+#include "NetManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
 
-std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& folderName,
-    std::string& outEntry) {
+std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& folderName) {
 
     YAML::Node loadNode;
 
-    auto path = fs::path("mods") / folderName / "modInfo.yml";
+    auto modPath = fs::path("mods") / folderName;
+    auto modInfoPath = modPath / "modInfo.yml";
 
-    if (auto opt = VUtils::Resource::ReadFileString(path)) {
+    if (auto opt = VUtils::Resource::ReadFileString(modInfoPath)) {
         loadNode = YAML::Load(opt.value());
     }
     else {
-        throw std::runtime_error(std::string("unable to open ") + path.string());
+        throw std::runtime_error(std::string("unable to open ") + modInfoPath.string());
     }
 
-    outEntry = loadNode["entry"].as<std::string>();
-
     auto mod(std::make_unique<Mod>(
-        loadNode["name"].as<std::string>(), sol::environment(m_state, sol::create, m_state.globals())));
+        loadNode["name"].as<std::string>(), 
+        //sol::environment(m_state, sol::create, m_state.globals()),
+        modPath / (loadNode["entry"].as<std::string>() + ".lua"))
+    );
+
+    //mod->m_env["_G"] = mod->m_env;
 
     mod->m_version = loadNode["version"].as<std::string>("");
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
     mod->m_description = loadNode["description"].as<std::string>("");
     mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
 
+    if (this->m_mods.contains(mod->m_name)) {
+        throw std::runtime_error("mod with duplicate name");
+    }
+
     return mod;
 }
 
-void IModManager::LoadModEntry(Mod* mod) {
-
-    // load all mods from file
-
-    auto&& env = mod->m_env;
-
-    env["print"] = [this, mod](sol::variadic_args args) {
-        auto&& tostring(m_state["tostring"]);
-
-        std::string s;
-        int idx = 0;
-        for (auto&& arg : args) {
-            if (idx++ > 0)
-                s += " ";
-            s += tostring(arg);
-        }
-
-        LOG(INFO) << "[" << mod->m_name << "] " << s;
-    };
-
-    auto utilsTable = env["VUtils"].get_or_create<sol::table>();
-
-    utilsTable["Compress"] = sol::overload(
-        sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
-        sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
-    );
-    utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
-    utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
-
-    {
-        auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
-
-        stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
-    }
-
-    {
-        auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
-                
-        resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
-        resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
-        resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
-        resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
-        resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
-        resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
-    }
-
-    //env.new_usertype<IMethod<Peer*>>("IMethod",
-    //    "Invoke", &IMethod<Peer*>::Invoke
-    //);
-
-    env.new_usertype<Peer>("Peer",
-        "Kick", static_cast<void (Peer::*)(bool)>(&Peer::Kick),
-        "Kick", static_cast<void (Peer::*)(std::string)>(&Peer::Kick),
-        "Disconnect", &Peer::Disconnect,
-        //"Invoke", []() {},
-        //"Register", &Peer::Register,
-        "characterID", &Peer::m_characterID,
-        "name", &Peer::m_name,
-        "visibleOnMap", &Peer::m_visibleOnMap,
-        "pos", &Peer::m_pos,
-        "uuid", &Peer::m_uuid, // sol::property([](Peer& self) { return std::to_string(self.m_uuid); }), 
-        "InvokeSelf", sol::overload(
-            static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
-            static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        "Invoke", [this, mod](Peer& self, sol::variadic_args args) {
-            auto&& tostring(m_state["tostring"]);
-
-            BYTES_t bytes;
-            DataWriter params(bytes);
-            for (int i = 0; i < args.size(); i++) {
-                auto&& arg = args[i];
-                auto&& type = arg.get_type();
-
-                if (i == 0) {
-                    if (type == sol::type::string) {
-                        params.Write(VUtils::String::GetStableHashCode(arg.as<std::string>()));
-                    }
-                    else if (type == sol::type::number) {
-                        params.Write(arg.as<HASH_t>());
-                    }
-                    else {
-                        sol::object o = tostring(arg);
-                        auto result = o.as<std::string>();
-                        return mod->Error(std::string("Expected string or number, got: ") + result);
-
-                        //snprintf(errBuf, sizeof(errBuf), "arg %d; expected string or number, got: %s", i, result.c_str());
-                        //return ptr->Throw(errBuf);
-                    }
-                }
-                else {
-                    // strict assumptions:
-                    // Every first number is assumed to be the PkgType, and the next to be the object
-                    if (type == sol::type::number) {
-                        DataType dataType = arg.as<DataType>();
-
-                        // bounds check end of array for pairs
-                        if (i + 1 < args.size()) {
-                            auto&& obj = args[++i];
-
-                            if (obj.get_type() != sol::type::number) {
-                                sol::object o = tostring(obj);
-                                auto result = o.as<std::string>();
-                                return mod->Error("arg " + std::to_string(i) + "; expected number immediately after PkgType, got: " + result);
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected number immediately after PkgType, got: %s", i, result.c_str());
-                                //return ptr->Throw(errBuf);
-                            }
-
-                            switch (dataType) {
-                            case DataType::INT8:
-                                params.Write(obj.as<int8_t>());
-                                break;
-                            case DataType::INT16:
-                                params.Write(obj.as<int16_t>());
-                                break;
-                            case DataType::INT32:
-                                params.Write(obj.as<int32_t>());
-                                break;
-                            case DataType::INT64:
-                                params.Write(obj.as<int64_t>());
-                                break;
-                            case DataType::FLOAT:
-                                params.Write(obj.as<float>());
-                                break;
-                            case DataType::DOUBLE:
-                                params.Write(obj.as<double>());
-                                break;
-                            default:
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; invalid PkgType enum, got: %d", i, static_cast<std::underlying_type_t<decltype(pkgType)>>(pkgType));
-                                //return ptr->Throw(errBuf);
-                                return mod->Error("arg " + std::to_string(i) + "; invalid PkgType enum, got: " + std::to_string(std::to_underlying(dataType)));
-                            }
-                        }
-                        else {
-                            //snprintf(errBuf, sizeof(errBuf), "arg %d; unknown number type", i);
-                            //return ptr->Throw(errBuf);
-                            return mod->Error("arg " + std::to_string(i) + "; unknown number type");
-                        }
-                    }
-                    else {
-                        if (type == sol::type::string) {
-                            params.Write(arg.as<std::string>());
-                        }
-                        else if (type == sol::type::boolean) {
-                            params.Write(arg.as<bool>());
-                        }
-                        else {
-                            if (arg.is<BYTES_t>()) {
-                                params.Write(arg.as<BYTES_t>());
-                            }
-                            else if (arg.is<NetID>()) {
-                                params.Write(arg.as<NetID>());
-                            }
-                            else if (arg.is<Vector3>()) {
-                                params.Write(arg.as<Vector3>());
-                            }
-                            else if (arg.is<Vector2i>()) {
-                                params.Write(arg.as<Vector2i>());
-                            }
-                            else if (arg.is<Quaternion>()) {
-                                params.Write(arg.as<Quaternion>());
-                            }
-                            else if (arg.is<std::vector<std::string>>()) {
-                                params.Write(arg.as<std::vector<std::string>>());
-                            }
-                            else {
-                                sol::object o = tostring(arg);
-                                auto result = o.as<std::string>();
-                                mod->Error("arg " + std::to_string(i) + "; expected serializable type, got: " + result);
-                                //snprintf(errBuf, sizeof(errBuf), "arg %d; expected serializable type, got: %s", i, result.c_str());
-                                //return ptr->Throw(errBuf);
-                            }
-                        }
-                    }
-                }
-            }
-
-            self.m_socket->Send(std::move(bytes));
-        },
-
-        "Register", [mod](Peer& self, sol::variadic_args args) {
-            HASH_t hash = 0;
-            std::vector<DataType> types;
-
-            for (int i = 0; i < args.size(); i++) {
-                auto&& arg = args[i];
-                auto&& type = arg.get_type();
-
-                if (i == 0) {
-                    if (type == sol::type::string) {
-                        auto name = arg.as<std::string>();
-                        hash = VUtils::String::GetStableHashCode(name);
-                    }
-                    else if (type == sol::type::number) {
-                        hash = arg.as<HASH_t>();
-                    }
-                    else {
-                        return mod->Error("first param must be a string or numeric hash");
-                    }
-                }
-                else if (i + 1 < args.size()) {
-                    // grab middle pkgtypes
-                    if (type == sol::type::number) {
-                        types.push_back(arg.as<DataType>());
-                    }
-                    else {
-                        return mod->Error("middle params must be a numeric enum");
-                    }
-                }
-                else {
-                    if (type == sol::type::function) {
-                        auto callback = arg.as<sol::function>();
-
-                        //assert(false);
-                        //self.Register(name, 
-                            //std::make_unique<MethodImplLua<Peer*>>(callback, std::move(types)));
-                        self.Register(hash, std::move(callback), std::move(types));
-                    }
-                    else {
-                        return mod->Error("last param must be a function");
-                    }
-                }
-            }
-        },
-        "socket", sol::property([](Peer& self) { return self.m_socket; })
-        //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+void IModManager::LoadAPI() {
+    m_state.new_usertype<Vector3>("Vector3",
+        sol::constructors<Vector3(), Vector3(float, float, float)>(),
+        "x", &Vector3::x,
+        "y", &Vector3::y,
+        "z", &Vector3::z,
+        "Distance", &Vector3::Distance,
+        "Magnitude", &Vector3::Magnitude,
+        "Normalize", &Vector3::Normalize,
+        "Normalized", &Vector3::Normalized,
+        "SqDistance", &Vector3::SqDistance,
+        "SqMagnitude", &Vector3::SqMagnitude,
+        "zero", sol::property([]() { return Vector3::ZERO; })
     );
 
-    env.new_enum("DataType",
-        "bytes",    DataType::BYTES,
-        "string",   DataType::STRING,
-        "zdoid",    DataType::ZDOID,
-        "vector3",     DataType::VECTOR3,
-        "vector2i",    DataType::VECTOR2i,
-        "quaternion",     DataType::QUATERNION,
-        "strings",  DataType::STRINGS,
-        "bool",     DataType::BOOL,
-        "byte",     DataType::INT8,         "int8", DataType::INT8,
-        "short",    DataType::INT16,        "int16", DataType::INT16,
-        "int",      DataType::INT32,        "int32", DataType::INT32,       "hash", DataType::INT32,
-        "long",     DataType::INT64,        "int64", DataType::INT64,       
-        "float",    DataType::FLOAT,
-        "double",   DataType::DOUBLE
+    m_state.new_usertype<Vector2i>("Vector2i",
+        sol::constructors<Vector2i(), Vector2i(int32_t, int32_t)>(),
+        "x", &Vector2i::x,
+        "y", &Vector2i::y,
+        "Distance", &Vector2i::Distance,
+        "Magnitude", &Vector2i::Magnitude,
+        "Normalize", &Vector2i::Normalize,
+        "Normalized", &Vector2i::Normalized,
+        "SqDistance", &Vector2i::SqDistance,
+        "SqMagnitude", &Vector2i::SqMagnitude,
+        "zero", sol::property([]() { return Vector2i::ZERO; })
     );
 
-    env.new_usertype<DataWriter>("DataWriter",
+    m_state.new_usertype<Quaternion>("Quaternion",
+        sol::constructors<Quaternion(float, float, float, float)>(),
+        "x", &Quaternion::x,
+        "y", &Quaternion::y,
+        "z", &Quaternion::z,
+        "w", &Quaternion::w,
+        "identity", sol::property([]() { return Quaternion::IDENTITY; })
+    );
+
+    m_state.new_usertype<ZDOID>("ZDOID",
+        sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
+        "uuid", &ZDOID::m_uuid,
+        "id", &ZDOID::m_id,
+        "none", sol::property([]() { return ZDOID::NONE; })
+    );
+
+    m_state.new_enum("DataType",
+        "bytes", DataType::BYTES,
+        "string", DataType::STRING,
+        "zdoid", DataType::ZDOID,
+        "vector3", DataType::VECTOR3,
+        "vector2i", DataType::VECTOR2i,
+        "quaternion", DataType::QUATERNION,
+        "strings", DataType::STRINGS,
+        "bool", DataType::BOOL,
+        "byte", DataType::INT8, "int8", DataType::INT8,
+        "short", DataType::INT16, "int16", DataType::INT16,
+        "int", DataType::INT32, "int32", DataType::INT32, "hash", DataType::INT32,
+        "long", DataType::INT64, "int64", DataType::INT64,
+        "float", DataType::FLOAT,
+        "double", DataType::DOUBLE
+    );
+
+    m_state.new_usertype<DataWriter>("DataWriter",
         sol::constructors<DataWriter(BYTES_t&)>(),
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
@@ -307,8 +136,9 @@ void IModManager::LoadModEntry(Mod* mod) {
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
-            [](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
-            [mod](DataWriter& self, DataType type, LUA_NUMBER val) {
+            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+            //[](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
+            [](DataWriter& self, DataType type, LUA_NUMBER val) {
                 switch (type) {
                 case DataType::INT8:
                     self.Write<int8_t>(val);
@@ -329,20 +159,21 @@ void IModManager::LoadModEntry(Mod* mod) {
                     self.Write<double>(val);
                     break;
                 default:
-                    return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
+                    throw std::runtime_error("invalid DataType");
+                    //return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
                 }
-            })
+            }
+        )
     );
 
     // Package read/write types
-    env.new_usertype<DataReader>("DataReader",
+    m_state.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
-        
         // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
         //  instead of this verbose nightmare
-        "Read", [mod](sol::this_state state, DataReader& self, DataType type) {
+        "Read", [](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
                 return sol::make_object(state, self.Read<BYTES_t>());
@@ -373,59 +204,66 @@ void IModManager::LoadModEntry(Mod* mod) {
             case DataType::DOUBLE:
                 return sol::make_object(state, self.Read<double>());
             default:
-                mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
+                throw std::runtime_error("invalid DataType");
+                //mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
             }
-            return sol::make_object(state, sol::nil);
+            //return sol::make_object(state, sol::nil);
         }
     );
 
-    env.new_usertype<ZDOID>("ZDOID",
-        sol::constructors<NetID(OWNER_t userID, uint32_t id)>(),
-        "uuid", &ZDOID::m_uuid,
-        //"uuid", [](NetID& self) { return std::to_string(self.m_uuid); }, 
-        "id", &ZDOID::m_id,
-        //"NONE", []() { return ZDOID::NONE; }
-        "none", sol::property([]() { return ZDOID::NONE; })
-    );
 
-    env.new_usertype<Vector3>("Vector3",
-        sol::constructors<Vector3(), Vector3(float, float, float)>(),
-        "x", &Vector3::x,
-        "y", &Vector3::y,
-        "z", &Vector3::z,
-        "Distance", &Vector3::Distance,
-        "Magnitude", &Vector3::Magnitude,
-        "Normalize", &Vector3::Normalize,
-        "Normalized", &Vector3::Normalized,
-        "SqDistance", &Vector3::SqDistance,
-        "SqMagnitude", &Vector3::SqMagnitude,
-        "zero", sol::property([]() { return Vector3::ZERO; })
-    );
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
+        sol::state_view state = ts;
 
-    env.new_usertype<Vector2i>("Vector2i",
-        sol::constructors<Vector2i(), Vector2i(int32_t, int32_t)>(),
-        "x", &Vector2i::x,
-        "y", &Vector2i::y,
-        "Distance", &Vector2i::Distance,
-        "Magnitude", &Vector2i::Magnitude,
-        "Normalize", &Vector2i::Normalize,
-        "Normalized", &Vector2i::Normalized,
-        "SqDistance", &Vector2i::SqDistance,
-        "SqMagnitude", &Vector2i::SqMagnitude,
-        "zero", sol::property([]() { return Vector2i::ZERO; })
-    );
+        auto&& tostring(state["tostring"]);
 
-    env.new_usertype<Quaternion>("Quaternion",
-        sol::constructors<Quaternion(float, float, float, float)>(),
-        "x", &Quaternion::x,
-        "y", &Quaternion::y,
-        "z", &Quaternion::z,
-        "w", &Quaternion::w,
-        "identity", sol::property([]() { return Quaternion::IDENTITY; })
-    );
+        std::string s;
+        int idx = 0;
+        for (auto&& arg : args) {
+            if (idx++ > 0)
+                s += " ";
+            s += tostring(arg);
+        }
+
+        //LOG(INFO) << "[" << mod->m_name << "] " << s;
+        LOG(INFO) << "[mod] " << s;
+    };
+
+    {
+        auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
+
+        utilsTable["Compress"] = sol::overload(
+            sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
+            sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
+        );
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+        utilsTable["CreateBytes"] = []() { return BYTES_t(); };
+
+        {
+            auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
+
+            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
+        }
+
+        {
+            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+
+            resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
+            resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
+            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
+            resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
+            resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
+            resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
+        }
+    }
+
+    //env.new_usertype<IMethod<Peer*>>("IMethod",
+    //    "Invoke", &IMethod<Peer*>::Invoke
+    //);
 
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
-    env.new_usertype<ISocket>("ISocket",
+    m_state.new_usertype<ISocket>("ISocket",
         "Close", &ISocket::Close,
         "Connected", &ISocket::Connected,
         "GetAddress", &ISocket::GetAddress,
@@ -433,18 +271,197 @@ void IModManager::LoadModEntry(Mod* mod) {
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
-    env.new_usertype<ZDO>("ZDO",
-        "id", &ZDO::m_id,
-        "owner", &ZDO::m_owner,
+    m_state.new_enum("MsgType",
+        "whisper", MsgType::WHISPER,
+        "normal", MsgType::NORMAL,
+        "console", MsgType::CONSOLE,
+        "corner", MsgType::CORNER,
+        "center", MsgType::CENTER
+    );
+
+    m_state.new_usertype<MethodSig>("MethodSig",
+        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
+    );
+
+    m_state.new_usertype<Peer>("Peer",
+        // member fields
+        "visibleOnMap", &Peer::m_visibleOnMap,
+        "admin", &Peer::m_admin,
+        "characterID", sol::property([](Peer& self) { return self.m_characterID; }),
+        "name", sol::property([](Peer& self) { return self.m_name; }),
+        "pos", &Peer::m_pos,
+        "uuid", sol::property([](Peer& self) { return self.m_uuid; }),
+        "socket", sol::property([](Peer& self) { return self.m_socket; }),
+        "zdo", sol::property(&Peer::GetZDO),
+        // member functions
+        "Kick", sol::resolve<void()>(&Peer::Kick),
+        "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
+        "Message", sol::overload(
+            sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
+            sol::resolve<void(const std::string&)>(&Peer::Message)),
+        "Teleport", sol::overload(
+            sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
+            sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
+        ),
+        "MoveTo", sol::overload(
+            sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
+            sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
+        ),
+        "Disconnect", &Peer::Disconnect,
+        "InvokeSelf", sol::overload(
+            sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
+            sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
+            //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
+            //static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
+        //"Register", [](Peer& self, const MethodSig &repr, sol::function func) {
+        //    self.Register(repr.m_hash, func, repr.m_types);
+        //},
+
+        // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
+        "Register", static_cast<void (Peer::*)(MethodSig, sol::function)>(&Peer::Register),
+        "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
+            if (args.size() != repr.m_types.size())
+                throw std::runtime_error("incorrect number of args");
+
+            BYTES_t bytes;
+            DataWriter params(bytes);
+
+            params.Write(repr.m_hash);
+
+            for (int i = 0; i < args.size(); i++) {
+                auto&& arg = args[i];
+                auto argType = arg.get_type();
+                DataType expectType = repr.m_types[i];
+
+                if (argType == sol::type::number) {
+                    switch (expectType) {
+                    case DataType::INT8:
+                        params.Write(arg.as<int8_t>());
+                        break;
+                    case DataType::INT16:
+                        params.Write(arg.as<int16_t>());
+                        break;
+                    case DataType::INT32:
+                        params.Write(arg.as<int32_t>());
+                        break;
+                    case DataType::INT64:
+                        params.Write(arg.as<int64_t>());
+                        break;
+                    case DataType::FLOAT:
+                        params.Write(arg.as<float>());
+                        break;
+                    case DataType::DOUBLE:
+                        params.Write(arg.as<double>());
+                        break;
+                    default:
+                        throw std::runtime_error("incorrect type at position (or bad DFlag?)");
+                    }
+                }
+                else if (argType == sol::type::string && expectType == DataType::STRING) {
+                    params.Write(arg.as<std::string>());
+                }
+                else if (argType == sol::type::boolean && expectType == DataType::BOOL) {
+                    params.Write(arg.as<bool>());
+                }
+                else if (arg.is<BYTES_t>() && expectType == DataType::BYTES) {
+                    params.Write(arg.as<BYTES_t>());
+                }
+                else if (arg.is<NetID>() && expectType == DataType::ZDOID) {
+                    params.Write(arg.as<NetID>());
+                }
+                else if (arg.is<Vector3>() && expectType == DataType::VECTOR3) {
+                    params.Write(arg.as<Vector3>());
+                }
+                else if (arg.is<Vector2i>() && expectType == DataType::VECTOR2i) {
+                    params.Write(arg.as<Vector2i>());
+                }
+                else if (arg.is<Quaternion>() && expectType == DataType::QUATERNION) {
+                    params.Write(arg.as<Quaternion>());
+                }
+                else if (arg.is<std::vector<std::string>>() && expectType == DataType::STRINGS) {
+                    params.Write(arg.as<std::vector<std::string>>());
+                }
+                else {
+                    throw std::runtime_error("unsupported type, or incorrect type at position");
+                }                
+            }
+
+            self.m_socket->Send(std::move(bytes));
+        }
+
+        //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+    );
+
+    
+
+    m_state.new_enum("PrefabFlag",
+        "scale", Prefab::Flag::SyncInitialScale,
+        "far", Prefab::Flag::Distant,
+        "persist", Prefab::Flag::Persistent,
+        "piece", Prefab::Flag::Piece,
+        "bed", Prefab::Flag::Bed,
+        "door", Prefab::Flag::Door,
+        "chair", Prefab::Flag::Chair,
+        "ship", Prefab::Flag::Ship,
+        "fish", Prefab::Flag::Fish,
+        "plant", Prefab::Flag::Plant,
+        "armature", Prefab::Flag::ArmorStand,
+        "item", Prefab::Flag::ItemDrop,
+        "pickable", Prefab::Flag::Pickable,
+        "pickableItem", Prefab::Flag::PickableItem,
+        "cooking", Prefab::Flag::CookingStation,
+        "crafting", Prefab::Flag::CraftingStation,
+        "smelting", Prefab::Flag::Smelter,
+        "burning", Prefab::Flag::Fireplace,
+        "support", Prefab::Flag::WearNTear,
+        "breakable", Prefab::Flag::Destructible,
+        "attach", Prefab::Flag::ItemStand,
+        "animal", Prefab::Flag::AnimalAI,
+        "monster", Prefab::Flag::MonsterAI,
+        "tame", Prefab::Flag::Tameable,
+        "breed", Prefab::Flag::Procreation,
+        "rock", Prefab::Flag::MineRock,
+        "rock5", Prefab::Flag::MineRock5,
+        "tree", Prefab::Flag::TreeBase,
+        "log", Prefab::Flag::TreeLog,
+        "sfx", Prefab::Flag::SFX,
+        "vfx", Prefab::Flag::VFX,
+        "aoe", Prefab::Flag::AOE
+    );
+
+    m_state.new_usertype<Prefab>("Prefab",
+        "name", &Prefab::m_name,
+        "hash", &Prefab::m_hash,
+        "HasFlag", &Prefab::HasFlag
+    );
+
+    auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();
+    prefabApiTable["GetPrefab"] = sol::overload(
+        [](const std::string& name) { return PrefabManager()->GetPrefab(name); },
+        [](HASH_t hash) { return PrefabManager()->GetPrefab(hash); }
+    );
+
+    m_state.new_usertype<ZDO>("ZDO",
+        "id", sol::property(&ZDO::ID),
+        "owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
         "SetLocal", &ZDO::SetLocal,
+        "Abandon", &ZDO::Abandon,
+        "prefab", sol::property(&ZDO::GetPrefab),
+        "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
+        "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
-        //"GetLong", &ZDO::GetLong,
+        "GetLong", sol::overload(
+            sol::resolve<int64_t (HASH_t, int64_t) const>(&ZDO::GetLong),
+            sol::resolve<int64_t (const std::string&, int64_t) const>(&ZDO::GetLong)
+        ),
         //"GetQuaternion", &ZDO::GetQuaternion,
         //"GetVector3", &ZDO::GetVector3,
         "GetString", sol::overload(
-            static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
-            static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
+            sol::resolve<const std::string& (const std::string&, const std::string&) const>(&ZDO::GetString),
+            sol::resolve<const std::string& (HASH_t, const std::string&) const>(&ZDO::GetString)
+            //static_cast<const std::string& (ZDO::*)(const std::string&, const std::string&) const>(&ZDO::GetString),
+            //static_cast<const std::string& (ZDO::*)(HASH_t, const std::string&) const>(&ZDO::GetString)
         ),
         //"GetBytes", &ZDO::GetBytes,
         //"GetBool", &ZDO::GetBool,
@@ -496,23 +513,48 @@ void IModManager::LoadModEntry(Mod* mod) {
         //}
 
         "Set", sol::overload(
-            [](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
+            ///[](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
         
             //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
-            [](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); }
+            ///[](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); },
             // string
-            //static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
             //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
             // zdoid
             //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
-            //static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
+            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
         )
 
     );
 
+    {
+        // References will be unwrapped to pointers / visa-versa
+        //  Pointers being dereferenced to a T& type is automatic if the function accepts a reference
+        // https://sol2.readthedocs.io/en/latest/functions.html#functions-and-argument-passing
 
+        auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
-    auto apiTable = env["Valhalla"].get_or_create<sol::table>();
+        viewsTable.new_usertype<Ward>("Ward",
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got null ZDO"); return Ward(*zdo); }),
+            "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
+            "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
+            "AddPermitted", &Ward::AddPermitted,
+            "RemovePermitted", &Ward::RemovePermitted,
+            "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
+            "IsPermitted", &Ward::IsPermitted,
+            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("got null Peer"); return self.SetCreator(*peer); }),
+            "IsAllowed", &Ward::IsAllowed
+        );
+
+        viewsTable.new_usertype<Portal>("Portal",
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got nullptr ZDO"); return Portal(*zdo); }),
+            "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
+            "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
+            "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
+        );
+    }
+
+    auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
     apiTable["ServerVersion"] = SERVER_VERSION;
     apiTable["ValheimVersion"] = VConstants::GAME;
     apiTable["Delta"] = []() { return Valhalla()->Delta(); };
@@ -521,83 +563,170 @@ void IModManager::LoadModEntry(Mod* mod) {
     apiTable["Ticks"] = []() { return Valhalla()->Ticks(); };
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
-    auto zdoApiTable = env["ZDOManager"].get_or_create<sol::table>();
+    auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
-    zdoApiTable["GetZDOs"] = [](HASH_t hash) { return ZDOManager()->GetZDOs(hash); };
+    zdoApiTable["GetZDOs"] = sol::overload(
+        [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
+        [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
+        [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
+        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("got null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
+    );
+
+    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
+    auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();
+    netApiTable["GetPeer"] = sol::overload(
+        [](OWNER_t uuid) { return NetManager()->GetPeer(uuid); },
+        [](const std::string& name) { return NetManager()->GetPeer(name); }
+    );
+
+    auto modApiTable = m_state["ModManager"].get_or_create<sol::table>();
+    modApiTable["GetMod"] = [this](const std::string& name) {
+        auto&& find = m_mods.find(name);
+        if (find != m_mods.end())
+            return find->second.get();
+        return static_cast<Mod*>(nullptr);
+    };
 
 
-    apiTable["OnEvent"] = [this, mod](sol::this_state thisState, sol::variadic_args args) {
+
+    apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {
+        sol::environment& env = te;
         // match incrementally
         //std::string name;
         HASH_t cbHash = 0;
+        sol::function func;
         int priority = 0;
+
+        /*
         for (int i = 0; i < args.size(); i++) {
             auto&& arg = args[i];
             auto&& type = arg.get_type();
 
-            if (i + 1 < args.size()) {
+            if (type != sol::type::function) {
                 HASH_t hash;
                 if (type == sol::type::string)
                     hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
                 else if (type == sol::type::number)
                     hash = arg.as<HASH_t>();
+                else
+                    continue;
+                    //throw std::runtime_error("initial params must be string or hash");
+
+                cbHash ^= hash;
+            }
+            else {
+                auto&& vec = m_callbacks[cbHash];
+
+                Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+                assert(mod);
+
+                vec.emplace_back(*mod, arg.as<sol::function>(), priority);
+                std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
+                    const EventHandler& b) {
+                        return a.m_priority < b.m_priority;
+                    }
+                );
+            }
+        }*/
+
+        // If priority is present (will be at end)
+        const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+
+        for (int i = 0; i < args.size(); i++) {
+            auto&& arg = args[i];
+            auto&& type = arg.get_type();
+
+            if (i + offset < args.size()) {
+                HASH_t hash;
+                if (type == sol::type::string)
+                    hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                else if (type == sol::type::number)
+                    hash = arg; // .as<HASH_t>();
                 else {
-                    return mod->Error("LUA starting parameters must be string or hash");
+                    throw std::runtime_error("initial params must be string or hash");
                 }
 
                 cbHash ^= hash;
             }
             else {
-                if (type == sol::type::function) {
-                    auto&& vec = m_callbacks[cbHash];
-                    vec.emplace_back( 
-                        mod, 
-                        arg.as<sol::function>(), 
-                        priority
-                    );
-                    std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-                        const EventHandler& b) {
-                        return a.m_priority < b.m_priority;
-                    });
+                if (i == args.size() - offset && type == sol::type::function) {
+                    func = arg;
+                }
+                else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
+                    priority = arg;
                 }
                 else {
-                    return mod->Error("LUA last param must be a function");
+                    throw std::runtime_error("final param must be a function or priority");
                 }
             }
         }
+
+        auto&& vec = m_callbacks[cbHash];
+
+        Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+        assert(mod);
+
+        vec.emplace_back(*mod, func, priority);
+        std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
+            const EventHandler& b) {
+                return a.m_priority < b.m_priority;
+            }
+        );
     };
 
+    // TODO use properties for immutability
+    m_state.new_usertype<Mod>("Mod",
+        "name", &Mod::m_name,
+        "version", &Mod::m_version,
+        "apiVersion", &Mod::m_apiVersion,
+        "description", &Mod::m_description,
+        "authors", &Mod::m_authors
+        //"Reload", [this](Mod& self) {
+        //    self.m_reload = true;
+        //    m_reload = true;
+        //}
+    );
+
+    m_state.new_usertype<IRouteManager::Data>("RouteData",
+        "sender", &IRouteManager::Data::m_sender,
+        "target", &IRouteManager::Data::m_target,
+        "targetZDO", &IRouteManager::Data::m_targetZDO,
+        "method", &IRouteManager::Data::m_method,
+        "params", &IRouteManager::Data::m_params
+    );
+
     {
-        auto thisTable = env["this"].get_or_create<sol::table>();
+        auto thisEventTable = m_state["event"].get_or_create<sol::table>();
 
-        {
-            auto thisModTable = thisTable["mod"].get_or_create<sol::table>();
-
-            thisModTable["name"] = mod->m_name;
-            thisModTable["version"] = mod->m_version;
-            thisModTable["apiVersion"] = mod->m_apiVersion;
-            thisModTable["description"] = mod->m_description;
-            thisModTable["authors"] = mod->m_authors;
-        }
-
-        {
-            auto thisEventTable = thisTable["event"].get_or_create<sol::table>();
-
-            thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
-            thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-            thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
-        }
-
-        {
-            auto thisConfigTable = thisTable["config"].get_or_create<sol::table>();
-
-            // TODO use yamlcpp to get and set config values...
-        }
-
+        thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
+        thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
     }
+}
+
+void IModManager::LoadMod(Mod& mod) {
+    auto path(mod.m_entry);
+    if (auto opt = VUtils::Resource::ReadFileString(path)) {
+        auto&& env = mod.m_env;
+        env = sol::environment(m_state, sol::create, m_state.globals());
+
+        env["_G"] = env;
+        env["this"] = mod;
+
+        {
+            //auto configTable = thisTable["config"].get_or_create<sol::table>();
+
+            // TODO use yamlcpp for config...
+        }
+
+        m_state.safe_script(opt.value(), env);
+    }
+    else
+        throw std::runtime_error(std::string("unable to open file ") + path.string());
 }
 
 
@@ -651,7 +780,7 @@ void IModManager::Init() {
         sol::lib::utf8
     );
 
-    
+    LoadAPI();
 
     for (const auto& dir
         : fs::directory_iterator("mods")) {
@@ -663,20 +792,12 @@ void IModManager::Init() {
                 if (dirname.starts_with("--"))
                     continue;
 
-                std::string entry;
-                auto mod = LoadModInfo(dirname, entry);
-
-                LoadModEntry(mod.get());
-
-                auto path(fs::path("mods") / dirname / (entry + ".lua"));
-                if (auto opt = VUtils::Resource::ReadFileString(path))
-                    m_state.safe_script(opt.value(), mod->m_env);
-                else
-                    throw std::runtime_error(std::string("unable to open file ") + path.string());
+                auto mod = LoadModInfo(dirname);
+                LoadMod(*mod.get());
 
                 LOG(INFO) << "Loaded mod '" << mod->m_name << "'";
 
-                mods.insert({ mod->m_name, std::move(mod) });
+                m_mods.insert({ mod->m_name, std::move(mod) });
             }
         }
         catch (const std::exception& e) {
@@ -684,7 +805,7 @@ void IModManager::Init() {
         }
     }
 
-    LOG(INFO) << "Loaded " << mods.size() << " mods";
+    LOG(INFO) << "Loaded " << m_mods.size() << " mods";
 
     CallEvent("Enable");
 }
@@ -692,5 +813,55 @@ void IModManager::Init() {
 void IModManager::Uninit() {
     CallEvent("Disable");
     m_callbacks.clear();
-    mods.clear();
+    m_mods.clear();
+}
+
+void IModManager::Update() {
+    ModManager()->CallEvent(EVENT_HASH_Update);
+
+    /*
+    if (m_reload) {
+        // first release all callbacks associated with the mod
+        for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+            auto&& callbacks = itr->second;
+            for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+                if (itr1->m_mod.get().m_reload) {
+                    itr1 = callbacks.erase(itr1);
+                }
+                else
+                    ++itr;
+            }
+
+            // Pop callback set for tidy
+            if (callbacks.empty())
+                itr = m_callbacks.erase(itr);
+            else
+                ++itr;
+        }
+
+        for (auto&& pair : m_mods) {
+            auto&& mod = *pair.second.get();
+            if (mod.m_reload) {
+                LOG(INFO) << "Reloading mod " << mod.m_name;
+
+                for (auto&& pair : NetManager()->GetPeers()) {
+                    auto&& peer = pair.second;
+                    for (auto&& pair1 : peer->m_methods) {
+                        auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
+                        //if (method)
+                            //method->m_func = 
+                    }
+                    //if (auto method = peer->GetMethod()
+                }
+
+                mod.m_env.reset();
+                LoadMod(mod);
+                mod.m_reload = false;
+            }
+        }
+
+        m_state.collect_gc();
+
+        m_reload = false;
+    }*/
 }

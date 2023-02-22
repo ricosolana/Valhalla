@@ -94,6 +94,8 @@ bool SteamSocket::Connected() const {
     return m_connected;
 }
 
+
+
 unsigned int SteamSocket::GetSendQueueSize() const {
     //if (Connected()) {
         unsigned int num = 0;
@@ -104,10 +106,18 @@ unsigned int SteamSocket::GetSendQueueSize() const {
         if (SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
         }
-
+        
         return num;
     //}
     //return -1;
+}
+
+unsigned int SteamSocket::GetPing() const {
+    SteamNetConnectionRealTimeStatus_t rt{};
+    if (SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
+        return rt.m_nPing;
+    }
+    return 0;
 }
 
 

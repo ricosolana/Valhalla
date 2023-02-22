@@ -20,8 +20,14 @@ public:
 		return GetPrefab(VUtils::String::GetStableHashCode(name));
 	}
 
+	// Instantiate a new ZDO in world with prefab at position and rotation
 	ZDO* Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY, const Prefab** outPrefab = nullptr);
-	ZDO* Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY);
+
+	// Instantiate a new ZDO in world with prefab at position and rotation
+	ZDO& Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY);
+
+	// Instantiate a copy of a ZDO (everything will be cloned)
+	ZDO& Instantiate(const ZDO& zdo);
 
 };
 

@@ -25,7 +25,8 @@ public:
 public:
     std::array<Biome, 4> m_cornerBiomes;
     Heights_t m_baseHeights;
-    Mask_t m_baseMask;
+    //Mask_t m_baseMask;
+    std::vector<float> m_vegMask;
 };
 
 class Heightmap {

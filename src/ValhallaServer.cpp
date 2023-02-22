@@ -59,7 +59,7 @@ void IValhalla::LoadFiles() {
     m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
     m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
-    if (m_settings.worldName.empty()) m_settings.worldName = "Dedicated world";
+    if (m_settings.worldName.empty()) m_settings.worldName = "world";
     m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
     if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
     //m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
@@ -79,8 +79,10 @@ void IValhalla::LoadFiles() {
 
     m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
     m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
-    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50)); // player timeout in milliseconds
-        
+    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50));
+    m_settings.zdoAssignInterval = seconds(std::max(loadNode["zdo-assign-interval-s"].as<unsigned int>(2), 1U));
+    m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(true);
+
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
     m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
@@ -115,6 +117,8 @@ void IValhalla::LoadFiles() {
         saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
         saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
         saveNode["zdo-send-interval-ms"] = m_settings.zdoSendInterval.count();
+        saveNode["zdo-assign-interval-s"] = m_settings.zdoAssignInterval.count();
+        saveNode["zdo-smart-assign"] = m_settings.zdoSmartAssign;
 
         saveNode["spawning-creatures"] = m_settings.spawningCreatures;
         saveNode["spawning-locations"] = m_settings.spawningLocations;
@@ -161,12 +165,6 @@ void IValhalla::Start() {
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
 
-    // Does not work properly in some circumstances
-    signal(SIGINT, [](int) {
-        LOG(WARNING) << "Interrupt caught, stopping server";
-        Valhalla()->Stop();
-    });
-
     this->LoadFiles();
 
     m_netTime = 2040;
@@ -206,6 +204,12 @@ void IValhalla::Start() {
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
+
+    LOG(INFO) << "Press ctrl+c to exit";
+    signal(SIGINT, [](int) {
+        LOG(WARNING) << "Interrupt caught, stopping server";
+        Valhalla()->Stop();
+    });
 
     m_running = true;
     while (m_running) {
@@ -256,7 +260,7 @@ void IValhalla::Start() {
     WorldManager()->WriteFileWorldDB(true);
 
     VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFileLines("whitelsit.txt", m_whitelist);
+    VUtils::Resource::WriteFileLines("whitelist.txt", m_whitelist);
     VUtils::Resource::WriteFileLines("admin.txt", m_admin);
     VUtils::Resource::WriteFileLines("bypass.txt", m_bypass);
 }
@@ -269,8 +273,9 @@ void IValhalla::Update() {
     if (!NetManager()->GetPeers().empty())
         m_netTime += Delta();
     
+    ModManager()->Update();
     NetManager()->Update();
-    ZDOManager()->Update();    
+    ZDOManager()->Update();
     ZoneManager()->Update();
 
     PERIODIC_NOW(180s, {

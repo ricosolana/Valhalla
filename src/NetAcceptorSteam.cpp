@@ -114,10 +114,12 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 
         auto pair = m_sockets.find(data->m_hConn);
 
-        pair->second->Close(false);
+        if (pair != m_sockets.end()) {
+            pair->second->Close(false);
 
-        m_connected.erase(data->m_hConn);
-        m_sockets.erase(pair);
+            m_connected.erase(data->m_hConn);
+            m_sockets.erase(pair);
+        }
     }
 }
 

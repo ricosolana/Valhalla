@@ -482,7 +482,7 @@ float IGeoManager::GetForestHeight(float wx, float wy) {
 	return num + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 }
 
-float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
+float IGeoManager::GetMistlandsHeight(float wx, float wy, float& mask) {
 	float wx2 = wx;
 	float wy2 = wy;
 	float num = GetBaseHeight(wx, wy);
@@ -492,7 +492,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
 		* VUtils::Math::PerlinNoise(wx * 0.04f * 0.7f, wy * 0.04f * 0.7f);
 	num2 += VUtils::Math::PerlinNoise(wx * 0.03f * 0.7f, wy * 0.03f * 0.7f)
 		* VUtils::Math::PerlinNoise(wx * 0.05f * 0.7f, wy * 0.05f * 0.7f) * num2 * 0.5f;
-	num2 = ((num2 > 0) ? std::pow(num2, 1.5f) : num2);
+	num2 = (num2 > 0) ? std::pow(num2, 1.5f) : num2;
 	num += num2 * 0.4f;
 	num = AddRivers(wx2, wy2, num);
 	float num3 = VUtils::Mathf::Clamp01(num2 * 7.f);
@@ -505,8 +505,10 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, Color& mask) {
 	num5 *= 400.f;
 	num5 = std::ceil(num5);
 	num5 /= 400.f;
-	num = VUtils::Mathf::Lerp(a, num5, num3);
-	mask = Color{ 0, 0, 0, num4 };
+	//num = VUtils::Mathf::Lerp(a, num5, num3);
+	num = std::lerp(a, num5, num3);
+	//mask = Color{ 0, 0, 0, num4 };
+	mask = num4;
 	return num;
 }
 
@@ -715,11 +717,11 @@ Biome IGeoManager::GetBiomes(float x, float z) {
 }
 
 float IGeoManager::GetHeight(float wx, float wy) {
-	Color dummy;
+	float dummy;
 	return GetHeight(wx, wy, dummy);
 }
 
-float IGeoManager::GetHeight(float wx, float wy, Color& mask) {
+float IGeoManager::GetHeight(float wx, float wy, float& mask) {
 	auto biome = GetBiome(wx, wy);
 	return GetBiomeHeight(biome, wx, wy, mask);
 }
@@ -729,12 +731,12 @@ float IGeoManager::GetGenerationHeight(float wx, float wy) {
 	auto biome = GetBiome(wx, wy);
 	if (biome == Biome::Mistlands)
 		return GetForestHeight(wx, wy) * 200.f;
-	Color dummy;
+	float dummy;
 	return GetBiomeHeight(biome, wx, wy, dummy);
 }
 
 // public
-float IGeoManager::GetBiomeHeight(Biome biome, float wx, float wy, Color& mask) {
+float IGeoManager::GetBiomeHeight(Biome biome, float wx, float wy, float& mask) {
 	switch (biome)
 	{
 	case Biome::Meadows:

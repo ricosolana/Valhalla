@@ -125,7 +125,11 @@ public:
 	static constexpr int DISTANT_ACTIVE_AREA = 2;
 	static constexpr int ZONE_SIZE = 64;
 	static constexpr float WATER_LEVEL = 30;
-	static constexpr int WORLD_SIZE_IN_ZONES = 312;
+	//static constexpr int WORLD_SIZE_IN_ZONES = 316;
+	static constexpr int WORLD_RADIUS_IN_ZONES = 324/2;
+	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
+
+	//static_assert(WORLD_RADIUS_IN_ZONES % 2 == 0, "World size must be even");
 
 private:
 	// All templated ZoneLocations, sorted by priority
@@ -209,7 +213,11 @@ public:
 	bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
 	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
-	bool IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid);
+	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
+
+	//bool IsPeerNearby(const Vector3& pos, OWNER_t uid) {
+	//	return IsPeerNearby(WorldToZonePos(pos), uid);
+	//}
 
 	void ResetGlobalKeys();
 

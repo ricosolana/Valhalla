@@ -10,6 +10,7 @@
 #include "ValhallaServer.h"
 #include "VUtilsRandom.h"
 #include "CompileSettings.h"
+#include "PrefabManager.h"
 
 #include "Tests.h"
 
@@ -35,6 +36,8 @@ void initLogger(bool colors) {
     // https://github.com/amrayn/easyloggingpp/blob/master/README.md#using-configuration-file
     // [%fbase:L%line]
     //std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
+    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, LOGFILE_NAME);
+
     std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     loggerConfiguration.set(el::Level::Info, el::ConfigurationType::Format, format);
     loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
@@ -42,7 +45,6 @@ void initLogger(bool colors) {
     loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, (colors ? GOLD : "") + format + (colors ? RESET : ""));
     loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format, 
         (colors ? GOLD : "") + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + (colors ? RESET : ""));
-    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, LOGFILE_NAME);
 
     el::Helpers::setThreadName("main");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);
@@ -63,17 +65,19 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
 
-#if FALSE
+#ifdef RUN_TESTS
     fs::current_path("./data/tests/");
     //Tests::Test_QuaternionLook();
+
+    //Tests::Test_PeerLuaConnect();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
-    //Tests::Test_ZDO();
+    Tests::Test_ZDO();
     //Tests::Test_ResourceReadWrite();
     //Tests::Test_Random();
     //Tests::Test_Perlin();
 
-    LOG(INFO) << "All tests passeed!";
+    LOG(INFO) << "All tests passed!";
 
     return 0;
 #endif
@@ -95,18 +99,26 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Copy any old file
-    if (backup_logs) {
-        std::error_code ec;
-        fs::copy_file(LOGFILE_NAME,
-            std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME, ec);
-    }
+    fs::current_path(root);
 
     initLogger(colors);
 
-    fs::current_path(root);
+    // Copy any old file
+    if (backup_logs) {
+        std::error_code ec;
+        fs::create_directories("logs", ec);
 
-    LOG(INFO) << "Press ctrl+c to exit";
+        if (auto log = VUtils::Resource::ReadFileBytes(LOGFILE_NAME)) {
+            if (auto compress = VUtils::CompressGz(*log))
+                VUtils::Resource::WriteFileBytes(
+                    fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + LOGFILE_NAME + ".gz"), 
+                    *compress);
+        }
+        //fs::copy_file(LOGFILE_NAME,
+            //std::to_string(steady_clock::now().time_since_epoch().count()) + LOGFILE_NAME, ec);
+    }
+
+    
 
 #ifndef _DEBUG
     try {

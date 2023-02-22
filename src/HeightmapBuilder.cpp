@@ -95,7 +95,7 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {
     const auto biome4 = base->m_cornerBiomes[3];
 
     base->m_baseHeights.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
-    base->m_baseMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
+    base->m_vegMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
         const float world_y = baseWorldPos.z + ry;
@@ -105,32 +105,39 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {
             const float world_x = baseWorldPos.x + rx;
             const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::ZONE_SIZE);
 
-            Color color;
+            //Color color = Colors::BLACK;
+            float mistlandsMask = 0;
             float height;
+            
+            assert(tx >= 0 && tx <= 1);
+            assert(ty >= 0 && ty <= 1);
+
+            // slight optimization case
             if (biome1 == biome2 && biome1 == biome3 && biome1 == biome4) {
-                height = GEO->GetBiomeHeight(biome1, world_x, world_y, color);
+                height = GEO->GetBiomeHeight(biome1, world_x, world_y, mistlandsMask);
             }
             else {
-                Color colors[4];
-                float biomeHeight1 = GEO->GetBiomeHeight(biome1, world_x, world_y, colors[0]);
-                float biomeHeight2 = GEO->GetBiomeHeight(biome2, world_x, world_y, colors[1]);
-                float biomeHeight3 = GEO->GetBiomeHeight(biome3, world_x, world_y, colors[2]);
-                float biomeHeight4 = GEO->GetBiomeHeight(biome4, world_x, world_y, colors[3]);
+                float mask1 = 0, mask2 = 0, mask3 = 0, mask4 = 0;
+                float height1 = GEO->GetBiomeHeight(biome1, world_x, world_y, mask1);
+                float height2 = GEO->GetBiomeHeight(biome2, world_x, world_y, mask2);
+                float height3 = GEO->GetBiomeHeight(biome3, world_x, world_y, mask3);
+                float height4 = GEO->GetBiomeHeight(biome4, world_x, world_y, mask4);
 
-                Color c1 = colors[0].Lerp(colors[1], tx);
-                Color c2 = colors[2].Lerp(colors[3], tx);
-                color = c1.Lerp(c2, ty);
-
-                float h1 = VUtils::Mathf::Lerp(biomeHeight1, biomeHeight2, tx);
-                float h2 = VUtils::Mathf::Lerp(biomeHeight3, biomeHeight4, tx);
-                height = VUtils::Mathf::Lerp(h1, h2, ty);
+                // this does nothing if no biomes are mistlands
+                float c1 = std::lerp(mask1, mask2, tx);
+                float c2 = std::lerp(mask3, mask4, tx);
+                mistlandsMask = std::lerp(c1, c2, ty);
+                
+                float h1 = std::lerp(height1, height2, tx);
+                float h2 = std::lerp(height3, height4, tx);
+                height = std::lerp(h1, h2, ty);
             }
 
             base->m_baseHeights[ry * Heightmap::E_WIDTH + rx] = height;
 
             // color mask is a bit smaller, so check bounds
             if (rx < IZoneManager::ZONE_SIZE && ry < IZoneManager::ZONE_SIZE) {
-                base->m_baseMask[ry * IZoneManager::ZONE_SIZE + rx] = color;
+                base->m_vegMask[ry * IZoneManager::ZONE_SIZE + rx] = mistlandsMask;
             }
         }
     }

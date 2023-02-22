@@ -4,6 +4,7 @@
 #include "ZoneManager.h"
 #include "Hashes.h"
 #include "RouteManager.h"
+#include "ZDOManager.h"
 
 void Peer::Update() {
     OPTICK_EVENT();
@@ -99,13 +100,13 @@ void Peer::Disconnect() {
 
 
 
-void Peer::Message(const std::string& text, TalkerType type) {
+void Peer::SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
-        m_pos,
+        pos, //Vector3(10000, 10000, 10000),
         type,
-        "<color=yellow><b>SERVER</b></color>",
+        senderName, //"<color=yellow><b>SERVER</b></color>",
         text,
-        ""
+        senderID //""
     );
 }
 
@@ -113,27 +114,97 @@ void Peer::ShowMessage(const std::string& text, MessageType type) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, type, text);
 }
 
+void Peer::Message(const std::string& text, MsgType type) {
+    switch (type) {
+    case MsgType::WHISPER:
+        SendChatMessage(text, TalkerType::Whisper, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        break;
+    case MsgType::NORMAL:
+        SendChatMessage(text, TalkerType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        break;
+    case MsgType::CONSOLE:
+        RemotePrint(text);
+        break;
+    case MsgType::CORNER:
+        ShowMessage(text, MessageType::TopLeft);
+        break;
+    case MsgType::CENTER:
+        ShowMessage(text, MessageType::Center);
+        break;
+    default:
+        throw std::runtime_error("bad enum type");
+    }
+}
+
+ZDO* Peer::GetZDO() {
+    return ZDOManager()->GetZDO(m_characterID);
+}
+
+void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::Teleport,
+        pos,
+        rot,
+        animation
+    );
+}
+
+void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
+    // hackish method to possibly move a player instantaneously
+    if (auto zdo = GetZDO()) {
+        zdo->Abandon();
+        //zdo->SetPosition(pos);
+        //zdo->SetRotation(rot);
+
+        auto uuid = m_uuid;
+
+        Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {
+            if (auto peer = NetManager()->GetPeer(uuid)) {
+                if (auto zdo = peer->GetZDO()) {
+                    zdo->Abandon();
+                    zdo->SetPosition(pos);
+                    zdo->SetRotation(rot);
+                    Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {
+                        if (auto peer = NetManager()->GetPeer(uuid)) {
+                            if (auto zdo = peer->GetZDO()) {
+                                zdo->SetOwner(peer->m_uuid);
+                                //zdo->SetPosition(pos);
+                                //zdo->SetRotation(rot);
+                            }
+                        }
+                        // TODO these values must be tweaked to be as low as possible
+                        //  This moveto method is so spontaneous it sometimes works
+                        //  sometimes it doesnt
+                        //  I have no clue why... something related to the client not
+                        //      abandoning its zdo
+                    }, milliseconds(500 + peer->m_socket->GetPing() * 2));
+                }
+            }
+        }, milliseconds(500 + m_socket->GetPing() * 2));
+        //, milliseconds(std::max(80U, m_socket->GetPing() * 2)));
+    }
+}
 
 
-void Peer::ZDOSectorInvalidated(ZDO* zdo) {
-    if (zdo->m_owner == m_uuid)
+
+void Peer::ZDOSectorInvalidated(ZDO& zdo) {
+    if (zdo.Owner() == m_uuid)
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo->Sector(), m_pos)) {
-        if (m_zdos.erase(zdo->ID())) {
-            m_invalidSector.insert(zdo->ID());
+    if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {
+        if (m_zdos.erase(zdo.ID())) {
+            m_invalidSector.insert(zdo.ID());
         }
     }
 }
 
-void Peer::ForceSendZDO(const NetID &id) {
+void Peer::ForceSendZDO(const ZDOID &id) {
     m_forceSend.insert(id);
 }
 
-bool Peer::IsOutdatedZDO(ZDO* zdo) {
-    auto find = m_zdos.find(zdo->ID());
+bool Peer::IsOutdatedZDO(ZDO& zdo) {
+    auto find = m_zdos.find(zdo.ID());
 
     return find == m_zdos.end()
-        || zdo->m_rev.m_ownerRev > find->second.m_ownerRev
-        || zdo->m_rev.m_dataRev > find->second.m_dataRev;
+        || zdo.m_rev.m_ownerRev > find->second.m_ownerRev
+        || zdo.m_rev.m_dataRev > find->second.m_dataRev;
 }

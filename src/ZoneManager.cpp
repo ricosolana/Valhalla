@@ -226,9 +226,10 @@ bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone)
         && zone.y >= refCenterZone.y - num;
 }
 
-bool IZoneManager::IsInPeerActiveArea(const ZoneID& zone, OWNER_t uid) {
+bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
     auto&& peer = NetManager()->GetPeer(uid);
-    if (peer) return IZoneManager::ZonesOverlap(zone, peer->m_pos);
+    assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
+    if (peer) return ZonesOverlap(zone, peer->m_pos);
     return false;
 }
 
@@ -372,8 +373,10 @@ bool IZoneManager::SpawnZone(const ZoneID& zone) {
     //  *note: ZonePrefab does NOT contain ZDO, nor ZNetView, unline _ZoneCtrl (which does)
 
     // Wait for builder thread
-    if ((zone.x > -WORLD_SIZE_IN_ZONES/2 && zone.y > -WORLD_SIZE_IN_ZONES/2
-        && zone.x < WORLD_SIZE_IN_ZONES/2 && zone.y < WORLD_SIZE_IN_ZONES/2)
+    
+
+    if ((zone.x > -WORLD_RADIUS_IN_ZONES && zone.y > -WORLD_RADIUS_IN_ZONES
+        && zone.x < WORLD_RADIUS_IN_ZONES && zone.y < WORLD_RADIUS_IN_ZONES)
         && !IsZoneGenerated(zone)) {
         if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
             static std::vector<ClearArea> m_tempClearAreas;
@@ -570,7 +573,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                             // hardcoded for now
                             //rotation = Quaternion(0, 1, 0, 0);
 
-                            auto zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
+                            auto &&zdo = PrefabManager()->Instantiate(zoneVegetation->m_prefab, pos, rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -579,7 +582,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                 // this does set the Unity gameobject localscale
-                                zdo->Set("scale", Vector3(scale, scale, scale));
+                                zdo.Set("scale", Vector3(scale, scale, scale));
                             }
 
                             generated = true;
@@ -953,10 +956,10 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
 // could be inlined...
 // private
 void IZoneManager::CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
-    auto zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
+    auto &&zdo = PrefabManager()->Instantiate(LOCATION_PROXY_PREFAB, pos, rot);
     
-    zdo->Set("location", location->m_hash);
-    zdo->Set("seed", seed);
+    zdo.Set("location", location->m_hash);
+    zdo.Set("seed", seed);
 }
 
 // public

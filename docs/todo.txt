@@ -1,43 +1,47 @@
 todo:
-    - test whether players work right near edge of world, or zdos...
-        vegetation is not placed near edge of world, this might be why
+    - boat-lagg fix (important or not?)
+        when a player (owner) temporarily stops sending packets, the boat will be much ahead, causing other players to be in the previous position.
+        a possible idea would be to identify any instantaneous change in position, not impulse or integral velocity (since position in this sense is a simple sudden change due to lagg spike)
         
-        instead of square zone checks, check radially (within bounds of circular world)
+        could try resetting player-owner, setting position, then setting owner back (hmm, must experiment because this abuses the particular code of ZSyncTransform--- I am not sure how the client might respond to this). This must be carried out over several frames, not all at once...
+        
+        Player.Teleport does work, but it is a whole slow sequence. It does not actually teleport the player instantaneously because it is meant for slow loading areas from long distance portal travels. The above ZSyncTransform idea is the best bet at something to tp the player instantaneousy, but possibly finicky and buggy. must test...
 
-    - implement quaternion euler fully
-    
-    - implement quaternion lookdirection fully
-        so that prefabs are rotated correctly on worldgen
-
-    - fix mistlands mist distribution
-        literally a blanket
-
-    - cleanup used heightmaps after time
-    
-    - fix zdo-specific world saving
-        primarily related to object-specific saves apparently, like container, terrain modifier?...
-   
-    - test reducing world size to 313
-        also add constraints when near edge of world
-        so index bounds issues wont happen
-      
     - fix server shutdown routines
         - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
             - save world, 
             - proper cleanup / disposal of managers
-       
+   
+    - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
+    
+    - ZDO restore / reconciliation to prevent illegal modification by malicious clients
+        
+    - ZDO based item assign 
+        Container::RPC_TakeAllRespons
+            appears to insert all items in inventory to local player
+        - Player death causes entire inventory to be moved to tombstone
+            this is clientside, as usual
+        - detect events via incoming updated zdos
+    
+    - fix mistlands mist distribution
+        literally a blanket
+        possibly vegetation mask broken?
+        is vegetation being correctly skipped or placed as needed?
+
+    - cleanup used heightmaps after time
+        or could generate everything
+          
     - calc server memory consumption
         zdos primarily...
+        estimated based on sizeof(ZDO) and number of zdos
+            not entirely accurate because zdos themselves allocate memory,
        
     - vegetation pkg values might need tweaking
         swamp trees are kinda not distributed?
         
     - block WNT packets?
         cause particles to spawn on screen likely causing lagg if many 
-            
-    - consolidate all player notification messages into one method
-        showMessage, chatMessage, RemotePrint...
-
+    
     - send zdos more/less often/more depending on network load and per-client latency
     
     - use bitshift for Biome type (instead of mask)
@@ -54,9 +58,72 @@ todo:
     - idea for unloading/destroying/reconciliating inactive zdos in world:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
-
-        
 finished:
+    - fix general-Valheim latency issues (regarding client-side processing)
+        theres no real good fix to this without changing the core networking and mechanics of the game
+        
+        Possible solutions:
+            - reassign zdos to the nearest player 
+            - reassign zdos radially to players, except in overlaps
+            
+        Biggest caveats/important aspects/most frequent annoyances:
+            - COMBAT (Parrying especially) / Pickable/PickableItem under another zone-client is annoying, and most always laggy,
+                so, likely reassign owners during these situations:
+                    combat might be partially fixed by reassigning to the nearest player, only when players are fa apart from each other, and depends on distance of zdo-enemy in question
+
+    - trying to get a way to represent zdo-components (members) without convoluting everything
+        - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
+        - whether the object is a:
+            - Piece (Buildable/Placeable by player)
+            - ItemDrop (Dropped Ground Item)
+            - CraftingStation
+            - WearNTear (Structural support / durability)
+            - Pickable (Seasoning vegetation / goblin totem poles / Respawnable stuff)
+            - DropOnDestroyed (destroyed objects drop)
+            - CharacterDrop (killed entities drop)
+            - Humanoid
+            - MonsterAI
+
+    - Use 64bit hash for ZDO map (mutated-only) so that collisions become nearly impossible
+
+    - Container::inUse wrongly named zdo hash
+        typo
+
+    - fix zdos on save:
+        chests Resetting
+        Terrain Resetting
+        Rocks Resetting
+        Wards disabling
+        Signs Resetting
+        Fermenter Resetting
+        Beds Resetting
+        
+        - ZDO save -> write issue fixed
+
+    - consolidate all player notification messages into one method
+        single useful Message(msg, type)
+
+    - mod event error handler
+        mod callback disabled if any error
+
+    - fix log file backups
+        compressed to /logs
+
+    - test whether players work right near edge of world, or zdos...
+        vegetation is not placed near edge of world, this might be why
+        
+        instead of square zone checks, check radially (within bounds of circular world)
+        
+    - test reducing world size to 313
+        also add constraints when near edge of world
+        so index bounds issues wont happen
+
+    - implement quaternion euler fully
+    
+    - implement quaternion lookdirection fully
+        so that prefabs are rotated correctly on worldgen
+        broken in cases where an axis is zero or near zero
+
     - implement portals
         portals now link together with the help of a lua mod 
         

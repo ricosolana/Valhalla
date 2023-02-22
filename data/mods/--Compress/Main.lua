@@ -6,6 +6,8 @@
 --]]
 
 local peers = {}
+local SIG_CompressedZDOData = MethodSig.new("CompressedZDOData", DataType.bytes)
+local SIG_CompressHandshake = MethodSig.new("CompressHandshake", DataType.bool)
 
 local RPC_CompressedZDOData = function(peer, compressed)
     -- Decompress raw data sent from client (intended for direct forwarding to RPC_ZDOData)
@@ -28,20 +30,16 @@ local RPC_CompressHandshake = function(peer, enabled)
 
         peers[peer.uuid] = true
 
-        peer:Register("CompressedZDOData", 
-            DataType.bytes, RPC_CompressedZDOData
-        )
+        peer:Register(SIG_CompressedZDOData, RPC_CompressedZDOData)
 
-        peer:Invoke("CompressHandshake", enabled);
+        peer:Invoke(SIG_CompressHandshake, enabled);
     end
 end
 
 Valhalla.OnEvent("PeerInfo", function(peer)
     print("Registering CompressHandshake")
-
-    peer:Register("CompressHandshake", 
-        DataType.bool, RPC_CompressHandshake
-    )
+    
+    peer:Register(SIG_CompressHandshake, RPC_CompressHandshake)
 end)
 
 -- Remove dead references
@@ -54,12 +52,12 @@ end)
 Valhalla.OnEvent("RpcOut", "ZDOData", function(peer, bytes)
     local uuid = peer.uuid
     if peers[uuid] ~= nil then
-        this.event.Cancel() -- To prevent normal packet from being sent
+        event.Cancel() -- To prevent normal packet from being sent
         local compressed = VUtils.Compress(bytes)
-        peer:Invoke("CompressedZDOData", compressed)
+        peer:Invoke(SIG_CompressedZDOData, compressed)
     end
 end)
 
 Valhalla.OnEvent("Enable", function()
-    print("Compress " .. this.mod.version .. " enabled")
+    print(this.name .. " " .. this.version .. " enabled")
 end)
