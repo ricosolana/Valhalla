@@ -1,10 +1,12 @@
 #pragma once
 
+#include "RoomConnection.h"
+
 class Room {
 public:
 	enum class Theme {
 		Crypt = 1,
-		SunkenCrypt,
+		SunkenCrypt = 2,
 		Cave = 4,
 		ForestCrypt = 8,
 		GoblinCamp = 16,
@@ -15,12 +17,13 @@ public:
 	};
 
 private:
-	private static List<RoomConnection> tempConnections = new List<RoomConnection>();
+	static std::vector<RoomConnection*> tempConnections;
 
-	private RoomConnection[] m_roomConnections;
+	std::vector<RoomConnection*> m_roomConnections;
 
 public:
-	Vector3Int m_size = new Vector3Int(8, 4, 8);
+	//Vector3Int m_size = new Vector3Int(8, 4, 8);
+	Vector3 m_size = Vector3(8, 4, 8);
 
 	//[BitMask(typeof(Room.Theme))]
 	Theme m_theme = Theme::Crypt;
@@ -43,6 +46,8 @@ public:
 
 	bool m_perimeter;
 
+	std::string m_name; // custom (unity gameobject name of this Room)
+
 	//[NonSerialized]
 	//public int m_placeOrder;
 
@@ -57,11 +62,18 @@ private:
 public:
 	int GetHash();
 
-	RoomConnection[] GetConnections();
+	std::vector<RoomConnection*>& GetConnections();
 
-	RoomConnection GetConnection(RoomConnection other);
+	RoomConnection *GetConnection(RoomConnection *other);
 
-	RoomConnection GetEntrance();
+	RoomConnection *GetEntrance();
 
-	bool HaveConnection(RoomConnection other);
+	bool HaveConnection(RoomConnection *other);
+};
+
+struct RoomInstance {
+	Room* m_room = nullptr;
+	Vector3 m_pos;
+	int m_placeOrder = 0;
+	int m_seed = 0;
 };

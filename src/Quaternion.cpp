@@ -10,6 +10,26 @@ const Quaternion Quaternion::IDENTITY = { 0, 0, 0, 1 };
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
+Quaternion::Quaternion(const Vector3 &v, float w)
+{
+    this->x = v.x;
+    this->y = v.y;
+    this->z = v.z;
+    this->w = w;
+}
+
+
+
+float Quaternion::LengthSquared() const {
+    return x * x + y * y + z * z + w * w;
+}
+
+Vector3 Quaternion::xyz() const {
+    return Vector3(x, y, z);
+}
+
+
+
 Vector3 Quaternion::operator*(const Vector3& point) const {
     float x2 = x * 2.f;
     float y2 = y * 2.f;
@@ -33,9 +53,18 @@ Vector3 Quaternion::operator*(const Vector3& point) const {
 }
 
 Quaternion Quaternion::operator*(const Quaternion &rhs) const {
-    return Quaternion(w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y, w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z, w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x, w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
+    return Quaternion(w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y, 
+        w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z, 
+        w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x, 
+        w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
 }
 
+void Quaternion::operator*=(const Quaternion& rhs) {
+    this->x = w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y;
+    this->y = w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z;
+    this->z = w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x;
+    this->w = w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z;
+}
 
 
 
@@ -315,4 +344,13 @@ Quaternion Quaternion::LookRotation(Vector3 forward, Vector3 up) {
 
         return quaternion;
     }
+}
+
+Quaternion Quaternion::Inverse(const Quaternion& rotation) {
+    float lengthSq = rotation.LengthSquared();
+    if (lengthSq != 0.0) {
+        float i = 1.0f / lengthSq;
+        return Quaternion(rotation.xyz() * -i, rotation.w * i);
+    }
+    return rotation;
 }

@@ -6,10 +6,13 @@
 #include "Quaternion.h"
 #include "PrefabManager.h"
 #include "VUtilsRandom.h"
+#include "Room.h"
+#include "RoomConnection.h"
 
 // TODO give more verbose direct name
 struct RoomData {
-
+	//std::reference_wrapper<Room> m_room;
+	Room& m_room;
 };
 
 class DungeonGenerator {
@@ -42,6 +45,8 @@ public:
 		CampRadial
 	};
 
+
+
 public:
 	void Clear();
 
@@ -60,7 +65,7 @@ private:
 
 	void GenerateCampRadial(VUtils::Random::State& state);
 
-	Quaternion GetCampRoomRotation(VUtils::Random::State& state, RoomData *room, Vector3 pos);
+	Quaternion GetCampRoomRotation(VUtils::Random::State& state, RoomData &room, Vector3 pos);
 
 	void PlaceWall(VUtils::Random::State& state, float radius, int sections);
 
@@ -78,19 +83,19 @@ private:
 
 	void FindEndCaps(VUtils::Random::State& state, RoomConnection connection, std::vector<RoomData*> &rooms);
 
-	RoomData* FindEndCap(VUtils::Random::State& state, RoomConnection connection);
+	RoomData* FindEndCap(VUtils::Random::State& state, RoomConnection &connection);
 
 	void PlaceRooms();
 
-	void PlaceStartRoom();
+	void PlaceStartRoom(VUtils::Random::State& state);
 
-	bool PlaceOneRoom();
+	bool PlaceOneRoom(VUtils::Random::State& state);
 
 	void CalculateRoomPosRot(RoomConnection roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &outPos, Quaternion &outRot);
 
 	bool PlaceRoom(RoomConnection connection, RoomData* roomData);
 
-	void PlaceRoom(RoomData* room, Vector3 pos, Quaternion rot, RoomConnection fromConnection);
+	void PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection);
 
 	void AddOpenConnections(Room newRoom, RoomConnection skipConnection);
 
@@ -98,7 +103,7 @@ private:
 
 	bool IsInsideDungeon(Room room, Vector3 pos, Quaternion rot);
 
-	bool TestCollision(Room room, Vector3 pos, Quaternion rot);
+	bool TestCollision(Room &room, Vector3 pos, Quaternion rot);
 
 	RoomData* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
 
@@ -117,19 +122,19 @@ private:
 private:
 	bool m_hasGeneratedSeed;
 
-	static std::vector<Room> m_placedRooms;
+	static std::vector<Room*> m_placedRooms;
 
-	static std::vector<RoomConnection> m_openConnections;
+	static std::vector<RoomConnection*> m_openConnections;
 
-	static std::vector<RoomConnection> m_doorConnections;
+	static std::vector<RoomConnection*> m_doorConnections;
 
 	static std::vector<RoomData*> m_availableRooms;
 
 	static std::vector<RoomData*> m_tempRooms;
 
-	BoxCollider m_colliderA;
+	//BoxCollider m_colliderA;
 
-	BoxCollider m_colliderB;
+	//BoxCollider m_colliderB;
 
 	//private ZNetView m_nview;
 
@@ -146,7 +151,7 @@ public:
 
 	bool m_alternativeFunctionality;
 
-	Room.Theme m_themes = Room.Theme.Crypt;
+	Room::Theme m_themes = Room::Theme::Crypt;
 
 	std::vector<DoorDef> m_doorTypes;
 
