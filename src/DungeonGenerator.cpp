@@ -40,7 +40,7 @@ void DungeonGenerator::DungeonGenerator::Generate(int seed) {
 
 	Vector2i zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
-	this->m_zoneCenter.y = m_pos.y - this->m_originalPosition.y;
+	this->m_zoneCenter.y = m_pos.y - this->m_dungeon->m_originalPosition.y;
 
 	//Bounds bounds = new Bounds(this->m_zoneCenter, this->m_zoneSize);
 	//ZLog.Log(string.Format("Generating {0}, Seed: {1}, Bounds diff: {2} / {3}", new object[]
@@ -52,11 +52,6 @@ void DungeonGenerator::DungeonGenerator::Generate(int seed) {
 	//	}));
 	//ZLog.Log("Available rooms:" + DungeonGenerator.m_availableRooms.Count.ToString());
 	//ZLog.Log("To place:" + this->m_maxRooms.ToString());
-	m_placedRooms.clear();
-	m_openConnections.clear();
-	m_doorConnections.clear();
-	//UnityEngine.Random.State state = UnityEngine.Random.state;
-	//UnityEngine.Random.InitState(seed);
 
 	VUtils::Random::State state(seed);
 
@@ -68,7 +63,7 @@ void DungeonGenerator::DungeonGenerator::Generate(int seed) {
 	std::string text;
 	for (auto&& room : m_placedRooms)
 	{
-		text += room.m_name;
+		text += room.m_room->m_name;
 	}
 	this->m_generatedHash = VUtils::String::GetStableHashCode(text); //.GetHashCode(); // C# instance-dependent hash
 
@@ -80,28 +75,21 @@ void DungeonGenerator::DungeonGenerator::Generate(int seed) {
 	//	UnityEngine.Object.DestroyImmediate(room2.gameObject);
 	//}
 
-	m_placedRooms.clear();
-	m_openConnections.clear();
-	m_doorConnections.clear();
-
 	//UnityEngine.Object.DestroyImmediate(this->m_colliderA);
 	//UnityEngine.Object.DestroyImmediate(this->m_colliderB);
 }
 
 void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
-	switch (this->m_algorithm)
-	{
-	case Algorithm::Dungeon:
+	switch (this->m_dungeon->m_algorithm) {
+	case Dungeon::Algorithm::Dungeon:
 		this->GenerateDungeon(state);
-		return;
-	case Algorithm::CampGrid:
+		break;
+	case Dungeon::Algorithm::CampGrid:
 		this->GenerateCampGrid(state);
-		return;
-	case Algorithm::CampRadial:
+		break;
+	case Dungeon::Algorithm::CampRadial:
 		this->GenerateCampRadial(state);
-		return;
-	default:
-		return;
+		break;
 	}
 }
 
@@ -113,14 +101,16 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 }
 
 void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
-	float num = std::cos(0.017453292f * this->m_maxTilt);
-	Vector3 a = m_pos + Vector3((float)(-this->m_gridSize) * this->m_tileWidth * 0.5f, 0.f, (float)(-this->m_gridSize) * this->m_tileWidth * 0.5f);
-	for (int i = 0; i < this->m_gridSize; i++)
+	float num = std::cos(0.017453292f * this->m_dungeon->m_maxTilt);
+	Vector3 a = m_pos + Vector3((float)(-this->m_dungeon->m_gridSize) * this->m_dungeon->m_tileWidth * 0.5f, 
+		0.f, 
+		(float)(-this->m_dungeon->m_gridSize) * this->m_dungeon->m_tileWidth * 0.5f);
+	for (int i = 0; i < this->m_dungeon->m_gridSize; i++)
 	{
-		for (int j = 0; j < this->m_gridSize; j++)
+		for (int j = 0; j < this->m_dungeon->m_gridSize; j++)
 		{
-			if (state.Value() <= this->m_spawnChance) {
-				Vector3 pos = a + Vector3((float)j * this->m_tileWidth, 0.f, (float)i * this->m_tileWidth);
+			if (state.Value() <= this->m_dungeon->m_spawnChance) {
+				Vector3 pos = a + Vector3((float)j * this->m_dungeon->m_tileWidth, 0.f, (float)i * this->m_dungeon->m_tileWidth);
 				auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 				if (randomWeightedRoom)
 				{
@@ -140,9 +130,9 @@ void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 }
 
 void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
-	float num = state.Range(this->m_campRadiusMin, this->m_campRadiusMax);
-	float num2 = std::cos(0.017453292f * this->m_maxTilt);
-	int num3 = state.Range(this->m_minRooms, this->m_maxRooms);
+	float num = state.Range(this->m_dungeon->m_campRadiusMin, this->m_dungeon->m_campRadiusMax);
+	float num2 = std::cos(0.017453292f * this->m_dungeon->m_maxTilt);
+	int num3 = state.Range(this->m_dungeon->m_minRooms, this->m_dungeon->m_maxRooms);
 	int num4 = num3 * 20;
 	int num5 = 0;
 	for (int i = 0; i < num4; i++) {
@@ -153,7 +143,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 			Biome biome;
 			BiomeArea biomeArea;
 			ZoneManager()->GetGroundData(vector, vector2, biome, biomeArea);
-			if (vector2.y < num2 || vector.y - IZoneManager::WATER_LEVEL < this->m_minAltitude)
+			if (vector2.y < num2 || vector.y - IZoneManager::WATER_LEVEL < this->m_dungeon->m_minAltitude)
 				continue;
 
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
@@ -168,10 +158,9 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 			}
 		}
 	}
-	if (this->m_perimeterSections > 0)
-	{
-		this->PlaceWall(state, num, this->m_perimeterSections);
-	}
+
+	if (this->m_dungeon->m_perimeterSections > 0)
+		this->PlaceWall(state, num, this->m_dungeon->m_perimeterSections);
 }
 
 Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, RoomData& room, Vector3 pos) {
@@ -191,7 +180,7 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, R
 
 void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int sections)
 {
-	float num = std::cos(0.017453292f * this->m_maxTilt);
+	float num = std::cos(0.017453292f * this->m_dungeon->m_maxTilt);
 	int num2 = 0;
 	int num3 = sections * 20;
 	for (int i = 0; i < num3; i++)
@@ -206,7 +195,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 			Biome biome;
 			BiomeArea biomeArea;
 			ZoneManager()->GetGroundData(vector, vector2, biome, biomeArea);
-			if (vector2.y < num || vector.y - IZoneManager::WATER_LEVEL < this->m_minAltitude)
+			if (vector2.y < num || vector.y - IZoneManager::WATER_LEVEL < this->m_dungeon->m_minAltitude)
 				continue;
 
 			if (!this->TestCollision(randomWeightedRoom->m_room, vector, campRoomRotation))
@@ -222,39 +211,38 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 }
 
 void DungeonGenerator::Save() {
-	m_zdo->Set("rooms", (int32_t) m_placedRooms.size());
+	m_zdo->Set("rooms", (int32_t)m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
-		Room room = m_placedRooms[i];
+		auto&& instance = m_placedRooms[i];
+		auto&& room = instance.m_room;
 		std::string text = "room" + std::to_string(i);
-		m_zdo->Set(text, room.GetHash());
-		m_zdo->Set(text + "_pos", room.transform.position); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
-		m_zdo->Set(text + "_rot", room.transform.rotation);
-		m_zdo->Set(text + "_seed", room.m_seed);
+		m_zdo->Set(text, room->GetHash());
+		m_zdo->Set(text + "_pos", instance.m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
+		m_zdo->Set(text + "_rot", instance.m_rot);
+		m_zdo->Set(text + "_seed", instance.m_seed);
 	}
 }
 
 void DungeonGenerator::SetupAvailableRooms() {
-	m_availableRooms.clear();
 	for (auto&& roomData : DungeonDB.GetRooms())
 	{
-		if ((roomData.m_room.m_theme & this->m_themes) && roomData.m_room.m_enabled)
+		if ((roomData.m_room.m_theme & this->m_dungeon->m_themes) && roomData.m_room.m_enabled)
 		{
-			m_availableRooms.Add(roomData);
+			m_availableRooms.push_back(roomData);
 		}
 	}
 }
 
-DungeonGenerator::DoorDef DungeonGenerator::FindDoorType(VUtils::Random::State& state, std::string type) {
-	std::vector<DoorDef> list;
-	for (auto&& doorDef : this->m_doorTypes) {
-		if (doorDef.m_connectionType == type) {
-			list.push_back(doorDef);
+Dungeon::DoorDef *DungeonGenerator::FindDoorType(VUtils::Random::State& state, std::string type) {
+	std::vector<Dungeon::DoorDef*> list;
+	for (auto&& doorDef : this->m_dungeon->m_doorTypes) {
+		if (doorDef->m_connectionType == type) {
+			list.push_back(doorDef.get());
 		}
 	}
 
-	if (list.empty()) {
+	if (list.empty())
 		return nullptr;
-	}
 
 	return list[state.Range(0, list.size())];
 }
@@ -262,12 +250,13 @@ DungeonGenerator::DoorDef DungeonGenerator::FindDoorType(VUtils::Random::State& 
 void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 	int num = 0;
 	for (auto&& roomConnection : m_doorConnections) {
-		auto&& doorDef = this->FindDoorType(state, roomConnection.m_type);
+		auto&& doorDef = this->FindDoorType(state, roomConnection.m_connection.m_type);
 		if (!doorDef)
 		{
-			LOG(INFO) << "No door type for connection: " << roomConnection.m_type;
+			LOG(INFO) << "No door type for connection: " << roomConnection.m_connection.m_type;
 		}
-		else if ((doorDef.m_chance <= 0 || state.Value() <= doorDef.m_chance) && (doorDef.m_chance > 0 || state.Value() <= this->m_doorChance))
+		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance) 
+			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon->m_doorChance))
 		{
 			// TODO impl
 			//PrefabManager()->Instantiate(doorDef.m_prefab)
@@ -283,37 +272,37 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 	LOG(INFO) << "placed " << num << " doors";
 }
 
-void DungeonGenerator::PlaceEndCaps()
+void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state)
 {
 	for (int i = 0; i < m_openConnections.size(); i++)
 	{
-		RoomConnection *roomConnection = m_openConnections[i];
-		RoomConnection *roomConnection2 = nullptr;
+		auto&& roomConnection = m_openConnections[i];
+		RoomConnectionInstance *roomConnection2 = nullptr;
 		for (int j = 0; j < m_openConnections.size(); j++)
 		{
 			if (j != i && roomConnection.TestContact(m_openConnections[j]))
 			{
-				roomConnection2 = m_openConnections[j];
+				roomConnection2 = &m_openConnections[j];
 				break;
 			}
 		}
 
-		if (roomConnection2 != null)
-		{
-			if (roomConnection.m_type != roomConnection2.m_type)
+		if (roomConnection2) {
+			if (roomConnection.m_connection.m_type != roomConnection2->m_connection.m_type)
 			{
-				this->FindDividers(m_tempRooms);
+				this->FindDividers(state, m_tempRooms);
 				if (!m_tempRooms.empty())
 				{
-					RoomData* weightedRoom = this->GetWeightedRoom(m_tempRooms);
-					RoomConnection[] connections = weightedRoom.m_room.GetConnections();
+					RoomData* weightedRoom = this->GetWeightedRoom(state, m_tempRooms);
+					auto&& connections = weightedRoom->m_room.GetConnections();
 					Vector3 vector;
-					Quaternion rot;
-					this->CalculateRoomPosRot(connections[0], roomConnection.transform.position, roomConnection.transform.rotation, vector, rot);
+					Quaternion rot = Quaternion::IDENTITY;
+					this->CalculateRoomPosRot(connections[0], roomConnection.m_pos, 
+						roomConnection.m_rot, vector, rot);
 					bool flag = false;
 					for (auto&& room : m_placedRooms)
 					{
-						if (room.m_divider && room.transform.position.Distance(vector) < 0.5f)
+						if (room.m_room->m_divider && room.m_pos.Distance(vector) < 0.5f) // TODO sqdistance
 						{
 							flag = true;
 							break;
@@ -404,6 +393,7 @@ void DungeonGenerator::FindEndCaps(VUtils::Random::State& state, RoomConnection 
 		}
 	}
 
+	// Inlined .Shuffle
 	auto i = rooms.size();
 	while (i > 1)
 	{
@@ -475,10 +465,10 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 	return false;
 }
 
-void DungeonGenerator::CalculateRoomPosRot(RoomConnection roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &pos, Quaternion &rot) {
-	Quaternion rhs = Quaternion::Inverse(roomCon.transform.localRotation);
+void DungeonGenerator::CalculateRoomPosRot(RoomConnection *roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &pos, Quaternion &rot) {
+	Quaternion rhs = Quaternion::Inverse(roomCon->m_localRot);
 	rot = exitRot * rhs;
-	Vector3 localPosition = roomCon.transform.localPosition;
+	Vector3 localPosition = roomCon->m_localPos;
 	pos = exitPos - rot * localPosition;
 }
 
@@ -555,13 +545,13 @@ void DungeonGenerator::PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, Ro
 	//	znetView3.gameObject.SetActive(false);
 	//}
 
-	RoomInstance instance{
+	RoomInstance component2{
 		.m_room = &room.m_room,
 		.m_pos = pos,
 		.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0)
 	};
 
-	Room component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform).GetComponent<Room>();
+	//RoomInstance *component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform).GetComponent<Room>();
 	component2.gameObject.name = room.m_room.gameObject.name;
 
 	component2.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0);
@@ -572,11 +562,11 @@ void DungeonGenerator::PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, Ro
 	//UnityEngine.Random.state = state;
 }
 
-void DungeonGenerator::AddOpenConnections(Room newRoom, RoomConnection skipConnection) {
-	RoomConnection[] connections = newRoom.GetConnections();
-	if (skipConnection != null)
+void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, RoomConnectionInstance *skipConnection) {
+	auto&& connections = newRoom.GetConnections();
+	if (skipConnection)
 	{
-		foreach(RoomConnection roomConnection in connections)
+		for (auto&& roomConnection : connections)
 		{
 			if (!roomConnection.m_entrance && Vector3.Distance(roomConnection.transform.position, skipConnection.transform.position) >= 0.1f)
 			{

@@ -60,7 +60,7 @@ private:
 	void OnEnable();
 
 public:
-	int GetHash();
+	int32_t GetHash();
 
 	std::vector<RoomConnection*>& GetConnections();
 
@@ -74,6 +74,7 @@ public:
 struct RoomInstance {
 	Room* m_room = nullptr;
 	Vector3 m_pos;
+	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
 };
