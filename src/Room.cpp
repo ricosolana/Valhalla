@@ -1,65 +1,40 @@
 #include "Room.h"
+#include "VUtilsString.h"
 
-int Room::GetHash()
-{
-	return Utils.GetPrefabName(base.gameObject).GetStableHashCode();
+HASH_t Room::GetHash() {
+	return VUtils::String::GetStableHashCode(m_name);
 }
 
-void Room::OnEnable()
-{
-	this.m_roomConnections = null;
-}
-
-RoomConnection[] Room::GetConnections()
-{
-	if (this.m_roomConnections == null)
-	{
-		this.m_roomConnections = base.GetComponentsInChildren<RoomConnection>(false);
-	}
-	return this.m_roomConnections;
-}
-
-RoomConnection Room::GetConnection(RoomConnection other)
-{
-	RoomConnection[] connections = this.GetConnections();
-	Room.tempConnections.Clear();
-	foreach(RoomConnection roomConnection in connections)
-	{
-		if (roomConnection.m_type == other.m_type)
+RoomConnection& Room::GetConnection(VUtils::Random::State& state, RoomConnection &other) {
+	std::vector<RoomConnection*> tempConnections;
+	for (auto&& roomConnection : m_roomConnections) {
+		if (roomConnection->m_type == other.m_type)
 		{
-			Room.tempConnections.Add(roomConnection);
+			tempConnections.push_back(roomConnection.get());
 		}
 	}
-	if (Room.tempConnections.Count == 0)
-	{
-		return null;
-	}
-	return Room.tempConnections[UnityEngine.Random.Range(0, Room.tempConnections.Count)];
+
+	if (tempConnections.empty())
+		throw std::runtime_error("missing guaranteed room");
+
+	return *tempConnections[state.Range(0, tempConnections.size())];
 }
 
-RoomConnection Room::GetEntrance()
-{
-	RoomConnection[] connections = this.GetConnections();
-	ZLog.Log("Connections " + connections.Length.ToString());
-	foreach(RoomConnection roomConnection in connections)
-	{
-		if (roomConnection.m_entrance)
-		{
-			return roomConnection;
-		}
+RoomConnection &Room::GetEntrance() {
+	LOG(INFO) <<  "Connections " << m_roomConnections.size();
+	for (auto&& roomConnection : m_roomConnections) {
+		if (roomConnection->m_entrance)
+			return *roomConnection.get();
 	}
-	return null;
+
+	throw std::runtime_error("unexpected branch");
 }
 
-bool Room::HaveConnection(RoomConnection other)
-{
-	RoomConnection[] connections = this.GetConnections();
-	for (int i = 0; i < connections.Length; i++)
-	{
-		if (connections[i].m_type == other.m_type)
-		{
+bool Room::HaveConnection(RoomConnection &other) {
+	for (auto&& connection : m_roomConnections) {
+		if (connection->m_type == other.m_type)
 			return true;
-		}
 	}
+
 	return false;
 }

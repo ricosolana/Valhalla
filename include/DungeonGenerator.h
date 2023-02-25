@@ -73,6 +73,8 @@ public:
 	bool m_useCustomInteriorTransform;
 
 	Vector3 m_originalPosition;
+
+	std::vector<RoomData> m_availableRooms;
 };
 
 
@@ -109,19 +111,19 @@ private:
 
 	void FindDividers(VUtils::Random::State& state, std::vector<RoomData*> &rooms);
 
-	void FindEndCaps(VUtils::Random::State& state, RoomConnection connection, std::vector<RoomData*> &rooms);
+	void FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<RoomData*> &rooms);
 
 	RoomData* FindEndCap(VUtils::Random::State& state, RoomConnection &connection);
 
-	void PlaceRooms();
+	void PlaceRooms(VUtils::Random::State& state);
 
 	void PlaceStartRoom(VUtils::Random::State& state);
 
 	bool PlaceOneRoom(VUtils::Random::State& state);
 
-	void CalculateRoomPosRot(RoomConnection *roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &outPos, Quaternion &outRot);
+	void CalculateRoomPosRot(RoomConnection &roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(RoomConnection connection, RoomData* roomData);
+	bool PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, RoomData& roomData);
 
 	void PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection);
 
@@ -137,13 +139,13 @@ private:
 
 	RoomData* GetRandomWeightedRoom(RoomConnection connection);
 
-	RoomData* GetWeightedRoom(VUtils::Random::State& state, std::vector<RoomData*> rooms);
+	RoomData& GetWeightedRoom(VUtils::Random::State& state, std::vector<RoomData*> rooms);
 
-	RoomData* GetRandomRoom(VUtils::Random::State& state, RoomConnection connection);
+	RoomData* GetRandomRoom(VUtils::Random::State& state, RoomConnectionInstance *connection);
 
-	RoomConnection GetOpenConnection(VUtils::Random::State& state);
+	RoomConnectionInstance*GetOpenConnection(VUtils::Random::State& state);
 
-	RoomData* FindStartRoom(VUtils::Random::State& state);
+	RoomData& FindStartRoom(VUtils::Random::State& state);
 
 	bool CheckRequiredRooms();
 
@@ -157,8 +159,8 @@ private:
 	// Instanced
 	std::vector<RoomConnectionInstance> m_doorConnections;
 
-	// Semi-Templated per type of generator
-	std::vector<RoomData*> m_availableRooms;
+	// Templated per type of generator
+	//std::vector<RoomData*> m_availableRooms;
 
 	std::vector<RoomData*> m_tempRooms;
 
@@ -171,7 +173,8 @@ private:
 public:
 	Dungeon* m_dungeon;
 
-	Vector3 m_pos; // custom
+	Vector3 m_pos; // instanced position
+	Quaternion m_rot; // instanced rotation
 
 	Vector3 m_zoneCenter;
 

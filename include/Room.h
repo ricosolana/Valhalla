@@ -2,6 +2,8 @@
 
 #include "RoomConnection.h"
 
+#include "VUtilsRandom.h"
+
 class Room {
 public:
 	enum class Theme {
@@ -17,9 +19,9 @@ public:
 	};
 
 private:
-	static std::vector<RoomConnection*> tempConnections;
+	//static std::vector<RoomConnection*> tempConnections;
 
-	std::vector<RoomConnection*> m_roomConnections;
+	std::vector<std::unique_ptr<RoomConnection>> m_roomConnections;
 
 public:
 	//Vector3Int m_size = new Vector3Int(8, 4, 8);
@@ -48,6 +50,9 @@ public:
 
 	std::string m_name; // custom (unity gameobject name of this Room)
 
+	Vector3 m_localPos;
+	Quaternion m_localRot;
+
 	//[NonSerialized]
 	//public int m_placeOrder;
 
@@ -56,19 +61,21 @@ public:
 
 	//public MusicVolume m_musicPrefab;
 
-private:
-	void OnEnable();
-
 public:
-	int32_t GetHash();
+	Room(const Room& other) = delete;
 
-	std::vector<RoomConnection*>& GetConnections();
+	HASH_t GetHash();
 
-	RoomConnection *GetConnection(RoomConnection *other);
+	std::vector<std::unique_ptr<RoomConnection>>& GetConnections() {
+		return m_roomConnections;
+	}
 
-	RoomConnection *GetEntrance();
+	// Nullable
+	RoomConnection &GetConnection(VUtils::Random::State& state, RoomConnection &other);
 
-	bool HaveConnection(RoomConnection *other);
+	RoomConnection &GetEntrance();
+
+	bool HaveConnection(RoomConnection &other);
 };
 
 struct RoomInstance {
