@@ -93,7 +93,15 @@ struct RoomInstance {
 			// Find the world position of the connection, 
 			//	given parent (Room) position and localPosition (Connection)
 			//m_connections.emplace_back(conn, room.m_pos + conn.get()->m_localPos)
-			assert(false);
+
+			// https://stackoverflow.com/questions/73652767/get-new-child-object-postion-based-on-parent-transform
+
+			Quaternion childWorldRot = rot * conn->m_localRot;
+			Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * conn->m_localPos.Magnitude();
+
+			Vector3 childWorldPos = pointOnRot + room.m_pos;
+
+			m_connections.emplace_back(*conn.get(), childWorldPos, childWorldRot, placeOrder);
 		}
 	}
 };

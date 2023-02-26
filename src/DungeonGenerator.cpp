@@ -670,7 +670,7 @@ bool DungeonGenerator::CheckRequiredRooms() {
 
 	int num = 0;
 	for (auto&& room : m_placedRooms) {
-		if (this->m_dungeon->m_requiredRooms.contains(room.m_room->m_name))
+		if (this->m_dungeon->m_requiredRooms.contains(room.m_room.get().m_name))
 			num++;
 	}
 
