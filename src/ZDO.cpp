@@ -10,15 +10,23 @@
 #include "NetManager.h"
 
 std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
-    return std::make_pair(
-        VUtils::String::GetStableHashCode(std::string(key + "_u")),
-        VUtils::String::GetStableHashCode(std::string(key + "_i"))
-    );
+    return {
+        VUtils::String::GetStableHashCode(key + "_u"),
+        VUtils::String::GetStableHashCode(key + "_i") 
+    };
 }
 
 ZDO::ZDO(const NetID& id, const Vector3& pos)
     : m_id(id), m_position(pos) {
 }
+
+//ZDO::ZDO(const NetID& id, const Vector3& pos, DataReader& load)
+//    : m_id(id), m_position(pos), Load() {
+//}
+
+//ZDO::ZDO(const NetID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev) {
+
+//}
 
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
@@ -67,14 +75,12 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        pkg.Read<ObjectType>(); //this->m_type
+        pkg.Read<ObjectType>(); // m_type
 
     if (worldVersion >= 22)
-        pkg.Read<bool>(); //this->m_distant
+        pkg.Read<bool>(); // m_distant
 
     if (worldVersion < 13) {
-        //assert(false, "c# char is utf8, NYI");
-        //pkg.Read<int16_t>(); // condensed 2 reads
         pkg.ReadChar();
         pkg.ReadChar();
     }
@@ -86,15 +92,10 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 #endif
         }
 
-    /*this->m_sector = */ pkg.Read<Vector2i>();
+    pkg.Read<Vector2i>(); // m_sector
     this->m_position = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
-    //AddToSector(this);
-
-    // Load uses 2 bytes for counts (char in c# is 2 bytes..)
-    // It of course has a weird encoding scheme according to UTF...
-    // But values 127 and lower are normal
     _TryReadType<float,         uint16_t>(pkg);
     _TryReadType<Vector3,       uint16_t>(pkg);
     _TryReadType<Quaternion,    uint16_t>(pkg);
@@ -178,37 +179,37 @@ NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
 // Trivial
 
 float ZDO::GetFloat(const std::string& key, float value) const {
-    return GetFloat(VUtils::String::GetStableHashCode(key), value);
+    return Get<float>(key, value);
 }
 
 int32_t ZDO::GetInt(const std::string& key, int32_t value) const {
-    return GetInt(VUtils::String::GetStableHashCode(key), value);
+    return Get<int32_t>(key, value);
 }
 
 int64_t ZDO::GetLong(const std::string& key, int64_t value) const {
-    return GetLong(VUtils::String::GetStableHashCode(key), value);
+    return Get<int64_t>(key, value);
 }
 
 const Quaternion& ZDO::GetQuaternion(const std::string& key, const Quaternion& value) const {
-    return GetQuaternion(VUtils::String::GetStableHashCode(key), value);
+    return Get<Quaternion>(VUtils::String::GetStableHashCode(key), value);
 }
 
 const Vector3& ZDO::GetVector3(const std::string& key, const Vector3& value) const {
-    return GetVector3(VUtils::String::GetStableHashCode(key), value);
+    return Get<Vector3>(VUtils::String::GetStableHashCode(key), value);
 }
 
 const std::string& ZDO::GetString(const std::string& key, const std::string& value) const {
-    return GetString(VUtils::String::GetStableHashCode(key), value);
+    return Get<std::string>(key, value);
 }
 
 const BYTES_t* ZDO::GetBytes(const std::string& key) {
-    return GetBytes(VUtils::String::GetStableHashCode(key));
+    return Get<BYTES_t>(key);
 }
 
 // Special
 
 bool ZDO::GetBool(const std::string& key, bool value) const {
-    return GetBool(VUtils::String::GetStableHashCode(key), value);
+    return Get<int32_t>(key, value);
 }
 
 NetID ZDO::GetNetID(const std::string& key) const {
@@ -239,16 +240,6 @@ void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const NetID& value) {
 }
 
 
-
-bool ZDO::Local() const {
-    return m_owner == Valhalla()->ID();
-}
-
-bool ZDO::SetLocal() {
-    if (Local())
-        return false;
-    return SetOwner(Valhalla()->ID());
-}
 
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_position != pos) {
@@ -309,12 +300,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
 }
 
 void ZDO::Deserialize(DataReader& pkg) {
-    // Since the data is arriving from the client, must assert things
-    // Filter the client inputs
-
     static_assert(sizeof(ObjectType) == 1);
-
-    static constexpr size_t sz = sizeof(ZDO);
 
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
@@ -333,7 +319,7 @@ void ZDO::Deserialize(DataReader& pkg) {
     assert(m_prefab);
 #endif
 
-    this->m_rotation = pkg.Read<Quaternion>();    
+    this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
 
     // double check this; 

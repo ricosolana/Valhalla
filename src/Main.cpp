@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     //Tests::Test_PeerLuaConnect();
     //Tests::Test_DataBuffer();
     //Tests::Test_World();
-    Tests::Test_ZDO();
+    Tests().Test_ZDO();
     //Tests::Test_ResourceReadWrite();
     //Tests::Test_Random();
     //Tests::Test_Perlin();
