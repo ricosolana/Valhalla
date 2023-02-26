@@ -25,6 +25,11 @@ public:
 	Quaternion m_rot;
 	int m_placeOrder;
 
+	RoomConnectionInstance(RoomConnection& connection, Vector3 pos, Quaternion rot, int placeOrder) 
+		: m_connection(connection), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder) {
+
+	}
+
 	bool TestContact(const RoomConnectionInstance& other) {
 		return m_pos.SqDistance(other.m_pos) < .1f * .1f;
 	}

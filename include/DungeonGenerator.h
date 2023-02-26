@@ -183,8 +183,6 @@ public:
 
 	HASH_t m_generatedSeed;
 
-	int m_generatedHash;
-
 	//Vector3 m_originalPosition; // templated
 
 	ZDO* m_zdo;

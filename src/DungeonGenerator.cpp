@@ -11,6 +11,9 @@ DungeonGenerator::DungeonGenerator(Vector3 pos, Quaternion rot) :
 	auto seed = GeoManager()->GetSeed();
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
+
+	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(IZoneManager::WorldToZonePos(m_pos));
+	this->m_zoneCenter.y = m_pos.y - this->m_dungeon->m_originalPosition.y;
 }
 
 // TODO generate seed during start
@@ -19,9 +22,6 @@ HASH_t DungeonGenerator::GetSeed() {
 }
 
 void DungeonGenerator::DungeonGenerator::Generate() {
-	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(IZoneManager::WorldToZonePos(m_pos));
-	this->m_zoneCenter.y = m_pos.y - this->m_dungeon->m_originalPosition.y;
-		
 	LOG(INFO) << "Available rooms:" << m_dungeon->m_availableRooms.size();
 	LOG(INFO) << "To place: " << m_dungeon->m_maxRooms;
 
@@ -31,14 +31,7 @@ void DungeonGenerator::DungeonGenerator::Generate() {
 	this->Save();
 
 	LOG(INFO) << "Placed " << m_placedRooms.size() << " rooms";
-
-	std::string text;
-	for (auto&& room : m_placedRooms)
-		text += room.m_room->m_name;
-
-	this->m_generatedHash = VUtils::String::GetStableHashCode(text); //.GetHashCode(); // C# instance-dependent hash
-
-	LOG(INFO) << "Dungeon generated with seed " << m_generatedSeed << " and hash " << this->m_generatedHash;
+	LOG(INFO) << "Dungeon generated with seed " << m_generatedSeed;
 }
 
 void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
@@ -136,11 +129,11 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, R
 		float y = VUtils::Mathf::Round(VUtils::Math::YawFromDirection(vector) / 22.5f) * 22.5f;
 		return Quaternion::Euler(0, y, 0);
 	}
+
 	return Quaternion::Euler(0, (float) state.Range(0, 16) * 22.5f, 0);
 }
 
-void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int sections)
-{
+void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int sections) {
 	float num = std::cos(0.017453292f * this->m_dungeon->m_maxTilt);
 	int num2 = 0;
 	int num3 = sections * 20;
@@ -172,12 +165,12 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 }
 
 void DungeonGenerator::Save() {
-	m_zdo->Set("rooms", (int32_t)m_placedRooms.size());
+	m_zdo->Set("rooms", (int32_t) m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
 		auto&& instance = m_placedRooms[i];
 		auto&& room = instance.m_room;
 		std::string text = "room" + std::to_string(i);
-		m_zdo->Set(text, room->GetHash());
+		m_zdo->Set(text, room.get().GetHash());
 		m_zdo->Set(text + "_pos", instance.m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
 		m_zdo->Set(text + "_rot", instance.m_rot);
 		m_zdo->Set(text + "_seed", instance.m_seed);
@@ -209,13 +202,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance) 
 			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon->m_doorChance))
 		{
-			// TODO impl
-			//PrefabManager()->Instantiate(doorDef.m_prefab)
-
-				//GameObject obj = UnityEngine.Object.Instantiate<GameObject>(doorDef.m_prefab, roomConnection.transform.position, roomConnection.transform.rotation);
-
-			//UnityEngine.Object.Destroy(obj);
-
+			PrefabManager()->Instantiate(doorDef->m_prefab, roomConnection.m_pos, roomConnection.m_rot);
 			num++;
 		}
 	}
@@ -225,10 +212,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 
 void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 	for (int i = 0; i < m_openConnections.size(); i++) {
-	//for (auto&& itr = m_openConnections.begin(); itr != m_openConnections.end();) {
 		auto&& roomConnection = m_openConnections[i];
-		//auto roomConnection = m_openConnections[i];
-		//RoomConnectionInstance* roomConnection = &(*itr);
 		RoomConnectionInstance *roomConnection2 = nullptr;
 
 		for (auto&& con2 : m_openConnections) {
@@ -266,7 +250,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 					bool flag = false;
 					for (auto&& room : m_placedRooms)
 					{
-						if (room.m_room->m_divider && room.m_pos.Distance(vector) < 0.5f) // TODO sqdistance
+						if (room.m_room.get().m_divider && room.m_pos.Distance(vector) < 0.5f) // TODO sqdistance
 						{
 							flag = true;
 							break;
@@ -319,20 +303,6 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 				}
 
 			}
-
-			//IOrderedEnumerable<RoomData*> orderedEnumerable = from item in DungeonGenerator.m_tempRooms
-			//	orderby item.m_room.m_endCapPrio descending
-			//	select item;
-			//if (!flag2) {
-			//	for (auto&& roomData : orderedEnumerable)
-			//	{
-			//		if (this->PlaceRoom(roomConnection, roomData))
-			//		{
-			//			flag2 = true;
-			//			break;
-			//		}
-			//	}
-			//}
 
 			if (!flag2)
 				LOG(WARNING) << "Failed to place end cap";
@@ -414,18 +384,14 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
 void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	auto&& roomData = this->FindStartRoom(state);
 	auto&& entrance = roomData.GetEntrance();
-	Quaternion rotation = this->m_rot;
 
-	RoomConnectionInstance dummy{
-		.m_connection = entrance,
-		.m_pos = Vector3(),
-		.m_rot = Quaternion::IDENTITY,
-		.m_placeOrder = 0
-	};
+	// localPos used because CalculateRoomPosRot(); 
+	// pos is not used for the later PlaceRoom...AddOpenConnections because this room is entrance (pos is skipped)
+	RoomConnectionInstance dummy = RoomConnectionInstance(entrance, entrance.m_localPos, entrance.m_localRot, 0);
 
 	Vector3 pos;
 	Quaternion rot = Quaternion::IDENTITY;
-	this->CalculateRoomPosRot(entrance, this->m_pos, rotation, pos, rot);
+	this->CalculateRoomPosRot(entrance, this->m_pos, this->m_rot, pos, rot);
 	this->PlaceRoom(roomData, pos, rot, &dummy);
 }
 
@@ -505,8 +471,8 @@ void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomCo
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	Vector3 position = room.m_localPos;
-	Quaternion quaternion = Quaternion::Inverse(room.m_localRot);
+	Vector3 position = room.m_pos;
+	Quaternion quaternion = Quaternion::Inverse(room.m_rot);
 	for (auto&& znetView2 : room.m_netViews) {
 		Vector3 point = quaternion * (znetView2.m_pos - position);
 		Vector3 position2 = pos + rot * point;
@@ -515,14 +481,8 @@ void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomCo
 		PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation);
 	}
 	
-	RoomInstance component2{
-		.m_room = &room,
-		.m_pos = pos,
-		.m_rot = rot,
-		.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0),
-		.m_seed = seed
-	};
-
+	RoomInstance component2 = RoomInstance(room, pos, rot, (fromConnection ? (fromConnection->m_placeOrder + 1) : 0), seed);
+	
 	//RoomInstance *component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform)
 		//.GetComponent<Room>();
 

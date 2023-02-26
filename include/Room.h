@@ -29,10 +29,7 @@ public:
 	//Vector3Int m_size = new Vector3Int(8, 4, 8);
 	Vector3 m_size = Vector3(8, 4, 8);
 
-	//[BitMask(typeof(Room.Theme))]
 	Theme m_theme = Theme::Crypt;
-
-	bool m_enabled = true;
 
 	bool m_entrance;
 
@@ -52,12 +49,14 @@ public:
 
 	std::string m_name; // custom (unity gameobject name of this Room)
 
-	Vector3 m_localPos;
-	Quaternion m_localRot;
+	HASH_t m_hash; // based off name
+
+	Vector3 m_pos;
+	Quaternion m_rot;
 
 	std::vector<Prefab::Instance> m_netViews;
 
-	// Also randomspawns
+	// TODO later...
 	//std::vector<RandomSpawn>
 
 	// TODO later...
@@ -81,11 +80,20 @@ public:
 };
 
 struct RoomInstance {
-	Room* m_room = nullptr;
+	std::reference_wrapper<Room> m_room;
 	Vector3 m_pos;
 	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
-
 	std::vector<RoomConnectionInstance> m_connections;
+
+	RoomInstance(Room& room, Vector3 pos, Quaternion rot, int placeOrder, int seed) 
+		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
+		for (auto&& conn : room.GetConnections()) {
+			// Find the world position of the connection, 
+			//	given parent (Room) position and localPosition (Connection)
+			//m_connections.emplace_back(conn, room.m_pos + conn.get()->m_localPos)
+			assert(false);
+		}
+	}
 };
