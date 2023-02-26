@@ -6,7 +6,31 @@
 #include "NetManager.h"
 
 class Tests {
-public:   
+public:
+    void Test_ParentChildTransforms() {
+        // Ensure that certain equations involving Vector3 and Quaternion can correctly transform a child relative to its parent to get its world position
+
+        // Dummy child local transforms
+        Vector3 childLocalPos(1, 1, 1);
+        Quaternion childLocalRot(Quaternion::Euler(10, 75, 10));
+
+        // Dummy parent transforms
+        Vector3 parentPos(4, 5, 4);
+        Quaternion parentRot(Quaternion::Euler(20, 90, 30));
+
+
+
+        // Unity-calculate values based on the above
+        //  World transforms of child
+        Vector3 expectChildPos(5.406901f, 5.941624f, 3.633975f);
+        Quaternion expectChildRot(.1371928f, .2958279f, .9315588f, .1608175f);
+
+        Quaternion calcChildRot = parentRot * childLocalRot;
+        Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+
+        Vector3 calcChildPos = pointOnRot + parentPos;
+    }
+
     void Test_QuaternionLook() {
         auto opt = VUtils::Resource::ReadFileLines("lookrotation_values.txt");
 
