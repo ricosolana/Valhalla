@@ -202,7 +202,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance) 
 			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon->m_doorChance))
 		{
-			PrefabManager()->Instantiate(doorDef->m_prefab, roomConnection.m_pos, roomConnection.m_rot);
+			PrefabManager()->Instantiate(*doorDef->m_prefab, roomConnection.m_pos, roomConnection.m_rot);
 			num++;
 		}
 	}
@@ -478,7 +478,7 @@ void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomCo
 		Vector3 position2 = pos + rot * point;
 		Quaternion rhs = quaternion * znetView2.m_rot;
 		Quaternion rotation = rot * rhs;
-		PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation);
+		PrefabManager()->Instantiate(*znetView2.m_prefab, position2, rotation);
 	}
 	
 	RoomInstance component2 = RoomInstance(room, pos, rot, (fromConnection ? (fromConnection->m_placeOrder + 1) : 0), seed);
