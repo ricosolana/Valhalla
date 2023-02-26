@@ -152,7 +152,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 
 void IZDOManager::Load(DataReader& reader, int version) {
 	reader.Read<OWNER_t>(); // skip server id
-	auto nextUid = reader.Read<uint32_t>();
+	m_nextUid = reader.Read<uint32_t>();
 	const auto count = reader.Read<int32_t>();
 	if (count < 0)
 		throw std::runtime_error("count must be positive");
@@ -162,16 +162,16 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 		zdo->m_id = reader.Read<NetID>();
-		auto zdoBytes = reader.Read<BYTES_t>();
+		auto zdoReader = reader.SubRead();
 
-		DataReader zdoReader(zdoBytes);
 		bool modern = zdo->Load(zdoReader, version);
 
-		zdo->Abandon();
+		// TODO redundant?
 		if (zdo->ID().m_uuid == SERVER_ID
-			&& zdo->ID().m_id >= nextUid)
+			&& zdo->ID().m_id >= m_nextUid)
 		{
-			nextUid = zdo->ID().m_id + 1;
+			assert(false && "looks like this might be significant");
+			m_nextUid = zdo->ID().m_id + 1;
 		}
 
 		if (modern || !SERVER_SETTINGS.worldModern) {
@@ -195,8 +195,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	}
 
 	//CapDeadZDOList();
-
-	m_nextUid = nextUid;
 
 	LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
 	LOG(INFO) << "Purged " << purgeCount << " old zdos";
@@ -688,8 +686,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				.m_ownerRev = ownerRev, 
 				.m_time = time 
 			};
-
-			
+						
 			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
 
 			//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });

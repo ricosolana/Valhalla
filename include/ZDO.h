@@ -11,6 +11,7 @@
 #include "VUtilsString.h"
 #include "DataWriter.h"
 #include "DataReader.h"
+#include "ValhallaServer.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -33,6 +34,7 @@ class Prefab;
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
+    friend class Tests;
 
 public:
     enum class ObjectType : BYTE_t {
@@ -138,9 +140,6 @@ private:
         return 0b1 << GetOrdinal<T>();
     }
 
-#ifdef RUN_TESTS // hmm
-public:
-#endif
     template<TrivialSyncType T>
     static constexpr SHIFTHASH_t ToShiftHash(HASH_t hash) {
         size_t key = std::hash<Ordinal>{}(GetOrdinal<T>());
@@ -382,7 +381,8 @@ private:
 
 
 
-private:     OWNER_t m_owner = 0;
+private:    OWNER_t m_owner = 0;
+//private:    std::reference_wrapper<Prefab> m_prefab;
 private:    const Prefab* m_prefab = nullptr;
 private:    Quaternion m_rotation = Quaternion::IDENTITY;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
@@ -467,15 +467,22 @@ public:
     // ZDOManager constructor
     ZDO(const NetID& id, const Vector3& pos);
 
-    ZDO(const ZDO& other) = default;
+    //ZDO(const NetID& id, const Vector3& pos, DataReader& load);
 
-public:
+    //ZDO(const NetID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
+
+    ZDO(const ZDO& other) = default;
+    
+
+
     // Save ZDO to disk
     void Save(DataWriter& writer) const;
 
     // Load ZDO from disk
     //  Returns whether this ZDO is modern
     bool Load(DataReader& reader, int32_t version);
+
+
 
     // Get a member by hash
     //  Returns a mutable proxy to the object with changes accurately reflected
@@ -490,6 +497,14 @@ public:
             }
         }
         return ProxyMember<T>(*this);
+    }
+
+    // Get a member by string
+    //  Returns a mutable proxy to the object with changes accurately reflected
+    //  Throws on type mismatch
+    template<TrivialSyncType T>
+    ProxyMember<T> ProxyGet(const std::string& key) {
+        return ProxyGet<T>(VUtils::String::GetStableHashCode(key));
     }
 
     // Get a member by hash
@@ -507,6 +522,14 @@ public:
         return nullptr;
     }
 
+    // Get a member by string
+    //  Returns null if absent 
+    //  Throws on type mismatch
+    template<TrivialSyncType T>
+    const T* Get(const std::string& key) const {
+        return Get<T>(VUtils::String::GetStableHashCode(key));
+    }
+
     // Trivial hash getters
     template<TrivialSyncType T>
         //requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
@@ -515,6 +538,15 @@ public:
         if (get) return *get;
         return value;
     }
+
+    // Trivial hash getters
+    template<TrivialSyncType T>
+    //requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
+    const T& Get(const std::string& key, const T& value) const {
+        return Get<T>(VUtils::String::GetStableHashCode(key), value);
+    }
+
+
 
     float GetFloat(HASH_t key, float value) const;
     int32_t GetInt(HASH_t key, int32_t value) const;
@@ -583,33 +615,6 @@ public:
 
 
 
-
-
-
-
-    // dumb vars
-    //float m_tempSortValue = 0; // only used in sending priority
-    //bool m_tempHaveRevision = 0; // appears to be unused besides assignments
-
-    //int32_t m_tempRemovedAt = -1; // equal to frame counter at intervals
-    //int32_t m_tempCreatedAt = -1; // ^
-
-    //bool Persists() const {
-    //    return m_persistent;
-    //}
-    //
-    //bool Distant() const {
-    //    return m_distant;
-    //}
-
-    //int32_t Version() const {
-    //    return m_pgwVersion;
-    //}
-
-    //ObjectType Type() const {
-    //    return m_type;
-    //}
-
     const Prefab* GetPrefab() const {
         return m_prefab;
     }
@@ -618,9 +623,16 @@ public:
         return m_rotation;
     }
 
+    void SetRotation(const Quaternion& rot) {
+        if (rot != m_rotation) {
+            m_rotation = rot;
+            Revise();
+        }
+    }
+
     Vector2i Sector() const;
 
-    const NetID ID() const {
+    NetID ID() const {
         return m_id;
     }
 
@@ -628,18 +640,20 @@ public:
     //    return m_rev;
     //}
 
-    OWNER_t Owner() const {
-        return m_owner;
-    }
-
-    const Vector3& Position() const {
+    Vector3 Position() const {
         return m_position;
     }
 
     void SetPosition(const Vector3& pos);
 
+    OWNER_t Owner() const {
+        return m_owner;
+    }
+
     // Return whether the ZDO instance is self hosted or remotely hosted
-    bool Local() const;
+    bool Local() const {
+        return m_owner == SERVER_ID;
+    }
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
@@ -647,7 +661,14 @@ public:
     }
 
     // Claim ownership over this ZDO
-    bool SetLocal();
+    bool SetLocal() {
+        return SetOwner(SERVER_ID);
+    }
+
+    // Should name better
+    void Abandon() {
+        SetOwner(0);
+    }
 
     // set the owner of the ZDO
     bool SetOwner(OWNER_t owner) {
@@ -660,23 +681,17 @@ public:
         return false;
     }
 
+    bool IsOwner(OWNER_t owner) {
+        return m_owner == owner;
+    }
+
     bool Valid() const {
         if (m_id)
             return true;
         return false;
     }
 
-    // Should name better
-    void Abandon() {
-        SetOwner(0);
-    }
 
-    void SetRotation(const Quaternion& rot) {
-        if (rot != m_rotation) {
-            m_rotation = rot;
-            Revise();
-        }
-    }
 
     size_t GetTotalAlloc() {
         size_t size = 0;

@@ -66,10 +66,9 @@ ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaterni
     if (find != m_prefabs.end()) {
         auto&& prefab = find->second;
 
-        auto&& zdo = Instantiate(prefab.get(), pos, rot);
+        auto&& zdo = Instantiate(*prefab.get(), pos, rot);
 
-        if (outPrefab)
-            *outPrefab = prefab.get();
+        if (outPrefab) *outPrefab = prefab.get();
 
         return &zdo;
     }
@@ -77,25 +76,19 @@ ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaterni
     return nullptr;
 }
 
-ZDO& IPrefabManager::Instantiate(const Prefab* prefab, const Vector3& pos, const Quaternion& rot) {
-    assert(prefab);
-    
+ZDO& IPrefabManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot) {    
     auto &&zdo = ZDOManager()->AddZDO(pos);
-    //zdo->m_distant = prefab->m_distant;
-    //zdo->m_persistent = prefab->m_persistent;
-    //zdo->m_type = prefab->m_type;
     zdo.m_rotation = rot;
-    //zdo->m_prefab = prefab->m_hash;
-    zdo.m_prefab = prefab;
+    zdo.m_prefab = &prefab;
 
-    if (prefab->HasFlag(Prefab::Flag::SyncInitialScale))
-        zdo.Set("scale", prefab->m_localScale);
+    if (prefab.HasFlag(Prefab::Flag::SyncInitialScale))
+        zdo.Set("scale", prefab.m_localScale);
 
     return zdo;
 }
 
 ZDO& IPrefabManager::Instantiate(const ZDO& zdo) {
-    auto&& copy = Instantiate(zdo.m_prefab, zdo.m_position, zdo.m_rotation);
+    auto&& copy = Instantiate(*zdo.m_prefab, zdo.m_position, zdo.m_rotation);
 
     ZDOID id = copy.m_id; // Copying copies everything (including UID, which MUST be unique for every ZDO)
     copy = zdo;

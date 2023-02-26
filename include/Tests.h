@@ -5,8 +5,8 @@
 #include "DataWriter.h"
 #include "NetManager.h"
 
-namespace Tests {
-   
+class Tests {
+public:   
     void Test_QuaternionLook() {
         auto opt = VUtils::Resource::ReadFileLines("lookrotation_values.txt");
 
@@ -314,5 +314,4 @@ namespace Tests {
             }
         }
     }
-
-}
+};
