@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <robin_hood.h>
+
 #include "VUtils.h"
 #include "Vector.h"
 #include "Quaternion.h"
@@ -42,12 +44,13 @@ public:
 
 	int m_minRequiredRooms;
 
-	std::vector<std::string> m_requiredRooms;
+	robin_hood::unordered_set<std::string> m_requiredRooms;
 
 	bool m_alternativeFunctionality;
 
 	Room::Theme m_themes = Room::Theme::Crypt;
 
+	// Order is significant (polled with Seeded Random)
 	std::vector<std::unique_ptr<DoorDef>> m_doorTypes; // Serialized
 
 	float m_doorChance = 0.5f;
@@ -74,16 +77,15 @@ public:
 
 	Vector3 m_originalPosition;
 
+	// Order is significant (polled with Seeded Random)
 	std::vector<Room*> m_availableRooms;
 };
 
 
 class DungeonGenerator {
 public:
-	void Clear();
 	void Generate();
-	int GetSeed();
-	void Generate(int seed);
+	HASH_t GetSeed();
 
 private:
 	void GenerateRooms(VUtils::Random::State& state);
@@ -133,9 +135,9 @@ private:
 
 	Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
 
-	Room* GetRandomWeightedRoom(RoomConnection connection);
+	Room* GetRandomWeightedRoom(VUtils::Random::State& state, RoomConnectionInstance *connection);
 
-	Room& GetWeightedRoom(VUtils::Random::State& state, std::vector<Room*> rooms);
+	Room& GetWeightedRoom(VUtils::Random::State& state, std::vector<Room*> &rooms);
 
 	Room* GetRandomRoom(VUtils::Random::State& state, RoomConnectionInstance *connection);
 
@@ -174,15 +176,20 @@ public:
 
 	Vector3 m_zoneCenter;
 
+	// TODO make Constexpr
 	Vector3 m_zoneSize = Vector3(64, 64, 64);
 
 	//bool m_useCustomInteriorTransform; // templated
 
-	int m_generatedSeed;
+	HASH_t m_generatedSeed;
 
 	int m_generatedHash;
 
 	//Vector3 m_originalPosition; // templated
 
 	ZDO* m_zdo;
+
+public:
+	DungeonGenerator(Vector3 pos, Quaternion rot);
+
 };

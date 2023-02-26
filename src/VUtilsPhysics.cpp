@@ -125,37 +125,21 @@ namespace VUtils::Physics {
         Vector3 a2 = pos1 + rot1 * Vector3(-size1.x, size1.y, -size1.z);
         Vector3 a3 = pos1 + rot1 * Vector3(size1.x, size1.y, size1.z);
         Vector3 a4 = pos1 + rot1 * Vector3(-size1.x, size1.y, size1.z);
-        Vector3 a5 = pos1 + rot1 * Vector3(size1.x, -size1.y, -size1.z);
-        Vector3 a6 = pos1 + rot1 * Vector3(-size1.x, -size1.y, -size1.z);
-        Vector3 a7 = pos1 + rot1 * Vector3(size1.x, -size1.y, size1.z);
-        Vector3 a8 = pos1 + rot1 * Vector3(-size1.x, -size1.y, size1.z);
 
         Vector3 b1 = pos2 + rot2 * Vector3(size2.x, size2.y, -size2.z);
         Vector3 b2 = pos2 + rot2 * Vector3(-size2.x, size2.y, -size2.z);
         Vector3 b3 = pos2 + rot2 * Vector3(size2.x, size2.y, size2.z);
         Vector3 b4 = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
-        Vector3 b5 = pos2 + rot2 * Vector3(size2.x, -size2.y, -size2.z);
-        Vector3 b6 = pos2 + rot2 * Vector3(-size2.x, -size2.y, -size2.z);
-        Vector3 b7 = pos2 + rot2 * Vector3(size2.x, -size2.y, size2.z);
-        Vector3 b8 = pos2 + rot2 * Vector3(-size2.x, -size2.y, size2.z);
 
         Vector2 j1(a1.x, a1.z);
         Vector2 j2(a2.x, a2.z);
         Vector2 j3(a3.x, a3.z);
         Vector2 j4(a4.x, a4.z);
-        Vector2 j5(a5.x, a5.z);
-        Vector2 j6(a6.x, a6.z);
-        Vector2 j7(a7.x, a7.z);
-        Vector2 j8(a8.x, a8.z);
 
         Vector2 k1(b1.x, b1.z);
         Vector2 k2(b2.x, b2.z);
         Vector2 k3(b3.x, b3.z);
         Vector2 k4(b4.x, b4.z);
-        Vector2 k5(b5.x, b5.z);
-        Vector2 k6(b6.x, b6.z);
-        Vector2 k7(b7.x, b7.z);
-        Vector2 k8(b8.x, b8.z);
 
         // Only testing x / z intersections (y is redundant because of the initial test)
         if (LinesIntersect(j1, j3, k1, k3)
@@ -181,7 +165,15 @@ namespace VUtils::Physics {
             return true;
         }
 
-        if ()
+        // Now test whether rectangle is inside rectangle
+        // This case is less likely (I think) due to this only being used in dungeon generator
+        // room placement (which is funky and jank, unlikely to be inner-overlaps)
+        //if (PointInsideRect(size1, pos1, rot1, a1)
+
+        // Some unity-specific Valheim dungeon room placement tests are required
+        //  determine whether rooms can be inside each other or not
+
+        return false;
     }
 
 

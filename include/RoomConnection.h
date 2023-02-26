@@ -3,6 +3,9 @@
 #include "VUtils.h"
 #include "VUtilsMath.h"
 
+#include "Vector.h"
+#include "Quaternion.h"
+
 class RoomConnection {
 public:
 	std::string m_type;
@@ -17,7 +20,7 @@ public:
 
 class RoomConnectionInstance {
 public:
-	RoomConnection& m_connection;
+	std::reference_wrapper<RoomConnection> m_connection;
 	Vector3 m_pos;
 	Quaternion m_rot;
 	int m_placeOrder;
