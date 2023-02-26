@@ -3,6 +3,8 @@
 #include "RoomConnection.h"
 
 #include "VUtilsRandom.h"
+#include "Quaternion.h"
+#include "Prefab.h"
 
 class Room {
 public:
@@ -53,12 +55,12 @@ public:
 	Vector3 m_localPos;
 	Quaternion m_localRot;
 
-	//[NonSerialized]
-	//public int m_placeOrder;
+	std::vector<Prefab::Instance> m_netViews;
 
-	//[NonSerialized]
-	//public int m_seed;
+	// Also randomspawns
+	//std::vector<RandomSpawn>
 
+	// TODO later...
 	//public MusicVolume m_musicPrefab;
 
 public:
@@ -84,4 +86,6 @@ struct RoomInstance {
 	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
+
+	std::vector<RoomConnectionInstance> m_connections;
 };

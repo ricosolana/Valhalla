@@ -8,6 +8,14 @@
 
 class Prefab {
 public:
+
+    // TODO use in ZoneManager::ZoneLocations
+    struct Instance {
+        const Prefab* m_prefab;
+        Vector3 m_pos;
+        Quaternion m_rot = Quaternion::IDENTITY; // hmm
+    };
+
     enum class Flag {
         // Single bit flags:
 

@@ -3,6 +3,7 @@
 #include "WorldManager.h"
 #include "GeoManager.h"
 #include "VUtilsMathf.h"
+#include "VUtilsPhysics.h"
 
 void DungeonGenerator::DungeonGenerator::Clear() {
 	//while (base.transform.childCount > 0)
@@ -36,7 +37,6 @@ void DungeonGenerator::DungeonGenerator::Generate(int seed) {
 	this->m_generatedSeed = seed;
 	this->Clear();
 	this->SetupColliders();
-	this->SetupAvailableRooms();
 
 	Vector2i zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
@@ -136,7 +136,8 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 	int num4 = num3 * 20;
 	int num5 = 0;
 	for (int i = 0; i < num4; i++) {
-		Vector3 vector = m_pos + Quaternion::Euler(0.f, (float)state.Range(0, 360), 0.f) * Vector3::FORWARD * state.Range(0.f, num - this->m_perimeterBuffer);
+		Vector3 vector = m_pos + Quaternion::Euler(0.f, (float)state.Range(0, 360), 0.f) 
+			* Vector3::FORWARD * state.Range(0.f, num - this->m_dungeon->m_perimeterBuffer);
 		auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 		if (randomWeightedRoom) {
 			Vector3 vector2;
@@ -147,14 +148,12 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 				continue;
 
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
-			if (!this->TestCollision(randomWeightedRoom->m_room, vector, campRoomRotation))
+			if (!this->TestCollision(*randomWeightedRoom, vector, campRoomRotation))
 			{
 				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation, nullptr);
 				num5++;
 				if (num5 >= num3)
-				{
 					break;
-				}
 			}
 		}
 	}
@@ -163,8 +162,8 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 		this->PlaceWall(state, num, this->m_dungeon->m_perimeterSections);
 }
 
-Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, RoomData& room, Vector3 pos) {
-	if (room.m_room.m_faceCenter) {
+Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, Room& room, Vector3 pos) {
+	if (room.m_faceCenter) {
 		Vector3 vector = m_pos - pos;
 		vector.y = 0;
 		if (vector == Vector3::ZERO)
@@ -185,7 +184,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 	int num3 = sections * 20;
 	for (int i = 0; i < num3; i++)
 	{
-		RoomData* randomWeightedRoom = this->GetRandomWeightedRoom(state, true);
+		Room* randomWeightedRoom = this->GetRandomWeightedRoom(state, true);
 		if (randomWeightedRoom)
 		{
 			Vector3 vector = m_pos + Quaternion::Euler(0, (float)state.Range(0, 360), 0) * Vector3::FORWARD * radius;
@@ -198,7 +197,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 			if (vector2.y < num || vector.y - IZoneManager::WATER_LEVEL < this->m_dungeon->m_minAltitude)
 				continue;
 
-			if (!this->TestCollision(randomWeightedRoom->m_room, vector, campRoomRotation))
+			if (!this->TestCollision(*randomWeightedRoom, vector, campRoomRotation))
 			{
 				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation, nullptr);
 				num2++;
@@ -220,16 +219,6 @@ void DungeonGenerator::Save() {
 		m_zdo->Set(text + "_pos", instance.m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
 		m_zdo->Set(text + "_rot", instance.m_rot);
 		m_zdo->Set(text + "_seed", instance.m_seed);
-	}
-}
-
-void DungeonGenerator::SetupAvailableRooms() {
-	for (auto&& roomData : DungeonDB.GetRooms())
-	{
-		if ((roomData.m_room.m_theme & this->m_dungeon->m_themes) && roomData.m_room.m_enabled)
-		{
-			m_availableRooms.push_back(roomData);
-		}
 	}
 }
 
@@ -307,7 +296,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 				if (!m_tempRooms.empty())
 				{
 					auto&& weightedRoom = this->GetWeightedRoom(state, m_tempRooms);
-					auto&& connections = weightedRoom.m_room.GetConnections();
+					auto&& connections = weightedRoom.GetConnections();
 					Vector3 vector;
 					Quaternion rot = Quaternion::IDENTITY;
 					this->CalculateRoomPosRot(*connections[0], roomConnection.m_pos, 
@@ -353,11 +342,11 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 
 			if (!flag2) {
 				// make a copy for sorting
-				std::vector<RoomData*> sorted = m_tempRooms;
+				std::vector<Room*> sorted = m_tempRooms;
 
 				// std::stable_sort is used because equal element value order are maintained
-				std::stable_sort(sorted.begin(), sorted.end(), [](const RoomData* a, const RoomData* b) {
-					return a->m_room.m_endCapPrio > b->m_room.m_endCapPrio;
+				std::stable_sort(sorted.begin(), sorted.end(), [](const Room* a, const Room* b) {
+					return a->m_endCapPrio > b->m_endCapPrio;
 				});
 
 				for (auto&& roomData : sorted) {
@@ -389,13 +378,13 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 	}
 }
 
-void DungeonGenerator::FindDividers(VUtils::Random::State& state, std::vector<RoomData*>& rooms) {
+void DungeonGenerator::FindDividers(VUtils::Random::State& state, std::vector<Room*>& rooms) {
 	rooms.clear();
 	for (auto&& roomData : m_dungeon->m_availableRooms)
 	{
-		if (roomData.m_room.m_divider)
+		if (roomData->m_divider)
 		{
-			rooms.push_back(&roomData);
+			rooms.push_back(roomData);
 		}
 	}
 
@@ -409,13 +398,13 @@ void DungeonGenerator::FindDividers(VUtils::Random::State& state, std::vector<Ro
 	}
 }
 
-void DungeonGenerator::FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<RoomData*>& rooms) {
+void DungeonGenerator::FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<Room*>& rooms) {
 	rooms.clear();
 	for (auto&& roomData : m_dungeon->m_availableRooms)
 	{
-		if (roomData.m_room.m_endCap && roomData.m_room.HaveConnection(connection))
+		if (roomData->m_endCap && roomData->HaveConnection(connection))
 		{
-			rooms.push_back(&roomData);
+			rooms.push_back(roomData);
 		}
 	}
 
@@ -431,20 +420,18 @@ void DungeonGenerator::FindEndCaps(VUtils::Random::State& state, RoomConnection 
 	}
 }
 
-RoomData* DungeonGenerator::FindEndCap(VUtils::Random::State& state, RoomConnection &connection) {
+Room* DungeonGenerator::FindEndCap(VUtils::Random::State& state, RoomConnection &connection) {
 	m_tempRooms.clear();
 	for (auto&& roomData : m_dungeon->m_availableRooms)
 	{
-		if (roomData.m_room.m_endCap && roomData.m_room.HaveConnection(connection))
+		if (roomData->m_endCap && roomData->HaveConnection(connection))
 		{
-			m_tempRooms.push_back(&roomData);
+			m_tempRooms.push_back(roomData);
 		}
 	}
 
 	if (m_tempRooms.empty())
-	{
 		return nullptr;
-	}
 
 	return m_tempRooms[state.Range(0, m_tempRooms.size())];
 }
@@ -453,7 +440,9 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
 	for (int i = 0; i < this->m_dungeon->m_maxRooms; i++)
 	{
 		this->PlaceOneRoom(state);
-		if (this->CheckRequiredRooms() && m_placedRooms.size() > this->m_dungeon->m_minRooms) {
+		if (this->CheckRequiredRooms() 
+			&& m_placedRooms.size() > this->m_dungeon->m_minRooms) 
+		{
 			LOG(INFO) << "All required rooms have been placed, stopping generation";
 			return;
 		}
@@ -462,7 +451,7 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
 
 void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	auto&& roomData = this->FindStartRoom(state);
-	auto&& entrance = roomData.m_room.GetEntrance();
+	auto&& entrance = roomData.GetEntrance();
 	Quaternion rotation = m_rot;
 
 	RoomConnectionInstance dummy{
@@ -485,14 +474,14 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 
 	for (int i = 0; i < 10; i++)
 	{
-		RoomData* roomData = this->m_dungeon->m_alternativeFunctionality 
-			? this->GetRandomWeightedRoom(state, openConnection) : this->GetRandomRoom(state, openConnection);
+		Room* roomData = this->m_dungeon->m_alternativeFunctionality 
+			? this->GetRandomWeightedRoom(state, openConnection) 
+			: this->GetRandomRoom(state, openConnection);
 		if (!roomData)
 			break;
 
-		if (this->PlaceRoom(state, *openConnection, *roomData)) {
+		if (this->PlaceRoom(state, *openConnection, *roomData))
 			return true;
-		}
 	}
 	return false;
 }
@@ -504,8 +493,7 @@ void DungeonGenerator::CalculateRoomPosRot(RoomConnection &roomCon, Vector3 exit
 	pos = exitPos - rot * localPosition;
 }
 
-bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, RoomData& roomData) {
-	auto &&room = roomData.m_room;
+bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, Room& room) {
 	Quaternion quaternion = connection.m_rot;
 	quaternion *= Quaternion::Euler(0, 180, 0);
 	auto&& connection2 = room.GetConnection(state, connection.m_connection);
@@ -518,7 +506,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionIns
 	if (room.m_size.x != 0 && room.m_size.z != 0 && this->TestCollision(room, pos, rot))
 		return false;
 
-	this->PlaceRoom(roomData, pos, rot, &connection);
+	this->PlaceRoom(room, pos, rot, &connection);
 	if (!room.m_endCap)
 	{
 		if (connection.m_connection.m_allowDoor 
@@ -543,13 +531,11 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionIns
 	return true;
 }
 
-void DungeonGenerator::PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection)
-{
+void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection) {
 	Vector3 vector = pos;
 	if (this->m_dungeon->m_useCustomInteriorTransform)
-	{
-		vector = pos - m_pos;
-	}
+		vector -= m_pos;
+
 	int seed = (int)vector.x * 4271 + (int)vector.y * 9187 + (int)vector.z * 2134;
 
 	VUtils::Random::State state(seed);
@@ -557,96 +543,82 @@ void DungeonGenerator::PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, Ro
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	Vector3 position = room.m_room.m_localPos;
-	Quaternion quaternion = Quaternion::Inverse(room.m_room.m_localRot);
+	Vector3 position = room.m_localPos;
+	Quaternion quaternion = Quaternion::Inverse(room.m_localRot);
 	for (auto&& znetView2 : room.m_netViews) {
-		Vector3 point = quaternion * (znetView2.gameObject.transform.position - position);
+		Vector3 point = quaternion * (znetView2.m_pos - position);
 		Vector3 position2 = pos + rot * point;
-		Quaternion rhs = quaternion * znetView2.gameObject.transform.rotation;
+		Quaternion rhs = quaternion * znetView2.m_rot;
 		Quaternion rotation = rot * rhs;
-		GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(znetView2.gameObject, position2, rotation);
-		ZNetView component = gameObject.GetComponent<ZNetView>();
-		if (component.GetZDO() != null)
-		{
-			component.GetZDO().SetPGWVersion(ZoneSystem.instance.m_pgwVersion);
-		}
-
-		UnityEngine.Object.Destroy(gameObject);		
+		PrefabManager()->Instantiate(znetView2.m_prefab, position2, rotation);
 	}
 	
 	RoomInstance component2{
-		.m_room = &room.m_room,
+		.m_room = &room,
 		.m_pos = pos,
-		.m_rot = 
-		.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0)
+		.m_rot = rot,
+		.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0),
+		.m_seed = seed
 	};
 
-	//RoomInstance *component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform).GetComponent<Room>();
-	component2.gameObject.name = room.m_room.gameObject.name;
+	//RoomInstance *component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform)
+		//.GetComponent<Room>();
 
-	component2.m_placeOrder = (fromConnection ? (fromConnection->m_placeOrder + 1) : 0);
-	component2.m_seed = seed;
-	m_placedRooms.Add(component2);
+	m_placedRooms.push_back(component2);
 	this->AddOpenConnections(component2, fromConnection);
-	
-	//UnityEngine.Random.state = state;
 }
 
 void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, RoomConnectionInstance *skipConnection) {
-	auto&& connections = newRoom.GetConnections();
-	if (skipConnection)
-	{
-		for (auto&& roomConnection : connections)
-		{
-			if (!roomConnection.m_entrance && Vector3.Distance(roomConnection.transform.position, skipConnection.transform.position) >= 0.1f)
+	auto&& connections = newRoom.m_connections;
+	if (skipConnection) {
+		for (auto&& roomConnection : connections) {
+			if (!roomConnection.m_connection.m_entrance 
+				&& roomConnection.m_pos.Distance(skipConnection->m_pos) >= .1f) 
 			{
 				roomConnection.m_placeOrder = newRoom.m_placeOrder;
-				DungeonGenerator.m_openConnections.Add(roomConnection);
+				m_openConnections.push_back(roomConnection);
 			}
 		}
-		return;
 	}
-	RoomConnection[] array = connections;
-	for (int i = 0; i < array.Length; i++)
-	{
-		array[i].m_placeOrder = newRoom.m_placeOrder;
+	else {
+		for (auto&& connection : connections) {
+			connection.m_placeOrder = newRoom.m_placeOrder;
+		}
+
+		m_openConnections.insert(m_openConnections.end(), 
+			connections.begin(), connections.end());
 	}
-	DungeonGenerator.m_openConnections.AddRange(connections);
 }
 
-void DungeonGenerator::SetupColliders() {
-	if (this->m_colliderA != null)
-	{
-		return;
-	}
-	BoxCollider[] componentsInChildren = base.gameObject.GetComponentsInChildren<BoxCollider>();
-	for (int i = 0; i < componentsInChildren.Length; i++)
-	{
-		UnityEngine.Object.DestroyImmediate(componentsInChildren[i]);
-	}
-	this->m_colliderA = base.gameObject.AddComponent<BoxCollider>();
-	this->m_colliderB = base.gameObject.AddComponent<BoxCollider>();
+// Determine whether a room (with center at origin of room) is completely contained within a zone
+bool DungeonGenerator::IsInsideDungeon(Room &room, Vector3 pos, Quaternion rot) {
+	return VUtils::Physics::RectInsideRect(m_zoneSize, m_zoneCenter, Quaternion::IDENTITY,
+		room.m_size, pos, rot);
+
+	//Bounds bounds = new Bounds(this->m_zoneCenter, this->m_zoneSize);
+	//Vector3 vector = room.m_size;
+	//vector *= 0.5f;
+	//
+	//// This checks every corner of in the room relative to the room origin
+	//return bounds.Contains(pos + rot * Vector3(vector.x, vector.y, -vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, -vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(vector.x, vector.y, vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, -vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, -vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, vector.z)) 
+	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, vector.z));
 }
 
-bool DungeonGenerator::IsInsideDungeon(Room room, Vector3 pos, Quaternion rot)
-{
-	Bounds bounds = new Bounds(this->m_zoneCenter, this->m_zoneSize);
-	Vector3 vector = room.m_size;
-	vector *= 0.5f;
-	return bounds.Contains(pos + rot * Vector3(vector.x, vector.y, -vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, -vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(vector.x, vector.y, vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, -vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, -vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, vector.z)) 
-		&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, vector.z));
-}
-
-bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot)
-{
+bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot) {
+	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
 	if (!this->IsInsideDungeon(room, pos, rot)) {
 		return true;
+	}
+
+	// determine whether the room collides with any other room
+	for (auto&& other : m_placedRooms) {
+		if (VUtils::Physics::RectOverlapRect())
 	}
 
 	this->m_colliderA.size = Vector3((float)room.m_size.x - 0.1f, (float)room.m_size.y - 0.1f, (float)room.m_size.z - 0.1f);
@@ -655,6 +627,8 @@ bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot)
 		this->m_colliderB.size = room2.m_size;
 		Vector3 vector;
 		float num;
+
+		// If the 
 		if (Physics.ComputePenetration(this->m_colliderA, pos, rot, this->m_colliderB, room2.transform.position, room2.transform.rotation, out vector, out num))
 		{
 			return true;
@@ -663,8 +637,7 @@ bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot)
 	return false;
 }
 
-RoomData* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom)
-{
+Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom) {
 	m_tempRooms.clear();
 	float num = 0;
 	for (auto&& roomData : m_availableRooms)

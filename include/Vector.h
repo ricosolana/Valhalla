@@ -155,8 +155,18 @@ struct Vector3 {
 
 
     Vector3 Cross(const Vector3 &rhs) const {
-        return Vector3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+        return Vector3(
+            y * rhs.z - z * rhs.y, 
+            z * rhs.x - x * rhs.z, 
+            x * rhs.y - y * rhs.x
+        );
     }
+
+    float Dot(const Vector3& rhs) const {
+        return x * rhs.x + y * rhs.y + z * rhs.z;
+    }
+
+
 
     float SqMagnitude() const {
         return VUtils::Math::SqMagnitude(x, y, z);

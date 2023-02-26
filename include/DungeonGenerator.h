@@ -10,10 +10,10 @@
 #include "RoomConnection.h"
 
 // TODO give more verbose direct name
-struct RoomData {
-	//std::reference_wrapper<Room> m_room;
-	Room& m_room;
-};
+//struct RoomData {
+//	//std::reference_wrapper<Room> m_room;
+//	Room& m_room;
+//};
 
 class Dungeon {
 public:
@@ -74,7 +74,7 @@ public:
 
 	Vector3 m_originalPosition;
 
-	std::vector<RoomData> m_availableRooms;
+	std::vector<Room*> m_availableRooms;
 };
 
 
@@ -94,13 +94,11 @@ private:
 
 	void GenerateCampRadial(VUtils::Random::State& state);
 
-	Quaternion GetCampRoomRotation(VUtils::Random::State& state, RoomData &room, Vector3 pos);
+	Quaternion GetCampRoomRotation(VUtils::Random::State& state, Room &room, Vector3 pos);
 
 	void PlaceWall(VUtils::Random::State& state, float radius, int sections);
 
 	void Save();
-
-	void SetupAvailableRooms();
 
 	// Nullable
 	Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, std::string type);
@@ -109,11 +107,11 @@ private:
 
 	void PlaceEndCaps(VUtils::Random::State& state);
 
-	void FindDividers(VUtils::Random::State& state, std::vector<RoomData*> &rooms);
+	void FindDividers(VUtils::Random::State& state, std::vector<Room*> &rooms);
 
-	void FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<RoomData*> &rooms);
+	void FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<Room*> &rooms);
 
-	RoomData* FindEndCap(VUtils::Random::State& state, RoomConnection &connection);
+	Room* FindEndCap(VUtils::Random::State& state, RoomConnection &connection);
 
 	void PlaceRooms(VUtils::Random::State& state);
 
@@ -123,29 +121,27 @@ private:
 
 	void CalculateRoomPosRot(RoomConnection &roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, RoomData& roomData);
+	bool PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, Room& roomData);
 
-	void PlaceRoom(RoomData& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection);
+	void PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection);
 
 	void AddOpenConnections(RoomInstance &newRoom, RoomConnectionInstance *skipConnection);
 
-	void SetupColliders();
-
-	bool IsInsideDungeon(Room room, Vector3 pos, Quaternion rot);
+	bool IsInsideDungeon(Room &room, Vector3 pos, Quaternion rot);
 
 	bool TestCollision(Room &room, Vector3 pos, Quaternion rot);
 
-	RoomData* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
+	Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
 
-	RoomData* GetRandomWeightedRoom(RoomConnection connection);
+	Room* GetRandomWeightedRoom(RoomConnection connection);
 
-	RoomData& GetWeightedRoom(VUtils::Random::State& state, std::vector<RoomData*> rooms);
+	Room& GetWeightedRoom(VUtils::Random::State& state, std::vector<Room*> rooms);
 
-	RoomData* GetRandomRoom(VUtils::Random::State& state, RoomConnectionInstance *connection);
+	Room* GetRandomRoom(VUtils::Random::State& state, RoomConnectionInstance *connection);
 
 	RoomConnectionInstance*GetOpenConnection(VUtils::Random::State& state);
 
-	RoomData& FindStartRoom(VUtils::Random::State& state);
+	Room& FindStartRoom(VUtils::Random::State& state);
 
 	bool CheckRequiredRooms();
 
@@ -162,7 +158,7 @@ private:
 	// Templated per type of generator
 	//std::vector<RoomData*> m_availableRooms;
 
-	std::vector<RoomData*> m_tempRooms;
+	std::vector<Room*> m_tempRooms;
 
 	//BoxCollider m_colliderA;
 
@@ -177,6 +173,8 @@ public:
 	Quaternion m_rot; // instanced rotation
 
 	Vector3 m_zoneCenter;
+
+	Vector3 m_zoneSize = Vector3(64, 64, 64);
 
 	//bool m_useCustomInteriorTransform; // templated
 
