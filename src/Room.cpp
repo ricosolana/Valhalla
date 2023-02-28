@@ -5,7 +5,7 @@ HASH_t Room::GetHash() {
 	return VUtils::String::GetStableHashCode(m_name);
 }
 
-RoomConnection& Room::GetConnection(VUtils::Random::State& state, RoomConnection &other) {
+RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConnection &other) {
 	std::vector<RoomConnection*> tempConnections;
 	for (auto&& roomConnection : m_roomConnections) {
 		if (roomConnection->m_type == other.m_type)
@@ -27,10 +27,10 @@ RoomConnection &Room::GetEntrance() {
 			return *roomConnection.get();
 	}
 
-	throw std::runtime_error("unexpected branch");
+	throw std::runtime_error("unexpected");
 }
 
-bool Room::HaveConnection(RoomConnection &other) {
+bool Room::HaveConnection(const RoomConnection &other) {
 	for (auto&& connection : m_roomConnections) {
 		if (connection->m_type == other.m_type)
 			return true;

@@ -52,18 +52,19 @@ void IZoneManager::Init() {
             //    throw std::runtime_error("vegetation missing prefab");
             //}
 
-            loc->m_biome = (Biome)pkg.Read<int32_t>();
+            loc->m_dungeon = pkg.Read<bool>();
+            loc->m_biome = (Biome)pkg.Read<int32_t>();            
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
             loc->m_centerFirst = pkg.Read<bool>();
             loc->m_clearArea = pkg.Read<bool>();
-            loc->m_useCustomInteriorTransform = pkg.Read<bool>();
+            //loc->m_useCustomInteriorTransform = pkg.Read<bool>();
             loc->m_exteriorRadius = pkg.Read<float>();
             loc->m_interiorRadius = pkg.Read<float>();
             loc->m_forestTresholdMin = pkg.Read<float>();
             loc->m_forestTresholdMax = pkg.Read<float>();
-            loc->m_interiorPosition = pkg.Read<Vector3>();
-            loc->m_generatorPosition = pkg.Read<Vector3>();
+            //loc->m_interiorPosition = pkg.Read<Vector3>();
+            //loc->m_generatorPosition = pkg.Read<Vector3>();
             loc->m_group = pkg.Read<std::string>();
             loc->m_iconAlways = pkg.Read<bool>();
             loc->m_iconPlaced = pkg.Read<bool>();
@@ -75,7 +76,6 @@ void IZoneManager::Init() {
             loc->m_minTerrainDelta = pkg.Read<float>();
             loc->m_maxTerrainDelta = pkg.Read<float>();
             loc->m_minDistanceFromSimilar = pkg.Read<float>();
-            //loc->m_prioritized = pkg.Read<bool>();
             loc->m_spawnAttempts = pkg.Read<int32_t>();
             loc->m_quantity = pkg.Read<int32_t>();
             loc->m_randomRotation = pkg.Read<bool>();

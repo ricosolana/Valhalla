@@ -7,6 +7,8 @@
 #include "Prefab.h"
 
 class Room {
+	friend class IDungeonManager;
+
 public:
 	enum class Theme {
 		Crypt = 1,
@@ -72,11 +74,11 @@ public:
 	}
 
 	// Nullable
-	RoomConnection &GetConnection(VUtils::Random::State& state, RoomConnection &other);
+	RoomConnection &GetConnection(VUtils::Random::State& state, const RoomConnection &other);
 
 	RoomConnection &GetEntrance();
 
-	bool HaveConnection(RoomConnection &other);
+	bool HaveConnection(const RoomConnection &other);
 };
 
 struct RoomInstance {
@@ -96,12 +98,17 @@ struct RoomInstance {
 
 			// https://stackoverflow.com/questions/73652767/get-new-child-object-postion-based-on-parent-transform
 
-			Quaternion childWorldRot = rot * conn->m_localRot;
-			Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * conn->m_localPos.Magnitude();
+			//Quaternion childWorldRot = rot * conn->m_localRot;
+			//Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * conn->m_localPos.Magnitude();
+			//
+			//Vector3 childWorldPos = pointOnRot + room.m_pos;
+			
+			//m_connections.emplace_back(*conn.get(), childWorldPos, childWorldRot, placeOrder);
 
-			Vector3 childWorldPos = pointOnRot + room.m_pos;
+			auto global = VUtils::Physics::LocalToGlobal(conn->m_localPos, conn->m_localRot,
+				pos, rot);
 
-			m_connections.emplace_back(*conn.get(), childWorldPos, childWorldRot, placeOrder);
+			m_connections.emplace_back(*conn.get(), global.first, global.second, placeOrder);
 		}
 	}
 };

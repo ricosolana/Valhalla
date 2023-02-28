@@ -31,18 +31,19 @@ class IZoneManager {
 		//const Prefab* m_prefab;
 
 		Biome m_biome;
+		bool m_dungeon;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
 		bool m_applyRandomDamage;
 		bool m_centerFirst;
 		bool m_clearArea;
-		bool m_useCustomInteriorTransform;
+		//bool m_useCustomInteriorTransform;
 
 		float m_exteriorRadius = 10;
 		float m_interiorRadius = 10;
 		float m_forestTresholdMin;
 		float m_forestTresholdMax = 1;
-		Vector3 m_interiorPosition;
-		Vector3 m_generatorPosition;
+		//Vector3 m_interiorPosition;
+		//Vector3 m_generatorPosition;
 		std::string m_group = "";
 		bool m_iconAlways;
 		bool m_iconPlaced;

@@ -1,4 +1,15 @@
 todo:
+    - dungeons currently being worked on
+    
+    - inventory equippable pickable items will have icons:
+        ItemDrop.m_itemData.m_shared.m_icons wont be empty if the item is legal
+    
+    - legal zdo spawning / tracking (illegal item / object spawning mitigation)
+        basically prevent players from spawning the un-grabbable draugr axe etc...
+        these weird items exist so that npc / characters are able to display them and use stats due to the way the game was made. The player however is not allowed to use them for obvious reasons. Will gid deeper to find what makes the player able to pick up or unable to pickup certain items, and will use that to base the legal item filter against
+        
+        can easily implement zdo searcher to see who spawns in certain zdos, who modified which zdos at whichever time, maybe even a replay tool? would be interesting, kinda reminds me of using wireshark to log packets. Basically replay the client conversation to the server visa-versa.      
+
     - boat-lagg fix (important or not?)
         when a player (owner) temporarily stops sending packets, the boat will be much ahead, causing other players to be in the previous position.
         a possible idea would be to identify any instantaneous change in position, not impulse or integral velocity (since position in this sense is a simple sudden change due to lagg spike)

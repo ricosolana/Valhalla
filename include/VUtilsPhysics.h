@@ -19,4 +19,7 @@ namespace VUtils::Physics {
     bool RectOverlapRect(Vector3 size1, Vector3 pos1, Quaternion rot1,
         Vector3 size2, Vector3 pos2, Quaternion rot2);
 
+    std::pair<Vector3, Quaternion> LocalToGlobal(Vector3 childLocalPos, Quaternion childLocalRot,
+        Vector3 parentPos, Quaternion parentRot);
+
 }

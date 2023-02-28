@@ -6,13 +6,13 @@
 #include "VUtilsMathf.h"
 #include "VUtilsPhysics.h"
 
-DungeonGenerator::DungeonGenerator(Vector3 pos, Quaternion rot) :
+DungeonGenerator::DungeonGenerator(const Vector3 &pos, const Quaternion &rot) :
 	m_pos(pos), m_rot(rot) {
 	auto seed = GeoManager()->GetSeed();
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
 
-	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(IZoneManager::WorldToZonePos(m_pos));
+	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
 	this->m_zoneCenter.y = m_pos.y - this->m_dungeon->m_originalPosition.y;
 }
 
@@ -117,14 +117,13 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 		this->PlaceWall(state, num, this->m_dungeon->m_perimeterSections);
 }
 
-Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, Room& room, Vector3 pos) {
+Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, const Room& room, const Vector3 &pos) {
 	if (room.m_faceCenter) {
 		Vector3 vector = m_pos - pos;
 		vector.y = 0;
 		if (vector == Vector3::ZERO)
-		{
 			vector = Vector3::FORWARD;
-		}
+
 		vector.Normalize();
 		float y = VUtils::Mathf::Round(VUtils::Math::YawFromDirection(vector) / 22.5f) * 22.5f;
 		return Quaternion::Euler(0, y, 0);
@@ -177,18 +176,19 @@ void DungeonGenerator::Save() {
 	}
 }
 
-Dungeon::DoorDef *DungeonGenerator::FindDoorType(VUtils::Random::State& state, std::string type) {
-	std::vector<Dungeon::DoorDef*> list;
+Dungeon::DoorDef *DungeonGenerator::FindDoorType(VUtils::Random::State& state, const std::string &type) {
+	std::vector<std::reference_wrapper<Dungeon::DoorDef>> list;
 	for (auto&& doorDef : this->m_dungeon->m_doorTypes) {
-		if (doorDef->m_connectionType == type) {
-			list.push_back(doorDef.get());
+		if (doorDef.m_connectionType == type) {
+			list.push_back(doorDef);
 		}
 	}
 
+	// This case is possible with 'dvergropen' (Mistlands)
 	if (list.empty())
 		return nullptr;
 
-	return list[state.Range(0, list.size())];
+	return &list[state.Range(0, list.size())].get();
 }
 
 void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
@@ -238,10 +238,10 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 		if (roomConnection2) {
 			if (roomConnection.m_connection.get().m_type != roomConnection2->m_connection.get().m_type)
 			{
-				this->FindDividers(state, m_tempRooms);
-				if (!m_tempRooms.empty())
+				auto &&tempRooms = this->FindDividers(state);
+				if (!tempRooms.empty())
 				{
-					auto&& weightedRoom = this->GetWeightedRoom(state, m_tempRooms);
+					auto&& weightedRoom = this->GetWeightedRoom(state, tempRooms);
 					auto&& connections = weightedRoom.GetConnections();
 					Vector3 vector;
 					Quaternion rot = Quaternion::IDENTITY;
@@ -271,13 +271,13 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 		}
 		else
 		{
-			this->FindEndCaps(state, roomConnection.m_connection, m_tempRooms);
+			auto tempRooms = this->FindEndCaps(state, roomConnection.m_connection);
 			bool flag2 = false;
 			if (this->m_dungeon->m_alternativeFunctionality)
 			{
 				for (int k = 0; k < 5; k++)
 				{
-					auto&& weightedRoom2 = this->GetWeightedRoom(state, m_tempRooms);
+					auto&& weightedRoom2 = this->GetWeightedRoom(state, tempRooms);
 					if (this->PlaceRoom(state, roomConnection, weightedRoom2))
 					{
 						flag2 = true;
@@ -288,7 +288,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 
 			if (!flag2) {
 				// make a copy for sorting
-				std::vector<Room*> sorted = m_tempRooms;
+				std::vector<std::reference_wrapper<Room>> sorted = tempRooms;
 
 				// std::stable_sort is used because equal element value order are maintained
 				std::stable_sort(sorted.begin(), sorted.end(), [](const Room* a, const Room* b) {
@@ -296,7 +296,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 				});
 
 				for (auto&& roomData : sorted) {
-					if (this->PlaceRoom(state, roomConnection, *roomData)) {
+					if (this->PlaceRoom(state, roomConnection, roomData)) {
 						flag2 = true;
 						break;
 					}
@@ -310,14 +310,12 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 	}
 }
 
-void DungeonGenerator::FindDividers(VUtils::Random::State& state, std::vector<Room*>& rooms) {
-	rooms.clear();
-	for (auto&& roomData : m_dungeon->m_availableRooms)
-	{
+std::vector<std::reference_wrapper<Room>> DungeonGenerator::FindDividers(VUtils::Random::State& state) {
+	std::vector<std::reference_wrapper<Room>> rooms;
+
+	for (auto&& roomData : m_dungeon->m_availableRooms) {
 		if (roomData->m_divider)
-		{
-			rooms.push_back(roomData);
-		}
+			rooms.push_back(*roomData);
 	}
 
 	auto i = rooms.size();
@@ -328,44 +326,29 @@ void DungeonGenerator::FindDividers(VUtils::Random::State& state, std::vector<Ro
 		rooms[index] = rooms[i];
 		rooms[i] = value;
 	}
+
+	return rooms;
 }
 
-void DungeonGenerator::FindEndCaps(VUtils::Random::State& state, RoomConnection &connection, std::vector<Room*>& rooms) {
-	rooms.clear();
-	for (auto&& roomData : m_dungeon->m_availableRooms)
-	{
+std::vector<std::reference_wrapper<Room>> DungeonGenerator::FindEndCaps(VUtils::Random::State& state, const RoomConnection &connection) {
+	std::vector<std::reference_wrapper<Room>> rooms;
+
+	for (auto&& roomData : m_dungeon->m_availableRooms) {
 		if (roomData->m_endCap && roomData->HaveConnection(connection))
-		{
-			rooms.push_back(roomData);
-		}
+			rooms.push_back(*roomData);
 	}
 
 	// Inlined .Shuffle
 	auto i = rooms.size();
-	while (i > 1)
-	{
+	while (i > 1) {
 		i--;
 		int index = state.Range(0, i);
 		auto&& value = rooms[index];
 		rooms[index] = rooms[i];
 		rooms[i] = value;
 	}
-}
 
-Room* DungeonGenerator::FindEndCap(VUtils::Random::State& state, RoomConnection &connection) {
-	m_tempRooms.clear();
-	for (auto&& roomData : m_dungeon->m_availableRooms)
-	{
-		if (roomData->m_endCap && roomData->HaveConnection(connection))
-		{
-			m_tempRooms.push_back(roomData);
-		}
-	}
-
-	if (m_tempRooms.empty())
-		return nullptr;
-
-	return m_tempRooms[state.Range(0, m_tempRooms.size())];
+	return rooms;
 }
 
 void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
@@ -387,7 +370,12 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 
 	// localPos used because CalculateRoomPosRot(); 
 	// pos is not used for the later PlaceRoom...AddOpenConnections because this room is entrance (pos is skipped)
-	RoomConnectionInstance dummy = RoomConnectionInstance(entrance, entrance.m_localPos, entrance.m_localRot, 0);
+	//RoomConnectionInstance dummy = RoomConnectionInstance(entrance, entrance.m_localPos, entrance.m_localRot, 0);
+	
+	auto global = VUtils::Physics::LocalToGlobal(entrance.m_localPos, entrance.m_localRot,
+		roomData.m_pos, roomData.m_rot);
+
+	RoomConnectionInstance dummy = RoomConnectionInstance(entrance, global.first, global.second, 0);
 
 	Vector3 pos;
 	Quaternion rot = Quaternion::IDENTITY;
@@ -414,14 +402,13 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 	return false;
 }
 
-void DungeonGenerator::CalculateRoomPosRot(RoomConnection &roomCon, Vector3 exitPos, Quaternion exitRot, Vector3 &pos, Quaternion &rot) {
-	Quaternion rhs = Quaternion::Inverse(roomCon.m_localRot);
-	rot = exitRot * rhs;
+void DungeonGenerator::CalculateRoomPosRot(const RoomConnection& roomCon, const Vector3& pos, const Quaternion& rot, Vector3& outPos, Quaternion& outRot) {
+	outRot = rot * Quaternion::Inverse(roomCon.m_localRot);
 	Vector3 localPosition = roomCon.m_localPos;
-	pos = exitPos - rot * localPosition;
+	outPos = pos - outRot * localPosition;
 }
 
-bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionInstance &connection, Room& room) {
+bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, Room& room) {
 	Quaternion quaternion = connection.m_rot;
 	quaternion *= Quaternion::Euler(0, 180, 0);
 	auto&& connection2 = room.GetConnection(state, connection.m_connection);
@@ -459,7 +446,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, RoomConnectionIns
 	return true;
 }
 
-void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomConnectionInstance *fromConnection) {
+void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection) {
 	Vector3 vector = pos;
 	if (this->m_dungeon->m_useCustomInteriorTransform)
 		vector -= this->m_pos;
@@ -490,50 +477,27 @@ void DungeonGenerator::PlaceRoom(Room& room, Vector3 pos, Quaternion rot, RoomCo
 	this->AddOpenConnections(component2, fromConnection);
 }
 
-void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, RoomConnectionInstance *skipConnection) {
+void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance *skipConnection) {
 	auto&& connections = newRoom.m_connections;
-	if (skipConnection) {
-		for (auto&& roomConnection : connections) {
-			if (!roomConnection.m_connection.get().m_entrance
-				&& roomConnection.m_pos.Distance(skipConnection->m_pos) >= .1f) 
-			{
-				roomConnection.m_placeOrder = newRoom.m_placeOrder;
-				m_openConnections.push_back(roomConnection);
-			}
+	for (auto&& roomConnection : connections) {
+		if (!skipConnection 
+			|| (!roomConnection.m_connection.get().m_entrance
+				&& roomConnection.m_pos.Distance(skipConnection->m_pos) >= .1f)) 
+		{
+			roomConnection.m_placeOrder = newRoom.m_placeOrder;
+			m_openConnections.push_back(roomConnection);
 		}
-	}
-	else {
-		for (auto&& connection : connections) {
-			connection.m_placeOrder = newRoom.m_placeOrder;
-		}
-
-		m_openConnections.insert(m_openConnections.end(), 
-			connections.begin(), connections.end());
-	}
+	}	
 }
 
 // Determine whether a room (with center at origin of room) is completely contained within a zone
-bool DungeonGenerator::IsInsideDungeon(Room &room, Vector3 pos, Quaternion rot) {
+bool DungeonGenerator::IsInsideDungeon(const Room& room, const Vector3& pos, const Quaternion& rot) {
 	return VUtils::Physics::RectInsideRect(
 		m_zoneSize, m_zoneCenter, Quaternion::IDENTITY,
 		room.m_size, pos, rot);
-
-	//Bounds bounds = new Bounds(this->m_zoneCenter, this->m_zoneSize);
-	//Vector3 vector = room.m_size;
-	//vector *= 0.5f;
-	//
-	//// This checks every corner of in the room relative to the room origin
-	//return bounds.Contains(pos + rot * Vector3(vector.x, vector.y, -vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, -vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(vector.x, vector.y, vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, vector.y, vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, -vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, -vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(vector.x, -vector.y, vector.z)) 
-	//	&& bounds.Contains(pos + rot * Vector3(-vector.x, -vector.y, vector.z));
 }
 
-bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot) {
+bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot) {
 	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
 	if (!this->IsInsideDungeon(room, pos, rot)) {
 		return true;
@@ -549,50 +513,42 @@ bool DungeonGenerator::TestCollision(Room &room, Vector3 pos, Quaternion rot) {
 	}
 
 	return false;
-
-	//this->m_colliderA.size = Vector3((float)room.m_size.x - 0.1f, (float)room.m_size.y - 0.1f, (float)room.m_size.z - 0.1f);
-	//for (auto&& room2 : m_placedRooms)
-	//{
-	//	this->m_colliderB.size = room2.m_size;
-	//	Vector3 vector;
-	//	float num;
-	//
-	//	// If the 
-	//	if (Physics.ComputePenetration(this->m_colliderA, pos, rot, this->m_colliderB, room2.transform.position, room2.transform.rotation, out vector, out num))
-	//	{
-	//		return true;
-	//	}
-	//}
-	//return false;
 }
 
 Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom) {
-	m_tempRooms.clear();
+	std::vector<Room*> tempRooms;
+	
 	float num = 0;
 	for (auto&& roomData : m_dungeon->m_availableRooms)
 	{
 		if (!roomData->m_entrance && !roomData->m_endCap && !roomData->m_divider && roomData->m_perimeter == perimeterRoom)
 		{
 			num += roomData->m_weight;
-			m_tempRooms.push_back(roomData);
+			tempRooms.push_back(roomData.get());
 		}
 	}
 
-	if (m_tempRooms.empty())
+	if (tempRooms.empty())
 		return nullptr;
 
 	float num2 = state.Range(0.f, num);
 	float num3 = 0;
-	for (auto&& roomData2 : m_tempRooms) {
+	for (auto&& roomData2 : tempRooms) {
 		num3 += roomData2->m_weight;
 		if (num2 <= num3)
 			return roomData2;
 	}
-	return m_tempRooms[0];
+
+	// TODO this seems sus
+	//	weighted search usually failed if this point is ever reach, signaling bad values or bad algo
+	// throw or exit() if this point is reached
+	throw std::runtime_error("unexpected");
+	//return tempRooms[0];
 }
 
-Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, RoomConnectionInstance *connection) {
-	m_tempRooms.clear();
+Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection) {
+	std::vector<std::reference_wrapper<Room>> tempRooms;
+
 	for (auto&& roomData : m_dungeon->m_availableRooms)
 	{
 		if (!roomData->m_entrance
@@ -601,34 +557,37 @@ Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, Room
 			&& (!connection || (roomData->HaveConnection(connection->m_connection) 
 				&& connection->m_placeOrder >= roomData->m_minPlaceOrder)))
 		{
-			m_tempRooms.push_back(roomData);
+			tempRooms.push_back(*roomData);
 		}
 	}
 
-	if (m_tempRooms.empty())
+	// This case is possible with DG_DvergrBoss
+	if (tempRooms.empty())
 		return nullptr;
 
-	return &this->GetWeightedRoom(state, m_tempRooms);
+	return &this->GetWeightedRoom(state, tempRooms);
 }
 
-Room& DungeonGenerator::GetWeightedRoom(VUtils::Random::State& state, std::vector<Room*> &rooms) {
+Room& DungeonGenerator::GetWeightedRoom(VUtils::Random::State& state, const std::vector<std::reference_wrapper<Room>> &rooms) {
 	float num = 0;
 	for (auto&& roomData : rooms)
-		num += roomData->m_weight;
+		num += roomData.get().m_weight;
 
 	float num2 = state.Range(0.f, num);
 	float num3 = 0;
 	for (auto&& roomData2 : rooms) {
-		num3 += roomData2->m_weight;
+		num3 += roomData2.get().m_weight;
 		if (num2 <= num3)
-			return *roomData2;
+			return roomData2;
 	}
 
-	return *m_tempRooms[0];
+	throw std::runtime_error("unexpected");
+	//return *m_tempRooms[0];
 }
 
-Room* DungeonGenerator::GetRandomRoom(VUtils::Random::State& state, RoomConnectionInstance *connection) {
-	m_tempRooms.clear();
+Room* DungeonGenerator::GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection) {
+	std::vector<Room*> tempRooms;
+
 	for (auto&& roomData : m_dungeon->m_availableRooms) {
 		if (!roomData->m_entrance 
 			&& !roomData->m_endCap 
@@ -637,14 +596,14 @@ Room* DungeonGenerator::GetRandomRoom(VUtils::Random::State& state, RoomConnecti
 				|| (roomData->HaveConnection(connection->m_connection) 
 					&& connection->m_placeOrder >= roomData->m_minPlaceOrder)))
 		{
-			m_tempRooms.push_back(roomData);
+			tempRooms.push_back(roomData.get());
 		}
 	}
 
-	if (m_tempRooms.empty())
+	if (tempRooms.empty())
 		return nullptr;
 
-	return m_tempRooms[state.Range(0, m_tempRooms.size())];
+	return tempRooms[state.Range(0, tempRooms.size())];
 }
 
 RoomConnectionInstance* DungeonGenerator::GetOpenConnection(VUtils::Random::State& state) {
@@ -655,13 +614,14 @@ RoomConnectionInstance* DungeonGenerator::GetOpenConnection(VUtils::Random::Stat
 }
 
 Room& DungeonGenerator::FindStartRoom(VUtils::Random::State& state) {
-	m_tempRooms.clear();
+	std::vector<Room*> tempRooms;
+
 	for (auto&& roomData : m_dungeon->m_availableRooms) {
 		if (roomData->m_entrance)
-			m_tempRooms.push_back(roomData);
+			tempRooms.push_back(roomData.get());
 	}
 
-	return *m_tempRooms[state.Range(0, m_tempRooms.size())];
+	return *tempRooms[state.Range(0, tempRooms.size())];
 }
 
 bool DungeonGenerator::CheckRequiredRooms() {
