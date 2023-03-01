@@ -5,6 +5,7 @@
 #include "VUtilsRandom.h"
 #include "Quaternion.h"
 #include "Prefab.h"
+#include "VUtilsPhysics.h"
 
 class Room {
 	friend class IDungeonManager;
@@ -54,7 +55,7 @@ public:
 	HASH_t m_hash; // based off name
 
 	Vector3 m_pos;
-	Quaternion m_rot;
+	Quaternion m_rot = Quaternion::IDENTITY;
 
 	std::vector<Prefab::Instance> m_netViews;
 
@@ -65,31 +66,33 @@ public:
 	//public MusicVolume m_musicPrefab;
 
 public:
+	Room() = default;
+
 	Room(const Room& other) = delete;
 
-	HASH_t GetHash();
+	HASH_t GetHash() const;
 
-	std::vector<std::unique_ptr<RoomConnection>>& GetConnections() {
+	const std::vector<std::unique_ptr<RoomConnection>>& GetConnections() const {
 		return m_roomConnections;
 	}
 
 	// Nullable
-	RoomConnection &GetConnection(VUtils::Random::State& state, const RoomConnection &other);
+	const RoomConnection &GetConnection(VUtils::Random::State& state, const RoomConnection &other) const;
 
-	RoomConnection &GetEntrance();
+	const RoomConnection &GetEntrance() const;
 
-	bool HaveConnection(const RoomConnection &other);
+	bool HaveConnection(const RoomConnection &other) const;
 };
 
 struct RoomInstance {
-	std::reference_wrapper<Room> m_room;
+	std::reference_wrapper<const Room> m_room;
 	Vector3 m_pos;
 	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
 	std::vector<RoomConnectionInstance> m_connections;
 
-	RoomInstance(Room& room, Vector3 pos, Quaternion rot, int placeOrder, int seed) 
+	RoomInstance(const Room& room, Vector3 pos, Quaternion rot, int placeOrder, int seed) 
 		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
 		for (auto&& conn : room.GetConnections()) {
 			// Find the world position of the connection, 

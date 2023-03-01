@@ -17,7 +17,26 @@ local RPC_vs = function(peer, cmd, args)
         print(' - ' .. args[i])
     end
     
-    if cmd == 'claim' then
+    if cmd == 'dungeon' then
+        if #args == 1 then
+            local dungeon = DungeonManager.GetDungeon(args[1])
+            if dungeon then
+                local pos = peer.pos + Vector3.new(0, 128, 0)
+                local rot = Quaternion.identity
+                
+                dungeon:Generate(pos, rot)
+                
+                peer:Message('generated dungeon at ' 
+                    .. tostring(pos.x) .. ' '
+                    .. tostring(pos.y) .. ' '
+                    .. tostring(pos.z), MsgType.console)
+            else
+                peer:Message('dungeon not found', MsgType.console)
+            end
+        else
+            peer:Message("dungeon arg missing", MsgType.console)
+        end
+    elseif cmd == 'claim' then
         local radius = (#args == 1 and tonumber(args[1])) or 32
         --local radius = #args ~= 1 and 32 or (true and tonumber(args[1]))
         

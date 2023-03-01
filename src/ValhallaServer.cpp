@@ -15,6 +15,7 @@
 #include "Hashes.h"
 #include "HeightmapBuilder.h"
 #include "ModManager.h"
+#include "DungeonManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -175,6 +176,7 @@ void IValhalla::Start() {
     WorldManager()->Init();
     GeoManager()->Init();
     ZoneManager()->GenerateLocations();
+    DungeonManager()->Init();
     ModManager()->Init();
 
     HeightmapBuilder()->Init();

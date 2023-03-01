@@ -15,17 +15,17 @@ public:
 	bool m_doorOnlyIfOtherAlsoAllowsDoor = false;
 
 	Vector3 m_localPos;
-	Quaternion m_localRot;
+	Quaternion m_localRot = Quaternion::IDENTITY;
 };
 
 class RoomConnectionInstance {
 public:
-	std::reference_wrapper<RoomConnection> m_connection;
+	std::reference_wrapper<const RoomConnection> m_connection;
 	Vector3 m_pos;
 	Quaternion m_rot;
 	int m_placeOrder;
 
-	RoomConnectionInstance(RoomConnection& connection, Vector3 pos, Quaternion rot, int placeOrder) 
+	RoomConnectionInstance(const RoomConnection& connection, Vector3 pos, Quaternion rot, int placeOrder) 
 		: m_connection(connection), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder) {
 
 	}

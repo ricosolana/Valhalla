@@ -20,6 +20,8 @@
 #include "objects/Player.h"
 #include "RouteManager.h"
 #include "NetManager.h"
+#include "DungeonManager.h"
+#include "DungeonGenerator.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 IModManager* ModManager() {
@@ -63,6 +65,8 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
 void IModManager::LoadAPI() {
     m_state.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(), Vector3(float, float, float)>(),
+        sol::meta_function::addition, &Vector3::operator+,
+        sol::meta_function::subtraction, &Vector3::operator-,
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z,
@@ -591,6 +595,14 @@ void IModManager::LoadAPI() {
             return find->second.get();
         return static_cast<Mod*>(nullptr);
     };
+
+    m_state.new_usertype<Dungeon>("Dungeon",
+        sol::no_constructor,
+        "Generate", &Dungeon::Generate
+    );
+
+    auto dungeonApiTable = m_state["DungeonManager"].get_or_create<sol::table>();
+    dungeonApiTable["GetDungeon"] = [](const std::string& name) { return DungeonManager()->GetDungeon(VUtils::String::GetStableHashCode(name)); };
 
 
 

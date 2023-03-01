@@ -1,11 +1,11 @@
 #include "Room.h"
 #include "VUtilsString.h"
 
-HASH_t Room::GetHash() {
+HASH_t Room::GetHash() const {
 	return VUtils::String::GetStableHashCode(m_name);
 }
 
-RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConnection &other) {
+const RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConnection &other) const {
 	std::vector<RoomConnection*> tempConnections;
 	for (auto&& roomConnection : m_roomConnections) {
 		if (roomConnection->m_type == other.m_type)
@@ -20,7 +20,7 @@ RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConn
 	return *tempConnections[state.Range(0, tempConnections.size())];
 }
 
-RoomConnection &Room::GetEntrance() {
+const RoomConnection &Room::GetEntrance() const {
 	LOG(INFO) <<  "Connections " << m_roomConnections.size();
 	for (auto&& roomConnection : m_roomConnections) {
 		if (roomConnection->m_entrance)
@@ -30,7 +30,7 @@ RoomConnection &Room::GetEntrance() {
 	throw std::runtime_error("unexpected");
 }
 
-bool Room::HaveConnection(const RoomConnection &other) {
+bool Room::HaveConnection(const RoomConnection &other) const {
 	for (auto&& connection : m_roomConnections) {
 		if (connection->m_type == other.m_type)
 			return true;

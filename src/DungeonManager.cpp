@@ -2,10 +2,20 @@
 #include "VUtilsResource.h"
 #include "DataReader.h"
 #include "PrefabManager.h"
+#include "DungeonGenerator.h"
 
 auto DUNGEON_MANAGER(std::make_unique<IDungeonManager>()); // TODO stop constructing in global
 IDungeonManager* DungeonManager() {
     return DUNGEON_MANAGER.get();
+}
+
+
+
+void Dungeon::Generate(const Vector3& pos, const Quaternion& rot) const {
+    auto&& zdo = PrefabManager()->Instantiate(VUtils::String::GetStableHashCode(m_name), pos, rot);
+    if (!zdo) throw std::runtime_error("prefab missing");
+
+    DungeonGenerator(*this, *zdo, pos, rot).Generate();
 }
 
 void IDungeonManager::Init() {
@@ -16,7 +26,7 @@ void IDungeonManager::Init() {
 
     DataReader pkg(opt.value());
 
-    pkg.Read<std::string>(); // date
+    pkg.Read<std::string>(); // date/comment
     std::string ver = pkg.Read<std::string>();
     LOG(INFO) << "dungeons.pkg has game version " << ver;
     if (ver != VConstants::GAME)
@@ -27,7 +37,11 @@ void IDungeonManager::Init() {
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
-        HASH_t hash = pkg.Read<HASH_t>();
+        //HASH_t hash = pkg.Read<HASH_t>();
+
+        dungeon->m_name = pkg.Read<std::string>();
+
+        LOG(INFO) << "Loading dungeon " << dungeon->m_name;
 
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.Read<int32_t>();
         dungeon->m_alternativeFunctionality = pkg.Read<bool>();
@@ -62,6 +76,7 @@ void IDungeonManager::Init() {
 
         dungeon->m_spawnChance = pkg.Read<float>();
         dungeon->m_themes = (Room::Theme) pkg.Read<int32_t>();
+        dungeon->m_tileWidth = pkg.Read<float>();
         
         auto roomCount = pkg.Read<int32_t>();
         for (int i2 = 0; i2 < roomCount; i2++) {
@@ -87,13 +102,28 @@ void IDungeonManager::Init() {
                 room->m_roomConnections.push_back(std::move(conn));
             }
 
+            auto viewCount = pkg.Read<int32_t>();
+            for (int i3 = 0; i3 < viewCount; i3++) {
+                Prefab::Instance instance;
+                
+                instance.m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>());
+                instance.m_pos = pkg.Read<Vector3>();
+                instance.m_rot = pkg.Read<Quaternion>();
+
+                room->m_netViews.push_back(instance);
+            }
+
             room->m_size = pkg.Read<Vector3>();
             room->m_theme = (Room::Theme) pkg.Read<int32_t>();
             room->m_weight = pkg.Read<float>();
+            room->m_pos = pkg.Read<Vector3>();
+            room->m_rot = pkg.Read<Quaternion>();
 
             dungeon->m_availableRooms.push_back(std::move(room));
         }
 
-        m_dungeons.insert({ hash, std::move(dungeon) });
+        m_dungeons.insert({ VUtils::String::GetStableHashCode(dungeon->m_name), std::move(dungeon)});
     }
 }
+
+

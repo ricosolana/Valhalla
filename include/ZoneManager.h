@@ -30,8 +30,8 @@ class IZoneManager {
 		HASH_t m_hash;
 		//const Prefab* m_prefab;
 
+		//bool m_dungeon;
 		Biome m_biome;
-		bool m_dungeon;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
 		bool m_applyRandomDamage;
 		bool m_centerFirst;

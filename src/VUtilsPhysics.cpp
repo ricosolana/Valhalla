@@ -176,8 +176,10 @@ namespace VUtils::Physics {
         return false;
     }
 
-    std::pair<Vector3, Quaternion> LocalToGlobal(Vector3 childLocalPos, Quaternion childLocalRot,
-        Vector3 &parentPos, Quaternion &parentRot) {
+
+
+    std::pair<Vector3, Quaternion> LocalToGlobal(const Vector3 &childLocalPos, const Quaternion &childLocalRot,
+        const Vector3 &parentPos, const Quaternion &parentRot) {
 
         Quaternion childWorldRot = parentRot * childLocalRot;
         Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();

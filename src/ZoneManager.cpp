@@ -8,6 +8,8 @@
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 #include "Hashes.h"
+#include "DungeonManager.h"
+#include "DungeonGenerator.h"
 
 auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
@@ -52,7 +54,7 @@ void IZoneManager::Init() {
             //    throw std::runtime_error("vegetation missing prefab");
             //}
 
-            loc->m_dungeon = pkg.Read<bool>();
+            //loc->m_dungeon = pkg.Read<bool>();
             loc->m_biome = (Biome)pkg.Read<int32_t>();            
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
@@ -852,14 +854,14 @@ std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &
         //    //eulerAngles.y = round(eulerAngles.y / 22.5f) * 22.5f;
         //    //rot.eulerAngles = eulerAngles;
         //}
-        //else if (locationInstance.m_location.m_randomRotation) {
-        //    //rot = Quaternion::Euler(0, (float)UnityEngine.Random.Range(0, 16) * 22.5f, 0);
-        //    rot = Quaternion::Euler(0, (float)VUtils::Random::State().Range(0, 16) * 22.5f, 0);
-        //}
+
+        if (locationInstance.m_location->m_randomRotation) {
+            //rot = Quaternion::Euler(0, (float)UnityEngine.Random.Range(0, 16) * 22.5f, 0);
+            rot = Quaternion::Euler(0, VUtils::Random::State().Range(0, 16) * 22.5f, 0);
+        }
 
         HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         SpawnLocation(locationInstance.m_location, seed, position, rot);
-        //locationInstance.m_placed = true;
 
         LOG(INFO) << "Placed '" << locationInstance.m_location->m_name << "' in zone (" << zoneID.x << ", " << zoneID.y << ") at height " << position.y;
 
@@ -911,18 +913,6 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
         //component.m_interiorTransform.localRotation = Quaternion.Inverse(rot);
     }
 
-    // Simple Unity precondition check
-    //  (not needed if I use perfect data)
-    //if (component
-    //    && component.m_generator
-    //    && component.m_useCustomInteriorTransform != component.m_generator.m_useCustomInteriorTransform) {
-    //    LOG(ERROR) << component.name << " & " + component.m_generator.name << " don't have matching m_useCustomInteriorTransform()! If one has it the other should as well!";
-    //}
-
-    //for (auto&& znetView : location.m_netViews) {
-    //    znetView.gameObject.SetActive(true);
-    //}
-
     VUtils::Random::State state(seed);
 
     //for (auto&& randomSpawn : location.m_randomSpawns) {
@@ -932,8 +922,17 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
     //WearNTear.m_randomInitialDamage = location.m_location.m_applyRandomDamage;
     //for (auto&& znetView2 : location.m_netViews) {
     for (auto&& piece : location->m_pieces) {
-        PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
-        //PrefabManager()->Instantiate(piece.m_prefab, pos + piece.m_pos, piece.m_rot);
+        auto &&zdo = PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+        
+        if (piece.m_prefab->HasFlag(Prefab::Flag::Dungeon)) {
+            auto&& dungeon = DungeonManager()->GetDungeon(piece.m_prefab->m_hash);
+            if (!dungeon) throw std::runtime_error("dungeon missing");
+
+            // TODO pass the zdo as arg
+            dungeon->Generate(zdo.Position(), zdo.Rotation());
+
+            //DungeonGenerator(*dungeon, zdo.Position(), zdo.Rotation()).Generate();
+        }
 
         // Dungeon generation is too complex
         //DungeonGenerator component2 = gameObject.GetComponent<DungeonGenerator>();

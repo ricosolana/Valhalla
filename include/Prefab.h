@@ -59,6 +59,8 @@ public:
         VFX, // visual effect
         AOE, // AOE attacks
 
+        Dungeon,
+
         //CharacterDrop,
         //DropOnDestroyed,
 	};

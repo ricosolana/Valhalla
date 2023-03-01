@@ -23,6 +23,8 @@ public:
 		float m_chance = 0;
 	}; 
 
+	std::string m_name;
+
 	Algorithm m_algorithm;
 
 	int m_maxRooms = 3;
@@ -60,12 +62,15 @@ public:
 
 	float m_perimeterBuffer = 2;
 
-	bool m_useCustomInteriorTransform;
+	//bool m_useCustomInteriorTransform;
 
-	Vector3 m_originalPosition;
+	//Vector3 m_originalPosition;
 
 	// Order is significant (polled with Seeded Random)
 	std::vector<std::unique_ptr<Room>> m_availableRooms;
+
+public:
+	void Generate(const Vector3 &pos, const Quaternion &rot) const;
 };
 
 class IDungeonManager {
@@ -73,6 +78,13 @@ class IDungeonManager {
 
 public:
     void Init();
+
+	const Dungeon* GetDungeon(HASH_t hash) const {
+		auto&& find = m_dungeons.find(hash);
+		if (find != m_dungeons.end())
+			return find->second.get();
+		return nullptr;
+	}
 
 };
 

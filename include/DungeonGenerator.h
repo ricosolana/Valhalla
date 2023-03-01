@@ -40,15 +40,15 @@ private:
 	void Save();
 
 	// Nullable
-	Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, const std::string& type);
+	const Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, const std::string& type);
 
 	void PlaceDoors(VUtils::Random::State& state);
 
 	void PlaceEndCaps(VUtils::Random::State& state);
 
-	std::vector<std::reference_wrapper<Room>> FindDividers(VUtils::Random::State& state);
+	std::vector<std::reference_wrapper<const Room>> FindDividers(VUtils::Random::State& state);
 
-	std::vector<std::reference_wrapper<Room>> FindEndCaps(VUtils::Random::State& state, const RoomConnection &connection);
+	std::vector<std::reference_wrapper<const Room>> FindEndCaps(VUtils::Random::State& state, const RoomConnection &connection);
 
 	void PlaceRooms(VUtils::Random::State& state);
 
@@ -58,9 +58,9 @@ private:
 
 	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3 &pos, const Quaternion &rot, Vector3 &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, Room& roomData);
+	bool PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, const Room& roomData);
 
-	void PlaceRoom(Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection);
+	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection);
 
 	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance *skipConnection);
 
@@ -69,24 +69,24 @@ private:
 	bool TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot);
 
 	// Nullable
-	Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
+	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
 
 	// Nullable
-	Room* GetRandomWeightedRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
+	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
-	Room& GetWeightedRoom(VUtils::Random::State& state, const std::vector<std::reference_wrapper<Room>> &rooms);
+	const Room& GetWeightedRoom(VUtils::Random::State& state, const std::vector<std::reference_wrapper<const Room>> &rooms);
 
-	Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
+	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
 	// Nullable
 	RoomConnectionInstance* GetOpenConnection(VUtils::Random::State& state);
 
-	Room& FindStartRoom(VUtils::Random::State& state);
+	const Room& FindStartRoom(VUtils::Random::State& state);
 
 	bool CheckRequiredRooms();
 
 private:
-	bool m_hasGeneratedSeed;
+	//bool m_hasGeneratedSeed = false;
 
 	// Instanced
 	std::vector<RoomInstance> m_placedRooms;
@@ -107,7 +107,7 @@ private:
 	//private ZNetView m_nview;
 
 public:
-	Dungeon* m_dungeon;
+	const Dungeon* m_dungeon = nullptr;
 
 	Vector3 m_pos; // instanced position
 	Quaternion m_rot; // instanced rotation
@@ -123,9 +123,9 @@ public:
 
 	//Vector3 m_originalPosition; // templated
 
-	ZDO* m_zdo;
+	ZDO* m_zdo = nullptr;
 
 public:
-	DungeonGenerator(const Vector3& pos, const Quaternion& rot);
+	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3& pos, const Quaternion& rot);
 
 };
