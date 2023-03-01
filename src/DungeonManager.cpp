@@ -82,6 +82,7 @@ void IDungeonManager::Init() {
         for (int i2 = 0; i2 < roomCount; i2++) {
             auto room(std::make_unique<Room>());
 
+            room->m_name = pkg.Read<std::string>();
             room->m_divider = pkg.Read<bool>();
             room->m_endCap = pkg.Read<bool>();
             room->m_endCapPrio = pkg.Read<int32_t>();
