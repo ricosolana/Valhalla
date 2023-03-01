@@ -28,6 +28,16 @@ All other settings are set in the `server.yml`. If it seems empty, try removing 
 Properly shutdown the server by using ctrl+c.
 
 ## Progress
+### 2/28/2023 + TODO
+
+![Dungeons broken](/docs/pics/dungeons-experimental.jpg)
+
+I'm currently working on dungeon generator, and as you can see there are some issues. I am planning to get the base-dungeon generation working, then possibly expand into dungeon reset intervals and maybe even deeper dungeons (I dont really like the zone-restricted dungeons at the moment, and am thinking on making generated-dungeons go beyond their zone for the future).
+
+Most of the process involved when creating a new module such as what I did with ZoneManager and ZDOManager consists of porting the c# to c++, then trying to get it to compile, then making sure the library functions being used and everything works the same way (like std::stable_sort vs std::sort and the equivalent IEnumerator orderby in c#). Then I have to somehow get the data from Valheim into a format readable by Valhalla. There are a lot of other Components in every gameobject that I really have no clue how I will implement, and I don't really want to go there. This is not supposed to be turning into a Component/Unity based server with parent-child objects. Valheim makes heavy use of these concepts, and I am basically trying to split all that apart and make it functional in an immediately understood sense (that makes no sense). 
+
+I hope to finish this without too much hassle or indirection caused by the way Valheim is internally shaped.
+
 ### 2/18/2023 + TODO
 
 World saving is fixed (I was wrongly writing a utf8 char instead of byte for ZDO members, hence turning map member-data into garbage). 

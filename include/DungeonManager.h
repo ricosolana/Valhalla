@@ -67,7 +67,7 @@ public:
 	//Vector3 m_originalPosition;
 
 	// Order is significant (polled with Seeded Random)
-	std::vector<std::unique_ptr<Room>> m_availableRooms;
+	std::vector<std::unique_ptr<const Room>> m_availableRooms;
 
 public:
 	void Generate(const Vector3 &pos, const Quaternion &rot) const;
