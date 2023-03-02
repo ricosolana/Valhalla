@@ -51,7 +51,7 @@ void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
 void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 	this->PlaceStartRoom(state);
 	this->PlaceRooms(state);
-	//this->PlaceEndCaps(state);
+	this->PlaceEndCaps(state);
 	//this->PlaceDoors(state);
 }
 
