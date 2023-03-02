@@ -4,9 +4,223 @@
 #include "WorldManager.h"
 #include "DataWriter.h"
 #include "NetManager.h"
+#include "VUtilsPhysics.h"
 
 class Tests {
 public:
+    void Test_RectInsideRect() {
+        {
+            Vector3 size(100, 0, 50);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(51, 0, 0);
+
+            auto rot(Quaternion::Euler(0, 0, 0));
+
+            assert(!VUtils::Physics::PointInsideRect(
+                size, pos1, rot,
+                pos2
+            ));
+        }
+
+        {
+            Vector3 size(100, 0, 50);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(49, 0, 0);
+
+            auto rot(Quaternion::Euler(0, 0, 0));
+
+            assert(VUtils::Physics::PointInsideRect(
+                size, pos1, rot,
+                pos2
+            ));
+        }
+
+        {
+            Vector3 size(100, 0, 50);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(32, 0, 18);
+
+            auto rot(Quaternion::Euler(0, 30, 0));
+
+            assert(!VUtils::Physics::PointInsideRect(
+                size, pos1, rot,
+                pos2
+            ));
+        }
+
+
+
+        {
+            Vector3 size1(100, 0, 50);
+            Vector3 size2(100, 0, 50);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(100, 0, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 0, 0));
+
+            assert(!VUtils::Physics::RectInsideRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(100, 0, 50);
+            Vector3 size2(90, 0, 40);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(0, 0, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 0, 0));
+
+            assert(VUtils::Physics::RectInsideRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.9, 0, .9);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(0, 0, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 45, 0));
+
+            assert(!VUtils::Physics::RectInsideRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.6, 0, .6);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(0, 0, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 45, 0));
+
+            assert(VUtils::Physics::RectInsideRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.6, 0, .6);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(0, 1, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 45, 0));
+
+            assert(!VUtils::Physics::RectInsideRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+    }
+
+    void Test_RectOverlap() {
+        // Rectangles touching side-to-side will always be considered overlapping
+        //{
+        //    Vector3 size1(100, 0, 50);
+        //    Vector3 size2(100, 0, 50);
+        //
+        //    Vector3 pos1(0, 0, 0);
+        //    Vector3 pos2(100, 0, 0);
+        //
+        //    auto rot1(Quaternion::Euler(0, 15, 0));
+        //    auto rot2(Quaternion::Euler(0, 0, 0));
+        //
+        //    assert(!VUtils::Physics::RectOverlapRect(
+        //        size1, pos1, rot1,
+        //        size2, pos2, rot2
+        //    ));
+        //}
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.7, 0, .7);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(0, 0, 0);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 30, 0));
+
+            assert(VUtils::Physics::RectOverlapRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.6, 0, .6);
+
+            Vector3 pos1(0, 0, 0);
+            Vector3 pos2(.8, 0, .8);
+
+            auto rot1(Quaternion::Euler(0, 0, 0));
+            auto rot2(Quaternion::Euler(0, 30, 0));
+
+            assert(!VUtils::Physics::RectOverlapRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.6, 0, .6);
+
+            Vector3 pos1(.15, 0, .15);
+            Vector3 pos2(.8, 0, .8);
+
+            auto rot1(Quaternion::Euler(0, 45, 0));
+            auto rot2(Quaternion::Euler(0, 45, 0));
+
+            assert(!VUtils::Physics::RectOverlapRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+
+        {
+            Vector3 size1(1, 0, 1);
+            Vector3 size2(.6, 0, .6);
+
+            Vector3 pos1(-.326, 0, -.474);
+            Vector3 pos2(.6, 0, -.04);
+
+            auto rot1(Quaternion::Euler(0, 210, 0));
+            auto rot2(Quaternion::Euler(0, 60, 0));
+
+            assert(!VUtils::Physics::RectOverlapRect(
+                size1, pos1, rot1,
+                size2, pos2, rot2
+            ));
+        }
+    }
+
+    //void Test_LineOverlap() {
+    //
+    //}
+
     void Test_ParentChildTransforms() {
         // Ensure that certain equations involving Vector3 and Quaternion can correctly transform a child relative to its parent to get its world position
 

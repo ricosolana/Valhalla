@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "VUtilsPhysics.h"
 #include "VUtilsMath.h"
 
@@ -59,9 +61,9 @@ namespace VUtils::Physics {
     bool PointInsideRect(Vector3 size, Vector3 pos) {
         size *= .5f;
 
-        return pos.x > -size.x && pos.x < size.x &&
-            pos.y > -size.y && pos.y < size.y &&
-            pos.z > -size.z && pos.z < size.z;
+        return pos.x >= -size.x && pos.x <= size.x &&
+            pos.y >= -size.y && pos.y <= size.y &&
+            pos.z >= -size.z && pos.z <= size.z;
     }
 
     bool PointInsideRect(Vector3 size1, Vector3 pos1, Vector3 pos2) {
@@ -69,9 +71,9 @@ namespace VUtils::Physics {
     }
 
     bool PointInsideRect(Vector3 size1, Vector3 pos1, Quaternion rot1, Vector3 pos2) {
-        Vector3 pos = rot1 * (pos2 - pos1);
+        Vector3 pos = Quaternion::Inverse(rot1) * (pos2 - pos1);
 
-        return PointInsideRect(size1, pos1);
+        return PointInsideRect(size1, pos);
     }
 
     bool RectInsideRect(Vector3 size1, Vector3 pos1, Quaternion rot1,
@@ -84,14 +86,14 @@ namespace VUtils::Physics {
         size2 *= .5f;
 
         // Now bound detection
-        return PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(size2.x, size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(-size2.x, size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(size2.x, size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(-size2.x, size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(size2.x, -size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(-size2.x, -size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(size2.x, -size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot, pos2 + rot * Vector3(-size2.x, -size2.y, size2.z));
+        return PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, -size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, -size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, -size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, -size2.y, size2.z));
     }
 
 
@@ -107,6 +109,9 @@ namespace VUtils::Physics {
         // If a point is in a rect from either other, or a line intersects
         // they overlap
 
+        assert(abs(rot1.x) < .01f && abs(rot1.z) < .01f);
+        assert(abs(rot2.x) < .01f && abs(rot2.z) < .01f);
+
         {
             float a1 = pos1.y - size1.y * 0.5f;
             float a2 = pos1.y + size1.y * 0.5f;
@@ -121,49 +126,65 @@ namespace VUtils::Physics {
                 return false;
         }
 
-        Vector3 a1 = pos1 + rot1 * Vector3(size1.x, size1.y, -size1.z);
-        Vector3 a2 = pos1 + rot1 * Vector3(-size1.x, size1.y, -size1.z);
-        Vector3 a3 = pos1 + rot1 * Vector3(size1.x, size1.y, size1.z);
-        Vector3 a4 = pos1 + rot1 * Vector3(-size1.x, size1.y, size1.z);
+        size1 *= .5f;
+        size2 *= .5f;
 
-        Vector3 b1 = pos2 + rot2 * Vector3(size2.x, size2.y, -size2.z);
-        Vector3 b2 = pos2 + rot2 * Vector3(-size2.x, size2.y, -size2.z);
-        Vector3 b3 = pos2 + rot2 * Vector3(size2.x, size2.y, size2.z);
-        Vector3 b4 = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
+        Vector3 v3_a_br = pos1 + rot1 * Vector3(size1.x, size1.y, -size1.z);
+        Vector3 v3_a_bl = pos1 + rot1 * Vector3(-size1.x, size1.y, -size1.z);
+        Vector3 v3_a_ur = pos1 + rot1 * Vector3(size1.x, size1.y, size1.z);
+        Vector3 v3_a_ul = pos1 + rot1 * Vector3(-size1.x, size1.y, size1.z);
 
-        Vector2 j1(a1.x, a1.z);
-        Vector2 j2(a2.x, a2.z);
-        Vector2 j3(a3.x, a3.z);
-        Vector2 j4(a4.x, a4.z);
+        Vector3 v3_b_br = pos2 + rot2 * Vector3(size2.x, size2.y, -size2.z);
+        Vector3 v3_b_bl = pos2 + rot2 * Vector3(-size2.x, size2.y, -size2.z);
+        Vector3 v3_b_ur = pos2 + rot2 * Vector3(size2.x, size2.y, size2.z);
+        Vector3 v3_b_ul = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
 
-        Vector2 k1(b1.x, b1.z);
-        Vector2 k2(b2.x, b2.z);
-        Vector2 k3(b3.x, b3.z);
-        Vector2 k4(b4.x, b4.z);
+        Vector2 a_br(v3_a_br.x, v3_a_br.z);
+        Vector2 a_bl(v3_a_bl.x, v3_a_bl.z);
+        Vector2 a_ur(v3_a_ur.x, v3_a_ur.z);
+        Vector2 a_ul(v3_a_ul.x, v3_a_ul.z);
+
+        Vector2 b_br(v3_b_br.x, v3_b_br.z);
+        Vector2 b_bl(v3_b_bl.x, v3_b_bl.z);
+        Vector2 b_ur(v3_b_ur.x, v3_b_ur.z);
+        Vector2 b_ul(v3_b_ul.x, v3_b_ul.z);
 
         // Only testing x / z intersections (y is redundant because of the initial test)
-        if (LinesIntersect(j1, j3, k1, k3)
-            || LinesIntersect(j1, j3, k3, k4)
-            || LinesIntersect(j1, j3, k4, k2)
-            || LinesIntersect(j1, j3, k2, k1)
-
-            || LinesIntersect(j3, k4, k1, k3)
-            || LinesIntersect(j3, k4, k3, k4)
-            || LinesIntersect(j3, k4, k4, k2)
-            || LinesIntersect(j3, k4, k2, k1)
-
-            || LinesIntersect(j4, k2, k1, k3)
-            || LinesIntersect(j4, k2, k3, k4)
-            || LinesIntersect(j4, k2, k4, k2)
-            || LinesIntersect(j4, k2, k2, k1)
-
-            || LinesIntersect(j2, k1, k1, k3)
-            || LinesIntersect(j2, k1, k3, k4)
-            || LinesIntersect(j2, k1, k4, k2)
-            || LinesIntersect(j2, k1, k2, k1)) 
-        {
+        if (LinesIntersect(a_br, a_ur, b_br, b_ur))
             return true;
-        }
+        if (LinesIntersect(a_br, a_ur, b_ur, b_ul))
+            return true;
+        if (LinesIntersect(a_br, a_ur, b_ul, b_bl))
+            return true;
+        if (LinesIntersect(a_br, a_ur, b_bl, b_br))
+            return true;
+
+        if (LinesIntersect(a_ur, a_ul, b_br, b_ur))
+            return true;
+        if (LinesIntersect(a_ur, a_ul, b_ur, b_ul))
+            return true;
+        if (LinesIntersect(a_ur, a_ul, b_ul, b_bl))
+            return true;
+        if (LinesIntersect(a_ur, a_ul, b_bl, b_br))
+            return true;
+
+        if (LinesIntersect(a_ul, a_bl, b_br, b_ur))
+            return true;
+        if (LinesIntersect(a_ul, a_bl, b_ur, b_ul))
+            return true;
+        if (LinesIntersect(a_ul, a_bl, b_ul, b_bl))
+            return true;
+        if (LinesIntersect(a_ul, a_bl, b_bl, b_br))
+            return true;
+
+        if (LinesIntersect(a_bl, a_br, b_br, b_ur))
+            return true;
+        if (LinesIntersect(a_bl, a_br, b_ur, b_ul))
+            return true;
+        if (LinesIntersect(a_bl, a_br, b_ul, b_bl))
+            return true;
+        if (LinesIntersect(a_bl, a_br, b_bl, b_br))
+            return true;
 
         // Now test whether rectangle is inside rectangle
         // This case is less likely (I think) due to this only being used in dungeon generator
@@ -172,6 +193,27 @@ namespace VUtils::Physics {
 
         // Some unity-specific Valheim dungeon room placement tests are required
         //  determine whether rooms can be inside each other or not
+
+        // Set sizes back to normal
+        size1 *= 2.f;
+        size2 *= 2.f;
+
+        if (PointInsideRect(size1, pos1, rot1, v3_b_br))
+            return true;
+        if (PointInsideRect(size1, pos1, rot1, v3_b_bl))
+            return true;
+        if (PointInsideRect(size1, pos1, rot1, v3_b_ur))
+            return true;
+        if (PointInsideRect(size1, pos1, rot1, v3_b_ul))
+            return true;
+        if (PointInsideRect(size2, pos2, rot2, v3_a_br))
+            return true;
+        if (PointInsideRect(size2, pos2, rot2, v3_a_bl))
+            return true;
+        if (PointInsideRect(size2, pos2, rot2, v3_a_ur))
+            return true;
+        if (PointInsideRect(size2, pos2, rot2, v3_a_ul))
+            return true;
 
         return false;
     }

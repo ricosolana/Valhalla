@@ -79,7 +79,7 @@ private:
 	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
 	// Nullable
-	RoomConnectionInstance* GetOpenConnection(VUtils::Random::State& state);
+	const RoomConnectionInstance* GetOpenConnection(VUtils::Random::State& state);
 
 	const Room& FindStartRoom(VUtils::Random::State& state);
 
@@ -89,11 +89,11 @@ private:
 	//bool m_hasGeneratedSeed = false;
 
 	// Instanced
-	std::vector<RoomInstance> m_placedRooms;
+	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
 	// Instanced
-	std::vector<RoomConnectionInstance> m_openConnections;
+	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
 	// Instanced
-	std::vector<RoomConnectionInstance> m_doorConnections;
+	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
 
 	// Templated per type of generator
 	//std::vector<RoomData*> m_availableRooms;

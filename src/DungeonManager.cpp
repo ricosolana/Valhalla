@@ -99,6 +99,8 @@ void IDungeonManager::Init() {
                 conn->m_entrance = pkg.Read<bool>();
                 conn->m_allowDoor = pkg.Read<bool>();
                 conn->m_doorOnlyIfOtherAlsoAllowsDoor = pkg.Read<bool>();
+                conn->m_localPos = pkg.Read<Vector3>();
+                conn->m_localRot = pkg.Read<Quaternion>();
 
                 room->m_roomConnections.push_back(std::move(conn));
             }

@@ -26,11 +26,13 @@ public:
 	int m_placeOrder;
 
 	RoomConnectionInstance(const RoomConnection& connection, Vector3 pos, Quaternion rot, int placeOrder) 
-		: m_connection(connection), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder) {
+		: m_connection(connection), 
+			m_pos(pos), 
+			m_rot(rot), 
+			m_placeOrder(placeOrder) {}
 
-	}
-
-	bool TestContact(const RoomConnectionInstance& other) {
+	// Returns whether 2 RoomConnections are touching
+	bool TestContact(const RoomConnectionInstance& other) const {
 		return m_pos.SqDistance(other.m_pos) < .1f * .1f;
 	}
 };

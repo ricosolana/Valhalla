@@ -67,6 +67,10 @@ int main(int argc, char **argv) {
 
 #ifdef RUN_TESTS
     fs::current_path("./data/tests/");
+    //Tests().Test_RectInsideRect();
+
+    Tests().Test_RectOverlap();
+
     //Tests().Test_ParentChildTransforms();
     //Tests::Test_QuaternionLook();
 
