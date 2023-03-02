@@ -45,7 +45,7 @@ void IRouteManager::RouteRPC(const Data& data) {
 
 void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	// If invocation was for RoutedRPC:
-	if (!data.m_target) {
+	if (!data.m_targetZDO) {
 		auto&& find = m_methods.find(data.m_method);
 		if (find != m_methods.end()) {
 			DataReader reader(data.m_params);
