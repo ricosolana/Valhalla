@@ -6,8 +6,18 @@
 #include "VUtilsMathf.h"
 #include "VUtilsPhysics.h"
 
-DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3 &pos, const Quaternion &rot) :
-	m_dungeon(&dungeon), m_zdo(&zdo), m_pos(pos), m_rot(rot) {
+//DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3 &pos, const Quaternion &rot) :
+//	m_dungeon(&dungeon), m_zdo(&zdo), m_pos(pos), m_rot(rot) {
+//	auto seed = GeoManager()->GetSeed();
+//	auto zone = IZoneManager::WorldToZonePos(m_pos);
+//	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
+//
+//	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
+//	this->m_zoneCenter.y = m_pos.y; // -this->m_dungeon->m_originalPosition.y;
+//}
+
+DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
+	m_dungeon(&dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
 	auto seed = GeoManager()->GetSeed();
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
@@ -164,15 +174,15 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 }
 
 void DungeonGenerator::Save() {
-	m_zdo->Set("rooms", (int32_t) m_placedRooms.size());
+	m_zdo.Set("rooms", (int32_t) m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
 		auto&& instance = m_placedRooms[i];
 		auto&& room = instance->m_room;
 		std::string text = "room" + std::to_string(i);
-		m_zdo->Set(text, room.get().GetHash());
-		m_zdo->Set(text + "_pos", instance->m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
-		m_zdo->Set(text + "_rot", instance->m_rot);
-		m_zdo->Set(text + "_seed", instance->m_seed);
+		m_zdo.Set(text, room.get().GetHash());
+		m_zdo.Set(text + "_pos", instance->m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
+		m_zdo.Set(text + "_rot", instance->m_rot);
+		m_zdo.Set(text + "_seed", instance->m_seed);
 	}
 }
 
@@ -501,8 +511,8 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	//return false;
 
 	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
-	//if (!this->IsInsideDungeon(room, pos, rot))
-		//return true;
+	if (!this->IsInsideDungeon(room, pos, rot))
+		return true;
 
 	Vector3 size = room.m_size
 		- Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)

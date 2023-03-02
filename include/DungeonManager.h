@@ -71,6 +71,7 @@ public:
 
 public:
 	void Generate(const Vector3 &pos, const Quaternion &rot) const;
+	void Generate(ZDO& zdo) const;
 };
 
 class IDungeonManager {

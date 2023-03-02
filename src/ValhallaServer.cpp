@@ -87,6 +87,7 @@ void IValhalla::LoadFiles() {
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
     m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
+    m_settings.spawningDungeons = loadNode["spawning-dungeons"].as<bool>(true);
     
     LOG(INFO) << "Server config loaded";
 
@@ -124,6 +125,7 @@ void IValhalla::LoadFiles() {
         saveNode["spawning-creatures"] = m_settings.spawningCreatures;
         saveNode["spawning-locations"] = m_settings.spawningLocations;
         saveNode["spawning-vegetation"] = m_settings.spawningVegetation;
+        saveNode["spawning-dungeons"] = m_settings.spawningDungeons;
 
         YAML::Emitter out;
         out.SetIndent(4);

@@ -924,12 +924,14 @@ void IZoneManager::SpawnLocation(const ZoneLocation* location, HASH_t seed, cons
     for (auto&& piece : location->m_pieces) {
         auto &&zdo = PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
         
-        if (piece.m_prefab->HasFlag(Prefab::Flag::Dungeon)) {
+        if (SERVER_SETTINGS.spawningDungeons && piece.m_prefab->HasFlag(Prefab::Flag::Dungeon)) {
             auto&& dungeon = DungeonManager()->GetDungeon(piece.m_prefab->m_hash);
             if (!dungeon) throw std::runtime_error("dungeon missing");
 
             // TODO pass the zdo as arg
-            dungeon->Generate(zdo.Position(), zdo.Rotation());
+            //dungeon->Generate(zdo.Position(), zdo.Rotation());
+
+            dungeon->Generate(zdo);
 
             //DungeonGenerator(*dungeon, zdo.Position(), zdo.Rotation()).Generate();
         }

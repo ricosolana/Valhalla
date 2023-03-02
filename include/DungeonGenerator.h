@@ -123,9 +123,13 @@ public:
 
 	//Vector3 m_originalPosition; // templated
 
-	ZDO* m_zdo = nullptr;
+	//ZDO* m_zdo = nullptr;
+
+	ZDO& m_zdo;
 
 public:
-	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3& pos, const Quaternion& rot);
+	//DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3& pos, const Quaternion& rot);
+
+	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
 
 };

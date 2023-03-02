@@ -180,17 +180,17 @@ namespace VUtils::Physics {
         Vector3 v3_b_ul = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
 
         // easy desmos copy/paste
-        LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
-            << v3_a_ur.x << "," << v3_a_ur.z << "),("
-            << v3_a_ul.x << "," << v3_a_ul.z << "),("
-            << v3_a_bl.x << "," << v3_a_bl.z << "))";
-
-        LOG(INFO) << "polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
-            << v3_b_ur.x << "," << v3_b_ur.z << "),("
-            << v3_b_ul.x << "," << v3_b_ul.z << "),("
-            << v3_b_bl.x << "," << v3_b_bl.z << "))";
-
-        LOG(INFO) << "";
+        //LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
+        //    << v3_a_ur.x << "," << v3_a_ur.z << "),("
+        //    << v3_a_ul.x << "," << v3_a_ul.z << "),("
+        //    << v3_a_bl.x << "," << v3_a_bl.z << "))";
+        //
+        //LOG(INFO) << "polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
+        //    << v3_b_ur.x << "," << v3_b_ur.z << "),("
+        //    << v3_b_ul.x << "," << v3_b_ul.z << "),("
+        //    << v3_b_bl.x << "," << v3_b_bl.z << "))";
+        //
+        //LOG(INFO) << "";
 
         Vector2 a_br(v3_a_br.x, v3_a_br.z);
         Vector2 a_bl(v3_a_bl.x, v3_a_bl.z);

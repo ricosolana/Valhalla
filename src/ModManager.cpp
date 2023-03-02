@@ -598,7 +598,7 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<Dungeon>("Dungeon",
         sol::no_constructor,
-        "Generate", &Dungeon::Generate
+        "Generate", sol::resolve<void(const Vector3& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
 
     auto dungeonApiTable = m_state["DungeonManager"].get_or_create<sol::table>();

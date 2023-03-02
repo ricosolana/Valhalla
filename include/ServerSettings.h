@@ -34,4 +34,5 @@ struct ServerSettings {
     bool            spawningCreatures;
     bool            spawningLocations;
     bool            spawningVegetation;
+    bool            spawningDungeons;
 };

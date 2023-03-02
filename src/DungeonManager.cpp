@@ -15,7 +15,13 @@ void Dungeon::Generate(const Vector3& pos, const Quaternion& rot) const {
     auto&& zdo = PrefabManager()->Instantiate(VUtils::String::GetStableHashCode(m_name), pos, rot);
     if (!zdo) throw std::runtime_error("prefab missing");
 
-    DungeonGenerator(*this, *zdo, pos, rot).Generate();
+    DungeonGenerator(*this, *zdo).Generate();
+
+    //DungeonGenerator(*this, *zdo, pos, rot).Generate();
+}
+
+void Dungeon::Generate(ZDO& zdo) const {
+    DungeonGenerator(*this, zdo).Generate();
 }
 
 void IDungeonManager::Init() {
