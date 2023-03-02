@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include "VUtils.h"
 #include "VUtilsPhysics.h"
 #include "VUtilsMath.h"
 
@@ -7,6 +8,7 @@ namespace VUtils::Physics {
 
     // The main function that returns true if line segment 'p1q1'
     // and 'p2q2' intersect.
+    /*
     bool LinesIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2)
     {
         static auto&& onSegment = [](Vector2 p, Vector2 q, Vector2 r)
@@ -55,6 +57,44 @@ namespace VUtils::Physics {
         if (o4 == 0 && onSegment(p2, q1, q2)) return true;
 
         return false; // Doesn't fall in any of the above cases
+    }
+
+    bool LinesIntersect2(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2) {
+        // calculates the triangle's size (formed by the "anchor" segment and additional point)
+        static auto&& Area2 = [](Vector2 a, Vector2 b, Vector2 c) {
+            return (b.x - a.x) * (c.y - a.y) -
+                (c.x - a.x) * (b.y - a.y);
+        };
+        
+        static auto&& IsOnLeft = [](Vector2 a, Vector2 b, Vector2 c) {
+            return Area2(a, b, c) > 0;
+        };
+
+        static auto&& IsOnRight = [](Vector2 a, Vector2 b, Vector2 c) {
+            return Area2(a, b, c) < 0;
+        };
+
+        static auto&& IsCollinear = [](Vector2 a, Vector2 b, Vector2 c) {
+            return std::abs(Area2(a, b, c)) < 0.001f;
+        };
+
+        //bool onLeft = IsOnLeft()
+
+        //if ()
+
+        return false;
+    }*/
+
+    // https://stackoverflow.com/a/9997374
+    bool LinesIntersect(Vector2 a, Vector2 b, Vector2 c, Vector2 d) {
+
+        static auto&& ccw = [](Vector2 a, Vector2 b, Vector2 c) {
+            return (c.y - a.y) * (b.x - a.x)
+            > (b.y - a.y) * (c.x - a.x);
+        };
+
+        return ccw(a, c, d) != ccw(b, c, d)
+            && ccw(a, b, c) != ccw(a, b, d);
     }
 
     // Return whether point lies inside rect at origin
@@ -138,6 +178,19 @@ namespace VUtils::Physics {
         Vector3 v3_b_bl = pos2 + rot2 * Vector3(-size2.x, size2.y, -size2.z);
         Vector3 v3_b_ur = pos2 + rot2 * Vector3(size2.x, size2.y, size2.z);
         Vector3 v3_b_ul = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
+
+        // easy desmos copy/paste
+        LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
+            << v3_a_ur.x << "," << v3_a_ur.z << "),("
+            << v3_a_ul.x << "," << v3_a_ul.z << "),("
+            << v3_a_bl.x << "," << v3_a_bl.z << "))";
+
+        LOG(INFO) << "polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
+            << v3_b_ur.x << "," << v3_b_ur.z << "),("
+            << v3_b_ul.x << "," << v3_b_ul.z << "),("
+            << v3_b_bl.x << "," << v3_b_bl.z << "))";
+
+        LOG(INFO) << "";
 
         Vector2 a_br(v3_a_br.x, v3_a_br.z);
         Vector2 a_bl(v3_a_bl.x, v3_a_bl.z);
@@ -223,11 +276,18 @@ namespace VUtils::Physics {
     std::pair<Vector3, Quaternion> LocalToGlobal(const Vector3 &childLocalPos, const Quaternion &childLocalRot,
         const Vector3 &parentPos, const Quaternion &parentRot) {
 
-        Quaternion childWorldRot = parentRot * childLocalRot;
-        Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+        auto childPos = parentPos + Quaternion::Inverse(parentRot) * childLocalPos;
+        auto childRot = parentRot * childLocalRot;
 
-        Vector3 childWorldPos = pointOnRot + parentPos;
+        return { childPos, childRot };
 
-        return { childWorldPos, childWorldRot };
+
+
+        //Quaternion childWorldRot = parentRot * childLocalRot;
+        //Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+        //
+        //Vector3 childWorldPos = pointOnRot + parentPos;
+        //
+        //return { childWorldPos, childWorldRot };
     }
 }

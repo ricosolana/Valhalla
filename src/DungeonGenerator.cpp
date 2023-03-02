@@ -367,6 +367,7 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 
 	for (int i = 0; i < 10; i++)
 	{
+		// Get a new random room to attach to the existing open instanced connect point
 		const Room* roomData = this->m_dungeon->m_alternativeFunctionality 
 			? this->GetRandomWeightedRoom(state, openConnection)
 			: this->GetRandomRoom(state, openConnection);
@@ -391,8 +392,17 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 	Vector3 pos;
 	Quaternion rot = Quaternion::IDENTITY;
 	this->CalculateRoomPosRot(connection2, 
-		connection.m_pos, connection.m_rot * Quaternion::Euler(0, 180, 0), 
+		connection.m_pos, connection.m_rot * Quaternion::Euler(0, 180, 0),
 		pos, rot);
+
+	// this is making me want to rip my hair out
+	// https://www.desmos.com/calculator/hykg8ckp3i
+
+	//pos += connection2.m_localPos;
+
+	//pos += connection.m_connection.get().m_localPos;
+	//pos += {0, 0, 1};
+	//rot = Quaternion::IDENTITY;
 
 	if (room.m_size.x != 0 && room.m_size.z != 0 && this->TestCollision(room, pos, rot))
 		return false;

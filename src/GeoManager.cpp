@@ -801,5 +801,9 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& c
 
 // public
 int IGeoManager::GetSeed() {
+#ifdef RUN_TESTS
+	return 0;
+#else
 	return m_world->m_seed;
+#endif
 }

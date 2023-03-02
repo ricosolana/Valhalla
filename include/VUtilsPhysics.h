@@ -6,7 +6,13 @@
 namespace VUtils::Physics {
 
     // Check whether 2 lines intersect
-    bool LinesIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2);
+    //bool LinesIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2);
+
+    // Check whether 2 lines intersect
+    //  does not check for collinear intersections
+    bool LinesIntersect(Vector2 a, Vector2 b, Vector2 c, Vector2 d);
+
+
 
     bool PointInsideRect(Vector3 size1, Vector3 pos1, Quaternion rot1, Vector3 pos2);
 

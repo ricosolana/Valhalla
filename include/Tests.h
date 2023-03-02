@@ -5,9 +5,33 @@
 #include "DataWriter.h"
 #include "NetManager.h"
 #include "VUtilsPhysics.h"
+#include "DungeonManager.h"
 
 class Tests {
 public:
+    void Test_DungeonGenerator() {
+        PrefabManager()->Init();
+        DungeonManager()->Init();
+
+        DungeonManager()->GetDungeon(
+            VUtils::String::GetStableHashCode("DG_Cave")
+        )->Generate(Vector3::ZERO, Quaternion::IDENTITY);
+
+    }
+
+    void Test_LinesIntersect() {
+        {
+            Vector2 a(.5, -.5);
+            Vector2 b(.5, .5);
+            Vector2 c(.3901, .6901);
+            Vector2 d(.9098, .3901);
+
+            assert(!VUtils::Physics::LinesIntersect(
+                a, b, c, d
+            ));
+        }
+    }
+
     void Test_RectInsideRect() {
         {
             Vector3 size(100, 0, 50);
@@ -215,6 +239,8 @@ public:
                 size2, pos2, rot2
             ));
         }
+
+
     }
 
     //void Test_LineOverlap() {
