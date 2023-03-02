@@ -248,27 +248,89 @@ public:
     //}
 
     void Test_ParentChildTransforms() {
-        // Ensure that certain equations involving Vector3 and Quaternion can correctly transform a child relative to its parent to get its world position
+        {
+            // Dummy child local transforms
+            Vector3 childLocalPos(1, 1, 1);
+            Quaternion childLocalRot(Quaternion::Euler(10, 75, 10));
 
-        // Dummy child local transforms
-        Vector3 childLocalPos(1, 1, 1);
-        Quaternion childLocalRot(Quaternion::Euler(10, 75, 10));
-
-        // Dummy parent transforms
-        Vector3 parentPos(4, 5, 4);
-        Quaternion parentRot(Quaternion::Euler(20, 90, 30));
-
+            // Dummy parent transforms
+            Vector3 parentPos(4, 5, 4);
+            Quaternion parentRot(Quaternion::Euler(20, 90, 30));
 
 
-        // Unity-calculate values based on the above
-        //  World transforms of child
-        Vector3 expectChildPos(5.406901f, 5.941624f, 3.633975f);
-        Quaternion expectChildRot(.1371928f, .2958279f, .9315588f, .1608175f);
 
-        Quaternion calcChildRot = parentRot * childLocalRot;
-        Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+            // Unity-calculate values based on the above
+            //  World transforms of child
+            Vector3 expectChildPos(5.406901f, 5.941624f, 3.633975f);
+            Quaternion expectChildRot(.1371928f, .2958279f, .9315588f, .1608175f);
 
-        Vector3 calcChildPos = pointOnRot + parentPos;
+            //Quaternion calcChildRot = parentRot * childLocalRot;
+            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+
+            //Vector3 calcChildPos = pointOnRot + parentPos;
+
+            auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
+                parentPos, parentRot
+            );
+        }
+
+        {
+            // Dummy child local transforms
+            Vector3 childLocalPos(12, 0, 0);
+            Quaternion childLocalRot(Quaternion::Euler(0, 10, 0));
+
+            // Dummy parent transforms
+            Vector3 parentPos(-182, 52, -52);
+            Quaternion parentRot(Quaternion::Euler(0, 24, 0));
+
+
+
+            // Unity-calculate values based on the above
+            //  World transforms of child
+            Vector3 expectChildPos(-171.0375, 52, -56.88084);
+            Quaternion expectChildRot(Quaternion::Euler(0, 34, 0));
+
+            //Quaternion calcChildRot = parentRot * childLocalRot;
+            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+
+            //Vector3 calcChildPos = pointOnRot + parentPos;
+
+            auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
+                parentPos, parentRot
+            );
+
+            if (true);
+                
+        }
+
+        {
+            // Dummy child local transforms
+            Vector3 childLocalPos(12, 0, 0);
+            Quaternion childLocalRot(Quaternion::Euler(0, -12, 0));
+
+            // Dummy parent transforms
+            Vector3 parentPos(-182, 52, -52);
+            Quaternion parentRot(Quaternion::Euler(0, 24, 0));
+
+
+
+            // Unity-calculate values based on the above
+            //  World transforms of child
+            Vector3 expectChildPos(-171.0375, 52, -56.88084);
+            Quaternion expectChildRot(Quaternion::Euler(0, 12, 0));
+
+            //Quaternion calcChildRot = parentRot * childLocalRot;
+            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+
+            //Vector3 calcChildPos = pointOnRot + parentPos;
+
+            auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
+                parentPos, parentRot
+            );
+
+            if (true);
+
+        }
     }
 
     void Test_QuaternionLook() {

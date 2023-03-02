@@ -349,8 +349,12 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 
 	Vector3 pos;
 	Quaternion rot = Quaternion::IDENTITY;
-	this->CalculateRoomPosRot(entrance, this->m_pos, this->m_rot, pos, rot);
+	this->CalculateRoomPosRot(entrance, 
+		this->m_pos, this->m_rot, 
+		pos, rot
+	);
 
+	// TODO room.POS and room.ROT are ultimately redundant
 	auto global = VUtils::Physics::LocalToGlobal(entrance.m_localPos, entrance.m_localRot,
 		roomData.m_pos, roomData.m_rot);
 
