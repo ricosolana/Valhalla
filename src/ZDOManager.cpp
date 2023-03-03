@@ -570,7 +570,7 @@ ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t p
 
 
 // Global send
-void IZDOManager::ForceSendZDO(const NetID& id) {
+void IZDOManager::ForceSendZDO(const ZDOID& id) {
 	for (auto&& pair : NetManager()->GetPeers()) {
 		auto&& peer = pair.second;
 		peer->ForceSendZDO(id);
@@ -779,8 +779,8 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		if (!zdo.GetPrefab() || !zdo.GetPrefab()->HasFlag(Prefab::Flag::Persistent)
 			&& (!zdo.HasOwner() || zdo.Owner() == peer.m_uuid))
 		{
-			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << " " << zdo.Owner() << ")";
-			DestroyZDO(zdo, false); // TODO could destroy immediate
+			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << ")";
+			DestroyZDO(zdo, false); // TODO could destroy immediate?
 		}
 	}
 }

@@ -307,6 +307,9 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
         ),
+        // TODO 'MoveTo' is experimental and heavily relies on the specific way the client handles ZSyncTransform synchronizes
+        //  it takes advantage of the fact that the Player does not manually validate its ZDO 
+        //  essentially, any cracked player could technically freeze a player character and ruin the game for them (gotta love client <-> client models)
         "MoveTo", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
             sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
@@ -430,10 +433,12 @@ void IModManager::LoadAPI() {
         "log", Prefab::Flag::TreeLog,
         "sfx", Prefab::Flag::SFX,
         "vfx", Prefab::Flag::VFX,
-        "aoe", Prefab::Flag::AOE
+        "aoe", Prefab::Flag::AOE,
+        "dungeon", Prefab::Flag::Dungeon
     );
 
     m_state.new_usertype<Prefab>("Prefab",
+        sol::no_constructor,
         "name", &Prefab::m_name,
         "hash", &Prefab::m_hash,
         "HasFlag", &Prefab::HasFlag
@@ -454,6 +459,8 @@ void IModManager::LoadAPI() {
         "prefab", sol::property(&ZDO::GetPrefab),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
+        // TODO add proxy types somehow (without adding specifiers for each template type)
+
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
         "GetLong", sol::overload(
@@ -540,19 +547,19 @@ void IModManager::LoadAPI() {
         auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
         viewsTable.new_usertype<Ward>("Ward",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got null ZDO"); return Ward(*zdo); }),
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Ward(*zdo); }),
             "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
             "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
             "AddPermitted", &Ward::AddPermitted,
             "RemovePermitted", &Ward::RemovePermitted,
             "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
             "IsPermitted", &Ward::IsPermitted,
-            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("got null Peer"); return self.SetCreator(*peer); }),
+            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("null Peer"); return self.SetCreator(*peer); }),
             "IsAllowed", &Ward::IsAllowed
         );
 
         viewsTable.new_usertype<Portal>("Portal",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got nullptr ZDO"); return Portal(*zdo); }),
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Portal(*zdo); }),
             "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
             "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
             "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
@@ -574,7 +581,7 @@ void IModManager::LoadAPI() {
         [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
-        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("got null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
         [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
 
@@ -613,38 +620,6 @@ void IModManager::LoadAPI() {
         HASH_t cbHash = 0;
         sol::function func;
         int priority = 0;
-
-        /*
-        for (int i = 0; i < args.size(); i++) {
-            auto&& arg = args[i];
-            auto&& type = arg.get_type();
-
-            if (type != sol::type::function) {
-                HASH_t hash;
-                if (type == sol::type::string)
-                    hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
-                else if (type == sol::type::number)
-                    hash = arg.as<HASH_t>();
-                else
-                    continue;
-                    //throw std::runtime_error("initial params must be string or hash");
-
-                cbHash ^= hash;
-            }
-            else {
-                auto&& vec = m_callbacks[cbHash];
-
-                Mod* mod = env["this"].get<sol::table>().as<Mod*>();
-                assert(mod);
-
-                vec.emplace_back(*mod, arg.as<sol::function>(), priority);
-                std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-                    const EventHandler& b) {
-                        return a.m_priority < b.m_priority;
-                    }
-                );
-            }
-        }*/
 
         // If priority is present (will be at end)
         const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;

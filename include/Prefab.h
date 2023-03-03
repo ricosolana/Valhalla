@@ -70,7 +70,7 @@ public:
 	std::string m_name;
 	HASH_t m_hash = 0;
 
-	ZDO::ObjectType m_type = ZDO::ObjectType::Default;
+	ZDO::ObjectType m_type = ZDO::ObjectType::Default; // TODO store in flags
 
 	Vector3 m_localScale;
 

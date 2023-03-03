@@ -63,7 +63,6 @@ void IValhalla::LoadFiles() {
     if (m_settings.worldName.empty()) m_settings.worldName = "world";
     m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
     if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-    //m_settings.worldSeed = VUtils::String::GetStableHashCode(m_settings.worldSeedName);
     m_settings.worldSave = loadNode["world-save"].as<bool>(false);
     m_settings.worldSaveInterval = seconds(std::max(loadNode["world-save-interval-s"].as<int>(1800), 60));
     m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
@@ -76,13 +75,13 @@ void IValhalla::LoadFiles() {
     //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
     m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
 
-    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout-ms"].as<unsigned int>(30000)); // player timeout in milliseconds
+    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout-ms"].as<unsigned int>(30000));
 
-    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int32_t>(10240);
-    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int32_t>(2048);
+    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<unsigned int>(10240);
+    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<unsigned int>(2048);
     m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50));
     m_settings.zdoAssignInterval = seconds(std::max(loadNode["zdo-assign-interval-s"].as<unsigned int>(2), 1U));
-    m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(true);
+    m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(false);
 
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
