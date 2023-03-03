@@ -34,3 +34,5 @@ struct Quaternion {
     static Quaternion LookRotation(Vector3 forward, Vector3 upwards = Vector3::UP);
     static Quaternion Inverse(const Quaternion& rotation);
 };
+
+std::ostream& operator<<(std::ostream& st, Quaternion& quat);

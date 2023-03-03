@@ -297,7 +297,7 @@ void IValhalla::Update() {
         // save warming message
         PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval, {
             LOG(INFO) << "World saving in 30s";
-            Broadcast(MessageType::Center, "$msg_worldsavewarning 30s");
+            Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         });
 
         PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval + 30s, {
@@ -335,6 +335,6 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
     return *task;
 }
 
-void IValhalla::Broadcast(MessageType type, const std::string& text) {
-    RouteManager()->InvokeAll(Hashes::Routed::ShowMessage, type, text);
+void IValhalla::Broadcast(UIMsgType type, const std::string& text) {
+    RouteManager()->InvokeAll(Hashes::Routed::UIMessage, type, text);
 }

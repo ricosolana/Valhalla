@@ -17,9 +17,13 @@ using ZoneID = Vector2i;
 //	its purpose
 class IZoneManager {
 	friend class INetManager;
+	friend class IModManager;
 
 	// Rename this to ZoneFeature
-	struct Feature {
+	class Feature {
+		friend class IModManager;
+
+	public:
 		std::string m_name;
 		HASH_t m_hash;
 
@@ -63,6 +67,8 @@ class IZoneManager {
 
 		// Rename this
 		class Instance {
+			friend class IModManager;
+
 		public:
 			std::reference_wrapper<const Feature> m_feature;
 			const Vector3 m_pos;
@@ -199,7 +205,7 @@ public:
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance *GetNearestGeneratedFeature(const std::string& name, const Vector3& pos);
+	Feature::Instance *GetNearestFeature(const std::string& name, const Vector3& pos);
 
 	static ZoneID WorldToZonePos(const Vector3& pos);
 	static Vector3 ZoneToWorldPos(const ZoneID& zone);

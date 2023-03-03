@@ -181,7 +181,7 @@ void IZoneManager::Init() {
     });
 
     RouteManager()->Register(Hashes::Routed::DiscoverLocation, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
-        if (auto&& instance = GetNearestGeneratedFeature(locationName, point)) {
+        if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG(INFO) << "Found location: '" << locationName << "'";
             RouteManager()->Invoke(peer->m_uuid, 
                 Hashes::Routed::DiscoverLocationCallback, 
@@ -970,7 +970,7 @@ Heightmap& IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome
 }
 
 // public
-IZoneManager::Feature::Instance* IZoneManager::GetNearestGeneratedFeature(const std::string& name, const Vector3& point) {
+IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(const std::string& name, const Vector3& point) {
     float closestDist = std::numeric_limits<float>::max();
     
     IZoneManager::Feature::Instance* closest = nullptr;

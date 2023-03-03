@@ -67,8 +67,8 @@ IMethod<Peer*>* Peer::GetMethod(HASH_t hash) {
 
 
 
-void Peer::RemotePrint(const std::string& msg) {
-    Invoke(Hashes::Rpc::RemotePrint, msg);
+void Peer::ConsoleMessage(const std::string& msg) {
+    Invoke(Hashes::Rpc::ConsoleMessage, msg);
 }
 
 void Peer::Kick(bool now) {
@@ -83,8 +83,8 @@ void Peer::Kick(std::string reason) {
 
     LOG(INFO) << "Kicking " << m_name << " for: " << reason;
 
-    RemotePrint("kick: " + reason);
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, MessageType::Center, "kick: " + reason);
+    ConsoleMessage("kick: " + reason);
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::UIMessage, UIMsgType::Center, "kick: " + reason);
     
     SendDisconnect();
     Disconnect();
@@ -100,7 +100,7 @@ void Peer::Disconnect() {
 
 
 
-void Peer::SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID) {
+void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const std::string& senderName, const std::string& senderID) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
         pos, //Vector3(10000, 10000, 10000),
         type,
@@ -110,30 +110,8 @@ void Peer::SendChatMessage(const std::string& text, TalkerType type, Vector3 pos
     );
 }
 
-void Peer::ShowMessage(const std::string& text, MessageType type) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::ShowMessage, type, text);
-}
-
-void Peer::Message(const std::string& text, MsgType type) {
-    switch (type) {
-    case MsgType::WHISPER:
-        SendChatMessage(text, TalkerType::Whisper, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
-        break;
-    case MsgType::NORMAL:
-        SendChatMessage(text, TalkerType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
-        break;
-    case MsgType::CONSOLE:
-        RemotePrint(text);
-        break;
-    case MsgType::CORNER:
-        ShowMessage(text, MessageType::TopLeft);
-        break;
-    case MsgType::CENTER:
-        ShowMessage(text, MessageType::Center);
-        break;
-    default:
-        throw std::runtime_error("bad enum type");
-    }
+void Peer::UIMessage(const std::string& text, UIMsgType type) {
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::UIMessage, type, text);
 }
 
 ZDO* Peer::GetZDO() {

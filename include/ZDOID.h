@@ -26,8 +26,10 @@ public:
 
     // Return whether this has a value besides NONE
     explicit operator bool() const noexcept {
-        return *this != ZDOID();
+        return *this != NONE;
     }
 
-    //static const ZDOID NONE;
+    static const ZDOID NONE;
 };
+
+std::ostream& operator<<(std::ostream& st, ZDOID& zdoid);

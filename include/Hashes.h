@@ -50,7 +50,7 @@ namespace Hashes {
         // Client + Server
         //
 
-        static constexpr HASH_t RemotePrint = __H("RemotePrint");
+        static constexpr HASH_t ConsoleMessage = __H("RemotePrint");
         static constexpr HASH_t RoutedRPC = __H("RoutedRPC");
         
     }
@@ -79,7 +79,7 @@ namespace Hashes {
         static constexpr HASH_t Ping = __H("Ping");
         static constexpr HASH_t GlobalKeys = __H("GlobalKeys");
         static constexpr HASH_t LocationIcons = __H("LocationIcons");
-        static constexpr HASH_t ShowMessage = __H("ShowMessage");
+        static constexpr HASH_t UIMessage = __H("ShowMessage");
         static constexpr HASH_t SetEvent = __H("SetEvent");
         static constexpr HASH_t DiscoverLocationCallback = __H("DiscoverLocationRespons");
         static constexpr HASH_t Teleport = __H("RPC_TeleportPlayer");

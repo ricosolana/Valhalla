@@ -105,7 +105,7 @@ void IModManager::LoadAPI() {
         sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
         "uuid", &ZDOID::m_uuid,
         "id", &ZDOID::m_id,
-        "none", sol::property([]() { return ZDOID(); })
+        "none", sol::property([]() { return ZDOID::NONE; })
     );
 
     m_state.new_enum("DataType",
@@ -275,23 +275,23 @@ void IModManager::LoadAPI() {
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
+    m_state.new_usertype<MethodSig>("MethodSig",
+        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
+    );
+
+    m_state.new_enum("ChatMsgType",
+        "whisper", ChatMsgType::Whisper,
+        "normal", ChatMsgType::Normal,
+        "shout", ChatMsgType::Shout,
+        "ping", ChatMsgType::Ping
+    );
+
     m_state.new_enum("MsgType",
         "whisper", MsgType::WHISPER,
         "normal", MsgType::NORMAL,
         "console", MsgType::CONSOLE,
         "corner", MsgType::CORNER,
         "center", MsgType::CENTER
-    );
-
-    m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
-    );
-
-    m_state.new_enum("TalkerType",
-        "whisper", TalkerType::Whisper,
-        "normal", TalkerType::Normal,
-        "shout", TalkerType::Shout,
-        "ping", TalkerType::Ping
     );
 
     m_state.new_usertype<Peer>("Peer",
@@ -307,17 +307,19 @@ void IModManager::LoadAPI() {
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),
         "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
-        "Message", sol::overload(
-            sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
-            sol::resolve<void(const std::string&)>(&Peer::Message)),
-        "SendChatMessage", &Peer::SendChatMessage,
+        // message functions
+        "ChatMessage", sol::overload(
+            sol::resolve<void(const std::string&, ChatMsgType, const Vector3&, const std::string&, const std::string&)>(&Peer::ChatMessage),
+            sol::resolve<void(const std::string&)>(&Peer::ChatMessage)
+        ),
+        "ConsoleMessage", &Peer::ConsoleMessage,
+        "CornerMessage", &Peer::CornerMessage,
+        "CenterMessage", &Peer::CenterMessage,
+        // misc functions
         "Teleport", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
         ),
-        // TODO 'MoveTo' is experimental and heavily relies on the specific way the client handles ZSyncTransform synchronizes
-        //  it takes advantage of the fact that the Player does not manually validate its ZDO 
-        //  essentially, any cracked player could technically freeze a player character and ruin the game for them (gotta love client <-> client models)
         "MoveTo", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
             sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
@@ -621,10 +623,15 @@ void IModManager::LoadAPI() {
 
 
 
+    m_state.new_usertype<IZoneManager::Feature::Instance>("FeatureInstance",
+        "pos", sol::property([](IZoneManager::Feature::Instance& self) { return self.m_pos; })
+    );
+
     auto zoneApiTable = m_state["ZoneManager"].get_or_create<sol::table>();
-    zoneApiTable["GetNearestGeneratedFeature"] = [](const std::string& name, const Vector3& point) {
-        return ZoneManager()->GetNearestGeneratedFeature(name, point);
+    zoneApiTable["GetNearestFeature"] = [](const std::string& name, const Vector3& point) {
+        return ZoneManager()->GetNearestFeature(name, point);
     };
+
 
 
     apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {

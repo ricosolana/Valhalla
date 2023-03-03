@@ -280,10 +280,10 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, ZDOID characterID) {
         if (!peer->m_characterID) {
             if (peer->m_magicLogin) {
-                peer->ShowMessage("You were automagically logged in");
+                peer->CornerMessage("You were automagically logged in");
             }
             else {
-                peer->ShowMessage("You will automagically log be logged in from now on");
+                peer->CornerMessage("You will automagically log be logged in from now on");
             }
         }
 
@@ -294,82 +294,82 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
     // Extras
     //  Vanilla client has no means to doing this
-    //peer->Register(Hashes::Rpc::RemotePrint, [](Peer* peer, std::string text) {
+    //peer->Register(Hashes::Rpc::ConsoleMessage, [](Peer* peer, std::string text) {
     //    // TODO limitation check
     //    LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
     //});
 
     peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin");
+            return peer->ConsoleMessage("You are not admin");
 
         auto split = VUtils::String::Split(user, " ");
 
         if (Kick(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
-            peer->Message("Kicked '" + user + "'");
+            peer->ConsoleMessage("Kicked '" + user + "'");
         }
         else {
-            peer->Message("Player not found");
+            peer->ConsoleMessage("Player not found");
         }
     });
 
     peer->Register(Hashes::Rpc::Ban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin");
+            return peer->ConsoleMessage("You are not admin");
 
         auto split = VUtils::String::Split(user, " ");
 
         if (Ban(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
-            peer->Message("Banned '" + user + "'");
+            peer->ConsoleMessage("Banned '" + user + "'");
         }
         else {
-            peer->Message("Player not found");
+            peer->ConsoleMessage("Player not found");
         }
     });
 
     peer->Register(Hashes::Rpc::Unban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin");
+            return peer->ConsoleMessage("You are not admin");
 
         if (Unban(user)) {
-            peer->Message("Unbanned '" + user + "'");
+            peer->ConsoleMessage("Unbanned '" + user + "'");
         }
         else {
-            peer->Message("Player is not banned");
+            peer->ConsoleMessage("Player is not banned");
         }
     });
     
     peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin");
+            return peer->ConsoleMessage("You are not admin");
 
         WorldManager()->WriteFileWorldDB(true);
 
-        peer->Message("Saved the world");
+        peer->ConsoleMessage("Saved the world");
     });
 
     peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {
         if (!peer->m_admin)
-            return peer->Message("You are not admin");
+            return peer->ConsoleMessage("You are not admin");
 
         if (Valhalla()->m_blacklist.empty())
-            peer->Message("Banned users: (none)");
+            peer->ConsoleMessage("Banned users: (none)");
         else {
-            peer->Message("Banned users:");
+            peer->ConsoleMessage("Banned users:");
             for (auto&& banned : Valhalla()->m_blacklist) {
-                peer->Message(banned);
+                peer->ConsoleMessage(banned);
             }
         }
 
         if (!SERVER_SETTINGS.playerWhitelist)
-            peer->Message("Whitelist is disabled");
+            peer->ConsoleMessage("Whitelist is disabled");
         else {
             if (Valhalla()->m_whitelist.empty())
-                peer->Message("Whitelisted users: (none)");
+                peer->ConsoleMessage("Whitelisted users: (none)");
             else {
-                peer->Message("Whitelisted users:");
+                peer->ConsoleMessage("Whitelisted users:");
                 for (auto&& banned : Valhalla()->m_whitelist) {
-                    peer->Message(banned);
+                    peer->ConsoleMessage(banned);
                 }
             }
         }

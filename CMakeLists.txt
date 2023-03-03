@@ -111,6 +111,7 @@ add_executable(${PROJECT_NAME}
     "src/WorldManager.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
+    "src/ZDOID.cpp"
     "src/ZoneManager.cpp"
     "src/DungeonGenerator.cpp" 
     "src/Room.cpp"
