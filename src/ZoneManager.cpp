@@ -40,21 +40,10 @@ void IZoneManager::Init() {
         LOG(INFO) << "Loading " << count << " ZoneLocations";
         for (int i=0; i < count; i++) {
             // TODO read zoneLocations from file
-            auto loc = std::make_unique<ZoneLocation>();
+            auto loc = std::make_unique<Feature>();
             loc->m_name = pkg.Read<std::string>();
             loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
 
-            //loc->m_prefab = PrefabManager()->GetPrefab(prefabName);
-            //assert(loc->m_prefab && "missing zonelocation prefab");
-
-            // ZoneLocations do not have prefab (only proxy by hash)
-            //  Only their netviews do
-            //if (!loc->m_prefab) {
-            //    LOG(ERROR) << "vegetation missing prefab '" << loc->m_name << "'";
-            //    throw std::runtime_error("vegetation missing prefab");
-            //}
-
-            //loc->m_dungeon = pkg.Read<bool>();
             loc->m_biome = (Biome)pkg.Read<int32_t>();            
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
@@ -108,7 +97,7 @@ void IZoneManager::Init() {
     }
 
     {
-        // load ZoneVegetation:
+        // load Foliage:
         auto opt = VUtils::Resource::ReadFileBytes("vegetation.pkg");
         if (!opt)
             throw std::runtime_error("vegetation.pkg missing");
@@ -125,7 +114,7 @@ void IZoneManager::Init() {
         LOG(INFO) << "Loading " << count << " ZoneVegetations";
         //while (count--) {
         for (int i=0; i < count; i++) {
-            auto veg = std::make_unique<ZoneVegetation>();
+            auto veg = std::make_unique<Foliage>();
 
             auto prefabName = pkg.Read<std::string>();
 
@@ -311,7 +300,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     auto&& location = GetLocation(text);
                     if (location) {
                         m_locationInstances[WorldToZonePos(pos)] = 
-                            std::make_unique<LocationInstance>(*location, pos);
+                            std::make_unique<Feature::Instance>(*location, pos);
                     }
                     else {
                         LOG(ERROR) << "Failed to find location " << text;
@@ -633,7 +622,7 @@ bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, const 
 }
 
 // private
-const IZoneManager::ZoneLocation* IZoneManager::GetLocation(HASH_t hash) {
+const IZoneManager::Feature* IZoneManager::GetLocation(HASH_t hash) {
     auto&& find = m_locationsByHash.find(hash);
     if (find != m_locationsByHash.end())
         return &find->second.get();
@@ -642,7 +631,7 @@ const IZoneManager::ZoneLocation* IZoneManager::GetLocation(HASH_t hash) {
 }
 
 // private
-const IZoneManager::ZoneLocation* IZoneManager::GetLocation(const std::string& name) {
+const IZoneManager::Feature* IZoneManager::GetLocation(const std::string& name) {
     return GetLocation(VUtils::String::GetStableHashCode(name));
 }
 
@@ -676,7 +665,7 @@ void IZoneManager::GenerateLocations() {
 }
 
 // private
-void IZoneManager::GenerateLocations(const ZoneLocation& location) {
+void IZoneManager::GenerateLocations(const Feature& location) {
     int spawnedLocations = 0;
 
     // CountNrOfLocation: inlined
@@ -751,7 +740,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation& location) {
                                         || !HaveLocationInRange(location, randomPointInZone)) {
                                         auto zone = WorldToZonePos(randomPointInZone);
 
-                                        m_locationInstances[zone] = std::make_unique<LocationInstance>(
+                                        m_locationInstances[zone] = std::make_unique<Feature::Instance>(
                                             location,
                                             randomPointInZone
                                         );
@@ -783,7 +772,7 @@ void IZoneManager::GenerateLocations(const ZoneLocation& location) {
     }
 }
 
-bool IZoneManager::HaveLocationInRange(const ZoneLocation& loc, const Vector3 &p) {
+bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3 &p) {
     for (auto&& pair : m_locationInstances) {
         auto&& locationInstance = pair.second;
         auto&& location = locationInstance->m_location.get();
@@ -883,7 +872,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &
 }
 
 // private
-void IZoneManager::RemoveUnplacedLocations(const ZoneLocation& location) {
+void IZoneManager::RemoveUnplacedLocations(const Feature& location) {
     int count = 0;
     for (auto&& itr = m_locationInstances.begin(); itr != m_locationInstances.end();) {
         auto&& instance = itr->second;
@@ -901,7 +890,7 @@ void IZoneManager::RemoveUnplacedLocations(const ZoneLocation& location) {
 }
 
 // private
-void IZoneManager::SpawnLocation(const ZoneLocation& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::SpawnLocation(const Feature& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
 
     //location->m_prefab.transform.position = Vector3::ZERO;
     //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
@@ -965,7 +954,7 @@ void IZoneManager::SpawnLocation(const ZoneLocation& location, HASH_t seed, cons
 
 // could be inlined...
 // private
-void IZoneManager::CreateLocationProxy(const ZoneLocation& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::CreateLocationProxy(const Feature& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
     auto &&zdo = PrefabManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
     
     zdo.Set("location", location.m_hash);
@@ -974,8 +963,8 @@ void IZoneManager::CreateLocationProxy(const ZoneLocation& location, HASH_t seed
 
 // public
 // TODO make this batch update every time a new location is added or whatever
-std::list<std::reference_wrapper<IZoneManager::LocationInstance>> IZoneManager::GetLocationIcons() {
-    std::list<std::reference_wrapper<IZoneManager::LocationInstance>> result;
+std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager::GetLocationIcons() {
+    std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> result;
 
     for (auto&& pair : m_locationInstances) {
         auto&& instance = pair.second;
@@ -1016,7 +1005,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& 
 }
 
 // public
-// Used by ZoneVegetation placement for blocked check
+// Used by Foliage placement for blocked check
 bool IZoneManager::IsBlocked(const Vector3& p) {
     throw std::runtime_error("not implemented");
     //return Physics.Raycast(p + Vector3(0, 2000, 0), Vector3::DOWN, 10000, m_blockRayMask);
@@ -1109,7 +1098,7 @@ bool IZoneManager::GetGroundHeight(const Vector3& p, float& height) {
 //    return result;
 //}
 
-// only used by ZoneVegetation 
+// only used by Foliage 
 //  Only if snapToStaticSolid, 
 //  only for Yggshoot and Magecap
 // public
@@ -1212,10 +1201,10 @@ Heightmap& IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome
 }
 
 // public
-IZoneManager::LocationInstance* IZoneManager::FindClosestLocation(const std::string& name, const Vector3& point) {
+IZoneManager::Feature::Instance* IZoneManager::FindClosestLocation(const std::string& name, const Vector3& point) {
     float num = std::numeric_limits<float>::max();
     
-    IZoneManager::LocationInstance* closest = nullptr;
+    IZoneManager::Feature::Instance* closest = nullptr;
 
     for (auto&& pair : m_locationInstances) {
         auto&& instance = pair.second;
@@ -1302,7 +1291,7 @@ std::vector<std::string> GetGlobalKeys() {
 // client terminal only
 // public
 /*
-robin_hood::unordered_map<Vector2i, ZoneSystem.LocationInstance>.ValueCollection GetLocationList() {
+robin_hood::unordered_map<Vector2i, ZoneSystem.FeatureInstance>.ValueCollection GetLocationList() {
     return m_locationInstances.Values;
 }*/
 

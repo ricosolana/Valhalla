@@ -287,6 +287,13 @@ void IModManager::LoadAPI() {
         sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
     );
 
+    m_state.new_enum("TalkerType",
+        "whisper", TalkerType::Whisper,
+        "normal", TalkerType::Normal,
+        "shout", TalkerType::Shout,
+        "ping", TalkerType::Ping
+    );
+
     m_state.new_usertype<Peer>("Peer",
         // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
@@ -303,6 +310,7 @@ void IModManager::LoadAPI() {
         "Message", sol::overload(
             sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
             sol::resolve<void(const std::string&)>(&Peer::Message)),
+        "SendChatMessage", &Peer::SendChatMessage,
         "Teleport", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
@@ -611,6 +619,10 @@ void IModManager::LoadAPI() {
     auto dungeonApiTable = m_state["DungeonManager"].get_or_create<sol::table>();
     dungeonApiTable["GetDungeon"] = [](const std::string& name) { return DungeonManager()->GetDungeon(VUtils::String::GetStableHashCode(name)); };
 
+
+
+    //auto zoneApiTable = m_state["ZoneManager"].get_or_create<sol::table>();
+    //zoneApiTable["GetLocation"]
 
 
     apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {

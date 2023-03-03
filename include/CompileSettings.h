@@ -43,7 +43,7 @@ namespace VConstants {
     // Used in ZDO
     static constexpr int32_t PGW = 99;
 
-    // Used in ZoneSystem ZoneLocation-Prefabs
+    // Used in ZoneSystem Feature-Prefabs
     static constexpr int32_t LOCATION = 26;
 
     // Player version
