@@ -818,7 +818,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::GenerateFeatures(const ZoneID
 
         // Remove all other Haldor locations, etc...
         if (location.m_unique) {
-            RemoveUnplacedLocations(location);
+            RemoveUngeneratedFeatures(location);
         }
 
         if (location.m_iconPlaced) {
@@ -830,13 +830,13 @@ std::vector<IZoneManager::ClearArea> IZoneManager::GenerateFeatures(const ZoneID
 }
 
 // private
-void IZoneManager::RemoveUnplacedLocations(const Feature& location) {
+void IZoneManager::RemoveUngeneratedFeatures(const Feature& feature) {
     int count = 0;
     for (auto&& itr = m_generatedFeatures.begin(); itr != m_generatedFeatures.end();) {
         auto&& instance = itr->second;
-        auto&& location = instance->m_feature.get();
+        auto&& otherFeature = instance->m_feature.get();
         if (!IsZoneGenerated(WorldToZonePos(instance->m_pos))
-            && location == location) 
+            && otherFeature == feature) 
         {
             itr = m_generatedFeatures.erase(itr);
             count++;
@@ -844,7 +844,7 @@ void IZoneManager::RemoveUnplacedLocations(const Feature& location) {
         else ++itr;
     }
 
-    LOG(INFO) << "Removed " << count << " unplaced '" << location.m_name << "'";
+    LOG(INFO) << "Removed " << count << " unplaced '" << feature.m_name << "'";
 }
 
 // private

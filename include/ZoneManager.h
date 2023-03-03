@@ -175,7 +175,7 @@ private:
 	void PrepareFeatures(const Feature &feature);
 	ZoneID GetRandomZone(VUtils::Random::State &state, float range);
 
-	void RemoveUnplacedLocations(const Feature& feature);
+	void RemoveUngeneratedFeatures(const Feature& feature);
 	void GenerateFeature(const Feature& feature, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
 
 	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& pos, float range, float& delta, Vector3& slopeDirection);
