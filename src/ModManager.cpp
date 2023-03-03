@@ -10,7 +10,7 @@
 #include "DataWriter.h"
 #include "Vector.h"
 #include "Quaternion.h"
-#include "NetID.h"
+#include "ZDOID.h"
 #include "ValhallaServer.h"
 #include "NetSocket.h"
 #include "ZDOManager.h"
@@ -105,7 +105,7 @@ void IModManager::LoadAPI() {
         sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
         "uuid", &ZDOID::m_uuid,
         "id", &ZDOID::m_id,
-        "none", sol::property([]() { return ZDOID::NONE; })
+        "none", sol::property([]() { return ZDOID(); })
     );
 
     m_state.new_enum("DataType",
@@ -136,7 +136,7 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const NetID&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
@@ -373,8 +373,8 @@ void IModManager::LoadAPI() {
                 else if (arg.is<BYTES_t>() && expectType == DataType::BYTES) {
                     params.Write(arg.as<BYTES_t>());
                 }
-                else if (arg.is<NetID>() && expectType == DataType::ZDOID) {
-                    params.Write(arg.as<NetID>());
+                else if (arg.is<ZDOID>() && expectType == DataType::ZDOID) {
+                    params.Write(arg.as<ZDOID>());
                 }
                 else if (arg.is<Vector3>() && expectType == DataType::VECTOR3) {
                     params.Write(arg.as<Vector3>());
@@ -527,14 +527,14 @@ void IModManager::LoadAPI() {
         "Set", sol::overload(
             ///[](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
         
-            //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
-            ///[](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); },
+            //sol::resolve<void(const std::string&, const ZDOID&)>(&ZDO::Set)
+            ///[](ZDO& self, const std::string& key, ZDOID value) { self.Set(key, value); },
             // string
             static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
             //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
             // zdoid
-            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
+            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const ZDOID&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
         )
 
     );

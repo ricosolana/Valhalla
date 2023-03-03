@@ -590,7 +590,7 @@ namespace Hashes {
 
         namespace Saddle {
             // partial
-            //NetID= __H("-empty");
+            //ZDOID= __H("-empty");
 
             static constexpr HASH_t STAMINA = __H("stamina");
             static constexpr HASH_t USER = __H("user");

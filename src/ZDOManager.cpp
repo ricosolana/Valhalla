@@ -21,12 +21,12 @@ void IZDOManager::Init() {
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, BYTES_t bytes) {
 		// TODO constraint check
 		DataReader reader(bytes);
-		auto destroyed = reader.Read<std::list<NetID>>();
+		auto destroyed = reader.Read<std::list<ZDOID>>();
 		for (auto&& uid : destroyed)
 			EraseZDO(uid);
 		});
 
-	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, NetID id) {
+	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, ZDOID id) {
 		peer->ForceSendZDO(id);
 	});
 }
@@ -161,7 +161,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
-		zdo->m_id = reader.Read<NetID>();
+		zdo->m_id = reader.Read<ZDOID>();
 		auto zdoReader = reader.SubRead();
 
 		bool modern = zdo->Load(zdoReader, version);
@@ -186,7 +186,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 	auto deadCount = reader.Read<int32_t>();
 	for (int j = 0; j < deadCount; j++) {
-		auto key = reader.Read<NetID>();
+		auto key = reader.Read<ZDOID>();
 		auto value = TICKS_t(reader.Read<int64_t>());
 		//m_deadZDOs[key] = value;
 		//if (key.m_uuid == SERVER_ID && key.m_id >= nextUid) {
@@ -202,7 +202,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 }
 
 ZDO& IZDOManager::AddZDO(const Vector3& position) {
-	NetID zdoid = NetID(Valhalla()->ID(), 0);
+	ZDOID zdoid = ZDOID(Valhalla()->ID(), 0);
 	for(;;) {
 		zdoid.m_id = m_nextUid++;
 		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
@@ -217,7 +217,7 @@ ZDO& IZDOManager::AddZDO(const Vector3& position) {
 	}
 }
 
-ZDO& IZDOManager::AddZDO(const NetID& uid, const Vector3& position) {
+ZDO& IZDOManager::AddZDO(const ZDOID& uid, const Vector3& position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
@@ -236,7 +236,7 @@ ZDO& IZDOManager::AddZDO(const NetID& uid, const Vector3& position) {
 	return *zdo.get();
 }
 
-ZDO* IZDOManager::GetZDO(const NetID& id) {
+ZDO* IZDOManager::GetZDO(const ZDOID& id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -247,7 +247,7 @@ ZDO* IZDOManager::GetZDO(const NetID& id) {
 
 
 
-std::pair<ZDO&, bool> IZDOManager::GetOrCreateZDO(const NetID& id, const Vector3& def) {
+std::pair<ZDO&, bool> IZDOManager::GetOrCreateZDO(const ZDOID& id, const Vector3& def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
 	auto&& zdo = pair.first->second;
@@ -334,7 +334,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 }
 
-void IZDOManager::EraseZDO(const NetID& uid) {
+void IZDOManager::EraseZDO(const ZDOID& uid) {
 	if (uid.m_uuid == SERVER_ID && uid.m_id >= m_nextUid)
 		m_nextUid = uid.m_uuid + 1;
 
@@ -644,7 +644,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			.m_time = time
 		};
 	}
-	writer.Write(NetID::NONE); // null terminator
+	writer.Write(ZDOID()); // null terminator
 
 	if (!peer.m_invalidSector.empty() || !syncList.empty()) {
 		peer.Invoke(Hashes::Rpc::ZDOData, bytes);
@@ -663,7 +663,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		DataReader reader(bytes);
 
 		{
-			auto invalidSectors = reader.Read<std::vector<NetID>>();
+			auto invalidSectors = reader.Read<std::vector<ZDOID>>();
 			for (auto&& id : invalidSectors) {
 				ZDO* zdo = GetZDO(id);
 
@@ -673,7 +673,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 		auto time = Valhalla()->Time();
 
-		while (auto zdoid = reader.Read<NetID>()) {
+		while (auto zdoid = reader.Read<ZDOID>()) {
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
 			auto owner = reader.Read<OWNER_t>();		// owner

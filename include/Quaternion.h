@@ -7,6 +7,8 @@ struct Quaternion {
 
     float x, y, z, w;
 
+    Quaternion();
+
     Quaternion(float x, float y, float z, float w);
 
     Quaternion(const Vector3& v, float w);

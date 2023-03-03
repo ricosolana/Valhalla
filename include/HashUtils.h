@@ -1,16 +1,16 @@
 #pragma once
 
-#include "NetID.h"
+#include "ZDOID.h"
 #include "Vector.h"
 
 namespace std {
 
     template <>
-    struct hash<NetID>
+    struct hash<ZDOID>
     {
-        std::size_t operator()(const NetID& id) const {
-            std::size_t hash1 = std::hash<decltype(NetID::m_id)>{}(id.m_id);
-            std::size_t hash2 = std::hash<decltype(NetID::m_uuid)>{}(id.m_uuid);
+        std::size_t operator()(const ZDOID& id) const {
+            std::size_t hash1 = std::hash<decltype(ZDOID::m_id)>{}(id.m_id);
+            std::size_t hash2 = std::hash<decltype(ZDOID::m_uuid)>{}(id.m_uuid);
 
             return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
         }

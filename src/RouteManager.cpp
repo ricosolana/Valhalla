@@ -59,7 +59,7 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	}
 }
 
-void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, BYTES_t params) {
+void IRouteManager::InvokeImpl(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, BYTES_t params) {
 	Data data;
 
 	data.m_sender = SERVER_ID;

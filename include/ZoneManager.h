@@ -23,7 +23,7 @@ class IZoneManager {
 		struct Piece {
 			const Prefab* m_prefab;
 			Vector3 m_pos;
-			Quaternion m_rot = Quaternion::IDENTITY; // hmm
+			Quaternion m_rot;
 		};
 
 		std::string m_name;

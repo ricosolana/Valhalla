@@ -243,7 +243,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 					auto&& connections = weightedRoom.GetConnections();
 
 					Vector3 vector;
-					Quaternion rot = Quaternion::IDENTITY;
+					Quaternion rot;
 					this->CalculateRoomPosRot(*connections[0], roomConnection.get().m_pos, 
 						roomConnection.get().m_rot, vector, rot);
 
@@ -358,7 +358,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	auto&& entrance = roomData.GetEntrance();
 
 	Vector3 pos;
-	Quaternion rot = Quaternion::IDENTITY;
+	Quaternion rot;
 	this->CalculateRoomPosRot(entrance, 
 		this->m_pos, this->m_rot, 
 		pos, rot
@@ -404,7 +404,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 	auto&& connection2 = room.GetConnection(state, connection.m_connection);
 
 	Vector3 pos;
-	Quaternion rot = Quaternion::IDENTITY;
+	Quaternion rot;
 	this->CalculateRoomPosRot(connection2, 
 		connection.m_pos, connection.m_rot * Quaternion::Euler(0, 180, 0),
 		pos, rot);

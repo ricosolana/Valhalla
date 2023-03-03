@@ -277,7 +277,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     });
 
     // Important
-    peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, NetID characterID) {
+    peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, ZDOID characterID) {
         if (!peer->m_characterID) {
             if (peer->m_magicLogin) {
                 peer->ShowMessage("You were automagically logged in");

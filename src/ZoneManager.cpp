@@ -551,7 +551,7 @@ void IZoneManager::PlaceVegetation(const ZoneID& zoneID, Heightmap& heightmap, c
                                 pos.y = WATER_LEVEL;
 
                             pos.y += zoneVegetation->m_groundOffset;
-                            Quaternion rotation = Quaternion::IDENTITY;
+                            Quaternion rotation;
 
 
 
@@ -839,7 +839,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::PlaceLocations(const ZoneID &
         if (locationInstance.m_location->m_clearArea)
             clearAreas.push_back({position, locationInstance.m_location->m_exteriorRadius });
 
-        Quaternion rot(Quaternion::IDENTITY);
+        Quaternion rot;
 
         // slopeRotation is Mistlands only
         //if (locationInstance.m_location->m_slopeRotation) {

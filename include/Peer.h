@@ -40,9 +40,9 @@ private:
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 public:
-    robin_hood::unordered_map<NetID, ZDO::Rev> m_zdos;
-    robin_hood::unordered_set<NetID> m_forceSend;
-    robin_hood::unordered_set<NetID> m_invalidSector;
+    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
+    robin_hood::unordered_set<ZDOID> m_forceSend;
+    robin_hood::unordered_set<ZDOID> m_invalidSector;
 
 public:
     ISocket::Ptr m_socket;
@@ -55,13 +55,13 @@ public:
     // Constantly changing vars
     Vector3 m_pos;
     bool m_visibleOnMap = false;
-    NetID m_characterID = NetID::NONE;
+    ZDOID m_characterID;
 
 private:
     void Update();
 
     void ZDOSectorInvalidated(ZDO& zdo);
-    void ForceSendZDO(const NetID& id);
+    void ForceSendZDO(const ZDOID& id);
     bool IsOutdatedZDO(ZDO& zdo);
 
 public:
