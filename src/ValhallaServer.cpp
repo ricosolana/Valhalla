@@ -209,11 +209,11 @@ void IValhalla::Start() {
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
 
-    LOG(INFO) << "Press ctrl+c to exit";
     signal(SIGINT, [](int) {
         LOG(WARNING) << "Interrupt caught, stopping server";
         Valhalla()->Stop();
     });
+    LOG(INFO) << "Press ctrl+c to exit";
 
     m_running = true;
     while (m_running) {

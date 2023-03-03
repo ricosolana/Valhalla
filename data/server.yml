@@ -12,7 +12,7 @@ player-max: 10
 player-auth: true
 player-list: true
 player-map-visible: false
-socket-timeout-ms: 300000000
+socket-timeout-ms: 30000
 zdo-max-congestion: 10240
 zdo-min-congestion: 2048
 zdo-send-interval-ms: 50
