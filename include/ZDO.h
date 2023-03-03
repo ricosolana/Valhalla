@@ -387,7 +387,7 @@ private:    const Prefab* m_prefab = nullptr;
 private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
-private:    Vector3 m_position;
+private:    Vector3 m_pos;
 
 public:     Rev m_rev = {};
 private:     ZDOID m_id;
@@ -641,7 +641,7 @@ public:
     //}
 
     Vector3 Position() const {
-        return m_position;
+        return m_pos;
     }
 
     void SetPosition(const Vector3& pos);

@@ -621,8 +621,10 @@ void IModManager::LoadAPI() {
 
 
 
-    //auto zoneApiTable = m_state["ZoneManager"].get_or_create<sol::table>();
-    //zoneApiTable["GetLocation"]
+    auto zoneApiTable = m_state["ZoneManager"].get_or_create<sol::table>();
+    zoneApiTable["GetNearestGeneratedFeature"] = [](const std::string& name, const Vector3& point) {
+        return ZoneManager()->GetNearestGeneratedFeature(name, point);
+    };
 
 
     apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {

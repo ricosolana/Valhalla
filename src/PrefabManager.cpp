@@ -88,7 +88,7 @@ ZDO& IPrefabManager::Instantiate(const Prefab& prefab, const Vector3& pos, const
 }
 
 ZDO& IPrefabManager::Instantiate(const ZDO& zdo) {
-    auto&& copy = Instantiate(*zdo.m_prefab, zdo.m_position, zdo.m_rotation);
+    auto&& copy = Instantiate(*zdo.m_prefab, zdo.m_pos, zdo.m_rotation);
 
     ZDOID id = copy.m_id; // Copying copies everything (including UID, which MUST be unique for every ZDO)
     copy = zdo;

@@ -176,7 +176,7 @@ void IValhalla::Start() {
     ZoneManager()->Init();
     WorldManager()->Init();
     GeoManager()->Init();
-    ZoneManager()->GenerateLocations();
+    ZoneManager()->PrepareAllFeatures();
     DungeonManager()->Init();
     ModManager()->Init();
 

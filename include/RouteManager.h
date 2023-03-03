@@ -47,7 +47,7 @@ private:
 
 private:
 	// Called from NetManager
-	void OnNewPeer(Peer *peer);
+	void OnNewPeer(Peer &peer);
 
 	// Internal use only by NetRouteManager
 	void InvokeImpl(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, BYTES_t params);

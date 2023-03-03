@@ -324,7 +324,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
 				if (zdo.get().m_prefab->HasFlag(Prefab::Flag::Persistent)
-					&& zdo.get().m_position.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
+					&& zdo.get().m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo.get().SetOwner(peer.m_uuid);
 				}
@@ -532,7 +532,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, 
 			if (num != -1) {
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
-					if (obj->m_position.SqDistance(pos) <= radius * radius
+					if (obj->m_pos.SqDistance(pos) <= radius * radius
 						&& (!cond || cond(*obj)))
 						out.push_back(*obj);
 				}
@@ -557,7 +557,7 @@ ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t p
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
 					if (obj->m_prefab->m_hash == prefabHash
-						&& obj->m_position.SqDistance(pos) <= radius * radius)
+						&& obj->m_pos.SqDistance(pos) <= radius * radius)
 						return obj;
 				}
 			}
@@ -632,7 +632,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		writer.Write(zdo.m_rev.m_ownerRev);
 		writer.Write(zdo.m_rev.m_dataRev);
 		writer.Write(zdo.m_owner);
-		writer.Write(zdo.m_position);
+		writer.Write(zdo.m_pos);
 
 		writer.SubWrite([zdo, &writer]() {
 			zdo.Serialize(writer);

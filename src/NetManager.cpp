@@ -378,8 +378,8 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     SendPeerInfo(peer);
 
     ZDOManager()->OnNewPeer(*peer);
-    RouteManager()->OnNewPeer(peer);
-    ZoneManager()->OnNewPeer(peer);
+    RouteManager()->OnNewPeer(*peer);
+    ZoneManager()->OnNewPeer(*peer);
 }
 
 
@@ -435,7 +435,6 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
     }
     return peers;
 }
-
 
 void INetManager::Init() {
     LOG(INFO) << "Initializing NetManager";
