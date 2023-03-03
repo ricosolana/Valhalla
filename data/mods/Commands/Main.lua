@@ -20,7 +20,16 @@ local RPC_vs = function(peer, cmd, args)
         print(' - ' .. args[i])
     end
     
-    if cmd == 'feature' then
+    if cmd == 'destroy' then    
+        local zdo = ZDOManager.AnyZDO(peer.pos, 32, VUtils.String.GetStableHashCode(args[1]))
+        
+        if zdo then
+            ZDOManager.DestroyZDO(zdo, false)
+            peer:ConsoleMessage('destroyed zdo')
+        else
+            peer:ConsoleMessage('no nearby matching ZDO found')
+        end
+    elseif cmd == 'feature' then
         if #args == 1 then
             local instance = ZoneManager.GetNearestFeature(args[1], peer.pos)
             if instance then
@@ -33,21 +42,36 @@ local RPC_vs = function(peer, cmd, args)
             peer:ConsoleMessage("feature arg missing")
         end
     elseif cmd == 'dungeon' then
-        if #args == 1 then
-            local dungeon = DungeonManager.GetDungeon(args[1])
-            if dungeon then
-                local pos = peer.pos
-                local rot = Quaternion.identity
-                
-                dungeon:Generate(pos, rot)
-                
-                peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
-            else
-                peer:ConsoleMessage('dungeon not found')
-            end
-        else
-            peer:ConsoleMessage("dungeon arg missing")
+        if #args == 0 then
+            peer:ConsoleMessage("usage: vs dungeon [dungeon]")
+            return
         end
+    
+        local dungeon = DungeonManager.GetDungeon(args[1])
+        
+        if not dungeon then
+            peer:ConsoleMessage('dungeon not found')
+            return
+        end
+        
+        local pos = peer.pos
+        if #args == 4 then
+            local x = tonumber(args[2])
+            local y = tonumber(args[3])
+            local z = tonumber(args[4])
+            
+            if not x or not y or not z then
+                peer:ConsoleMessage('invalid position')
+                return
+            end
+            
+            pos = Vector3.new(x, y, z)
+        end
+        
+        dungeon:Generate(pos, Quaternion.identity)
+        
+        peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
+
     elseif cmd == 'claim' then
         local radius = (#args == 1 and tonumber(args[1])) or 32
         --local radius = #args ~= 1 and 32 or (true and tonumber(args[1]))

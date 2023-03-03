@@ -597,6 +597,7 @@ void IModManager::LoadAPI() {
 
     zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
+    zdoApiTable["DestroyZDO"] = [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
     auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();

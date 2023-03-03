@@ -158,12 +158,18 @@ namespace VUtils::Physics {
             float b1 = pos2.y - size2.y * 0.5f;
             float b2 = pos2.y + size2.y * 0.5f;
 
-            // Check that the rectangles vertically overlap
-            if (!((a1 >= b1 && a1 <= b2)
-                || (a2 >= b1 && a2 <= b2)
-                || (b1 >= a1 && b1 <= a2)
-                || (b2 >= a1 && b2 <= a2)))
+            if (!(VUtils::Math::Between(a1, b1, b2) ||
+                VUtils::Math::Between(a2, b1, b2) ||
+                VUtils::Math::Between(b1, a1, a2) ||
+                VUtils::Math::Between(b2, a1, a2)))
                 return false;
+
+            // Check that the rectangles vertically overlap
+            //if (!((a1 >= b1 && a1 <= b2)
+            //    || (a2 >= b1 && a2 <= b2)
+            //    || (b1 >= a1 && b1 <= a2)
+            //    || (b2 >= a1 && b2 <= a2)))
+            //    return false;
         }
 
         size1 *= .5f;
