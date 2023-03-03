@@ -122,7 +122,9 @@ public:
             this->m_eventStatus = EventStatus::DEFAULT;
 
             // Multiple tables
-            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_object(m_state, std::ref(params)))...);
+            // TODO it turns out that strings are weird (i think), 
+            //  go back to the old method... this will break some functionality from past
+            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_object(m_state, params))...);
 
             // Single table
             //auto&& lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
