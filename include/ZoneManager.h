@@ -7,8 +7,8 @@
 #include "Peer.h"
 #include "Biome.h"
 #include "VUtilsRandom.h"
+#include "Prefab.h"
 
-class Prefab;
 class Heightmap;
 
 using ZoneID = Vector2i;
@@ -20,17 +20,9 @@ class IZoneManager {
 
 	// Rename this to ZoneFeature
 	struct ZoneLocation {
-		struct Piece {
-			const Prefab* m_prefab;
-			Vector3 m_pos;
-			Quaternion m_rot;
-		};
-
 		std::string m_name;
 		HASH_t m_hash;
-		//const Prefab* m_prefab;
 
-		//bool m_dungeon;
 		Biome m_biome;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
 		bool m_applyRandomDamage;
@@ -64,14 +56,19 @@ class IZoneManager {
 		bool m_snapToWater;
 		bool m_unique;
 		//std::vector<std::tuple<HASH_t, Vector3, Quaternion>> m_prefabs; // m_netViews;
-		std::vector<Piece> m_pieces;
+		std::vector<Prefab::Instance> m_pieces;
+
+		bool operator==(const ZoneLocation& other) const {
+			return this->m_name == other.m_name;
+		}
 	};
 
 	// Rename this to VegetationFeature
-	struct ZoneVegetation {
+	class ZoneVegetation {
+	public:
 		//std::string m_name = "veg";
 		//std::string m_prefabName;
-		const Prefab* m_prefab;
+		const Prefab* m_prefab = nullptr;
 
 		Biome m_biome = Biome::None;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
@@ -107,10 +104,14 @@ class IZoneManager {
 	};
 
 	// Rename this
-	struct LocationInstance {
-		const ZoneLocation *m_location;
-		Vector3 m_position;
-		//bool m_placed; // not needed, assuming locations are placed only once during zone spawn (when player enters a new zone)
+	class LocationInstance {
+	public:
+		std::reference_wrapper<const ZoneLocation> m_location;
+		const Vector3 m_position;
+		//bool m_placed = false; // if m_generatedZones contains position, it can be considered placed
+
+		LocationInstance(const ZoneLocation& location, Vector3 pos) 
+			: m_location(location), m_position(pos) {}
 	};
 
 	struct ClearArea {
@@ -135,14 +136,14 @@ public:
 private:
 	// All templated ZoneLocations, sorted by priority
 	std::vector<std::unique_ptr<const ZoneLocation>> m_locations;
-	robin_hood::unordered_map<HASH_t, const ZoneLocation*> m_locationsByHash;
+	robin_hood::unordered_map<HASH_t, std::reference_wrapper<const ZoneLocation>> m_locationsByHash;
 
 	// All templated ZoneVegetation
 	// Generally unimplemented ATM
 	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
 
 	// The generated ZoneLocations per world
-	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
+	robin_hood::unordered_map<Vector2i, std::unique_ptr<LocationInstance>> m_locationInstances;
 
 	// Which Zones have already been generated (locations and vegetation placed)
 	robin_hood::unordered_set<Vector2i> m_generatedZones;
@@ -164,7 +165,7 @@ private:
 	void PlaceVegetation(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 	void PlaceZoneCtrl(const ZoneID& zone);
 
-	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
+	bool HaveLocationInRange(const ZoneLocation& loc, const Vector3& p);
 	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
 	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
 	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
@@ -172,12 +173,12 @@ private:
 	const ZoneLocation* GetLocation(HASH_t hash);
 	const ZoneLocation* GetLocation(const std::string& name);
 
-	void GenerateLocations(const ZoneLocation *location);
+	void GenerateLocations(const ZoneLocation &location);
 	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
 
-	void RemoveUnplacedLocations(const ZoneLocation* location);
-	void SpawnLocation(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
-	void CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
+	void RemoveUnplacedLocations(const ZoneLocation& location);
+	void SpawnLocation(const ZoneLocation& location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
+	void CreateLocationProxy(const ZoneLocation& location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
 	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
 
 	// inlined 
@@ -195,7 +196,7 @@ public:
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
-	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons);
+	std::list<std::reference_wrapper<IZoneManager::LocationInstance>> GetLocationIcons();
 	bool IsBlocked(const Vector3& p);
 	float GetGroundHeight(const Vector3& p);
 	bool GetGroundHeight(const Vector3& p, float& height);
@@ -206,7 +207,10 @@ public:
 	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
 	//bool FindFloor(const Vector3& p, float& height);
 	Heightmap& GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
-	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
+
+	// Find the nearest location
+	//	Nullable
+	LocationInstance *FindClosestLocation(const std::string& name, const Vector3& point);
 
 	static ZoneID WorldToZonePos(const Vector3& point);
 	static Vector3 ZoneToWorldPos(const ZoneID& id);

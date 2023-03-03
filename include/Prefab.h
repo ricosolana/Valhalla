@@ -11,9 +11,9 @@ public:
 
     // TODO use in ZoneManager::ZoneLocations
     struct Instance {
-        const Prefab* m_prefab;
+        const Prefab* m_prefab = nullptr;
         Vector3 m_pos;
-        Quaternion m_rot = Quaternion::IDENTITY; // hmm
+        Quaternion m_rot;
     };
 
     enum class Flag {
