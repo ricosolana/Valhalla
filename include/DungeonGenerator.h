@@ -20,6 +20,34 @@
 
 
 class DungeonGenerator {
+private:
+	// Instanced
+	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
+	// Instanced
+	std::list<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
+	// Instanced
+	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
+
+public:
+	// TODO use reference
+	const Dungeon* m_dungeon = nullptr;
+
+	Vector3 m_pos; // instanced position
+	Quaternion m_rot; // instanced rotation
+
+	Vector3 m_zoneCenter;
+
+	// TODO make Constexpr
+	Vector3 m_zoneSize = Vector3(64, 64, 64);
+
+	//bool m_useCustomInteriorTransform; // templated
+
+	HASH_t m_generatedSeed;
+
+	//Vector3 m_originalPosition; // templated
+
+	ZDO& m_zdo;
+
 public:
 	void Generate();
 	HASH_t GetSeed();
@@ -84,33 +112,6 @@ private:
 	const Room& FindStartRoom(VUtils::Random::State& state);
 
 	bool CheckRequiredRooms();
-
-private:
-	// Instanced
-	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
-	// Instanced
-	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
-	// Instanced
-	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
-public:
-	// TODO use reference
-	const Dungeon* m_dungeon = nullptr;
-
-	Vector3 m_pos; // instanced position
-	Quaternion m_rot; // instanced rotation
-
-	Vector3 m_zoneCenter;
-
-	// TODO make Constexpr
-	Vector3 m_zoneSize = Vector3(64, 64, 64);
-
-	//bool m_useCustomInteriorTransform; // templated
-
-	HASH_t m_generatedSeed;
-
-	//Vector3 m_originalPosition; // templated
-
-	ZDO& m_zdo;
 
 public:
 	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
