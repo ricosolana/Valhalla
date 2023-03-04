@@ -878,13 +878,50 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
     //WearNTear.m_randomInitialDamage = location.m_feature.m_applyRandomDamage;
     //for (auto&& znetView2 : location.m_netViews) {
     for (auto&& piece : location.m_pieces) {
-        auto &&zdo = PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
-        
-        if (SERVER_SETTINGS.spawningDungeons && piece.m_prefab->HasFlag(Prefab::Flag::Dungeon)) {
+        //Vector3 piecePos = piece.m_pos;
+        //Quaternion pieceRot = piece.m_rot;
+
+        //const Dungeon *dungeon = nullptr;
+
+        // Dungeon hierarchy:
+        //  Location
+        //      Interior (InteriorTransform)
+        //          DG_(dungeon)
+
+        if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->HasFlag(Prefab::Flag::Dungeon))) {
+            PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+        } else {
             auto&& dungeon = DungeonManager()->GetDungeon(piece.m_prefab->m_hash);
             if (!dungeon) throw std::runtime_error("dungeon missing");
 
-            dungeon->Generate(zdo);
+            ZDO* zdo = nullptr;
+
+            if (dungeon->m_interiorPosition != Vector3::ZERO) {
+
+                ZoneID zone = WorldToZonePos(pos);
+                Vector3 zonePos = ZoneToWorldPos(zone);
+
+                //Vector3 localPosition = (zonePos - pos) 
+                //    + dungeon->m_interiorPosition // ( 0, 5000, 0 )
+                //    + dungeon->m_originalPosition; // minor position change (usually height and a horizontal axis)
+
+                //localPosition = Quaternion::Inverse(rot) * localPosition;
+
+                Vector3 piecePos = zonePos
+                    + dungeon->m_interiorPosition // ( 0, 5000, 0 )
+                    + dungeon->m_originalPosition; // minor position change (usually height and a horizontal axis)
+
+                piecePos.y = dungeon->m_interiorPosition.y + pos.y;
+
+                zdo = &PrefabManager()->Instantiate(*piece.m_prefab, piecePos, piece.m_rot);
+            }
+            else {
+                zdo = &PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+            }
+
+            assert(zdo);
+                        
+            dungeon->Generate(*zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;

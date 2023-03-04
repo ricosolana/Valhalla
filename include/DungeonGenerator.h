@@ -86,27 +86,14 @@ private:
 	bool CheckRequiredRooms();
 
 private:
-	//bool m_hasGeneratedSeed = false;
-
 	// Instanced
 	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
 	// Instanced
 	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
 	// Instanced
 	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
-
-	// Templated per type of generator
-	//std::vector<RoomData*> m_availableRooms;
-
-	//std::vector<Room*> m_tempRooms;
-
-	//BoxCollider m_colliderA;
-
-	//BoxCollider m_colliderB;
-
-	//private ZNetView m_nview;
-
 public:
+	// TODO use reference
 	const Dungeon* m_dungeon = nullptr;
 
 	Vector3 m_pos; // instanced position
@@ -123,13 +110,9 @@ public:
 
 	//Vector3 m_originalPosition; // templated
 
-	//ZDO* m_zdo = nullptr;
-
 	ZDO& m_zdo;
 
 public:
-	//DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3& pos, const Quaternion& rot);
-
 	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
 
 };

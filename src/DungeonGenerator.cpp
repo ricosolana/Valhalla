@@ -6,16 +6,6 @@
 #include "VUtilsMathf.h"
 #include "VUtilsPhysics.h"
 
-//DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3 &pos, const Quaternion &rot) :
-//	m_dungeon(&dungeon), m_zdo(&zdo), m_pos(pos), m_rot(rot) {
-//	auto seed = GeoManager()->GetSeed();
-//	auto zone = IZoneManager::WorldToZonePos(m_pos);
-//	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
-//
-//	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
-//	this->m_zoneCenter.y = m_pos.y; // -this->m_dungeon->m_originalPosition.y;
-//}
-
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 	m_dungeon(&dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
 	auto seed = GeoManager()->GetSeed();

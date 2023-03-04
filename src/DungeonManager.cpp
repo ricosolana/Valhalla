@@ -49,6 +49,9 @@ void IDungeonManager::Init() {
 
         LOG(INFO) << "Loading dungeon " << dungeon->m_name;
 
+        dungeon->m_interiorPosition = pkg.Read<Vector3>();
+        dungeon->m_originalPosition = pkg.Read<Vector3>();
+
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.Read<int32_t>();
         dungeon->m_alternativeFunctionality = pkg.Read<bool>();
         dungeon->m_campRadiusMax = pkg.Read<float>();

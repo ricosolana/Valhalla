@@ -64,7 +64,8 @@ public:
 
 	//bool m_useCustomInteriorTransform;
 
-	//Vector3 m_originalPosition;
+	Vector3 m_interiorPosition; // {0, 5000, 0} for dg/cave
+	Vector3 m_originalPosition; // {0, 110, 30} and varies for dg/cave
 
 	// Order is significant (polled with Seeded Random)
 	std::vector<std::unique_ptr<const Room>> m_availableRooms;
