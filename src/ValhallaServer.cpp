@@ -87,6 +87,12 @@ void IValhalla::LoadFiles() {
     m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
     m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
     m_settings.spawningDungeons = loadNode["spawning-dungeons"].as<bool>(true);
+
+    m_settings.dungeonEndCaps = loadNode["dungeon-end-caps"].as<bool>(true);
+    m_settings.dungeonDoors = loadNode["dungeon-doors"].as<bool>(true);
+    m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
+    m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
+    m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
     
     LOG(INFO) << "Server config loaded";
 
@@ -125,6 +131,12 @@ void IValhalla::LoadFiles() {
         saveNode["spawning-locations"] = m_settings.spawningLocations;
         saveNode["spawning-vegetation"] = m_settings.spawningVegetation;
         saveNode["spawning-dungeons"] = m_settings.spawningDungeons;
+
+        saveNode["dungeon-end-caps"] = m_settings.dungeonEndCaps;
+        saveNode["dungeon-doors"] = m_settings.dungeonDoors;
+        saveNode["dungeon-flip-rooms"] = m_settings.dungeonFlipRooms;
+        saveNode["dungeon-zone-limit"] = m_settings.dungeonZoneLimit;
+        loadNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
 
         YAML::Emitter out;
         out.SetIndent(4);

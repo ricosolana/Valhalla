@@ -35,4 +35,10 @@ struct ServerSettings {
     bool            spawningLocations;
     bool            spawningVegetation;
     bool            spawningDungeons;
+
+    bool            dungeonEndCaps;
+    bool            dungeonDoors;
+    bool            dungeonFlipRooms;
+    bool            dungeonZoneLimit;
+    bool            dungeonRoomShrink;
 };

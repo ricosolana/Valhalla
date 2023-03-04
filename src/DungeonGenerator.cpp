@@ -61,8 +61,12 @@ void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
 void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 	this->PlaceStartRoom(state);
 	this->PlaceRooms(state);
-	this->PlaceEndCaps(state);
-	//this->PlaceDoors(state);
+
+	if (SERVER_SETTINGS.dungeonEndCaps) 
+		this->PlaceEndCaps(state);
+
+	if (SERVER_SETTINGS.dungeonDoors) 
+		this->PlaceDoors(state);
 }
 
 void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
@@ -406,7 +410,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 	Vector3 pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(connection2, 
-		connection.m_pos, connection.m_rot * Quaternion::Euler(0, 180, 0),
+		connection.m_pos, connection.m_rot * (SERVER_SETTINGS.dungeonFlipRooms ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
 		pos, rot);
 
 	// this is making me want to rip my hair out
@@ -459,14 +463,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, 
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	Vector3 position = room.m_pos;
-	Quaternion quaternion = Quaternion::Inverse(room.m_rot);
 	for (auto&& view : room.m_netViews) {
-		//Vector3 point = quaternion * (znetView2.m_pos - position);
-		//Vector3 position2 = pos + rot * point;
-		//Quaternion rhs = quaternion * znetView2.m_rot;
-		//Quaternion rotation = rot * rhs;
-
 		Vector3 pos1 = pos + rot * view.m_pos;
 		Quaternion rot1 = rot * view.m_rot;
 
@@ -511,11 +508,12 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	//return false;
 
 	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
-	if (!this->IsInsideDungeon(room, pos, rot))
+	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
 		return true;
 
-	Vector3 size = room.m_size
-		- Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
+	Vector3 size = room.m_size;
+	if (SERVER_SETTINGS.dungeonRoomShrink)
+		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
 
 	// determine whether the room collides with any other room
 	for (auto&& other : m_placedRooms) {
