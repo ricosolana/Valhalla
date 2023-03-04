@@ -152,6 +152,8 @@ namespace VUtils::Physics {
         assert(abs(rot1.x) < .01f && abs(rot1.z) < .01f);
         assert(abs(rot2.x) < .01f && abs(rot2.z) < .01f);
 
+        bool overlaps = false;
+
         {
             float a1 = pos1.y - size1.y * 0.5f;
             float a2 = pos1.y + size1.y * 0.5f;
@@ -179,19 +181,6 @@ namespace VUtils::Physics {
         Vector3 v3_b_ur = pos2 + rot2 * Vector3(size2.x, size2.y, size2.z);
         Vector3 v3_b_ul = pos2 + rot2 * Vector3(-size2.x, size2.y, size2.z);
 
-        // easy desmos copy/paste
-        //LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
-        //    << v3_a_ur.x << "," << v3_a_ur.z << "),("
-        //    << v3_a_ul.x << "," << v3_a_ul.z << "),("
-        //    << v3_a_bl.x << "," << v3_a_bl.z << "))";
-        //
-        //LOG(INFO) << "polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
-        //    << v3_b_ur.x << "," << v3_b_ur.z << "),("
-        //    << v3_b_ul.x << "," << v3_b_ul.z << "),("
-        //    << v3_b_bl.x << "," << v3_b_bl.z << "))";
-        //
-        //LOG(INFO) << "";
-
         Vector2 a_br(v3_a_br.x, v3_a_br.z);
         Vector2 a_bl(v3_a_bl.x, v3_a_bl.z);
         Vector2 a_ur(v3_a_ur.x, v3_a_ur.z);
@@ -204,40 +193,40 @@ namespace VUtils::Physics {
 
         // Only testing x / z intersections (y is redundant because of the initial test)
         if (LinesIntersect(a_br, a_ur, b_br, b_ur))
-            return true;
-        if (LinesIntersect(a_br, a_ur, b_ur, b_ul))
-            return true;
-        if (LinesIntersect(a_br, a_ur, b_ul, b_bl))
-            return true;
-        if (LinesIntersect(a_br, a_ur, b_bl, b_br))
-            return true;
+            overlaps = true;
+        else if (LinesIntersect(a_br, a_ur, b_ur, b_ul))
+            overlaps = true;
+        else if (LinesIntersect(a_br, a_ur, b_ul, b_bl))
+            overlaps = true;
+        else if (LinesIntersect(a_br, a_ur, b_bl, b_br))
+            overlaps = true;
 
-        if (LinesIntersect(a_ur, a_ul, b_br, b_ur))
-            return true;
-        if (LinesIntersect(a_ur, a_ul, b_ur, b_ul))
-            return true;
-        if (LinesIntersect(a_ur, a_ul, b_ul, b_bl))
-            return true;
-        if (LinesIntersect(a_ur, a_ul, b_bl, b_br))
-            return true;
+        else if (LinesIntersect(a_ur, a_ul, b_br, b_ur))
+            overlaps = true;
+        else if (LinesIntersect(a_ur, a_ul, b_ur, b_ul))
+            overlaps = true;
+        else if (LinesIntersect(a_ur, a_ul, b_ul, b_bl))
+            overlaps = true;
+        else if (LinesIntersect(a_ur, a_ul, b_bl, b_br))
+            overlaps = true;
 
-        if (LinesIntersect(a_ul, a_bl, b_br, b_ur))
-            return true;
-        if (LinesIntersect(a_ul, a_bl, b_ur, b_ul))
-            return true;
-        if (LinesIntersect(a_ul, a_bl, b_ul, b_bl))
-            return true;
-        if (LinesIntersect(a_ul, a_bl, b_bl, b_br))
-            return true;
+        else if (LinesIntersect(a_ul, a_bl, b_br, b_ur))
+            overlaps = true;
+        else if (LinesIntersect(a_ul, a_bl, b_ur, b_ul))
+            overlaps = true;
+        else if (LinesIntersect(a_ul, a_bl, b_ul, b_bl))
+            overlaps = true;
+        else if (LinesIntersect(a_ul, a_bl, b_bl, b_br))
+            overlaps = true;
 
-        if (LinesIntersect(a_bl, a_br, b_br, b_ur))
-            return true;
-        if (LinesIntersect(a_bl, a_br, b_ur, b_ul))
-            return true;
-        if (LinesIntersect(a_bl, a_br, b_ul, b_bl))
-            return true;
-        if (LinesIntersect(a_bl, a_br, b_bl, b_br))
-            return true;
+        else if (LinesIntersect(a_bl, a_br, b_br, b_ur))
+            overlaps = true;
+        else if (LinesIntersect(a_bl, a_br, b_ur, b_ul))
+            overlaps = true;
+        else if (LinesIntersect(a_bl, a_br, b_ul, b_bl))
+            overlaps = true;
+        else if (LinesIntersect(a_bl, a_br, b_bl, b_br))
+            overlaps = true;
 
         // Now test whether rectangle is inside rectangle
         // This case is less likely (I think) due to this only being used in dungeon generator
@@ -252,23 +241,38 @@ namespace VUtils::Physics {
         size2 *= 2.f;
 
         if (PointInsideRect(size1, pos1, rot1, v3_b_br))
-            return true;
-        if (PointInsideRect(size1, pos1, rot1, v3_b_bl))
-            return true;
-        if (PointInsideRect(size1, pos1, rot1, v3_b_ur))
-            return true;
-        if (PointInsideRect(size1, pos1, rot1, v3_b_ul))
-            return true;
-        if (PointInsideRect(size2, pos2, rot2, v3_a_br))
-            return true;
-        if (PointInsideRect(size2, pos2, rot2, v3_a_bl))
-            return true;
-        if (PointInsideRect(size2, pos2, rot2, v3_a_ur))
-            return true;
-        if (PointInsideRect(size2, pos2, rot2, v3_a_ul))
-            return true;
+            overlaps = true;
+        else if (PointInsideRect(size1, pos1, rot1, v3_b_bl))
+            overlaps = true;
+        else if (PointInsideRect(size1, pos1, rot1, v3_b_ur))
+            overlaps = true;
+        else if (PointInsideRect(size1, pos1, rot1, v3_b_ul))
+            overlaps = true;
+        else if (PointInsideRect(size2, pos2, rot2, v3_a_br))
+            overlaps = true;
+        else if (PointInsideRect(size2, pos2, rot2, v3_a_bl))
+            overlaps = true;
+        else if (PointInsideRect(size2, pos2, rot2, v3_a_ur))
+            overlaps = true;
+        else if (PointInsideRect(size2, pos2, rot2, v3_a_ul))
+            overlaps = true;
 
-        return false;
+        if (!overlaps) {
+            // easy desmos copy/paste
+            LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
+                << v3_a_ur.x << "," << v3_a_ur.z << "),("
+                << v3_a_ul.x << "," << v3_a_ul.z << "),("
+                << v3_a_bl.x << "," << v3_a_bl.z << "))";
+        
+            //LOG(INFO) << "polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
+            //    << v3_b_ur.x << "," << v3_b_ur.z << "),("
+            //    << v3_b_ul.x << "," << v3_b_ul.z << "),("
+            //    << v3_b_bl.x << "," << v3_b_bl.z << "))";
+        
+            LOG(INFO) << "";
+        }
+
+        return overlaps;
     }
 
 

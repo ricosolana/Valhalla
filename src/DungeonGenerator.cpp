@@ -459,19 +459,12 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, 
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	Vector3 position = room.m_pos;
-	Quaternion quaternion = Quaternion::Inverse(room.m_rot);
-	for (auto&& view : room.m_netViews) {
-		//Vector3 point = quaternion * (znetView2.m_pos - position);
-		//Vector3 position2 = pos + rot * point;
-		//Quaternion rhs = quaternion * znetView2.m_rot;
-		//Quaternion rotation = rot * rhs;
-
-		Vector3 pos1 = pos + rot * view.m_pos;
-		Quaternion rot1 = rot * view.m_rot;
-
-		PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
-	}
+	//for (auto&& view : room.m_netViews) {
+	//	Vector3 pos1 = pos + rot * view.m_pos;
+	//	Quaternion rot1 = rot * view.m_rot;
+	//
+	//	PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
+	//}
 	
 	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, (fromConnection ? (fromConnection->m_placeOrder + 1) : 0), seed);
 	
