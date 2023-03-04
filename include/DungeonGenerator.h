@@ -86,7 +86,7 @@ private:
 
 	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3 &pos, const Quaternion &rot, Vector3 &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, const Room& roomData);
+	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
 	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection);
 
@@ -107,7 +107,7 @@ private:
 	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
 	// Nullable
-	const RoomConnectionInstance* GetOpenConnection(VUtils::Random::State& state);
+	decltype(m_openConnections)::iterator GetOpenConnection(VUtils::Random::State& state);
 
 	const Room& FindStartRoom(VUtils::Random::State& state);
 

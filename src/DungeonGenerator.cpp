@@ -215,14 +215,18 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 }
 
 void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
-	for (int i = 0; i < m_openConnections.size(); i++) {
-		auto&& roomConnection = m_openConnections[i];
+	//for (int i = 0; i < m_openConnections.size(); i++) {
+	for (auto&& itr1 = m_openConnections.begin(); itr1 != m_openConnections.end(); ) {
+		//auto&& roomConnection = m_openConnections[i];
+		auto&& roomConnection = *itr1;
 		const RoomConnectionInstance *roomConnection2 = nullptr;
 
 		// Find the other matching connection
-		for (int j = 0; j < m_openConnections.size(); j++) {
-			if (j != i && roomConnection.get().TestContact(m_openConnections[j])) {
-				roomConnection2 = &m_openConnections[j].get();
+		//for (int j = 0; j < m_openConnections.size(); j++) {
+		for (auto&& itr2 = m_openConnections.begin(); itr2 != m_openConnections.end(); ++itr2) {
+			//if (j != i && roomConnection.get().TestContact(m_openConnections[j])) {
+			if (itr2 != itr1 && roomConnection.get().TestContact(*itr2)) {
+				roomConnection2 = &itr2->get();
 				break;
 			}
 		}
@@ -254,17 +258,21 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 				else LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
 			}
 			else LOG(INFO) << "Cyclic detected: Door types successfully match";
+
+			++itr1;
 		}
 		else
 		{
 			auto &&tempRooms = this->FindEndCaps(state, roomConnection.get().m_connection);
 			bool flag2 = false;
 
+			bool erased = false;
+
 			if (!flag2 && this->m_dungeon->m_alternativeFunctionality) {
 				for (int k = 0; k < 5; k++)
 				{
 					auto&& weightedRoom2 = this->GetWeightedRoom(state, tempRooms);
-					if (this->PlaceRoom(state, roomConnection, weightedRoom2))
+					if (this->PlaceRoom(state, itr1, weightedRoom2, &erased))
 					{
 						flag2 = true;
 						break;
@@ -279,16 +287,19 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 				});
 
 				for (auto&& roomData : tempRooms) {
-					if (this->PlaceRoom(state, roomConnection, roomData)) {
+					if (this->PlaceRoom(state, itr1, roomData, &erased)) {
 						flag2 = true;
 						break;
 					}
 				}
-
 			}
 
 			if (!flag2)
 				LOG(WARNING) << "Failed to place end cap";
+
+			if (!erased) {
+				++itr1;
+			}
 		}
 	}
 }
@@ -369,20 +380,22 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 
 	// Get a random attachment point for the next room
-	auto&& openConnection = this->GetOpenConnection(state);
-	if (!openConnection)
+	auto&& itr = this->GetOpenConnection(state);
+	if (itr == m_openConnections.end())
 		return false;
 
+	auto openConnection = itr->get();
+	
 	for (int i = 0; i < 10; i++)
 	{
 		// Get a new random room to attach to the existing open instanced connect point
 		const Room* roomData = this->m_dungeon->m_alternativeFunctionality 
-			? this->GetRandomWeightedRoom(state, openConnection)
-			: this->GetRandomRoom(state, openConnection);
+			? this->GetRandomWeightedRoom(state, &openConnection)
+			: this->GetRandomRoom(state, &openConnection);
 		if (!roomData)
 			break;
 
-		if (this->PlaceRoom(state, *openConnection, *roomData))
+		if (this->PlaceRoom(state, itr, *roomData, nullptr))
 			return true;
 	}
 	return false;
@@ -393,9 +406,14 @@ void DungeonGenerator::CalculateRoomPosRot(const RoomConnection& roomCon, const 
 	outPos = pos - outRot * roomCon.m_localPos;
 }
 
-bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, const Room& room) {
+bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator& itr, const Room& room, bool *outErased) {
+
+	auto&& connection = itr->get();
 
 	auto&& connection2 = room.GetConnection(state, connection.m_connection);
+
+	if (outErased)
+		*outErased = false;
 
 	Vector3 pos;
 	Quaternion rot;
@@ -412,8 +430,9 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 	//pos += {0, 0, 1};
 	//rot = Quaternion::IDENTITY;
 
-	if (room.m_size.x != 0 && room.m_size.z != 0 && this->TestCollision(room, pos, rot))
+	if (room.m_size.x != 0 && room.m_size.z != 0 && this->TestCollision(room, pos, rot)) {
 		return false;
+	}
 
 	this->PlaceRoom(room, pos, rot, &connection);
 	if (!room.m_endCap) {
@@ -423,18 +442,11 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 			m_doorConnections.push_back(connection);
 		}
 
-		// TODO identify whether RoomConnections are modified after their initial creation then passing
-		//	will determine whether they must be alive always, or can use copies (instead of references)
-		//	because openConnections ends up being popped
-		for (auto&& itr = m_openConnections.begin(); itr != m_openConnections.end(); ) {
-			if (&itr->get() == &connection) {
-				itr = m_openConnections.erase(itr);
-				break;
-			}
-			else
-				++itr;
-		}
+		itr = m_openConnections.erase(itr);
+
+		if (outErased) *outErased = true;
 	}
+
 	return true;
 }
 
@@ -608,11 +620,11 @@ const Room* DungeonGenerator::GetRandomRoom(VUtils::Random::State& state, const 
 	return &tempRooms[state.Range(0, tempRooms.size())].get();
 }
 
-const RoomConnectionInstance* DungeonGenerator::GetOpenConnection(VUtils::Random::State& state) {
+decltype(DungeonGenerator::m_openConnections)::iterator DungeonGenerator::GetOpenConnection(VUtils::Random::State& state) {
 	if (m_openConnections.empty())
-		return nullptr;
-
-	return &m_openConnections[state.Range(0, m_openConnections.size())].get();
+		return m_openConnections.end();
+	
+	return std::next(m_openConnections.begin(), state.Range(0, m_openConnections.size()));
 }
 
 const Room& DungeonGenerator::FindStartRoom(VUtils::Random::State& state) {
