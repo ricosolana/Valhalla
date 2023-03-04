@@ -61,8 +61,12 @@ void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
 void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 	this->PlaceStartRoom(state);
 	this->PlaceRooms(state);
-	this->PlaceEndCaps(state);
-	//this->PlaceDoors(state);
+
+	if (SERVER_SETTINGS.dungeonEndCaps) 
+		this->PlaceEndCaps(state);
+
+	if (SERVER_SETTINGS.dungeonDoors) 
+		this->PlaceDoors(state);
 }
 
 void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
@@ -243,7 +247,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state) {
 					auto&& connections = weightedRoom.GetConnections();
 
 					Vector3 vector;
-					Quaternion rot = Quaternion::IDENTITY;
+					Quaternion rot;
 					this->CalculateRoomPosRot(*connections[0], roomConnection.get().m_pos, 
 						roomConnection.get().m_rot, vector, rot);
 
@@ -358,7 +362,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	auto&& entrance = roomData.GetEntrance();
 
 	Vector3 pos;
-	Quaternion rot = Quaternion::IDENTITY;
+	Quaternion rot;
 	this->CalculateRoomPosRot(entrance, 
 		this->m_pos, this->m_rot, 
 		pos, rot
@@ -404,9 +408,9 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, const RoomConnect
 	auto&& connection2 = room.GetConnection(state, connection.m_connection);
 
 	Vector3 pos;
-	Quaternion rot = Quaternion::IDENTITY;
+	Quaternion rot;
 	this->CalculateRoomPosRot(connection2, 
-		connection.m_pos, connection.m_rot * Quaternion::Euler(0, 180, 0),
+		connection.m_pos, connection.m_rot * (SERVER_SETTINGS.dungeonFlipRooms ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
 		pos, rot);
 
 	// this is making me want to rip my hair out
@@ -459,12 +463,12 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, 
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	//for (auto&& view : room.m_netViews) {
-	//	Vector3 pos1 = pos + rot * view.m_pos;
-	//	Quaternion rot1 = rot * view.m_rot;
-	//
-	//	PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
-	//}
+	for (auto&& view : room.m_netViews) {
+		Vector3 pos1 = pos + rot * view.m_pos;
+		Quaternion rot1 = rot * view.m_rot;
+
+		PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
+	}
 	
 	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, (fromConnection ? (fromConnection->m_placeOrder + 1) : 0), seed);
 	
@@ -504,11 +508,12 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	//return false;
 
 	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
-	if (!this->IsInsideDungeon(room, pos, rot))
+	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
 		return true;
 
-	Vector3 size = room.m_size
-		- Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
+	Vector3 size = room.m_size;
+	if (SERVER_SETTINGS.dungeonRoomShrink)
+		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
 
 	// determine whether the room collides with any other room
 	for (auto&& other : m_placedRooms) {

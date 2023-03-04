@@ -15,7 +15,7 @@ public:
 	bool m_doorOnlyIfOtherAlsoAllowsDoor = false;
 
 	Vector3 m_localPos;
-	Quaternion m_localRot = Quaternion::IDENTITY;
+	Quaternion m_localRot;
 };
 
 class RoomConnectionInstance {

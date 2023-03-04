@@ -10,7 +10,7 @@
 #include "DataWriter.h"
 #include "Vector.h"
 #include "Quaternion.h"
-#include "NetID.h"
+#include "ZDOID.h"
 #include "ValhallaServer.h"
 #include "NetSocket.h"
 #include "ZDOManager.h"
@@ -136,7 +136,7 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const NetID&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
@@ -275,16 +275,23 @@ void IModManager::LoadAPI() {
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
+    m_state.new_usertype<MethodSig>("MethodSig",
+        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
+    );
+
+    m_state.new_enum("ChatMsgType",
+        "whisper", ChatMsgType::Whisper,
+        "normal", ChatMsgType::Normal,
+        "shout", ChatMsgType::Shout,
+        "ping", ChatMsgType::Ping
+    );
+
     m_state.new_enum("MsgType",
         "whisper", MsgType::WHISPER,
         "normal", MsgType::NORMAL,
         "console", MsgType::CONSOLE,
         "corner", MsgType::CORNER,
         "center", MsgType::CENTER
-    );
-
-    m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
     );
 
     m_state.new_usertype<Peer>("Peer",
@@ -300,9 +307,15 @@ void IModManager::LoadAPI() {
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),
         "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
-        "Message", sol::overload(
-            sol::resolve<void(const std::string&, MsgType)>(&Peer::Message),
-            sol::resolve<void(const std::string&)>(&Peer::Message)),
+        // message functions
+        "ChatMessage", sol::overload(
+            sol::resolve<void(const std::string&, ChatMsgType, const Vector3&, const std::string&, const std::string&)>(&Peer::ChatMessage),
+            sol::resolve<void(const std::string&)>(&Peer::ChatMessage)
+        ),
+        "ConsoleMessage", &Peer::ConsoleMessage,
+        "CornerMessage", &Peer::CornerMessage,
+        "CenterMessage", &Peer::CenterMessage,
+        // misc functions
         "Teleport", sol::overload(
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
@@ -370,8 +383,8 @@ void IModManager::LoadAPI() {
                 else if (arg.is<BYTES_t>() && expectType == DataType::BYTES) {
                     params.Write(arg.as<BYTES_t>());
                 }
-                else if (arg.is<NetID>() && expectType == DataType::ZDOID) {
-                    params.Write(arg.as<NetID>());
+                else if (arg.is<ZDOID>() && expectType == DataType::ZDOID) {
+                    params.Write(arg.as<ZDOID>());
                 }
                 else if (arg.is<Vector3>() && expectType == DataType::VECTOR3) {
                     params.Write(arg.as<Vector3>());
@@ -430,10 +443,12 @@ void IModManager::LoadAPI() {
         "log", Prefab::Flag::TreeLog,
         "sfx", Prefab::Flag::SFX,
         "vfx", Prefab::Flag::VFX,
-        "aoe", Prefab::Flag::AOE
+        "aoe", Prefab::Flag::AOE,
+        "dungeon", Prefab::Flag::Dungeon
     );
 
     m_state.new_usertype<Prefab>("Prefab",
+        sol::no_constructor,
         "name", &Prefab::m_name,
         "hash", &Prefab::m_hash,
         "HasFlag", &Prefab::HasFlag
@@ -454,6 +469,8 @@ void IModManager::LoadAPI() {
         "prefab", sol::property(&ZDO::GetPrefab),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
+        // TODO add proxy types somehow (without adding specifiers for each template type)
+
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,
         //"GetInt", &ZDO::GetInt,
         "GetLong", sol::overload(
@@ -520,14 +537,14 @@ void IModManager::LoadAPI() {
         "Set", sol::overload(
             ///[](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
         
-            //sol::resolve<void(const std::string&, const NetID&)>(&ZDO::Set)
-            ///[](ZDO& self, const std::string& key, NetID value) { self.Set(key, value); },
+            //sol::resolve<void(const std::string&, const ZDOID&)>(&ZDO::Set)
+            ///[](ZDO& self, const std::string& key, ZDOID value) { self.Set(key, value); },
             // string
             static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
             //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
             // zdoid
-            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const NetID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const NetID&)>(&ZDO::Set)
+            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const ZDOID&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
         )
 
     );
@@ -540,19 +557,19 @@ void IModManager::LoadAPI() {
         auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
 
         viewsTable.new_usertype<Ward>("Ward",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got null ZDO"); return Ward(*zdo); }),
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Ward(*zdo); }),
             "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
             "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
             "AddPermitted", &Ward::AddPermitted,
             "RemovePermitted", &Ward::RemovePermitted,
             "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
             "IsPermitted", &Ward::IsPermitted,
-            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("got null Peer"); return self.SetCreator(*peer); }),
+            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("null Peer"); return self.SetCreator(*peer); }),
             "IsAllowed", &Ward::IsAllowed
         );
 
         viewsTable.new_usertype<Portal>("Portal",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("got nullptr ZDO"); return Portal(*zdo); }),
+            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Portal(*zdo); }),
             "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
             "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
             "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
@@ -574,12 +591,13 @@ void IModManager::LoadAPI() {
         [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
-        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("got null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
         [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
 
     zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
+    zdoApiTable["DestroyZDO"] = [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
     auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();
@@ -606,6 +624,17 @@ void IModManager::LoadAPI() {
 
 
 
+    m_state.new_usertype<IZoneManager::Feature::Instance>("FeatureInstance",
+        "pos", sol::property([](IZoneManager::Feature::Instance& self) { return self.m_pos; })
+    );
+
+    auto zoneApiTable = m_state["ZoneManager"].get_or_create<sol::table>();
+    zoneApiTable["GetNearestFeature"] = [](const std::string& name, const Vector3& point) {
+        return ZoneManager()->GetNearestFeature(name, point);
+    };
+
+
+
     apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {
         sol::environment& env = te;
         // match incrementally
@@ -613,38 +642,6 @@ void IModManager::LoadAPI() {
         HASH_t cbHash = 0;
         sol::function func;
         int priority = 0;
-
-        /*
-        for (int i = 0; i < args.size(); i++) {
-            auto&& arg = args[i];
-            auto&& type = arg.get_type();
-
-            if (type != sol::type::function) {
-                HASH_t hash;
-                if (type == sol::type::string)
-                    hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
-                else if (type == sol::type::number)
-                    hash = arg.as<HASH_t>();
-                else
-                    continue;
-                    //throw std::runtime_error("initial params must be string or hash");
-
-                cbHash ^= hash;
-            }
-            else {
-                auto&& vec = m_callbacks[cbHash];
-
-                Mod* mod = env["this"].get<sol::table>().as<Mod*>();
-                assert(mod);
-
-                vec.emplace_back(*mod, arg.as<sol::function>(), priority);
-                std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-                    const EventHandler& b) {
-                        return a.m_priority < b.m_priority;
-                    }
-                );
-            }
-        }*/
 
         // If priority is present (will be at end)
         const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;

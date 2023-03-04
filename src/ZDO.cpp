@@ -3,7 +3,7 @@
 #include "ZDO.h"
 #include "ZDOManager.h"
 #include "ValhallaServer.h"
-#include "NetID.h"
+#include "ZDOID.h"
 #include "PrefabManager.h"
 #include "Prefab.h"
 #include "ZoneManager.h"
@@ -16,15 +16,15 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     };
 }
 
-ZDO::ZDO(const NetID& id, const Vector3& pos)
-    : m_id(id), m_position(pos) {
+ZDO::ZDO(const ZDOID& id, const Vector3& pos)
+    : m_id(id), m_pos(pos) {
 }
 
-//ZDO::ZDO(const NetID& id, const Vector3& pos, DataReader& load)
-//    : m_id(id), m_position(pos), Load() {
+//ZDO::ZDO(const ZDOID& id, const Vector3& pos, DataReader& load)
+//    : m_id(id), m_pos(pos), Load() {
 //}
 
-//ZDO::ZDO(const NetID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev) {
+//ZDO::ZDO(const ZDOID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev) {
 
 //}
 
@@ -48,8 +48,8 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_prefab->HasFlag(Prefab::Flag::Persistent));
     pkg.Write(this->m_prefab->m_hash);
 #endif
-    pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_position));
-    pkg.Write(this->m_position);
+    pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
+    pkg.Write(this->m_pos);
     pkg.Write(this->m_rotation);
     
     // Save uses 2 bytes for counts (char in c# is 2 bytes..)
@@ -93,7 +93,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         }
 
     pkg.Read<Vector2i>(); // m_sector
-    this->m_position = pkg.Read<Vector3>();
+    this->m_pos = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
     _TryReadType<float,         uint16_t>(pkg);
@@ -159,11 +159,11 @@ bool ZDO::GetBool(HASH_t key, bool value) const {
     return GetInt(key, value ? 1 : 0);
 }
 
-NetID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
+ZDOID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
     auto k = GetLong(key.first, 0);
     auto v = GetLong(key.second, 0);
 
-    return NetID(k, v);
+    return ZDOID(k, v);
 }
 
 
@@ -212,7 +212,7 @@ bool ZDO::GetBool(const std::string& key, bool value) const {
     return Get<int32_t>(key, value);
 }
 
-NetID ZDO::GetNetID(const std::string& key) const {
+ZDOID ZDO::GetNetID(const std::string& key) const {
     return GetNetID(ToHashPair(key));
 }
 
@@ -234,7 +234,7 @@ void ZDO::Set(HASH_t key, bool value) {
     Set(key, value ? (int32_t)1 : 0);
 }
 
-void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const NetID& value) {
+void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
     Set(key.first, value.m_uuid);
     Set(key.second, (int64_t)value.m_id);
 }
@@ -242,9 +242,9 @@ void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const NetID& value) {
 
 
 void ZDO::SetPosition(const Vector3& pos) {
-    if (m_position != pos) {
+    if (m_pos != pos) {
         ZDOManager()->InvalidateSector(*this);
-        this->m_position = pos;
+        this->m_pos = pos;
         ZDOManager()->AddToSector(*this);
 
         if (Local())
@@ -253,7 +253,7 @@ void ZDO::SetPosition(const Vector3& pos) {
 }
 
 ZoneID ZDO::Sector() const {
-    return IZoneManager::WorldToZonePos(m_position);
+    return IZoneManager::WorldToZonePos(m_pos);
 }
 
 void ZDO::Serialize(DataWriter& pkg) const {

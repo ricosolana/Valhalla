@@ -7,6 +7,9 @@
 
 const Quaternion Quaternion::IDENTITY = { 0, 0, 0, 1 };
 
+Quaternion::Quaternion() 
+    : Quaternion(IDENTITY) {}
+
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
@@ -353,4 +356,8 @@ Quaternion Quaternion::Inverse(const Quaternion& rotation) {
         return Quaternion(rotation.xyz() * -i, rotation.w * i);
     }
     return rotation;
+}
+
+std::ostream& operator<<(std::ostream& st, Quaternion& quat) {
+    return st << "(" << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << ")";
 }

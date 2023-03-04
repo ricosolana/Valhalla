@@ -384,13 +384,13 @@ private:
 private:    OWNER_t m_owner = 0;
 //private:    std::reference_wrapper<Prefab> m_prefab;
 private:    const Prefab* m_prefab = nullptr;
-private:    Quaternion m_rotation = Quaternion::IDENTITY;
+private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
-private:    Vector3 m_position;
+private:    Vector3 m_pos;
 
 public:     Rev m_rev = {};
-private:     NetID m_id;
+private:     ZDOID m_id;
 
 
 private:
@@ -465,11 +465,11 @@ public:
     ZDO() = default;
 
     // ZDOManager constructor
-    ZDO(const NetID& id, const Vector3& pos);
+    ZDO(const ZDOID& id, const Vector3& pos);
 
-    //ZDO(const NetID& id, const Vector3& pos, DataReader& load);
+    //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);
 
-    //ZDO(const NetID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
+    //ZDO(const ZDOID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
 
     ZDO(const ZDO& other) = default;
     
@@ -559,7 +559,7 @@ public:
     // Special hash getters
 
     bool GetBool(HASH_t key, bool value) const;
-    NetID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */) const;
+    ZDOID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */) const;
 
 
 
@@ -582,7 +582,7 @@ public:
     // Special string getters
 
     bool GetBool(const std::string& key, bool value) const;
-    NetID GetNetID(const std::string& key /* no default */) const;
+    ZDOID GetNetID(const std::string& key /* no default */) const;
 
 
 
@@ -597,7 +597,7 @@ public:
     // Special hash setters
 
     void Set(HASH_t key, bool value);
-    void Set(const std::pair<HASH_t, HASH_t>& key, const NetID& value);
+    void Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value);
 
 
 
@@ -610,8 +610,8 @@ public:
 
     // Special string setters
 
-    void Set(const std::string& key, const NetID& value) { Set(ToHashPair(key), value); }
-    void Set(const char* key, const NetID& value) { Set(ToHashPair(key), value); }
+    void Set(const std::string& key, const ZDOID& value) { Set(ToHashPair(key), value); }
+    void Set(const char* key, const ZDOID& value) { Set(ToHashPair(key), value); }
 
 
 
@@ -632,7 +632,7 @@ public:
 
     Vector2i Sector() const;
 
-    NetID ID() const {
+    ZDOID ID() const {
         return m_id;
     }
 
@@ -641,7 +641,7 @@ public:
     //}
 
     Vector3 Position() const {
-        return m_position;
+        return m_pos;
     }
 
     void SetPosition(const Vector3& pos);

@@ -55,7 +55,7 @@ public:
 	HASH_t m_hash; // based off name
 
 	Vector3 m_pos;
-	Quaternion m_rot = Quaternion::IDENTITY;
+	Quaternion m_rot;
 
 	std::vector<Prefab::Instance> m_netViews;
 

@@ -76,8 +76,6 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	//decltype(m_objectsByID)::const_iterator GetZDOItr(const NetID& id, const Vector3& def);
-
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
@@ -115,7 +113,7 @@ public:
 	// Get all ZDOs strictly within a radius by prefab
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, const Prefab& prefab) {
 		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
-			return zdo.m_prefab == &prefab;
+			return *zdo.m_prefab == prefab;
 		}));
 	}
 

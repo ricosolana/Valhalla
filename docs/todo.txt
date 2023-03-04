@@ -1,6 +1,4 @@
-todo:
-    - dungeons currently being worked on
-    
+todo:    
     - inventory equippable pickable items will have icons:
         ItemDrop.m_itemData.m_shared.m_icons wont be empty if the item is legal
     
@@ -70,6 +68,12 @@ todo:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
 finished:
+    - change room netviews instantiate transforms to correctly reflect new pkg transform write (most local)
+    
+        also observe any usages of templated room.position (not instanced) or localPos or rotation for significance in keeping?
+        
+    - dungeons currently being worked on
+
     - fix general-Valheim latency issues (regarding client-side processing)
         theres no real good fix to this without changing the core networking and mechanics of the game
         

@@ -69,4 +69,8 @@ namespace VUtils::Math {
 
     // Wrap degrees
     float FixDegAngle(float p_Angle);
+
+
+
+    bool Between(float i, float a, float b);
 }

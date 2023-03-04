@@ -7,8 +7,8 @@
 #include "Peer.h"
 #include "Biome.h"
 #include "VUtilsRandom.h"
+#include "Prefab.h"
 
-class Prefab;
 class Heightmap;
 
 using ZoneID = Vector2i;
@@ -17,20 +17,16 @@ using ZoneID = Vector2i;
 //	its purpose
 class IZoneManager {
 	friend class INetManager;
+	friend class IModManager;
 
 	// Rename this to ZoneFeature
-	struct ZoneLocation {
-		struct Piece {
-			const Prefab* m_prefab;
-			Vector3 m_pos;
-			Quaternion m_rot = Quaternion::IDENTITY; // hmm
-		};
+	class Feature {
+		friend class IModManager;
 
+	public:
 		std::string m_name;
 		HASH_t m_hash;
-		//const Prefab* m_prefab;
 
-		//bool m_dungeon;
 		Biome m_biome;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
 		bool m_applyRandomDamage;
@@ -63,15 +59,30 @@ class IZoneManager {
 		bool m_slopeRotation;
 		bool m_snapToWater;
 		bool m_unique;
-		//std::vector<std::tuple<HASH_t, Vector3, Quaternion>> m_prefabs; // m_netViews;
-		std::vector<Piece> m_pieces;
+		std::vector<Prefab::Instance> m_pieces;
+
+		bool operator==(const Feature& other) const {
+			return this->m_name == other.m_name;
+		}
+
+		// Rename this
+		class Instance {
+			friend class IModManager;
+
+		public:
+			std::reference_wrapper<const Feature> m_feature;
+			const Vector3 m_pos;
+			//bool m_placed = false; // if m_generatedZones contains position
+
+			Instance(const Feature& location, const Vector3 &pos)
+				: m_feature(location), m_pos(pos) {}
+		};
 	};
 
 	// Rename this to VegetationFeature
-	struct ZoneVegetation {
-		//std::string m_name = "veg";
-		//std::string m_prefabName;
-		const Prefab* m_prefab;
+	class Foliage {
+	public:
+		const Prefab* m_prefab = nullptr;
 
 		Biome m_biome = Biome::None;
 		BiomeArea m_biomeArea = BiomeArea::Everything;
@@ -106,13 +117,6 @@ class IZoneManager {
 		float m_maxVegetation = 0;
 	};
 
-	// Rename this
-	struct LocationInstance {
-		const ZoneLocation *m_location;
-		Vector3 m_position;
-		//bool m_placed; // not needed, assuming locations are placed only once during zone spawn (when player enters a new zone)
-	};
-
 	struct ClearArea {
 		Vector3 m_center;
 		float m_semiWidth;
@@ -126,67 +130,63 @@ public:
 	static constexpr int DISTANT_ACTIVE_AREA = 2;
 	static constexpr int ZONE_SIZE = 64;
 	static constexpr float WATER_LEVEL = 30;
-	//static constexpr int WORLD_SIZE_IN_ZONES = 316;
-	static constexpr int WORLD_RADIUS_IN_ZONES = 324/2;
+	static constexpr int WORLD_RADIUS_IN_ZONES = 157;
 	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
 
-	//static_assert(WORLD_RADIUS_IN_ZONES % 2 == 0, "World size must be even");
-
 private:
-	// All templated ZoneLocations, sorted by priority
-	std::vector<std::unique_ptr<const ZoneLocation>> m_locations;
-	robin_hood::unordered_map<HASH_t, const ZoneLocation*> m_locationsByHash;
+	// All Features within a world capable of generation
+	std::vector<std::unique_ptr<const Feature>> m_features;
 
-	// All templated ZoneVegetation
-	// Generally unimplemented ATM
-	std::vector<std::unique_ptr<const ZoneVegetation>> m_vegetation;
+	// All Features within a world hashed by name
+	robin_hood::unordered_map<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
 
-	// The generated ZoneLocations per world
-	robin_hood::unordered_map<Vector2i, LocationInstance> m_locationInstances;
+	// All Foliage within a world capable of generation
+	std::vector<std::unique_ptr<const Foliage>> m_foliage;
 
-	// Which Zones have already been generated (locations and vegetation placed)
-	robin_hood::unordered_set<Vector2i> m_generatedZones;
+	// All the generated Features in a world
+	robin_hood::unordered_map<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
+
+	// Which Zones have already been generated
+	robin_hood::unordered_set<ZoneID> m_generatedZones;
 
 	// Game-state global keys
-	// Used only by client (and saved on the server for syncing to other clients)
-	// TODO They dont really belong here, but I'm just following Valheim
 	robin_hood::unordered_set<std::string> m_globalKeys;
 
 private:
 	void SendGlobalKeys(OWNER_t peer);
 	void SendLocationIcons(OWNER_t peer);
-	void OnNewPeer(Peer* peer);
+	void OnNewPeer(Peer& peer);
 
-	void CreateGhostZones(const Vector3& refPoint);
+	void CreateGhostZones(const Vector3& pos);
 
 	bool SpawnZone(const ZoneID& zone);
-	std::vector<ClearArea> PlaceLocations(const ZoneID& zone);
-	void PlaceVegetation(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
-	void PlaceZoneCtrl(const ZoneID& zone);
+	std::vector<ClearArea> GenerateFeatures(const ZoneID& zone);
+	void GenerateFoliage(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
-	bool HaveLocationInRange(const ZoneLocation* loc, const Vector3& p);
-	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float locationRadius);
-	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius);
-	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point);
-	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& point, float radius);
-	const ZoneLocation* GetLocation(HASH_t hash);
-	const ZoneLocation* GetLocation(const std::string& name);
+	bool HaveLocationInRange(const Feature& feature, const Vector3& pos);
+	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
+	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& pos, float range);
+	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& pos);
+	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& pos, float range);
 
-	void GenerateLocations(const ZoneLocation *location);
-	Vector2i GetRandomZone(VUtils::Random::State &state, float range);
+	const Feature* GetFeature(HASH_t hash);
+	const Feature* GetFeature(const std::string& name);
 
-	void RemoveUnplacedLocations(const ZoneLocation* location);
-	void SpawnLocation(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
-	void CreateLocationProxy(const ZoneLocation* location, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
-	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
+	void PrepareFeatures(const Feature &feature);
+	ZoneID GetRandomZone(VUtils::Random::State &state, float range);
 
-	// inlined 
-	//void SetZoneGenerated(const Vector2i& zoneID);
+	void RemoveUngeneratedFeatures(const Feature& feature);
+	void GenerateFeature(const Feature& feature, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
 
-	bool IsZoneGenerated(const ZoneID& zoneID);
+	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& pos, float range, float& delta, Vector3& slopeDirection);
+
+	bool IsZoneGenerated(const ZoneID& zone);
+
+	void GenerateLocationProxy(const Feature& feature, HASH_t seed, const Vector3& pos, const Quaternion& rot);
+	void GenerateZoneCtrl(const ZoneID& zone);
 
 public:
-	void GenerateLocations();
+	void PrepareAllFeatures();
 
 	void Init();
 
@@ -195,34 +195,25 @@ public:
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
-	void GetLocationIcons(robin_hood::unordered_map<Vector3, std::string> &icons);
-	bool IsBlocked(const Vector3& p);
-	float GetGroundHeight(const Vector3& p);
-	bool GetGroundHeight(const Vector3& p, float& height);
-	float GetSolidHeight(const Vector3& p);
-	// ?? client only ??
-	//bool GetSolidHeight(const Vector3& p, float& height, int32_t heightMargin = 1000);
-	//bool GetSolidHeight(const Vector3& p, float& radius, float height, Transform ignore);
-	bool GetStaticSolidHeight(const Vector3& p, float& height, const Vector3& normal);
-	//bool FindFloor(const Vector3& p, float& height);
-	Heightmap& GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
-	bool FindClosestLocation(const std::string& name, const Vector3& point, LocationInstance& closest);
+	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
 
-	static ZoneID WorldToZonePos(const Vector3& point);
-	static Vector3 ZoneToWorldPos(const ZoneID& id);
+	// Get world height at location
+	float GetGroundHeight(const Vector3& pos);
+
+	// Get specific height information at position
+	Heightmap& GetGroundData(Vector3& pos, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
+
+	// Find the nearest location
+	//	Nullable
+	Feature::Instance *GetNearestFeature(const std::string& name, const Vector3& pos);
+
+	static ZoneID WorldToZonePos(const Vector3& pos);
+	static Vector3 ZoneToWorldPos(const ZoneID& zone);
 
 	bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
 	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
 	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
-
-	//bool IsPeerNearby(const Vector3& pos, OWNER_t uid) {
-	//	return IsPeerNearby(WorldToZonePos(pos), uid);
-	//}
-
-	void ResetGlobalKeys();
-
-	//bool GetWorldNormal(const Vector3& worldPos, Vector3& normal);
 };
 
 IZoneManager* ZoneManager();

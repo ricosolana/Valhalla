@@ -7,6 +7,8 @@ struct Quaternion {
 
     float x, y, z, w;
 
+    Quaternion();
+
     Quaternion(float x, float y, float z, float w);
 
     Quaternion(const Vector3& v, float w);
@@ -32,3 +34,5 @@ struct Quaternion {
     static Quaternion LookRotation(Vector3 forward, Vector3 upwards = Vector3::UP);
     static Quaternion Inverse(const Quaternion& rotation);
 };
+
+std::ostream& operator<<(std::ostream& st, Quaternion& quat);

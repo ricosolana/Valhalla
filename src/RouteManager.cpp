@@ -59,7 +59,7 @@ void IRouteManager::HandleRoutedRPC(Peer* sender, Data data) {
 	}
 }
 
-void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_t hash, BYTES_t params) {
+void IRouteManager::InvokeImpl(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, BYTES_t params) {
 	Data data;
 
 	data.m_sender = SERVER_ID;
@@ -81,8 +81,8 @@ void IRouteManager::InvokeImpl(OWNER_t target, const NetID& targetNetSync, HASH_
 	}
 }
 
-void IRouteManager::OnNewPeer(Peer *peer) {
-	peer->Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, BYTES_t bytes) {
+void IRouteManager::OnNewPeer(Peer &peer) {
+	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, BYTES_t bytes) {
 		Data data = Data(DataReader(bytes));
 
 		// TODO constraint peer sender

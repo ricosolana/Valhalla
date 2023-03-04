@@ -14,14 +14,12 @@ class INetManager;
 enum class MsgType {
     WHISPER,
     NORMAL,
-    //Shout,
-    //Ping,
     CONSOLE,
     CORNER,
     CENTER
 };
 
-enum class TalkerType : int32_t {
+enum class ChatMsgType : int32_t {
     Whisper,
     Normal,
     Shout,
@@ -40,9 +38,9 @@ private:
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 public:
-    robin_hood::unordered_map<NetID, ZDO::Rev> m_zdos;
-    robin_hood::unordered_set<NetID> m_forceSend;
-    robin_hood::unordered_set<NetID> m_invalidSector;
+    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
+    robin_hood::unordered_set<ZDOID> m_forceSend;
+    robin_hood::unordered_set<ZDOID> m_invalidSector;
 
 public:
     ISocket::Ptr m_socket;
@@ -55,13 +53,13 @@ public:
     // Constantly changing vars
     Vector3 m_pos;
     bool m_visibleOnMap = false;
-    NetID m_characterID = NetID::NONE;
+    ZDOID m_characterID;
 
 private:
     void Update();
 
     void ZDOSectorInvalidated(ZDO& zdo);
-    void ForceSendZDO(const NetID& id);
+    void ForceSendZDO(const ZDOID& id);
     bool IsOutdatedZDO(ZDO& zdo);
 
 public:
@@ -142,30 +140,36 @@ public:
     IMethod<Peer*>* GetMethod(const std::string& name);
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
-    void RemotePrint(const std::string& msg);
     void Kick(bool now);
     void Kick() { Kick(false); }
     void Kick(std::string reason);
     void SendDisconnect();
     void Disconnect();
 
-    // Send a chat message
-    //void SendChatMessage(const std::string& text, TalkerType type = TalkerType::Normal);
 
-    void SendChatMessage(const std::string& text, TalkerType type, Vector3 pos, const std::string& senderName, const std::string& senderID);
-
-    void Message(const std::string& text, MsgType type);
-    void Message(const std::string& text) {
-        Message(text, MsgType::NORMAL);
+    // Show a specific chat message
+    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const std::string& senderName, const std::string& senderID);
+    // Show a chat message
+    void ChatMessage(const std::string& text) {
+        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+    }
+    // Show a console message
+    void ConsoleMessage(const std::string& msg);
+    // Show a screen message
+    void UIMessage(const std::string& text, UIMsgType type);
+    // Show a corner screen message
+    void CornerMessage(const std::string& text) {
+        UIMessage(text, UIMsgType::TopLeft);
+    }
+    // Show a center screen message
+    void CenterMessage(const std::string& text) {
+        UIMessage(text, UIMsgType::Center);
     }
 
 
-    // Send a screen popup message
-    void ShowMessage(const std::string& text, MessageType type = MessageType::TopLeft);
 
-
-    // Get the character ZDO
-    //  Nullable
+    // Get the Player ZDO
+    //  Rarely Nullable (during join/death/quit)
     ZDO* GetZDO();
 
     void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);

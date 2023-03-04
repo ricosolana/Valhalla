@@ -92,7 +92,6 @@ add_executable(${PROJECT_NAME}
     "src/Main.cpp"
     "src/ModManager.cpp"
     "src/NetAcceptorSteam.cpp"
-    "src/NetID.cpp"
     "src/NetManager.cpp"
     "src/NetRpc.cpp"
     "src/NetSteamSocket.cpp"
@@ -112,10 +111,13 @@ add_executable(${PROJECT_NAME}
     "src/WorldManager.cpp"
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
+    "src/ZDOID.cpp"
     "src/ZoneManager.cpp"
     "src/DungeonGenerator.cpp" 
     "src/Room.cpp"
- "include/RoomConnection.h" "include/VUtilsPhysics.h" "src/VUtilsPhysics.cpp" "src/DungeonManager.cpp")
+    "src/VUtilsPhysics.cpp" 
+    "src/DungeonManager.cpp"
+)
 
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 

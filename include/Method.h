@@ -185,7 +185,7 @@ public:
                 results.push_back(sol::make_object(state, reader.Read<std::string>()));
                 break;
             case DataType::ZDOID:
-                results.push_back(sol::make_object(state, reader.Read<NetID>()));
+                results.push_back(sol::make_object(state, reader.Read<ZDOID>()));
                 break;
             case DataType::VECTOR3:
                 results.push_back(sol::make_object(state, reader.Read<Vector3>()));

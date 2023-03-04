@@ -223,4 +223,10 @@ namespace VUtils::Math {
         return p_Angle;
     }
 
+
+
+    bool Between(float i, float a, float b) {
+        return i > a && i < b;
+    }
+
 }
