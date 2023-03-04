@@ -35,4 +35,4 @@ struct Quaternion {
     static Quaternion Inverse(const Quaternion& rotation);
 };
 
-std::ostream& operator<<(std::ostream& st, Quaternion& quat);
+std::ostream& operator<<(std::ostream& st, const Quaternion& quat);

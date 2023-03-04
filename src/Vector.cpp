@@ -87,7 +87,7 @@ Vector2 Vector2::Normalized() {
     return vec;
 }
 
-std::ostream& operator<<(std::ostream& st, Vector2& vec) {
+std::ostream& operator<<(std::ostream& st, const Vector2& vec) {
     return st << "(" << vec.x << ", " << vec.y << ")";
 }
 
@@ -185,7 +185,7 @@ Vector2i Vector2i::Normalized() {
     return vec;
 }
 
-std::ostream& operator<<(std::ostream& st, Vector2i& vec) {
+std::ostream& operator<<(std::ostream& st, const Vector2i& vec) {
     return st << "(" << vec.x << ", " << vec.y << ")";
 }
 
@@ -313,6 +313,6 @@ Vector3 Vector3::Normalized() {
     return vec;
 }
 
-std::ostream& operator<<(std::ostream& st, Vector3& vec) {
+std::ostream& operator<<(std::ostream& st, const Vector3& vec) {
     return st << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 }

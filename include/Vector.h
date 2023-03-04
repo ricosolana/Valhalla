@@ -65,7 +65,7 @@ struct Vector2 {
     static const Vector2 ZERO;
 };
 
-std::ostream& operator<<(std::ostream& st, Vector2& vec);
+std::ostream& operator<<(std::ostream& st, const Vector2& vec);
 
 struct Vector2i {
     int32_t x, y;
@@ -122,7 +122,7 @@ struct Vector2i {
     static const Vector2i ZERO;
 };
 
-std::ostream& operator<<(std::ostream& st, Vector2i& vec);
+std::ostream& operator<<(std::ostream& st, const Vector2i& vec);
 
 struct Vector3 {
     float x, y, z;
@@ -202,4 +202,4 @@ struct Vector3 {
     static const Vector3 FORWARD;
 };
 
-std::ostream& operator<<(std::ostream& st, Vector3& vec);
+std::ostream& operator<<(std::ostream& st, const Vector3& vec);
