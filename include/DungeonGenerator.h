@@ -30,7 +30,7 @@ private:
 
 public:
 	// TODO use reference
-	const Dungeon* m_dungeon = nullptr;
+	const Dungeon& m_dungeon;
 
 	Vector3 m_pos; // instanced position
 	Quaternion m_rot; // instanced rotation
