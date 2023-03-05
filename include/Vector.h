@@ -194,7 +194,7 @@ struct Vector3 {
     }
 
     Vector3& Normalize();
-    Vector3 Normalized();
+    Vector3 Normalized() const;
 
     static const Vector3 ZERO;
     static const Vector3 UP;

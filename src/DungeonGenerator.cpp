@@ -564,52 +564,64 @@ static bool RectOverlapRect(Vector3 size1, Vector3 pos1, Vector3 size2, Vector3 
 
 bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot) {
 
+	Vector3 newPos = pos;
+	Quaternion newRot = rot;
+
+	if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
+		std::tie(newPos, newRot) = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
+
+	// Convert from local root transform to world transform
+	//auto global = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
+
+	// Constrain dungeon within zone
+	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, newPos, newRot))
+		return true;
+
+	Vector3 size;
 	if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
+		// Rotate this room by either IDENTITY (0 deg), or 90deg
+		// Assumes that dungeon rooms fit together like axis aligned boxes
+		size = rot * room.m_size;
 
-		// Convert from local root transform to world transform
-		auto global = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
-
-		// Constrain dungeon within zone
-		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, global.first, global.second))
-			return true;
-
-		assert(std::abs(rot.x) < 0.01f && std::abs(rot.z) < 0.01f);
-
-		// This will ONLY work assuming the rotation is cardinal
-		Vector3 size = rot * room.m_size;
 		size.x = std::abs(size.x);
 		size.z = std::abs(size.z);
-
-		if (SERVER_SETTINGS.dungeonRoomShrink)
-			size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
-
-		std::string desmos;
-
-		// determine whether the room collides with any other room
-		for (auto&& other : m_placedRooms) {
-			Vector3 size2 = other->m_rot * other.get()->m_room.get().m_size;
-
-			size2.x = std::abs(size2.x);
-			size2.z = std::abs(size2.z);
-
-			if (RectOverlapRect(size, pos, size2, other->m_pos))
-				return true;
-
-			//if (VUtils::Physics::RectOverlapRect(
-			//	size, pos, rot,
-			//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
-			//	desmos))
-			//	return true;
-		}
-
-		LOG(INFO) << desmos;
 	}
 	else {
-		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
+		// Resize the room to its smallest fitting circular region
+		size = room.m_size.Normalized() * Vector2(room.m_size.x, room.m_size.z).Magnitude();
+	}
+
+	if (SERVER_SETTINGS.dungeonRoomShrink)
+		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
+
+	std::string desmos;
+
+	// determine whether the room collides with any other room
+	for (auto&& other : m_placedRooms) {
+		auto&& otherRoom = other->m_room.get();
+
+		Vector3 otherSize;
+		if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
+			otherSize = other->m_rot * otherRoom.m_size;
+
+			otherSize.x = std::abs(otherSize.x);
+			otherSize.z = std::abs(otherSize.z);
+		}
+		else {
+			otherSize = otherRoom.m_size.Normalized() * Vector2(otherRoom.m_size.x, otherRoom.m_size.z).Magnitude();
+		}
+
+		if (RectOverlapRect(size, pos, otherSize, other->m_pos))
 			return true;
 
-		// TODO work on this
+		//if (VUtils::Physics::RectOverlapRect(
+		//	size, pos, rot,
+		//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
+		//	desmos))
+		//	return true;
 	}
+
+	LOG(INFO) << desmos;
 
 	return false;
 }

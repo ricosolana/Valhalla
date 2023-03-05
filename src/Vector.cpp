@@ -307,7 +307,7 @@ Vector3& Vector3::Normalize() {
     return *this;
 }
 
-Vector3 Vector3::Normalized() {
+Vector3 Vector3::Normalized() const {
     Vector3 vec(x, y, z);
     vec.Normalize();
     return vec;
