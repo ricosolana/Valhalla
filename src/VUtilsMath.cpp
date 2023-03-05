@@ -226,7 +226,9 @@ namespace VUtils::Math {
 
 
     bool Between(float i, float a, float b) {
-        return i > a && i < b;
+        assert(a <= b);
+
+        return i >= a && i <= b;
     }
 
 }

@@ -8,6 +8,9 @@
 
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 	m_dungeon(&dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
+
+	LOG(INFO) << "Generating dungeon '" << dungeon.m_name << "' at " << m_pos;
+
 	auto seed = GeoManager()->GetSeed();
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
@@ -384,7 +387,7 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 	if (itr == m_openConnections.end())
 		return false;
 
-	auto openConnection = itr->get();
+	auto &&openConnection = itr->get();
 	
 	for (int i = 0; i < 10; i++)
 	{
@@ -486,11 +489,11 @@ void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, const RoomConne
 	auto&& connections = newRoom.m_connections;
 	for (auto&& roomConnection : connections) {
 		if (!skipConnection 
-			|| (!roomConnection.m_connection.get().m_entrance
-				&& roomConnection.m_pos.SqDistance(skipConnection->m_pos) >= .1f * .1f)) 
+			|| (!roomConnection->m_connection.get().m_entrance
+				&& roomConnection->m_pos.SqDistance(skipConnection->m_pos) >= .1f * .1f)) 
 		{
-			roomConnection.m_placeOrder = newRoom.m_placeOrder;
-			m_openConnections.push_back(roomConnection);
+			roomConnection->m_placeOrder = newRoom.m_placeOrder;
+			m_openConnections.push_back(*roomConnection.get());
 		}
 	}	
 }
@@ -517,6 +520,8 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	if (SERVER_SETTINGS.dungeonRoomShrink)
 		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
 
+	std::string desmos;
+
 	// determine whether the room collides with any other room
 	for (auto&& other : m_placedRooms) {
 
@@ -525,6 +530,8 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 			other.get()->m_room.get().m_size, other->m_pos, other->m_rot))
 			return true;
 	}
+
+	LOG(INFO) << desmos;
 
 	return false;
 }

@@ -90,7 +90,7 @@ struct RoomInstance {
 	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
-	std::vector<RoomConnectionInstance> m_connections;
+	std::vector<std::unique_ptr<RoomConnectionInstance>> m_connections;
 
 	RoomInstance(const Room& room, Vector3 pos, Quaternion rot, int placeOrder, int seed) 
 		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
@@ -111,7 +111,7 @@ struct RoomInstance {
 			auto global = VUtils::Physics::LocalToGlobal(conn->m_localPos, conn->m_localRot,
 				pos, rot);
 
-			m_connections.emplace_back(*conn.get(), global.first, global.second, placeOrder);
+			m_connections.push_back(std::make_unique<RoomConnectionInstance>(*conn.get(), global.first, global.second, placeOrder));
 		}
 	}
 };
