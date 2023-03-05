@@ -507,6 +507,22 @@ bool DungeonGenerator::IsInsideDungeon(const Room& room, const Vector3& pos, con
 		room.m_size, pos, rot);
 }
 
+static bool RectOverlapRect(Vector3 size1, Vector3 pos1, Vector3 size2, Vector3 pos2) {
+
+	assert(size1.x >= 0 && size1.y >= 0 && size1.z >= 0 
+		&& size2.x >= 0 && size2.y >= 0 && size2.z >= 0);
+
+	size1 *= .5f;
+	size2 *= .5f;
+
+	return !(pos1.x + size1.x < pos2.x - size2.x
+		|| pos1.y + size1.y < pos2.y - size2.y
+		|| pos1.z + size1.z < pos2.z - size2.z
+		|| pos1.x - size1.x > pos2.x + size2.x
+		|| pos1.y - size1.y > pos2.y + size2.y
+		|| pos1.z - size1.z > pos2.z + size2.z);
+}
+
 bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot) {
 	
 	// TODO remove this later, it breaks things a bit (rooms will overlap and fuck things up)
@@ -516,7 +532,13 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
 		return true;
 
-	Vector3 size = room.m_size;
+	assert(std::abs(rot.x) < 0.01f && std::abs(rot.z) < 0.01f);
+
+	// This will ONLY work assuming the rotation is cardinal
+	Vector3 size = rot * room.m_size;
+	size.x = std::abs(size.x);
+	size.z = std::abs(size.z);
+
 	if (SERVER_SETTINGS.dungeonRoomShrink)
 		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
 
@@ -525,10 +547,18 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 	// determine whether the room collides with any other room
 	for (auto&& other : m_placedRooms) {
 
-		if (VUtils::Physics::RectOverlapRect(
-			size, pos, rot,
-			other.get()->m_room.get().m_size, other->m_pos, other->m_rot))
+		Vector3 size2 = other->m_rot * other.get()->m_room.get().m_size;
+		size2.x = std::abs(size2.x);
+		size2.z = std::abs(size2.z);
+
+		if (RectOverlapRect(size, pos, size2, other->m_pos))
 			return true;
+
+		//if (VUtils::Physics::RectOverlapRect(
+		//	size, pos, rot,
+		//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
+		//	desmos))
+		//	return true;
 	}
 
 	LOG(INFO) << desmos;
