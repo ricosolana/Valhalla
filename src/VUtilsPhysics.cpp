@@ -299,6 +299,20 @@ namespace VUtils::Physics {
         auto childRot = childLocalRot * parentRot;
 
         return { childPos, childRot };
+    }
+
+    std::pair<Vector3, Quaternion> GlobalToLocal(const Vector3& globalPos, const Quaternion& globalRot,
+        const Vector3& parentPos, const Quaternion& parentRot) {
+
+        // solve for localPos
+        // globalPos = parentPos + parentRot * (localPos);
+        // globalPos - parentPos = parentRot * localPos
+        // localPos = Quaternion::Inverse(globalRot) * (globalPos - parentPos)
+
+        auto localPos = Quaternion::Inverse(globalRot) * (globalPos - parentPos);
+        auto localRot = Quaternion::Inverse(globalRot) * parentRot;
+
+        return { localPos, localRot };
 
 
 

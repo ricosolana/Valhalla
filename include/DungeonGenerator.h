@@ -88,9 +88,13 @@ private:
 
 	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
-	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection);
+	// Camps/grid meadows
+	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot);
 
-	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance *skipConnection);
+	// Dungeon placement
+	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
+
+	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
 	bool IsInsideDungeon(const Room &room, const Vector3 &pos, const Quaternion &rot);
 

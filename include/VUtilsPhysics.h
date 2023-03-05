@@ -31,4 +31,8 @@ namespace VUtils::Physics {
     std::pair<Vector3, Quaternion> LocalToGlobal(const Vector3& childLocalPos, const Quaternion& childLocalRot,
         const Vector3& parentPos, const Quaternion& parentRot);
 
+    // TODO requires testing
+    std::pair<Vector3, Quaternion> GlobalToLocal(const Vector3& globalPos, const Quaternion& globalRot,
+        const Vector3& parentPos, const Quaternion& parentRot);
+
 }

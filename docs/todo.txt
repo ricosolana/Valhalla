@@ -1,4 +1,9 @@
 todo:
+    - fix dungeon netview orientations
+        some netviews in DG_Cave (crystal in this small corrider) and the roots when entering crypt are either floating or in the way. 
+        
+        seemingly another root in a different crypt is fine... (i think it has to do with not applying correct rotations) I bet this is the issue because crypt mud piles are misaligned in a room (too much to the side in start room)
+
     - fix dungeon generation
         either go back to using mild accuracy rotated rect detection
         OR

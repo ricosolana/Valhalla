@@ -64,9 +64,10 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 
 void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 	float num = std::cos(0.017453292f * this->m_dungeon->m_maxTilt);
-	Vector3 a = m_pos + Vector3((float)(-this->m_dungeon->m_gridSize) * this->m_dungeon->m_tileWidth * 0.5f, 
+	Vector3 a = this->m_pos + Vector3((float)(-this->m_dungeon->m_gridSize) * this->m_dungeon->m_tileWidth * 0.5f, 
 		0.f, 
 		(float)(-this->m_dungeon->m_gridSize) * this->m_dungeon->m_tileWidth * 0.5f);
+
 	for (int i = 0; i < this->m_dungeon->m_gridSize; i++)
 	{
 		for (int j = 0; j < this->m_dungeon->m_gridSize; j++)
@@ -76,6 +77,8 @@ void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 				auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 				if (randomWeightedRoom)
 				{
+					//auto global = VUtils::Physics::LocalToGlobal(a, Quaternion::IDENTITY, this->m_pos, this->m_rot);
+
 					Vector3 vector;
 					Biome biome;
 					BiomeArea biomeArea;
@@ -83,8 +86,8 @@ void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 					if (vector.y < num)
 						continue;
 
-					Quaternion rot = Quaternion::Euler(0, (float)state.Range(0, 16) * 22.5f, 0.f);
-					this->PlaceRoom(*randomWeightedRoom, pos, rot, nullptr);
+					Quaternion rot = Quaternion::Euler(0, 22.5f * state.Range(0, 16), 0.f);
+					this->PlaceRoom(*randomWeightedRoom, pos, rot);
 				}
 			}
 		}
@@ -98,8 +101,10 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 	int num4 = num3 * 20;
 	int num5 = 0;
 	for (int i = 0; i < num4; i++) {
-		Vector3 vector = m_pos + Quaternion::Euler(0.f, (float)state.Range(0, 360), 0.f) 
+		Vector3 vector = this->m_pos 
+			+ Quaternion::Euler(0.f, state.Range(0, 360), 0.f)
 			* Vector3::FORWARD * state.Range(0.f, num - this->m_dungeon->m_perimeterBuffer);
+
 		auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 		if (randomWeightedRoom) {
 			Vector3 vector2;
@@ -112,7 +117,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 			if (!this->TestCollision(*randomWeightedRoom, vector, campRoomRotation))
 			{
-				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation, nullptr);
+				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation);
 				num5++;
 				if (num5 >= num3)
 					break;
@@ -136,7 +141,7 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, c
 		return Quaternion::Euler(0, y, 0);
 	}
 
-	return Quaternion::Euler(0, (float) state.Range(0, 16) * 22.5f, 0);
+	return Quaternion::Euler(0, 22.5f * state.Range(0, 16), 0);
 }
 
 void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int sections) {
@@ -148,7 +153,9 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 		auto&& randomWeightedRoom = this->GetRandomWeightedRoom(state, true);
 		if (randomWeightedRoom)
 		{
-			Vector3 vector = m_pos + Quaternion::Euler(0, (float)state.Range(0, 360), 0) * Vector3::FORWARD * radius;
+			Vector3 vector = this->m_pos 
+				+ Quaternion::Euler(0, state.Range(0, 360), 0) * Vector3::FORWARD * radius;
+
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 
 			Vector3 vector2;
@@ -160,7 +167,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 
 			if (!this->TestCollision(*randomWeightedRoom, vector, campRoomRotation))
 			{
-				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation, nullptr);
+				this->PlaceRoom(*randomWeightedRoom, vector, campRoomRotation);
 				num2++;
 				if (num2 >= sections) {
 					break;
@@ -174,12 +181,20 @@ void DungeonGenerator::Save() {
 	m_zdo.Set("rooms", (int32_t) m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
 		auto&& instance = m_placedRooms[i];
-		auto&& room = instance->m_room;
+		auto&& room = instance->m_room.get();
+		
 		std::string text = "room" + std::to_string(i);
-		m_zdo.Set(text, room.get().GetHash());
-		m_zdo.Set(text + "_pos", instance->m_pos); // Do NOT use room templated transform; instead use the room instance transform (make a new class called RoomInstance)
-		m_zdo.Set(text + "_rot", instance->m_rot);
-		m_zdo.Set(text + "_seed", instance->m_seed);
+		m_zdo.Set(text, room.GetHash());
+
+		Vector3 pos = instance->m_pos;
+		Quaternion rot = instance->m_rot;
+
+		if (m_dungeon->m_algorithm == Dungeon::Algorithm::Dungeon)
+			std::tie(pos, rot) = VUtils::Physics::LocalToGlobal(instance->m_pos, instance->m_rot, this->m_pos, this->m_rot);
+
+		m_zdo.Set(text + "_pos", pos);
+		m_zdo.Set(text + "_rot", rot);
+		m_zdo.Set(text + "_seed", instance->m_seed); // TODO seed useless?
 	}
 }
 
@@ -209,7 +224,10 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance) 
 			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon->m_doorChance))
 		{
-			PrefabManager()->Instantiate(*doorDef->m_prefab, roomConnection.get().m_pos, roomConnection.get().m_rot);
+			auto global = VUtils::Physics::LocalToGlobal(roomConnection.get().m_pos, roomConnection.get().m_rot,
+				this->m_pos, this->m_rot);
+
+			PrefabManager()->Instantiate(*doorDef->m_prefab, global.first, global.second);
 			num++;
 		}
 	}
@@ -368,7 +386,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	Vector3 pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(entrance, 
-		this->m_pos, this->m_rot, 
+		Vector3::ZERO, Quaternion::IDENTITY, //this->m_rot, 
 		pos, rot
 	);
 
@@ -377,7 +395,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 		roomData.m_pos, roomData.m_rot);
 
 	RoomConnectionInstance dummy = RoomConnectionInstance(entrance, global.first, global.second, 0);
-	this->PlaceRoom(roomData, pos, rot, &dummy);
+	this->PlaceRoom(roomData, pos, rot, dummy);
 }
 
 bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
@@ -437,7 +455,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openCo
 		return false;
 	}
 
-	this->PlaceRoom(room, pos, rot, &connection);
+	this->PlaceRoom(room, pos, rot, connection);
 	if (!room.m_endCap) {
 		if (connection.m_connection.get().m_allowDoor
 			&& (!connection.m_connection.get().m_doorOnlyIfOtherAlsoAllowsDoor || connection2.m_allowDoor))
@@ -453,7 +471,28 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openCo
 	return true;
 }
 
-void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection) {
+
+void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot) {
+	// TODO seed is only useful for RandomSpawn
+	int seed = (int)pos.x * 4271 + (int)pos.y * 9187 + (int)pos.z * 2134;
+
+	//VUtils::Random::State state(seed);
+	//for (auto&& randomSpawn : room.m_randomSpawns)
+	//	randomSpawn.Randomize();
+
+	for (auto&& view : room.m_netViews) {
+		Vector3 pos1 = pos + rot * view.m_pos;
+		Quaternion rot1 = rot * view.m_rot;
+
+		PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);		
+	}
+
+	// TODO this might be redundant for dummy 'dungeons' (plains villages shouldnt be considered dungeons)
+	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, 0, seed);
+	m_placedRooms.push_back(std::move(component2));
+}
+
+void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance &fromConnection) {
 	// wtf is the point of this?
 	//	only setting a seed? seems really extraneous
 	//Vector3 vector = pos;
@@ -472,25 +511,25 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, 
 		Vector3 pos1 = pos + rot * view.m_pos;
 		Quaternion rot1 = rot * view.m_rot;
 
-		PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
+		// Prefabs can be instantiated exactly in world space (not local room space)
+		auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
+
+		PrefabManager()->Instantiate(*view.m_prefab, global.first, global.second);
 	}
 	
-	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, (fromConnection ? (fromConnection->m_placeOrder + 1) : 0), seed);
+	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, fromConnection.m_placeOrder + 1, seed);
 	
-	//RoomInstance *component2 = UnityEngine.Object.Instantiate<GameObject>(room.m_room.gameObject, pos, rot, base.transform)
-		//.GetComponent<Room>();
-
 	this->AddOpenConnections(*component2, fromConnection);
 
 	m_placedRooms.push_back(std::move(component2));
 }
 
-void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance *skipConnection) {
+
+void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection) {
 	auto&& connections = newRoom.m_connections;
 	for (auto&& roomConnection : connections) {
-		if (!skipConnection 
-			|| (!roomConnection->m_connection.get().m_entrance
-				&& roomConnection->m_pos.SqDistance(skipConnection->m_pos) >= .1f * .1f)) 
+		if (!roomConnection->m_connection.get().m_entrance
+				&& roomConnection->m_pos.SqDistance(skipConnection.m_pos) >= .1f * .1f)
 		{
 			roomConnection->m_placeOrder = newRoom.m_placeOrder;
 			m_openConnections.push_back(*roomConnection.get());
@@ -525,43 +564,52 @@ static bool RectOverlapRect(Vector3 size1, Vector3 pos1, Vector3 size2, Vector3 
 
 bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot) {
 	
-	// TODO remove this later, it breaks things a bit (rooms will overlap and fuck things up)
-	//return false;
+	if (m_dungeon->m_algorithm == Dungeon::Algorithm::Dungeon) {
 
-	// If room is not entirely within zone, it cannot be placed (might intersect with another different zonedungeon)
-	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
-		return true;
+		// Convert from local root transform to world transform
+		auto global = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
 
-	assert(std::abs(rot.x) < 0.01f && std::abs(rot.z) < 0.01f);
-
-	// This will ONLY work assuming the rotation is cardinal
-	Vector3 size = rot * room.m_size;
-	size.x = std::abs(size.x);
-	size.z = std::abs(size.z);
-
-	if (SERVER_SETTINGS.dungeonRoomShrink)
-		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
-
-	std::string desmos;
-
-	// determine whether the room collides with any other room
-	for (auto&& other : m_placedRooms) {
-
-		Vector3 size2 = other->m_rot * other.get()->m_room.get().m_size;
-		size2.x = std::abs(size2.x);
-		size2.z = std::abs(size2.z);
-
-		if (RectOverlapRect(size, pos, size2, other->m_pos))
+		// Constrain dungeon within zone
+		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, global.first, global.second))
 			return true;
 
-		//if (VUtils::Physics::RectOverlapRect(
-		//	size, pos, rot,
-		//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
-		//	desmos))
-		//	return true;
-	}
+		assert(std::abs(rot.x) < 0.01f && std::abs(rot.z) < 0.01f);
 
-	LOG(INFO) << desmos;
+		// This will ONLY work assuming the rotation is cardinal
+		Vector3 size = rot * room.m_size;
+		size.x = std::abs(size.x);
+		size.z = std::abs(size.z);
+
+		if (SERVER_SETTINGS.dungeonRoomShrink)
+			size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
+
+		std::string desmos;
+
+		// determine whether the room collides with any other room
+		for (auto&& other : m_placedRooms) {
+			Vector3 size2 = other->m_rot * other.get()->m_room.get().m_size;
+
+			size2.x = std::abs(size2.x);
+			size2.z = std::abs(size2.z);
+
+			if (RectOverlapRect(size, pos, size2, other->m_pos))
+				return true;
+
+			//if (VUtils::Physics::RectOverlapRect(
+			//	size, pos, rot,
+			//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
+			//	desmos))
+			//	return true;
+		}
+
+		LOG(INFO) << desmos;
+	}
+	else {
+		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, pos, rot))
+			return true;
+
+		// TODO work on this
+	}
 
 	return false;
 }
