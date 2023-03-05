@@ -10,13 +10,19 @@
 class Tests {
 public:
     void Test_DungeonGenerator() {
+        Valhalla()->LoadFiles();
+
         PrefabManager()->Init();
         DungeonManager()->Init();
 
-        DungeonManager()->GetDungeon(
-            VUtils::String::GetStableHashCode("DG_Cave")
-        )->Generate(Vector3::ZERO, Quaternion::IDENTITY);
+        //DungeonManager()->GetDungeon(
+        //    //VUtils::String::GetStableHashCode("DG_Cave")
+        //    VUtils::String::GetStableHashCode("DG_SunkenCrypt")
+        //)->Generate(Vector3(130, 234, 2423), Quaternion::IDENTITY);
 
+        DungeonManager()->GetDungeon(
+            VUtils::String::GetStableHashCode("DG_SunkenCrypt")
+        )->Generate(Vector3(2513.1, 5031.8, -4212.3), Quaternion(0.0, -0.2, 0.0, -1.0), 1372687413);
     }
 
     void Test_LinesIntersect() {

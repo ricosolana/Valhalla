@@ -72,6 +72,8 @@ public:
 
 public:
 	void Generate(const Vector3 &pos, const Quaternion &rot) const;
+	void Generate(const Vector3& pos, const Quaternion& rot, HASH_t seed) const;
+
 	void Generate(ZDO& zdo) const;
 };
 

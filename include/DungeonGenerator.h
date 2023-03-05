@@ -38,11 +38,11 @@ public:
 	Vector3 m_zoneCenter;
 
 	// TODO make Constexpr
-	Vector3 m_zoneSize = Vector3(64, 64, 64);
+	const Vector3 m_zoneSize = Vector3(64, 64, 64);
 
 	//bool m_useCustomInteriorTransform; // templated
 
-	HASH_t m_generatedSeed;
+	//HASH_t m_generatedSeed;
 
 	//Vector3 m_originalPosition; // templated
 
@@ -50,6 +50,8 @@ public:
 
 public:
 	void Generate();
+	void Generate(HASH_t seed);
+
 	HASH_t GetSeed();
 
 private:
@@ -96,7 +98,7 @@ private:
 
 	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
-	bool IsInsideDungeon(const Room &room, const Vector3 &pos, const Quaternion &rot);
+	bool IsInsideZone(const Room &room, const Vector3 &pos, const Quaternion &rot);
 
 	bool TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot);
 

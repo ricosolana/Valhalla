@@ -9,10 +9,10 @@
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
 
-	auto seed = GeoManager()->GetSeed();
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
+	auto seed = GeoManager()->GetSeed();
 	//this->m_generatedSeed = seed + zone.x * 4271 + zone.y * -7187 + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
-	this->m_generatedSeed = seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
+	//this->m_generatedSeed = seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
 
 	this->m_zoneCenter = IZoneManager::ZoneToWorldPos(zone);
 	this->m_zoneCenter.y = m_pos.y; // -this->m_dungeon.m_originalPosition.y;
@@ -20,18 +20,24 @@ DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 
 // TODO generate seed during start
 HASH_t DungeonGenerator::GetSeed() {
-	return m_generatedSeed;
+	auto seed = GeoManager()->GetSeed();
+	auto zone = IZoneManager::WorldToZonePos(m_pos);
+	return seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
 }
 
-void DungeonGenerator::DungeonGenerator::Generate() {
-	VUtils::Random::State state(m_generatedSeed);
+void DungeonGenerator::Generate() {
+	this->Generate(GetSeed());
+}
+
+void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
+	VUtils::Random::State state(seed);
 
 	this->GenerateRooms(state);
 	this->Save();
 
 	LOG(INFO) << "Finished generating dungeon: '" << m_dungeon.m_name
 		<< "', pos: " << m_pos
-		<< ", seed: " << m_generatedSeed
+		<< ", seed: " << seed
 		<< ", rooms: " << m_placedRooms.size() << "/" << m_dungeon.m_maxRooms;
 }
 
@@ -305,7 +311,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 				// std::stable_sort is used because equal element value order are maintained
 				std::stable_sort(tempRooms.begin(), tempRooms.end(), [](const std::reference_wrapper<const Room>& a, const std::reference_wrapper<const Room>& b) {
 					return a.get().m_endCapPrio > b.get().m_endCapPrio;
-					});
+				});
 
 				for (auto&& roomData : tempRooms) {
 					if (this->PlaceRoom(state, itr1, roomData, &erased)) {
@@ -395,6 +401,23 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 		roomData.m_pos, roomData.m_rot);
 
 	RoomConnectionInstance dummy = RoomConnectionInstance(entrance, global.first, global.second, 0);
+	
+	{
+		Vector3 size = rot * roomData.m_size;
+
+		size.x = std::abs(size.x);
+		size.z = std::abs(size.z);
+
+		size *= .5f;
+
+		LOG(INFO) << "start: " 
+			<< "polygon(("
+			<< pos.x - size.x << "," << pos.z - size.z << "),("
+			<< pos.x - size.x << "," << pos.z + size.z << "),("
+			<< pos.x + size.x << "," << pos.z + size.z << "),("
+			<< pos.x + size.x << "," << pos.z - size.z << "))";
+	}
+
 	this->PlaceRoom(roomData, pos, rot, dummy);
 }
 
@@ -540,14 +563,46 @@ void DungeonGenerator::AddOpenConnections(RoomInstance& newRoom, const RoomConne
 // Determine whether a room (with center at origin of room) is completely contained within a zone
 // TODO rename something better, wtf is 'IsInsideDungeon'
 //	this just makes sure that a rotated rectangle is within the zone
-bool DungeonGenerator::IsInsideDungeon(const Room& room, const Vector3& pos, const Quaternion& rot) {
-	return VUtils::Physics::RectInsideRect(
-		m_zoneSize, m_zoneCenter, Quaternion::IDENTITY,
-		room.m_size, pos, rot);
+bool DungeonGenerator::IsInsideZone(const Room& room, const Vector3& pos, const Quaternion& rot) {
+	Vector3 semiSize = room.m_size * .5f;
+
+	if (pos.y + semiSize.y < m_zoneCenter.y - m_zoneSize.y * .5f
+		|| pos.y - semiSize.y > m_zoneCenter.y + m_zoneSize.y * .5f)
+		return false;
+
+	Vector3 a = pos + rot * Vector3(-semiSize.x,	0,		-semiSize.z);
+	Vector3 b = pos + rot * Vector3(-semiSize.x,	0,		semiSize.z);
+	Vector3 c = pos + rot * Vector3(semiSize.x,		0,		semiSize.z);
+	Vector3 d = pos + rot * Vector3(semiSize.x,		0,		-semiSize.z);
+
+	//Vector3 e = pos + rot * Vector3(-semiSize.x,	0,	-semiSize.z);
+	//Vector3 f = pos + rot * Vector3(-semiSize.x,	0,	semiSize.z);
+	//Vector3 g = pos + rot * Vector3(semiSize.x,		0,	semiSize.z);
+	//Vector3 h = pos + rot * Vector3(semiSize.x,		0,	-semiSize.z);
+
+	static auto&& inRectSemi = [](const Vector3 &semiSize, const Vector3& pos, const Vector3& point) {
+		return point.x >= pos.x - semiSize.x && point.x <= pos.x + semiSize.x
+			//&& point.y >= pos.y - semiSize.y && point.y <= pos.y + semiSize.y
+			&& point.z >= pos.z - semiSize.z && point.z <= pos.z + semiSize.z;
+	};
+
+	Vector3 semiZone = m_zoneSize * .5f;
+
+	return inRectSemi(semiZone, m_zoneCenter, a)
+		&& inRectSemi(semiZone, m_zoneCenter, b)
+		&& inRectSemi(semiZone, m_zoneCenter, c)
+		&& inRectSemi(semiZone, m_zoneCenter, d);
+		//&& inRectSemi(semiZone, m_zoneCenter, e)
+		//&& inRectSemi(semiZone, m_zoneCenter, f)
+		//&& inRectSemi(semiZone, m_zoneCenter, g)
+		//&& inRectSemi(semiZone, m_zoneCenter, h);
+
+	//return VUtils::Physics::RectInsideRect(
+	//	m_zoneSize, m_zoneCenter, Quaternion::IDENTITY,
+	//	room.m_size, pos, rot);
 }
 
 static bool RectOverlapRect(Vector3 size1, Vector3 pos1, Vector3 size2, Vector3 pos2) {
-
 	assert(size1.x >= 0 && size1.y >= 0 && size1.z >= 0
 		&& size2.x >= 0 && size2.y >= 0 && size2.z >= 0);
 
@@ -564,20 +619,22 @@ static bool RectOverlapRect(Vector3 size1, Vector3 pos1, Vector3 size2, Vector3 
 
 bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot) {
 
-	Vector3 newPos = pos;
-	Quaternion newRot = rot;
+	{
+		Vector3 newPos = pos;
+		Quaternion newRot = rot;
 
-	if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
-		std::tie(newPos, newRot) = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
+		if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
+			std::tie(newPos, newRot) = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
 
-	// Convert from local root transform to world transform
-	//auto global = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
+		// Constrain dungeon within zone
+		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideZone(room, newPos, newRot))
+			return true;
+	}
 
-	// Constrain dungeon within zone
-	if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideDungeon(room, newPos, newRot))
-		return true;
+	if (room.m_endCap)
+		return false;
 
-	Vector3 size;
+	Vector3 size;	
 	if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
 		// Rotate this room by either IDENTITY (0 deg), or 90deg
 		// Assumes that dungeon rooms fit together like axis aligned boxes
@@ -591,10 +648,11 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 		size = room.m_size.Normalized() * Vector2(room.m_size.x, room.m_size.z).Magnitude();
 	}
 
-	if (SERVER_SETTINGS.dungeonRoomShrink)
-		size -= Vector3(.1f, .1f, .1f); // subtract because edge touching rectangles always overlap (so prevent that)
-
-	std::string desmos;
+	//if (SERVER_SETTINGS.dungeonRoomShrink)
+		//size -= Vector3(.1f, .1f, .1f);
+	//if (room.m_endCap)
+		//size -= Vector3(.2f, .2f, .2f); // subtract because edge touching rectangles always overlap (so prevent that)
+	//else size += Vector3(.2f, .2f, .2f);
 
 	// determine whether the room collides with any other room
 	for (auto&& other : m_placedRooms) {
@@ -611,17 +669,20 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 			otherSize = otherRoom.m_size.Normalized() * Vector2(otherRoom.m_size.x, otherRoom.m_size.z).Magnitude();
 		}
 
+		//otherSize -= Vector3(.1f, .1f, .1f);
+
 		if (RectOverlapRect(size, pos, otherSize, other->m_pos))
 			return true;
-
-		//if (VUtils::Physics::RectOverlapRect(
-		//	size, pos, rot,
-		//	other.get()->m_room.get().m_size, other->m_pos, other->m_rot,
-		//	desmos))
-		//	return true;
 	}
 
-	LOG(INFO) << desmos;
+	size *= .5f;
+
+	LOG(INFO) 
+		<< "polygon((" 
+		<< pos.x - size.x << "," << pos.z - size.z << "),("
+		<< pos.x - size.x << "," << pos.z + size.z << "),("
+		<< pos.x + size.x << "," << pos.z + size.z << "),("
+		<< pos.x + size.x << "," << pos.z - size.z << "))";
 
 	return false;
 }
