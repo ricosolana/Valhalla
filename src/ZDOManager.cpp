@@ -337,30 +337,37 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 }
 
-void IZDOManager::EraseZDO(const ZDOID& uid) {
-	if (uid.m_uuid == SERVER_ID && uid.m_id >= m_nextUid)
-		m_nextUid = uid.m_uuid + 1;
+void IZDOManager::EraseZDO(const ZDOID& zdoid) {
+	// If id is none, do nothing
+	if (!zdoid)
+		return;
+
+	if (zdoid.m_uuid == SERVER_ID && zdoid.m_id >= m_nextUid)
+		m_nextUid = zdoid.m_uuid + 1;
 
 	{
-		auto zdo = GetZDO(uid);
-		if (!zdo)
+		auto&& find = m_objectsByID.find(zdoid);
+		if (find == m_objectsByID.end())
 			return;
+
+		auto&& zdo = find->second;
 
 		RemoveFromSector(*zdo);
 		if (zdo->m_prefab) {
-			auto&& find = m_objectsByPrefab.find(zdo->m_prefab->m_hash); // .erase(zdo->)
-			if (find != m_objectsByPrefab.end()) find->second.erase(zdo);
+			auto&& find = m_objectsByPrefab.find(zdo->m_prefab->m_hash);
+			if (find != m_objectsByPrefab.end()) find->second.erase(zdo.get());
 		}
-		m_objectsByID.erase(zdo->m_id);
+
+		m_objectsByID.erase(find);
 	}
 
 	auto&& peers = NetManager()->GetPeers();
 	for (auto&& pair : peers) {
 		auto&& peer = pair.second;
-		peer->m_zdos.erase(uid);
+		peer->m_zdos.erase(zdoid);
 	}
 
-	m_deadZDOs[uid] = Valhalla()->Ticks();
+	m_deadZDOs[zdoid] = Valhalla()->Ticks();
 }
 
 void IZDOManager::SendAllZDOs(Peer& peer) {
@@ -508,9 +515,9 @@ void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<std::reference
 
 
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Prefab& prefab) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 	std::list<std::reference_wrapper<ZDO>> out;
-	auto&& find = m_objectsByPrefab.find(prefab.m_hash);
+	auto&& find = m_objectsByPrefab.find(prefab);
 	if (find != m_objectsByPrefab.end()) {
 		auto&& zdos = find->second;
 		std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), [](ZDO* zdo) { return std::ref(*zdo); });
@@ -567,7 +574,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, 
 
 
 
-ZDO* IZDOManager::AnyZDO(const Vector3& pos, float radius, const Prefab& prefab) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const Vector3& pos, float radius, HASH_t prefab) {
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
 	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
 
@@ -578,7 +585,7 @@ ZDO* IZDOManager::AnyZDO(const Vector3& pos, float radius, const Prefab& prefab)
 			if (num != -1) {
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
-					if (*obj->m_prefab == prefab
+					if (obj->m_prefab->m_hash == prefab
 						&& obj->m_pos.SqDistance(pos) <= radius * radius)
 						return obj;
 				}
@@ -589,12 +596,49 @@ ZDO* IZDOManager::AnyZDO(const Vector3& pos, float radius, const Prefab& prefab)
 	return nullptr;
 }
 
-ZDO* IZDOManager::AnyZDO(const ZoneID& zone, const Prefab& prefab) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const ZoneID& zone, HASH_t prefab) {
 	int num = SectorToIndex(zone);
 	if (num != -1) {
 		auto&& objects = m_objectsBySector[num];
 		for (auto&& obj : objects) {
-			if (*obj->m_prefab == prefab)
+			if (obj->m_prefab->m_hash == prefab)
+				return obj;
+		}
+	}
+
+	return nullptr;
+}
+
+
+
+ZDO* IZDOManager::AnyZDO(const Vector3& pos, float radius, HASH_t prefab) {
+	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
+	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
+
+	for (auto z = minZone.y; z <= maxZone.y; z++) {
+		for (auto x = minZone.x; x <= maxZone.x; x++) {
+			//FindObjects({ x, z }, out);
+			int num = SectorToIndex({ x, z });
+			if (num != -1) {
+				auto&& objects = m_objectsBySector[num];
+				for (auto&& obj : objects) {
+					if (obj->m_prefab->m_hash == prefab
+						&& obj->m_pos.SqDistance(pos) <= radius * radius)
+						return obj;
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+ZDO* IZDOManager::AnyZDO(const ZoneID& zone, HASH_t prefab) {
+	int num = SectorToIndex(zone);
+	if (num != -1) {
+		auto&& objects = m_objectsBySector[num];
+		for (auto&& obj : objects) {
+			if (obj->m_prefab->m_hash == prefab)
 				return obj;
 		}
 	}
@@ -785,7 +829,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				if (created) {
 					AddToSector(zdo);
 					if (m_deadZDOs.contains(zdoid)) {
-						DestroyZDO(zdo, false);
+						DestroyZDO(zdo);
 					}
 					else {
 						m_objectsByPrefab[zdo.GetPrefab()->m_hash].insert(&zdo);
@@ -817,7 +861,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 			&& (!zdo.HasOwner() || zdo.Owner() == peer.m_uuid))
 		{
 			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << ")";
-			DestroyZDO(zdo, false); // TODO could destroy immediate?
+			DestroyZDO(zdo);
 		}
 	}
 }

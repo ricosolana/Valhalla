@@ -33,9 +33,6 @@ private:
 	// Contains ZDOs according to prefab
 	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
 
-	// Contains all ZDOs according to Prefab::Flag
-	//robin_hood::unordered_map<Prefab::Flag, robin_hood::unordered_set<ZDO*>> m_objectsByFlag;
-
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<ZDOID, TICKS_t> m_deadZDOs;
 
@@ -102,7 +99,7 @@ public:
 
 
 	// Get all ZDOs strictly by prefab
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Prefab& prefab);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(HASH_t prefab);
 
 	// Get all ZDOs strictly within a zone based on a condition
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(const ZoneID& zone, const std::function<bool(const ZDO&)>& cond);
@@ -116,9 +113,9 @@ public:
 	}
 
 	// Get all ZDOs strictly within a radius by prefab
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, const Prefab& prefab) {
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, HASH_t prefab) {
 		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
-			return *zdo.m_prefab == prefab;
+			return zdo.m_prefab->m_hash == prefab;
 		}));
 	}
 
@@ -147,14 +144,36 @@ public:
 
 
 
-	ZDO* AnyZDO(const Vector3& pos, float radius, const Prefab& prefab);
+	std::list<std::reference_wrapper<ZDO>> SomeZDOs(const Vector3& pos, float radius, int max, const std::function<bool(const ZDO&)>& cond);
 
-	ZDO* AnyZDO(const ZoneID& zone, const Prefab& prefab);
+	std::list<std::reference_wrapper<ZDO>> SomeZDOs(const Vector3& pos, float radius, int max) {
+		return SomeZDOs(pos, radius, max, nullptr);
+	}
+
+	std::list<std::reference_wrapper<ZDO>> SomeZDOs(const Vector3& pos, float radius, HASH_t prefab, int max);
+
+	std::list<std::reference_wrapper<ZDO>> SomeZDOs(const ZoneID& zone, HASH_t prefab, int max) {
+
+	}
+
+	ZDO* AnyZDO(const Vector3& pos, float radius, HASH_t prefab);
+
+	ZDO* AnyZDO(const ZoneID& zone, HASH_t prefab);
+
+
+
+
 
 
 
 	void ForceSendZDO(const ZDOID& id);
 	void DestroyZDO(ZDO& zdo, bool immediate);
+
+	// Destroy a ZDO with default client erase behaviour
+	//	ZDO is still kept around on the server
+	void DestroyZDO(ZDO& zdo) {
+		this->DestroyZDO(zdo, false);
+	}
 };
 
 IZDOManager* ZDOManager();

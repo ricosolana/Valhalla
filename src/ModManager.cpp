@@ -592,17 +592,20 @@ void IModManager::LoadAPI() {
         //  then eliminate native implementation usages of T&, use hashes where possible for reduced error checking...
         //  hashes are rarely going to be a concern, are never null...
 
-        [](const Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(*prefab); },
+        [](HASH_t prefab) { return ZDOManager()->GetZDOs(prefab); },
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
-        [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
-        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, PrefabManager()->RequirePrefab(name)); },
+        [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs(pos, radius, prefab); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name)); },
         [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
 
-    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, const Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->AnyZDO(pos, radius, *prefab); };
+    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO(pos, radius, prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
-    zdoApiTable["DestroyZDO"] = [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); };
+    zdoApiTable["DestroyZDO"] = sol::overload(
+        [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); },
+        [](ZDO* zdo) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo); }
+    );
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
 
     auto netApiTable = m_state["NetManager"].get_or_create<sol::table>();
