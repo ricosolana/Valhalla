@@ -64,23 +64,23 @@ void IValhalla::LoadFiles() {
     m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
     if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
     m_settings.worldSave = loadNode["world-save"].as<bool>(false);
-    m_settings.worldSaveInterval = seconds(std::max(loadNode["world-save-interval-s"].as<int>(1800), 60));
+    m_settings.worldSaveInterval = seconds(std::max(60, loadNode["world-save-interval-s"].as<int>(1800)));
     m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
     m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
     m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
-    m_settings.playerMax = std::max(loadNode["player-max"].as<int>(10), 1);                 // max allowed players
+    m_settings.playerMax = std::max(1, loadNode["player-max"].as<int>(10));                 // max allowed players
     m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
     m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
     //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
     m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
 
-    m_settings.socketTimeout = milliseconds(loadNode["socket-timeout-ms"].as<unsigned int>(30000));
+    m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
 
-    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<unsigned int>(10240);
-    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<unsigned int>(2048);
-    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<unsigned int>(50));
-    m_settings.zdoAssignInterval = seconds(std::max(loadNode["zdo-assign-interval-s"].as<unsigned int>(2), 1U));
+    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int>(10240);
+    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int>(2048);
+    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<int>(50));
+    m_settings.zdoAssignInterval = seconds(std::clamp(loadNode["zdo-assign-interval-s"].as<int>(2), 1, 60));
     m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(false);
 
     m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
@@ -93,6 +93,7 @@ void IValhalla::LoadFiles() {
     m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
     m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
     m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
+    m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
     
     LOG(INFO) << "Server config loaded";
 
@@ -137,6 +138,7 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-flip-rooms"] = m_settings.dungeonFlipRooms;
         saveNode["dungeon-zone-limit"] = m_settings.dungeonZoneLimit;
         loadNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
+        loadNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
 
         YAML::Emitter out;
         out.SetIndent(4);

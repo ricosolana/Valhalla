@@ -16,8 +16,25 @@ public:
 
 	const Prefab* GetPrefab(HASH_t hash);
 
+	// Get a prefab by name
+	//	Returns the prefab or null
 	const Prefab* GetPrefab(const std::string& name) {
 		return GetPrefab(VUtils::String::GetStableHashCode(name));
+	}
+
+	// Get a definite prefab
+	//	Throws if prefab not found
+	const Prefab& RequirePrefab(HASH_t hash) {
+		auto prefab = GetPrefab(hash);
+		if (!prefab)
+			throw std::runtime_error("prefab not found");
+		return *prefab;
+	}
+
+	// Get a definite prefab
+	//	Throws if prefab not found
+	const Prefab& RequirePrefab(const std::string& name) {
+		return RequirePrefab(VUtils::String::GetStableHashCode(name));
 	}
 
 	// Instantiate a new ZDO in world with prefab at position and rotation

@@ -49,7 +49,10 @@ public:
         uint32_t m_ownerRev = 0;
 
         union {
+            // Ticks is used for ZDO creationTime
             TICKS_t m_ticks;
+
+            // Time is used for Peer last ZDO update time
             float m_time;
         };
     };
@@ -465,7 +468,11 @@ public:
     ZDO() = default;
 
     // ZDOManager constructor
-    ZDO(const ZDOID& id, const Vector3& pos);
+    ZDO(const ZDOID& id, const Vector3& pos)
+        : m_id(id), m_pos(pos) 
+    {
+        m_rev.m_ticks = Valhalla()->Ticks();
+    }
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);
 

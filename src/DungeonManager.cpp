@@ -3,6 +3,9 @@
 #include "DataReader.h"
 #include "PrefabManager.h"
 #include "DungeonGenerator.h"
+#include "ZDOManager.h"
+#include "NetManager.h"
+#include "Hashes.h"
 
 auto DUNGEON_MANAGER(std::make_unique<IDungeonManager>()); // TODO stop constructing in global
 IDungeonManager* DungeonManager() {
@@ -10,19 +13,6 @@ IDungeonManager* DungeonManager() {
 }
 
 
-
-void Dungeon::Generate(const Vector3& pos, const Quaternion& rot) const {
-    auto&& zdo = PrefabManager()->Instantiate(VUtils::String::GetStableHashCode(m_name), pos, rot);
-    if (!zdo) throw std::runtime_error("prefab missing");
-
-    DungeonGenerator(*this, *zdo).Generate();
-
-    //DungeonGenerator(*this, *zdo, pos, rot).Generate();
-}
-
-void Dungeon::Generate(ZDO& zdo) const {
-    DungeonGenerator(*this, zdo).Generate();
-}
 
 void IDungeonManager::Init() {
     // load dungeons:
@@ -45,9 +35,14 @@ void IDungeonManager::Init() {
 
         //HASH_t hash = pkg.Read<HASH_t>();
 
-        dungeon->m_name = pkg.Read<std::string>();
+        auto name = pkg.Read<std::string>();
 
-        LOG(INFO) << "Loading dungeon " << dungeon->m_name;
+        dungeon->m_prefab = &PrefabManager()->RequirePrefab(name);
+
+        LOG(INFO) << "Loading dungeon " << name;
+
+        dungeon->m_interiorPosition = pkg.Read<Vector3>();
+        dungeon->m_originalPosition = pkg.Read<Vector3>();
 
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.Read<int32_t>();
         dungeon->m_alternativeFunctionality = pkg.Read<bool>();
@@ -115,7 +110,7 @@ void IDungeonManager::Init() {
             for (int i3 = 0; i3 < viewCount; i3++) {
                 Prefab::Instance instance;
                 
-                instance.m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>());
+                instance.m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
                 instance.m_pos = pkg.Read<Vector3>();
                 instance.m_rot = pkg.Read<Quaternion>();
 
@@ -131,8 +126,97 @@ void IDungeonManager::Init() {
             dungeon->m_availableRooms.push_back(std::move(room));
         }
 
-        m_dungeons.insert({ VUtils::String::GetStableHashCode(dungeon->m_name), std::move(dungeon)});
+        m_dungeons.insert({ dungeon->m_prefab->m_hash, std::move(dungeon)});
+    }
+}
+
+void IDungeonManager::RegenerateDungeons() {
+    auto&& ticksNow = Valhalla()->Ticks();
+
+    for (auto&& itr = m_dungeonInstances.begin(); itr != m_dungeonInstances.end(); ) {
+        auto&& zdoid = *itr;
+
+        auto dungeonZdo = ZDOManager()->GetZDO(zdoid);
+        if (!dungeonZdo) {
+            itr = m_dungeonInstances.erase(itr);
+        }
+        else {
+            auto&& ticksDungeon = dungeonZdo->m_rev.m_ticks;
+
+            // Reset dungeons after a time
+            if (ticksDungeon + SERVER_SETTINGS.dungeonResetTime < ticksNow) {
+                // how to handle resets?
+
+                bool playerNear = false;
+
+                // if a player is inside, do not reset
+                for (auto&& peer : NetManager()->GetPeers()) {
+                    if (dungeonZdo->Position().SqDistance(peer.second->m_pos) < 100 * 100) {
+                        playerNear = true;
+                        break;
+                    }
+                }
+
+                if (!playerNear) {
+                    //dungeonZdo->m_rev.m_ticks = ticksNow;
+
+                    auto dungeon = GetDungeon(dungeonZdo->GetPrefab()->m_hash);
+                    if (!dungeon) throw std::runtime_error("dungeon missing");
+
+                    // Destroy all zdos high in the sky near dungeon IN ZONE
+                    auto pos = dungeonZdo->Position();
+                    auto rot = dungeonZdo->Rotation();
+
+                    auto height = pos.x;
+                    auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), height - 100, height + 100);
+                    for (auto&& ref : zdos) {
+                        auto&& zdo = ref.get();
+                        auto&& prefab = zdo.GetPrefab();
+
+                        // Delete only valid ZDOs
+                        if (prefab->m_hash == Hashes::Object::Player
+                            || prefab->m_hash == Hashes::Object::Player_tombstone
+                            )
+                            continue;
+
+                        ZDOManager()->DestroyZDO(zdo, false);
+                    }
+
+                    // create new zdo
+                    zdoid = Generate(*dungeon, pos, rot).ID();
+                }
+            }
+
+            ++itr;
+        }
+
     }
 }
 
 
+
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot) {
+    //auto&& zdo = PrefabManager()->Instantiate(VUtils::String::GetStableHashCode(m_name), pos, rot);
+    //if (!zdo) throw std::runtime_error("prefab missing");
+
+    auto&& zdo = PrefabManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+    
+    DungeonGenerator(dungeon, zdo).Generate();
+
+    return zdo;
+    //m_dungeonInstances.insert(zdo.ID());
+}
+
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot, HASH_t seed) {
+    auto&& zdo = PrefabManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+
+    DungeonGenerator(dungeon, zdo).Generate(seed);
+    //m_dungeonInstances.insert(zdo.ID());
+
+    return zdo;
+}
+
+void IDungeonManager::Generate(const Dungeon& dungeon, ZDO& zdo) {
+    DungeonGenerator(dungeon, zdo).Generate();
+    //m_dungeonInstances.insert(zdo.ID());
+}

@@ -16,50 +16,50 @@ public:
         Quaternion m_rot;
     };
 
-    enum class Flag {
+    enum class Flag : uint64_t {
         // Single bit flags:
 
-        SyncInitialScale = 0,
-        Distant,
-        Persistent,
+        SyncInitialScale = 1ULL << 0,
+        Distant = 1ULL << 1,
+        Persistent = 1ULL << 2,
 
-        Piece,
-        Bed,
-        Door,
-        Chair,
-        Ship,
-        Fish,
-        Plant,
-        ArmorStand,
+        Piece = 1ULL << 3,
+        Bed = 1ULL << 4,
+        Door = 1ULL << 5,
+        Chair = 1ULL << 6,
+        Ship = 1ULL << 7,
+        Fish = 1ULL << 8,
+        Plant = 1ULL << 9,
+        ArmorStand = 1ULL << 10,
 
-        ItemDrop,
-        Pickable,
-        PickableItem,
+        ItemDrop = 1ULL << 11,
+        Pickable = 1ULL << 12,
+        PickableItem = 1ULL << 13,
 
-        CookingStation,
-        CraftingStation,
-        Smelter,
-        Fireplace,
+        CookingStation = 1ULL << 14,
+        CraftingStation = 1ULL << 15,
+        Smelter = 1ULL << 16,
+        Fireplace = 1ULL << 17,
 
-        WearNTear,
-        Destructible,
-        ItemStand,
+        WearNTear = 1ULL << 18,
+        Destructible = 1ULL << 19,
+        ItemStand = 1ULL << 20,
 
-        AnimalAI,
-        MonsterAI,
-        Tameable,
-        Procreation,
+        AnimalAI = 1ULL << 21,
+        MonsterAI = 1ULL << 22,
+        Tameable = 1ULL << 23,
+        Procreation = 1ULL << 24,
 
-        MineRock,
-        MineRock5, 
-        TreeBase, // vegetation
-        TreeLog, // chopped down physics tree
+        MineRock = 1ULL << 25,
+        MineRock5 = 1ULL << 26,
+        TreeBase = 1ULL << 27, // vegetation
+        TreeLog = 1ULL << 28, // chopped down physics tree
         
-        SFX, // sound effect
-        VFX, // visual effect
-        AOE, // AOE attacks
+        SFX = 1ULL << 29, // sound effect
+        VFX = 1ULL << 30, // visual effect
+        AOE = 1ULL << 31, // AOE attacks
 
-        Dungeon,
+        Dungeon = 1ULL << 32,
 
         //CharacterDrop,
         //DropOnDestroyed,
@@ -77,7 +77,7 @@ public:
 	uint64_t m_flags = 0;
 
     bool HasFlag(Flag flag) const {
-        return m_flags & ((uint64_t)1 << std::to_underlying(flag));
+        return m_flags & std::to_underlying(flag);
     }
 
     bool operator==(const Prefab& other) const {

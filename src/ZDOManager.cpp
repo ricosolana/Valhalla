@@ -177,6 +177,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		if (modern || !SERVER_SETTINGS.worldModern) {
 			AddToSector(*zdo.get());
 			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
+
+			//m_objectsByPrefab[zdo->m_prefab->m_flags].insert(zdo.get());
+
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;
@@ -503,9 +506,11 @@ void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<std::reference
 	}
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Prefab(HASH_t prefabHash) {
+
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Prefab& prefab) {
 	std::list<std::reference_wrapper<ZDO>> out;
-	auto&& find = m_objectsByPrefab.find(prefabHash);
+	auto&& find = m_objectsByPrefab.find(prefab.m_hash);
 	if (find != m_objectsByPrefab.end()) {
 		auto&& zdos = find->second;
 		std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), [](ZDO* zdo) { return std::ref(*zdo); });
@@ -517,7 +522,24 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs_Prefab(HASH_t prefab
 	return out;
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) {
+
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const ZoneID& zone, const std::function<bool(const ZDO&)>& cond) {
+	std::list<std::reference_wrapper<ZDO>> out;
+
+	int num = SectorToIndex(zone);
+	if (num != -1) {
+		auto&& objects = m_objectsBySector[num];
+		for (auto&& obj : objects) {
+			if (!cond || cond(*obj))
+				out.push_back(*obj);
+		}
+	}
+
+	return out;
+}
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, float radius, const std::function<bool(const ZDO&)>& cond) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	auto zone = IZoneManager::WorldToZonePos(pos);
@@ -545,7 +567,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const Vector3& pos, 
 
 
 
-ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash) {
+ZDO* IZDOManager::AnyZDO(const Vector3& pos, float radius, const Prefab& prefab) {
 	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
 	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
 
@@ -556,7 +578,7 @@ ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t p
 			if (num != -1) {
 				auto&& objects = m_objectsBySector[num];
 				for (auto&& obj : objects) {
-					if (obj->m_prefab->m_hash == prefabHash
+					if (*obj->m_prefab == prefab
 						&& obj->m_pos.SqDistance(pos) <= radius * radius)
 						return obj;
 				}
@@ -566,6 +588,21 @@ ZDO* IZDOManager::AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t p
 
 	return nullptr;
 }
+
+ZDO* IZDOManager::AnyZDO(const ZoneID& zone, const Prefab& prefab) {
+	int num = SectorToIndex(zone);
+	if (num != -1) {
+		auto&& objects = m_objectsBySector[num];
+		for (auto&& obj : objects) {
+			if (*obj->m_prefab == prefab)
+				return obj;
+		}
+	}
+
+	return nullptr;
+}
+
+
 
 
 

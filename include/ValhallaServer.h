@@ -23,6 +23,7 @@ class IWorldManager;
 class IValhalla {
     friend class ValhallaLauncher;
     friend class IWorldManager;
+    friend class Tests;
 
 private:
     std::atomic_bool m_running; // mostly const

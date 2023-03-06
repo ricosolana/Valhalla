@@ -8,7 +8,9 @@
 #include "Quaternion.h"
 #include "PrefabManager.h"
 #include "VUtilsRandom.h"
-#include "DungeonManager.h"
+#include "ZoneManager.h"
+
+#include "Dungeon.h"
 
 // TODO give more verbose direct name
 //struct RoomData {
@@ -16,13 +18,38 @@
 //	Room& m_room;
 //};
 
-
-
+class Dungeon;
 
 class DungeonGenerator {
+private:
+	// Instanced
+	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
+	// Instanced
+	std::list<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
+	// Instanced
+	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
+
 public:
-	void Generate();
-	HASH_t GetSeed();
+	// TODO use reference
+	const Dungeon& m_dungeon;
+
+	Vector3 m_pos; // instanced position
+	Quaternion m_rot; // instanced rotation
+
+	Vector3 m_zoneCenter;
+
+	// TODO make Constexpr
+	const Vector3 m_zoneSize = Vector3(64, 64, 64);
+
+	//bool m_useCustomInteriorTransform; // templated
+
+	//HASH_t m_generatedSeed;
+
+	//Vector3 m_originalPosition; // templated
+
+	//steady_clock::time_point m_generatedTime;
+
+	ZDO& m_zdo;
 
 private:
 	void GenerateRooms(VUtils::Random::State& state);
@@ -58,13 +85,17 @@ private:
 
 	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3 &pos, const Quaternion &rot, Vector3 &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, const RoomConnectionInstance &connection, const Room& roomData);
+	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
-	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance *fromConnection);
+	// Camps/grid meadows
+	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot);
 
-	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance *skipConnection);
+	// Dungeon placement
+	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
 
-	bool IsInsideDungeon(const Room &room, const Vector3 &pos, const Quaternion &rot);
+	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
+
+	bool IsInsideZone(const Room &room, const Vector3 &pos, const Quaternion &rot);
 
 	bool TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot);
 
@@ -79,57 +110,29 @@ private:
 	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
 	// Nullable
-	const RoomConnectionInstance* GetOpenConnection(VUtils::Random::State& state);
+	decltype(m_openConnections)::iterator GetOpenConnection(VUtils::Random::State& state);
 
 	const Room& FindStartRoom(VUtils::Random::State& state);
 
 	bool CheckRequiredRooms();
 
-private:
-	//bool m_hasGeneratedSeed = false;
-
-	// Instanced
-	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
-	// Instanced
-	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
-	// Instanced
-	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
-
-	// Templated per type of generator
-	//std::vector<RoomData*> m_availableRooms;
-
-	//std::vector<Room*> m_tempRooms;
-
-	//BoxCollider m_colliderA;
-
-	//BoxCollider m_colliderB;
-
-	//private ZNetView m_nview;
-
 public:
-	const Dungeon* m_dungeon = nullptr;
-
-	Vector3 m_pos; // instanced position
-	Quaternion m_rot; // instanced rotation
-
-	Vector3 m_zoneCenter;
-
-	// TODO make Constexpr
-	Vector3 m_zoneSize = Vector3(64, 64, 64);
-
-	//bool m_useCustomInteriorTransform; // templated
-
-	HASH_t m_generatedSeed;
-
-	//Vector3 m_originalPosition; // templated
-
-	//ZDO* m_zdo = nullptr;
-
-	ZDO& m_zdo;
-
-public:
-	//DungeonGenerator(const Dungeon& dungeon, ZDO& zdo, const Vector3& pos, const Quaternion& rot);
-
 	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
+
+	DungeonGenerator(const DungeonGenerator& other) = delete;
+
+	void Generate();
+	void Generate(HASH_t seed);
+
+	HASH_t GetSeed();
+
+	// i hate the split between zoneloc inst and dungeon
+	// it should have dungeon type immediately within it...
+	//	reduce indirection where possible to avoid continuous retrieval and annoyances
+	//static void Regenerate(const ZoneID& zone);
+
+	//static void Regenerate(const ZDO& zdo);
+
+	//static void RegenerateDungeons();
 
 };

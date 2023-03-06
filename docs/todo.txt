@@ -1,4 +1,11 @@
-todo:    
+todo:
+    - fix dungeon netview orientations
+        some netviews in DG_Cave (crystal in this small corrider) and the roots when entering crypt are either floating or in the way. 
+        
+        seemingly another root in a different crypt is fine... (i think it has to do with not applying correct rotations) I bet this is the issue because crypt mud piles are misaligned in a room (too much to the side in start room)
+        
+
+
     - inventory equippable pickable items will have icons:
         ItemDrop.m_itemData.m_shared.m_icons wont be empty if the item is legal
     
@@ -68,6 +75,22 @@ todo:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
 finished:
+    - GoblinCamp2 - very crammed
+        fixed
+
+    - fix dungeon generation
+        either go back to using mild accuracy rotated rect detection
+        OR
+        use normalized grid room overlap detection, where each room takes up nodes,
+        and has max size:
+            since im assuming each room has a normalized/unit size, find this out, then create a grid of nodes equal to 64/UNIT (where unit is the smallest square room). Collision detection will just be detecting whether a grid is occupied
+            
+            what about end caps? they might be emall and weirdly sized, so im not sure about this method
+            
+            another method could be to just stop using complex rotated rectangle collision, since im having insane troubles with that. INSTEAD, use regular rectangle collision with a normalized rotation grid, then apply all rotation to rooms after its done.
+            
+            Either way, I cant continue making so many features that already exist in unity. I thought this would be simple, but the method the devs use is not so simple. I will find a way around this.
+
     - change room netviews instantiate transforms to correctly reflect new pkg transform write (most local)
     
         also observe any usages of templated room.position (not instanced) or localPos or rotation for significance in keeping?

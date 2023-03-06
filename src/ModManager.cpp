@@ -588,14 +588,19 @@ void IModManager::LoadAPI() {
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = sol::overload(
-        [](HASH_t prefab) { return ZDOManager()->GetZDOs_Prefab(prefab); },
+        // TODO remove any ptr accepting functions, use HASH
+        //  then eliminate native implementation usages of T&, use hashes where possible for reduced error checking...
+        //  hashes are rarely going to be a concern, are never null...
+
+        [](const Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(*prefab); },
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
         [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, PrefabManager()->RequirePrefab(name)); },
         [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
 
-    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO_PrefabRadius(pos, radius, prefab); };
+    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, const Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->AnyZDO(pos, radius, *prefab); };
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     zdoApiTable["DestroyZDO"] = [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); };
     //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
@@ -615,12 +620,13 @@ void IModManager::LoadAPI() {
     };
 
     m_state.new_usertype<Dungeon>("Dungeon",
-        sol::no_constructor,
-        "Generate", sol::resolve<void(const Vector3& pos, const Quaternion& rot) const>(&Dungeon::Generate)
+        sol::no_constructor
+        //"Generate", sol::resolve<void(const Vector3& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
 
     auto dungeonApiTable = m_state["DungeonManager"].get_or_create<sol::table>();
     dungeonApiTable["GetDungeon"] = [](const std::string& name) { return DungeonManager()->GetDungeon(VUtils::String::GetStableHashCode(name)); };
+    dungeonApiTable["Generate"] = [](const Dungeon* dungeon, const Vector3& pos, const Quaternion& rot) { if (!dungeon) throw std::runtime_error("null dungeon"); DungeonManager()->Generate(*dungeon, pos, rot); };
 
 
 

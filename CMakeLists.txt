@@ -117,7 +117,7 @@ add_executable(${PROJECT_NAME}
     "src/Room.cpp"
     "src/VUtilsPhysics.cpp" 
     "src/DungeonManager.cpp"
-)
+ "include/Dungeon.h")
 
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 

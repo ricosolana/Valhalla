@@ -31,6 +31,8 @@ public:
 			m_rot(rot), 
 			m_placeOrder(placeOrder) {}
 
+	//RoomConnectionInstance(const RoomConnectionInstance& other) = delete;
+
 	// Returns whether 2 RoomConnections are touching
 	bool TestContact(const RoomConnectionInstance& other) const {
 		return m_pos.SqDistance(other.m_pos) < .1f * .1f;

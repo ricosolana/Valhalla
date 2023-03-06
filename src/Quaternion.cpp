@@ -358,6 +358,6 @@ Quaternion Quaternion::Inverse(const Quaternion& rotation) {
     return rotation;
 }
 
-std::ostream& operator<<(std::ostream& st, Quaternion& quat) {
+std::ostream& operator<<(std::ostream& st, const Quaternion& quat) {
     return st << "(" << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << ")";
 }
