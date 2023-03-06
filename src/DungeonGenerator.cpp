@@ -5,6 +5,7 @@
 #include "GeoManager.h"
 #include "VUtilsMathf.h"
 #include "VUtilsPhysics.h"
+#include "ZDOManager.h"
 
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
@@ -35,11 +36,33 @@ void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
 	this->GenerateRooms(state);
 	this->Save();
 
-	LOG(INFO) << "Finished generating dungeon: '" << m_dungeon.m_name
+	//this->m_generatedTime = steady_clock::now();
+
+	LOG(INFO) << "Finished generating dungeon: '" << m_dungeon.m_prefab->m_name
 		<< "', pos: " << m_pos
 		<< ", seed: " << seed
 		<< ", rooms: " << m_placedRooms.size() << "/" << m_dungeon.m_maxRooms;
 }
+
+//
+//void DungeonGenerator::Regenerate(const ZoneID& zone) {
+//	// Find the dungeon in that zone
+//	//ZDOManager()->AnyZDO(zone).
+//	//zdo
+//}
+
+//void DungeonGenerator::Regenerate(const ZDO& zdo) {
+//	// Find the dungeon in that zone
+//	//ZDOManager()->AnyZDO(zone).
+//	if (!zdo.GetPrefab()->HasFlag(Prefab::Flag::Dungeon))
+//		throw std::runtime_error("not a dungeon");
+//
+//
+//}
+
+
+
+
 
 void DungeonGenerator::GenerateRooms(VUtils::Random::State& state) {
 	switch (this->m_dungeon.m_algorithm) {

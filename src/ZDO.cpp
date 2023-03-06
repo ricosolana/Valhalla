@@ -16,9 +16,9 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     };
 }
 
-ZDO::ZDO(const ZDOID& id, const Vector3& pos)
-    : m_id(id), m_pos(pos) {
-}
+//ZDO::ZDO(const ZDOID& id, const Vector3& pos)
+//    : m_id(id), m_pos(pos) {
+//}
 
 //ZDO::ZDO(const ZDOID& id, const Vector3& pos, DataReader& load)
 //    : m_id(id), m_pos(pos), Load() {

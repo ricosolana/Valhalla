@@ -8,7 +8,9 @@
 #include "Quaternion.h"
 #include "PrefabManager.h"
 #include "VUtilsRandom.h"
-#include "DungeonManager.h"
+#include "ZoneManager.h"
+
+#include "Dungeon.h"
 
 // TODO give more verbose direct name
 //struct RoomData {
@@ -16,8 +18,7 @@
 //	Room& m_room;
 //};
 
-
-
+class Dungeon;
 
 class DungeonGenerator {
 private:
@@ -46,13 +47,9 @@ public:
 
 	//Vector3 m_originalPosition; // templated
 
+	//steady_clock::time_point m_generatedTime;
+
 	ZDO& m_zdo;
-
-public:
-	void Generate();
-	void Generate(HASH_t seed);
-
-	HASH_t GetSeed();
 
 private:
 	void GenerateRooms(VUtils::Random::State& state);
@@ -121,5 +118,21 @@ private:
 
 public:
 	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
+
+	DungeonGenerator(const DungeonGenerator& other) = delete;
+
+	void Generate();
+	void Generate(HASH_t seed);
+
+	HASH_t GetSeed();
+
+	// i hate the split between zoneloc inst and dungeon
+	// it should have dungeon type immediately within it...
+	//	reduce indirection where possible to avoid continuous retrieval and annoyances
+	//static void Regenerate(const ZoneID& zone);
+
+	//static void Regenerate(const ZDO& zdo);
+
+	//static void RegenerateDungeons();
 
 };

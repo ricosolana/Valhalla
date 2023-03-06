@@ -20,9 +20,9 @@ public:
         //    VUtils::String::GetStableHashCode("DG_SunkenCrypt")
         //)->Generate(Vector3(130, 234, 2423), Quaternion::IDENTITY);
 
-        DungeonManager()->GetDungeon(
-            VUtils::String::GetStableHashCode("DG_SunkenCrypt")
-        )->Generate(Vector3(2513.1, 5031.8, -4212.3), Quaternion(0.0, -0.2, 0.0, -1.0), 1372687413);
+        //DungeonManager()->GetDungeon(
+        //    VUtils::String::GetStableHashCode("DG_SunkenCrypt")
+        //)->Generate(Vector3(2513.1, 5031.8, -4212.3), Quaternion(0.0, -0.2, 0.0, -1.0), 1372687413);
     }
 
     void Test_LinesIntersect() {

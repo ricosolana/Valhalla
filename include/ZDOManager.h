@@ -33,6 +33,9 @@ private:
 	// Contains ZDOs according to prefab
 	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
 
+	// Contains all ZDOs according to Prefab::Flag
+	//robin_hood::unordered_map<Prefab::Flag, robin_hood::unordered_set<ZDO*>> m_objectsByFlag;
+
 	// Primarily used in RPC_ZDOData
 	robin_hood::unordered_map<ZDOID, TICKS_t> m_deadZDOs;
 
@@ -97,19 +100,21 @@ public:
 	// Get all ZDOs strictly within a zone that are distant flagged
 	void GetZDOs_Distant(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects);
 
+
 	// Get all ZDOs strictly by prefab
-	std::list<std::reference_wrapper<ZDO>> GetZDOs_Prefab(HASH_t prefabHash);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Prefab& prefab);
 
-
+	// Get all ZDOs strictly within a zone based on a condition
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const ZoneID& zone, const std::function<bool(const ZDO&)>& cond);
 
 	// Get all ZDOs strictly within a radius based on a condition
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond);
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, const std::function<bool(const ZDO&)>& cond);
 
 	// Get all ZDOs strictly within a radius
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius) {
 		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>());
 	}
-		
+
 	// Get all ZDOs strictly within a radius by prefab
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(const Vector3& pos, float radius, const Prefab& prefab) {
 		return GetZDOs(pos, radius, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
@@ -123,9 +128,28 @@ public:
 		}));
 	}
 
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const ZoneID& zone, float minHeight, float maxHeight) {
+		return GetZDOs(zone, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
+			auto&& h = zdo.Position().y;
+			return h >= minHeight && h <= maxHeight;
+		}));
+	}
+
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const ZoneID& zone, float minHeight, float maxHeight, Prefab::Flag flag) {
+		return GetZDOs(zone, std::function<bool(const ZDO&)>([=](const ZDO& zdo) {
+			if (!zdo.GetPrefab()->HasFlag(flag))
+				return false;
+
+			auto&& h = zdo.Position().y;
+			return h >= minHeight && h <= maxHeight;
+		}));
+	}
 
 
-	ZDO* AnyZDO_PrefabRadius(const Vector3& pos, float radius, HASH_t prefabHash);
+
+	ZDO* AnyZDO(const Vector3& pos, float radius, const Prefab& prefab);
+
+	ZDO* AnyZDO(const ZoneID& zone, const Prefab& prefab);
 
 
 

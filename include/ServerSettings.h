@@ -41,4 +41,5 @@ struct ServerSettings {
     bool            dungeonFlipRooms;
     bool            dungeonZoneLimit;
     bool            dungeonRoomShrink;
+    seconds         dungeonResetTime;
 };

@@ -920,8 +920,8 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
             }
 
             assert(zdo);
-                        
-            dungeon->Generate(*zdo);
+
+            DungeonManager()->Generate(*dungeon, *zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;
