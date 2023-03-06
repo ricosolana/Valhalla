@@ -20,8 +20,9 @@ local RPC_vs = function(peer, cmd, args)
         print(' - ' .. args[i])
     end
     
-    if cmd == 'destroy' then    
-        local zdo = ZDOManager.AnyZDO(peer.pos, 32, VUtils.String.GetStableHashCode(args[1]))
+    if cmd == 'destroy' then
+        local radius = (#args == 2 and tonumber(args[2])) or 32
+        local zdo = ZDOManager.AnyZDO(peer.pos, radius, VUtils.String.GetStableHashCode(args[1]))
         
         if zdo then
             ZDOManager.DestroyZDO(zdo, false)

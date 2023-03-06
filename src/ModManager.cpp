@@ -588,10 +588,15 @@ void IModManager::LoadAPI() {
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
     zdoApiTable["GetZDOs"] = sol::overload(
+        // TODO remove any ptr accepting functions, use HASH
+        //  then eliminate native implementation usages of T&, use hashes where possible for reduced error checking...
+        //  hashes are rarely going to be a concern, are never null...
+
         [](const Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(*prefab); },
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
         [](const Vector3& pos, float radius, Prefab* prefab) { if (!prefab) throw std::runtime_error("null prefab"); return ZDOManager()->GetZDOs(pos, radius, *prefab); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, PrefabManager()->RequirePrefab(name)); },
         [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
     );
 
