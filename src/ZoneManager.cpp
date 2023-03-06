@@ -888,7 +888,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->HasFlag(Prefab::Flag::Dungeon))) {
+        if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->FlagsPresent(Prefab::Flag::Dungeon))) {
             PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->GetDungeon(piece.m_prefab->m_hash);

@@ -19,6 +19,8 @@ public:
     enum class Flag : uint64_t {
         // Single bit flags:
 
+        None = 0,
+
         SyncInitialScale = 1ULL << 0,
         Distant = 1ULL << 1,
         Persistent = 1ULL << 2,
@@ -76,8 +78,13 @@ public:
 
 	uint64_t m_flags = 0;
 
-    bool HasFlag(Flag flag) const {
-        return m_flags & std::to_underlying(flag);
+    bool FlagsPresent(Flag flag) const {
+        return (m_flags & std::to_underlying(flag)) == std::to_underlying(flag);
+    }
+
+    bool FlagsAbsent(Flag flag) const {
+        auto mask = std::to_underlying(flag);
+        return !mask || (m_flags & mask) != mask;
     }
 
     bool operator==(const Prefab& other) const {

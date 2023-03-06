@@ -168,7 +168,7 @@ void IDungeonManager::RegenerateDungeons() {
                     auto rot = dungeonZdo->Rotation();
 
                     auto height = pos.x;
-                    auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), height - 100, height + 100);
+                    auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), pos, 100);
                     for (auto&& ref : zdos) {
                         auto&& zdo = ref.get();
                         auto&& prefab = zdo.GetPrefab();
@@ -179,7 +179,7 @@ void IDungeonManager::RegenerateDungeons() {
                             )
                             continue;
 
-                        ZDOManager()->DestroyZDO(zdo, false);
+                        ZDOManager()->DestroyZDO(zdo);
                     }
 
                     // create new zdo

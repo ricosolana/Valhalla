@@ -412,7 +412,8 @@ void IModManager::LoadAPI() {
     
 
     m_state.new_enum("PrefabFlag",
-        "scale", Prefab::Flag::SyncInitialScale,
+        "none", Prefab::Flag::None,
+        "scaled", Prefab::Flag::SyncInitialScale,
         "far", Prefab::Flag::Distant,
         "persist", Prefab::Flag::Persistent,
         "piece", Prefab::Flag::Piece,
@@ -451,7 +452,8 @@ void IModManager::LoadAPI() {
         sol::no_constructor,
         "name", &Prefab::m_name,
         "hash", &Prefab::m_hash,
-        "HasFlag", &Prefab::HasFlag
+        "FlagsPresent", &Prefab::FlagsPresent,
+        "FlagsAbsent", &Prefab::FlagsAbsent
     );
 
     auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();
@@ -585,22 +587,55 @@ void IModManager::LoadAPI() {
     apiTable["Ticks"] = []() { return Valhalla()->Ticks(); };
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
+    // TODO turn managers into lua classes that can be indexed
+    // but still retrieve with ZDOManager... class usertypes will be named by their class names, like IZDOManager...
+
     auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
     zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
-    zdoApiTable["GetZDOs"] = sol::overload(
-        // TODO remove any ptr accepting functions, use HASH
-        //  then eliminate native implementation usages of T&, use hashes where possible for reduced error checking...
-        //  hashes are rarely going to be a concern, are never null...
+    zdoApiTable["SomeZDOs"] = sol::overload(
+        [](const Vector3& pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->SomeZDOs(pos, radius, max, pred); },
+        [](const Vector3& pos, float radius, size_t max) { return ZDOManager()->SomeZDOs(pos, radius, max); },
+        [](const Vector3& pos, float radius, size_t max, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->SomeZDOs(pos, radius, max, prefabHash, flagsPresent, flagsAbsent); },
+        [](const Vector3& pos, float radius, size_t max, const std::string& name) { return ZDOManager()->SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
 
+        [](const ZoneID& zone, size_t max, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->SomeZDOs(zone, max, pred); },
+        [](const ZoneID& zone, size_t max) { return ZDOManager()->SomeZDOs(zone, max); },
+        [](const ZoneID& zone, size_t max, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->SomeZDOs(zone, max, prefabHash, flagsPresent, flagsAbsent); },
+        [](const ZoneID& zone, size_t max, const std::string& name) { return ZDOManager()->SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+
+        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius) { return ZDOManager()->SomeZDOs(zone, max, pos, radius); },
+        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->SomeZDOs(zone, max, pos, radius, prefabHash, flagsPresent, flagsAbsent); },
+        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+    );
+    zdoApiTable["GetZDOs"] = sol::overload(
         [](HASH_t prefab) { return ZDOManager()->GetZDOs(prefab); },
+
         [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
         [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
-        [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->GetZDOs(pos, radius, prefab); },
-        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name)); },
-        [](const Vector3& pos, float radius, Prefab::Flag flag) { return ZDOManager()->GetZDOs(pos, radius, flag); }
-    );
+        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->GetZDOs(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
 
-    zdoApiTable["AnyZDO"] = [](const Vector3& pos, float radius, HASH_t prefab) { return ZDOManager()->AnyZDO(pos, radius, prefab); };
+        [](const ZoneID& zone, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->GetZDOs(zone, pred); },
+        [](const ZoneID& zone) { return ZDOManager()->GetZDOs(zone); },
+        [](const ZoneID& zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->GetZDOs(zone, prefabHash, flagsPresent, flagsAbsent); },
+        [](const ZoneID& zone, const std::string& name) { return ZDOManager()->GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+
+        [](const ZoneID& zone, const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(zone, pos, radius); },
+        [](const ZoneID& zone, const Vector3& pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->GetZDOs(zone, pos, radius, prefabHash, flagsPresent, flagsAbsent); },
+        [](const ZoneID& zone, const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+    );
+    zdoApiTable["AnyZDO"] = sol::overload(
+        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->AnyZDO(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+
+        [](const ZoneID& zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->AnyZDO(zone, prefabHash, flagsPresent, flagsAbsent); },
+        [](const ZoneID& zone, const std::string& name) { return ZDOManager()->AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+    );
+    zdoApiTable["NearestZDO"] = sol::overload(
+        [](const Vector3& pos, float radius, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->NearestZDO(pos, radius, pred); },
+        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) { return ZDOManager()->NearestZDO(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
+        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+    );
     zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
     zdoApiTable["DestroyZDO"] = sol::overload(
         [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); },

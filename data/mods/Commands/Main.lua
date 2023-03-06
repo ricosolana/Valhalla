@@ -4,8 +4,6 @@
 
 --local WARD_PREFAB = VUtils.String.GetStableHashCode('guard_stone')
 
-local WARD_PREFAB = PrefabManager.GetPrefab('guard_stone')
-
 local RPC_vs = function(peer, cmd, args)
 
     if not peer.admin then 
@@ -21,14 +19,76 @@ local RPC_vs = function(peer, cmd, args)
     end
     
     if cmd == 'destroy' then
-        local radius = (#args == 2 and tonumber(args[2])) or 32
-        local zdo = ZDOManager.AnyZDO(peer.pos, radius, VUtils.String.GetStableHashCode(args[1]))
+        -- destroy DG_Cave 32
+        -- destroy DG_Cave <32>
+        -- destroy -all <32>
+        --local radius = tonumber(args[2]) or 32
         
-        if zdo then
-            ZDOManager.DestroyZDO(zdo, false)
-            peer:ConsoleMessage('destroyed zdo')
+        local radius = nil
+        local proximal = nil
+        local prefab = nil
+        
+        if #args == 0 or #args % 2 ~= 0 then
+            return peer:ConsoleMessage('usage: destroy --target <prox/rad> --prefab <name/all> --radius <radius>')
+        end
+        
+        for i=1, #args do
+            if args[i] == '--target' then
+                if args[i + 1] == 'prox' then
+                    proximal = true
+                elseif args[i + 1] == 'rad' then
+                    proximal = false
+                end
+            elseif args[i] == '--prefab' then
+                prefab = args[i + 1]
+            elseif args[i] == '--radius' then
+                radius = tonumber(args[i + 1]) 
+                if not radius or radius > 32 then 
+                    radius = nil
+                    break
+                end
+            end
+        end
+
+        if not prefab then
+            return peer:ConsoleMessage('prefab unspecified')
+        elseif prefab == 'all' then
+            prefab = nil
+        end
+
+        if not radius then 
+            return peer:ConsoleMessage('radius invalid or too large')
+        end
+        
+        if proximal == nil then
+            return peer:ConsoleMessage('target invalid or unspecified')
+        end
+
+        -- target only nearest zdo
+        if proximal then
+            local zdo = ZDOManager.NearestZDO(peer.pos, radius, prefab or 0, PrefabFlag.persist, PrefabFlag.none)
+            
+            if zdo then
+                peer:ConsoleMessage('destroying ' .. zdo.prefab.name)
+                ZDOManager.DestroyZDO(zdo)
+            else
+                peer:ConsoleMessage('no persistent matches found')
+            end
         else
-            peer:ConsoleMessage('no nearby matching ZDO found')
+            -- vs destroy --target prox --prefab all --radius 10
+            local zdos = nil
+            if prefab then
+                zdos = ZDOManager.GetZDOs(peer.pos, radius, prefab)
+            else
+                zdos = ZDOManager.GetZDOs(peer.pos, radius, 0, PrefabFlag.persist, PrefabFlag.none)
+            end
+            
+            for i=1, #zdos do
+                local zdo = zdos[i]
+                ZDOManager.DestroyZDO(zdo)
+            end
+            
+            peer:ConsoleMessage('destroyed ' .. tostring(#zdos) .. ' persistent zdos')
         end
     elseif cmd == 'feature' then
         if #args == 1 then
@@ -69,15 +129,13 @@ local RPC_vs = function(peer, cmd, args)
             pos = Vector3.new(x, y, z)
         end
         
-        dungeon:Generate(pos, Quaternion.identity)
+        DungeonManager.Generate(dungeon, pos, Quaternion.identity)
         
         peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
-
     elseif cmd == 'claim' then
         local radius = (#args == 1 and tonumber(args[1])) or 32
-        --local radius = #args ~= 1 and 32 or (true and tonumber(args[1]))
         
-        local zdos = ZDOManager.GetZDOs(peer.pos, radius, WARD_PREFAB)
+        local zdos = ZDOManager.GetZDOs(peer.pos, radius, 'guard_stone')
         
         for i=1, #zdos do
             Views.Ward.new(zdos[i]).creator = peer

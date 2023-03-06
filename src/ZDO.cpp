@@ -34,7 +34,7 @@ void ZDO::Save(DataWriter& pkg) const {
 #ifdef RUN_TESTS
     pkg.Write(false);
 #else
-    pkg.Write(this->m_prefab->HasFlag(Prefab::Flag::Persistent));
+    pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
 #endif
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticks.count());
@@ -45,7 +45,7 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write<HASH_t>(0);
 #else
     pkg.Write(this->m_prefab->m_type);
-    pkg.Write(this->m_prefab->HasFlag(Prefab::Flag::Persistent));
+    pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
     pkg.Write(this->m_prefab->m_hash);
 #endif
     pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
@@ -264,8 +264,8 @@ void ZDO::Serialize(DataWriter& pkg) const {
 
 #ifndef RUN_TESTS
     assert(m_prefab);
-    pkg.Write(m_prefab->HasFlag(Prefab::Flag::Persistent));
-    pkg.Write(m_prefab->HasFlag(Prefab::Flag::Distant));
+    pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Persistent));
+    pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Distant));
 #else
     pkg.Write(false);
     pkg.Write(false);

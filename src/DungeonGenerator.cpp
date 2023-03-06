@@ -54,7 +54,7 @@ void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
 //void DungeonGenerator::Regenerate(const ZDO& zdo) {
 //	// Find the dungeon in that zone
 //	//ZDOManager()->AnyZDO(zone).
-//	if (!zdo.GetPrefab()->HasFlag(Prefab::Flag::Dungeon))
+//	if (!zdo.GetPrefab()->FlagsPresent(Prefab::Flag::Dungeon))
 //		throw std::runtime_error("not a dungeon");
 //
 //
