@@ -74,6 +74,8 @@ void IValhalla::LoadFiles() {
     m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
     //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
     m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
+    m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
+    m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
 
     m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
 
@@ -120,6 +122,8 @@ void IValhalla::LoadFiles() {
         saveNode["player-list"] = m_settings.playerList;
         saveNode["player-map-visible"] = m_settings.playerForceVisible;
         //saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
+        saveNode["player-sleep"] = m_settings.playerSleep;
+        saveNode["player-sleep-solo"] = m_settings.playerSleepSolo;
 
         saveNode["socket-timeout-ms"] = m_settings.socketTimeout.count();
 
@@ -266,6 +270,10 @@ void IValhalla::Start() {
         
         Update();
 
+        PERIODIC_NOW(1s, {
+            PeriodUpdate();
+        });
+
         // TODO adjust based on workload intensity
         std::this_thread::sleep_for(1ms);
     }
@@ -289,39 +297,112 @@ void IValhalla::Start() {
 void IValhalla::Update() {
     // This is important to processing RPC remote invocations
 
-    if (!NetManager()->GetPeers().empty())
-        m_netTime += Delta();
+    if (!NetManager()->GetPeers().empty()) {
+        m_netTime += Delta() * m_timeMultiplier;
+    }
     
     ModManager()->Update();
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
+}
 
+void IValhalla::PeriodUpdate() {
     PERIODIC_NOW(180s, {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
-    PERIODIC_NOW(1s, {
-        ModManager()->CallEvent("PeriodUpdate");
-    });
+    ModManager()->CallEvent("PeriodUpdate");
 
-    PERIODIC_NOW(1min, {
-        if (SERVER_SETTINGS.dungeonReset)
-            DungeonManager()->RegenerateDungeons();
-    });
+    if (m_settings.dungeonReset)
+        DungeonManager()->RegenerateDungeons();
 
-    //PERIODIC_NOW(1s, {
-    //    LOG(INFO) << "update";
-    //});
+    if (m_settings.playerSleep) {
+        if (m_playerSleep) {
+            if (m_netTime > m_playerSleepUntil) {
+                // Wake up players
 
-    if (SERVER_SETTINGS.worldSave) {
+                if (m_settings.playerSleepSolo) {
+                    // only awake sleeping players
+                    for (auto&& pair : NetManager()->GetPeers()) {
+                        auto&& zdo = pair.second->GetZDO();
+                        if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
+                            RouteManager()->Invoke(pair.first, Hashes::Routed::SleepStop);
+                        }
+                    }
+                }
+                else {
+                    // wake every player
+                    RouteManager()->InvokeAll(Hashes::Routed::SleepStop);
+                }
+
+                m_playerSleep = false;
+                m_timeMultiplier = 1;
+            }
+        }
+        else {
+            if (IsAfternoon() || IsNight()) {
+                bool allInBed = true;
+                bool anyInBed = false;
+
+                for (auto&& peer : NetManager()->GetPeers()) {
+                    auto&& zdo = peer.second->GetZDO();
+                    bool inBed = zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false);
+                    if (!inBed) {
+                        allInBed = false;
+                        if (!m_settings.playerSleepSolo) // early break if special sleep mode is not enabled
+                            break;
+                    }
+                    else {
+                        // Early break if the special sleep is enabled
+                        if (m_settings.playerSleepSolo) {
+                            anyInBed = true;
+                            break;
+                        }                        
+                    }
+                }
+
+                if ((allInBed || (anyInBed && m_settings.playerSleepSolo))
+                    && !NetManager()->GetPeers().empty()) 
+                {
+                    m_playerSleep = true;
+
+                    // Skip to time
+                    m_playerSleepUntil = GetNextMorning();
+
+                    // Set skip interval
+                    m_timeMultiplier = (m_playerSleepUntil - m_netTime) / 12.0;
+
+                    if (m_settings.playerSleepSolo) {
+                        // Players who are ALREADY in bed, go ahead and signal them to sleep
+                        for (auto&& pair : NetManager()->GetPeers()) {
+                            auto&& zdo = pair.second->GetZDO();
+                            if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
+                                RouteManager()->Invoke(pair.first, Hashes::Routed::SleepStart);
+                            }
+                            else {
+                                pair.second->CornerMessage("The world is sleeping");
+                            }
+                        }
+                    }
+                    else {
+                        // Just signal to all players to sleep
+                        //  This assumes they are all already in bed
+                        RouteManager()->InvokeAll(Hashes::Routed::SleepStart);
+                    }
+                }
+            }
+        }
+    }
+
+    if (m_settings.worldSave) {
         // save warming message
-        PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval, {
+        PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
             LOG(INFO) << "World saving in 30s";
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-        });
+            });
 
-        PERIODIC_LATER(SERVER_SETTINGS.worldSaveInterval, SERVER_SETTINGS.worldSaveInterval + 30s, {
+        PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
             WorldManager()->WriteFileWorldDB(false);
         });
     }

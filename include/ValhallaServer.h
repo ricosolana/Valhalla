@@ -8,6 +8,7 @@
 #include "ServerSettings.h"
 #include "NetAcceptor.h"
 #include "VUtilsRandom.h"
+#include "VUtilsMathf.h"
 
 #define SERVER_ID Valhalla()->ID()
 #define SERVER_SETTINGS Valhalla()->Settings()
@@ -39,6 +40,11 @@ private:
     steady_clock::time_point m_nowUpdate;
 
     double m_netTime;
+
+    bool m_playerSleep = false;
+    double m_playerSleepUntil = 0;
+
+    double m_timeMultiplier = 1;
 
 private:
     void LoadFiles();
@@ -91,7 +97,59 @@ public:
     double NetTime() {
         return m_netTime;
     }
+
+    float DayFrac() {
+        float m_totalSeconds = NetTime();
+
+        // with nettime wrapped by 1800
+        //  morning?: 240 (2040 - 1800)
+        //  day: 270
+        //  night: 
+
+        //int64_t num = m_totalSeconds;
+        //double num2 = m_totalSeconds * 1000.0;
+        //int64_t num3 = 1260 * 1000L;
+        //float num4 = VUtils::Mathf::Clamp01(std::fmod(m_totalSeconds * 1000.0f, 1260) / 1260.f);
+        //num4 = this.RescaleDayFraction(num4);
+        //float smoothDayFraction = this.m_smoothDayFraction;
+        //float t = Mathf.LerpAngle(this.m_smoothDayFraction * 360f, num4 * 360f, 0.01f);
+        //this.m_smoothDayFraction = Mathf.Repeat(t, 360f) / 360f;
+    }
+
+    float NetTimeWrapped() const {
+        return std::fmod(m_netTime, 1800);
+    }
+
+    bool IsMorning() const {
+        auto time = NetTimeWrapped();
+        return time >= 240 && time < 270;
+    }
+
+    // Time of day functions
+    bool IsDay() const {
+        auto time = NetTimeWrapped();
+        return time >= 270 && time < 900;
+    }
     
+    bool IsAfternoon() const {
+        auto time = NetTimeWrapped();
+        return time >= 900 && time < 1530;
+    }
+
+    bool IsNight() const {
+        auto time = NetTimeWrapped();
+        return time >= 1530 || time < 240;
+    }
+
+    int GetDay() const {
+        return (m_netTime - 270.0) / 1800.0;
+    }
+
+    double GetNextMorning() const {
+        auto day = GetDay();
+        return ((day + 1) * 1800) + 240;
+    }
+
     bool IsPeerAllowed(NetRpc* rpc);
 
     Task& RunTask(Task::F f);
@@ -105,6 +163,7 @@ public:
 
 private:
     void Update();
+    void PeriodUpdate();
 };
 
 IValhalla* Valhalla();

@@ -14,7 +14,7 @@ struct ServerSettings {
     bool            worldSave;
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
-
+    
     bool            playerAutoPassword;
     bool            playerWhitelist;
     unsigned int    playerMax;
@@ -22,6 +22,8 @@ struct ServerSettings {
     bool            playerList;
     //bool            playerArrivePing;
     bool            playerForceVisible;
+    bool            playerSleep;        // enable time skip when all players sleeping
+    bool            playerSleepSolo;    // whether only 1 player needs to sleep to enable time skip
     
     milliseconds    socketTimeout;          // ms
 

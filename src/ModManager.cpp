@@ -471,6 +471,9 @@ void IModManager::LoadAPI() {
         "prefab", sol::property(&ZDO::GetPrefab),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
+        "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
+        "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
+        "timeCreated", sol::property([](ZDO& self) { return self.m_rev.m_ticks; }),
         // TODO add proxy types somehow (without adding specifiers for each template type)
 
         //"GetFloat", static_cast<void (ZDO::*)()& ZDO::GetFloat,

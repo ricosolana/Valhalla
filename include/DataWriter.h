@@ -165,4 +165,9 @@ public:
         _Serialize(writer, var1, var2...);
         return bytes;
     }
+
+    static BYTES_t Serialize() {
+        BYTES_t bytes;
+        return bytes;
+    }
 };

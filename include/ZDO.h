@@ -382,8 +382,11 @@ private:
         }
     }
 
+    // owner is initially derived by random:
+    //  C#  hash code function covers [INT_MIN, INT_MAX],
+    //  UnityEngine Range(1, MAX) covers [1, 2^31 - 1)
 
-
+    
 private:    OWNER_t m_owner = 0;
 //private:    std::reference_wrapper<Prefab> m_prefab;
 private:    const Prefab* m_prefab = nullptr;
@@ -392,7 +395,7 @@ private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
 private:    Vector3 m_pos;
 
-public:     Rev m_rev = {};
+public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
 private:     ZDOID m_id;
 
 
