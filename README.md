@@ -5,17 +5,13 @@ This is an implementation of the Valheim Dedicated Server in C++.
 
 Current state of the server:
  - Mostly accurate heightmap
- - World loading (experimental legacy world loading)
- - World saving (partly broken ZDOs)
- - Vegetation generation
- - Location generation (no dungeons yet :(
- - Creature spawning
+ - World loading/saving (legacy support)
+ - World generation
+  - Features / Foliage / Dungeons / Creatures / Bosses
  - LUA modding (no documentation yet, I'm lazy)
- - ZDO synchronization
- - Players can see other
- - Server customizability beyond Valheim defaults
+ - Enhanced customizability
 
-The server is in a currently in a semi-functional state and should **NOT** be used for anything serious, however feel free to play around with it.
+The server is in a currently in a functional state and somewhat usable. I would give it a 70% right now in terms of stability when compared with the Valheim dedicated server. Feel free to play around with it.
 
 ## Usage
 Command line arguments (all optional):
@@ -28,6 +24,26 @@ All other settings are set in the `server.yml`. If it seems empty, try removing 
 Properly shutdown the server by using ctrl+c.
 
 ## Progress
+### 3/7/2023 + TODO
+
+![All dungeons](/docs/pics/dungeons.jpg)
+
+The dungeon generator has been mostly fixed and 90% perfect. There are still issues which I have tried to fix by bruting the solution. An example of this are room end-caps, which for some reason keep failing to place 100% of the time. Also, netviews in rooms are quite accurate, but some are not placed correctly. This makes so sense to me because I used the same approach for all netviews when dumping them from the game. Either I'm missing something, or everything is done right and there is something going on behind the scenes. I suspect it has something to do with the parent/child transforms being off axis or something. For instance, the fenring-claw and/or fur pedestal is missing, with the claw floating in some of the deeper rooms. Crystals float in a small lengthy room. Aside from this, everything else is perfect.
+
+I plan to fully implement dungeon regeneration and fixing edge cases in failing end-caps (this has annoyed me the most). I had the roughest time in implementing room overlap detection, and took the over-complicated route. I ended up on a method that was way simpler than I made it out to be, and I think I'll stick with it.
+
+In short, I created a grid system with the rooms that do not rotate, and they function correctly given the rotations are cardinal/90 degree increments. The rooms are only transformed when the ZDO dungeon data is saved relative to the start room.
+
+Anyways, they look quite close to the original:
+
+![All dungeons](/docs/pics/dungeon-forest.jpg)
+
+![All dungeons](/docs/pics/dungeon-swamp.jpg)
+
+![All dungeons](/docs/pics/dungeon-mountain.jpg)
+
+![All dungeons](/docs/pics/dungeon-mistlands.jpg)
+
 ### 2/28/2023 + TODO
 
 ![Dungeons broken](/docs/pics/dungeons-experimental.jpg)
