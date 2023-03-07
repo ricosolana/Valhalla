@@ -19,9 +19,9 @@ Command line arguments (all optional):
  - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
  - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
  
-All other settings are set in the `server.yml`. If it seems empty, try removing it and another will generate with defaults.
+All other settings are set in the `server.yml`. I periodically add new options every commit or release, so try deleting this file to generate a freshly populated config, or looking at https://github.com/PeriodicSeizures/Valhalla/blob/48a985f4d2ae0f3eac90cf4382e6c1d6d55ca3b8/src/ValhallaServer.cpp#L56 for config keys and their values.
 
-Properly shutdown the server by using ctrl+c.
+Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
 
 ## Progress
 ### 3/7/2023 + TODO
