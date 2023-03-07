@@ -13,13 +13,10 @@ class Heightmap;
 
 using ZoneID = Vector2i;
 
-// TODO rename Location to Feature, as this better describes
-//	its purpose
 class IZoneManager {
 	friend class INetManager;
 	friend class IModManager;
 
-	// Rename this to ZoneFeature
 	class Feature {
 		friend class IModManager;
 
@@ -65,7 +62,6 @@ class IZoneManager {
 			return this->m_name == other.m_name;
 		}
 
-		// Rename this
 		class Instance {
 			friend class IModManager;
 
@@ -157,9 +153,9 @@ private:
 	void SendLocationIcons(OWNER_t peer);
 	void OnNewPeer(Peer& peer);
 
-	void CreateGhostZones(const Vector3& pos);
+	void TryGenerateZones(const Vector3& pos);
 
-	bool SpawnZone(const ZoneID& zone);
+	bool TryGenerateZone(const ZoneID& zone);
 	std::vector<ClearArea> GenerateFeatures(const ZoneID& zone);
 	void GenerateFoliage(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
@@ -195,6 +191,7 @@ public:
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
+	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
 
 	// Get world height at location
@@ -216,4 +213,5 @@ public:
 	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
 };
 
+// Manager class for everything related to world generation
 IZoneManager* ZoneManager();

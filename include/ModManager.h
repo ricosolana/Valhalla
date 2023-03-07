@@ -192,4 +192,5 @@ public:
     }
 };
 
+// Manager class for everything related to mods which affect server functionality
 IModManager* ModManager();

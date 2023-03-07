@@ -19,5 +19,5 @@ zdo-send-interval-ms: 50
 zdo-assign-interval-s: 2
 zdo-smart-assign: true
 spawning-creatures: true
-spawning-locations: false
+spawning-locations: true
 spawning-vegetation: true

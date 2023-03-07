@@ -314,17 +314,17 @@ void IZoneManager::Update() {
         auto&& peers = NetManager()->GetPeers();
         for (auto&& pair : peers) {
             auto&& peer = pair.second;
-            CreateGhostZones(peer->m_pos);
+            TryGenerateZones(peer->m_pos);
         }
     });
 }
 
 // Rename?
-void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
+void IZoneManager::TryGenerateZones(const Vector3& refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
     // Prioritize center zone
-    if (!SpawnZone(zone)) {
+    if (!TryGenerateZone(zone)) {
 
         // If spawning fails, spawn other neighboring zones
         auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
@@ -335,13 +335,13 @@ void IZoneManager::CreateGhostZones(const Vector3& refPoint) {
                 if (x == zone.x && z == zone.y)
                     continue;
 
-                SpawnZone(ZoneID( x, z ));
+                TryGenerateZone(ZoneID( x, z ));
             }
         }
     }
 }
 
-bool IZoneManager::SpawnZone(const ZoneID& zone) {
+bool IZoneManager::TryGenerateZone(const ZoneID& zone) {
     if ((zone.x > -WORLD_RADIUS_IN_ZONES && zone.y > -WORLD_RADIUS_IN_ZONES
         && zone.x < WORLD_RADIUS_IN_ZONES && zone.y < WORLD_RADIUS_IN_ZONES)
         && !IsZoneGenerated(zone)) {
@@ -921,6 +921,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
             assert(zdo);
 
+            DungeonManager()->m_dungeonInstances.insert(zdo->ID());
             DungeonManager()->Generate(*dungeon, *zdo);
         }
     }

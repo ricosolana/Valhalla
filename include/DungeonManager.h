@@ -7,6 +7,10 @@
 #include "Dungeon.h"
 
 class IDungeonManager {
+	friend class IZDOManager;
+	friend class IZoneManager;
+
+private:
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
 
 	robin_hood::unordered_set<ZDOID> m_dungeonInstances;
@@ -28,4 +32,5 @@ public:
 	void Generate(const Dungeon& dungeon, ZDO& zdo);
 };
 
+// Manager for everything related to dungeon spawning 
 IDungeonManager* DungeonManager();

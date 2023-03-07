@@ -135,4 +135,5 @@ public:
 
 };
 
+// Manager class for everything related to high-level networking for simulated p2p communication
 IRouteManager* RouteManager();

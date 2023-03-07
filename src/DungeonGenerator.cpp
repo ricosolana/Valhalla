@@ -589,6 +589,9 @@ void DungeonGenerator::AddOpenConnections(RoomInstance& newRoom, const RoomConne
 bool DungeonGenerator::IsInsideZone(const Room& room, const Vector3& pos, const Quaternion& rot) {
 	Vector3 semiSize = room.m_size * .5f;
 
+	if (room.m_endCap)
+		semiSize *= .5f;
+
 	if (pos.y + semiSize.y < m_zoneCenter.y - m_zoneSize.y * .5f
 		|| pos.y - semiSize.y > m_zoneCenter.y + m_zoneSize.y * .5f)
 		return false;
@@ -654,8 +657,8 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 			return true;
 	}
 
-	if (room.m_endCap)
-		return false;
+	//if (room.m_endCap)
+		//return false;
 
 	Vector3 size;	
 	if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
@@ -670,6 +673,11 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 		// Resize the room to its smallest fitting circular region
 		size = room.m_size.Normalized() * Vector2(room.m_size.x, room.m_size.z).Magnitude();
 	}
+
+	if (room.m_endCap)
+		size *= .5f;
+	else
+		size -= Vector3(.1f, .1f, .1f);
 
 	//if (SERVER_SETTINGS.dungeonRoomShrink)
 		//size -= Vector3(.1f, .1f, .1f);

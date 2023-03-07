@@ -56,4 +56,5 @@ public:
     const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 };
 
+// Manager class for everything related to networking at a mildly abstracted level
 INetManager* NetManager();

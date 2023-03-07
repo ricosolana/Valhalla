@@ -48,4 +48,5 @@ public:
     void Init();
 };
 
+// Manager class for everything related to world file loading and file saving
 IWorldManager* WorldManager();

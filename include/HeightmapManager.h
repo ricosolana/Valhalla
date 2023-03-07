@@ -50,4 +50,5 @@ public:
 	//Heightmap* CreateHeightmap(const Vector2i& zone);
 };
 
+// Manager class for everything related to finely partitioned world heights and biomes during generation
 IHeightmapManager* HeightmapManager();

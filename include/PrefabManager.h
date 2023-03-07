@@ -6,6 +6,9 @@
 #include "Prefab.h"
 #include "ZDO.h"
 
+// TODO consider moving Instantiate(...) to ZDOManager
+//	this class doesnt do much besides try to simulate Unity in appearance
+//		which is not the desired result...
 class IPrefabManager {
 
 private:
@@ -48,4 +51,5 @@ public:
 
 };
 
+// Manager class for everything related to ZDO-belonging Prefabs and their base data
 IPrefabManager* PrefabManager();

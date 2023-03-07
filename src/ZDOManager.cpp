@@ -7,6 +7,7 @@
 #include "ZoneManager.h"
 #include "RouteManager.h"
 #include "HashUtils.h"
+#include "DungeonManager.h"
 
 auto ZDO_MANAGER(std::make_unique<IZDOManager>());
 IZDOManager* ZDOManager() {
@@ -178,8 +179,10 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			AddToSector(*zdo.get());
 			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
 
-			//m_objectsByPrefab[zdo->m_prefab->m_flags].insert(zdo.get());
+			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flag::Dungeon))
+				DungeonManager()->m_dungeonInstances.insert(zdo->ID());
 
+			// Do not use ZDO anywhere after this point, since its moved
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;

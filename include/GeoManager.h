@@ -194,4 +194,5 @@ public:
 	static constexpr float waterEdge = 10500;
 };
 
+// Manager class for everything related to coarse world heights and biomes during initial generation
 IGeoManager* GeoManager();

@@ -93,6 +93,7 @@ void IValhalla::LoadFiles() {
     m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
     m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
     m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
+    m_settings.dungeonReset = loadNode["dungeon-reset"].as<bool>(true);
     m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
     
     LOG(INFO) << "Server config loaded";
@@ -138,6 +139,7 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-flip-rooms"] = m_settings.dungeonFlipRooms;
         saveNode["dungeon-zone-limit"] = m_settings.dungeonZoneLimit;
         loadNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
+        loadNode["dungeon-reset"] = m_settings.dungeonReset;
         loadNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
 
         YAML::Emitter out;
@@ -301,7 +303,12 @@ void IValhalla::Update() {
 
     PERIODIC_NOW(1s, {
         ModManager()->CallEvent("PeriodUpdate");
-    })
+    });
+
+    PERIODIC_NOW(1min, {
+        if (SERVER_SETTINGS.dungeonReset)
+            DungeonManager()->RegenerateDungeons();
+    });
 
     //PERIODIC_NOW(1s, {
     //    LOG(INFO) << "update";

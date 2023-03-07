@@ -184,6 +184,8 @@ void IDungeonManager::RegenerateDungeons() {
 
                     // create new zdo
                     zdoid = Generate(*dungeon, pos, rot).ID();
+
+                    LOG(INFO) << "Regenerated dungeon at " << pos;
                 }
             }
 
