@@ -433,12 +433,12 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 
 		size *= .5f;
 
-		LOG(INFO) << "start: " 
-			<< "polygon(("
-			<< pos.x - size.x << "," << pos.z - size.z << "),("
-			<< pos.x - size.x << "," << pos.z + size.z << "),("
-			<< pos.x + size.x << "," << pos.z + size.z << "),("
-			<< pos.x + size.x << "," << pos.z - size.z << "))";
+		//LOG(INFO) << "start: " 
+		//	<< "polygon(("
+		//	<< pos.x - size.x << "," << pos.z - size.z << "),("
+		//	<< pos.x - size.x << "," << pos.z + size.z << "),("
+		//	<< pos.x + size.x << "," << pos.z + size.z << "),("
+		//	<< pos.x + size.x << "," << pos.z - size.z << "))";
 	}
 
 	this->PlaceRoom(roomData, pos, rot, dummy);
@@ -708,12 +708,12 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3& pos, const
 
 	size *= .5f;
 
-	LOG(INFO) 
-		<< "polygon((" 
-		<< pos.x - size.x << "," << pos.z - size.z << "),("
-		<< pos.x - size.x << "," << pos.z + size.z << "),("
-		<< pos.x + size.x << "," << pos.z + size.z << "),("
-		<< pos.x + size.x << "," << pos.z - size.z << "))";
+	//LOG(INFO) 
+	//	<< "polygon((" 
+	//	<< pos.x - size.x << "," << pos.z - size.z << "),("
+	//	<< pos.x - size.x << "," << pos.z + size.z << "),("
+	//	<< pos.x + size.x << "," << pos.z + size.z << "),("
+	//	<< pos.x + size.x << "," << pos.z - size.z << "))";
 
 	return false;
 }
