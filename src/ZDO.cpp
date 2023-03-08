@@ -31,23 +31,17 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
-#ifdef RUN_TESTS
-    pkg.Write(false);
-#else
+
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
-#endif
+
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
-#ifdef RUN_TESTS
-    pkg.Write(ObjectType::Default);
-    pkg.Write(false);
-    pkg.Write<HASH_t>(0);
-#else
+
     pkg.Write(this->m_prefab->m_type);
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
     pkg.Write(this->m_prefab->m_hash);
-#endif
+
     pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
     pkg.Write(this->m_pos);
     pkg.Write(this->m_rotation);
@@ -86,11 +80,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     }
 
     if (worldVersion >= 17)
-        if (!(this->m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>()))) {
-#ifndef RUN_TESTS
-            throw std::runtime_error("unknown zdo prefab");
-#endif
-        }
+        this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
     pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3>();
@@ -262,24 +252,15 @@ void ZDO::Serialize(DataWriter& pkg) const {
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticksCreated) == 8);
 
-#ifndef RUN_TESTS
-    assert(m_prefab);
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Persistent));
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Distant));
-#else
-    pkg.Write(false);
-    pkg.Write(false);
-#endif
 
     pkg.Write(m_rev.m_ticksCreated.count());
-    pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
-#ifndef RUN_TESTS
+    pkg.Write(VConstants::PGW);
+
     pkg.Write(m_prefab->m_type); // sbyte
     pkg.Write(m_prefab->m_hash);
-#else
-    pkg.Write(ObjectType::Default); // sbyte
-    pkg.Write<HASH_t>(0);
-#endif
+
     pkg.Write(m_rotation);
 
     // sections organized like this:
@@ -308,16 +289,8 @@ void ZDO::Deserialize(DataReader& pkg) {
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<ObjectType>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();
-#ifndef RUN_TESTS
-    if (!m_prefab && !(this->m_prefab = PrefabManager()->GetPrefab(prefabHash))) {
-        // If the prefab is initially being assigned and the prefab entry does not exist, throw
-        //  (client exception, since clients fault)
-        assert(!m_prefab);
-        throw std::runtime_error("zdo unknown prefab hash");
-    }
-
-    assert(m_prefab);
-#endif
+    if (!m_prefab)
+        this->m_prefab = &PrefabManager()->RequirePrefab(prefabHash);
 
     this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
