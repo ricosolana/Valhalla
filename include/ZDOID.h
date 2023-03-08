@@ -3,6 +3,7 @@
 #include "VUtils.h"
 
 // TODO rename back to ZDOID
+//PACKED_CLASS(ZDOID) {
 class ZDOID {
 public:
     // TODO make this structure more efficient, currently padding takes up 1/4 of the size

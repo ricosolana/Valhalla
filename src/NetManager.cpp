@@ -513,7 +513,7 @@ void INetManager::Update() {
         try {
             peer->Update();
         }
-        catch (const VUtils::data_error& e) {
+        catch (const std::runtime_error& e) {
             LOG(ERROR) << "Peer error: " << e.what();
             peer->m_socket->Close(false);
         }
@@ -524,7 +524,7 @@ void INetManager::Update() {
         try {
             rpc->PollOne();
         }
-        catch (const VUtils::data_error& e) {
+        catch (const std::runtime_error& e) {
             LOG(ERROR) << "NetRPC error: " << e.what();
             rpc->m_socket->Close(false);
         }

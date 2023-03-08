@@ -112,7 +112,7 @@ std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
 		try {
 			world = std::make_unique<World>(DataReader(opt.value()));
 		}
-		catch (const VUtils::data_error& e) {
+		catch (const std::runtime_error& e) {
 			LOG(ERROR) << "Failed to load world meta: " << e.what();
 		}
 	}
@@ -188,7 +188,7 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 					//}
 				}
 			}
-		} catch (const VUtils::data_error& e) {
+		} catch (const std::runtime_error& e) {
 			LOG(ERROR) << "Failed to load world: " << e.what();
 		}
 	}

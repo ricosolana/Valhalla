@@ -40,7 +40,7 @@ private:
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
 
-	robin_hood::unordered_map<ZDOID, TICKS_t> m_terrainModifiers;
+	//robin_hood::unordered_map<ZDOID, TICKS_t> m_terrainModifiers; // hmm..
 
 private:
 	// Called when an authenticated peer joins (internal)
@@ -269,6 +269,11 @@ public:
 	void DestroyZDO(ZDO& zdo) {
 		this->DestroyZDO(zdo, false);
 	}
+
+	size_t GetSumZDOMembers();
+	float GetMeanZDOMembers();
+	float GetStDevZDOMembers();
+	size_t GetTotalZDOAlloc();
 };
 
 // Manager class for everything related to networked object synchronization

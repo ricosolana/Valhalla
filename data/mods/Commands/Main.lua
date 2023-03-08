@@ -18,7 +18,17 @@ local RPC_vs = function(peer, cmd, args)
         print(' - ' .. args[i])
     end
     
-    if cmd == 'destroy' then
+    if cmd == 'time' then
+    
+        if #args == 0 then
+            return peer:ConsoleMessage('usage: time <day/afternoon/night>')
+        end
+    
+        if args[1] == 'day' then
+            
+        end
+    
+    elseif cmd == 'destroy' then
         -- destroy DG_Cave 32
         -- destroy DG_Cave <32>
         -- destroy -all <32>

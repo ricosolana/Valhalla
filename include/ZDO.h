@@ -293,7 +293,7 @@ private:
         void AssertType() const {
             //assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
             if (!IsType<T>())
-                throw VUtils::data_error("zdo typemask mismatch");
+                throw std::runtime_error("zdo typemask mismatch");
         }
 
         // Reassign the underlying member value
@@ -408,12 +408,16 @@ private:
 
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Quaternion m_rotation;
-private:    OWNER_t m_owner = 0;
 private:    const Prefab* m_prefab = nullptr;
+private:    OWNER_t m_owner = 0;
+//private:    HASH_t prefab;
 private:    Vector3 m_pos;
+//private:    uint32_t m_id;
+//private:    OWNER_t m_creator;
 private:    Ordinal m_ordinalMask = 0;
-private:    ZDOID m_id;
 public:     Rev m_rev; // TODO use smaller type for ownerRev and timeCreated
+private:    ZDOID m_id;
+public:     TICKS_t m_timeCreated;
 
 
 
@@ -492,7 +496,7 @@ public:
     ZDO(const ZDOID& id, const Vector3& pos)
         : m_id(id), m_pos(pos) 
     {
-        //m_rev.m_ticks = Valhalla()->Ticks();
+        m_timeCreated = Valhalla()->Ticks();
     }
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);

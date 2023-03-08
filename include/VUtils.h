@@ -79,6 +79,22 @@ using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
 
 
 
+#ifdef _MSC_VER
+#  define PACKED_STRUCT(name) \
+    __pragma(pack(push, 1)) struct name __pragma(pack(pop))
+#elif defined(__GNUC__)
+#  define PACKED_STRUCT(name) struct __attribute__((packed)) name
+#endif
+
+#ifdef _MSC_VER
+#  define PACKED_CLASS(name) \
+    __pragma(pack(push, 1)) class name __pragma(pack(pop))
+#elif defined(__GNUC__)
+#  define PACKED_CLASS(name) class __attribute__((packed)) name
+#endif
+
+
+
 struct Color {
     float r, g, b, a;
 
@@ -237,13 +253,13 @@ public:
 
 namespace VUtils {
 
-    class compress_error : public std::runtime_error {
-        using runtime_error::runtime_error;
-    };
-
-    class data_error : public std::runtime_error {
-        using runtime_error::runtime_error;
-    };
+    //class compress_error : public std::runtime_error {
+    //    using runtime_error::runtime_error;
+    //};
+    //
+    //class data_error : public std::runtime_error {
+    //    using runtime_error::runtime_error;
+    //};
 
     // Compress a byte array with a specified length and compression level
     // Stores the compressed contents into 'out' array

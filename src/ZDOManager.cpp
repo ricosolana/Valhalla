@@ -52,13 +52,8 @@ void IZDOManager::Update() {
 	});
 
 	PERIODIC_NOW(1min, {
-		//size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
-		size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-		for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
-
-		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000.f) << "kb)";
-
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000000.f) << "Mb)";
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
+		LOG(INFO) << "ZDO members (sum: " << GetSumZDOMembers() << ", mean: " << GetMeanZDOMembers() << ", stdev: " << GetStDevZDOMembers() << ")";
 	});
 
 	if (m_destroySendList.empty())
@@ -180,7 +175,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
 
 			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flag::Dungeon))
-				DungeonManager()->m_dungeonInstances.insert({ zdo->ID(), Valhalla()->Time() });
+				DungeonManager()->m_dungeonInstances.insert(zdo->ID());
 
 			// Do not use ZDO anywhere after this point, since its moved
 			m_objectsByID[zdo->ID()] = std::move(zdo);
@@ -232,7 +227,7 @@ ZDO& IZDOManager::AddZDO(const ZDOID& uid, const Vector3& position) {
 
 	auto&& pair = m_objectsByID.insert({ uid, nullptr });
 	if (!pair.second) // if insert failed, throw
-		throw VUtils::data_error("zdo id already exists");
+		throw std::runtime_error("zdo id already exists");
 
 	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
 
@@ -756,10 +751,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		static constexpr size_t sz2 = sizeof(ZDO::Rev);
 		static constexpr size_t sz3 = sizeof(ZDOID);
 
+		//static constexpr size_t sz4 = sizeof(BYTES_t::);
+
 		while (auto zdoid = reader.Read<ZDOID>()) {
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
-			auto owner = reader.Read<OWNER_t>();		// owner
+			auto owner = reader.Read<int64_t>();		// owner
 			auto pos = reader.Read<Vector3>();			// position
 
 			auto des = reader.SubRead();				// dont move this
@@ -818,7 +815,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					.m_dataRev = rev.m_dataRev,
 					.m_ownerRev = rev.m_ownerRev
 				};
-
+				
 				// Only set position if ZDO has previously existed
 				if (!created)
 					zdo.SetPosition(pos);
@@ -841,7 +838,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						zdo = copy; // if zdo modification was to be cancelled
 				}
 			}
-			catch (const VUtils::data_error& e) {
+			catch (const std::runtime_error& e) {
 				// erase the zdo from map
 				if (created) // if the zdo was just created, throw it away
 					EraseZDO(zdoid);
@@ -872,4 +869,34 @@ void IZDOManager::DestroyZDO(ZDO& zdo, bool immediate) {
 	m_destroySendList.push_back(zdo.m_id);
 	if (immediate)
 		EraseZDO(zdo.m_id);
+}
+
+size_t IZDOManager::GetSumZDOMembers() {
+	size_t res = 0;
+	for (auto&& zdo : m_objectsByID) {
+		res += zdo.second->m_members.size();
+	}
+	return res;
+}
+
+float IZDOManager::GetMeanZDOMembers() {
+	return (float) GetSumZDOMembers() / (float) m_objectsByID.size();
+}
+
+float IZDOManager::GetStDevZDOMembers() {
+	const float mean = GetMeanZDOMembers();
+	const float n = m_objectsByID.size();
+
+	float res = 0;
+	for (auto&& zdo : m_objectsByID) {
+		res += std::pow((float)zdo.second->m_members.size() - mean, 2.f);
+	}
+
+	return std::sqrt(res / n);
+}
+
+size_t IZDOManager::GetTotalZDOAlloc() {
+	size_t bytes = m_objectsByID.size() * sizeof(ZDO);
+	for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
+	return bytes;
 }

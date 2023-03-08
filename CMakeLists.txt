@@ -51,10 +51,14 @@ if(WIN32)
     add_definitions("/wd4244") # float loss
     add_definitions("/wd4267") # int loss
     add_definitions("/wd4996") # c functions it seems unsafe
+
+    #add_definitions("/d1reportSingleClassLayoutZDO")
 endif()
 
 #IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
     add_compile_definitions(ELPP_DISABLE_DEBUG_LOGS)
+    #add_compile_definitions(ELPP_NO_LOG_TO_FILE) # disable that pesky myeasylog.txt in root dir
+    add_compile_definitions(ELPP_NO_DEFAULT_LOG_FILE)
 #ENDIF()
 CPMAddPackage(
     NAME easyloggingpp

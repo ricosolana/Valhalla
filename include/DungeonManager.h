@@ -13,7 +13,9 @@ class IDungeonManager {
 private:
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
 
-	robin_hood::unordered_map<ZDOID, float> m_dungeonInstances;
+	//robin_hood::unordered_map<ZDOID, float> m_dungeonInstances;
+
+	robin_hood::unordered_set<ZDOID> m_dungeonInstances;
 
 public:
     void Init();

@@ -36,7 +36,7 @@ private:
                 return out;
             }
         }
-        throw VUtils::data_error("bad encoded int");
+        throw std::runtime_error("bad encoded int");
     }
 
 public:

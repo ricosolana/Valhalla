@@ -36,29 +36,18 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
-    assert(this->m_prefab);
-#ifdef RUN_TESTS
-    pkg.Write(false);
-#else
+
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
-#endif
-    pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
-    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
-        pkg.Write(ZDOManager()->m_terrainModifiers[m_id].count());
-    }
-    else {
-        pkg.Write<int64_t>(0);
-    }
+
+    pkg.Write<OWNER_t>(0);
+
+    pkg.Write<int64_t>(this->m_timeCreated.count());
     pkg.Write(VConstants::PGW);
-#ifdef RUN_TESTS
-    pkg.Write(ObjectType::Default);
-    pkg.Write(false);
-    pkg.Write<HASH_t>(0);
-#else
+
     pkg.Write(this->m_prefab->m_type);
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
     pkg.Write(this->m_prefab->m_hash);
-#endif
+
     pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
     pkg.Write(this->m_pos);
     pkg.Write(this->m_rotation);
@@ -80,8 +69,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>(); // data rev
     pkg.Read<bool>(); //this->m_persistent
     pkg.Read<OWNER_t>(); // unused owner
-    //this->m_rev.m_time = pkg.Read<int64_t>(); // Only needed for Terrain, which is wasteful for 99% of zdos
-    auto timeCreated = TICKS_t(pkg.Read<int64_t>());
+    this->m_timeCreated = TICKS_t(pkg.Read<int64_t>()); // Only needed for Terrain, which is wasteful for 99% of zdos
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
@@ -118,9 +106,9 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17)
         this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
-    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
-        ZDOManager()->m_terrainModifiers[m_id] = timeCreated;
-    }
+    //if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+    //    ZDOManager()->m_terrainModifiers[m_id] = timeCreated;
+    //}
 
     return modern;
 }
@@ -269,35 +257,14 @@ ZoneID ZDO::Sector() const {
 }
 
 void ZDO::Serialize(DataWriter& pkg) const {
-    //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_persistent) == 1);
-    //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
-    static_assert(sizeof(VConstants::PGW) == 4);
-    //static_assert(sizeof(Rev::m_ticks) == 8);
-
-#ifndef RUN_TESTS
-    assert(m_prefab);
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Persistent));
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Distant));
-#else
-    pkg.Write(false);
-    pkg.Write(false);
-#endif
 
-    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
-        pkg.Write(ZDOManager()->m_terrainModifiers[m_id].count());
-    }
-    else {
-        pkg.Write<int64_t>(0);
-    }
+    pkg.Write<int64_t>(m_timeCreated.count());
     
     pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
-#ifndef RUN_TESTS
     pkg.Write(m_prefab->m_type); // sbyte
     pkg.Write(m_prefab->m_hash);
-#else
-    pkg.Write(ObjectType::Default); // sbyte
-    pkg.Write<HASH_t>(0);
-#endif
     pkg.Write(m_rotation);
 
     // sections organized like this:
@@ -323,26 +290,14 @@ void ZDO::Deserialize(DataReader& pkg) {
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
 
-    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
-        ZDOManager()->m_terrainModifiers[m_id] = TICKS_t(pkg.Read<int64_t>());
-    }
-    else {
-        pkg.Read<int64_t>();
-    }
+    m_timeCreated = TICKS_t(pkg.Read<int64_t>());
 
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<ObjectType>(); // this->m_type
-    HASH_t prefabHash = pkg.Read<HASH_t>();
-#ifndef RUN_TESTS
-    if (!m_prefab && !(this->m_prefab = PrefabManager()->GetPrefab(prefabHash))) {
-        // If the prefab is initially being assigned and the prefab entry does not exist, throw
-        //  (client exception, since clients fault)
-        assert(!m_prefab);
-        throw VUtils::data_error("unknown prefab");
-    }
 
-    assert(m_prefab);
-#endif
+    HASH_t prefabHash = pkg.Read<HASH_t>();
+    if (!this->m_prefab)
+        this->m_prefab = &PrefabManager()->RequirePrefab(prefabHash);
 
     this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();

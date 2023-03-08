@@ -921,7 +921,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
             assert(zdo);
 
-            DungeonManager()->m_dungeonInstances.insert({ zdo->ID(), Valhalla()->Time() });
+            DungeonManager()->m_dungeonInstances.insert(zdo->ID());
             DungeonManager()->Generate(*dungeon, *zdo);
         }
     }

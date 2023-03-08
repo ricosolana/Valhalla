@@ -30,73 +30,76 @@ bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
 }
 
 void IValhalla::LoadFiles() {
-    YAML::Node loadNode;
     bool createSettingsFile = false;
+
     {
-        if (auto opt = VUtils::Resource::ReadFileString("server.yml")) {
-            try {
-                loadNode = YAML::Load(opt.value());
+        YAML::Node loadNode;
+        {
+            if (auto opt = VUtils::Resource::ReadFileString("server.yml")) {
+                try {
+                    loadNode = YAML::Load(opt.value());
+                }
+                catch (const YAML::ParserException& e) {
+                    LOG(INFO) << e.what();
+                    createSettingsFile = true;
+                }
             }
-            catch (const YAML::ParserException& e) {
-                LOG(INFO) << e.what();
+            else {
+                LOG(INFO) << "Server config not found, creating...";
                 createSettingsFile = true;
             }
         }
-        else {
-            LOG(INFO) << "Server config not found, creating...";
-            createSettingsFile = true;
-        }
+
+        // TODO:
+        // consider moving extraneous features into a separate lua mod group
+        //  to not pollute the primary base server code
+        //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
+
+        m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
+        if (m_settings.serverName.empty()) m_settings.serverName = "Valhalla server";
+        m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+        m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
+        m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
+
+        m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
+        if (m_settings.worldName.empty()) m_settings.worldName = "world";
+        m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
+        if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
+        m_settings.worldSave = loadNode["world-save"].as<bool>(false);
+        m_settings.worldSaveInterval = seconds(std::max(60, loadNode["world-save-interval-s"].as<int>(1800)));
+        m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
+
+        m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
+        m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
+        m_settings.playerMax = std::max(1, loadNode["player-max"].as<int>(10));                 // max allowed players
+        m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
+        m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
+        //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
+        m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
+        m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
+        m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
+
+        m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
+
+        m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int>(10240);
+        m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int>(2048);
+        m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<int>(50));
+        m_settings.zdoAssignInterval = seconds(std::clamp(loadNode["zdo-assign-interval-s"].as<int>(2), 1, 60));
+        m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(false);
+
+        m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
+        m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
+        m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
+        m_settings.spawningDungeons = loadNode["spawning-dungeons"].as<bool>(true);
+
+        m_settings.dungeonEndCaps = loadNode["dungeon-end-caps"].as<bool>(true);
+        m_settings.dungeonDoors = loadNode["dungeon-doors"].as<bool>(true);
+        m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
+        m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
+        m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
+        m_settings.dungeonReset = loadNode["dungeon-reset"].as<bool>(true);
+        m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
     }
-
-    // TODO:
-    // consider moving extraneous features into a separate lua mod group
-    //  to not pollute the primary base server code
-    //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
-
-    m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
-    if (m_settings.serverName.empty()) m_settings.serverName = "Valhalla server";
-    m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
-    m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
-    m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
-
-    m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
-    if (m_settings.worldName.empty()) m_settings.worldName = "world";
-    m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
-    if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-    m_settings.worldSave = loadNode["world-save"].as<bool>(false);
-    m_settings.worldSaveInterval = seconds(std::max(60, loadNode["world-save-interval-s"].as<int>(1800)));
-    m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
-
-    m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
-    m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
-    m_settings.playerMax = std::max(1, loadNode["player-max"].as<int>(10));                 // max allowed players
-    m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
-    m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
-    //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
-    m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
-    m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
-    m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
-
-    m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
-
-    m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int>(10240);
-    m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int>(2048);
-    m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<int>(50));
-    m_settings.zdoAssignInterval = seconds(std::clamp(loadNode["zdo-assign-interval-s"].as<int>(2), 1, 60));
-    m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(false);
-
-    m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
-    m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
-    m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
-    m_settings.spawningDungeons = loadNode["spawning-dungeons"].as<bool>(true);
-
-    m_settings.dungeonEndCaps = loadNode["dungeon-end-caps"].as<bool>(true);
-    m_settings.dungeonDoors = loadNode["dungeon-doors"].as<bool>(true);
-    m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
-    m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
-    m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
-    m_settings.dungeonReset = loadNode["dungeon-reset"].as<bool>(true);
-    m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
     
     LOG(INFO) << "Server config loaded";
 
@@ -142,9 +145,9 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-doors"] = m_settings.dungeonDoors;
         saveNode["dungeon-flip-rooms"] = m_settings.dungeonFlipRooms;
         saveNode["dungeon-zone-limit"] = m_settings.dungeonZoneLimit;
-        loadNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
-        loadNode["dungeon-reset"] = m_settings.dungeonReset;
-        loadNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
+        saveNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
+        saveNode["dungeon-reset"] = m_settings.dungeonReset;
+        saveNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
 
         YAML::Emitter out;
         out.SetIndent(4);

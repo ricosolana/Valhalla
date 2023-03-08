@@ -133,10 +133,10 @@ void IDungeonManager::Init() {
 void IDungeonManager::RegenerateDungeons() {
     //auto&& ticksNow = Valhalla()->Ticks();
 
-    auto now(Valhalla()->NetTime());
+    auto now(Valhalla()->Ticks());
 
     for (auto&& itr = m_dungeonInstances.begin(); itr != m_dungeonInstances.end(); ) {
-        auto&& zdoid = itr->first;
+        auto&& zdoid = *itr;
 
         auto dungeonZdo = ZDOManager()->GetZDO(zdoid);
         if (!dungeonZdo) {
@@ -144,10 +144,10 @@ void IDungeonManager::RegenerateDungeons() {
         }
         else {
             //auto&& ticksDungeon = dungeonZdo->m_rev.m_ticks;
-            auto&& last = itr->second;
+            auto&& last = dungeonZdo->m_timeCreated;
 
             // Reset dungeons after a time
-            if (last + SERVER_SETTINGS.dungeonResetTime.count() < now) {
+            if (last + SERVER_SETTINGS.dungeonResetTime < now) {
                 // how to handle resets?
 
                 bool playerNear = false;
@@ -161,7 +161,7 @@ void IDungeonManager::RegenerateDungeons() {
                 }
 
                 if (!playerNear) {
-                    last = now;
+                    //last = now;
 
                     auto dungeon = GetDungeon(dungeonZdo->GetPrefab()->m_hash);
                     if (!dungeon) throw std::runtime_error("dungeon missing");
