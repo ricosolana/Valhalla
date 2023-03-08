@@ -50,10 +50,10 @@ public:
 
         union {
             // Ticks is used for ZDO creationTime
-            TICKS_t m_ticks;
+            TICKS_t m_ticksCreated;
 
             // Time is used for Peer last ZDO update time
-            float m_time;
+            float m_syncTime;
         };
     };
 
@@ -474,7 +474,7 @@ public:
     ZDO(const ZDOID& id, const Vector3& pos)
         : m_id(id), m_pos(pos) 
     {
-        m_rev.m_ticks = Valhalla()->Ticks();
+        m_rev.m_ticksCreated = Valhalla()->Ticks();
     }
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);

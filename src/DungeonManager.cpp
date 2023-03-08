@@ -141,7 +141,7 @@ void IDungeonManager::RegenerateDungeons() {
             itr = m_dungeonInstances.erase(itr);
         }
         else {
-            auto&& ticksDungeon = dungeonZdo->m_rev.m_ticks;
+            auto&& ticksDungeon = dungeonZdo->m_rev.m_ticksCreated;
 
             // Reset dungeons after a time
             if (ticksDungeon + SERVER_SETTINGS.dungeonResetTime < ticksNow) {

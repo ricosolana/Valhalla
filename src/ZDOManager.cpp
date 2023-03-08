@@ -457,14 +457,14 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 				{
 					auto&& find = peer.m_zdos.find(a.m_id);
 					if (find != peer.m_zdos.end())
-						sub1 = std::clamp(time - find->second.m_time, 0.f, 100.f) * 1.5f;
+						sub1 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
 				}
 
 				float sub2 = 150;
 				{
 					auto&& find = peer.m_zdos.find(b.m_id);
 					if (find != peer.m_zdos.end())
-						sub2 = std::clamp(time - find->second.m_time, 0.f, 100.f) * 1.5f;
+						sub2 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
 				}
 
 				return a.Position().SqDistance(peer.m_pos) - sub1 * sub1 <
@@ -695,7 +695,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		peer.m_zdos[zdo.m_id] = ZDO::Rev {
 			.m_dataRev = zdo.m_rev.m_dataRev,
 			.m_ownerRev = zdo.m_rev.m_ownerRev,
-			.m_time = time
+			.m_syncTime = time
 		};
 	}
 	writer.Write(ZDOID()); // null terminator
@@ -738,7 +738,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			ZDO::Rev rev = { 
 				.m_dataRev = dataRev, 
 				.m_ownerRev = ownerRev, 
-				.m_time = time 
+				.m_syncTime = time 
 			};
 						
 			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
@@ -794,7 +794,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				peer->m_zdos[zdoid] = {
 					.m_dataRev = zdo.m_rev.m_dataRev,
 					.m_ownerRev = zdo.m_rev.m_ownerRev,
-					.m_time = time
+					.m_syncTime = time
 				};
 
 				zdo.Deserialize(des);

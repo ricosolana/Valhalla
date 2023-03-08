@@ -37,7 +37,7 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
 #endif
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
-    pkg.Write(this->m_rev.m_ticks.count());
+    pkg.Write(this->m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
 #ifdef RUN_TESTS
     pkg.Write(ObjectType::Default);
@@ -68,7 +68,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<bool>(); //this->m_persistent
     //this->m_owner = pkg.Read<OWNER_t>();
     pkg.Read<OWNER_t>(); // unused owner
-    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
+    this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
@@ -260,7 +260,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_persistent) == 1);
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
     static_assert(sizeof(VConstants::PGW) == 4);
-    static_assert(sizeof(Rev::m_ticks) == 8);
+    static_assert(sizeof(Rev::m_ticksCreated) == 8);
 
 #ifndef RUN_TESTS
     assert(m_prefab);
@@ -271,7 +271,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     pkg.Write(false);
 #endif
 
-    pkg.Write(m_rev.m_ticks.count());
+    pkg.Write(m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
 #ifndef RUN_TESTS
     pkg.Write(m_prefab->m_type); // sbyte
@@ -304,7 +304,7 @@ void ZDO::Deserialize(DataReader& pkg) {
 
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
-    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
+    this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<ObjectType>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();

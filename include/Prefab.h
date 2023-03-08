@@ -63,6 +63,8 @@ public:
 
         Dungeon = 1ULL << 32,
 
+        TerrainModifier = 1ULL < 33,
+
         //CharacterDrop,
         //DropOnDestroyed,
 	};
