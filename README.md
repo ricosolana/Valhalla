@@ -24,6 +24,14 @@ All other settings are set in the `server.yml`. I periodically add new options e
 Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
 
 ## Progress
+### 3/7/2023 (late)
+
+The devs updated late today and there are many changes:
+ - RoutedRpc ChatMessage has different signature (UserInfo instead of String). Additionally, string id in Chat class has been effectively changed to UserInfo (also its a serializeable pkg type, which is interesting...).
+ - Many client text changes (including rendering and languages for NPCs)
+   - The 'I HAVE ARRIVED' text is now locale based.
+ - Player now distinctly knows whether they were kicked, instead of guessing
+
 ### 3/7/2023 + TODO
 
 ![All dungeons](/docs/pics/dungeons.jpg)
