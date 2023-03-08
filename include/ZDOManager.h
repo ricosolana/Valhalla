@@ -40,7 +40,7 @@ private:
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
 
-	//robin_hood::unordered_map<ZDOID, TICKS_t> m_terrainRevisions;
+	robin_hood::unordered_map<ZDOID, TICKS_t> m_terrainModifiers;
 
 private:
 	// Called when an authenticated peer joins (internal)

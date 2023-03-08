@@ -28,6 +28,11 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
 
 //}
 
+//ZDO::Rev::Rev(const Peer::Rev& rev) 
+//    : m_dataRev(rev.m_dataRev), m_ownerRev(rev.m_ownerRev) {}
+//
+
+
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
@@ -38,7 +43,12 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Persistent));
 #endif
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
-    pkg.Write(this->m_rev.m_ticks.count());
+    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+        pkg.Write(ZDOManager()->m_terrainModifiers[m_id].count());
+    }
+    else {
+        pkg.Write<int64_t>(0);
+    }
     pkg.Write(VConstants::PGW);
 #ifdef RUN_TESTS
     pkg.Write(ObjectType::Default);
@@ -70,7 +80,8 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>(); // data rev
     pkg.Read<bool>(); //this->m_persistent
     pkg.Read<OWNER_t>(); // unused owner
-    this->m_rev.m_time = pkg.Read<int64_t>(); // Only needed for Terrain, which is wasteful for 99% of zdos
+    //this->m_rev.m_time = pkg.Read<int64_t>(); // Only needed for Terrain, which is wasteful for 99% of zdos
+    auto timeCreated = TICKS_t(pkg.Read<int64_t>());
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
@@ -106,6 +117,10 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion < 17)
         this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
+
+    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+        ZDOManager()->m_terrainModifiers[m_id] = timeCreated;
+    }
 
     return modern;
 }
@@ -257,7 +272,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_persistent) == 1);
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
     static_assert(sizeof(VConstants::PGW) == 4);
-    static_assert(sizeof(Rev::m_ticks) == 8);
+    //static_assert(sizeof(Rev::m_ticks) == 8);
 
 #ifndef RUN_TESTS
     assert(m_prefab);
@@ -268,7 +283,13 @@ void ZDO::Serialize(DataWriter& pkg) const {
     pkg.Write(false);
 #endif
 
-    pkg.Write(m_rev.m_ticks.count());
+    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+        pkg.Write(ZDOManager()->m_terrainModifiers[m_id].count());
+    }
+    else {
+        pkg.Write<int64_t>(0);
+    }
+    
     pkg.Write(VConstants::PGW); // pkg.Write(m_pgwVersion);
 #ifndef RUN_TESTS
     pkg.Write(m_prefab->m_type); // sbyte
@@ -301,7 +322,14 @@ void ZDO::Deserialize(DataReader& pkg) {
 
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
-    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
+
+    if (m_prefab->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+        ZDOManager()->m_terrainModifiers[m_id] = TICKS_t(pkg.Read<int64_t>());
+    }
+    else {
+        pkg.Read<int64_t>();
+    }
+
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<ObjectType>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();

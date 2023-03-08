@@ -33,12 +33,25 @@ class Peer {
     friend class INetManager;
     friend class IModManager;
 
+public:
+    struct Rev {
+        uint32_t m_dataRev = 0;
+        uint32_t m_ownerRev = 0;
+        float m_syncTime = 0;
+
+        //Rev(uint32_t dataRev, uint32_t ownerRev, float syncTime)
+        //    : m_dataRev(dataRev), m_ownerRev(ownerRev), m_syncTime(syncTime) {}
+        //
+        //Rev(const ZDO::Rev& rev) 
+        //    : m_dataRev(rev.m_dataRev), m_ownerRev(rev.m_ownerRev) {}
+    };
+
 private:
     std::chrono::steady_clock::time_point m_lastPing;
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 public:
-    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
+    robin_hood::unordered_map<ZDOID, Rev> m_zdos;
     robin_hood::unordered_set<ZDOID> m_forceSend;
     robin_hood::unordered_set<ZDOID> m_invalidSector;
 

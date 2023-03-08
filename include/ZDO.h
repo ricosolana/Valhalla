@@ -23,9 +23,10 @@ concept TrivialSyncType =
     || std::same_as<T, std::string>
     || std::same_as<T, BYTES_t>;
 
-class IZDOManager;
-class IPrefabManager;
 class Prefab;
+
+//class Peer;
+//struct Peer::Rev;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -56,18 +57,25 @@ public:
     //  TerrainModifier is the only ZDO that makes use of the 
     //      timeCreated, and seemingly
     struct Rev {
-        union {
-            struct {
-                uint16_t m_dataRev;
-                uint16_t m_ownerRev;
-            };
+        //uint16_t m_dataRev;
+        //
+        //union {
+        //    uint16_t m_ownerRev;
+        //
+        //    struct {
+        //        uint8_t m_ownerRevTC;
+        //        uint8_t m_timeOrderTC;
+        //    };
+        //};
 
-            struct {
-                uint16_t m_dataRevTC;
-                uint8_t m_ownerRevTC;
-                uint8_t m_timeOrderTC;
-            };
-        };
+        uint32_t m_dataRev = 0;
+        uint32_t m_ownerRev = 0;
+
+        //TICKS_t m_timeCreated;
+
+        //Rev() = default;
+        //
+        //Rev(const Peer::Rev& rev);
     };
 
     template<TrivialSyncType T>
@@ -398,17 +406,15 @@ private:
     //  C#  hash code function covers [INT_MIN, INT_MAX],
     //  UnityEngine Range(1, MAX) covers [1, 2^31 - 1)
 
-    
-private:    OWNER_t m_owner = 0;
-//private:    std::reference_wrapper<Prefab> m_prefab;
-private:    const Prefab* m_prefab = nullptr;
-private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
-private:    Ordinal m_ordinalMask = 0;
+private:    Quaternion m_rotation;
+private:    OWNER_t m_owner = 0;
+private:    const Prefab* m_prefab = nullptr;
 private:    Vector3 m_pos;
+private:    Ordinal m_ordinalMask = 0;
+private:    ZDOID m_id;
+public:     Rev m_rev; // TODO use smaller type for ownerRev and timeCreated
 
-public:     Rev m_rev = {}; // TODO use smaller type for ownerRev and timeCreated
-private:     ZDOID m_id;
 
 
 private:

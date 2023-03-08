@@ -454,10 +454,20 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 
 		if (flag == flag2) {
 			if (a.GetPrefab()->m_type == b.GetPrefab()->m_type) {
-				float sub1 = peer.m_zdos.contains(a.m_id) ? std::clamp(time - a.m_rev.m_time, 0.f, 100.f) * 1.5f
-					: 150;
-				float sub2 = peer.m_zdos.contains(b.m_id) ? std::clamp(time - b.m_rev.m_time, 0.f, 100.f) * 1.5f
-					: 150;
+
+				float sub1 = 150;
+				{
+					auto&& find = peer.m_zdos.find(a.m_id);
+					if (find != peer.m_zdos.end())
+						sub1 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
+				}
+
+				float sub2 = 150;
+				{
+					auto&& find = peer.m_zdos.find(b.m_id);
+					if (find != peer.m_zdos.end())
+						sub2 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
+				}
 
 				return a.Position().SqDistance(peer.m_pos) - sub1 * sub1 <
 					b.Position().SqDistance(peer.m_pos) - sub2 * sub2;
@@ -672,23 +682,45 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 		auto &&zdo = itr->get();
 
-		peer.m_forceSend.erase(zdo.ID());
+		peer.m_forceSend.erase(zdo.m_id);
 
 		writer.Write(zdo.m_id);
+
+		//if (zdo.GetPrefab()->FlagsPresent(Prefab::Flag::TerrainModifier)) {
+		//	// If 16bit owner revision is nearing overflow, force client 32bit uint overflow
+		//	if (zdo.m_rev.m_ownerRevTC >= std::numeric_limits<decltype(zdo.m_rev.m_ownerRevTC)>::max() >> 1) {
+		//		writer.Write<uint32_t>(std::numeric_limits<uint32_t>::max());
+		//	}
+		//	else
+		//		writer.Write<uint32_t>(zdo.m_rev.m_ownerRevTC);
+		//}
+		//else {
+		//	// If 16bit owner revision is nearing overflow, force client 32bit uint overflow
+		//	if (zdo.m_rev.m_ownerRev >= std::numeric_limits<decltype(zdo.m_rev.m_ownerRev)>::max() >> 1) {
+		//		writer.Write<uint32_t>(std::numeric_limits<uint32_t>::max());
+		//	}
+		//	else
+		//		writer.Write<uint32_t>(zdo.m_rev.m_ownerRev);
+		//}
+
+		// If 16bit data revision is nearing overflow, force client 32bit uint overflow
+		//if (zdo.m_rev.m_dataRev >= std::numeric_limits<decltype(zdo.m_rev.m_dataRev)>::max() >> 1) {
+		//	writer.Write<uint32_t>(std::numeric_limits<uint32_t>::max());
+		//}
+		//else
+		//	writer.Write<uint32_t>(zdo.m_rev.m_dataRev);
+
 		writer.Write(zdo.m_rev.m_ownerRev);
 		writer.Write(zdo.m_rev.m_dataRev);
+
 		writer.Write(zdo.m_owner);
 		writer.Write(zdo.m_pos);
 
-		writer.SubWrite([zdo, &writer]() {
+		writer.SubWrite([&]() {
 			zdo.Serialize(writer);
 		});
 
-		peer.m_zdos[zdo.m_id] = ZDO::Rev {
-			.m_dataRev = zdo.m_rev.m_dataRev,
-			.m_ownerRev = zdo.m_rev.m_ownerRev,
-			.m_time = time
-		};
+		peer.m_zdos[zdo.m_id] = Peer::Rev(zdo.m_rev.m_dataRev, zdo.m_rev.m_ownerRev, time);
 	}
 	writer.Write(ZDOID()); // null terminator
 
@@ -719,6 +751,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 		auto time = Valhalla()->Time();
 
+		static constexpr size_t sz = sizeof(ZDO::m_members);
+		static constexpr size_t sz1 = sizeof(ZDO);
+		static constexpr size_t sz2 = sizeof(ZDO::Rev);
+		static constexpr size_t sz3 = sizeof(ZDOID);
+
 		while (auto zdoid = reader.Read<ZDOID>()) {
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
@@ -727,12 +764,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			auto des = reader.SubRead();				// dont move this
 
-			ZDO::Rev rev = { 
+			Peer::Rev rev{ 
 				.m_dataRev = dataRev, 
 				.m_ownerRev = ownerRev, 
-				.m_time = time 
+				.m_syncTime = time 
 			};
-						
+
 			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
 
 			//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
@@ -777,17 +814,16 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 
 				zdo.m_owner = owner;
-				zdo.m_rev = rev;
+				zdo.m_rev = {
+					.m_dataRev = rev.m_dataRev,
+					.m_ownerRev = rev.m_ownerRev
+				};
 
 				// Only set position if ZDO has previously existed
 				if (!created)
 					zdo.SetPosition(pos);
 
-				peer->m_zdos[zdoid] = {
-					.m_dataRev = zdo.m_rev.m_dataRev,
-					.m_ownerRev = zdo.m_rev.m_ownerRev,
-					.m_time = time
-				};
+				peer->m_zdos[zdoid] = Peer::Rev(zdo.m_rev.m_dataRev, zdo.m_rev.m_ownerRev, time);
 
 				zdo.Deserialize(des);
 
