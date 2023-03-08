@@ -68,7 +68,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<bool>(); //this->m_persistent
     //this->m_owner = pkg.Read<OWNER_t>();
     pkg.Read<OWNER_t>(); // unused owner
-    this->m_rev.m_time = pkg.Read<int64_t>();
+    this->m_rev.m_ticks = TICKS_t(pkg.Read<int64_t>());
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
