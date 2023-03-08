@@ -16,10 +16,10 @@ namespace Hashes {
         //
         // Client
         //
-        static constexpr HASH_t ClientHandshake = __H("ClientHandshake");
-        static constexpr HASH_t Error = __H("Error");
-        static constexpr HASH_t NetTime = __H("NetTime");
-        static constexpr HASH_t PlayerList = __H("PlayerList");
+        static constexpr HASH_t S2C_Handshake = __H("ClientHandshake");
+        static constexpr HASH_t S2C_Error = __H("Error");
+        static constexpr HASH_t S2C_UpdateTime = __H("NetTime");
+        static constexpr HASH_t S2C_UpdatePlayerList = __H("PlayerList");
 
 
 
@@ -29,20 +29,20 @@ namespace Hashes {
 
         // Once
         static constexpr HASH_t Disconnect = __H("Disconnect");
-        static constexpr HASH_t ServerHandshake = __H("ServerHandshake"); 
+        static constexpr HASH_t C2S_Handshake = __H("ServerHandshake"); 
         static constexpr HASH_t PeerInfo = __H("PeerInfo");
 
         // Permissions
-        static constexpr HASH_t Save = __H("Save");
-        static constexpr HASH_t PrintBanned = __H("PrintBanned");
-        static constexpr HASH_t Kick = __H("Kick");
-        static constexpr HASH_t Ban = __H("Ban");
-        static constexpr HASH_t Unban = __H("Unban");
+        static constexpr HASH_t C2S_RequestSave = __H("Save");
+        static constexpr HASH_t C2S_RequestBanList = __H("PrintBanned");
+        static constexpr HASH_t C2S_RequestKick = __H("Kick");
+        static constexpr HASH_t C2S_RequestBan = __H("Ban");
+        static constexpr HASH_t C2S_RequestUnban = __H("Unban");
 
         // Regularly called
         static constexpr HASH_t ZDOData = __H("ZDOData");
-        static constexpr HASH_t CharacterID = __H("CharacterID");
-        static constexpr HASH_t RefPos = __H("RefPos");
+        static constexpr HASH_t C2S_UpdateID = __H("CharacterID");
+        static constexpr HASH_t C2S_UpdatePos = __H("RefPos");
         
 
 
@@ -50,7 +50,7 @@ namespace Hashes {
         // Client + Server
         //
 
-        static constexpr HASH_t ConsoleMessage = __H("RemotePrint");
+        static constexpr HASH_t S2C_ConsoleMessage = __H("RemotePrint");
         static constexpr HASH_t RoutedRPC = __H("RoutedRPC");
         
     }
@@ -73,16 +73,16 @@ namespace Hashes {
         // 
 
         // Meter
-        static constexpr HASH_t SleepStart = __H("SleepStart");
-        static constexpr HASH_t SleepStop = __H("SleepStop");
+        static constexpr HASH_t S2C_RequestSleep = __H("SleepStart");
+        static constexpr HASH_t S2C_RequestStopSleep = __H("SleepStop");
         static constexpr HASH_t DamageText = __H("DamageText");
-        static constexpr HASH_t Ping = __H("Ping");
-        static constexpr HASH_t GlobalKeys = __H("GlobalKeys");
-        static constexpr HASH_t LocationIcons = __H("LocationIcons");
-        static constexpr HASH_t UIMessage = __H("ShowMessage");
+        static constexpr HASH_t S2C_ResponsePing = __H("Ping");
+        static constexpr HASH_t S2C_UpdateKeys = __H("GlobalKeys");
+        static constexpr HASH_t S2C_UpdateIcons = __H("LocationIcons");
+        static constexpr HASH_t S2C_UIMessage = __H("ShowMessage");
         static constexpr HASH_t SetEvent = __H("SetEvent");
-        static constexpr HASH_t DiscoverLocationCallback = __H("DiscoverLocationRespons");
-        static constexpr HASH_t Teleport = __H("RPC_TeleportPlayer");
+        static constexpr HASH_t S2C_ResponseIcon = __H("DiscoverLocationRespons");
+        static constexpr HASH_t S2C_RequestTeleport = __H("RPC_TeleportPlayer");
 
 
 
@@ -107,7 +107,7 @@ namespace Hashes {
         // Server
         //
 
-        static constexpr HASH_t DiscoverLocation = __H("DiscoverClosestLocation");
+        static constexpr HASH_t C2S_RequestIcon = __H("DiscoverClosestLocation");
     }
 
 

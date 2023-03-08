@@ -180,11 +180,11 @@ void IZoneManager::Init() {
             SendGlobalKeys(IRouteManager::EVERYBODY); // Notify clients
     });
 
-    RouteManager()->Register(Hashes::Routed::DiscoverLocation, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
+    RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG(INFO) << "Found location: '" << locationName << "'";
             RouteManager()->Invoke(peer->m_uuid, 
-                Hashes::Routed::DiscoverLocationCallback, 
+                Hashes::Routed::S2C_ResponseIcon, 
                 pinName, 
                 pinType, 
                 instance->m_pos, 
@@ -244,7 +244,7 @@ void IZoneManager::SendLocationIcons(OWNER_t peer) {
         writer.Write(instance.get().m_feature.get().m_name);
     }
 
-    RouteManager()->Invoke(peer, Hashes::Routed::LocationIcons, bytes);
+    RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
 }
 
 // public

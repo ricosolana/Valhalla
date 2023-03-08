@@ -327,13 +327,13 @@ void IValhalla::PeriodUpdate() {
                     for (auto&& pair : NetManager()->GetPeers()) {
                         auto&& zdo = pair.second->GetZDO();
                         if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(pair.first, Hashes::Routed::SleepStop);
+                            RouteManager()->Invoke(pair.first, Hashes::Routed::S2C_RequestStopSleep);
                         }
                     }
                 }
                 else {
                     // wake every player
-                    RouteManager()->InvokeAll(Hashes::Routed::SleepStop);
+                    RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestStopSleep);
                 }
 
                 m_playerSleep = false;
@@ -378,7 +378,7 @@ void IValhalla::PeriodUpdate() {
                         for (auto&& pair : NetManager()->GetPeers()) {
                             auto&& zdo = pair.second->GetZDO();
                             if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(pair.first, Hashes::Routed::SleepStart);
+                                RouteManager()->Invoke(pair.first, Hashes::Routed::S2C_RequestSleep);
                             }
                             else {
                                 pair.second->CornerMessage("The world is sleeping");
@@ -388,7 +388,7 @@ void IValhalla::PeriodUpdate() {
                     else {
                         // Just signal to all players to sleep
                         //  This assumes they are all already in bed
-                        RouteManager()->InvokeAll(Hashes::Routed::SleepStart);
+                        RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestSleep);
                     }
                 }
             }
@@ -438,5 +438,5 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
 }
 
 void IValhalla::Broadcast(UIMsgType type, const std::string& text) {
-    RouteManager()->InvokeAll(Hashes::Routed::UIMessage, type, text);
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, text);
 }

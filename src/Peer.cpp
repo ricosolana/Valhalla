@@ -68,7 +68,7 @@ IMethod<Peer*>* Peer::GetMethod(HASH_t hash) {
 
 
 void Peer::ConsoleMessage(const std::string& msg) {
-    Invoke(Hashes::Rpc::ConsoleMessage, msg);
+    Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
 }
 
 void Peer::Kick(bool now) {
@@ -84,14 +84,14 @@ void Peer::Kick(std::string reason) {
     LOG(INFO) << "Kicking " << m_name << " for: " << reason;
 
     ConsoleMessage("kick: " + reason);
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::UIMessage, UIMsgType::Center, "kick: " + reason);
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_UIMessage, UIMsgType::Center, "kick: " + reason);
     
     SendDisconnect();
     Disconnect();
 }
 
 void Peer::SendDisconnect() {
-    Invoke("Disconnect");
+    Invoke(Hashes::Rpc::Disconnect);
 }
 
 void Peer::Disconnect() {
@@ -111,7 +111,7 @@ void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3 
 }
 
 void Peer::UIMessage(const std::string& text, UIMsgType type) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::UIMessage, type, text);
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_UIMessage, type, text);
 }
 
 ZDO* Peer::GetZDO() {
@@ -119,7 +119,7 @@ ZDO* Peer::GetZDO() {
 }
 
 void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::Teleport,
+    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,
         animation

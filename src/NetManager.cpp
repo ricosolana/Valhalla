@@ -143,7 +143,7 @@ void INetManager::SendPlayerList() {
         for (auto&& pair : m_peers) {
             auto&& peer = pair.second;
             // this is the problem
-            peer->Invoke(Hashes::Rpc::PlayerList, bytes);
+            peer->Invoke(Hashes::Rpc::S2C_UpdatePlayerList, bytes);
         }
     }
 }
@@ -151,7 +151,7 @@ void INetManager::SendPlayerList() {
 void INetManager::SendNetTime() {
     for (auto&& pair : m_peers) {
         auto&& peer = pair.second;
-        peer->Invoke(Hashes::Rpc::NetTime, (double)Valhalla()->NetTime());
+        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, (double)Valhalla()->NetTime());
     }
 }
 
@@ -271,13 +271,13 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     rpc = nullptr;
 
     // Important
-    peer->Register(Hashes::Rpc::RefPos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
+    peer->Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
         peer->m_pos = pos;
         peer->m_visibleOnMap = publicRefPos; // stupid name
     });
 
     // Important
-    peer->Register(Hashes::Rpc::CharacterID, [this](Peer* peer, ZDOID characterID) {
+    peer->Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
         if (!peer->m_characterID) {
             if (peer->m_magicLogin) {
                 peer->CornerMessage("You were automagically logged in");
@@ -299,7 +299,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     //    LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
     //});
 
-    peer->Register(Hashes::Rpc::Kick, [this](Peer* peer, std::string user) {
+    peer->Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -313,7 +313,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     });
 
-    peer->Register(Hashes::Rpc::Ban, [this](Peer* peer, std::string user) {
+    peer->Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -327,7 +327,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     });
 
-    peer->Register(Hashes::Rpc::Unban, [this](Peer* peer, std::string user) {
+    peer->Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -339,7 +339,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     });
     
-    peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
+    peer->Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -348,7 +348,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         peer->ConsoleMessage("Saved the world");
     });
 
-    peer->Register(Hashes::Rpc::PrintBanned, [this](Peer* peer) {
+    peer->Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -457,7 +457,7 @@ void INetManager::Update() {
             rpc->m_socket->Close(true);
         });
 
-        rpc->Register(Hashes::Rpc::ServerHandshake, [this](NetRpc* rpc) {
+        rpc->Register(Hashes::Rpc::C2S_Handshake, [this](NetRpc* rpc) {
             LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
 
             rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, BYTES_t pkg) {
@@ -466,10 +466,10 @@ void INetManager::Update() {
 
             if (SERVER_SETTINGS.playerAutoPassword && Valhalla()->m_bypass.contains(rpc->m_socket->GetHostName())) {
                 rpc->m_skipPassword = true;
-                rpc->Invoke(Hashes::Rpc::ClientHandshake, false, "");
+                rpc->Invoke(Hashes::Rpc::S2C_Handshake, false, "");
             }
             else
-                rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
+                rpc->Invoke(Hashes::Rpc::S2C_Handshake, m_hasPassword, m_salt);
         });
 
         m_rpcs.push_back(std::move(rpc));
