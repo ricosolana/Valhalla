@@ -44,16 +44,29 @@ public:
         Terrain
     };
 
+    // TODO
+    //  identify the amount of revisions that take place for a ZDO during a certain amount of time
+    //  this will directly depend on ZDO proximity to player and type of ZDO
+    //  most likely ZDOs capable of rapid updating (delta):
+    //      - Player ZDO
+    //      - simulated Characters near player
+    //      - 
+
+    // misc ideas for reducing memory consumption:
+    //  TerrainModifier is the only ZDO that makes use of the 
+    //      timeCreated, and seemingly
     struct Rev {
-        uint32_t m_dataRev = 0;
-        uint32_t m_ownerRev = 0;
-
         union {
-            // Ticks is used for ZDO creationTime
-            TICKS_t m_ticks;
+            struct {
+                uint16_t m_dataRev;
+                uint16_t m_ownerRev;
+            };
 
-            // Time is used for Peer last ZDO update time
-            float m_time;
+            struct {
+                uint16_t m_dataRevTC;
+                uint8_t m_ownerRevTC;
+                uint8_t m_timeOrderTC;
+            };
         };
     };
 
@@ -78,7 +91,7 @@ public:
             if (valid())
                 return *this->m_member;
             else
-                throw std::runtime_error("cannot retrieve T& from null");
+                throw std::runtime_error("proxy is empty");
         }
 
         void operator=(const T& other) {
@@ -86,12 +99,12 @@ public:
                 // Only revise if types are unequal (if an actual noticeable change will happen)
                 if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>) 
                     || *this->m_member != other) {
-                    *this->m_member = other;
+                    *this->m_member = other; // Cant use 'value() = other' because fx is const
                     m_zdo.Revise();
                 }
             }
             else {
-                throw std::runtime_error("cannot reassign null type");
+                throw std::runtime_error("proxy is empty");
             }
         }
     };
@@ -177,7 +190,6 @@ private:
         
         return static_cast<HASH_t>(mut & 0xFFFFFFFF);
     }
-
 
 private:
     class Ord {
@@ -395,7 +407,7 @@ private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
 private:    Vector3 m_pos;
 
-public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
+public:     Rev m_rev = {}; // TODO use smaller type for ownerRev and timeCreated
 private:     ZDOID m_id;
 
 
@@ -474,7 +486,7 @@ public:
     ZDO(const ZDOID& id, const Vector3& pos)
         : m_id(id), m_pos(pos) 
     {
-        m_rev.m_ticks = Valhalla()->Ticks();
+        //m_rev.m_ticks = Valhalla()->Ticks();
     }
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);

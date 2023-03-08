@@ -180,7 +180,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
 
 			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flag::Dungeon))
-				DungeonManager()->m_dungeonInstances.insert(zdo->ID());
+				DungeonManager()->m_dungeonInstances.insert({ zdo->ID(), Valhalla()->Time() });
 
 			// Do not use ZDO anywhere after this point, since its moved
 			m_objectsByID[zdo->ID()] = std::move(zdo);
@@ -370,7 +370,8 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 		peer->m_zdos.erase(zdoid);
 	}
 
-	m_deadZDOs[zdoid] = Valhalla()->Ticks();
+	//m_deadZDOs[zdoid] = Valhalla()->Ticks();
+	m_deadZDOs.insert(zdoid);
 }
 
 void IZDOManager::SendAllZDOs(Peer& peer) {

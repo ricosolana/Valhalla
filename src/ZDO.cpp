@@ -31,6 +31,7 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
+    assert(this->m_prefab);
 #ifdef RUN_TESTS
     pkg.Write(false);
 #else
@@ -63,12 +64,13 @@ void ZDO::Save(DataWriter& pkg) const {
 }
 
 bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
-    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO this isnt necessary?
-    this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // TODO this isnt necessary?
+    //this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO this isnt necessary?
+    //this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // TODO this isnt necessary?
+    pkg.Read<uint32_t>(); // owner rev
+    pkg.Read<uint32_t>(); // data rev
     pkg.Read<bool>(); //this->m_persistent
-    //this->m_owner = pkg.Read<OWNER_t>();
     pkg.Read<OWNER_t>(); // unused owner
-    this->m_rev.m_time = pkg.Read<int64_t>();
+    this->m_rev.m_time = pkg.Read<int64_t>(); // Only needed for Terrain, which is wasteful for 99% of zdos
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
@@ -86,11 +88,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     }
 
     if (worldVersion >= 17)
-        if (!(this->m_prefab = PrefabManager()->GetPrefab(pkg.Read<HASH_t>()))) {
-#ifndef RUN_TESTS
-            throw std::runtime_error("unknown zdo prefab");
-#endif
-        }
+        this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
     pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3>();
@@ -107,8 +105,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         _TryReadType<BYTES_t, int16_t>(pkg);
 
     if (worldVersion < 17)
-        if (!(this->m_prefab = PrefabManager()->GetPrefab(GetInt("prefab", 0))))
-            throw std::runtime_error("unknown zdo prefab");
+        this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
     return modern;
 }
@@ -242,7 +239,7 @@ void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
 
 
 void ZDO::SetPosition(const Vector3& pos) {
-    if (m_pos != pos) {
+    if (this->m_pos != pos) {
         ZDOManager()->InvalidateSector(*this);
         this->m_pos = pos;
         ZDOManager()->AddToSector(*this);
@@ -313,7 +310,7 @@ void ZDO::Deserialize(DataReader& pkg) {
         // If the prefab is initially being assigned and the prefab entry does not exist, throw
         //  (client exception, since clients fault)
         assert(!m_prefab);
-        throw VUtils::data_error("zdo unknown prefab hash");
+        throw VUtils::data_error("unknown prefab");
     }
 
     assert(m_prefab);

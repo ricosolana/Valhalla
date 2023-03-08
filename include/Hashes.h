@@ -13,14 +13,23 @@
 namespace Hashes {
 
     namespace Rpc {
-        //
-        // Client
-        //
+        // Handshake bound from server to client
         static constexpr HASH_t S2C_Handshake = __H("ClientHandshake");
+
+        // NetRpc status message handler
         static constexpr HASH_t S2C_Error = __H("Error");
-        static constexpr HASH_t S2C_Time = __H("NetTime");
+
+        // Update world time client-side
+        static constexpr HASH_t S2C_UpdateTime = __H("NetTime");
+
+        // Update player list client-side
         static constexpr HASH_t S2C_PlayerList = __H("PlayerList");
+
+        // Notify client that they were kicked
         static constexpr HASH_t S2C_Kicked = __H("Kicked");
+
+        // Request that the client save their profile
+        static constexpr HASH_t S2C_SaveProfile = __H("ManualSave");
 
 
 
@@ -34,16 +43,16 @@ namespace Hashes {
         static constexpr HASH_t C2S_PeerInfo = __H("PeerInfo");
 
         // Permissions
-        static constexpr HASH_t C2S_Save = __H("Save");
-        static constexpr HASH_t PrintBanned = __H("PrintBanned");
-        static constexpr HASH_t Kick = __H("Kick");
-        static constexpr HASH_t Ban = __H("Ban");
-        static constexpr HASH_t Unban = __H("Unban");
+        static constexpr HASH_t C2S_RequestSave = __H("Save");
+        static constexpr HASH_t C2S_RequestBanlist = __H("PrintBanned");
+        static constexpr HASH_t C2S_RequestKick = __H("Kick");
+        static constexpr HASH_t C2S_RequestBan = __H("Ban");
+        static constexpr HASH_t C2S_RequestUnban = __H("Unban");
 
         // Regularly called
         static constexpr HASH_t ZDOData = __H("ZDOData");
-        static constexpr HASH_t CharacterID = __H("CharacterID");
-        static constexpr HASH_t RefPos = __H("RefPos");
+        static constexpr HASH_t C2S_UpdateID = __H("CharacterID");
+        static constexpr HASH_t C2S_UpdatePosition = __H("RefPos");
         
 
 
@@ -51,7 +60,7 @@ namespace Hashes {
         // Client + Server
         //
 
-        static constexpr HASH_t ConsoleMessage = __H("RemotePrint");
+        static constexpr HASH_t S2C_ConsoleMessage = __H("RemotePrint");
         static constexpr HASH_t RoutedRPC = __H("RoutedRPC");
         
     }

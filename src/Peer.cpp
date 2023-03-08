@@ -68,7 +68,7 @@ IMethod<Peer*>* Peer::GetMethod(HASH_t hash) {
 
 
 void Peer::ConsoleMessage(const std::string& msg) {
-    Invoke(Hashes::Rpc::ConsoleMessage, msg);
+    Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
 }
 
 void Peer::Kick() {
