@@ -52,13 +52,8 @@ void IZDOManager::Update() {
 	});
 
 	PERIODIC_NOW(1min, {
-		//size_t bytes = m_objectsByID.calcNumBytesInfo(m_objectsByID.calcNumElementsWithBuffer(m_objectsByID.mask() + 1));
-		size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-		for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
-
-		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000.f) << "kb)";
-
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (bytes / 1000000.f) << "Mb)";
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
+		LOG(INFO) << "ZDO members (sum: " << GetSumZDOMembers() << ", mean: " << GetMeanZDOMembers() << ", stdev: " << GetStDevZDOMembers() << ")"; 
 	});
 
 	if (m_destroySendList.empty())
@@ -844,4 +839,34 @@ void IZDOManager::DestroyZDO(ZDO& zdo, bool immediate) {
 	m_destroySendList.push_back(zdo.m_id);
 	if (immediate)
 		EraseZDO(zdo.m_id);
+}
+
+size_t IZDOManager::GetSumZDOMembers() {
+	size_t res = 0;
+	for (auto&& zdo : m_objectsByID) {
+		res += zdo.second->m_members.size();
+	}
+	return res;
+}
+
+float IZDOManager::GetMeanZDOMembers() {
+	return (float)GetSumZDOMembers() / (float)m_objectsByID.size();
+}
+
+float IZDOManager::GetStDevZDOMembers() {
+	const float mean = GetMeanZDOMembers();
+	const float n = m_objectsByID.size();
+
+	float res = 0;
+	for (auto&& zdo : m_objectsByID) {
+		res += std::pow((float)zdo.second->m_members.size() - mean, 2.f);
+	}
+
+	return std::sqrt(res / n);
+}
+
+size_t IZDOManager::GetTotalZDOAlloc() {
+	size_t bytes = m_objectsByID.size() * sizeof(ZDO);
+	for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
+	return bytes;
 }

@@ -266,6 +266,11 @@ public:
 	void DestroyZDO(ZDO& zdo) {
 		this->DestroyZDO(zdo, false);
 	}
+
+	size_t GetSumZDOMembers();
+	float GetMeanZDOMembers();
+	float GetStDevZDOMembers();
+	size_t GetTotalZDOAlloc();
 };
 
 // Manager class for everything related to networked object synchronization
