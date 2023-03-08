@@ -273,7 +273,7 @@ private:
         void AssertType() const {
             //assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
             if (!IsType<T>())
-                throw VUtils::data_error("zdo typemask mismatch");
+                throw std::runtime_error("zdo typemask mismatch");
         }
 
         // Reassign the underlying member value

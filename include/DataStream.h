@@ -12,7 +12,7 @@ protected:
     // Throws if the count exceeds int32_t::max signed size
     static void Assert31U(size_t count) {
         if (Check31U(count))
-            throw VUtils::data_error("count is negative or exceeds 2^32 - 1");
+            throw std::runtime_error("count is negative or exceeds 2^32 - 1");
     }
     
     // Returns whether the specified position exceeds container length
@@ -23,7 +23,7 @@ protected:
     // Throws if the specified position exceeds container length
     void AssertPosition(size_t pos) const {
         if (CheckPosition(pos))
-            throw VUtils::data_error("position exceeds length");
+            throw std::runtime_error("position exceeds length");
     }
 
     // Returns whether the specified offset from m_pos exceeds container length
@@ -34,7 +34,7 @@ protected:
     // Throws if the specified offset from m_pos exceeds container length
     void AssertOffset(size_t offset) const {
         if (CheckOffset(offset))
-            throw VUtils::data_error("offset from position exceeds length");
+            throw std::runtime_error("offset from position exceeds length");
     }
 
 public:

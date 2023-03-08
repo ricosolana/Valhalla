@@ -232,7 +232,7 @@ ZDO& IZDOManager::AddZDO(const ZDOID& uid, const Vector3& position) {
 
 	auto&& pair = m_objectsByID.insert({ uid, nullptr });
 	if (!pair.second) // if insert failed, throw
-		throw VUtils::data_error("zdo id already exists");
+		throw std::runtime_error("zdo id already exists");
 
 	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
 
@@ -813,7 +813,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						zdo = copy; // if zdo modification was to be cancelled
 				}
 			}
-			catch (const VUtils::data_error& e) {
+			catch (const std::runtime_error& e) {
 				// erase the zdo from map
 				if (created) // if the zdo was just created, throw it away
 					EraseZDO(zdoid);

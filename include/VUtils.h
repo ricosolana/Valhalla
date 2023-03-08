@@ -223,13 +223,13 @@ public:
 
 namespace VUtils {
 
-    class compress_error : public std::runtime_error {
-        using runtime_error::runtime_error;
-    };
-
-    class data_error : public std::runtime_error {
-        using runtime_error::runtime_error;
-    };
+    //class compress_error : public std::runtime_error {
+    //    using runtime_error::runtime_error;
+    //};
+    //
+    //class data_error : public std::runtime_error {
+    //    using runtime_error::runtime_error;
+    //};
 
     // Compress a byte array with a specified length and compression level
     // Stores the compressed contents into 'out' array

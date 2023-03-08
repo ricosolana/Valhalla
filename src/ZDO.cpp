@@ -313,7 +313,7 @@ void ZDO::Deserialize(DataReader& pkg) {
         // If the prefab is initially being assigned and the prefab entry does not exist, throw
         //  (client exception, since clients fault)
         assert(!m_prefab);
-        throw VUtils::data_error("zdo unknown prefab hash");
+        throw std::runtime_error("zdo unknown prefab hash");
     }
 
     assert(m_prefab);
