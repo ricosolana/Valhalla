@@ -150,23 +150,27 @@ void IDungeonManager::RegenerateDungeons() {
                 bool playerNear = false;
 
                 // if a player is inside, do not reset
-                for (auto&& peer : NetManager()->GetPeers()) {
-                    if (dungeonZdo->Position().SqDistance(peer.second->m_pos) < 100 * 100) {
+                for (auto&& pair : NetManager()->GetPeers()) {
+                    auto&& peer = pair.second;
+                    auto&& peerZDO = peer->GetZDO();
+
+                    // peers zdo pos is used instead of refpos because zdo pos is more accurate
+                    if (peerZDO && 
+                        (dungeonZdo->Position().SqDistance(peerZDO->Position()) < 100 * 100)
+                        //|| dungeonZdo->Sector() == peerZDO->Sector()
+                        ) {
                         playerNear = true;
                         break;
                     }
                 }
 
+                auto&& dungeon = RequireDungeon(dungeonZdo->GetPrefab()->m_hash);
+
+                // Destroy all zdos high in the sky near dungeon IN ZONE
+                auto pos = dungeonZdo->Position();
+                auto rot = dungeonZdo->Rotation();
+
                 if (!playerNear) {
-                    //dungeonZdo->m_rev.m_ticks = ticksNow;
-
-                    auto dungeon = GetDungeon(dungeonZdo->GetPrefab()->m_hash);
-                    if (!dungeon) throw std::runtime_error("dungeon missing");
-
-                    // Destroy all zdos high in the sky near dungeon IN ZONE
-                    auto pos = dungeonZdo->Position();
-                    auto rot = dungeonZdo->Rotation();
-
                     auto height = pos.x;
                     auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), pos, 100);
                     for (auto&& ref : zdos) {
@@ -183,9 +187,12 @@ void IDungeonManager::RegenerateDungeons() {
                     }
 
                     // create new zdo
-                    zdoid = Generate(*dungeon, pos, rot).ID();
+                    zdoid = Generate(dungeon, pos, rot).ID();
 
-                    LOG(INFO) << "Regenerated dungeon at " << pos;
+                    LOG(INFO) << "Regenerated " << dungeon.m_prefab->m_name << " at " << pos;
+                }
+                else {
+                    LOG(INFO) << "Unable to regenerate " << dungeon.m_prefab->m_name << " at " << pos << " (peer is inside)";
                 }
             }
 

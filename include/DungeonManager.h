@@ -25,6 +25,13 @@ public:
 		return nullptr;
 	}
 
+	const Dungeon& RequireDungeon(HASH_t hash) const {
+		auto&& dungeon = GetDungeon(hash);
+		if (!dungeon)
+			throw std::runtime_error("unknown dungeon");
+		return *dungeon;
+	}
+
 	void RegenerateDungeons();
 
 	ZDO& Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot);
