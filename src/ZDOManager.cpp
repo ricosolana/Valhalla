@@ -688,7 +688,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		writer.Write(zdo.m_owner);
 		writer.Write(zdo.m_pos);
 
-		writer.SubWrite([zdo, &writer]() {
+		writer.SubWrite([&]() {
 			zdo.Serialize(writer);
 		});
 
