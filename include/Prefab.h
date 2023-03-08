@@ -16,58 +16,58 @@ public:
         Quaternion m_rot;
     };
 
-    enum class Flag : uint64_t {
-        // Single bit flags:
+    using Flag = uint64_t;
 
-        None = 0,
+    struct Flags {
+        static constexpr Flag None = 0;
 
-        SyncInitialScale = 1ULL << 0,
-        Distant = 1ULL << 1,
-        Persistent = 1ULL << 2,
+        static constexpr Flag SyncInitialScale = 1ULL << 0;
+        static constexpr Flag Distant = 1ULL << 1;
+        static constexpr Flag Persistent = 1ULL << 2;
 
-        Piece = 1ULL << 3,
-        Bed = 1ULL << 4,
-        Door = 1ULL << 5,
-        Chair = 1ULL << 6,
-        Ship = 1ULL << 7,
-        Fish = 1ULL << 8,
-        Plant = 1ULL << 9,
-        ArmorStand = 1ULL << 10,
+        static constexpr Flag Piece = 1ULL << 3;
+        static constexpr Flag Bed = 1ULL << 4;
+        static constexpr Flag Door = 1ULL << 5;
+        static constexpr Flag Chair = 1ULL << 6;
+        static constexpr Flag Ship = 1ULL << 7;
+        static constexpr Flag Fish = 1ULL << 8;
+        static constexpr Flag Plant = 1ULL << 9;
+        static constexpr Flag ArmorStand = 1ULL << 10;
 
-        ItemDrop = 1ULL << 11,
-        Pickable = 1ULL << 12,
-        PickableItem = 1ULL << 13,
+        static constexpr Flag ItemDrop = 1ULL << 11;
+        static constexpr Flag Pickable = 1ULL << 12;
+        static constexpr Flag PickableItem = 1ULL << 13;
 
-        CookingStation = 1ULL << 14,
-        CraftingStation = 1ULL << 15,
-        Smelter = 1ULL << 16,
-        Fireplace = 1ULL << 17,
+        static constexpr Flag CookingStation = 1ULL << 14;
+        static constexpr Flag CraftingStation = 1ULL << 15;
+        static constexpr Flag Smelter = 1ULL << 16;
+        static constexpr Flag Fireplace = 1ULL << 17;
 
-        WearNTear = 1ULL << 18,
-        Destructible = 1ULL << 19,
-        ItemStand = 1ULL << 20,
+        static constexpr Flag WearNTear = 1ULL << 18;
+        static constexpr Flag Destructible = 1ULL << 19;
+        static constexpr Flag ItemStand = 1ULL << 20;
 
-        AnimalAI = 1ULL << 21,
-        MonsterAI = 1ULL << 22,
-        Tameable = 1ULL << 23,
-        Procreation = 1ULL << 24,
+        static constexpr Flag AnimalAI = 1ULL << 21;
+        static constexpr Flag MonsterAI = 1ULL << 22;
+        static constexpr Flag Tameable = 1ULL << 23;
+        static constexpr Flag Procreation = 1ULL << 24;
 
-        MineRock = 1ULL << 25,
-        MineRock5 = 1ULL << 26,
-        TreeBase = 1ULL << 27, // vegetation
-        TreeLog = 1ULL << 28, // chopped down physics tree
-        
-        SFX = 1ULL << 29, // sound effect
-        VFX = 1ULL << 30, // visual effect
-        AOE = 1ULL << 31, // AOE attacks
+        static constexpr Flag MineRock = 1ULL << 25;
+        static constexpr Flag MineRock5 = 1ULL << 26;
+        static constexpr Flag TreeBase = 1ULL << 27; // vegetation
+        static constexpr Flag TreeLog = 1ULL << 28; // chopped down
 
-        Dungeon = 1ULL << 32,
+        static constexpr Flag SFX = 1ULL << 29; // sound effect
+        static constexpr Flag VFX = 1ULL << 30; // visual effect
+        static constexpr Flag AOE = 1ULL << 31; // AOE attacks
 
-        TerrainModifier = 1ULL < 33,
+        static constexpr Flag Dungeon = 1ULL << 32;
 
-        //CharacterDrop,
-        //DropOnDestroyed,
-	};
+        static constexpr Flag TerrainModifier = 1ULL << 33;
+
+        static constexpr Flag Player = 1ULL << 34;
+        static constexpr Flag Tombstone = 1ULL << 35;
+    };
 
 	Prefab() = default;
 
@@ -80,13 +80,13 @@ public:
 
 	uint64_t m_flags = 0;
 
-    bool FlagsPresent(Flag flag) const {
-        return (m_flags & std::to_underlying(flag)) == std::to_underlying(flag);
+    bool FlagsPresent(Flag prefabFlags) const {
+        return (m_flags & prefabFlags) == prefabFlags;
     }
 
-    bool FlagsAbsent(Flag flag) const {
-        auto mask = std::to_underlying(flag);
-        return !mask || (m_flags & mask) != mask;
+    bool FlagsAbsent(Flag prefabFlags) const {
+        return !prefabFlags 
+            || (m_flags & prefabFlags) != prefabFlags;
     }
 
     bool operator==(const Prefab& other) const {

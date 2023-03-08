@@ -172,16 +172,18 @@ void IDungeonManager::RegenerateDungeons() {
 
                 if (!playerNear) {
                     auto height = pos.x;
-                    auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), pos, 100);
+                    auto zdos = ZDOManager()->GetZDOs(dungeonZdo->Sector(), pos, 100, 0, Prefab::Flags::None, Prefab::Flags::Player | Prefab::Flags::Tombstone);
                     for (auto&& ref : zdos) {
                         auto&& zdo = ref.get();
                         auto&& prefab = zdo.GetPrefab();
 
                         // Delete only valid ZDOs
-                        if (prefab->m_hash == Hashes::Object::Player
-                            || prefab->m_hash == Hashes::Object::Player_tombstone
-                            )
-                            continue;
+                        //if (prefab->m_hash == Hashes::Object::Player
+                        //    || prefab->m_hash == Hashes::Object::Player_tombstone
+                        //    )
+                        //    continue;
+
+                        assert(!(prefab->m_hash == Hashes::Object::Player || prefab->m_hash == Hashes::Object::Player_tombstone));
 
                         ZDOManager()->DestroyZDO(zdo);
                     }

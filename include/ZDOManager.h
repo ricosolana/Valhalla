@@ -111,7 +111,7 @@ public:
 			auto&& prefab = zdo.GetPrefab();
 			return prefab->FlagsAbsent(flagsAbsent) &&
 				(prefab->m_hash == prefabHash 
-					|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+					|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 		});
 	}
 
@@ -128,7 +128,7 @@ public:
 			auto&& prefab = zdo.GetPrefab();
 			return prefab->FlagsAbsent(flagsAbsent) &&
 				(prefab->m_hash == prefabHash
-					|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+					|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 		});
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
@@ -146,7 +146,7 @@ public:
 				auto&& prefab = zdo.GetPrefab();
 				return prefab->FlagsAbsent(flagsAbsent) &&
 					(prefab->m_hash == prefabHash
-						|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+						|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 			}
 			return false;
 		});
@@ -185,7 +185,7 @@ public:
 			auto&& prefab = zdo.GetPrefab();
 			return prefab->FlagsAbsent(flagsAbsent) &&
 				(prefab->m_hash == prefabHash
-					|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+					|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 		});
 	}
 	// Get all ZDOs within a radius in zone
@@ -203,7 +203,7 @@ public:
 				auto&& prefab = zdo.GetPrefab();
 				return prefab->FlagsAbsent(flagsAbsent) &&
 					(prefab->m_hash == prefabHash
-						|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+						|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 			}
 			return false;
 		});
@@ -252,7 +252,7 @@ public:
 			auto&& prefab = zdo.GetPrefab();
 			return prefab->FlagsAbsent(flagsAbsent) &&
 				(prefab->m_hash == prefabHash
-					|| (std::to_underlying(flagsPresent) && prefab->FlagsPresent(flagsPresent)));
+					|| (flagsPresent && prefab->FlagsPresent(flagsPresent)));
 		});
 	}
 

@@ -81,7 +81,7 @@ ZDO& IPrefabManager::Instantiate(const Prefab& prefab, const Vector3& pos, const
     zdo.m_rotation = rot;
     zdo.m_prefab = &prefab;
 
-    if (prefab.FlagsPresent(Prefab::Flag::SyncInitialScale))
+    if (prefab.FlagsPresent(Prefab::Flags::SyncInitialScale))
         zdo.Set("scale", prefab.m_localScale);
 
     return zdo;
