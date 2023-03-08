@@ -180,7 +180,7 @@ void INetManager::SendPeerInfo(Peer* peer) {
     writer.Write(world->m_worldGenVersion);
     writer.Write(Valhalla()->NetTime());
 
-    peer->Invoke(Hashes::Rpc::PeerInfo, bytes);
+    peer->Invoke(Hashes::Rpc::C2S_PeerInfo, bytes);
 }
 
 
@@ -339,7 +339,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     });
     
-    peer->Register(Hashes::Rpc::Save, [](Peer* peer) {
+    peer->Register(Hashes::Rpc::C2S_Save, [](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -457,19 +457,19 @@ void INetManager::Update() {
             rpc->m_socket->Close(true);
         });
 
-        rpc->Register(Hashes::Rpc::ServerHandshake, [this](NetRpc* rpc) {
+        rpc->Register(Hashes::Rpc::C2S_Handshake, [this](NetRpc* rpc) {
             LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
 
-            rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, BYTES_t pkg) {
+            rpc->Register(Hashes::Rpc::C2S_PeerInfo, [this](NetRpc* rpc, BYTES_t pkg) {
                 RPC_PeerInfo(rpc, std::move(pkg));
             });
 
             if (SERVER_SETTINGS.playerAutoPassword && Valhalla()->m_bypass.contains(rpc->m_socket->GetHostName())) {
                 rpc->m_skipPassword = true;
-                rpc->Invoke(Hashes::Rpc::ClientHandshake, false, "");
+                rpc->Invoke(Hashes::Rpc::S2C_Handshake, false, "");
             }
             else
-                rpc->Invoke(Hashes::Rpc::ClientHandshake, m_hasPassword, m_salt);
+                rpc->Invoke(Hashes::Rpc::S2C_Handshake, m_hasPassword, m_salt);
         });
 
         m_rpcs.push_back(std::move(rpc));

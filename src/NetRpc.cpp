@@ -42,6 +42,6 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 
 void NetRpc::Close(ConnectionStatus status) {
     LOG(INFO) << "Client error: " << STATUS_STRINGS[(int)status];
-    Invoke(Hashes::Rpc::Error, status);
+    Invoke(Hashes::Rpc::S2C_Error, status);
     m_socket->Close(true);
 }

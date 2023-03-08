@@ -16,10 +16,11 @@ namespace Hashes {
         //
         // Client
         //
-        static constexpr HASH_t ClientHandshake = __H("ClientHandshake");
-        static constexpr HASH_t Error = __H("Error");
-        static constexpr HASH_t NetTime = __H("NetTime");
-        static constexpr HASH_t PlayerList = __H("PlayerList");
+        static constexpr HASH_t S2C_Handshake = __H("ClientHandshake");
+        static constexpr HASH_t S2C_Error = __H("Error");
+        static constexpr HASH_t S2C_Time = __H("NetTime");
+        static constexpr HASH_t S2C_PlayerList = __H("PlayerList");
+        static constexpr HASH_t S2C_Kicked = __H("Kicked");
 
 
 
@@ -29,11 +30,11 @@ namespace Hashes {
 
         // Once
         static constexpr HASH_t Disconnect = __H("Disconnect");
-        static constexpr HASH_t ServerHandshake = __H("ServerHandshake"); 
-        static constexpr HASH_t PeerInfo = __H("PeerInfo");
+        static constexpr HASH_t C2S_Handshake = __H("ServerHandshake"); 
+        static constexpr HASH_t C2S_PeerInfo = __H("PeerInfo");
 
         // Permissions
-        static constexpr HASH_t Save = __H("Save");
+        static constexpr HASH_t C2S_Save = __H("Save");
         static constexpr HASH_t PrintBanned = __H("PrintBanned");
         static constexpr HASH_t Kick = __H("Kick");
         static constexpr HASH_t Ban = __H("Ban");

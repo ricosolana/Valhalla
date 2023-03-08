@@ -32,7 +32,7 @@ namespace VConstants {
     //static const char* PLAYERNAME = "Stranger";
 
     // Valheim game version
-    static const char* GAME = "0.213.4";
+    static const char* GAME = "0.214.2";
 
     // worldgenerator
     static constexpr int32_t WORLD = 29;

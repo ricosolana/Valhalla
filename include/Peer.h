@@ -140,8 +140,7 @@ public:
     IMethod<Peer*>* GetMethod(const std::string& name);
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
-    void Kick(bool now);
-    void Kick() { Kick(false); }
+    void Kick();
     void Kick(std::string reason);
     void SendDisconnect();
     void Disconnect();
@@ -165,6 +164,9 @@ public:
     void CenterMessage(const std::string& text) {
         UIMessage(text, UIMsgType::Center);
     }
+    
+    // Requests that the client save their profile
+    void ManualSave();
 
 
 

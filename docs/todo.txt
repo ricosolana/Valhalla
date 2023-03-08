@@ -1,4 +1,7 @@
 todo:
+    - Command line args in main
+        I dont exactly like the location or usage of the main.cpp command line arguments or their usage (except for the working dir arg, its fine). The server.yml should have most if not all of the options for the server.
+
     - fix dungeon netview orientations
         some netviews in DG_Cave (crystal in this small corrider) and the roots when entering crypt are either floating or in the way. 
         

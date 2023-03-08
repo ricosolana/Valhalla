@@ -22,6 +22,7 @@ enum class ConnectionStatus : int32_t {
     ErrorFull,
     ErrorPlatformExcluded,
     ErrorCrossplayPrivilege,
+    ErrorKicked,
     MAX // 10
 };
 

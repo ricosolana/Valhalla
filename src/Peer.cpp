@@ -71,11 +71,13 @@ void Peer::ConsoleMessage(const std::string& msg) {
     Invoke(Hashes::Rpc::ConsoleMessage, msg);
 }
 
-void Peer::Kick(bool now) {
+void Peer::Kick() {
     LOG(INFO) << "Kicking " << m_name;
 
-    SendDisconnect();
-    m_socket->Close(now);
+    Invoke(Hashes::Rpc::S2C_Kicked);
+    //SendDisconnect();
+    //m_socket->Close(true);
+    Disconnect();
 }
 
 void Peer::Kick(std::string reason) {
@@ -91,7 +93,7 @@ void Peer::Kick(std::string reason) {
 }
 
 void Peer::SendDisconnect() {
-    Invoke("Disconnect");
+    Invoke(Hashes::Rpc::Disconnect);
 }
 
 void Peer::Disconnect() {
@@ -104,7 +106,7 @@ void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3 
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
         pos, //Vector3(10000, 10000, 10000),
         type,
-        senderName, //"<color=yellow><b>SERVER</b></color>",
+        "", senderName, "", //"<color=yellow><b>SERVER</b></color>",
         text,
         senderID //""
     );
