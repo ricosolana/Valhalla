@@ -174,8 +174,11 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			AddToSector(*zdo.get());
 			m_objectsByPrefab[zdo->m_prefab->m_hash].insert(zdo.get());
 
-			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flags::Dungeon))
-				DungeonManager()->m_dungeonInstances.insert(zdo->ID());
+			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flags::Dungeon)) {
+				// Only add real sky dungeon
+				if (zdo->Position().y > 4000)
+					DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
+			}
 
 			// Do not use ZDO anywhere after this point, since its moved
 			m_objectsByID[zdo->ID()] = std::move(zdo);
@@ -365,7 +368,8 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 		peer->m_zdos.erase(zdoid);
 	}
 
-	m_deadZDOs[zdoid] = Valhalla()->Ticks();
+	//m_deadZDOs[zdoid] = Valhalla()->Ticks();
+	m_deadZDOs.insert(zdoid);
 }
 
 void IZDOManager::SendAllZDOs(Peer& peer) {

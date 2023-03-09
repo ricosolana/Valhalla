@@ -45,4 +45,6 @@ struct ServerSettings {
     bool            dungeonRoomShrink;
     bool            dungeonReset;
     seconds         dungeonResetTime;
+    //milliseconds    dungeonIncrementalResetTime;
+    int             dungeonIncrementalResetCount;
 };

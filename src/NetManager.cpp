@@ -534,8 +534,7 @@ void INetManager::Update() {
 
     // Cleanup
     {
-        auto&& itr = m_rpcs.begin();
-        while (itr != m_rpcs.end()) {
+        for (auto&& itr = m_rpcs.begin(); itr != m_rpcs.end(); ) {
             auto&& rpc = itr->get();
             assert(rpc);
             if (!(rpc->m_socket && rpc->m_socket->Connected())) {
@@ -548,21 +547,19 @@ void INetManager::Update() {
     }
 
     {
-        auto&& itr = m_peers.begin();
-        while (itr != m_peers.end()) {
-            auto&& peer = itr->second;
-            assert(peer);
+        for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
+            auto&& peer = *itr->second.get();
 
-            if (!peer->m_socket->Connected()) {
+            if (!peer.m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
 
-                ModManager()->CallEvent(EVENT_HASH_Quit, peer.get());
-                ZDOManager()->OnPeerQuit(*peer.get());
+                ModManager()->CallEvent(EVENT_HASH_Quit, std::ref(peer));
+                ZDOManager()->OnPeerQuit(peer);
 
-                if (peer->m_admin)
-                    Valhalla()->m_admin.insert(peer->m_socket->GetHostName());
+                if (peer.m_admin)
+                    Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
                 else 
-                    Valhalla()->m_admin.erase(peer->m_socket->GetHostName());
+                    Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
 
                 itr = m_peers.erase(itr);
             }

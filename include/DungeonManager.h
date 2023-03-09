@@ -13,7 +13,9 @@ class IDungeonManager {
 private:
 	robin_hood::unordered_map<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
 
-	robin_hood::unordered_set<ZDOID> m_dungeonInstances;
+	//robin_hood::unordered_set<ZDOID> m_dungeonInstances;
+	std::vector<ZDOID> m_dungeonInstances;
+	size_t m_nextIndex = 0;
 
 public:
     void Init();
@@ -32,7 +34,11 @@ public:
 		return *dungeon;
 	}
 
-	void RegenerateDungeons();
+	// Try to replace the target dungeon with a newly generated one
+	//	Returns the new dungeon (dungeonZdo is invalidated)
+	//	Returns null if replacement failed (dungeonZdo remains valid)
+	ZDO* TryRegenerateDungeon(ZDO& dungeonZdo);
+	void TryRegenerateDungeons();
 
 	ZDO& Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot);
 	ZDO& Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot, HASH_t seed);

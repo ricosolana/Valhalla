@@ -77,9 +77,9 @@ public:
     }
 
     // Get the time in Ticks (C# DateTime.Ticks)
-    auto Ticks() {
-        return duration_cast<TICKS_t>(Nanos());
-    }
+    //auto Ticks() {
+    //    return duration_cast<TICKS_t>(Nanos());
+    //}
 
     // Get the time in seconds (Unity Time.time)
     float Time() {
@@ -98,22 +98,8 @@ public:
         return m_netTime;
     }
 
-    float DayFrac() {
-        float m_totalSeconds = NetTime();
-
-        // with nettime wrapped by 1800
-        //  morning?: 240 (2040 - 1800)
-        //  day: 270
-        //  night: 
-
-        //int64_t num = m_totalSeconds;
-        //double num2 = m_totalSeconds * 1000.0;
-        //int64_t num3 = 1260 * 1000L;
-        //float num4 = VUtils::Mathf::Clamp01(std::fmod(m_totalSeconds * 1000.0f, 1260) / 1260.f);
-        //num4 = this.RescaleDayFraction(num4);
-        //float smoothDayFraction = this.m_smoothDayFraction;
-        //float t = Mathf.LerpAngle(this.m_smoothDayFraction * 360f, num4 * 360f, 0.01f);
-        //this.m_smoothDayFraction = Mathf.Repeat(t, 360f) / 360f;
+    TICKS_t NetTicks() {
+        return TICKS_t((int64_t)(m_netTime * 1000.0 * 10000.0));
     }
 
     float NetTimeWrapped() const {

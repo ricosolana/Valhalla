@@ -34,7 +34,8 @@ private:
 	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
 
 	// Primarily used in RPC_ZDOData
-	robin_hood::unordered_map<ZDOID, TICKS_t> m_deadZDOs;
+	//robin_hood::unordered_map<ZDOID, TICKS_t> m_deadZDOs;
+	robin_hood::unordered_set<ZDOID> m_deadZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;

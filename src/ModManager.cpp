@@ -589,7 +589,7 @@ void IModManager::LoadAPI() {
     apiTable["Delta"] = []() { return Valhalla()->Delta(); };
     apiTable["ID"] = []() { return Valhalla()->ID(); };
     apiTable["Nanos"] = []() { return Valhalla()->Nanos(); };
-    apiTable["Ticks"] = []() { return Valhalla()->Ticks(); };
+    apiTable["NetTicks"] = []() { return Valhalla()->NetTicks(); };
     apiTable["Time"] = []() { return Valhalla()->Time(); };
 
     // TODO turn managers into lua classes that can be indexed

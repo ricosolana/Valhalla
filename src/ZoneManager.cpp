@@ -891,12 +891,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
         if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->FlagsPresent(Prefab::Flags::Dungeon))) {
             PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
         } else {
-            auto&& dungeon = DungeonManager()->GetDungeon(piece.m_prefab->m_hash);
-            if (!dungeon) throw std::runtime_error("dungeon missing");
+            auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
             ZDO* zdo = nullptr;
 
-            if (dungeon->m_interiorPosition != Vector3::ZERO) {
+            if (dungeon.m_interiorPosition != Vector3::ZERO) {
 
                 ZoneID zone = WorldToZonePos(pos);
                 Vector3 zonePos = ZoneToWorldPos(zone);
@@ -908,10 +907,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
                 //localPosition = Quaternion::Inverse(rot) * localPosition;
 
                 Vector3 piecePos = zonePos
-                    + dungeon->m_interiorPosition // ( 0, 5000, 0 )
-                    + dungeon->m_originalPosition; // minor position change (usually height and a horizontal axis)
+                    + dungeon.m_interiorPosition // ( 0, 5000, 0 )
+                    + dungeon.m_originalPosition; // minor position change (usually height and a horizontal axis)
 
-                piecePos.y = dungeon->m_interiorPosition.y + pos.y;
+                piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
                 zdo = &PrefabManager()->Instantiate(*piece.m_prefab, piecePos, piece.m_rot);
             }
@@ -921,8 +920,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
             assert(zdo);
 
-            DungeonManager()->m_dungeonInstances.insert(zdo->ID());
-            DungeonManager()->Generate(*dungeon, *zdo);
+            // Only add real sky dungeon
+            if (zdo->Position().y > 4000)
+                DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
+
+            DungeonManager()->Generate(dungeon, *zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;

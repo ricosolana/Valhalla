@@ -99,6 +99,8 @@ void IValhalla::LoadFiles() {
         m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
         m_settings.dungeonReset = loadNode["dungeon-reset"].as<bool>(true);
         m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
+        //m_settings.dungeonIncrementalResetTime = seconds(std::max(1, loadNode["dungeon-incremental-reset-time-s"].as<int>(5)));
+        m_settings.dungeonIncrementalResetCount = std::min(20, loadNode["dungeon-incremental-reset-count"].as<int>(3));
     }
     
     LOG(INFO) << "Server config loaded";
@@ -148,6 +150,8 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
         saveNode["dungeon-reset"] = m_settings.dungeonReset;
         saveNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
+        //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
+        saveNode["dungeon-incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -318,7 +322,7 @@ void IValhalla::PeriodUpdate() {
     ModManager()->CallEvent("PeriodUpdate");
 
     if (m_settings.dungeonReset)
-        DungeonManager()->RegenerateDungeons();
+        DungeonManager()->TryRegenerateDungeons();
 
     if (m_settings.playerSleep) {
         if (m_playerSleep) {
