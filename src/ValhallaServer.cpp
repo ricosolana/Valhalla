@@ -101,6 +101,7 @@ void IValhalla::LoadFiles() {
         m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
         //m_settings.dungeonIncrementalResetTime = seconds(std::max(1, loadNode["dungeon-incremental-reset-time-s"].as<int>(5)));
         m_settings.dungeonIncrementalResetCount = std::min(20, loadNode["dungeon-incremental-reset-count"].as<int>(3));
+        m_settings.dungeonRandomGeneration = loadNode["dungeon-random-generation"].as<bool>(true);
     }
     
     LOG(INFO) << "Server config loaded";
@@ -152,6 +153,7 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
         //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
         saveNode["dungeon-incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
+        saveNode["dungeon-random-generation"] = m_settings.dungeonRandomGeneration;
 
         YAML::Emitter out;
         out.SetIndent(4);
