@@ -21,6 +21,23 @@ enum class UIMsgType : int32_t {
 class NetRpc;
 class IWorldManager;
 
+
+using WorldTime = double;
+// relative time from 0 in the day cycle
+using TimeOfDay = double;
+
+static constexpr TimeOfDay TIME_MORNING = 240;
+static constexpr TimeOfDay TIME_DAY = 270;
+static constexpr TimeOfDay TIME_AFTERNOON = 900;
+static constexpr TimeOfDay TIME_NIGHT = 1530;
+
+//enum class TimeOfDay {
+//    MORNING = 240,
+//    DAY = 270,
+//    AFTERNOON = 900,
+//    NIGHT = 1530
+//};
+
 class IValhalla {
     friend class ValhallaLauncher;
     friend class IWorldManager;
@@ -39,12 +56,12 @@ private:
     steady_clock::time_point m_prevUpdate;
     steady_clock::time_point m_nowUpdate;
 
-    double m_netTime;
+    WorldTime m_worldTime = 0;
 
     bool m_playerSleep = false;
     double m_playerSleepUntil = 0;
 
-    double m_timeMultiplier = 1;
+    double m_worldTimeMultiplier = 1;
 
 private:
     void LoadFiles();
@@ -92,49 +109,161 @@ public:
         return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
     }
 
+
+
+    //static constexpr int WORLD_TIME_MORNING = 240;
+    //static constexpr int WORLD_TIME_DAY = 270;
+    //static constexpr int WORLD_TIME_AFTERNOON = 900;
+    //static constexpr int WORLD_TIME_NIGHT = 1530;
+
+    static constexpr int WORLD_TIME_LENGTH = 1800;
+
+
+
+    // Get the current day given a world time
+    static int GetDay(WorldTime worldTime) {
+        return (worldTime - TIME_DAY) / WORLD_TIME_LENGTH;
+    }
+    // Get the time relative to a given world time
+    //  Returns a world time ranging [0, WORLD_TIME_LENGTH)
+    static TimeOfDay GetTimeOfDay(WorldTime worldTime) {
+        auto wrapped = std::fmod(worldTime, WORLD_TIME_LENGTH);
+        if (wrapped < 0)
+            wrapped += WORLD_TIME_LENGTH;
+        return wrapped;
+    }
+    // Get the time of day given a day
+    static WorldTime GetWorldTime(int day, TimeOfDay timeOfDay) {
+        return (double) day * (double) WORLD_TIME_LENGTH 
+            + timeOfDay;
+    }
+    static bool IsMorning(TimeOfDay timeOfDay) {
+        return timeOfDay >= TIME_MORNING && timeOfDay < TIME_DAY;
+    }
+    static bool IsDay(TimeOfDay timeOfDay) {
+        return timeOfDay >= TIME_DAY && timeOfDay < TIME_AFTERNOON;
+    }
+    static bool IsAfternoon(TimeOfDay timeOfDay) {
+        return timeOfDay >= TIME_AFTERNOON && timeOfDay < TIME_NIGHT;
+    }
+    static bool IsNight(TimeOfDay timeOfDay) {
+        return timeOfDay >= TIME_NIGHT || timeOfDay < TIME_MORNING;
+    }
+    // Get the morning time of the next given day
+    static WorldTime GetMorning(int day) {
+        return GetWorldTime(day, TIME_MORNING);
+    }
+    // Get the day time of the next given day
+    static WorldTime GetDay(int day) {
+        return GetWorldTime(day, TIME_DAY);
+    }
+    // Get the morning time of the next given day
+    static WorldTime GetAfternoon(int day) {
+        return GetWorldTime(day, TIME_AFTERNOON);
+    }
+    // Get the night time of the next given day
+    static WorldTime GetNight(int day) {
+        return GetWorldTime(day, TIME_NIGHT);
+    }
+    // Get the next immediate world time for a given time of day and given world time
+    static WorldTime GetNextTime(WorldTime worldTime, TimeOfDay timeOfDay) {
+        return GetWorldTime(
+            GetDay(worldTime) + (GetTimeOfDay(worldTime) < timeOfDay ? 0 : 1),
+            timeOfDay
+        );
+    }
+
+
+
     // Returns game server time
-    // Will freeze as long as players are offline
-    double NetTime() {
-        return m_netTime;
+    //  World time remains unchanged as players are offline
+    WorldTime GetWorldTime() const {
+        return this->m_worldTime;
     }
 
-    TICKS_t NetTicks() {
-        return TICKS_t((int64_t)(m_netTime * 1000.0 * 10000.0));
+    void SetWorldTime(WorldTime worldTime) {
+        this->m_worldTime = worldTime;
     }
 
-    float NetTimeWrapped() const {
-        return std::fmod(m_netTime, 1800);
+    TICKS_t GetWorldTicks() const {
+        return TICKS_t((int64_t)(this->m_worldTime * (WorldTime)TICKS_t::period::den));
     }
 
-    bool IsMorning() const {
-        auto time = NetTimeWrapped();
-        return time >= 240 && time < 270;
+
+    // Get the current day
+    int GetDay() const {
+        return GetDay(this->m_worldTime);
     }
+    // Set the current day
+    //  Maintains the relative world time
+    void SetDay(int day) {
+        auto timeOfDay = GetTimeOfDay();
+
+        m_worldTime = day * WORLD_TIME_LENGTH + timeOfDay;
+    }
+
+
+    // Get the time relative to this cycle
+    TimeOfDay GetTimeOfDay() const {
+        return GetTimeOfDay(this->m_worldTime);
+    }
+    // Set the relative time to this day
+    //  The day is unchanged
+    void SetTimeOfDay(TimeOfDay timeOfDay) {
+        timeOfDay = GetTimeOfDay(timeOfDay); // normalize
+        this->m_worldTime = GetDay() * WORLD_TIME_LENGTH + timeOfDay;
+    }
+
 
     // Time of day functions
+    bool IsMorning() const {
+        return IsMorning(GetTimeOfDay(m_worldTime));
+    }
     bool IsDay() const {
-        auto time = NetTimeWrapped();
-        return time >= 270 && time < 900;
+        return IsDay(GetTimeOfDay(m_worldTime));
+    }
+    bool IsAfternoon() const {
+        return IsAfternoon(GetTimeOfDay(m_worldTime));
+    }
+    bool IsNight() const {
+        return IsNight(GetTimeOfDay(m_worldTime));
+    }   
+
+
+
+    // Get the morning time of the next cycle
+    double GetTomorrowMorning() const {
+        return GetWorldTime(GetDay() + 1, TIME_MORNING);
+    }
+    // Get the day time of the next cycle
+    double GetTomorrowDay() const {
+        return GetWorldTime(GetDay() + 1, TIME_DAY);
+    }
+    // Get the morning time of the next cycle
+    double GetTomorrowAfternoon() const {
+        return GetWorldTime(GetDay() + 1, TIME_AFTERNOON);
+    }
+    // Get the night time of the next cycle
+    double GetTomorrowNight() const {
+        return GetWorldTime(GetDay() + 1, TIME_NIGHT);
+    }
+
+
+    // Get the next immediate morning time
+    double GetNextMorning() const {
+        return GetNextTime(m_worldTime, TIME_MORNING);
     }
     
-    bool IsAfternoon() const {
-        auto time = NetTimeWrapped();
-        return time >= 900 && time < 1530;
+    // Get the next immediate afternoon time
+    double GetNextAfternoon() const {
+        return GetNextTime(m_worldTime, TIME_AFTERNOON);
+    }
+    // Get the next immediate night time
+    double GetNextNight() const {
+        return GetNextTime(m_worldTime, TIME_NIGHT);
     }
 
-    bool IsNight() const {
-        auto time = NetTimeWrapped();
-        return time >= 1530 || time < 240;
-    }
 
-    int GetDay() const {
-        return (m_netTime - 270.0) / 1800.0;
-    }
-
-    double GetNextMorning() const {
-        auto day = GetDay();
-        return ((day + 1) * 1800) + 240;
-    }
 
     bool IsPeerAllowed(NetRpc* rpc);
 

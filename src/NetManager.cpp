@@ -151,7 +151,7 @@ void INetManager::SendPlayerList() {
 void INetManager::SendNetTime() {
     for (auto&& pair : m_peers) {
         auto&& peer = pair.second;
-        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, (double)Valhalla()->NetTime());
+        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, (double)Valhalla()->GetWorldTime());
     }
 }
 
@@ -178,7 +178,7 @@ void INetManager::SendPeerInfo(Peer* peer) {
     writer.Write(world->m_seedName);
     writer.Write(world->m_uid);
     writer.Write(world->m_worldGenVersion);
-    writer.Write(Valhalla()->NetTime());
+    writer.Write(Valhalla()->GetWorldTime());
 
     peer->Invoke(Hashes::Rpc::PeerInfo, bytes);
 }
@@ -496,13 +496,11 @@ void INetManager::Update() {
         writer.Write(true);
 
         for (auto&& rpc : m_rpcs) {
-            LOG(DEBUG) << "Rpc join pinging ";
             rpc->m_socket->Send(bytes);
         }
 
         for (auto&& pair : m_peers) {
             auto&& peer = pair.second;
-            LOG(DEBUG) << "Rpc pinging " << peer->m_uuid;
             peer->m_socket->Send(bytes);
         }
     });
@@ -514,7 +512,8 @@ void INetManager::Update() {
             peer->Update();
         }
         catch (const std::runtime_error& e) {
-            LOG(ERROR) << "Peer error: " << e.what();
+            LOG(WARNING) << "Peer error";
+            LOG(WARNING) << e.what();
             peer->m_socket->Close(false);
         }
     }
@@ -525,7 +524,8 @@ void INetManager::Update() {
             rpc->PollOne();
         }
         catch (const std::runtime_error& e) {
-            LOG(ERROR) << "NetRPC error: " << e.what();
+            LOG(WARNING) << "NetRPC error";
+            LOG(WARNING) << e.what();
             rpc->m_socket->Close(false);
         }
     }

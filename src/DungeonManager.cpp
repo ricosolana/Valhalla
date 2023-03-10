@@ -131,7 +131,7 @@ void IDungeonManager::Init() {
 }
 
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
-    auto&& netTicksNow = Valhalla()->NetTicks();
+    auto&& netTicksNow = Valhalla()->GetWorldTicks();
 
     auto&& ticksDungeon = dungeonZdo.m_rev.m_ticksCreated;
 

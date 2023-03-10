@@ -114,7 +114,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 			//NetPackage zdoPkg;
 			for (auto&& sectorObjects : m_objectsBySector) {
 				for (auto zdo : sectorObjects) {
-					if (zdo->m_prefab->FlagsPresent(Prefab::Flags::Persistent)) {
+					if (zdo->m_prefab->FlagsAbsent(Prefab::Flags::Sessioned)) {
 						pkg.Write(zdo->ID());
 						pkg.SubWrite([zdo, &pkg]() {
 							zdo->Save(pkg);
@@ -272,7 +272,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
 	for (auto&& zdo : m_tempNearObjects) {
-		if (zdo.get().m_prefab->FlagsPresent(Prefab::Flags::Persistent)) {
+		if (zdo.get().m_prefab->FlagsAbsent(Prefab::Flags::Sessioned)) {
 			if (zdo.get().Owner() == peer.m_uuid) {
 				
 				// If owner-peer no longer in area, make it unclaimed
@@ -327,7 +327,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
-				if (zdo.get().m_prefab->FlagsPresent(Prefab::Flags::Persistent)
+				if (zdo.get().m_prefab->FlagsAbsent(Prefab::Flags::Sessioned)
 					&& zdo.get().m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo.get().SetOwner(peer.m_uuid);
@@ -829,7 +829,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 	for (auto&& pair : m_objectsByID) {
 		auto&& zdo = *pair.second.get();
 		// If ZDO prefab is not assigned (because bad prefab hash)
-		if (!zdo.GetPrefab() || !zdo.GetPrefab()->FlagsPresent(Prefab::Flags::Persistent)
+		if (!zdo.GetPrefab() || !zdo.GetPrefab()->FlagsAbsent(Prefab::Flags::Sessioned)
 			&& (!zdo.HasOwner() || zdo.Owner() == peer.m_uuid))
 		{
 			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << ")";

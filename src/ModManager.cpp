@@ -109,20 +109,20 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_enum("DataType",
-        "bytes", DataType::BYTES,
-        "string", DataType::STRING,
-        "zdoid", DataType::ZDOID,
-        "vector3", DataType::VECTOR3,
-        "vector2i", DataType::VECTOR2i,
-        "quaternion", DataType::QUATERNION,
-        "strings", DataType::STRINGS,
-        "bool", DataType::BOOL,
-        "byte", DataType::INT8, "int8", DataType::INT8,
-        "short", DataType::INT16, "int16", DataType::INT16,
-        "int", DataType::INT32, "int32", DataType::INT32, "hash", DataType::INT32,
-        "long", DataType::INT64, "int64", DataType::INT64,
-        "float", DataType::FLOAT,
-        "double", DataType::DOUBLE
+        "BYTES", DataType::BYTES,
+        "STRING", DataType::STRING,
+        "ZDOID", DataType::ZDOID,
+        "VECTOR3", DataType::VECTOR3,
+        "VECTOR2i", DataType::VECTOR2i,
+        "QUATERNION", DataType::QUATERNION,
+        "STRINGS", DataType::STRINGS,
+        "BOOL", DataType::BOOL,
+        "BYTE", DataType::INT8, "INT8", DataType::INT8,
+        "SHORT", DataType::INT16, "INT16", DataType::INT16,
+        "INT", DataType::INT32, "INT32", DataType::INT32, "HASH", DataType::INT32,
+        "LONG", DataType::INT64, "INT64", DataType::INT64,
+        "FLOAT", DataType::FLOAT,
+        "DOUBLE", DataType::DOUBLE
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
@@ -193,8 +193,6 @@ void IModManager::LoadAPI() {
                 return sol::make_object(state, self.Read<Quaternion>());
             case DataType::STRINGS:
                 return sol::make_object(state, self.Read<std::vector<std::string>>());
-            case DataType::BOOL:
-                return sol::make_object(state, self.Read<bool>());
             case DataType::INT8:
                 return sol::make_object(state, self.Read<int8_t>());
             case DataType::INT16:
@@ -280,18 +278,10 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_enum("ChatMsgType",
-        "whisper", ChatMsgType::Whisper,
-        "normal", ChatMsgType::Normal,
-        "shout", ChatMsgType::Shout,
-        "ping", ChatMsgType::Ping
-    );
-
-    m_state.new_enum("MsgType",
-        "whisper", MsgType::WHISPER,
-        "normal", MsgType::NORMAL,
-        "console", MsgType::CONSOLE,
-        "corner", MsgType::CORNER,
-        "center", MsgType::CENTER
+        "WHISPER", ChatMsgType::Whisper,
+        "NORMAL", ChatMsgType::Normal,
+        "SHOUT", ChatMsgType::Shout,
+        "PING", ChatMsgType::Ping
     );
 
     m_state.new_usertype<Peer>("Peer",
@@ -371,7 +361,7 @@ void IModManager::LoadAPI() {
                         params.Write(arg.as<double>());
                         break;
                     default:
-                        throw std::runtime_error("incorrect type at position (or bad DFlag?)");
+                        throw std::runtime_error("incorrect type at position (or bad DataFlag?)");
                     }
                 }
                 else if (argType == sol::type::string && expectType == DataType::STRING) {
@@ -400,7 +390,7 @@ void IModManager::LoadAPI() {
                 }
                 else {
                     throw std::runtime_error("unsupported type, or incorrect type at position");
-                }                
+                }
             }
 
             self.m_socket->Send(std::move(bytes));
@@ -412,42 +402,42 @@ void IModManager::LoadAPI() {
     
 
     m_state.new_enum("PrefabFlag",
-        "none", Prefab::Flags::None,
-        "scaled", Prefab::Flags::SyncInitialScale,
-        "far", Prefab::Flags::Distant,
-        "persist", Prefab::Flags::Persistent,
-        "piece", Prefab::Flags::Piece,
-        "bed", Prefab::Flags::Bed,
-        "door", Prefab::Flags::Door,
-        "chair", Prefab::Flags::Chair,
-        "ship", Prefab::Flags::Ship,
-        "fish", Prefab::Flags::Fish,
-        "plant", Prefab::Flags::Plant,
-        "armature", Prefab::Flags::ArmorStand,
-        "item", Prefab::Flags::ItemDrop,
-        "pickable", Prefab::Flags::Pickable,
-        "pickableItem", Prefab::Flags::PickableItem,
-        "cooking", Prefab::Flags::CookingStation,
-        "crafting", Prefab::Flags::CraftingStation,
-        "smelting", Prefab::Flags::Smelter,
-        "burning", Prefab::Flags::Fireplace,
-        "support", Prefab::Flags::WearNTear,
-        "breakable", Prefab::Flags::Destructible,
-        "attach", Prefab::Flags::ItemStand,
-        "animal", Prefab::Flags::AnimalAI,
-        "monster", Prefab::Flags::MonsterAI,
-        "tame", Prefab::Flags::Tameable,
-        "breed", Prefab::Flags::Procreation,
-        "rock", Prefab::Flags::MineRock,
-        "rock5", Prefab::Flags::MineRock5,
-        "tree", Prefab::Flags::TreeBase,
-        "log", Prefab::Flags::TreeLog,
-        "sfx", Prefab::Flags::SFX,
-        "vfx", Prefab::Flags::VFX,
-        "aoe", Prefab::Flags::AOE,
-        "dungeon", Prefab::Flags::Dungeon,
-        "player", Prefab::Flags::Player,
-        "tombstone", Prefab::Flags::Tombstone
+        "NONE", Prefab::Flags::None,
+        "SCALE", Prefab::Flags::SyncInitialScale,
+        "FAR", Prefab::Flags::Distant,
+        "SESSIONED", Prefab::Flags::Sessioned,
+        "PIECE", Prefab::Flags::Piece,
+        "BED", Prefab::Flags::Bed,
+        "DOOR", Prefab::Flags::Door,
+        "CHAIR", Prefab::Flags::Chair,
+        "SHIP", Prefab::Flags::Ship,
+        "FISH", Prefab::Flags::Fish,
+        "PLANT", Prefab::Flags::Plant,
+        "ARMATURE", Prefab::Flags::ArmorStand,
+        "ITEM", Prefab::Flags::ItemDrop,
+        "PICKABLE", Prefab::Flags::Pickable,
+        "PICKABLE_ITEM", Prefab::Flags::PickableItem,
+        "COOKING", Prefab::Flags::CookingStation,
+        "CRAFTING", Prefab::Flags::CraftingStation,
+        "SMELTING", Prefab::Flags::Smelter,
+        "BURNING", Prefab::Flags::Fireplace,
+        "SUPPORT", Prefab::Flags::WearNTear,
+        "BREAKABLE", Prefab::Flags::Destructible,
+        "ATTACH", Prefab::Flags::ItemStand,
+        "ANIMAL", Prefab::Flags::AnimalAI,
+        "MONSTER", Prefab::Flags::MonsterAI,
+        "TAME", Prefab::Flags::Tameable,
+        "BREED", Prefab::Flags::Procreation,
+        "ROCK", Prefab::Flags::MineRock,
+        "ROCK_5", Prefab::Flags::MineRock5,
+        "TREE", Prefab::Flags::TreeBase,
+        "LOG", Prefab::Flags::TreeLog,
+        "SFX", Prefab::Flags::SFX,
+        "VFX", Prefab::Flags::VFX,
+        "AOE", Prefab::Flags::AOE,
+        "DUNGEON", Prefab::Flags::Dungeon,
+        "PLAYER", Prefab::Flags::Player,
+        "TOMBSTONE", Prefab::Flags::Tombstone
     );
 
     m_state.new_usertype<Prefab>("Prefab",
@@ -583,14 +573,105 @@ void IModManager::LoadAPI() {
         );
     }
 
-    auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
-    apiTable["ServerVersion"] = SERVER_VERSION;
-    apiTable["ValheimVersion"] = VConstants::GAME;
-    apiTable["Delta"] = []() { return Valhalla()->Delta(); };
-    apiTable["ID"] = []() { return Valhalla()->ID(); };
-    apiTable["Nanos"] = []() { return Valhalla()->Nanos(); };
-    apiTable["NetTicks"] = []() { return Valhalla()->NetTicks(); };
-    apiTable["Time"] = []() { return Valhalla()->Time(); };
+    //auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
+    //apiTable["ServerVersion"] = SERVER_VERSION;
+    //apiTable["ValheimVersion"] = VConstants::GAME;
+    //apiTable["delta"] = sol::property([]() { return Valhalla()->Delta(); });
+    //apiTable["id"] = sol::property([]() { return Valhalla()->ID(); });
+    //apiTable["nanos"] = sol::property([]() { return Valhalla()->Nanos(); });
+    //apiTable["time"] = sol::property([]() { return Valhalla()->Time(); });
+    //apiTable["worldTicks"] = sol::property([]() { return Valhalla()->GetWorldTicks(); });
+    //apiTable["worldTime"] = sol::property([]() { return Valhalla()->GetWorldTime(); }, [](double worldTime) { Valhalla()->SetWorldTime(worldTime); });
+    //apiTable["worldTimeWrapped"] = sol::property([]() { return Valhalla()->GetTimeOfDay(); }, [](double worldTime) { Valhalla()->SetWorldTime(worldTime); });
+
+    m_state.new_enum("TimeOfDay",
+        "MORNING", TIME_MORNING,
+        "DAY", TIME_DAY,
+        "AFTERNOON", TIME_AFTERNOON,
+        "NIGHT", TIME_NIGHT
+    );
+
+    m_state.new_usertype<IValhalla>("IValhalla",
+        // server members
+        "version", sol::var(SERVER_VERSION),
+        "delta", sol::property(&IValhalla::Delta),
+        "id", sol::property(&IValhalla::ID),
+        "nanos", sol::property(&IValhalla::Nanos),
+        "time", sol::property(&IValhalla::Time),
+        // world time functions
+        "worldTime", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
+        "worldTicks", sol::property(&IValhalla::GetWorldTicks),
+        "day", sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay),        
+        "timeOfDay", sol::property(
+            sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay),
+            &IValhalla::SetTimeOfDay
+        ),
+        "IsMorning", sol::resolve<bool() const>(&IValhalla::IsMorning),
+        "IsDay", sol::resolve<bool() const>(&IValhalla::IsDay),
+        "IsAfternoon", sol::resolve<bool() const>(&IValhalla::IsAfternoon),
+        "IsNight", sol::resolve<bool() const>(&IValhalla::IsNight),
+        "GetTomorrowMorning", &IValhalla::GetTomorrowMorning,
+        "GetTomorrowDay", &IValhalla::GetTomorrowDay,
+        "GetTomorrowAfternoon", &IValhalla::GetTomorrowAfternoon,
+        "GetTomorrowNight", &IValhalla::GetTomorrowNight,
+
+        "OnEvent", [this](IValhalla& self, sol::variadic_args args, sol::this_environment te) { // sol::meta_function::bitwise_left_shift
+        //"OnEvent", [this](IValhalla& self, sol::this_environment te, sol::variadic_args args) { // this always passes a function type in args
+        //"OnEvent", [this](IValhalla& self, sol::variadic_args args) { // this correctly passes self, and no self instance in args
+            sol::environment& env = te;
+
+            HASH_t cbHash = 0;
+            sol::function func;
+            int priority = 0;
+
+            // If priority is present (will be at end)
+            const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+
+            for (int i = 0; i < args.size(); i++) {
+                auto&& arg = args[i];
+                auto&& type = arg.get_type();
+
+                if (i + offset < args.size()) {
+                    HASH_t hash;
+                    if (type == sol::type::string)
+                        hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                    else if (type == sol::type::number)
+                        hash = arg; // .as<HASH_t>();
+                    else {
+                        throw std::runtime_error("initial params must be string or hash");
+                    }
+
+                    cbHash ^= hash;
+                }
+                else {
+                    if (i == args.size() - offset && type == sol::type::function) {
+                        func = arg;
+                    }
+                    else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
+                        priority = arg;
+                    }
+                    else {
+                        throw std::runtime_error("final param must be a function or priority");
+                    }
+                }
+            }
+
+            auto&& vec = m_callbacks[cbHash];
+            
+            Mod* mod = env["this"].get<sol::table>().as<Mod*>();
+            assert(mod);
+            
+            vec.emplace_back(*mod, func, priority);
+            std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
+                const EventHandler& b) {
+                    return a.m_priority < b.m_priority;
+                }
+            );
+        }
+
+    );
+
+    m_state["Valhalla"] = Valhalla();
 
     // TODO turn managers into lua classes that can be indexed
     // but still retrieve with ZDOManager... class usertypes will be named by their class names, like IZDOManager...
@@ -684,59 +765,6 @@ void IModManager::LoadAPI() {
 
 
 
-    apiTable["OnEvent"] = [this](sol::variadic_args args, sol::this_environment te) {
-        sol::environment& env = te;
-        // match incrementally
-        //std::string name;
-        HASH_t cbHash = 0;
-        sol::function func;
-        int priority = 0;
-
-        // If priority is present (will be at end)
-        const int offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
-
-        for (int i = 0; i < args.size(); i++) {
-            auto&& arg = args[i];
-            auto&& type = arg.get_type();
-
-            if (i + offset < args.size()) {
-                HASH_t hash;
-                if (type == sol::type::string)
-                    hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
-                else if (type == sol::type::number)
-                    hash = arg; // .as<HASH_t>();
-                else {
-                    throw std::runtime_error("initial params must be string or hash");
-                }
-
-                cbHash ^= hash;
-            }
-            else {
-                if (i == args.size() - offset && type == sol::type::function) {
-                    func = arg;
-                }
-                else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
-                    priority = arg;
-                }
-                else {
-                    throw std::runtime_error("final param must be a function or priority");
-                }
-            }
-        }
-
-        auto&& vec = m_callbacks[cbHash];
-
-        Mod* mod = env["this"].get<sol::table>().as<Mod*>();
-        assert(mod);
-
-        vec.emplace_back(*mod, func, priority);
-        std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-            const EventHandler& b) {
-                return a.m_priority < b.m_priority;
-            }
-        );
-    };
-
     // TODO use properties for immutability
     m_state.new_usertype<Mod>("Mod",
         "name", &Mod::m_name,
@@ -824,9 +852,12 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
 void IModManager::Init() {
     LOG(INFO) << "Initializing ModManager";
 
-    m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
+    //m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
 
     m_state.set_exception_handler(&my_exception_handler);
+
+    //sol::main_thread()
+
 
     m_state.open_libraries(
         sol::lib::base,

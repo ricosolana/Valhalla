@@ -474,7 +474,7 @@ public:
     ZDO(const ZDOID& id, const Vector3& pos)
         : m_id(id), m_pos(pos) 
     {
-        m_rev.m_ticksCreated = Valhalla()->NetTicks();
+        m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
     }
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);

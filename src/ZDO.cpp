@@ -32,7 +32,7 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
 
-    pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flags::Persistent));
+    pkg.Write(this->m_prefab->FlagsAbsent(Prefab::Flags::Sessioned));
 
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticksCreated.count());
@@ -252,7 +252,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticksCreated) == 8);
 
-    pkg.Write(m_prefab->FlagsPresent(Prefab::Flags::Persistent));
+    pkg.Write(m_prefab->FlagsAbsent(Prefab::Flags::Sessioned));
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flags::Distant));
 
     pkg.Write(m_rev.m_ticksCreated.count());

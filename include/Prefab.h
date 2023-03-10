@@ -23,7 +23,8 @@ public:
 
         static constexpr Flag SyncInitialScale = 1ULL << 0;
         static constexpr Flag Distant = 1ULL << 1;
-        static constexpr Flag Persistent = 1ULL << 2;
+        //static constexpr Flag Persistent = 1ULL << 2;
+        static constexpr Flag Sessioned = 1ULL << 2;
 
         static constexpr Flag Piece = 1ULL << 3;
         static constexpr Flag Bed = 1ULL << 4;

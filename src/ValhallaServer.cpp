@@ -198,7 +198,7 @@ void IValhalla::Start() {
 
     this->LoadFiles();
 
-    m_netTime = 2040;
+    m_worldTime = 2040;
 
     PrefabManager()->Init();
     ZDOManager()->Init();
@@ -307,7 +307,7 @@ void IValhalla::Update() {
     // This is important to processing RPC remote invocations
 
     if (!NetManager()->GetPeers().empty()) {
-        m_netTime += Delta() * m_timeMultiplier;
+        m_worldTime += Delta() * m_worldTimeMultiplier;
     }
     
     ModManager()->Update();
@@ -333,7 +333,7 @@ void IValhalla::PeriodUpdate() {
     //  - Players will be forced to awaken when receiving SleepStop Rpc (they get rested buff and control is handed back)
     if (m_settings.playerSleep) {
         if (m_playerSleep) {
-            if (m_netTime > m_playerSleepUntil) {
+            if (m_worldTime > m_playerSleepUntil) {
                 // Wake up players
 
                 if (m_settings.playerSleepSolo) {
@@ -351,7 +351,7 @@ void IValhalla::PeriodUpdate() {
                 }
 
                 m_playerSleep = false;
-                m_timeMultiplier = 1;
+                m_worldTimeMultiplier = 1;
             }
         }
         else {
@@ -385,7 +385,7 @@ void IValhalla::PeriodUpdate() {
                     m_playerSleepUntil = GetNextMorning();
 
                     // Set skip interval
-                    m_timeMultiplier = (m_playerSleepUntil - m_netTime) / 12.0;
+                    m_worldTimeMultiplier = (m_playerSleepUntil - m_worldTime) / 12.0;
 
                     if (m_settings.playerSleepSolo) {
                         // Players who are ALREADY in bed, go ahead and signal them to sleep

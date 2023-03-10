@@ -159,7 +159,7 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 				LOG(INFO) << "Loading world version " << worldVersion;
 
 			if (worldVersion >= 4)
-				Valhalla()->m_netTime = reader.Read<double>();
+				Valhalla()->m_worldTime = reader.Read<double>();
 
 
 
@@ -227,7 +227,7 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	DataWriter writer(bytes);
 	
 	writer.Write(VConstants::WORLD);
-	writer.Write(Valhalla()->NetTime());
+	writer.Write(Valhalla()->GetWorldTime());
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
 	

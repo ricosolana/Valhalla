@@ -158,11 +158,11 @@ class MethodImplLua : public IMethod<T> {
     friend class IModManager;
 
 private:
-    sol::function m_func;
+    sol::protected_function m_func;
     std::vector<DataType> m_types;
 
 public:
-    explicit MethodImplLua(sol::function func, std::vector<DataType> types)
+    explicit MethodImplLua(sol::protected_function func, std::vector<DataType> types)
         : m_func(func), 
         m_types(types) {}
 
@@ -229,15 +229,20 @@ public:
                 results.push_back(sol::make_object(state, reader.Read<double>()));
                 break;
             default:
-                LOG(ERROR) << "LUA MethodImpl bad";
+                LOG(FATAL) << "LUA MethodImpl bad DataType; this should have been impossible due to plugin register(handler) checking types for validity";
             }
         }
-
+        
         //m_func(results);
 
         //auto args(sol::as_args(results));
         //m_func(args);
-        m_func(sol::as_args(results));
+        sol::protected_function_result result = m_func(sol::as_args(results));
+        if (!result.valid()) {
+            // player invocation was bad
+            sol::error error = result;
+            throw error;
+        }
     }
 };
 

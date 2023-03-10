@@ -10,15 +10,6 @@
 class IZDOManager;
 class INetManager;
 
-// TODO merge player message types all in one
-enum class MsgType {
-    WHISPER,
-    NORMAL,
-    CONSOLE,
-    CORNER,
-    CENTER
-};
-
 enum class ChatMsgType : int32_t {
     Whisper,
     Normal,
