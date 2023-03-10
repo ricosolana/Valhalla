@@ -40,6 +40,7 @@ static constexpr TimeOfDay TIME_NIGHT = 1530;
 
 class IValhalla {
     friend class ValhallaLauncher;
+    friend class IModManager;
     friend class IWorldManager;
     friend class Tests;
 

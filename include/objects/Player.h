@@ -16,4 +16,8 @@ public:
 		return m_zdo.GetString(Hashes::ZDO::Player::PLAYER_NAME, "");
 	}
 
+	bool InBed() {
+		return m_zdo.GetBool(Hashes::ZDO::Player::IN_BED, false);
+	}
+
 };

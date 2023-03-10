@@ -267,9 +267,9 @@ void IModManager::LoadAPI() {
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
     m_state.new_usertype<ISocket>("ISocket",
         "Close", &ISocket::Close,
-        "Connected", &ISocket::Connected,
-        "GetAddress", &ISocket::GetAddress,
-        "GetHostName", &ISocket::GetHostName,
+        "connected", sol::property(&ISocket::Connected),
+        "address", sol::property(&ISocket::GetAddress),
+        "hostName", sol::property(&ISocket::GetHostName),
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
@@ -288,10 +288,10 @@ void IModManager::LoadAPI() {
         // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
         "admin", &Peer::m_admin,
-        "characterID", sol::property([](Peer& self) { return self.m_characterID; }),
-        "name", sol::property([](Peer& self) { return self.m_name; }),
+        "characterID", sol::readonly(&Peer::m_characterID),
+        "name", sol::readonly(&Peer::m_name),
         "pos", &Peer::m_pos,
-        "uuid", sol::property([](Peer& self) { return self.m_uuid; }),
+        "uuid", sol::readonly(&Peer::m_uuid),
         "socket", sol::property([](Peer& self) { return self.m_socket; }),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
@@ -600,20 +600,18 @@ void IModManager::LoadAPI() {
         "time", sol::property(&IValhalla::Time),
         // world time functions
         "worldTime", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
+        "worldTimeMultiplier", sol::property([](IValhalla& self) { return self.m_worldTimeMultiplier; }, [](IValhalla& self, double mul) { if (mul <= 0.001) throw std::runtime_error("multiplier too small"); self.m_worldTimeMultiplier = mul; }),
         "worldTicks", sol::property(&IValhalla::GetWorldTicks),
         "day", sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay),        
-        "timeOfDay", sol::property(
-            sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay),
-            &IValhalla::SetTimeOfDay
-        ),
+        "timeOfDay", sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay), &IValhalla::SetTimeOfDay),
         "IsMorning", sol::resolve<bool() const>(&IValhalla::IsMorning),
         "IsDay", sol::resolve<bool() const>(&IValhalla::IsDay),
         "IsAfternoon", sol::resolve<bool() const>(&IValhalla::IsAfternoon),
         "IsNight", sol::resolve<bool() const>(&IValhalla::IsNight),
-        "GetTomorrowMorning", &IValhalla::GetTomorrowMorning,
-        "GetTomorrowDay", &IValhalla::GetTomorrowDay,
-        "GetTomorrowAfternoon", &IValhalla::GetTomorrowAfternoon,
-        "GetTomorrowNight", &IValhalla::GetTomorrowNight,
+        "tomorrowMorning", sol::property(&IValhalla::GetTomorrowMorning),
+        "tomorrow", sol::property(&IValhalla::GetTomorrowDay),
+        "tomorrowAfternoon", sol::property(&IValhalla::GetTomorrowAfternoon),
+        "tomorrowNight", sol::property(&IValhalla::GetTomorrowNight),
 
         "OnEvent", [this](IValhalla& self, sol::variadic_args args, sol::this_environment te) { // sol::meta_function::bitwise_left_shift
         //"OnEvent", [this](IValhalla& self, sol::this_environment te, sol::variadic_args args) { // this always passes a function type in args
@@ -734,6 +732,9 @@ void IModManager::LoadAPI() {
         [](OWNER_t uuid) { return NetManager()->GetPeer(uuid); },
         [](const std::string& name) { return NetManager()->GetPeer(name); }
     );
+    //netApiTable["peers"] = 
+
+
 
     auto modApiTable = m_state["ModManager"].get_or_create<sol::table>();
     modApiTable["GetMod"] = [this](const std::string& name) {
