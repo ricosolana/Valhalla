@@ -338,10 +338,10 @@ void IValhalla::PeriodUpdate() {
 
                 if (m_settings.playerSleepSolo) {
                     // only awake sleeping players
-                    for (auto&& pair : NetManager()->GetPeers()) {
-                        auto&& zdo = pair.second->GetZDO();
+                    for (auto&& peer : NetManager()->GetPeers()) {
+                        auto&& zdo = peer->GetZDO();
                         if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(pair.first, Hashes::Routed::S2C_RequestStopSleep);
+                            RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestStopSleep);
                         }
                     }
                 }
@@ -360,7 +360,7 @@ void IValhalla::PeriodUpdate() {
                 bool anyInBed = false;
 
                 for (auto&& peer : NetManager()->GetPeers()) {
-                    auto&& zdo = peer.second->GetZDO();
+                    auto&& zdo = peer->GetZDO();
                     bool inBed = zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false);
                     if (!inBed) {
                         allInBed = false;
@@ -389,13 +389,13 @@ void IValhalla::PeriodUpdate() {
 
                     if (m_settings.playerSleepSolo) {
                         // Players who are ALREADY in bed, go ahead and signal them to sleep
-                        for (auto&& pair : NetManager()->GetPeers()) {
-                            auto&& zdo = pair.second->GetZDO();
+                        for (auto&& peer : NetManager()->GetPeers()) {
+                            auto&& zdo = peer->GetZDO();
                             if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(pair.first, Hashes::Routed::S2C_RequestSleep);
+                                RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestSleep);
                             }
                             else {
-                                pair.second->CornerMessage("The world is sleeping");
+                                peer->CornerMessage("The world is sleeping");
                             }
                         }
                     }

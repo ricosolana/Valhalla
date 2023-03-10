@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ranges>
+
 #include "Peer.h"
 #include "NetAcceptor.h"
 #include "Vector.h"
@@ -12,7 +14,8 @@ private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
     std::list<std::unique_ptr<NetRpc>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
-    robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>> m_peers;
+    //robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>> m_peers;
+    std::list<std::unique_ptr<Peer>> m_peers;
 
     //World* m_world;
 
@@ -32,7 +35,7 @@ private:
     // Unban a player by name
     bool Unban(const std::string& user);
 
-    void SendDisconnect(Peer* peer);
+    //void SendDisconnect(Peer* peer);
 
     void SendDisconnect();
 
@@ -53,7 +56,11 @@ public:
     Peer* GetPeer(OWNER_t uuid);
     std::vector<Peer*> GetPeers(const std::string &addr);
 
-    const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
+    //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
+
+    const auto &GetPeers() {
+        return m_peers;
+    }
 };
 
 // Manager class for everything related to networking at a mildly abstracted level

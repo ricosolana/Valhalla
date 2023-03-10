@@ -108,16 +108,16 @@ bool INetManager::Unban(const std::string& user) {
     return Valhalla()->m_blacklist.erase(user);
 }
 
-void INetManager::SendDisconnect(Peer *peer) {
-    LOG(INFO) << "Disconnect sent to " << peer->m_socket->GetHostName();
-    peer->Invoke("Disconnect");
-}
+//void INetManager::SendDisconnect(Peer *peer) {
+//    LOG(INFO) << "Disconnect sent to " << peer->m_socket->GetHostName();
+//    peer->Invoke("Disconnect");
+//}
 
 void INetManager::SendDisconnect() {
     LOG(INFO) << "Sending disconnect msg";
 
-    for (auto&& pair : m_peers) {
-        SendDisconnect(pair.second.get());
+    for (auto&& peer : m_peers) {
+        peer->SendDisconnect();
     }
 }
 
@@ -129,8 +129,7 @@ void INetManager::SendPlayerList() {
         DataWriter writer(bytes);
         writer.Write((int)m_peers.size());
 
-        for (auto&& pair : m_peers) {
-            auto&& peer = pair.second;
+        for (auto&& peer : m_peers) {
             writer.Write(peer->m_name);
             writer.Write(peer->m_socket->GetHostName());
             writer.Write(peer->m_characterID);
@@ -140,8 +139,7 @@ void INetManager::SendPlayerList() {
             }
         }
 
-        for (auto&& pair : m_peers) {
-            auto&& peer = pair.second;
+        for (auto&& peer : m_peers) {
             // this is the problem
             peer->Invoke(Hashes::Rpc::S2C_UpdatePlayerList, bytes);
         }
@@ -149,9 +147,8 @@ void INetManager::SendPlayerList() {
 }
 
 void INetManager::SendNetTime() {
-    for (auto&& pair : m_peers) {
-        auto&& peer = pair.second;
-        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, (double)Valhalla()->GetWorldTime());
+    for (auto&& peer : m_peers) {
+        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
 }
 
@@ -231,7 +228,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
 
     // if peer already connected
-    if (m_peers.contains(uuid))
+    if (GetPeer(uuid))
         return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
     // if whitelist enabled
@@ -255,7 +252,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
             return rpc->Close(ConnectionStatus::ErrorBanned);
         }
 
-        m_peers.insert({ uuid, std::move(ptr) });
+        m_peers.push_back(std::move(ptr));
     }
 
     peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
@@ -385,9 +382,8 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
 
 // Return the peer or nullptr
-Peer * INetManager::GetPeer(const std::string& name) {
-    for (auto&& pair : m_peers) {
-        auto&& peer = pair.second;
+Peer* INetManager::GetPeer(const std::string& name) {
+    for (auto&& peer : m_peers) {
         if (peer->m_name == name)
             return peer.get();
     }
@@ -395,10 +391,11 @@ Peer * INetManager::GetPeer(const std::string& name) {
 }
 
 // Return the peer or nullptr
-Peer * INetManager::GetPeer(OWNER_t uuid) {
-    auto&& find = m_peers.find(uuid);
-    if (find != m_peers.end())
-        return find->second.get();
+Peer* INetManager::GetPeer(OWNER_t uuid) {
+    for (auto&& peer : m_peers) {
+        if (peer->m_uuid == uuid)
+            return peer.get();
+    }
     return nullptr;
 }
 
@@ -407,8 +404,7 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
 
     std::vector<Peer*> peers;
 
-    for (auto&& pair : m_peers) {
-        auto&& peer = pair.second;
+    for (auto&& peer : m_peers) {
 
         // use wildcards too
         std::string p = peer->m_socket->GetAddress();
@@ -499,15 +495,13 @@ void INetManager::Update() {
             rpc->m_socket->Send(bytes);
         }
 
-        for (auto&& pair : m_peers) {
-            auto&& peer = pair.second;
+        for (auto&& peer : m_peers) {
             peer->m_socket->Send(bytes);
         }
     });
 
     // Update peers
-    for (auto&& pair : m_peers) {
-        auto&& peer = pair.second;
+    for (auto&& peer : m_peers) {
         try {
             peer->Update();
         }
@@ -545,10 +539,11 @@ void INetManager::Update() {
             }
         }
     }
+    auto&& peers = GetPeers();
 
     {
         for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
-            auto&& peer = *itr->second.get();
+            auto&& peer = *itr->get();
 
             if (!peer.m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
@@ -572,8 +567,4 @@ void INetManager::Update() {
 
 void INetManager::Uninit() {
     m_acceptor.reset();
-}
-
-const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& INetManager::GetPeers() {
-    return m_peers;
 }

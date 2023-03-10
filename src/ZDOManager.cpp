@@ -37,16 +37,14 @@ void IZDOManager::Update() {
 
 	// Occasionally release ZDOs
 	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
-		for (auto&& pair : peers) {
-			auto&& peer = pair.second;
+		for (auto&& peer : peers) {
 			AssignOrReleaseZDOs(*peer.get());
 		}
 	});
 
 	// Send ZDOS:
 	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
-		for (auto&& pair : peers) {
-			auto&& peer = pair.second;
+		for (auto&& peer : peers) {
 			SendZDOs(*peer.get(), false);
 		}
 	});
@@ -90,8 +88,7 @@ void IZDOManager::InvalidateSector(ZDO& zdo) {
 	RemoveFromSector(zdo);
 
 	auto&& peers = NetManager()->GetPeers();
-	for (auto&& pair : peers) {
-		auto&& peer = pair.second;
+	for (auto&& peer : peers) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
 }
@@ -299,9 +296,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		Vector3 closestPos;
 
 		// get the distance to the closest peer
-		for (auto&& pair : NetManager()->GetPeers()) {
-			auto&& otherPeer = pair.second;
-
+		for (auto&& otherPeer : NetManager()->GetPeers()) {
 			if (otherPeer.get() == &peer)
 				continue;
 
@@ -363,8 +358,7 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 	}
 
 	auto&& peers = NetManager()->GetPeers();
-	for (auto&& pair : peers) {
-		auto&& peer = pair.second;
+	for (auto&& peer : peers) {
 		peer->m_zdos.erase(zdoid);
 	}
 
@@ -624,8 +618,7 @@ ZDO* IZDOManager::NearestZDO(const Vector3& pos, float radius, const std::functi
 
 // Global send
 void IZDOManager::ForceSendZDO(const ZDOID& id) {
-	for (auto&& pair : NetManager()->GetPeers()) {
-		auto&& peer = pair.second;
+	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ForceSendZDO(id);
 	}
 }

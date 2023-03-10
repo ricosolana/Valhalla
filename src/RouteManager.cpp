@@ -21,8 +21,7 @@ void IRouteManager::RouteRPC(const Data& data) {
 
 	if (data.m_target == EVERYBODY) {
 		auto&& peers = NetManager()->GetPeers();
-		for (auto&& pair : peers) {
-			auto&& peer = pair.second;
+		for (auto&& peer : peers) {
 			// send to everyone (except sender)
 			if (data.m_sender != peer->m_uuid) {
 
