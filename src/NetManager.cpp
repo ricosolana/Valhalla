@@ -29,11 +29,6 @@ void INetManager::InitPassword() {
         // better
         m_salt = VUtils::Random::GenerateAlphaNum(16);
 
-        // Create random 16 byte salt
-        //m_salt.resize(16);
-        //RAND_bytes(reinterpret_cast<uint8_t*>(m_salt.data()), m_salt.size());
-        //VUtils::String::FormatAscii(m_salt);
-
         const auto merge = Valhalla()->Settings().serverPassword + m_salt;
 
         // Hash a salted password
@@ -108,11 +103,6 @@ bool INetManager::Unban(const std::string& user) {
     return Valhalla()->m_blacklist.erase(user);
 }
 
-//void INetManager::SendDisconnect(Peer *peer) {
-//    LOG(INFO) << "Disconnect sent to " << peer->m_socket->GetHostName();
-//    peer->Invoke("Disconnect");
-//}
-
 void INetManager::SendDisconnect() {
     LOG(INFO) << "Sending disconnect msg";
 
@@ -133,7 +123,7 @@ void INetManager::SendPlayerList() {
             writer.Write(peer->m_name);
             writer.Write(peer->m_socket->GetHostName());
             writer.Write(peer->m_characterID);
-            writer.Write(peer->m_visibleOnMap);
+            writer.Write(peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible);
             if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
                 writer.Write(peer->m_pos);
             }
@@ -154,10 +144,7 @@ void INetManager::SendNetTime() {
 
 
 
-void INetManager::SendPeerInfo(Peer* peer) {
-    //auto now(steady_clock::now());
-    //double netTime =
-    //    (double)duration_cast<milliseconds>(now - m_startTime).count() / (double)((1000ms).count());
+void INetManager::SendPeerInfo(Peer& peer) {
     static BYTES_t bytes; bytes.clear();
     DataWriter writer(bytes);
 
@@ -165,8 +152,6 @@ void INetManager::SendPeerInfo(Peer* peer) {
     writer.Write(VConstants::GAME);
     writer.Write(Vector3()); // dummy
     writer.Write(""); // dummy
-
-    // why does server need to send a position and name?
 
     auto world = WorldManager()->GetWorld();
 
@@ -177,7 +162,7 @@ void INetManager::SendPeerInfo(Peer* peer) {
     writer.Write(world->m_worldGenVersion);
     writer.Write(Valhalla()->GetWorldTime());
 
-    peer->Invoke(Hashes::Rpc::PeerInfo, bytes);
+    peer.Invoke(Hashes::Rpc::PeerInfo, bytes);
 }
 
 
@@ -257,7 +242,6 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
     peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
     
-    //Peer* peer = m_peers.insert({ uuid, std::make_unique<Peer>(std::move(rpc->m_socket), uuid, name, pos) }).first->second.get();
 
     
     //Valhalla()->RunTaskLater()
@@ -297,6 +281,8 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     //});
 
     peer->Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
+        // TODO maybe permissions tree in future?
+        //  lua? ...
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -372,7 +358,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         }
     });
 
-    SendPeerInfo(peer);
+    SendPeerInfo(*peer);
 
     ZDOManager()->OnNewPeer(*peer);
     RouteManager()->OnNewPeer(*peer);
@@ -471,11 +457,7 @@ void INetManager::Update() {
         m_rpcs.push_back(std::move(rpc));
     }
 
-
-
-
-
-
+       
 
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
@@ -524,6 +506,7 @@ void INetManager::Update() {
         }
     }
 
+    // TODO I think this is in the correct location?
     SteamGameServer_RunCallbacks();
 
     // Cleanup
@@ -539,7 +522,6 @@ void INetManager::Update() {
             }
         }
     }
-    auto&& peers = GetPeers();
 
     {
         for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
@@ -566,5 +548,6 @@ void INetManager::Update() {
 }
 
 void INetManager::Uninit() {
+    SendDisconnect();
     m_acceptor.reset();
 }

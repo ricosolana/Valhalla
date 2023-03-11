@@ -37,15 +37,10 @@ private:
     // Unban a player by name
     bool Unban(const std::string& user);
 
-    //void SendDisconnect(Peer* peer);
-
     void SendDisconnect();
-
     void SendPlayerList();
-
     void SendNetTime();
-
-    void SendPeerInfo(Peer *peer);
+    void SendPeerInfo(Peer &peer);
 
     void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
