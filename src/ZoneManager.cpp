@@ -311,9 +311,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 // private
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
-        auto&& peers = NetManager()->GetPeers();
-        for (auto&& pair : peers) {
-            auto&& peer = pair.second;
+        for (auto&& peer : NetManager()->GetPeers()) {
             TryGenerateZones(peer->m_pos);
         }
     });

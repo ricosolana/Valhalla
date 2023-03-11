@@ -82,11 +82,11 @@ public:
 	uint64_t m_flags = 0;
 
     bool FlagsPresent(Flag prefabFlags) const {
-        return (m_flags & prefabFlags) == prefabFlags;
+        return prefabFlags == Flags::None || (m_flags & prefabFlags) == prefabFlags;
     }
 
     bool FlagsAbsent(Flag prefabFlags) const {
-        return !prefabFlags 
+        return prefabFlags == Flags::None
             || (m_flags & prefabFlags) != prefabFlags;
     }
 

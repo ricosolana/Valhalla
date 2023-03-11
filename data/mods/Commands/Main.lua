@@ -18,17 +18,18 @@ local commands = {
         function(peer, cmd, args)
             assert(#args >= 3, 'not enough args')
         
-            local mode = assert((args[1] == 'nearby' and args[1]) or (args[1] == 'closest' and args[1]), 'invalid mode')
-            local prefab = args[2]
-            local radius = assert(tonumber(args[3]), 'not a number')
-            local withFlags = #args >= 4 and tonumber(args[4]) or 0
-            local withoutFlags = #args >= 5 and tonumber(args[5]) or 0
+            local mode = assert((args[1] == 'nearby' and args[1]) or (args[1] == 'closest' and args[1]), 'invalid selector mode')
+            local prefab = args[2] ~= 'all' and VUtils.String.GetStableHashCode(args[2]) or 0
+            local radius = assert(tonumber(args[3]), 'radius expects number')
+            --local withFlags = #args >= 4 and tonumber(args[4]) or 0
+            --local withoutFlags = #args >= 5 and tonumber(args[5]) or 0
+            
+            local withFlags = #args >= 4 and assert(PrefabFlag[args[4]:upper()], 'invalid flag') or 0
+            local withoutFlags = #args >= 5 and assert(PrefabFlag[args[5]:upper()], 'invalid !flag') or 0
             
             if radius > 32 and not args[#args] == '-y' then
                 return peer:ConsoleMessage('add "-y" to confirm')
             end
-            
-            if prefab == 'all' then prefab = 0 end
             
             -- ignore SESSIONED flags
             withFlags = withFlags & ~PrefabFlag.SESSIONED
@@ -37,24 +38,24 @@ local commands = {
             withoutFlags = withoutFlags | PrefabFlag.SESSIONED
             
             -- target zdos in radius zdo
-            if mode == 'closest' then
+            if mode == 'nearby' then
                 -- vs destroy nearest all 10
-                local zdos = ZDOManager.GetZDOs(peer.pos, radius, prefab, withFlags, withoutFlags)
+                local zdos = ZDOManager:GetZDOs(peer.zdo.pos, radius, prefab, withFlags, withoutFlags)
                 
                 for i=1, #zdos do
                     local zdo = zdos[i]
-                    ZDOManager.DestroyZDO(zdo)
+                    ZDOManager:DestroyZDO(zdo)
                 end
                 
                 peer:ConsoleMessage('destroyed ' .. #zdos .. ' zdos')
-            else
-                local zdo = ZDOManager.NearestZDO(peer.pos, radius, prefab, withFlags, withoutFlags)
+            elseif mode == 'closest' then
+                local zdo = ZDOManager:NearestZDO(peer.zdo.pos, radius, prefab, withFlags, withoutFlags)
                 
                 if zdo then
                     peer:ConsoleMessage('destroying ' .. zdo.prefab.name)
-                    ZDOManager.DestroyZDO(zdo)
+                    ZDOManager:DestroyZDO(zdo)
                 else
-                    peer:ConsoleMessage('no persistent matches found')
+                    peer:ConsoleMessage('no matches found')
                 end
             end
         end,
@@ -63,7 +64,7 @@ local commands = {
     findfeature = {
         function(peer, cmd, args)
             if #args == 1 then
-                local instance = ZoneManager.GetNearestFeature(args[1], peer.pos)
+                local instance = ZoneManager.GetNearestFeature(args[1], peer.zdo.pos)
                 if instance then
                     peer:ChatMessage(args[1], ChatMsgType.shout, instance.pos, '', '')
                     peer:ConsoleMessage('feature located at ' .. tostring(instance.pos))
@@ -77,10 +78,10 @@ local commands = {
         '<feature>'
     },
     gendungeon = {
-        function(peer, cmd, args)        
+        function(peer, cmd, args)
             local dungeon = assert(DungeonManager.GetDungeon(args[1]))
             
-            local pos = #args >= 4 and Vector3.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.pos
+            local pos = #args >= 4 and Vector3.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
             
             DungeonManager.Generate(dungeon, pos, Quaternion.identity)
             
@@ -96,7 +97,7 @@ local commands = {
                 return peer:ConsoleMessage('add "-y" to confirm')
             end
             
-            local zdos = ZDOManager.GetZDOs(peer.pos, radius, 'guard_stone')
+            local zdos = ZDOManager:GetZDOs(peer.zdo.pos, radius, 'guard_stone')
             
             for i=1, #zdos do
                 Views.Ward.new(zdos[i]).creator = peer
@@ -108,7 +109,7 @@ local commands = {
     },
     op = {
         function(peer, cmd, args)
-            local p = NetManager.GetPeer(args[1])
+            local p = NetManager:GetPeer(args[1])
             if p then 
                 p.admin = not p.admin 
                 
@@ -127,17 +128,17 @@ local commands = {
         function(peer, cmd, args)
             if #args == 1 then
                 -- tp to the player-arg
-                local p = NetManager.GetPeer(args[1])
+                local p = NetManager:GetPeer(args[1])
                 if p then 
-                    peer:Teleport(p.pos)
+                    peer:Teleport(p.zdo.pos)
                 else
                     peer:ConsoleMessage('player not found ')
                 end
             elseif #args == 2 then
-                local p1 = NetManager.GetPeer(args[1])
-                local p2 = NetManager.GetPeer(args[2])
+                local p1 = NetManager:GetPeer(args[1])
+                local p2 = NetManager:GetPeer(args[2])
                 if p1 and p2 then 
-                    p1:Teleport(p2.pos)
+                    p1:Teleport(p2.zdo.pos)
                 else
                     peer:ConsoleMessage('players not found ')
                 end
@@ -146,6 +147,30 @@ local commands = {
             end
         end,
         '[player] [player]'
+    },
+    tp = {
+        function(peer, cmd, args)
+            if #args == 1 then
+                -- tp to the player-arg
+                local p = NetManager:GetPeer(args[1])
+                if p then 
+                    peer:Teleport(p.zdo.pos)
+                else
+                    peer:ConsoleMessage('player not found ')
+                end
+            elseif #args == 2 then
+                local p1 = NetManager:GetPeer(args[1])
+                local p2 = NetManager:GetPeer(args[2])
+                if p1 and p2 then 
+                    p1:Teleport(p2.zdo.pos)
+                else
+                    peer:ConsoleMessage('players not found ')
+                end
+            else
+                peer:ConsoleMessage('expected 1 or 2 args')
+            end
+        end,
+        '[x] [y] [z]'
     }
     --moveto = {
     --    function(peer, cmd, args)
@@ -408,23 +433,32 @@ local handleVsCommand = function(peer, cmd, args)
     end
 end
 
-local RPC_vs = function(peer, cmd, args)
+local RPC_vs = function(peer, label, args)
     if not peer.admin then 
         peer:ConsoleMessage("must be an admin")
     else         
-        print('Got command ' .. cmd)
+        --print('Got command ' .. cmd)
+        --
+        --print('args: ' .. #args)
+        --for i=1, #args do
+        --    print(' - ' .. args[i])
+        --end
         
-        print('args: ' .. #args)
-        for i=1, #args do
-            print(' - ' .. args[i])
-        end
+        local command = commands[label]
         
-        local success, errMsg = pcall(handleVsCommand, peer, cmd, args)
-        
-        if not success then
-            peer:ConsoleMessage('Error: ' .. errMsg)
-            --print('Error: ')
-            --print(errMsg)
+        if command then
+            -- the function must be handled because this is an Rpc call, 
+            --  and exceptions occurring during commands should not kick the player
+            local success, errMsg = pcall(command[1], peer, label, args)
+            if not success then
+                peer:ConsoleMessage('Error: ' .. errMsg)
+                peer:ConsoleMessage('Usage: ' .. label .. ' ' .. command[2])
+            end
+        else
+            peer:ConsoleMessage('unknown .vs command')
+            for k,v in pairs(commands) do
+                peer:ConsoleMessage(' - ' .. k .. ' ' .. v[2])
+            end
         end
     end    
 end

@@ -87,8 +87,7 @@ void IZDOManager::RemoveFromSector(ZDO& zdo) {
 void IZDOManager::InvalidateSector(ZDO& zdo) {
 	RemoveFromSector(zdo);
 
-	auto&& peers = NetManager()->GetPeers();
-	for (auto&& peer : peers) {
+	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
 }
@@ -357,8 +356,7 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 		m_objectsByID.erase(find);
 	}
 
-	auto&& peers = NetManager()->GetPeers();
-	for (auto&& peer : peers) {
+	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->m_zdos.erase(zdoid);
 	}
 

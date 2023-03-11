@@ -140,9 +140,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
         bool playerNear = false;
 
         // if a player is inside, do not reset
-        for (auto&& pair : NetManager()->GetPeers()) {
-            auto&& peer = pair.second;
-
+        for (auto&& peer : NetManager()->GetPeers()) {
             // if peer in dungeon sector, and they are high up (presumably inside the dungeon)
             if (dungeonZdo.Sector() == ZoneManager()->WorldToZonePos(peer->m_pos)
                 && peer->m_pos.y > 4000) {

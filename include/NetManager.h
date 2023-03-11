@@ -10,6 +10,8 @@
 #include "HashUtils.h"
 
 class INetManager {
+    friend class IModManager;
+
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
