@@ -156,6 +156,7 @@ private:
 	void TryGenerateZones(const Vector3& pos);
 
 	bool TryGenerateZone(const ZoneID& zone);
+	void GenerateZone(Heightmap& heightmap);
 	std::vector<ClearArea> GenerateFeatures(const ZoneID& zone);
 	void GenerateFoliage(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
@@ -182,14 +183,19 @@ private:
 	void GenerateZoneCtrl(const ZoneID& zone);
 
 public:
-	void PrepareAllFeatures();
-
 	void Init();
-
 	void Update();
+
+	void PrepareAllFeatures();
 
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
+
+	robin_hood::unordered_set<std::string>& GlobalKeys() {
+		return m_globalKeys;
+	}
+
+	void RegenerateZone(const ZoneID& zone);
 
 	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();

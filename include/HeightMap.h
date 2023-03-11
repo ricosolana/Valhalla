@@ -52,21 +52,23 @@ public:
     static constexpr int E_WIDTH = IZoneManager::ZONE_SIZE + 1;
 
 private:
-    //friend class HeightmapManager;
+    const std::unique_ptr<BaseHeightmap> m_base;
+    BaseHeightmap::Heights_t m_heights;
 
-    //using Heights = std::array<float, (Heightmap::WIDTH + 1)* (Heightmap::WIDTH + 1)>;
+    BaseHeightmap::Mask_t m_paintMask;
 
-    
+    std::array<float, 4> m_oceanDepth{};
 
-    //void Awake();
-    //void OnDestroy();
-    //void OnEnable();
+    std::array<Biome, 4> m_cornerBiomes = {
+        Biome::Meadows,
+        Biome::Meadows,
+        Biome::Meadows,
+        Biome::Meadows
+    };
 
+    const ZoneID m_zone;
 
-
-    //void UpdateCornerDepths();
-    //void Generate();
-
+private:
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
     void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
@@ -89,6 +91,10 @@ private:
 
 public:
     Heightmap(const ZoneID& zone, std::unique_ptr<BaseHeightmap> base);
+
+    const ZoneID& GetZone() {
+        return m_zone;
+    }
 
     //Heightmap(const Heightmap& other) = delete; // delete copy
 
@@ -148,38 +154,4 @@ public:
 
 
     TerrainComp GetAndCreateTerrainCompiler();
-    
-    //Vector3 GetWorldPosition();
-
-public:
-
-    Material m_material;
-
-private:
-    //void CancelQueuedRegeneration();
-    
-
-    //Task *m_queuedRegenerateTask = nullptr;
-
-    const std::unique_ptr<BaseHeightmap> m_base;
-    BaseHeightmap::Heights_t m_heights;
-
-    BaseHeightmap::Mask_t m_paintMask;
-
-    MeshCollider m_collider;
-
-    std::array<float, 4> m_oceanDepth{};
-
-    std::array<Biome, 4> m_cornerBiomes = {
-        Biome::Meadows,
-        Biome::Meadows,
-        Biome::Meadows,
-        Biome::Meadows
-    };
-
-    Mesh m_collisionMesh;
-
-    Mesh m_renderMesh;
-
-    const ZoneID m_zone;
 };

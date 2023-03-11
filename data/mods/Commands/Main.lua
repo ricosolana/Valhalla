@@ -14,6 +14,17 @@ local commands = {
         end,
         '[time]'
     },
+    timeofday = {
+        function(peer, cmd, args)
+            if #args == 0 then
+                peer:ConsoleMessage('Time of day: ' .. Valhalla.timeOfDay)
+            else
+                Valhalla.timeOfDay = assert(tonumber(args[1]), 'not a number')
+                peer:ConsoleMessage('Set time of day to ' .. args[1] .. '(worldTime: ' .. Valhalla.worldTime .. ')')
+            end
+        end,
+        '[time]'
+    },
     destroy = {
         function(peer, cmd, args)
             assert(#args >= 3, 'not enough args')
@@ -24,12 +35,12 @@ local commands = {
             --local withFlags = #args >= 4 and tonumber(args[4]) or 0
             --local withoutFlags = #args >= 5 and tonumber(args[5]) or 0
             
-            local withFlags = #args >= 4 and assert(PrefabFlag[args[4]:upper()], 'invalid flag') or 0
-            local withoutFlags = #args >= 5 and assert(PrefabFlag[args[5]:upper()], 'invalid !flag') or 0
+            local withFlags = #args >= 4 and assert(PrefabFlag[string.upper(args[4])], 'invalid flag') or 0
+            local withoutFlags = #args >= 5 and assert(PrefabFlag[string.upper(args[5])], 'invalid !flag') or 0
             
-            if radius > 32 and not args[#args] == '-y' then
-                return peer:ConsoleMessage('add "-y" to confirm')
-            end
+            --if radius > 32 and args[#args] ~= '-y' then
+            --    return peer:ConsoleMessage('add "-y" to confirm')
+            --end
             
             -- ignore SESSIONED flags
             withFlags = withFlags & ~PrefabFlag.SESSIONED
@@ -52,7 +63,7 @@ local commands = {
                 local zdo = ZDOManager:NearestZDO(peer.zdo.pos, radius, prefab, withFlags, withoutFlags)
                 
                 if zdo then
-                    peer:ConsoleMessage('destroying ' .. zdo.prefab.name)
+                    peer:ConsoleMessage('destroying ' .. zdo.prefab.name .. ' ' .. tostring(zdo.pos))
                     ZDOManager:DestroyZDO(zdo)
                 else
                     peer:ConsoleMessage('no matches found')
@@ -63,31 +74,41 @@ local commands = {
     },
     findfeature = {
         function(peer, cmd, args)
-            if #args == 1 then
-                local instance = ZoneManager.GetNearestFeature(args[1], peer.zdo.pos)
-                if instance then
-                    peer:ChatMessage(args[1], ChatMsgType.shout, instance.pos, '', '')
-                    peer:ConsoleMessage('feature located at ' .. tostring(instance.pos))
-                else
-                    peer:ConsoleMessage('feature not found')
-                end
+            local instance = ZoneManager:GetNearestFeature(args[1], peer.zdo.pos)
+            if instance then
+                peer:ChatMessage(args[1], ChatMsgType.SHOUT, instance.pos, '', '')
+                peer:ConsoleMessage('feature located at ' .. tostring(instance.pos))
             else
-                peer:ConsoleMessage("feature arg missing")
+                peer:ConsoleMessage('feature not found')
             end
         end,
         '<feature>'
     },
     gendungeon = {
         function(peer, cmd, args)
-            local dungeon = assert(DungeonManager.GetDungeon(args[1]))
+            local dungeon = assert(DungeonManager:GetDungeon(args[1]))
             
             local pos = #args >= 4 and Vector3.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
             
-            DungeonManager.Generate(dungeon, pos, Quaternion.identity)
+            DungeonManager.Generate(dungeon, pos, Quaternion.IDENTITY)
             
             peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
         end,
         '<dungeon>'
+    },
+    regenzone = {
+        function(peer, cmd, args)
+            --local radius = assert(tonumber(args[1]), 'radius expects number')
+            --            
+            --if radius > 2 and args[#args] ~= '-y' then
+            --    return peer:ConsoleMessage('add "-y" to confirm')
+            --end
+            
+            ZoneManager:RegenerateZone(peer.zdo.zone)
+            
+            peer:ConsoleMessage('regenerated zone at ' .. tostring(peer.zdo.pos))
+        end,
+        '<z-radius>'
     },
     claimwards = {
         function(peer, cmd, args)
@@ -148,30 +169,31 @@ local commands = {
         end,
         '[player] [player]'
     },
-    tp = {
-        function(peer, cmd, args)
-            if #args == 1 then
-                -- tp to the player-arg
-                local p = NetManager:GetPeer(args[1])
-                if p then 
-                    peer:Teleport(p.zdo.pos)
-                else
-                    peer:ConsoleMessage('player not found ')
-                end
-            elseif #args == 2 then
-                local p1 = NetManager:GetPeer(args[1])
-                local p2 = NetManager:GetPeer(args[2])
-                if p1 and p2 then 
-                    p1:Teleport(p2.zdo.pos)
-                else
-                    peer:ConsoleMessage('players not found ')
-                end
-            else
-                peer:ConsoleMessage('expected 1 or 2 args')
-            end
-        end,
-        '[x] [y] [z]'
-    }
+    --tp = {
+    --    function(peer, cmd, args)
+    --        if #args == 1 then
+    --            -- tp to the player-arg
+    --            local p = NetManager:GetPeer(args[1])
+    --            if p then 
+    --                peer:Teleport(p.zdo.pos)
+    --            else
+    --                peer:ConsoleMessage('player not found ')
+    --            end
+    --        elseif #args == 2 then
+    --            local p1 = NetManager:GetPeer(args[1])
+    --            local p2 = NetManager:GetPeer(args[2])
+    --            if p1 and p2 then 
+    --                p1:Teleport(p2.zdo.pos)
+    --            else
+    --                peer:ConsoleMessage('players not found ')
+    --            end
+    --        else
+    --            peer:ConsoleMessage('expected 1 or 2 args')
+    --        end
+    --    end,
+    --    '[x] [y] [z]'
+    --}
+    
     --moveto = {
     --    function(peer, cmd, args)
     --    
@@ -444,7 +466,7 @@ local RPC_vs = function(peer, label, args)
         --    print(' - ' .. args[i])
         --end
         
-        local command = commands[label]
+        local command = commands[string.lower(label)]
         
         if command then
             -- the function must be handled because this is an Rpc call, 

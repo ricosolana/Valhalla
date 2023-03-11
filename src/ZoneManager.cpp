@@ -10,6 +10,7 @@
 #include "Hashes.h"
 #include "DungeonManager.h"
 #include "DungeonGenerator.h"
+#include "ZDOManager.h"
 
 auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
@@ -317,6 +318,15 @@ void IZoneManager::Update() {
     });
 }
 
+void IZoneManager::RegenerateZone(const ZoneID& zone) {
+    for (auto&& zdo : ZDOManager()->GetZDOs(zone, 0, Prefab::Flags::None, Prefab::Flags::Player))
+        ZDOManager()->DestroyZDO(zdo);
+
+    m_generatedZones.erase(zone);
+    GenerateZone(HeightmapManager()->GetHeightmap(zone));
+    m_generatedZones.insert(zone);
+}
+
 // Rename?
 void IZoneManager::TryGenerateZones(const Vector3& refPoint) {
     auto zone = WorldToZonePos(refPoint);
@@ -344,24 +354,29 @@ bool IZoneManager::TryGenerateZone(const ZoneID& zone) {
         && zone.x < WORLD_RADIUS_IN_ZONES && zone.y < WORLD_RADIUS_IN_ZONES)
         && !IsZoneGenerated(zone)) {
         if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
-            static std::vector<ClearArea> m_tempClearAreas;
-
             m_generatedZones.insert(zone);
 
-            if (SERVER_SETTINGS.spawningLocations)
-                m_tempClearAreas = GenerateFeatures(zone);
-
-            if (SERVER_SETTINGS.spawningVegetation)
-                GenerateFoliage(zone, *heightmap, m_tempClearAreas);
-
-            if (SERVER_SETTINGS.spawningCreatures)
-                GenerateZoneCtrl(zone);
+            GenerateZone(*heightmap);
 
             return true;
         }
     }
     return false;
 }
+
+void IZoneManager::GenerateZone(Heightmap &heightmap) {
+    std::vector<ClearArea> m_tempClearAreas;
+
+    if (SERVER_SETTINGS.spawningLocations)
+        m_tempClearAreas = GenerateFeatures(heightmap.GetZone());
+
+    if (SERVER_SETTINGS.spawningVegetation)
+        GenerateFoliage(heightmap.GetZone(), heightmap, m_tempClearAreas);
+
+    if (SERVER_SETTINGS.spawningCreatures)
+        GenerateZoneCtrl(heightmap.GetZone());
+}
+
 
 // private
 void IZoneManager::GenerateZoneCtrl(const ZoneID& zone) {

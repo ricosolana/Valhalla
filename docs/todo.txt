@@ -1,4 +1,12 @@
 todo:
+    - leviathans sinking when leaving area
+        probably something to do with server needing to do something with them
+        
+        possible ideas:
+            if leviathan not at y=0 prior to peer leaving, consider setting height to 40 or something to prevent peer from fucking up everything
+            
+            hopefully this causes peer to only lower the leviathan down towards the surface instead of down to bedrock
+
     - fix dungeon netview orientations
         some netviews in DG_Cave (crystal in this small corrider) and the roots when entering crypt are either floating or in the way. 
         
