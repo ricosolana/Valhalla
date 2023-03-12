@@ -604,6 +604,16 @@ void IModManager::LoadAPI() {
         "NIGHT", TIME_NIGHT
     );
 
+    //m_state.new_usertype<EventHandle>("EventHandle",
+    //    "mod", &EventHandle::m_mod,
+    //    //sol:meta_function_names()[sol::meta_function::call], &EventHandle::operator(),
+    //    //sol::meta_function::call, &EventHandle::operator(),
+    //    "priority", sol::readonly(&EventHandle::m_priority)
+    //);
+    //m_state["EventHandle"][sol::meta_function::call] = &EventHandle::operator();
+
+
+
     m_state["Valhalla"] = Valhalla();
     m_state.new_usertype<IValhalla>("IValhalla",
         // server members
@@ -627,12 +637,10 @@ void IModManager::LoadAPI() {
         "tomorrowAfternoon", sol::property(&IValhalla::GetTomorrowAfternoon),
         "tomorrowNight", sol::property(&IValhalla::GetTomorrowNight),
 
-        "OnEvent", [this](IValhalla& self, sol::variadic_args args, sol::this_environment te) { // sol::meta_function::bitwise_left_shift
-        //"OnEvent", [this](IValhalla& self, sol::this_environment te, sol::variadic_args args) { // this always passes a function type in args
-        //"OnEvent", [this](IValhalla& self, sol::variadic_args args) { // this correctly passes self, and no self instance in args
+        "Subscribe", [this](IValhalla& self, sol::variadic_args args, sol::this_environment te) {
             sol::environment& env = te;
 
-            HASH_t cbHash = 0;
+            HASH_t hash = 0;
             sol::function func;
             int priority = 0;
 
@@ -644,16 +652,13 @@ void IModManager::LoadAPI() {
                 auto&& type = arg.get_type();
 
                 if (i + offset < args.size()) {
-                    HASH_t hash;
                     if (type == sol::type::string)
-                        hash = VUtils::String::GetStableHashCode(arg.as<std::string>());
+                        hash ^= VUtils::String::GetStableHashCode(arg.as<std::string>());
                     else if (type == sol::type::number)
-                        hash = arg; // .as<HASH_t>();
+                        hash ^= arg.as<HASH_t>();
                     else {
                         throw std::runtime_error("initial params must be string or hash");
                     }
-
-                    cbHash ^= hash;
                 }
                 else {
                     if (i == args.size() - offset && type == sol::type::function) {
@@ -668,18 +673,37 @@ void IModManager::LoadAPI() {
                 }
             }
 
-            auto&& vec = m_callbacks[cbHash];
+            auto&& callbacks = m_callbacks[hash];
             
-            Mod* mod = env["this"].get<sol::table>().as<Mod*>();
-            assert(mod);
+            Mod& mod = env["this"].get<sol::table>().as<Mod&>();
             
-            vec.emplace_back(*mod, func, priority);
-            std::sort(vec.begin(), vec.end(), [](const EventHandler& a,
-                const EventHandler& b) {
+            callbacks.emplace_back(mod, func, priority);            
+            callbacks.sort([](const EventHandle& a, const EventHandle& b) {
                     return a.m_priority < b.m_priority;
                 }
             );
         }
+        //"Unsubscribe", [](IValhalla& self, std::string name, sol::this_environment te) {
+        //
+        //}, 
+        // 
+        //"Unsubscribe", [this](IValhalla& self, EventHandle* eventHandle) {
+        //    if (!eventHandle) throw std::runtime_error("EventHandle is null");
+        //
+        //    if (eventHandle == )
+        //
+        //    auto&& callbacks = m_callbacks[eventHandle->m_hash];
+        //
+        //    // erase the handle from events
+        //    for (auto&& itr = callbacks.begin(); itr != callbacks.end();) {
+        //        if (itr->get() == eventHandle) {
+        //            itr = callbacks.erase(itr);
+        //            break;
+        //        }
+        //        else
+        //            ++itr;
+        //    }
+        //}
 
     );
 
@@ -709,6 +733,7 @@ void IModManager::LoadAPI() {
         ),
         "GetZDOs", sol::overload(
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(HASH_t)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, const std::string& name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float)>(&IZDOManager::GetZDOs),
@@ -742,60 +767,7 @@ void IModManager::LoadAPI() {
             [](IZDOManager& self, ZDO* zdo) { if (!zdo) throw std::runtime_error("null zdo"); self.DestroyZDO(*zdo); }
         )
     );
-    /*
-    auto zdoApiTable = m_state["ZDOManager"].get_or_create<sol::table>();
-    zdoApiTable["GetZDO"] = [](const ZDOID& zdoid) { return ZDOManager()->GetZDO(zdoid); };
-    zdoApiTable["SomeZDOs"] = sol::overload(
-        [](const Vector3& pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->SomeZDOs(pos, radius, max, pred); },
-        [](const Vector3& pos, float radius, size_t max) { return ZDOManager()->SomeZDOs(pos, radius, max); },
-        [](const Vector3& pos, float radius, size_t max, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->SomeZDOs(pos, radius, max, prefabHash, flagsPresent, flagsAbsent); },
-        [](const Vector3& pos, float radius, size_t max, const std::string& name) { return ZDOManager()->SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); },
 
-        [](const ZoneID& zone, size_t max, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->SomeZDOs(zone, max, pred); },
-        [](const ZoneID& zone, size_t max) { return ZDOManager()->SomeZDOs(zone, max); },
-        [](const ZoneID& zone, size_t max, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->SomeZDOs(zone, max, prefabHash, flagsPresent, flagsAbsent); },
-        [](const ZoneID& zone, size_t max, const std::string& name) { return ZDOManager()->SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); },
-
-        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius) { return ZDOManager()->SomeZDOs(zone, max, pos, radius); },
-        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->SomeZDOs(zone, max, pos, radius, prefabHash, flagsPresent, flagsAbsent); },
-        [](const ZoneID& zone, size_t max, const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); }
-    );
-    zdoApiTable["GetZDOs"] = sol::overload(
-        [](HASH_t prefab) { return ZDOManager()->GetZDOs(prefab); },
-
-        [](const Vector3& pos, float radius, std::function<bool(const ZDO&)> cond) { return ZDOManager()->GetZDOs(pos, radius, cond); },
-        [](const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(pos, radius); },
-        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->GetZDOs(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
-        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); },
-
-        [](const ZoneID& zone, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->GetZDOs(zone, pred); },
-        [](const ZoneID& zone) { return ZDOManager()->GetZDOs(zone); },
-        [](const ZoneID& zone, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->GetZDOs(zone, prefabHash, flagsPresent, flagsAbsent); },
-        [](const ZoneID& zone, const std::string& name) { return ZDOManager()->GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); },
-
-        [](const ZoneID& zone, const Vector3& pos, float radius) { return ZDOManager()->GetZDOs(zone, pos, radius); },
-        [](const ZoneID& zone, const Vector3& pos, float radius, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->GetZDOs(zone, pos, radius, prefabHash, flagsPresent, flagsAbsent); },
-        [](const ZoneID& zone, const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); }
-    );
-    zdoApiTable["AnyZDO"] = sol::overload(
-        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->AnyZDO(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
-        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); },
-
-        [](const ZoneID& zone, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->AnyZDO(zone, prefabHash, flagsPresent, flagsAbsent); },
-        [](const ZoneID& zone, const std::string& name) { return ZDOManager()->AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); }
-    );
-    zdoApiTable["NearestZDO"] = sol::overload(
-        [](const Vector3& pos, float radius, const std::function<bool(const ZDO&)>& pred) { return ZDOManager()->NearestZDO(pos, radius, pred); },
-        [](const Vector3& pos, float radius, HASH_t prefabHash, Prefab::FLAG_t flagsPresent, Prefab::FLAG_t flagsAbsent) { return ZDOManager()->NearestZDO(pos, radius, prefabHash, flagsPresent, flagsAbsent); },
-        [](const Vector3& pos, float radius, const std::string& name) { return ZDOManager()->NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flags::None, Prefab::Flags::None); }
-    );
-    zdoApiTable["ForceSendZDO"] = [](const ZDOID& zdoid) { ZDOManager()->ForceSendZDO(zdoid); };
-    zdoApiTable["DestroyZDO"] = sol::overload(
-        [](ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo, immediate); },
-        [](ZDO* zdo) { if (!zdo) throw std::runtime_error("null zdo"); ZDOManager()->DestroyZDO(*zdo); }
-    );
-    //zdoApiTable["HashZDOID"] = [](const std::string& key) { return ZDO::ToHashPair(key); };
-    */
 
 
     m_state["NetManager"] = NetManager();
@@ -825,7 +797,6 @@ void IModManager::LoadAPI() {
         sol::no_constructor
         //"Generate", sol::resolve<void(const Vector3& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
-
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
@@ -863,6 +834,8 @@ void IModManager::LoadAPI() {
         //}
     );
 
+
+
     m_state.new_usertype<IRouteManager::Data>("RouteData",
         "sender", &IRouteManager::Data::m_sender,
         "target", &IRouteManager::Data::m_target,
@@ -872,11 +845,33 @@ void IModManager::LoadAPI() {
     );
 
     {
-        auto thisEventTable = m_state["event"].get_or_create<sol::table>();
+        auto eventTable = m_state["event"].get_or_create<sol::table>();
 
-        thisEventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
-        thisEventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-        thisEventTable["cancelled"] = [this]() { return m_eventStatus == EventStatus::CANCEL; };
+        eventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
+        eventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
+        eventTable["cancelled"] = sol::property([this]() { return m_eventStatus == EventStatus::CANCEL; });
+        
+        
+        
+        eventTable["Unsubscribe"] = [this]() {
+            m_eventStatus = EventStatus::UNSUBSCRIBE;
+
+            //if (!m_currentCallback) throw std::runtime_error("No events are active");
+            //
+            //auto&& callbacks = m_callbacks[eventHandle->m_hash];
+            //
+            //// erase the handle from events
+            //for (auto&& itr = callbacks.begin(); itr != callbacks.end();) {
+            //    if (itr->get() == m_currentCallback) {
+            //        itr = callbacks.erase(itr);
+            //        break;
+            //    }
+            //    else
+            //        ++itr;
+            //}
+        };
+        
+        //eventTable["Unsubscribe"] = [this]() { m_eventStatus = EventStatus::UNSUBSCRIBE; }
     }
 }
 

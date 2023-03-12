@@ -10,8 +10,8 @@
         my code below also exhibits this, (un)fortunately? so.
 --]]
 
-Valhalla.OnEvent("PeriodUpdate", function()
-	local portalZdos = ZDOManager.GetZDOs('portal_wood')
+Valhalla:Subscribe('PeriodUpdate', function()
+	local portalZdos = ZDOManager:GetZDOs('portal_wood')
 
 	for i1=1, #portalZdos do
 		local portalZdo1 = portalZdos[i1]
@@ -23,7 +23,7 @@ Valhalla.OnEvent("PeriodUpdate", function()
 		-- if target portal assigned
         if target1 ~= ZDOID.NONE then
 			local portalZdo2 = ZDOManager:GetZDO(target1)
-            local portal2 = Views.Portal.new(portalZdo2)
+            local portal2 = portalZdo2 and Views.Portal.new(portalZdo2) or nil
 
 			-- if target is missing from world, reset target
 			if not portalZdo2 or portal2.tag ~= tag1 then

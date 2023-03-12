@@ -27,6 +27,7 @@ enum class EventStatus {
     DEFAULT,
     PROCEED,
     CANCEL,
+    UNSUBSCRIBE, // Set only when calling function self unsubscribes
 };
 
 struct MethodSig {
@@ -82,12 +83,12 @@ class IModManager {
         }
     };
 
-    struct EventHandler {
+    struct EventHandle {
         std::reference_wrapper<Mod> m_mod;
         sol::protected_function m_func;
         int m_priority;
 
-        EventHandler(Mod& mod, sol::function func, int priority)
+        EventHandle(Mod& mod, sol::function func, int priority)
             : m_mod(mod), m_func(func), m_priority(priority) {}
     };
 
@@ -95,10 +96,11 @@ private:
     sol::state m_state;
 
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
-    robin_hood::unordered_map<HASH_t, std::vector<EventHandler>> m_callbacks;
+    robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
+
+    //EventHandle* m_currentCallback = nullptr;
 
     EventStatus m_eventStatus = EventStatus::DEFAULT;
-    //bool m_reload = false;
 
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);
@@ -124,7 +126,7 @@ public:
             // Multiple tables
             // TODO it turns out that strings are weird (i think), 
             //  go back to the old method... this will break some functionality from past
-            auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_object(m_state, params))...);
+            //auto &&lutup = std::make_tuple(m_state.create_table_with("value", sol::make_object(m_state, params))...);
 
             // Single table
             //auto&& lutup = std::make_tuple(m_state.create_table_with("value", sol::make_reference(m_state, params)...));
@@ -132,7 +134,12 @@ public:
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
             //for (auto&& callback : callbacks) {
                 //try {
-                    //sol::protected_function_result result = std::apply(callback.m_func, t);
+                    //sol::protected_function_result result = std::apply(itr->m_func, params);
+                
+                //m_currentCallback = itr->get();
+
+                //sol::protected_function_result result = (*itr)(params);
+                sol::protected_function_result result = itr->m_func(params...);
                     
                     // Pass each type in a proxy reference (will be variadic unpacked to function)
                     //sol::protected_function_result result = callback.m_func(m_state.create_table_with("value", sol::make_reference(m_state, params))...);
@@ -144,21 +151,28 @@ public:
 
                     // TODO test whether the values in table are mutable (whether reassignments directly affect 'params' vararg)
 
-                sol::protected_function_result result = std::apply(itr->m_func, lutup);
+                //sol::protected_function_result result = std::apply(itr->m_func, lutup);
                 if (!result.valid()) {
+                    LOG(ERROR) << "Callback error: ";
+
                     sol::error error = result;
                     LOG(ERROR) << error.what();
 
-                    LOG(ERROR) << "Disabling callback...";
+                    LOG(ERROR) << "Callback disabling...";
                     itr = callbacks.erase(itr);
                 }
-                else
+                else if (m_eventStatus == EventStatus::UNSUBSCRIBE) {
+                    LOG(INFO) << "Event unsubscribed";
+                    itr = callbacks.erase(itr);
+                } else {
                     ++itr;
+                }
                 //}
                 //catch (const sol::error& e) {
                 //    LOG(ERROR) << e.what();
                 //}
             }
+            //m_currentCallback = nullptr;
         }
         return m_eventStatus;
     }
