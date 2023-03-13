@@ -129,7 +129,7 @@ void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
 void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
     // hackish method to possibly move a player instantaneously
     if (auto zdo = GetZDO()) {
-        zdo->Abandon();
+        zdo->Disown();
         //zdo->SetPosition(pos);
         //zdo->SetRotation(rot);
 
@@ -138,7 +138,7 @@ void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
         Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {
             if (auto peer = NetManager()->GetPeer(uuid)) {
                 if (auto zdo = peer->GetZDO()) {
-                    zdo->Abandon();
+                    zdo->Disown();
                     zdo->SetPosition(pos);
                     zdo->SetRotation(rot);
                     Valhalla()->RunTaskLater([pos, rot, uuid](Task&) {

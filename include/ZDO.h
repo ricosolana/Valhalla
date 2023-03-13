@@ -578,7 +578,7 @@ public:
     const Quaternion&   GetQuaternion(  const std::string& key, const Quaternion& value) const {    return Get<Quaternion>(key, value); }
     const Vector3&      GetVector3(     const std::string& key, const Vector3& value) const {       return Get<Vector3>(key, value); }
     const std::string&  GetString(      const std::string& key, const std::string& value) const {   return Get<std::string>(key, value); }
-    const BYTES_t*      GetBytes(       const std::string& key) {                                   return Get<BYTES_t>(key); }
+    const BYTES_t*      GetBytes(       const std::string& key) const {                             return Get<BYTES_t>(key); }
     bool                GetBool(        const std::string& key, bool value) const {                 return Get<int32_t>(key, value); }
     ZDOID               GetZDOID(       const std::string& key, const ZDOID& value) const {         return GetZDOID(ToHashPair(key), value); }
 
@@ -592,13 +592,15 @@ public:
     bool                GetBool(const std::string& key) const {                                     return Get<int32_t>(key, {}); }
     ZDOID               GetZDOID(const std::string& key) const {                                    return GetZDOID(key, {}); }
 
+
+
     // Trivial hash setters
     template<TrivialSyncType T>
     void Set(HASH_t key, const T& value) {
         if (_Set(key, value))
             Revise();
     }
-
+    
     // Special hash setters
     void Set(HASH_t key, bool value) { Set(key, value ? (int32_t)1 : 0); }
     void Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
@@ -608,10 +610,16 @@ public:
 
     // Trivial hey-string setters (+bool)
 
-    template<typename T> requires TrivialSyncType<T> || std::same_as<T, bool>
-    void Set(const std::string & key, const T & value) { Set(VUtils::String::GetStableHashCode(key), value); }
-    void Set(const std::string& key, const std::string& value) { Set(VUtils::String::GetStableHashCode(key), value); } // String overload
+    //template<typename T> requires TrivialSyncType<T> || std::same_as<T, bool>
+    //void Set(const std::string& key, const T& value) { Set(VUtils::String::GetStableHashCode(key), value); }
+    
+    //void Set(const std::string& key, const std::string& value) { Set(VUtils::String::GetStableHashCode(key), value); } // String overload
     // Special string setters
+
+    template<TrivialSyncType T>
+    void Set(const std::string &key, const T& value) { Set(VUtils::String::GetStableHashCode(key), value); }
+
+    void Set(const std::string& key, bool value) { Set(VUtils::String::GetStableHashCode(key), value ? (int32_t)1 : 0); }
 
     void Set(const std::string& key, const ZDOID& value) { Set(ToHashPair(key), value); }
 
@@ -620,9 +628,17 @@ public:
     //  ie. ignore Prefab restrictions...
     //  prefab checking...
 
-    const Prefab* GetPrefab() const {
-        return m_prefab;
+    ZDOID ID() const {
+        return m_id;
     }
+
+    Vector3 Position() const {
+        return m_pos;
+    }
+
+    void SetPosition(const Vector3& pos);
+
+    Vector2i Sector() const;
 
     const Quaternion& Rotation() const {
         return m_rotation;
@@ -635,17 +651,9 @@ public:
         }
     }
 
-    Vector2i Sector() const;
-
-    ZDOID ID() const {
-        return m_id;
+    const Prefab* GetPrefab() const {
+        return m_prefab;
     }
-
-    Vector3 Position() const {
-        return m_pos;
-    }
-
-    void SetPosition(const Vector3& pos);
 
     OWNER_t Owner() const {
         return m_owner;
@@ -656,13 +664,13 @@ public:
     }
 
     // Return whether the ZDO instance is self hosted or remotely hosted
-    bool Local() const {
-        return m_owner == SERVER_ID;
+    bool IsLocal() const {
+        return IsOwner(SERVER_ID);
     }
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
-        return m_owner != 0;
+        return IsOwner(0);
     }
 
     // Claim ownership over this ZDO
@@ -671,7 +679,7 @@ public:
     }
 
     // Should name better
-    void Abandon() {
+    void Disown() {
         SetOwner(0);
     }
 

@@ -102,7 +102,7 @@ void ZDO::SetPosition(const Vector3& pos) {
         this->m_pos = pos;
         ZDOManager()->AddToSector(*this);
 
-        if (Local())
+        if (IsLocal())
             Revise();
     }
 }

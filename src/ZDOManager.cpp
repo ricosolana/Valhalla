@@ -19,17 +19,21 @@ IZDOManager* ZDOManager() {
 void IZDOManager::Init() {
 	LOG(INFO) << "Initializing ZDOManager";
 
-	RouteManager()->Register(Hashes::Routed::DestroyZDO, [this](Peer*, BYTES_t bytes) {
-		// TODO constraint check
-		DataReader reader(bytes);
-		auto destroyed = reader.Read<std::list<ZDOID>>();
-		for (auto&& uid : destroyed)
-			EraseZDO(uid);
-		});
+	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
+		[this](Peer*, BYTES_t bytes) {
+			// TODO constraint check
+			DataReader reader(bytes);
+			auto destroyed = reader.Read<std::list<ZDOID>>();
+			for (auto&& uid : destroyed)
+				EraseZDO(uid);
+		}
+	);
 
-	RouteManager()->Register(Hashes::Routed::RequestZDO, [this](Peer* peer, ZDOID id) {
-		peer->ForceSendZDO(id);
-	});
+	RouteManager()->Register(Hashes::Routed::RequestZDO, 
+		[this](Peer* peer, ZDOID id) {
+			peer->ForceSendZDO(id);
+		}
+	);
 }
 
 void IZDOManager::Update() {
@@ -112,9 +116,11 @@ void IZDOManager::Save(DataWriter& pkg) {
 				for (auto zdo : sectorObjects) {
 					if (zdo->m_prefab->FlagsAbsent(Prefab::Flags::Sessioned)) {
 						pkg.Write(zdo->ID());
-						pkg.SubWrite([zdo, &pkg]() {
-							zdo->Save(pkg);
-							});
+						pkg.SubWrite(
+							[&]() {
+								zdo->Save(pkg);
+							}
+						);
 						count++;
 					}
 				}
@@ -129,15 +135,6 @@ void IZDOManager::Save(DataWriter& pkg) {
 	}
 
 	pkg.Write<int32_t>(0);
-
-	// Write dead zdos
-	//pkg.Write((int32_t)m_deadZDOs.size());
-	//for (auto&& dead : m_deadZDOs) {
-	//	pkg.Write(dead.first);
-	//	auto t = dead.second.count();
-	//	static_assert(sizeof(t) == 8);
-	//	pkg.Write(t);
-	//}
 }
 
 
@@ -176,29 +173,20 @@ void IZDOManager::Load(DataReader& reader, int version) {
 					DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
 			}
 
-			// Do not use ZDO anywhere after this point, since its moved
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;
 	}
 
-
-
 	auto deadCount = reader.Read<int32_t>();
 	for (int j = 0; j < deadCount; j++) {
-		auto key = reader.Read<ZDOID>();
-		auto value = TICKS_t(reader.Read<int64_t>());
-		//m_deadZDOs[key] = value;
-		//if (key.m_uuid == SERVER_ID && key.m_id >= nextUid) {
-		//	nextUid = key.m_id + 1;
-		//}
+		reader.Read<ZDOID>();
+		TICKS_t(reader.Read<int64_t>());
 	}
 
-	//CapDeadZDOList();
-
 	LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
-	LOG(INFO) << "Purged " << purgeCount << " old zdos";
-	//LOG(INFO) << "Loaded " << m_deadZDOs.size() << " dead zdos";
+	if (purgeCount)
+		LOG(INFO) << "Purged " << purgeCount << " old zdos";
 }
 
 ZDO& IZDOManager::AddZDO(const Vector3& position) {
@@ -273,7 +261,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				
 				// If owner-peer no longer in area, make it unclaimed
 				if (!ZoneManager()->ZonesOverlap(zdo.get().Sector(), zone)) {
-					zdo.get().Abandon();
+					zdo.get().Disown();
 				}
 			}
 			else {
@@ -360,7 +348,6 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 		peer->m_zdos.erase(zdoid);
 	}
 
-	//m_deadZDOs[zdoid] = Valhalla()->Ticks();
 	m_deadZDOs.insert(zdoid);
 }
 
