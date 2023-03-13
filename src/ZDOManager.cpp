@@ -654,8 +654,6 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
 		return false;
 
-	//static std::vector<ZDO*> m_tempToSync; m_tempToSync.clear();
-
 	auto syncList = CreateSyncList(peer);
 
 	// continue only if there are updated/invalid NetSyncs to send
@@ -712,12 +710,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		DataReader reader(bytes);
 
 		{
-			auto invalidSectors = reader.Read<std::vector<ZDOID>>();
-			for (auto&& id : invalidSectors) {
-				ZDO* zdo = GetZDO(id);
-
-				if (zdo) InvalidateSector(*zdo);
-			}
+			reader.ReadEach([&](const ZDOID& zdoid) {
+				if (auto zdo = GetZDO(zdoid))
+					InvalidateSector(*zdo);
+				}
+			);
 		}
 
 		auto time = Valhalla()->Time();
@@ -738,17 +735,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						
 			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
 
-			//auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
-			//if (pair.second) // if newly inserted
-			//	pair.first->second = std::make_unique<ZDO>(zdoid, pos);
-			//ZDO *zdo = pair.
-
 			auto&& zdo = pair.first;
 			auto&& created = pair.second;
 
-			//auto&& pair = m_objectsByID.find(zdoid);
-						
-			//auto created = pair == m_objectsByID.end();
 			if (!created) {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
@@ -772,13 +761,6 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			try {
 				// Create a copy of ZDO prior to any modifications
-				
-
-				//static std::unique_ptr<ZDO> zdo; // = std::make_unique<ZDO>(zdoid, pos);
-
-				//auto zdo = std::make_unique<ZDO>(zdoid, pos);
-
-
 				zdo.m_owner = owner;
 				zdo.m_rev = rev;
 
@@ -812,8 +794,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				// erase the zdo from map
 				if (created) // if the zdo was just created, throw it away
 					EraseZDO(zdoid);
-				else zdo = copy; // else, back up the zdo to a prior revision
+				else zdo = copy; // else, restore the ZDO to the prior revision
 
+				// This will kick the malicious peer
 				std::rethrow_exception(std::make_exception_ptr(e));
 			}
 		}
@@ -821,14 +804,13 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {
-	// This is the kind of iteration removal I am trying to avoid
 	for (auto&& pair : m_objectsByID) {
 		auto&& zdo = *pair.second.get();
 		// If ZDO prefab is not assigned (because bad prefab hash)
-		if (!zdo.GetPrefab() || !zdo.GetPrefab()->FlagsAbsent(Prefab::Flags::Sessioned)
-			&& (!zdo.HasOwner() || zdo.Owner() == peer.m_uuid))
+		if ((!zdo.GetPrefab() || !zdo.GetPrefab()->FlagsAbsent(Prefab::Flags::Sessioned))
+			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid)))
 		{
-			LOG(INFO) << "Destroying zdo (" << zdo.m_prefab->m_name << ")";
+			LOG(INFO) << "Destroying zdo (" << (zdo.m_prefab ? zdo.m_prefab->m_name : "???") << ")";
 			DestroyZDO(zdo);
 		}
 	}
@@ -850,7 +832,7 @@ size_t IZDOManager::GetSumZDOMembers() {
 }
 
 float IZDOManager::GetMeanZDOMembers() {
-	return (float)GetSumZDOMembers() / (float)m_objectsByID.size();
+	return (float) GetSumZDOMembers() / m_objectsByID.size();
 }
 
 float IZDOManager::GetStDevZDOMembers() {

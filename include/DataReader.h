@@ -100,18 +100,33 @@ public:
 
         assert(count >= 0);
 
+        using Type = Iterable::value_type;
+
         Iterable out;
 
-        if constexpr (std::is_same_v<Iterable, std::vector<std::string>>)
+        if constexpr (std::is_same_v<Type, std::string>)
             out.reserve(count);
 
         for (int32_t i=0; i < count; i++) {
-            assert(i >= 0);
-            auto type = Read<typename Iterable::value_type>();
+            auto type = Read<Type>();
             out.insert(out.end(), type);
         }
 
         return out;
+    }
+
+    template<typename F>
+        requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
+        //requires (std::is_same_typename VUtils::Traits::func_traits<F>::args_type)
+    void ReadEach(F func) {
+        using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
+
+        const auto count = Read<int32_t>();
+        Assert31U(count);
+
+        for (int32_t i = 0; i < count; i++) {
+            func(Read<Type>());
+        }
     }
 
     // Reads a ZDOID

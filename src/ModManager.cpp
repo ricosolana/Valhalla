@@ -213,53 +213,6 @@ void IModManager::LoadAPI() {
         }
     );
 
-
-    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
-        sol::state_view state = ts;
-
-        auto&& tostring(state["tostring"]);
-
-        std::string s;
-        int idx = 0;
-        for (auto&& arg : args) {
-            if (idx++ > 0)
-                s += " ";
-            s += tostring(arg);
-        }
-
-        //LOG(INFO) << "[" << mod->m_name << "] " << s;
-        LOG(INFO) << "[mod] " << s;
-    };
-
-    {
-        auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
-
-        utilsTable["Compress"] = sol::overload(
-            sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
-            sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
-        );
-        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
-        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
-        utilsTable["CreateBytes"] = []() { return BYTES_t(); };
-
-        {
-            auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
-
-            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
-        }
-
-        {
-            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
-
-            resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
-            resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
-            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
-            resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
-            resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
-            resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
-        }
-    }
-
     //env.new_usertype<IMethod<Peer*>>("IMethod",
     //    "Invoke", &IMethod<Peer*>::Invoke
     //);
@@ -497,27 +450,27 @@ void IModManager::LoadAPI() {
         ),
         //"GetBytes", &ZDO::GetBytes,
         //"GetBool", &ZDO::GetBool,
-        "GetZDOID", static_cast<ZDOID (ZDO::*)(const std::string&) const>(&ZDO::GetNetID), //sol::overload(
+        "GetZDOID", static_cast<ZDOID (ZDO::*)(const std::string&) const>(&ZDO::GetZDOID), //sol::overload(
             //[](sol::state_view state, ZDO& self, const std::string& key) {
-            //    auto zdoid = self.GetNetID(key);
+            //    auto zdoid = self.GetZDOID(key);
             //    if (zdoid)
             //        return sol::make_object(state, zdoid); 
             //    return sol::make_object(state, sol::lua_nil);
             //},
             ///[](sol::state_view state, ZDO& self, const std::pair<HASH_t, HASH_t>& pair) {
-            ///    auto zdoid = self.GetNetID(pair);
+            ///    auto zdoid = self.GetZDOID(pair);
             ///    if (zdoid)
             ///        return sol::make_object(state, zdoid);
             ///    return sol::make_object(state, sol::lua_nil);
             ///},
             ////[](sol::state_view state, ZDO& self, HASH_t a, HASH_t b) {
-            ////    auto zdoid = self.GetNetID(std::make_pair(a, b));
+            ////    auto zdoid = self.GetZDOID(std::make_pair(a, b));
             ////    if (zdoid)
             ////        return sol::make_object(state, zdoid);
             ////    return sol::make_object(state, sol::lua_nil);
             ////}
             //[](sol::state_view state, ZDO& self, const sol::tie<HASH_t, HASH_t> &pair) {
-            //    auto zdoid = self.GetNetID(std::make_pair(a, b));
+            //    auto zdoid = self.GetZDOID(std::make_pair(a, b));
             //    if (zdoid)
             //        return sol::make_object(state, zdoid);
             //    return sol::make_object(state, sol::lua_nil);
@@ -683,35 +636,12 @@ void IModManager::LoadAPI() {
                 }
             );
         }
-        //"Unsubscribe", [](IValhalla& self, std::string name, sol::this_environment te) {
-        //
-        //}, 
-        // 
-        //"Unsubscribe", [this](IValhalla& self, EventHandle* eventHandle) {
-        //    if (!eventHandle) throw std::runtime_error("EventHandle is null");
-        //
-        //    if (eventHandle == )
-        //
-        //    auto&& callbacks = m_callbacks[eventHandle->m_hash];
-        //
-        //    // erase the handle from events
-        //    for (auto&& itr = callbacks.begin(); itr != callbacks.end();) {
-        //        if (itr->get() == eventHandle) {
-        //            itr = callbacks.erase(itr);
-        //            break;
-        //        }
-        //        else
-        //            ++itr;
-        //    }
-        //}
-
     );
 
     
 
     // TODO turn managers into lua classes that can be indexed
     // but still retrieve with ZDOManager... class usertypes will be named by their class names, like IZDOManager...
-
 
     m_state["ZDOManager"] = ZDOManager();
     m_state.new_usertype<IZDOManager>("IZDOManager",
@@ -828,10 +758,6 @@ void IModManager::LoadAPI() {
         "apiVersion", &Mod::m_apiVersion,
         "description", &Mod::m_description,
         "authors", &Mod::m_authors
-        //"Reload", [this](Mod& self) {
-        //    self.m_reload = true;
-        //    m_reload = true;
-        //}
     );
 
 
@@ -850,28 +776,53 @@ void IModManager::LoadAPI() {
         eventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
         eventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
         eventTable["cancelled"] = sol::property([this]() { return m_eventStatus == EventStatus::CANCEL; });
-        
-        
-        
-        eventTable["Unsubscribe"] = [this]() {
-            m_eventStatus = EventStatus::UNSUBSCRIBE;
+        eventTable["Unsubscribe"] = [this]() { m_eventStatus = EventStatus::UNSUBSCRIBE; };
+    }
 
-            //if (!m_currentCallback) throw std::runtime_error("No events are active");
-            //
-            //auto&& callbacks = m_callbacks[eventHandle->m_hash];
-            //
-            //// erase the handle from events
-            //for (auto&& itr = callbacks.begin(); itr != callbacks.end();) {
-            //    if (itr->get() == m_currentCallback) {
-            //        itr = callbacks.erase(itr);
-            //        break;
-            //    }
-            //    else
-            //        ++itr;
-            //}
-        };
-        
-        //eventTable["Unsubscribe"] = [this]() { m_eventStatus = EventStatus::UNSUBSCRIBE; }
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
+        sol::state_view state = ts;
+
+        auto&& tostring(state["tostring"]);
+
+        std::string s;
+        int idx = 0;
+        for (auto&& arg : args) {
+            if (idx++ > 0)
+                s += " ";
+            s += tostring(arg);
+        }
+
+        //LOG(INFO) << "[" << mod->m_name << "] " << s;
+        LOG(INFO) << "[mod] " << s;
+    };
+
+    {
+        auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
+
+        utilsTable["Compress"] = sol::overload(
+            sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
+            sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
+        );
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
+        utilsTable["CreateBytes"] = []() { return BYTES_t(); };
+
+        {
+            auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
+
+            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
+        }
+
+        {
+            auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+
+            resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
+            resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
+            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
+            resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
+            resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
+            resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
+        }
     }
 }
 

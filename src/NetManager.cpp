@@ -171,6 +171,9 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     DataReader reader(bytes);
 
     auto uuid = reader.Read<OWNER_t>();
+    if (!uuid)
+        throw std::runtime_error("peer provided 0 owner");
+
     auto version = reader.Read<std::string>();
     LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
     if (version != VConstants::GAME)
@@ -178,6 +181,9 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
     auto pos = reader.Read<Vector3>();
     auto name = reader.Read<std::string>();
+    if (!(name.length() >= 3 && name.length() <= 15))
+        throw std::runtime_error("peer provided invalid length name");
+
     auto password = reader.Read<std::string>();
     auto ticket = reader.Read<BYTES_t>(); // read in the dummy ticket
 
@@ -193,7 +199,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
     // allow ascii only (no spaces)
     for (auto ch : name) {
         if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) {
-            LOG(INFO) << "Player has illegal name character: " << (int)ch;
+            LOG(INFO) << "Player has unsupported name character: " << (int)ch;
             return rpc->Close(ConnectionStatus::ErrorDisconnected);
         }
     }

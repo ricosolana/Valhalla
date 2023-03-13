@@ -78,7 +78,7 @@ public:
             if (valid())
                 return *this->m_member;
             else
-                throw std::runtime_error("cannot retrieve T& from null");
+                throw std::runtime_error("cannot retrieve T& from null proxy");
         }
 
         void operator=(const T& other) {
@@ -91,7 +91,7 @@ public:
                 }
             }
             else {
-                throw std::runtime_error("cannot reassign null type");
+                throw std::runtime_error("cannot reassign null proxy");
             }
         }
     };
@@ -542,62 +542,57 @@ public:
 
     // Trivial hash getters
     template<TrivialSyncType T>
-        //requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
     const T& Get(HASH_t key, const T& value) const {
         auto&& get = Get<T>(key);
-        if (get) return *get;
-        return value;
+        return get ? *get : value;
     }
 
-    // Trivial hash getters
+    // Hash-key getters
     template<TrivialSyncType T>
-    //requires (!std::same_as<T, BYTES_t>)    // Bytes has no default value for missing entries
-    const T& Get(const std::string& key, const T& value) const {
-        return Get<T>(VUtils::String::GetStableHashCode(key), value);
-    }
+    const T& Get(const std::string& key, const T& value) const { return Get<T>(VUtils::String::GetStableHashCode(key), value); }
+        
+    float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
+    int32_t             GetInt(         HASH_t key, int32_t value) const {                          return Get<int32_t>(key, value); }
+    int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
+    const Quaternion&   GetQuaternion(  HASH_t key, const Quaternion& value) const {                return Get<Quaternion>(key, value); }
+    const Vector3&      GetVector3(     HASH_t key, const Vector3& value) const {                   return Get<Vector3>(key, value); }
+    const std::string&  GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
+    const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
+    bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
+    ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) const {  return ZDOID(GetLong(key.first, value.m_uuid), GetLong(key.second, value.m_id)); }
 
+    // Hash-key default getters
+    float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
+    int32_t             GetInt(         HASH_t key) const {                                         return Get<int32_t>(key, {}); }
+    int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
+    const Quaternion&   GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
+    const Vector3&      GetVector3(     HASH_t key) const {                                         return Get<Vector3>(key, {}); }
+    const std::string&  GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
+    bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
+    ZDOID               GetZDOID(       const std::pair<HASH_t, HASH_t>& key) const {               return ZDOID(GetLong(key.first), GetLong(key.second)); }
 
+    // String-key getters
+    float               GetFloat(       const std::string& key, float value) const {                return Get<float>(key, value); }
+    int32_t             GetInt(         const std::string& key, int32_t value) const {              return Get<int32_t>(key, value); }
+    int64_t             GetLong(        const std::string& key, int64_t value) const {              return Get<int64_t>(key, value); }
+    const Quaternion&   GetQuaternion(  const std::string& key, const Quaternion& value) const {    return Get<Quaternion>(key, value); }
+    const Vector3&      GetVector3(     const std::string& key, const Vector3& value) const {       return Get<Vector3>(key, value); }
+    const std::string&  GetString(      const std::string& key, const std::string& value) const {   return Get<std::string>(key, value); }
+    const BYTES_t*      GetBytes(       const std::string& key) {                                   return Get<BYTES_t>(key); }
+    bool                GetBool(        const std::string& key, bool value) const {                 return Get<int32_t>(key, value); }
+    ZDOID               GetZDOID(       const std::string& key, const ZDOID& value) const {         return GetZDOID(ToHashPair(key), value); }
 
-    float GetFloat(HASH_t key, float value) const;
-    int32_t GetInt(HASH_t key, int32_t value) const;
-    int64_t GetLong(HASH_t key, int64_t value) const;
-    const Quaternion& GetQuaternion(HASH_t key, const Quaternion& value) const;
-    const Vector3& GetVector3(HASH_t key, const Vector3& value) const;
-    const std::string& GetString(HASH_t key, const std::string& value) const;
-    const BYTES_t* GetBytes(HASH_t key /* no default */) const;
-
-    // Special hash getters
-
-    bool GetBool(HASH_t key, bool value) const;
-    ZDOID GetNetID(const std::pair<HASH_t, HASH_t>& key /* no default */) const;
-
-
-
-    //template<TrivialSyncType T>
-    //    requires (!std::same_as<T, BYTES_t>)
-    //const T& Get(const std::string& key, const T& value) {
-    //    return Get(VUtils::String::GetStableHashCode(key), value);
-    //}
-
-    // Trivial string getters
-
-    float GetFloat(const std::string& key, float value) const;
-    int32_t GetInt(const std::string& key, int32_t value) const;
-    int64_t GetLong(const std::string& key, int64_t value) const;
-    const Quaternion& GetQuaternion(const std::string& key, const Quaternion& value) const;
-    const Vector3& GetVector3(const std::string& key, const Vector3& value) const;
-    const std::string& GetString(const std::string& key, const std::string& value) const;
-    const BYTES_t* GetBytes(const std::string& key /* no default */);
-
-    // Special string getters
-
-    bool GetBool(const std::string& key, bool value) const;
-    ZDOID GetNetID(const std::string& key /* no default */) const;
-
-
+    // String-key default getters
+    float               GetFloat(const std::string& key) const {                                    return Get<float>(key, {}); }
+    int32_t             GetInt(const std::string& key) const {                                      return Get<int32_t>(key, {}); }
+    int64_t             GetLong(const std::string& key) const {                                     return Get<int64_t>(key, {}); }
+    const Quaternion&   GetQuaternion(const std::string& key) const {                               return Get<Quaternion>(key, {}); }
+    const Vector3&      GetVector3(const std::string& key) const {                                  return Get<Vector3>(key, {}); }
+    const std::string&  GetString(const std::string& key) const {                                   return Get<std::string>(key, {}); }
+    bool                GetBool(const std::string& key) const {                                     return Get<int32_t>(key, {}); }
+    ZDOID               GetZDOID(const std::string& key) const {                                    return GetZDOID(key, {}); }
 
     // Trivial hash setters
-
     template<TrivialSyncType T>
     void Set(HASH_t key, const T& value) {
         if (_Set(key, value))
@@ -605,25 +600,25 @@ public:
     }
 
     // Special hash setters
+    void Set(HASH_t key, bool value) { Set(key, value ? (int32_t)1 : 0); }
+    void Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
+        Set(key.first, value.m_uuid);
+        Set(key.second, (int64_t)value.m_id);
+    }
 
-    void Set(HASH_t key, bool value);
-    void Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value);
-
-
-
-    // Trivial string setters (+bool)
+    // Trivial hey-string setters (+bool)
 
     template<typename T> requires TrivialSyncType<T> || std::same_as<T, bool>
     void Set(const std::string & key, const T & value) { Set(VUtils::String::GetStableHashCode(key), value); }
     void Set(const std::string& key, const std::string& value) { Set(VUtils::String::GetStableHashCode(key), value); } // String overload
-    void Set(const char* key, const std::string& value) { Set(VUtils::String::GetStableHashCode(key), value); } // string constexpr overload
-
     // Special string setters
 
     void Set(const std::string& key, const ZDOID& value) { Set(ToHashPair(key), value); }
-    void Set(const char* key, const ZDOID& value) { Set(ToHashPair(key), value); }
 
 
+    // TODO have compiler settings that include/exclude certain features
+    //  ie. ignore Prefab restrictions...
+    //  prefab checking...
 
     const Prefab* GetPrefab() const {
         return m_prefab;
@@ -646,10 +641,6 @@ public:
         return m_id;
     }
 
-    //const Rev GetRev() const {
-    //    return m_rev;
-    //}
-
     Vector3 Position() const {
         return m_pos;
     }
@@ -658,6 +649,10 @@ public:
 
     OWNER_t Owner() const {
         return m_owner;
+    }
+
+    bool IsOwner(OWNER_t owner) const {
+        return this->m_owner == owner;
     }
 
     // Return whether the ZDO instance is self hosted or remotely hosted
@@ -683,16 +678,12 @@ public:
     // set the owner of the ZDO
     bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
-        if (m_owner != owner) {
-            m_owner = owner;
-            m_rev.m_ownerRev++;
+        if (this->m_owner != owner) {
+            this->m_owner = owner;
+            this->m_rev.m_ownerRev++;
             return true;
         }
         return false;
-    }
-
-    bool IsOwner(OWNER_t owner) {
-        return m_owner == owner;
     }
 
     bool Valid() const {

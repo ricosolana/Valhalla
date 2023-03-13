@@ -17,8 +17,8 @@ public:
 	}
 
 	ZDOID GetTarget() {
-		//return m_zdo->GetNetID(Hashes::ZDO::TeleportWorld::TARGET);
-		return m_zdo.GetNetID("target");
+		//return m_zdo->GetZDOID(Hashes::ZDO::TeleportWorld::TARGET);
+		return m_zdo.GetZDOID("target");
 	}
 
 	void SetTarget(const ZDOID& target) {

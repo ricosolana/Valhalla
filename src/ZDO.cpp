@@ -16,18 +16,6 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     };
 }
 
-//ZDO::ZDO(const ZDOID& id, const Vector3& pos)
-//    : m_id(id), m_pos(pos) {
-//}
-
-//ZDO::ZDO(const ZDOID& id, const Vector3& pos, DataReader& load)
-//    : m_id(id), m_pos(pos), Load() {
-//}
-
-//ZDO::ZDO(const ZDOID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev) {
-
-//}
-
 void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
@@ -105,131 +93,8 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
 
 
-/*
-*
-*
-*         Hash Getters
-*
-*
-*/
 
-// Trivial
-
-float ZDO::GetFloat(HASH_t key, float value) const {
-    return Get<float>(key, value);
-}
-
-int32_t ZDO::GetInt(HASH_t key, int32_t value) const {
-    return Get<int32_t>(key, value);
-}
-
-int64_t ZDO::GetLong(HASH_t key, int64_t value) const {
-    return Get<int64_t>(key, value);
-}
-
-const Quaternion& ZDO::GetQuaternion(HASH_t key, const Quaternion& value) const {
-    return Get<Quaternion>(key, value);
-}
-
-const Vector3& ZDO::GetVector3(HASH_t key, const Vector3& value) const {
-    return Get<Vector3>(key, value);
-}
-
-const std::string& ZDO::GetString(HASH_t key, const std::string& value) const {
-    return Get<std::string>(key, value);
-}
-
-const BYTES_t* ZDO::GetBytes(HASH_t key) const {
-    return Get<BYTES_t>(key);
-}
-
-// Special
-
-bool ZDO::GetBool(HASH_t key, bool value) const {
-    return GetInt(key, value ? 1 : 0);
-}
-
-ZDOID ZDO::GetNetID(const std::pair<HASH_t, HASH_t>& key) const {
-    auto k = GetLong(key.first, 0);
-    auto v = GetLong(key.second, 0);
-
-    return ZDOID(k, v);
-}
-
-
-
-/*
-*
-*
-*         String Getters
-*
-*
-*/
-
-// Trivial
-
-float ZDO::GetFloat(const std::string& key, float value) const {
-    return Get<float>(key, value);
-}
-
-int32_t ZDO::GetInt(const std::string& key, int32_t value) const {
-    return Get<int32_t>(key, value);
-}
-
-int64_t ZDO::GetLong(const std::string& key, int64_t value) const {
-    return Get<int64_t>(key, value);
-}
-
-const Quaternion& ZDO::GetQuaternion(const std::string& key, const Quaternion& value) const {
-    return Get<Quaternion>(VUtils::String::GetStableHashCode(key), value);
-}
-
-const Vector3& ZDO::GetVector3(const std::string& key, const Vector3& value) const {
-    return Get<Vector3>(VUtils::String::GetStableHashCode(key), value);
-}
-
-const std::string& ZDO::GetString(const std::string& key, const std::string& value) const {
-    return Get<std::string>(key, value);
-}
-
-const BYTES_t* ZDO::GetBytes(const std::string& key) {
-    return Get<BYTES_t>(key);
-}
-
-// Special
-
-bool ZDO::GetBool(const std::string& key, bool value) const {
-    return Get<int32_t>(key, value);
-}
-
-ZDOID ZDO::GetNetID(const std::string& key) const {
-    return GetNetID(ToHashPair(key));
-}
-
-
-
-/*
-*
-*
-*         Hash Setters
-*
-*
-*/
-
-// Trivial
-
-// Special
-
-void ZDO::Set(HASH_t key, bool value) {
-    Set(key, value ? (int32_t)1 : 0);
-}
-
-void ZDO::Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
-    Set(key.first, value.m_uuid);
-    Set(key.second, (int64_t)value.m_id);
-}
-
-
+// ZDO specific-methods
 
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_pos != pos) {
