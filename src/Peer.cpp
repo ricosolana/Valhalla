@@ -180,7 +180,7 @@ void Peer::ForceSendZDO(const ZDOID &id) {
 }
 
 bool Peer::IsOutdatedZDO(ZDO& zdo) {
-    auto find = m_zdos.find(zdo.ID());
+    auto &&find = m_zdos.find(zdo.ID());
 
     return find == m_zdos.end()
         || zdo.m_rev.m_ownerRev > find->second.m_ownerRev

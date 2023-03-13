@@ -411,24 +411,21 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 	auto zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	// Gather all updated ZDO's
-	std::list<std::reference_wrapper<ZDO>> tempSectorObjects;
-	std::list<std::reference_wrapper<ZDO>> m_tempToSyncDistant;
-	GetZDOs_ActiveZones(zone, tempSectorObjects, m_tempToSyncDistant);
+	std::list<std::reference_wrapper<ZDO>> zoneZDOs;
+	std::list<std::reference_wrapper<ZDO>> distantZDOs;
+	GetZDOs_ActiveZones(zone, zoneZDOs, distantZDOs);
 
 	std::list<std::reference_wrapper<ZDO>> result;
 
 	// Prepare client-side outdated ZDO's
-	for (auto&& zdo : tempSectorObjects) {
+	for (auto&& zdo : zoneZDOs) {
 		if (peer.IsOutdatedZDO(zdo)) {
 			result.push_back(zdo);
 		}
 	}
 
-	// Prioritize ZDO's
-	//ServerSortSendZDOS(toSync, peer);
-	
+	// Prioritize ZDO's	
 	auto time(Valhalla()->Time());
-
 	result.sort([&](const std::reference_wrapper<ZDO>& first, const std::reference_wrapper<ZDO>& second) {
 
 		// Sort in rough order of:
@@ -443,42 +440,50 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 		bool flag2 = b.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b.HasOwner() && b.Owner() != peer.m_uuid;
 
 		if (flag == flag2) {
-			if (a.GetPrefab()->m_type == b.GetPrefab()->m_type) {
+			if ((flag && flag2) || a.GetPrefab()->m_type == b.GetPrefab()->m_type) {
 				float sub1 = 150;
 				{
 					auto&& find = peer.m_zdos.find(a.m_id);
 					if (find != peer.m_zdos.end())
-						sub1 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
+						sub1 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
 				}
 
 				float sub2 = 150;
 				{
 					auto&& find = peer.m_zdos.find(b.m_id);
 					if (find != peer.m_zdos.end())
-						sub2 = std::clamp(time - find->second.m_syncTime, 0.f, 100.f) * 1.5f;
+						sub2 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
 				}
 
 				return a.Position().SqDistance(peer.m_pos) - sub1 * sub1 <
 					b.Position().SqDistance(peer.m_pos) - sub2 * sub2;
 			}
 			else
-				return a.GetPrefab()->m_type < b.GetPrefab()->m_type;
+				// > (shows large trees first)
+				// <  (shows smallest, then small trees first)
+				// >= (shows small trees and large trees simultaneously)
+
+				// the problem with seemingly slowly perceived network speed is not with the actual network,
+				// but with the ZDOManager being bottlenecked by the expensive HeightmapBuilder
+				//	(if Heightmap is not ready, vegetation cannot be generated -> ZDOs cannot be sent)
+				//	this only applies to newly generated areas
+				return a.GetPrefab()->m_type >= b.GetPrefab()->m_type;
 		}
 		else {
-			return !flag ? true : false;
+			return flag;
 		}
 	});
 
+	// Add a minimum amount of ZDOs
 	if (result.size() < 10) {
-		for (auto&& zdo2 : m_tempToSyncDistant) {
+		for (auto&& zdo2 : distantZDOs) {
 			if (peer.IsOutdatedZDO(zdo2)) {
 				result.push_back(zdo2);
 			}
 		}
 	}
 
-	//AddForceSendZDOs(peer, toSync);
-
+	// Add forcible send ZDOs
 	for (auto&& itr = peer.m_forceSend.begin(); itr != peer.m_forceSend.end();) {
 		auto&& zdoid = *itr;
 		auto zdo = GetZDO(zdoid);
