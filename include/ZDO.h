@@ -57,45 +57,6 @@ public:
         };
     };
 
-    template<TrivialSyncType T>
-    class ProxyMember {
-        friend class ZDO;
-
-    private:
-        ZDO& m_zdo; // The ZDO to which this member belongs
-        T* m_member;
-
-    private:
-        ProxyMember(ZDO& zdo) : m_zdo(zdo), m_member(nullptr) {}
-        ProxyMember(ZDO& zdo, T& member) : m_zdo(zdo), m_member(&member) {}
-
-    public:
-        bool valid() const {
-            return m_member != nullptr;
-        }
-
-        const T& value() const {
-            if (valid())
-                return *this->m_member;
-            else
-                throw std::runtime_error("cannot retrieve T& from null proxy");
-        }
-
-        void operator=(const T& other) {
-            if (valid()) {
-                // Only revise if types are unequal (if an actual noticeable change will happen)
-                if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>) 
-                    || *this->m_member != other) {
-                    *this->m_member = other;
-                    m_zdo.Revise();
-                }
-            }
-            else {
-                throw std::runtime_error("cannot reassign null proxy");
-            }
-        }
-    };
-
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
@@ -181,37 +142,52 @@ private:
 
 private:
     class Ord {
+        friend class ZDO;
+
     private:
         // Allocated bytes of [Ordinal, member...]
         //  First byte is Ordinal
         //  Remaining allocation is type
         
-        BYTE_t* m_contiguous;
+        ZDO* m_zdo;
+        BYTE_t* m_data;
 
-        static_assert(sizeof(*m_contiguous) == 1);
+        static_assert(sizeof(*m_data) == 1);
 
         Ordinal* _Ordinal() {
-            return (Ordinal*)m_contiguous;
+            return (Ordinal*) m_data;
         }
 
         const Ordinal* _Ordinal() const {
-            return (Ordinal*)m_contiguous;
+            return (Ordinal*) m_data;
         }
 
         template<TrivialSyncType T>
         T* _Member() {
-            return (T*)(m_contiguous + sizeof(Ordinal));
+            return (T*)(m_data + sizeof(Ordinal));
         }
 
         template<TrivialSyncType T>
         const T* _Member() const {
-            return (T*)(m_contiguous + sizeof(Ordinal));
+            return (T*)(m_data + sizeof(Ordinal));
+        }
+
+        // Used when saving or serializing internal ZDO information
+        //  Returns whether write was successful (if type match)
+        template<TrivialSyncType T>
+        bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
+            if (!IsType<T>())
+                return false;
+
+            writer.Write(FromShiftHash<T>(shiftHash));
+            writer.Write(*_Member<T>());
+            return true;
         }
 
     public:
         template<TrivialSyncType T>
-        Ord(const T &type) {
-            this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(T));
+        Ord(const T &type, ZDO& zdo) : m_zdo(&zdo) {
+            this->m_data = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(T));
 
             *this->_Ordinal() = GetOrdinal<T>();
 
@@ -219,30 +195,32 @@ private:
             new (this->_Member<T>()) T(type);
         }
 
-        Ord(const Ord& other) {
+        Ord(const Ord& other) : m_zdo(other.m_zdo) {
             const auto ord = *other._Ordinal();
             switch (ord) {
-            case ORD_FLOAT:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(float));          *_Member<float>() = *other._Member<float>(); break;
-            case ORD_VECTOR3:       this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Vector3));        *_Member<Vector3>() = *other._Member<Vector3>(); break;
-            case ORD_QUATERNION:    this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Quaternion));     *_Member<Quaternion>() = *other._Member<Quaternion>(); break;
-            case ORD_INT:           this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int32_t));        *_Member<int32_t>() = *other._Member<int32_t>(); break;
-            case ORD_LONG:          this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int64_t));        *_Member<int64_t>() = *other._Member<int64_t>(); break;
-            case ORD_STRING:        this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(std::string));    new (this->_Member<std::string>()) std::string(*other._Member<std::string>()); break;
-            case ORD_ARRAY:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(BYTES_t));        new (this->_Member<BYTES_t>()) BYTES_t(*other._Member<BYTES_t>()); break;
+            case ORD_FLOAT:         this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(float));          *_Member<float>() = *other._Member<float>(); break;
+            case ORD_VECTOR3:       this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(Vector3));        *_Member<Vector3>() = *other._Member<Vector3>(); break;
+            case ORD_QUATERNION:    this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(Quaternion));     *_Member<Quaternion>() = *other._Member<Quaternion>(); break;
+            case ORD_INT:           this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(int32_t));        *_Member<int32_t>() = *other._Member<int32_t>(); break;
+            case ORD_LONG:          this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(int64_t));        *_Member<int64_t>() = *other._Member<int64_t>(); break;
+            case ORD_STRING:        this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(std::string));    new (this->_Member<std::string>()) std::string(*other._Member<std::string>()); break;
+            case ORD_ARRAY:         this->m_data = (BYTE_t*) malloc(sizeof(Ordinal) + sizeof(BYTES_t));        new (this->_Member<BYTES_t>()) BYTES_t(*other._Member<BYTES_t>()); break;
             default:
-                assert(false && "reached impossible case");
+                assert(!"impossible case");
             }
 
             *this->_Ordinal() = ord;
         }
 
         Ord(Ord&& other) noexcept {
-            this->m_contiguous = other.m_contiguous;
-            other.m_contiguous = nullptr;
+            this->m_zdo = other.m_zdo;
+            this->m_data = other.m_data;
+            other.m_zdo = nullptr;
+            other.m_data = nullptr;
         }
 
         ~Ord() {
-            if (!m_contiguous)
+            if (!m_data)
                 return;
 
             switch (*_Ordinal()) {
@@ -254,10 +232,10 @@ private:
                 case ORD_STRING: _Member<std::string>()->~basic_string(); break;
                 case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
                 default:
-                    assert(false && "reached impossible case");
+                    assert(!"impossible case");
             }
 
-            free(m_contiguous);
+            free(m_data);
         }
 
 
@@ -271,14 +249,28 @@ private:
         //  Will throw on type mismatch
         template<TrivialSyncType T>
         void AssertType() const {
-            //assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
             if (!IsType<T>())
                 throw std::runtime_error("zdo typemask mismatch");
         }
 
-        // Reassign the underlying member value
-        //  Returns whether the previous value was modified
-        //  Will throw on type mismatch
+        // TODO experiment with <const T&> to avoid copying of large types
+        template<TrivialSyncType T>
+        operator T() const {
+            AssertType<T>();
+            return *_Member<T>();
+        }
+
+        template<TrivialSyncType T>
+        void operator=(T&& other) {
+
+            AssertType<T>();
+            if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>)
+                || *_Member<T>() != other) {
+                *_Member<T>() = std::forward<T>(other);
+                m_zdo->Revise();
+            }
+        }
+
         template<TrivialSyncType T>
         bool Set(const T& type) {
             AssertType<T>();
@@ -294,36 +286,6 @@ private:
             return false;
         }
 
-        // Get the underlying member
-        //  Will throw on type mismatch
-        template<TrivialSyncType T>
-        T* Get() {
-            AssertType<T>();
-
-            return _Member<T>();
-        }
-
-        // Get the underlying member
-        //  Will throw on type mismatch
-        template<TrivialSyncType T>
-        const T* Get() const {
-            AssertType<T>();
-
-            return _Member<T>();
-        }
-
-        // Used when saving or serializing internal ZDO information
-        //  Returns whether write was successful (if type match)
-        template<TrivialSyncType T>
-        bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
-            if (!IsType<T>())
-                return false;
-
-            writer.Write(FromShiftHash<T>(shiftHash));
-            writer.Write(*_Member<T>());
-            return true;
-        }
-
         size_t GetTotalAlloc() {
             switch (*_Ordinal()) {
             case ORD_FLOAT: return sizeof(Ordinal) + sizeof(float);
@@ -334,7 +296,7 @@ private:
             case ORD_STRING: return sizeof(Ordinal) + sizeof(std::string) + _Member<std::string>()->capacity();
             case ORD_ARRAY: return sizeof(Ordinal) + sizeof(BYTES_t) + _Member<BYTES_t>()->capacity();
             default:
-                assert(false && "reached impossible case");
+                assert(!"impossible case");
             }
             return 0;
         }
