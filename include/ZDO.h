@@ -57,45 +57,6 @@ public:
         };
     };
 
-    template<TrivialSyncType T>
-    class ProxyMember {
-        friend class ZDO;
-
-    private:
-        ZDO& m_zdo; // The ZDO to which this member belongs
-        T* m_member;
-
-    private:
-        ProxyMember(ZDO& zdo) : m_zdo(zdo), m_member(nullptr) {}
-        ProxyMember(ZDO& zdo, T& member) : m_zdo(zdo), m_member(&member) {}
-
-    public:
-        bool valid() const {
-            return m_member != nullptr;
-        }
-
-        const T& value() const {
-            if (valid())
-                return *this->m_member;
-            else
-                throw std::runtime_error("cannot retrieve T& from null proxy");
-        }
-
-        void operator=(const T& other) {
-            if (valid()) {
-                // Only revise if types are unequal (if an actual noticeable change will happen)
-                if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>) 
-                    || *this->m_member != other) {
-                    *this->m_member = other;
-                    m_zdo.Revise();
-                }
-            }
-            else {
-                throw std::runtime_error("cannot reassign null proxy");
-            }
-        }
-    };
-
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
@@ -493,29 +454,6 @@ public:
     bool Load(DataReader& reader, int32_t version);
 
 
-
-    // Get a member by hash
-    //  Returns a mutable proxy to the object with changes accurately reflected
-    //  Throws on type mismatch
-    template<TrivialSyncType T>
-    ProxyMember<T> ProxyGet(HASH_t key) {
-        if (m_ordinalMask & GetOrdinalMask<T>()) {
-            auto mut = ToShiftHash<T>(key);
-            auto&& find = m_members.find(mut);
-            if (find != m_members.end()) {
-                return ProxyMember<T>(*this, *find->second.Get<T>());
-            }
-        }
-        return ProxyMember<T>(*this);
-    }
-
-    // Get a member by string
-    //  Returns a mutable proxy to the object with changes accurately reflected
-    //  Throws on type mismatch
-    template<TrivialSyncType T>
-    ProxyMember<T> ProxyGet(const std::string& key) {
-        return ProxyGet<T>(VUtils::String::GetStableHashCode(key));
-    }
 
     // Get a member by hash
     //  Returns null if absent 

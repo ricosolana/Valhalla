@@ -417,12 +417,6 @@ void IModManager::LoadAPI() {
     //    [](HASH_t hash) { return PrefabManager()->GetPrefab(hash); }
     //);
 
-    // proxy should be simplified or reconciliated into a 
-    //  Generified adapter
-    //  
-    //m_state.new_usertype<ZDO::ProxyMember<float>>("ProxyMember",
-    //    ""
-    //);
 
     m_state.new_usertype<ZDO>("ZDO",
         sol::no_constructor,
@@ -440,39 +434,7 @@ void IModManager::LoadAPI() {
         "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
         "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
         "timeCreated", sol::property([](ZDO& self) { return self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
-        // TODO add proxy types somehow (without adding specifiers for each template type)
         
-        "GetFloatProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<float> (ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<float>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetIntProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<int32_t>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<int32_t>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetLongProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<int64_t>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<int64_t>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetQuaternionProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<Quaternion>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<Quaternion>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetVectorProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<Vector3>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<Vector3>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetStringProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<std::string>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<std::string>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        "GetBytesProxy", sol::overload(
-            static_cast<ZDO::ProxyMember<BYTES_t>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-            static_cast<ZDO::ProxyMember<BYTES_t>(ZDO::*)(const std::string&)>(&ZDO::ProxyGet)
-        ),
-        //"GetBoolProxy", static_cast<ZDO::ProxyMember<bool>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-        //"GetZDOIDProxy", static_cast<ZDO::ProxyMember<ZDOID>(ZDO::*)(HASH_t)>(&ZDO::ProxyGet),
-
         // Getters
         "GetFloat", sol::overload(
             sol::resolve<float(HASH_t, float) const>(&ZDO::GetFloat),
