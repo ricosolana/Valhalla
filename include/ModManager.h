@@ -20,7 +20,8 @@ enum class DataType {
     INT32,
     INT64,
     FLOAT,
-    DOUBLE
+    DOUBLE,
+    CHAR // utf8 variable length
 };
 
 enum class EventStatus {

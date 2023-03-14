@@ -66,8 +66,7 @@ public:
     template<typename T> requires std::same_as<T, std::string>
     decltype(auto) Read() {
         auto count = Read7BitEncodedInt();
-        if (count == 0)
-            return "";
+        if (count == 0) return std::string();
 
         Assert31U(count);
         AssertOffset(count);
@@ -198,28 +197,21 @@ public:
 
 
 
-    // extension methods for mainly lua... or whatever
+    // verbose extension methods
 
     decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
 
-    // large ints are not exactly supported in lua
-    //  a workaround is to use a custom implemented 64bit usertype object
     decltype(auto) ReadInt8() { return Read<int8_t>(); }
     decltype(auto) ReadInt16() { return Read<int16_t>(); }
-    decltype(auto) ReadInt32() { return Read<int32_t>(); }
+    decltype(auto) ReadInt32() { return Read<int32_t>(); }    
     decltype(auto) ReadInt64() { return Read<int64_t>(); }
-    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
-    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
-    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
-    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
-
     decltype(auto) ReadFloat() { return Read<float>(); }
     decltype(auto) ReadDouble() { return Read<double>(); }
+
     decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
     decltype(auto) ReadVector3() { return Read<Vector3>(); }
     decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
     decltype(auto) ReadString() { return Read<std::string>(); }
-    
-    BYTE_t ReadShort() { return Read<int16_t>(); }
+    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
 };

@@ -222,37 +222,87 @@ public:
 
 
 
-class UInt64Wrapper {
-public:
-    uint64_t m_value;
+class Int64Wrapper {
+private:
+    int64_t m_value;
 
-    UInt64Wrapper() {
+public:
+    Int64Wrapper() {
         m_value = 0;
     }
+
+    Int64Wrapper(int64_t value) 
+        : m_value(value) {
+
+    }
     
-    UInt64Wrapper(uint32_t high, uint32_t low) {
+    Int64Wrapper(uint32_t high, uint32_t low) {
         // high and low should be bounded around 2^32
-        m_value = (high << 32) | (low);
+        m_value = ((uint64_t)high << 32) | (uint64_t)low;
     }
 
-    void __add(const UInt64Wrapper& other) {
-        this->m_value += other.m_value;
+    Int64Wrapper(const std::string &hex) {
+        // high and low should be bounded around 2^32
+
+        // number accepts '0x...', 'bases...'
+        // when radix is 0, radix will be deduced from the initial base '0x...'
+        this->m_value = std::strtoull(hex.c_str() + 2, nullptr, 0);
     }
 
-    void __sub(const UInt64Wrapper& other) {
-        this->m_value -= other.m_value;
+
+
+    operator int64_t() const {
+        return this->m_value;
+    }
+    
+    operator uint64_t() const {
+        return this->m_value;
     }
 
-    void __mul(const UInt64Wrapper& other) {
-        this->m_value *= other.m_value;
+    operator int32_t() const {
+        return static_cast<int32_t>(this->m_value);
     }
 
-    void __div(const UInt64Wrapper& other) {
-        this->m_value /= other.m_value;
+    operator uint32_t() const {
+        return static_cast<uint32_t>(this->m_value);
     }
 
-    void __divi(const UInt64Wrapper& other) {
-        this->m_value /= other.m_value;
+
+
+    decltype(auto) __add(const Int64Wrapper& other) {
+        return this->m_value + other.m_value;
+    }
+
+    decltype(auto) __sub(const Int64Wrapper& other) {
+        return this->m_value - other.m_value;
+    }
+
+    decltype(auto) __mul(const Int64Wrapper& other) {
+        return this->m_value * other.m_value;
+    }
+
+    decltype(auto) __div(const Int64Wrapper& other) {
+        return this->m_value / other.m_value;
+    }
+
+    decltype(auto) __divi(const Int64Wrapper& other) {
+        return this->m_value / other.m_value;
+    }
+
+    decltype(auto) __unm() {
+        return -this->m_value;
+    }
+
+    decltype(auto) __eq(const Int64Wrapper& other) {
+        return this->m_value == other.m_value;
+    }
+
+    decltype(auto) __lt(const Int64Wrapper& other) {
+        return this->m_value < other.m_value;
+    }
+
+    decltype(auto) __le(const Int64Wrapper& other) {
+        return this->m_value <= other.m_value;
     }
 };
 

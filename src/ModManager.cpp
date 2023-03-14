@@ -103,7 +103,7 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZDOID>("ZDOID",
         sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
-        "uuid", &ZDOID::m_uuid,
+        "uuid", sol::property([](ZDOID& self) { return self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
         "id", &ZDOID::m_id,
         "NONE", sol::property([]() { return ZDOID::NONE; })
     );
@@ -122,7 +122,8 @@ void IModManager::LoadAPI() {
         "INT", DataType::INT32, "INT32", DataType::INT32, "HASH", DataType::INT32,
         "LONG", DataType::INT64, "INT64", DataType::INT64,
         "FLOAT", DataType::FLOAT,
-        "DOUBLE", DataType::DOUBLE
+        "DOUBLE", DataType::DOUBLE,
+        "CHAR", DataType::CHAR
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
@@ -177,6 +178,8 @@ void IModManager::LoadAPI() {
         "pos", &DataReader::m_pos,
         // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
         //  instead of this verbose nightmare
+
+
         "Read", [](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
@@ -205,11 +208,11 @@ void IModManager::LoadAPI() {
                 return sol::make_object(state, self.Read<float>());
             case DataType::DOUBLE:
                 return sol::make_object(state, self.Read<double>());
+            case DataType::CHAR:
+                return sol::make_object(state, self.ReadChar());
             default:
                 throw std::runtime_error("invalid DataType");
-                //mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
             }
-            //return sol::make_object(state, sol::nil);
         }
     );
 
@@ -244,7 +247,7 @@ void IModManager::LoadAPI() {
         "characterID", sol::readonly(&Peer::m_characterID),
         "name", sol::readonly(&Peer::m_name),
         "pos", &Peer::m_pos,
-        "uuid", sol::readonly(&Peer::m_uuid),
+        "uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
         "socket", sol::property([](Peer& self) { return self.m_socket; }),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
@@ -425,7 +428,8 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::Sector),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        "owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
+        //"owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
+        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, const Int64Wrapper &owner) { self.SetOwner(owner); }),
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
         "HasOwner", &ZDO::HasOwner,
@@ -433,7 +437,7 @@ void IModManager::LoadAPI() {
         "Disown", &ZDO::Disown,
         "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
         "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
-        "timeCreated", sol::property([](ZDO& self) { return self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
+        "timeCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
         "GetFloat", sol::overload(
@@ -449,10 +453,15 @@ void IModManager::LoadAPI() {
             sol::resolve<int32_t(const std::string&) const>(&ZDO::GetInt)
         ),
         "GetLong", sol::overload(
-            sol::resolve<int64_t(HASH_t, int64_t) const>(&ZDO::GetLong),
-            sol::resolve<int64_t(HASH_t) const>(&ZDO::GetLong),
-            sol::resolve<int64_t(const std::string&, int64_t) const>(&ZDO::GetLong),
-            sol::resolve<int64_t(const std::string&) const>(&ZDO::GetLong)
+            [](ZDO& self, HASH_t key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
+            [](ZDO& self, HASH_t key) { return (Int64Wrapper) self.GetLong(key); },
+            [](ZDO& self, const std::string &key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
+            [](ZDO& self, const std::string &key) { return (Int64Wrapper) self.GetLong(key); }
+
+            //sol::resolve<int64_t(HASH_t, int64_t) const>(&ZDO::GetLong),
+            //sol::resolve<int64_t(HASH_t) const>(&ZDO::GetLong),
+            //sol::resolve<int64_t(const std::string&, int64_t) const>(&ZDO::GetLong),
+            //sol::resolve<int64_t(const std::string&) const>(&ZDO::GetLong)
         ),
         "GetQuaternion", sol::overload(
             sol::resolve<const Quaternion&(HASH_t, const Quaternion&) const>(&ZDO::GetQuaternion),
@@ -489,6 +498,8 @@ void IModManager::LoadAPI() {
             sol::resolve<ZDOID(const std::string&) const>(&ZDO::GetZDOID)
         ),
 
+
+        // Setters
         "SetFloat", sol::overload(
             static_cast<void (ZDO::*)(HASH_t, const float&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const float&)>(&ZDO::Set)
@@ -498,8 +509,10 @@ void IModManager::LoadAPI() {
             static_cast<void (ZDO::*)(const std::string&, const int32_t&)>(&ZDO::Set)
         ),
         "SetLong", sol::overload(
-            static_cast<void (ZDO::*)(HASH_t, const int64_t&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const int64_t&)>(&ZDO::Set)
+            [](ZDO& self, HASH_t key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); },
+            [](ZDO& self, const std::string &key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); }
+            //static_cast<void (ZDO::*)(HASH_t, const int64_t&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(const std::string&, const int64_t&)>(&ZDO::Set)
         ),
         "Set", sol::overload(
             // Quaternion
@@ -546,13 +559,24 @@ void IModManager::LoadAPI() {
     // 
     // TODO figure the number weirdness out...
 
-    m_state.new_usertype<UInt64Wrapper>("UInt64",
-        sol::constructors<UInt64Wrapper(), UInt64Wrapper(uint32_t, uint32_t)>(),
-        sol::meta_function::addition, &UInt64Wrapper::__add,
-        sol::meta_function::subtraction, &UInt64Wrapper::__sub,
-        sol::meta_function::multiplication, &UInt64Wrapper::__mul,
-        sol::meta_function::division, &UInt64Wrapper::__div,
-        sol::meta_function::floor_division, &UInt64Wrapper::__divi
+    m_state.new_usertype<Int64Wrapper>("Int64",
+        sol::constructors<Int64Wrapper(), Int64Wrapper(uint64_t), 
+            Int64Wrapper(uint32_t, uint32_t), Int64Wrapper(const std::string&)>(),
+        //"value", sol::readonly(&Int64Wrapper::m_value),
+
+        // not the actual tonumber, just uses same name for simplicity
+        //  local wrapper = Int64(0xFFFFFFFF, 0xFFFFAACC)
+        //  local num = wrapper:tonumber()
+        "tonumber", [](Int64Wrapper& self) { return (int64_t)self; },
+        sol::meta_function::addition, &Int64Wrapper::__add,
+        sol::meta_function::subtraction, &Int64Wrapper::__sub,
+        sol::meta_function::multiplication, &Int64Wrapper::__mul,
+        sol::meta_function::division, &Int64Wrapper::__div,
+        sol::meta_function::floor_division, &Int64Wrapper::__divi,
+        sol::meta_function::unary_minus, &Int64Wrapper::__unm,
+        sol::meta_function::equal_to, &Int64Wrapper::__eq,
+        sol::meta_function::less_than, &Int64Wrapper::__lt,
+        sol::meta_function::less_than_or_equal_to, &Int64Wrapper::__le
     );
 
 
