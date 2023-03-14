@@ -66,7 +66,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
         pkg.Read<char16_t>();
     }
-
+    
     if (worldVersion >= 17)
         this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 

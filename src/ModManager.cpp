@@ -874,10 +874,19 @@ void IModManager::LoadAPI() {
     {
         auto eventTable = m_state["event"].get_or_create<sol::table>();
 
-        eventTable["Cancel"] = [this]() { m_eventStatus = EventStatus::CANCEL; };
-        eventTable["SetCancelled"] = [this](bool c) { m_eventStatus = c ? EventStatus::CANCEL : EventStatus::PROCEED; };
-        eventTable["cancelled"] = sol::property([this]() { return m_eventStatus == EventStatus::CANCEL; });
-        eventTable["Unsubscribe"] = [this]() { m_eventStatus = EventStatus::UNSUBSCRIBE; };
+        eventTable["Cancel"] = [this]() { m_eventStatus |= EventStatus::CANCEL; };
+        eventTable["SetCancelled"] = [this](bool c) { m_eventStatus = (c 
+            ? EventStatus::CANCEL | m_eventStatus 
+            : ~EventStatus::CANCEL & m_eventStatus); 
+        };
+        eventTable["cancelled"] = sol::property([this]() { return m_eventStatus & EventStatus::CANCEL == EventStatus::CANCEL; });
+                
+        eventTable["Unsubscribe"] = [this]() { m_eventStatus |= EventStatus::UNSUBSCRIBE; };
+        eventTable["SetSubscribed"] = [this](bool c) { m_eventStatus = (c 
+            ? ~EventStatus::UNSUBSCRIBE & m_eventStatus
+            : EventStatus::UNSUBSCRIBE | m_eventStatus); 
+        };
+        eventTable["subscribed"] = sol::property([this]() { return m_eventStatus & EventStatus::UNSUBSCRIBE != EventStatus::UNSUBSCRIBE; });
     }
 
     m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {

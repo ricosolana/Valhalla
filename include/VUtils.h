@@ -14,6 +14,7 @@
 #include <sol/sol.hpp>
 
 #include "CompileSettings.h"
+#include "VUtilsEnum.h"
 
 namespace fs = std::filesystem;
 using namespace std::chrono;
@@ -219,6 +220,9 @@ public:
     //operator |=
 };
 #endif
+
+
+
 
 
 
