@@ -319,7 +319,7 @@ void IZoneManager::Update() {
 }
 
 void IZoneManager::RegenerateZone(const ZoneID& zone) {
-    for (auto&& zdo : ZDOManager()->GetZDOs(zone, 0, Prefab::Flags::None, Prefab::Flags::Player))
+    for (auto&& zdo : ZDOManager()->GetZDOs(zone, 0, Prefab::Flag::None, Prefab::Flag::Player))
         ZDOManager()->DestroyZDO(zdo);
 
     m_generatedZones.erase(zone);
@@ -901,7 +901,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->FlagsPresent(Prefab::Flags::Dungeon))) {
+        if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->FlagsPresent(Prefab::Flag::Dungeon))) {
             PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);

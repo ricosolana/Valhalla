@@ -43,7 +43,7 @@ void IPrefabManager::Init() {
 
         prefab->m_localScale = pkg.Read<Vector3>();
 
-        prefab->m_flags = pkg.Read<uint64_t>();
+        prefab->m_flags = pkg.Read<Prefab::Flag>();
 
         //prefab->m_distant = pkg.Read<bool>();
         //prefab->m_persistent = pkg.Read<bool>();
@@ -81,7 +81,7 @@ ZDO& IPrefabManager::Instantiate(const Prefab& prefab, const Vector3& pos, const
     zdo.m_rotation = rot;
     zdo.m_prefab = &prefab;
 
-    if (prefab.FlagsPresent(Prefab::Flags::SyncInitialScale))
+    if (prefab.FlagsPresent(Prefab::Flag::SyncInitialScale))
         zdo.Set("scale", prefab.m_localScale);
 
     return zdo;
