@@ -116,7 +116,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticksCreated) == 8);
-
+    
     pkg.Write(m_prefab->FlagsAbsent(Prefab::Flags::Sessioned));
     pkg.Write(m_prefab->FlagsPresent(Prefab::Flags::Distant));
 

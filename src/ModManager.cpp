@@ -489,43 +489,10 @@ void IModManager::LoadAPI() {
             sol::resolve<ZDOID(const std::string&) const>(&ZDO::GetZDOID)
         ),
 
-
-        /*
-        "GetZDOID", static_cast<ZDOID (ZDO::*)(const std::string&) const>(&ZDO::GetZDOID), //sol::overload(
-            //[](sol::state_view state, ZDO& self, const std::string& key) {
-            //    auto zdoid = self.GetZDOID(key);
-            //    if (zdoid)
-            //        return sol::make_object(state, zdoid); 
-            //    return sol::make_object(state, sol::lua_nil);
-            //},
-            ///[](sol::state_view state, ZDO& self, const std::pair<HASH_t, HASH_t>& pair) {
-            ///    auto zdoid = self.GetZDOID(pair);
-            ///    if (zdoid)
-            ///        return sol::make_object(state, zdoid);
-            ///    return sol::make_object(state, sol::lua_nil);
-            ///},
-            ////[](sol::state_view state, ZDO& self, HASH_t a, HASH_t b) {
-            ////    auto zdoid = self.GetZDOID(std::make_pair(a, b));
-            ////    if (zdoid)
-            ////        return sol::make_object(state, zdoid);
-            ////    return sol::make_object(state, sol::lua_nil);
-            ////}
-            //[](sol::state_view state, ZDO& self, const sol::tie<HASH_t, HASH_t> &pair) {
-            //    auto zdoid = self.GetZDOID(std::make_pair(a, b));
-            //    if (zdoid)
-            //        return sol::make_object(state, zdoid);
-            //    return sol::make_object(state, sol::lua_nil);
-            //}
-        //),*/
-
-
-
         "SetFloat", sol::overload(
             static_cast<void (ZDO::*)(HASH_t, const float&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const float&)>(&ZDO::Set)
-        ),
-
-        
+        ),        
         "SetInt", sol::overload(
             static_cast<void (ZDO::*)(HASH_t, const int32_t&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const int32_t&)>(&ZDO::Set)
@@ -550,43 +517,44 @@ void IModManager::LoadAPI() {
             // zdoid
             //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
-        )
-
-        //"Set", [this](ZDO& self, sol::variadic_args args) {
-        //    for (int i = 0; i < args.size(); i++) {
-        //        // set based on types
-        //        auto&& key = args[i];
-        //        auto&& value = args[i + 1];
-        //
-        //        // hash
-        //        if (key.get_type() == sol::type::number) {
-        //
-        //        }
-        //        else if (key.get_type() == sol::type::string) {
-        //
-        //        }
-        //        else {
-        //            mod->Error("received incorrect type for key");
-        //        }
-        //
-        //    }
-        //}
-
-        /*
-        "Set", sol::overload(
-            ///[](ZDO& self, HASH_t key, const std::string& value) { self.Set(key, value); },
-        
-            //sol::resolve<void(const std::string&, const ZDOID&)>(&ZDO::Set)
-            ///[](ZDO& self, const std::string& key, ZDOID value) { self.Set(key, value); },
-            // string
+        ),
+        "SetQuaternion", sol::overload(
+            static_cast<void (ZDO::*)(HASH_t, const Quaternion&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const Quaternion&)>(&ZDO::Set)
+        ),
+        "SetVector3", sol::overload(
+            static_cast<void (ZDO::*)(HASH_t, const Vector3&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const Vector3&)>(&ZDO::Set)
+        ),
+        "SetString", sol::overload(
             static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
-            //static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set)
+        ),
+        "SetBool", sol::overload(
+            static_cast<void (ZDO::*)(HASH_t, bool)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(const std::string&, bool)>(&ZDO::Set)
+        ),
+        "SetZDOID", sol::overload(
             // zdoid
-            //static_cast<void (ZDO::*)(const std::pair<HASH_t, HASH_t>&, const ZDOID&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
-        )*/
-
+        )
     );
+
+    // setting meta functions
+    // https://sol2.readthedocs.io/en/latest/api/metatable_key.html
+    // 
+    // TODO figure the number weirdness out...
+
+    m_state.new_usertype<UInt64Wrapper>("UInt64",
+        sol::constructors<UInt64Wrapper(), UInt64Wrapper(uint32_t, uint32_t)>(),
+        sol::meta_function::addition, &UInt64Wrapper::__add,
+        sol::meta_function::subtraction, &UInt64Wrapper::__sub,
+        sol::meta_function::multiplication, &UInt64Wrapper::__mul,
+        sol::meta_function::division, &UInt64Wrapper::__div,
+        sol::meta_function::floor_division, &UInt64Wrapper::__divi
+    );
+
 
     {
         // References will be unwrapped to pointers / visa-versa

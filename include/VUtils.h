@@ -11,6 +11,7 @@
 
 #include <optick.h>
 #include <easylogging++.h>
+#include <sol/sol.hpp>
 
 #include "CompileSettings.h"
 
@@ -218,6 +219,42 @@ public:
     //operator |=
 };
 #endif
+
+
+
+class UInt64Wrapper {
+public:
+    uint64_t m_value;
+
+    UInt64Wrapper() {
+        m_value = 0;
+    }
+    
+    UInt64Wrapper(uint32_t high, uint32_t low) {
+        // high and low should be bounded around 2^32
+        m_value = (high << 32) | (low);
+    }
+
+    void __add(const UInt64Wrapper& other) {
+        this->m_value += other.m_value;
+    }
+
+    void __sub(const UInt64Wrapper& other) {
+        this->m_value -= other.m_value;
+    }
+
+    void __mul(const UInt64Wrapper& other) {
+        this->m_value *= other.m_value;
+    }
+
+    void __div(const UInt64Wrapper& other) {
+        this->m_value /= other.m_value;
+    }
+
+    void __divi(const UInt64Wrapper& other) {
+        this->m_value /= other.m_value;
+    }
+};
 
 
 

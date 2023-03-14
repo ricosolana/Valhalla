@@ -56,7 +56,7 @@ public:
 
     //  Reads a primitive type
     template<typename T> requires std::is_fundamental_v<T>
-    T Read() {
+    decltype(auto) Read() {
         T out;
         ReadBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
@@ -64,7 +64,7 @@ public:
 
     // Reads a string
     template<typename T> requires std::same_as<T, std::string>
-    T Read() {
+    decltype(auto) Read() {
         auto count = Read7BitEncodedInt();
         if (count == 0)
             return "";
@@ -83,7 +83,7 @@ public:
     //  uint32_t:   size
     //  BYTES_t:    data
     template<typename T> requires std::same_as<T, BYTES_t>
-    T Read() {
+    decltype(auto) Read() {
         T out;
         ReadBytes(out, Read<int32_t>());
         return out;
@@ -94,7 +94,7 @@ public:
     //  T...:       value_type
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
-        Iterable Read() {
+    decltype(auto) Read() {
         const auto count = Read<int32_t>();
         Assert31U(count);
 
@@ -134,7 +134,7 @@ public:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
     template<typename T> requires std::same_as<T, ZDOID>
-    T Read() {
+    decltype(auto) Read() {
         auto a(Read<int64_t>());
         auto b(Read<uint32_t>());
         return ZDOID(a, b);
@@ -146,7 +146,7 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     template<typename T> requires std::same_as<T, Vector3>
-    T Read() {
+    decltype(auto) Read() {
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
@@ -158,7 +158,7 @@ public:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
     template<typename T> requires std::same_as<T, Vector2i>
-    T Read() {
+    decltype(auto) Read() {
         auto a(Read<int32_t>());
         auto b(Read<int32_t>());
         return Vector2i{ a, b };
@@ -171,7 +171,7 @@ public:
     //  float: z (4 bytes)
     //  float: w (4 bytes)
     template<typename T> requires std::same_as<T, Quaternion>
-    T Read() {
+    decltype(auto) Read() {
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
@@ -182,7 +182,7 @@ public:
     // Reads an enum type
     //  - Bytes read depend on the underlying value
     template<typename E> requires std::is_enum_v<E>
-    E Read() {
+    decltype(auto) Read() {
         return static_cast<E>(Read<std::underlying_type_t<E>>());
     }
 
@@ -195,4 +195,31 @@ public:
     static std::tuple<Ts...> Deserialize(RD& reader) {
         return { reader.template Read<Ts>()... };
     }
+
+
+
+    // extension methods for mainly lua... or whatever
+
+    decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
+
+    // large ints are not exactly supported in lua
+    //  a workaround is to use a custom implemented 64bit usertype object
+    decltype(auto) ReadInt8() { return Read<int8_t>(); }
+    decltype(auto) ReadInt16() { return Read<int16_t>(); }
+    decltype(auto) ReadInt32() { return Read<int32_t>(); }
+    decltype(auto) ReadInt64() { return Read<int64_t>(); }
+    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
+    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
+    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
+    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
+
+    decltype(auto) ReadFloat() { return Read<float>(); }
+    decltype(auto) ReadDouble() { return Read<double>(); }
+    decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
+    decltype(auto) ReadVector3() { return Read<Vector3>(); }
+    decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
+    decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
+    decltype(auto) ReadString() { return Read<std::string>(); }
+    
+    BYTE_t ReadShort() { return Read<int16_t>(); }
 };
