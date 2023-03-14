@@ -134,41 +134,57 @@ void IModManager::LoadAPI() {
         "Write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
+            //static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
+            //static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write)
             //[](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
-            [](DataWriter& self, DataType type, LUA_NUMBER val) {
-                switch (type) {
-                case DataType::INT8:
-                    self.Write<int8_t>(val);
-                    break;
-                case DataType::INT16:
-                    self.Write<int16_t>(val);
-                    break;
-                case DataType::INT32:
-                    self.Write<int32_t>(val);
-                    break;
-                case DataType::INT64:
-                    self.Write<int64_t>(val);
-                    break;
-                case DataType::FLOAT:
-                    self.Write<float>(val);
-                    break;
-                case DataType::DOUBLE:
-                    self.Write<double>(val);
-                    break;
-                default:
-                    throw std::runtime_error("invalid DataType");
-                    //return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
-                }
-            }
-        )
+
+            //[](DataWriter& self, DataType type, LUA_NUMBER val) {
+            //    switch (type) {
+            //    case DataType::INT8:
+            //        self.Write<int8_t>(val);
+            //        break;
+            //    case DataType::INT16:
+            //        self.Write<int16_t>(val);
+            //        break;
+            //    case DataType::INT32:
+            //        self.Write<int32_t>(val);
+            //        break;
+            //    case DataType::INT64:
+            //        self.Write<int64_t>(val);
+            //        break;
+            //    case DataType::FLOAT:
+            //        self.Write<float>(val);
+            //        break;
+            //    case DataType::DOUBLE:
+            //        self.Write<double>(val);
+            //        break;
+            //    default:
+            //        throw std::runtime_error("invalid DataType");
+            //        //return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
+            //    }
+            //}
+        ),
+        "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
+        "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
+        "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
+        "WriteInt64", static_cast<void (DataWriter::*)(int64_t)>(&DataWriter::Write),
+        "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
+        "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
+
+        // Would char be a string or number from lua -> c++?
+        //  in high-level programming, a char geenrally represents a letter
+        //  or a single unit of a string, so maybe use a number to enforce single?
+        // Lua also has no understanding of UTF8 strings and makes
+        //  zero assumptions about whether a string is/isnt UTF-8
+        // In C#, a Char is 2 bytes (basically a signed short)
+        //  and not sized weirdly
+        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write)
     );
 
     // Package read/write types
@@ -178,8 +194,22 @@ void IModManager::LoadAPI() {
         "pos", &DataReader::m_pos,
         // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
         //  instead of this verbose nightmare
+        "ReadBytes", &DataReader::ReadBytes,
+        "ReadInt8", &DataReader::ReadInt8,
+        "ReadInt16", &DataReader::ReadInt16,
+        "ReadInt32", &DataReader::ReadInt32,
+        "ReadInt64", &DataReader::ReadInt64,
+        "ReadFloat", &DataReader::ReadFloat,
+        "ReadDouble", &DataReader::ReadDouble,
+        "ReadZDOID", &DataReader::ReadZDOID,
+        "ReadVector3", &DataReader::ReadVector3,
+        "ReadVector2i", &DataReader::ReadVector2i,
+        "ReadQuaternion", &DataReader::ReadQuaternion,
+        "ReadString", &DataReader::ReadString,
+        "ReadStrings", &DataReader::ReadStrings,
+        "ReadChar", &DataReader::ReadChar
 
-
+        /*
         "Read", [](sol::this_state state, DataReader& self, DataType type) {
             switch (type) {
             case DataType::BYTES:
@@ -213,7 +243,7 @@ void IModManager::LoadAPI() {
             default:
                 throw std::runtime_error("invalid DataType");
             }
-        }
+        }*/
     );
 
     //env.new_usertype<IMethod<Peer*>>("IMethod",
@@ -530,28 +560,31 @@ void IModManager::LoadAPI() {
             // zdoid
             //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
-        ),
-        "SetQuaternion", sol::overload(
-            static_cast<void (ZDO::*)(HASH_t, const Quaternion&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const Quaternion&)>(&ZDO::Set)
-        ),
-        "SetVector3", sol::overload(
-            static_cast<void (ZDO::*)(HASH_t, const Vector3&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const Vector3&)>(&ZDO::Set)
-        ),
-        "SetString", sol::overload(
-            static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set)
-        ),
-        "SetBool", sol::overload(
-            static_cast<void (ZDO::*)(HASH_t, bool)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, bool)>(&ZDO::Set)
-        ),
-        "SetZDOID", sol::overload(
-            // zdoid
-            //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
         )
+        // I might go ahead and ignore these specific functions, because they
+        //  are correctly overloaded anyways to accept specific types, types that
+        //  are not convertible to different stuff...
+        //"SetQuaternion", sol::overload(
+        //    static_cast<void (ZDO::*)(HASH_t, const Quaternion&)>(&ZDO::Set),
+        //    static_cast<void (ZDO::*)(const std::string&, const Quaternion&)>(&ZDO::Set)
+        //),
+        //"SetVector3", sol::overload(
+        //    static_cast<void (ZDO::*)(HASH_t, const Vector3&)>(&ZDO::Set),
+        //    static_cast<void (ZDO::*)(const std::string&, const Vector3&)>(&ZDO::Set)
+        //),
+        //"SetString", sol::overload(
+        //    static_cast<void (ZDO::*)(HASH_t, const std::string&)>(&ZDO::Set),
+        //    static_cast<void (ZDO::*)(const std::string&, const std::string&)>(&ZDO::Set)
+        //),
+        //"SetBool", sol::overload(
+        //    static_cast<void (ZDO::*)(HASH_t, bool)>(&ZDO::Set),
+        //    static_cast<void (ZDO::*)(const std::string&, bool)>(&ZDO::Set)
+        //),
+        //"SetZDOID", sol::overload(
+        //    // zdoid
+        //    //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
+        //    static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
+        //)
     );
 
     // setting meta functions

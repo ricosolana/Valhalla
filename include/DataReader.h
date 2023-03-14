@@ -9,7 +9,7 @@
 
 class DataReader : public DataStream {
 private:
-    void ReadBytes(BYTE_t* buffer, size_t count);
+    void ReadSomeBytes(BYTE_t* buffer, size_t count);
 
     // Read a single byte from the buffer (slow if used to read a bunch of bytes)
     // Throws if end of buffer is reached
@@ -17,7 +17,7 @@ private:
 
     // Reads count bytes overriding the specified vector
     // Throws if not enough bytes to read
-    void ReadBytes(BYTES_t& vec, size_t count);
+    void ReadSomeBytes(BYTES_t& vec, size_t count);
 
     // Reads count bytes overriding the specified string
     // '\0' is not included in count (raw bytes only)
@@ -55,10 +55,11 @@ public:
     }
 
     //  Reads a primitive type
-    template<typename T> requires std::is_fundamental_v<T>
+    template<typename T> 
+        requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
         T out;
-        ReadBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
+        ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
 
@@ -84,7 +85,7 @@ public:
     template<typename T> requires std::same_as<T, BYTES_t>
     decltype(auto) Read() {
         T out;
-        ReadBytes(out, Read<int32_t>());
+        ReadSomeBytes(out, Read<int32_t>());
         return out;
     }
 
@@ -117,7 +118,7 @@ public:
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
         //requires (std::is_same_typename VUtils::Traits::func_traits<F>::args_type)
-    void ReadEach(F func) {
+    void AsEach(F func) {
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
         const auto count = Read<int32_t>();
@@ -180,14 +181,33 @@ public:
 
     // Reads an enum type
     //  - Bytes read depend on the underlying value
-    template<typename E> requires std::is_enum_v<E>
+    template<typename Enum> requires std::is_enum_v<Enum>
     decltype(auto) Read() {
-        return static_cast<E>(Read<std::underlying_type_t<E>>());
+        return static_cast<Enum>(Read<std::underlying_type_t<Enum>>());
     }
 
     // Read a UTF-8 encoded C# char
     //  Will advance 1 -> 3 bytes, depending on size of first char
-    uint16_t ReadChar();
+    template<typename T> requires std::is_same_v<T, char16_t>
+    decltype(auto) Read() {
+        auto b1 = Read<BYTE_t>();
+
+        // 3 byte
+        if (b1 >= 0xE0) {
+            auto b2 = Read<BYTE_t>() & 0x3F;
+            auto b3 = Read<BYTE_t>() & 0x3F;
+            return ((b1 & 0xF) << 12) | (b2 << 6) | b3;
+        }
+        // 2 byte
+        else if (b1 >= 0xC0) {
+            auto b2 = Read<BYTE_t>() & 0x3F;
+            return ((b1 & 0x1F) << 6) | b2;
+        }
+        // 1 byte
+        else {
+            return b1 & 0x7F;
+        }
+    }
 
     // Deserialize a reader to a tuple of types
     template<class...Ts, class RD>
@@ -214,4 +234,6 @@ public:
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
     decltype(auto) ReadString() { return Read<std::string>(); }
     decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
+
+    decltype(auto) ReadChar() { return Read<char16_t>(); }
 };

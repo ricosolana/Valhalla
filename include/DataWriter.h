@@ -11,18 +11,18 @@ class DataWriter : public DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteBytes(const BYTE_t* buffer, size_t count);
+    void WriteSomeBytes(const BYTE_t* buffer, size_t count);
 
     // Write count bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteBytes(const BYTES_t& vec, size_t count) {
-        return WriteBytes(vec.data(), count);
+    auto WriteSomeBytes(const BYTES_t& vec, size_t count) {
+        return WriteSomeBytes(vec.data(), count);
     }
 
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteBytes(const BYTES_t& vec) {
-        return WriteBytes(vec, vec.size());
+    auto WriteSomeBytes(const BYTES_t& vec) {
+        return WriteSomeBytes(vec, vec.size());
     }
 
     void Write7BitEncodedInt(int32_t value) {
@@ -130,18 +130,31 @@ public:
     }
 
     // Writes a primitive type
-    template<typename T> requires std::is_fundamental_v<T>
-    void Write(const T& in) { WriteBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
+    template<typename T> requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
+    void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
     //  Bytes written depend on the underlying value
-    template<typename E> requires std::is_enum_v<E>
-    void Write(E v) {
-        using T = std::underlying_type_t<E>;
-        Write(static_cast<T>(v));
+    template<typename Enum> requires std::is_enum_v<Enum>
+    void Write(Enum value) {
+        Write(std::to_underlying(value));
     }
 
-    void WriteChar(uint16_t i);
+    template<typename T> requires std::is_same_v<T, char16_t>
+    void Write(T in) {
+        if (in < 0x80) {
+            Write<BYTE_t>(in);
+        }
+        else if (in < 0x0800) {
+            Write<BYTE_t>(((in >> 6) & 0x1F) | 0xC0);
+            Write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
+        }
+        else { // if (i < 0x010000) {
+            Write<BYTE_t>(((in >> 12) & 0x0F) | 0xE0);
+            Write<BYTE_t>(((in >> 6) & 0x3F) | 0x80);
+            Write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
+        }
+    }
 
 
 
@@ -170,8 +183,5 @@ public:
         BYTES_t bytes;
         return bytes;
     }
-
-
-
 
 };

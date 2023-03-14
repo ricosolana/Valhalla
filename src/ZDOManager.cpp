@@ -697,7 +697,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		DataReader reader(bytes);
 
 		{
-			reader.ReadEach([&](const ZDOID& zdoid) {
+			reader.AsEach([&](const ZDOID& zdoid) {
 				if (auto zdo = GetZDO(zdoid))
 					InvalidateSector(*zdo);
 				}

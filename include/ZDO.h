@@ -397,7 +397,7 @@ private:
                         assert(count >= 0x80);
                         // make room for utf8 bytes
                         vec.insert(vec.begin() + size_mark, extraCount, 0);
-                        writer.WriteChar(count);
+                        writer.Write<char16_t>(count);
                         end_mark += extraCount;
                     } else {
                         assert(count < 0x80);

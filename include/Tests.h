@@ -454,7 +454,7 @@ public:
 
         int count = 0xFFF1;
 
-        writer.WriteChar(count);
+        writer.Write<char16_t>(count);
 
         assert(count == DataReader(bytes).ReadChar());
 

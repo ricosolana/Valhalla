@@ -63,8 +63,8 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<bool>(); // m_distant
 
     if (worldVersion < 13) {
-        pkg.ReadChar();
-        pkg.ReadChar();
+        pkg.Read<char16_t>();
+        pkg.Read<char16_t>();
     }
 
     if (worldVersion >= 17)
@@ -147,7 +147,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
 
 void ZDO::Deserialize(DataReader& pkg) {
     static_assert(sizeof(ObjectType) == 1);
-
+    
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
     this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());

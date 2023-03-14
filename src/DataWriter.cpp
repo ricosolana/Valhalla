@@ -1,7 +1,7 @@
 #include "DataWriter.h"
 #include "VUtilsString.h"
 
-void DataWriter::WriteBytes(const BYTE_t* buffer, size_t count) {
+void DataWriter::WriteSomeBytes(const BYTE_t* buffer, size_t count) {
     Assert31U(count);
 
     Assert31U(m_pos + count);
@@ -26,33 +26,11 @@ void DataWriter::WriteBytes(const BYTE_t* buffer, size_t count) {
     m_pos += count;
 }
 
-void DataWriter::WriteChar(uint16_t i) {
-    // simplest case
-    if (i < 0x80) {
-        Write<BYTE_t>(i);
-    }
-    else if (i < 0x0800) {
-        Write<BYTE_t>(((i >> 6) & 0x1F) | 0xC0);
-        Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
-    }
-    else { // if (i < 0x010000) {
-        Write<BYTE_t>(((i >> 12) & 0x0F) | 0xE0);
-        Write<BYTE_t>(((i >> 6) & 0x3F) | 0x80);
-        Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
-    }
-    //else if (i < 0x110000) {
-    //    Write<BYTE_t>(((i >> 18) & 0x07) | 0xF0);
-    //    Write<BYTE_t>(((i >> 12) & 0x3F) | 0x80);
-    //    Write<BYTE_t>(((i >> 6) & 0x3F) | 0x80);
-    //    Write<BYTE_t>(((i >> 0) & 0x3F) | 0x80);
-    //}
-}
-
 
 
 void DataWriter::Write(const BYTE_t* in, size_t count) {
     Write<int32_t>(count);
-    WriteBytes(in, count);
+    WriteSomeBytes(in, count);
 }
 
 void DataWriter::Write(const BYTES_t& in, size_t count) {
@@ -79,7 +57,7 @@ void DataWriter::Write(const std::string& in) {
     if (byteCount == 0)
         return;
 
-    WriteBytes(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
+    WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
 }
 
 void DataWriter::Write(const ZDOID& in) {
