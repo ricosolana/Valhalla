@@ -8,7 +8,148 @@
 #include "DungeonManager.h"
 
 class Tests {
+private:
+    std::optional<BYTES_t> Test_ResourceBytes1(const fs::path& path) {
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file)
+            return std::nullopt;
+
+        // https://www.reddit.com/r/cpp_questions/comments/m93tjb/comment/grkst7r/?utm_source=share&utm_medium=web2x&context=3
+
+        return BYTES_t(
+            std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>());        
+    }
+
+    std::optional<BYTES_t> Test_ResourceBytes2(const fs::path& path) {
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file)
+            return std::nullopt;
+
+        file.unsetf(std::ios::skipws);
+
+        std::streampos fileSize;
+
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        BYTES_t vec;
+        vec.resize(fileSize);
+        file.read(reinterpret_cast<std::ifstream::char_type*>(&vec.front()), 
+            fileSize);
+
+        return vec;
+    }
+
+    std::optional<BYTES_t> Test_ResourceBytes3(const fs::path& path) {
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file)
+            return std::nullopt;
+
+        BYTES_t vec;
+
+        file.unsetf(std::ios::skipws);
+
+        std::streampos fileSize;
+
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        vec.reserve(fileSize);
+
+        vec.insert(vec.begin(), std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+        return vec;
+    }
+
+    std::optional<BYTES_t> Test_ResourceBytes4(const fs::path& path) {
+        FILE* file = fopen(path.string().c_str(), "rb");
+
+        if (!file)
+            return std::nullopt;
+
+        BYTES_t vec;
+
+        fseek(file, 0, SEEK_END);
+        auto fileSize = ftell(file);
+        fseek(file, 0, SEEK_SET);
+
+        // somehow avoid the zero-initialization
+        vec.resize(fileSize);
+        
+        fread_s(vec.data(), vec.size(), 1, fileSize, file);
+
+        return vec;
+    }
+
 public:
+    void Test_ResourceBytes() {
+        static constexpr int TRIALS = 5;
+
+        LOG(INFO) << "Starting trials in 3s";
+        std::this_thread::sleep_for(3s);
+
+        {
+            LOG(INFO) << "Starting ResourceBytes1...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceBytes1("worlds/ClanWarsS01.db");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceBytes1: " << ((float)duration_cast<milliseconds>(now - start).count())/1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting ResourceBytes2...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceBytes2("worlds/ClanWarsS01.db");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting ResourceBytes3...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceBytes3("worlds/ClanWarsS01.db");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting ResourceBytes4";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceBytes4("worlds/ClanWarsS01.db");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceBytes4: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+    }
+
+
+
+
     void Test_DungeonGenerator() {
         Valhalla()->LoadFiles();
 
@@ -27,10 +168,10 @@ public:
 
     void Test_LinesIntersect() {
         {
-            Vector2 a(.5, -.5);
-            Vector2 b(.5, .5);
-            Vector2 c(.3901, .6901);
-            Vector2 d(.9098, .3901);
+            Vector2 a(.5f, -.5f);
+            Vector2 b(.5f, .5f);
+            Vector2 c(.3901f, .6901f);
+            Vector2 d(.9098f, .3901f);
 
             //assert(!VUtils::Physics::LinesIntersect(
             //    a, b, c, d
@@ -116,8 +257,8 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.9, 0, .9);
+            Vector3 size1(1.f, 0, 1.f);
+            Vector3 size2(.9f, 0, .9f);
 
             Vector3 pos1(0, 0, 0);
             Vector3 pos2(0, 0, 0);
@@ -183,8 +324,8 @@ public:
         //}
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.7, 0, .7);
+            Vector3 size1(1.f, 0, 1.f);
+            Vector3 size2(.7f, 0, .7f);
 
             Vector3 pos1(0, 0, 0);
             Vector3 pos2(0, 0, 0);
@@ -215,11 +356,11 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.6, 0, .6);
+            Vector3 size1(1.f, 0, 1);
+            Vector3 size2(.6f, 0, .6f);
 
-            Vector3 pos1(.15, 0, .15);
-            Vector3 pos2(.8, 0, .8);
+            Vector3 pos1(.15f, 0, .15f);
+            Vector3 pos2(.8f, 0, .8f);
 
             auto rot1(Quaternion::Euler(0, 45, 0));
             auto rot2(Quaternion::Euler(0, 45, 0));
@@ -231,11 +372,11 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.6, 0, .6);
+            Vector3 size1(1.f, 0, 1);
+            Vector3 size2(.6f, 0, .6f);
 
-            Vector3 pos1(-.326, 0, -.474);
-            Vector3 pos2(.6, 0, -.04);
+            Vector3 pos1(-.326f, 0, -.474f);
+            Vector3 pos2(.6f, 0, -.04f);
 
             auto rot1(Quaternion::Euler(0, 210, 0));
             auto rot2(Quaternion::Euler(0, 60, 0));
@@ -293,7 +434,7 @@ public:
 
             // Unity-calculate values based on the above
             //  World transforms of child
-            Vector3 expectChildPos(-171.0375, 52, -56.88084);
+            Vector3 expectChildPos(-171.0375f, 52, -56.88084f);
             Quaternion expectChildRot(Quaternion::Euler(0, 34, 0));
 
             //Quaternion calcChildRot = parentRot * childLocalRot;
@@ -305,7 +446,7 @@ public:
                 parentPos, parentRot
             );
 
-            if (true);
+            if (true) {}
                 
         }
 
@@ -322,7 +463,7 @@ public:
 
             // Unity-calculate values based on the above
             //  World transforms of child
-            Vector3 expectChildPos(-171.0375, 52, -56.88084);
+            Vector3 expectChildPos(-171.0375f, 52, -56.88084f);
             Quaternion expectChildRot(Quaternion::Euler(0, 12, 0));
 
             //Quaternion calcChildRot = parentRot * childLocalRot;
@@ -334,7 +475,7 @@ public:
                 parentPos, parentRot
             );
 
-            if (true);
+            if (true) {}
 
         }
     }

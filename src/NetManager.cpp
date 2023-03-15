@@ -42,7 +42,7 @@ void INetManager::InitPassword() {
 
 
 
-bool INetManager::Kick(std::string user, const std::string &reason) {
+bool INetManager::Kick(std::string user) {
     auto&& peer = GetPeer(user);
     try {
         if (!peer) peer = GetPeer(std::stoll(user));
@@ -51,7 +51,7 @@ bool INetManager::Kick(std::string user, const std::string &reason) {
 
     if (peer) {
         user = peer->m_socket->GetHostName();
-        peer->Kick(reason);
+        peer->Kick();
         return true;
     }
     else {
@@ -59,7 +59,7 @@ bool INetManager::Kick(std::string user, const std::string &reason) {
 
         for (auto&& peer : peers) {
             user = peer->m_socket->GetHostName();
-            peer->Kick(reason);
+            peer->Kick();
         }
 
         if (!peers.empty())
@@ -69,7 +69,7 @@ bool INetManager::Kick(std::string user, const std::string &reason) {
     return false;
 }
 
-bool INetManager::Ban(std::string user, const std::string& reason) {
+bool INetManager::Ban(std::string user) {
     {
         auto&& peer = GetPeer(user);
         try {
@@ -79,7 +79,7 @@ bool INetManager::Ban(std::string user, const std::string& reason) {
 
         if (peer) {
             user = peer->m_socket->GetHostName();
-            peer->Kick(reason);
+            peer->Kick();
             Valhalla()->m_blacklist.insert(user);
             return true;
         }
@@ -89,7 +89,7 @@ bool INetManager::Ban(std::string user, const std::string& reason) {
 
     for (auto&& peer : peers) {
         user = peer->m_socket->GetHostName();
-        peer->Kick(reason);
+        peer->Kick();
     }
 
     if (!peers.empty())
@@ -294,7 +294,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
         auto split = VUtils::String::Split(user, " ");
 
-        if (Kick(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
+        if (Kick(std::string(split[0]))) {
             peer->ConsoleMessage("Kicked '" + user + "'");
         }
         else {
@@ -308,7 +308,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
 
         auto split = VUtils::String::Split(user, " ");
 
-        if (Ban(std::string(split[0]), split.size() == 1 ? "" : std::string(split[1]))) {
+        if (Ban(std::string(split[0]))) {
             peer->ConsoleMessage("Banned '" + user + "'");
         }
         else {

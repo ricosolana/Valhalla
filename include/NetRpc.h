@@ -22,7 +22,8 @@ enum class ConnectionStatus : int32_t {
     ErrorFull,
     ErrorPlatformExcluded,
     ErrorCrossplayPrivilege,
-    MAX // 10
+    ErrorKicked,
+    MAX // 13
 };
 
 class NetRpc {

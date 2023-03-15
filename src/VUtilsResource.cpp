@@ -25,12 +25,39 @@ namespace VUtils::Resource {
     //    return std::ofstream(GetPath(path), std::ios::binary);
     //}
 
+    // https://stackoverflow.com/questions/15138353/how-to-read-a-binary-file-into-a-vector-of-unsigned-chars
     std::optional<BYTES_t> ReadFileBytes(const fs::path& path) {
         //auto file = GetInFile(path);
         std::ifstream file(path, std::ios::binary);
         
         if (!file)
             return std::nullopt;
+
+
+        BYTES_t vec;
+
+        file.unsetf(std::ios::skipws);
+
+        std::streampos fileSize;
+
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        
+        //vec.resize(fileSize);
+        //file.read(reinterpret_cast<std::ifstream::char_type*>(&vec.front()), 
+        //    fileSize);
+
+        //return vec;
+
+
+
+        vec.reserve(fileSize);
+
+        vec.insert(vec.begin(), std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+        return vec;
+
 
         // https://www.reddit.com/r/cpp_questions/comments/m93tjb/comment/grkst7r/?utm_source=share&utm_medium=web2x&context=3
 

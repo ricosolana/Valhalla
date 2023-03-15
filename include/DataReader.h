@@ -4,6 +4,7 @@
 #include "ZDOID.h"
 #include "Vector.h"
 #include "Quaternion.h"
+#include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
 
@@ -208,6 +209,18 @@ public:
             return b1 & 0x7F;
         }
     }
+
+    template<typename T> requires std::is_same_v<T, UserProfile>
+    decltype(auto) Read() {
+        // return the 
+        auto name = Read<std::string>();
+        auto gamerTag = Read<std::string>();
+        auto networkUserId = Read<std::string>();
+
+        return UserProfile(name, gamerTag, networkUserId);
+    }
+
+
 
     // Deserialize a reader to a tuple of types
     template<class...Ts, class RD>

@@ -282,10 +282,10 @@ void IModManager::LoadAPI() {
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),
-        "Kick", sol::resolve<void(std::string)>(&Peer::Kick),
         // message functions
         "ChatMessage", sol::overload(
-            sol::resolve<void(const std::string&, ChatMsgType, const Vector3&, const std::string&, const std::string&)>(&Peer::ChatMessage),
+            // TODO fix this
+            //sol::resolve<void(const std::string&, ChatMsgType, const Vector3&, const std::string&, const std::string&)>(&Peer::ChatMessage),
             sol::resolve<void(const std::string&)>(&Peer::ChatMessage)
         ),
         "ConsoleMessage", &Peer::ConsoleMessage,

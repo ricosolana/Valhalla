@@ -20,6 +20,8 @@ namespace Hashes {
         static constexpr HASH_t S2C_Error = __H("Error");
         static constexpr HASH_t S2C_UpdateTime = __H("NetTime");
         static constexpr HASH_t S2C_UpdatePlayerList = __H("PlayerList");
+        static constexpr HASH_t S2C_ResponseKicked = __H("Kicked");
+        static constexpr HASH_t S2C_RequestSave = __H("ManualSave");
 
 
 

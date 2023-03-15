@@ -4,6 +4,7 @@
 #include "ZDOID.h"
 #include "Vector.h"
 #include "Quaternion.h"
+#include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
 
@@ -154,6 +155,12 @@ public:
             Write<BYTE_t>(((in >> 6) & 0x3F) | 0x80);
             Write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
         }
+    }
+
+    void Write(const UserProfile &in) {
+        Write(in.m_name);
+        Write(in.m_gamerTag);
+        Write(in.m_networkUserId);
     }
 
 

@@ -6,6 +6,8 @@
 #include "ZDO.h"
 #include "ValhallaServer.h"
 #include "ModManager.h"
+#include "Hashes.h"
+#include "UserData.h"
 
 class IZDOManager;
 class INetManager;
@@ -131,18 +133,37 @@ public:
     IMethod<Peer*>* GetMethod(const std::string& name);
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
-    void Kick(bool now);
-    void Kick() { Kick(false); }
-    void Kick(std::string reason);
-    void SendDisconnect();
-    void Disconnect();
+    //void Kick(bool now);
+
+    void Kick();
+
+    void Disconnect() {
+        m_socket->Close(true);
+    }
+
+    void SendDisconnect() {
+        Invoke(Hashes::Rpc::Disconnect);
+    }
+
+    void SendKicked() {
+        Invoke(Hashes::Rpc::S2C_ResponseKicked);
+    }
+
+    void RequestSave() {
+        Invoke(Hashes::Rpc::C2S_RequestSave);
+    }
+
 
 
     // Show a specific chat message
-    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const std::string& senderName, const std::string& senderID);
+    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const UserProfile& profile, const std::string& senderID);
     // Show a chat message
     void ChatMessage(const std::string& text) {
-        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        //ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        
+        auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
+
+        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), profile, "");
     }
     // Show a console message
     void ConsoleMessage(const std::string& msg);
@@ -169,8 +190,10 @@ public:
         Teleport(pos, Quaternion::IDENTITY, false);
     }
 
+    // Experimental
     void MoveTo(const Vector3& pos, const Quaternion& rot);
 
+    // Experimental
     void MoveTo(const Vector3& pos) {
         MoveTo(pos, Quaternion::IDENTITY);
     }

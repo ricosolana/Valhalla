@@ -29,10 +29,10 @@ private:
     void InitPassword();
 
     // Kick a player by name
-    bool Kick(std::string user, const std::string& reason);
+    bool Kick(std::string user);
 
     // Ban a player by name
-    bool Ban(std::string user, const std::string& reason);
+    bool Ban(std::string user);
 
     // Unban a player by name
     bool Unban(const std::string& user);
@@ -55,7 +55,7 @@ public:
 
     //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 
-    const auto &GetPeers() {
+    const auto& GetPeers() {
         return m_peers;
     }
 };

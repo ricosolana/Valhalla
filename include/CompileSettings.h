@@ -4,7 +4,7 @@
 
 using namespace std::chrono_literals;
 
-//#define RUN_TESTS
+#define RUN_TESTS
 
 #define SERVER_VERSION "v1.0.3"
 
@@ -32,7 +32,8 @@ namespace VConstants {
     //static const char* PLAYERNAME = "Stranger";
 
     // Valheim game version
-    static const char* GAME = "0.213.4";
+    //  Located in Version.cs
+    static const char* GAME = "0.214.2";
 
     // worldgenerator
     static constexpr int32_t WORLD = 29;

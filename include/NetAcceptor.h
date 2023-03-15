@@ -31,6 +31,13 @@ private:
     robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
     robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
 
+
+
+    CSteamID m_lobbyID;
+
+    void OnLobbyCreated(LobbyCreated_t* pCallback, bool failure);
+    CCallResult<AcceptorSteam, LobbyCreated_t> m_lobbyCreatedCallResult;
+
 public:
     AcceptorSteam();
     ~AcceptorSteam() override;

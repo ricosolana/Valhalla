@@ -48,6 +48,10 @@ AcceptorSteam::AcceptorSteam()
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMax,
         k_ESteamNetworkingConfig_Global, 0,
         k_ESteamNetworkingConfig_Int32, &sendrate);
+
+    // Can lobbies work while anonymous?
+    //auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 64);
+    //m_lobbyCreatedCallResult.Set(handle, this, OnLobbyCreated);
 }
 
 AcceptorSteam::~AcceptorSteam() {
@@ -86,9 +90,9 @@ const char* stateToString(ESteamNetworkingConnectionState state) {
     static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connected", "ClosedByPeer", "ProblemDetectedLocally",
         "FinWait", "Linger", "Dead"
     };
-    if (state >= 0) {
+    if (state >= 0 && state < sizeof(messages)/sizeof(messages[0])) {
         return messages[state];
-    }
+    } 
     return messages[5 + (-state)];
 }
 
@@ -133,4 +137,47 @@ void AcceptorSteam::OnSteamServersDisconnected(SteamServersDisconnected_t* data)
 
 void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
     LOG(INFO) << "Steam server connect failure";
+}
+
+
+
+// call results
+void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
+    if (failure) {
+
+    } else if (data->m_eResult == k_EResultNoConnection) {
+        LOG(WARNING) << "Failed to connect to Steam to register lobby";
+
+        // either quit or retry in a little
+
+        //ZSteamMatchmaking ServerRegistered serverRegistered2 = this.serverRegisteredCallback;
+        //if (serverRegistered2)
+            //serverRegistered2(false);
+    } else {
+        this->m_lobbyID = CSteamID(data->m_ulSteamIDLobby);
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", SERVER_SETTINGS.serverName.c_str()))
+            LOG(ERROR) << "Unable to set Steam lobby name";
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", SERVER_SETTINGS.serverPassword.empty() ? "0" : "1"))
+            LOG(ERROR) << "Unable to set Steam lobby password flag";
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME))
+            LOG(ERROR) << "Unable to set Steam lobby Valheim version";
+
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user"))
+        {
+            //Debug.LogError("Couldn't set backend in lobby");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", ""))
+        {
+            //Debug.LogError("Couldn't set host in lobby");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0"))
+        {
+            //Debug.LogError("Couldn't set crossplay in lobby");
+        }
+
+        SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
+        //auto serverRegistered3 = this.serverRegisteredCallback;
+        //if (serverRegistered3)
+        //    serverRegistered3(true);
+    }
 }

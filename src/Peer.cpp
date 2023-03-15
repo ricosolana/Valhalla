@@ -71,40 +71,20 @@ void Peer::ConsoleMessage(const std::string& msg) {
     Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
 }
 
-void Peer::Kick(bool now) {
+void Peer::Kick() {
     LOG(INFO) << "Kicking " << m_name;
-
-    SendDisconnect();
-    m_socket->Close(now);
-}
-
-void Peer::Kick(std::string reason) {
-    if (reason.empty()) reason = "being not fun";
-
-    LOG(INFO) << "Kicking " << m_name << " for: " << reason;
-
-    ConsoleMessage("kick: " + reason);
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_UIMessage, UIMsgType::Center, "kick: " + reason);
-    
-    SendDisconnect();
+        
+    SendKicked();
     Disconnect();
 }
 
-void Peer::SendDisconnect() {
-    Invoke(Hashes::Rpc::Disconnect);
-}
-
-void Peer::Disconnect() {
-    m_socket->Close(true);
-}
 
 
-
-void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const std::string& senderName, const std::string& senderID) {
+void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const UserProfile& profile, const std::string& senderID) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage, 
         pos, //Vector3(10000, 10000, 10000),
         type,
-        senderName, //"<color=yellow><b>SERVER</b></color>",
+        profile, //"<color=yellow><b>SERVER</b></color>",
         text,
         senderID //""
     );
