@@ -74,6 +74,8 @@ private:
             return std::nullopt;
 
         BYTES_t vec;
+        
+
 
         fseek(file, 0, SEEK_END);
         auto fileSize = ftell(file);
@@ -88,6 +90,23 @@ private:
     }
 
 public:
+    //2023-03-15 00:57:55,531 INFO [default] Starting trials in 3s
+    //2023-03-15 00:57:58,546 INFO [default] Starting ResourceBytes1...
+    //2023-03-15 00:58:10,911 INFO [default] Test_ResourceBytes1: 12.357s
+    //2023-03-15 00:58:10,915 INFO [default] Starting ResourceBytes2...
+    //2023-03-15 00:58:12,174 INFO [default] Test_ResourceBytes2: 1.258s
+    //2023-03-15 00:58:12,174 INFO [default] Starting ResourceBytes3...
+    //2023-03-15 00:58:21,588 INFO [default] Test_ResourceBytes3: 9.412s
+    //2023-03-15 00:58:21,588 INFO [default] Starting ResourceBytes4
+    //2023-03-15 00:58:22,319 INFO [default] Test_ResourceBytes4: 0.73s
+    //2023-03-15 00:58:22,319 INFO [default] All tests passed!
+
+    // the c methods are the fastest, faster than the 'recommended' c++ methods more than 15x faster
+    //  so dumb...
+    // there are more limitations, but this is still insane...
+
+    // ive not even tried removing vector resize from the equation or tried asm...
+
     void Test_ResourceBytes() {
         static constexpr int TRIALS = 5;
 
