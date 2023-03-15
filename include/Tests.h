@@ -1,5 +1,11 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <errno.h>
+
 #include "ZDO.h"
 #include "WorldManager.h"
 #include "DataWriter.h"
@@ -75,8 +81,6 @@ private:
 
         BYTES_t vec;
         
-
-
         fseek(file, 0, SEEK_END);
         auto fileSize = ftell(file);
         fseek(file, 0, SEEK_SET);
@@ -88,6 +92,123 @@ private:
 
         return vec;
     }
+
+
+
+    std::optional<std::list<std::string>> Test_ResourceLines1(const fs::path& path) {
+        std::ifstream file(path, std::ios::in);
+
+        if (!file)
+            return std::nullopt;
+
+        std::list<std::string> out;
+
+        std::string line;
+        while (std::getline(file, line)) {
+            out.insert(out.end(), line);
+        }
+
+        return out;
+    }
+
+    std::optional<std::list<std::string>> Test_ResourceLines2(const fs::path& path) {
+        FILE* file = fopen(path.string().c_str(), "r");
+
+        if (!file)
+            return std::nullopt;
+
+        std::list<std::string> lines;
+
+        char buf[512];
+        while (fgets(buf, sizeof(buf) - 1, file)) {
+            lines.push_back(buf);
+        }
+
+        return lines;
+    }
+
+    std::optional<std::list<std::string_view>> Test_ResourceLines3(const fs::path& path, bool blanks, std::string& out) {
+        FILE* file = fopen(path.string().c_str(), "rb");
+
+        if (!file)
+            return std::nullopt;
+        
+        if (!fseek(file, 0, SEEK_END)) return std::nullopt;
+        const int size = ftell(file); if (size == -1) return std::nullopt;
+        if (!fseek(file, 0, SEEK_SET)) return std::nullopt;
+
+        // somehow avoid the zero-initialization
+        out.resize(size);
+
+        char* data = out.data();
+        
+        if (fread(data, 1, size, file) != size && ferror(file))
+            return std::nullopt;
+
+        std::list<std::string_view> lines;
+
+        int lineIdx = -1;
+        int lineSize = 0;
+        for (int i = 0; i < size; i++) {
+            // if theres a newline at end of file, do not include
+
+            // if at end of file and no newline at end
+
+            lineSize = i - lineIdx - 1;
+                        
+            if (data[i] == '\n') {
+                //if (lineSize || blanks) {
+                if (lineSize) {
+                    lines.push_back(std::string_view(data + lineIdx + 1, lineSize));
+                }
+                lineIdx = i;
+            }
+        }
+
+        // this includes last line ONLY if it is not blank (has at least 1 character)
+        if (lineIdx < size - 1) {
+            lines.push_back(std::string_view(data + lineIdx + 1, size - lineIdx - 1));
+        }
+
+        return lines;
+    }
+
+
+
+
+
+    bool Test_WriteFileBytes1(const fs::path& path, const BYTE_t* buf, int size) {
+        std::ofstream file(path, std::ios::binary);
+
+        if (!file)
+            return false;
+
+        std::copy(buf, buf + size,
+            std::ostream_iterator<BYTE_t>(file));
+
+        file.close();
+
+        return true;
+    }
+
+    bool Test_WriteFileBytes2(const fs::path& path, const BYTE_t* buf, int size) {
+        FILE* file = fopen(path.string().c_str(), "wb");
+
+        if (!file)
+            return false;
+
+        auto sizeWritten = fwrite(buf, 1, size, file);
+        if (sizeWritten != size) {
+            fclose(file);
+            LOG(ERROR) << "File write error";
+            return false;
+        }
+
+        fclose(file);
+
+        return true;
+    }
+
 
 public:
     //2023-03-15 00:57:55,531 INFO [default] Starting trials in 3s
@@ -106,6 +227,17 @@ public:
     // there are more limitations, but this is still insane...
 
     // ive not even tried removing vector resize from the equation or tried asm...
+    // this was tested in release mode several times, with all results being similar each new running instance
+    // the #4 method is the fastest, but it utilizes c FILE/fopen/fread, which is considered unsafe/not modern
+    // the next option is to use the ifstream method, which is about 1.72x slower than the c way
+    //  the c way I am utilizing is not even the best because: 
+    //  - still using vector resize
+    //  - fread only supports reading ~2gb files
+    //  for these reasons, I should use fread64 or the equivalent to read larger files quickly
+    //  I am not sure why ifstream/iterator is still 16x slower than fopen/fread
+
+    // maybe the fopen/fread method is best for situations where files <2GB are being opened because
+    //  not many files go over that. It seems best for my use-cases, and its speedy af
 
     void Test_ResourceBytes() {
         static constexpr int TRIALS = 5;
@@ -165,6 +297,100 @@ public:
             LOG(INFO) << "Test_ResourceBytes4: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
+
+
+
+    void Test_ResourceLines() {
+        static constexpr int TRIALS = 5;
+
+        //std::string ss;
+        //Test_ResourceLines3("smallfile.txt", true, ss);
+        //printf("%c", ss[0]);
+
+
+
+        LOG(INFO) << "Starting trials in 3s";
+        std::this_thread::sleep_for(3s);
+
+        {
+            LOG(INFO) << "Starting ResourceLines1...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceLines1("bigfile.txt");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting ResourceLines2...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceLines2("bigfile.txt");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting ResourceLines3...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                std::string out;
+                auto opt = Test_ResourceLines3("bigfile.txt", false, out);
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+    }
+
+    void Test_FileWriteBytes() {
+        static constexpr int TRIALS = 5;
+
+        LOG(INFO) << "Generating random file data...";
+        auto val = VUtils::Random::GenerateAlphaNum(100000000);
+
+        LOG(INFO) << "Starting trials in 3s";
+        std::this_thread::sleep_for(3s);
+
+        {
+            LOG(INFO) << "Starting FileWriteBytes1...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileBytes1("writelargefile.txt", 
+                    reinterpret_cast<BYTE_t*>(val.data()), val.size());
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting FileWriteBytes2...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileBytes2("writelargefile.txt",
+                    reinterpret_cast<BYTE_t*>(val.data()), val.size());
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+    }
+
 
 
 

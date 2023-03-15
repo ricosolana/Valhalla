@@ -19,6 +19,60 @@ namespace VUtils::Resource {
     //std::ifstream GetInFile(const fs::path& path);
     //std::ofstream GetOutFile(const fs::path& path);
 
+    class ScopedFile {
+    private:
+        FILE* m_file;
+
+    public:
+        ScopedFile(FILE* file)
+            : m_file(file) {}
+
+        ~ScopedFile() {
+            if (m_file)
+                fclose(m_file);
+        }
+
+        ScopedFile(const ScopedFile& other) = delete;
+
+        operator FILE* () {
+            return m_file;
+        }
+    };
+
+
+
+    std::optional<std::list<std::string_view>> ReadFileLines(const fs::path& path, bool includeBlanks, std::string& out);
+
+
+
+    /*
+    template<typename T>
+    std::optional<T> ReadFile(const fs::path& path) {
+        ScopedFile file(fopen(path.string().c_str(), "rb"));
+
+        if (!file)
+            return std::nullopt;
+
+        if (!fseek(file, 0, SEEK_END))
+            return std::nullopt;
+
+        auto size = ftell(file);
+        if (size == -1)
+            return std::nullopt;
+
+        if (!fseek(file, 0, SEEK_SET))
+            return std::nullopt;
+
+        T result{};
+
+        // somehow avoid the zero-initialization
+        result.resize(size);
+
+        fread_s(result.data(), result.size(), 1, size, file);
+
+        return result;
+    }*/
+
     std::optional<BYTES_t> ReadFileBytes(const fs::path& path);
     std::optional<std::string> ReadFileString(const fs::path& path);
     //std::optional<std::vector<std::string>> ReadFileLines(const fs::path& path);
