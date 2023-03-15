@@ -35,7 +35,7 @@ void IValhalla::LoadFiles() {
     {
         YAML::Node loadNode;
         {
-            if (auto opt = VUtils::Resource::ReadFileString("server.yml")) {
+            if (auto opt = VUtils::Resource::ReadFile<std::string>("server.yml")) {
                 try {
                     loadNode = YAML::Load(opt.value());
                 }
@@ -159,7 +159,7 @@ void IValhalla::LoadFiles() {
         out.SetIndent(4);
         out << saveNode;
 
-        VUtils::Resource::WriteFileString("server.yml", out.c_str());
+        VUtils::Resource::WriteFile("server.yml", out.c_str());
     }
 
     if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_blacklist)>("blacklist.txt")) {

@@ -75,7 +75,7 @@ void World::WriteFileMeta() {
 	BYTES_t bytes = SaveMeta();
 
 	// create fwl
-	if (!VUtils::Resource::WriteFileBytes(metaPath, bytes))
+	if (!VUtils::Resource::WriteFile(metaPath, bytes))
 		LOG(ERROR) << "Failed to write world meta file";
 }
 
@@ -104,7 +104,7 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
 	// load world from file
 
-	auto opt = VUtils::Resource::ReadFileBytes(GetWorldMetaPath(name));
+	auto opt = VUtils::Resource::ReadFile(GetWorldMetaPath(name));
 
 	std::unique_ptr<World> world;
 
@@ -141,7 +141,7 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 	LOG(INFO) << "Loading world '" << name << "'";
 	auto dbpath = GetWorldDBPath(name);
 
-	auto&& opt = VUtils::Resource::ReadFileBytes(dbpath);
+	auto&& opt = VUtils::Resource::ReadFile(dbpath);
 
 	auto now(steady_clock::now());
 
@@ -202,7 +202,7 @@ void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 	auto path = GetWorldDBPath(name);
 
 	if (fs::exists(path)) {
-		if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
+		if (auto oldSave = VUtils::Resource::ReadFile(path)) {
 			auto compressed = VUtils::CompressGz(*oldSave);
 			if (!compressed) {
 				LOG(ERROR) << "Failed to compress world backup " << path;
@@ -211,7 +211,7 @@ void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 
 			auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 			auto backup = path.string() + std::to_string(ms) + ".gz";
-			if (VUtils::Resource::WriteFileBytes(backup, *compressed))
+			if (VUtils::Resource::WriteFile(backup, *compressed))
 				LOG(INFO) << "Saved world backup as '" << backup << "'";
 			else
 				LOG(ERROR) << "Failed to save world backup to " << backup;
@@ -266,7 +266,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 
 			// backup the old file
 			if (fs::exists(path)) {
-				if (auto oldSave = VUtils::Resource::ReadFileBytes(path)) {
+				if (auto oldSave = VUtils::Resource::ReadFile(path)) {
 					auto compressed = VUtils::CompressGz(*oldSave);
 					if (!compressed) {
 						LOG(WARNING) << "Failed to compress world backup " << path;
@@ -275,7 +275,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 
 					auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 					auto backup = path.string().substr(0, path.string().length() - 3) + "-" + std::to_string(ms) + ".db.gz";
-					if (VUtils::Resource::WriteFileBytes(backup, *compressed))
+					if (VUtils::Resource::WriteFile(backup, *compressed))
 						LOG(INFO) << "Saved world backup as '" << backup << "'";
 					else
 						LOG(WARNING) << "Failed to save world backup to " << backup;
@@ -285,7 +285,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 				}
 			}
 
-			if (!VUtils::Resource::WriteFileBytes(path, bytes))
+			if (!VUtils::Resource::WriteFile(path, bytes))
 				LOG(WARNING) << "Failed to save world";
 			else
 				LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";

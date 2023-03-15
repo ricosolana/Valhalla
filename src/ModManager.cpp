@@ -35,7 +35,7 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     auto modPath = fs::path("mods") / folderName;
     auto modInfoPath = modPath / "modInfo.yml";
 
-    if (auto opt = VUtils::Resource::ReadFileString(modInfoPath)) {
+    if (auto opt = VUtils::Resource::ReadFile<std::string>(modInfoPath)) {
         loadNode = YAML::Load(opt.value());
     }
     else {
@@ -925,20 +925,24 @@ void IModManager::LoadAPI() {
 
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
+            
+            // TODO use static_casts to resolve templates
+            
+            assert(false);
 
-            resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
-            resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
-            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
-            resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
-            resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
-            resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
+            //resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
+            //resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
+            //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
+            //resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
+            //resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
+            //resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
         }
     }
 }
 
 void IModManager::LoadMod(Mod& mod) {
     auto path(mod.m_entry);
-    if (auto opt = VUtils::Resource::ReadFileString(path)) {
+    if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
         auto&& env = mod.m_env;
         env = sol::environment(m_state, sol::create, m_state.globals());
 

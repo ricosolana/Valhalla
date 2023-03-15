@@ -25,7 +25,7 @@ void IZoneManager::Init() {
 
     {
         // load ZoneLocations:
-        auto opt = VUtils::Resource::ReadFileBytes("zoneLocations.pkg");
+        auto opt = VUtils::Resource::ReadFile("zoneLocations.pkg");
         if (!opt)
             throw std::runtime_error("zoneLocations.pkg missing");
 
@@ -99,7 +99,7 @@ void IZoneManager::Init() {
 
     {
         // load Foliage:
-        auto opt = VUtils::Resource::ReadFileBytes("vegetation.pkg");
+        auto opt = VUtils::Resource::ReadFile("vegetation.pkg");
         if (!opt)
             throw std::runtime_error("vegetation.pkg missing");
 

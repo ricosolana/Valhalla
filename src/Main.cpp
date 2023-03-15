@@ -68,10 +68,12 @@ int main(int argc, char **argv) {
 #ifdef RUN_TESTS
     fs::current_path("./data/tests/");
 
+    Tests().Test_FileWriteLines();
+
     //Tests().Test_ResourceBytes();
     //Tests().Test_ResourceLines();
 
-    Tests().Test_FileWriteBytes();
+    //Tests().Test_FileWriteBytes();
 
     //Tests().Test_ParentChildTransforms();
 
@@ -124,9 +126,9 @@ int main(int argc, char **argv) {
         std::error_code ec;
         fs::create_directories("logs", ec);
 
-        if (auto log = VUtils::Resource::ReadFileBytes(LOGFILE_NAME)) {
+        if (auto log = VUtils::Resource::ReadFile(LOGFILE_NAME)) {
             if (auto compress = VUtils::CompressGz(*log))
-                VUtils::Resource::WriteFileBytes(
+                VUtils::Resource::WriteFile(
                     fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + LOGFILE_NAME + ".gz"), 
                     *compress);
         }

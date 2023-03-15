@@ -191,7 +191,20 @@ private:
         return true;
     }
 
+    // this is pretty fast,
+    //  only slower by the c method by only 5%
+    //  and this is tons safer and more modern than the c method...
+    //  I might settle on this
     bool Test_WriteFileBytes2(const fs::path& path, const BYTE_t* buf, int size) {
+        std::ofstream file(path, std::ios::binary);
+
+        if (!file)
+            return false;
+
+        file.write(reinterpret_cast<const char*>(buf), size);
+    }
+
+    bool Test_WriteFileBytes3(const fs::path& path, const BYTE_t* buf, int size) {
         FILE* file = fopen(path.string().c_str(), "wb");
 
         if (!file)
@@ -208,6 +221,89 @@ private:
 
         return true;
     }
+
+
+
+
+    template<typename Iterable> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string>)
+        bool Test_WriteFileLines0(const fs::path& path, const Iterable& in)
+    {
+        std::ofstream file(path, std::ios::binary);
+
+        if (!file)
+            return false;
+
+        for (auto&& str : in) {
+            //file << str << "\n";
+            file.write(str.c_str(), str.size());
+            file.write("\n", 1);
+        }
+
+        file.close();
+
+        return true;
+    }
+
+    template<typename Iterable> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string>)
+        bool Test_WriteFileLines1(const fs::path& path, const Iterable& in) 
+    {
+        std::ofstream file(path, std::ios::binary);
+
+        if (!file)
+            return false;
+
+        for (auto&& str : in) {
+            file << str << "\n";
+        }
+
+        file.close();
+
+        return true;
+    }
+
+    template<typename Iterable> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string>)
+        bool Test_WriteFileLines2(const fs::path& path, const Iterable& in) 
+    {
+        FILE* file = fopen(path.string().c_str(), "wb");
+
+        if (!file) return false;
+
+        for (auto&& s : in) {
+            fwrite(s.data(), 1, s.size(), file);
+            fwrite("\n", 1, sizeof("\n"), file);
+        }
+
+        fclose(file);
+
+        return true;
+    }
+
+    template<typename Iterable> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string>)
+        bool Test_WriteFileLines3(const fs::path& path, const Iterable& in)
+    {
+        FILE* file = fopen(path.string().c_str(), "wb");
+
+        if (!file) return false;
+
+        for (auto&& s : in) {
+            std::string val = s + "\n";
+            fwrite(val.data(), 1, val.size(), file);
+        }
+
+        fclose(file);
+
+        return true;
+    }
+
+
 
 
 public:
@@ -389,9 +485,86 @@ public:
             auto now(std::chrono::steady_clock::now());
             LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
+
+        {
+            LOG(INFO) << "Starting FileWriteBytes3...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileBytes3("writelargefile.txt",
+                    reinterpret_cast<BYTE_t*>(val.data()), val.size());
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
     }
 
+    void Test_FileWriteLines() {
+        static constexpr int TRIALS = 2000;
 
+        LOG(INFO) << "Generating random file data...";
+        std::list<std::string> val;
+        for (int i = 0; i < 1000; i++) {
+            val.push_back(VUtils::Random::GenerateAlphaNum(300 + (i%100)));
+        }
+
+        LOG(INFO) << "Starting trials in 3s";
+        std::this_thread::sleep_for(3s);
+
+        {
+            LOG(INFO) << "Starting FileWriteLines0...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileLines0("writefilelines.txt", val);
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "FileWriteLines0: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting FileWriteLines1...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileLines1("writefilelines.txt", val);
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "FileWriteLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting FileWriteLines2...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileLines2("writefilelines.txt", val);
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "FileWriteLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+
+        {
+            LOG(INFO) << "Starting FileWriteLines3...";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_WriteFileLines3("writefilelines.txt", val);
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "FileWriteLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
+    }
 
 
 
@@ -876,7 +1049,7 @@ public:
 
         // Valheim-sourced Load tests
         {
-            auto opt = VUtils::Resource::ReadFileBytes("zdo.sav");
+            auto opt = VUtils::Resource::ReadFile("zdo.sav");
             assert(opt);
 
             ZDO zdo;
