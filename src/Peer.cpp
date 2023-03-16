@@ -144,13 +144,16 @@ void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO& zdo) {
-    if (zdo.Owner() == m_uuid)
+void Peer::ZDOSectorInvalidated(const ZDOPair& pair) {
+    auto&& id = pair.first;
+    auto&& zdo = pair.second.get();
+
+    if (zdo.IsOwner(this->m_uuid))
         return;
 
     if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {
-        if (m_zdos.erase(zdo.ID())) {
-            m_invalidSector.insert(zdo.ID());
+        if (m_zdos.erase(id)) {
+            m_invalidSector.insert(id);
         }
     }
 }
@@ -159,8 +162,12 @@ void Peer::ForceSendZDO(const ZDOID &id) {
     m_forceSend.insert(id);
 }
 
-bool Peer::IsOutdatedZDO(ZDO& zdo) {
-    auto &&find = m_zdos.find(zdo.ID());
+bool Peer::IsOutdatedZDO(const ZDOPair& pair) {
+
+    auto&& id = pair.first;
+    auto&& zdo = pair.second.get();
+
+    auto &&find = m_zdos.find(id);
 
     return find == m_zdos.end()
         || zdo.m_rev.m_ownerRev > find->second.m_ownerRev

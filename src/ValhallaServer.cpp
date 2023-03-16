@@ -238,6 +238,9 @@ void IValhalla::Start() {
     m_nowUpdate = steady_clock::now();
 
     signal(SIGINT, [](int) {
+        // TODO rename kernal thread
+        el::Helpers::setThreadName("kernal");
+
         LOG(WARNING) << "Interrupt caught, stopping server";
         Valhalla()->Stop();
     });

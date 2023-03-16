@@ -251,27 +251,28 @@ std::pair<ZDO&, bool> IZDOManager::GetOrCreateZDO(const ZDOID& id, const Vector3
 void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 	auto&& zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
-	std::list<std::reference_wrapper<ZDO>> m_tempNearObjects;
+	std::list<ZDOPair> m_tempNearObjects;
 	GetZDOs_Zone(zone, m_tempNearObjects); // get zdos: zone, nearby
 	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
-	for (auto&& zdo : m_tempNearObjects) {
-		if (zdo.get().m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)) {
-			if (zdo.get().Owner() == peer.m_uuid) {
+	for (auto&& ref : m_tempNearObjects) {
+		auto&& zdo = ref.second.get();
+		if (zdo.m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)) {
+			if (zdo.IsOwner(peer.m_uuid)) {
 				
 				// If owner-peer no longer in area, make it unclaimed
-				if (!ZoneManager()->ZonesOverlap(zdo.get().Sector(), zone)) {
-					zdo.get().Disown();
+				if (!ZoneManager()->ZonesOverlap(zdo.Sector(), zone)) {
+					zdo.Disown();
 				}
 			}
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
 				// TODO remove HasOwner check
-				if (!(zdo.get().HasOwner() && ZoneManager()->IsPeerNearby(zdo.get().Sector(), zdo.get().m_owner))
-					&& ZoneManager()->ZonesOverlap(zdo.get().Sector(), zone)) {
+				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.Sector(), zdo.m_owner))
+					&& ZoneManager()->ZonesOverlap(zdo.Sector(), zone)) {
 					
-					zdo.get().SetOwner(peer.m_uuid);
+					zdo.SetOwner(peer.m_uuid);
 				}
 			}
 		}
@@ -308,11 +309,12 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				std::sqrt(minSqDist) * 0.5f - 2.f);
 
 			// Basically reassign zdos from another owner to me instead
-			for (auto&& zdo : zdos) {
-				if (zdo.get().m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)
-					&& zdo.get().m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
+			for (auto&& ref : zdos) {
+				auto&& zdo = ref.second.get();
+				if (zdo.m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)
+					&& zdo.m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
-					zdo.get().SetOwner(peer.m_uuid);
+					zdo.SetOwner(peer.m_uuid);
 				}
 			}
 		}
@@ -355,7 +357,7 @@ void IZDOManager::SendAllZDOs(Peer& peer) {
 	while (SendZDOs(peer, true));
 }
 
-void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out, std::list<std::reference_wrapper<ZDO>>& outDistant) {
+void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<ZDOPair>& out, std::list<ZDOPair>& outDistant) {
 	// Add ZDOs from immediate sector
 	GetZDOs_Zone(zone, out);
 
@@ -366,7 +368,7 @@ void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<std::referen
 	GetZDOs_DistantZones(zone, outDistant);
 }
 
-void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<std::reference_wrapper<ZDO>>& sectorObjects) {
+void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<ZDOPair>& sectorObjects) {
 	for (auto z = zone.y - IZoneManager::NEAR_ACTIVE_AREA; z <= zone.y + IZoneManager::NEAR_ACTIVE_AREA; z++) {
 		for (auto x = zone.x - IZoneManager::NEAR_ACTIVE_AREA; x <= zone.x + IZoneManager::NEAR_ACTIVE_AREA; x++) {
 			auto current = ZoneID(x, z);
@@ -379,7 +381,7 @@ void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<std::refer
 	}
 }
 
-void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out) {
+void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<ZDOPair>& out) {
 	for (auto r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
 		r <= IZoneManager::NEAR_ACTIVE_AREA + IZoneManager::DISTANT_ACTIVE_AREA; 
 		r++) {
@@ -394,50 +396,50 @@ void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<std::refere
 	}
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
+std::list<ZDOPair> IZDOManager::CreateSyncList(Peer& peer) {
 	auto zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	// Gather all updated ZDO's
-	std::list<std::reference_wrapper<ZDO>> zoneZDOs;
-	std::list<std::reference_wrapper<ZDO>> distantZDOs;
+	std::list<ZDOPair> zoneZDOs;
+	std::list<ZDOPair> distantZDOs;
 	GetZDOs_ActiveZones(zone, zoneZDOs, distantZDOs);
 
-	std::list<std::reference_wrapper<ZDO>> result;
+	std::list<ZDOPair> result;
 
 	// Prepare client-side outdated ZDO's
-	for (auto&& zdo : zoneZDOs) {
-		if (peer.IsOutdatedZDO(zdo)) {
-			result.push_back(zdo);
+	for (auto&& ref : zoneZDOs) {
+		if (peer.IsOutdatedZDO(ref)) {
+			result.push_back(ref);
 		}
 	}
 
 	// Prioritize ZDO's	
 	auto time(Valhalla()->Time());
-	result.sort([&](const std::reference_wrapper<ZDO>& first, const std::reference_wrapper<ZDO>& second) {
+	result.sort([&](const ZDOPair& first, const ZDOPair& second) {
 
 		// Sort in rough order of:
 		//	flag -> type/priority -> distance ASC -> age ASC
 
 		// https://www.reddit.com/r/valheim/comments/mga1iw/understanding_the_new_networking_mechanisms_from/
 
-		auto&& a = first.get();
-		auto&& b = second.get();
+		auto&& a = first.second.get();
+		auto&& b = second.second.get();
 
-		bool flag = a.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && a.HasOwner() && a.Owner() != peer.m_uuid;
-		bool flag2 = b.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b.HasOwner() && b.Owner() != peer.m_uuid;
+		bool flag = a.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && a.HasOwner() && !a.IsOwner(peer.m_uuid);
+		bool flag2 = b.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetPrefab()->m_type == b.GetPrefab()->m_type) {
 				float sub1 = 150;
 				{
-					auto&& find = peer.m_zdos.find(a.m_id);
+					auto&& find = peer.m_zdos.find(first.first);
 					if (find != peer.m_zdos.end())
 						sub1 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
 				}
 
 				float sub2 = 150;
 				{
-					auto&& find = peer.m_zdos.find(b.m_id);
+					auto&& find = peer.m_zdos.find(second.first);
 					if (find != peer.m_zdos.end())
 						sub2 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
 				}
@@ -473,9 +475,10 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 	// Add forcible send ZDOs
 	for (auto&& itr = peer.m_forceSend.begin(); itr != peer.m_forceSend.end();) {
 		auto&& zdoid = *itr;
-		auto zdo = GetZDO(zdoid);
-		if (zdo && peer.IsOutdatedZDO(*zdo)) {
-			result.push_front(*zdo);
+		auto&& zdo = GetZDO(zdoid);
+		ZDOPair pair{ zdoid, *zdo };
+		if (zdo && peer.IsOutdatedZDO(pair)) {
+			result.push_front(pair);
 			++itr;
 		}
 		else {
@@ -486,7 +489,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 	return result;
 }
 
-void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects) {
+void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<ZDOPair>& objects) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& obj = m_objectsBySector[num];
@@ -494,13 +497,14 @@ void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<std::reference_wr
 	}
 }
 
-void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects) {
+void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<ZDOPair>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
-
-		for (auto&& zdo : list) {
-			if (zdo->GetPrefab()->FlagsPresent(Prefab::Flag::Distant))
+		
+		for (auto&& zdoid : list) {
+			auto&& zdo = GetZDO(zdoid);
+			if (zdo && zdo->GetPrefab()->FlagsPresent(Prefab::Flag::Distant))
 				objects.push_back(*zdo);
 		}
 	}
@@ -766,7 +770,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				if (created) {
 					AddToSector(zdo);
 					if (m_deadZDOs.contains(zdoid)) {
-						DestroyZDO(zdo);
+						DestroyZDO(zdoid, zdo);
 					}
 					else {
 						m_objectsByPrefab[zdo.GetPrefab()->m_hash].insert(&zdo);
@@ -798,16 +802,16 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid)))
 		{
 			LOG(INFO) << "Destroying zdo (" << (zdo.m_prefab ? zdo.m_prefab->m_name : "???") << ")";
-			DestroyZDO(zdo);
+			DestroyZDO(pair.first, zdo);
 		}
 	}
 }
 
-void IZDOManager::DestroyZDO(ZDO& zdo, bool immediate) {
+void IZDOManager::DestroyZDO(const ZDOID& zdoid, ZDO& zdo, bool immediate) {
 	zdo.SetLocal();
-	m_destroySendList.push_back(zdo.m_id);
+	m_destroySendList.push_back(zdoid);
 	if (immediate)
-		EraseZDO(zdo.m_id);
+		EraseZDO(zdoid);
 }
 
 size_t IZDOManager::GetSumZDOMembers() {

@@ -357,7 +357,7 @@ private:    Ordinal m_ordinalMask = 0;
 private:    Vector3 m_pos;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-private:     ZDOID m_id;
+//private:     ZDOID m_id;
 
 
 private:
@@ -432,8 +432,8 @@ public:
     ZDO() = default;
 
     // ZDOManager constructor
-    ZDO(const ZDOID& id, const Vector3& pos)
-        : m_id(id), m_pos(pos) 
+    ZDO(const Vector3& pos)
+        : m_pos(pos) 
     {
         m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
     }
@@ -570,9 +570,9 @@ public:
     //  ie. ignore Prefab restrictions...
     //  prefab checking...
 
-    ZDOID ID() const {
-        return m_id;
-    }
+    //ZDOID ID() const {
+    //    return m_id;
+    //}
 
     Vector3 Position() const {
         return m_pos;
@@ -636,12 +636,6 @@ public:
         return false;
     }
 
-    bool Valid() const {
-        if (m_id)
-            return true;
-        return false;
-    }
-
 
 
     size_t GetTotalAlloc() {
@@ -656,3 +650,5 @@ public:
     // Load ZDO from network packet
     void Deserialize(DataReader& pkg);
 };
+
+using ZDOPair = std::pair<ZDOID, std::reference_wrapper<ZDO>>;
