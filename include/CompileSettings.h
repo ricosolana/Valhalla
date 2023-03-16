@@ -4,7 +4,7 @@
 
 using namespace std::chrono_literals;
 
-#define RUN_TESTS
+//#define RUN_TESTS
 
 #define SERVER_VERSION "v1.0.3"
 

@@ -7,7 +7,7 @@
 
 namespace VUtils::Resource {
 
-    bool WriteFile(const fs::path& path, const BYTE_t* buf, int size) {
+    bool WriteFile(const fs::path& path, const BYTE_t* buf, size_t size) {
         //ScopedFile file = fopen(path.string().c_str(), "wb");
         //
         //if (!file) return false;
@@ -25,6 +25,8 @@ namespace VUtils::Resource {
             return false;
 
         file.write(reinterpret_cast<const char*>(buf), size);
+
+        return true;
     }
 
     bool WriteFile(const fs::path& path, const BYTES_t& vec) {

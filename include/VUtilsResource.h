@@ -7,6 +7,7 @@
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
+#include "VUtilsString.h"
 
 namespace VUtils::Resource {
 
@@ -32,9 +33,11 @@ namespace VUtils::Resource {
     };*/
 
 
-
-    template<typename T = BYTES_t>
-    std::optional<T> ReadFile(const fs::path& path) {
+    // Read a file into a buffer object
+    //  Buffer can be a byte vector, string, or 
+    //  other (preferably) contiguous data structure
+    template<typename Buffer = BYTES_t>
+    std::optional<Buffer> ReadFile(const fs::path& path) {
        //ScopedFile file(fopen(path.string().c_str(), "rb"));
        //
        //if (!file) return std::nullopt;
@@ -68,28 +71,34 @@ namespace VUtils::Resource {
         fileSize = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        T result {};
+        Buffer result {};
         result.resize(fileSize);
-        file.read(reinterpret_cast<std::ifstream::char_type*>(&result.front()),
+        file.read(reinterpret_cast<std::ifstream::char_type*>(result.data()),
             fileSize);
 
         return result;
     }
 
-    // TODO readlines methods are both similar to each other
-    //  try to condense them together into 1 single  method, somehow or another
+
+
+    // Read a file into separate lines
+    //  Iterable can be any container type consisting of any buffer object
     template<typename Iterable = std::vector<std::string>> requires
         (VUtils::Traits::is_iterable_v<Iterable>
-            && std::is_same_v<typename Iterable::value_type, std::string>)
-        std::optional<Iterable> ReadFileLines(const fs::path& path, bool includeBlanks = false) {
+            && !std::is_same_v<typename Iterable::value_type, std::string_view>)
+        std::optional<Iterable> ReadFileLines(const fs::path& path, bool includeBlanks = false) 
+    {
         auto opt = ReadFile<std::string>(path);
         if (!opt)
             return std::nullopt;
+        
+        return VUtils::String::template Split<Iterable>(opt.value(), '\n', includeBlanks);
 
+        /*
         auto size = opt.value().size();
         auto data = opt.value().data();
 
-        Iterable lines;
+        Iterable lines{};
 
         int lineIdx = -1;
         int lineSize = 0;
@@ -109,22 +118,30 @@ namespace VUtils::Resource {
             lines.insert(lines.end(), Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
         }
 
-        return lines;
+        return lines;*/
     }
 
+    // Read a file into separate lines
+    //  Iterable can be any container type consisting of any buffer object
+    //  This method is the most preferred over the Iterable<string> method
     template<typename Iterable = std::vector<std::string_view>> requires
-        (VUtils::Traits::is_iterable_v<Iterable>
-            && std::is_same_v<typename Iterable::value_type, std::string_view>)
+        (VUtils::Traits::is_iterable_v<Iterable>)
     std::optional<Iterable> ReadFileLines(const fs::path& path, std::string& out, bool includeBlanks = false) {
-        auto opt = ReadFile<std::string>(path);
-        if (!opt)
-            return std::nullopt;
-        
-        out = std::move(opt.value());
+        {
+            auto opt = ReadFile<std::string>(path);
+            if (!opt)
+                return std::nullopt;
+
+            out = std::move(opt.value());
+        }
+
+        return VUtils::String::template Split<Iterable>(out, '\n', includeBlanks);
+
+        /*
         auto size = out.size();
         auto data = out.data();
 
-        Iterable lines;
+        Iterable lines{};
 
         int lineIdx = -1;
         int lineSize = 0;
@@ -144,12 +161,12 @@ namespace VUtils::Resource {
             lines.push_back(Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
         }
 
-        return lines;
+        return lines;*/
     }
 
 
         
-    bool WriteFile(const fs::path& path, const BYTE_t* buf, int size);
+    bool WriteFile(const fs::path& path, const BYTE_t* buf, size_t size);
     bool WriteFile(const fs::path& path, const BYTES_t& buffer);
     bool WriteFile(const fs::path& path, const std::string& str);
 

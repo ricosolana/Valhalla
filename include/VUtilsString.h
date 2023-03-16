@@ -49,6 +49,36 @@ namespace VUtils::String {
 
     std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
 
+    template<typename Iterable = std::vector<std::string_view>>
+        requires VUtils::Traits::is_iterable_v<Iterable> 
+    Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
+    {
+        auto size = s.size();
+        auto data = s.data();
+
+        Iterable split{};
+
+        int lineIdx = -1;
+        int lineSize = 0;
+        for (int i = 0; i < size; i++) {
+            lineSize = i - lineIdx - 1;
+
+            if (data[i] == delim) {
+                if (lineSize || includeBlanks) {
+                    split.insert(split.end(), Iterable::value_type(data + lineIdx + 1, lineSize));
+                }
+                lineIdx = i;
+            }
+        }
+
+        // this includes last line ONLY if it is not blank (has at least 1 character)
+        if (lineIdx < size - 1) {
+            split.insert(split.end(), Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
+        }
+
+        return split;
+    }
+
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns whether any modification was done
