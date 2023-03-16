@@ -926,16 +926,16 @@ void IModManager::LoadAPI() {
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
             
-            // TODO use static_casts to resolve templates
+            resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<BYTES_t>(const fs::path&)>(VUtils::Resource::ReadFile);
+            resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
+            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
             
-            assert(false);
-
-            //resourceUtilsTable["ReadFileBytes"] = VUtils::Resource::ReadFileBytes;
-            //resourceUtilsTable["ReadFileString"] = VUtils::Resource::ReadFileString;
-            //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&)>(VUtils::Resource::ReadFileLines);
-            //resourceUtilsTable["WriteFileBytes"] = sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFileBytes);
-            //resourceUtilsTable["WriteFileString"] = VUtils::Resource::WriteFileString;
-            //resourceUtilsTable["WriteFileLines"] = sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFileLines);
+            resourceUtilsTable["WriteFile"] = sol::overload(
+                sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFile),
+                sol::resolve<bool(const fs::path&, const std::string&)>(VUtils::Resource::WriteFile),
+                sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFile),
+                sol::resolve<bool(const fs::path&, const std::list<std::string>&)>(VUtils::Resource::WriteFile)
+            );
         }
     }
 }

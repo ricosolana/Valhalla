@@ -162,21 +162,21 @@ void IValhalla::LoadFiles() {
         VUtils::Resource::WriteFile("server.yml", out.c_str());
     }
 
-    if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_blacklist)>("blacklist.txt")) {
+    if (auto opt = VUtils::Resource::ReadFile<decltype(m_blacklist)>("blacklist.txt")) {
         m_blacklist = *opt;
     }
 
     if (m_settings.playerWhitelist)
-        if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_whitelist)>("whitelist.txt")) {
+        if (auto opt = VUtils::Resource::ReadFile<decltype(m_whitelist)>("whitelist.txt")) {
             m_whitelist = *opt;
         }
 
-    if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_admin)>("admin.txt")) {
+    if (auto opt = VUtils::Resource::ReadFile<decltype(m_admin)>("admin.txt")) {
         m_admin = *opt;
     }
 
     if (m_settings.playerAutoPassword)
-        if (auto opt = VUtils::Resource::ReadFileLines<decltype(m_bypass)>("bypass.txt")) {
+        if (auto opt = VUtils::Resource::ReadFile<decltype(m_bypass)>("bypass.txt")) {
             m_bypass = *opt;
         }
 
@@ -295,10 +295,10 @@ void IValhalla::Start() {
 
     WorldManager()->WriteFileWorldDB(true);
 
-    VUtils::Resource::WriteFileLines("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFileLines("whitelist.txt", m_whitelist);
-    VUtils::Resource::WriteFileLines("admin.txt", m_admin);
-    VUtils::Resource::WriteFileLines("bypass.txt", m_bypass);
+    VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
+    VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
+    VUtils::Resource::WriteFile("admin.txt", m_admin);
+    VUtils::Resource::WriteFile("bypass.txt", m_bypass);
 }
 
 

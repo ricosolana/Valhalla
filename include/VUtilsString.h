@@ -50,7 +50,7 @@ namespace VUtils::String {
     std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
 
     template<typename Iterable = std::vector<std::string_view>>
-        requires VUtils::Traits::is_iterable_v<Iterable> 
+        requires (VUtils::Traits::is_iterable_v<Iterable>)
     Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
     {
         auto size = s.size();

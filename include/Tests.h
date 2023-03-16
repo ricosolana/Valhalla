@@ -1061,7 +1061,7 @@ public:
     }
 
     void Test_QuaternionLook() {
-        auto opt = VUtils::Resource::ReadFileLines("lookrotation_values.txt");
+        auto opt = VUtils::Resource::ReadFile<std::vector<std::string>>("lookrotation_values.txt");
 
         assert(opt && "file not found");
 
@@ -1102,7 +1102,7 @@ public:
     }
 
     void Test_QuaternionEuler() {
-        auto opt = VUtils::Resource::ReadFileLines("euler_values.txt");
+        auto opt = VUtils::Resource::ReadFile<std::vector<std::string>>("euler_values.txt");
 
         assert(opt && "file not found");
 
@@ -1211,7 +1211,7 @@ public:
 
         // Valheim-sourced Load tests
         {
-            auto opt = VUtils::Resource::ReadFile("zdo.sav");
+            auto opt = VUtils::Resource::ReadFile<BYTES_t>("zdo.sav");
             assert(opt);
 
             ZDO zdo;
@@ -1308,10 +1308,10 @@ public:
         std::vector<std::string> linesToWrite;
         int itr = rand();
         for (int i = 0; i < itr; ++i) linesToWrite.push_back(VUtils::Random::GenerateAlphaNum((rand() % 10) + 10));
-        VUtils::Resource::WriteFileLines("test_write_lines.txt", linesToWrite);
+        VUtils::Resource::WriteFile("test_write_lines.txt", linesToWrite);
 
         // now read file
-        auto opt = VUtils::Resource::ReadFileLines("test_write_lines.txt");
+        auto opt = VUtils::Resource::ReadFile<std::vector<std::string>>("test_write_lines.txt");
         assert(opt && "file not found");
         assert(opt.value() == linesToWrite);
     }
@@ -1320,7 +1320,7 @@ public:
         // The plan is to read in the Unity random file with many values, then compare against it
 
         // read in integers separated by a \n
-        auto opt = VUtils::Resource::ReadFileLines("random_values.txt");
+        auto opt = VUtils::Resource::ReadFile<std::vector<std::string>>("random_values.txt");
 
         assert(opt && "file not found");
 
@@ -1341,7 +1341,7 @@ public:
 
 
 
-        auto opt = VUtils::Resource::ReadFileLines("perlin_values.txt");
+        auto opt = VUtils::Resource::ReadFile<std::vector<std::string>>("perlin_values.txt");
 
         assert(opt && "file not found");
 

@@ -8,6 +8,7 @@
 #include "Prefab.h"
 #include "ZoneManager.h"
 #include "NetManager.h"
+#include "VUtilsResource.h"
 
 std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     return {
@@ -66,6 +67,10 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
         pkg.Read<char16_t>();
     }
+
+    //sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFile);
+
+    //auto fn = static_cast<std::optional<BYTES_t>()(const fs::path&)>(VUtils::Resource::ReadFile);
     
     if (worldVersion >= 17)
         this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());

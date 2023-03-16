@@ -19,7 +19,7 @@ const Prefab* IPrefabManager::GetPrefab(HASH_t hash) {
 void IPrefabManager::Init() {
     LOG(INFO) << "Initializing PrefabManager";
 
-    auto opt = VUtils::Resource::ReadFile("prefabs.pkg");
+    auto opt = VUtils::Resource::ReadFile<BYTES_t>("prefabs.pkg");
 
     if (!opt) {
         throw std::runtime_error("prefabs.pkg missing");

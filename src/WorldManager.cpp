@@ -104,7 +104,7 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
 	// load world from file
 
-	auto opt = VUtils::Resource::ReadFile(GetWorldMetaPath(name));
+	auto opt = VUtils::Resource::ReadFile<BYTES_t>(GetWorldMetaPath(name));
 
 	std::unique_ptr<World> world;
 
@@ -141,7 +141,7 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 	LOG(INFO) << "Loading world '" << name << "'";
 	auto dbpath = GetWorldDBPath(name);
 
-	auto&& opt = VUtils::Resource::ReadFile(dbpath);
+	auto&& opt = VUtils::Resource::ReadFile<BYTES_t>(dbpath);
 
 	auto now(steady_clock::now());
 
@@ -202,7 +202,7 @@ void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 	auto path = GetWorldDBPath(name);
 
 	if (fs::exists(path)) {
-		if (auto oldSave = VUtils::Resource::ReadFile(path)) {
+		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
 			auto compressed = VUtils::CompressGz(*oldSave);
 			if (!compressed) {
 				LOG(ERROR) << "Failed to compress world backup " << path;
@@ -266,7 +266,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 
 			// backup the old file
 			if (fs::exists(path)) {
-				if (auto oldSave = VUtils::Resource::ReadFile(path)) {
+				if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
 					auto compressed = VUtils::CompressGz(*oldSave);
 					if (!compressed) {
 						LOG(WARNING) << "Failed to compress world backup " << path;

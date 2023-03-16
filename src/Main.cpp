@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         std::error_code ec;
         fs::create_directories("logs", ec);
 
-        if (auto log = VUtils::Resource::ReadFile(LOGFILE_NAME)) {
+        if (auto log = VUtils::Resource::ReadFile<BYTES_t>(LOGFILE_NAME)) {
             if (auto compress = VUtils::CompressGz(*log))
                 VUtils::Resource::WriteFile(
                     fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + LOGFILE_NAME + ".gz"), 

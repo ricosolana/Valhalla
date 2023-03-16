@@ -16,7 +16,7 @@ IDungeonManager* DungeonManager() {
 
 void IDungeonManager::Init() {
     // load dungeons:
-    auto opt = VUtils::Resource::ReadFile("dungeons.pkg");
+    auto opt = VUtils::Resource::ReadFile<BYTES_t>("dungeons.pkg");
     if (!opt)
         throw std::runtime_error("dungeons.pkg missing");
 

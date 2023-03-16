@@ -25,11 +25,11 @@ void IZoneManager::Init() {
 
     {
         // load ZoneLocations:
-        auto opt = VUtils::Resource::ReadFile("zoneLocations.pkg");
+        auto opt = VUtils::Resource::ReadFile<BYTES_t>("zoneLocations.pkg");
         if (!opt)
             throw std::runtime_error("zoneLocations.pkg missing");
 
-        DataReader pkg(opt.value());
+        DataReader pkg(*opt);
 
         pkg.Read<std::string>(); // date
         std::string ver = pkg.Read<std::string>();
@@ -99,11 +99,11 @@ void IZoneManager::Init() {
 
     {
         // load Foliage:
-        auto opt = VUtils::Resource::ReadFile("vegetation.pkg");
+        auto opt = VUtils::Resource::ReadFile<BYTES_t>("vegetation.pkg");
         if (!opt)
             throw std::runtime_error("vegetation.pkg missing");
 
-        DataReader pkg(opt.value());
+        DataReader pkg(*opt);
 
         pkg.Read<std::string>(); // date
         std::string ver = pkg.Read<std::string>();
@@ -219,7 +219,7 @@ bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone)
 
 bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
     auto&& peer = NetManager()->GetPeer(uid);
-    assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
+    //assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer) return ZonesOverlap(zone, peer->m_pos);
     return false;
 }
