@@ -90,8 +90,27 @@ private:
         
         fread_s(vec.data(), vec.size(), 1, fileSize, file);
 
+        fclose(file);
+
         return vec;
     }
+
+    std::optional<std::string> Test_ResourceBytes5(const fs::path& path) {
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file)
+            return std::nullopt;
+
+        file.unsetf(std::ios::skipws);
+//        file.unsetf(std::ios::l)
+
+        std::string result;
+
+        file >> result;
+
+        return result;
+    }
+
 
 
 
@@ -168,6 +187,120 @@ private:
         // this includes last line ONLY if it is not blank (has at least 1 character)
         if (lineIdx < size - 1) {
             lines.push_back(std::string_view(data + lineIdx + 1, size - lineIdx - 1));
+        }
+
+        return lines;
+    }
+
+
+
+    template<typename T = BYTES_t>
+    std::optional<T> ReadFile(const fs::path& path) {
+        //ScopedFile file(fopen(path.string().c_str(), "rb"));
+        //
+        //if (!file) return std::nullopt;
+        //
+        //if (!fseek(file, 0, SEEK_END)) return std::nullopt;
+        //
+        //auto size = ftell(file);
+        //if (size == -1) return std::nullopt;
+        //
+        //if (!fseek(file, 0, SEEK_SET)) return std::nullopt;
+        //
+        //T result{};
+        //
+        //// somehow avoid the zero-initialization
+        //result.resize(size);
+        //
+        //fread(result.data(), 1, size, file);
+        //
+        //return result;
+
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file)
+            return std::nullopt;
+
+        file.unsetf(std::ios::skipws);
+
+        std::streampos fileSize;
+
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        T result{};
+        result.resize(fileSize);
+        file.read(reinterpret_cast<std::ifstream::char_type*>(&result.front()),
+            fileSize);
+
+        return result;
+    }
+
+    template<typename Iterable = std::vector<std::string>> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string>)
+        std::optional<Iterable> ReadFileLines(const fs::path& path, bool includeBlanks = false) {
+        auto opt = ReadFile<std::string>(path);
+        if (!opt)
+            return std::nullopt;
+
+        auto size = opt.value().size();
+        auto data = opt.value().data();
+
+        Iterable lines;
+
+        int lineIdx = -1;
+        int lineSize = 0;
+        for (int i = 0; i < size; i++) {
+            lineSize = i - lineIdx - 1;
+
+            if (data[i] == '\n') {
+                if (lineSize || includeBlanks) {
+                    lines.insert(lines.end(), Iterable::value_type(data + lineIdx + 1, lineSize));
+                }
+                lineIdx = i;
+            }
+        }
+
+        // this includes last line ONLY if it is not blank (has at least 1 character)
+        if (lineIdx < size - 1) {
+            lines.insert(lines.end(), Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
+        }
+
+        return lines;
+    }
+
+    template<typename Iterable = std::vector<std::string_view>> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && std::is_same_v<typename Iterable::value_type, std::string_view>)
+        std::optional<Iterable> ReadFileLines(const fs::path& path, std::string& out, bool includeBlanks = false) {
+        auto opt = ReadFile<std::string>(path);
+        if (!opt)
+            return std::nullopt;
+
+        out = std::move(opt.value());
+        auto size = out.size();
+        auto data = out.data();
+
+        Iterable lines;
+
+        int lineIdx = -1;
+        int lineSize = 0;
+        for (int i = 0; i < size; i++) {
+            lineSize = i - lineIdx - 1;
+
+            if (data[i] == '\n') {
+                if (lineSize || includeBlanks) {
+                    lines.push_back(Iterable::value_type(data + lineIdx + 1, lineSize));
+                }
+                lineIdx = i;
+            }
+        }
+
+        // this includes last line ONLY if it is not blank (has at least 1 character)
+        if (lineIdx < size - 1) {
+            lines.push_back(Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
         }
 
         return lines;
@@ -335,8 +468,8 @@ public:
     // maybe the fopen/fread method is best for situations where files <2GB are being opened because
     //  not many files go over that. It seems best for my use-cases, and its speedy af
 
-    void Test_ResourceBytes() {
-        static constexpr int TRIALS = 5;
+    void Test_ResourceReadBytes() {
+        static constexpr int TRIALS = 10;
 
         LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
@@ -392,12 +525,25 @@ public:
             auto now(std::chrono::steady_clock::now());
             LOG(INFO) << "Test_ResourceBytes4: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
+
+        {
+            LOG(INFO) << "Starting ResourceBytes5";
+
+            auto start(std::chrono::steady_clock::now());
+            for (int i = 0; i < TRIALS; i++) {
+                auto opt = Test_ResourceBytes5("worlds/ClanWarsS01.db");
+                if (opt)
+                    printf(""); // maybe prevents optimizizing away opt
+            }
+            auto now(std::chrono::steady_clock::now());
+            LOG(INFO) << "Test_ResourceBytes5: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        }
     }
 
 
 
     void Test_ResourceLines() {
-        static constexpr int TRIALS = 5;
+        static constexpr int TRIALS = 1;
 
         //std::string ss;
         //Test_ResourceLines3("smallfile.txt", true, ss);
@@ -408,6 +554,7 @@ public:
         LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
 
+        /*
         {
             LOG(INFO) << "Starting ResourceLines1...";
 
@@ -433,19 +580,34 @@ public:
             auto now(std::chrono::steady_clock::now());
             LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
+        */
+
+        //{
+        //    LOG(INFO) << "Starting ResourceLines3...";
+        //
+        //    auto start(std::chrono::steady_clock::now());
+        //    for (int i = 0; i < TRIALS; i++) {
+        //        std::string out;
+        //        auto opt = Test_ResourceLines3("bigfile.txt", false, out);
+        //        if (opt)
+        //            printf(""); // maybe prevents optimizizing away opt
+        //    }
+        //    auto now(std::chrono::steady_clock::now());
+        //    LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        //}
 
         {
-            LOG(INFO) << "Starting ResourceLines3...";
+            LOG(INFO) << "Starting ReadFileLines...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
                 std::string out;
-                auto opt = Test_ResourceLines3("bigfile.txt", false, out);
+                auto opt = ReadFileLines("bigfile.txt", out);
                 if (opt)
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 
@@ -453,7 +615,7 @@ public:
         static constexpr int TRIALS = 5;
 
         LOG(INFO) << "Generating random file data...";
-        auto val = VUtils::Random::GenerateAlphaNum(100000000);
+        auto val = VUtils::Random::GenerateAlphaNum(30000000);
 
         LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
@@ -469,7 +631,7 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            LOG(INFO) << "Test_WriteFileBytes1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
@@ -483,7 +645,7 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            LOG(INFO) << "Test_WriteFileBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
@@ -497,7 +659,7 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            LOG(INFO) << "Test_WriteFileBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 

@@ -68,10 +68,12 @@ int main(int argc, char **argv) {
 #ifdef RUN_TESTS
     fs::current_path("./data/tests/");
 
-    Tests().Test_FileWriteLines();
 
-    //Tests().Test_ResourceBytes();
-    //Tests().Test_ResourceLines();
+
+    //Tests().Test_FileWriteLines();
+
+    //Tests().Test_ResourceReadBytes();
+    Tests().Test_ResourceLines();
 
     //Tests().Test_FileWriteBytes();
 

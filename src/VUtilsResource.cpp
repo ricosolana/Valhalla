@@ -8,16 +8,23 @@
 namespace VUtils::Resource {
 
     bool WriteFile(const fs::path& path, const BYTE_t* buf, int size) {
-        ScopedFile file = fopen(path.string().c_str(), "wb");
+        //ScopedFile file = fopen(path.string().c_str(), "wb");
+        //
+        //if (!file) return false;
+        //
+        //auto sizeWritten = fwrite(buf, 1, size, file);
+        //if (sizeWritten != size) {
+        //    return false;
+        //}
+        //
+        //return true;
 
-        if (!file) return false;
+        std::ofstream file(path, std::ios::binary);
 
-        auto sizeWritten = fwrite(buf, 1, size, file);
-        if (sizeWritten != size) {
+        if (!file)
             return false;
-        }
 
-        return true;
+        file.write(reinterpret_cast<const char*>(buf), size);
     }
 
     bool WriteFile(const fs::path& path, const BYTES_t& vec) {
