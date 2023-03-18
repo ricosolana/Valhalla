@@ -111,6 +111,19 @@ public:
     void Uninit();
     void Update();
 
+    void recurse(sol::table table) {
+        auto&& tostring = m_state["tostring"];
+
+        for (int i = 0; i < table.size(); i++) {
+            auto&& element = table[i];
+            auto&& type = element.get_type();
+            if (type == sol::type::table)
+                recurse(element);
+            else
+                LOG(INFO) << tostring(table).get<std::string>();
+        }
+    };
+
     template <class... Args>
     auto CallEvent(HASH_t name, Args&&... params) {
         OPTICK_EVENT();
@@ -126,8 +139,15 @@ public:
                 if (!result.valid()) {
                     LOG(ERROR) << "Event error: ";
 
-                    sol::error error = result;
-                    LOG(ERROR) << error.what();
+                    auto&& tostring = m_state["tostring"];
+                    
+
+
+                    LOG(ERROR) << tostring(result).get<std::string>();
+                    recurse(result);
+
+                    //sol::error error = result;
+                    //LOG(ERROR) << error.what();
                     m_eventStatus |= EventStatus::UNSUBSCRIBE;
                 }
 
