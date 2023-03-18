@@ -159,8 +159,10 @@ void Peer::ForceSendZDO(const ZDOID &id) {
     m_forceSend.insert(id);
 }
 
-bool Peer::IsOutdatedZDO(ZDO& zdo) {
-    auto &&find = m_zdos.find(zdo.ID());
+bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
+    auto&& find = m_zdos.find(zdo.ID());
+
+    outItr = find;
 
     return find == m_zdos.end()
         || zdo.m_rev.m_ownerRev > find->second.m_ownerRev

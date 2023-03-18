@@ -237,6 +237,11 @@ void IValhalla::Start() {
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
 
+    std::atexit([]() {
+        // terminate
+        std::cout << "At exit called!";
+    });
+
     signal(SIGINT, [](int) {
         LOG(WARNING) << "Interrupt caught, stopping server";
         Valhalla()->Stop();

@@ -854,11 +854,11 @@ void IModManager::LoadAPI() {
 
     // TODO use properties for immutability
     m_state.new_usertype<Mod>("Mod",
-        "name", &Mod::m_name,
-        "version", &Mod::m_version,
-        "apiVersion", &Mod::m_apiVersion,
-        "description", &Mod::m_description,
-        "authors", &Mod::m_authors
+        "name", sol::readonly(&Mod::m_name),
+        "version", sol::readonly(&Mod::m_version),
+        "apiVersion", sol::readonly(&Mod::m_apiVersion),
+        "description", sol::readonly(&Mod::m_description),
+        "authors", sol::readonly(&Mod::m_authors)
     );
 
 
@@ -889,8 +889,9 @@ void IModManager::LoadAPI() {
         eventTable["subscribed"] = sol::property([this]() { return m_eventStatus & EventStatus::UNSUBSCRIBE != EventStatus::UNSUBSCRIBE; });
     }
 
-    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args, sol::this_environment te) {
         sol::state_view state = ts;
+        sol::environment& env = te;
 
         auto&& tostring(state["tostring"]);
 
@@ -902,8 +903,9 @@ void IModManager::LoadAPI() {
             s += tostring(arg);
         }
 
-        //LOG(INFO) << "[" << mod->m_name << "] " << s;
-        LOG(INFO) << "[mod] " << s;
+        Mod& mod = env["this"].get<sol::table>().as<Mod&>();
+
+        LOG(INFO) << "[" << mod.m_name << "] " << s;
     };
 
     {
@@ -948,6 +950,12 @@ void IModManager::LoadMod(Mod& mod) {
 
         env["_G"] = env;
         env["this"] = mod;
+
+        //sol::table meta = m_state.create_table_with();
+        //meta[sol::meta_function::new_index] = [](lua_State* L) { return luaL_error(L, "cannot reassign env table"); };
+        //meta[sol::meta_function::index] = meta;
+        //
+        //env[sol::metatable_key] = meta;
 
         {
             //auto configTable = thisTable["config"].get_or_create<sol::table>();

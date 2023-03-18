@@ -70,7 +70,7 @@ private:
 	void EraseZDO(const ZDOID& uid);
 	void SendAllZDOs(Peer& peer);
 	bool SendZDOs(Peer& peer, bool flush);
-	std::list<std::reference_wrapper<ZDO>> CreateSyncList(Peer& peer);
+	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
 
 	ZDO& AddZDO(const Vector3& position);
 	ZDO& AddZDO(const ZDOID& uid, const Vector3& position);
@@ -236,6 +236,8 @@ public:
 	float GetMeanZDOMembers();
 	float GetStDevZDOMembers();
 	size_t GetTotalZDOAlloc();
+
+	size_t GetCountEmptyZDOs();
 };
 
 // Manager class for everything related to networked object synchronization

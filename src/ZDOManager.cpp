@@ -55,7 +55,11 @@ void IZDOManager::Update() {
 
 	PERIODIC_NOW(1min, {
 		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
-		LOG(INFO) << "ZDO members (sum: " << GetSumZDOMembers() << ", mean: " << GetMeanZDOMembers() << ", stdev: " << GetStDevZDOMembers() << ")"; 
+		LOG(INFO) << "ZDO members (sum: " << GetSumZDOMembers() 
+			<< ", mean: " << GetMeanZDOMembers() 
+			<< ", stdev: " << GetStDevZDOMembers() 
+			<< ", empty: " << GetCountEmptyZDOs()
+			<< ")";
 	});
 
 	if (m_destroySendList.empty())
@@ -394,7 +398,7 @@ void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<std::refere
 	}
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
+std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSyncList(Peer& peer) {
 	auto zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	// Gather all updated ZDO's
@@ -402,48 +406,40 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 	std::list<std::reference_wrapper<ZDO>> distantZDOs;
 	GetZDOs_ActiveZones(zone, zoneZDOs, distantZDOs);
 
-	std::list<std::reference_wrapper<ZDO>> result;
+	std::list<std::pair<std::reference_wrapper<ZDO>, float>> result;
 
 	// Prepare client-side outdated ZDO's
-	for (auto&& zdo : zoneZDOs) {
-		if (peer.IsOutdatedZDO(zdo)) {
-			result.push_back(zdo);
+	const auto time(Valhalla()->Time());
+	for (auto&& ref : zoneZDOs) {
+		decltype(Peer::m_zdos)::iterator outItr;
+		if (peer.IsOutdatedZDO(ref, outItr)) {
+			auto&& zdo = ref.get();
+
+			float weight = 150;
+			if (outItr != peer.m_zdos.end())
+				weight = std::min(time - outItr->second.m_syncTime, 100.f) * 1.5f;
+
+			result.push_back({ zdo, zdo.Position().SqDistance(peer.m_pos) - weight * weight });
 		}
 	}
 
 	// Prioritize ZDO's	
-	auto time(Valhalla()->Time());
-	result.sort([&](const std::reference_wrapper<ZDO>& first, const std::reference_wrapper<ZDO>& second) {
+	result.sort([&](const std::pair<std::reference_wrapper<ZDO>, float>& first, const std::pair<std::reference_wrapper<ZDO>, float>& second) {
 
 		// Sort in rough order of:
 		//	flag -> type/priority -> distance ASC -> age ASC
 
 		// https://www.reddit.com/r/valheim/comments/mga1iw/understanding_the_new_networking_mechanisms_from/
 
-		auto&& a = first.get();
-		auto&& b = second.get();
+		auto&& a = first.first.get();
+		auto&& b = second.first.get();
 
-		bool flag = a.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && a.HasOwner() && a.Owner() != peer.m_uuid;
-		bool flag2 = b.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b.HasOwner() && b.Owner() != peer.m_uuid;
+		bool flag = a.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && a.HasOwner() && !a.IsOwner(peer.m_uuid);
+		bool flag2 = b.GetPrefab()->m_type == ZDO::ObjectType::Prioritized && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetPrefab()->m_type == b.GetPrefab()->m_type) {
-				float sub1 = 150;
-				{
-					auto&& find = peer.m_zdos.find(a.m_id);
-					if (find != peer.m_zdos.end())
-						sub1 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
-				}
-
-				float sub2 = 150;
-				{
-					auto&& find = peer.m_zdos.find(b.m_id);
-					if (find != peer.m_zdos.end())
-						sub2 = std::min(time - find->second.m_syncTime, 100.f) * 1.5f;
-				}
-
-				return a.Position().SqDistance(peer.m_pos) - sub1 * sub1 <
-					b.Position().SqDistance(peer.m_pos) - sub2 * sub2;
+				return first.second < second.second;
 			}
 			else
 				// > (shows large trees first)
@@ -465,7 +461,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 	if (result.size() < 10) {
 		for (auto&& zdo2 : distantZDOs) {
 			if (peer.IsOutdatedZDO(zdo2)) {
-				result.push_back(zdo2);
+				result.push_back({ zdo2, 0 });
 			}
 		}
 	}
@@ -475,7 +471,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::CreateSyncList(Peer& peer) {
 		auto&& zdoid = *itr;
 		auto zdo = GetZDO(zdoid);
 		if (zdo && peer.IsOutdatedZDO(*zdo)) {
-			result.push_front(*zdo);
+			result.push_front({ *zdo, 0 });
 			++itr;
 		}
 		else {
@@ -658,7 +654,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		itr != syncList.end() && writer.Length() <= availableSpace;
 		itr++) {
 
-		auto &&zdo = itr->get();
+		auto &&zdo = itr->first.get();
 
 		peer.m_forceSend.erase(zdo.ID());
 
@@ -838,4 +834,15 @@ size_t IZDOManager::GetTotalZDOAlloc() {
 	size_t bytes = m_objectsByID.size() * sizeof(ZDO);
 	for (auto&& pair : m_objectsByID) bytes += pair.second->GetTotalAlloc();
 	return bytes;
+}
+
+size_t IZDOManager::GetCountEmptyZDOs() {
+	// so gather each ZDO member, and write how many of them are empty
+	size_t count = 0;
+	for (auto&& pair : m_objectsByID) {
+		auto alloc = pair.second->GetTotalAlloc();
+		if (alloc == 0)
+			count++;
+	}
+	return count;
 }
