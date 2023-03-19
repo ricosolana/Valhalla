@@ -13,7 +13,7 @@ NetRpc::NetRpc(ISocket::Ptr socket)
         }
     );
 
-    Register(Hashes::Rpc::C2S_Handshake, [](NetRpc* rpc, BYTES_t pkg) {
+    Register(Hashes::Rpc::C2S_Handshake, [](NetRpc* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](NetRpc* rpc, BYTES_t bytes) {
             // Forward call to rpc
 
@@ -78,14 +78,18 @@ NetRpc::NetRpc(ISocket::Ptr socket)
         });
 
         if (!SERVER_SETTINGS.serverPassword.empty()) {
-            std::string salt = VUtils::Random::GenerateAlphaNum(16);
+            const auto salt = VUtils::Random::GenerateAlphaNum(16);
 
-            const auto merge = SERVER_SETTINGS.serverPassword + salt;
+            {
+                const auto merge = SERVER_SETTINGS.serverPassword + salt;
 
-            // Hash a salted password
-            rpc->m_password.resize(16);
-            MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-                merge.size(), reinterpret_cast<uint8_t*>(rpc->m_password.data()));
+                // Hash a salted password
+                rpc->m_password.resize(16);
+                MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+                    merge.size(), reinterpret_cast<uint8_t*>(rpc->m_password.data()));
+
+                VUtils::String::FormatAscii(rpc->m_password);
+            }
 
             rpc->Invoke(Hashes::Rpc::S2C_Handshake, true, salt);
         }

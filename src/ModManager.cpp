@@ -312,7 +312,7 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-        "Register", static_cast<void (Peer::*)(MethodSig, sol::function&&)>(&Peer::Register),
+        "Register", static_cast<void (Peer::*)(MethodSig, sol::function)>(&Peer::Register),
         "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("incorrect number of args");
