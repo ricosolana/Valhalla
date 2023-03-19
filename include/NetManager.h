@@ -19,15 +19,7 @@ private:
     //robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>> m_peers;
     std::list<std::unique_ptr<Peer>> m_peers;
 
-    //World* m_world;
-
-    bool m_hasPassword = false;
-    std::string m_salt;
-    std::string m_saltedPassword;
-
 private:
-    void InitPassword();
-
     // Kick a player by name
     bool Kick(std::string user);
 
@@ -42,7 +34,7 @@ private:
     void SendNetTime();
     void SendPeerInfo(Peer &peer);
 
-    void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
+    //void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
 public:
     void Init();
@@ -54,6 +46,12 @@ public:
     std::vector<Peer*> GetPeers(const std::string &addr);
 
     //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
+
+    //void OnNewPeer(std::unique_ptr<Peer> peer);
+
+    void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3 &pos);
+
+    //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3& pos);
 
     const auto& GetPeers() {
         return m_peers;

@@ -27,15 +27,13 @@ void IPrefabManager::Init() {
 
     DataReader pkg(opt.value());
 
-    pkg.Read<std::string>(); // date
+    pkg.Read<std::string>(); // comment
     std::string ver = pkg.Read<std::string>();
-    LOG(INFO) << "prefabs.pkg has game version " << ver;
     if (ver != VConstants::GAME)
-        LOG(WARNING) << "prefabs.pkg uses different game version than server";
+        LOG(WARNING) << "prefabs.pkg uses different game version than server (" << ver << ")";
 
     auto count = pkg.Read<int32_t>();
-    LOG(INFO) << "Loading " <<  count << " prefabs";
-    while (count--) {
+    for (int i=0; i < count; i++) {
         auto prefab = std::make_unique<Prefab>();
         prefab->m_name = pkg.Read<std::string>();
         prefab->m_hash = VUtils::String::GetStableHashCode(prefab->m_name);
@@ -44,6 +42,8 @@ void IPrefabManager::Init() {
         prefab->m_localScale = pkg.Read<Vector3>();
 
         prefab->m_flags = pkg.Read<Prefab::Flag>();
+
+        VLOG(1) << "'" << prefab->m_name << "', '" << prefab->m_hash << "'";
 
         //prefab->m_distant = pkg.Read<bool>();
         //prefab->m_persistent = pkg.Read<bool>();
@@ -58,6 +58,8 @@ void IPrefabManager::Init() {
             VUtils::String::GetStableHashCode(prefab->m_name),
             std::move(prefab) });
     }
+
+    LOG(INFO) << "Loaded " << count << " prefabs";
 }
 
 ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab) {

@@ -8,6 +8,7 @@
 #include "NetSocket.h"
 #include "Task.h"
 #include "DataWriter.h"
+#include "openssl/md5.h"
 
 enum class ConnectionStatus : int32_t {
     None,
@@ -32,17 +33,17 @@ private:
 
     robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<NetRpc*>>> m_methods;
 
+    std::string m_password;
+
 public:
     ISocket::Ptr m_socket;
 
     bool m_skipPassword = false;
 
 public:
-    explicit NetRpc(ISocket::Ptr socket) 
-        : m_socket(std::move(socket)), m_lastPing(steady_clock::now()) {}
+    NetRpc(ISocket::Ptr socket);
 
     NetRpc(const NetRpc& other) = delete; // copy
-    NetRpc(NetRpc&& other) = delete; // move
 
     ~NetRpc() {
         LOG(DEBUG) << "~NetRpc()";
@@ -55,7 +56,9 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash));
+        //m_methods[hash] = std::unique_ptr<IMethod<NetRpc*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash));
+        //m_methods[hash] = std::make_unique<IMethod<NetRpc*, F>>(func, EVENT_HASH_RpcIn, hash);
+        m_methods[hash] = std::make_unique<MethodImpl<NetRpc*, F>>(func, EVENT_HASH_RpcIn, hash);
     }
 
     template<typename F>
@@ -72,11 +75,10 @@ public:
     // https://stackoverflow.com/a/6361619
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
-        //assert(m_socket && m_socket->Connected());
         if (!m_socket->Connected())
             return;
 
-        static BYTES_t bytes; bytes.clear();
+        BYTES_t bytes;
         DataWriter writer(bytes);
 
         writer.Write(hash);
@@ -86,8 +88,8 @@ public:
     }
 
     template <typename... Types>
-    void Invoke(const char* name, Types... params) {
-        Invoke(VUtils::String::GetStableHashCode(name), std::move(params)...);
+    void Invoke(const char* name, const Types&... params) {
+        Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
     template <typename... Types>

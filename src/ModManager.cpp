@@ -301,9 +301,10 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
         ),
         "Disconnect", &Peer::Disconnect,
-        "InvokeSelf", sol::overload(
-            sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
-            sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
+        //"InvokeSelf", sol::overload(
+        //    sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
+        //    sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
+
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             //static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
         //"Register", [](Peer& self, const MethodSig &repr, sol::function func) {
@@ -311,7 +312,7 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-        "Register", static_cast<void (Peer::*)(MethodSig, sol::function)>(&Peer::Register),
+        "Register", static_cast<void (Peer::*)(MethodSig, sol::function&&)>(&Peer::Register),
         "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("incorrect number of args");
@@ -641,7 +642,7 @@ void IModManager::LoadAPI() {
     }
 
     //auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
-    //apiTable["ServerVersion"] = SERVER_VERSION;
+    //apiTable["ServerVersion"] = VALHALLA_SERVER_VERSION;
     //apiTable["ValheimVersion"] = VConstants::GAME;
     //apiTable["delta"] = sol::property([]() { return Valhalla()->Delta(); });
     //apiTable["id"] = sol::property([]() { return Valhalla()->ID(); });
@@ -671,7 +672,7 @@ void IModManager::LoadAPI() {
     m_state["Valhalla"] = Valhalla();
     m_state.new_usertype<IValhalla>("IValhalla",
         // server members
-        "version", sol::var(SERVER_VERSION),
+        "version", sol::var(VALHALLA_SERVER_VERSION),
         "delta", sol::property(&IValhalla::Delta),
         "id", sol::property(&IValhalla::ID),
         "nanos", sol::property(&IValhalla::Nanos),

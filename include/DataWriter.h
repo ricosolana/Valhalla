@@ -170,7 +170,7 @@ public:
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static void _Serialize(DataWriter& pkg, T var1, const Types&... var2) {
+    static void _Serialize(DataWriter& pkg, const T &var1, const Types&... var2) {
         pkg.Write(var1);
 
         _Serialize(pkg, var2...);
@@ -178,7 +178,7 @@ public:
 
     // Serialize variadic types to an array
     template <typename T, typename... Types>
-    static BYTES_t Serialize(T var1, const Types&... var2) {
+    static BYTES_t Serialize(const T &var1, const Types&... var2) {
         BYTES_t bytes; bytes.reserve((sizeof(var1) + ... + sizeof(Types)));
         DataWriter writer(bytes);
 
@@ -186,6 +186,7 @@ public:
         return bytes;
     }
 
+    // empty full template
     static BYTES_t Serialize() {
         BYTES_t bytes;
         return bytes;

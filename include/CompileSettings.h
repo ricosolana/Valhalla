@@ -6,7 +6,7 @@ using namespace std::chrono_literals;
 
 //#define RUN_TESTS
 
-#define SERVER_VERSION "v1.0.3"
+#define VALHALLA_SERVER_VERSION "v1.0.3"
 
 // Interval for RPC pinging
 // Should be inlined
@@ -19,7 +19,13 @@ using namespace std::chrono_literals;
 //#define VALHEIM_APP_ID 892970
 
 // ELPP log file name
-#define LOGFILE_NAME "log.txt"
+#define VALHALLA_LOGFILE_NAME "log.txt"
+
+// Whether to enable or disable
+//  Will explicitly enable 
+#define VALHALLA_GENERATE_FEATURES
+
+// Whether 
 
 //#define DUMMY_PLAYERNAME "Stranger"
 

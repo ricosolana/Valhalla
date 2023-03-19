@@ -149,8 +149,12 @@ private:
 	robin_hood::unordered_set<std::string> m_globalKeys;
 
 private:
-	void SendGlobalKeys(OWNER_t peer);
-	void SendLocationIcons(OWNER_t peer);
+	void SendGlobalKeys();
+	void SendGlobalKeys(Peer& peer);
+
+	void SendLocationIcons();
+	void SendLocationIcons(Peer& peer);
+
 	void OnNewPeer(Peer& peer);
 
 	void TryGenerateZones(const Vector3& pos);

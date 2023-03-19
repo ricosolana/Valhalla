@@ -158,6 +158,8 @@ void IZoneManager::Init() {
 
             m_foliage.push_back(std::move(veg));
         }
+
+        LOG(INFO) << "Loaded " << count << " vegetation";
     }
 
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
@@ -169,13 +171,13 @@ void IZoneManager::Init() {
     RouteManager()->Register(Hashes::Routed::SetGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.insert(name).second)
-            SendGlobalKeys(IRouteManager::EVERYBODY); // Notify clients
+            SendGlobalKeys(); // Notify clients
     });
 
     RouteManager()->Register(Hashes::Routed::RemoveGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.erase(name))
-            SendGlobalKeys(IRouteManager::EVERYBODY); // Notify clients
+            SendGlobalKeys(); // Notify clients
     });
 
     RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
@@ -197,8 +199,8 @@ void IZoneManager::Init() {
 
 // private
 void IZoneManager::OnNewPeer(Peer& peer) {
-    SendGlobalKeys(peer.m_uuid);
-    SendLocationIcons(peer.m_uuid);
+    SendGlobalKeys(peer);
+    SendLocationIcons(peer);
 }
 
 bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3& refPoint) {
@@ -222,14 +224,33 @@ bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
 }
 
 // private
-void IZoneManager::SendGlobalKeys(OWNER_t peer) {
-    LOG(INFO) << "Sending global keys to " << peer;
-    RouteManager()->Invoke(peer, "GlobalKeys", m_globalKeys);
+void IZoneManager::SendGlobalKeys() {
+    RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+}
+
+void IZoneManager::SendGlobalKeys(Peer& peer) {
+    RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
 // private
-void IZoneManager::SendLocationIcons(OWNER_t peer) {
-    LOG(INFO) << "Sending location icons to " << peer;
+void IZoneManager::SendLocationIcons() {
+    BYTES_t bytes;
+    DataWriter writer(bytes);
+
+    auto&& icons = GetFeatureIcons();
+
+    writer.Write<int32_t>(icons.size());
+    for (auto&& instance : icons) {
+        writer.Write(instance.get().m_pos);
+        writer.Write(instance.get().m_feature.get().m_name);
+    }
+
+    RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::S2C_UpdateIcons, bytes);
+}
+
+// private
+void IZoneManager::SendLocationIcons(Peer& peer) {
+    LOG(INFO) << "Sending location icons to " << peer.m_name;
 
     BYTES_t bytes;
     DataWriter writer(bytes);
@@ -831,8 +852,9 @@ std::vector<IZoneManager::ClearArea> IZoneManager::GenerateFeatures(const ZoneID
             RemoveUngeneratedFeatures(location);
         }
 
+        // TODO determine whether this method requires a special Peer* method
         if (location.m_iconPlaced) {
-            SendLocationIcons(IRouteManager::EVERYBODY);
+            SendLocationIcons();
         }
     }
 

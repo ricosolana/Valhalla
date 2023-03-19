@@ -135,26 +135,33 @@ public:
             this->m_eventStatus = EventStatus::DEFAULT;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
-                sol::protected_function_result result = itr->m_func(params...);
-                if (!result.valid()) {
-                    LOG(ERROR) << "Event error: ";
+                try {
+                    sol::protected_function_result result = itr->m_func(params...);
+                    if (!result.valid()) {
+                        LOG(ERROR) << "Event error: ";
 
-                    auto&& tostring = m_state["tostring"];
-                    
+                        //auto&& tostring = m_state["tostring"];
 
 
-                    LOG(ERROR) << tostring(result).get<std::string>();
-                    recurse(result);
 
-                    //sol::error error = result;
-                    //LOG(ERROR) << error.what();
+                        //LOG(ERROR) << tostring(result).get<std::string>();
+                        //recurse(result);
+
+                        sol::error error = result;
+                        LOG(ERROR) << error.what();
+                        m_eventStatus |= EventStatus::UNSUBSCRIBE;
+                    }
+                }
+                catch (const std::exception& e) {
+                    LOG(ERROR) << "Unhandled sol exception: " << e.what();
                     m_eventStatus |= EventStatus::UNSUBSCRIBE;
                 }
 
                 if ((m_eventStatus & EventStatus::UNSUBSCRIBE) == EventStatus::UNSUBSCRIBE) {
                     LOG(INFO) << "Unsubscribed event";
                     itr = callbacks.erase(itr);
-                } else {
+                }
+                else {
                     ++itr;
                 }
             }

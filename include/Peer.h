@@ -41,12 +41,15 @@ public:
     const OWNER_t m_uuid;
     const std::string m_name;
     bool m_admin = false;
-    bool m_magicLogin = false;
+    //bool m_magicLogin = false;
 
     // Constantly changing vars
     Vector3 m_pos;
     bool m_visibleOnMap = false;
     ZDOID m_characterID;
+
+    // if many bools are eventually required
+    //  then use a bitmask
 
 private:
     void Update();
@@ -67,6 +70,10 @@ public:
 
     Peer(const Peer& peer) = delete;
 
+    ~Peer() {
+        LOG(DEBUG) << "~Peer()";
+    }
+
     /**
         * @brief Register a static method for remote invocation
         * @param name function name to register
@@ -74,8 +81,9 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash)); // TODO use make_unique
+        //m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash)); // TODO use make_unique
         //m_methods[hash] = std::make_unique<MethodImpl<Peer*>>(func, EVENT_HASH_RpcIn, hash);
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, EVENT_HASH_RpcIn, hash); // TODO use make_unique
     }
 
     template<typename F>
@@ -83,20 +91,15 @@ public:
         Register(VUtils::String::GetStableHashCode(name), func);
     }
 
-    //void Register(HASH_t hash, sol::function &&func, std::vector<DataType> &&types) {
-    //    m_methods[hash] = std::make_unique<MethodImplLua<Peer*>>(
-    //        std::forward<decltype(func)>(func), std::forward<decltype(types)>(types));
-    //}
-
     void Register(MethodSig sig, sol::function func) {
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
+    // Invoke a function on the remote client
+    //  *NOT* thread safe, do not call this function on
+    //  any Peer* instance from more than 1 thread!
     template <typename... Types>
-    void Invoke(HASH_t hash, Types&&... params) {
-        // Can still fail during mid-frame Close() calls
-        //assert(m_socket && m_socket->Connected());
-
+    void Invoke(HASH_t hash, const Types&... params) {
         if (!m_socket->Connected())
             return;
 
@@ -107,37 +110,39 @@ public:
         DataWriter writer(bytes);
 
         writer.Write(hash);
-        DataWriter::_Serialize(writer, std::forward<Types>(params)...); // serialize
+        DataWriter::_Serialize(writer, params...); // serialize
 
         m_socket->Send(std::move(bytes));
     }
 
     template <typename... Types>
-    void Invoke(const char* name, Types&&... params) {
-        Invoke(VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
-    }
-
-    template <typename... Types>
-    void Invoke(std::string& name, Types&&... params) {
-        Invoke(name.c_str(), std::forward<Types>(params)...);
+    void Invoke(const std::string& name, const Types&... params) {
+        Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
 
 
-    void InvokeSelf(HASH_t hash, DataReader reader) {
-        if (auto method = GetMethod(hash))
-            method->Invoke(this, reader);
-    }
+    //bool InvokeSelf(HASH_t hash, DataReader reader) {
+    //    if (auto method = GetMethod(hash)) {
+    //        method->Invoke(this, reader);
+    //        return true;
+    //    }
+    //    return false;
+    //}
+    //
+    //bool InvokeSelf(const std::string& name, DataReader reader) {
+    //    if (auto method = GetMethod(name)) {
+    //        method->Invoke(this, reader);
+    //        return true;
+    //    }
+    //    return false;
+    //}
 
-    void InvokeSelf(const std::string& name, DataReader reader) {
-        if (auto method = GetMethod(name))
-            method->Invoke(this, reader);
-    }
-
-    IMethod<Peer*>* GetMethod(const std::string& name);
     IMethod<Peer*>* GetMethod(HASH_t hash);
 
-    //void Kick(bool now);
+    IMethod<Peer*>* GetMethod(const std::string& name) {
+        return GetMethod(VUtils::String::GetStableHashCode(name));
+    }
 
     void Kick();
 

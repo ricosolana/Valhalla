@@ -39,13 +39,13 @@ static constexpr TimeOfDay TIME_NIGHT = 1530;
 //};
 
 class IValhalla {
-    friend class ValhallaLauncher;
     friend class IModManager;
     friend class IWorldManager;
     friend class Tests;
 
 private:
-    std::atomic_bool m_running; // mostly const
+    //std::atomic_bool m_running; // mostly const
+    std::jthread m_thread;
 
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
@@ -67,6 +67,7 @@ private:
 private:
     void LoadFiles();
 
+public:
     void Start();
     void Stop();
 

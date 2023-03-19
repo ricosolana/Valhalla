@@ -35,14 +35,8 @@ void Peer::Update() {
             }
         }
         else {
-            InvokeSelf(hash, reader);
-            //if (auto method = GetMethod(hash))
-            //    method->Invoke(this, reader);
-
-            //auto&& find = m_methods.find(hash);
-            //if (find != m_methods.end()) {
-            //    find->second->Invoke(this, pkg);
-            //}
+            if (auto method = GetMethod(hash))
+                method->Invoke(this, reader);
         }
     }
 
@@ -52,15 +46,10 @@ void Peer::Update() {
     }
 }
 
-IMethod<Peer*>* Peer::GetMethod(const std::string& name) {
-    return GetMethod(VUtils::String::GetStableHashCode(name));
-}
-
 IMethod<Peer*>* Peer::GetMethod(HASH_t hash) {
     auto&& find = m_methods.find(hash);
     if (find != m_methods.end()) {
         return find->second.get();
-        //find->second->Invoke(this, pkg);
     }
     return nullptr;
 }
@@ -145,7 +134,7 @@ void Peer::MoveTo(const Vector3& pos, const Quaternion& rot) {
 
 
 void Peer::ZDOSectorInvalidated(ZDO& zdo) {
-    if (zdo.Owner() == m_uuid)
+    if (zdo.IsOwner(this->m_uuid))
         return;
 
     if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {

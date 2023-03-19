@@ -64,8 +64,8 @@ public:
 	*/
 	template<typename F>
 	void Register(HASH_t hash, F func) {
-		assert(!m_methods.contains(hash));
-		m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RouteIn, hash));
+		//m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RouteIn, hash));
+		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, EVENT_HASH_RouteIn, hash);
 	}
 
 	template<typename F>
@@ -81,16 +81,30 @@ public:
 		InvokeImpl(target, targetNetSync, hash, DataWriter::Serialize(params...));
 	}
 
-	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, const char* name, const Args&... params) {
-		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), DataWriter::Serialize(params...));
+	void InvokeView(Peer& peer, const ZDOID& targetZDO, HASH_t hash, const Args&... params) {
+		Data data;
+		data.m_sender = SERVER_ID;
+		data.m_target = peer.m_uuid;
+		data.m_targetZDO = targetZDO;
+		data.m_method = hash;
+		data.m_params = DataWriter::Serialize(params...);
+
+		static BYTES_t bytes; bytes.clear();
+		data.Serialize(DataWriter(bytes));
+
+		peer.Invoke(Hashes::Rpc::RoutedRPC, bytes);
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, std::string& name, const Args&... params) {
+	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, const std::string& name, const Args&... params) {
 		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), DataWriter::Serialize(params...));
+	}
+
+	template <typename... Args>
+	void InvokeView(Peer& peer, const ZDOID& targetZDO, const std::string& name, const Args&... params) {
+		InvokeView(peer, targetZDO, VUtils::String::GetStableHashCode(name), params...);
 	}
 
 
@@ -98,20 +112,25 @@ public:
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
 	void Invoke(OWNER_t target, HASH_t hash, const Args&... params) {
-		InvokeView(target, ZDOID(), hash, params...);
+		InvokeView(target, ZDOID::NONE, hash, params...);
+	}
+
+	template <typename... Args>
+	void Invoke(Peer& peer, HASH_t hash, const Args&... params) {
+		InvokeView(peer, ZDOID::NONE, hash, params...);
 	}
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, const char* name, const Args&... params) {
-		InvokeView(target, ZDOID(), VUtils::String::GetStableHashCode(name), params...);
+	void Invoke(OWNER_t target, const std::string& name, const Args&... params) {
+		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), params...);
 	}
 
-	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, std::string& name, const Args&... params) {
-		InvokeView(target, ZDOID(), VUtils::String::GetStableHashCode(name), params...);
+	void Invoke(Peer& peer, const std::string& name, const Args&... params) {
+		InvokeView(peer, ZDOID::NONE, VUtils::String::GetStableHashCode(name), params);
 	}
+
 
 
 
@@ -123,13 +142,7 @@ public:
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
-	void InvokeAll(const char* name, const Args&... params) {
-		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), params...);
-	}
-
-	// Invoke a routed function targeted to all peers
-	template <typename... Args>
-	void InvokeAll(std::string& name, const Args&... params) {
+	void InvokeAll(const std::string& name, const Args&... params) {
 		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), params...);
 	}
 

@@ -184,15 +184,39 @@ void IValhalla::LoadFiles() {
 }
 
 void IValhalla::Stop() {
-    m_running = false;
+    m_thread.request_stop();
+    if (m_thread.joinable())
+        m_thread.join();
+
+    //if (m_thread.get_id() != std::this_thread::get_id()
+    //    && m_thread.joinable()) {
+    //    LOG(INFO) << "Joining server thread";
+    //    m_thread.join();
+    //}
+
+    /*
+    LOG(INFO) << "Terminating server";
+
+    // Cleanup 
+    NetManager()->Uninit();
+    HeightmapBuilder()->Uninit();
+
+    ModManager()->Uninit();
+
+    WorldManager()->WriteFileWorldDB(true);
+
+    VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
+    VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
+    VUtils::Resource::WriteFile("admin.txt", m_admin);
+    VUtils::Resource::WriteFile("bypass.txt", m_bypass);
+
+    LOG(INFO) << "Server was grecefully terminated";
+    */    
 }
 
 void IValhalla::Start() {
-    LOG(INFO) << "Starting Valhalla " << SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
+    LOG(INFO) << "Starting Valhalla " << VALHALLA_SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
     
-    assert(!m_running);
-
-    m_running = false;
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
 
@@ -237,73 +261,106 @@ void IValhalla::Start() {
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
 
-    std::atexit([]() {
-        // terminate
-        std::cout << "At exit called!";
-    });
+    // exiting by pressing 'X' button does not call this
+    //std::atexit([]() {
+    //    // terminate
+    //    std::cout << "At exit called!";
+    //});
 
+#ifdef _WIN32
+    SetConsoleCtrlHandler([](DWORD dwCtrlType) {
+        // Program must close within 5000ms of receiving the CTRL_CLOSE_EVENT
+        if (dwCtrlType == CTRL_CLOSE_EVENT) {
+            el::Helpers::setThreadName("system");
+
+            LOG(INFO) << "WIN32 Close event caught";
+            Valhalla()->Stop();
+            return TRUE;
+        }
+        return FALSE;
+    }, TRUE);
+#else
     signal(SIGINT, [](int) {
-        LOG(WARNING) << "Interrupt caught, stopping server";
+        el::Helpers::setThreadName("system");
+
+        LOG(WARNING) << "Interrupt caught";
         Valhalla()->Stop();
-    });
+        });
     LOG(INFO) << "Press ctrl+c to exit";
+#endif
 
-    m_running = true;
-    while (m_running) {
-        OPTICK_FRAME("main");
+    //m_running = true;
 
-        auto now = steady_clock::now();
-        auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+    m_thread = std::jthread(
+        [&](std::stop_token token) {
+            el::Helpers::setThreadName("server");
 
-        m_prevUpdate = m_nowUpdate; // old state
-        m_nowUpdate = now; // new state
+            while (!token.stop_requested()) {
+                OPTICK_FRAME("main");
 
-        // Mutex is scoped
-        {
-            std::scoped_lock lock(m_taskMutex);
-            for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
-                auto ptr = itr->get();
-                if (ptr->at < now) {
-                    if (ptr->period == milliseconds::min()) { // if task cancelled
-                        itr = m_tasks.erase(itr);
-                    }
-                    else {
-                        ptr->function(*ptr);
-                        if (ptr->Repeats()) {
-                            ptr->at += ptr->period;
-                            ++itr;
+                auto now = steady_clock::now();
+                auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+
+                m_prevUpdate = m_nowUpdate; // old state
+                m_nowUpdate = now; // new state
+
+                // Mutex is scoped
+                {
+                    std::scoped_lock lock(m_taskMutex);
+                    for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
+                        auto ptr = itr->get();
+                        if (ptr->at < now) {
+                            if (ptr->period == milliseconds::min()) { // if task cancelled
+                                itr = m_tasks.erase(itr);
+                            }
+                            else {
+                                ptr->function(*ptr);
+                                if (ptr->Repeats()) {
+                                    ptr->at += ptr->period;
+                                    ++itr;
+                                }
+                                else
+                                    itr = m_tasks.erase(itr);
+                            }
                         }
                         else
-                            itr = m_tasks.erase(itr);
+                            ++itr;
                     }
                 }
-                else
-                    ++itr;
+
+                Update();
+
+                PERIODIC_NOW(1s, {
+                    PeriodUpdate();
+                });
+
+                // TODO adjust based on workload intensity
+                std::this_thread::sleep_for(1ms); // prevents busy looping
+                //std::this_thread::yield(); // 25% cpu usage
             }
+            
+            LOG(INFO) << "Terminating server";
+
+            // Cleanup 
+            NetManager()->Uninit();
+            HeightmapBuilder()->Uninit();
+
+            ModManager()->Uninit();
+
+            WorldManager()->WriteFileWorldDB(true);
+
+            VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
+            VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
+            VUtils::Resource::WriteFile("admin.txt", m_admin);
+            VUtils::Resource::WriteFile("bypass.txt", m_bypass);
+
+            LOG(INFO) << "Server was grecefully terminated";
         }
-        
-        Update();
+    );
 
-        PERIODIC_NOW(1s, {
-            PeriodUpdate();
-        });
-
-        // TODO adjust based on workload intensity
-        std::this_thread::sleep_for(1ms);
-    }
-
-    // Cleanup 
-    NetManager()->Uninit();
-    HeightmapBuilder()->Uninit();
-
-    ModManager()->Uninit();
-
-    WorldManager()->WriteFileWorldDB(true);
-
-    VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
-    VUtils::Resource::WriteFile("admin.txt", m_admin);
-    VUtils::Resource::WriteFile("bypass.txt", m_bypass);
+    // will block indefinetly, until server terminates
+    if (m_thread.joinable())
+        m_thread.join();
 }
 
 

@@ -21,25 +21,6 @@ INetManager* NetManager() {
     return NET_MANAGER.get();
 }
 
-// used during server start
-void INetManager::InitPassword() {
-    m_hasPassword = !Valhalla()->Settings().serverPassword.empty();
-
-    if (m_hasPassword) {
-        // better
-        m_salt = VUtils::Random::GenerateAlphaNum(16);
-
-        const auto merge = Valhalla()->Settings().serverPassword + m_salt;
-
-        // Hash a salted password
-        m_saltedPassword.resize(16);
-        MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-            merge.size(), reinterpret_cast<uint8_t*>(m_saltedPassword.data()));
-
-        VUtils::String::FormatAscii(m_saltedPassword);
-    }
-}
-
 
 
 bool INetManager::Kick(std::string user) {
@@ -75,7 +56,7 @@ bool INetManager::Ban(std::string user) {
         try {
             if (!peer) peer = GetPeer(std::stoll(user));
         }
-        catch (std::exception&) {}
+        catch (const std::exception&) {}
 
         if (peer) {
             user = peer->m_socket->GetHostName();
@@ -157,7 +138,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
     writer.Write(world->m_name);
     writer.Write(world->m_seed);
-    writer.Write(world->m_seedName);
+    writer.Write(world->m_seedName); // Peer does not seem to use
     writer.Write(world->m_uid);
     writer.Write(world->m_worldGenVersion);
     writer.Write(Valhalla()->GetWorldTime());
@@ -167,124 +148,28 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 
-void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
-    DataReader reader(bytes);
+//void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos) {
+void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3& pos) {
+    auto peer(std::make_unique<Peer>(socket, uuid, name, pos));
 
-    auto uuid = reader.Read<OWNER_t>();
-    if (!uuid)
-        throw std::runtime_error("peer provided 0 owner");
-
-    auto version = reader.Read<std::string>();
-    LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
-    if (version != VConstants::GAME)
-        return rpc->Close(ConnectionStatus::ErrorVersion);
-
-    auto pos = reader.Read<Vector3>();
-    auto name = reader.Read<std::string>();
-    if (!(name.length() >= 3 && name.length() <= 15))
-        throw std::runtime_error("peer provided invalid length name");
-
-    auto password = reader.Read<std::string>();
-    auto ticket = reader.Read<BYTES_t>(); // read in the dummy ticket
-
-    if (SERVER_SETTINGS.playerAuth) {
-        auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-        if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
-            return rpc->Close(ConnectionStatus::ErrorBanned);
-    }
-
-    if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
-        return rpc->Close(ConnectionStatus::ErrorBanned);
-
-    // allow ascii only (no spaces)
-    for (auto ch : name) {
-        if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) {
-            LOG(INFO) << "Player has unsupported name character: " << (int)ch;
-            return rpc->Close(ConnectionStatus::ErrorDisconnected);
-        }
-    }
-
-
-
-    if (SERVER_SETTINGS.playerAutoPassword) {
-        if (!rpc->m_skipPassword) {        
-            if (password != m_saltedPassword)
-                return rpc->Close(ConnectionStatus::ErrorPassword);
-
-            Valhalla()->m_bypass.insert(rpc->m_socket->GetHostName());
-        }
-    } else if (password != m_saltedPassword)
-        return rpc->Close(ConnectionStatus::ErrorPassword);
-
-
-
-    // if peer already connected
-    if (GetPeer(uuid))
-        return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
-
-    // if whitelist enabled
-    if (SERVER_SETTINGS.playerWhitelist
-        && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
-        return rpc->Close(ConnectionStatus::ErrorFull);
-    }
-
-    // if too many players online
-    if (m_peers.size() >= SERVER_SETTINGS.playerMax)
-        return rpc->Close(ConnectionStatus::ErrorFull);
-
-    Peer* peer;
-
-    {
-        auto ptr(std::make_unique<Peer>(rpc->m_socket, uuid, name, pos));
-
-        peer = ptr.get();
-
-        if (ModManager()->CallEvent(EVENT_HASH_Join, peer) == EventStatus::CANCEL) {
-            return rpc->Close(ConnectionStatus::ErrorBanned);
-        }
-
-        m_peers.push_back(std::move(ptr));
+    if (ModManager()->CallEvent(EVENT_HASH_Join, peer.get()) == EventStatus::CANCEL) {
+        return peer->Kick();
     }
 
     peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
-    
-
-    
-    //Valhalla()->RunTaskLater()
-    if (SERVER_SETTINGS.playerAutoPassword) {
-        peer->m_magicLogin = rpc->m_skipPassword;
-    }
-
-    rpc = nullptr;
 
     // Important
     peer->Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
         peer->m_pos = pos;
         peer->m_visibleOnMap = publicRefPos; // stupid name
-    });
+        });
 
     // Important
     peer->Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
-        if (!peer->m_characterID) {
-            if (peer->m_magicLogin) {
-                peer->CornerMessage("You were automagically logged in");
-            }
-            else {
-                peer->CornerMessage("You will automagically log be logged in from now on");
-            }
-        }
-
         peer->m_characterID = characterID;
 
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
-    });
-
-    // Extras
-    //  Vanilla client has no means to doing this
-    //peer->Register(Hashes::Rpc::ConsoleMessage, [](Peer* peer, std::string text) {
-    //    // TODO limitation check
-    //    LOG(INFO) << text << " (" << peer->m_name << " " << peer->m_socket->GetHostName() << ")";
-    //});
+        });
 
     peer->Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
         // TODO maybe permissions tree in future?
@@ -300,7 +185,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         else {
             peer->ConsoleMessage("Player not found");
         }
-    });
+        });
 
     peer->Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
@@ -314,7 +199,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         else {
             peer->ConsoleMessage("Player not found");
         }
-    });
+        });
 
     peer->Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
@@ -326,8 +211,8 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         else {
             peer->ConsoleMessage("Player is not banned");
         }
-    });
-    
+        });
+
     peer->Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
@@ -335,7 +220,7 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
         WorldManager()->WriteFileWorldDB(true);
 
         peer->ConsoleMessage("Saved the world");
-    });
+        });
 
     peer->Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
         if (!peer->m_admin)
@@ -362,15 +247,16 @@ void INetManager::RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes) {
                 }
             }
         }
-    });
+        });
 
     SendPeerInfo(*peer);
 
     ZDOManager()->OnNewPeer(*peer);
     RouteManager()->OnNewPeer(*peer);
     ZoneManager()->OnNewPeer(*peer);
-}
 
+    m_peers.push_back(std::move(peer));
+}
 
 
 // Return the peer or nullptr
@@ -429,8 +315,6 @@ void INetManager::Init() {
 
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
-
-    InitPassword();
 }
 
 void INetManager::Update() {
@@ -438,32 +322,8 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        auto&& rpc = std::make_unique<NetRpc>(opt.value());
-                        
-        rpc->Register(Hashes::Rpc::Disconnect, [](NetRpc* rpc) {
-            LOG(INFO) << "RPC_Disconnect";
-            rpc->m_socket->Close(true);
-        });
-
-        rpc->Register(Hashes::Rpc::C2S_Handshake, [this](NetRpc* rpc) {
-            LOG(INFO) << "Client initiated handshake " << rpc->m_socket->GetHostName() << " " << rpc->m_socket->GetAddress();
-
-            rpc->Register(Hashes::Rpc::PeerInfo, [this](NetRpc* rpc, BYTES_t pkg) {
-                RPC_PeerInfo(rpc, std::move(pkg));
-            });
-
-            if (SERVER_SETTINGS.playerAutoPassword && Valhalla()->m_bypass.contains(rpc->m_socket->GetHostName())) {
-                rpc->m_skipPassword = true;
-                rpc->Invoke(Hashes::Rpc::S2C_Handshake, false, "");
-            }
-            else
-                rpc->Invoke(Hashes::Rpc::S2C_Handshake, m_hasPassword, m_salt);
-        });
-
-        m_rpcs.push_back(std::move(rpc));
-    }
-
-       
+        m_rpcs.push_back(std::make_unique<NetRpc>(*opt));
+    }       
 
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
