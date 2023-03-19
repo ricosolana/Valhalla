@@ -205,12 +205,16 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
-        if (Unban(user)) {
-            peer->ConsoleMessage("Unbanned '" + user + "'");
-        }
-        else {
-            peer->ConsoleMessage("Player is not banned");
-        }
+        // devcommands requires an exact format...
+        Unban(user);
+        peer->ConsoleMessage("Unbanning user " + user);
+
+        //if (Unban(user)) {
+        //    peer->ConsoleMessage("Unbanning user " + user);
+        //}
+        //else {
+        //    peer->ConsoleMessage("Player is not banned");
+        //}
         });
 
     peer->Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
