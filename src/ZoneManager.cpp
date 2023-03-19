@@ -25,20 +25,18 @@ void IZoneManager::Init() {
 
     {
         // load ZoneLocations:
-        auto opt = VUtils::Resource::ReadFile<BYTES_t>("zoneLocations.pkg");
+        auto opt = VUtils::Resource::ReadFile<BYTES_t>("features.pkg");
         if (!opt)
-            throw std::runtime_error("zoneLocations.pkg missing");
+            throw std::runtime_error("features.pkg missing");
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string>(); // date
+        pkg.Read<std::string>(); // comment
         std::string ver = pkg.Read<std::string>();
-        LOG(INFO) << "zoneLocations.pkg has game version " << ver;
         if (ver != VConstants::GAME)
-            LOG(WARNING) << "zoneLocations.pkg uses different game version than server";
+            LOG(WARNING) << "features.pkg uses different game version than server (" << ver << ")";
 
-        int32_t count = pkg.Read<int32_t>();
-        LOG(INFO) << "Loading " << count << " ZoneLocations";
+        auto count = pkg.Read<int32_t>();
         for (int i=0; i < count; i++) {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<Feature>();
@@ -83,8 +81,8 @@ void IZoneManager::Init() {
 
                 piece.m_prefab = PrefabManager()->GetPrefab(hash);
                 if (!piece.m_prefab) {
-                    LOG(ERROR) << "ZoneLocation znetview missing prefab '" << loc->m_name << "' " << hash;
-                    throw std::runtime_error("znetview missing prefab");
+                    LOG(ERROR) << "Feature prefab instance missing prefab '" << loc->m_name << "' " << hash;
+                    throw std::runtime_error("prefab instance missing prefab");
                 }
 
                 piece.m_pos = pkg.Read<Vector3>();
@@ -95,7 +93,9 @@ void IZoneManager::Init() {
             m_featuresByHash.insert({ loc->m_hash, *loc.get() });
             m_features.push_back(std::move(loc));
         }
-    }
+
+        LOG(INFO) << "Loaded " << count << " features";
+    }    
 
     {
         // load Foliage:
@@ -105,15 +105,12 @@ void IZoneManager::Init() {
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string>(); // date
+        pkg.Read<std::string>(); // comment
         std::string ver = pkg.Read<std::string>();
-        LOG(INFO) << "zoneVegetation.pkg has game version " << ver;
         if (ver != VConstants::GAME)
-            LOG(WARNING) << "zoneVegetation.pkg uses different game version than server";
+            LOG(WARNING) << "vegetation.pkg uses different game version than server (" << ver << ")";
 
         auto count = pkg.Read<int32_t>();
-        LOG(INFO) << "Loading " << count << " ZoneVegetations";
-
         for (int i=0; i < count; i++) {
             auto veg = std::make_unique<Foliage>();
 
