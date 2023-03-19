@@ -185,7 +185,8 @@ void IValhalla::LoadFiles() {
 
 void IValhalla::Stop() {
     m_thread.request_stop();
-    if (m_thread.joinable())
+    if (std::this_thread::get_id() != m_thread.get_id() 
+        && m_thread.joinable())
         m_thread.join();
 
     //if (m_thread.get_id() != std::this_thread::get_id()
@@ -261,35 +262,19 @@ void IValhalla::Start() {
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
 
-    // exiting by pressing 'X' button does not call this
-    //std::atexit([]() {
-    //    // terminate
-    //    std::cout << "At exit called!";
-    //});
-
 #ifdef _WIN32
     SetConsoleCtrlHandler([](DWORD dwCtrlType) {
-        // Program must close within 5000ms of receiving the CTRL_CLOSE_EVENT
-        if (dwCtrlType == CTRL_CLOSE_EVENT) {
-            el::Helpers::setThreadName("system");
-
-            LOG(INFO) << "WIN32 Close event caught";
-            Valhalla()->Stop();
-            return TRUE;
-        }
-        return FALSE;
-    }, TRUE);
 #else
     signal(SIGINT, [](int) {
-        el::Helpers::setThreadName("system");
-
-        LOG(WARNING) << "Interrupt caught";
-        Valhalla()->Stop();
-        });
-    LOG(INFO) << "Press ctrl+c to exit";
 #endif
-
-    //m_running = true;
+        el::Helpers::setThreadName("system");
+        Valhalla()->Stop();
+#ifdef _WIN32
+        return TRUE;
+    }, TRUE);
+#else
+    });
+#endif
 
     m_thread = std::jthread(
         [&](std::stop_token token) {
