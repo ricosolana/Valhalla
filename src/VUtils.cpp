@@ -1,6 +1,7 @@
 #include <random>
 #include <limits>
 #include <zlib.h>
+#include <zstd.h>
 
 #include "VUtils.h"
 #include "VUtilsMath.h"
@@ -79,6 +80,30 @@ namespace VUtils {
 
 
 
+    std::optional<BYTES_t> CompressZStd(const BYTES_t& in) {
+
+        //ZSTD_compress2
+
+        //ZSTD_CCtx_loadDictionary()
+
+        //ZSTD_CCtx_setParameter
+
+
+        BYTES_t out;
+        out.resize(ZSTD_compressBound(in.size()));
+        
+        size_t status = ZSTD_compress(out.data(), out.size(), in.data(), in.size(), ZSTD_fast);
+
+        if (ZSTD_isError(status))
+            return std::nullopt;
+
+        out.resize(status);
+
+        return out;
+    }
+
+
+
     std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize) {
         if (inSize == 0)
             return std::nullopt;
@@ -128,6 +153,7 @@ namespace VUtils {
     std::optional<BYTES_t> Decompress(const BYTES_t& in) {
         return Decompress(in.data(), in.size());
     }
+
 
 
 }

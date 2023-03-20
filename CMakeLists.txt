@@ -36,6 +36,7 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 #find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(zstd CONFIG REQUIRED)
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
 
@@ -143,6 +144,7 @@ target_link_libraries(${PROJECT_NAME}
     yaml-cpp
     easyloggingpp
     OptickCore
+    PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
 )
 
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)

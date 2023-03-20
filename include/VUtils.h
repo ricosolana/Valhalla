@@ -336,6 +336,8 @@ namespace VUtils {
     // Returns nullopt on compress failure
     std::optional<BYTES_t> CompressGz(const BYTES_t& in);
 
+    std::optional<BYTES_t> CompressZStd(const BYTES_t& in);
+
 
 
     // Decompress a byte array with a specified length
