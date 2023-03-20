@@ -7,6 +7,7 @@
 #include "ZoneManager.h"
 #include "ZDOManager.h"
 #include "Hashes.h"
+#include "Peer.h"
 
 auto ROUTE_MANAGER(std::make_unique<IRouteManager>()); // TODO stop constructing in global
 IRouteManager* RouteManager() {

@@ -34,6 +34,8 @@ private:
     void SendNetTime();
     void SendPeerInfo(Peer &peer);
 
+    void CleanupPeer(Peer& peer);
+
     //void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
 public:

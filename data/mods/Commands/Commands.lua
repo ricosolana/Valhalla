@@ -35,18 +35,18 @@ local commands = {
             --local withFlags = #args >= 4 and tonumber(args[4]) or 0
             --local withoutFlags = #args >= 5 and tonumber(args[5]) or 0
             
-            local withFlags = #args >= 4 and assert(PrefabFlag[string.upper(args[4])], 'invalid flag') or 0
-            local withoutFlags = #args >= 5 and assert(PrefabFlag[string.upper(args[5])], 'invalid !flag') or 0
+            local withFlags = #args >= 4 and assert(Flag[string.upper(args[4])], 'invalid flag') or 0
+            local withoutFlags = #args >= 5 and assert(Flag[string.upper(args[5])], 'invalid !flag') or 0
             
             --if radius > 32 and args[#args] ~= '-y' then
             --    return peer:ConsoleMessage('add "-y" to confirm')
             --end
             
             -- ignore SESSIONED flags
-            withFlags = withFlags & ~PrefabFlag.SESSIONED
+            withFlags = withFlags & ~Flag.SESSIONED
             
             -- exclude SESSIONED flags
-            withoutFlags = withoutFlags | PrefabFlag.SESSIONED
+            withoutFlags = withoutFlags | Flag.SESSIONED
             
             -- target zdos in radius zdo
             if mode == 'nearby' then
@@ -204,7 +204,7 @@ Valhalla:Subscribe('Join', function(peer)
     print('Registering command vs')
 
     peer:Register(
-        MethodSig.new('OnCommand', DataType.STRING, DataType.STRINGS),
+        MethodSig.new('OnCommand', Type.STRING, Type.STRINGS),
         function(peer, label, args)
             if not peer.admin then 
                 peer:ConsoleMessage("must be an admin")
@@ -217,7 +217,7 @@ Valhalla:Subscribe('Join', function(peer)
                     
                     local success, err = pcall(command[1], peer, label, args)
                     if not success then
-                        peer:ConsoleMessage('Error: ' .. err)
+                        peer:ConsoleMessage(err)
                         peer:ConsoleMessage('Usage: ' .. label .. ' ' .. command[2])
                     end
                 else

@@ -6,8 +6,8 @@
 --]]
 
 local peers = {}
-local SIG_CompressedZDOData = MethodSig.new("CompressedZDOData", DataType.BYTES)
-local SIG_CompressHandshake = MethodSig.new("CompressHandshake", DataType.BOOL)
+local SIG_CompressedZDOData = MethodSig.new("CompressedZDOData", Type.BYTES)
+local SIG_CompressHandshake = MethodSig.new("CompressHandshake", Type.BOOL)
 
 local RPC_CompressedZDOData = function(peer, compressed)
     -- Decompress raw data sent from client (intended for direct forwarding to RPC_ZDOData)

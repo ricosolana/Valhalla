@@ -7,6 +7,21 @@
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
+#include "ModManager.h"
+
+/*
+template <class T>
+struct Serializer;
+
+template <class T>
+struct Serializer
+    : _Conditionally_enabled_hash<_Kty,
+    !is_const_v<_Kty> && !is_volatile_v<_Kty> && (is_enum_v<_Kty> || is_integral_v<_Kty> || is_pointer_v<_Kty>)> {
+    // hash functor primary template (handles enums, integrals, and pointers)
+    static size_t _Do_hash(const _Kty& _Keyval) noexcept {
+        return _Hash_representation(_Keyval);
+    }
+};*/
 
 class DataWriter : public DataStream {
 private:
@@ -178,8 +193,8 @@ public:
 
     // Serialize variadic types to an array
     template <typename T, typename... Types>
-    static BYTES_t Serialize(const T &var1, const Types&... var2) {
-        BYTES_t bytes; bytes.reserve((sizeof(var1) + ... + sizeof(Types)));
+    static decltype(auto) Serialize(const T &var1, const Types&... var2) {
+        BYTES_t bytes;
         DataWriter writer(bytes);
 
         _Serialize(writer, var1, var2...);
@@ -187,9 +202,18 @@ public:
     }
 
     // empty full template
-    static BYTES_t Serialize() {
-        BYTES_t bytes;
-        return bytes;
+    static decltype(auto) Serialize() {
+        return BYTES_t{};
     }
 
+    static void _SerializeLua(DataWriter& writer, const IModManager::Types& types, const sol::variadic_args& args);
+
+    static BYTES_t SerializeLua(const IModManager::Types& types, const sol::variadic_args& args) {
+        BYTES_t bytes;
+        DataWriter params(bytes);
+
+        _SerializeLua(params, types, args);
+
+        return bytes;
+    }
 };

@@ -6,58 +6,61 @@
 #include "VUtils.h"
 #include "VUtilsString.h"
 
-enum class DataType {
-    BYTES,
-    STRING,
-    ZDOID,
-    VECTOR3,
-    VECTOR2i,
-    QUATERNION,
-    STRINGS,
-    BOOL,
-    INT8,
-    INT16,
-    INT32,
-    INT64,
-    FLOAT,
-    DOUBLE,
-    CHAR // utf8 variable length
-};
-
-enum class EventStatus {
-    DEFAULT = 0,
-    CANCEL = 1 << 0,
-    UNSUBSCRIBE = 1 << 1, // Set only when calling function self unsubscribes
-};
-
-struct MethodSig {
-    //std::string m_name;
-    HASH_t m_hash;
-    std::vector<DataType> m_types;
-};
-
-static constexpr HASH_t EVENT_HASH_RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
-static constexpr HASH_t EVENT_HASH_RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
-static constexpr HASH_t EVENT_HASH_RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
-static constexpr HASH_t EVENT_HASH_RouteOut = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
-static constexpr HASH_t EVENT_HASH_Routed = __H("Routed");      // Server relays a message from peer to peer
-
-static constexpr HASH_t EVENT_HASH_Update = __H("Update");      
-static constexpr HASH_t EVENT_HASH_Join = __H("Join");
-static constexpr HASH_t EVENT_HASH_Quit = __H("Quit");
-
-static constexpr HASH_t EVENT_HASH_POST = __H("POST");
 
 //int GetCurrentLuaLine(lua_State* L);
 
 class IModManager {
+public:
+    enum class Type {
+        BYTES,
+        STRING,
+        ZDOID,
+        VECTOR3,
+        VECTOR2i,
+        QUATERNION,
+        STRINGS,
+        BOOL,
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        FLOAT,
+        DOUBLE,
+        CHAR // utf8 variable length
+    };
+
+    enum class EventStatus {
+        DEFAULT = 0,
+        CANCEL = 1 << 0,
+        UNSUBSCRIBE = 1 << 1, // Set only when calling function self unsubscribes
+    };
+
+    using Types = std::vector<Type>;
+
+    class MethodSig {
+    public:
+        HASH_t m_hash;
+        Types m_types;
+    };
+
+    static constexpr HASH_t EVENT_RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
+    static constexpr HASH_t EVENT_RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
+    static constexpr HASH_t EVENT_RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
+    static constexpr HASH_t EVENT_RouteOut = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
+    static constexpr HASH_t EVENT_Routed = __H("Routed");      // Server relays a message from peer to peer
+
+    static constexpr HASH_t EVENT_Update = __H("Update");
+    static constexpr HASH_t EVENT_Join = __H("Join");
+    static constexpr HASH_t EVENT_Quit = __H("Quit");
+
+    static constexpr HASH_t EVENT_POST = __H("POST");
+
+private:
     struct Mod {
         std::string m_name;
         sol::environment m_env;
 
         fs::path m_entry;
-        //bool m_reload;
-        //fs::file_time_type m_lastModified;
 
         std::string m_version;
         std::string m_apiVersion;
@@ -65,10 +68,9 @@ class IModManager {
         std::list<std::string> m_authors;
 
         Mod(std::string name,
-            //sol::environment env,
             fs::path entry) 
-            : m_name(name),// m_env(std::move(env)), 
-            m_entry(entry)/*, m_lastModified(fs::last_write_time(entry))*/ {}
+            : m_name(name),
+            m_entry(entry) {}
 
         void Error(const std::string& s) {
             LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
@@ -124,8 +126,10 @@ public:
         }
     };
 
+    // Dispatch a Lua event
+    //  Returns whether the event was requested for cancellation
     template <class... Args>
-    auto CallEvent(HASH_t name, Args&&... params) {
+    bool CallEvent(HASH_t name, Args&&... params) {
         OPTICK_EVENT();
 
         auto&& find = m_callbacks.find(name);
@@ -166,30 +170,36 @@ public:
                 }
             }
         }
-        return m_eventStatus;
+        return (m_eventStatus & IModManager::EventStatus::CANCEL) == IModManager::EventStatus::CANCEL;
     }
 
+    // Dispatch a Lua event
+    //  Returns whether the event was requested for cancellation
     template <typename... Args>
     auto CallEvent(const std::string& name, Args&&... params) {
         return CallEvent(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
     }
 
 private:
+    // Dispatch a Lua event
+    //  Returns whether the event was requested for cancellation
     template<class Tuple, size_t... Is>
     auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
         return CallEvent(name, std::get<Is>(t)...); // TODO use forward
     }
 
 public:
-    // Dispatch a event for capture by any registered mod event handlers
-    // Returns whether the event-delegate is cancelled
+    // Dispatch a Lua event
+    //  Returns whether the event was requested for cancellation
     template <class Tuple>
-    EventStatus CallEventTuple(HASH_t name, const Tuple& t) {
+    auto CallEventTuple(HASH_t name, const Tuple& t) {
         return CallEventTupleImpl(name,
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 
+    // Dispatch a Lua event
+    //  Returns whether the event was requested for cancellation
     template <class Tuple>
     auto CallEventTuple(const std::string& name, const Tuple& t) {
         return CallEventTupleImpl(VUtils::String::GetStableHashCode(name),

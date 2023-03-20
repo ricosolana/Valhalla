@@ -82,3 +82,64 @@ void DataWriter::Write(const Quaternion& in) {
     Write(in.z);
     Write(in.w);
 }
+
+void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&types, const sol::variadic_args &args) {
+    for (int i = 0; i < args.size(); i++) {
+        auto&& arg = args[i];
+        auto argType = arg.get_type();
+        auto&& expectType = types[i];
+
+        // A vector of types and vector of values are used because Lua makes no distinction
+        if (argType == sol::type::number) {
+            switch (expectType) {
+            case IModManager::Type::INT8:
+                params.Write(arg.as<int8_t>());
+                break;
+            case IModManager::Type::INT16:
+                params.Write(arg.as<int16_t>());
+                break;
+            case IModManager::Type::INT32:
+                params.Write(arg.as<int32_t>());
+                break;
+            case IModManager::Type::INT64:
+                params.Write(arg.as<int64_t>());
+                break;
+            case IModManager::Type::FLOAT:
+                params.Write(arg.as<float>());
+                break;
+            case IModManager::Type::DOUBLE:
+                params.Write(arg.as<double>());
+                break;
+            default:
+                throw std::runtime_error("incorrect type at position (or bad DataFlag?)");
+            }
+        }
+        else if (argType == sol::type::string && expectType == IModManager::Type::STRING) {
+            params.Write(arg.as<std::string>());
+        }
+        else if (argType == sol::type::boolean && expectType == IModManager::Type::BOOL) {
+            params.Write(arg.as<bool>());
+        }
+        else if (arg.is<BYTES_t>() && expectType == IModManager::Type::BYTES) {
+            params.Write(arg.as<BYTES_t>());
+        }
+        else if (arg.is<ZDOID>() && expectType == IModManager::Type::ZDOID) {
+            params.Write(arg.as<ZDOID>());
+        }
+        else if (arg.is<Vector3>() && expectType == IModManager::Type::VECTOR3) {
+            params.Write(arg.as<Vector3>());
+        }
+        else if (arg.is<Vector2i>() && expectType == IModManager::Type::VECTOR2i) {
+            params.Write(arg.as<Vector2i>());
+        }
+        else if (arg.is<Quaternion>() && expectType == IModManager::Type::QUATERNION) {
+            params.Write(arg.as<Quaternion>());
+        }
+        else if (arg.is<std::vector<std::string>>() && expectType == IModManager::Type::STRINGS) {
+            params.Write(arg.as<std::vector<std::string>>());
+        }
+        else {
+            throw std::runtime_error("unsupported type, or incorrect type at position");
+        }
+    }
+}

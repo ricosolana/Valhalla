@@ -108,22 +108,22 @@ void IModManager::LoadAPI() {
         "NONE", sol::property([]() { return ZDOID::NONE; })
     );
 
-    m_state.new_enum("DataType",
-        "BYTES", DataType::BYTES,
-        "STRING", DataType::STRING,
-        "ZDOID", DataType::ZDOID,
-        "VECTOR3", DataType::VECTOR3,
-        "VECTOR2i", DataType::VECTOR2i,
-        "QUATERNION", DataType::QUATERNION,
-        "STRINGS", DataType::STRINGS,
-        "BOOL", DataType::BOOL,
-        "BYTE", DataType::INT8, "INT8", DataType::INT8,
-        "SHORT", DataType::INT16, "INT16", DataType::INT16,
-        "INT", DataType::INT32, "INT32", DataType::INT32, "HASH", DataType::INT32,
-        "LONG", DataType::INT64, "INT64", DataType::INT64,
-        "FLOAT", DataType::FLOAT,
-        "DOUBLE", DataType::DOUBLE,
-        "CHAR", DataType::CHAR
+    m_state.new_enum("Type",
+        "BYTES", Type::BYTES,
+        "STRING", Type::STRING,
+        "ZDOID", Type::ZDOID,
+        "VECTOR3", Type::VECTOR3,
+        "VECTOR2i", Type::VECTOR2i,
+        "QUATERNION", Type::QUATERNION,
+        "STRINGS", Type::STRINGS,
+        "BOOL", Type::BOOL,
+        "BYTE", Type::INT8, "INT8", Type::INT8,
+        "SHORT", Type::INT16, "INT16", Type::INT16,
+        "INT", Type::INT32, "INT32", Type::INT32, "HASH", Type::INT32,
+        "LONG", Type::INT64, "INT64", Type::INT64,
+        "FLOAT", Type::FLOAT,
+        "DOUBLE", Type::DOUBLE,
+        "CHAR", Type::CHAR
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
@@ -173,7 +173,7 @@ void IModManager::LoadAPI() {
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
         "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
         "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
-        "WriteInt64", static_cast<void (DataWriter::*)(int64_t)>(&DataWriter::Write),
+        "WriteInt64", static_cast<void (DataWriter::*)(int64_t)>(&DataWriter::Write), // TODO use int64 wrapper
         "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
         "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
 
@@ -198,7 +198,7 @@ void IModManager::LoadAPI() {
         "ReadInt8", &DataReader::ReadInt8,
         "ReadInt16", &DataReader::ReadInt16,
         "ReadInt32", &DataReader::ReadInt32,
-        "ReadInt64", &DataReader::ReadInt64,
+        "ReadInt64", &DataReader::ReadInt64, // TODO use int64 wrapper
         "ReadFloat", &DataReader::ReadFloat,
         "ReadDouble", &DataReader::ReadDouble,
         "ReadZDOID", &DataReader::ReadZDOID,
@@ -260,7 +260,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), std::vector<DataType>(types.begin(), types.end()) }; })
+        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
     );
 
     m_state.new_enum("ChatMsgType",
@@ -312,76 +312,9 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-        "Register", static_cast<void (Peer::*)(MethodSig, sol::function)>(&Peer::Register),
-        "Invoke", [](Peer& self, const MethodSig &repr, sol::variadic_args args) {
-            if (args.size() != repr.m_types.size())
-                throw std::runtime_error("incorrect number of args");
-
-            BYTES_t bytes;
-            DataWriter params(bytes);
-
-            params.Write(repr.m_hash);
-
-            for (int i = 0; i < args.size(); i++) {
-                auto&& arg = args[i];
-                auto argType = arg.get_type();
-                DataType expectType = repr.m_types[i];
-
-                if (argType == sol::type::number) {
-                    switch (expectType) {
-                    case DataType::INT8:
-                        params.Write(arg.as<int8_t>());
-                        break;
-                    case DataType::INT16:
-                        params.Write(arg.as<int16_t>());
-                        break;
-                    case DataType::INT32:
-                        params.Write(arg.as<int32_t>());
-                        break;
-                    case DataType::INT64:
-                        params.Write(arg.as<int64_t>());
-                        break;
-                    case DataType::FLOAT:
-                        params.Write(arg.as<float>());
-                        break;
-                    case DataType::DOUBLE:
-                        params.Write(arg.as<double>());
-                        break;
-                    default:
-                        throw std::runtime_error("incorrect type at position (or bad DataFlag?)");
-                    }
-                }
-                else if (argType == sol::type::string && expectType == DataType::STRING) {
-                    params.Write(arg.as<std::string>());
-                }
-                else if (argType == sol::type::boolean && expectType == DataType::BOOL) {
-                    params.Write(arg.as<bool>());
-                }
-                else if (arg.is<BYTES_t>() && expectType == DataType::BYTES) {
-                    params.Write(arg.as<BYTES_t>());
-                }
-                else if (arg.is<ZDOID>() && expectType == DataType::ZDOID) {
-                    params.Write(arg.as<ZDOID>());
-                }
-                else if (arg.is<Vector3>() && expectType == DataType::VECTOR3) {
-                    params.Write(arg.as<Vector3>());
-                }
-                else if (arg.is<Vector2i>() && expectType == DataType::VECTOR2i) {
-                    params.Write(arg.as<Vector2i>());
-                }
-                else if (arg.is<Quaternion>() && expectType == DataType::QUATERNION) {
-                    params.Write(arg.as<Quaternion>());
-                }
-                else if (arg.is<std::vector<std::string>>() && expectType == DataType::STRINGS) {
-                    params.Write(arg.as<std::vector<std::string>>());
-                }
-                else {
-                    throw std::runtime_error("unsupported type, or incorrect type at position");
-                }
-            }
-
-            self.m_socket->Send(std::move(bytes));
-        },
+        "Register", &Peer::RegisterLua,
+        "Invoke", &Peer::InvokeLua,
+        "Route", &Peer::RouteLua,
 
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
         "GetMethod", sol::overload(
@@ -393,7 +326,7 @@ void IModManager::LoadAPI() {
     );
 
     
-
+    /*
     m_state.new_enum("PrefabFlag",
         "NONE", Prefab::Flag::None,
         "SCALE", Prefab::Flag::SyncInitialScale,
@@ -431,7 +364,7 @@ void IModManager::LoadAPI() {
         "DUNGEON", Prefab::Flag::Dungeon,
         "PLAYER", Prefab::Flag::Player,
         "TOMBSTONE", Prefab::Flag::Tombstone
-    );
+    );*/
 
     m_state.new_usertype<Prefab>("Prefab",
         sol::no_constructor,
@@ -439,6 +372,45 @@ void IModManager::LoadAPI() {
         "hash", &Prefab::m_hash,
         "FlagsPresent", &Prefab::FlagsPresent,
         "FlagsAbsent", &Prefab::FlagsAbsent
+    );
+
+    m_state.new_enum("Flag",
+        "NONE", Prefab::Flag::None,
+        "SCALE", Prefab::Flag::SyncInitialScale,
+        "FAR", Prefab::Flag::Distant,
+        "SESSIONED", Prefab::Flag::Sessioned,
+        "PIECE", Prefab::Flag::Piece,
+        "BED", Prefab::Flag::Bed,
+        "DOOR", Prefab::Flag::Door,
+        "CHAIR", Prefab::Flag::Chair,
+        "SHIP", Prefab::Flag::Ship,
+        "FISH", Prefab::Flag::Fish,
+        "PLANT", Prefab::Flag::Plant,
+        "ARMATURE", Prefab::Flag::ArmorStand,
+        "ITEM", Prefab::Flag::ItemDrop,
+        "PICKABLE", Prefab::Flag::Pickable,
+        "PICKABLE_ITEM", Prefab::Flag::PickableItem,
+        "COOKING", Prefab::Flag::CookingStation,
+        "CRAFTING", Prefab::Flag::CraftingStation,
+        "SMELTING", Prefab::Flag::Smelter,
+        "BURNING", Prefab::Flag::Fireplace,
+        "SUPPORT", Prefab::Flag::WearNTear,
+        "BREAKABLE", Prefab::Flag::Destructible,
+        "ATTACH", Prefab::Flag::ItemStand,
+        "ANIMAL", Prefab::Flag::AnimalAI,
+        "MONSTER", Prefab::Flag::MonsterAI,
+        "TAME", Prefab::Flag::Tameable,
+        "BREED", Prefab::Flag::Procreation,
+        "ROCK", Prefab::Flag::MineRock,
+        "ROCK_5", Prefab::Flag::MineRock5,
+        "TREE", Prefab::Flag::TreeBase,
+        "LOG", Prefab::Flag::TreeLog,
+        "SFX", Prefab::Flag::SFX,
+        "VFX", Prefab::Flag::VFX,
+        "AOE", Prefab::Flag::AOE,
+        "DUNGEON", Prefab::Flag::Dungeon,
+        "PLAYER", Prefab::Flag::Player,
+        "TOMBSTONE", Prefab::Flag::Tombstone
     );
 
 
@@ -870,13 +842,22 @@ void IModManager::LoadAPI() {
 
 
 
-    m_state.new_usertype<IRouteManager::Data>("RouteData",
-        "sender", &IRouteManager::Data::m_sender,
-        "target", &IRouteManager::Data::m_target,
-        "targetZDO", &IRouteManager::Data::m_targetZDO,
-        "method", &IRouteManager::Data::m_method,
-        "params", &IRouteManager::Data::m_params
-    );
+    //m_state.new_usertype<IRouteManager::Data>("RouteData",
+    //    "sender", &IRouteManager::Data::m_sender,
+    //    "target", &IRouteManager::Data::m_target,
+    //    "targetZDO", &IRouteManager::Data::m_targetZDO,
+    //    "method", &IRouteManager::Data::m_method,
+    //    "params", &IRouteManager::Data::m_params
+    //);
+
+    m_state["RouteManager"] = RouteManager();
+    m_state.new_usertype<IRouteManager>("IRouteManager",
+        "InvokeView", &IRouteManager::InvokeViewLua,
+        "Invoke", &IRouteManager::InvokeLua,
+        "InvokeAll", &IRouteManager::InvokeAllLua
+        );
+
+
 
     {
         auto eventTable = m_state["event"].get_or_create<sol::table>();
@@ -1067,7 +1048,7 @@ void IModManager::Uninit() {
 }
 
 void IModManager::Update() {
-    ModManager()->CallEvent(EVENT_HASH_Update);
+    ModManager()->CallEvent(IModManager::EVENT_Update);
 
     /*
     if (m_reload) {

@@ -8,6 +8,7 @@
 #include "ModManager.h"
 #include "Hashes.h"
 #include "UserData.h"
+#include "RouteManager.h"
 
 class IZDOManager;
 class INetManager;
@@ -83,7 +84,7 @@ public:
     void Register(HASH_t hash, F func) {
         //m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash)); // TODO use make_unique
         //m_methods[hash] = std::make_unique<MethodImpl<Peer*>>(func, EVENT_HASH_RpcIn, hash);
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, EVENT_HASH_RpcIn, hash); // TODO use make_unique
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
     }
 
     template<typename F>
@@ -91,7 +92,7 @@ public:
         Register(VUtils::String::GetStableHashCode(name), func);
     }
 
-    void Register(MethodSig sig, sol::function func) {
+    void RegisterLua(const IModManager::MethodSig &sig, const sol::function &func) {
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
@@ -103,10 +104,10 @@ public:
         if (!m_socket->Connected())
             return;
 
-        if (ModManager()->CallEvent(EVENT_HASH_RpcOut ^ hash, this, params...) == EventStatus::CANCEL)
+        if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash, this, params...))
             return;
 
-        static BYTES_t bytes; bytes.clear();
+        BYTES_t bytes;
         DataWriter writer(bytes);
 
         writer.Write(hash);
@@ -120,6 +121,67 @@ public:
         Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
+    void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args &args) {
+        if (args.size() != repr.m_types.size())
+            throw std::runtime_error("mismatched number of args");
+
+        BYTES_t bytes;
+        DataWriter params(bytes);
+
+        params.Write(repr.m_hash);
+        DataWriter::_SerializeLua(params, repr.m_types, args);
+
+        m_socket->Send(std::move(bytes));
+    }
+
+
+
+    template <typename... Types>
+    void Route(const ZDOID& targetZDO, HASH_t hash, const Types&... params) {
+        IRouteManager::Data data;
+        data.m_sender = SERVER_ID;
+        data.m_target = this->m_uuid;
+        data.m_targetZDO = targetZDO;
+        data.m_method = hash;
+        data.m_params = DataWriter::Serialize(params...);
+
+        BYTES_t bytes;
+        data.Serialize(DataWriter(bytes));
+
+        Invoke(Hashes::Rpc::RoutedRPC, bytes);
+    }
+
+    template <typename... Types>
+    decltype(auto) Route(HASH_t hash, const Types&... params) {
+        return Route(ZDOID::NONE, hash, params...);
+    }
+
+    template <typename... Types>
+    decltype(auto) Route(const std::string& name, const Types&... params) {
+        return Route(ZDOID::NONE, VUtils::String::GetStableHashCode(name), params...);
+    }
+
+    template <typename... Types>
+    decltype(auto) Route(const ZDOID& targetZDO, const std::string& name, const Types&... params) {
+        return Route(targetZDO, VUtils::String::GetStableHashCode(name), params...);
+    }
+
+    void RouteLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+        if (args.size() != repr.m_types.size())
+            throw std::runtime_error("mismatched number of args");
+
+        IRouteManager::Data data;
+        data.m_sender = SERVER_ID;
+        data.m_target = this->m_uuid;
+        data.m_targetZDO = targetZDO;
+        data.m_method = repr.m_hash;
+        data.m_params = DataWriter::SerializeLua(repr.m_types, args);
+
+        BYTES_t bytes;
+        data.Serialize(DataWriter(bytes));
+
+        Invoke(Hashes::Rpc::RoutedRPC, bytes);
+    }
 
 
     //bool InvokeSelf(HASH_t hash, DataReader reader) {

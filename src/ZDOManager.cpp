@@ -760,16 +760,16 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				zdo.Deserialize(des);
 
 				if (created) {
-					AddToSector(zdo);
 					if (m_deadZDOs.contains(zdoid)) {
-						DestroyZDO(zdo);
+						DestroyZDO(zdo, true);
 					}
 					else {
+						AddToSector(zdo);
 						m_objectsByPrefab[zdo.GetPrefab()->m_hash].insert(&zdo);
 					}
 				}
 				else {
-					if (ModManager()->CallEvent("ZDOChange", &copy, zdo) == EventStatus::CANCEL)
+					if (ModManager()->CallEvent("ZDOChange", &copy, zdo))
 						zdo = copy; // if zdo modification was to be cancelled
 				}
 			}

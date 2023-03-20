@@ -7,6 +7,7 @@
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
+#include "ModManager.h"
 
 class DataReader : public DataStream {
 private:
@@ -227,6 +228,8 @@ public:
     static std::tuple<Ts...> Deserialize(RD& reader) {
         return { reader.template Read<Ts>()... };
     }
+
+    static sol::variadic_results DeserializeLua(sol::state_view state, DataReader& reader, const IModManager::Types& types);
 
 
 

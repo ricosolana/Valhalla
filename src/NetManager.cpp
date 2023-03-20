@@ -152,7 +152,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3& pos) {
     auto peer(std::make_unique<Peer>(socket, uuid, name, pos));
 
-    if (ModManager()->CallEvent(EVENT_HASH_Join, peer.get()) == EventStatus::CANCEL) {
+    if (ModManager()->CallEvent(IModManager::EVENT_Join, peer.get())) {
         return peer->Kick();
     }
 
@@ -398,15 +398,7 @@ void INetManager::Update() {
             auto&& peer = *itr->get();
             
             if (!peer.m_socket->Connected()) {
-                LOG(INFO) << "Cleaning up peer";
-
-                ModManager()->CallEvent(EVENT_HASH_Quit, std::ref(peer));
-                ZDOManager()->OnPeerQuit(peer);
-
-                if (peer.m_admin)
-                    Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
-                else 
-                    Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
+                CleanupPeer(peer);
 
                 itr = m_peers.erase(itr);
             }
@@ -417,7 +409,23 @@ void INetManager::Update() {
     }
 }
 
+void INetManager::CleanupPeer(Peer& peer) {
+    LOG(INFO) << "Cleaning up peer";
+    ModManager()->CallEvent(IModManager::EVENT_Quit, std::ref(peer));
+    ZDOManager()->OnPeerQuit(peer);
+
+    if (peer.m_admin)
+        Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
+    else
+        Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
+}
+
 void INetManager::Uninit() {
     SendDisconnect();
+
+    for (auto&& peer : m_peers) {
+        CleanupPeer(*peer.get());
+    }
+
     m_acceptor.reset();
 }

@@ -133,11 +133,11 @@ public:
         // category catch
         //ModManager()->CallEventTuple(m_categoryHash, tuple);
         // specific catch
-        if (ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash, tuple) != EventStatus::CANCEL)
+        if (!ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash, tuple))
             std::apply(m_func, tuple);
 
         // Postfix
-        ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash ^ EVENT_HASH_POST, tuple);
+        ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash ^ IModManager::EVENT_POST, tuple);
     }
 };
 
@@ -159,84 +159,19 @@ class MethodImplLua : public IMethod<T> {
 
 private:
     sol::protected_function m_func;
-    std::vector<DataType> m_types;
+    IModManager::Types m_types;
 
 public:
-    explicit MethodImplLua(sol::protected_function func, std::vector<DataType> types)
+    explicit MethodImplLua(sol::protected_function func, const IModManager::Types& types)
         : m_func(func), 
         m_types(types) {}
 
     void Invoke(T t, DataReader reader) override {
-        sol::variadic_results results;
-        auto&& state(m_func.lua_state());
+        auto&& state = m_func.lua_state();
 
-        // Pass the rpc always
-        results.push_back(sol::make_object(state, t));
+        auto results(DataReader::DeserializeLua(state, reader, m_types));
+        results.insert(results.begin(), sol::make_object(state, t));
 
-        for (auto&& type : m_types) {
-            switch (type) {
-            case DataType::BYTES:
-                // Will be interpreted as sol container type
-                // see https://sol2.readthedocs.io/en/latest/containers.html
-                results.push_back(sol::make_object(state, reader.Read<BYTES_t>()));
-                break;
-            case DataType::STRING:
-                // Primitive: string
-                results.push_back(sol::make_object(state, reader.Read<std::string>()));
-                break;
-            case DataType::ZDOID:
-                results.push_back(sol::make_object(state, reader.Read<ZDOID>()));
-                break;
-            case DataType::VECTOR3:
-                results.push_back(sol::make_object(state, reader.Read<Vector3>()));
-                break;
-            case DataType::VECTOR2i:
-                results.push_back(sol::make_object(state, reader.Read<Vector2i>()));
-                break;
-            case DataType::QUATERNION:
-                results.push_back(sol::make_object(state, reader.Read<Quaternion>()));
-                break;
-            case DataType::STRINGS:
-                // Container type of Primitive: string
-                results.push_back(sol::make_object(state, reader.Read<std::vector<std::string>>()));
-                break;
-            case DataType::BOOL:
-                // Primitive: boolean
-                results.push_back(sol::make_object(state, reader.Read<bool>()));
-                break;
-            case DataType::INT8:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<int8_t>()));
-                break;
-            case DataType::INT16:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<int16_t>()));
-                break;
-            case DataType::INT32:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<int32_t>()));
-                break;
-            case DataType::INT64:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<int64_t>()));
-                break;
-            case DataType::FLOAT:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<float>()));
-                break;
-            case DataType::DOUBLE:
-                // Primitive: number
-                results.push_back(sol::make_object(state, reader.Read<double>()));
-                break;
-            default:
-                LOG(FATAL) << "LUA MethodImpl bad DataType; this should have been impossible due to plugin register(handler) checking types for validity";
-            }
-        }
-        
-        //m_func(results);
-
-        //auto args(sol::as_args(results));
-        //m_func(args);
         sol::protected_function_result result = m_func(sol::as_args(results));
         if (!result.valid()) {
             // player invocation was bad
@@ -247,4 +182,4 @@ public:
 };
 
 template<typename T>
-MethodImplLua(sol::function, std::vector<DataType>) -> MethodImplLua<T>;
+MethodImplLua(sol::function, std::vector<IModManager::Type>) -> MethodImplLua<T>;

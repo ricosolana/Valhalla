@@ -853,14 +853,14 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.6, 0, .6);
+            Vector3 size1(1.f, 0, 1.f);
+            Vector3 size2(.6f, 0, .6f);
 
             Vector3 pos1(0, 0, 0);
             Vector3 pos2(0, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
-            auto rot2(Quaternion::Euler(0, 45, 0));
+            auto rot2(Quaternion::Euler(0, 45.f, 0));
 
             assert(VUtils::Physics::RectInsideRect(
                 size1, pos1, rot1,
@@ -920,14 +920,14 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.6, 0, .6);
+            Vector3 size1(1.f, 0, 1.f);
+            Vector3 size2(.6f, 0, .6f);
 
             Vector3 pos1(0, 0, 0);
-            Vector3 pos2(.8, 0, .8);
+            Vector3 pos2(.8f, 0, .8f);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
-            auto rot2(Quaternion::Euler(0, 30, 0));
+            auto rot2(Quaternion::Euler(0, 30.f, 0));
 
             assert(!VUtils::Physics::RectOverlapRect(
                 size1, pos1, rot1,

@@ -229,7 +229,8 @@ void IZoneManager::SendGlobalKeys() {
 }
 
 void IZoneManager::SendGlobalKeys(Peer& peer) {
-    RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    peer.Route(Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
 // private
@@ -263,7 +264,9 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
         writer.Write(instance.get().m_feature.get().m_name);
     }
 
-    RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
+    //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
+
+    peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
 }
 
 // public
