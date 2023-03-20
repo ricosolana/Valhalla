@@ -44,8 +44,7 @@ class IValhalla {
     friend class Tests;
 
 private:
-    //std::atomic_bool m_running; // mostly const
-    std::jthread m_thread;
+    std::atomic_bool m_terminate;
 
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
