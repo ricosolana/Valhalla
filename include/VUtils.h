@@ -310,6 +310,8 @@ public:
     }
 };
 
+std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
+
 
 
 namespace VUtils {

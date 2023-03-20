@@ -320,8 +320,7 @@ void IValhalla::Start() {
                 });
 
                 // TODO adjust based on workload intensity
-                std::this_thread::sleep_for(1ms); // prevents busy looping
-                //std::this_thread::yield(); // 25% cpu usage
+                std::this_thread::sleep_for(1ms);
             }
             
             LOG(INFO) << "Terminating server";

@@ -396,7 +396,7 @@ void INetManager::Update() {
     {
         for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
             auto&& peer = *itr->get();
-
+            
             if (!peer.m_socket->Connected()) {
                 LOG(INFO) << "Cleaning up peer";
 

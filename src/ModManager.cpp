@@ -134,8 +134,8 @@ void IModManager::LoadAPI() {
         "Write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            //static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-            //static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
@@ -246,9 +246,9 @@ void IModManager::LoadAPI() {
         }*/
     );
 
-    //env.new_usertype<IMethod<Peer*>>("IMethod",
-    //    "Invoke", &IMethod<Peer*>::Invoke
-    //);
+    m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",
+        "Invoke", &IMethod<Peer*>::Invoke
+    );
 
     // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
     m_state.new_usertype<ISocket>("ISocket",
@@ -381,9 +381,15 @@ void IModManager::LoadAPI() {
             }
 
             self.m_socket->Send(std::move(bytes));
-        }
+        },
 
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+        "GetMethod", sol::overload(
+            sol::resolve<IMethod<Peer*>* (HASH_t)>(&Peer::GetMethod),
+            sol::resolve<IMethod<Peer*>* (const std::string&)>(&Peer::GetMethod)
+
+            //static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+        )
     );
 
     
