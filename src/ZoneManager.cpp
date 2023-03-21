@@ -409,7 +409,7 @@ void IZoneManager::GenerateZoneCtrl(const ZoneID& zone) {
     // ZoneCtrl is basically a player controlled natural mob spawner
     //  - SpawnSystem
     auto pos = ZoneToWorldPos(zone);
-    PrefabManager()->Instantiate(*ZONE_CTRL_PREFAB, pos);
+    ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, pos);
 }
 
 // private
@@ -567,7 +567,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                             }
 
-                            auto &&zdo = PrefabManager()->Instantiate(*zoneVegetation->m_prefab, pos, rotation);
+                            auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos, rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -931,7 +931,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
         //          DG_(dungeon)
 
         if (!(SERVER_SETTINGS.spawningDungeons && piece.m_prefab->FlagsPresent(Prefab::Flag::Dungeon))) {
-            PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+            ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
@@ -954,10 +954,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = &PrefabManager()->Instantiate(*piece.m_prefab, piecePos, piece.m_rot);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos, piece.m_rot);
             }
             else {
-                zdo = &PrefabManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
             }
 
             assert(zdo);
@@ -980,7 +980,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 // could be inlined...
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
-    auto &&zdo = PrefabManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
+    auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
     
     zdo.Set("location", location.m_hash);
     zdo.Set("seed", seed);

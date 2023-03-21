@@ -260,7 +260,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 			auto global = VUtils::Physics::LocalToGlobal(roomConnection.get().m_pos, roomConnection.get().m_rot,
 				this->m_pos, this->m_rot);
 
-			PrefabManager()->Instantiate(*doorDef->m_prefab, global.first, global.second);
+			ZDOManager()->Instantiate(*doorDef->m_prefab, global.first, global.second);
 			num++;
 		}
 	}
@@ -534,7 +534,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot) 
 		Vector3 pos1 = pos + rot * view.m_pos;
 		Quaternion rot1 = rot * view.m_rot;
 
-		PrefabManager()->Instantiate(*view.m_prefab, pos1, rot1);
+		ZDOManager()->Instantiate(*view.m_prefab, pos1, rot1);
 	}
 
 	// TODO this might be redundant for dummy 'dungeons' (plains villages shouldnt be considered dungeons)
@@ -564,7 +564,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, 
 		// Prefabs can be instantiated exactly in world space (not local room space)
 		auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
-		PrefabManager()->Instantiate(*view.m_prefab, global.first, global.second);
+		ZDOManager()->Instantiate(*view.m_prefab, global.first, global.second);
 	}
 
 	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, fromConnection.m_placeOrder + 1, seed);

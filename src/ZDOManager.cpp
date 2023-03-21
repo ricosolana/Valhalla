@@ -191,7 +191,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		LOG(INFO) << "Purged " << purgeCount << " old zdos";
 }
 
-ZDO& IZDOManager::AddZDO(const Vector3& position) {
+ZDO& IZDOManager::Instantiate(const Vector3& position) {
 	ZDOID zdoid = ZDOID(Valhalla()->ID(), 0);
 	for(;;) {
 		zdoid.m_id = m_nextUid++;
@@ -207,7 +207,7 @@ ZDO& IZDOManager::AddZDO(const Vector3& position) {
 	}
 }
 
-ZDO& IZDOManager::AddZDO(const ZDOID& uid, const Vector3& position) {
+ZDO& IZDOManager::Instantiate(const ZDOID& uid, const Vector3& position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
@@ -237,7 +237,7 @@ ZDO* IZDOManager::GetZDO(const ZDOID& id) {
 
 
 
-std::pair<ZDO&, bool> IZDOManager::GetOrCreateZDO(const ZDOID& id, const Vector3& def) {
+std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3& def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
 	auto&& zdo = pair.first->second;
@@ -246,6 +246,36 @@ std::pair<ZDO&, bool> IZDOManager::GetOrCreateZDO(const ZDOID& id, const Vector3
 
 	zdo = std::make_unique<ZDO>(id, def);
 	return { *zdo.get(), true };
+}
+
+
+
+ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot) {
+	auto&& zdo = ZDOManager()->Instantiate(pos);
+	zdo.m_rotation = rot;
+	zdo.m_prefab = &prefab;
+
+	if (prefab.FlagsPresent(Prefab::Flag::SyncInitialScale))
+		zdo.Set("scale", prefab.m_localScale);
+
+	return zdo;
+}
+
+ZDO& IZDOManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab) {
+	auto&& prefab = PrefabManager()->RequirePrefab(hash);
+	if (outPrefab) *outPrefab = &prefab;
+
+	return Instantiate(prefab, pos, rot);
+}
+
+ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
+	auto&& copy = Instantiate(*zdo.m_prefab, zdo.m_pos, zdo.m_rotation);
+
+	const ZDOID temp = copy.m_id; // Copying copies everything (including UID, which MUST be unique for every ZDO)
+	copy = zdo;
+	copy.m_id = temp;
+
+	return copy;
 }
 
 
@@ -714,7 +744,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				.m_syncTime = time 
 			};
 						
-			auto&& pair = this->GetOrCreateZDO(zdoid, pos);
+			auto&& pair = this->GetOrInstantiate(zdoid, pos);
 
 			auto&& zdo = pair.first;
 			auto&& created = pair.second;

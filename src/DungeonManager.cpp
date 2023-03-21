@@ -237,7 +237,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 
 ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot) {
-    auto&& zdo = PrefabManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
 
@@ -245,7 +245,7 @@ ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const
 }
 
 ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot, HASH_t seed) {
-    auto&& zdo = PrefabManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
 

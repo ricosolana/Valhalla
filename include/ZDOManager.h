@@ -72,8 +72,8 @@ private:
 	bool SendZDOs(Peer& peer, bool flush);
 	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
 
-	ZDO& AddZDO(const Vector3& position);
-	ZDO& AddZDO(const ZDOID& uid, const Vector3& position);
+	ZDO& Instantiate(const Vector3& position);
+	ZDO& Instantiate(const ZDOID& uid, const Vector3& position);
 		
 	// Performs a coordinate to pitch conversion
 	int SectorToIndex(const ZoneID& zone) const;
@@ -91,7 +91,15 @@ public:
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
-	std::pair<ZDO&, bool> GetOrCreateZDO(const ZDOID& id, const Vector3& def);
+	std::pair<ZDO&, bool> GetOrInstantiate(const ZDOID& id, const Vector3& def);
+
+	ZDO& Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot);
+	ZDO& Instantiate(const Prefab& prefab, const Vector3& pos) { return Instantiate(prefab, pos, Quaternion::IDENTITY); }
+	
+	ZDO& Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab);
+	ZDO& Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot) { return Instantiate(hash, pos, rot, nullptr); }
+	ZDO& Instantiate(HASH_t hash, const Vector3& pos) { return Instantiate(hash, pos, Quaternion::IDENTITY, nullptr);  }
+	ZDO& Instantiate(const ZDO& zdo);
 
 	// Get a ZDO by id
 	//	TODO use optional<reference>

@@ -62,6 +62,7 @@ void IPrefabManager::Init() {
     LOG(INFO) << "Loaded " << count << " prefabs";
 }
 
+/*
 ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab) {
     auto&& find = m_prefabs.find(hash);
 
@@ -79,7 +80,7 @@ ZDO* IPrefabManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaterni
 }
 
 ZDO& IPrefabManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot) {    
-    auto &&zdo = ZDOManager()->AddZDO(pos);
+    auto &&zdo = ZDOManager()->Instantiate(pos);
     zdo.m_rotation = rot;
     zdo.m_prefab = &prefab;
 
@@ -97,4 +98,4 @@ ZDO& IPrefabManager::Instantiate(const ZDO& zdo) {
     copy.m_id = temp;
 
     return copy;
-}
+}*/

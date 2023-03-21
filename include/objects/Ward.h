@@ -80,7 +80,7 @@ public:
 		auto&& zdo = peer.GetZDO();
 		if (zdo) {
 			// Create the copy
-			auto&& newZdo = PrefabManager()->Instantiate(m_zdo);
+			auto&& newZdo = ZDOManager()->Instantiate(m_zdo);
 
 			// Destroy the old ZDO
 			ZDOManager()->DestroyZDO(m_zdo, true);
