@@ -314,7 +314,12 @@ void IModManager::LoadAPI() {
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
         "Register", &Peer::RegisterLua,
         "Invoke", &Peer::InvokeLua,
+        "RouteView", &Peer::RouteViewLua,
         "Route", &Peer::RouteLua,
+        //sol::overload(
+        //    sol::resolve<void(const ZDOID&, const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
+        //    sol::resolve<void(const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
+        //),
 
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
         "GetMethod", sol::overload(

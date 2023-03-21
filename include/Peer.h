@@ -121,6 +121,8 @@ public:
         Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
+
+
     void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args &args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
@@ -166,7 +168,9 @@ public:
         return Route(targetZDO, VUtils::String::GetStableHashCode(name), params...);
     }
 
-    void RouteLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+
+
+    void RouteViewLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
@@ -181,6 +185,10 @@ public:
         data.Serialize(DataWriter(bytes));
 
         Invoke(Hashes::Rpc::RoutedRPC, bytes);
+    }
+
+    void RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+        return RouteViewLua(ZDOID::NONE, repr, args);
     }
 
 
