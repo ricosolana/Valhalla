@@ -295,8 +295,8 @@ void IValhalla::Start() {
         // TODO adjust based on workload intensity
         std::this_thread::sleep_for(1ms);
 
-        std::this_thread::sleep_for(3s);
-        this->Stop();
+        //std::this_thread::sleep_for(3s);
+        //this->Stop();
     }
             
     LOG(INFO) << "Terminating server";
