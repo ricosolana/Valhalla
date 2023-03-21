@@ -22,9 +22,7 @@ void IZDOManager::Init() {
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, BYTES_t bytes) {
 			// TODO constraint check
-			DataReader reader(bytes);
-			auto destroyed = reader.Read<std::list<ZDOID>>();
-			for (auto&& uid : destroyed)
+			for (auto&& uid : DataReader(bytes).Read<std::list<ZDOID>>())
 				EraseZDO(uid);
 		}
 	);

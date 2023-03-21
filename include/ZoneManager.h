@@ -157,12 +157,12 @@ private:
 
 	void OnNewPeer(Peer& peer);
 
-	void TryGenerateZones(const Vector3& pos);
+	void TryGenerateNearbyZones(const Vector3& pos);
 
 	bool TryGenerateZone(const ZoneID& zone);
 	void GenerateZone(Heightmap& heightmap);
-	std::vector<ClearArea> GenerateFeatures(const ZoneID& zone);
-	void GenerateFoliage(const ZoneID& zone, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
+	std::vector<ClearArea> TryGenerateFeature(const ZoneID& zone);
+	void GenerateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
 	bool HaveLocationInRange(const Feature& feature, const Vector3& pos);
 	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
@@ -199,7 +199,9 @@ public:
 		return m_globalKeys;
 	}
 
-	void RegenerateZone(const ZoneID& zone);
+	//void RegenerateZone(const ZoneID& zone);
+
+	void GenerateZone(const ZoneID& zone);
 
 	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();

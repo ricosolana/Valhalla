@@ -334,22 +334,23 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
         for (auto&& peer : NetManager()->GetPeers()) {
-            TryGenerateZones(peer->m_pos);
+            TryGenerateNearbyZones(peer->m_pos);
         }
     });
 }
 
+/*
 void IZoneManager::RegenerateZone(const ZoneID& zone) {
     for (auto&& zdo : ZDOManager()->GetZDOs(zone, 0, Prefab::Flag::None, Prefab::Flag::Player))
         ZDOManager()->DestroyZDO(zdo);
 
-    m_generatedZones.erase(zone);
+    //m_generatedZones.erase(zone);
     GenerateZone(HeightmapManager()->GetHeightmap(zone));
-    m_generatedZones.insert(zone);
-}
+    //m_generatedZones.insert(zone);
+}*/
 
 // Rename?
-void IZoneManager::TryGenerateZones(const Vector3& refPoint) {
+void IZoneManager::TryGenerateNearbyZones(const Vector3& refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
     // Prioritize center zone
@@ -389,13 +390,17 @@ void IZoneManager::GenerateZone(Heightmap &heightmap) {
     std::vector<ClearArea> m_tempClearAreas;
 
     if (SERVER_SETTINGS.spawningLocations)
-        m_tempClearAreas = GenerateFeatures(heightmap.GetZone());
+        m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
 
     if (SERVER_SETTINGS.spawningVegetation)
-        GenerateFoliage(heightmap.GetZone(), heightmap, m_tempClearAreas);
+        GenerateFoliage(heightmap, m_tempClearAreas);
 
     if (SERVER_SETTINGS.spawningCreatures)
         GenerateZoneCtrl(heightmap.GetZone());
+}
+
+void IZoneManager::GenerateZone(const ZoneID& zone) {
+    this->GenerateZone(HeightmapManager()->GetHeightmap(zone));
 }
 
 
@@ -415,7 +420,9 @@ Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const
 }
 
 // private
-void IZoneManager::GenerateFoliage(const ZoneID& zoneID, Heightmap& heightmap, const std::vector<ClearArea>& clearAreas) {
+void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas) {
+    auto&& zoneID = heightmap.GetZone();
+
     const Vector3 center = ZoneToWorldPos(zoneID);
 
     const auto seed = GeoManager()->GetSeed();
@@ -801,7 +808,7 @@ Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) 
 }
 
 // private
-std::vector<IZoneManager::ClearArea> IZoneManager::GenerateFeatures(const ZoneID &zoneID)
+std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(const ZoneID &zoneID)
 {
     auto now(steady_clock::now());
 

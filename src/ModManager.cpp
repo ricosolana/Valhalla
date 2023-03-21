@@ -822,8 +822,9 @@ void IModManager::LoadAPI() {
 
     m_state["ZoneManager"] = ZoneManager();
     m_state.new_usertype<IZoneManager>("IZoneManager",
+        "GenerateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::GenerateZone),
         "GetNearestFeature", &IZoneManager::GetNearestFeature,
-        "RegenerateZone", &IZoneManager::RegenerateZone,
+        //"RegenerateZone", &IZoneManager::RegenerateZone,
         "WorldToZonePos", &IZoneManager::WorldToZonePos,
         "ZoneToWorldPos", &IZoneManager::ZoneToWorldPos,
         "globalKeys", sol::property(&IZoneManager::GlobalKeys)

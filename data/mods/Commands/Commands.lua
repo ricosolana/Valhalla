@@ -90,7 +90,7 @@ local commands = {
             
             local pos = #args >= 4 and Vector3.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
             
-            DungeonManager.Generate(dungeon, pos, Quaternion.IDENTITY)
+            DungeonManager:Generate(dungeon, pos, Quaternion.IDENTITY)
             
             peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
         end,
@@ -104,7 +104,14 @@ local commands = {
             --    return peer:ConsoleMessage('add "-y" to confirm')
             --end
             
-            ZoneManager:RegenerateZone(peer.zdo.zone)
+            local zdos = ZDOManager:GetZDOs(peer.zdo.zone, 0, Flag.NONE, Flag.PLAYER)
+            for i=1, #zdos do
+                ZDOManager:DestroyZDO(zdos[i])
+            end
+            
+            ZoneManager:GenerateZone(peer.zdo.zone)
+            
+            --ZoneManager:RegenerateZone(peer.zdo.zone)
             
             peer:ConsoleMessage('regenerated zone at ' .. tostring(peer.zdo.pos))
         end,
