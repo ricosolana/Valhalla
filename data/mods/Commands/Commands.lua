@@ -19,7 +19,7 @@ local commands = {
             if #args == 0 then
                 peer:ConsoleMessage('Time of day: ' .. Valhalla.timeOfDay)
             else
-                Valhalla.timeOfDay = assert(tonumber(args[1]), 'not a number')
+                Valhalla.timeOfDay = assert(tonumber(args[1]) or TimeOfDay[args[1]:upper()], 'not a number')
                 peer:ConsoleMessage('Set time of day to ' .. args[1] .. '(worldTime: ' .. Valhalla.worldTime .. ')')
             end
         end,

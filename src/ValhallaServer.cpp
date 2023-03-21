@@ -350,6 +350,7 @@ void IValhalla::PeriodUpdate() {
     //  This also takes advantage of a few quirks present in how Valheim makes players sleep
     //  - Players will be forced to enter sleep when receiving SleepStart Rpc (the screen goes black and dream text appears)
     //  - Players will be forced to awaken when receiving SleepStop Rpc (they get rested buff and control is handed back)
+    /*
     if (m_settings.playerSleep) {
         if (m_playerSleep) {
             if (m_worldTime > m_playerSleepUntil) {
@@ -426,7 +427,7 @@ void IValhalla::PeriodUpdate() {
                 }
             }
         }
-    }
+    }*/
 
     if (m_settings.worldSave) {
         // save warming message
