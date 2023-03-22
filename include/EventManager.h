@@ -67,9 +67,9 @@ public:
 	std::vector<std::unique_ptr<Event>> m_events;
 
 private:
-	Event *m_randomEvent = nullptr;
-	float m_forcedEventUpdateTimer = 0;
-	Event *m_forcedEvent = nullptr;
+	//Event *m_randomEvent = nullptr;
+	//float m_forcedEventUpdateTimer = 0;
+	//Event *m_forcedEvent = nullptr;
 	Event *m_activeEvent = nullptr;
 
 	//float m_tempSaveEventTimer;
@@ -83,6 +83,10 @@ private:
 private:
 	void SendCurrentRandomEvent();
 
+	std::optional<std::pair<std::reference_wrapper<Event>, Vector3>> GetPossibleRandomEvent();
+
+	bool HaveGlobalKeys(Event& e);
+
 public:
     void Update();
 
@@ -90,4 +94,4 @@ public:
     void Load(DataReader& reader, int version);
 };
 
-IEventManager EventManager();
+IEventManager *EventManager();

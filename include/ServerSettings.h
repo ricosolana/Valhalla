@@ -48,4 +48,10 @@ struct ServerSettings {
     //milliseconds    dungeonIncrementalResetTime;
     int             dungeonIncrementalResetCount;
     bool            dungeonRandomGeneration;
+
+    bool            events;
+    float           eventsChance;
+    seconds         eventInterval;
+    seconds         eventSendInterval;
+
 };
