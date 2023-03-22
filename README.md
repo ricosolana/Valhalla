@@ -39,8 +39,10 @@ I will be somehow soon creating a documentation for server config, Lua bindings 
    - `Peer` sockets are safe to store outside the event scope, and safe to store after a peer is cleaned-up and freed (because of `std::shared_ptr`).
  - Events as subscribed to by using `Valhalla:Subscribe(name, name1, name2, ..., func)`:
    - All the name parameters represent a single name when binding. So think of the above as `name.name1.name2` (not like subscribing `name`, `name1`, `name2` with func). It works different internally than I've described, but its similar (the hashes of the names are combined with xor to give a *mostly* unique hash).
-   - See https://github.com/PeriodicSeizures/Valhalla/blob/22508dbed6f796e09a154cfaf752fc2be78558e8/data/mods/Compress/Compress.lua#L56, basically the Rpc sent by the server is selected, then only call on `ZDOData` calls are caught.
-  - Calling any `event.*()` methods outside of events subscribed to by `Valhalla:Subscribe(...)` will do nothing useful (so its pointless when used like this).
+   - https://github.com/PeriodicSeizures/Valhalla/blob/22508dbed6f796e09a154cfaf752fc2be78558e8/data/mods/Compress/Compress.lua#L56
+     Any outbound Rpc `RpcOut` sent by the server of `ZDOData` is selected. There is also a built in `...In` for incoming data and RoutedRpc too.
+     https://github.com/PeriodicSeizures/Valhalla/blob/e36b13242afdae9d9338613be2c268f368209524/include/ModManager.h#L46
+   - Calling any `event.*()` methods outside of events subscribed to by `Valhalla:Subscribe(...)` will do nothing useful (so its pointless when used like this).
  - Although I created some ZDO object wrappers (Views.Portal, etc...), I do not like these because they could change across versions (I will consider eventually removing). 
  - The `print` method acts weirdly in some cases when printing a sol error string (it somehow overwrites characters). This is rare and only happened when printing a `string .. errorString`.
  - All global methods are shared between different mods/scripts (I think?). Different mods are distinguished by a unique environment which only they have access to, and doing global stuff works according to however sol works (so globals between scripts might work?).
