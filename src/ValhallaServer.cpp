@@ -16,6 +16,7 @@
 #include "HeightmapBuilder.h"
 #include "ModManager.h"
 #include "DungeonManager.h"
+#include "EventManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -56,28 +57,34 @@ void IValhalla::LoadFiles() {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
-        if (m_settings.serverName.empty()) m_settings.serverName = "Valhalla server";
+        if (m_settings.serverName.empty() 
+            || m_settings.serverName.length() < 3
+            || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
         m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
-        m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
+        //m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
+        m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
+        if (!m_settings.serverPassword.empty()
+            && (m_settings.serverPassword.length() < 5
+                || m_settings.serverPassword.length())) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
         m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
         m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
-        if (m_settings.worldName.empty()) m_settings.worldName = "world";
+        if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
         m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
         if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-        m_settings.worldSave = loadNode["world-save"].as<bool>(false);
-        m_settings.worldSaveInterval = seconds(std::max(60, loadNode["world-save-interval-s"].as<int>(1800)));
+        m_settings.worldSave = loadNode["world-save"].as<bool>(true);
+        m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60*60*24));
         m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
-        m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
+        //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
         m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
-        m_settings.playerMax = std::max(1, loadNode["player-max"].as<int>(10));                 // max allowed players
+        m_settings.playerMax = std::clamp(loadNode["player-max"].as<int>(10), 1, 99999);     // max allowed players
         m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
         m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
         //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
-        m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map
-        m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
-        m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
+        m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map # TODO put this in lua?
+        //m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
+        //m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
 
         m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
 
@@ -102,6 +109,12 @@ void IValhalla::LoadFiles() {
         //m_settings.dungeonIncrementalResetTime = seconds(std::max(1, loadNode["dungeon-incremental-reset-time-s"].as<int>(5)));
         m_settings.dungeonIncrementalResetCount = std::min(20, loadNode["dungeon-incremental-reset-count"].as<int>(3));
         m_settings.dungeonRandomGeneration = loadNode["dungeon-random-generation"].as<bool>(true);
+    
+        m_settings.eventsEnabled = loadNode["events-enabled"].as<bool>(true);
+        m_settings.eventsChance = std::clamp(loadNode["events-chance"].as<float>(.2f), 0.f, 1.f);
+        m_settings.eventsInterval = seconds(std::max(60, loadNode["events-interval-m"].as<int>(46)) * 60);
+        m_settings.eventsRange = std::clamp(loadNode["events-range"].as<float>(96), 1.f, 96.f * 4);
+        //m_settings.eventsSendInterval = loadNode["events-enabled"].as<bool>(true);
     }
     
     LOG(INFO) << "Server config loaded";
@@ -121,15 +134,15 @@ void IValhalla::LoadFiles() {
         saveNode["world-modern"] = m_settings.worldModern;
         //saveNode["world-seed"] = m_settings.worldSeed;
 
-        saveNode["player-auto-password"] = m_settings.playerAutoPassword;
+        //saveNode["player-auto-password"] = m_settings.playerAutoPassword;
         saveNode["player-whitelist"] = m_settings.playerWhitelist;
         saveNode["player-max"] = m_settings.playerMax;
         saveNode["player-auth"] = m_settings.playerAuth;
         saveNode["player-list"] = m_settings.playerList;
         saveNode["player-map-visible"] = m_settings.playerForceVisible;
         //saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
-        saveNode["player-sleep"] = m_settings.playerSleep;
-        saveNode["player-sleep-solo"] = m_settings.playerSleepSolo;
+        //saveNode["player-sleep"] = m_settings.playerSleep;
+        //saveNode["player-sleep-solo"] = m_settings.playerSleepSolo;
 
         saveNode["socket-timeout-ms"] = m_settings.socketTimeout.count();
 
@@ -155,6 +168,11 @@ void IValhalla::LoadFiles() {
         saveNode["dungeon-incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
         saveNode["dungeon-random-generation"] = m_settings.dungeonRandomGeneration;
 
+        saveNode["events-enabled"] = m_settings.eventsEnabled;
+        saveNode["events-chance"] = m_settings.eventsChance;
+        saveNode["events-interval-m"] = m_settings.eventsInterval.count() / 60;
+        saveNode["events-range"] = m_settings.eventsRange;
+
         YAML::Emitter out;
         out.SetIndent(4);
         out << saveNode;
@@ -175,12 +193,10 @@ void IValhalla::LoadFiles() {
         m_admin = *opt;
     }
 
-    if (m_settings.playerAutoPassword)
-        if (auto opt = VUtils::Resource::ReadFile<decltype(m_bypass)>("bypass.txt")) {
-            m_bypass = *opt;
-        }
-
-
+    //if (m_settings.playerAutoPassword)
+    //    if (auto opt = VUtils::Resource::ReadFile<decltype(m_bypass)>("bypass.txt")) {
+    //        m_bypass = *opt;
+    //    }
 }
 
 void IValhalla::Stop() {
@@ -204,6 +220,7 @@ void IValhalla::Start() {
     PrefabManager()->Init();
     ZDOManager()->Init();
     ZoneManager()->Init();
+    EventManager()->Init();
     WorldManager()->Init();
     GeoManager()->Init();
     ZoneManager()->PrepareAllFeatures();
@@ -213,27 +230,30 @@ void IValhalla::Start() {
     HeightmapBuilder()->Init();
     NetManager()->Init();
 
-    LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+    if (m_settings.serverPassword.empty())
+        LOG(WARNING) << "Server does not have a password";
+    else
+        LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
     // Basically, allow players who have already logged in before, unless the password has changed
-    if (m_settings.playerAutoPassword) {
-        const char* prevPassword = getenv("valhalla-prev-password");
-
-        // Clear the allow list on password change
-        if (prevPassword && m_settings.serverPassword != prevPassword) {
-            m_bypass.clear();
-        }
-
-        // Put the env
-        std::string kv = "valhalla-prev-password=" + m_settings.serverPassword;
-        if (putenv(kv.c_str())) {
-            char* msg = strerror(errno);
-            LOG(ERROR) << "Failed to set env: " << msg;
-        }
-        else {
-            LOG(INFO) << "Player auto password is enabled";
-        }
-    }
+    //if (m_settings.playerAutoPassword) {
+    //    const char* prevPassword = getenv("valhalla-prev-password");
+    //
+    //    // Clear the allow list on password change
+    //    if (prevPassword && m_settings.serverPassword != prevPassword) {
+    //        m_bypass.clear();
+    //    }
+    //
+    //    // Put the env
+    //    std::string kv = "valhalla-prev-password=" + m_settings.serverPassword;
+    //    if (putenv(kv.c_str())) {
+    //        char* msg = strerror(errno);
+    //        LOG(ERROR) << "Failed to set env: " << msg;
+    //    }
+    //    else {
+    //        LOG(INFO) << "Player auto password is enabled";
+    //    }
+    //}
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
@@ -312,7 +332,7 @@ void IValhalla::Start() {
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
     VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
     VUtils::Resource::WriteFile("admin.txt", m_admin);
-    VUtils::Resource::WriteFile("bypass.txt", m_bypass);
+    //VUtils::Resource::WriteFile("bypass.txt", m_bypass);
 
     LOG(INFO) << "Server was gracefully terminated";
 
@@ -333,6 +353,7 @@ void IValhalla::Update() {
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
+    EventManager()->Update();
 }
 
 void IValhalla::PeriodUpdate() {

@@ -19,7 +19,7 @@ class IEventManager {
 		//bool m_enabled = true;
 
 		// redundant? arent all events random?
-		bool m_random = true;
+		//bool m_random = true;
 
 		float m_duration = 60;
 
@@ -32,11 +32,11 @@ class IEventManager {
 
 		//[Header("( Keys required to be TRUE )")]
 		// could use hashes
-		robin_hood::unordered_set<std::string> m_requiredGlobalKeys;
+		robin_hood::unordered_set<std::string> m_presentGlobalKeys;
 
 		//[Header("( Keys required to be FALSE )")]
 		// could use hashes
-		robin_hood::unordered_set<std::string> m_notRequiredGlobalKeys;
+		robin_hood::unordered_set<std::string> m_absentGlobalKeys;
 
 		//[Space(20f)]
 		//std::string m_startMessage = "";
@@ -52,42 +52,38 @@ class IEventManager {
 	};
 
 public:
-	// add configuration in server settings
+	robin_hood::unordered_map<HASH_t, std::unique_ptr<Event>> m_events;
 
-	float m_eventIntervalMin = 1;
-
-	float m_eventChance = 25;
-
-	float m_randomEventRange = 200;
-
-	float m_eventTimer = 0;
-
-	float m_sendTimer = 0;
-
-	std::vector<std::unique_ptr<Event>> m_events;
+	// Event timer for chance of next event
+	float m_eventIntervalTimer = 0;
 
 private:
-	//Event *m_randomEvent = nullptr;
-	//float m_forcedEventUpdateTimer = 0;
-	//Event *m_forcedEvent = nullptr;
-	Event *m_activeEvent = nullptr;
-
-	//float m_tempSaveEventTimer;
-	//std::string m_tempSaveRandomEvent;
-	//float m_tempSaveRandomEventTime;
-	//Vector3 m_tempSaveRandomEventPos;
-
-	Vector3 m_activeEventPos; // location of current event
-	float m_activeEventTimer = 0; //  running time of current event
+	// The current random active event in the world
+	//	can be null if no event is active
+	const Event *m_activeEvent = nullptr;
+	Vector3 m_activeEventPos;
+	float m_activeEventTimer = 0;
 
 private:
 	void SendCurrentRandomEvent();
 
-	std::optional<std::pair<std::reference_wrapper<Event>, Vector3>> GetPossibleRandomEvent();
+	std::optional<std::pair<std::reference_wrapper<const Event>, Vector3>> GetPossibleRandomEvent();
 
-	bool HaveGlobalKeys(Event& e);
+	// Checks whether the server has or doesnt have
+	//	the global keys requested of the event
+	bool CheckGlobalKeys(const Event& e);
+
+	// Get an event by name
+	//	Returns null if not found
+	const Event* GetEvent(const std::string& name) {
+		auto&& find = m_events.find(VUtils::String::GetStableHashCode(name));
+		if (find != m_events.end())
+			return find->second.get();
+		return nullptr;
+	}
 
 public:
+	void Init();
     void Update();
 
     void Save(DataWriter& writer);

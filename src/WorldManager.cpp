@@ -9,6 +9,7 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 #include "NetManager.h"
+#include "EventManager.h"
 
 auto WORLD_MANAGER(std::make_unique<IWorldManager>());
 IWorldManager* WorldManager() {
@@ -168,26 +169,9 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 			if (worldVersion >= 12)
 				ZoneManager()->Load(reader, worldVersion);
 
-			if (worldVersion >= 15) {
-				// inlined RandEventManager::Load
-				//RandEventManager::Load(pkg, worldVersion);
+			if (worldVersion >= 15)
+				EventManager()->Load(reader, worldVersion);
 
-				auto eventTimer = reader.Read<float>();
-				if (worldVersion >= 25) {
-					auto text = reader.Read<std::string>();
-					auto time = reader.Read<float>();
-					Vector3 pos = reader.Read<Vector3>();
-
-					//if (!text.empty()) {
-					//	this.SetRandomEventByName(text, pos);
-					//	if (this.m_randomEvent != null)
-					//	{
-					//		this.m_randomEvent.m_time = time;
-					//		this.m_randomEvent.m_pos = pos;
-					//	}
-					//}
-				}
-			}
 		} catch (const std::runtime_error& e) {
 			LOG(ERROR) << "Failed to load world: " << e.what();
 		}
@@ -228,15 +212,10 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	
 	writer.Write(VConstants::WORLD);
 	writer.Write(Valhalla()->GetWorldTime());
+
 	ZDOManager()->Save(writer);
-	ZoneManager()->Save(writer);
-	
-	// Temporary inlined RandEventSystem::SaveAsync:
-	//RandEventSystem::SaveAsync(binary);
-	writer.Write((float)0);
-	writer.Write("");
-	writer.Write((float)0);
-	writer.Write(Vector3());
+	ZoneManager()->Save(writer);	
+	EventManager()->Save(writer);
 	
 	return bytes;
 }

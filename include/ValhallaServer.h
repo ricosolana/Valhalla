@@ -82,7 +82,7 @@ public:
     robin_hood::unordered_set<std::string> m_blacklist; // banned steam ids
     robin_hood::unordered_set<std::string> m_admin;     // admin steam ids
     robin_hood::unordered_set<std::string> m_whitelist; // whitelisted steam ids
-    robin_hood::unordered_set<std::string> m_bypass;    // password-bypass steam ids
+    //robin_hood::unordered_set<std::string> m_bypass;    // password-bypass steam ids
 
     // Get the time since the server started
     // Updated once per frame

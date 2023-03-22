@@ -1,33 +1,42 @@
 server-name: Valhalla server
 server-port: 2456
-server-password: secret
+server-password: ''
 server-public: false
+
 world-name: world
 world-save: false
 world-save-interval-s: 1800
-world-modern: false
-player-auto-password: true
+world-modern: true
+
 player-whitelist: false
 player-max: 10
 player-auth: true
 player-list: true
 player-map-visible: false
-player-sleep: true
-player-sleep-solo: true
+
 socket-timeout-ms: 300000000
 zdo-max-congestion: 10240
 zdo-min-congestion: 2048
 zdo-send-interval-ms: 50
 zdo-assign-interval-s: 2
 zdo-smart-assign: false
+
 spawning-creatures: true
 spawning-locations: false
 spawning-vegetation: true
-spawning-dungeons: true
+spawning-dungeons: false
+
 dungeon-end-caps: true
 dungeon-doors: true
 dungeon-flip-rooms: true
 dungeon-zone-limit: true
 dungeon-room-shrink: true
-dungeon-reset: false
-dungeon-reset-time-s: 300
+dungeon-reset: true
+dungeon-reset-time-s: 259200
+dungeon-incremental-reset-count: 3
+dungeon-random-generation: true
+
+events-enabled: true
+events-chance: 0.200000003
+events-interval-m: 46
+events-range: 96

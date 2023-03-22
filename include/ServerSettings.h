@@ -15,15 +15,15 @@ struct ServerSettings {
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
     
-    bool            playerAutoPassword;
+    //bool            playerAutoPassword;
     bool            playerWhitelist;
     unsigned int    playerMax;
     bool            playerAuth;
     bool            playerList;
     //bool            playerArrivePing;
     bool            playerForceVisible;
-    bool            playerSleep;        // enable time skip when all players sleeping
-    bool            playerSleepSolo;    // whether only 1 player needs to sleep to enable time skip
+    //bool            playerSleep;        // enable time skip when all players sleeping
+    //bool            playerSleepSolo;    // whether only 1 player needs to sleep to enable time skip
     
     milliseconds    socketTimeout;          // ms
 
@@ -49,9 +49,10 @@ struct ServerSettings {
     int             dungeonIncrementalResetCount;
     bool            dungeonRandomGeneration;
 
-    bool            events;
+    bool            eventsEnabled;
     float           eventsChance;
-    seconds         eventInterval;
-    seconds         eventSendInterval;
+    seconds         eventsInterval;
+    float           eventsRange;
+    //seconds         eventsSendInterval;
 
 };
