@@ -1,4 +1,10 @@
 todo:
+    - minor memory leaks (these are more like ignored object leaks, not forgotton ptrs)
+        - Peer.m_zdos
+            old ZDOs that are no longer near the player persist in this container until the peer quits
+        - HeightmapManager heightmaps
+            newly generated zones utilize Heightmaps in order to generate features/foliage, and these Heightmaps persist until the server stops
+
     - leviathans sinking when leaving area
         probably something to do with server needing to do something with them
         
