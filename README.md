@@ -24,6 +24,29 @@ All other settings are set in the `server.yml`. I periodically add new options e
 Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
 
 ## Progress
+### 3/22/2023 + TODO
+
+I've implemented a lot of stuff in Lua and made many misc fixes throughout. I essentially want to move all non-essential core server features into Lua. Some of these things include portal linking, sleeping, and eventually random event system. I have not listed some stuff but that's the basic idea. I will try to figure out compression and how to get the Valheim BetterNetworking mod to work with clients who join the server.
+
+This networking mod is different from the Compress mod in that it uses zStd + baked dictionaries instead of zlib. It seems straightforward enough although I will have to find look into the equivalent c++ bindings and way to approach this. I feel like it will be similar to the compress mod, in which I will just use the already made rpc event bindings to modify the outgoing packet and any incoming packets.
+
+I will be somehow soon creating a documentation for server config, Lua bindings and tutorial, and other server quirks. I feel like things on the Lua-side are finally setting-in and the approach seems ok. I'll go through some things below that I've noticed about the system from c++ to Lua:
+ - Unsafe storage of objects:
+   - `Peer` is safe to store in external containers. Any references must be nilled out during `Quit` events. Be aware that any errors thrown by `Quit` event handlers could result in lingering ptrs.
+   - `ZDO` objects automatically managed/retrieved from `ZDOManager:GetZDO(...)` from are unsafe to store outside of the scope they occur in. There is currently no way to to know when ZDOs are unallocated from memory, so store the `ZDOID` of the ZDO instead (I will add a onZdoErase method or equivalent sometime).
+   - Any `ZDO` objects created manually are *probably* safe to store anywhere/anytime (assuming they are not held by ZDOManager).
+   - Violating any of the above rules will likely result in a segfault or crash. I could easily fix this issue by making all shared objects use `std::shared_ptr`, but `std::unique_ptr` is easier to manage and faster.
+   - `Peer` sockets are safe to store outside the event scope, and safe to store after a peer is cleaned-up and freed (because of `std::shared_ptr`).
+ - Events as subscribed to by using `Valhalla:Subscribe(name, name1, name2, ..., func)`:
+   - All the name parameters represent a single name when binding. So think of the above as `name.name1.name2` (not like subscribing `name`, `name1`, `name2` with func). It works different internally than I've described, but its similar (the hashes of the names are combined with xor to give a *mostly* unique hash).
+   - See https://github.com/PeriodicSeizures/Valhalla/blob/22508dbed6f796e09a154cfaf752fc2be78558e8/data/mods/Compress/Compress.lua#L56, basically the Rpc sent by the server is selected, then only call on `ZDOData` calls are caught.
+  - Calling any `event.*()` methods outside of events subscribed to by `Valhalla:Subscribe(...)` will do nothing useful (so its pointless when used like this).
+ - Although I created some ZDO object wrappers (Views.Portal, etc...), I do not like these because they could change across versions (I will consider eventually removing). 
+ - The `print` method acts weirdly in some cases when printing a sol error string (it somehow overwrites characters). This is rare and only happened when printing a `string .. errorString`.
+ - All global methods are shared between different mods/scripts (I think?). Different mods are distinguished by a unique environment which only they have access to, and doing global stuff works according to however sol works (so globals between scripts might work?).
+ - Weird errors might occur when nilling out a global method or variable provided by Valhalla. Dont try to nil out `Valhalla`, `event`, `this`, `...Manager` or any stuff provided by Valhalla. For instance, `this` is used in the overridden print statement to print out the mod name and the string, so nilling it out will cause sol to throw.
+ - The variable `this` is dependent per environment, and it stores the current mod instance (think of Bukkit JavaPlugin).
+
 ### 3/7/2023 + TODO
 
 ![All dungeons](/docs/pics/dungeons.jpg)
