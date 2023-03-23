@@ -42,7 +42,7 @@ end
 Valhalla:Subscribe('PeriodUpdate', function()
     if not sleeping then
         if Valhalla.isAfternoon or Valhalla.isNight then
-            print('afternoon / night')
+            --print('afternoon / night')
             
             local peers = NetManager.peers
             

@@ -580,7 +580,7 @@ public:
 
     void SetPosition(const Vector3& pos);
 
-    Vector2i Sector() const;
+    Vector2i GetZone() const;
 
     const Quaternion& Rotation() const {
         return m_rotation;

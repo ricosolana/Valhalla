@@ -31,7 +31,7 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Distant));
     pkg.Write(this->m_prefab->m_hash);
 
-    pkg.Write(this->Sector());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
+    pkg.Write(this->GetZone());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
     pkg.Write(this->m_pos);
     pkg.Write(this->m_rotation);
     
@@ -112,7 +112,7 @@ void ZDO::SetPosition(const Vector3& pos) {
     }
 }
 
-ZoneID ZDO::Sector() const {
+ZoneID ZDO::GetZone() const {
     return IZoneManager::WorldToZonePos(m_pos);
 }
 

@@ -74,7 +74,7 @@ void IZDOManager::Update() {
 
 
 bool IZDOManager::AddToSector(ZDO& zdo) {
-	int num = SectorToIndex(zdo.Sector());
+	int num = SectorToIndex(zdo.GetZone());
 	if (num != -1) {
 		auto&& pair = m_objectsBySector[num].insert(&zdo);
 		assert(pair.second);
@@ -84,7 +84,7 @@ bool IZDOManager::AddToSector(ZDO& zdo) {
 }
 
 void IZDOManager::RemoveFromSector(ZDO& zdo) {
-	int num = SectorToIndex(zdo.Sector());
+	int num = SectorToIndex(zdo.GetZone());
 	if (num != -1) {
 		m_objectsBySector[num].erase(&zdo);
 	}
@@ -287,23 +287,23 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 	GetZDOs_Zone(zone, m_tempNearObjects); // get zdos: zone, nearby
 	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
-	for (auto&& zdo : m_tempNearObjects) {
-		if (zdo.get().m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)) {
-			if (zdo.get().Owner() == peer.m_uuid) {
+	for (auto&& ref : m_tempNearObjects) {
+		auto&& zdo = ref.get();
+		if (zdo.m_prefab->FlagsAbsent(Prefab::Flag::Sessioned)) {
+			if (zdo.IsOwner(peer.m_uuid)) {
 				
-				// If owner-peer no longer in area, make it unclaimed
-				if (!ZoneManager()->ZonesOverlap(zdo.get().Sector(), zone)) {
-					zdo.get().Disown();
+				// If peer no longer in area of zdo, unclaim zdo
+				if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
+					zdo.Disown();
 				}
 			}
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
-				// TODO remove HasOwner check
-				if (!(zdo.get().HasOwner() && ZoneManager()->IsPeerNearby(zdo.get().Sector(), zdo.get().m_owner))
-					&& ZoneManager()->ZonesOverlap(zdo.get().Sector(), zone)) {
+				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.m_owner))
+					&& ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					
-					zdo.get().SetOwner(peer.m_uuid);
+					zdo.SetOwner(peer.m_uuid);
 				}
 			}
 		}
@@ -376,11 +376,12 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 		m_objectsByID.erase(find);
 	}
 
+	// cleans up some zdos
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->m_zdos.erase(zdoid);
 	}
 
-	m_deadZDOs.insert(zdoid);
+	m_erasedZDOs.insert(zdoid);
 }
 
 void IZDOManager::SendAllZDOs(Peer& peer) {
@@ -759,6 +760,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
 							//*zdo = copy; // if zdo modification was to be cancelled
 
+						// ensure that owner change is legal
+						//	owner will only change if the ZDO was handed over to another client by the controlling client
+						if (!zdo.IsOwner(peer->m_uuid))
+							throw std::runtime_error("non-owning peer tried changing ZDO ownership");
+
 						zdo.m_owner = owner;
 						zdo.m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos[zdoid] = rev;
@@ -785,20 +791,37 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					.m_syncTime = time
 				};
 
+				// TODO extract deserialize directly here, 
+				//	and use to construct ZDOs directly, with a non-null prefab to guarantee safety
 				zdo.Deserialize(des);
 
 				if (created) {
-					if (m_deadZDOs.contains(zdoid)) {
+					if (m_erasedZDOs.contains(zdoid)) {
 						DestroyZDO(zdo, true);
 					}
 					else {
+						// check-test
+						//	if ZDO was created (presumably by the client)
+						//	zdoid.uuid should match
+						if (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid)
+							throw std::runtime_error("newly created ZDO.owner or uuid does not match peer id");
+
 						AddToSector(zdo);
 						m_objectsByPrefab[zdo.GetPrefab()->m_hash].insert(&zdo);
 					}
 				}
 				else {
-					if (ModManager()->CallEvent("ZDOChange", &copy, zdo))
-						zdo = copy; // if zdo modification was to be cancelled
+					// maybe too expensive? create another that polls for specific zdos with prefab/flags...
+					//if (ModManager()->CallEvent("ZDOChange", &copy, zdo))
+						//zdo = copy; // if zdo modification was to be cancelled
+
+					// check-test
+					//	theoretical: sessioned ZDOs are pretty much clients-only
+					//	if sessioned/temporary ZDO was modified by the client
+					//	zdoid.uuid should match (because temps are used only by local-client)
+					if (zdo.GetPrefab()->FlagsPresent(Prefab::Flag::Sessioned) 
+						&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
+							throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");					
 				}
 			}
 			catch (const std::runtime_error& e) {
@@ -817,8 +840,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 void IZDOManager::OnPeerQuit(Peer& peer) {
 	for (auto&& pair : m_objectsByID) {
 		auto&& zdo = *pair.second.get();
-		// If ZDO prefab is not assigned (because bad prefab hash)
-		if ((!zdo.GetPrefab() || !zdo.GetPrefab()->FlagsAbsent(Prefab::Flag::Sessioned))
+		assert(zdo.GetPrefab());
+
+		// Remove temporary ZDOs belonging to peers (like particles and attack anims, vfx, sfx...)
+		if ((!zdo.GetPrefab()->FlagsAbsent(Prefab::Flag::Sessioned))
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid)))
 		{
 			LOG(INFO) << "Destroying zdo (" << (zdo.m_prefab ? zdo.m_prefab->m_name : "???") << ")";

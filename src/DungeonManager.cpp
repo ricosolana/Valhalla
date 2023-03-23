@@ -142,7 +142,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
         // if a player is inside, do not reset
         for (auto&& peer : NetManager()->GetPeers()) {
             // if peer in dungeon sector, and they are high up (presumably inside the dungeon)
-            if (dungeonZdo.Sector() == ZoneManager()->WorldToZonePos(peer->m_pos)
+            if (dungeonZdo.GetZone() == ZoneManager()->WorldToZonePos(peer->m_pos)
                 && peer->m_pos.y > 4000) {
                 playerNear = true;
                 break;
@@ -156,7 +156,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
         auto rot = dungeonZdo.Rotation();
 
         if (!playerNear) {
-            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.Sector(), [](const ZDO& zdo) {
+            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
                 return zdo.Position().y > 4000 && zdo.GetPrefab()->FlagsAbsent(Prefab::Flag::Player | Prefab::Flag::Tombstone);
             });
 

@@ -439,7 +439,7 @@ void IModManager::LoadAPI() {
         sol::no_constructor,
         "id", sol::property(&ZDO::ID),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
-        "zone", sol::property(&ZDO::Sector),
+        "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
         //"owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),

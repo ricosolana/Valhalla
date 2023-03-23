@@ -26,7 +26,8 @@ public:
 
     // Return whether this has a value besides NONE
     explicit operator bool() const noexcept {
-        return *this != NONE;
+        return this->m_uuid != 0;
+        //return *this != NONE;
     }
 
     static const ZDOID NONE;

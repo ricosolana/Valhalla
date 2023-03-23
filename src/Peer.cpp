@@ -137,7 +137,7 @@ void Peer::ZDOSectorInvalidated(ZDO& zdo) {
     if (zdo.IsOwner(this->m_uuid))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo.Sector(), m_pos)) {
+    if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {
         if (m_zdos.erase(zdo.ID())) {
             m_invalidSector.insert(zdo.ID());
         }
