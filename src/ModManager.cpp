@@ -102,8 +102,9 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
-        sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
-        "uuid", sol::property([](ZDOID& self) { return self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
+        //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
+        sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID((OWNER_t)uuid, id); }),
+        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
         "id", &ZDOID::m_id,
         "NONE", sol::property([]() { return ZDOID::NONE; })
     );
@@ -117,6 +118,7 @@ void IModManager::LoadAPI() {
         "QUATERNION", Type::QUATERNION,
         "STRINGS", Type::STRINGS,
         "BOOL", Type::BOOL,
+        // TODO bring back unsigned (because of negative numbers are not the same as positive)
         "BYTE", Type::INT8, "INT8", Type::INT8,
         "SHORT", Type::INT16, "INT16", Type::INT16,
         "INT", Type::INT32, "INT32", Type::INT32, "HASH", Type::INT32,
@@ -142,6 +144,8 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write)
+            // TODO add int64 wrappers here too (since theyre now distinct object classes)
+
             //[](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
 
             //[](DataWriter& self, DataType type, LUA_NUMBER val) {
@@ -173,7 +177,8 @@ void IModManager::LoadAPI() {
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
         "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
         "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
-        "WriteInt64", static_cast<void (DataWriter::*)(int64_t)>(&DataWriter::Write), // TODO use int64 wrapper
+        "WriteInt64", static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
+        "WriteUInt64", static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write),
         "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
         "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
 
@@ -192,13 +197,15 @@ void IModManager::LoadAPI() {
         sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
-        // TODO make several descriptive reads, ie, ReadString, ReadInt, ReadVector3...
-        //  instead of this verbose nightmare
+
         "ReadBytes", &DataReader::ReadBytes,
+
+        // TODO add unsigned (doesnt really matter, but makes things more concise; bytes that overflow past INTx_MAX are still represented correctly?)
+        //  Lua numbers are all doubles, then calling these functions causes sol to do casts and stuff... might lose required signedness...
         "ReadInt8", &DataReader::ReadInt8,
         "ReadInt16", &DataReader::ReadInt16,
         "ReadInt32", &DataReader::ReadInt32,
-        "ReadInt64", &DataReader::ReadInt64, // TODO use int64 wrapper
+        "ReadInt64", &DataReader::ReadInt64Wrapper,
         "ReadFloat", &DataReader::ReadFloat,
         "ReadDouble", &DataReader::ReadDouble,
         "ReadZDOID", &DataReader::ReadZDOID,
@@ -260,7 +267,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
+        sol::factories([](const std::string &name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
     );
 
     m_state.new_enum("ChatMsgType",
@@ -330,47 +337,6 @@ void IModManager::LoadAPI() {
         )
     );
 
-    
-    /*
-    m_state.new_enum("PrefabFlag",
-        "NONE", Prefab::Flag::None,
-        "SCALE", Prefab::Flag::SyncInitialScale,
-        "FAR", Prefab::Flag::Distant,
-        "SESSIONED", Prefab::Flag::Sessioned,
-        "PIECE", Prefab::Flag::Piece,
-        "BED", Prefab::Flag::Bed,
-        "DOOR", Prefab::Flag::Door,
-        "CHAIR", Prefab::Flag::Chair,
-        "SHIP", Prefab::Flag::Ship,
-        "FISH", Prefab::Flag::Fish,
-        "PLANT", Prefab::Flag::Plant,
-        "ARMATURE", Prefab::Flag::ArmorStand,
-        "ITEM", Prefab::Flag::ItemDrop,
-        "PICKABLE", Prefab::Flag::Pickable,
-        "PICKABLE_ITEM", Prefab::Flag::PickableItem,
-        "COOKING", Prefab::Flag::CookingStation,
-        "CRAFTING", Prefab::Flag::CraftingStation,
-        "SMELTING", Prefab::Flag::Smelter,
-        "BURNING", Prefab::Flag::Fireplace,
-        "SUPPORT", Prefab::Flag::WearNTear,
-        "BREAKABLE", Prefab::Flag::Destructible,
-        "ATTACH", Prefab::Flag::ItemStand,
-        "ANIMAL", Prefab::Flag::AnimalAI,
-        "MONSTER", Prefab::Flag::MonsterAI,
-        "TAME", Prefab::Flag::Tameable,
-        "BREED", Prefab::Flag::Procreation,
-        "ROCK", Prefab::Flag::MineRock,
-        "ROCK_5", Prefab::Flag::MineRock5,
-        "TREE", Prefab::Flag::TreeBase,
-        "LOG", Prefab::Flag::TreeLog,
-        "SFX", Prefab::Flag::SFX,
-        "VFX", Prefab::Flag::VFX,
-        "AOE", Prefab::Flag::AOE,
-        "DUNGEON", Prefab::Flag::Dungeon,
-        "PLAYER", Prefab::Flag::Player,
-        "TOMBSTONE", Prefab::Flag::Tombstone
-    );*/
-
     m_state.new_usertype<Prefab>("Prefab",
         sol::no_constructor,
         "name", &Prefab::m_name,
@@ -379,43 +345,49 @@ void IModManager::LoadAPI() {
         "FlagsAbsent", &Prefab::FlagsAbsent
     );
 
+    // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
+    // When converting flag double to int from lua->c++, double finely represents all integral values with about
+    //  32 bits being perfectly represented
+    //  when masking and combining about 35+ bits, a double cannot represent this integral number accurately
+    //  ive about reached the limit of using bitflags with lua, and will have to opt for a different type (I dont want to use the intwrapper for flags)
+
     m_state.new_enum("Flag",
-        "NONE", Prefab::Flag::None,
-        "SCALE", Prefab::Flag::SyncInitialScale,
-        "FAR", Prefab::Flag::Distant,
-        "SESSIONED", Prefab::Flag::Sessioned,
-        "PIECE", Prefab::Flag::Piece,
-        "BED", Prefab::Flag::Bed,
-        "DOOR", Prefab::Flag::Door,
-        "CHAIR", Prefab::Flag::Chair,
-        "SHIP", Prefab::Flag::Ship,
-        "FISH", Prefab::Flag::Fish,
-        "PLANT", Prefab::Flag::Plant,
-        "ARMATURE", Prefab::Flag::ArmorStand,
-        "ITEM", Prefab::Flag::ItemDrop,
-        "PICKABLE", Prefab::Flag::Pickable,
-        "PICKABLE_ITEM", Prefab::Flag::PickableItem,
-        "COOKING", Prefab::Flag::CookingStation,
-        "CRAFTING", Prefab::Flag::CraftingStation,
-        "SMELTING", Prefab::Flag::Smelter,
-        "BURNING", Prefab::Flag::Fireplace,
-        "SUPPORT", Prefab::Flag::WearNTear,
-        "BREAKABLE", Prefab::Flag::Destructible,
-        "ATTACH", Prefab::Flag::ItemStand,
-        "ANIMAL", Prefab::Flag::AnimalAI,
-        "MONSTER", Prefab::Flag::MonsterAI,
-        "TAME", Prefab::Flag::Tameable,
-        "BREED", Prefab::Flag::Procreation,
-        "ROCK", Prefab::Flag::MineRock,
-        "ROCK_5", Prefab::Flag::MineRock5,
-        "TREE", Prefab::Flag::TreeBase,
-        "LOG", Prefab::Flag::TreeLog,
+        "NONE", Prefab::Flag::NONE,
+        "SCALE", Prefab::Flag::SYNC_INITIAL_SCALE,
+        "FAR", Prefab::Flag::DISTANT,
+        "SESSIONED", Prefab::Flag::SESSIONED,
+        "PIECE", Prefab::Flag::PIECE,
+        "BED", Prefab::Flag::BED,
+        "DOOR", Prefab::Flag::DOOR,
+        "CHAIR", Prefab::Flag::CHAIR,
+        "SHIP", Prefab::Flag::SHIP,
+        "FISH", Prefab::Flag::FISH,
+        "PLANT", Prefab::Flag::PLANT,
+        "ARMATURE", Prefab::Flag::ARMOR_STAND,
+        "ITEM", Prefab::Flag::ITEM_DROP,
+        "PICKABLE", Prefab::Flag::PICKABLE,
+        "PICKABLE_ITEM", Prefab::Flag::PICKABLE_ITEM,
+        "COOKING", Prefab::Flag::COOKING_STATION,
+        "CRAFTING", Prefab::Flag::CRAFTING_STATION,
+        "SMELTING", Prefab::Flag::SMELTER,
+        "BURNING", Prefab::Flag::FIREPLACE,
+        "SUPPORT", Prefab::Flag::WEAR_N_TEAR,
+        "BREAKABLE", Prefab::Flag::DESTRUCTIBLE,
+        "ATTACH", Prefab::Flag::ITEM_STAND,
+        "ANIMAL", Prefab::Flag::ANIMAL_AI,
+        "MONSTER", Prefab::Flag::MONSTER_AI,
+        "TAME", Prefab::Flag::TAMEABLE,
+        "BREED", Prefab::Flag::PROCREATION,
+        "MINEABLE_OLD", Prefab::Flag::MINE_ROCK,
+        "MINEABLE", Prefab::Flag::MINE_ROCK_5,
+        "TREE", Prefab::Flag::TREE_BASE,
+        "LOG", Prefab::Flag::TREE_LOG,
         "SFX", Prefab::Flag::SFX,
         "VFX", Prefab::Flag::VFX,
         "AOE", Prefab::Flag::AOE,
-        "DUNGEON", Prefab::Flag::Dungeon,
-        "PLAYER", Prefab::Flag::Player,
-        "TOMBSTONE", Prefab::Flag::Tombstone
+        "DUNGEON", Prefab::Flag::DUNGEON,
+        "PLAYER", Prefab::Flag::PLAYER,
+        "TOMBSTONE", Prefab::Flag::TOMBSTONE
     );
 
 
@@ -735,16 +707,16 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const Vector3& pos, float radius, size_t max, const std::string& name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+            [](IZDOManager& self, const Vector3& pos, float radius, size_t max, const std::string& name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, size_t max, const std::string& name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+            [](IZDOManager& self, const ZoneID& zone, size_t max, const std::string& name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const Vector3&, float)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, size_t max, const Vector3& pos, float radius, const std::string& name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+            [](IZDOManager& self, const ZoneID& zone, size_t max, const Vector3& pos, float radius, const std::string& name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(HASH_t)>(&IZDOManager::GetZDOs),
@@ -753,28 +725,28 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const Vector3&, float)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const ZoneID& zone, const Vector3& pos, float radius, const std::string& name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+            [](IZDOManager& self, const ZoneID& zone, const Vector3& pos, float radius, const std::string& name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "AnyZDO", sol::overload(
             sol::resolve<ZDO* (const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); },
+            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<ZDO* (const ZoneID&, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "NearestZDO", sol::overload(
             sol::resolve<ZDO* (const Vector3&, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::NearestZDO),
             sol::resolve<ZDO* (const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
-            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::None, Prefab::Flag::None); }
+            [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", [](IZDOManager& self, const ZDOID& zdoid) { self.ForceSendZDO(zdoid); },
         "DestroyZDO", sol::overload(

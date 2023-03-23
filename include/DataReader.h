@@ -239,8 +239,8 @@ public:
 
     decltype(auto) ReadInt8() { return Read<int8_t>(); }
     decltype(auto) ReadInt16() { return Read<int16_t>(); }
-    decltype(auto) ReadInt32() { return Read<int32_t>(); }    
-    decltype(auto) ReadInt64() { return Read<int64_t>(); }
+    decltype(auto) ReadInt32() { return Read<int32_t>(); }
+    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
     decltype(auto) ReadFloat() { return Read<float>(); }
     decltype(auto) ReadDouble() { return Read<double>(); }
 

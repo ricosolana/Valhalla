@@ -60,7 +60,7 @@ void IEventManager::Update() {
 	if (m_activeEvent) {
 		// Update the timer of the current event
 		if (!m_activeEvent->m_pauseIfNoPlayerInArea
-			|| ZDOManager()->AnyZDO(this->m_activeEventPos, SERVER_SETTINGS.eventsRange, 0, Prefab::Flag::Player, Prefab::Flag::None))
+			|| ZDOManager()->AnyZDO(this->m_activeEventPos, SERVER_SETTINGS.eventsRange, 0, Prefab::Flag::PLAYER, Prefab::Flag::NONE))
 			m_activeEventTimer += Valhalla()->Delta();
 
 		if (m_activeEventTimer > this->m_activeEvent->m_duration) {

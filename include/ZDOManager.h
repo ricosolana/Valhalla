@@ -154,7 +154,7 @@ public:
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
 	std::list<std::reference_wrapper<ZDO>> SomeZDOs(const ZoneID& zone, size_t max, const Vector3& pos, float radius) {
-		return SomeZDOs(zone, max, pos, radius, 0, Prefab::Flag::None, Prefab::Flag::None);
+		return SomeZDOs(zone, max, pos, radius, 0, Prefab::Flag::NONE, Prefab::Flag::NONE);
 	}
 
 
@@ -200,7 +200,7 @@ public:
 	}
 	// Get all ZDOs within a radius in zone
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(const ZoneID& zone, const Vector3& pos, float radius) {
-		return GetZDOs(zone, pos, radius, 0, Prefab::Flag::None, Prefab::Flag::None);
+		return GetZDOs(zone, pos, radius, 0, Prefab::Flag::NONE, Prefab::Flag::NONE);
 	}
 
 

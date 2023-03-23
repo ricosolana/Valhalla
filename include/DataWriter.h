@@ -178,6 +178,14 @@ public:
         Write(in.m_networkUserId);
     }
 
+    void Write(const UInt64Wrapper& in) {
+        Write((uint64_t)in);
+    }
+
+    void Write(const Int64Wrapper& in) {
+        Write((int64_t)in);
+    }
+
 
 
     // Empty template

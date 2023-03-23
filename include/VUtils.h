@@ -224,43 +224,45 @@ public:
 
 
 
+template<typename T> requires std::is_integral_v<T>
+class IntegralWrapper {
+    using Type = IntegralWrapper<T>;
 
-
-class Int64Wrapper {
 private:
-    int64_t m_value;
+    T m_value;
 
 public:
-    Int64Wrapper() {
+    IntegralWrapper() {
         m_value = 0;
     }
 
-    Int64Wrapper(int64_t value) 
-        : m_value(value) {
-
-    }
+    IntegralWrapper(T value)
+        : m_value(value) {}
     
-    Int64Wrapper(uint32_t high, uint32_t low) {
+    IntegralWrapper(uint32_t high, uint32_t low) {
         // high and low should be bounded around 2^32
-        m_value = ((uint64_t)high << 32) | (uint64_t)low;
+        m_value = (static_cast<T>(high) << 32) | static_cast<T>(low);
     }
 
-    Int64Wrapper(const std::string &hex) {
+    IntegralWrapper(const std::string &hex) {
         // high and low should be bounded around 2^32
 
         // number accepts '0x...', 'bases...'
         // when radix is 0, radix will be deduced from the initial base '0x...'
-        this->m_value = std::strtoull(hex.c_str() + 2, nullptr, 0);
+        if constexpr (std::is_unsigned_v<T>)
+            this->m_value = std::strtoull(hex.c_str() + 2, nullptr, 0);
+        else 
+            this->m_value = std::strtoll(hex.c_str() + 2, nullptr, 0);
     }
 
 
 
     operator int64_t() const {
-        return this->m_value;
+        return static_cast<int64_t>(this->m_value);
     }
     
     operator uint64_t() const {
-        return this->m_value;
+        return static_cast<uint64_t>(this->m_value);
     }
 
     operator int32_t() const {
@@ -273,23 +275,23 @@ public:
 
 
 
-    decltype(auto) __add(const Int64Wrapper& other) {
+    decltype(auto) __add(const Type& other) {
         return this->m_value + other.m_value;
     }
 
-    decltype(auto) __sub(const Int64Wrapper& other) {
+    decltype(auto) __sub(const Type& other) {
         return this->m_value - other.m_value;
     }
 
-    decltype(auto) __mul(const Int64Wrapper& other) {
+    decltype(auto) __mul(const Type& other) {
         return this->m_value * other.m_value;
     }
 
-    decltype(auto) __div(const Int64Wrapper& other) {
+    decltype(auto) __div(const Type& other) {
         return this->m_value / other.m_value;
     }
 
-    decltype(auto) __divi(const Int64Wrapper& other) {
+    decltype(auto) __divi(const Type& other) {
         return this->m_value / other.m_value;
     }
 
@@ -297,19 +299,23 @@ public:
         return -this->m_value;
     }
 
-    decltype(auto) __eq(const Int64Wrapper& other) {
+    decltype(auto) __eq(const Type& other) {
         return this->m_value == other.m_value;
     }
 
-    decltype(auto) __lt(const Int64Wrapper& other) {
+    decltype(auto) __lt(const Type& other) {
         return this->m_value < other.m_value;
     }
 
-    decltype(auto) __le(const Int64Wrapper& other) {
+    decltype(auto) __le(const Type& other) {
         return this->m_value <= other.m_value;
     }
 };
 
+using UInt64Wrapper = IntegralWrapper<uint64_t>;
+using Int64Wrapper = IntegralWrapper<int64_t>;
+
+std::ostream& operator<<(std::ostream& st, const UInt64Wrapper& val);
 std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
 
 

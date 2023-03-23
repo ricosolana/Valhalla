@@ -12,62 +12,92 @@ public:
     };
 
     enum class Type : BYTE_t {
-        Default,
-        Prioritized,
-        Solid,
-        Terrain
+        DEFAULT,
+        PRIORITIZED,
+        SOLID,
+        TERRAIN
     };
 
+    // MineRock/5 is interesting
+    //  MineRock is not used throughout the game, except for Leviathan
+    //  MineRock5 is used by every pickaxe mineable thing (rocks / copper / icon / scrap / Plains monoliths / scrap piles / pretty much everything)
+    //  - The '5' in MineRock5 could mean:
+    //      - an earlier naming where it used to have 5 mineable parts?
+    //      - the 5th revision of the MineRockX
+    //      - im not really sure of the naming besides this
+
     enum class Flag : uint64_t {
-        None = 0,
+        NONE = 0,
 
-        SyncInitialScale = 1ULL << 0,
-        Distant = 1ULL << 1,
-        Persistent = 1ULL << 2,
-        Sessioned = 1ULL << 2,
+        SYNC_INITIAL_SCALE = 1ULL << 0,
+        DISTANT = 1ULL << 1,
+        PERSISTENT = 1ULL << 2,
+        SESSIONED = 1ULL << 2,
 
-        Piece = 1ULL << 3,
-        Bed = 1ULL << 4,
-        Door = 1ULL << 5,
-        Chair = 1ULL << 6,
-        Ship = 1ULL << 7,
-        Fish = 1ULL << 8,
-        Plant = 1ULL << 9,
-        ArmorStand = 1ULL << 10,
+        PIECE = 1ULL << 3,
+        BED = 1ULL << 4,
+        DOOR = 1ULL << 5,
+        CHAIR = 1ULL << 6,
+        SHIP = 1ULL << 7,
+        FISH = 1ULL << 8,
+        PLANT = 1ULL << 9,
+        ARMOR_STAND = 1ULL << 10,
 
-        ItemDrop = 1ULL << 11,
-        Pickable = 1ULL << 12,
-        PickableItem = 1ULL << 13,
+        ITEM_DROP = 1ULL << 11,
+        PICKABLE = 1ULL << 12,
+        PICKABLE_ITEM = 1ULL << 13,
 
-        CookingStation = 1ULL << 14,
-        CraftingStation = 1ULL << 15,
-        Smelter = 1ULL << 16,
-        Fireplace = 1ULL << 17,
+        COOKING_STATION = 1ULL << 14,
+        CRAFTING_STATION = 1ULL << 15,
+        SMELTER = 1ULL << 16,
+        FIREPLACE = 1ULL << 17,
 
-        WearNTear = 1ULL << 18,
-        Destructible = 1ULL << 19,
-        ItemStand = 1ULL << 20,
+        WEAR_N_TEAR = 1ULL << 18,
+        DESTRUCTIBLE = 1ULL << 19,
+        ITEM_STAND = 1ULL << 20,
 
-        AnimalAI = 1ULL << 21,
-        MonsterAI = 1ULL << 22,
-        Tameable = 1ULL << 23,
-        Procreation = 1ULL << 24,
+        ANIMAL_AI = 1ULL << 21,
+        MONSTER_AI = 1ULL << 22,
+        TAMEABLE = 1ULL << 23,
+        PROCREATION = 1ULL << 24,
 
-        MineRock = 1ULL << 25,
-        MineRock5 = 1ULL << 26,
-        TreeBase = 1ULL << 27, // vegetation
-        TreeLog = 1ULL << 28, // chopped down
+        // Unused rock, except for Leviathan
+        MINE_ROCK = 1ULL << 25, 
+        // Use this for all normal in-game Mineables
+        MINE_ROCK_5 = 1ULL << 26,
+        TREE_BASE = 1ULL << 27, // vegetation
+        TREE_LOG = 1ULL << 28, // chopped down
 
         SFX = 1ULL << 29, // sound effect
         VFX = 1ULL << 30, // visual effect
         AOE = 1ULL << 31, // AOE attacks
 
-        Dungeon = 1ULL << 32,
+        DUNGEON = 1ULL << 32,
 
-        TerrainModifier = 1ULL << 33,
+        TERRAIN_MODIFIER = 1ULL << 33,
 
-        Player = 1ULL << 34,
-        Tombstone = 1ULL << 35,
+        PLAYER = 1ULL << 34,
+        TOMBSTONE = 1ULL << 35,
+
+        // TODO add (order of importance): 
+        //  - Container
+        //  - Projectile
+        //  - MusicLocation
+        //  - Floating
+        //  - Gibber        
+        //  - Mister (area/edge/small)
+        //  - NpcTalk
+        // TODO remove (if more bits needed):
+        //  - MineRock
+        //  - ItemStand (4 prefabs, also used by boss stones...)
+        //  - Tombstone
+        //  - Player
+        //  - Bed? (there are 2 types of beds)
+        //  - ArmorStand (3 types: M/F/default)
+        //  - CookingStation (3 types: reg/iron/oven)
+        //  - Procreation (4 types)
+        //  - Ship (4 types: includes trailership)
+
 
         //static constexpr FLAG_t BossStone = 1ULL << 36;
         //static constexpr FLAG_t Container = 1ULL << 37;
@@ -83,18 +113,18 @@ public:
 	std::string m_name;
 	HASH_t m_hash = 0;
 
-	Type m_type = Type::Default; // TODO store in flags
+	Type m_type = Type::DEFAULT; // TODO store in flags
 
 	Vector3 m_localScale;
 
-	Flag m_flags = Flag::None;
+	Flag m_flags = Flag::NONE;
 
     bool FlagsPresent(Flag prefabFlags) const {
-        return prefabFlags == Flag::None || (m_flags & prefabFlags) == prefabFlags;
+        return prefabFlags == Flag::NONE || (m_flags & prefabFlags) == prefabFlags;
     }
 
     bool FlagsAbsent(Flag prefabFlags) const {
-        return prefabFlags == Flag::None
+        return prefabFlags == Flag::NONE
             || (m_flags & prefabFlags) != prefabFlags;
     }
 

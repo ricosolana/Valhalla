@@ -157,7 +157,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
         if (!playerNear) {
             auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
-                return zdo.Position().y > 4000 && zdo.GetPrefab().FlagsAbsent(Prefab::Flag::Player | Prefab::Flag::Tombstone);
+                return zdo.Position().y > 4000 && zdo.GetPrefab().FlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
             });
 
             for (auto&& ref : zdos) {

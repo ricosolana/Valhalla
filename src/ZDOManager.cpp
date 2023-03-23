@@ -116,7 +116,7 @@ void IZDOManager::Save(DataWriter& pkg) {
 			//NetPackage zdoPkg;
 			for (auto&& sectorObjects : m_objectsBySector) {
 				for (auto zdo : sectorObjects) {
-					if (zdo->m_prefab.get().FlagsAbsent(Prefab::Flag::Sessioned)) {
+					if (zdo->m_prefab.get().FlagsAbsent(Prefab::Flag::SESSIONED)) {
 						pkg.Write(zdo->ID());
 						pkg.SubWrite(
 							[&]() {
@@ -171,7 +171,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			AddZDOToZone(*zdo.get());
 			m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
 
-			if (prefab.FlagsPresent(Prefab::Flag::Dungeon)) {
+			if (prefab.FlagsPresent(Prefab::Flag::DUNGEON)) {
 				// Only add real sky dungeon
 				if (zdo->Position().y > 4000)
 					DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
@@ -257,7 +257,7 @@ ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Qu
 	zdo.m_rotation = rot;
 	zdo.m_prefab = prefab;
 
-	if (prefab.FlagsPresent(Prefab::Flag::SyncInitialScale))
+	if (prefab.FlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE))
 		zdo.Set("scale", prefab.m_localScale);
 
 	return zdo;
@@ -291,7 +291,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 	for (auto&& ref : m_tempNearObjects) {
 		auto&& zdo = ref.get();
-		if (zdo.m_prefab.get().FlagsAbsent(Prefab::Flag::Sessioned)) {
+		if (zdo.m_prefab.get().FlagsAbsent(Prefab::Flag::SESSIONED)) {
 			if (zdo.IsOwner(peer.m_uuid)) {
 				
 				// If peer no longer in area of zdo, unclaim zdo
@@ -344,7 +344,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& ref : zdos) {
 				auto&& zdo = ref.get();
-				if (zdo.GetPrefab().FlagsAbsent(Prefab::Flag::Sessioned)
+				if (zdo.GetPrefab().FlagsAbsent(Prefab::Flag::SESSIONED)
 					&& zdo.m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo.SetOwner(peer.m_uuid);
@@ -466,8 +466,8 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 		auto&& a = first.first.get();
 		auto&& b = second.first.get();
 
-		bool flag = a.GetPrefab().m_type == Prefab::Type::Prioritized && a.HasOwner() && !a.IsOwner(peer.m_uuid);
-		bool flag2 = b.GetPrefab().m_type == Prefab::Type::Prioritized && b.HasOwner() && !b.IsOwner(peer.m_uuid);
+		bool flag = a.GetPrefab().m_type == Prefab::Type::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
+		bool flag2 = b.GetPrefab().m_type == Prefab::Type::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetPrefab().m_type == b.GetPrefab().m_type) {
@@ -528,7 +528,7 @@ void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<std::reference
 		auto&& list = m_objectsBySector[num];
 
 		for (auto&& zdo : list) {
-			if (zdo->GetPrefab().FlagsPresent(Prefab::Flag::Distant))
+			if (zdo->GetPrefab().FlagsPresent(Prefab::Flag::DISTANT))
 				objects.push_back(*zdo);
 		}
 	}
@@ -822,7 +822,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	theoretical: sessioned ZDOs are pretty much clients-only
 					//	if sessioned/temporary ZDO was modified by the client
 					//	zdoid.uuid should match (because temps are used only by local-client)
-					if (zdo.GetPrefab().FlagsPresent(Prefab::Flag::Sessioned) 
+					if (zdo.GetPrefab().FlagsPresent(Prefab::Flag::SESSIONED) 
 						&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
 							throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");					
 				}
@@ -846,7 +846,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		auto&& prefab = zdo.GetPrefab();
 
 		// Remove temporary ZDOs belonging to peers (like particles and attack anims, vfx, sfx...)
-		if (prefab.FlagsPresent(Prefab::Flag::Sessioned)
+		if (prefab.FlagsPresent(Prefab::Flag::SESSIONED)
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid)))
 		{
 			LOG(INFO) << "Destroying zdo (" << prefab.m_name << ")";

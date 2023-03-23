@@ -29,6 +29,10 @@ Color32 Color32::Lerp(const Color32 &other, float t) {
 //const Color Color::GREEN = Color(0, 1, 0);
 //const Color Color::BLUE = Color(0, 0, 1);
 
+std::ostream& operator<<(std::ostream& st, const UInt64Wrapper& val) {
+    return st << (uint64_t)val;
+}
+
 std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val) {
     return st << (int64_t)val;
 }
