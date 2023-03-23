@@ -377,7 +377,7 @@ private:
                         assert(count >= 0x80);
                         // make room for utf8 bytes
                         vec.insert(vec.begin() + size_mark, extraCount, 0);
-                        writer.Write<char16_t>(count);
+                        writer.Write((char16_t)count);
                         end_mark += extraCount;
                     } else {
                         assert(count < 0x80);
@@ -396,8 +396,10 @@ private:
     }
 
     template<typename T, typename CountType>
+        requires std::same_as<CountType, char16_t> || std::same_as<CountType, BYTE_t>
     void _TryReadType(DataReader& reader) {
-        CountType count = sizeof(CountType) == 2 ? reader.ReadChar() : reader.Read<BYTE_t>();
+        //CountType count = sizeof(CountType) == 2 ? reader.ReadChar() : reader.Read<BYTE_t>();
+        decltype(auto) count = reader.Read<CountType>();
 
         for (int i=0; i < count; i++) {
             // ...fuck

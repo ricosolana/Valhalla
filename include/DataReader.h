@@ -49,8 +49,14 @@ public:
     }
 
 public:
+    // Reads a byte array as a Reader (more efficient than ReadBytes())
+    //  int32_t:   size
+    //  BYTES_t:    data
     DataReader SubRead() {
         auto count = Read<int32_t>();
+
+        Assert31U(count);
+
         auto other = DataReader(m_provider.get(), Position());
         this->SetPos(m_pos + count);
         return other;
@@ -58,7 +64,7 @@ public:
 
     //  Reads a primitive type
     template<typename T> 
-        requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
         T out;
         ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
@@ -82,7 +88,7 @@ public:
     }
 
     // Reads a byte array
-    //  uint32_t:   size
+    //  int32_t:   size
     //  BYTES_t:    data
     template<typename T> requires std::same_as<T, BYTES_t>
     decltype(auto) Read() {
@@ -92,15 +98,13 @@ public:
     }
 
     // Reads a container of supported types
-    //  uint32_t:   size
+    //  int32_t:   size
     //  T...:       value_type
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
     decltype(auto) Read() {
         const auto count = Read<int32_t>();
         Assert31U(count);
-
-        assert(count >= 0);
 
         using Type = Iterable::value_type;
 
@@ -213,7 +217,6 @@ public:
 
     template<typename T> requires std::is_same_v<T, UserProfile>
     decltype(auto) Read() {
-        // return the 
         auto name = Read<std::string>();
         auto gamerTag = Read<std::string>();
         auto networkUserId = Read<std::string>();
@@ -231,25 +234,36 @@ public:
 
     static sol::variadic_results DeserializeLua(sol::state_view state, DataReader& reader, const IModManager::Types& types);
 
-
-
     // verbose extension methods
+    //  I want these to actually all be in lua
+    //  templates in c, wrappers for lua in modman
+
+    decltype(auto) ReadBool() { return Read<bool>(); }
+
+    decltype(auto) ReadString() { return Read<std::string>(); }
+    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
 
     decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
-
-    decltype(auto) ReadInt8() { return Read<int8_t>(); }
-    decltype(auto) ReadInt16() { return Read<int16_t>(); }
-    decltype(auto) ReadInt32() { return Read<int32_t>(); }
-    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
-    decltype(auto) ReadFloat() { return Read<float>(); }
-    decltype(auto) ReadDouble() { return Read<double>(); }
 
     decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
     decltype(auto) ReadVector3() { return Read<Vector3>(); }
     decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
-    decltype(auto) ReadString() { return Read<std::string>(); }
-    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
 
+    decltype(auto) ReadInt8() { return Read<int8_t>(); }
+    decltype(auto) ReadInt16() { return Read<int16_t>(); }
+    decltype(auto) ReadInt32() { return Read<int32_t>(); }
+    decltype(auto) ReadInt64() { return Read<int64_t>(); }
+    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
+
+    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
+    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
+    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
+    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
+    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) Read<uint64_t>(); }
+
+    decltype(auto) ReadFloat() { return Read<float>(); }
+    decltype(auto) ReadDouble() { return Read<double>(); }
+    
     decltype(auto) ReadChar() { return Read<char16_t>(); }
 };

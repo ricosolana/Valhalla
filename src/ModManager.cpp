@@ -103,92 +103,77 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZDOID>("ZDOID",
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
-        sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID((OWNER_t)uuid, id); }),
+        sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID(uuid, id); }),
         "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
         "id", &ZDOID::m_id,
         "NONE", sol::property([]() { return ZDOID::NONE; })
     );
 
     m_state.new_enum("Type",
-        "BYTES", Type::BYTES,
+        "BOOL", Type::BOOL,
+
         "STRING", Type::STRING,
+        "STRINGS", Type::STRINGS,
+
+        "BYTES", Type::BYTES,
+        
         "ZDOID", Type::ZDOID,
         "VECTOR3", Type::VECTOR3,
         "VECTOR2i", Type::VECTOR2i,
         "QUATERNION", Type::QUATERNION,
-        "STRINGS", Type::STRINGS,
-        "BOOL", Type::BOOL,
-        // TODO bring back unsigned (because of negative numbers are not the same as positive)
-        "BYTE", Type::INT8, "INT8", Type::INT8,
+        
+        "INT8", Type::INT8,
         "SHORT", Type::INT16, "INT16", Type::INT16,
         "INT", Type::INT32, "INT32", Type::INT32, "HASH", Type::INT32,
         "LONG", Type::INT64, "INT64", Type::INT64,
+
+        "BYTE", Type::UINT8, "UINT8", Type::UINT8,
+        "UINT16", Type::UINT16,
+        "UINT32", Type::UINT32,
+        "UINT64", Type::UINT64,
+
         "FLOAT", Type::FLOAT,
         "DOUBLE", Type::DOUBLE,
+
         "CHAR", Type::CHAR
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
         sol::constructors<DataWriter(BYTES_t&)>(),
+
         "provider", &DataWriter::m_provider,
         "pos", &DataWriter::m_pos,
-        "Clear", &DataWriter::Clear,
+
+        "Clear", & DataWriter::Clear,
+
         "Write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
+
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+
+            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
+            
             static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write)
-            // TODO add int64 wrappers here too (since theyre now distinct object classes)
-
-            //[](DataWriter& self, std::vector<std::string> in) { self.Write(in); },
-
-            //[](DataWriter& self, DataType type, LUA_NUMBER val) {
-            //    switch (type) {
-            //    case DataType::INT8:
-            //        self.Write<int8_t>(val);
-            //        break;
-            //    case DataType::INT16:
-            //        self.Write<int16_t>(val);
-            //        break;
-            //    case DataType::INT32:
-            //        self.Write<int32_t>(val);
-            //        break;
-            //    case DataType::INT64:
-            //        self.Write<int64_t>(val);
-            //        break;
-            //    case DataType::FLOAT:
-            //        self.Write<float>(val);
-            //        break;
-            //    case DataType::DOUBLE:
-            //        self.Write<double>(val);
-            //        break;
-            //    default:
-            //        throw std::runtime_error("invalid DataType");
-            //        //return mod->Error("invalid DataType enum, got: " + std::to_string(std::to_underlying(type)));
-            //    }
-            //}
+            static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write)
         ),
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
         "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
         "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
         "WriteInt64", static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
+
+        "WriteUInt8", static_cast<void (DataWriter::*)(uint8_t)>(&DataWriter::Write),
+        "WriteUInt16", static_cast<void (DataWriter::*)(uint16_t)>(&DataWriter::Write),
+        "WriteUInt32", static_cast<void (DataWriter::*)(uint32_t)>(&DataWriter::Write),
         "WriteUInt64", static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write),
+
         "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
         "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
 
-        // Would char be a string or number from lua -> c++?
-        //  in high-level programming, a char geenrally represents a letter
-        //  or a single unit of a string, so maybe use a number to enforce single?
-        // Lua also has no understanding of UTF8 strings and makes
-        //  zero assumptions about whether a string is/isnt UTF-8
-        // In C#, a Char is 2 bytes (basically a signed short)
-        //  and not sized weirdly
         "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write)
     );
 
@@ -198,71 +183,43 @@ void IModManager::LoadAPI() {
         "provider", &DataReader::m_provider,
         "pos", &DataReader::m_pos,
 
+        "ReadBool", &DataReader::ReadBool,
+
+        "ReadString", &DataReader::ReadString,
+        "ReadStrings", &DataReader::ReadStrings,
+
         "ReadBytes", &DataReader::ReadBytes,
 
-        // TODO add unsigned (doesnt really matter, but makes things more concise; bytes that overflow past INTx_MAX are still represented correctly?)
-        //  Lua numbers are all doubles, then calling these functions causes sol to do casts and stuff... might lose required signedness...
+        "ReadZDOID", &DataReader::ReadZDOID,
+        "ReadVector3", &DataReader::ReadVector3,
+        "ReadVector2i", &DataReader::ReadVector2i,
+        "ReadQuaternion", &DataReader::ReadQuaternion,               
+
         "ReadInt8", &DataReader::ReadInt8,
         "ReadInt16", &DataReader::ReadInt16,
         "ReadInt32", &DataReader::ReadInt32,
         "ReadInt64", &DataReader::ReadInt64Wrapper,
+
+        "ReadUInt8", & DataReader::ReadUInt8,
+        "ReadUInt16", & DataReader::ReadUInt16,
+        "ReadUInt32", & DataReader::ReadUInt32,
+        "ReadUInt64", & DataReader::ReadUInt64Wrapper,
+
         "ReadFloat", &DataReader::ReadFloat,
         "ReadDouble", &DataReader::ReadDouble,
-        "ReadZDOID", &DataReader::ReadZDOID,
-        "ReadVector3", &DataReader::ReadVector3,
-        "ReadVector2i", &DataReader::ReadVector2i,
-        "ReadQuaternion", &DataReader::ReadQuaternion,
-        "ReadString", &DataReader::ReadString,
-        "ReadStrings", &DataReader::ReadStrings,
+                
         "ReadChar", &DataReader::ReadChar
-
-        /*
-        "Read", [](sol::this_state state, DataReader& self, DataType type) {
-            switch (type) {
-            case DataType::BYTES:
-                return sol::make_object(state, self.Read<BYTES_t>());
-            case DataType::STRING:
-                return sol::make_object(state, self.Read<std::string>());
-            case DataType::ZDOID:
-                return sol::make_object(state, self.Read<ZDOID>());
-            case DataType::VECTOR3:
-                return sol::make_object(state, self.Read<Vector3>());
-            case DataType::VECTOR2i:
-                return sol::make_object(state, self.Read<Vector2i>());
-            case DataType::QUATERNION:
-                return sol::make_object(state, self.Read<Quaternion>());
-            case DataType::STRINGS:
-                return sol::make_object(state, self.Read<std::vector<std::string>>());
-            case DataType::INT8:
-                return sol::make_object(state, self.Read<int8_t>());
-            case DataType::INT16:
-                return sol::make_object(state, self.Read<int16_t>());
-            case DataType::INT32:
-                return sol::make_object(state, self.Read<int32_t>());
-            case DataType::INT64:
-                return sol::make_object(state, self.Read<int64_t>());
-            case DataType::FLOAT:
-                return sol::make_object(state, self.Read<float>());
-            case DataType::DOUBLE:
-                return sol::make_object(state, self.Read<double>());
-            case DataType::CHAR:
-                return sol::make_object(state, self.ReadChar());
-            default:
-                throw std::runtime_error("invalid DataType");
-            }
-        }*/
     );
 
     m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",
         "Invoke", &IMethod<Peer*>::Invoke
     );
 
-    // https://sol2.readthedocs.io/en/latest/api/usertype.html#inheritance-example
     m_state.new_usertype<ISocket>("ISocket",
         "Close", &ISocket::Close,
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
-        "hostName", sol::property(&ISocket::GetHostName),
+        "host", sol::property(&ISocket::GetHostName),
         "GetSendQueueSize", &ISocket::GetSendQueueSize
     );
 
@@ -414,7 +371,6 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        //"owner", sol::property(&ZDO::Owner, &ZDO::SetOwner),
         "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, const Int64Wrapper &owner) { self.SetOwner(owner); }),
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
@@ -443,11 +399,6 @@ void IModManager::LoadAPI() {
             [](ZDO& self, HASH_t key) { return (Int64Wrapper) self.GetLong(key); },
             [](ZDO& self, const std::string &key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
             [](ZDO& self, const std::string &key) { return (Int64Wrapper) self.GetLong(key); }
-
-            //sol::resolve<int64_t(HASH_t, int64_t) const>(&ZDO::GetLong),
-            //sol::resolve<int64_t(HASH_t) const>(&ZDO::GetLong),
-            //sol::resolve<int64_t(const std::string&, int64_t) const>(&ZDO::GetLong),
-            //sol::resolve<int64_t(const std::string&) const>(&ZDO::GetLong)
         ),
         "GetQuaternion", sol::overload(
             sol::resolve<const Quaternion&(HASH_t, const Quaternion&) const>(&ZDO::GetQuaternion),
@@ -497,8 +448,6 @@ void IModManager::LoadAPI() {
         "SetLong", sol::overload(
             [](ZDO& self, HASH_t key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); },
             [](ZDO& self, const std::string &key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); }
-            //static_cast<void (ZDO::*)(HASH_t, const int64_t&)>(&ZDO::Set),
-            //static_cast<void (ZDO::*)(const std::string&, const int64_t&)>(&ZDO::Set)
         ),
         "Set", sol::overload(
             // Quaternion
@@ -596,17 +545,6 @@ void IModManager::LoadAPI() {
         );
     }
 
-    //auto apiTable = m_state["Valhalla"].get_or_create<sol::table>();
-    //apiTable["ServerVersion"] = VALHALLA_SERVER_VERSION;
-    //apiTable["ValheimVersion"] = VConstants::GAME;
-    //apiTable["delta"] = sol::property([]() { return Valhalla()->Delta(); });
-    //apiTable["id"] = sol::property([]() { return Valhalla()->ID(); });
-    //apiTable["nanos"] = sol::property([]() { return Valhalla()->Nanos(); });
-    //apiTable["time"] = sol::property([]() { return Valhalla()->Time(); });
-    //apiTable["worldTicks"] = sol::property([]() { return Valhalla()->GetWorldTicks(); });
-    //apiTable["worldTime"] = sol::property([]() { return Valhalla()->GetWorldTime(); }, [](double worldTime) { Valhalla()->SetWorldTime(worldTime); });
-    //apiTable["worldTimeWrapped"] = sol::property([]() { return Valhalla()->GetTimeOfDay(); }, [](double worldTime) { Valhalla()->SetWorldTime(worldTime); });
-
     m_state.new_enum("TimeOfDay",
         "MORNING", TIME_MORNING,
         "DAY", TIME_DAY,
@@ -614,6 +552,7 @@ void IModManager::LoadAPI() {
         "NIGHT", TIME_NIGHT
     );
 
+    // TODO could implement handle if access is needed to unsubscribe outside of event...
     //m_state.new_usertype<EventHandle>("EventHandle",
     //    "mod", &EventHandle::m_mod,
     //    //sol:meta_function_names()[sol::meta_function::call], &EventHandle::operator(),
@@ -687,7 +626,7 @@ void IModManager::LoadAPI() {
             
             Mod& mod = env["this"].get<sol::table>().as<Mod&>();
             
-            callbacks.emplace_back(mod, func, priority);            
+            callbacks.emplace_back(mod, func, priority);
             callbacks.sort([](const EventHandle& a, const EventHandle& b) {
                     return a.m_priority < b.m_priority;
                 }
@@ -980,10 +919,10 @@ void IModManager::Init() {
 
     m_state.open_libraries(
         sol::lib::base,
-        sol::lib::debug,
+        //sol::lib::debug,
         sol::lib::io, // override
         sol::lib::math,
-        sol::lib::package, // override
+        //sol::lib::package, // override
         sol::lib::string,
         sol::lib::table,
         sol::lib::utf8

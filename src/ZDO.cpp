@@ -100,15 +100,15 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     this->m_pos = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
-    _TryReadType<float,         uint16_t>(pkg);
-    _TryReadType<Vector3,       uint16_t>(pkg);
-    _TryReadType<Quaternion,    uint16_t>(pkg);
-    _TryReadType<int32_t,       uint16_t>(pkg);
-    _TryReadType<int64_t,       uint16_t>(pkg);
-    _TryReadType<std::string,   uint16_t>(pkg);
+    _TryReadType<float,         char16_t>(pkg);
+    _TryReadType<Vector3,       char16_t>(pkg);
+    _TryReadType<Quaternion,    char16_t>(pkg);
+    _TryReadType<int32_t,       char16_t>(pkg);
+    _TryReadType<int64_t,       char16_t>(pkg);
+    _TryReadType<std::string,   char16_t>(pkg);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t, int16_t>(pkg);
+        _TryReadType<BYTES_t, char16_t>(pkg);
 
     if (worldVersion < 17)
         this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
@@ -163,13 +163,13 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //  same when positive (for both)
     pkg.Write((int32_t) m_ordinalMask);
 
-    _TryWriteType<float,            uint8_t>(pkg);
-    _TryWriteType<Vector3,          uint8_t>(pkg);
-    _TryWriteType<Quaternion,       uint8_t>(pkg);
-    _TryWriteType<int32_t,          uint8_t>(pkg);
-    _TryWriteType<int64_t,          uint8_t>(pkg);
-    _TryWriteType<std::string,      uint8_t>(pkg);
-    _TryWriteType<BYTES_t,          uint8_t>(pkg);
+    _TryWriteType<float,            BYTE_t>(pkg);
+    _TryWriteType<Vector3,          BYTE_t>(pkg);
+    _TryWriteType<Quaternion,       BYTE_t>(pkg);
+    _TryWriteType<int32_t,          BYTE_t>(pkg);
+    _TryWriteType<int64_t,          BYTE_t>(pkg);
+    _TryWriteType<std::string,      BYTE_t>(pkg);
+    _TryWriteType<BYTES_t,          BYTE_t>(pkg);
 }
 
 void ZDO::Deserialize(DataReader& pkg) {
@@ -183,7 +183,7 @@ void ZDO::Deserialize(DataReader& pkg) {
     HASH_t prefabHash = pkg.Read<HASH_t>();
     if (!m_prefab.get())
         this->m_prefab = PrefabManager()->RequirePrefab(prefabHash);
-
+    
     this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
 

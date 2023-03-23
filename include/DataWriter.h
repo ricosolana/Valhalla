@@ -134,9 +134,9 @@ public:
     // Writes a container of supported types
     //  uint32_t:   size
     //  T...:       value_type
-    template<typename Iterable> requires
-        (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
-        void Write(const Iterable& in) {
+    template<typename Iterable> 
+        requires (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+    void Write(const Iterable& in) {
         size_t size = in.size();
         Assert31U(size);
         Write(static_cast<int32_t>(size));
@@ -146,7 +146,8 @@ public:
     }
 
     // Writes a primitive type
-    template<typename T> requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
+    template<typename T> 
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
@@ -156,8 +157,9 @@ public:
         Write(std::to_underlying(value));
     }
 
-    template<typename T> requires std::is_same_v<T, char16_t>
-    void Write(T in) {
+    //template<typename T> requires std::is_same_v<T, char16_t>
+    //void Write(T in) {
+    void Write(char16_t in) {
         if (in < 0x80) {
             Write<BYTE_t>(in);
         }

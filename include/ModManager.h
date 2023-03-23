@@ -12,21 +12,34 @@
 class IModManager {
 public:
     enum class Type {
-        BYTES,
+        BOOL,
+
         STRING,
+        STRINGS,
+
+        BYTES,
+
         ZDOID,
         VECTOR3,
         VECTOR2i,
         QUATERNION,
-        STRINGS,
-        BOOL,
+
         INT8,
         INT16,
         INT32,
         INT64,
+
+        UINT8,
+        UINT16,
+        UINT32,
+        UINT64,
+
         FLOAT,
         DOUBLE,
-        CHAR // utf8 variable length
+
+        CHAR, // utf8
+
+        max
     };
 
     enum class EventStatus {

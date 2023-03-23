@@ -870,7 +870,7 @@ public:
 
         {
             Vector3 size1(1, 0, 1);
-            Vector3 size2(.6, 0, .6);
+            Vector3 size2(.6f, 0, .6f);
 
             Vector3 pos1(0, 0, 0);
             Vector3 pos2(0, 1, 0);
@@ -1175,7 +1175,7 @@ public:
 
         int count = 0xFFF1;
 
-        writer.Write<char16_t>(count);
+        writer.Write((char16_t)count);
 
         assert(count == DataReader(bytes).ReadChar());
 
