@@ -709,6 +709,18 @@ void IModManager::LoadAPI() {
 
 
 
+    m_state.new_usertype<Compressor>("Compressor",
+        sol::constructors<Compressor(const BYTES_t&)>(),
+        "Compress", &Compressor::Compress
+    );
+
+    m_state.new_usertype<Decompressor>("Decompressor",
+        sol::constructors<Decompressor(const BYTES_t&)>(),
+        "Decompress", &Decompressor::Decompress
+    );
+
+
+
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(

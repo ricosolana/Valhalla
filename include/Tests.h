@@ -12,6 +12,7 @@
 #include "NetManager.h"
 #include "VUtilsPhysics.h"
 #include "DungeonManager.h"
+#include "VUtils.h"
 
 class Tests {
 private:
@@ -440,6 +441,28 @@ private:
 
 
 public:
+
+    void Test_ZStdCompressorDecompressor() {
+
+        auto dict = *VUtils::Resource::ReadFile<BYTES_t>("dict/small");
+
+        Compressor compressor(dict);
+        Decompressor decompressor(dict);
+
+        auto declaration = *VUtils::Resource::ReadFile<BYTES_t>("dict/declaration.txt");
+
+        auto c_opt = compressor.Compress(declaration);
+        auto d_opt = decompressor.Decompress(*c_opt);
+
+        assert(declaration == *d_opt);
+    }
+
+
+
+
+
+
+
     //2023-03-15 00:57:55,531 INFO [default] Starting trials in 3s
     //2023-03-15 00:57:58,546 INFO [default] Starting ResourceBytes1...
     //2023-03-15 00:58:10,911 INFO [default] Test_ResourceBytes1: 12.357s
