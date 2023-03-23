@@ -695,6 +695,15 @@ void IModManager::LoadAPI() {
         "DestroyZDO", sol::overload(
             [](IZDOManager& self, ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); self.DestroyZDO(*zdo, immediate); },
             [](IZDOManager& self, ZDO* zdo) { if (!zdo) throw std::runtime_error("null zdo"); self.DestroyZDO(*zdo); }
+        ),
+        "Instantiate", sol::overload(
+            sol::resolve<ZDO& (const Prefab&, const Vector3&, const Quaternion&)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (const Prefab&, const Vector3&)>(&IZDOManager::Instantiate),
+            [](IZDOManager& self, const std::string& name, const Vector3& pos, const Quaternion& rot) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos, rot); },
+            [](IZDOManager& self, const std::string& name, const Vector3& pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
+            sol::resolve<ZDO& (HASH_t, const Vector3&, const Quaternion&)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (HASH_t, const Vector3&)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (const ZDO&)>(&IZDOManager::Instantiate)
         )
     );
 
@@ -748,6 +757,8 @@ void IModManager::LoadAPI() {
         "WorldToZonePos", &IZoneManager::WorldToZonePos,
         "ZoneToWorldPos", &IZoneManager::ZoneToWorldPos,
         "globalKeys", sol::property(&IZoneManager::GlobalKeys)
+
+        //"Register"
     );
 
 

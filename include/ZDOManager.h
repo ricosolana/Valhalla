@@ -10,7 +10,6 @@
 #include "ZoneManager.h"
 
 class IZDOManager {
-	friend class IPrefabManager;
 	friend class INetManager;
 	friend class ZDO;
 
@@ -75,6 +74,11 @@ private:
 	ZDO& Instantiate(const Vector3& position);
 	ZDO& Instantiate(const ZDOID& uid, const Vector3& position);
 		
+	// Get a ZDO by id
+	//	The ZDO will be created if its ID does not exist
+	//	Returns the ZDO and a bool if newly created
+	std::pair<ZDO&, bool> GetOrInstantiate(const ZDOID& id, const Vector3& def);
+
 	// Performs a coordinate to pitch conversion
 	int SectorToIndex(const ZoneID& zone) const;
 
@@ -88,17 +92,13 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	// Get a ZDO by id
-	//	The ZDO will be created if its ID does not exist
-	//	Returns the ZDO and a bool if newly created
-	std::pair<ZDO&, bool> GetOrInstantiate(const ZDOID& id, const Vector3& def);
-
 	ZDO& Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot);
 	ZDO& Instantiate(const Prefab& prefab, const Vector3& pos) { return Instantiate(prefab, pos, Quaternion::IDENTITY); }
 	
 	ZDO& Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab);
 	ZDO& Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot) { return Instantiate(hash, pos, rot, nullptr); }
 	ZDO& Instantiate(HASH_t hash, const Vector3& pos) { return Instantiate(hash, pos, Quaternion::IDENTITY, nullptr);  }
+	// Clones a ZDO
 	ZDO& Instantiate(const ZDO& zdo);
 
 	// Get a ZDO by id
