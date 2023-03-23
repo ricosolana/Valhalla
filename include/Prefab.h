@@ -109,7 +109,7 @@ public:
     };
 
 	Prefab() = default;
-
+    
 	std::string m_name;
 	HASH_t m_hash = 0;
 

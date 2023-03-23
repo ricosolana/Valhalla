@@ -36,29 +36,7 @@ void IPrefabManager::Init() {
 
     auto count = pkg.Read<int32_t>();
     for (int i=0; i < count; i++) {
-        auto prefab = std::make_unique<Prefab>();
-        prefab->m_name = pkg.Read<std::string>();
-        prefab->m_hash = VUtils::String::GetStableHashCode(prefab->m_name);
-        prefab->m_type = (Prefab::Type) pkg.Read<int32_t>();
-
-        prefab->m_localScale = pkg.Read<Vector3>();
-
-        prefab->m_flags = pkg.Read<Prefab::Flag>();
-
-        VLOG(1) << "'" << prefab->m_name << "', '" << prefab->m_hash << "'";
-
-        //prefab->m_distant = pkg.Read<bool>();
-        //prefab->m_persistent = pkg.Read<bool>();
-        //prefab->m_type = (ZDO::ObjectType)pkg.Read<int32_t>();
-        //if (pkg.Read<bool>()) // sync initial scale
-        //    prefab->m_localScale = pkg.Read<Vector3>();
-        //else {
-        //    prefab->m_localScale = Vector3(1, 1, 1);
-        //}
-
-        m_prefabs.insert({
-            VUtils::String::GetStableHashCode(prefab->m_name),
-            std::move(prefab) });
+        Register(pkg, true);
     }
 
     LOG(INFO) << "Loaded " << count << " prefabs";

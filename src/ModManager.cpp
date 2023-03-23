@@ -296,8 +296,8 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<Prefab>("Prefab",
         sol::no_constructor,
-        "name", &Prefab::m_name,
-        "hash", &Prefab::m_hash,
+        "name", sol::readonly(&Prefab::m_name),
+        "hash", sol::readonly(&Prefab::m_hash),
         "FlagsPresent", &Prefab::FlagsPresent,
         "FlagsAbsent", &Prefab::FlagsAbsent
     );
@@ -352,8 +352,12 @@ void IModManager::LoadAPI() {
     m_state["PrefabManager"] = PrefabManager();
     m_state.new_usertype<IPrefabManager>("IPrefabManager",
         "GetPrefab", sol::overload(
-            sol::resolve<const Prefab*(const std::string&)>(&IPrefabManager::GetPrefab),
+            sol::resolve<const Prefab* (const std::string&)>(&IPrefabManager::GetPrefab),
             sol::resolve<const Prefab* (HASH_t)>(&IPrefabManager::GetPrefab)
+        ),
+        "Register", sol::overload(
+            sol::resolve<void(const std::string&, Prefab::Type, const Vector3&, Prefab::Flag, bool)>(&IPrefabManager::Register),
+            sol::resolve<void(DataReader&, bool)>(&IPrefabManager::Register)
         )
     );
 
@@ -920,7 +924,7 @@ void IModManager::Init() {
     m_state.open_libraries(
         sol::lib::base,
         //sol::lib::debug,
-        sol::lib::io, // override
+        //sol::lib::io, // override
         sol::lib::math,
         //sol::lib::package, // override
         sol::lib::string,

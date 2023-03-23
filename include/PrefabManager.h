@@ -5,6 +5,7 @@
 #include "VUtilsString.h"
 #include "VUtils.h"
 #include "Prefab.h"
+#include "DataReader.h"
 
 // TODO consider moving Instantiate(...) to ZDOManager
 //	this class doesnt do much besides try to simulate Unity in appearance
@@ -40,14 +41,43 @@ public:
 		return RequirePrefab(VUtils::String::GetStableHashCode(name));
 	}
 
-	//// Instantiate a new ZDO in world with prefab at position and rotation
-	//ZDO* Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY, const Prefab** outPrefab = nullptr);
-	//
-	//// Instantiate a new ZDO in world with prefab at position and rotation
-	//ZDO& Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot = Quaternion::IDENTITY);
-	//
-	//// Instantiate a copy of a ZDO (everything will be cloned)
-	//ZDO& Instantiate(const ZDO& zdo);
+	void Register(const std::string& name, Prefab::Type type, const Vector3 &scale, Prefab::Flag flags, bool overwrite) {
+		HASH_t hash = VUtils::String::GetStableHashCode(name);
+		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
+
+		if (!overwrite && !insert.second)
+			throw std::runtime_error("prefab already registered");
+
+		auto&& prefab = *insert.first->second;
+		
+		prefab.m_name = name;
+		prefab.m_hash = hash;
+		prefab.m_type = type;
+		prefab.m_localScale = scale;
+		prefab.m_flags = flags;
+
+		VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
+	}
+
+	void Register(DataReader& reader, bool overwrite) {
+		auto name = reader.Read<std::string>();
+		auto hash = VUtils::String::GetStableHashCode(name);
+
+		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
+
+		if (!overwrite && !insert.second)
+			throw std::runtime_error("prefab already registered");
+
+		auto&& prefab = *insert.first->second;
+
+		prefab.m_name = name;
+		prefab.m_hash = hash;
+		prefab.m_type = (Prefab::Type) reader.Read<int32_t>();
+		prefab.m_localScale = reader.Read<Vector3>();
+		prefab.m_flags = reader.Read<Prefab::Flag>();
+
+		VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
+	}
 
 };
 
