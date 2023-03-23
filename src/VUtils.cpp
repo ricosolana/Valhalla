@@ -1,7 +1,6 @@
 #include <random>
 #include <limits>
 #include <zlib.h>
-#include <zstd.h>
 
 #include "VUtils.h"
 #include "VUtilsMath.h"
@@ -38,7 +37,6 @@ std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val) {
 }
 
 namespace VUtils {
-
     std::optional<BYTES_t> CompressGz(const BYTE_t* in, unsigned int inSize, int level) {
         if (inSize == 0)
             return std::nullopt;
@@ -83,12 +81,11 @@ namespace VUtils {
     }
 
 
-
+    /*
     std::optional<BYTES_t> CompressZStd(const BYTES_t& in) {
 
         //ZSTD_compress2
-
-        //ZSTD_CCtx_loadDictionary()
+        
 
         //ZSTD_CCtx_setParameter
 
@@ -104,7 +101,7 @@ namespace VUtils {
         out.resize(status);
 
         return out;
-    }
+    }*/
 
 
 

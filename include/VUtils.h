@@ -12,6 +12,7 @@
 #include <optick.h>
 #include <easylogging++.h>
 #include <sol/sol.hpp>
+#include <zstd.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"
@@ -320,6 +321,100 @@ std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
 
 
 
+class Compressor {
+    ZSTD_CCtx* m_ctx = nullptr;
+    ZSTD_CDict* m_dict = nullptr;
+
+public:
+    Compressor(const BYTES_t& dict) {
+        this->m_ctx = ZSTD_createCCtx();
+        if (!this->m_ctx)
+            throw std::runtime_error("failed to init zstd cctx");
+
+        this->m_dict = ZSTD_createCDict(dict.data(), dict.size(), 1);
+        if (!this->m_dict) {
+            ZSTD_freeCCtx(m_ctx);
+            throw std::runtime_error("failed to create zstd cdict");
+        }
+    }
+
+    Compressor(const Compressor&) = delete;
+    Compressor(Compressor&& other) {
+        this->m_ctx = other.m_ctx;
+        this->m_dict = other.m_dict;
+        other.m_ctx = nullptr;
+    }
+
+    ~Compressor() {
+        ZSTD_freeCCtx(this->m_ctx);
+        ZSTD_freeCDict(this->m_dict);
+    }
+
+    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+        BYTES_t out;
+        out.resize(ZSTD_compressBound(in.size()));
+
+        auto status = ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in.data(), in.size(), this->m_dict);
+        if (ZSTD_isError(status))
+            return std::nullopt;
+
+        out.resize(status);
+        return out;
+    }
+};
+
+class Decompressor {
+    ZSTD_DCtx* m_ctx = nullptr;
+    ZSTD_DDict* m_dict = nullptr;
+
+public:
+    Decompressor(const BYTES_t& dict) {
+        this->m_ctx = ZSTD_createDCtx();
+        if (!this->m_ctx)
+            throw std::runtime_error("failed to init zstd dctx");
+
+        this->m_dict = ZSTD_createDDict(dict.data(), dict.size());
+        if (!this->m_dict) {
+            ZSTD_freeDCtx(m_ctx);
+            throw std::runtime_error("failed to create zstd ddict");
+        }
+    }
+
+    Decompressor(const Decompressor&) = delete;
+    Decompressor(Decompressor&& other) {
+        this->m_ctx = other.m_ctx;
+        this->m_dict = other.m_dict;
+        other.m_ctx = nullptr;
+    }
+
+    ~Decompressor() {
+        ZSTD_freeDCtx(this->m_ctx);
+        ZSTD_freeDDict(this->m_dict);
+    }
+
+    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+        BYTES_t out;
+        out.resize(ZSTD_getFrameContentSize(in.data(), in.size()));
+
+        // check that dictionaries match
+        auto expect = ZSTD_getDictID_fromDDict(this->m_dict);
+        auto actual = ZSTD_getDictID_fromFrame(in.data(), in.size());
+        if (expect != actual)
+            return std::nullopt;
+
+        auto status = ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in.data(), in.size(), this->m_dict);
+        if (ZSTD_isError(status))
+            return std::nullopt;
+
+        assert(status == out.size());
+
+        out.resize(status);
+        return out;
+    }
+};
+
+
+
 namespace VUtils {
 
     //class compress_error : public std::runtime_error {
@@ -342,7 +437,7 @@ namespace VUtils {
     // Returns nullopt on compress failure
     std::optional<BYTES_t> CompressGz(const BYTES_t& in);
 
-    std::optional<BYTES_t> CompressZStd(const BYTES_t& in);
+    //std::optional<BYTES_t> CompressZStd(const BYTES_t& in);
 
 
 
