@@ -9,6 +9,8 @@ IPrefabManager* PrefabManager() {
 
 
 
+const Prefab Prefab::NONE = Prefab();
+
 const Prefab* IPrefabManager::GetPrefab(HASH_t hash) {
     auto&& find = m_prefabs.find(hash);
     if (find != m_prefabs.end())
@@ -37,7 +39,7 @@ void IPrefabManager::Init() {
         auto prefab = std::make_unique<Prefab>();
         prefab->m_name = pkg.Read<std::string>();
         prefab->m_hash = VUtils::String::GetStableHashCode(prefab->m_name);
-        prefab->m_type = (ZDO::ObjectType)pkg.Read<int32_t>();
+        prefab->m_type = (Prefab::Type) pkg.Read<int32_t>();
 
         prefab->m_localScale = pkg.Read<Vector3>();
 

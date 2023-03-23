@@ -4,14 +4,16 @@
 #include <type_traits>
 #include <algorithm>
 
+#include "VUtils.h"
+#include "VUtilsString.h"
 #include "HashUtils.h"
 #include "Quaternion.h"
 #include "Vector.h"
-#include "VUtils.h"
-#include "VUtilsString.h"
 #include "DataWriter.h"
 #include "DataReader.h"
 #include "ValhallaServer.h"
+#include "ZoneManager.h"
+#include "PrefabManager.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -24,8 +26,6 @@ concept TrivialSyncType =
     || std::same_as<T, BYTES_t>;
 
 class IZDOManager;
-class IPrefabManager;
-class Prefab;
 
 // 500+ bytes (7 maps)
 // 168 bytes (1 map)
@@ -37,13 +37,6 @@ class ZDO {
     friend class Tests;
 
 public:
-    enum class ObjectType : BYTE_t {
-        Default,
-        Prioritized,
-        Solid,
-        Terrain
-    };
-
     struct Rev {
         uint32_t m_dataRev = 0;
         uint32_t m_ownerRev = 0;
@@ -347,19 +340,6 @@ private:
     //  C#  hash code function covers [INT_MIN, INT_MAX],
     //  UnityEngine Range(1, MAX) covers [1, 2^31 - 1)
 
-    
-private:    OWNER_t m_owner = 0;
-//private:    std::reference_wrapper<Prefab> m_prefab;
-private:    const Prefab* m_prefab = nullptr;
-private:    Quaternion m_rotation;
-private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
-private:    Ordinal m_ordinalMask = 0;
-private:    Vector3 m_pos;
-
-public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-private:     ZDOID m_id;
-
-
 private:
     void Revise() {
         m_rev.m_dataRev++;
@@ -428,17 +408,24 @@ private:
         }
     }
 
+private:    OWNER_t m_owner = 0;
+private:    std::reference_wrapper<const Prefab> m_prefab;
+//private:    const Prefab* m_prefab = nullptr;
+private:    Quaternion m_rotation;
+private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
+private:    Ordinal m_ordinalMask = 0;
+private:    Vector3 m_pos;
+
+public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
+private:     ZDOID m_id;
+
 public:
-    ZDO() = default;
+    ZDO();
 
     // ZDOManager constructor
-    ZDO(const ZDOID& id, const Vector3& pos)
-        : m_id(id), m_pos(pos) 
-    {
-        m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
-    }
+    ZDO(const ZDOID& id, const Vector3& pos);
 
-    //ZDO(const ZDOID& id, const Vector3& pos, DataReader& load);
+    //ZDO(const ZDOID& id, const Vector3& pos, HASH_t prefab);
 
     //ZDO(const ZDOID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
 
@@ -580,7 +567,7 @@ public:
 
     void SetPosition(const Vector3& pos);
 
-    Vector2i GetZone() const;
+    ZoneID GetZone() const;
 
     const Quaternion& Rotation() const {
         return m_rotation;
@@ -593,7 +580,7 @@ public:
         }
     }
 
-    const Prefab* GetPrefab() const {
+    const Prefab& GetPrefab() const {
         return m_prefab;
     }
 

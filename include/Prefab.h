@@ -2,18 +2,20 @@
 
 #include "Vector.h"
 #include "Quaternion.h"
-#include "ZDO.h"
-
-//class IPrefabManager;
 
 class Prefab {
 public:
-
-    // TODO use in ZoneManager::ZoneLocations
     struct Instance {
         const Prefab* m_prefab = nullptr;
         Vector3 m_pos;
         Quaternion m_rot;
+    };
+
+    enum class Type : BYTE_t {
+        Default,
+        Prioritized,
+        Solid,
+        Terrain
     };
 
     enum class Flag : uint64_t {
@@ -81,7 +83,7 @@ public:
 	std::string m_name;
 	HASH_t m_hash = 0;
 
-	ZDO::ObjectType m_type = ZDO::ObjectType::Default; // TODO store in flags
+	Type m_type = Type::Default; // TODO store in flags
 
 	Vector3 m_localScale;
 
@@ -99,4 +101,10 @@ public:
     bool operator==(const Prefab& other) const {
         return this->m_hash == other.m_hash;
     }
+
+    explicit operator bool() const noexcept {
+        return this->m_hash != 0;
+    }
+
+    static const Prefab NONE;
 };

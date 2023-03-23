@@ -2,9 +2,9 @@
 
 #include <robin_hood.h>
 
+#include "VUtilsString.h"
 #include "VUtils.h"
 #include "Prefab.h"
-#include "ZDO.h"
 
 // TODO consider moving Instantiate(...) to ZDOManager
 //	this class doesnt do much besides try to simulate Unity in appearance

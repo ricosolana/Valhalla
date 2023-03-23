@@ -14,7 +14,7 @@ class IZDOManager {
 	friend class INetManager;
 	friend class ZDO;
 
-	//friend void AddToSector(ZDO* zdo);
+	//friend void AddZDOToZone(ZDO* zdo);
 	//friend void RemoveFromSector(ZDO* zdo);
 	
 	//static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
@@ -23,9 +23,9 @@ class IZDOManager {
 	static bool PREFAB_CHECK_FUNCTION(const ZDO& zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& prefab = zdo.GetPrefab();
 
-		return prefab->FlagsAbsent(flagsAbsent)
-			&& (prefabHash == 0 || prefab->m_hash == prefabHash)
-			&& prefab->FlagsPresent(flagsPresent);
+		return prefab.FlagsAbsent(flagsAbsent)
+			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
+			&& prefab.FlagsPresent(flagsPresent);
 	}
 
 private:
@@ -58,11 +58,11 @@ private:
 	void OnPeerQuit(Peer& peer);
 
 	// Insert a ZDO into zone (internal)
-	bool AddToSector(ZDO& zdo);
+	bool AddZDOToZone(ZDO& zdo);
 	// Remove a zdo from a zone (internal)
 	void RemoveFromSector(ZDO& zdo);
 	// Relay a ZDO sector change to clients (internal)
-	void InvalidateSector(ZDO& zdo);
+	void InvalidateZDOZone(ZDO& zdo);
 
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();

@@ -9,7 +9,7 @@ class Sign {
 public:
 	ZDO &m_zdo;
 	Sign(ZDO& zdo) : m_zdo(zdo) {
-		if (zdo.GetPrefab()->m_hash != Hashes::Object::sign)
+		if (zdo.GetPrefab().m_hash != Hashes::Object::sign)
 			throw std::runtime_error("not a ward");
 	}
 

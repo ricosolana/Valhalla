@@ -149,7 +149,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
             }
         }
 
-        auto&& dungeon = RequireDungeon(dungeonZdo.GetPrefab()->m_hash);
+        auto&& dungeon = RequireDungeon(dungeonZdo.GetPrefab().m_hash);
 
         // Destroy all zdos high in the sky near dungeon IN ZONE
         auto pos = dungeonZdo.Position();
@@ -157,14 +157,14 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
         if (!playerNear) {
             auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
-                return zdo.Position().y > 4000 && zdo.GetPrefab()->FlagsAbsent(Prefab::Flag::Player | Prefab::Flag::Tombstone);
+                return zdo.Position().y > 4000 && zdo.GetPrefab().FlagsAbsent(Prefab::Flag::Player | Prefab::Flag::Tombstone);
             });
 
             for (auto&& ref : zdos) {
                 auto&& zdo = ref.get();
                 auto&& prefab = zdo.GetPrefab();
 
-                assert(!(prefab->m_hash == Hashes::Object::Player || prefab->m_hash == Hashes::Object::Player_tombstone));
+                assert(!(prefab.m_hash == Hashes::Object::Player || prefab.m_hash == Hashes::Object::Player_tombstone));
 
                 ZDOManager()->DestroyZDO(zdo, true);
             }

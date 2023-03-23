@@ -17,19 +17,40 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
     };
 }
 
+
+
+ZDO::ZDO() 
+    : m_prefab(Prefab::NONE) {
+
+}
+
+ZDO::ZDO(const ZDOID& id, const Vector3& pos)
+    : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
+{
+    m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
+}
+
+//ZDO::ZDO(const ZDOID& id, const Vector3& pos, HASH_t prefab)
+//    : m_id(id), m_pos(pos), m_prefab(PrefabManager()->RequirePrefab(prefab))
+//{
+//    m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
+//}
+
 void ZDO::Save(DataWriter& pkg) const {
+    auto&& prefab = GetPrefab();
+
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
 
-    pkg.Write(this->m_prefab->FlagsAbsent(Prefab::Flag::Sessioned));
+    pkg.Write(prefab.FlagsAbsent(Prefab::Flag::Sessioned));
 
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
 
-    pkg.Write(this->m_prefab->m_type);
-    pkg.Write(this->m_prefab->FlagsPresent(Prefab::Flag::Distant));
-    pkg.Write(this->m_prefab->m_hash);
+    pkg.Write(prefab.m_type);
+    pkg.Write(prefab.FlagsPresent(Prefab::Flag::Distant));
+    pkg.Write(prefab.m_hash);
 
     pkg.Write(this->GetZone());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
     pkg.Write(this->m_pos);
@@ -46,19 +67,19 @@ void ZDO::Save(DataWriter& pkg) const {
 }
 
 bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
-    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO this isnt necessary?
-    this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // TODO this isnt necessary?
+    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO redundant?
+    this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // redundant?
     pkg.Read<bool>(); //this->m_persistent
     //this->m_owner = pkg.Read<OWNER_t>();
     pkg.Read<OWNER_t>(); // unused owner
-    this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());
+    this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>()); // necessary for TerrainComp (order)
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
     if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        pkg.Read<ObjectType>(); // m_type
+        pkg.Read<Prefab::Type>(); // m_type
 
     if (worldVersion >= 22)
         pkg.Read<bool>(); // m_distant
@@ -73,9 +94,9 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     //auto fn = static_cast<std::optional<BYTES_t>()(const fs::path&)>(VUtils::Resource::ReadFile);
     
     if (worldVersion >= 17)
-        this->m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
+        this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
-    pkg.Read<Vector2i>(); // m_sector
+    pkg.Read<ZoneID>(); // m_sector
     this->m_pos = pkg.Read<Vector3>();
     this->m_rotation = pkg.Read<Quaternion>();
 
@@ -90,8 +111,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         _TryReadType<BYTES_t, int16_t>(pkg);
 
     if (worldVersion < 17)
-        if (!(this->m_prefab = PrefabManager()->GetPrefab(GetInt("prefab", 0))))
-            throw std::runtime_error("unknown zdo prefab");
+        this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
 
     return modern;
 }
@@ -103,9 +123,9 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
 void ZDO::SetPosition(const Vector3& pos) {
     if (m_pos != pos) {
-        ZDOManager()->InvalidateSector(*this);
+        ZDOManager()->InvalidateZDOZone(*this);
         this->m_pos = pos;
-        ZDOManager()->AddToSector(*this);
+        ZDOManager()->AddZDOToZone(*this);
 
         if (IsLocal())
             Revise();
@@ -121,15 +141,17 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //static_assert(sizeof(std::remove_pointer_t<decltype(m_prefab)>::m_distant) == 1);
     static_assert(sizeof(VConstants::PGW) == 4);
     static_assert(sizeof(Rev::m_ticksCreated) == 8);
+
+    auto&& prefab = GetPrefab();
     
-    pkg.Write(m_prefab->FlagsAbsent(Prefab::Flag::Sessioned));
-    pkg.Write(m_prefab->FlagsPresent(Prefab::Flag::Distant));
+    pkg.Write(prefab.FlagsAbsent(Prefab::Flag::Sessioned));
+    pkg.Write(prefab.FlagsPresent(Prefab::Flag::Distant));
 
     pkg.Write(m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
 
-    pkg.Write(m_prefab->m_type); // sbyte
-    pkg.Write(m_prefab->m_hash);
+    pkg.Write(prefab.m_type); // sbyte
+    pkg.Write(prefab.m_hash);
 
     pkg.Write(m_rotation);
 
@@ -151,16 +173,16 @@ void ZDO::Serialize(DataWriter& pkg) const {
 }
 
 void ZDO::Deserialize(DataReader& pkg) {
-    static_assert(sizeof(ObjectType) == 1);
+    static_assert(sizeof(Prefab::Type) == 1);
     
     pkg.Read<bool>();       // m_persistent
     pkg.Read<bool>();       // m_distant
     this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());
     pkg.Read<int32_t>();    // m_pgwVersion
-    pkg.Read<ObjectType>(); // this->m_type
+    pkg.Read<Prefab::Type>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();
-    if (!m_prefab)
-        this->m_prefab = &PrefabManager()->RequirePrefab(prefabHash);
+    if (!m_prefab.get())
+        this->m_prefab = PrefabManager()->RequirePrefab(prefabHash);
 
     this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();

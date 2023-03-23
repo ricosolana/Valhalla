@@ -5,6 +5,7 @@
 #include "VUtils.h"
 #include "Prefab.h"
 #include "Dungeon.h"
+#include "ZDO.h"
 
 class IDungeonManager {
 	friend class IZDOManager;

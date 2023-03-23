@@ -167,6 +167,9 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
     // Important
     peer->Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
         peer->m_characterID = characterID;
+        // Peer does send 0,0 on death
+        //if (!characterID)
+            //throw std::runtime_error("charac")
 
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
         });

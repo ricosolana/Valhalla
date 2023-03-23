@@ -5,6 +5,7 @@
 #include "Hashes.h"
 #include "RouteManager.h"
 #include "ZDOManager.h"
+#include "ZDO.h"
 
 void Peer::Update() {
     OPTICK_EVENT();

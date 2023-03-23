@@ -9,7 +9,7 @@
 #include "PrefabManager.h"
 #include "VUtilsRandom.h"
 #include "ZoneManager.h"
-
+#include "ZDO.h"
 #include "Dungeon.h"
 
 // TODO give more verbose direct name
