@@ -866,10 +866,14 @@ void IModManager::LoadAPI() {
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
             
-            resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<BYTES_t>(const fs::path&)>(VUtils::Resource::ReadFile);
-            resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
-            resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<BYTES_t>(const fs::path&)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
             
+            resourceUtilsTable["ReadFileBytes"] = [](const std::string& path) { return VUtils::Resource::ReadFile<BYTES_t>(path); };
+            resourceUtilsTable["ReadFileString"] = [](const std::string& path) { return VUtils::Resource::ReadFile<std::string>(path); };
+            resourceUtilsTable["ReadFileLines"] = [](const std::string& path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
+
             resourceUtilsTable["WriteFile"] = sol::overload(
                 sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::string&)>(VUtils::Resource::WriteFile),

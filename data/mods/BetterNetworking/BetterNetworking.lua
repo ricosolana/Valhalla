@@ -6,55 +6,69 @@
     Ported by crzi for use on the C++ Valhalla server
 --]]
 
-local RPC_COMPRESSION_VERSION = 'CW_Jesse.BetterNetworking.CompressionVersion'
-local RPC_COMPRESSION_ENABLED = 'CW_Jesse.BetterNetworking.CompressionEnabled'
-local RPC_COMPRESSION_STARTED = 'CW_Jesse.BetterNetworking.CompressedStarted'
+local COMPRESSION_VERSION = 6
+
+local compressor = Compressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
+
+local decompressor = Decompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
 
 local peers = {}
-local SIG_CompressedZDOData = MethodSig.new("CompressedZDOData", Type.BYTES)
-local SIG_CompressHandshake = MethodSig.new("CompressHandshake", Type.BOOL)
 
-local RPC_CompressedZDOData = function(peer, compressed)
-    -- Decompress raw data sent from client (intended for direct forwarding to RPC_ZDOData)
-    local decompressed = assert(VUtils.Decompress(compressed), 'decompression error');
+local SIG_CompressionVersion = MethodSig.new("CW_Jesse.BetterNetworking.CompressionVersion", Type.INT32)
+local SIG_CompressionEnabled = MethodSig.new("CW_Jesse.BetterNetworking.CompressionEnabled", Type.BOOL)
+local SIG_CompressionStarted = MethodSig.new("CW_Jesse.BetterNetworking.CompressedStarted", Type.BOOL)
 
-    -- This is necessary because method invoke treats the package as a sub package...
-    compressed:clear() -- sol container clear
-    local writer = DataWriter.new(compressed);
-    writer:Write(decompressed)
-
-    -- Finally invoke it
-    --peer:InvokeSelf("ZDOData", DataReader.new(compressed));
-    --peers[peer].Invoke(DataReader.new(compressed))
-    peers[tostring(peer.uuid)]:Invoke(peer, DataReader.new(compressed))
-end
-
-local RPC_CompressHandshake = function(peer, enabled)
-    print("Got CompressHandshake")
-
-    if enabled then
-        print("Registering CompressedZDOData")
-
-        peers[tostring(peer.uuid)] = assert(peer:GetMethod('ZDOData'))
-        --peers[peer] = assert(peer:GetMethod('ZDOData'))
-
-        peer:Register(SIG_CompressedZDOData, RPC_CompressedZDOData)
-
-        peer:Invoke(SIG_CompressHandshake, enabled);
+local SendCompressionStarted = function(peer, started, status)
+    if started ~= status.sending then
+        peer:Invoke(SIG_CompressionStarted, started)
+        status.sending = started
+        
+        print('Compression to ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
     end
 end
 
+local SendCompressionEnabled = function(peer, enabled, status)
+    peer:Invoke(SIG_CompressionEnabled, true)
+    SendCompressionStarted(peer, status.enabled, status)
+end
+
+
+
 Valhalla:Subscribe("Join", function(peer)
-    print("Registering CompressHandshake")
+    local status = { enabled = false, receiving = false, sending = false }
+    peers[tostring(peer.uuid)] = status
+
+    -- Handshake for each request is same time, but semi-sequential
+    -- Version -> Enabled -> Started
     
-    peer:Register(SIG_CompressHandshake, RPC_CompressHandshake)
+    -- Version listener
+    peer:Register(SIG_CompressionVersion, function(peer, version)
+        if version == COMPRESSION_VERSION then
+            
+            -- Enable listener
+            peer:Register(SIG_CompressionEnabled, function(peer, enabled)
+                status.enabled = enabled
+                SendCompressionStarted(peer, enabled, status)                
+            end)
+            
+            -- Started listener
+            peer:Register(SIG_CompressionStarted, function(peer, started)
+                status.started = started
+                print('Compression from ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
+            end)
+            
+            SendCompressionEnabled(peer, status.enabled, status)
+            SendCompressionStarted(peer, status.sending, status)
+        end
+    end)
+        
+    peer:Invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
 end)
 
 -- Remove dead references
 Valhalla:Subscribe("Quit", function(peer)
-    print("Cleaning up peer ")
+    print(peer.name .. ' disconnected')
     peers[tostring(peer.uuid)] = nil
-    --table.remove(peers, peer)
 end)
 
 -- delegate to replace call
@@ -70,5 +84,5 @@ Valhalla:Subscribe("RpcOut", "ZDOData", function(peer, bytes)
 end)
 
 Valhalla:Subscribe("Enable", function()
-    print(this.name .. " " .. this.version .. " enabled")
+    
 end)
