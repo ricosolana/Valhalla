@@ -1,62 +1,74 @@
 #pragma once
 
+#include <robin_hood.h>
+#include <openssl/md5.h>
+
 #include "VUtils.h"
-#include "NetSocket.h"
+#include "VUtilsString.h"
 #include "Method.h"
-#include "ZDO.h"
+#include "NetSocket.h"
+#include "Task.h"
+#include "DataWriter.h"
 #include "ValhallaServer.h"
-#include "ModManager.h"
 #include "Hashes.h"
-#include "UserData.h"
-#include "RouteManager.h"
+#include "ZDO.h"
 
-class IZDOManager;
-class INetManager;
-
-enum class ChatMsgType : int32_t {
-    Whisper,
-    Normal,
-    Shout,
-    Ping
+enum class ConnectionStatus : int32_t {
+    None,
+    Connecting,
+    Connected,
+    ErrorVersion,
+    ErrorDisconnected,
+    ErrorConnectFailed,
+    ErrorPassword,
+    ErrorAlreadyConnected,
+    ErrorBanned,
+    ErrorFull,
+    ErrorPlatformExcluded,
+    ErrorCrossplayPrivilege,
+    ErrorKicked,
+    MAX // 13
 };
 
-
-
-class Peer {
+class RpcClient {
     friend class IZDOManager;
     friend class INetManager;
     friend class IModManager;
 
+public:
+    using Method = IMethod<RpcClient*>;
+
 private:
     std::chrono::steady_clock::time_point m_lastPing;
-    robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
-public:
-    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
-    robin_hood::unordered_set<ZDOID> m_forceSend;
-    robin_hood::unordered_set<ZDOID> m_invalidSector;
+    robin_hood::unordered_map<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
     ISocket::Ptr m_socket;
 
-    const OWNER_t m_uuid;
-    const std::string m_name;
-    bool m_admin = false;
-    //bool m_magicLogin = false;
+    // Immutable variables
+    OWNER_t m_uuid;
+    std::string m_name;
 
-    // Constantly changing vars
+    // Mutable variables
     Vector3 m_pos;
     bool m_visibleOnMap = false;
     ZDOID m_characterID;
+    bool m_admin = false;
 
-    // if many bools are eventually required
-    //  then use a bitmask
+    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
+    robin_hood::unordered_set<ZDOID> m_forceSend;
+    robin_hood::unordered_set<ZDOID> m_invalidSector;
 
 private:
     void Update();
 
     void ZDOSectorInvalidated(ZDO& zdo);
-    void ForceSendZDO(const ZDOID& id);
+
+    void ForceSendZDO(const ZDOID& id) {
+        m_forceSend.insert(id);
+    }
+
     bool IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr);
     bool IsOutdatedZDO(ZDO& zdo) {
         decltype(m_zdos)::iterator outItr;
@@ -64,15 +76,12 @@ private:
     }
 
 public:
-    Peer(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos)
-        : m_socket(std::move(socket)), m_lastPing(steady_clock::now()), 
-        m_name(name), m_uuid(uuid), m_pos(pos)
-    {}
+    RpcClient(ISocket::Ptr socket);
 
-    Peer(const Peer& peer) = delete;
+    RpcClient(const RpcClient& other) = delete; // copy
 
-    ~Peer() {
-        LOG(DEBUG) << "~Peer()";
+    ~RpcClient() {
+        LOG(DEBUG) << "~RpcClient()";
     }
 
     /**
@@ -82,23 +91,20 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        //m_methods[hash] = std::unique_ptr<IMethod<Peer*>>(new MethodImpl(func, EVENT_HASH_RpcIn, hash)); // TODO use make_unique
-        //m_methods[hash] = std::make_unique<MethodImpl<Peer*>>(func, EVENT_HASH_RpcIn, hash);
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
+        m_methods[hash] = std::make_unique<MethodImpl<RpcClient*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
     }
 
     template<typename F>
-    void Register(const std::string& name, F func) {
-        Register(VUtils::String::GetStableHashCode(name), func);
+    decltype(auto) Register(const std::string& name, F func) {
+        return Register(VUtils::String::GetStableHashCode(name), func);
     }
 
-    void RegisterLua(const IModManager::MethodSig &sig, const sol::function &func) {
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
+    void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<RpcClient*>>(func, sig.m_types);
     }
 
-    // Invoke a function on the remote client
-    //  *NOT* thread safe, do not call this function on
-    //  any Peer* instance from more than 1 thread!
+
+
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
         if (!m_socket->Connected())
@@ -117,13 +123,13 @@ public:
     }
 
     template <typename... Types>
-    void Invoke(const std::string& name, const Types&... params) {
-        Invoke(VUtils::String::GetStableHashCode(name), params...);
+    decltype(auto) Invoke(const std::string& name, const Types&... params) {
+        return Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
 
 
-    void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args &args) {
+    void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
@@ -134,6 +140,84 @@ public:
         DataWriter::_SerializeLua(params, repr.m_types, args);
 
         m_socket->Send(std::move(bytes));
+    }
+
+
+
+    Method* GetMethod(HASH_t hash) {
+        auto&& find = m_methods.find(hash);
+        if (find != m_methods.end()) {
+            return find->second.get();
+        }
+        return nullptr;
+    }
+
+    decltype(auto) GetMethod(const std::string& name) {
+        return GetMethod(VUtils::String::GetStableHashCode(name));
+    }
+
+
+
+    void Disconnect() {
+        m_socket->Close(true);
+    }
+
+    void SendDisconnect() {
+        Invoke(Hashes::Rpc::Disconnect);
+    }
+
+    void SendKicked() {
+        Invoke(Hashes::Rpc::S2C_ResponseKicked);
+    }
+
+    void RequestSave() {
+        Invoke(Hashes::Rpc::C2S_RequestSave);
+    }
+
+    void Kick() {
+        SendKicked();
+        Disconnect();
+    }
+
+    void Close(ConnectionStatus status);
+
+
+
+    // Higher utility functions once authenticated
+
+
+
+    ZDO* GetZDO();
+
+    void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);
+
+    void Teleport(const Vector3& pos) {
+        Teleport(pos, Quaternion::IDENTITY, false);
+    }
+
+    // Show a specific chat message
+    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3& pos, const UserProfile& profile, const std::string& senderID);
+    // Show a chat message
+    void ChatMessage(const std::string& text) {
+        //ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+
+        auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
+
+        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), profile, "");
+    }
+    // Show a console message
+    decltype(auto) ConsoleMessage(const std::string& msg) {
+        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
+    }
+    // Show a screen message
+    void UIMessage(const std::string& text, UIMsgType type);
+    // Show a corner screen message
+    decltype(auto) CornerMessage(const std::string& text) {
+        return UIMessage(text, UIMsgType::TopLeft);
+    }
+    // Show a center screen message
+    decltype(auto) CenterMessage(const std::string& text) {
+        return UIMessage(text, UIMsgType::Center);
     }
 
 
@@ -187,93 +271,7 @@ public:
         Invoke(Hashes::Rpc::RoutedRPC, bytes);
     }
 
-    void RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+    decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         return RouteViewLua(ZDOID::NONE, repr, args);
-    }
-
-
-    //bool InvokeSelf(HASH_t hash, DataReader reader) {
-    //    if (auto method = GetMethod(hash)) {
-    //        method->Invoke(this, reader);
-    //        return true;
-    //    }
-    //    return false;
-    //}
-    //
-    //bool InvokeSelf(const std::string& name, DataReader reader) {
-    //    if (auto method = GetMethod(name)) {
-    //        method->Invoke(this, reader);
-    //        return true;
-    //    }
-    //    return false;
-    //}
-
-    IMethod<Peer*>* GetMethod(HASH_t hash);
-
-    IMethod<Peer*>* GetMethod(const std::string& name) {
-        return GetMethod(VUtils::String::GetStableHashCode(name));
-    }
-
-    void Kick();
-
-    void Disconnect() {
-        m_socket->Close(true);
-    }
-
-    void SendDisconnect() {
-        Invoke(Hashes::Rpc::Disconnect);
-    }
-
-    void SendKicked() {
-        Invoke(Hashes::Rpc::S2C_ResponseKicked);
-    }
-
-    void RequestSave() {
-        Invoke(Hashes::Rpc::C2S_RequestSave);
-    }
-
-
-
-    // Show a specific chat message
-    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3 &pos, const UserProfile& profile, const std::string& senderID);
-    // Show a chat message
-    void ChatMessage(const std::string& text) {
-        //ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
-        
-        auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
-
-        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), profile, "");
-    }
-    // Show a console message
-    void ConsoleMessage(const std::string& msg);
-    // Show a screen message
-    void UIMessage(const std::string& text, UIMsgType type);
-    // Show a corner screen message
-    void CornerMessage(const std::string& text) {
-        UIMessage(text, UIMsgType::TopLeft);
-    }
-    // Show a center screen message
-    void CenterMessage(const std::string& text) {
-        UIMessage(text, UIMsgType::Center);
-    }
-
-
-
-    // Get the Player ZDO
-    //  Rarely Nullable (during join/death/quit)
-    ZDO* GetZDO();
-
-    void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);
-
-    void Teleport(const Vector3& pos) {
-        Teleport(pos, Quaternion::IDENTITY, false);
-    }
-
-    // Experimental
-    void MoveTo(const Vector3& pos, const Quaternion& rot);
-
-    // Experimental
-    void MoveTo(const Vector3& pos) {
-        MoveTo(pos, Quaternion::IDENTITY);
     }
 };

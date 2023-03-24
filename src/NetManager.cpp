@@ -337,7 +337,7 @@ void INetManager::Update() {
         SendNetTime();
         if (SERVER_SETTINGS.playerList)
             SendPlayerList();
-    });
+        }); 
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {

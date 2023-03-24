@@ -234,15 +234,21 @@ void IModManager::LoadAPI() {
         "PING", ChatMsgType::Ping
     );
 
+    m_state.new_usertype<NetRpc>("RpcClient",
+        "socket", sol::readonly(&Peer::m_socket)
+        //"Register", sol::
+
+        );
+
     m_state.new_usertype<Peer>("Peer",
         // member fields
         "visibleOnMap", &Peer::m_visibleOnMap,
         "admin", &Peer::m_admin,
-        "characterID", sol::readonly(&Peer::m_characterID),
-        "name", sol::readonly(&Peer::m_name),
+        "characterID", sol::property([](Peer& self) { return self.m_characterID; }), // return copy
+        "name", sol::readonly(&Peer::m_name), // strings are immutable in Lua similarly to Java
         "pos", &Peer::m_pos,
         "uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
-        "socket", sol::property([](Peer& self) { return self.m_socket; }),
+        "socket", sol::readonly(&Peer::m_socket),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
         "Kick", sol::resolve<void()>(&Peer::Kick),
