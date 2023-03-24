@@ -18,7 +18,6 @@ enum class UIMsgType : int32_t {
     Center
 };
 
-class NetRpc;
 class IWorldManager;
 
 
@@ -265,8 +264,6 @@ public:
     }
 
 
-
-    bool IsPeerAllowed(NetRpc* rpc);
 
     Task& RunTask(Task::F f);
     Task& RunTaskLater(Task::F f, std::chrono::milliseconds after);

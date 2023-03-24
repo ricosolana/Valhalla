@@ -234,11 +234,11 @@ void IModManager::LoadAPI() {
         "PING", ChatMsgType::Ping
     );
 
-    m_state.new_usertype<NetRpc>("RpcClient",
-        "socket", sol::readonly(&Peer::m_socket)
-        //"Register", sol::
-
-        );
+    //m_state.new_usertype<NetRpc>("RpcClient",
+    //    "socket", sol::readonly(&Peer::m_socket)
+    //    //"Register", sol::
+    //
+    //    );
 
     m_state.new_usertype<Peer>("Peer",
         // member fields
@@ -266,10 +266,10 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
         ),
-        "MoveTo", sol::overload(
-            sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
-            sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
-        ),
+        //"MoveTo", sol::overload(
+        //    sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
+        //    sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
+        //),
         "Disconnect", &Peer::Disconnect,
         //"InvokeSelf", sol::overload(
         //    sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),

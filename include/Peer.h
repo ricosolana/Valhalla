@@ -12,6 +12,14 @@
 #include "ValhallaServer.h"
 #include "Hashes.h"
 #include "ZDO.h"
+#include "RouteManager.h"
+
+enum class ChatMsgType : int32_t {
+    Whisper,
+    Normal,
+    Shout,
+    Ping
+};
 
 enum class ConnectionStatus : int32_t {
     None,
@@ -30,13 +38,17 @@ enum class ConnectionStatus : int32_t {
     MAX // 13
 };
 
-class RpcClient {
+class Peer {
     friend class IZDOManager;
     friend class INetManager;
     friend class IModManager;
 
 public:
-    using Method = IMethod<RpcClient*>;
+    using Method = IMethod<Peer*>;
+
+private:
+    static std::string SALT;
+    static std::string PASSWORD;
 
 private:
     std::chrono::steady_clock::time_point m_lastPing;
@@ -76,12 +88,12 @@ private:
     }
 
 public:
-    RpcClient(ISocket::Ptr socket);
+    Peer(ISocket::Ptr socket);
 
-    RpcClient(const RpcClient& other) = delete; // copy
+    Peer(const Peer& other) = delete; // copy
 
-    ~RpcClient() {
-        LOG(DEBUG) << "~RpcClient()";
+    ~Peer() {
+        LOG(DEBUG) << "~Peer()";
     }
 
     /**
@@ -91,7 +103,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::make_unique<MethodImpl<RpcClient*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
     }
 
     template<typename F>
@@ -100,7 +112,7 @@ public:
     }
 
     void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<RpcClient*>>(func, sig.m_types);
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
 

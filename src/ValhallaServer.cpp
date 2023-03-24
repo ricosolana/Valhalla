@@ -25,11 +25,6 @@ IValhalla* Valhalla() {
 
 
 
-bool IValhalla::IsPeerAllowed(NetRpc* rpc) {
-    //rpc
-    return false;
-}
-
 void IValhalla::LoadFiles() {
     bool createSettingsFile = false;
     

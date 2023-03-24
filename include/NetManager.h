@@ -6,7 +6,6 @@
 #include "NetAcceptor.h"
 #include "Vector.h"
 #include "WorldManager.h"
-#include "NetRpc.h"
 #include "HashUtils.h"
 
 class INetManager {
@@ -15,8 +14,8 @@ class INetManager {
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
-    std::list<std::unique_ptr<NetRpc>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
-    //robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>> m_peers;
+    std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
+
     std::list<std::unique_ptr<Peer>> m_peers;
 
 private:

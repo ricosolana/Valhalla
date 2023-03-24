@@ -1,22 +1,26 @@
-#include "NetRpc.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
 #include "ZDOManager.h"
+#include "RouteManager.h"
 
 static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
     "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword",
     "ErrorAlreadyConnected", "ErrorBanned", "ErrorFull" };
 
-RpcClient::RpcClient(ISocket::Ptr socket)
+// Static globals initialized once
+std::string Peer::PASSWORD;
+std::string Peer::SALT;
+
+Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now())
 {
-    this->Register(Hashes::Rpc::Disconnect, [](RpcClient* self) {
+    this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
         LOG(INFO) << "RPC_Disconnect";
         self->Disconnect();
-        });
+    });
 
-    this->Register(Hashes::Rpc::C2S_Handshake, [](RpcClient* rpc) {
-        rpc->Register(Hashes::Rpc::PeerInfo, [](RpcClient* rpc, BYTES_t bytes) {
+    this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
+        rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, BYTES_t bytes) {
             // Forward call to rpc
 
             DataReader reader(bytes);
@@ -56,9 +60,8 @@ RpcClient::RpcClient(ISocket::Ptr socket)
             //}
 
 
-            assert(false && "implement password in NetManager");
-            //if (password != rpc->m_password)
-                //return rpc->Close(ConnectionStatus::ErrorPassword);
+            if (password != PASSWORD)
+                return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
 
@@ -77,33 +80,31 @@ RpcClient::RpcClient(ISocket::Ptr socket)
                 return rpc->Close(ConnectionStatus::ErrorFull);
 
             NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
-            });
+        });
 
-        if (!SERVER_SETTINGS.serverPassword.empty()) {
-            const auto salt = VUtils::Random::GenerateAlphaNum(16);
+        bool hasPassword = !SERVER_SETTINGS.serverPassword.empty();
 
-            {
-                const auto merge = SERVER_SETTINGS.serverPassword + salt;
+        if (hasPassword) {
+            // Init password statically once
+            if (PASSWORD.empty()) {
+                SALT = VUtils::Random::GenerateAlphaNum(16);
 
-                assert(false && "implement password!");
+                const auto merge = SERVER_SETTINGS.serverPassword + SALT;
 
                 // Hash a salted password
-                //rpc->m_password.resize(16);
-                //MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-                //    merge.size(), reinterpret_cast<uint8_t*>(rpc->m_password.data()));
-                //
-                //VUtils::String::FormatAscii(rpc->m_password);
+                PASSWORD.resize(16);
+                MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+                    merge.size(), reinterpret_cast<uint8_t*>(PASSWORD.data()));
+                
+                VUtils::String::FormatAscii(PASSWORD);
             }
+        }
 
-            rpc->Invoke(Hashes::Rpc::S2C_Handshake, true, salt);
-        }
-        else {
-            rpc->Invoke(Hashes::Rpc::S2C_Handshake, false, "");
-        }
-        });
+        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, SALT);
+    });
 }
 
-void RpcClient::Update() {
+void Peer::Update() {
     OPTICK_EVENT();
 
     auto now(steady_clock::now());
@@ -143,7 +144,7 @@ void RpcClient::Update() {
     }
 }
 
-void RpcClient::Close(ConnectionStatus status) {
+void Peer::Close(ConnectionStatus status) {
     LOG(INFO) << "RpcClient error: " << STATUS_STRINGS[(int)status];
     Invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
@@ -161,15 +162,15 @@ void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3&
     );
 }
 
-void RpcClient::UIMessage(const std::string& text, UIMsgType type) {
+void Peer::UIMessage(const std::string& text, UIMsgType type) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_UIMessage, type, text);
 }
 
-ZDO* RpcClient::GetZDO() {
+ZDO* Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
-void RpcClient::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
+void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,
@@ -179,7 +180,7 @@ void RpcClient::Teleport(const Vector3& pos, const Quaternion& rot, bool animati
 
 
 
-void RpcClient::ZDOSectorInvalidated(ZDO& zdo) {
+void Peer::ZDOSectorInvalidated(ZDO& zdo) {
     if (zdo.IsOwner(this->m_uuid))
         return;
 
@@ -190,7 +191,7 @@ void RpcClient::ZDOSectorInvalidated(ZDO& zdo) {
     }
 }
 
-bool RpcClient::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
+bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
     auto&& find = m_zdos.find(zdo.ID());
 
     outItr = find;

@@ -97,7 +97,7 @@ add_executable(${PROJECT_NAME}
     "src/ModManager.cpp"
     "src/NetAcceptorSteam.cpp"
     "src/NetManager.cpp"
-    "src/NetRpc.cpp"
+    
     "src/NetSteamSocket.cpp"
     "src/Peer.cpp"
     "src/PrefabManager.cpp"

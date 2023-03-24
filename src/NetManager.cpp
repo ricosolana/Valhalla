@@ -150,13 +150,17 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos) {
 void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3& pos) {
-    auto peer(std::make_unique<Peer>(socket, uuid, name, pos));
+    auto peer(std::make_unique<Peer>(std::move(socket)));
+
+    peer->m_uuid = uuid;
+    peer->m_name = name;
+    peer->m_pos = pos;
+
+    peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
 
     if (ModManager()->CallEvent(IModManager::EVENT_Join, peer.get())) {
         return peer->Kick();
     }
-
-    peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
 
     // Important
     peer->Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
@@ -329,7 +333,7 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        m_rpcs.push_back(std::make_unique<NetRpc>(*opt));
+        m_rpcs.push_back(std::make_unique<Peer>(std::move(*opt)));
     }       
 
     // Send periodic data (2s)
@@ -370,10 +374,10 @@ void INetManager::Update() {
     // Update joining (after peer update to avoid double updating any moved peer)
     for (auto&& rpc : m_rpcs) {
         try {
-            rpc->PollOne();
+            rpc->Update();
         }
         catch (const std::runtime_error& e) {
-            LOG(WARNING) << "NetRPC error";
+            LOG(WARNING) << "Client error";
             LOG(WARNING) << e.what();
             rpc->m_socket->Close(false);
         }
