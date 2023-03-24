@@ -125,6 +125,7 @@ public:
         if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash, this, params...))
             return;
 
+        /*
         BYTES_t bytes;
         DataWriter writer(bytes);
 
@@ -132,6 +133,11 @@ public:
         DataWriter::_Serialize(writer, params...); // serialize
 
         m_socket->Send(std::move(bytes));
+        */
+
+        m_socket->Send(DataWriter::Serialize(hash, params...));
+
+        ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash ^ IModManager::EVENT_POST, this, params...);
     }
 
     template <typename... Types>
@@ -141,17 +147,36 @@ public:
 
 
 
+    //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+
     void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+        if (!m_socket->Connected())
+            return;
+
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
+
+        //sol::variadic_results results(args.begin(), args.end());
+
+        if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
+            return;
+
+        //sol::variadic_results results;
+        //results.push_back(sol::make_object(ModManager()->m_state, this));
+        //for (auto&& arg : args)
+        //    results.push_back(arg);
+        //
+        //if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, sol::as_args(results)))
+        //    return;
+        
         BYTES_t bytes;
         DataWriter params(bytes);
-
         params.Write(repr.m_hash);
-        DataWriter::_SerializeLua(params, repr.m_types, args);
-
+        DataWriter::_SerializeLua(params, repr.m_types, sol::variadic_results(args.begin(), args.end()));
         m_socket->Send(std::move(bytes));
+
+        ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
     }
 
 
@@ -275,7 +300,7 @@ public:
         data.m_target = this->m_uuid;
         data.m_targetZDO = targetZDO;
         data.m_method = repr.m_hash;
-        data.m_params = DataWriter::SerializeLua(repr.m_types, args);
+        data.m_params = DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
 
         BYTES_t bytes;
         data.Serialize(DataWriter(bytes));

@@ -79,17 +79,22 @@ public:
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, const Args&... params) {
+		// Prefix
+		//if (!ModManager()->CallEvent(IModManager::EVENT_RouteOut))
+		// Routed is a bit more finicky because they are both serialized and deserialized at different places with different intent...
+
 		InvokeImpl(target, targetNetSync, hash, DataWriter::Serialize(params...));
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, const std::string& name, const Args&... params) {
-		InvokeImpl(target, targetNetSync, VUtils::String::GetStableHashCode(name), DataWriter::Serialize(params...));
+		InvokeView(target, targetNetSync, VUtils::String::GetStableHashCode(name), params...);
 	}
 
 	void InvokeViewLua(OWNER_t target, const ZDOID& targetNetSync, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-		InvokeImpl(target, targetNetSync, repr.m_hash, DataWriter::SerializeLua(repr.m_types, args));
+		
+		InvokeImpl(target, targetNetSync, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
 
 	//template <typename... Args>

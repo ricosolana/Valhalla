@@ -108,12 +108,13 @@ private:
     };
 
 private:
-    sol::state m_state;
-
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
     robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
 
     EventStatus m_eventStatus = EventStatus::DEFAULT;
+
+public:
+    sol::state m_state;
 
 private:
     std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);
@@ -153,7 +154,7 @@ public:
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
                 try {
-                    sol::protected_function_result result = itr->m_func(params...);
+                    sol::protected_function_result result = itr->m_func(Args(params)...);
                     if (!result.valid()) {
                         LOG(ERROR) << "Event error: ";
 

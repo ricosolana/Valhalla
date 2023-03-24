@@ -170,9 +170,9 @@ public:
         auto&& state = m_func.lua_state();
 
         auto results(DataReader::DeserializeLua(state, reader, m_types));
-        results.insert(results.begin(), sol::make_object(state, t));
+        //results.insert(results.begin(), sol::make_object(state, t));
 
-        sol::protected_function_result result = m_func(sol::as_args(results));
+        sol::protected_function_result result = m_func(t, sol::as_args(results));
         if (!result.valid()) {
             // player invocation was bad
             sol::error error = result;

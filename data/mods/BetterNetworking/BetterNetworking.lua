@@ -32,9 +32,14 @@ local SendCompressionEnabled = function(peer, enabled, status)
     SendCompressionStarted(peer, status.enabled, status)
 end
 
+-- DUMMY SPECIAL LISTENER FOR TESTING LUA-INVOLVED RPC IO
+Valhalla:Subscribe('RpcOut', 'CW_Jesse.BetterNetworking.CompressionVersion', 'POST', function(peer, version)
+    print('zdo: ' .. (peer.zdo and 'yes' or 'nil'))
+    print('cool lua post works: ' .. peer.name .. ' ' .. version)
+end)
 
-
-Valhalla:Subscribe("Join", function(peer)
+--Valhalla:Subscribe("Join", function(peer)
+Valhalla:Subscribe('RpcOut', 'ClientHandshake', 'POST', function(peer)
     local status = { enabled = false, receiving = false, sending = false }
     peers[tostring(peer.uuid)] = status
 
@@ -43,8 +48,13 @@ Valhalla:Subscribe("Join", function(peer)
     
     -- Version listener
     peer:Register(SIG_CompressionVersion, function(peer, version)
-        if version == COMPRESSION_VERSION then
-            
+        if version < COMPRESSION_VERSION then
+            print(peer.name .. ' (v' .. version .. ') is outdated')
+        elseif version > COMPRESSION_VERSION then
+            print(peer.name .. ' (v' .. version .. ') is newer than server')
+        else
+            print('Compatible with ' .. peer.name .. '(v' .. peer.name .. ')')
+        
             -- Enable listener
             peer:Register(SIG_CompressionEnabled, function(peer, enabled)
                 status.enabled = enabled
@@ -61,6 +71,8 @@ Valhalla:Subscribe("Join", function(peer)
             SendCompressionStarted(peer, status.sending, status)
         end
     end)
+    
+    print('Sending version...')
         
     peer:Invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
 end)

@@ -83,15 +83,28 @@ void DataWriter::Write(const Quaternion& in) {
     Write(in.w);
 }
 
-void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&types, const sol::variadic_args &args) {
-    for (int i = 0; i < args.size(); i++) {
-        auto&& arg = args[i];
+void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&types, const sol::variadic_results &results) {
+    for (int i = 0; i < results.size(); i++) {
+        auto&& arg = results[i];
         auto argType = arg.get_type();
         auto&& expectType = types[i];
 
         // A vector of types and vector of values are used because Lua makes no distinction
         if (argType == sol::type::number) {
             switch (expectType) {
+                // TODO add recent unsigned types
+            case IModManager::Type::UINT8:
+                params.Write(arg.as<uint8_t>());
+                break;
+            case IModManager::Type::UINT16:
+                params.Write(arg.as<uint16_t>());
+                break;
+            case IModManager::Type::UINT32:
+                params.Write(arg.as<uint32_t>());
+                break;
+            case IModManager::Type::UINT64:
+                params.Write(arg.as<uint64_t>());
+                break;
             case IModManager::Type::INT8:
                 params.Write(arg.as<int8_t>());
                 break;
@@ -120,6 +133,7 @@ void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&type
         else if (argType == sol::type::boolean && expectType == IModManager::Type::BOOL) {
             params.Write(arg.as<bool>());
         }
+        // TODO can remove checks as sol safe mode already checks
         else if (arg.is<BYTES_t>() && expectType == IModManager::Type::BYTES) {
             params.Write(arg.as<BYTES_t>());
         }
