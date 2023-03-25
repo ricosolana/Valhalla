@@ -446,8 +446,8 @@ public:
 
         auto dict = *VUtils::Resource::ReadFile<BYTES_t>("dict/small");
 
-        Compressor compressor(dict);
-        Decompressor decompressor(dict);
+        ZStdCompressor compressor(dict);
+        ZStdDecompressor decompressor(dict);
 
         auto declaration = *VUtils::Resource::ReadFile<BYTES_t>("dict/declaration.txt");
 

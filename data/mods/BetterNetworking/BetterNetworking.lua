@@ -8,9 +8,9 @@
 
 local COMPRESSION_VERSION = 6
 
-local compressor = Compressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
+local compressor = ZStdCompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
 
-local decompressor = Decompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
+local decompressor = ZStdDecompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
 
 local peers = {}
 

@@ -724,18 +724,6 @@ void IModManager::LoadAPI() {
 
 
 
-    m_state.new_usertype<Compressor>("Compressor",
-        sol::constructors<Compressor(const BYTES_t&)>(),
-        "Compress", &Compressor::Compress
-    );
-
-    m_state.new_usertype<Decompressor>("Decompressor",
-        sol::constructors<Decompressor(const BYTES_t&)>(),
-        "Decompress", &Decompressor::Decompress
-    );
-
-
-
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
@@ -855,15 +843,35 @@ void IModManager::LoadAPI() {
         LOG(INFO) << "[" << mod.m_name << "] " << s;
     };
 
+
+
+    m_state.new_usertype<ZStdCompressor>("ZStdCompressor",
+        sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(const BYTES_t&)>(),
+        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&ZStdCompressor::Compress)
+        );
+
+    m_state.new_usertype<ZStdDecompressor>("ZStdDecompressor",
+        sol::constructors<ZStdDecompressor(), ZStdDecompressor(const BYTES_t&)>(),
+        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&ZStdDecompressor::Decompress)
+        );
+    
+
+
+    m_state.new_usertype<GZCompressor>("GZCompressor",
+        sol::constructors<GZCompressor(), GZCompressor(int)>(),
+        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GZCompressor::Compress)
+        );
+
+    m_state.new_usertype<GZDecompressor>("GZDecompressor",
+        sol::constructors<GZDecompressor()>(),
+        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GZDecompressor::Decompress)
+        );
+
+
+
     {
         auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
 
-        utilsTable["Compress"] = sol::overload(
-            sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::CompressGz),
-            sol::resolve<std::optional<BYTES_t>(const BYTES_t&, int)>(VUtils::CompressGz)
-        );
-        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
-        utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
         utilsTable["CreateBytes"] = []() { return BYTES_t(); };
 
         utilsTable["Assign"] = sol::overload(

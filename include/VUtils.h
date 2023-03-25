@@ -13,6 +13,7 @@
 #include <easylogging++.h>
 #include <sol/sol.hpp>
 #include <zstd.h>
+#include <zlib.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"
@@ -321,92 +322,137 @@ std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
 
 
 
-class Compressor {
-    ZSTD_CCtx* m_ctx = nullptr;
-    ZSTD_CDict* m_dict = nullptr;
+class ZStdCompressor {
+    ZSTD_CCtx* m_ctx;
+    ZSTD_CDict* m_dict;
 
 public:
-    Compressor(const BYTES_t& dict) {
+    ZStdCompressor(int level) {
         this->m_ctx = ZSTD_createCCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd cctx");
 
-        this->m_dict = ZSTD_createCDict(dict.data(), dict.size(), 1);
+        auto status = ZSTD_CCtx_setParameter(this->m_ctx, ZSTD_c_compressionLevel, level);
+        if (ZSTD_isError(status)) {
+            ZSTD_freeCCtx(m_ctx);
+            throw std::runtime_error("failed to set zstd compression level parameter");
+        }
+        this->m_dict = nullptr;
+    }
+
+    ZStdCompressor() : ZStdCompressor(ZSTD_CLEVEL_DEFAULT) {}
+
+    ZStdCompressor(const BYTE_t* dict, size_t dictSize, int level) {
+        this->m_ctx = ZSTD_createCCtx();
+        if (!this->m_ctx)
+            throw std::runtime_error("failed to init zstd cctx");
+
+        this->m_dict = ZSTD_createCDict(dict, dictSize, level);
         if (!this->m_dict) {
             ZSTD_freeCCtx(m_ctx);
             throw std::runtime_error("failed to create zstd cdict");
         }
     }
 
-    Compressor(const Compressor&) = delete;
-    Compressor(Compressor&& other) {
+    ZStdCompressor(const BYTES_t& dict, int level) 
+        : ZStdCompressor(dict.data(), dict.size(), level) {}
+
+    ZStdCompressor(const BYTES_t& dict) 
+        : ZStdCompressor(dict, ZSTD_CLEVEL_DEFAULT) {}
+
+    ZStdCompressor(const ZStdCompressor&) = delete;
+    ZStdCompressor(ZStdCompressor&& other) {
         this->m_ctx = other.m_ctx;
         this->m_dict = other.m_dict;
         other.m_ctx = nullptr;
     }
 
-    ~Compressor() {
+    ~ZStdCompressor() {
         ZSTD_freeCCtx(this->m_ctx);
         ZSTD_freeCDict(this->m_dict);
     }
 
-    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+public:
+    std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
         BYTES_t out;
-        out.resize(ZSTD_compressBound(in.size()));
+        out.resize(ZSTD_compressBound(inSize));
+        
+        auto status = m_dict ?
+            ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in, inSize, this->m_dict) : 
+            ZSTD_compress2(this->m_ctx, out.data(), out.size(), in, inSize);
 
-        auto status = ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in.data(), in.size(), this->m_dict);
         if (ZSTD_isError(status))
             return std::nullopt;
-        
+
         out.resize(status);
         return out;
     }
+
+    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+        return Compress(in.data(), in.size());
+    }
 };
 
-class Decompressor {
-    ZSTD_DCtx* m_ctx = nullptr;
-    ZSTD_DDict* m_dict = nullptr;
+class ZStdDecompressor {
+    ZSTD_DCtx* m_ctx;
+    ZSTD_DDict* m_dict;
 
 public:
-    Decompressor(const BYTES_t& dict) {
+    ZStdDecompressor() {
+        this->m_ctx = ZSTD_createDCtx();
+        if (!this->m_ctx)
+            throw std::runtime_error("failed to init zstd dctx");
+        this->m_dict = nullptr;
+    }
+
+    ZStdDecompressor(const BYTE_t* dict, size_t dictSize) {
         this->m_ctx = ZSTD_createDCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd dctx");
 
-        this->m_dict = ZSTD_createDDict(dict.data(), dict.size());
+        this->m_dict = ZSTD_createDDict(dict, dictSize);
         if (!this->m_dict) {
             ZSTD_freeDCtx(m_ctx);
             throw std::runtime_error("failed to create zstd ddict");
         }
     }
 
-    Decompressor(const Decompressor&) = delete;
-    Decompressor(Decompressor&& other) {
+    ZStdDecompressor(const BYTES_t& dict) 
+        : ZStdDecompressor(dict.data(), dict.size()) {}
+
+    ZStdDecompressor(const ZStdDecompressor&) = delete;
+    ZStdDecompressor(ZStdDecompressor&& other) {
         this->m_ctx = other.m_ctx;
         this->m_dict = other.m_dict;
         other.m_ctx = nullptr;
     }
 
-    ~Decompressor() {
+    ~ZStdDecompressor() {
         ZSTD_freeDCtx(this->m_ctx);
         ZSTD_freeDDict(this->m_dict);
     }
 
-    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
-        auto size = ZSTD_getFrameContentSize(in.data(), in.size());
+public:
+    std::optional<BYTES_t> Decompress(const BYTE_t* in, size_t inSize) {
+        auto size = ZSTD_getFrameContentSize(in, inSize);
         if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN)
             return std::nullopt;
 
         BYTES_t out;
         out.resize(size);
 
-        // check that dictionaries match
-        auto expect = ZSTD_getDictID_fromDDict(this->m_dict);
-        auto actual = ZSTD_getDictID_fromFrame(in.data(), in.size());
-        if (expect != actual)
-            return std::nullopt;
+        if (this->m_dict) {
+            // check that dictionaries match
+            auto expect = ZSTD_getDictID_fromDDict(this->m_dict);
+            auto actual = ZSTD_getDictID_fromFrame(in, inSize);
+            if (expect != actual)
+                return std::nullopt;
+        }
 
-        auto status = ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in.data(), in.size(), this->m_dict);
+        auto status = this->m_dict ? 
+            ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in, inSize, this->m_dict) : 
+            ZSTD_decompressDCtx(this->m_ctx, out.data(), out.size(), in, inSize);
+
         if (ZSTD_isError(status))
             return std::nullopt;
 
@@ -415,44 +461,122 @@ public:
         out.resize(status);
         return out;
     }
+
+    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+        return Decompress(in.data(), in.size());
+    }
+};
+
+
+
+class GZCompressor {
+    int m_level;
+
+public:
+    GZCompressor() : m_level(Z_BEST_SPEED) {}
+
+    GZCompressor(int level) : m_level(level) {}
+
+public:
+    std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
+        if (inSize == 0)
+            return std::nullopt;
+
+        BYTES_t out;
+
+        z_stream zs{};
+
+        // possible init errors are:
+        //  - invalid param (can be fixed at compile time)
+        //  - out of memory (unlikely)
+        //  - incompatible version (should be fine if using the init macro)
+        // https://stackoverflow.com/a/72499721
+        if (deflateInit2(&zs, m_level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+            return std::nullopt;
+
+        // Set output buffer size to an upper bound compressed size
+        // Might throw if out of memory (unlikely)
+        out.resize(deflateBound(&zs, inSize));
+
+        zs.avail_in = (uInt)inSize;
+        zs.next_in = (Bytef*)in;
+        zs.next_out = (Bytef*)out.data();
+        zs.avail_out = out.size();
+
+        auto r = deflate(&zs, Z_FINISH);
+        if (r != Z_STREAM_END) {
+            return std::nullopt;
+        }
+
+        out.resize(zs.total_out);
+
+        return out;
+    }
+
+    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+        return Compress(in.data(), in.size());
+    }
+};
+
+class GZDecompressor {
+public:
+    GZDecompressor() {}
+
+public:
+    std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize) {
+        if (inSize == 0)
+            return std::nullopt;
+
+        BYTES_t out;
+        out.resize(inSize + inSize / 2);
+
+        z_stream stream;
+        stream.next_in = (Bytef*)in;
+        stream.avail_in = inSize;
+        stream.total_out = 0;
+        stream.zalloc = Z_NULL;
+        stream.zfree = Z_NULL;
+
+        if (inflateInit2(&stream, 15 | 16) != Z_OK)
+            return std::nullopt;
+
+        while (true) {
+            // If our output buffer is too small
+            if (stream.total_out >= out.size()) {
+                out.resize(stream.total_out + inSize / 2);
+            }
+
+            // Advance to the next chunk to decode
+            stream.next_out = (Bytef*)(out.data() + stream.total_out);
+
+            // Set the available output capacity
+            stream.avail_out = out.size() - stream.total_out;
+
+            // Inflate another chunk.
+            int err = inflate(&stream, Z_SYNC_FLUSH);
+            if (err == Z_STREAM_END)
+                break;
+            else if (err != Z_OK) {
+                return std::nullopt;
+            }
+        }
+
+        if (inflateEnd(&stream) != Z_OK)
+            return std::nullopt;
+
+        // Trim off the extra-capacity inflated bytes
+        out.resize(stream.total_out);
+        return out;
+    }
+
+    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+        return Decompress(in.data(), in.size());
+    }
 };
 
 
 
 namespace VUtils {
-
-    //class compress_error : public std::runtime_error {
-    //    using runtime_error::runtime_error;
-    //};
-    //
-    //class data_error : public std::runtime_error {
-    //    using runtime_error::runtime_error;
-    //};
-
-    // Compress a byte array with a specified length and compression level
-    // Stores the compressed contents into 'out' array
-    // Returns the compressed size otherwise a negative number on compression failure
-    std::optional<BYTES_t> CompressGz(const BYTE_t* in, unsigned int inSize, int level);
-
-    // Compress a vector with a specified compression level
-    // Returns nullopt on compress failure
-    std::optional<BYTES_t> CompressGz(const BYTES_t& in, int level);
-    // Compress a vector with specified length
-    // Returns nullopt on compress failure
-    std::optional<BYTES_t> CompressGz(const BYTES_t& in);
-
-    //std::optional<BYTES_t> CompressZStd(const BYTES_t& in);
-
-
-
-    // Decompress a byte array with a specified length
-    // Returns nullopt on decompress failure
-    std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize);
-
-    // Decompress a byte vector
-    // Returns nullopt on decompress failure
-    std::optional<BYTES_t> Decompress(const BYTES_t& in);
-
     // Returns the smallest 1-value bitshift
     template<typename Enum> requires std::is_enum_v<Enum>
     constexpr uint8_t GetShift(Enum value) {

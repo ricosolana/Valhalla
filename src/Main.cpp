@@ -138,10 +138,10 @@ int main(int argc, char **argv) {
         fs::create_directories("logs", ec);
 
         if (auto log = VUtils::Resource::ReadFile<BYTES_t>(VALHALLA_LOGFILE_NAME)) {
-            if (auto compress = VUtils::CompressGz(*log))
+            if (auto opt = GZCompressor().Compress(*log))
                 VUtils::Resource::WriteFile(
                     fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + VALHALLA_LOGFILE_NAME + ".gz"), 
-                    *compress);
+                    *opt);
         }
         //fs::copy_file(VALHALLA_LOGFILE_NAME,
             //std::to_string(steady_clock::now().time_since_epoch().count()) + VALHALLA_LOGFILE_NAME, ec);

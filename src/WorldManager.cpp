@@ -187,7 +187,7 @@ void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 
 	if (fs::exists(path)) {
 		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-			auto compressed = VUtils::CompressGz(*oldSave);
+			auto compressed = GZCompressor().Compress(*oldSave);
 			if (!compressed) {
 				LOG(ERROR) << "Failed to compress world backup " << path;
 				return;
@@ -246,7 +246,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 			// backup the old file
 			if (fs::exists(path)) {
 				if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-					auto compressed = VUtils::CompressGz(*oldSave);
+					auto compressed = GZCompressor().Compress(*oldSave);
 					if (!compressed) {
 						LOG(WARNING) << "Failed to compress world backup " << path;
 						return;
