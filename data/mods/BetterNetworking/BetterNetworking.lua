@@ -114,9 +114,9 @@ end)
 -- Remove dead references
 
 
-Valhalla:Subscribe("Quit", function(peer)
+Valhalla:Subscribe("Disconnect", function(peer)
     print(peer.name .. ' disconnected')
-    peers[tostring(peer.uuid)] = nil
+    peers[tostring(peer.socket.host)] = nil
 end)
 
 Valhalla:Subscribe('Enable', function()
