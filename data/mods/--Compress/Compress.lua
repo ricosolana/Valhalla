@@ -20,8 +20,7 @@ local RPC_CompressedZDOData = function(peer, compressed)
 
     -- Finally invoke it
     --peer:InvokeSelf("ZDOData", DataReader.new(compressed));
-    --peers[peer].Invoke(DataReader.new(compressed))
-    peers[tostring(peer.uuid)]:Invoke(peer, DataReader.new(compressed))
+    peers[tostring(peer.socket.host)]:Invoke(peer, DataReader.new(compressed))
 end
 
 local RPC_CompressHandshake = function(peer, enabled)
@@ -30,8 +29,7 @@ local RPC_CompressHandshake = function(peer, enabled)
     if enabled then
         print("Registering CompressedZDOData")
 
-        peers[tostring(peer.uuid)] = assert(peer:GetMethod('ZDOData'))
-        --peers[peer] = assert(peer:GetMethod('ZDOData'))
+        peers[tostring(peer.socket.host)] = assert(peer:GetMethod('ZDOData'))
 
         peer:Register(SIG_CompressedZDOData, RPC_CompressedZDOData)
 
@@ -47,17 +45,13 @@ end)
 
 -- Remove dead references
 Valhalla:Subscribe("Quit", function(peer)
-    print("Cleaning up peer")
-    table.remove(peers, tostring(peer.uuid))
-    --table.remove(peers, peer)
+    print("Disconnecting peer")
+    peers[tostring(peer.socket.host)] = nil
 end)
 
 -- delegate to replace call
 Valhalla:Subscribe("RpcOut", "ZDOData", function(peer, bytes)
-    --local uuid = peer.uuid
-    --if peers[uuid] ~= nil then
-    --if peers[peer] then
-    if peers[tostring(peer.uuid)] then
+    if peers[tostring(peer.socket.host)] then
         event.Cancel() -- To prevent normal packet from being sent
         local compressed = assert(VUtils.Compress(bytes), 'compression error')
         peer:Invoke(SIG_CompressedZDOData, compressed)
