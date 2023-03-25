@@ -19,10 +19,10 @@ local SIG_CompressionEnabled = MethodSig.new("CW_Jesse.BetterNetworking.Compress
 local SIG_CompressionStarted = MethodSig.new("CW_Jesse.BetterNetworking.CompressedStarted", Type.BOOL)
 
 local SendCompressionStarted = function(peer, started, status)
-    if started ~= status.sending then
+    if started ~= status.o then
         peer:Invoke(SIG_CompressionStarted, started)
-        status.sending = started
-        
+        status.o = started
+
         print('Compression to ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
     end
 end
@@ -33,43 +33,45 @@ local SendCompressionEnabled = function(peer, enabled, status)
 end
 
 -- DUMMY SPECIAL LISTENER FOR TESTING LUA-INVOLVED RPC IO
-Valhalla:Subscribe('RpcOut', 'CW_Jesse.BetterNetworking.CompressionVersion', 'POST', function(peer, version)
-    print('zdo: ' .. (peer.zdo and 'yes' or 'nil'))
-    print('cool lua post works: ' .. peer.name .. ' ' .. version)
-end)
+--Valhalla:Subscribe('RpcOut', 'CW_Jesse.BetterNetworking.CompressionVersion', 'POST', function(peer, version)
+--    print('zdo: ' .. (peer.zdo and 'yes' or 'nil'))
+--    print('cool lua post works: ' .. peer.name .. ' ' .. version)
+--end)
 
 --Valhalla:Subscribe("Join", function(peer)
-Valhalla:Subscribe('RpcOut', 'ClientHandshake', 'POST', function(peer)
-    local status = { enabled = false, receiving = false, sending = false }
-    peers[tostring(peer.uuid)] = status
-
-    -- Handshake for each request is same time, but semi-sequential
-    -- Version -> Enabled -> Started
+--Valhalla:Subscribe('RpcOut', 'ClientHandshake', 'POST', function(peer)
+Valhalla:Subscribe('Connect', function(peer)
+    --local status = peers[tostring(peer.socket.host)]
+    local status = { enabled = false, i = false, o = false }
     
-    -- Version listener
+    peers[tostring(peer.socket.host)] = status
+    
+    -- Version
     peer:Register(SIG_CompressionVersion, function(peer, version)
         if version < COMPRESSION_VERSION then
             print(peer.name .. ' (v' .. version .. ') is outdated')
         elseif version > COMPRESSION_VERSION then
             print(peer.name .. ' (v' .. version .. ') is newer than server')
         else
-            print('Compatible with ' .. peer.name .. '(v' .. peer.name .. ')')
+            print('Peer ' .. peer.socket.host .. ' compatible (v' .. version .. ')')
         
-            -- Enable listener
-            peer:Register(SIG_CompressionEnabled, function(peer, enabled)
-                status.enabled = enabled
-                SendCompressionStarted(peer, enabled, status)                
-            end)
-            
-            -- Started listener
-            peer:Register(SIG_CompressionStarted, function(peer, started)
-                status.started = started
-                print('Compression from ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
-            end)
-            
             SendCompressionEnabled(peer, status.enabled, status)
-            SendCompressionStarted(peer, status.sending, status)
         end
+        
+        return false
+    end)
+    
+    -- Enable
+    peer:Register(SIG_CompressionEnabled, function(peer, enabled)
+        status.enabled = enabled
+        SendCompressionStarted(peer, enabled, status)
+    end)
+    
+    -- Started
+    peer:Register(SIG_CompressionStarted, function(peer, started)
+        -- prepare to start receiving compressed packets
+        status.i = started
+        print('Compression from ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
     end)
     
     print('Sending version...')
@@ -77,24 +79,46 @@ Valhalla:Subscribe('RpcOut', 'ClientHandshake', 'POST', function(peer)
     peer:Invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
 end)
 
+Valhalla:Subscribe('Send', function(socket, bytes)
+    -- compress data if peer is started
+    local status = peers[tostring(socket.host)]
+    
+    if status and status.o then
+        local com = compressor:Compress(bytes)
+        if com then
+            VUtils.Swap(bytes, com)
+        else
+            -- compression failed for an unknown reason, this is rare
+            print('Compression failed; this is rare')
+        end
+    end
+end)
+
+Valhalla:Subscribe('Recv', function(socket, bytes)
+    local decom = decompressor:Decompress(bytes)
+
+    local status = peers[tostring(socket.host)]
+    
+    if decom then
+        VUtils.Swap(bytes, decom)
+        if not status.i then
+            print('Received unexpected compressed message from ' .. socket.host)
+        end
+    else
+        if status.i then
+            print('Received unexpected uncompressed message from ' .. socket.host)
+        end
+    end
+end)
+
 -- Remove dead references
+
+
 Valhalla:Subscribe("Quit", function(peer)
     print(peer.name .. ' disconnected')
     peers[tostring(peer.uuid)] = nil
 end)
 
--- delegate to replace call
-Valhalla:Subscribe("RpcOut", "ZDOData", function(peer, bytes)
-    --local uuid = peer.uuid
-    --if peers[uuid] ~= nil then
-    --if peers[peer] then
-    if peers[tostring(peer.uuid)] then
-        event.Cancel() -- To prevent normal packet from being sent
-        local compressed = assert(VUtils.Compress(bytes), 'compression error')
-        peer:Invoke(SIG_CompressedZDOData, compressed)
-    end
-end)
-
-Valhalla:Subscribe("Enable", function()
+Valhalla:Subscribe('Enable', function()
     
 end)

@@ -80,6 +80,8 @@ Peer::Peer(ISocket::Ptr socket)
                 return rpc->Close(ConnectionStatus::ErrorFull);
 
             NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
+
+            return false;
         });
 
         bool hasPassword = !SERVER_SETTINGS.serverPassword.empty();
@@ -101,6 +103,8 @@ Peer::Peer(ISocket::Ptr socket)
         }
 
         rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, SALT);
+
+        return false;
     });
 }
 
@@ -133,21 +137,21 @@ void Peer::Update() {
             }
         }
         else {
-            if (auto method = GetMethod(hash))
-                method->Invoke(this, reader);
+            InternalInvoke(hash, reader);
         }
     }
 
     if (now - m_lastPing > SERVER_SETTINGS.socketTimeout) {
         LOG(INFO) << "Client RPC timeout";
-        m_socket->Close(false);
+        Disconnect();
     }
 }
 
-void Peer::Close(ConnectionStatus status) {
+bool Peer::Close(ConnectionStatus status) {
     LOG(INFO) << "RpcClient error: " << STATUS_STRINGS[(int)status];
     Invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
+    return false;
 }
 
 

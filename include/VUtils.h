@@ -357,7 +357,7 @@ public:
         auto status = ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in.data(), in.size(), this->m_dict);
         if (ZSTD_isError(status))
             return std::nullopt;
-
+        
         out.resize(status);
         return out;
     }
@@ -393,8 +393,12 @@ public:
     }
 
     std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+        auto size = ZSTD_getFrameContentSize(in.data(), in.size());
+        if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN)
+            return std::nullopt;
+
         BYTES_t out;
-        out.resize(ZSTD_getFrameContentSize(in.data(), in.size()));
+        out.resize(size);
 
         // check that dictionaries match
         auto expect = ZSTD_getDictID_fromDDict(this->m_dict);

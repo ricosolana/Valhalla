@@ -3,6 +3,7 @@
 
 #include "NetSocket.h"
 #include "ValhallaServer.h"
+#include "ModManager.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection hConn)
     : m_hConn(hConn) {
@@ -56,8 +57,11 @@ void SteamSocket::Update() {
 }
 
 void SteamSocket::Send(BYTES_t bytes) {
-    if (!bytes.empty())
-        m_sendQueue.push_back(std::move(bytes));
+    if (!bytes.empty()) {
+        // SteamSocket is not implemented in modman, so pass parent class
+        if (ModManager()->CallEvent(IModManager::EVENT_Send, static_cast<ISocket*>(this), std::ref(bytes)))
+            m_sendQueue.push_back(std::move(bytes));
+    }
 }
 
 std::optional<BYTES_t> SteamSocket::Recv() {
@@ -66,12 +70,13 @@ std::optional<BYTES_t> SteamSocket::Recv() {
 #define MSG_COUNT 1
         SteamNetworkingMessage_t* msg; // will point to allocated messages
         if (SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
-            BYTES_t pkg; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
-            pkg.insert(pkg.begin(), 
+            BYTES_t bytes; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
+            bytes.insert(bytes.begin(),
                 reinterpret_cast<BYTE_t*>(msg->m_pData), 
                 reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
             msg->Release();
-            return pkg;
+            if (ModManager()->CallEvent(IModManager::EVENT_Recv, static_cast<ISocket*>(this), std::ref(bytes)))
+                return bytes;
         }
         else {
             LOG(DEBUG) << "Failed to receive message";

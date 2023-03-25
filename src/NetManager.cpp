@@ -158,7 +158,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
 
     peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
 
-    if (ModManager()->CallEvent(IModManager::EVENT_Join, peer.get())) {
+    if (!ModManager()->CallEvent(IModManager::EVENT_Join, peer.get())) {
         return peer->Kick();
     }
 
@@ -333,7 +333,9 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        m_rpcs.push_back(std::make_unique<Peer>(std::move(*opt)));
+        auto&& peer = std::make_unique<Peer>(std::move(*opt));
+        if (ModManager()->CallEvent(IModManager::EVENT_Connect, peer.get()))
+            m_rpcs.push_back(std::move(peer));
     }       
 
     // Send periodic data (2s)
@@ -341,7 +343,8 @@ void INetManager::Update() {
         SendNetTime();
         if (SERVER_SETTINGS.playerList)
             SendPlayerList();
-        }); 
+        }
+    ); 
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {
@@ -389,9 +392,11 @@ void INetManager::Update() {
     // Cleanup
     {
         for (auto&& itr = m_rpcs.begin(); itr != m_rpcs.end(); ) {
-            auto&& rpc = itr->get();
-            assert(rpc);
-            if (!(rpc->m_socket && rpc->m_socket->Connected())) {
+            auto&& peer = itr->get();
+            assert(peer);
+            if (!(peer->m_socket && peer->m_socket->Connected())) {
+                ModManager()->CallEvent(IModManager::EVENT_Disconnect, std::ref(peer));
+
                 itr = m_rpcs.erase(itr);
             }
             else {

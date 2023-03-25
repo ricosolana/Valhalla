@@ -43,7 +43,7 @@ public:
     };
 
     enum class EventStatus {
-        DEFAULT = 0,
+        NONE = 0,
         CANCEL = 1 << 0,
         UNSUBSCRIBE = 1 << 1, // Set only when calling function self unsubscribes
     };
@@ -63,8 +63,17 @@ public:
     static constexpr HASH_t EVENT_Routed = __H("Routed");      // Server relays a message from peer to peer
 
     static constexpr HASH_t EVENT_Update = __H("Update");
+
+    // Pre-authentication peer methods
+    static constexpr HASH_t EVENT_Connect = __H("Connect");
+    static constexpr HASH_t EVENT_Disconnect = __H("Disconnect");
+
+    // Authenticated peer methods
     static constexpr HASH_t EVENT_Join = __H("Join");
     static constexpr HASH_t EVENT_Quit = __H("Quit");
+
+    static constexpr HASH_t EVENT_Send = __H("Send");
+    static constexpr HASH_t EVENT_Recv = __H("Recv");
 
     static constexpr HASH_t EVENT_POST = __H("POST");
 
@@ -111,7 +120,7 @@ private:
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
     robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
 
-    EventStatus m_eventStatus = EventStatus::DEFAULT;
+    EventStatus m_eventStatus = EventStatus::NONE;
 
 public:
     sol::state m_state;
@@ -127,6 +136,7 @@ public:
     void Uninit();
     void Update();
 
+    /*
     void recurse(sol::table table) {
         auto&& tostring = m_state["tostring"];
 
@@ -138,19 +148,19 @@ public:
             else
                 LOG(INFO) << tostring(table).get<std::string>();
         }
-    };
+    };*/
 
     // Dispatch a Lua event
-    //  Returns whether the event was requested for cancellation
+    //  Returns false if the event requested cancellation
     template <class... Args>
     bool CallEvent(HASH_t name, Args&&... params) {
         OPTICK_EVENT();
 
+        this->m_eventStatus = EventStatus::NONE;
+
         auto&& find = m_callbacks.find(name);
         if (find != m_callbacks.end()) {
             auto&& callbacks = find->second;
-
-            this->m_eventStatus = EventStatus::DEFAULT;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
                 try {
@@ -171,7 +181,7 @@ public:
                     }
                 }
                 catch (const std::exception& e) {
-                    LOG(ERROR) << "Unhandled sol exception: " << e.what();
+                    LOG(ERROR) << "Unexpected sol exception: " << e.what();
                     m_eventStatus |= EventStatus::UNSUBSCRIBE;
                 }
 
@@ -184,7 +194,7 @@ public:
                 }
             }
         }
-        return (m_eventStatus & IModManager::EventStatus::CANCEL) == IModManager::EventStatus::CANCEL;
+        return (m_eventStatus & IModManager::EventStatus::CANCEL) != IModManager::EventStatus::CANCEL;
     }
 
     // Dispatch a Lua event

@@ -200,10 +200,10 @@ void IModManager::LoadAPI() {
         "ReadInt32", &DataReader::ReadInt32,
         "ReadInt64", &DataReader::ReadInt64Wrapper,
 
-        "ReadUInt8", & DataReader::ReadUInt8,
-        "ReadUInt16", & DataReader::ReadUInt16,
-        "ReadUInt32", & DataReader::ReadUInt32,
-        "ReadUInt64", & DataReader::ReadUInt64Wrapper,
+        "ReadUInt8", &DataReader::ReadUInt8,
+        "ReadUInt16", &DataReader::ReadUInt16,
+        "ReadUInt32", &DataReader::ReadUInt32,
+        "ReadUInt64", &DataReader::ReadUInt64Wrapper,
 
         "ReadFloat", &DataReader::ReadFloat,
         "ReadDouble", &DataReader::ReadDouble,
@@ -220,7 +220,7 @@ void IModManager::LoadAPI() {
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
         "host", sol::property(&ISocket::GetHostName),
-        "GetSendQueueSize", &ISocket::GetSendQueueSize
+        "sendQuaueSize", sol::property(&ISocket::GetSendQueueSize)
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
@@ -285,19 +285,19 @@ void IModManager::LoadAPI() {
         "Register", &Peer::RegisterLua,
         "Invoke", &Peer::InvokeLua,
         "RouteView", &Peer::RouteViewLua,
-        "Route", &Peer::RouteLua,
+        "Route", &Peer::RouteLua
         //sol::overload(
         //    sol::resolve<void(const ZDOID&, const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
         //    sol::resolve<void(const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
         //),
 
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
-        "GetMethod", sol::overload(
-            sol::resolve<IMethod<Peer*>* (HASH_t)>(&Peer::GetMethod),
-            sol::resolve<IMethod<Peer*>* (const std::string&)>(&Peer::GetMethod)
-
-            //static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
-        )
+        //"GetMethod", sol::overload(
+        //    sol::resolve<IMethod<Peer*>* (HASH_t)>(&Peer::GetMethod),
+        //    sol::resolve<IMethod<Peer*>* (const std::string&)>(&Peer::GetMethod)
+        //
+        //    //static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
+        //)
     );
 
     m_state.new_usertype<Prefab>("Prefab",
@@ -856,6 +856,18 @@ void IModManager::LoadAPI() {
         utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
         utilsTable["Decompress"] = sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(VUtils::Decompress);
         utilsTable["CreateBytes"] = []() { return BYTES_t(); };
+
+        utilsTable["Assign"] = sol::overload(
+            [](BYTES_t& replace, BYTES_t& other) { replace = other; }
+        );
+
+        utilsTable["Swap"] = sol::overload(
+            [](BYTES_t& a, BYTES_t& b) { std::swap(a, b); }
+        );
+
+        //utilsTable["Move"] = sol::overload(
+        //    [](BYTES_t& a, BYTES_t& b) { std::swap(a, b); }
+        //);
 
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();

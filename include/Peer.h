@@ -93,7 +93,7 @@ public:
     Peer(const Peer& other) = delete; // copy
 
     ~Peer() {
-        LOG(DEBUG) << "~Peer()";
+        VLOG(1) << "~Peer()";
     }
 
     /**
@@ -122,21 +122,13 @@ public:
         if (!m_socket->Connected())
             return;
 
-        if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash, this, params...))
+        // Prefix
+        if (!ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash, this, params...))
             return;
-
-        /*
-        BYTES_t bytes;
-        DataWriter writer(bytes);
-
-        writer.Write(hash);
-        DataWriter::_Serialize(writer, params...); // serialize
-
-        m_socket->Send(std::move(bytes));
-        */
 
         m_socket->Send(DataWriter::Serialize(hash, params...));
 
+        // Postfix
         ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash ^ IModManager::EVENT_POST, this, params...);
     }
 
@@ -156,31 +148,22 @@ public:
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-
-        //sol::variadic_results results(args.begin(), args.end());
-
-        if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
-            return;
-
-        //sol::variadic_results results;
-        //results.push_back(sol::make_object(ModManager()->m_state, this));
-        //for (auto&& arg : args)
-        //    results.push_back(arg);
-        //
-        //if (ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, sol::as_args(results)))
+        // Prefix
+        //if (!ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
         //    return;
-        
+
         BYTES_t bytes;
         DataWriter params(bytes);
         params.Write(repr.m_hash);
         DataWriter::_SerializeLua(params, repr.m_types, sol::variadic_results(args.begin(), args.end()));
         m_socket->Send(std::move(bytes));
 
-        ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
+        // Postfix
+        //ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
     }
 
 
-
+    /*
     Method* GetMethod(HASH_t hash) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
@@ -191,6 +174,19 @@ public:
 
     decltype(auto) GetMethod(const std::string& name) {
         return GetMethod(VUtils::String::GetStableHashCode(name));
+    }*/
+
+
+
+    decltype(auto) InternalInvoke(HASH_t hash, DataReader &reader) {
+        auto&& find = m_methods.find(hash);
+        if (find != m_methods.end()) {
+            auto result = find->second->Invoke(this, reader);
+            if (!result)
+                m_methods.erase(find);
+            return result;
+        }
+        return true;
     }
 
 
@@ -216,7 +212,7 @@ public:
         Disconnect();
     }
 
-    void Close(ConnectionStatus status);
+    bool Close(ConnectionStatus status);
 
 
 
