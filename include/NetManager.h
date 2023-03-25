@@ -14,9 +14,11 @@ class INetManager {
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
-    std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
+    //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
+    //std::list<std::unique_ptr<Peer>> m_peers;
 
-    std::list<std::unique_ptr<Peer>> m_peers;
+    std::vector<std::unique_ptr<Peer>> m_clients;
+    std::vector<Peer*> m_peers;
 
 private:
     // Kick a player by name
@@ -50,7 +52,8 @@ public:
 
     //void OnNewPeer(std::unique_ptr<Peer> peer);
 
-    void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3 &pos);
+    //void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3 &pos);
+    void OnNewPeer(Peer& peer);
 
     //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3& pos);
 

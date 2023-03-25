@@ -40,14 +40,14 @@ void IZDOManager::Update() {
 	// Occasionally release ZDOs
 	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			AssignOrReleaseZDOs(*peer.get());
+			AssignOrReleaseZDOs(*peer);
 		}
 	});
 
 	// Send ZDOS:
 	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
 		for (auto&& peer : peers) {
-			SendZDOs(*peer.get(), false);
+			SendZDOs(*peer, false);
 		}
 	});
 
@@ -318,7 +318,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 		// get the distance to the closest peer
 		for (auto&& otherPeer : NetManager()->GetPeers()) {
-			if (otherPeer.get() == &peer)
+			if (otherPeer == &peer)
 				continue;
 
 			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.m_uuid))

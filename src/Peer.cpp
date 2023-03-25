@@ -25,8 +25,8 @@ Peer::Peer(ISocket::Ptr socket)
 
             DataReader reader(bytes);
 
-            auto uuid = reader.Read<OWNER_t>();
-            if (!uuid)
+            rpc->m_uuid = reader.Read<OWNER_t>();
+            if (!rpc->m_uuid)
                 throw std::runtime_error("peer provided 0 owner");
 
             auto version = reader.Read<std::string>();
@@ -34,8 +34,8 @@ Peer::Peer(ISocket::Ptr socket)
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
-            auto pos = reader.Read<Vector3>();
-            auto name = reader.Read<std::string>();
+            rpc->m_pos = reader.Read<Vector3>();
+            rpc->m_name = reader.Read<std::string>();
             //if (!(name.length() >= 3 && name.length() <= 15))
                 //throw std::runtime_error("peer provided invalid length name");
 
@@ -66,7 +66,7 @@ Peer::Peer(ISocket::Ptr socket)
 
 
             // if peer already connected
-            if (NetManager()->GetPeer(uuid))
+            if (NetManager()->GetPeer(rpc->m_uuid))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
             // if whitelist enabled
@@ -79,7 +79,9 @@ Peer::Peer(ISocket::Ptr socket)
             if (NetManager()->GetPeers().size() >= SERVER_SETTINGS.playerMax)
                 return rpc->Close(ConnectionStatus::ErrorFull);
 
-            NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
+            //NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
+
+            NetManager()->OnNewPeer(*rpc);
 
             return false;
         });

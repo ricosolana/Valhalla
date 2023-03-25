@@ -84,10 +84,12 @@ bool INetManager::Unban(const std::string& user) {
     return Valhalla()->m_blacklist.erase(user);
 }
 
+
+
 void INetManager::SendDisconnect() {
     LOG(INFO) << "Sending disconnect msg";
 
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_clients) {
         peer->SendDisconnect();
     }
 }
@@ -149,27 +151,27 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos) {
-void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3& pos) {
-    auto peer(std::make_unique<Peer>(std::move(socket)));
+void INetManager::OnNewPeer(Peer& peer) {
+    //auto peer(std::make_unique<Peer>(std::move(socket)));
 
-    peer->m_uuid = uuid;
-    peer->m_name = name;
-    peer->m_pos = pos;
+    //peer->m_uuid = uuid;
+    //peer->m_name = name;
+    //peer->m_pos = pos;
 
-    peer->m_admin = Valhalla()->m_admin.contains(peer->m_socket->GetHostName());
+    peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
 
-    if (!ModManager()->CallEvent(IModManager::EVENT_Join, peer.get())) {
-        return peer->Kick();
+    if (!ModManager()->CallEvent(IModManager::EVENT_Join, peer)) {
+        return peer.Kick();
     }
 
     // Important
-    peer->Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
+    peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
         peer->m_pos = pos;
         peer->m_visibleOnMap = publicRefPos; // stupid name
         });
 
     // Important
-    peer->Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
+    peer.Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
         peer->m_characterID = characterID;
         // Peer does send 0,0 on death
         //if (!characterID)
@@ -178,7 +180,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
         });
 
-    peer->Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
         // TODO maybe permissions tree in future?
         //  lua? ...
         if (!peer->m_admin)
@@ -194,7 +196,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         }
         });
 
-    peer->Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -208,7 +210,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         }
         });
 
-    peer->Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -224,7 +226,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         //}
         });
 
-    peer->Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
+    peer.Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -233,7 +235,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         peer->ConsoleMessage("Saved the world");
         });
 
-    peer->Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
+    peer.Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
@@ -260,13 +262,13 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
         }
         });
 
-    SendPeerInfo(*peer);
+    SendPeerInfo(peer);
 
-    ZDOManager()->OnNewPeer(*peer);
-    RouteManager()->OnNewPeer(*peer);
-    ZoneManager()->OnNewPeer(*peer);
+    ZDOManager()->OnNewPeer(peer);
+    RouteManager()->OnNewPeer(peer);
+    ZoneManager()->OnNewPeer(peer);
 
-    m_peers.push_back(std::move(peer));
+    m_peers.push_back(&peer);
 }
 
 
@@ -274,7 +276,7 @@ void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::stri
 Peer* INetManager::GetPeer(const std::string& name) {
     for (auto&& peer : m_peers) {
         if (peer->m_name == name)
-            return peer.get();
+            return peer;
     }
     return nullptr;
 }
@@ -283,7 +285,7 @@ Peer* INetManager::GetPeer(const std::string& name) {
 Peer* INetManager::GetPeer(OWNER_t uuid) {
     for (auto&& peer : m_peers) {
         if (peer->m_uuid == uuid)
-            return peer.get();
+            return peer;
     }
     return nullptr;
 }
@@ -313,7 +315,7 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
         }
 
         if (match)
-            peers.push_back(peer.get());
+            peers.push_back(peer);
 
         //if (peer->m_socket->GetAddress() == buf)
             //return peer.get();
@@ -335,7 +337,7 @@ void INetManager::Update() {
     while (auto opt = m_acceptor->Accept()) {
         auto&& peer = std::make_unique<Peer>(std::move(*opt));
         if (ModManager()->CallEvent(IModManager::EVENT_Connect, peer.get()))
-            m_rpcs.push_back(std::move(peer));
+            m_clients.push_back(std::move(peer));
     }       
 
     // Send periodic data (2s)
@@ -353,17 +355,13 @@ void INetManager::Update() {
         writer.Write<HASH_t>(0);
         writer.Write(true);
 
-        for (auto&& rpc : m_rpcs) {
-            rpc->m_socket->Send(bytes);
-        }
-
-        for (auto&& peer : m_peers) {
+        for (auto&& peer : m_clients) {
             peer->m_socket->Send(bytes);
         }
     });
 
     // Update peers
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_clients) {
         try {
             peer->Update();
         }
@@ -374,41 +372,14 @@ void INetManager::Update() {
         }
     }
 
-    // Update joining (after peer update to avoid double updating any moved peer)
-    for (auto&& rpc : m_rpcs) {
-        try {
-            rpc->Update();
-        }
-        catch (const std::runtime_error& e) {
-            LOG(WARNING) << "Client error";
-            LOG(WARNING) << e.what();
-            rpc->m_socket->Close(false);
-        }
-    }
-
     // TODO I think this is in the correct location?
     SteamGameServer_RunCallbacks();
 
     // Cleanup
     {
-        for (auto&& itr = m_rpcs.begin(); itr != m_rpcs.end(); ) {
-            auto&& peer = itr->get();
-            assert(peer);
-            if (!(peer->m_socket && peer->m_socket->Connected())) {
-                ModManager()->CallEvent(IModManager::EVENT_Disconnect, std::ref(peer));
-
-                itr = m_rpcs.erase(itr);
-            }
-            else {
-                ++itr;
-            }
-        }
-    }
-
-    {
         for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
-            auto&& peer = *itr->get();
-            
+            Peer& peer = *(*itr);
+
             if (!peer.m_socket->Connected()) {
                 CleanupPeer(peer);
 
@@ -419,11 +390,26 @@ void INetManager::Update() {
             }
         }
     }
+
+    {
+        for (auto&& itr = m_clients.begin(); itr != m_clients.end(); ) {
+            Peer* peer = itr->get();
+            assert(peer);
+            if (!(peer->m_socket && peer->m_socket->Connected())) {
+                ModManager()->CallEvent(IModManager::EVENT_Disconnect, peer);
+
+                itr = m_clients.erase(itr);
+            }
+            else {
+                ++itr;
+            }
+        }
+    }
 }
 
 void INetManager::CleanupPeer(Peer& peer) {
     LOG(INFO) << "Cleaning up peer";
-    ModManager()->CallEvent(IModManager::EVENT_Quit, std::ref(peer));
+    ModManager()->CallEvent(IModManager::EVENT_Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
 
     if (peer.m_admin)
@@ -436,7 +422,7 @@ void INetManager::Uninit() {
     SendDisconnect();
 
     for (auto&& peer : m_peers) {
-        CleanupPeer(*peer.get());
+        CleanupPeer(*peer);
     }
 
     m_acceptor.reset();
