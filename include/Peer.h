@@ -182,8 +182,12 @@ public:
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             auto result = find->second->Invoke(this, reader);
-            if (!result)
-                m_methods.erase(find);
+            if (!result) {
+                // this is UB in cases where a method is added by the Invoked func
+                //  insertions of deletions invalidate iterators, causing the crash
+                //m_methods.erase(find); 
+                m_methods.erase(hash);
+            }
             return result;
         }
         return true;
