@@ -405,32 +405,38 @@ void IModManager::LoadAPI() {
             sol::resolve<int32_t(const std::string&) const>(&ZDO::GetInt)
         ),
         "GetLong", sol::overload(
-            [](ZDO& self, HASH_t key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
-            [](ZDO& self, HASH_t key) { return (Int64Wrapper) self.GetLong(key); },
-            [](ZDO& self, const std::string &key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
-            [](ZDO& self, const std::string &key) { return (Int64Wrapper) self.GetLong(key); }
+            //[](ZDO& self, HASH_t key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
+            //[](ZDO& self, HASH_t key) { return (Int64Wrapper) self.GetLong(key); },
+            //[](ZDO& self, const std::string &key, const Int64Wrapper &value) { return (Int64Wrapper) self.GetLong(key, value); },
+            //[](ZDO& self, const std::string &key) { return (Int64Wrapper) self.GetLong(key); }
+            sol::resolve<Int64Wrapper(HASH_t, const Int64Wrapper&) const>(&ZDO::GetLongWrapper),
+            sol::resolve<Int64Wrapper(HASH_t) const>(&ZDO::GetLongWrapper),
+            sol::resolve<Int64Wrapper(const std::string&, const Int64Wrapper&) const>(&ZDO::GetLongWrapper),
+            sol::resolve<Int64Wrapper(const std::string&) const>(&ZDO::GetLongWrapper)
         ),
         "GetQuaternion", sol::overload(
-            sol::resolve<const Quaternion&(HASH_t, const Quaternion&) const>(&ZDO::GetQuaternion),
-            sol::resolve<const Quaternion&(HASH_t) const>(&ZDO::GetQuaternion),
-            sol::resolve<const Quaternion&(const std::string&, const Quaternion&) const>(&ZDO::GetQuaternion),
-            sol::resolve<const Quaternion&(const std::string&) const>(&ZDO::GetQuaternion)
+            sol::resolve<Quaternion(HASH_t, const Quaternion&) const>(&ZDO::GetQuaternion),
+            sol::resolve<Quaternion(HASH_t) const>(&ZDO::GetQuaternion),
+            sol::resolve<Quaternion(const std::string&, const Quaternion&) const>(&ZDO::GetQuaternion),
+            sol::resolve<Quaternion(const std::string&) const>(&ZDO::GetQuaternion)
         ),
         "GetVector3", sol::overload(
-            sol::resolve<const Vector3& (HASH_t, const Vector3&) const>(&ZDO::GetVector3),
-            sol::resolve<const Vector3& (HASH_t) const>(&ZDO::GetVector3),
-            sol::resolve<const Vector3& (const std::string&, const Vector3&) const>(&ZDO::GetVector3),
-            sol::resolve<const Vector3& (const std::string&) const>(&ZDO::GetVector3)
+            sol::resolve<Vector3 (HASH_t, const Vector3&) const>(&ZDO::GetVector3),
+            sol::resolve<Vector3 (HASH_t) const>(&ZDO::GetVector3),
+            sol::resolve<Vector3 (const std::string&, const Vector3&) const>(&ZDO::GetVector3),
+            sol::resolve<Vector3 (const std::string&) const>(&ZDO::GetVector3)
         ),
         "GetString", sol::overload(
-            sol::resolve<const std::string& (HASH_t, const std::string&) const>(&ZDO::GetString),
-            sol::resolve<const std::string& (HASH_t) const>(&ZDO::GetString),
-            sol::resolve<const std::string& (const std::string&, const std::string&) const>(&ZDO::GetString),
-            sol::resolve<const std::string& (const std::string&) const>(&ZDO::GetString)
+            sol::resolve<std::string (HASH_t, const std::string&) const>(&ZDO::GetString),
+            sol::resolve<std::string (HASH_t) const>(&ZDO::GetString),
+            sol::resolve<std::string (const std::string&, const std::string&) const>(&ZDO::GetString),
+            sol::resolve<std::string (const std::string&) const>(&ZDO::GetString)
         ),
         "GetBytes", sol::overload(
-            sol::resolve<const BYTES_t* (HASH_t) const>(&ZDO::GetBytes),
-            sol::resolve<const BYTES_t* (const std::string&) const>(&ZDO::GetBytes)
+            //sol::resolve<const BYTES_t* (HASH_t) const>(&ZDO::GetBytes),
+            //sol::resolve<const BYTES_t* (const std::string&) const>(&ZDO::GetBytes)
+            [](ZDO& self, HASH_t key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; },
+            [](ZDO& self, const std::string &key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; }
         ),
         "GetBool", sol::overload(
             sol::resolve<bool (HASH_t, bool) const>(&ZDO::GetBool),
@@ -455,10 +461,10 @@ void IModManager::LoadAPI() {
             static_cast<void (ZDO::*)(HASH_t, const int32_t&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(const std::string&, const int32_t&)>(&ZDO::Set)
         ),
-        "SetLong", sol::overload(
-            [](ZDO& self, HASH_t key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); },
-            [](ZDO& self, const std::string &key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); }
-        ),
+        //"SetLong", sol::overload(
+        //    [](ZDO& self, HASH_t key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); },
+        //    [](ZDO& self, const std::string &key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); }
+        //),
         "Set", sol::overload(
             // Quaternion
             static_cast<void (ZDO::*)(HASH_t, const Quaternion&)>(&ZDO::Set),
@@ -474,7 +480,10 @@ void IModManager::LoadAPI() {
             static_cast<void (ZDO::*)(const std::string&, bool)>(&ZDO::Set),
             // zdoid
             //static_cast<void (ZDO::*)(HASH_t, HASH_t, const ZDOID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set)
+            static_cast<void (ZDO::*)(const std::string&, const ZDOID&)>(&ZDO::Set),
+            // int64 wrapper
+            [](ZDO& self, HASH_t key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); },
+            [](ZDO& self, const std::string& key, const Int64Wrapper& value) { self.Set(key, (int64_t)value); }
         )
         // I might go ahead and ignore these specific functions, because they
         //  are correctly overloaded anyways to accept specific types, types that
@@ -528,32 +537,32 @@ void IModManager::LoadAPI() {
     );
 
 
-    {
-        // References will be unwrapped to pointers / visa-versa
-        //  Pointers being dereferenced to a T& type is automatic if the function accepts a reference
-        // https://sol2.readthedocs.io/en/latest/functions.html#functions-and-argument-passing
-
-        auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
-
-        viewsTable.new_usertype<Ward>("Ward",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Ward(*zdo); }),
-            "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
-            "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
-            "AddPermitted", &Ward::AddPermitted,
-            "RemovePermitted", &Ward::RemovePermitted,
-            "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
-            "IsPermitted", &Ward::IsPermitted,
-            "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("null Peer"); return self.SetCreator(*peer); }),
-            "IsAllowed", &Ward::IsAllowed
-        );
-
-        viewsTable.new_usertype<Portal>("Portal",
-            sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Portal(*zdo); }),
-            "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
-            "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
-            "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
-        );
-    }
+    //{
+    //    // References will be unwrapped to pointers / visa-versa
+    //    //  Pointers being dereferenced to a T& type is automatic if the function accepts a reference
+    //    // https://sol2.readthedocs.io/en/latest/functions.html#functions-and-argument-passing
+    //
+    //    auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
+    //
+    //    viewsTable.new_usertype<Ward>("Ward",
+    //        sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Ward(*zdo); }),
+    //        "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
+    //        "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
+    //        "AddPermitted", &Ward::AddPermitted,
+    //        "RemovePermitted", &Ward::RemovePermitted,
+    //        "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
+    //        "IsPermitted", &Ward::IsPermitted,
+    //        "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("null Peer"); return self.SetCreator(*peer); }),
+    //        "IsAllowed", &Ward::IsAllowed
+    //    );
+    //
+    //    viewsTable.new_usertype<Portal>("Portal",
+    //        sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Portal(*zdo); }),
+    //        "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
+    //        "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
+    //        "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
+    //    );
+    //}
 
     m_state.new_enum("TimeOfDay",
         "MORNING", TIME_MORNING,
@@ -699,8 +708,8 @@ void IModManager::LoadAPI() {
         ),
         "ForceSendZDO", [](IZDOManager& self, const ZDOID& zdoid) { self.ForceSendZDO(zdoid); },
         "DestroyZDO", sol::overload(
-            [](IZDOManager& self, ZDO* zdo, bool immediate) { if (!zdo) throw std::runtime_error("null zdo"); self.DestroyZDO(*zdo, immediate); },
-            [](IZDOManager& self, ZDO* zdo) { if (!zdo) throw std::runtime_error("null zdo"); self.DestroyZDO(*zdo); }
+            [](IZDOManager& self, ZDO& zdo, bool immediate) { self.DestroyZDO(zdo, immediate); },
+            [](IZDOManager& self, ZDO& zdo) { self.DestroyZDO(zdo); }
         ),
         "Instantiate", sol::overload(
             sol::resolve<ZDO& (const Prefab&, const Vector3&, const Quaternion&)>(&IZDOManager::Instantiate),
@@ -758,7 +767,7 @@ void IModManager::LoadAPI() {
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
         "GetDungeon", [](IDungeonManager& self, const std::string& name) { return self.GetDungeon(VUtils::String::GetStableHashCode(name)); },
-        "Generate", [](IDungeonManager& self, const Dungeon* dungeon, const Vector3& pos, const Quaternion& rot) { if (!dungeon) throw std::runtime_error("null dungeon"); self.Generate(*dungeon, pos, rot); }
+        "Generate", [](IDungeonManager& self, Dungeon& dungeon, const Vector3& pos, const Quaternion& rot) { self.Generate(dungeon, pos, rot); }
     );
 
 
@@ -968,10 +977,10 @@ void IModManager::Init() {
 
     m_state.open_libraries(
         sol::lib::base,
-        //sol::lib::debug,
-        //sol::lib::io, // override
+        sol::lib::debug,
+        sol::lib::io, // override
         sol::lib::math,
-        //sol::lib::package, // override
+        sol::lib::package, // override
         sol::lib::string,
         sol::lib::table,
         sol::lib::utf8

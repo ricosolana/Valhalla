@@ -481,10 +481,10 @@ public:
     float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
     int32_t             GetInt(         HASH_t key, int32_t value) const {                          return Get<int32_t>(key, value); }
     int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
-    //Int64Wrapper        GetLongWrapper( HASH_t key, Int64Wrapper value) const {                     return Get<int64_t>(key, value); }
-    const Quaternion&   GetQuaternion(  HASH_t key, const Quaternion& value) const {                return Get<Quaternion>(key, value); }
-    const Vector3&      GetVector3(     HASH_t key, const Vector3& value) const {                   return Get<Vector3>(key, value); }
-    const std::string&  GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
+    Int64Wrapper        GetLongWrapper( HASH_t key, const Int64Wrapper& value) const {              return Get<int64_t>(key, value); }
+    Quaternion          GetQuaternion(  HASH_t key, const Quaternion& value) const {                return Get<Quaternion>(key, value); }
+    Vector3             GetVector3(     HASH_t key, const Vector3& value) const {                   return Get<Vector3>(key, value); }
+    std::string         GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
     const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
     ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) const {  return ZDOID(GetLong(key.first, value.m_uuid), GetLong(key.second, value.m_id)); }
@@ -493,10 +493,10 @@ public:
     float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
     int32_t             GetInt(         HASH_t key) const {                                         return Get<int32_t>(key, {}); }
     int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
-    //Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
-    const Quaternion&   GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
-    const Vector3&      GetVector3(     HASH_t key) const {                                         return Get<Vector3>(key, {}); }
-    const std::string&  GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
+    Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
+    Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
+    Vector3             GetVector3(     HASH_t key) const {                                         return Get<Vector3>(key, {}); }
+    std::string         GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
     bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
     ZDOID               GetZDOID(       const std::pair<HASH_t, HASH_t>& key) const {               return ZDOID(GetLong(key.first), GetLong(key.second)); }
 
@@ -504,10 +504,10 @@ public:
     float               GetFloat(       const std::string& key, float value) const {                return Get<float>(key, value); }
     int32_t             GetInt(         const std::string& key, int32_t value) const {              return Get<int32_t>(key, value); }
     int64_t             GetLong(        const std::string& key, int64_t value) const {              return Get<int64_t>(key, value); }
-    //Int64Wrapper        GetLongWrapper( const std::string& key, Int64Wrapper value) const {         return Get<int64_t>(key, value); }
-    const Quaternion&   GetQuaternion(  const std::string& key, const Quaternion& value) const {    return Get<Quaternion>(key, value); }
-    const Vector3&      GetVector3(     const std::string& key, const Vector3& value) const {       return Get<Vector3>(key, value); }
-    const std::string&  GetString(      const std::string& key, const std::string& value) const {   return Get<std::string>(key, value); }
+    Int64Wrapper        GetLongWrapper( const std::string& key, const Int64Wrapper& value) const {  return Get<int64_t>(key, value); }
+    Quaternion          GetQuaternion(  const std::string& key, const Quaternion& value) const {    return Get<Quaternion>(key, value); }
+    Vector3             GetVector3(     const std::string& key, const Vector3& value) const {       return Get<Vector3>(key, value); }
+    std::string         GetString(      const std::string& key, const std::string& value) const {   return Get<std::string>(key, value); }
     const BYTES_t*      GetBytes(       const std::string& key) const {                             return Get<BYTES_t>(key); }
     bool                GetBool(        const std::string& key, bool value) const {                 return Get<int32_t>(key, value); }
     ZDOID               GetZDOID(       const std::string& key, const ZDOID& value) const {         return GetZDOID(ToHashPair(key), value); }
@@ -516,10 +516,10 @@ public:
     float               GetFloat(const std::string& key) const {                                    return Get<float>(key, {}); }
     int32_t             GetInt(const std::string& key) const {                                      return Get<int32_t>(key, {}); }
     int64_t             GetLong(const std::string& key) const {                                     return Get<int64_t>(key, {}); }
-    //Int64Wrapper        GetLongWrapper(const std::string& key) const {                              return Get<int64_t>(key, {}); }
-    const Quaternion&   GetQuaternion(const std::string& key) const {                               return Get<Quaternion>(key, {}); }
-    const Vector3&      GetVector3(const std::string& key) const {                                  return Get<Vector3>(key, {}); }
-    const std::string&  GetString(const std::string& key) const {                                   return Get<std::string>(key, {}); }
+    Int64Wrapper        GetLongWrapper(const std::string& key) const {                              return Get<int64_t>(key, {}); }
+    Quaternion          GetQuaternion(const std::string& key) const {                               return Get<Quaternion>(key, {}); }
+    Vector3             GetVector3(const std::string& key) const {                                  return Get<Vector3>(key, {}); }
+    std::string         GetString(const std::string& key) const {                                   return Get<std::string>(key, {}); }
     bool                GetBool(const std::string& key) const {                                     return Get<int32_t>(key, {}); }
     ZDOID               GetZDOID(const std::string& key) const {                                    return GetZDOID(key, {}); }
 

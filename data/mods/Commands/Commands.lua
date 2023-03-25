@@ -114,8 +114,7 @@ local commands = {
             --ZoneManager:RegenerateZone(peer.zdo.zone)
             
             peer:ConsoleMessage('regenerated zone at ' .. tostring(peer.zdo.pos))
-        end,
-        '<z-radius>'
+        end
     },
     claimwards = {
         function(peer, cmd, args)
@@ -125,13 +124,30 @@ local commands = {
                 return peer:ConsoleMessage('add "-y" to confirm')
             end
             
-            local zdos = ZDOManager:GetZDOs(peer.zdo.pos, radius, 'guard_stone')
+            local peerZdo = peer.zdo
+            
+            local zdos = ZDOManager:GetZDOs(peerZdo.pos, radius, 'guard_stone')
+            
+            local count = 0
             
             for i=1, #zdos do
-                Views.Ward.new(zdos[i]).creator = peer
+                local old = zdos[i]
+                
+                if old:GetString('creatorName') ~= peer.name then
+                    -- clone zdo
+                    local new = ZDOManager:Instantiate(old)
+                    new:Set('creatorName', peer.name)
+                    new:Set('creator', peerZdo:GetLong('playerID'))
+                    
+                    ZDOManager:DestroyZDO(old)
+                    
+                    count = count + 1
+                end
+                
+                --Views.Ward.new(zdos[i]).creator = peer
             end
             
-            peer:ConsoleMessage('claimed ' .. #zdos .. ' wards within ' .. radius .. 'm')
+            peer:ConsoleMessage('claimed ' .. count .. ' wards within ' .. radius .. 'm')
         end,
         '[radius]'
     },
@@ -224,7 +240,9 @@ Valhalla:Subscribe('Join', function(peer)
                     
                     local success, err = pcall(command[1], peer, label, args)
                     if not success then
-                        peer:ConsoleMessage(err)
+                        for s in err:gmatch('[^\n]+') do
+                            peer:ConsoleMessage(s)
+                        end
                         peer:ConsoleMessage('Usage: ' .. label .. ' ' .. command[2])
                     end
                 else
