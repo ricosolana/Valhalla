@@ -39,7 +39,7 @@ void IDungeonManager::Init() {
 
         dungeon->m_prefab = &PrefabManager()->RequirePrefab(name);
 
-        LOG(INFO) << "Loading dungeon " << name;
+        VLOG(2) << "Loading dungeon " << name;
 
         dungeon->m_interiorPosition = pkg.Read<Vector3>();
         dungeon->m_originalPosition = pkg.Read<Vector3>();

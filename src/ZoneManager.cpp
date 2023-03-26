@@ -300,6 +300,13 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
         if (version >= 14) {
             m_globalKeys = reader.Read<robin_hood::unordered_set<std::string>>();
 
+#ifndef ELPP_DISABLE_VERBOSE_LOGS
+            VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
+            for (auto&& key : this->m_globalKeys) {
+                VLOG(1) << " - " << key;
+            }
+#endif
+
             if (version >= 18) {
                 if (version >= 20) reader.Read<bool>();
 

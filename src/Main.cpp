@@ -42,45 +42,60 @@ void initLogger(bool colors) {
     loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
     loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
     loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, (colors ? GOLD : "") + format + (colors ? RESET : ""));
-    loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format,
-        (colors ? GOLD : "") + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + (colors ? RESET : ""));
+    //loggerConfiguration.set(el::Level::Debug, el::ConfigurationType::Format,
+        //(colors ? GOLD : "") + std::string("[%datetime{%H:%m:%s}] [%thread thread] %file:L%line: %msg") + (colors ? RESET : ""));
 
-    loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, format);
-    
+#ifndef ELPP_DISABLE_VERBOSE_LOGS
+    //loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? GRAY : "") + format + (colors ? RESET : ""));
+    //loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? GRAY : "") + 
+        //std::string("[%datetime{%H:%m:%s}] [%thread thread/v%vlevel] %file:L%line: %msg") + (colors ? RESET : ""));
+    //loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? GRAY : "") +
+        //std::string("[%datetime{%H:%m:%s}] [%thread thread/v%vlevel] %loc: %msg") + (colors ? RESET : ""));
+    loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? GRAY : "") +
+        std::string("[%datetime{%H:%m:%s}] [%thread thread/v%vlevel] %fbase:L%line: %msg") + (colors ? RESET : ""));
+#endif
+    // Enable all modules unless otherwise specified?
+    //  kinda vague
+    //el::Loggers::addFlag(el::LoggingFlag::AllowVerboseIfModuleNotSpecified);
+
     el::Helpers::setThreadName("main");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);
-    if (colors)
+    if (colors) // not sure whether this does anything
         el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
 
     LOG(INFO) << "Logger is configured";
 }
 
-// Steam Documentation https://partner.steamgames.com/doc/sdk/api
+/*
+* Example command line args:
+*   .\Valhalla.exe -vmodule=VUtilsResource=1
+*   .\Valhalla.exe --no-colors "-vmodule=Peer=2,PrefabManager=2"
+*   .\Valhalla.exe --no-log-backups --v=2
+*   .\Valhalla.exe -v
+*/
 int main(int argc, char **argv) {
 #ifdef RUN_TESTS
     Tests().RunTests();
 #else // !RUN_TESTS
     OPTICK_THREAD("main");
+    
+    fs::current_path("./data/");
 
-    std::string root = "./data/";
     bool colors = true;
     bool log_backups = true;
     for (int i = 1; i < argc-1; i++) {
         auto&& arg = std::string(argv[i]);
 
         auto&& NEXT_ARG = [&]() { return i < argc ? std::string(argv[++i]) : ""; };
-        auto&& NEXT_ARG_ENABLED = [&]() { auto&& arg = NEXT_ARG(); return arg == "true" || arg == "1"; };
-        auto&& NEXT_ARG_NUMBER = [&]() { return std::stoi(NEXT_ARG()); };
-        if (arg == "-root") {
-            root = NEXT_ARG();
+        //auto&& NEXT_ARG_ENABLED = [&]() { auto&& arg = NEXT_ARG(); return arg == "true" || arg == "1"; };
+        //auto&& NEXT_ARG_NUMBER = [&]() { return std::stoi(NEXT_ARG()); };
+        if (arg == "--no-colors") {
+            colors = false;
         }
-        else if (arg == "-colors") {
-            colors = NEXT_ARG_ENABLED();
+        else if (arg == "--no-log-backups") {
+            log_backups = false;
         }
-        else if (arg == "-log-backups") {
-            log_backups = NEXT_ARG_ENABLED();
-        }
-        else if (arg == "-verbose") {
+        //else if (arg == "-verbose") {
             /*
             * Verbosity levels: (1-9)
             *   - just some ideas on what to log:
@@ -88,12 +103,18 @@ int main(int argc, char **argv) {
             *   - Rare events should be printed first? Then often events printed last
             *       in order of increasing verbosity as assigned
             *       
-            *       - 1 (Rare prints)
+            *       - 1 (Important rare prints)
             *           VUtils Resource read/written, 
-            * 
-            *       - 2 (Occasional prints):
             *           peer ctor/dtor
             *           socket ctor/dtor
+            *           
+            * 
+            *       - 2 (Occasional prints):
+            *           basic world loading data
+            *               # of each location?
+            *               global keys
+            *               current random event
+            *               
             * 
             *       - 3 ()
             * 
@@ -120,14 +141,18 @@ int main(int argc, char **argv) {
             *   - 5 (log some mild descriptive infos)...
             *   - 9 (log highly descriptive packets, rpc calls, lua event handlers)...
             */
-
-            el::Loggers::setVerboseLevel(NEXT_ARG_NUMBER());
-        }
+            
+            //el::Loggers::setVerboseLevel(NEXT_ARG_NUMBER());
+        //}
     }
 
-    fs::current_path(root);
-
+    // set basic defaults
     initLogger(colors);
+
+    // now load overrides
+    START_EASYLOGGINGPP(argc, argv);
+
+    el::Loggers::removeFlag(el::LoggingFlag::AllowVerboseIfModuleNotSpecified);
 
     // backup old logs
     if (log_backups) {

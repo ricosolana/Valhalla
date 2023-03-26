@@ -9,6 +9,10 @@
 # - Some stack overflow 'enthusiasts' dislike this method, however its the only one which worked for me, so yea..
 #   I will be removing asio anyways because I consider RCON to be semi-insecure and too extra/finicky, so the forbidden technique above isnt needed!
 
+# setting command line program arguments (https://unrealistic.dev/posts/setting-debug-parameters-with-cmake-tools-for-visual-studio)
+#   right click the cmakelists.txt -> 'add debug configuration''
+#   add a new key 'args' followed by args
+
 ##########
 # Project
 ##########
@@ -55,11 +59,7 @@ if(WIN32)
 endif()
 
 #IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
-    add_compile_definitions(ELPP_DISABLE_DEBUG_LOGS)
 #ENDIF()
-
-add_compile_definitions(ELPP_NO_DEFAULT_LOG_FILE) # disable default `myeasylog.txt`
-add_compile_definitions(ELPP_FRESH_LOG_FILE)
 
 CPMAddPackage(
     NAME easyloggingpp
@@ -68,7 +68,13 @@ CPMAddPackage(
     OPTIONS "build_static_lib ON"
 )
 target_include_directories(easyloggingpp PUBLIC ${easyloggingpp_SOURCE_DIR}/src)
-target_compile_definitions(easyloggingpp PUBLIC ELPP_THREAD_SAFE ELPP_FEATURE_PERFORMANCE_TRACKING)
+target_compile_definitions(easyloggingpp PUBLIC 
+    ELPP_THREAD_SAFE 
+    ELPP_FEATURE_PERFORMANCE_TRACKING
+    ELPP_DISABLE_DEBUG_LOGS
+    ELPP_NO_DEFAULT_LOG_FILE
+    ELPP_FRESH_LOG_FILE
+)
 if (LINUX)
     target_compile_definitions(easyloggingpp PUBLIC ELPP_FEATURE_CRASH_LOG ELPP_STL_LOGGING)
 endif ()
@@ -122,7 +128,7 @@ add_executable(${PROJECT_NAME}
     "src/Room.cpp"
     "src/VUtilsPhysics.cpp" 
     "src/DungeonManager.cpp"
- "include/Dungeon.h" "include/UserData.h")
+)
 
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 
@@ -158,6 +164,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run/
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
+    #VS_DEBUGGER_COMMAND_ARGUMENTS "-v"
 )
 
 if (MSVC)

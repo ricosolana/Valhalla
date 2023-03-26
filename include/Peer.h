@@ -93,8 +93,7 @@ public:
     Peer(const Peer& other) = delete; // copy
 
     ~Peer() {
-        //VLOG(1) << "~Peer()";
-        LOG(INFO) << "~Peer()";
+        VLOG(1) << "~Peer()";
     }
 
     /**
@@ -104,7 +103,8 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash); // TODO use make_unique
+        VLOG(1) << "Register, hash: " << hash;
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
     }
 
     template<typename F>
@@ -113,6 +113,8 @@ public:
     }
 
     void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
+        VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
+
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
@@ -126,6 +128,8 @@ public:
         // Prefix
         if (!ModManager()->CallEvent(IModManager::Events::RpcOut ^ hash, this, params...))
             return;
+
+        VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
         m_socket->Send(DataWriter::Serialize(hash, params...));
 
@@ -152,6 +156,8 @@ public:
         // Prefix
         //if (!ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
         //    return;
+
+        VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
 
         BYTES_t bytes;
         DataWriter params(bytes);
@@ -182,6 +188,8 @@ public:
     decltype(auto) InternalInvoke(HASH_t hash, DataReader &reader) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
+            VLOG(2) << "InternalInvoke, hash: " << hash;
+
             auto result = find->second->Invoke(this, reader);
             if (!result) {
                 // this is UB in cases where a method is added by the Invoked func

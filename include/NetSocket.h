@@ -4,7 +4,9 @@
 #include <memory>
 #include <optional>
 #include <queue>
+
 #include <steamnetworkingtypes.h>
+#include <isteamfriends.h>
 
 #include "VUtils.h"
 
@@ -74,6 +76,8 @@ public:
     HSteamNetConnection m_hConn;
     SteamNetworkingIdentity m_steamNetId;
 
+    //std::string m_persona;
+
 public:
     explicit SteamSocket(HSteamNetConnection hConn);
     ~SteamSocket() override;
@@ -95,4 +99,8 @@ public:
 private:
     void SendQueued();
 
+//private:
+//#ifndef ELPP_DISABLE_VERBOSE_LOGS
+//    STEAM_CALLBACK(SteamSocket, OnPersonaStateChange, PersonaStateChange_t);
+//#endif
 };

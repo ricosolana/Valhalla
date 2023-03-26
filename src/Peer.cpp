@@ -108,6 +108,8 @@ Peer::Peer(ISocket::Ptr socket)
 
         return false;
     });
+
+    VLOG(1) << "Peer()";
 }
 
 void Peer::Update() {
@@ -150,7 +152,7 @@ void Peer::Update() {
 }
 
 bool Peer::Close(ConnectionStatus status) {
-    LOG(INFO) << "RpcClient error: " << STATUS_STRINGS[(int)status];
+    LOG(INFO) << "Peer error: " << STATUS_STRINGS[(int)status];
     Invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;

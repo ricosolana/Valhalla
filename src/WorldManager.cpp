@@ -162,7 +162,7 @@ void IWorldManager::LoadFileWorldDB(const std::string &name) const {
 			if (worldVersion >= 4)
 				Valhalla()->m_worldTime = reader.Read<double>();
 
-
+			VLOG(1) << "World time: " << Valhalla()->m_worldTime;
 
 			ZDOManager()->Load(reader, worldVersion);
 

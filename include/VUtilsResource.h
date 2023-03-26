@@ -65,11 +65,11 @@ namespace VUtils::Resource {
 
         file.unsetf(std::ios::skipws);
 
-        std::streampos fileSize;
-
         file.seekg(0, std::ios::end);
-        fileSize = file.tellg();
+        auto fileSize = file.tellg();
         file.seekg(0, std::ios::beg);
+
+        VLOG(1) << "Reading file " << path << " (" << fileSize << " bytes)";
 
         Buffer result {};
         result.resize(fileSize);
@@ -184,6 +184,16 @@ namespace VUtils::Resource {
         for (auto&& str : in) {
             file << str << "\n";
         }
+
+#ifndef ELPP_DISABLE_VERBOSE_LOGS
+        if (el::Loggers::verboseLevel() == 1) {
+            file.seekp(0, std::ios::end);
+            auto fileSize = file.tellp();
+            file.seekp(0, std::ios::beg);
+
+            VLOG(1) << "Writing txt file " << path << " (" << fileSize << " bytes)";
+        }
+#endif
 
         file.close();
 

@@ -162,6 +162,10 @@ void IEventManager::Load(DataReader& reader, int version) {
 		this->m_activeEventTimer = reader.Read<float>();
 		this->m_activeEventPos = reader.Read<Vector3>();
 	}
+
+	VLOG(1) << "interval: " << this->m_eventIntervalTimer
+		<< ", event: " << (this->m_activeEvent ? this->m_activeEvent->m_name : "none")
+		<< ", pos: " << this->m_activeEventPos;
 }
 
 void IEventManager::SendCurrentRandomEvent() {
