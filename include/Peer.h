@@ -104,7 +104,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::EVENT_RpcIn, hash); // TODO use make_unique
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash); // TODO use make_unique
     }
 
     template<typename F>
@@ -124,13 +124,13 @@ public:
             return;
 
         // Prefix
-        if (!ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash, this, params...))
+        if (!ModManager()->CallEvent(IModManager::Events::RpcOut ^ hash, this, params...))
             return;
 
         m_socket->Send(DataWriter::Serialize(hash, params...));
 
         // Postfix
-        ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ hash ^ IModManager::EVENT_POST, this, params...);
+        ModManager()->CallEvent(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
     }
 
     template <typename... Types>

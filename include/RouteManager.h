@@ -66,7 +66,7 @@ public:
 	*/
 	template<typename F>
 	void Register(HASH_t hash, F func) {
-		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::EVENT_RouteIn, hash);
+		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RouteIn, hash);
 	}
 
 	template<typename F>

@@ -71,7 +71,7 @@ public:
             std::apply(m_func, tuple);
     
         // Postfix
-        ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash ^ IModManager::EVENT_POST, tuple);
+        ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, tuple);
 
         return result;
     }
@@ -115,7 +115,7 @@ public:
         }
 
         // Postfix
-        //ModManager()->CallEvent(m_categoryHash ^ m_methodHash ^ IModManager::EVENT_POST, sol::as_args(results))
+        //ModManager()->CallEvent(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results))
         if (result.get_type() == sol::type::boolean)
             return result.get<bool>();
 

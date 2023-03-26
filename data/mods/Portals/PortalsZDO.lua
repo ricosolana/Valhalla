@@ -12,7 +12,7 @@
         my code below also exhibits this, (un)fortunately? so.
 --]]
 
-Valhalla:Subscribe('PeriodUpdate', function()
+Valhalla:Subscribe('PeriodicUpdate', function()
 	local portalZdos = ZDOManager:GetZDOs('portal_wood')
 
 	for i1=1, #portalZdos do
@@ -77,6 +77,6 @@ Valhalla:Subscribe('PeriodUpdate', function()
 	end
 end)
 
-debug.sethook(function(_, line)
-    print(line)
-end, "l")
+--debug.sethook(function(_, line)
+--    print(line)
+--end, "l")

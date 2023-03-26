@@ -1021,17 +1021,17 @@ void IModManager::Init() {
 
     LOG(INFO) << "Loaded " << m_mods.size() << " mods";
 
-    CallEvent("Enable");
+    CallEvent(IModManager::Events::Enable);
 }
 
 void IModManager::Uninit() {
-    CallEvent("Disable");
+    CallEvent(IModManager::Events::Disable);
     m_callbacks.clear();
     m_mods.clear();
 }
 
 void IModManager::Update() {
-    ModManager()->CallEvent(IModManager::EVENT_Update);
+    ModManager()->CallEvent(IModManager::Events::Update);
 
     /*
     if (m_reload) {

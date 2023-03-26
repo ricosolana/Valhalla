@@ -56,27 +56,36 @@ public:
         Types m_types;
     };
 
-    static constexpr HASH_t EVENT_RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
-    static constexpr HASH_t EVENT_RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
-    static constexpr HASH_t EVENT_RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
-    static constexpr HASH_t EVENT_RouteOut = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
-    static constexpr HASH_t EVENT_Routed = __H("Routed");      // Server relays a message from peer to peer
+    class Events {
+    public:
+        // Game state events
+        static constexpr HASH_t Enable = __H("Enable");
+        static constexpr HASH_t Disable = __H("Disable");
+        static constexpr HASH_t Update = __H("Update");
+        static constexpr HASH_t PeriodicUpdate = __H("PeriodicUpdate");
 
-    static constexpr HASH_t EVENT_Update = __H("Update");
+        // Rpc events (some unimplemented)
+        static constexpr HASH_t RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
+        static constexpr HASH_t RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
+        static constexpr HASH_t RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
+        static constexpr HASH_t RouteOut = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
+        static constexpr HASH_t Routed = __H("Routed");      // Server relays a message from peer to peer
 
-    // Pre-authentication peer methods
-    static constexpr HASH_t EVENT_Connect = __H("Connect");
-    static constexpr HASH_t EVENT_Disconnect = __H("Disconnect");
+        // Connecting peer events
+        static constexpr HASH_t Connect = __H("Connect");
+        static constexpr HASH_t Disconnect = __H("Disconnect");
 
-    // Authenticated peer methods
-    static constexpr HASH_t EVENT_Join = __H("Join");
-    static constexpr HASH_t EVENT_Quit = __H("Quit");
+        // Connected peer events
+        static constexpr HASH_t Join = __H("Join");
+        static constexpr HASH_t Quit = __H("Quit");
 
-    static constexpr HASH_t EVENT_Send = __H("Send");
-    static constexpr HASH_t EVENT_Recv = __H("Recv");
+        // Socket methods events
+        static constexpr HASH_t Send = __H("Send");
+        static constexpr HASH_t Recv = __H("Recv");
 
-    static constexpr HASH_t EVENT_POST = __H("POST");
-
+        // Event postfix handler
+        static constexpr HASH_t POSTFIX = __H("POST");
+    };
 private:
     struct Mod {
         std::string m_name;

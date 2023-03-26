@@ -760,7 +760,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 					// If the owner has changed, keep a copy
 					if (ownerRev > zdo.m_rev.m_ownerRev) {
-						//if (ModManager()->CallEvent("ZDOOwnerChange", &copy, zdo) == EventStatus::CANCEL)
+						//if (ModManager()->CallEvent(IModManager::Events::ZDOOwnerChange, &copy, zdo) == EventStatus::CANCEL)
 							//*zdo = copy; // if zdo modification was to be cancelled
 
 						// ensure that owner change is legal
@@ -815,7 +815,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 				else {
 					// maybe too expensive? create another that polls for specific zdos with prefab/flags...
-					//if (ModManager()->CallEvent("ZDOChange", &copy, zdo))
+					//if (ModManager()->CallEvent(IModManager::Events::ZDOChange, &copy, zdo))
 						//zdo = copy; // if zdo modification was to be cancelled
 
 					// check-test
