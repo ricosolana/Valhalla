@@ -81,6 +81,46 @@ int main(int argc, char **argv) {
             log_backups = NEXT_ARG_ENABLED();
         }
         else if (arg == "-verbose") {
+            /*
+            * Verbosity levels: (1-9)
+            *   - just some ideas on what to log:
+            *   - how to order and prioritize what things in what way for verbose
+            *   - Rare events should be printed first? Then often events printed last
+            *       in order of increasing verbosity as assigned
+            *       
+            *       - 1 (Rare prints)
+            *           VUtils Resource read/written, 
+            * 
+            *       - 2 (Occasional prints):
+            *           peer ctor/dtor
+            *           socket ctor/dtor
+            * 
+            *       - 3 ()
+            * 
+            *           
+            *           
+            *           
+            *       - 4
+            *           dungeon generation, 
+            *           heightmap building 
+            * 
+            *       - 5 (Features being generated)
+            * 
+            *       - 7 (IMethod calls, and types, names...)
+            * 
+            *       - 8 (ZDOs being updated)
+            * 
+            *       - 8 (Partial packet data)
+            * 
+            *       - 9 (Exact packet data)
+            *           
+            *           
+            * 
+            *   - 1 (log somewhat descriptive infos)...
+            *   - 5 (log some mild descriptive infos)...
+            *   - 9 (log highly descriptive packets, rpc calls, lua event handlers)...
+            */
+
             el::Loggers::setVerboseLevel(NEXT_ARG_NUMBER());
         }
     }
