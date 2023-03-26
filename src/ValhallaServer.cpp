@@ -255,17 +255,17 @@ void IValhalla::Start() {
 
 #ifdef _WIN32
     SetConsoleCtrlHandler([](DWORD dwCtrlType) {
-#else
+#else // !_WIN32
     signal(SIGINT, [](int) {
-#endif
+#endif // !_WIN32
         el::Helpers::setThreadName("system");
         Valhalla()->Stop();
 #ifdef _WIN32
         return TRUE;
     }, TRUE);
-#else
+#else // !_WIN32
     });
-#endif
+#endif // !_WIN32
 
     m_terminate = false;
     while (!m_terminate) {
@@ -307,11 +307,7 @@ void IValhalla::Start() {
             PeriodUpdate();
         });
 
-        // TODO adjust based on workload intensity
         std::this_thread::sleep_for(1ms);
-
-        //std::this_thread::sleep_for(3s);
-        //this->Stop();
     }
             
     LOG(INFO) << "Terminating server";
@@ -356,94 +352,10 @@ void IValhalla::PeriodUpdate() {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
-    ModManager()->CallEvent("PeriodUpdate");
+    ModManager()->CallEvent(IModManager::Events::PeriodicUpdate);
 
     if (m_settings.dungeonReset)
         DungeonManager()->TryRegenerateDungeons();
-
-    // This needs testing
-    //  I've not actually tested it, but its theoretical and all based on what Valheim does
-    //  This also takes advantage of a few quirks present in how Valheim makes players sleep
-    //  - Players will be forced to enter sleep when receiving SleepStart Rpc (the screen goes black and dream text appears)
-    //  - Players will be forced to awaken when receiving SleepStop Rpc (they get rested buff and control is handed back)
-    /*
-    if (m_settings.playerSleep) {
-        if (m_playerSleep) {
-            if (m_worldTime > m_playerSleepUntil) {
-                // Wake up players
-
-                if (m_settings.playerSleepSolo) {
-                    // only awake sleeping players
-                    for (auto&& peer : NetManager()->GetPeers()) {
-                        auto&& zdo = peer->GetZDO();
-                        if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestStopSleep);
-                        }
-                    }
-                }
-                else {
-                    // wake every player
-                    RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestStopSleep);
-                }
-
-                m_playerSleep = false;
-                m_worldTimeMultiplier = 1;
-            }
-        }
-        else {
-            if (IsAfternoon() || IsNight()) {
-                bool allInBed = true;
-                bool anyInBed = false;
-
-                for (auto&& peer : NetManager()->GetPeers()) {
-                    auto&& zdo = peer->GetZDO();
-                    bool inBed = zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false);
-                    if (!inBed) {
-                        allInBed = false;
-                        if (!m_settings.playerSleepSolo) // early break if special sleep mode is not enabled
-                            break;
-                    }
-                    else {
-                        // Early break if the special sleep is enabled
-                        if (m_settings.playerSleepSolo) {
-                            anyInBed = true;
-                            break;
-                        }                        
-                    }
-                }
-
-                if ((allInBed || (anyInBed && m_settings.playerSleepSolo))
-                    && !NetManager()->GetPeers().empty()) 
-                {
-                    m_playerSleep = true;
-
-                    // Skip to time
-                    m_playerSleepUntil = GetNextMorning();
-
-                    // Set skip interval
-                    m_worldTimeMultiplier = (m_playerSleepUntil - m_worldTime) / 12.0;
-
-                    if (m_settings.playerSleepSolo) {
-                        // Players who are ALREADY in bed, go ahead and signal them to sleep
-                        for (auto&& peer : NetManager()->GetPeers()) {
-                            auto&& zdo = peer->GetZDO();
-                            if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestSleep);
-                            }
-                            else {
-                                peer->CornerMessage("The world is sleeping");
-                            }
-                        }
-                    }
-                    else {
-                        // Just signal to all players to sleep
-                        //  This assumes they are all already in bed
-                        RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestSleep);
-                    }
-                }
-            }
-        }
-    }*/
 
     if (m_settings.worldSave) {
         // save warming message

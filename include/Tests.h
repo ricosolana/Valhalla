@@ -441,6 +441,41 @@ private:
 
 
 public:
+    void RunTests() {
+        fs::current_path("./data/tests/");
+
+        Test_ZStdCompressorDecompressor();
+
+        //Tests().Test_FileWriteLines();
+
+        //Tests().Test_ResourceReadBytes();
+        //Tests().Test_ResourceLines();
+
+        //Tests().Test_FileWriteBytes();
+
+        //Tests().Test_ParentChildTransforms();
+
+        //Tests().Test_DungeonGenerator();
+
+        //Tests().Test_RectInsideRect();
+        //Tests().Test_RectOverlap();
+
+        //Tests().Test_LinesIntersect();
+
+        //Tests().Test_ParentChildTransforms();
+        //Tests::Test_QuaternionLook();
+
+        //Tests::Test_PeerLuaConnect();
+        //Tests::Test_DataBuffer();
+        //Tests::Test_World();
+        //Tests().Test_ZDO();
+        //Tests::Test_ResourceReadWrite();
+        //Tests::Test_Random();
+        //Tests::Test_Perlin();
+
+        LOG(INFO) << "All tests passed!";
+    }
+
 
     void Test_ZStdCompressorDecompressor() {
 

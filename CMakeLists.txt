@@ -59,6 +59,7 @@ endif()
 #ENDIF()
 
 add_compile_definitions(ELPP_NO_DEFAULT_LOG_FILE) # disable default `myeasylog.txt`
+add_compile_definitions(ELPP_FRESH_LOG_FILE)
 
 CPMAddPackage(
     NAME easyloggingpp

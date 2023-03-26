@@ -93,7 +93,8 @@ public:
     Peer(const Peer& other) = delete; // copy
 
     ~Peer() {
-        VLOG(1) << "~Peer()";
+        //VLOG(1) << "~Peer()";
+        LOG(INFO) << "~Peer()";
     }
 
     /**

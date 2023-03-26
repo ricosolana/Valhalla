@@ -17,7 +17,6 @@
 INITIALIZE_EASYLOGGINGPP
 
 // https://stackoverflow.com/a/17350413
-// Colors for output
 #define RESET "\033[0m"
 #define BLACK "\033[30m"
 #define RED "\033[31m"
@@ -37,7 +36,7 @@ void initLogger(bool colors) {
     // [%fbase:L%line]
     //std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     loggerConfiguration.setGlobally(el::ConfigurationType::Filename, VALHALLA_LOGFILE_NAME);
-
+    
     std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     loggerConfiguration.set(el::Level::Info, el::ConfigurationType::Format, format);
     loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
@@ -47,7 +46,7 @@ void initLogger(bool colors) {
         (colors ? GOLD : "") + std::string("[%datetime{%H:%m:%s}] [%thread thread] %fbase:L%line: %msg") + (colors ? RESET : ""));
 
     loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, format);
-
+    
     el::Helpers::setThreadName("main");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);
     if (colors)
@@ -56,75 +55,33 @@ void initLogger(bool colors) {
     LOG(INFO) << "Logger is configured";
 }
 
-// I've violated several visibility modifier practices regarding
-//  valhalla having access to init/uninit methods of managers, and no otherclasses...
-//  so is this really reasonable>
-//class ValhallaLauncher {
-//public:
-//    void Launch() {
-//        Valhalla()->Start();
-//    }
-//};
-
 // Steam Documentation https://partner.steamgames.com/doc/sdk/api
 int main(int argc, char **argv) {
-    OPTICK_THREAD("main");
-    
-
 #ifdef RUN_TESTS
-    fs::current_path("./data/tests/");
+    Tests().RunTests();
+#else // !RUN_TESTS
+    OPTICK_THREAD("main");
 
-    Tests().Test_ZStdCompressorDecompressor();
-
-    //Tests().Test_FileWriteLines();
-
-    //Tests().Test_ResourceReadBytes();
-    //Tests().Test_ResourceLines();
-
-    //Tests().Test_FileWriteBytes();
-
-    //Tests().Test_ParentChildTransforms();
-
-    //Tests().Test_DungeonGenerator();
-
-    //Tests().Test_RectInsideRect();
-    //Tests().Test_RectOverlap();
-
-    //Tests().Test_LinesIntersect();
-
-    //Tests().Test_ParentChildTransforms();
-    //Tests::Test_QuaternionLook();
-
-    //Tests::Test_PeerLuaConnect();
-    //Tests::Test_DataBuffer();
-    //Tests::Test_World();
-    //Tests().Test_ZDO();
-    //Tests::Test_ResourceReadWrite();
-    //Tests::Test_Random();
-    //Tests::Test_Perlin();
-
-    LOG(INFO) << "All tests passed!";
-
-    return 0;
-#endif
-
-
-
-    const char* root = "./data/";
+    std::string root = "./data/";
     bool colors = true;
-    bool backup_logs = true;
+    bool log_backups = true;
     for (int i = 1; i < argc-1; i++) {
-        if (strcmp(argv[i], "-root") == 0) {
-            if (i < argc) root = argv[++i];
+        auto&& arg = std::string(argv[i]);
+
+        auto&& NEXT_ARG = [&]() { return i < argc ? std::string(argv[++i]) : ""; };
+        auto&& NEXT_ARG_ENABLED = [&]() { auto&& arg = NEXT_ARG(); return arg == "true" || arg == "1"; };
+        auto&& NEXT_ARG_NUMBER = [&]() { return std::stoi(NEXT_ARG()); };
+        if (arg == "-root") {
+            root = NEXT_ARG();
         }
-        else if (strcmp(argv[i], "-colors") == 0) {
-            if (i < argc) colors = strcmp(argv[++i], "false") == 0 || strcmp(argv[i], "0") == 0 ? false : true;
+        else if (arg == "-colors") {
+            colors = NEXT_ARG_ENABLED();
         }
-        else if (strcmp(argv[i], "-backup-logs") == 0) {
-            if (i < argc) backup_logs = strcmp(argv[++i], "false") == 0 || strcmp(argv[i], "0") == 0 ? false : true;
+        else if (arg == "-log-backups") {
+            log_backups = NEXT_ARG_ENABLED();
         }
-        else if (strcmp(argv[i], "-v") == 0) {
-            if (i < argc) el::Loggers::setVerboseLevel(std::stoi(argv[++i]));
+        else if (arg == "-verbose") {
+            el::Loggers::setVerboseLevel(NEXT_ARG_NUMBER());
         }
     }
 
@@ -132,25 +89,22 @@ int main(int argc, char **argv) {
 
     initLogger(colors);
 
-    // Copy any old file
-    if (backup_logs) {
+    // backup old logs
+    if (log_backups) {
         std::error_code ec;
         fs::create_directories("logs", ec);
 
+        auto path = fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + VALHALLA_LOGFILE_NAME + ".gz");
+
         if (auto log = VUtils::Resource::ReadFile<BYTES_t>(VALHALLA_LOGFILE_NAME)) {
-            if (auto opt = GZCompressor().Compress(*log))
-                VUtils::Resource::WriteFile(
-                    fs::path("logs") / (std::to_string(steady_clock::now().time_since_epoch().count()) + "-" + VALHALLA_LOGFILE_NAME + ".gz"), 
-                    *opt);
+            if (auto opt = ZStdCompressor().Compress(*log))
+                VUtils::Resource::WriteFile(path, *opt);
         }
-        //fs::copy_file(VALHALLA_LOGFILE_NAME,
-            //std::to_string(steady_clock::now().time_since_epoch().count()) + VALHALLA_LOGFILE_NAME, ec);
     }
     
 #ifndef _DEBUG
     try {
-#endif
-        //ValhallaLauncher().Launch();
+#endif // _DEBUG
         Valhalla()->Start();
 #ifndef _DEBUG
     }
@@ -158,7 +112,8 @@ int main(int argc, char **argv) {
         LOG(ERROR) << e.what();
         return 1;
     }
-#endif
+#endif // _DEBUG
 
     return 0;
+#endif // !RUN_TESTS
 }
