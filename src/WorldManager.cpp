@@ -187,14 +187,14 @@ void IWorldManager::BackupFileWorldDB(const std::string& name) const {
 
 	if (fs::exists(path)) {
 		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-			auto compressed = GZCompressor().Compress(*oldSave);
+			auto compressed = ZStdCompressor().Compress(*oldSave);
 			if (!compressed) {
 				LOG(ERROR) << "Failed to compress world backup " << path;
 				return;
 			}
 
-			auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-			auto backup = path.string() + std::to_string(ms) + ".gz";
+			auto now(std::to_string(steady_clock::now().time_since_epoch().count()));
+			auto backup = path.string() + "-" + now + ".zstd";
 			if (VUtils::Resource::WriteFile(backup, *compressed))
 				LOG(INFO) << "Saved world backup as '" << backup << "'";
 			else
@@ -226,53 +226,32 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 		m_saveThread.join();
 	}
 
-	auto now(steady_clock::now());
-
 	LOG(INFO) << "World saving";
 
-	auto path = GetWorldDBPath(m_world->m_name);
+	auto start(steady_clock::now());
+	BYTES_t bytes = SaveWorldDB();
+	auto now(steady_clock::now());
 
-	static BYTES_t bytes;
-	bytes = SaveWorldDB();
+	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(now - start).count() << "ms";
 
-	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
-
-	m_saveThread = std::thread([path]() {
+	m_saveThread = std::jthread([](const std::string &name, const BYTES_t& bytes) {
 		try {
 			el::Helpers::setThreadName("save");
 
-			auto now(steady_clock::now());
+			auto path = WorldManager()->GetWorldDBPath(name);
 
-			// backup the old file
-			if (fs::exists(path)) {
-				if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-					auto compressed = GZCompressor().Compress(*oldSave);
-					if (!compressed) {
-						LOG(WARNING) << "Failed to compress world backup " << path;
-						return;
-					}
-
-					auto ms = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-					auto backup = path.string().substr(0, path.string().length() - 3) + "-" + std::to_string(ms) + ".db.gz";
-					if (VUtils::Resource::WriteFile(backup, *compressed))
-						LOG(INFO) << "Saved world backup as '" << backup << "'";
-					else
-						LOG(WARNING) << "Failed to save world backup to " << backup;
-				}
-				else {
-					LOG(WARNING) << "Failed to load old world for backup";
-				}
-			}
+			auto start(steady_clock::now());
+			WorldManager()->BackupFileWorldDB(name);
 
 			if (!VUtils::Resource::WriteFile(path, bytes))
 				LOG(WARNING) << "Failed to save world";
 			else
-				LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - now).count() << "ms";
+				LOG(INFO) << "World save took " << duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 		}
 		catch (const std::exception& e) {
 			LOG(ERROR) << "Severe error while saving world: " << e.what();
 		}
-	});
+	}, m_world->m_name, bytes);
 
 	if (sync)
 		m_saveThread.join();
