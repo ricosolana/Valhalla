@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 //#define VALHEIM_APP_ID 892970
 
 // ELPP log file name
-#define VALHALLA_LOGFILE_NAME "log.txt"
+#define VALHALLA_LOGFILE_NAME "logs/log.txt"
 
 // Whether to enable or disable
 //  Will explicitly enable 

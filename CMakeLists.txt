@@ -73,10 +73,14 @@ target_compile_definitions(easyloggingpp PUBLIC
     ELPP_FEATURE_PERFORMANCE_TRACKING
     ELPP_DISABLE_DEBUG_LOGS
     ELPP_NO_DEFAULT_LOG_FILE
+    ELPP_NO_LOG_TO_FILE
     ELPP_FRESH_LOG_FILE
 )
 if (LINUX)
-    target_compile_definitions(easyloggingpp PUBLIC ELPP_FEATURE_CRASH_LOG ELPP_STL_LOGGING)
+    target_compile_definitions(easyloggingpp PUBLIC 
+        ELPP_FEATURE_CRASH_LOG 
+        ELPP_STL_LOGGING
+    )
 endif ()
 
 
