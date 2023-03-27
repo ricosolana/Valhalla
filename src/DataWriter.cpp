@@ -1,5 +1,6 @@
 #include "DataWriter.h"
 #include "VUtilsString.h"
+#include "DataReader.h"
 
 void DataWriter::WriteSomeBytes(const BYTE_t* buffer, size_t count) {
     Assert31U(count);
@@ -27,6 +28,10 @@ void DataWriter::WriteSomeBytes(const BYTE_t* buffer, size_t count) {
 }
 
 
+
+DataReader DataWriter::ToReader() {
+    return DataReader(this->m_provider, this->m_pos);
+}
 
 void DataWriter::Write(const BYTE_t* in, size_t count) {
     Write<int32_t>(count);

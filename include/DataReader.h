@@ -9,6 +9,8 @@
 #include "DataStream.h"
 #include "ModManager.h"
 
+class DataWriter;
+
 class DataReader : public DataStream {
 private:
     void ReadSomeBytes(BYTE_t* buffer, size_t count);
@@ -49,6 +51,8 @@ public:
     }
 
 public:
+    DataWriter ToWriter();
+
     // Reads a byte array as a Reader (more efficient than ReadBytes())
     //  int32_t:   size
     //  BYTES_t:    data

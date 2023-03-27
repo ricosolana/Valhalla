@@ -65,11 +65,16 @@ public:
         static constexpr HASH_t PeriodicUpdate = __H("PeriodicUpdate");
 
         // Rpc events (some unimplemented)
-        static constexpr HASH_t RpcIn = __H("RpcIn");        // Server receives the lowest-layer RPC
-        static constexpr HASH_t RpcOut = __H("RpcOut");      // Server sends the lowest-layer RPC
-        static constexpr HASH_t RouteIn = __H("RouteIn");    // Server receives the middle-layer RoutedRPC
-        static constexpr HASH_t RouteOut = __H("RouteOut");   // Server receives the middle-layer RoutedRPC
-        static constexpr HASH_t Routed = __H("Routed");      // Server relays a message from peer to peer
+        static constexpr HASH_t RpcIn = __H("RpcIn");       // Peer -> Server
+        static constexpr HASH_t RpcOut = __H("RpcOut");     // Peer -> Server
+        
+        // Routed events (this is complicated)
+        static constexpr HASH_t RouteIn = __H("RouteIn");           // Peer -> Server
+        static constexpr HASH_t RouteInAll = __H("RouteInAll");     // Peer -> Server
+        static constexpr HASH_t RouteOut = __H("RouteOut");         // Server -> Peer
+        static constexpr HASH_t RouteOutAll = __H("RouteOutAll");   // Server -> Peer
+        static constexpr HASH_t Routed = __H("Routed");             // Peer -> Server -> Peer
+
 
         // Connecting peer events
         static constexpr HASH_t Connect = __H("Connect");

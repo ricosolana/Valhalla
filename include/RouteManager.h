@@ -5,6 +5,7 @@
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "ModManager.h"
+#include "RouteData.h"
 
 class Peer;
 
@@ -12,36 +13,6 @@ class IRouteManager {
 	friend class INetManager;
 
 public:
-	struct Data {
-		//OWNER_t m_msgID; // TODO this is never utilized
-		OWNER_t m_sender;
-		OWNER_t m_target;
-		ZDOID m_targetZDO;
-		HASH_t m_method;
-		BYTES_t m_params;
-
-		Data() : m_sender(0), m_target(0), m_method(0) {}
-
-		// Will unpack the package
-		explicit Data(DataReader reader) {
-			reader.Read<int64_t>(); // msgID
-			m_sender = reader.Read<OWNER_t>();
-			m_target = reader.Read<OWNER_t>();
-			m_targetZDO = reader.Read<ZDOID>();
-			m_method = reader.Read<HASH_t>();
-			m_params = reader.Read<BYTES_t>();
-		}
-
-		void Serialize(DataWriter writer) const {
-			writer.Write<int64_t>(0);
-			writer.Write(m_sender);
-			writer.Write(m_target);
-			writer.Write(m_targetZDO);
-			writer.Write(m_method);
-			writer.Write(m_params);
-		}
-	};
-
 	static constexpr OWNER_t EVERYBODY = 0;
 
 private:	
@@ -50,12 +21,6 @@ private:
 private:
 	// Called from NetManager
 	void OnNewPeer(Peer &peer);
-
-	// Internal use only by NetRouteManager
-	void InvokeImpl(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, BYTES_t params);
-	void HandleRoutedRPC(Peer* peer, Data data);
-
-	void RouteRPC(const Data& data);
 
 public:
 
@@ -78,71 +43,74 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, HASH_t hash, const Args&... params) {
+	void Invoke(HASH_t hash, Args&&... params) {
 		// Prefix
-		//if (!ModManager()->CallEvent(IModManager::EVENT_RouteOut))
-		// Routed is a bit more finicky because they are both serialized and deserialized at different places with different intent...
+		//if (target == EVERYBODY) {
+			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, targetZDO, params))
+				return;
 
-		InvokeImpl(target, targetNetSync, hash, DataWriter::Serialize(params...));
+			BYTES_t bytes;
+			DataWriter writer(bytes);
+
+			writer.Write<int64_t>(0); // msg id
+			writer.Write(SERVER_ID);
+			writer.Write(target);
+			writer.Write(ZDOID::NONE);
+			writer.Write(hash);
+			writer.Write(DataWriter::Serialize(params...));
+
+			for (auto&& peer : peers) {
+				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+			}
+		//}
+		//else {
+		//	if (auto peer = NetManager()->GetPeer(target))
+		//		peer->Route(targetZDO, hash, std::forward<Args>(params)...);
+		//}
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetNetSync, const std::string& name, const Args&... params) {
-		InvokeView(target, targetNetSync, VUtils::String::GetStableHashCode(name), params...);
+	void InvokeView(OWNER_t target, const ZDOID& targetZDO, const std::string& name, Args&&... params) {
+		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeViewLua(OWNER_t target, const ZDOID& targetNetSync, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeViewLua(OWNER_t target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		
-		InvokeImpl(target, targetNetSync, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+		
+		InvokeImpl(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
-
-	//template <typename... Args>
-	//void InvokeView(Peer& peer, const ZDOID& targetZDO, const std::string& name, const Args&... params) {
-	//	InvokeView(peer, targetZDO, VUtils::String::GetStableHashCode(name), params...);
-	//}
 
 
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, HASH_t hash, const Args&... params) {
-		InvokeView(target, ZDOID::NONE, hash, params...);
+	void Invoke(OWNER_t target, HASH_t hash, Args&&... params) {
+		InvokeView(target, ZDOID::NONE, hash, std::forward<Args>(params)...);
 	}
-
-	//template <typename... Args>
-	//void Invoke(Peer& peer, HASH_t hash, const Args&... params) {
-	//	InvokeView(peer, ZDOID::NONE, hash, params...);
-	//}
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, const std::string& name, const Args&... params) {
-		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), params...);
+	void Invoke(OWNER_t target, const std::string& name, Args&&... params) {
+		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
 	void InvokeLua(OWNER_t target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeViewLua(target, ZDOID::NONE, repr, args);
 	}
 
-	//template <typename... Args>
-	//void Invoke(Peer& peer, const std::string& name, const Args&... params) {
-	//	InvokeView(peer, ZDOID::NONE, VUtils::String::GetStableHashCode(name), params);
-	//}
-
-
 
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
-	void InvokeAll(HASH_t hash, const Args&... params) {
-		Invoke(EVERYBODY, hash, params...);
+	void InvokeAll(HASH_t hash, Args&&... params) {
+		Invoke(EVERYBODY, hash, std::forward<Args>(params)...);
 	}
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
-	void InvokeAll(const std::string& name, const Args&... params) {
-		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), params...);
+	void InvokeAll(const std::string& name, Args&&... params) {
+		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
 	void InvokeAllLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {

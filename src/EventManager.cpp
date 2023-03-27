@@ -170,14 +170,14 @@ void IEventManager::Load(DataReader& reader, int version) {
 
 void IEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
-		RouteManager()->InvokeAll(Hashes::Routed::SetEvent, 
+		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent, 
 			m_activeEvent->m_name,
 			m_activeEventTimer,
 			m_activeEventPos
 		);
 	}
 	else {
-		RouteManager()->InvokeAll(Hashes::Routed::SetEvent,
+		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent,
 			"",
 			0.f,
 			Vector3::ZERO

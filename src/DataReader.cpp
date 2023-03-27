@@ -1,4 +1,5 @@
 #include "DataReader.h"
+#include "DataWriter.h"
 
 void DataReader::ReadSomeBytes(BYTE_t* buffer, size_t count) {
     Assert31U(count);
@@ -20,6 +21,10 @@ void DataReader::ReadSomeBytes(BYTES_t& vec, size_t count) {
         m_provider.get().begin() + m_pos + count);
 
     m_pos += count;
+}
+
+DataWriter DataReader::ToWriter() {
+    return DataWriter(this->m_provider, this->m_pos);
 }
 
 sol::variadic_results DataReader::DeserializeLua(sol::state_view state, DataReader& reader, const IModManager::Types& types) {

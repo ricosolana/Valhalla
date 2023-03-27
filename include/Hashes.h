@@ -82,7 +82,7 @@ namespace Hashes {
         static constexpr HASH_t S2C_UpdateKeys = __H("GlobalKeys");
         static constexpr HASH_t S2C_UpdateIcons = __H("LocationIcons");
         static constexpr HASH_t S2C_UIMessage = __H("ShowMessage");
-        static constexpr HASH_t SetEvent = __H("SetEvent");
+        static constexpr HASH_t S2C_SetEvent = __H("SetEvent");
         static constexpr HASH_t S2C_ResponseIcon = __H("DiscoverLocationRespons");
         static constexpr HASH_t S2C_RequestTeleport = __H("RPC_TeleportPlayer");
 

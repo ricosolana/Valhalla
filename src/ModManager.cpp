@@ -790,13 +790,13 @@ void IModManager::LoadAPI() {
 
 
 
-    //m_state.new_usertype<IRouteManager::Data>("RouteData",
-    //    "sender", &IRouteManager::Data::m_sender,
-    //    "target", &IRouteManager::Data::m_target,
-    //    "targetZDO", &IRouteManager::Data::m_targetZDO,
-    //    "method", &IRouteManager::Data::m_method,
-    //    "params", &IRouteManager::Data::m_params
-    //);
+    m_state.new_usertype<IRouteManager::Data>("RouteData",
+        "sender", &IRouteManager::Data::m_sender,
+        "target", &IRouteManager::Data::m_target,
+        "targetZDO", &IRouteManager::Data::m_targetZDO,
+        "method", &IRouteManager::Data::m_method,
+        "params", &IRouteManager::Data::m_params
+    );
 
     m_state["RouteManager"] = RouteManager();
     m_state.new_usertype<IRouteManager>("IRouteManager",

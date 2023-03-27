@@ -12,7 +12,7 @@
 #include "ValhallaServer.h"
 #include "Hashes.h"
 #include "ZDO.h"
-#include "RouteManager.h"
+#include "RouteData.h"
 
 enum class ChatMsgType : int32_t {
     Whisper,
@@ -273,33 +273,36 @@ public:
 
 
     template <typename... Types>
-    void Route(const ZDOID& targetZDO, HASH_t hash, const Types&... params) {
-        IRouteManager::Data data;
-        data.m_sender = SERVER_ID;
-        data.m_target = this->m_uuid;
-        data.m_targetZDO = targetZDO;
-        data.m_method = hash;
-        data.m_params = DataWriter::Serialize(params...);
+    void RouteView(const ZDOID& targetZDO, HASH_t hash, Types&&... params) {
+        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ hash, this, targetZDO, params))
+            return;
 
         BYTES_t bytes;
-        data.Serialize(DataWriter(bytes));
+        DataWriter writer(bytes);
+
+        writer.Write<int64_t>(0); // msg id
+        writer.Write(SERVER_ID);
+        writer.Write(this->m_uuid);
+        writer.Write(targetZDO);
+        writer.Write(hash);
+        writer.Write(DataWriter::Serialize(params...));
 
         Invoke(Hashes::Rpc::RoutedRPC, bytes);
     }
 
     template <typename... Types>
-    decltype(auto) Route(HASH_t hash, const Types&... params) {
-        return Route(ZDOID::NONE, hash, params...);
+    decltype(auto) Route(HASH_t hash, Types&&... params) {
+        return RouteView(ZDOID::NONE, hash, std::forward<Types>(params)...);
     }
 
     template <typename... Types>
-    decltype(auto) Route(const std::string& name, const Types&... params) {
-        return Route(ZDOID::NONE, VUtils::String::GetStableHashCode(name), params...);
+    decltype(auto) Route(const std::string& name, Types&&... params) {
+        return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
     template <typename... Types>
-    decltype(auto) Route(const ZDOID& targetZDO, const std::string& name, const Types&... params) {
-        return Route(targetZDO, VUtils::String::GetStableHashCode(name), params...);
+    decltype(auto) RouteView(const ZDOID& targetZDO, const std::string& name, Types&&... params) {
+        return RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
 
@@ -308,15 +311,14 @@ public:
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-        IRouteManager::Data data;
-        data.m_sender = SERVER_ID;
-        data.m_target = this->m_uuid;
-        data.m_targetZDO = targetZDO;
-        data.m_method = repr.m_hash;
-        data.m_params = DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
-
         BYTES_t bytes;
-        data.Serialize(DataWriter(bytes));
+        DataWriter writer(bytes);
+
+        writer.Write(SERVER_ID);
+        writer.Write(this->m_uuid);
+        writer.Write(targetZDO);
+        writer.Write(repr.m_hash);
+        writer.Write(DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 
         Invoke(Hashes::Rpc::RoutedRPC, bytes);
     }

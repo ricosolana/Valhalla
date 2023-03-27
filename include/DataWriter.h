@@ -9,6 +9,8 @@
 #include "DataStream.h"
 #include "ModManager.h"
 
+class DataReader;
+
 /*
 template <class T>
 struct Serializer;
@@ -52,6 +54,10 @@ private:
 public:
     DataWriter(BYTES_t& bytes) : DataStream(bytes) {}
 
+    DataWriter(BYTES_t& bytes, size_t pos) : DataStream(bytes) {
+        SetPos(pos);
+    }
+
     // Clears the underlying container and resets position
     void Clear() {
         m_pos = 0;
@@ -64,6 +70,8 @@ public:
     //}
 
 public:
+    DataReader ToReader();
+
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
     void SubWrite(F func) {
