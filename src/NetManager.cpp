@@ -106,10 +106,13 @@ void INetManager::SendPlayerList() {
             writer.Write(peer->m_name);
             writer.Write(peer->m_socket->GetHostName());
             writer.Write(peer->m_characterID);
-            writer.Write(peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible);
-            if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
+            //writer.Write(peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible);
+            //if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
+            //    writer.Write(peer->m_pos);
+            //}
+            writer.Write(peer->m_visibleOnMap);
+            if (peer->m_visibleOnMap)
                 writer.Write(peer->m_pos);
-            }
         }
 
         for (auto&& peer : m_peers) {

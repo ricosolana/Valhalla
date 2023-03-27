@@ -21,7 +21,7 @@ struct ServerSettings {
     bool            playerAuth;
     bool            playerList;
     //bool            playerArrivePing;
-    bool            playerForceVisible;
+    //bool            playerForceVisible;
     //bool            playerSleep;        // enable time skip when all players sleeping
     //bool            playerSleepSolo;    // whether only 1 player needs to sleep to enable time skip
     

@@ -785,7 +785,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			try {
 				// if peer tries changing owner without revision set
 				//	hmm
-				//if (!created && owner != zdo.Owner())
+				// Findings:
+				//	seagul had a 0-owner, peer tried claiming it however
+				//if (!created && zdo.HasOwner() && owner != zdo.Owner())
 					//throw std::runtime_error("peer tried checkless changing owner");
 
 				zdo.m_owner = owner;
