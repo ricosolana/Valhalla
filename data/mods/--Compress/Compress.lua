@@ -9,9 +9,12 @@ local peers = {}
 local SIG_CompressedZDOData = MethodSig.new("CompressedZDOData", Type.BYTES)
 local SIG_CompressHandshake = MethodSig.new("CompressHandshake", Type.BOOL)
 
+local compressor = GzCompressor.new()
+local decompressor = GzDecompressor.new()
+
 local RPC_CompressedZDOData = function(peer, compressed)
     -- Decompress raw data sent from client (intended for direct forwarding to RPC_ZDOData)
-    local decompressed = assert(VUtils.Decompress(compressed), 'decompression error');
+    local decompressed = assert(decompressor:Decompress(compressed), 'decompression error');
 
     -- This is necessary because method invoke treats the package as a sub package...
     compressed:clear() -- sol container clear
@@ -19,8 +22,7 @@ local RPC_CompressedZDOData = function(peer, compressed)
     writer:Write(decompressed)
 
     -- Finally invoke it
-    --peer:InvokeSelf("ZDOData", DataReader.new(compressed));
-    peers[tostring(peer.socket.host)]:Invoke(peer, DataReader.new(compressed))
+    peer:InvokeSelf("ZDOData", DataReader.new(compressed));
 end
 
 local RPC_CompressHandshake = function(peer, enabled)
@@ -29,12 +31,14 @@ local RPC_CompressHandshake = function(peer, enabled)
     if enabled then
         print("Registering CompressedZDOData")
 
-        peers[tostring(peer.socket.host)] = assert(peer:GetMethod('ZDOData'))
+        peers[tostring(peer.socket.host)] = true
 
         peer:Register(SIG_CompressedZDOData, RPC_CompressedZDOData)
 
         peer:Invoke(SIG_CompressHandshake, enabled);
     end
+    
+    return false
 end
 
 Valhalla:Subscribe("Join", function(peer)
@@ -53,7 +57,7 @@ end)
 Valhalla:Subscribe("RpcOut", "ZDOData", function(peer, bytes)
     if peers[tostring(peer.socket.host)] then
         event.Cancel() -- To prevent normal packet from being sent
-        local compressed = assert(VUtils.Compress(bytes), 'compression error')
+        local compressed = assert(compressor:Compress(bytes), 'compression error')
         peer:Invoke(SIG_CompressedZDOData, compressed)
     end
 end)

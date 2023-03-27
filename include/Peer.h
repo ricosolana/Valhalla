@@ -185,7 +185,7 @@ public:
 
 
 
-    decltype(auto) InternalInvoke(HASH_t hash, DataReader &reader) {
+    bool InternalInvoke(HASH_t hash, DataReader &reader) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             VLOG(2) << "InternalInvoke, hash: " << hash;
@@ -200,6 +200,10 @@ public:
             return result;
         }
         return true;
+    }
+
+    decltype(auto) InternalInvoke(const std::string& name, DataReader& reader) {
+        return InternalInvoke(VUtils::String::GetStableHashCode(name), reader);
     }
 
 

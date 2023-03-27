@@ -251,29 +251,30 @@ void IModManager::LoadAPI() {
         "socket", sol::readonly(&Peer::m_socket),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
-        "Kick", sol::resolve<void()>(&Peer::Kick),
+        "Kick", sol::resolve<void ()>(&Peer::Kick),
         // message functions
         "ChatMessage", sol::overload(
             // TODO fix this
             //sol::resolve<void(const std::string&, ChatMsgType, const Vector3&, const std::string&, const std::string&)>(&Peer::ChatMessage),
-            sol::resolve<void(const std::string&)>(&Peer::ChatMessage)
+            sol::resolve<void (const std::string&)>(&Peer::ChatMessage)
         ),
         "ConsoleMessage", &Peer::ConsoleMessage,
         "CornerMessage", &Peer::CornerMessage,
         "CenterMessage", &Peer::CenterMessage,
         // misc functions
         "Teleport", sol::overload(
-            sol::resolve<void(const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
-            sol::resolve<void(const Vector3& pos)>(&Peer::Teleport)
+            sol::resolve<void (const Vector3& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
+            sol::resolve<void (const Vector3& pos)>(&Peer::Teleport)
         ),
         //"MoveTo", sol::overload(
         //    sol::resolve<void(const Vector3& pos, const Quaternion& rot)>(&Peer::MoveTo),
         //    sol::resolve<void(const Vector3& pos)>(&Peer::MoveTo)
         //),
         "Disconnect", &Peer::Disconnect,
-        //"InvokeSelf", sol::overload(
-        //    sol::resolve<void (const std::string&, DataReader)>(&Peer::InvokeSelf),
-        //    sol::resolve<void(HASH_t, DataReader)>(&Peer::InvokeSelf)),
+        "InvokeSelf", sol::overload(
+            sol::resolve<bool (HASH_t, DataReader&)>(&Peer::InternalInvoke),
+            sol::resolve<bool (const std::string&, DataReader&)>(&Peer::InternalInvoke)
+        ),
 
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             //static_cast<void (Peer::*)(HASH_t, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
@@ -857,14 +858,14 @@ void IModManager::LoadAPI() {
     
 
 
-    m_state.new_usertype<GZCompressor>("GZCompressor",
-        sol::constructors<GZCompressor(), GZCompressor(int)>(),
-        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GZCompressor::Compress)
+    m_state.new_usertype<GzCompressor>("GzCompressor",
+        sol::constructors<GzCompressor(), GzCompressor(int)>(),
+        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GzCompressor::Compress)
         );
 
-    m_state.new_usertype<GZDecompressor>("GZDecompressor",
-        sol::constructors<GZDecompressor()>(),
-        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GZDecompressor::Decompress)
+    m_state.new_usertype<GzDecompressor>("GzDecompressor",
+        sol::constructors<GzDecompressor()>(),
+        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GzDecompressor::Decompress)
         );
 
 

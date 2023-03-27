@@ -768,6 +768,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						if (!zdo.IsOwner(peer->m_uuid))
 							throw std::runtime_error("non-owning peer tried changing ZDO ownership");
 
+						if (zdo.GetPrefab().FlagsPresent(Prefab::Flag::SESSIONED))
+							throw std::runtime_error("peer tried changing ownership of session ZDO");
+
 						zdo.m_owner = owner;
 						zdo.m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos[zdoid] = rev;
@@ -780,7 +783,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			ZDO copy(zdo);
 
 			try {
-				// Create a copy of ZDO prior to any modifications
+				// if peer tries changing owner without revision set
+				//	hmm
+				//if (!created && owner != zdo.Owner())
+					//throw std::runtime_error("peer tried checkless changing owner");
+
 				zdo.m_owner = owner;
 				zdo.m_rev = rev;
 
@@ -824,7 +831,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	zdoid.uuid should match (because temps are used only by local-client)
 					if (zdo.GetPrefab().FlagsPresent(Prefab::Flag::SESSIONED) 
 						&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
-							throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");					
+							throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");
 				}
 			}
 			catch (const std::runtime_error& e) {
@@ -844,10 +851,15 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 	for (auto&& pair : m_objectsByID) {
 		auto&& zdo = *pair.second.get();
 		auto&& prefab = zdo.GetPrefab();
+		
+		// Apparently peer does unclaim sessioned ZDOs (Player zdo had 0 owner)
+		//assert((prefab.FlagsAbsent(Prefab::Flag::SESSIONED) || zdo.HasOwner()) && "Session ZDOs should always be owned");
 
 		// Remove temporary ZDOs belonging to peers (like particles and attack anims, vfx, sfx...)
-		if (prefab.FlagsPresent(Prefab::Flag::SESSIONED)
-			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid)))
+		//if (prefab.FlagsPresent(Prefab::Flag::SESSIONED)
+			//&& (zdo.IsOwner(peer.m_uuid)))
+		if (prefab.FlagsPresent(Prefab::Flag::SESSIONED) 
+			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeer(zdo.Owner())))
 		{
 			LOG(INFO) << "Destroying zdo (" << prefab.m_name << ")";
 			DestroyZDO(zdo);

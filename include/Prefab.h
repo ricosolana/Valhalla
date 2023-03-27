@@ -31,7 +31,6 @@ public:
 
         SYNC_INITIAL_SCALE = 1ULL << 0,
         DISTANT = 1ULL << 1,
-        PERSISTENT = 1ULL << 2,
         SESSIONED = 1ULL << 2,
 
         PIECE = 1ULL << 3,

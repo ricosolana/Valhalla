@@ -145,6 +145,9 @@ public:
     void Uninit();
     void Update();
 
+
+    //bool IsEventCancelled();
+
     /*
     void recurse(sol::table table) {
         auto&& tostring = m_state["tostring"];
@@ -172,21 +175,27 @@ public:
             auto&& callbacks = find->second;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
+                bool err = false;
                 try {
                     sol::protected_function_result result = itr->m_func(Args(params)...);
                     if (!result.valid()) {
                         LOG(ERROR) << "Event error: ";
-
                         //auto&& tostring = m_state["tostring"];
-
-
 
                         //LOG(ERROR) << tostring(result).get<std::string>();
                         //recurse(result);
 
+                        err = true;
+
                         sol::error error = result;
                         LOG(ERROR) << error.what();
                         m_eventStatus |= EventStatus::UNSUBSCRIBE;
+                    }
+                    else {
+                        // whether cancelled-events should follow Harmony prefix cancellation with bools
+                        //if (result.get_type() == sol::type::boolean)
+                            //if (!result.get<bool>())
+                                //m_eventStatus |=
                     }
                 }
                 catch (const std::exception& e) {
@@ -195,7 +204,10 @@ public:
                 }
 
                 if ((m_eventStatus & EventStatus::UNSUBSCRIBE) == EventStatus::UNSUBSCRIBE) {
-                    LOG(INFO) << "Unsubscribed event";
+                    if (err)
+                        LOG(ERROR) << "Unsubscribed event";
+                    else
+                        LOG(INFO) << "Unsubscribed event";
                     itr = callbacks.erase(itr);
                 }
                 else {

@@ -1,4 +1,15 @@
 todo:
+    - server-side player inventories and metering
+        player defaultingly spawns in with nothing (except for rag cloth)
+        
+        if player is new, treat inventory as empty
+        
+        only definite way to add/remove items from inventory:
+            - ItemDrop::Pickup (causes zdo erase)
+            - ItemDrop::Drop (causes zdo instantiate)
+            - Inventory::MoveItemToThisContainer -> Container::OnContainerChanged triggers a ZDO save
+            - Crafting (a bit is unknown about this on client side, no way to validate?)
+
     - minor memory leaks (these are more like ignored object leaks, not forgotton ptrs)
         - Peer.m_zdos
             old ZDOs that are no longer near the player persist in this container until the peer quits

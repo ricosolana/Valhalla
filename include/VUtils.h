@@ -469,13 +469,13 @@ public:
 
 
 
-class GZCompressor {
+class GzCompressor {
     int m_level;
 
 public:
-    GZCompressor() : m_level(Z_BEST_SPEED) {}
+    GzCompressor() : m_level(Z_BEST_SPEED) {}
 
-    GZCompressor(int level) : m_level(level) {}
+    GzCompressor(int level) : m_level(level) {}
 
 public:
     std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
@@ -518,9 +518,9 @@ public:
     }
 };
 
-class GZDecompressor {
+class GzDecompressor {
 public:
-    GZDecompressor() {}
+    GzDecompressor() {}
 
 public:
     std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize) {
