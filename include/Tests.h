@@ -6,6 +6,10 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include <robin_hood.h>
+
+#include "IntrusiveList.h"
+
 #include "ZDO.h"
 #include "WorldManager.h"
 #include "DataWriter.h"
@@ -441,10 +445,43 @@ private:
 
 
 public:
+    using StringList = PCSX::Intrusive::List<std::string>;
+
+    void TestIntrusive() {
+        sol::state lua;
+        lua.open_libraries();
+
+        lua.new_usertype<StringList>(//"StringList",
+            //sol::meta_function::length, &StringList::size
+            [](const StringList& rl) {
+                return sol::as_container(rl); // Required for sol to treat Intrusive Lists as a container
+            }
+        );
+
+        StringList intrusive;
+        intrusive.push_back(StringList::Node::Node().);
+        //StringList copy = intrusive;
+
+        lua["intrusive"] = &intrusive;
+
+        const auto& code = R"(
+            for i = 1, #intrusive do
+                --print(intrusive[i])
+            end
+        )";
+
+        lua.script(code);
+
+        return;
+    }
+
+
     void RunTests() {
         fs::current_path("./data/tests/");
 
-        Test_ZStdCompressorDecompressor();
+        //Test_ZStdCompressorDecompressor();
+
+        TestIntrusive();
 
         //Tests().Test_FileWriteLines();
 
