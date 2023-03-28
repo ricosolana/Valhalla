@@ -6,6 +6,8 @@
 #include "DataWriter.h"
 #include "ModManager.h"
 #include "RouteData.h"
+#include "Hashes.h"
+#include "NetManager.h"
 
 class Peer;
 
@@ -40,33 +42,30 @@ public:
 	}
 
 
+	// Forwards raw data to peer(s) with no Lua handlers
+	//void InvokeParams(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
+
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void Invoke(HASH_t hash, Args&&... params) {
+	void InvokeView(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, Args&&... params) {
 		// Prefix
-		//if (target == EVERYBODY) {
-			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, targetZDO, params))
+		if (target == EVERYBODY) {
+			// target and ZDO is not passed because global/everybody implies RoutedRpc, not NetView method
+			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, params...))
 				return;
 
-			BYTES_t bytes;
-			DataWriter writer(bytes);
+			auto bytes = Serialize(SERVER_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
 
-			writer.Write<int64_t>(0); // msg id
-			writer.Write(SERVER_ID);
-			writer.Write(target);
-			writer.Write(ZDOID::NONE);
-			writer.Write(hash);
-			writer.Write(DataWriter::Serialize(params...));
-
-			for (auto&& peer : peers) {
+			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
-		//}
-		//else {
-		//	if (auto peer = NetManager()->GetPeer(target))
-		//		peer->Route(targetZDO, hash, std::forward<Args>(params)...);
-		//}
+		}
+		else {
+			if (auto peer = NetManager()->GetPeer(target)) {
+				peer->RouteView(targetZDO, hash, std::forward<Args>(params)...);
+			}
+		}
 	}
 
 	// Invoke a routed function bound to a peer with sub zdo
@@ -75,10 +74,33 @@ public:
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeViewLua(OWNER_t target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeViewLua(OWNER_t target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
+		if (target == EVERYBODY) {
+			if (args.size() != repr.m_types.size())
+				throw std::runtime_error("mismatched number of args");
+
+			auto results = sol::variadic_results(args.begin(), args.end());
+
+#ifdef MOD_EVENT_RESPONSE
+			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
+				return;
+#endif
+
+			auto bytes = Serialize(SERVER_ID, target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, results));
+
+			for (auto&& peer : NetManager()->GetPeers()) {
+				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+			}
+		}
+		else {
+			if (auto peer = NetManager()->GetPeer(target))
+				peer->RouteViewLua(targetZDO, repr, args);
+		}
 		
+		//Serialize(SERVER_ID, target, targetZDO, repr.m_hash,
+			//DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 		
-		InvokeImpl(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+		//Invoke(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
 
 
@@ -115,6 +137,20 @@ public:
 
 	void InvokeAllLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeLua(EVERYBODY, repr, args);
+	}
+
+	BYTES_t Serialize(OWNER_t sender, OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params) {
+		BYTES_t bytes;
+		DataWriter writer(bytes);
+
+		writer.Write<int64_t>(0); // msg id
+		writer.Write(sender);
+		writer.Write(target);
+		writer.Write(targetZDO);
+		writer.Write(hash);
+		writer.Write(params);
+
+		return bytes;
 	}
 
 };

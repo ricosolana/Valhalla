@@ -272,22 +272,21 @@ public:
 
 
 
+    void RouteParams(const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
+
+
+
     template <typename... Types>
     void RouteView(const ZDOID& targetZDO, HASH_t hash, Types&&... params) {
-        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ hash, this, targetZDO, params))
+        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
+    }
 
-        writer.Write<int64_t>(0); // msg id
-        writer.Write(SERVER_ID);
-        writer.Write(this->m_uuid);
-        writer.Write(targetZDO);
-        writer.Write(hash);
-        writer.Write(DataWriter::Serialize(params...));
-
-        Invoke(Hashes::Rpc::RoutedRPC, bytes);
+    template <typename... Types>
+    decltype(auto) RouteView(const ZDOID& targetZDO, const std::string& name, Types&&... params) {
+        return RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
     template <typename... Types>
@@ -300,27 +299,20 @@ public:
         return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
-    template <typename... Types>
-    decltype(auto) RouteView(const ZDOID& targetZDO, const std::string& name, Types&&... params) {
-        return RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
-    }
-
 
 
     void RouteViewLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        auto results = sol::variadic_results(args.begin(), args.end());
 
-        writer.Write(SERVER_ID);
-        writer.Write(this->m_uuid);
-        writer.Write(targetZDO);
-        writer.Write(repr.m_hash);
-        writer.Write(DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+#ifdef MOD_EVENT_RESPONSE
+        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO, sol::as_args(results)))
+            return;
+#endif
 
-        Invoke(Hashes::Rpc::RoutedRPC, bytes);
+        RouteParams(targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, results));
     }
 
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {

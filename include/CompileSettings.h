@@ -23,11 +23,12 @@ using namespace std::chrono_literals;
 
 // Whether to enable or disable
 //  Will explicitly enable 
+//  not exactly implemented
 #define VALHALLA_GENERATE_FEATURES
 
-// Whether 
-
-//#define DUMMY_PLAYERNAME "Stranger"
+// Whether to evoke callbacks for RPC/route/event handlers invoked from within Lua 
+//  this is named terribly
+//#define MOD_EVENT_RESPONSE
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

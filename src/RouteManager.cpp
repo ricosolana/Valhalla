@@ -24,14 +24,16 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		auto target = reader.Read<OWNER_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
+		auto params = reader.SubRead();
 
 		if (target == EVERYBODY) {
-			if (!ModManager()->CallEvent(IModManager::Events::RouteInAll ^ hash, bytes))
+			assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");
+			if (!ModManager()->CallEvent(IModManager::Events::RouteInAll ^ hash, params))
 				return;
 
 			auto&& peers = NetManager()->GetPeers();
 			for (auto&& other : peers) {
-				// Unlikely
+				// Ignore the src peer
 				if (peer->m_uuid != other->m_uuid) {
 					other->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 				}
@@ -39,17 +41,17 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		}
 		else {
 			if (target != SERVER_ID) {
-				if (!ModManager()->CallEvent(IModManager::Events::Routed ^ hash, bytes))
-					return;
+				if (auto peer = NetManager()->GetPeer(target)) {
+					if (!ModManager()->CallEvent(IModManager::Events::Routed ^ hash, peer, targetZDO, params))
+						return;
 
-				if (auto peer = NetManager()->GetPeer(target))
 					peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+				}
 			}
 			else {
 				if (!targetZDO) {
 					auto&& find = m_methods.find(hash);
-					if (find != m_methods.end()) {
-						DataReader params(reader.SubRead());
+					if (find != m_methods.end()) {						
 						find->second->Invoke(peer, params);
 					}
 				} //else ... // netview is not currently supported

@@ -104,8 +104,10 @@ public:
         auto results(DataReader::DeserializeLua(state, reader, m_types));
 
         // Prefix
-        //if (!ModManager()->CallEvent(m_categoryHash ^ m_methodHash, sol::as_args(results))) 
-            //return;
+#ifdef MOD_EVENT_RESPONSE
+        if (!ModManager()->CallEvent(m_categoryHash ^ m_methodHash, sol::as_args(results))) 
+            return;
+#endif
 
         sol::protected_function_result result = m_func(t, sol::as_args(results));
         if (!result.valid()) {
@@ -115,7 +117,10 @@ public:
         }
 
         // Postfix
-        //ModManager()->CallEvent(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results))
+#ifdef MOD_EVENT_RESPONSE
+        ModManager()->CallEvent(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results));
+#endif
+
         if (result.get_type() == sol::type::boolean)
             return result.get<bool>();
 

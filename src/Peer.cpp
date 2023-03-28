@@ -188,6 +188,12 @@ void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
 
 
 
+void Peer::RouteParams(const ZDOID& targetZDO, HASH_t hash, BYTES_t params) {
+    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(SERVER_ID, this->m_uuid, targetZDO, hash, std::move(params)));
+}
+
+
+
 void Peer::ZDOSectorInvalidated(ZDO& zdo) {
     if (zdo.IsOwner(this->m_uuid))
         return;
