@@ -98,6 +98,9 @@ void INetManager::SendDisconnect() {
 
 void INetManager::SendPlayerList() {
     if (!m_peers.empty()) {
+        if (!ModManager()->CallEvent(IModManager::Events::PlayerList))
+            return;
+
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
         writer.Write((int)m_peers.size());
@@ -136,7 +139,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
     writer.Write(Valhalla()->ID());
     writer.Write(VConstants::GAME);
-    writer.Write(Vector3()); // dummy
+    writer.Write(Vector3::ZERO); // dummy
     writer.Write(""); // dummy
 
     auto world = WorldManager()->GetWorld();

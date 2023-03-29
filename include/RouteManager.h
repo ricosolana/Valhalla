@@ -51,8 +51,8 @@ public:
 	void InvokeView(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, Args&&... params) {
 		// Prefix
 		if (target == EVERYBODY) {
-			// target and ZDO is not passed because global/everybody implies RoutedRpc, not NetView method
-			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, params...))
+			// targetZDO can have a value apparently
+			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
 
 			auto bytes = Serialize(SERVER_ID, target, targetZDO, hash, DataWriter::Serialize(params...));

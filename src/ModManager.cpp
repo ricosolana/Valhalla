@@ -159,8 +159,10 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write)
+            static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write)
         ),
+
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
         "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
         "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
@@ -193,7 +195,8 @@ void IModManager::LoadAPI() {
         "ReadZDOID", &DataReader::ReadZDOID,
         "ReadVector3", &DataReader::ReadVector3,
         "ReadVector2i", &DataReader::ReadVector2i,
-        "ReadQuaternion", &DataReader::ReadQuaternion,               
+        "ReadQuaternion", &DataReader::ReadQuaternion,
+        "ReadProfile", &DataReader::ReadProfile,
 
         "ReadInt8", &DataReader::ReadInt8,
         "ReadInt16", &DataReader::ReadInt16,
@@ -211,11 +214,11 @@ void IModManager::LoadAPI() {
         "ReadChar", &DataReader::ReadChar
     );
 
-    m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",
-        "Invoke", &IMethod<Peer*>::Invoke
-    );
+    //m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",
+    //    "Invoke", &IMethod<Peer*>::Invoke
+    //);
 
-    m_state.new_usertype<ISocket>("ISocket",
+    m_state.new_usertype<ISocket>("Socket",
         "Close", &ISocket::Close,
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
@@ -586,7 +589,7 @@ void IModManager::LoadAPI() {
     m_state["Valhalla"] = Valhalla();
     m_state.new_usertype<IValhalla>("IValhalla",
         // server members
-        "version", sol::var(VALHALLA_SERVER_VERSION),
+        "version", sol::var(VConstants::GAME), // Valheim version
         "delta", sol::property(&IValhalla::Delta),
         "id", sol::property(&IValhalla::ID),
         "nanos", sol::property(&IValhalla::Nanos),
@@ -707,11 +710,8 @@ void IModManager::LoadAPI() {
             sol::resolve<ZDO* (const Vector3&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
             [](IZDOManager& self, const Vector3& pos, float radius, const std::string& name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
-        "ForceSendZDO", [](IZDOManager& self, const ZDOID& zdoid) { self.ForceSendZDO(zdoid); },
-        "DestroyZDO", sol::overload(
-            [](IZDOManager& self, ZDO& zdo, bool immediate) { self.DestroyZDO(zdo, immediate); },
-            [](IZDOManager& self, ZDO& zdo) { self.DestroyZDO(zdo); }
-        ),
+        "ForceSendZDO", &IZDOManager::ForceSendZDO,
+        "DestroyZDO", &IZDOManager::DestroyZDO,
         "Instantiate", sol::overload(
             sol::resolve<ZDO& (const Prefab&, const Vector3&, const Quaternion&)>(&IZDOManager::Instantiate),
             sol::resolve<ZDO& (const Prefab&, const Vector3&)>(&IZDOManager::Instantiate),
@@ -803,7 +803,7 @@ void IModManager::LoadAPI() {
         "InvokeView", &IRouteManager::InvokeViewLua,
         "Invoke", &IRouteManager::InvokeLua,
         "InvokeAll", &IRouteManager::InvokeAllLua
-        );
+    );
 
 
 
@@ -982,18 +982,19 @@ void IModManager::Init() {
     m_state.set_exception_handler(&my_exception_handler);
 
     //sol::main_thread()
+    m_state.open_libraries();
 
-
-    m_state.open_libraries(
-        sol::lib::base,
-        sol::lib::debug,
-        sol::lib::io, // override
-        sol::lib::math,
-        sol::lib::package, // override
-        sol::lib::string,
-        sol::lib::table,
-        sol::lib::utf8
-    );
+    //m_state.open_libraries(
+    //    sol::lib::base,
+    //    sol::lib::debug,
+    //    sol::lib::io, // override
+    //    sol::lib::math,
+    //    sol::lib::package, // override
+    //    sol::lib::string,
+    //    sol::lib::table,
+    //    sol::lib::utf8,
+    //    sol::lib::c
+    //);
 
     LoadAPI();
 

@@ -83,7 +83,7 @@ public:
 			auto&& newZdo = ZDOManager()->Instantiate(m_zdo);
 
 			// Destroy the old ZDO
-			ZDOManager()->DestroyZDO(m_zdo, true);
+			ZDOManager()->DestroyZDO(m_zdo);
 
 			// Reassign
 			m_zdo = newZdo;
