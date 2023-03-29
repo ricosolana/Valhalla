@@ -46,7 +46,7 @@ struct Vector2 {
     float Magnitude() const {
         return VUtils::Math::Magnitude(x, y);
     }
-
+    
     float Distance(const Vector2& other) const {
         return VUtils::Math::Distance(x, y, other.x, other.y);
     }
@@ -54,7 +54,6 @@ struct Vector2 {
     float SqDistance(const Vector2& other) const {
         return VUtils::Math::SqDistance(x, y, other.x, other.y);
     }
-
 
     //normalize and returns this
     Vector2 &Normalize();

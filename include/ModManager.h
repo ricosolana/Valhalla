@@ -62,7 +62,7 @@ public:
         static constexpr HASH_t Enable = __H("Enable");
         static constexpr HASH_t Disable = __H("Disable");
         static constexpr HASH_t Update = __H("Update");
-        static constexpr HASH_t PeriodicUpdate = __H("PeriodicUpdate");
+        static constexpr HASH_t PeriodicUpdate = __H("Periodic");
 
         // Connecting peer events
         static constexpr HASH_t Connect = __H("Connect");

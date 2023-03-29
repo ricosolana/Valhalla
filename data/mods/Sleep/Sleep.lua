@@ -39,7 +39,7 @@ local UPDATE_SLEEP_FN = function()
     end
 end
 
-Valhalla:Subscribe('PeriodUpdate', function()
+Valhalla:Subscribe('Periodic', function()
     if not sleeping then
         if Valhalla.isAfternoon or Valhalla.isNight then
             --print('afternoon / night')

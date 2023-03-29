@@ -116,20 +116,20 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",
-        sol::constructors<Quaternion(float, float, float, float)>(),
+        sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
+        "IDENTITY", sol::property([]() { return Quaternion::IDENTITY; }),
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
-        "w", &Quaternion::w,
-        "IDENTITY", sol::property([]() { return Quaternion::IDENTITY; })
+        "w", &Quaternion::w
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
         sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID(uuid, id); }),
+        "NONE", sol::property([]() { return ZDOID::NONE; }),
         "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
-        "id", &ZDOID::m_id,
-        "NONE", sol::property([]() { return ZDOID::NONE; })
+        "id", &ZDOID::m_id
     );
 
     m_state.new_enum("Type",
@@ -159,6 +159,20 @@ void IModManager::LoadAPI() {
         "DOUBLE", Type::DOUBLE,
 
         "CHAR", Type::CHAR
+    );
+
+    m_state.new_usertype<BYTES_t>("Bytes",
+        sol::constructors<BYTES_t(), BYTES_t(const BYTES_t&)>(),
+        "Assign", [](BYTES_t& self, const BYTES_t& other) { self = other; },
+        "Move", [](BYTES_t& self, BYTES_t& other) { self = std::move(other); },
+        "Swap", [](BYTES_t& self, BYTES_t& other) { self.swap(other); }
+    );
+
+    m_state.new_usertype<UserProfile>("UserProfile",
+        sol::constructors<UserProfile(const std::string&, const std::string&, const std::string&)>(),
+        "name", &UserProfile::m_name,
+        "ign", &UserProfile::m_gamerTag,
+        "nid", &UserProfile::m_networkUserId
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
@@ -246,7 +260,7 @@ void IModManager::LoadAPI() {
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
         "host", sol::property(&ISocket::GetHostName),
-        "sendQuaueSize", sol::property(&ISocket::GetSendQueueSize)
+        "sendQueueSize", sol::property(&ISocket::GetSendQueueSize)
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",

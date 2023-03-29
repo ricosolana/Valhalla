@@ -10,7 +10,7 @@
         my code below also exhibits this, (un)fortunately? so.
 --]]
 
-Valhalla:Subscribe('PeriodUpdate', function()
+Valhalla:Subscribe('Periodic', function()
 	local portalZdos = ZDOManager:GetZDOs('portal_wood')
 
 	for i1=1, #portalZdos do
