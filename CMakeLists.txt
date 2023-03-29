@@ -13,6 +13,11 @@
 #   right click the cmakelists.txt -> 'add debug configuration''
 #   add a new key 'args' followed by args
 
+# luasocket install tutorial
+#   just use vcpkg to build, then:
+#   copy the folders from luasocket/bin/ to lua root dir
+#   copy the folders from luasocket/lua/ to lua root dir
+
 ##########
 # Project
 ##########
