@@ -8,8 +8,10 @@ Current state of the server:
  - World loading/saving (legacy support)
  - World generation
   - Features / Foliage / Dungeons / Creatures / Bosses
- - LUA modding (no documentation yet, I'm lazy)
+ - LUA modding 
  - Enhanced customizability
+
+Documentation is currently underway. I will also be trying to fully flesh-out the Lua API as many things are still not implemented. See it in action at https://periodicseizures.github.io/Valhalla-docs/.
 
 The server is in a currently in a functional state and somewhat usable. I would give it a 70% right now in terms of stability when compared with the Valheim dedicated server. Feel free to play around with it.
 
