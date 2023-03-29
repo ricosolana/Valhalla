@@ -65,8 +65,7 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
 void IModManager::LoadAPI() {
     m_state.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(), Vector3(float, float, float)>(),
-        sol::meta_function::addition, &Vector3::operator+,
-        sol::meta_function::subtraction, &Vector3::operator-,
+        "ZERO", sol::property([]() { return Vector3::ZERO; }),
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z,
@@ -76,11 +75,32 @@ void IModManager::LoadAPI() {
         "normalized", sol::property(&Vector3::Normalized),
         "SqDistance", &Vector3::SqDistance,
         "sqMagnitude", sol::property(&Vector3::SqMagnitude),
-        "ZERO", sol::property([]() { return Vector3::ZERO; })
+        sol::meta_function::addition, &Vector3::operator+,
+        sol::meta_function::subtraction, &Vector3::operator-,
+        sol::meta_function::multiplication, &Vector3::operator*,
+        sol::meta_function::division, &Vector3::operator/
+    );
+
+    m_state.new_usertype<Vector2>("Vector2",
+        sol::constructors<Vector2(), Vector2(float, float)>(),
+        "ZERO", sol::property([]() { return Vector2::ZERO; }),
+        "x", &Vector2::x,
+        "y", &Vector2::y,
+        "Distance", &Vector2i::Distance,
+        "magnitude", sol::property(&Vector2::Magnitude),
+        "Normalize", &Vector2i::Normalize,
+        "normalized", sol::property(&Vector2::Normalized),
+        "SqDistance", &Vector2i::SqDistance,
+        "sqMagnitude", sol::property(&Vector2::SqMagnitude),
+        sol::meta_function::addition, &Vector2::operator+,
+        sol::meta_function::subtraction, &Vector2::operator-,
+        sol::meta_function::multiplication, &Vector2::operator*,
+        sol::meta_function::division, &Vector2::operator/
     );
 
     m_state.new_usertype<Vector2i>("Vector2i",
         sol::constructors<Vector2i(), Vector2i(int32_t, int32_t)>(),
+        "ZERO", sol::property([]() { return Vector2i::ZERO; }),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
         "Distance", &Vector2i::Distance,
@@ -89,7 +109,10 @@ void IModManager::LoadAPI() {
         "normalized", sol::property(&Vector2i::Normalized),
         "SqDistance", &Vector2i::SqDistance,
         "sqMagnitude", sol::property(&Vector2i::SqMagnitude),
-        "ZERO", sol::property([]() { return Vector2i::ZERO; })
+        sol::meta_function::addition, &Vector2i::operator+,
+        sol::meta_function::subtraction, &Vector2i::operator-,
+        sol::meta_function::multiplication, &Vector2i::operator*,
+        sol::meta_function::division, &Vector2i::operator/
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",
