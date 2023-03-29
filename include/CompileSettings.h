@@ -40,7 +40,7 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.214.2";
+    static const char* GAME = "0.214.300";
 
     // worldgenerator
     static constexpr int32_t WORLD = 29;
