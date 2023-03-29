@@ -166,7 +166,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
                 assert(!(prefab.m_hash == Hashes::Object::Player || prefab.m_hash == Hashes::Object::Player_tombstone));
 
-                ZDOManager()->DestroyZDO(zdo, true);
+                ZDOManager()->DestroyZDO(zdo);
             }
 
             LOG(INFO) << "Regenerated " << dungeon.m_prefab->m_name << " at " << pos;

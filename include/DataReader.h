@@ -253,6 +253,7 @@ public:
     decltype(auto) ReadVector3() { return Read<Vector3>(); }
     decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
+    decltype(auto) ReadProfile() { return Read<UserProfile>(); }
 
     decltype(auto) ReadInt8() { return Read<int8_t>(); }
     decltype(auto) ReadInt16() { return Read<int16_t>(); }

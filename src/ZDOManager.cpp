@@ -63,13 +63,16 @@ void IZDOManager::Update() {
 	if (m_destroySendList.empty())
 		return;
 
-	static BYTES_t bytes; bytes.clear();
+	// TODO make a member variable?
+	//	think about emulated zdo containers (like replaying actions to specific peers)
+	//	this is a functionality I might be planning on into the future
+	BYTES_t bytes;
 
 	DataWriter writer(bytes);
 	writer.Write(m_destroySendList);
 
 	m_destroySendList.clear();
-	RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::DestroyZDO, bytes);
+	RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, bytes);
 }
 
 
@@ -370,11 +373,11 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 
 		auto&& zdo = find->second;
 
+		VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
+
 		RemoveFromSector(*zdo);
-		//if (zdo->m_prefab) {
-			auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefab().m_hash);
-			if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
-		//}
+		auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefab().m_hash);
+		if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
 
 		m_objectsByID.erase(find);
 	}
@@ -809,7 +812,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 				if (created) {
 					if (m_erasedZDOs.contains(zdoid)) {
-						DestroyZDO(zdo, true);
+						DestroyZDO(zdo);
 					}
 					else {
 						// check-test
@@ -863,17 +866,14 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		if (prefab.FlagsPresent(Prefab::Flag::SESSIONED) 
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeer(zdo.Owner())))
 		{
-			LOG(INFO) << "Destroying zdo (" << prefab.m_name << ")";
 			DestroyZDO(zdo);
 		}
 	}
 }
 
-void IZDOManager::DestroyZDO(ZDO& zdo, bool immediate) {
-	zdo.SetLocal();
+void IZDOManager::DestroyZDO(ZDO& zdo) {
 	m_destroySendList.push_back(zdo.m_id);
-	if (immediate)
-		EraseZDO(zdo.m_id);
+	EraseZDO(zdo.m_id);
 }
 
 size_t IZDOManager::GetSumZDOMembers() {

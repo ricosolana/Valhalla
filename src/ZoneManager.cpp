@@ -195,6 +195,10 @@ void IZoneManager::Init() {
             LOG(INFO) << "Failed to find location: '" << locationName << "'";
         }
     });
+
+    RouteManager()->Register(Hashes::Routed::S2C_ResponsePing, [](Peer* peer, float time) {
+        peer->Route(Hashes::Routed::Pong, time);
+    });
 }
 
 // private

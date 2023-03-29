@@ -232,13 +232,10 @@ public:
 
 
 	void ForceSendZDO(const ZDOID& id);
-	void DestroyZDO(ZDO& zdo, bool immediate);
 
-	// Destroy a ZDO with default client erase behaviour
-	//	ZDO is still kept around on the server
-	void DestroyZDO(ZDO& zdo) {
-		this->DestroyZDO(zdo, false);
-	}
+	// Erases a ZDO on clients and server
+	//	Warning: the target ZDO is freed from memory and will become no longer accessible
+	void DestroyZDO(ZDO& zdo);
 
 	size_t GetSumZDOMembers();
 	float GetMeanZDOMembers();

@@ -64,6 +64,14 @@ public:
         static constexpr HASH_t Update = __H("Update");
         static constexpr HASH_t PeriodicUpdate = __H("PeriodicUpdate");
 
+        // Connecting peer events
+        static constexpr HASH_t Connect = __H("Connect");
+        static constexpr HASH_t Disconnect = __H("Disconnect");
+
+        // Connected peer events
+        static constexpr HASH_t Join = __H("Join");
+        static constexpr HASH_t Quit = __H("Quit");
+
         // Rpc events (some unimplemented)
         static constexpr HASH_t RpcIn = __H("RpcIn");       // Peer -> Server
         static constexpr HASH_t RpcOut = __H("RpcOut");     // Peer -> Server
@@ -75,14 +83,8 @@ public:
         static constexpr HASH_t RouteOutAll = __H("RouteOutAll");   // Server -> Peer
         static constexpr HASH_t Routed = __H("Routed");             // Peer -> Server -> Peer
 
-
-        // Connecting peer events
-        static constexpr HASH_t Connect = __H("Connect");
-        static constexpr HASH_t Disconnect = __H("Disconnect");
-
-        // Connected peer events
-        static constexpr HASH_t Join = __H("Join");
-        static constexpr HASH_t Quit = __H("Quit");
+        // General game events
+        static constexpr HASH_t PlayerList = __H("PlayerList");
 
         // Socket methods events
         static constexpr HASH_t Send = __H("Send");
@@ -198,9 +200,10 @@ public:
                     }
                     else {
                         // whether cancelled-events should follow Harmony prefix cancellation with bools
-                        //if (result.get_type() == sol::type::boolean)
-                            //if (!result.get<bool>())
-                                //m_eventStatus |=
+                        if (result.get_type() == sol::type::boolean) {
+                            if (!result.get<bool>())
+                                m_eventStatus |= EventStatus::CANCEL;
+                        }
                     }
                 }
                 catch (const std::exception& e) {
