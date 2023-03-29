@@ -70,11 +70,11 @@ void IModManager::LoadAPI() {
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z,
-        "distance", sol::property(&Vector3::Distance),
+        "Distance", &Vector3::Distance,
         "magnitude", sol::property(&Vector3::Magnitude),
         "Normalize", &Vector3::Normalize,
         "normalized", sol::property(&Vector3::Normalized),
-        "sqDistance", sol::property(&Vector3::SqDistance),
+        "SqDistance", &Vector3::SqDistance,
         "sqMagnitude", sol::property(&Vector3::SqMagnitude),
         "ZERO", sol::property([]() { return Vector3::ZERO; })
     );
@@ -83,11 +83,11 @@ void IModManager::LoadAPI() {
         sol::constructors<Vector2i(), Vector2i(int32_t, int32_t)>(),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
-        "distance", sol::property(&Vector2i::Distance),
+        "Distance", &Vector2i::Distance,
         "magnitude", sol::property(&Vector2i::Magnitude),
         "Normalize", &Vector2i::Normalize,
         "normalized", sol::property(&Vector2i::Normalized),
-        "sqDistance", sol::property(&Vector2i::SqDistance),
+        "SqDistance", &Vector2i::SqDistance,
         "sqMagnitude", sol::property(&Vector2i::SqMagnitude),
         "ZERO", sol::property([]() { return Vector2i::ZERO; })
     );
