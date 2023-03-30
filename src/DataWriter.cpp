@@ -88,7 +88,7 @@ void DataWriter::Write(const Quaternion& in) {
     Write(in.w);
 }
 
-void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&types, const sol::variadic_results &results) {
+void DataWriter::SerializeLuaImpl(DataWriter& params, const IModManager::Types&types, const sol::variadic_results &results) {
     for (int i = 0; i < results.size(); i++) {
         auto&& arg = results[i];
         auto argType = arg.get_type();
@@ -153,9 +153,6 @@ void DataWriter::_SerializeLua(DataWriter& params, const IModManager::Types&type
         }
         else if (arg.is<Quaternion>() && expectType == IModManager::Type::QUATERNION) {
             params.Write(arg.as<Quaternion>());
-        }
-        else if (arg.is<std::vector<std::string>>() && expectType == IModManager::Type::STRINGS) {
-            params.Write(arg.as<std::vector<std::string>>());
         }
         else {
             throw std::runtime_error("unsupported type, or incorrect type at position");

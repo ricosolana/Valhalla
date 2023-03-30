@@ -199,14 +199,14 @@ public:
 
 
     // Empty template
-    static void _Serialize(DataWriter& pkg) {}
+    static void SerializeImpl(DataWriter& pkg) {}
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static decltype(auto) _Serialize(DataWriter& pkg, const T &var1, const Types&... var2) {
+    static decltype(auto) SerializeImpl(DataWriter& pkg, const T &var1, const Types&... var2) {
         pkg.Write(var1);
 
-        return _Serialize(pkg, var2...);
+        return SerializeImpl(pkg, var2...);
     }
 
     // Serialize variadic types to an array
@@ -215,7 +215,7 @@ public:
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        _Serialize(writer, var1, var2...);
+        SerializeImpl(writer, var1, var2...);
         return bytes;
     }
 
@@ -224,13 +224,13 @@ public:
         return BYTES_t{};
     }
 
-    static void _SerializeLua(DataWriter& writer, const IModManager::Types& types, const sol::variadic_results& results);
+    static void SerializeLuaImpl(DataWriter& writer, const IModManager::Types& types, const sol::variadic_results& results);
 
     static decltype(auto) SerializeLua(const IModManager::Types& types, const sol::variadic_results& results) {
         BYTES_t bytes;
         DataWriter params(bytes);
 
-        _SerializeLua(params, types, results);
+        SerializeLuaImpl(params, types, results);
 
         return bytes;
     }

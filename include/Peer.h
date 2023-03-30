@@ -162,7 +162,7 @@ public:
         BYTES_t bytes;
         DataWriter params(bytes);
         params.Write(repr.m_hash);
-        DataWriter::_SerializeLua(params, repr.m_types, sol::variadic_results(args.begin(), args.end()));
+        DataWriter::SerializeLuaImpl(params, repr.m_types, sol::variadic_results(args.begin(), args.end()));
         m_socket->Send(std::move(bytes));
 
         // Postfix
