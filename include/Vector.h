@@ -109,7 +109,7 @@ struct Vector2 {
         auto sqmagnitude = this->SqMagnitude();
 
         if (sqmagnitude > 1E-05f * 1E-05f) {
-            return *this * std::sqrt(sqmagnitude);
+            return *this / std::sqrt(sqmagnitude);
         }
         else {
             return Zero();

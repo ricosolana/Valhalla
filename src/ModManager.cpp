@@ -772,10 +772,10 @@ void IModManager::LoadAPI() {
                 return find->second.get();
             return static_cast<Mod*>(nullptr);
         },
-        "ReloadMod", [this](Mod& mod) {
-            if (!this->m_reload) {
+        "ReloadMod", [](IModManager& self, Mod& mod) {
+            if (!self.m_reload) {
                 mod.m_reload = true;
-                this->m_reload = true;
+                self.m_reload = true;
             }
         }
     );
