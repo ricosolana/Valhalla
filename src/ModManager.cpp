@@ -566,43 +566,35 @@ void IModManager::LoadAPI() {
     // TODO figure the number weirdness out...
 
     m_state.new_usertype<Int64Wrapper>("Int64",
-        sol::constructors<Int64Wrapper(), Int64Wrapper(uint64_t), 
+        sol::constructors<Int64Wrapper(), Int64Wrapper(int64_t), 
             Int64Wrapper(uint32_t, uint32_t), Int64Wrapper(const std::string&)>(),
-        //"value", sol::readonly(&Int64Wrapper::m_value),
 
-        // not the actual tonumber, just uses same name for simplicity
-        //  local wrapper = Int64(0xFFFFFFFF, 0xFFFFAACC)
-        //  local num = wrapper:tonumber()
         "tonumber", [](Int64Wrapper& self) { return (int64_t)self; },
-        sol::meta_function::addition, &Int64Wrapper::__add,
-        sol::meta_function::subtraction, &Int64Wrapper::__sub,
-        sol::meta_function::multiplication, &Int64Wrapper::__mul,
-        sol::meta_function::division, &Int64Wrapper::__div,
+        sol::meta_function::addition, &Int64Wrapper::operator+,
+        sol::meta_function::subtraction, sol::resolve<Int64Wrapper(const Int64Wrapper&) const>(&Int64Wrapper::operator-),
+        sol::meta_function::multiplication, &Int64Wrapper::operator*,
+        sol::meta_function::division, &Int64Wrapper::operator/,
         sol::meta_function::floor_division, &Int64Wrapper::__divi,
-        sol::meta_function::unary_minus, &Int64Wrapper::__unm,
-        sol::meta_function::equal_to, &Int64Wrapper::__eq,
-        sol::meta_function::less_than, &Int64Wrapper::__lt,
-        sol::meta_function::less_than_or_equal_to, &Int64Wrapper::__le
+        sol::meta_function::unary_minus, sol::resolve<Int64Wrapper() const>(&Int64Wrapper::operator-),
+        sol::meta_function::equal_to, &Int64Wrapper::operator==,
+        sol::meta_function::less_than, &Int64Wrapper::operator<,
+        sol::meta_function::less_than_or_equal_to, &Int64Wrapper::operator<=
     );
 
     m_state.new_usertype<UInt64Wrapper>("UInt64",
         sol::constructors<UInt64Wrapper(), UInt64Wrapper(uint64_t),
-        UInt64Wrapper(uint32_t, uint32_t), UInt64Wrapper(const std::string&)>(),
-        //"value", sol::readonly(&Int64Wrapper::m_value),
+        Int64Wrapper(uint32_t, uint32_t), UInt64Wrapper(const std::string&)>(),
 
-        // not the actual tonumber, just uses same name for simplicity
-        //  local wrapper = Int64(0xFFFFFFFF, 0xFFFFAACC)
-        //  local num = wrapper:tonumber()
         "tonumber", [](UInt64Wrapper& self) { return (uint64_t)self; },
-        sol::meta_function::addition, &UInt64Wrapper::__add,
-        sol::meta_function::subtraction, &UInt64Wrapper::__sub,
-        sol::meta_function::multiplication, &UInt64Wrapper::__mul,
-        sol::meta_function::division, &UInt64Wrapper::__div,
-        sol::meta_function::floor_division, &UInt64Wrapper::__divi,
-        sol::meta_function::unary_minus, &UInt64Wrapper::__unm,
-        sol::meta_function::equal_to, &UInt64Wrapper::__eq,
-        sol::meta_function::less_than, &UInt64Wrapper::__lt,
-        sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::__le
+        sol::meta_function::addition, & UInt64Wrapper::operator+,
+        sol::meta_function::subtraction, sol::resolve<UInt64Wrapper(const UInt64Wrapper&) const>(&UInt64Wrapper::operator-),
+        sol::meta_function::multiplication, & UInt64Wrapper::operator*,
+        sol::meta_function::division, & UInt64Wrapper::operator/,
+        sol::meta_function::floor_division, & UInt64Wrapper::__divi,
+        sol::meta_function::unary_minus, sol::resolve<UInt64Wrapper() const>(&UInt64Wrapper::operator-),
+        sol::meta_function::equal_to, & UInt64Wrapper::operator==,
+        sol::meta_function::less_than, & UInt64Wrapper::operator<,
+        sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::operator<=
     );
 
 

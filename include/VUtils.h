@@ -226,7 +226,7 @@ public:
 
 
 
-template<typename T> requires std::is_integral_v<T>
+template<typename T> requires (std::is_integral_v<T> && sizeof(T) == 8)
 class IntegralWrapper {
     using Type = IntegralWrapper<T>;
 
@@ -234,19 +234,16 @@ private:
     T m_value;
 
 public:
-    IntegralWrapper() {
-        m_value = 0;
-    }
+    constexpr IntegralWrapper() 
+        : m_value(0) {}
 
-    IntegralWrapper(T value)
+    constexpr IntegralWrapper(T value)
         : m_value(value) {}
     
-    IntegralWrapper(uint32_t high, uint32_t low) {
-        // high and low should be bounded around 2^32
-        m_value = (static_cast<T>(high) << 32) | static_cast<T>(low);
-    }
+    constexpr IntegralWrapper(uint32_t high, uint32_t low)
+        : m_value((static_cast<T>(high) << 32) | static_cast<T>(low)) {}
 
-    IntegralWrapper(const std::string &hex) {
+    constexpr IntegralWrapper(const std::string &hex) {
         // high and low should be bounded around 2^32
 
         // number accepts '0x...', 'bases...'
@@ -267,50 +264,48 @@ public:
         return static_cast<uint64_t>(this->m_value);
     }
 
-    operator int32_t() const {
-        return static_cast<int32_t>(this->m_value);
+
+
+    IntegralWrapper<T> operator+(const IntegralWrapper<T>& rhs) const {
+        return IntegralWrapper<T>(this->m_value + rhs.m_value);
     }
 
-    operator uint32_t() const {
-        return static_cast<uint32_t>(this->m_value);
+    IntegralWrapper<T> operator-(const IntegralWrapper<T>& rhs) const {
+        return IntegralWrapper<T>(this->m_value - rhs.m_value);
+    }
+
+    IntegralWrapper<T> operator-() const {
+        return IntegralWrapper<T>(-this->m_value);
+    }
+
+    IntegralWrapper<T> operator*(const IntegralWrapper<T>& rhs) const {
+        return IntegralWrapper<T>(this->m_value * rhs.m_value);
+    }
+
+    IntegralWrapper<T> operator/(const IntegralWrapper<T>& rhs) const {
+        return IntegralWrapper<T>(this->m_value / rhs.m_value);
+    }
+
+    bool operator==(const IntegralWrapper<T>& rhs) const {
+        return this->m_value == rhs.m_value;
+    }
+
+    bool operator!=(const IntegralWrapper<T>& rhs) const {
+        return this->m_value != rhs.m_value;
+    }
+
+    bool operator<(const IntegralWrapper<T>& rhs) const {
+        return this->m_value < rhs.m_value;
+    }
+
+    bool operator<=(const IntegralWrapper<T>& rhs) const {
+        return this->m_value <= rhs.m_value;
     }
 
 
-
-    decltype(auto) __add(const Type& other) {
-        return this->m_value + other.m_value;
-    }
-
-    decltype(auto) __sub(const Type& other) {
-        return this->m_value - other.m_value;
-    }
-
-    decltype(auto) __mul(const Type& other) {
-        return this->m_value * other.m_value;
-    }
-
-    decltype(auto) __div(const Type& other) {
-        return this->m_value / other.m_value;
-    }
 
     decltype(auto) __divi(const Type& other) {
         return this->m_value / other.m_value;
-    }
-
-    decltype(auto) __unm() {
-        return -this->m_value;
-    }
-
-    decltype(auto) __eq(const Type& other) {
-        return this->m_value == other.m_value;
-    }
-
-    decltype(auto) __lt(const Type& other) {
-        return this->m_value < other.m_value;
-    }
-
-    decltype(auto) __le(const Type& other) {
-        return this->m_value <= other.m_value;
     }
 };
 
