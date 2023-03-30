@@ -1,8 +1,8 @@
-#include "ModManager.h"
 #include <easylogging++.h>
 #include <robin_hood.h>
 #include <yaml-cpp/yaml.h>
 
+#include "ModManager.h"
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "Peer.h"
@@ -328,7 +328,11 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-        "Register", &Peer::RegisterLua,
+        "Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
+            sol::environment& env = te;
+            Mod& mod = env["this"].get<sol::table>().as<Mod&>();
+            self.RegisterLua(sig, func, &mod); 
+        },
         "Invoke", &Peer::InvokeLua,
         "RouteView", &Peer::RouteViewLua,
         "Route", &Peer::RouteLua
@@ -761,6 +765,12 @@ void IModManager::LoadAPI() {
             if (find != self.m_mods.end())
                 return find->second.get();
             return static_cast<Mod*>(nullptr);
+        },
+        "ReloadMod", [this](Mod& mod) {
+            if (!this->m_reload) {
+                mod.m_reload = true;
+                this->m_reload = true;
+            }
         }
     );
 
@@ -1053,7 +1063,7 @@ void IModManager::Uninit() {
 void IModManager::Update() {
     ModManager()->CallEvent(IModManager::Events::Update);
 
-    /*
+    
     if (m_reload) {
         // first release all callbacks associated with the mod
         for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
@@ -1078,14 +1088,15 @@ void IModManager::Update() {
             if (mod.m_reload) {
                 LOG(INFO) << "Reloading mod " << mod.m_name;
 
-                for (auto&& pair : NetManager()->GetPeers()) {
-                    auto&& peer = pair.second;
-                    for (auto&& pair1 : peer->m_methods) {
-                        auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
-                        //if (method)
-                            //method->m_func = 
+                for (auto&& peer : NetManager()->GetPeers()) {
+                    for (auto&& itr = peer->m_methods.begin(); itr != peer->m_methods.end(); ) {
+                        auto method = dynamic_cast<MethodImplLua<Peer*>*>(itr->second.get());
+                        if (method && method->m_mod == &mod) {
+                            itr = peer->m_methods.erase(itr);
+                        }
+                        else
+                            ++itr;
                     }
-                    //if (auto method = peer->GetMethod()
                 }
 
                 mod.m_env.reset();
@@ -1097,5 +1108,5 @@ void IModManager::Update() {
         m_state.collect_gc();
 
         m_reload = false;
-    }*/
+    }
 }

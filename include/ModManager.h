@@ -92,7 +92,7 @@ public:
         // Event postfix handler
         static constexpr HASH_t POSTFIX = __H("POST");
     };
-private:
+
     struct Mod {
         std::string m_name;
         sol::environment m_env;
@@ -103,6 +103,8 @@ private:
         std::string m_apiVersion;
         std::string m_description;
         std::list<std::string> m_authors;
+
+        bool m_reload = false;
 
         Mod(std::string name,
             fs::path entry) 
@@ -136,6 +138,8 @@ private:
     robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
 
     EventStatus m_eventStatus = EventStatus::NONE;
+
+    bool m_reload = false;
 
 public:
     sol::state m_state;

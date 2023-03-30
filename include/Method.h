@@ -93,8 +93,10 @@ private:
     sol::protected_function m_func;
     IModManager::Types m_types;
 
+    const IModManager::Mod* m_mod;
+
 public:
-    explicit MethodImplLua(sol::protected_function func, const IModManager::Types& types)
+    explicit MethodImplLua(sol::protected_function func, const IModManager::Types& types, const IModManager::Mod* mod)
         : m_func(func), 
         m_types(types) {}
 
