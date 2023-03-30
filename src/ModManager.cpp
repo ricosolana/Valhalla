@@ -197,7 +197,9 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const Vector3&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write)
+            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write)
         ),
 
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
@@ -577,7 +579,7 @@ void IModManager::LoadAPI() {
         sol::meta_function::less_than_or_equal_to, &Int64Wrapper::__le
     );
 
-    m_state.new_usertype<Int64Wrapper>("UInt64",
+    m_state.new_usertype<UInt64Wrapper>("UInt64",
         sol::constructors<UInt64Wrapper(), UInt64Wrapper(uint64_t),
         UInt64Wrapper(uint32_t, uint32_t), UInt64Wrapper(const std::string&)>(),
         //"value", sol::readonly(&Int64Wrapper::m_value),

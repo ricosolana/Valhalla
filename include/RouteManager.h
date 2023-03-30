@@ -74,8 +74,8 @@ public:
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeViewLua(OWNER_t target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
-		if (target == EVERYBODY) {
+	void InvokeViewLua(const Int64Wrapper& target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
+		if ((OWNER_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
 				throw std::runtime_error("mismatched number of args");
 
@@ -86,7 +86,7 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(SERVER_ID, target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, results));
+			auto bytes = Serialize(SERVER_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -117,7 +117,7 @@ public:
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeLua(OWNER_t target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeLua(const Int64Wrapper& target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeViewLua(target, ZDOID::NONE, repr, args);
 	}
 
