@@ -45,9 +45,9 @@ sol::variadic_results DataReader::DeserializeLua(sol::state_view state, DataRead
             // Userdata: ZDOID
             results.push_back(sol::make_object(state, reader.ReadZDOID()));
             break;
-        case IModManager::Type::VECTOR3:
+        case IModManager::Type::VECTOR3f:
             // Userdata: Vector3f
-            results.push_back(sol::make_object(state, reader.ReadVector3()));
+            results.push_back(sol::make_object(state, reader.ReadVector3f()));
             break;
         case IModManager::Type::VECTOR2i:
             // Userdata: Vector2i

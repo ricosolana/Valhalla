@@ -250,7 +250,7 @@ public:
     decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
 
     decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
-    decltype(auto) ReadVector3() { return Read<Vector3f>(); }
+    decltype(auto) ReadVector3f() { return Read<Vector3f>(); }
     decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
     decltype(auto) ReadProfile() { return Read<UserProfile>(); }

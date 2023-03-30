@@ -46,7 +46,7 @@ private:
     const HASH_t m_methodHash;
 
 public:
-    explicit MethodImpl(F func, HASH_t categoryHash, HASH_t methodHash)
+    MethodImpl(F func, HASH_t categoryHash, HASH_t methodHash)
         : m_func(func), m_categoryHash(categoryHash), m_methodHash(methodHash) {}
 
     bool Invoke(T t, DataReader &reader) override {
@@ -96,9 +96,10 @@ private:
     const IModManager::Mod* m_mod;
 
 public:
-    explicit MethodImplLua(sol::protected_function func, const IModManager::Types& types, const IModManager::Mod* mod)
+    MethodImplLua(sol::protected_function func, const IModManager::Types& types, const IModManager::Mod* mod)
         : m_func(func), 
-        m_types(types) {}
+        m_types(types),
+        m_mod(mod) {}
 
     bool Invoke(T t, DataReader &reader) override {
         auto&& state = m_func.lua_state();

@@ -52,7 +52,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			else {
 				if (!targetZDO) {
 					auto&& find = m_methods.find(hash);
-					if (find != m_methods.end()) {						
+					if (find != m_methods.end()) {
 						find->second->Invoke(peer, params);
 					}
 				} //else ... // netview is not currently supported

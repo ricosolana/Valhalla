@@ -136,12 +136,13 @@ struct Vector3 {
 
     constexpr Vector3() : x(0), y(0), z(0) {}
     constexpr Vector3(const T x, const T y, const T z) 
-        : x(x), y(y), z(0) {}
+        : x(x), y(y), z(z) {}
 
     // vector arithmetic
     void operator=(const Vector3<T>& other) {
         this->x = other.x;
         this->y = other.y;
+        this->z = other.z;
     }
 
 
@@ -214,18 +215,22 @@ struct Vector3 {
 
     constexpr Vector3<T> Cross(const Vector3<T>& rhs) const {
         return Vector3<T>(
-            (float)this->y * rhs.z - (float)this->z * rhs.y,
-            (float)this->z * rhs.x - (float)this->x * rhs.z,
-            (float)this->x * rhs.y - (float)this->y * rhs.x
+            this->y * rhs.z - this->z * rhs.y,
+            this->z * rhs.x - this->x * rhs.z,
+            this->x * rhs.y - this->y * rhs.x
         );
     }
 
     constexpr float Dot(const Vector3<T>& rhs) const {
-        return (float)this->x * rhs.x + (float)this->y * rhs.y + (float)this->z * rhs.z;
+        return this->x * rhs.x 
+            + this->y * rhs.y 
+            + this->z * rhs.z;
     }
 
     constexpr float SqMagnitude() const {
-        return (float)this->x * this->x + (float)this->y * this->y + (float)this->z * this->z;
+        return this->x * this->x 
+            + this->y * this->y 
+            + this->z * this->z;
     }
 
     constexpr float Magnitude() const {
@@ -233,7 +238,9 @@ struct Vector3 {
     }
 
     constexpr float SqDistance(const Vector3<T>& rhs) const {
-        return (this->x - rhs.x) * (this->x - rhs.x) + (this->y - rhs.y) * (this->y - rhs.y) + (this->z - rhs.z) * (this->z - rhs.z);
+        return (this->x - rhs.x) * (this->x - rhs.x) 
+            + (this->y - rhs.y) * (this->y - rhs.y) 
+            + (this->z - rhs.z) * (this->z - rhs.z);
     }
 
     constexpr float Distance(const Vector3<T>& rhs) const {
@@ -244,7 +251,7 @@ struct Vector3 {
         auto sqmagnitude = this->SqMagnitude();
 
         if (sqmagnitude > 1E-05f * 1E-05f) {
-            return *this * std::sqrt(sqmagnitude);
+            return *this / std::sqrt(sqmagnitude);
         }
         else {
             return Zero();

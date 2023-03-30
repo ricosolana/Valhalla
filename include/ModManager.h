@@ -20,7 +20,7 @@ public:
         BYTES,
 
         ZDOID,
-        VECTOR3,
+        VECTOR3f,
         VECTOR2i,
         QUATERNION,
 

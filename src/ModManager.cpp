@@ -142,11 +142,12 @@ void IModManager::LoadAPI() {
         "BOOL", Type::BOOL,
 
         "STRING", Type::STRING,
+        "STRINGS", Type::STRINGS,
 
         "BYTES", Type::BYTES,
         
         "ZDOID", Type::ZDOID,
-        "VECTOR3", Type::VECTOR3,
+        "VECTOR3f", Type::VECTOR3f,
         "VECTOR2i", Type::VECTOR2i,
         "QUATERNION", Type::QUATERNION,
         
@@ -183,6 +184,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<DataWriter>("DataWriter",
         sol::constructors<DataWriter(BYTES_t&)>(),
 
+        "ToReader", &DataWriter::ToReader,
         "provider", &DataWriter::m_provider,
         "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
 
@@ -194,6 +196,7 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             
@@ -225,17 +228,20 @@ void IModManager::LoadAPI() {
     // Package read/write types
     m_state.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
+
+        "ToWriter", &DataReader::ToWriter,
         "provider", &DataReader::m_provider,
         "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
         "ReadBool", &DataReader::ReadBool,
 
         "ReadString", &DataReader::ReadString,
+        "ReadStrings", &DataReader::ReadStrings,
 
         "ReadBytes", &DataReader::ReadBytes,
 
         "ReadZDOID", &DataReader::ReadZDOID,
-        "ReadVector3", &DataReader::ReadVector3,
+        "ReadVector3f", &DataReader::ReadVector3f,
         "ReadVector2i", &DataReader::ReadVector2i,
         "ReadQuaternion", &DataReader::ReadQuaternion,
         "ReadProfile", &DataReader::ReadProfile,

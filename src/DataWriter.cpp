@@ -145,7 +145,7 @@ void DataWriter::SerializeLuaImpl(DataWriter& params, const IModManager::Types&t
         else if (arg.is<ZDOID>() && expectType == IModManager::Type::ZDOID) {
             params.Write(arg.as<ZDOID>());
         }
-        else if (arg.is<Vector3f>() && expectType == IModManager::Type::VECTOR3) {
+        else if (arg.is<Vector3f>() && expectType == IModManager::Type::VECTOR3f) {
             params.Write(arg.as<Vector3f>());
         }
         else if (arg.is<Vector2i>() && expectType == IModManager::Type::VECTOR2i) {
