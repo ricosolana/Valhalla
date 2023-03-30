@@ -57,10 +57,6 @@ sol::variadic_results DataReader::DeserializeLua(sol::state_view state, DataRead
             // Userdata: Quaternion
             results.push_back(sol::make_object(state, reader.ReadQuaternion()));
             break;
-        case IModManager::Type::STRINGS:
-            // Container type of Primitive: string
-            results.push_back(sol::make_object(state, reader.ReadStrings()));
-            break;
         case IModManager::Type::BOOL:
             // Primitive: boolean
             results.push_back(sol::make_object(state, reader.ReadBool()));

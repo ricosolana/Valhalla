@@ -245,7 +245,6 @@ public:
     decltype(auto) ReadBool() { return Read<bool>(); }
 
     decltype(auto) ReadString() { return Read<std::string>(); }
-    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
 
     decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
 
