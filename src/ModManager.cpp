@@ -70,15 +70,19 @@ void IModManager::LoadAPI() {
         "x", &Vector3f::x,
         "y", &Vector3f::y,
         "z", &Vector3f::z,
-        "Distance", &Vector3f::Distance,
         "magnitude", sol::property(&Vector3f::Magnitude),
-        "normal", sol::property(&Vector3f::Normal),
-        "SqDistance", &Vector3f::SqDistance,
         "sqMagnitude", sol::property(&Vector3f::SqMagnitude),
+        "normal", sol::property(&Vector3f::Normal),
+        "Distance", &Vector3f::Distance,
+        "SqDistance", &Vector3f::SqDistance,
+        "Dot", &Vector3f::Dot,
+        "Cross", &Vector3f::Cross,
         sol::meta_function::addition, &Vector3f::operator+,
-        sol::meta_function::subtraction, &Vector3f::operator-,
+        sol::meta_function::subtraction, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator-),
+        sol::meta_function::unary_minus, sol::resolve<Vector3f() const>(&Vector3f::operator-),
         sol::meta_function::multiplication, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator*),
-        sol::meta_function::division, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator/)
+        sol::meta_function::division, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator/),
+        sol::meta_function::equal_to, &Vector3f::operator==
     );
 
     m_state.new_usertype<Vector2f>("Vector2f",
@@ -86,15 +90,18 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property(&Vector2f::Zero),
         "x", &Vector2f::x,
         "y", &Vector2f::y,
-        "Distance", &Vector2f::Distance,
         "magnitude", sol::property(&Vector2f::Magnitude),
-        "normal", sol::property(&Vector2f::Normal),
-        "SqDistance", &Vector2f::SqDistance,
         "sqMagnitude", sol::property(&Vector2f::SqMagnitude),
+        "normal", sol::property(&Vector2f::Normal),
+        "Distance", &Vector2f::Distance,
+        "SqDistance", &Vector2f::SqDistance,
+        "Dot", &Vector2f::Dot,
         sol::meta_function::addition, &Vector2f::operator+,
-        sol::meta_function::subtraction, &Vector2f::operator-,
+        sol::meta_function::subtraction, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator-),
+        sol::meta_function::unary_minus, sol::resolve<Vector2f() const>(&Vector2f::operator-),
         sol::meta_function::multiplication, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator*),
-        sol::meta_function::division, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator/)
+        sol::meta_function::division, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator/),
+        sol::meta_function::equal_to, &Vector2f::operator==
     );
 
     m_state.new_usertype<Vector2i>("Vector2i",
@@ -102,15 +109,18 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property(&Vector2i::Zero),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
-        "Distance", &Vector2i::Distance,
         "magnitude", sol::property(&Vector2i::Magnitude),
-        "normal", sol::property(&Vector2i::Normal),
-        "SqDistance", &Vector2i::SqDistance,
         "sqMagnitude", sol::property(&Vector2i::SqMagnitude),
+        "normal", sol::property(&Vector2i::Normal),
+        "Distance", &Vector2i::Distance,
+        "SqDistance", &Vector2i::SqDistance,
+        "Dot", &Vector2i::Dot,
         sol::meta_function::addition, &Vector2i::operator+,
-        sol::meta_function::subtraction, &Vector2i::operator-,
+        sol::meta_function::subtraction, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator-),
+        sol::meta_function::unary_minus, sol::resolve<Vector2i() const>(&Vector2i::operator-),
         sol::meta_function::multiplication, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator*),
-        sol::meta_function::division, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator/)
+        sol::meta_function::division, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator/),
+        sol::meta_function::equal_to, &Vector2i::operator==
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",

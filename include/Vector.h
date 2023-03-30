@@ -27,6 +27,10 @@ struct Vector2 {
         return Vector2<T>(this->x - rhs.x, this->y - rhs.y);
     }
 
+    Vector2<T> operator-() const {
+        return Vector2<T>(-this->x, -this->y);
+    }
+
     Vector2<T> operator*(const Vector2<T>& rhs) const {
         return Vector2<T>(this->x * rhs.x, this->y * rhs.y);
     }
@@ -150,6 +154,10 @@ struct Vector3 {
         return Vector3<T>(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
     }
 
+    Vector3<T> operator-() const {
+        return Vector3<T>(-this->x, -this->y, -this->z);
+    }
+
     Vector3<T> operator*(const Vector3<T>& rhs) const {
         return Vector3<T>(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);
     }
@@ -193,7 +201,7 @@ struct Vector3 {
     }
 
 
-
+    
     constexpr bool operator==(const Vector3<T>& rhs) const {
         return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z;
     }
