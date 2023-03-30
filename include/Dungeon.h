@@ -66,15 +66,15 @@ public:
 
 	//bool m_useCustomInteriorTransform;
 
-	Vector3 m_interiorPosition; // {0, 5000, 0} for dg/cave
-	Vector3 m_originalPosition; // {0, 110, 30} and varies for dg/cave
+	Vector3f m_interiorPosition; // {0, 5000, 0} for dg/cave
+	Vector3f m_originalPosition; // {0, 110, 30} and varies for dg/cave
 
 	// Order is significant (polled with Seeded Random)
 	std::vector<std::unique_ptr<const Room>> m_availableRooms;
 
 public:
-	//std::unique_ptr<DungeonGenerator> Generate(const Vector3& pos, const Quaternion& rot) const;
-	//std::unique_ptr<DungeonGenerator> Generate(const Vector3& pos, const Quaternion& rot, HASH_t seed) const;
+	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot) const;
+	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, HASH_t seed) const;
 	//
 	//std::unique_ptr<DungeonGenerator> Generate(ZDO& zdo) const;
 };

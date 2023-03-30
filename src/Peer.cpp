@@ -34,7 +34,7 @@ Peer::Peer(ISocket::Ptr socket)
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
-            rpc->m_pos = reader.Read<Vector3>();
+            rpc->m_pos = reader.Read<Vector3f>();
             rpc->m_name = reader.Read<std::string>();
             //if (!(name.length() >= 3 && name.length() <= 15))
                 //throw std::runtime_error("peer provided invalid length name");
@@ -160,9 +160,9 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 
-void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3& pos, const UserProfile& profile, const std::string& senderID) {
+void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, const std::string& senderID) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage,
-        pos, //Vector3(10000, 10000, 10000),
+        pos, //Vector3f(10000, 10000, 10000),
         type,
         profile, //"<color=yellow><b>SERVER</b></color>",
         text,
@@ -178,7 +178,7 @@ ZDO* Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
-void Peer::Teleport(const Vector3& pos, const Quaternion& rot, bool animation) {
+void Peer::Teleport(const Vector3f& pos, const Quaternion& rot, bool animation) {
     RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,

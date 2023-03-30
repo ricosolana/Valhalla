@@ -37,8 +37,8 @@ class IZoneManager {
 		float m_interiorRadius = 10;
 		float m_forestTresholdMin;
 		float m_forestTresholdMax = 1;
-		//Vector3 m_interiorPosition;
-		//Vector3 m_generatorPosition;
+		//Vector3f m_interiorPosition;
+		//Vector3f m_generatorPosition;
 		std::string m_group = "";
 		bool m_iconAlways;
 		bool m_iconPlaced;
@@ -69,10 +69,10 @@ class IZoneManager {
 
 		public:
 			std::reference_wrapper<const Feature> m_feature;
-			const Vector3 m_pos;
+			const Vector3f m_pos;
 			//bool m_placed = false; // if m_generatedZones contains position
 
-			Instance(const Feature& location, const Vector3 &pos)
+			Instance(const Feature& location, const Vector3f &pos)
 				: m_feature(location), m_pos(pos) {}
 		};
 	};
@@ -116,7 +116,7 @@ class IZoneManager {
 	};
 
 	struct ClearArea {
-		Vector3 m_center;
+		Vector3f m_center;
 		float m_semiWidth;
 	};
 
@@ -159,18 +159,18 @@ private:
 
 	void OnNewPeer(Peer& peer);
 
-	void TryGenerateNearbyZones(const Vector3& pos);
+	void TryGenerateNearbyZones(const Vector3f& pos);
 
 	bool TryGenerateZone(const ZoneID& zone);
 	void GenerateZone(Heightmap& heightmap);
 	std::vector<ClearArea> TryGenerateFeature(const ZoneID& zone);
 	void GenerateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
-	bool HaveLocationInRange(const Feature& feature, const Vector3& pos);
-	Vector3 GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
-	Vector3 GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& pos, float range);
-	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& pos);
-	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& pos, float range);
+	bool HaveLocationInRange(const Feature& feature, const Vector3f& pos);
+	Vector3f GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
+	Vector3f GetRandomPointInRadius(VUtils::Random::State& state, const Vector3f& pos, float range);
+	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3f& pos);
+	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3f& pos, float range);
 
 	const Feature* GetFeature(HASH_t hash);
 	const Feature* GetFeature(const std::string& name);
@@ -179,13 +179,13 @@ private:
 	ZoneID GetRandomZone(VUtils::Random::State &state, float range);
 
 	void RemoveUngeneratedFeatures(const Feature& feature);
-	void GenerateFeature(const Feature& feature, HASH_t seed, const Vector3 &pos, const Quaternion &rot);
+	void GenerateFeature(const Feature& feature, HASH_t seed, const Vector3f &pos, const Quaternion &rot);
 
-	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& pos, float range, float& delta, Vector3& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, const Vector3f& pos, float range, float& delta, Vector3f& slopeDirection);
 
 	bool IsZoneGenerated(const ZoneID& zone);
 
-	void GenerateLocationProxy(const Feature& feature, HASH_t seed, const Vector3& pos, const Quaternion& rot);
+	void GenerateLocationProxy(const Feature& feature, HASH_t seed, const Vector3f& pos, const Quaternion& rot);
 	void GenerateZoneCtrl(const ZoneID& zone);
 
 public:
@@ -209,19 +209,19 @@ public:
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
 
 	// Get world height at location
-	float GetGroundHeight(const Vector3& pos);
+	float GetGroundHeight(const Vector3f& pos);
 
 	// Get specific height information at position
-	Heightmap& GetGroundData(Vector3& pos, Vector3& normal, Biome& biome, BiomeArea& biomeArea);
+	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance *GetNearestFeature(const std::string& name, const Vector3& pos);
+	Feature::Instance *GetNearestFeature(const std::string& name, const Vector3f& pos);
 
-	static ZoneID WorldToZonePos(const Vector3& pos);
-	static Vector3 ZoneToWorldPos(const ZoneID& zone);
+	static ZoneID WorldToZonePos(const Vector3f& pos);
+	static Vector3f ZoneToWorldPos(const ZoneID& zone);
 
-	bool ZonesOverlap(const ZoneID& zone, const Vector3& areaPoint);
+	bool ZonesOverlap(const ZoneID& zone, const Vector3f& areaPoint);
 	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
 
 	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);

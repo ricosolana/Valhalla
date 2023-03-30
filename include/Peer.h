@@ -63,7 +63,7 @@ public:
     std::string m_name;
 
     // Mutable variables
-    Vector3 m_pos;
+    Vector3f m_pos;
     bool m_visibleOnMap = false;
     ZDOID m_characterID;
     bool m_admin = false;
@@ -239,21 +239,21 @@ public:
 
     ZDO* GetZDO();
 
-    void Teleport(const Vector3& pos, const Quaternion& rot, bool animation);
+    void Teleport(const Vector3f& pos, const Quaternion& rot, bool animation);
 
-    void Teleport(const Vector3& pos) {
+    void Teleport(const Vector3f& pos) {
         Teleport(pos, Quaternion::IDENTITY, false);
     }
 
     // Show a specific chat message
-    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3& pos, const UserProfile& profile, const std::string& senderID);
+    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, const std::string& senderID);
     // Show a chat message
     void ChatMessage(const std::string& text) {
-        //ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
+        //ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
 
         auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
 
-        ChatMessage(text, ChatMsgType::Normal, Vector3(10000, 10000, 10000), profile, "");
+        ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), profile, "");
     }
     // Show a console message
     decltype(auto) ConsoleMessage(const std::string& msg) {

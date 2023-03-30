@@ -25,9 +25,9 @@ namespace std {
     };
 
     template <>
-    struct hash<Vector3>
+    struct hash<Vector3f>
     {
-        std::size_t operator()(const Vector3& vec) const {
+        std::size_t operator()(const Vector3f& vec) const {
             return std::hash<float>{}(vec.x) ^ (std::hash<float>{}(vec.y) << 8) ^ (std::hash<float>{}(vec.z) << 16);
         }
     };
@@ -41,9 +41,9 @@ namespace std {
     };
 
     template <>
-    struct equal_to<Vector3>
+    struct equal_to<Vector3f>
     {
-        bool operator()(const Vector3& lhs, const Vector3& rhs) const {
+        bool operator()(const Vector3f& lhs, const Vector3f& rhs) const {
             return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
         }
     };

@@ -78,7 +78,7 @@ void IHeightmapBuilder::Uninit() {
 void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {
     //OPTICK_EVENT();
 
-    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
+    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
 
     auto GEO(GeoManager());
 

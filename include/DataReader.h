@@ -150,17 +150,17 @@ public:
         return ZDOID(a, b);
     }
 
-    // Reads a Vector3
+    // Reads a Vector3f
     //  12 bytes total are read:
     //  float: x (4 bytes)
     //  float: y (4 bytes)
     //  float: z (4 bytes)
-    template<typename T> requires std::same_as<T, Vector3>
+    template<typename T> requires std::same_as<T, Vector3f>
     decltype(auto) Read() {
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
-        return Vector3{ a, b, c };
+        return Vector3f{ a, b, c };
     }
 
     // Reads a Vector2i
@@ -171,7 +171,7 @@ public:
     decltype(auto) Read() {
         auto a(Read<int32_t>());
         auto b(Read<int32_t>());
-        return Vector2i{ a, b };
+        return Vector2i(a, b);
     }
 
     // Reads a Quaternion
@@ -249,7 +249,7 @@ public:
     decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
 
     decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
-    decltype(auto) ReadVector3() { return Read<Vector3>(); }
+    decltype(auto) ReadVector3() { return Read<Vector3f>(); }
     decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
     decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
     decltype(auto) ReadProfile() { return Read<UserProfile>(); }

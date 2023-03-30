@@ -41,8 +41,8 @@ void IDungeonManager::Init() {
 
         VLOG(2) << "Loading dungeon " << name;
 
-        dungeon->m_interiorPosition = pkg.Read<Vector3>();
-        dungeon->m_originalPosition = pkg.Read<Vector3>();
+        dungeon->m_interiorPosition = pkg.Read<Vector3f>();
+        dungeon->m_originalPosition = pkg.Read<Vector3f>();
 
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.Read<int32_t>();
         dungeon->m_alternativeFunctionality = pkg.Read<bool>();
@@ -100,7 +100,7 @@ void IDungeonManager::Init() {
                 conn->m_entrance = pkg.Read<bool>();
                 conn->m_allowDoor = pkg.Read<bool>();
                 conn->m_doorOnlyIfOtherAlsoAllowsDoor = pkg.Read<bool>();
-                conn->m_localPos = pkg.Read<Vector3>();
+                conn->m_localPos = pkg.Read<Vector3f>();
                 conn->m_localRot = pkg.Read<Quaternion>();
 
                 room->m_roomConnections.push_back(std::move(conn));
@@ -111,16 +111,16 @@ void IDungeonManager::Init() {
                 Prefab::Instance instance;
                 
                 instance.m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
-                instance.m_pos = pkg.Read<Vector3>();
+                instance.m_pos = pkg.Read<Vector3f>();
                 instance.m_rot = pkg.Read<Quaternion>();
 
                 room->m_netViews.push_back(instance);
             }
 
-            room->m_size = pkg.Read<Vector3>();
+            room->m_size = pkg.Read<Vector3f>();
             room->m_theme = (Room::Theme) pkg.Read<int32_t>();
             room->m_weight = pkg.Read<float>();
-            room->m_pos = pkg.Read<Vector3>();
+            room->m_pos = pkg.Read<Vector3f>();
             room->m_rot = pkg.Read<Quaternion>();
 
             dungeon->m_availableRooms.push_back(std::move(room));
@@ -236,7 +236,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot) {
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3f& pos, const Quaternion& rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
@@ -244,7 +244,7 @@ ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const
     return zdo;
 }
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3& pos, const Quaternion& rot, HASH_t seed) {
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3f& pos, const Quaternion& rot, HASH_t seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);

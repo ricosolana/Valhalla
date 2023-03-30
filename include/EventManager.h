@@ -61,13 +61,13 @@ private:
 	// The current random active event in the world
 	//	can be null if no event is active
 	const Event *m_activeEvent = nullptr;
-	Vector3 m_activeEventPos;
+	Vector3f m_activeEventPos;
 	float m_activeEventTimer = 0;
 
 private:
 	void SendCurrentRandomEvent();
 
-	std::optional<std::pair<std::reference_wrapper<const Event>, Vector3>> GetPossibleRandomEvent();
+	std::optional<std::pair<std::reference_wrapper<const Event>, Vector3f>> GetPossibleRandomEvent();
 
 	// Checks whether the server has or doesnt have
 	//	the global keys requested of the event

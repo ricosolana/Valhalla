@@ -3,6 +3,7 @@
 #include "HashUtils.h"
 #include "ZoneManager.h"
 #include "VUtilsMathf.h"
+#include "VUtilsMath.h"
 
 auto GEO_MANAGER(std::make_unique<IGeoManager>());
 IGeoManager* GeoManager() {
@@ -46,7 +47,7 @@ void IGeoManager::Generate() {
 }
 
 void IGeoManager::GenerateLakes() {
-	std::vector<Vector2> list;
+	std::vector<Vector2f> list;
 	for (float num = -worldSize; num <= worldSize; num += 128)
 	{
 		for (float num2 = -worldSize; num2 <= worldSize; num2 += 128)
@@ -54,7 +55,7 @@ void IGeoManager::GenerateLakes() {
 			if (VUtils::Math::Magnitude(num2, num) <= worldSize
 				&& GetBaseHeight(num2, num) < 0.05f)
 			{
-				list.push_back(Vector2(num2, num));
+				list.push_back(Vector2f(num2, num));
 			}
 		}
 	}
@@ -62,10 +63,10 @@ void IGeoManager::GenerateLakes() {
 }
 
 // Basically blender merge nearby vertices
-std::vector<Vector2> IGeoManager::MergePoints(std::vector<Vector2>& points, float range) {
-	std::vector<Vector2> list;
+std::vector<Vector2f> IGeoManager::MergePoints(std::vector<Vector2f>& points, float range) {
+	std::vector<Vector2f> list;
 	while (!points.empty()) {
-		Vector2 vector = points[0];
+		Vector2f vector = points[0];
 		points.erase(points.begin()); // not efficient for vector
 		while (!points.empty()) {
 			int num = FindClosest(points, vector, range);
@@ -83,7 +84,7 @@ std::vector<Vector2> IGeoManager::MergePoints(std::vector<Vector2>& points, floa
 }
 
 // Return the index in points of the nearest point to p
-int IGeoManager::FindClosest(const std::vector<Vector2>& points, const Vector2& p, float maxDistance) {
+int IGeoManager::FindClosest(const std::vector<Vector2f>& points, const Vector2f& p, float maxDistance) {
 	int result = -1;
 	float num = std::numeric_limits<float>::max();
 	for (int i = 0; i < points.size(); i++)
@@ -107,12 +108,12 @@ void IGeoManager::GenerateStreams() {
 	VUtils::Random::State state(m_streamSeed);
 	int num = 0;
 	for (int i = 0; i < streams; i++) {
-		Vector2 vector;
+		Vector2f vector;
 		float num2;
-		Vector2 vector2; // out
+		Vector2f vector2; // out
 		if (FindStreamStartPoint(state, 100, 26, 31, vector, num2)
 			&& FindStreamEndPoint(state, 100, 36, 44, vector, 80, 200, vector2)) {
-			Vector2 vector3 = (vector + vector2) * 0.5f;
+			Vector2f vector3 = (vector + vector2) * 0.5f;
 			float height = GetGenerationHeight(vector3.x, vector3.y);
 			if (height >= 26 && height <= 44) {
 				River river;
@@ -132,13 +133,13 @@ void IGeoManager::GenerateStreams() {
 	RenderRivers(state, m_streams);
 }
 
-bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2& start, float minLength, float maxLength, Vector2& end) {
+bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2f& start, float minLength, float maxLength, Vector2f& end) {
 	float num = (maxLength - minLength) / (float)iterations;
 	float num2 = maxLength;
 	for (int i = 0; i < iterations; i++) {
 		num2 -= num;
 		float f = state.Range(0.f, PI * 2.0f);
-		Vector2 vector = start + Vector2(sin(f), cos(f)) * num2;
+		Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
 		float height = GetGenerationHeight(vector.x, vector.y);
 		if (height > minHeight && height < maxHeight)
 		{
@@ -146,23 +147,23 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 			return true;
 		}
 	}
-	end = Vector2::ZERO;
+	end = Vector2f::Zero();
 	return false;
 }
 
-bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2& p, float& starth) {
+bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth) {
 	for (int i = 0; i < iterations; i++) {
 		auto num = state.Range((float)-worldSize, (float)worldSize);
 		auto num2 = state.Range((float)-worldSize, (float)worldSize);
 		auto height = GetGenerationHeight(num, num2);
 		if (height > minHeight && height < maxHeight)
 		{
-			p = Vector2(num, num2);
+			p = Vector2f(num, num2);
 			starth = height;
 			return true;
 		}
 	}
-	p = Vector2::ZERO;
+	p = Vector2f::Zero();
 	starth = 0;
 	return false;
 }
@@ -171,7 +172,7 @@ void IGeoManager::GenerateRivers() {
 	VUtils::Random::State state(m_riverSeed);
 
 	//std::vector<River> list;
-	std::vector<Vector2> list2(m_lakes); // TODO use list
+	std::vector<Vector2f> list2(m_lakes); // TODO use list
 
 	while (list2.size() > 1)
 	{
@@ -201,8 +202,8 @@ void IGeoManager::GenerateRivers() {
 	RenderRivers(state, m_rivers);
 }
 
-int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2> &points, 
-	const Vector2& p, float maxDistance, float heightLimit, float checkStep) const {
+int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f> &points, 
+	const Vector2f& p, float maxDistance, float heightLimit, float checkStep) const {
 
 	std::vector<int> list;
 	for (int i = 0; i < points.size(); i++) {
@@ -221,7 +222,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vec
 	return list[state.Range(0, list.size())];
 }
 
-bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0) const {
+bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2f& p0) const {
 	for (auto&& river : rivers) {
 		if (river.p0 == p0 || river.p1 == p0) {
 			return true;
@@ -230,7 +231,7 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0)
 	return false;
 }
 
-bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1) const {
+bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2f& p0, const Vector2f& p1) const {
 	for (auto&& river : rivers)
 	{
 		if ((river.p0 == p0 && river.p1 == p1)
@@ -242,12 +243,12 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, const Vector2& p0,
 	return false;
 }
 
-bool IGeoManager::IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit) const {
+bool IGeoManager::IsRiverAllowed(const Vector2f& p0, const Vector2f& p1, float step, float heightLimit) const {
 	float num = p0.Distance(p1);
-	Vector2 normalized = (p1 - p0).Normalized();
+	Vector2f normalized = (p1 - p0).Normal();
 	bool flag = true;
 	for (float num2 = step; num2 <= num - step; num2 += step) {
-		Vector2 vector = p0 + normalized * num2;
+		Vector2f vector = p0 + normalized * num2;
 		float baseHeight = GetBaseHeight(vector.x, vector.y);
 		if (baseHeight > heightLimit)
 			return false;
@@ -264,15 +265,15 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	for (auto&& river : rivers) {
 
 		float num = river.widthMin / 8.f;
-		const Vector2 normalized = (river.p1 - river.p0).Normalized();
-		const Vector2 a(-normalized.y, normalized.x);
+		const Vector2f normalized = (river.p1 - river.p0).Normal();
+		const Vector2f a(-normalized.y, normalized.x);
 		float num2 = river.p0.Distance(river.p1);
 
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;
 			float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
 			float r = state.Range(river.widthMin, river.widthMax);
-			Vector2 p = river.p0 + normalized * num3 + a * d;
+			Vector2f p = river.p0 + normalized * num3 + a * d;
 			AddRiverPoint(dictionary, p, r);
 		}
 	}
@@ -285,7 +286,7 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 }
 
 void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
-	const Vector2& p,
+	const Vector2f& p,
 	float r)
 {
 	Vector2i riverGrid = GetRiverGrid(p.x, p.y);
@@ -301,7 +302,7 @@ void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<
 	}
 }
 
-void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r) {
+void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r) {
 	riverPoints[grid].push_back({ p, r });
 }
 
@@ -337,7 +338,7 @@ void IGeoManager::GetWeight(const std::vector<RiverPoint>& points, float wx, flo
 	outWeight = 0;
 	outWidth = 0;
 
-	Vector2 b(wx, wy);
+	Vector2f b(wx, wy);
 	float num = 0;
 	float num2 = 0;
 
@@ -618,9 +619,9 @@ float IGeoManager::GetDeepNorthHeight(float wx, float wy) {
 
 
 
-bool IGeoManager::InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r) {
-	Vector2 b((float)grid.x * riverGridSize, (float)grid.y * riverGridSize);
-	Vector2 vector = p - b;
+bool IGeoManager::InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r) {
+	Vector2f b((float)grid.x * riverGridSize, (float)grid.y * riverGridSize);
+	Vector2f vector = p - b;
 	return std::abs(vector.x) < r + (riverGridSize * .5f)
 		&& std::abs(vector.y) < r + (riverGridSize * .5f);
 }
@@ -631,17 +632,17 @@ Vector2i IGeoManager::GetRiverGrid(float wx, float wy) {
 	return Vector2i(x, y);
 }
 
-BiomeArea IGeoManager::GetBiomeArea(const Vector3& point) {
+BiomeArea IGeoManager::GetBiomeArea(const Vector3f& point) {
 	auto&& biome = GetBiome(point);
 
-	auto&& biome2 = GetBiome(point - Vector3(-IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome3 = GetBiome(point - Vector3(IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome4 = GetBiome(point - Vector3(IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
-	auto&& biome5 = GetBiome(point - Vector3(-IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
-	auto&& biome6 = GetBiome(point - Vector3(-IZoneManager::ZONE_SIZE, 0, 0));
-	auto&& biome7 = GetBiome(point - Vector3(IZoneManager::ZONE_SIZE, 0, 0));
-	auto&& biome8 = GetBiome(point - Vector3(0, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome9 = GetBiome(point - Vector3(0, 0, IZoneManager::ZONE_SIZE));
+	auto&& biome2 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
+	auto&& biome3 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
+	auto&& biome4 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
+	auto&& biome5 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
+	auto&& biome6 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, 0));
+	auto&& biome7 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, 0));
+	auto&& biome8 = GetBiome(point - Vector3f(0, 0, -IZoneManager::ZONE_SIZE));
+	auto&& biome9 = GetBiome(point - Vector3f(0, 0, IZoneManager::ZONE_SIZE));
 	if (biome == biome2
 		&& biome == biome3
 		&& biome == biome4
@@ -657,7 +658,7 @@ BiomeArea IGeoManager::GetBiomeArea(const Vector3& point) {
 }
 
 // public
-Biome IGeoManager::GetBiome(const Vector3& point) {
+Biome IGeoManager::GetBiome(const Vector3f& point) {
 	return GetBiome(point.x, point.z);
 }
 
@@ -707,8 +708,8 @@ Biome IGeoManager::GetBiome(float wx, float wy) {
 }
 
 Biome IGeoManager::GetBiomes(float x, float z) {
-	//ZoneID zone = IZoneManager::WorldToZonePos(Vector3(x, 0., z));
-	//Vector3 center = IZoneManager::ZoneToWorldPos(zone) + ;
+	//ZoneID zone = IZoneManager::WorldToZonePos(Vector3f(x, 0., z));
+	//Vector3f center = IZoneManager::ZoneToWorldPos(zone) + ;
 	return Biome(std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
 		|| std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
 		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
@@ -762,27 +763,27 @@ float IGeoManager::GetBiomeHeight(Biome biome, float wx, float wy, float& mask) 
 }
 
 // public
-bool IGeoManager::InForest(const Vector3& pos) {
+bool IGeoManager::InForest(const Vector3f& pos) {
 	return GetForestFactor(pos) < 1.15f;
 }
 
 // public
-float IGeoManager::GetForestFactor(const Vector3& pos) {
+float IGeoManager::GetForestFactor(const Vector3f& pos) {
 	float d = 0.4f;
 	return VUtils::Math::Fbm(pos * 0.01f * d, 3, 1.6f, 0.7f);
 }
 
 // public
-void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection) {
+void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3f& center, float radius, float& delta, Vector3f& slopeDirection) {
 	int num = 10;
 	float num2 = std::numeric_limits<float>::min();
 	float num3 = std::numeric_limits<float>::max();
-	Vector3 b = center;
-	Vector3 a = center;
+	Vector3f b = center;
+	Vector3f a = center;
 	for (int i = 0; i < num; i++)
 	{
-		Vector2 vector = state.InsideUnitCircle() * radius;
-		Vector3 vector2 = center + Vector3(vector.x, 0.f, vector.y);
+		Vector2f vector = state.InsideUnitCircle() * radius;
+		Vector3f vector2 = center + Vector3f(vector.x, 0.f, vector.y);
 		float height = GetHeight(vector2.x, vector2.z);
 		if (height < num3)
 		{
@@ -796,7 +797,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& c
 		}
 	}
 	delta = num2 - num3;
-	slopeDirection = (a - b).Normalize();
+	slopeDirection = (a - b).Normal();
 }
 
 // public

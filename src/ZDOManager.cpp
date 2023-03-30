@@ -197,7 +197,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		LOG(INFO) << "Purged " << purgeCount << " old zdos";
 }
 
-ZDO& IZDOManager::Instantiate(const Vector3& position) {
+ZDO& IZDOManager::Instantiate(const Vector3f& position) {
 	ZDOID zdoid = ZDOID(Valhalla()->ID(), 0);
 	for(;;) {
 		zdoid.m_id = m_nextUid++;
@@ -213,7 +213,7 @@ ZDO& IZDOManager::Instantiate(const Vector3& position) {
 	}
 }
 
-ZDO& IZDOManager::Instantiate(const ZDOID& uid, const Vector3& position) {
+ZDO& IZDOManager::Instantiate(const ZDOID& uid, const Vector3f& position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
@@ -243,7 +243,7 @@ ZDO* IZDOManager::GetZDO(const ZDOID& id) {
 
 
 
-std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3& def) {
+std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3f& def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
 	auto&& zdo = pair.first->second;
@@ -256,7 +256,7 @@ std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vecto
 
 
 
-ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Quaternion& rot) {
+ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3f& pos, const Quaternion& rot) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
 	zdo.m_rotation = rot;
 	zdo.m_prefab = prefab;
@@ -267,7 +267,7 @@ ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3& pos, const Qu
 	return zdo;
 }
 
-ZDO& IZDOManager::Instantiate(HASH_t hash, const Vector3& pos, const Quaternion& rot, const Prefab** outPrefab) {
+ZDO& IZDOManager::Instantiate(HASH_t hash, const Vector3f& pos, const Quaternion& rot, const Prefab** outPrefab) {
 	auto&& prefab = PrefabManager()->RequirePrefab(hash);
 	if (outPrefab) *outPrefab = &prefab;
 
@@ -318,7 +318,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 	if (SERVER_SETTINGS.zdoSmartAssign) {
 
 		float minSqDist = std::numeric_limits<float>::max();
-		Vector3 closestPos;
+		Vector3f closestPos;
 
 		// get the distance to the closest peer
 		for (auto&& otherPeer : NetManager()->GetPeers()) {
@@ -552,13 +552,13 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 
 
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const Vector3& pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const Vector3f& pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	const float sqRadius = radius * radius;
 
-	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
-	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
+	auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
+	auto maxZone = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius));
 
 	for (auto z = minZone.y; z <= maxZone.y; z++) {
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
@@ -603,7 +603,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const ZoneID& zone,
 
 
 
-ZDO* IZDOManager::NearestZDO(const Vector3& pos, float radius, const std::function<bool(const ZDO&)>& pred) {
+ZDO* IZDOManager::NearestZDO(const Vector3f& pos, float radius, const std::function<bool(const ZDO&)>& pred) {
 	//std::list<std::reference_wrapper<ZDO>> out;
 
 	const float sqRadius = radius * radius;
@@ -611,8 +611,8 @@ ZDO* IZDOManager::NearestZDO(const Vector3& pos, float radius, const std::functi
 	ZDO* zdo = nullptr;
 	float minSqDist = std::numeric_limits<float>::max();
 
-	auto minZone = IZoneManager::WorldToZonePos(Vector3(pos.x - radius, 0, pos.z - radius));
-	auto maxZone = IZoneManager::WorldToZonePos(Vector3(pos.x + radius, 0, pos.z + radius));
+	auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
+	auto maxZone = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius));
 
 	for (auto z = minZone.y; z <= maxZone.y; z++) {
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
@@ -742,7 +742,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
 			auto owner = reader.Read<OWNER_t>();		// owner
-			auto pos = reader.Read<Vector3>();			// position
+			auto pos = reader.Read<Vector3f>();			// position
 
 			auto des = reader.SubRead();				// dont move this
 

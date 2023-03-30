@@ -65,7 +65,7 @@ void IEventManager::Update() {
 
 		if (m_activeEventTimer > this->m_activeEvent->m_duration) {
 			m_activeEvent = nullptr;
-			m_activeEventPos = Vector3::ZERO;
+			m_activeEventPos = Vector3f::Zero();
 		}
 	}
 	else if (SERVER_SETTINGS.eventsEnabled) {
@@ -94,15 +94,15 @@ void IEventManager::Update() {
 	PERIODIC_NOW(1s, { SendCurrentRandomEvent(); });
 }
 
-std::optional<std::pair<std::reference_wrapper<const IEventManager::Event>, Vector3>> IEventManager::GetPossibleRandomEvent() {
-	std::vector<std::pair<std::reference_wrapper<const Event>, Vector3>> result;
+std::optional<std::pair<std::reference_wrapper<const IEventManager::Event>, Vector3f>> IEventManager::GetPossibleRandomEvent() {
+	std::vector<std::pair<std::reference_wrapper<const Event>, Vector3f>> result;
 	
 	for (auto&& pair : this->m_events) {
 
 		auto&& e = pair.second;
 		if (CheckGlobalKeys(*e)) {
 
-			std::vector<Vector3> positions;
+			std::vector<Vector3f> positions;
 
 			// now look for valid spaces
 			for (auto&& peer : NetManager()->GetPeers()) {
@@ -160,7 +160,7 @@ void IEventManager::Load(DataReader& reader, int version) {
 	if (version >= 25) {
 		this->m_activeEvent = GetEvent(reader.Read<std::string>());
 		this->m_activeEventTimer = reader.Read<float>();
-		this->m_activeEventPos = reader.Read<Vector3>();
+		this->m_activeEventPos = reader.Read<Vector3f>();
 	}
 
 	VLOG(1) << "interval: " << this->m_eventIntervalTimer
@@ -180,7 +180,7 @@ void IEventManager::SendCurrentRandomEvent() {
 		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent,
 			"",
 			0.f,
-			Vector3::ZERO
+			Vector3f::Zero()
 		);
 	}
 }

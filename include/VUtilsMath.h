@@ -1,7 +1,6 @@
 #pragma once
 
-struct Vector2;
-struct Vector3;
+#include "Vector.h"
 
 namespace VUtils::Math {
 
@@ -43,13 +42,13 @@ namespace VUtils::Math {
 
 
     // Fractional brownian noise
-    float Fbm(const Vector3 &p, int octaves, float lacunarity, float gain);
+    float Fbm(const Vector3f &p, int octaves, float lacunarity, float gain);
 
     // Fractional brownian noise
     float FbmMaxValue(int octaves, float gain);
 
     // Fractional brownian noise
-    float Fbm(const Vector2 &p, int octaves, float lacunarity, float gain);
+    float Fbm(const Vector2f &p, int octaves, float lacunarity, float gain);
 
 
 
@@ -65,7 +64,7 @@ namespace VUtils::Math {
 
 
 
-    float YawFromDirection(const Vector3 &dir);
+    float YawFromDirection(const Vector3f &dir);
 
     // Wrap degrees
     float FixDegAngle(float p_Angle);

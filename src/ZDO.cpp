@@ -24,13 +24,13 @@ ZDO::ZDO()
 
 }
 
-ZDO::ZDO(const ZDOID& id, const Vector3& pos)
+ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
     : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
 {
     m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
 
-//ZDO::ZDO(const ZDOID& id, const Vector3& pos, HASH_t prefab)
+//ZDO::ZDO(const ZDOID& id, const Vector3f& pos, HASH_t prefab)
 //    : m_id(id), m_pos(pos), m_prefab(PrefabManager()->RequirePrefab(prefab))
 //{
 //    m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
@@ -58,7 +58,7 @@ void ZDO::Save(DataWriter& pkg) const {
     
     // Save uses 2 bytes for counts (char in c# is 2 bytes..)
     _TryWriteType<float,        uint16_t>(pkg);
-    _TryWriteType<Vector3,      uint16_t>(pkg);
+    _TryWriteType<Vector3f,      uint16_t>(pkg);
     _TryWriteType<Quaternion,   uint16_t>(pkg);
     _TryWriteType<int32_t,      uint16_t>(pkg);
     _TryWriteType<int64_t,      uint16_t>(pkg);
@@ -97,11 +97,11 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
     pkg.Read<ZoneID>(); // m_sector
-    this->m_pos = pkg.Read<Vector3>();
+    this->m_pos = pkg.Read<Vector3f>();
     this->m_rotation = pkg.Read<Quaternion>();
 
     _TryReadType<float,         char16_t>(pkg);
-    _TryReadType<Vector3,       char16_t>(pkg);
+    _TryReadType<Vector3f,       char16_t>(pkg);
     _TryReadType<Quaternion,    char16_t>(pkg);
     _TryReadType<int32_t,       char16_t>(pkg);
     _TryReadType<int64_t,       char16_t>(pkg);
@@ -121,7 +121,7 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
 // ZDO specific-methods
 
-void ZDO::SetPosition(const Vector3& pos) {
+void ZDO::SetPosition(const Vector3f& pos) {
     if (m_pos != pos) {
         ZDOManager()->InvalidateZDOZone(*this);
         this->m_pos = pos;
@@ -164,7 +164,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     pkg.Write((int32_t) m_ordinalMask);
 
     _TryWriteType<float,            BYTE_t>(pkg);
-    _TryWriteType<Vector3,          BYTE_t>(pkg);
+    _TryWriteType<Vector3f,          BYTE_t>(pkg);
     _TryWriteType<Quaternion,       BYTE_t>(pkg);
     _TryWriteType<int32_t,          BYTE_t>(pkg);
     _TryWriteType<int64_t,          BYTE_t>(pkg);
@@ -190,8 +190,8 @@ void ZDO::Deserialize(DataReader& pkg) {
     // double check this; 
     if (m_ordinalMask & GetOrdinalMask<float>())
         _TryReadType<float,         uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<Vector3>())
-        _TryReadType<Vector3,       uint8_t>(pkg);
+    if (m_ordinalMask & GetOrdinalMask<Vector3f>())
+        _TryReadType<Vector3f,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<Quaternion>())
         _TryReadType<Quaternion,    uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<int32_t>())

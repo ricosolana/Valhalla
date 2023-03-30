@@ -4,206 +4,264 @@
 #include <cmath>
 #include <ostream>
 
-#include "VUtilsMath.h"
-
+template<typename T> requires std::is_arithmetic_v<T>
 struct Vector2 {
-    float x, y;
+    T x, y;
 
-    Vector2() : x(0), y(0) {}
-    Vector2(float x, float y) 
-        : x(x), y(y) {}
-
-    Vector2(const Vector2& other) = default; //copy
-    Vector2(Vector2&& other) = default; // move
-
+    constexpr Vector2() : x(0), y(0) {}
+    constexpr Vector2(const T x, const T y) : x(x), y(y) {}
+        
     // vector arithmetic
-    Vector2 &operator=(const Vector2& other);
-
-    Vector2 operator+(const Vector2& other) const;
-    Vector2 operator-(const Vector2& other) const;
-    Vector2 operator*(const Vector2& other) const;
-    Vector2 operator/(const Vector2& other) const;
-    
-    // scalar arithmetic
-    Vector2 operator*(float other) const;
-    Vector2 operator/(float other) const;
-
-    Vector2& operator+=(const Vector2& other);
-    Vector2& operator-=(const Vector2& other);
-    Vector2& operator*=(const Vector2& other);
-    Vector2& operator/=(const Vector2& other);
-
-    Vector2& operator*=(float other);
-    Vector2& operator/=(float other);
-
-    bool operator==(const Vector2& other) const;
-    bool operator!=(const Vector2& other) const;
-
-
-
-    float SqMagnitude() const {
-        return VUtils::Math::SqMagnitude(x, y);
+    void operator=(const Vector2<T>& other) {
+        this->x = other.x;
+        this->y = other.y;
     }
 
-    float Magnitude() const {
-        return VUtils::Math::Magnitude(x, y);
+
+
+    Vector2<T> operator+(const Vector2<T>& rhs) const {
+        return Vector2<T>(this->x + rhs.x, this->y + rhs.y);
+    }
+
+    Vector2<T> operator-(const Vector2<T>& rhs) const {
+        return Vector2<T>(this->x - rhs.x, this->y - rhs.y);
+    }
+
+    Vector2<T> operator*(const Vector2<T>& rhs) const {
+        return Vector2<T>(this->x * rhs.x, this->y * rhs.y);
+    }
+
+    Vector2<T> operator/(const Vector2<T>& rhs) const {
+        return Vector2<T>(this->x / rhs.x, this->y / rhs.y);
     }
     
-    float Distance(const Vector2& other) const {
-        return VUtils::Math::Distance(x, y, other.x, other.y);
+    Vector2<T> operator*(const float rhs) const {
+        return Vector2<T>(this->x * rhs, this->y * rhs);
     }
 
-    float SqDistance(const Vector2& other) const {
-        return VUtils::Math::SqDistance(x, y, other.x, other.y);
+    Vector2<T> operator/(const float rhs) const {
+        return Vector2<T>(this->x / rhs, this->y / rhs);
     }
 
-    //normalize and returns this
-    Vector2 &Normalize();
 
-    //normalize and returns a copy
-    Vector2 Normalized();
 
-    static const Vector2 ZERO;
+    void operator+=(const Vector2<T>& rhs) {
+        *this = *this + rhs;
+    }
+
+    void operator-=(const Vector2<T>& rhs) {
+        *this = *this - rhs;
+    }
+
+    void operator*=(const Vector2<T>& rhs) {
+        *this = *this * rhs;
+    }
+
+    void operator/=(const Vector2<T>& rhs) {
+        *this = *this / rhs;
+    }
+
+    void operator*=(const float rhs) {
+        *this = *this * rhs;
+    }
+
+    void operator/=(const float rhs) {
+        *this = *this / rhs;
+    }
+
+
+
+    constexpr bool operator==(const Vector2<T>& rhs) const {
+        return this->x == rhs.x && this->y == rhs.y;
+    }
+
+    constexpr bool operator!=(const Vector2<T>& rhs) const {
+        return !(*this == rhs);
+    }
+
+
+
+    constexpr float Dot(const Vector2<T>& rhs) const {
+        return (float)this->x * rhs.x + (float)this->y * rhs.y;
+    }
+
+    constexpr float SqMagnitude() const {
+        return (float)this->x * this->x + (float)this->y * this->y;
+    }
+
+    constexpr float Magnitude() const {
+        return std::sqrt(this->SqMagnitude());
+    }
+    
+    constexpr float SqDistance(const Vector2<T>& rhs) const {
+        return (this->x - rhs.x) * (this->x - rhs.x) + (this->y - rhs.y) * (this->y - rhs.y);
+    }
+
+    constexpr float Distance(const Vector2<T>& rhs) const {
+        return std::sqrt(this->SqDistance(rhs));
+    }
+
+    constexpr Vector2<T> Normal() const {
+        auto sqmagnitude = this->SqMagnitude();
+
+        if (sqmagnitude > 1E-05f * 1E-05f) {
+            return *this * std::sqrt(sqmagnitude);
+        }
+        else {
+            return Zero();
+        }
+    }
+
+
+
+    static constexpr Vector2<T> Zero() {
+        return Vector2<T>(0, 0);
+    }
 };
 
-std::ostream& operator<<(std::ostream& st, const Vector2& vec);
+using Vector2f = Vector2<float>;
+using Vector2i = Vector2<int32_t>;
 
-
-
-struct Vector2i {
-    int32_t x, y;
-
-    Vector2i() : x(0), y(0) {}
-    Vector2i(int32_t x, int32_t y)
-        : x(x), y(y) {}
-
-    Vector2i(const Vector2i& other) = default; //copy
-    Vector2i(Vector2i&& other) = default; // move
-
-
-    Vector2i& operator=(const Vector2i& other);
-    Vector2i operator+(const Vector2i& other) const;
-    Vector2i operator-(const Vector2i& other) const;
-    Vector2i operator*(const Vector2i& other) const;
-    Vector2i operator/(const Vector2i& other) const;
-
-    Vector2i operator*(float other) const;
-    Vector2i operator/(float other) const;
-
-    Vector2i& operator+=(const Vector2i& other);
-    Vector2i& operator-=(const Vector2i& other);
-    Vector2i& operator*=(const Vector2i& other);
-    Vector2i& operator/=(const Vector2i& other);
-
-    Vector2i& operator*=(float other);
-    Vector2i& operator/=(float other);
-
-    bool operator==(const Vector2i& other) const;
-    bool operator!=(const Vector2i& other) const;
-
-
-
-    float SqMagnitude() const {
-        return VUtils::Math::SqMagnitude(x, y);
-    }
-
-    float Magnitude() const {
-        return VUtils::Math::Magnitude(x, y);
-    }
-
-    float Distance(const Vector2i& other) const {
-        return VUtils::Math::Distance(x, y, other.x, other.y);
-    }
-
-    float SqDistance(const Vector2i& other) const {
-        return VUtils::Math::SqDistance(x, y, other.x, other.y);
-    }
-
-    Vector2i& Normalize();
-    Vector2i Normalized();
-
-    static const Vector2i ZERO;
-};
-
+std::ostream& operator<<(std::ostream& st, const Vector2f& vec);
 std::ostream& operator<<(std::ostream& st, const Vector2i& vec);
 
 
-
+template<typename T> requires std::is_arithmetic_v<T>
 struct Vector3 {
-    float x, y, z;
+    T x, y, z;
 
-    Vector3() : x(0), y(0), z(0) {}
-    Vector3(float x, float y, float z)
-        : x(x), y(y), z(z) {}
-    ///Vector3(int x, int y, int z)
-    //    : x(x), y(y), z(z) {}
+    constexpr Vector3() : x(0), y(0), z(0) {}
+    constexpr Vector3(const T x, const T y, const T z) 
+        : x(x), y(y), z(0) {}
 
-
-    Vector3(const Vector3& other) = default; //copy
-    Vector3(Vector3&& other) = default; // move
-
-
-
-    Vector3& operator=(const Vector3& other);
-
-    Vector3 operator+(const Vector3& other) const;
-    Vector3 operator-(const Vector3& other) const;
-    Vector3 operator*(const Vector3& other) const;
-    Vector3 operator/(const Vector3& other) const;
-
-    Vector3 operator*(float other) const;
-    Vector3 operator/(float other) const;
-
-    Vector3& operator+=(const Vector3& other);
-    Vector3& operator-=(const Vector3& other);
-    Vector3& operator*=(const Vector3& other);
-    Vector3& operator/=(const Vector3& other);
-
-    Vector3& operator*=(float other);
-    Vector3& operator/=(float other);
-
-    bool operator==(const Vector3& other) const;
-    bool operator!=(const Vector3& other) const;
+    // vector arithmetic
+    void operator=(const Vector3<T>& other) {
+        this->x = other.x;
+        this->y = other.y;
+    }
 
 
 
-    Vector3 Cross(const Vector3 &rhs) const {
-        return Vector3(
-            y * rhs.z - z * rhs.y, 
-            z * rhs.x - x * rhs.z, 
-            x * rhs.y - y * rhs.x
+    Vector3<T> operator+(const Vector3<T>& rhs) const {
+        return Vector3<T>(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);
+    }
+
+    Vector3<T> operator-(const Vector3<T>& rhs) const {
+        return Vector3<T>(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
+    }
+
+    Vector3<T> operator*(const Vector3<T>& rhs) const {
+        return Vector3<T>(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);
+    }
+
+    Vector3<T> operator/(const Vector3<T>& rhs) const {
+        return Vector3<T>(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z);
+    }
+
+    Vector3<T> operator*(const float rhs) const {
+        return Vector3<T>(this->x * rhs, this->y * rhs, this->z * rhs);
+    }
+
+    Vector3<T> operator/(const float rhs) const {
+        return Vector3<T>(this->x / rhs, this->y / rhs, this->z / rhs);
+    }
+
+
+
+    void operator+=(const Vector3<T>& rhs) {
+        *this = *this + rhs;
+    }
+
+    void operator-=(const Vector3<T>& rhs) {
+        *this = *this - rhs;
+    }
+
+    void operator*=(const Vector3<T>& rhs) {
+        *this = *this * rhs;
+    }
+
+    void operator/=(const Vector3<T>& rhs) {
+        *this = *this / rhs;
+    }
+
+    void operator*=(const float rhs) {
+        *this = *this * rhs;
+    }
+
+    void operator/=(const float rhs) {
+        *this = *this / rhs;
+    }
+
+
+
+    constexpr bool operator==(const Vector3<T>& rhs) const {
+        return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z;
+    }
+
+    constexpr bool operator!=(const Vector3<T>& rhs) const {
+        return !(*this == rhs);
+    }
+
+
+
+    constexpr Vector3<T> Cross(const Vector3<T>& rhs) const {
+        return Vector3<T>(
+            (float)this->y * rhs.z - (float)this->z * rhs.y,
+            (float)this->z * rhs.x - (float)this->x * rhs.z,
+            (float)this->x * rhs.y - (float)this->y * rhs.x
         );
     }
 
-    float Dot(const Vector3& rhs) const {
-        return x * rhs.x + y * rhs.y + z * rhs.z;
+    constexpr float Dot(const Vector3<T>& rhs) const {
+        return (float)this->x * rhs.x + (float)this->y * rhs.y + (float)this->z * rhs.z;
+    }
+
+    constexpr float SqMagnitude() const {
+        return (float)this->x * this->x + (float)this->y * this->y + (float)this->z * this->z;
+    }
+
+    constexpr float Magnitude() const {
+        return std::sqrt(this->SqMagnitude());
+    }
+
+    constexpr float SqDistance(const Vector3<T>& rhs) const {
+        return (this->x - rhs.x) * (this->x - rhs.x) + (this->y - rhs.y) * (this->y - rhs.y) + (this->z - rhs.z) * (this->z - rhs.z);
+    }
+
+    constexpr float Distance(const Vector3<T>& rhs) const {
+        return std::sqrt(this->SqDistance(rhs));
+    }
+
+    constexpr Vector3<T> Normal() const {
+        auto sqmagnitude = this->SqMagnitude();
+
+        if (sqmagnitude > 1E-05f * 1E-05f) {
+            return *this * std::sqrt(sqmagnitude);
+        }
+        else {
+            return Zero();
+        }
     }
 
 
 
-    float SqMagnitude() const {
-        return VUtils::Math::SqMagnitude(x, y, z);
+    static constexpr Vector3<T> Zero() {
+        return Vector3<T>(0, 0, 0);
     }
 
-    float Magnitude() const {
-        return VUtils::Math::Magnitude(x, y, z);
+    static constexpr Vector3<T> Up() {
+        return Vector3<T>(0, 1, 0);
     }
 
-    float Distance(const Vector3& other) const {
-        return VUtils::Math::Distance(x, y, z, other.x, other.y, other.z);
+    static constexpr Vector3<T> Down() {
+        return Vector3<T>(0, -1, 0);
     }
 
-    float SqDistance(const Vector3& other) const {
-        return VUtils::Math::SqDistance(x, y, z, other.x, other.y, other.z);
+    static constexpr Vector3<T> Forward() {
+        return Vector3<T>(0, 0, 1);
     }
-
-    Vector3& Normalize();
-    Vector3 Normalized() const;
-
-    static const Vector3 ZERO;
-    static const Vector3 UP;
-    static const Vector3 DOWN;
-    static const Vector3 FORWARD;
 };
 
-std::ostream& operator<<(std::ostream& st, const Vector3& vec);
+using Vector3f = Vector3<float>;
+
+std::ostream& operator<<(std::ostream& st, const Vector3f& vec);

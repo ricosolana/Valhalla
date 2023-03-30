@@ -10,8 +10,8 @@ namespace VUtils::Physics {
 
     // The main function that returns true if line segment 'p1q1'
     // and 'p2q2' intersect.
-    bool LinesIntersect(const Vector2& p1, const Vector2& q1, const Vector2& p2, const Vector2& q2) {
-        static auto&& onSegment = [](const Vector2& p, const Vector2& q, const Vector2& r) -> bool {
+    bool LinesIntersect(const Vector2f& p1, const Vector2f& q1, const Vector2f& p2, const Vector2f& q2) {
+        static auto&& onSegment = [](const Vector2f& p, const Vector2f& q, const Vector2f& r) -> bool {
             return q.x <= std::max(p.x, r.x) + EPS && q.x >= std::min(p.x, r.x) - EPS &&
                 q.y <= std::max(p.y, r.y) + EPS && q.y >= std::min(p.y, r.y) - EPS;
         };
@@ -21,7 +21,7 @@ namespace VUtils::Physics {
         // 0 --> p, q and r are collinear
         // 1 --> Clockwise
         // 2 --> Counterclockwise
-        static auto&& orientation = [](const Vector2& p, const Vector2& q, const Vector2& r) -> int {
+        static auto&& orientation = [](const Vector2f& p, const Vector2f& q, const Vector2f& r) -> int {
             // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
             // for details of below formula.
             float val = (q.y - p.y) * (r.x - q.x) -
@@ -61,10 +61,10 @@ namespace VUtils::Physics {
 
     /*
     // https://stackoverflow.com/a/9997374
-    bool LinesIntersect(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2) {
+    bool LinesIntersect(Vector2f a1, Vector2f a2, Vector2f b1, Vector2f b2) {
 
         // Return the area of triangle formed by points
-        static auto&& ccw = [](Vector2 a, Vector2 b, Vector2 c) {
+        static auto&& ccw = [](Vector2f a, Vector2f b, Vector2f c) {
             return (c.y - a.y) * (b.x - a.x)
             > (b.y - a.y) * (c.x - a.x);
         };
@@ -80,7 +80,7 @@ namespace VUtils::Physics {
             return true;
 
         // Return whether p is in a rectangular region formed by a and b
-        static auto&& inRegion = [](Vector2 p, Vector2 a, Vector2 b)
+        static auto&& inRegion = [](Vector2f p, Vector2f a, Vector2f b)
         {
             if (p.x <= std::max(a.x, b.x) && p.x >= std::min(a.x, b.x) &&
                 p.y <= std::max(a.y, b.y) && p.y >= std::min(a.y, b.y))
@@ -96,7 +96,7 @@ namespace VUtils::Physics {
     }*/
 
     // Return whether point lies inside rect at origin
-    bool PointInsideRect(Vector3 size, Vector3 pos) {
+    bool PointInsideRect(Vector3f size, Vector3f pos) {
         size *= .5f;
 
         return pos.x >= -size.x && pos.x <= size.x &&
@@ -104,20 +104,20 @@ namespace VUtils::Physics {
             pos.z >= -size.z && pos.z <= size.z;
     }
 
-    bool PointInsideRect(Vector3 size1, Vector3 pos1, Vector3 pos2) {
+    bool PointInsideRect(Vector3f size1, Vector3f pos1, Vector3f pos2) {
         return PointInsideRect(size1, pos2 - pos1);
     }
 
-    bool PointInsideRect(Vector3 size1, Vector3 pos1, Quaternion rot1, Vector3 pos2) {
+    bool PointInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f pos2) {
         // Normalize the point relative to the rectangle
         //  Get the difference in positions, then apply inverse rotation
-        Vector3 pos = Quaternion::Inverse(rot1) * (pos2 - pos1);
+        Vector3f pos = Quaternion::Inverse(rot1) * (pos2 - pos1);
 
         return PointInsideRect(size1, pos);
     }
 
-    bool RectInsideRect(Vector3 size1, Vector3 pos1, Quaternion rot1,
-        Vector3 size2, Vector3 pos2, Quaternion rot2) 
+    bool RectInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
+        Vector3f size2, Vector3f pos2, Quaternion rot2) 
     {
         // Get the difference between the 2 angles
         // https://wirewhiz.com/quaternion-tips/
@@ -126,20 +126,20 @@ namespace VUtils::Physics {
         size2 *= .5f;
 
         // Now bound detection
-        return PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, -size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, -size2.y, -size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(size2.x, -size2.y, size2.z))
-            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3(-size2.x, -size2.y, size2.z));
+        return PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(size2.x, size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(-size2.x, size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(size2.x, size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(-size2.x, size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(size2.x, -size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(-size2.x, -size2.y, -size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(size2.x, -size2.y, size2.z))
+            && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(-size2.x, -size2.y, size2.z));
     }
 
 
 
-    bool RectOverlapRect(Vector3 size1, Vector3 pos1, Quaternion rot1,
-        Vector3 size2, Vector3 pos2, Quaternion rot2, std::string& desmos) {
+    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
+        Vector3f size2, Vector3f pos2, Quaternion rot2, std::string& desmos) {
         // Determine whether rectangles overlap in any way
 
         // If a point is in a rect from either other, or a line intersects
@@ -173,25 +173,25 @@ namespace VUtils::Physics {
             //    return false;
         }
 
-        Vector3 v3_a_br = pos1 + rot1 * Vector3(size1.x, pos1.y, -size1.z);
-        Vector3 v3_a_bl = pos1 + rot1 * Vector3(-size1.x, pos1.y, -size1.z);
-        Vector3 v3_a_ur = pos1 + rot1 * Vector3(size1.x, pos1.y, size1.z);
-        Vector3 v3_a_ul = pos1 + rot1 * Vector3(-size1.x, pos1.y, size1.z);
+        Vector3f v3_a_br = pos1 + rot1 * Vector3f(size1.x, pos1.y, -size1.z);
+        Vector3f v3_a_bl = pos1 + rot1 * Vector3f(-size1.x, pos1.y, -size1.z);
+        Vector3f v3_a_ur = pos1 + rot1 * Vector3f(size1.x, pos1.y, size1.z);
+        Vector3f v3_a_ul = pos1 + rot1 * Vector3f(-size1.x, pos1.y, size1.z);
 
-        Vector3 v3_b_br = pos2 + rot2 * Vector3(size2.x, pos2.y, -size2.z);
-        Vector3 v3_b_bl = pos2 + rot2 * Vector3(-size2.x, pos2.y, -size2.z);
-        Vector3 v3_b_ur = pos2 + rot2 * Vector3(size2.x, pos2.y, size2.z);
-        Vector3 v3_b_ul = pos2 + rot2 * Vector3(-size2.x, pos2.y, size2.z);
+        Vector3f v3_b_br = pos2 + rot2 * Vector3f(size2.x, pos2.y, -size2.z);
+        Vector3f v3_b_bl = pos2 + rot2 * Vector3f(-size2.x, pos2.y, -size2.z);
+        Vector3f v3_b_ur = pos2 + rot2 * Vector3f(size2.x, pos2.y, size2.z);
+        Vector3f v3_b_ul = pos2 + rot2 * Vector3f(-size2.x, pos2.y, size2.z);
 
-        Vector2 a_br(v3_a_br.x, v3_a_br.z);
-        Vector2 a_bl(v3_a_bl.x, v3_a_bl.z);
-        Vector2 a_ur(v3_a_ur.x, v3_a_ur.z);
-        Vector2 a_ul(v3_a_ul.x, v3_a_ul.z);
+        Vector2f a_br(v3_a_br.x, v3_a_br.z);
+        Vector2f a_bl(v3_a_bl.x, v3_a_bl.z);
+        Vector2f a_ur(v3_a_ur.x, v3_a_ur.z);
+        Vector2f a_ul(v3_a_ul.x, v3_a_ul.z);
 
-        Vector2 b_br(v3_b_br.x, v3_b_br.z);
-        Vector2 b_bl(v3_b_bl.x, v3_b_bl.z);
-        Vector2 b_ur(v3_b_ur.x, v3_b_ur.z);
-        Vector2 b_ul(v3_b_ul.x, v3_b_ul.z);
+        Vector2f b_br(v3_b_br.x, v3_b_br.z);
+        Vector2f b_bl(v3_b_bl.x, v3_b_bl.z);
+        Vector2f b_ur(v3_b_ur.x, v3_b_ur.z);
+        Vector2f b_ul(v3_b_ul.x, v3_b_ul.z);
 
         // Only testing x / z intersections (y is redundant because of the initial test)
         if (LinesIntersect(a_br, a_ur, b_br, b_ur))
@@ -286,14 +286,14 @@ namespace VUtils::Physics {
         return overlaps;
     }
 
-    bool RectOverlapRect(Vector3 size1, Vector3 pos1, Quaternion rot1,
-        Vector3 size2, Vector3 pos2, Quaternion rot2) {
+    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
+        Vector3f size2, Vector3f pos2, Quaternion rot2) {
         assert(false);
         throw std::runtime_error("not implemented");
     }
 
-    std::pair<Vector3, Quaternion> LocalToGlobal(const Vector3 &childLocalPos, const Quaternion &childLocalRot,
-        const Vector3 &parentPos, const Quaternion &parentRot) {
+    std::pair<Vector3f, Quaternion> LocalToGlobal(const Vector3f &childLocalPos, const Quaternion &childLocalRot,
+        const Vector3f &parentPos, const Quaternion &parentRot) {
 
         auto childPos = parentPos + parentRot * (childLocalPos);
         auto childRot = childLocalRot * parentRot;
@@ -301,8 +301,8 @@ namespace VUtils::Physics {
         return { childPos, childRot };
     }
 
-    std::pair<Vector3, Quaternion> GlobalToLocal(const Vector3& globalPos, const Quaternion& globalRot,
-        const Vector3& parentPos, const Quaternion& parentRot) {
+    std::pair<Vector3f, Quaternion> GlobalToLocal(const Vector3f& globalPos, const Quaternion& globalRot,
+        const Vector3f& parentPos, const Quaternion& parentRot) {
 
         // solve for localPos
         // globalPos = parentPos + parentRot * (localPos);
@@ -317,9 +317,9 @@ namespace VUtils::Physics {
 
 
         //Quaternion childWorldRot = parentRot * childLocalRot;
-        //Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+        //Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * childLocalPos.Magnitude();
         //
-        //Vector3 childWorldPos = pointOnRot + parentPos;
+        //Vector3f childWorldPos = pointOnRot + parentPos;
         //
         //return { childWorldPos, childWorldRot };
     }

@@ -15,23 +15,23 @@ public:
 	//void ForceGenerateAll();
 	void ForceQueuedRegeneration();
 
-	float GetOceanDepthAll(const Vector3& worldPos);
+	float GetOceanDepthAll(const Vector3f& worldPos);
 
-	bool AtMaxLevelDepth(const Vector3& worldPos);
+	bool AtMaxLevelDepth(const Vector3f& worldPos);
 
-	//Vector3 GetNormal(const Vector3& pos);
+	//Vector3f GetNormal(const Vector3f& pos);
 
 	// Get the heightmap height at position
 	//	Will only succeed given the heightmap exists
 	// TODO make this return the height, or throw if out of bounds of entire square world
-	//bool GetHeight(const Vector3& worldPos, float& height);
-	//bool GetAverageHeight(const Vector3& worldPos, float radius, float &height);
+	//bool GetHeight(const Vector3f& worldPos, float& height);
+	//bool GetAverageHeight(const Vector3f& worldPos, float radius, float &height);
 
 	
 
 	// Get the heightmap height at position,
 	//	The heightmap will be created if it does not exist
-	//float GetHeight(const Vector3& worldPos);
+	//float GetHeight(const Vector3f& worldPos);
 
 	//static std::vector<Heightmap> GetAllHeightmaps();
 	robin_hood::unordered_map<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
@@ -40,12 +40,12 @@ public:
 
 	Heightmap* PollHeightmap(const ZoneID& zone);
 
-	Heightmap &GetHeightmap(const Vector3& point);
+	Heightmap &GetHeightmap(const Vector3f& point);
 	Heightmap &GetHeightmap(const ZoneID& zone);
-	std::vector<Heightmap*> GetHeightmaps(const Vector3& point, float radius);
-	//Biome FindBiome(const Vector3& point);
+	std::vector<Heightmap*> GetHeightmaps(const Vector3f& point, float radius);
+	//Biome FindBiome(const Vector3f& point);
 
-	bool IsRegenerateQueued(const Vector3& point, float radius);
+	bool IsRegenerateQueued(const Vector3f& point, float radius);
 
 	//Heightmap* CreateHeightmap(const Vector2i& zone);
 };

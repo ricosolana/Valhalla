@@ -13,7 +13,7 @@ Quaternion::Quaternion()
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
-Quaternion::Quaternion(const Vector3 &v, float w)
+Quaternion::Quaternion(const Vector3f &v, float w)
 {
     this->x = v.x;
     this->y = v.y;
@@ -27,13 +27,13 @@ float Quaternion::LengthSquared() const {
     return x * x + y * y + z * z + w * w;
 }
 
-Vector3 Quaternion::xyz() const {
-    return Vector3(x, y, z);
+Vector3f Quaternion::xyz() const {
+    return Vector3f(x, y, z);
 }
 
 
 
-Vector3 Quaternion::operator*(const Vector3& point) const {
+Vector3f Quaternion::operator*(const Vector3f& point) const {
     float x2 = x * 2.f;
     float y2 = y * 2.f;
     float z2 = z * 2.f;
@@ -86,7 +86,7 @@ bool Quaternion::operator!=(const Quaternion & other) const {
 
 
 Quaternion FromEulerRad_Impl(
-    const Vector3& refVec,
+    const Vector3f& refVec,
     int dims) {
 
     float sx;
@@ -234,8 +234,8 @@ Quaternion FromEulerRad_Impl(
 Quaternion Quaternion::Euler(float x, float y, float z) {
     // float yaw, float pitch, float roll
 
-    //Vector3 vec(x * 0.017453292f, y * 0.017453292f, z * 0.017453292f);
-    //return FromEulerRad_Impl(Vector3(x, y, z) * (PI / 180.f), 4);
+    //Vector3f vec(x * 0.017453292f, y * 0.017453292f, z * 0.017453292f);
+    //return FromEulerRad_Impl(Vector3f(x, y, z) * (PI / 180.f), 4);
     //return FromEulerRad_Impl(vec, 4);
         
     // degrees to radians
@@ -265,20 +265,20 @@ Quaternion Quaternion::Euler(float x, float y, float z) {
 
 // https://web.archive.org/web/20221126145919/https://gist.github.com/aeroson/043001ca12fe29ee911e
 
-Quaternion Quaternion::LookRotation(Vector3 forward, Vector3 up) {
+Quaternion Quaternion::LookRotation(Vector3f forward, Vector3f up) {
     // from http://answers.unity3d.com/questions/467614/what-is-the-source-code-of-quaternionlookrotation.html
-    //private static MyQuaternion LookRotation(ref Vector3 forward, ref Vector3 up)
+    //private static MyQuaternion LookRotation(ref Vector3f forward, ref Vector3f up)
     {
 
-        //forward = forward.Normalize(); // Vector3.Normalize(forward);
+        //forward = forward.Normalize(); // Vector3f.Normalize(forward);
         //forward.Normalize();
 
-        //auto right = up.Cross(forward).Normalized(); // Vector3.Normalize(Vector3.Cross(up, forward));
+        //auto right = up.Cross(forward).Normalized(); // Vector3f.Normalize(Vector3f.Cross(up, forward));
         //up = forward.Cross(right);
 
-        Vector3 vector = forward.Normalized();
-        Vector3 vector2 = up.Cross(vector).Normalized();
-        Vector3 vector3 = vector.Cross(vector2);
+        Vector3f vector = forward.Normal();
+        Vector3f vector2 = up.Cross(vector).Normal();
+        Vector3f vector3 = vector.Cross(vector2);
 
         auto m00 = vector2.x;
         auto m01 = vector2.y;

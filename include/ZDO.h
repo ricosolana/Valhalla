@@ -18,7 +18,7 @@
 template<typename T>
 concept TrivialSyncType = 
        std::same_as<T, float>
-    || std::same_as<T, Vector3>
+    || std::same_as<T, Vector3f>
     || std::same_as<T, Quaternion>
     || std::same_as<T, int32_t>
     || std::same_as<T, int64_t>
@@ -72,7 +72,7 @@ private:
         if constexpr (std::same_as<T, float>) {
             return ORD_FLOAT;
         }
-        else if constexpr (std::same_as<T, Vector3>) {
+        else if constexpr (std::same_as<T, Vector3f>) {
             return ORD_VECTOR3;
         }
         else if constexpr (std::same_as<T, Quaternion>) {
@@ -177,7 +177,7 @@ private:
             const auto ord = *other._Ordinal();
             switch (ord) {
             case ORD_FLOAT:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(float));          *_Member<float>() = *other._Member<float>(); break;
-            case ORD_VECTOR3:       this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Vector3));        *_Member<Vector3>() = *other._Member<Vector3>(); break;
+            case ORD_VECTOR3:       this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Vector3f));        *_Member<Vector3f>() = *other._Member<Vector3f>(); break;
             case ORD_QUATERNION:    this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Quaternion));     *_Member<Quaternion>() = *other._Member<Quaternion>(); break;
             case ORD_INT:           this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int32_t));        *_Member<int32_t>() = *other._Member<int32_t>(); break;
             case ORD_LONG:          this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int64_t));        *_Member<int64_t>() = *other._Member<int64_t>(); break;
@@ -281,7 +281,7 @@ private:
         size_t GetTotalAlloc() {
             switch (*_Ordinal()) {
             case ORD_FLOAT: return sizeof(Ordinal) + sizeof(float);
-            case ORD_VECTOR3: return sizeof(Ordinal) + sizeof(Vector3);
+            case ORD_VECTOR3: return sizeof(Ordinal) + sizeof(Vector3f);
             case ORD_QUATERNION: return sizeof(Ordinal) + sizeof(Quaternion);
             case ORD_INT: return sizeof(Ordinal) + sizeof(int32_t);
             case ORD_LONG: return sizeof(Ordinal) + sizeof(int64_t);
@@ -324,7 +324,7 @@ private:
     bool _Set(HASH_t key, const void* value, Ordinal ordinal) {
         switch (ordinal) {
         case ORD_FLOAT:		    return _Set(key, *(float*)         value);
-        case ORD_VECTOR3:		return _Set(key, *(Vector3*)       value);
+        case ORD_VECTOR3:		return _Set(key, *(Vector3f*)       value);
         case ORD_QUATERNION:	return _Set(key, *(Quaternion*)    value);
         case ORD_INT:			return _Set(key, *(int32_t*)       value);
         case ORD_LONG:			return _Set(key, *(int64_t*)       value);
@@ -416,7 +416,7 @@ private:    std::reference_wrapper<const Prefab> m_prefab;
 private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
-private:    Vector3 m_pos;
+private:    Vector3f m_pos;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
 private:     ZDOID m_id;
@@ -425,11 +425,11 @@ public:
     ZDO();
 
     // ZDOManager constructor
-    ZDO(const ZDOID& id, const Vector3& pos);
+    ZDO(const ZDOID& id, const Vector3f& pos);
 
-    //ZDO(const ZDOID& id, const Vector3& pos, HASH_t prefab);
+    //ZDO(const ZDOID& id, const Vector3f& pos, HASH_t prefab);
 
-    //ZDO(const ZDOID& id, const Vector3& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
+    //ZDO(const ZDOID& id, const Vector3f& pos, DataReader& deserialize, uint32_t ownerRev, uint32_t dataRev);
 
     ZDO(const ZDO& other) = default;
     
@@ -483,7 +483,7 @@ public:
     int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
     Int64Wrapper        GetLongWrapper( HASH_t key, const Int64Wrapper& value) const {              return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  HASH_t key, const Quaternion& value) const {                return Get<Quaternion>(key, value); }
-    Vector3             GetVector3(     HASH_t key, const Vector3& value) const {                   return Get<Vector3>(key, value); }
+    Vector3f             GetVector3(     HASH_t key, const Vector3f& value) const {                   return Get<Vector3f>(key, value); }
     std::string         GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
     const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
@@ -495,7 +495,7 @@ public:
     int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
     Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
-    Vector3             GetVector3(     HASH_t key) const {                                         return Get<Vector3>(key, {}); }
+    Vector3f             GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
     std::string         GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
     bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
     ZDOID               GetZDOID(       const std::pair<HASH_t, HASH_t>& key) const {               return ZDOID(GetLong(key.first), GetLong(key.second)); }
@@ -506,7 +506,7 @@ public:
     int64_t             GetLong(        const std::string& key, int64_t value) const {              return Get<int64_t>(key, value); }
     Int64Wrapper        GetLongWrapper( const std::string& key, const Int64Wrapper& value) const {  return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  const std::string& key, const Quaternion& value) const {    return Get<Quaternion>(key, value); }
-    Vector3             GetVector3(     const std::string& key, const Vector3& value) const {       return Get<Vector3>(key, value); }
+    Vector3f             GetVector3(     const std::string& key, const Vector3f& value) const {       return Get<Vector3f>(key, value); }
     std::string         GetString(      const std::string& key, const std::string& value) const {   return Get<std::string>(key, value); }
     const BYTES_t*      GetBytes(       const std::string& key) const {                             return Get<BYTES_t>(key); }
     bool                GetBool(        const std::string& key, bool value) const {                 return Get<int32_t>(key, value); }
@@ -518,7 +518,7 @@ public:
     int64_t             GetLong(const std::string& key) const {                                     return Get<int64_t>(key, {}); }
     Int64Wrapper        GetLongWrapper(const std::string& key) const {                              return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(const std::string& key) const {                               return Get<Quaternion>(key, {}); }
-    Vector3             GetVector3(const std::string& key) const {                                  return Get<Vector3>(key, {}); }
+    Vector3f             GetVector3(const std::string& key) const {                                  return Get<Vector3f>(key, {}); }
     std::string         GetString(const std::string& key) const {                                   return Get<std::string>(key, {}); }
     bool                GetBool(const std::string& key) const {                                     return Get<int32_t>(key, {}); }
     ZDOID               GetZDOID(const std::string& key) const {                                    return GetZDOID(key, {}); }
@@ -563,11 +563,11 @@ public:
         return m_id;
     }
 
-    Vector3 Position() const {
+    Vector3f Position() const {
         return m_pos;
     }
 
-    void SetPosition(const Vector3& pos);
+    void SetPosition(const Vector3f& pos);
 
     ZoneID GetZone() const;
 

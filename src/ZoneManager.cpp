@@ -53,8 +53,8 @@ void IZoneManager::Init() {
             loc->m_interiorRadius = pkg.Read<float>();
             loc->m_forestTresholdMin = pkg.Read<float>();
             loc->m_forestTresholdMax = pkg.Read<float>();
-            //loc->m_interiorPosition = pkg.Read<Vector3>();
-            //loc->m_generatorPosition = pkg.Read<Vector3>();
+            //loc->m_interiorPosition = pkg.Read<Vector3f>();
+            //loc->m_generatorPosition = pkg.Read<Vector3f>();
             loc->m_group = pkg.Read<std::string>();
             loc->m_iconAlways = pkg.Read<bool>();
             loc->m_iconPlaced = pkg.Read<bool>();
@@ -85,7 +85,7 @@ void IZoneManager::Init() {
                     throw std::runtime_error("prefab instance missing prefab");
                 }
 
-                piece.m_pos = pkg.Read<Vector3>();
+                piece.m_pos = pkg.Read<Vector3f>();
                 piece.m_rot = pkg.Read<Quaternion>();
                 loc->m_pieces.push_back(piece);
             }
@@ -180,7 +180,7 @@ void IZoneManager::Init() {
             SendGlobalKeys(); // Notify clients
     });
 
-    RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string locationName, Vector3 point, std::string pinName, int pinType, bool showMap) {
+    RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string locationName, Vector3f point, std::string pinName, int pinType, bool showMap) {
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG(INFO) << "Found location: '" << locationName << "'";
             RouteManager()->Invoke(peer->m_uuid, 
@@ -207,7 +207,7 @@ void IZoneManager::OnNewPeer(Peer& peer) {
     SendLocationIcons(peer);
 }
 
-bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3& refPoint) {
+bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3f& refPoint) {
     return ZonesOverlap(zone,
         WorldToZonePos(refPoint));
 }
@@ -317,7 +317,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                 const auto countLocations = reader.Read<int32_t>();
                 for (int i = 0; i < countLocations; i++) {
                     auto text = reader.Read<std::string>();
-                    auto pos = reader.Read<Vector3>();
+                    auto pos = reader.Read<Vector3f>();
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
 
                     auto&& location = GetFeature(text);
@@ -361,7 +361,7 @@ void IZoneManager::RegenerateZone(const ZoneID& zone) {
 }*/
 
 // Rename?
-void IZoneManager::TryGenerateNearbyZones(const Vector3& refPoint) {
+void IZoneManager::TryGenerateNearbyZones(const Vector3f& refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
     // Prioritize center zone
@@ -424,17 +424,17 @@ void IZoneManager::GenerateZoneCtrl(const ZoneID& zone) {
 }
 
 // private
-Vector3 IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const Vector3& center, float radius) {
+Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const Vector3f& center, float radius) {
     float f = state.NextFloat() * PI * 2.f;
     float num = state.Range(0.f, radius);
-    return center + Vector3(sin(f) * num, 0.f, cos(f) * num);
+    return center + Vector3f(sin(f) * num, 0.f, cos(f) * num);
 }
 
 // private
 void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas) {
     auto&& zoneID = heightmap.GetZone();
 
-    const Vector3 center = ZoneToWorldPos(zoneID);
+    const Vector3f center = ZoneToWorldPos(zoneID);
 
     const auto seed = GeoManager()->GetSeed();
 
@@ -475,13 +475,13 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
             float vx = state.Range(center.x - num6, center.x + num6);
             float vz = state.Range(center.z - num6, center.z + num6);
 
-            Vector3 basePos(vx, 0., vz);
+            Vector3f basePos(vx, 0., vz);
 
             const auto groupCount = state.Range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
             bool generated = false;
             for (int32_t j = 0; j < groupCount; j++) {
 
-                Vector3 pos = (j == 0) ? basePos
+                Vector3f pos = (j == 0) ? basePos
                     : GetRandomPointInRadius(state, basePos, zoneVegetation->m_groupRadius);
 
                 // random rotations
@@ -495,7 +495,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
                     //|| !IsBlocked(vector2)) // no unity   \_(^.^)_/
                 {
 
-                    Vector3 normal;
+                    Vector3f normal;
                     Biome biome;
                     BiomeArea biomeArea;
                     Heightmap &otherHeightmap = GetGroundData(pos, normal, biome, biomeArea);
@@ -511,7 +511,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
                     // objects with static physics every so often while nearby
                     // 
                     //float y2 = 0;
-                    //Vector3 vector4;
+                    //Vector3f vector4;
                     //if (zoneVegetation->m_snapToStaticSolid && GetStaticSolidHeight(vector2, y2, vector4)) {
                     //    vector2.y = y2;
                     //    vector3 = vector4;
@@ -542,7 +542,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
 
                         if (zoneVegetation->m_terrainDeltaRadius > 0) {
                             float num12;
-                            Vector3 vector5;
+                            Vector3f vector5;
                             GetTerrainDelta(state, pos, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
                             if (num12 > zoneVegetation->m_maxTerrainDelta || num12 < zoneVegetation->m_minTerrainDelta) {
                                 continue;
@@ -570,7 +570,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
                                 auto rotation2 = Quaternion::Euler(0, rot_y, 0);
                                 rotation = Quaternion::LookRotation(
-                                    normal.Cross(rotation2 * Vector3::FORWARD),
+                                    normal.Cross(rotation2 * Vector3f::Forward()),
                                     normal
                                 );
                             }
@@ -587,7 +587,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
                                 // this does set the Unity gameobject localscale
-                                zdo.Set("scale", Vector3(scale, scale, scale));
+                                zdo.Set("scale", Vector3f(scale, scale, scale));
                             }
 
                             generated = true;
@@ -608,7 +608,7 @@ void IZoneManager::GenerateFoliage(Heightmap& heightmap, const std::vector<Clear
 }
 
 // private
-bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Vector3& point) {
+bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Vector3f& point) {
     for (auto&& clearArea : areas) {
         if (point.x > clearArea.m_center.x - clearArea.m_semiWidth
             && point.x < clearArea.m_center.x + clearArea.m_semiWidth
@@ -620,7 +620,7 @@ bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Ve
     return false;
 }
 
-bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3& point, float radius) {
+bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3f& point, float radius) {
     for (auto&& area : areas) {
 
         float d = VUtils::Math::SqDistance(point.x, point.z, area.m_center.x, area.m_center.z);
@@ -707,7 +707,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
         if (m_generatedFeatures.contains(randomZone))
             errLocations++;
         else {
-            Vector3 zonePos = ZoneToWorldPos(randomZone);
+            Vector3f zonePos = ZoneToWorldPos(randomZone);
             BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
             if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea)))
@@ -741,7 +741,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
                                 }
 
                                 float delta = 0;
-                                Vector3 vector;
+                                Vector3f vector;
                                 GeoManager()->GetTerrainDelta(state, randomPointInZone, feature.m_exteriorRadius, delta, vector);
                                 if (delta > feature.m_maxTerrainDelta
                                     || delta < feature.m_minTerrainDelta)
@@ -784,7 +784,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     }
 }
 
-bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3 &p) {
+bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3f &p) {
     for (auto&& pair : m_generatedFeatures) {
         auto&& locationInstance = pair.second;
         auto&& location = locationInstance->m_feature.get();
@@ -799,12 +799,12 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3 &p) {
     return false;
 }
 
-Vector3 IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, const ZoneID& zone, float locationRadius) {
+Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, const ZoneID& zone, float locationRadius) {
     auto pos = ZoneToWorldPos(zone);
     float num = ZONE_SIZE / 2.f;
     float x = state.Range(-num + locationRadius, num - locationRadius);
     float z = state.Range(-num + locationRadius, num - locationRadius);
-    return pos + Vector3(x, 0.f, z);
+    return pos + Vector3f(x, 0.f, z);
 }
 
 Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
@@ -830,8 +830,8 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(const Zone
         auto&& locationInstance = find->second;
         auto&& location = locationInstance->m_feature.get();
 
-        Vector3 position = locationInstance->m_pos;
-        //Vector3 vector;
+        Vector3f position = locationInstance->m_pos;
+        //Vector3f vector;
         //Biome biome;
         //BiomeArea biomeArea;
         //Heightmap *heightmap = GetGroundData(position, vector, biome, biomeArea);
@@ -848,13 +848,13 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(const Zone
         // slopeRotation is Mistlands only
         //if (locationInstance.m_feature->m_slopeRotation) {
         //    float num;
-        //    Vector3 vector2;
+        //    Vector3f vector2;
         //    GetTerrainDelta(position, locationInstance.m_feature->m_exteriorRadius, num, vector2);
-        //    Vector3 forward(vector2.x, 0.f, vector2.z);
+        //    Vector3f forward(vector2.x, 0.f, vector2.z);
         //    forward.Normalize();
         //    rot = Quaternion::LookRotation(forward);
         //    assert(false);
-        //    //Vector3 eulerAngles = rot.eulerAngles;
+        //    //Vector3f eulerAngles = rot.eulerAngles;
         //    //eulerAngles.y = round(eulerAngles.y / 22.5f) * 22.5f;
         //    //rot.eulerAngles = eulerAngles;
         //}
@@ -901,9 +901,9 @@ void IZoneManager::RemoveUngeneratedFeatures(const Feature& feature) {
 }
 
 // private
-void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const Vector3f& pos, const Quaternion& rot) {
 
-    //location->m_prefab.transform.position = Vector3::ZERO;
+    //location->m_prefab.transform.position = Vector3f::ZERO;
     //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
 
     //Location component = location.m_prefab.GetComponent<Location>();
@@ -913,10 +913,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
     if (flag) {
         LOG(ERROR) << "Tried pre-initializing ZoneLocation Dungeon: " << location.m_name;
         //Vector2i zone = WorldToZonePos(pos);
-        //Vector3 zonePos = ZoneToWorldPos(zone);
-        //component.m_generator.transform.localPosition = Vector3::ZERO;
-        //Vector3 vector = zonePos + location.m_interiorPosition + location.m_generatorPosition - pos;
-        //Vector3 localPosition = (Matrix4x4.Rotate(Quaternion.Inverse(rot)) * Matrix4x4.Translate(vector)).GetColumn(3);
+        //Vector3f zonePos = ZoneToWorldPos(zone);
+        //component.m_generator.transform.localPosition = Vector3f::ZERO;
+        //Vector3f vector = zonePos + location.m_interiorPosition + location.m_generatorPosition - pos;
+        //Vector3f localPosition = (Matrix4x4.Rotate(Quaternion.Inverse(rot)) * Matrix4x4.Translate(vector)).GetColumn(3);
         //localPosition.y = component.m_interiorTransform.localPosition.y;
         //component.m_interiorTransform.localPosition = localPosition;
         //component.m_interiorTransform.localRotation = Quaternion.Inverse(rot);
@@ -931,7 +931,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
     //WearNTear.m_randomInitialDamage = location.m_feature.m_applyRandomDamage;
     //for (auto&& znetView2 : location.m_netViews) {
     for (auto&& piece : location.m_pieces) {
-        //Vector3 piecePos = piece.m_pos;
+        //Vector3f piecePos = piece.m_pos;
         //Quaternion pieceRot = piece.m_rot;
 
         //const Dungeon *dungeon = nullptr;
@@ -948,18 +948,18 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
             ZDO* zdo = nullptr;
 
-            if (dungeon.m_interiorPosition != Vector3::ZERO) {
+            if (dungeon.m_interiorPosition != Vector3f::Zero()) {
 
                 ZoneID zone = WorldToZonePos(pos);
-                Vector3 zonePos = ZoneToWorldPos(zone);
+                Vector3f zonePos = ZoneToWorldPos(zone);
 
-                //Vector3 localPosition = (zonePos - pos) 
+                //Vector3f localPosition = (zonePos - pos) 
                 //    + dungeon->m_interiorPosition // ( 0, 5000, 0 )
                 //    + dungeon->m_originalPosition; // minor position change (usually height and a horizontal axis)
 
                 //localPosition = Quaternion::Inverse(rot) * localPosition;
 
-                Vector3 piecePos = zonePos
+                Vector3f piecePos = zonePos
                     + dungeon.m_interiorPosition // ( 0, 5000, 0 )
                     + dungeon.m_originalPosition; // minor position change (usually height and a horizontal axis)
 
@@ -990,7 +990,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
 // could be inlined...
 // private
-void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, const Vector3& pos, const Quaternion& rot) {
+void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, const Vector3f& pos, const Quaternion& rot) {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
     
     zdo.Set("location", location.m_hash);
@@ -1018,14 +1018,14 @@ std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager:
 }
 
 // private
-void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection) {
+void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3f& center, float radius, float& delta, Vector3f& slopeDirection) {
     float num2 = std::numeric_limits<float>::min();
     float num3 = std::numeric_limits<float>::max();
-    Vector3 b = center;
-    Vector3 a = center;
+    Vector3f b = center;
+    Vector3f a = center;
     for (int i = 0; i < 10; i++) {
-        Vector2 vector = state.InsideUnitCircle() * radius;
-        Vector3 vector2 = center + Vector3(vector.x, 0.f, vector.y);
+        Vector2f vector = state.InsideUnitCircle() * radius;
+        Vector3f vector2 = center + Vector3f(vector.x, 0.f, vector.y);
         float groundHeight = GetGroundHeight(vector2);
         if (groundHeight < num3) {
             num3 = groundHeight;
@@ -1037,19 +1037,19 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3& 
         }
     }
     delta = num2 - num3;
-    slopeDirection = (a - b).Normalize();
+    slopeDirection = (a - b).Normal();
 }
 
 // used importantly for snapping and location/vegetation generation
 // public
-float IZoneManager::GetGroundHeight(const Vector3& p) {
+float IZoneManager::GetGroundHeight(const Vector3f& p) {
     return GeoManager()->GetHeight(p.x, p.z);
 }
 
 // public
 // if terrain is just heightmap,
 // could easily create a wrapper and poll points where needed
-Heightmap& IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome, BiomeArea& biomeArea) {
+Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& biome, BiomeArea& biomeArea) {
     auto &&heightmap = HeightmapManager()->GetHeightmap(WorldToZonePos(p));
 
     heightmap.GetWorldHeight(p, p.y);
@@ -1063,7 +1063,7 @@ Heightmap& IZoneManager::GetGroundData(Vector3& p, Vector3& normal, Biome& biome
 }
 
 // public
-IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(const std::string& name, const Vector3& point) {
+IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(const std::string& name, const Vector3f& point) {
     float closestDist = std::numeric_limits<float>::max();
     
     IZoneManager::Feature::Instance* closest = nullptr;
@@ -1085,7 +1085,7 @@ IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(const std::stri
 // public
 // this is world position to zone position
 // formerly GetZone
-Vector2i IZoneManager::WorldToZonePos(const Vector3& point) {
+Vector2i IZoneManager::WorldToZonePos(const Vector3f& point) {
     int32_t x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
     int32_t y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
     return Vector2i(x, y);
@@ -1094,8 +1094,8 @@ Vector2i IZoneManager::WorldToZonePos(const Vector3& point) {
 // public
 // zone position to ~world position
 // GetZonePos
-Vector3 IZoneManager::ZoneToWorldPos(const ZoneID& id) {
-    return Vector3(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
+Vector3f IZoneManager::ZoneToWorldPos(const ZoneID& id) {
+    return Vector3f(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
 }
 
 // private

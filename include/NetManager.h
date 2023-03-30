@@ -52,10 +52,10 @@ public:
 
     //void OnNewPeer(std::unique_ptr<Peer> peer);
 
-    //void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3 &pos);
+    //void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3f &pos);
     void OnNewPeer(Peer& peer);
 
-    //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3& pos);
+    //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3f& pos);
 
     const auto& GetPeers() {
         return m_peers;

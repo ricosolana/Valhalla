@@ -70,7 +70,7 @@ void DataWriter::Write(const ZDOID& in) {
     Write(in.m_id);
 }
 
-void DataWriter::Write(const Vector3& in) {
+void DataWriter::Write(const Vector3f& in) {
     Write(in.x);
     Write(in.y);
     Write(in.z);
@@ -145,8 +145,8 @@ void DataWriter::SerializeLuaImpl(DataWriter& params, const IModManager::Types&t
         else if (arg.is<ZDOID>() && expectType == IModManager::Type::ZDOID) {
             params.Write(arg.as<ZDOID>());
         }
-        else if (arg.is<Vector3>() && expectType == IModManager::Type::VECTOR3) {
-            params.Write(arg.as<Vector3>());
+        else if (arg.is<Vector3f>() && expectType == IModManager::Type::VECTOR3) {
+            params.Write(arg.as<Vector3f>());
         }
         else if (arg.is<Vector2i>() && expectType == IModManager::Type::VECTOR2i) {
             params.Write(arg.as<Vector2i>());

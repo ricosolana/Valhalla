@@ -75,7 +75,7 @@ namespace VUtils::Random {
         return minInclude;
     }
 
-    Vector2 State::InsideUnitCircle() {
+    Vector2f State::InsideUnitCircle() {
 
         // get random 
         float rad = Range(0.f, PI * 2.f);
@@ -85,7 +85,7 @@ namespace VUtils::Random {
         float ze = Range(0.f, 1.f);
         float d = sqrtf(ze);
 
-        return Vector2(x * d, y * d);
+        return Vector2f(x * d, y * d);
         /*
         uint32_t uVar1;
         uint32_t* seed;
@@ -113,16 +113,16 @@ namespace VUtils::Random {
         *param_1 = CONCAT44(rad * fVar5, fVar4 * fVar5);*/
     }
 
-    Vector3 State::OnUnitSphere() {
+    Vector3f State::OnUnitSphere() {
         float dist = Range(-1.f, 1.f);
         float rad = Range(0.f, PI * 2.f);
 
         float vecX = sqrtf(1.0 - dist * dist);
 
-        return Vector3(cosf(rad) * vecX, sinf(rad) * vecX, dist);
+        return Vector3f(cosf(rad) * vecX, sinf(rad) * vecX, dist);
     }
 
-    Vector3 State::InsideUnitSphere() {
+    Vector3f State::InsideUnitSphere() {
         // unity does this by sampling a point on the surface of sphere
         auto vec = OnUnitSphere();
 

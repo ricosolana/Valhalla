@@ -139,7 +139,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
     writer.Write(Valhalla()->ID());
     writer.Write(VConstants::GAME);
-    writer.Write(Vector3::ZERO); // dummy
+    writer.Write(Vector3f::Zero()); // dummy
     writer.Write(""); // dummy
 
     auto world = WorldManager()->GetWorld();
@@ -156,7 +156,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 
-//void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3 &pos) {
+//void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnNewPeer(Peer& peer) {
     //auto peer(std::make_unique<Peer>(std::move(socket)));
 
@@ -171,7 +171,7 @@ void INetManager::OnNewPeer(Peer& peer) {
     }
 
     // Important
-    peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3 pos, bool publicRefPos) {
+    peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3f pos, bool publicRefPos) {
         peer->m_pos = pos;
         peer->m_visibleOnMap = publicRefPos; // stupid name
         });

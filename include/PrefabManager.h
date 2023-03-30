@@ -41,7 +41,7 @@ public:
 		return RequirePrefab(VUtils::String::GetStableHashCode(name));
 	}
 
-	void Register(const std::string& name, Prefab::Type type, const Vector3 &scale, Prefab::Flag flags, bool overwrite) {
+	void Register(const std::string& name, Prefab::Type type, const Vector3f &scale, Prefab::Flag flags, bool overwrite) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
 		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
 
@@ -73,7 +73,7 @@ public:
 		prefab.m_name = name;
 		prefab.m_hash = hash;
 		prefab.m_type = (Prefab::Type) reader.Read<int32_t>();
-		prefab.m_localScale = reader.Read<Vector3>();
+		prefab.m_localScale = reader.Read<Vector3f>();
 		prefab.m_flags = reader.Read<Prefab::Flag>();
 
 		VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";

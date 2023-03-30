@@ -797,19 +797,19 @@ public:
         //DungeonManager()->GetDungeon(
         //    //VUtils::String::GetStableHashCode("DG_Cave")
         //    VUtils::String::GetStableHashCode("DG_SunkenCrypt")
-        //)->Generate(Vector3(130, 234, 2423), Quaternion::IDENTITY);
+        //)->Generate(Vector3f(130, 234, 2423), Quaternion::IDENTITY);
 
         //DungeonManager()->GetDungeon(
         //    VUtils::String::GetStableHashCode("DG_SunkenCrypt")
-        //)->Generate(Vector3(2513.1, 5031.8, -4212.3), Quaternion(0.0, -0.2, 0.0, -1.0), 1372687413);
+        //)->Generate(Vector3f(2513.1, 5031.8, -4212.3), Quaternion(0.0, -0.2, 0.0, -1.0), 1372687413);
     }
 
     void Test_LinesIntersect() {
         {
-            Vector2 a(.5f, -.5f);
-            Vector2 b(.5f, .5f);
-            Vector2 c(.3901f, .6901f);
-            Vector2 d(.9098f, .3901f);
+            Vector2f a(.5f, -.5f);
+            Vector2f b(.5f, .5f);
+            Vector2f c(.3901f, .6901f);
+            Vector2f d(.9098f, .3901f);
 
             //assert(!VUtils::Physics::LinesIntersect(
             //    a, b, c, d
@@ -819,10 +819,10 @@ public:
 
     void Test_RectInsideRect() {
         {
-            Vector3 size(100, 0, 50);
+            Vector3f size(100, 0, 50);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(51, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(51, 0, 0);
 
             auto rot(Quaternion::Euler(0, 0, 0));
 
@@ -833,10 +833,10 @@ public:
         }
 
         {
-            Vector3 size(100, 0, 50);
+            Vector3f size(100, 0, 50);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(49, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(49, 0, 0);
 
             auto rot(Quaternion::Euler(0, 0, 0));
 
@@ -847,10 +847,10 @@ public:
         }
 
         {
-            Vector3 size(100, 0, 50);
+            Vector3f size(100, 0, 50);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(32, 0, 18);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(32, 0, 18);
 
             auto rot(Quaternion::Euler(0, 30, 0));
 
@@ -863,11 +863,11 @@ public:
 
 
         {
-            Vector3 size1(100, 0, 50);
-            Vector3 size2(100, 0, 50);
+            Vector3f size1(100, 0, 50);
+            Vector3f size2(100, 0, 50);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(100, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(100, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 0, 0));
@@ -879,11 +879,11 @@ public:
         }
 
         {
-            Vector3 size1(100, 0, 50);
-            Vector3 size2(90, 0, 40);
+            Vector3f size1(100, 0, 50);
+            Vector3f size2(90, 0, 40);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(0, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(0, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 0, 0));
@@ -895,11 +895,11 @@ public:
         }
 
         {
-            Vector3 size1(1.f, 0, 1.f);
-            Vector3 size2(.9f, 0, .9f);
+            Vector3f size1(1.f, 0, 1.f);
+            Vector3f size2(.9f, 0, .9f);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(0, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(0, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 45, 0));
@@ -911,11 +911,11 @@ public:
         }
 
         {
-            Vector3 size1(1.f, 0, 1.f);
-            Vector3 size2(.6f, 0, .6f);
+            Vector3f size1(1.f, 0, 1.f);
+            Vector3f size2(.6f, 0, .6f);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(0, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(0, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 45.f, 0));
@@ -927,11 +927,11 @@ public:
         }
 
         {
-            Vector3 size1(1, 0, 1);
-            Vector3 size2(.6f, 0, .6f);
+            Vector3f size1(1, 0, 1);
+            Vector3f size2(.6f, 0, .6f);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(0, 1, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(0, 1, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 45, 0));
@@ -946,11 +946,11 @@ public:
     void Test_RectOverlap() {
         // Rectangles touching side-to-side will always be considered overlapping
         //{
-        //    Vector3 size1(100, 0, 50);
-        //    Vector3 size2(100, 0, 50);
+        //    Vector3f size1(100, 0, 50);
+        //    Vector3f size2(100, 0, 50);
         //
-        //    Vector3 pos1(0, 0, 0);
-        //    Vector3 pos2(100, 0, 0);
+        //    Vector3f pos1(0, 0, 0);
+        //    Vector3f pos2(100, 0, 0);
         //
         //    auto rot1(Quaternion::Euler(0, 15, 0));
         //    auto rot2(Quaternion::Euler(0, 0, 0));
@@ -962,11 +962,11 @@ public:
         //}
 
         {
-            Vector3 size1(1.f, 0, 1.f);
-            Vector3 size2(.7f, 0, .7f);
+            Vector3f size1(1.f, 0, 1.f);
+            Vector3f size2(.7f, 0, .7f);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(0, 0, 0);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(0, 0, 0);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 30, 0));
@@ -978,11 +978,11 @@ public:
         }
 
         {
-            Vector3 size1(1.f, 0, 1.f);
-            Vector3 size2(.6f, 0, .6f);
+            Vector3f size1(1.f, 0, 1.f);
+            Vector3f size2(.6f, 0, .6f);
 
-            Vector3 pos1(0, 0, 0);
-            Vector3 pos2(.8f, 0, .8f);
+            Vector3f pos1(0, 0, 0);
+            Vector3f pos2(.8f, 0, .8f);
 
             auto rot1(Quaternion::Euler(0, 0, 0));
             auto rot2(Quaternion::Euler(0, 30.f, 0));
@@ -994,11 +994,11 @@ public:
         }
 
         {
-            Vector3 size1(1.f, 0, 1);
-            Vector3 size2(.6f, 0, .6f);
+            Vector3f size1(1.f, 0, 1);
+            Vector3f size2(.6f, 0, .6f);
 
-            Vector3 pos1(.15f, 0, .15f);
-            Vector3 pos2(.8f, 0, .8f);
+            Vector3f pos1(.15f, 0, .15f);
+            Vector3f pos2(.8f, 0, .8f);
 
             auto rot1(Quaternion::Euler(0, 45, 0));
             auto rot2(Quaternion::Euler(0, 45, 0));
@@ -1010,11 +1010,11 @@ public:
         }
 
         {
-            Vector3 size1(1.f, 0, 1);
-            Vector3 size2(.6f, 0, .6f);
+            Vector3f size1(1.f, 0, 1);
+            Vector3f size2(.6f, 0, .6f);
 
-            Vector3 pos1(-.326f, 0, -.474f);
-            Vector3 pos2(.6f, 0, -.04f);
+            Vector3f pos1(-.326f, 0, -.474f);
+            Vector3f pos2(.6f, 0, -.04f);
 
             auto rot1(Quaternion::Euler(0, 210, 0));
             auto rot2(Quaternion::Euler(0, 60, 0));
@@ -1035,24 +1035,24 @@ public:
     void Test_ParentChildTransforms() {
         {
             // Dummy child local transforms
-            Vector3 childLocalPos(1, 1, 1);
+            Vector3f childLocalPos(1, 1, 1);
             Quaternion childLocalRot(Quaternion::Euler(10, 75, 10));
 
             // Dummy parent transforms
-            Vector3 parentPos(4, 5, 4);
+            Vector3f parentPos(4, 5, 4);
             Quaternion parentRot(Quaternion::Euler(20, 90, 30));
 
 
 
             // Unity-calculate values based on the above
             //  World transforms of child
-            Vector3 expectChildPos(5.406901f, 5.941624f, 3.633975f);
+            Vector3f expectChildPos(5.406901f, 5.941624f, 3.633975f);
             Quaternion expectChildRot(.1371928f, .2958279f, .9315588f, .1608175f);
 
             //Quaternion calcChildRot = parentRot * childLocalRot;
-            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+            //Vector3f pointOnRot = (calcChildRot * Vector3f::FORWARD).Normalized() * childLocalPos.Magnitude();
 
-            //Vector3 calcChildPos = pointOnRot + parentPos;
+            //Vector3f calcChildPos = pointOnRot + parentPos;
 
             auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
                 parentPos, parentRot
@@ -1061,24 +1061,24 @@ public:
 
         {
             // Dummy child local transforms
-            Vector3 childLocalPos(12, 0, 0);
+            Vector3f childLocalPos(12, 0, 0);
             Quaternion childLocalRot(Quaternion::Euler(0, 10, 0));
 
             // Dummy parent transforms
-            Vector3 parentPos(-182, 52, -52);
+            Vector3f parentPos(-182, 52, -52);
             Quaternion parentRot(Quaternion::Euler(0, 24, 0));
 
 
 
             // Unity-calculate values based on the above
             //  World transforms of child
-            Vector3 expectChildPos(-171.0375f, 52, -56.88084f);
+            Vector3f expectChildPos(-171.0375f, 52, -56.88084f);
             Quaternion expectChildRot(Quaternion::Euler(0, 34, 0));
 
             //Quaternion calcChildRot = parentRot * childLocalRot;
-            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+            //Vector3f pointOnRot = (calcChildRot * Vector3f::FORWARD).Normalized() * childLocalPos.Magnitude();
 
-            //Vector3 calcChildPos = pointOnRot + parentPos;
+            //Vector3f calcChildPos = pointOnRot + parentPos;
 
             auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
                 parentPos, parentRot
@@ -1090,24 +1090,24 @@ public:
 
         {
             // Dummy child local transforms
-            Vector3 childLocalPos(12, 0, 0);
+            Vector3f childLocalPos(12, 0, 0);
             Quaternion childLocalRot(Quaternion::Euler(0, -12, 0));
 
             // Dummy parent transforms
-            Vector3 parentPos(-182, 52, -52);
+            Vector3f parentPos(-182, 52, -52);
             Quaternion parentRot(Quaternion::Euler(0, 24, 0));
 
 
 
             // Unity-calculate values based on the above
             //  World transforms of child
-            Vector3 expectChildPos(-171.0375f, 52, -56.88084f);
+            Vector3f expectChildPos(-171.0375f, 52, -56.88084f);
             Quaternion expectChildRot(Quaternion::Euler(0, 12, 0));
 
             //Quaternion calcChildRot = parentRot * childLocalRot;
-            //Vector3 pointOnRot = (calcChildRot * Vector3::FORWARD).Normalized() * childLocalPos.Magnitude();
+            //Vector3f pointOnRot = (calcChildRot * Vector3f::FORWARD).Normalized() * childLocalPos.Magnitude();
 
-            //Vector3 calcChildPos = pointOnRot + parentPos;
+            //Vector3f calcChildPos = pointOnRot + parentPos;
 
             auto global = VUtils::Physics::LocalToGlobal(childLocalPos, childLocalRot,
                 parentPos, parentRot
@@ -1132,11 +1132,11 @@ public:
             {
                 for (float x = -1; x < 1; x += .05f)
                 {
-                    auto vec = Vector3(x, y, z);
+                    auto vec = Vector3f(x, y, z);
                     if (vec.Magnitude() <= 0.0001f)
                         continue;
 
-                    auto calc = Quaternion::LookRotation(Vector3(x, y, z));
+                    auto calc = Quaternion::LookRotation(Vector3f(x, y, z));
                     auto expect = Quaternion(
                         std::stof(values[index + 0]),
                         std::stof(values[index + 1]),
@@ -1199,7 +1199,7 @@ public:
     }
     
     void Test_PeerLuaConnect() {
-        //Peer ref(nullptr, 123456789, "eikthyr", Vector3::ZERO);
+        //Peer ref(nullptr, 123456789, "eikthyr", Vector3f::ZERO);
         //
         //Peer* peer = &ref;
         //

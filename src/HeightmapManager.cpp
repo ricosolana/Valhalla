@@ -31,25 +31,25 @@ void IHeightmapManager::ForceQueuedRegeneration() {
 }
 
 // public static 
-float IHeightmapManager::GetOceanDepthAll(const Vector3& worldPos) {
+float IHeightmapManager::GetOceanDepthAll(const Vector3f& worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.GetOceanDepth(worldPos);
 }
 
 // public static
-bool IHeightmapManager::AtMaxLevelDepth(const Vector3& worldPos) {
+bool IHeightmapManager::AtMaxLevelDepth(const Vector3f& worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.AtMaxWorldLevelDepth(worldPos);
 }
 
 /*
-Vector3 IHeightmapManager::GetNormal(const Vector3& pos) {
+Vector3f IHeightmapManager::GetNormal(const Vector3f& pos) {
 
 }*/
 
 /*
 // public static
-bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
+bool IHeightmapManager::GetHeight(const Vector3f& worldPos, float& height) {
     auto&& heightmap = GetHeightmap(worldPos);
     if (heightmap.GetWorldHeight(worldPos, height)) {
         return true;
@@ -58,7 +58,7 @@ bool IHeightmapManager::GetHeight(const Vector3& worldPos, float& height) {
     return false;
 }
 
-float IHeightmapManager::GetHeight(const Vector3& worldPos) {
+float IHeightmapManager::GetHeight(const Vector3f& worldPos) {
     auto&& heightmap = GetHeightmap(IZoneManager::WorldToZonePos(worldPos));
 
     float height = 0;
@@ -76,7 +76,7 @@ float IHeightmapManager::GetHeight(const Vector3& worldPos) {
 
 /*
 // public static
-bool IHeightmapManager::GetAverageHeight(const Vector3& worldPos, float radius, float &height) {
+bool IHeightmapManager::GetAverageHeight(const Vector3f& worldPos, float radius, float &height) {
     auto heightmaps = GetHeightmaps(worldPos, radius);
 
     float num = 0;
@@ -152,7 +152,7 @@ Heightmap* IHeightmapManager::PollHeightmap(const ZoneID& zone) {
 }
 
 // public static
-Heightmap& IHeightmapManager::GetHeightmap(const Vector3& point) {
+Heightmap& IHeightmapManager::GetHeightmap(const Vector3f& point) {
     return GetHeightmap(IZoneManager::WorldToZonePos(point));
 }
 
@@ -169,7 +169,7 @@ Heightmap& IHeightmapManager::GetHeightmap(const ZoneID& zone) {
 }
 
 // public static
-std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, float radius) {
+std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3f& point, float radius) {
     throw std::runtime_error("not implemented");
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
@@ -183,7 +183,7 @@ std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3& point, f
 
 /*
 // public static
-Biome IHeightmapManager::FindBiome(const Vector3& point) {
+Biome IHeightmapManager::FindBiome(const Vector3f& point) {
     auto &&heightmap = GetHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
@@ -192,7 +192,7 @@ Biome IHeightmapManager::FindBiome(const Vector3& point) {
 }*/
 
 // public static
-bool IHeightmapManager::IsRegenerateQueued(const Vector3& point, float radius) {
+bool IHeightmapManager::IsRegenerateQueued(const Vector3f& point, float radius) {
     assert(false);
     return false;
     //auto heightmaps = GetHeightmaps(point, radius);

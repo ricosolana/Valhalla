@@ -9,9 +9,9 @@
 class IGeoManager {
 private:
 	struct River {
-		Vector2 p0;
-		Vector2 p1;
-		Vector2 center;
+		Vector2f p0;
+		Vector2f p1;
+		Vector2f center;
 		float widthMin;
 		float widthMax;
 		float curveWidth;
@@ -19,11 +19,11 @@ private:
 	};
 
 	struct RiverPoint {
-		Vector2 p;
+		Vector2f p;
 		float w;
 		float w2;
 
-		RiverPoint(Vector2 p_p, float p_w) {
+		RiverPoint(Vector2f p_p, float p_w) {
 			p = p_p;
 			w = p_w;
 			w2 = p_w * p_w;
@@ -42,7 +42,7 @@ private:
 	float m_offset4;
 	int32_t m_riverSeed;
 	int32_t m_streamSeed;
-	std::vector<Vector2> m_lakes;
+	std::vector<Vector2f> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
 	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> m_riverPoints;
@@ -112,23 +112,23 @@ private:
 
 	//void GenerateMountains();
 	void GenerateLakes();
-	std::vector<Vector2> MergePoints(std::vector<Vector2>& points, float range);
-	int FindClosest(const std::vector<Vector2>& points, const Vector2& p, float maxDistance);
+	std::vector<Vector2f> MergePoints(std::vector<Vector2f>& points, float range);
+	int FindClosest(const std::vector<Vector2f>& points, const Vector2f& p, float maxDistance);
 	void GenerateStreams();
-	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2& start, float minLength, float maxLength, Vector2& end);
-	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2& p, float& starth);
+	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2f& start, float minLength, float maxLength, Vector2f& end);
+	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth);
 	void GenerateRivers();
-	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2>& points, 
-		const Vector2& p, float maxDistance, float heightLimit, float checkStep) const;
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0) const;
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2& p0, const Vector2& p1) const;
-	bool IsRiverAllowed(const Vector2& p0, const Vector2& p1, float step, float heightLimit) const;
+	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f>& points, 
+		const Vector2f& p, float maxDistance, float heightLimit, float checkStep) const;
+	bool HaveRiver(const std::vector<River>& rivers, const Vector2f& p0) const;
+	bool HaveRiver(const std::vector<River>& rivers, const Vector2f& p0, const Vector2f& p1) const;
+	bool IsRiverAllowed(const Vector2f& p0, const Vector2f& p1, float step, float heightLimit) const;
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
 	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
-		const Vector2& p,
+		const Vector2f& p,
 		float r);
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2& p, float r);
-	//bool InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r);
+	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r);
+	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	//Vector2i GetRiverGrid(float wx, float wy);
 	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth);
@@ -156,14 +156,14 @@ private:
 public:
 	void Init();
 
-	bool InsideRiverGrid(const Vector2i& grid, const Vector2& p, float r);
+	bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	Vector2i GetRiverGrid(float wx, float wy);
 
-	BiomeArea GetBiomeArea(const Vector3& point);
+	BiomeArea GetBiomeArea(const Vector3f& point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(const Vector3& point);
+	Biome GetBiome(const Vector3f& point);
 
 	// Get the biome at world coordinates
 	Biome GetBiome(float x, float z);
@@ -181,11 +181,11 @@ public:
 	float GetHeight(float x, float z, float& mask);
 	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
 
-	bool InForest(const Vector3& pos);
+	bool InForest(const Vector3f& pos);
 
-	float GetForestFactor(const Vector3& pos);
+	float GetForestFactor(const Vector3f& pos);
 
-	void GetTerrainDelta(VUtils::Random::State& state, const Vector3& center, float radius, float& delta, Vector3& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, const Vector3f& center, float radius, float& delta, Vector3f& slopeDirection);
 
 	int GetSeed();
 

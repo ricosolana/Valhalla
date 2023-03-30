@@ -30,7 +30,7 @@ private:
 
 public:
 	//Vector3Int m_size = new Vector3Int(8, 4, 8);
-	Vector3 m_size = Vector3(8, 4, 8);
+	Vector3f m_size = Vector3f(8, 4, 8);
 
 	Theme m_theme = Theme::Crypt;
 
@@ -54,7 +54,7 @@ public:
 
 	HASH_t m_hash; // based off name
 
-	Vector3 m_pos;
+	Vector3f m_pos;
 	Quaternion m_rot;
 
 	std::vector<Prefab::Instance> m_netViews;
@@ -86,13 +86,13 @@ public:
 
 struct RoomInstance {
 	std::reference_wrapper<const Room> m_room;
-	Vector3 m_pos;
+	Vector3f m_pos;
 	Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
 	std::vector<std::unique_ptr<RoomConnectionInstance>> m_connections;
 
-	RoomInstance(const Room& room, Vector3 pos, Quaternion rot, int placeOrder, int seed) 
+	RoomInstance(const Room& room, Vector3f pos, Quaternion rot, int placeOrder, int seed) 
 		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
 		for (auto&& conn : room.GetConnections()) {
 			// Find the world position of the connection, 
@@ -102,9 +102,9 @@ struct RoomInstance {
 			// https://stackoverflow.com/questions/73652767/get-new-child-object-postion-based-on-parent-transform
 
 			//Quaternion childWorldRot = rot * conn->m_localRot;
-			//Vector3 pointOnRot = (childWorldRot * Vector3::FORWARD).Normalized() * conn->m_localPos.Magnitude();
+			//Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * conn->m_localPos.Magnitude();
 			//
-			//Vector3 childWorldPos = pointOnRot + room.m_pos;
+			//Vector3f childWorldPos = pointOnRot + room.m_pos;
 			
 			//m_connections.emplace_back(*conn.get(), childWorldPos, childWorldRot, placeOrder);
 

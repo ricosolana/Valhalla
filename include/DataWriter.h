@@ -118,12 +118,12 @@ public:
     //  uint32_t:   uid (4 bytes)
     void Write(const ZDOID& id);
 
-    // Writes a Vector3
+    // Writes a Vector3f
     //  12 bytes total are written:
     //  float: x (4 bytes)
     //  float: y (4 bytes)
     //  float: z (4 bytes)
-    void Write(const Vector3& in);
+    void Write(const Vector3f& in);
 
     // Writes a Vector2i
     //  8 bytes total are written:

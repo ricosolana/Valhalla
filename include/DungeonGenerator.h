@@ -33,19 +33,19 @@ public:
 	// TODO use reference
 	const Dungeon& m_dungeon;
 
-	Vector3 m_pos; // instanced position
+	Vector3f m_pos; // instanced position
 	Quaternion m_rot; // instanced rotation
 
-	Vector3 m_zoneCenter;
+	Vector3f m_zoneCenter;
 
 	// TODO make Constexpr
-	const Vector3 m_zoneSize = Vector3(64, 64, 64);
+	const Vector3f m_zoneSize = Vector3f(64, 64, 64);
 
 	//bool m_useCustomInteriorTransform; // templated
 
 	//HASH_t m_generatedSeed;
 
-	//Vector3 m_originalPosition; // templated
+	//Vector3f m_originalPosition; // templated
 
 	//steady_clock::time_point m_generatedTime;
 
@@ -60,7 +60,7 @@ private:
 
 	void GenerateCampRadial(VUtils::Random::State& state);
 
-	Quaternion GetCampRoomRotation(VUtils::Random::State& state, const Room &room, const Vector3 &pos);
+	Quaternion GetCampRoomRotation(VUtils::Random::State& state, const Room &room, const Vector3f &pos);
 
 	void PlaceWall(VUtils::Random::State& state, float radius, int sections);
 
@@ -83,21 +83,21 @@ private:
 
 	bool PlaceOneRoom(VUtils::Random::State& state);
 
-	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3 &pos, const Quaternion &rot, Vector3 &outPos, Quaternion &outRot);
+	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3f &pos, const Quaternion &rot, Vector3f &outPos, Quaternion &outRot);
 
 	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
 	// Camps/grid meadows
-	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot);
+	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot);
 
 	// Dungeon placement
-	void PlaceRoom(const Room& room, Vector3 pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
+	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
 
 	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
-	bool IsInsideZone(const Room &room, const Vector3 &pos, const Quaternion &rot);
+	bool IsInsideZone(const Room &room, const Vector3f &pos, const Quaternion &rot);
 
-	bool TestCollision(const Room& room, const Vector3& pos, const Quaternion& rot);
+	bool TestCollision(const Room& room, const Vector3f& pos, const Quaternion& rot);
 
 	// Nullable
 	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);

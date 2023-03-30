@@ -7,7 +7,7 @@ class Prefab {
 public:
     struct Instance {
         const Prefab* m_prefab = nullptr;
-        Vector3 m_pos;
+        Vector3f m_pos;
         Quaternion m_rot;
     };
 
@@ -114,7 +114,7 @@ public:
 
 	Type m_type = Type::DEFAULT; // TODO store in flags
 
-	Vector3 m_localScale;
+	Vector3f m_localScale;
 
 	Flag m_flags = Flag::NONE;
 
