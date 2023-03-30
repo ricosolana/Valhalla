@@ -63,10 +63,7 @@ Quaternion Quaternion::operator*(const Quaternion &rhs) const {
 }
 
 void Quaternion::operator*=(const Quaternion& rhs) {
-    this->x = w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y;
-    this->y = w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z;
-    this->z = w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x;
-    this->w = w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z;
+    *this = *this * rhs;
 }
 
 

@@ -122,7 +122,8 @@ void IModManager::LoadAPI() {
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
-        "w", &Quaternion::w
+        "w", &Quaternion::w,
+        sol::meta_function::multiplication, sol::resolve<Quaternion(const Quaternion&) const>(&Quaternion::operator*)
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
