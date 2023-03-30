@@ -63,6 +63,7 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
 }
 
 void IModManager::LoadAPI() {
+    
     m_state.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(), Vector3(float, float, float)>(),
         "ZERO", sol::property([]() { return Vector3::ZERO; }),
@@ -77,8 +78,8 @@ void IModManager::LoadAPI() {
         "sqMagnitude", sol::property(&Vector3::SqMagnitude),
         sol::meta_function::addition, &Vector3::operator+,
         sol::meta_function::subtraction, &Vector3::operator-,
-        sol::meta_function::multiplication, &Vector3::operator*,
-        sol::meta_function::division, &Vector3::operator/
+        sol::meta_function::multiplication, sol::resolve<Vector3(const Vector3&) const>(&Vector3::operator*),
+        sol::meta_function::division, sol::resolve<Vector3(const Vector3&) const>(&Vector3::operator/)
     );
 
     m_state.new_usertype<Vector2>("Vector2",
@@ -86,16 +87,16 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property([]() { return Vector2::ZERO; }),
         "x", &Vector2::x,
         "y", &Vector2::y,
-        "Distance", &Vector2i::Distance,
+        "Distance", &Vector2::Distance,
         "magnitude", sol::property(&Vector2::Magnitude),
-        "Normalize", &Vector2i::Normalize,
+        "Normalize", &Vector2::Normalize,
         "normalized", sol::property(&Vector2::Normalized),
-        "SqDistance", &Vector2i::SqDistance,
+        "SqDistance", &Vector2::SqDistance,
         "sqMagnitude", sol::property(&Vector2::SqMagnitude),
         sol::meta_function::addition, &Vector2::operator+,
         sol::meta_function::subtraction, &Vector2::operator-,
-        sol::meta_function::multiplication, &Vector2::operator*,
-        sol::meta_function::division, &Vector2::operator/
+        sol::meta_function::multiplication, sol::resolve<Vector2(const Vector2&) const>(&Vector2::operator*),
+        sol::meta_function::division, sol::resolve<Vector2(const Vector2&) const>(&Vector2::operator/)
     );
 
     m_state.new_usertype<Vector2i>("Vector2i",
@@ -111,8 +112,8 @@ void IModManager::LoadAPI() {
         "sqMagnitude", sol::property(&Vector2i::SqMagnitude),
         sol::meta_function::addition, &Vector2i::operator+,
         sol::meta_function::subtraction, &Vector2i::operator-,
-        sol::meta_function::multiplication, &Vector2i::operator*,
-        sol::meta_function::division, &Vector2i::operator/
+        sol::meta_function::multiplication, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator*),
+        sol::meta_function::division, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator/)
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",
@@ -136,7 +137,6 @@ void IModManager::LoadAPI() {
         "BOOL", Type::BOOL,
 
         "STRING", Type::STRING,
-        "STRINGS", Type::STRINGS,
 
         "BYTES", Type::BYTES,
         
@@ -179,9 +179,9 @@ void IModManager::LoadAPI() {
         sol::constructors<DataWriter(BYTES_t&)>(),
 
         "provider", &DataWriter::m_provider,
-        "pos", &DataWriter::m_pos,
+        "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
 
-        "Clear", & DataWriter::Clear,
+        "Clear", &DataWriter::Clear,
 
         "Write", sol::overload(
             // templated functions are too complex for resolve
@@ -189,7 +189,6 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             
@@ -222,12 +221,11 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
         "provider", &DataReader::m_provider,
-        "pos", &DataReader::m_pos,
+        "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
         "ReadBool", &DataReader::ReadBool,
 
         "ReadString", &DataReader::ReadString,
-        "ReadStrings", &DataReader::ReadStrings,
 
         "ReadBytes", &DataReader::ReadBytes,
 
@@ -787,7 +785,8 @@ void IModManager::LoadAPI() {
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
-            sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
+            [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeer(owner); },
+            //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeer)
         ),
         "peers", sol::readonly(&INetManager::m_peers)

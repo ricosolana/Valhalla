@@ -18,6 +18,7 @@ struct Vector2 {
 
     // vector arithmetic
     Vector2 &operator=(const Vector2& other);
+
     Vector2 operator+(const Vector2& other) const;
     Vector2 operator-(const Vector2& other) const;
     Vector2 operator*(const Vector2& other) const;
@@ -25,6 +26,7 @@ struct Vector2 {
     
     // scalar arithmetic
     Vector2 operator*(float other) const;
+    Vector2 operator/(float other) const;
 
     Vector2& operator+=(const Vector2& other);
     Vector2& operator-=(const Vector2& other);
@@ -66,6 +68,8 @@ struct Vector2 {
 
 std::ostream& operator<<(std::ostream& st, const Vector2& vec);
 
+
+
 struct Vector2i {
     int32_t x, y;
 
@@ -83,8 +87,8 @@ struct Vector2i {
     Vector2i operator*(const Vector2i& other) const;
     Vector2i operator/(const Vector2i& other) const;
 
-
     Vector2i operator*(float other) const;
+    Vector2i operator/(float other) const;
 
     Vector2i& operator+=(const Vector2i& other);
     Vector2i& operator-=(const Vector2i& other);
@@ -123,6 +127,8 @@ struct Vector2i {
 
 std::ostream& operator<<(std::ostream& st, const Vector2i& vec);
 
+
+
 struct Vector3 {
     float x, y, z;
 
@@ -138,16 +144,15 @@ struct Vector3 {
 
 
 
-
-
     Vector3& operator=(const Vector3& other);
+
     Vector3 operator+(const Vector3& other) const;
     Vector3 operator-(const Vector3& other) const;
     Vector3 operator*(const Vector3& other) const;
     Vector3 operator/(const Vector3& other) const;
 
-
     Vector3 operator*(float other) const;
+    Vector3 operator/(float other) const;
 
     Vector3& operator+=(const Vector3& other);
     Vector3& operator-=(const Vector3& other);

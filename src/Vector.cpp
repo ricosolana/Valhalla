@@ -9,6 +9,7 @@ Vector2 &Vector2::operator=(const Vector2& other) {
     y = other.y;
     return *this;
 }
+
 Vector2 Vector2::operator+(const Vector2& other) const {
     return Vector2(x + other.x, y + other.y);
 }
@@ -18,9 +19,15 @@ Vector2 Vector2::operator-(const Vector2& other) const {
 Vector2 Vector2::operator*(const Vector2& other) const {
     return Vector2(x * other.x, y * other.y);
 }
+Vector2 Vector2::operator/(const Vector2& other) const {
+    return Vector2(x / other.x, y / other.y);
+}
 
 Vector2 Vector2::operator*(float other) const {
     return Vector2(x * other, y * other);
+}
+Vector2 Vector2::operator/(float other) const {
+    return Vector2(x / other, y / other);
 }
 
 Vector2& Vector2::operator+=(const Vector2& other) {
@@ -107,6 +114,7 @@ Vector2i& Vector2i::operator=(const Vector2i& other) {
     y = other.y;
     return *this;
 }
+
 Vector2i Vector2i::operator+(const Vector2i& other) const {
     return Vector2i(x + other.x, y + other.y);
 }
@@ -116,10 +124,18 @@ Vector2i Vector2i::operator-(const Vector2i& other) const {
 Vector2i Vector2i::operator*(const Vector2i& other) const {
     return Vector2i(x * other.x, y * other.y);
 }
+Vector2i Vector2i::operator/(const Vector2i& other) const {
+    return Vector2i(x / other.x, y / other.y);
+}
 
 Vector2i Vector2i::operator*(float other) const {
     return Vector2i(x * other, y * other);
 }
+Vector2i Vector2i::operator/(float other) const {
+    return Vector2i(x / other, y / other);
+}
+
+
 
 Vector2i& Vector2i::operator+=(const Vector2i& other) {
     x += other.x;
@@ -209,6 +225,7 @@ Vector3& Vector3::operator=(const Vector3& other) {
     z = other.z;
     return *this;
 }
+
 Vector3 Vector3::operator+(const Vector3& other) const {
     return Vector3(x + other.x, y + other.y, z + other.z);
 }
@@ -218,9 +235,15 @@ Vector3 Vector3::operator-(const Vector3& other) const {
 Vector3 Vector3::operator*(const Vector3& other) const {
     return Vector3(x * other.x, y * other.y, z * other.z);
 }
+Vector3 Vector3::operator/(const Vector3& other) const {
+    return Vector3(x / other.x, y / other.y, z / other.z);
+}
 
 Vector3 Vector3::operator*(float other) const {
     return Vector3(x * other, y * other, z * other);
+}
+Vector3 Vector3::operator/(float other) const {
+    return Vector3(x / other, y / other, z / other);
 }
 
 Vector3& Vector3::operator+=(const Vector3& other) {
