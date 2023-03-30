@@ -15,6 +15,7 @@ public:
         BOOL,
 
         STRING,
+        STRINGS,
 
         BYTES,
 
