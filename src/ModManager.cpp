@@ -15,9 +15,6 @@
 #include "NetSocket.h"
 #include "ZDOManager.h"
 #include "Method.h"
-#include "objects/Ward.h"
-#include "objects/Portal.h"
-#include "objects/Player.h"
 #include "RouteManager.h"
 #include "NetManager.h"
 #include "DungeonManager.h"
@@ -597,49 +594,12 @@ void IModManager::LoadAPI() {
         sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::operator<=
     );
 
-
-    //{
-    //    // References will be unwrapped to pointers / visa-versa
-    //    //  Pointers being dereferenced to a T& type is automatic if the function accepts a reference
-    //    // https://sol2.readthedocs.io/en/latest/functions.html#functions-and-argument-passing
-    //
-    //    auto viewsTable = m_state["Views"].get_or_create<sol::table>(); // idk a good namespace for this, 'shadow', 'wrapper', ...
-    //
-    //    viewsTable.new_usertype<Ward>("Ward",
-    //        sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Ward(*zdo); }),
-    //        "creatorName", sol::property(&Ward::GetCreatorName, &Ward::SetCreatorName),
-    //        "permitted", sol::property(&Ward::GetPermitted, &Ward::SetPermitted),
-    //        "AddPermitted", &Ward::AddPermitted,
-    //        "RemovePermitted", &Ward::RemovePermitted,
-    //        "enabled", sol::property(&Ward::IsEnabled, &Ward::SetEnabled),
-    //        "IsPermitted", &Ward::IsPermitted,
-    //        "creator", sol::property([](Ward& self, Peer* peer) { if (!peer) throw std::runtime_error("null Peer"); return self.SetCreator(*peer); }),
-    //        "IsAllowed", &Ward::IsAllowed
-    //    );
-    //
-    //    viewsTable.new_usertype<Portal>("Portal",
-    //        sol::factories([](ZDO* zdo) { if (!zdo) throw std::runtime_error("null ZDO"); return Portal(*zdo); }),
-    //        "tag", sol::property(&Portal::GetTag, &Portal::SetTag),
-    //        "target", sol::property(&Portal::GetTarget, &Portal::SetTarget),
-    //        "author", sol::property(&Portal::GetAuthor, &Portal::SetAuthor)
-    //    );
-    //}
-
     m_state.new_enum("TimeOfDay",
         "MORNING", TIME_MORNING,
         "DAY", TIME_DAY,
         "AFTERNOON", TIME_AFTERNOON,
         "NIGHT", TIME_NIGHT
     );
-
-    // TODO could implement handle if access is needed to unsubscribe outside of event...
-    //m_state.new_usertype<EventHandle>("EventHandle",
-    //    "mod", &EventHandle::m_mod,
-    //    //sol:meta_function_names()[sol::meta_function::call], &EventHandle::operator(),
-    //    //sol::meta_function::call, &EventHandle::operator(),
-    //    "priority", sol::readonly(&EventHandle::m_priority)
-    //);
-    //m_state["EventHandle"][sol::meta_function::call] = &EventHandle::operator();
 
 
 
