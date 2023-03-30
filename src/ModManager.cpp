@@ -146,14 +146,14 @@ void IModManager::LoadAPI() {
         "QUATERNION", Type::QUATERNION,
         
         "INT8", Type::INT8,
-        "SHORT", Type::INT16, "INT16", Type::INT16,
-        "INT", Type::INT32, "INT32", Type::INT32, "HASH", Type::INT32,
-        "LONG", Type::INT64, "INT64", Type::INT64,
+        "INT16", Type::INT16, "SHORT", Type::INT16,
+        "INT32", Type::INT32, "INT", Type::INT32, "HASH", Type::INT32,
+        "INT64", Type::INT64, "LONG", Type::INT64,
 
-        "BYTE", Type::UINT8, "UINT8", Type::UINT8,
-        "UINT16", Type::UINT16,
-        "UINT32", Type::UINT32,
-        "UINT64", Type::UINT64,
+        "UINT8", Type::UINT8, "BYTE", Type::UINT8,
+        "UINT16", Type::UINT16, "USHORT", Type::UINT16,
+        "UINT32", Type::UINT32, "UINT", Type::UINT32,
+        "UINT64", Type::UINT64, "ULONG", Type::UINT64,
 
         "FLOAT", Type::FLOAT,
         "DOUBLE", Type::DOUBLE,
@@ -577,6 +577,26 @@ void IModManager::LoadAPI() {
         sol::meta_function::less_than_or_equal_to, &Int64Wrapper::__le
     );
 
+    m_state.new_usertype<Int64Wrapper>("UInt64",
+        sol::constructors<UInt64Wrapper(), UInt64Wrapper(uint64_t),
+        UInt64Wrapper(uint32_t, uint32_t), UInt64Wrapper(const std::string&)>(),
+        //"value", sol::readonly(&Int64Wrapper::m_value),
+
+        // not the actual tonumber, just uses same name for simplicity
+        //  local wrapper = Int64(0xFFFFFFFF, 0xFFFFAACC)
+        //  local num = wrapper:tonumber()
+        "tonumber", [](UInt64Wrapper& self) { return (uint64_t)self; },
+        sol::meta_function::addition, &UInt64Wrapper::__add,
+        sol::meta_function::subtraction, &UInt64Wrapper::__sub,
+        sol::meta_function::multiplication, &UInt64Wrapper::__mul,
+        sol::meta_function::division, &UInt64Wrapper::__div,
+        sol::meta_function::floor_division, &UInt64Wrapper::__divi,
+        sol::meta_function::unary_minus, &UInt64Wrapper::__unm,
+        sol::meta_function::equal_to, &UInt64Wrapper::__eq,
+        sol::meta_function::less_than, &UInt64Wrapper::__lt,
+        sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::__le
+    );
+
 
     //{
     //    // References will be unwrapped to pointers / visa-versa
@@ -628,13 +648,13 @@ void IModManager::LoadAPI() {
         // server members
         "version", sol::var(VConstants::GAME), // Valheim version
         "delta", sol::property(&IValhalla::Delta),
-        "id", sol::property(&IValhalla::ID),
-        "nanos", sol::property(&IValhalla::Nanos),
+        "id", sol::property([](IValhalla& self) { return Int64Wrapper(self.ID()); }),
+        "nanos", sol::property([](IValhalla& self) { return Int64Wrapper(self.Nanos().count()); }),
         "time", sol::property(&IValhalla::Time),
         // world time functions
         "worldTime", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
         "worldTimeMultiplier", sol::property([](IValhalla& self) { return self.m_worldTimeMultiplier; }, [](IValhalla& self, double mul) { if (mul <= 0.001) throw std::runtime_error("multiplier too small"); self.m_worldTimeMultiplier = mul; }),
-        "worldTicks", sol::property(&IValhalla::GetWorldTicks),
+        "worldTicks", sol::property([](IValhalla& self) { return self.GetWorldTicks(); }),
         "day", sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay),        
         "timeOfDay", sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay), &IValhalla::SetTimeOfDay),
         "isMorning", sol::property(sol::resolve<bool() const>(&IValhalla::IsMorning)),
