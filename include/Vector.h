@@ -4,6 +4,9 @@
 #include <cmath>
 #include <ostream>
 
+#include "VUtils.h"
+#include "VUtilsMath.h"
+
 template<typename T> requires std::is_arithmetic_v<T>
 struct Vector2 {
     T x, y;
@@ -109,7 +112,8 @@ struct Vector2 {
         auto sqmagnitude = this->SqMagnitude();
 
         if (sqmagnitude > 1E-05f * 1E-05f) {
-            return *this / std::sqrt(sqmagnitude);
+            //return *this / std::sqrt(sqmagnitude);
+            return *this * VUtils::Math::FISQRT(sqmagnitude);
         }
         else {
             return Zero();
@@ -251,7 +255,8 @@ struct Vector3 {
         auto sqmagnitude = this->SqMagnitude();
 
         if (sqmagnitude > 1E-05f * 1E-05f) {
-            return *this / std::sqrt(sqmagnitude);
+            //return *this / std::sqrt(sqmagnitude);
+            return *this * VUtils::Math::FISQRT(sqmagnitude);
         }
         else {
             return Zero();

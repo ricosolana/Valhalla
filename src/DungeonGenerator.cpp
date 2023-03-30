@@ -6,6 +6,7 @@
 #include "VUtilsMathf.h"
 #include "VUtilsPhysics.h"
 #include "ZDOManager.h"
+#include "VUtilsMath2.h"
 
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {

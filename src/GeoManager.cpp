@@ -4,6 +4,7 @@
 #include "ZoneManager.h"
 #include "VUtilsMathf.h"
 #include "VUtilsMath.h"
+#include "VUtilsMath2.h"
 
 auto GEO_MANAGER(std::make_unique<IGeoManager>());
 IGeoManager* GeoManager() {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Vector.h"
-
 namespace VUtils::Math {
 
     /*
@@ -16,7 +14,6 @@ namespace VUtils::Math {
 
     float Distance(float x1, float y1, float x2, float y2);
 
-
     float SqMagnitude(float x, float y, float z);
 
     float Magnitude(float x, float y, float z);
@@ -24,9 +21,6 @@ namespace VUtils::Math {
     float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2);
 
     float Distance(float x1, float y1, float z1, float x2, float y2, float z2);
-
-
-
 
 
 
@@ -39,37 +33,11 @@ namespace VUtils::Math {
 
     double LerpStep(double l, double h, double v);
 
-
-
-    // Fractional brownian noise
-    float Fbm(const Vector3f &p, int octaves, float lacunarity, float gain);
-
-    // Fractional brownian noise
-    float FbmMaxValue(int octaves, float gain);
-
-    // Fractional brownian noise
-    float Fbm(const Vector2f &p, int octaves, float lacunarity, float gain);
-
-
-
-    // fucky methods
-
     // Fast inverse square root
     float FISQRT(float n);
 
-
-
     // Perlin noise
     float PerlinNoise(float x, float y);
-
-
-
-    float YawFromDirection(const Vector3f &dir);
-
-    // Wrap degrees
-    float FixDegAngle(float p_Angle);
-
-
 
     bool Between(float i, float a, float b);
 }

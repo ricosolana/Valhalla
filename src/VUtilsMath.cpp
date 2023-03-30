@@ -5,6 +5,7 @@
 #include "Vector.h"
 #include "VUtils.h"
 #include "VUtilsMathf.h"
+#include "VUtilsMath2.h"
 
 namespace VUtils::Math {
     float SqMagnitude(float x, float y) {
@@ -87,7 +88,7 @@ namespace VUtils::Math {
         return num;
     }
 
-    float Fbm(const Vector2f &p, int octaves, float lacunarity, float gain) {
+    float Fbm(const Vector2f& p, int octaves, float lacunarity, float gain) {
         float num = 0;
         float num2 = 1;
         Vector2f vector = p;
@@ -207,12 +208,6 @@ namespace VUtils::Math {
         return (res + .69f) / 1.483f;
     }
 
-
-    float YawFromDirection(const Vector3f &dir) {
-        float num = std::atan2(dir.x, dir.z);
-        return FixDegAngle(57.29578f * num);
-    }
-
     float FixDegAngle(float p_Angle) {
         while (p_Angle >= 360)
             p_Angle -= 360;
@@ -222,6 +217,13 @@ namespace VUtils::Math {
 
         return p_Angle;
     }
+
+    float YawFromDirection(const Vector3f &dir) {
+        float num = std::atan2(dir.x, dir.z);
+        return FixDegAngle(57.29578f * num);
+    }
+
+
 
 
 

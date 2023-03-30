@@ -104,6 +104,8 @@ CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 add_executable(${PROJECT_NAME}
     "src/DataReader.cpp"
     "src/DataWriter.cpp"
+    "src/DungeonGenerator.cpp"
+    "src/DungeonManager.cpp"
     "src/EventManager.cpp"
     "src/GeoManager.cpp"
     "src/Heightmap.cpp"
@@ -112,12 +114,12 @@ add_executable(${PROJECT_NAME}
     "src/Main.cpp"
     "src/ModManager.cpp"
     "src/NetAcceptorSteam.cpp"
-    "src/NetManager.cpp"
-    
+    "src/NetManager.cpp"    
     "src/NetSteamSocket.cpp"
     "src/Peer.cpp"
     "src/PrefabManager.cpp"
     "src/Quaternion.cpp"
+    "src/Room.cpp"
     "src/RouteManager.cpp"
     "src/Task.cpp"
     "src/ValhallaServer.cpp"
@@ -125,6 +127,7 @@ add_executable(${PROJECT_NAME}
     "src/VUtils.cpp"
     "src/VUtilsMath.cpp"
     "src/VUtilsMathf.cpp"
+    "src/VUtilsPhysics.cpp" 
     "src/VUtilsRandom.cpp"
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
@@ -132,12 +135,8 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
-    "src/ZoneManager.cpp"
-    "src/DungeonGenerator.cpp" 
-    "src/Room.cpp"
-    "src/VUtilsPhysics.cpp" 
-    "src/DungeonManager.cpp"
- "include/RouteData.h")
+    "src/ZoneManager.cpp"    
+)
 
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 
