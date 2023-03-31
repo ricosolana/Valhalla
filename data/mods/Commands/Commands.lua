@@ -3,6 +3,18 @@
 --]]
 
 local commands = {
+    reload = {
+        function(peer, cmd, args)
+            if #args == 0 then
+                ModManager:ReloadMod(this)
+            else
+                local mod = ModManager:GetMod(args[0])
+                
+                ModManager:ReloadMod(mod)
+            end
+        end,
+        '[mod]'
+    },
     worldtime = {
         function(peer, cmd, args)
             if #args == 0 then

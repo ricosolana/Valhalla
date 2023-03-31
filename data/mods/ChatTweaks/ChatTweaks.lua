@@ -18,7 +18,10 @@ local SIG_CompressionEnabled = MethodSig.new("CW_Jesse.BetterNetworking.Compress
 local SIG_CompressionStarted = MethodSig.new("CW_Jesse.BetterNetworking.CompressedStarted", Type.BOOL)
 
 Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
-    local pos = params:ReadVector3()
+    -- grab a writer beforehand so position is maintained
+    local writer = DataWriter.new(params.provider)
+
+    local pos = params:ReadVector3f()
     local msgtype = params:ReadInt32()
     local profile = params:ReadProfile()
     local msg = params:ReadString()
@@ -28,8 +31,7 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     
     if msgtype == ChatMsgType.SHOUT then
         -- then set the pos to 0,0,0 then display as a simple chat message
-        local writer = DataWriter.new(params)
-        writer:Write(Vector3.ZERO)
+        writer:Write(Vector3f.ZERO)
         writer:WriteInt32(ChatMsgType.NORMAL)
         writer:Write(profile)
         writer:Write(msg)

@@ -771,13 +771,13 @@ void IModManager::LoadAPI() {
             if (find != self.m_mods.end())
                 return find->second.get();
             return static_cast<Mod*>(nullptr);
-        },
-        "ReloadMod", [](IModManager& self, Mod& mod) {
-            if (!self.m_reload) {
-                mod.m_reload = true;
-                self.m_reload = true;
-            }
         }
+        //"ReloadMod", [](IModManager& self, Mod& mod) {
+        //    if (!self.m_reload) {
+        //        mod.m_reload = true;
+        //        self.m_reload = true;
+        //    }
+        //}
     );
 
 
@@ -1069,7 +1069,8 @@ void IModManager::Uninit() {
 void IModManager::Update() {
     ModManager()->CallEvent(IModManager::Events::Update);
 
-    
+    // why is this proving to be such a pain
+    /*
     if (m_reload) {
         // first release all callbacks associated with the mod
         for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
@@ -1079,7 +1080,7 @@ void IModManager::Update() {
                     itr1 = callbacks.erase(itr1);
                 }
                 else
-                    ++itr;
+                    ++itr1;
             }
 
             // Pop callback set for tidy
@@ -1089,21 +1090,25 @@ void IModManager::Update() {
                 ++itr;
         }
 
+
+        // Unregister all Lua Rpcs
+        for (auto&& peer : NetManager()->GetPeers()) {
+            for (auto&& itr = peer->m_methods.begin(); itr != peer->m_methods.end(); ) {
+                auto method = dynamic_cast<MethodImplLua<Peer*>*>(itr->second.get());
+                if (method && method->m_mod->m_reload) {
+                    itr = peer->m_methods.erase(itr);
+                }
+                else
+                    ++itr;
+            }
+        }
+
+
         for (auto&& pair : m_mods) {
             auto&& mod = *pair.second.get();
+
             if (mod.m_reload) {
                 LOG(INFO) << "Reloading mod " << mod.m_name;
-
-                for (auto&& peer : NetManager()->GetPeers()) {
-                    for (auto&& itr = peer->m_methods.begin(); itr != peer->m_methods.end(); ) {
-                        auto method = dynamic_cast<MethodImplLua<Peer*>*>(itr->second.get());
-                        if (method && method->m_mod == &mod) {
-                            itr = peer->m_methods.erase(itr);
-                        }
-                        else
-                            ++itr;
-                    }
-                }
 
                 mod.m_env.reset();
                 LoadMod(mod);
@@ -1114,5 +1119,5 @@ void IModManager::Update() {
         m_state.collect_gc();
 
         m_reload = false;
-    }
+    }*/
 }

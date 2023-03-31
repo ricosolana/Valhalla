@@ -53,7 +53,7 @@ namespace VUtils::String {
         requires (VUtils::Traits::is_iterable_v<Iterable>)
     Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
     {
-        auto size = s.size();
+        int64_t size = s.size();
         auto data = s.data();
 
         Iterable split{};

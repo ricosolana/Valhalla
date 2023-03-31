@@ -105,7 +105,7 @@ public:
         std::string m_description;
         std::list<std::string> m_authors;
 
-        bool m_reload = false;
+        //bool m_reload = false;
 
         Mod(std::string name,
             fs::path entry) 
@@ -140,7 +140,7 @@ private:
 
     EventStatus m_eventStatus = EventStatus::NONE;
 
-    bool m_reload = false;
+    //bool m_reload = false;
 
 public:
     sol::state m_state;
