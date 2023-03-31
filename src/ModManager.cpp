@@ -360,8 +360,10 @@ void IModManager::LoadAPI() {
         sol::no_constructor,
         "name", sol::readonly(&Prefab::m_name),
         "hash", sol::readonly(&Prefab::m_hash),
-        "FlagsPresent", &Prefab::FlagsPresent,
-        "FlagsAbsent", &Prefab::FlagsAbsent
+        "AllFlagsPresent", &Prefab::AllFlagsPresent,
+        "AnyFlagsPresent", &Prefab::AnyFlagsPresent,
+        "AllFlagsAbsent", &Prefab::AllFlagsAbsent,
+        "AnyFlagsAbsent", &Prefab::AnyFlagsAbsent
     );
 
     // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
@@ -439,13 +441,12 @@ void IModManager::LoadAPI() {
         "prefab", sol::property(&ZDO::GetPrefab),
         "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, const Int64Wrapper &owner) { self.SetOwner(owner); }),
         "IsOwner", &ZDO::IsOwner,
-        "IsLocal", &ZDO::IsLocal,
-        "HasOwner", &ZDO::HasOwner,
-        "SetLocal", &ZDO::SetLocal,
+        "local", sol::property(&ZDO::IsLocal, [](ZDO& self, bool setLocal) { if (setLocal) self.SetLocal(); else if (self.IsLocal()) self.Disown(); }),
+        "claimed", sol::property(&ZDO::HasOwner),
         "Disown", &ZDO::Disown,
         "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
         "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
-        "timeCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
+        "ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
         "GetFloat", sol::overload(

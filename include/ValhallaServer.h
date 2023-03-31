@@ -62,8 +62,10 @@ private:
 
     double m_worldTimeMultiplier = 1;
 
+    fs::file_time_type m_settingsLastTime;
+
 private:
-    void LoadFiles();
+    void LoadFiles(bool fresh);
 
 public:
     void Start();

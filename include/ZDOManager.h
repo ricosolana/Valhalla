@@ -22,9 +22,9 @@ class IZDOManager {
 	static bool PREFAB_CHECK_FUNCTION(const ZDO& zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& prefab = zdo.GetPrefab();
 
-		return prefab.FlagsAbsent(flagsAbsent)
+		return prefab.AllFlagsAbsent(flagsAbsent)
 			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
-			&& prefab.FlagsPresent(flagsPresent);
+			&& prefab.AllFlagsPresent(flagsPresent);
 	}
 
 private:

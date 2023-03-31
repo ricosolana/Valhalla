@@ -789,7 +789,7 @@ public:
 
 
     void Test_DungeonGenerator() {
-        Valhalla()->LoadFiles();
+        Valhalla()->LoadFiles(true);
 
         PrefabManager()->Init();
         DungeonManager()->Init();

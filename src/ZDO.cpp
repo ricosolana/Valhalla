@@ -42,14 +42,14 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rev.m_ownerRev);
     pkg.Write(this->m_rev.m_dataRev);
 
-    pkg.Write(prefab.FlagsAbsent(Prefab::Flag::SESSIONED));
+    pkg.Write(prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED));
 
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     pkg.Write(this->m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
 
     pkg.Write(prefab.m_type);
-    pkg.Write(prefab.FlagsPresent(Prefab::Flag::DISTANT));
+    pkg.Write(prefab.AllFlagsPresent(Prefab::Flag::DISTANT));
     pkg.Write(prefab.m_hash);
 
     pkg.Write(this->GetZone());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
@@ -144,8 +144,8 @@ void ZDO::Serialize(DataWriter& pkg) const {
 
     auto&& prefab = GetPrefab();
     
-    pkg.Write(prefab.FlagsAbsent(Prefab::Flag::SESSIONED));
-    pkg.Write(prefab.FlagsPresent(Prefab::Flag::DISTANT));
+    pkg.Write(prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED));
+    pkg.Write(prefab.AllFlagsPresent(Prefab::Flag::DISTANT));
 
     pkg.Write(m_rev.m_ticksCreated.count());
     pkg.Write(VConstants::PGW);
