@@ -1242,7 +1242,7 @@ public:
     void Test_World() {
         WorldManager()->BackupFileWorldDB("world");
 
-        auto world = WorldManager()->GetWorld("privUWorld");
+        auto world = WorldManager()->RetrieveWorld("privUWorld", "");
         WorldManager()->LoadFileWorldDB("02129");
     }
 

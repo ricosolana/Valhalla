@@ -20,7 +20,7 @@ public:
     int32_t m_worldGenVersion;
 
 public:
-    World(const std::string& name);
+    World(const std::string& name, const std::string& seedName);
     World(DataReader reader);
 
 public:
@@ -46,7 +46,7 @@ public:
     //  threadsafe
     fs::path GetWorldDBPath(const std::string& name) const;
 
-    std::unique_ptr<World> GetWorld(const std::string& name) const;
+    std::unique_ptr<World> RetrieveWorld(const std::string& name, const std ::string& fallbackSeedName) const;
 
     BYTES_t SaveWorldDB() const;
     void LoadFileWorldDB(const std::string& name) const;

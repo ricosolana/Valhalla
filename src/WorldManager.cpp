@@ -18,9 +18,7 @@ IWorldManager* WorldManager() {
 
 
 
-World::World(const std::string& name) {
-	std::string seedName = VUtils::Random::GenerateAlphaNum(10);
-
+World::World(const std::string& name, const std::string& seedName) {
 	m_name = name;
 	m_seedName = seedName;
 	m_seed = VUtils::String::GetStableHashCode(seedName);
@@ -48,15 +46,14 @@ World::World(DataReader reader) {
 BYTES_t World::SaveMeta() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
-	writer.SubWrite([&writer, this]() {
+	writer.SubWrite([&]() {
 		writer.Write(VConstants::WORLD);
 		writer.Write(m_name);
 		writer.Write(m_seedName);
-		//writer.Write(m_seed);
 		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
 		writer.Write(m_uid);
 		writer.Write(m_worldGenVersion);
-		});
+	});
 
 	return bytes;
 }
@@ -102,7 +99,7 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 
 
 
-std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
+std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, const std::string& fallbackSeedName) const {
 	// load world from file
 
 	auto opt = VUtils::Resource::ReadFile<BYTES_t>(GetWorldMetaPath(name));
@@ -120,7 +117,7 @@ std::unique_ptr<World> IWorldManager::GetWorld(const std::string& name) const {
 
 	if (!world) {
 		LOG(INFO) << "Creating a new world meta";
-		world = std::make_unique<World>(name);
+		world = std::make_unique<World>(name, fallbackSeedName);
 
 		try {
 			world->WriteFileMeta();
@@ -253,18 +250,16 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 		}
 	}, m_world->m_name, bytes);
 
-	if (sync)
+	if (sync && m_saveThread.joinable())
 		m_saveThread.join();
 }
-
-
 
 
 
 void IWorldManager::Init() {
 	LOG(INFO) << "Initializing WorldManager";
 
-	m_world = GetWorld(SERVER_SETTINGS.worldName);
+	m_world = RetrieveWorld(SERVER_SETTINGS.worldName, SERVER_SETTINGS.worldSeed);
 
 	LoadFileWorldDB(m_world->m_name);
 }
