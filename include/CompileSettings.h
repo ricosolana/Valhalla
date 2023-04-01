@@ -6,7 +6,7 @@ using namespace std::chrono_literals;
 
 //#define RUN_TESTS
 
-#define VALHALLA_SERVER_VERSION "v1.0.3"
+#define VALHALLA_SERVER_VERSION "v1.0.4"
 
 // Interval for RPC pinging
 // Should be inlined
