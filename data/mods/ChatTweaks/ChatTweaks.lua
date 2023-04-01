@@ -13,12 +13,14 @@
 
 local peers = {}
 
-local SIG_CompressionVersion = MethodSig.new("CW_Jesse.BetterNetworking.CompressionVersion", Type.INT32)
-local SIG_CompressionEnabled = MethodSig.new("CW_Jesse.BetterNetworking.CompressionEnabled", Type.BOOL)
-local SIG_CompressionStarted = MethodSig.new("CW_Jesse.BetterNetworking.CompressedStarted", Type.BOOL)
-
 Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     -- grab a writer beforehand so position is maintained
+    if peers[peer.socket.host] then
+        return
+    end
+    
+    peers[peer.socket.host] = true
+    
     local writer = DataWriter.new(params.provider)
 
     local pos = params:ReadVector3f()
@@ -27,7 +29,7 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     local msg = params:ReadString()
     local nid = params:ReadString()
     
-    print('got msg: ' .. msg)
+    --print('got msg: ' .. msg)
     
     if msgtype == ChatMsgType.SHOUT then
         -- then set the pos to 0,0,0 then display as a simple chat message
@@ -39,17 +41,6 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     end
 end)
 
-Valhalla:Subscribe('PlayerList', function()
-    -- can do something here
-    
-    -- maybe guild-faction based visibility
-    -- players will be visible only to others in their 'guild'
-
-    --for i, peer in ipairs(NetManager.peers) do
-    --    peer.visibleOnMap = true
-    --end
-    --
-    --
-    --
-    --return false
+Valhalla:Subscribe('Quit', function(peer)
+    peers[peer.socket.host] = nil
 end)

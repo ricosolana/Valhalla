@@ -3,7 +3,6 @@
 --]]
 
 local commands = {
-    --[[
     reload = {
         function(peer, cmd, args)
             if #args == 0 then
@@ -15,7 +14,7 @@ local commands = {
             end
         end,
         '[mod]'
-    },--]]
+    },
     worldtime = {
         function(peer, cmd, args)
             if #args == 0 then
@@ -101,7 +100,7 @@ local commands = {
         function(peer, cmd, args)
             local dungeon = assert(DungeonManager:GetDungeon(args[1]))
             
-            local pos = #args >= 4 and Vector3.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
+            local pos = #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
             
             DungeonManager:Generate(dungeon, pos, Quaternion.IDENTITY)
             
@@ -201,7 +200,7 @@ local commands = {
             local y = tonumber(args[2])
             local z = tonumber(args[3])
             
-            peer:Teleport(Vector3.new(x, y, z))
+            peer:Teleport(Vector3f.new(x, y, z))
         end,
         '[x] [y] [z]'
     },    

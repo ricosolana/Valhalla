@@ -44,7 +44,7 @@ Valhalla:Subscribe('Connect', function(peer)
     --local status = peers[tostring(peer.socket.host)]
     local status = { enabled = false, i = false, o = false }
     
-    peers[tostring(peer.socket.host)] = status
+    peers[peer.socket.host] = status
     
     -- Version
     peer:Register(SIG_CompressionVersion, function(peer, version)
@@ -97,7 +97,7 @@ end)
 Valhalla:Subscribe('Recv', function(socket, bytes)
     local decom = decompressor:Decompress(bytes)
 
-    local status = peers[tostring(socket.host)]
+    local status = peers[socket.host]
     
     if decom then
         VUtils.Swap(bytes, decom)
@@ -116,7 +116,7 @@ end)
 
 Valhalla:Subscribe("Disconnect", function(peer)
     print(peer.name .. ' disconnected')
-    peers[tostring(peer.socket.host)] = nil
+    peers[peer.socket.host] = nil
 end)
 
 Valhalla:Subscribe('Enable', function()
