@@ -19,7 +19,7 @@ struct ServerSettings {
     bool            playerWhitelist;
     unsigned int    playerMax;
     bool            playerAuth;
-    bool            playerList;
+    //bool            playerList;
     //bool            playerArrivePing;
     //bool            playerForceVisible;
     //bool            playerSleep;        // enable time skip when all players sleeping

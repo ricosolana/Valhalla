@@ -71,14 +71,14 @@ void IValhalla::LoadFiles(bool fresh) {
             m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
             if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
             m_settings.worldSave = loadNode["world-save"].as<bool>(true);
-            m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60 * 24));
+            m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
             m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
             //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
             m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
             m_settings.playerMax = std::clamp(loadNode["player-max"].as<int>(10), 1, 99999);     // max allowed players
             m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
-            m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
+            //m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
             //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
             //m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map # TODO put this in lua?
             //m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
@@ -137,7 +137,7 @@ void IValhalla::LoadFiles(bool fresh) {
         saveNode["player-whitelist"] = m_settings.playerWhitelist;
         saveNode["player-max"] = m_settings.playerMax;
         saveNode["player-auth"] = m_settings.playerAuth;
-        saveNode["player-list"] = m_settings.playerList;
+        //saveNode["player-list"] = m_settings.playerList;
         //saveNode["player-map-visible"] = m_settings.playerForceVisible;
         //saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
         //saveNode["player-sleep"] = m_settings.playerSleep;
