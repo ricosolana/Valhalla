@@ -1033,11 +1033,17 @@ void IModManager::Init() {
 
     LoadAPI();
 
+    std::error_code ec;
+    fs::create_directories("mods", ec);
+    
+    if (ec)
+        return;
+
     for (const auto& dir
-        : fs::directory_iterator("mods")) {
+        : fs::directory_iterator("mods", ec)) {
 
         try {
-            if (dir.exists() && dir.is_directory()) {
+            if (dir.exists(ec) && dir.is_directory(ec)) {
                 auto&& dirname = dir.path().filename().string();
 
                 if (dirname.starts_with("--"))
