@@ -45,6 +45,8 @@ find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
 #find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(tomlplusplus CONFIG REQUIRED)
+    
 find_package(zstd CONFIG REQUIRED)
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
@@ -147,7 +149,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-    
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMAPI_BINARY_DIR}
@@ -157,6 +159,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC lua
     #sol2
     yaml-cpp
+    PRIVATE tomlplusplus::tomlplusplus
     easyloggingpp
     OptickCore
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>

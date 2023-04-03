@@ -4,6 +4,7 @@
 #include <csignal>
 #include <optick.h>
 #include <easylogging++.h>
+#include <toml++/toml.h>
 
 #include "VUtils.h"
 #include "VUtilsResource.h"
@@ -99,6 +100,12 @@ int main(int argc, char **argv) {
     OPTICK_THREAD("main");
     
     fs::current_path("./data/");
+
+    // this throws because toml is cool
+    //  why doesnt bepin use yaml or json...
+    //auto opt = VUtils::Resource::ReadFile<std::string>(
+    //    R"(\mods\RareMagicPortal\WackyMole.RareMagicPortal.cfg)");
+    //auto cfg = toml::parse(*opt);
 
     // set basic defaults
     initLogger(argc, argv);

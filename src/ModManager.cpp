@@ -1,6 +1,7 @@
 #include <easylogging++.h>
 #include <robin_hood.h>
 #include <yaml-cpp/yaml.h>
+#include <toml++/toml.h>
 
 #include "ModManager.h"
 #include "VUtilsResource.h"
@@ -57,6 +58,20 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
     }
 
     return mod;
+}
+
+int LoadFileRequire(lua_State* L) {
+    std::string path = sol::stack::get<std::string>(L);
+
+    // first look in the sub mod dir
+    //  ./mods/MyExampleMod/
+    if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + path + ".lua"))
+        luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
+    else {
+        sol::stack::push(L, "Module '" + path + "' not found");
+    }
+
+    return 1;
 }
 
 void IModManager::LoadAPI() {
@@ -894,15 +909,59 @@ void IModManager::LoadAPI() {
     
 
 
-    m_state.new_usertype<GzCompressor>("GzCompressor",
-        sol::constructors<GzCompressor(), GzCompressor(int)>(),
-        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GzCompressor::Compress)
-        );
+    m_state.new_usertype<Deflater>("Deflater",
+        "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
+        "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)),
+        "raw", sol::property(sol::resolve<Deflater()>(Deflater::Raw)),
+        "Compress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&Deflater::Compress)
+    );
 
-    m_state.new_usertype<GzDecompressor>("GzDecompressor",
-        sol::constructors<GzDecompressor()>(),
-        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&GzDecompressor::Decompress)
-        );
+    m_state.new_usertype<Inflater>("Inflater",
+        //"any", sol::property(Inflater::Any),
+        "zlib", sol::property(Inflater::Gz),
+        "gz", sol::property(Inflater::Gz),
+        "auto", sol::property(Inflater::Auto),
+        "raw", sol::property(Inflater::Raw),
+        "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&Inflater::Decompress)
+    );
+
+
+
+    // toml wrapper
+    //toml::parse
+    m_state["package"]["searchers"] = m_state.create_table_with(1, LoadFileRequire);
+
+    /*
+    m_state["package"]["searchers"] = m_state.create_table_with(1, [](lua_State* L) {        
+        std::string path = sol::stack::get<std::string>(L);
+
+        // first look in the sub mod dir
+        //  ./mods/MyExampleMod/
+        if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + path + ".lua"))
+            luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
+        else {
+            sol::stack::push(L, "Module '" + path + "' not found");
+        }
+
+        return 1;
+    });
+    */
+
+    /*
+    m_state["package"]["searchers"][1] = [this](sol::this_environment te, const std::string& path) {
+        sol::environment& env = te;
+
+        Mod* mod = env["this"].get<Mod*>();
+
+        // first look in the sub mod dir
+        //  ./mods/MyExampleMod/
+        if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + (mod ? mod->m_name + "/" : "") + path + ".lua")) {
+            return m_state.load(opt.value(), path);
+        }
+        else {
+            throw std::runtime_error("Module " + path + " not found");
+        }
+    };*/
 
 
 
@@ -969,9 +1028,9 @@ void IModManager::LoadMod(Mod& mod) {
             //auto configTable = thisTable["config"].get_or_create<sol::table>();
 
             // TODO use yamlcpp for config...
-        }
+        }     
 
-        m_state.safe_script(opt.value(), env);
+        m_state.safe_script(opt.value(), env); // , mod.m_name, sol::load_mode::any);
     }
     else
         throw std::runtime_error(std::string("unable to open file ") + path.string());

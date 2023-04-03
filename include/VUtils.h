@@ -464,13 +464,38 @@ public:
 
 
 
-class GzCompressor {
+class Deflater {
     int m_level;
+    int m_windowBits;
+
+    Deflater(int level, int windowBits) : m_level(level), m_windowBits(windowBits) {}
 
 public:
-    GzCompressor() : m_level(Z_BEST_SPEED) {}
+    static Deflater Gz(int level) {
+        return Deflater(level, 15 | 16);
+    };
 
-    GzCompressor(int level) : m_level(level) {}
+    static Deflater Gz() {
+        return Gz(Z_BEST_SPEED);
+    };
+
+    static Deflater ZLib(int level) {
+        return Deflater(level, 15);
+    }
+
+    static Deflater ZLib() {
+        return ZLib(Z_BEST_SPEED);
+    }
+
+    // Deflater with no header
+    static Deflater Raw(int level) {
+        return Deflater(level, -15);
+    }
+
+    // Deflater with no header
+    static Deflater Raw() {
+        return Raw(Z_BEST_SPEED);
+    }
 
 public:
     std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
@@ -481,12 +506,15 @@ public:
 
         z_stream zs{};
 
+        // https://www.zlib.net/manual.html
+        // default windowBits with deflateInit is 15
+
         // possible init errors are:
         //  - invalid param (can be fixed at compile time)
         //  - out of memory (unlikely)
         //  - incompatible version (should be fine if using the init macro)
         // https://stackoverflow.com/a/72499721
-        if (deflateInit2(&zs, m_level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+        if (deflateInit2(&zs, m_level, Z_DEFLATED, m_windowBits, 8, Z_DEFAULT_STRATEGY) != Z_OK)
             return std::nullopt;
 
         // Set output buffer size to an upper bound compressed size
@@ -513,9 +541,37 @@ public:
     }
 };
 
-class GzDecompressor {
+class Inflater {
+private:
+    int m_windowBits;
+
+    Inflater(int windowBits) : m_windowBits(windowBits) {}
+
 public:
-    GzDecompressor() {}
+    // Inflater that uses the header from the compressed data
+    //static Inflater Any() {
+    //    return Inflater(0);
+    //}
+
+    // Inflater expecting zlib header only
+    static Inflater ZLib() {
+        return Inflater(15);
+    }
+
+    // Inflater expecting gz header only 
+    static Inflater Gz() {
+        return Inflater(16);
+    };
+
+    // Inflater with automatic zlib/gz header detection
+    static Inflater Auto() {
+        return Inflater(15 | 16);
+    }
+
+    // Inflater with no header
+    static Inflater Raw() {
+        return Inflater(-15);
+    }
 
 public:
     std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize) {
@@ -523,7 +579,7 @@ public:
             return std::nullopt;
 
         BYTES_t out;
-        out.resize(inSize + inSize / 2);
+        out.resize(inSize * 2);
 
         z_stream stream;
         stream.next_in = (Bytef*)in;
@@ -532,7 +588,7 @@ public:
         stream.zalloc = Z_NULL;
         stream.zfree = Z_NULL;
 
-        if (inflateInit2(&stream, 15 | 16) != Z_OK)
+        if (inflateInit2(&stream, m_windowBits) != Z_OK)
             return std::nullopt;
 
         while (true) {
@@ -568,6 +624,8 @@ public:
         return Decompress(in.data(), in.size());
     }
 };
+
+
 
 
 
