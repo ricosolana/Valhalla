@@ -349,11 +349,12 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
-        "Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
-            sol::environment& env = te;
-            Mod& mod = env["this"].get<sol::table>().as<Mod&>();
-            self.RegisterLua(sig, func, &mod); 
-        },
+        "Register", &Peer::RegisterLua,
+        //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
+        //    sol::environment& env = te;
+        //    Mod& mod = env["this"].get<sol::table>().as<Mod&>();
+        //    self.RegisterLua(sig, func, &mod); 
+        //},
         "Invoke", &Peer::InvokeLua,
         "RouteView", &Peer::RouteViewLua,
         "Route", &Peer::RouteLua
@@ -851,6 +852,7 @@ void IModManager::LoadAPI() {
 
     m_state["RouteManager"] = RouteManager();
     m_state.new_usertype<IRouteManager>("IRouteManager",
+        "Register", &IRouteManager::RegisterLua,
         "InvokeView", &IRouteManager::InvokeViewLua,
         "Invoke", &IRouteManager::InvokeLua,
         "InvokeAll", &IRouteManager::InvokeAllLua

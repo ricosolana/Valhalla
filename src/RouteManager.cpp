@@ -26,11 +26,27 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		auto hash = reader.Read<HASH_t>();
 		auto params = reader.SubRead();
 
+		/*
+		* Rpc and multi-execution dilemna
+		*	Should I let multiple handlers be able to call RoutedRpc methods?
+		*	What about packets coming in that do not refer to any currently register Rpc?
+		*		Should they still dispatch the Lua handlers?
+		*	Similarly, what about missing RoutedRpc handlers?
+		*/
+
 		if (target == EVERYBODY) {
 			// Confirmed: targetZDO CAN have a value when globally routed
 			//assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");
 			if (!ModManager()->CallEvent(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
 				return;
+
+			// 'EVERYBODY' also targets the server
+			if (!targetZDO) {
+				auto&& find = m_methods.find(hash);
+				if (find != m_methods.end()) {
+					find->second->Invoke(peer, params);
+				}
+			} //else ... // netview is not currently supported
 
 			auto&& peers = NetManager()->GetPeers();
 			for (auto&& other : peers) {

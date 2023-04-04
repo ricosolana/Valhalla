@@ -93,13 +93,10 @@ private:
     sol::protected_function m_func;
     IModManager::Types m_types;
 
-    const IModManager::Mod* m_mod;
-
 public:
-    MethodImplLua(sol::protected_function func, const IModManager::Types& types, const IModManager::Mod* mod)
+    MethodImplLua(sol::protected_function func, const IModManager::Types& types)
         : m_func(func), 
-        m_types(types),
-        m_mod(mod) {}
+        m_types(types) {}
 
     bool Invoke(T t, DataReader &reader) override {
         auto&& state = m_func.lua_state();

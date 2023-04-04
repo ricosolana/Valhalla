@@ -41,6 +41,12 @@ public:
 		return Register(VUtils::String::GetStableHashCode(name), func);
 	}
 
+	void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
+		VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
+
+		m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
+	}
+
 
 	// Forwards raw data to peer(s) with no Lua handlers
 	//void InvokeParams(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
