@@ -167,7 +167,7 @@ void INetManager::OnNewPeer(Peer& peer) {
     peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
 
     if (!ModManager()->CallEvent(IModManager::Events::Join, peer)) {
-        return peer.Kick();
+        return peer.Disconnect();
     }
 
     // Important

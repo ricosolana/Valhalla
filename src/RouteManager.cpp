@@ -41,12 +41,12 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 				return;
 
 			// 'EVERYBODY' also targets the server
-			if (!targetZDO) {
-				auto&& find = m_methods.find(hash);
-				if (find != m_methods.end()) {
-					find->second->Invoke(peer, params);
-				}
-			} //else ... // netview is not currently supported
+			//if (!targetZDO) {
+			//	auto&& find = m_methods.find(hash);
+			//	if (find != m_methods.end()) {
+			//		find->second->Invoke(peer, params);
+			//	}
+			//} //else ... // netview is not currently supported
 
 			auto&& peers = NetManager()->GetPeers();
 			for (auto&& other : peers) {

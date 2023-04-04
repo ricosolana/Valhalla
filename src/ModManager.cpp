@@ -459,7 +459,8 @@ void IModManager::LoadAPI() {
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
         "SetLocal", &ZDO::SetLocal,
-        "claimed", sol::property(&ZDO::HasOwner),
+        //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
+        "HasOwner", &ZDO::HasOwner,
         "Disown", &ZDO::Disown,
         "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
         "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
@@ -932,22 +933,28 @@ void IModManager::LoadAPI() {
     // toml wrapper
     //toml::parse
     m_state["package"]["searchers"] = m_state.create_table_with(1, LoadFileRequire);
-
     /*
-    m_state["package"]["searchers"] = m_state.create_table_with(1, [](lua_State* L) {        
-        std::string path = sol::stack::get<std::string>(L);
+    m_state["package"]["searchers"] = m_state.create_table_with(1, sol::as_function([this](std::string path, sol::this_environment te) {
+        
+        Mod* mod = nullptr;
+
+        if (te) {
+            sol::environment& env = te;
+            mod = env["this"].get<Mod*>();
+        }
+            
+        //sol::environment& env = te;
 
         // first look in the sub mod dir
         //  ./mods/MyExampleMod/
-        if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + path + ".lua"))
-            luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
-        else {
-            sol::stack::push(L, "Module '" + path + "' not found");
+        if (auto opt = VUtils::Resource::ReadFile<std::string>("./mods/" + (mod ? mod->m_name + "/" : "") + path + ".lua")) {
+            m_state.load(opt.value(), path);
+            //luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
         }
-
-        return 1;
-    });
-    */
+        else {
+            throw std::runtime_error("Module '" + path + "' not found");
+        }
+    }));*/
 
     /*
     m_state["package"]["searchers"][1] = [this](sol::this_environment te, const std::string& path) {
@@ -1104,7 +1111,7 @@ void IModManager::Init() {
     for (const auto& dir
         : fs::directory_iterator("mods", ec)) {
 
-        try {
+        //try {
             if (dir.exists(ec) && dir.is_directory(ec)) {
                 auto&& dirname = dir.path().filename().string();
 
@@ -1118,10 +1125,10 @@ void IModManager::Init() {
 
                 m_mods.insert({ mod->m_name, std::move(mod) });
             }
-        }
-        catch (const std::exception& e) {
-            LOG(ERROR) << "Failed to load mod: " << e.what() << " (" << dir.path().c_str() << ")";
-        }
+        //}
+        //catch (const std::exception& e) {
+        //    LOG(ERROR) << "Failed to load mod: " << e.what() << " (" << dir.path().c_str() << ")";
+        //}
     }
 
     LOG(INFO) << "Loaded " << m_mods.size() << " mods";
