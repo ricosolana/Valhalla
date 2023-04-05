@@ -1,32 +1,4 @@
--- https://stackoverflow.com/a/22843701
-string.startswith = function(self, str)
-  --return self:find('^' .. str) ~= nil
-  return self:sub(1, #str) == str
-end
-
-string.endswith = function(self, str)
-  return self:sub(-#str) == str
-end
-
--- https://stackoverflow.com/a/27455195
-string.trim = function(self)
-  return self:match( '^%s*(.-)%s*$' )
-end
-
-string.lines = function(self)
-  if self:sub(-1) ~= '\n' then self = self .. '\n' end
-  return self:gmatch('(.-)\n')
-end
-
-string.indexof = function(self, str)
-  return self:find(str, 1, true)
-end
-
-string.contains = function(self, str)
-  return self:find(str, 1, true) ~= nil
-end
-
-
+require 'stringext'
 
 local TOML = {}
 
@@ -78,7 +50,8 @@ local NUMBER_TYPES = {
   --Decimal = true
 }--]]
 
-local CraftingTable = {
+-- global
+CraftingTable = {
   Disabled = 0,
   Inventory = 1,
   Workbench = 2,
