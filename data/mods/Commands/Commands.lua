@@ -274,6 +274,3 @@ Valhalla:Subscribe('Join', function(peer)
     print('Registered command vs')
 end)
 
-Valhalla:Subscribe('Enable', function()
-    print(this.name .. ' enabled')
-end)

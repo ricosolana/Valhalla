@@ -118,7 +118,3 @@ Valhalla:Subscribe("Disconnect", function(peer)
     print(peer.name .. ' disconnected')
     peers[peer.socket.host] = nil
 end)
-
-Valhalla:Subscribe('Enable', function()
-    
-end)

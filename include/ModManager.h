@@ -96,7 +96,6 @@ public:
 
     struct Mod {
         std::string m_name;
-        sol::environment m_env;
 
         fs::path m_entry;
 
@@ -105,48 +104,32 @@ public:
         std::string m_description;
         std::list<std::string> m_authors;
 
-        //bool m_reload = false;
-
         Mod(std::string name,
             fs::path entry) 
             : m_name(name),
             m_entry(entry) {}
 
-        void Error(const std::string& s) {
-            LOG(ERROR) << "mod [" << m_name << "]: " << s << " (L" << GetCurrentLine() << ")";
-        }
-
-        int GetCurrentLine() {
-            lua_Debug ar;
-            lua_getstack(m_env.lua_state(), 1, &ar);
-            lua_getinfo(m_env.lua_state(), "nSl", &ar);
-
-            return ar.currentline;
-        }
     };
 
     struct EventHandle {
-        std::reference_wrapper<Mod> m_mod;
         sol::protected_function m_func;
         int m_priority;
 
-        EventHandle(Mod& mod, sol::function func, int priority)
-            : m_mod(mod), m_func(func), m_priority(priority) {}
+        EventHandle(sol::function func, int priority)
+            : m_func(func), m_priority(priority) {}
     };
 
 private:
     robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
     robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
 
-    EventStatus m_eventStatus = EventStatus::NONE;
-
-    //bool m_reload = false;
+    bool m_unsubscribeCurrentEvent;
 
 public:
     sol::state m_state;
 
 private:
-    std::unique_ptr<Mod> LoadModInfo(const std::string &folderName);
+    Mod& LoadModInfo(const std::string &folderName);
 
     void LoadAPI();
     void LoadMod(Mod& mod);
@@ -156,70 +139,36 @@ public:
     void Uninit();
     void Update();
 
-
-    //bool IsEventCancelled();
-
-    /*
-    void recurse(sol::table table) {
-        auto&& tostring = m_state["tostring"];
-
-        for (int i = 0; i < table.size(); i++) {
-            auto&& element = table[i];
-            auto&& type = element.get_type();
-            if (type == sol::type::table)
-                recurse(element);
-            else
-                LOG(INFO) << tostring(table).get<std::string>();
-        }
-    };*/
-
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
     template <class... Args>
     bool CallEvent(HASH_t name, Args&&... params) {
         OPTICK_EVENT();
 
-        this->m_eventStatus = EventStatus::NONE;
+        this->m_unsubscribeCurrentEvent = false;
 
         auto&& find = m_callbacks.find(name);
         if (find != m_callbacks.end()) {
             auto&& callbacks = find->second;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
-                bool err = false;
-                try {
-                    sol::protected_function_result result = itr->m_func(Args(params)...);
-                    if (!result.valid()) {
-                        LOG(ERROR) << "Event error: ";
-                        //auto&& tostring = m_state["tostring"];
+                sol::protected_function_result result = itr->m_func(Args(params)...);
+                if (!result.valid()) {
+                    LOG(WARNING) << "Event error: ";
 
-                        //LOG(ERROR) << tostring(result).get<std::string>();
-                        //recurse(result);
-
-                        err = true;
-
-                        sol::error error = result;
-                        LOG(ERROR) << error.what();
-                        m_eventStatus |= EventStatus::UNSUBSCRIBE;
-                    }
-                    else {
-                        // whether cancelled-events should follow Harmony prefix cancellation with bools
-                        if (result.get_type() == sol::type::boolean) {
-                            if (!result.get<bool>())
-                                m_eventStatus |= EventStatus::CANCEL;
-                        }
+                    sol::error error = result;
+                    LOG(ERROR) << error.what();
+                    this->m_unsubscribeCurrentEvent = true;
+                }
+                else {
+                    // whether cancelled-events should follow Harmony prefix cancellation with bools
+                    if (result.get_type() == sol::type::boolean) {
+                        if (!result.get<bool>())
+                            return false;
                     }
                 }
-                catch (const std::exception& e) {
-                    LOG(ERROR) << "Unexpected sol exception: " << e.what();
-                    m_eventStatus |= EventStatus::UNSUBSCRIBE;
-                }
 
-                if ((m_eventStatus & EventStatus::UNSUBSCRIBE) == EventStatus::UNSUBSCRIBE) {
-                    if (err)
-                        LOG(ERROR) << "Unsubscribed event";
-                    else
-                        LOG(INFO) << "Unsubscribed event";
+                if (this->m_unsubscribeCurrentEvent) {
                     itr = callbacks.erase(itr);
                 }
                 else {
@@ -227,7 +176,8 @@ public:
                 }
             }
         }
-        return (m_eventStatus & IModManager::EventStatus::CANCEL) != IModManager::EventStatus::CANCEL;
+
+        return true;
     }
 
     // Dispatch a Lua event

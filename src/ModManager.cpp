@@ -26,7 +26,7 @@ IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
 
-std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& folderName) {
+IModManager::Mod& IModManager::LoadModInfo(const std::string& folderName) {
 
     YAML::Node loadNode;
 
@@ -40,24 +40,24 @@ std::unique_ptr<IModManager::Mod> IModManager::LoadModInfo(const std::string& fo
         throw std::runtime_error(std::string("unable to open ") + modInfoPath.string());
     }
 
-    auto mod(std::make_unique<Mod>(
-        loadNode["name"].as<std::string>(), 
-        //sol::environment(m_state, sol::create, m_state.globals()),
-        modPath / (loadNode["entry"].as<std::string>() + ".lua"))
-    );
+    auto name = loadNode["name"].as<std::string>();
 
-    //mod->m_env["_G"] = mod->m_env;
+    auto &&insert = this->m_mods.insert({ name, std::make_unique<Mod>(
+        loadNode["name"].as<std::string>(),
+        modPath / (loadNode["entry"].as<std::string>() + ".lua"))
+    });
+
+    if (!insert.second)
+        throw std::runtime_error("Mod " + name + " already loaded");
+
+    auto&& mod = insert.first->second;
 
     mod->m_version = loadNode["version"].as<std::string>("");
     mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
     mod->m_description = loadNode["description"].as<std::string>("");
     mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
-
-    if (this->m_mods.contains(mod->m_name)) {
-        throw std::runtime_error("mod with duplicate name");
-    }
-
-    return mod;
+    
+    return *mod;
 }
 
 int LoadFileRequire(lua_State* L) {
@@ -655,9 +655,7 @@ void IModManager::LoadAPI() {
         "tomorrowAfternoon", sol::property(&IValhalla::GetTomorrowAfternoon),
         "tomorrowNight", sol::property(&IValhalla::GetTomorrowNight),
 
-        "Subscribe", [this](IValhalla& self, sol::variadic_args args, sol::this_environment te) {
-            sol::environment& env = te;
-
+        "Subscribe", [this](IValhalla& self, sol::variadic_args args) {
             HASH_t hash = 0;
             sol::function func;
             int priority = 0;
@@ -693,13 +691,10 @@ void IModManager::LoadAPI() {
 
             auto&& callbacks = m_callbacks[hash];
             
-            Mod& mod = env["this"].get<sol::table>().as<Mod&>();
-            
-            callbacks.emplace_back(mod, func, priority);
+            callbacks.emplace_back(func, priority);
             callbacks.sort([](const EventHandle& a, const EventHandle& b) {
-                    return a.m_priority < b.m_priority;
-                }
-            );
+                return a.m_priority < b.m_priority;
+            });
         }
     );
 
@@ -864,24 +859,11 @@ void IModManager::LoadAPI() {
     {
         auto eventTable = m_state["event"].get_or_create<sol::table>();
 
-        eventTable["Cancel"] = [this]() { m_eventStatus |= EventStatus::CANCEL; };
-        eventTable["SetCancelled"] = [this](bool c) { m_eventStatus = (c 
-            ? EventStatus::CANCEL | m_eventStatus 
-            : ~EventStatus::CANCEL & m_eventStatus); 
-        };
-        eventTable["cancelled"] = sol::property([this]() { return m_eventStatus & EventStatus::CANCEL == EventStatus::CANCEL; });
-                
-        eventTable["Unsubscribe"] = [this]() { m_eventStatus |= EventStatus::UNSUBSCRIBE; };
-        eventTable["SetSubscribed"] = [this](bool c) { m_eventStatus = (c 
-            ? ~EventStatus::UNSUBSCRIBE & m_eventStatus
-            : EventStatus::UNSUBSCRIBE | m_eventStatus); 
-        };
-        eventTable["subscribed"] = sol::property([this]() { return m_eventStatus & EventStatus::UNSUBSCRIBE != EventStatus::UNSUBSCRIBE; });
+        eventTable["Unsubscribe"] = [this]() { this->m_unsubscribeCurrentEvent = false; };
     }
 
-    m_state["print"] = [](sol::this_state ts, sol::variadic_args args, sol::this_environment te) {
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
         sol::state_view state = ts;
-        sol::environment& env = te;
 
         auto&& tostring(state["tostring"]);
 
@@ -893,9 +875,7 @@ void IModManager::LoadAPI() {
             s += tostring(arg);
         }
 
-        Mod& mod = env["this"].get<sol::table>().as<Mod&>();
-
-        LOG(INFO) << "[" << mod.m_name << "] " << s;
+        LOG(INFO) << "[Lua] " << s;
     };
 
 
@@ -1021,25 +1001,7 @@ void IModManager::LoadAPI() {
 void IModManager::LoadMod(Mod& mod) {
     auto path(mod.m_entry);
     if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
-        auto&& env = mod.m_env;
-        env = sol::environment(m_state, sol::create, m_state.globals());
-
-        env["_G"] = env;
-        env["this"] = mod;
-
-        //sol::table meta = m_state.create_table_with();
-        //meta[sol::meta_function::new_index] = [](lua_State* L) { return luaL_error(L, "cannot reassign env table"); };
-        //meta[sol::meta_function::index] = meta;
-        //
-        //env[sol::metatable_key] = meta;
-
-        {
-            //auto configTable = thisTable["config"].get_or_create<sol::table>();
-
-            // TODO use yamlcpp for config...
-        }     
-
-        m_state.safe_script(opt.value(), env); // , mod.m_name, sol::load_mode::any);
+        m_state.safe_script(opt.value(), mod.m_name);
     }
     else
         throw std::runtime_error(std::string("unable to open file ") + path.string());
@@ -1081,54 +1043,37 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
 void IModManager::Init() {
     LOG(INFO) << "Initializing ModManager";
 
-    //m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
-
     m_state.set_exception_handler(&my_exception_handler);
 
-    //sol::main_thread()
     m_state.open_libraries();
-
-    //m_state.open_libraries(
-    //    sol::lib::base,
-    //    sol::lib::debug,
-    //    sol::lib::io, // override
-    //    sol::lib::math,
-    //    sol::lib::package, // override
-    //    sol::lib::string,
-    //    sol::lib::table,
-    //    sol::lib::utf8,
-    //    sol::lib::c
-    //);
 
     LoadAPI();
 
     std::error_code ec;
-    fs::create_directories("mods", ec);
+    fs::create_directories(VALHALLA_MOD_PATH, ec);
     
     if (ec)
         return;
 
     for (const auto& dir
-        : fs::directory_iterator("mods", ec)) {
+        : fs::directory_iterator(VALHALLA_MOD_PATH, ec)) {
 
-        //try {
+        try {
             if (dir.exists(ec) && dir.is_directory(ec)) {
                 auto&& dirname = dir.path().filename().string();
 
                 if (dirname.starts_with("--"))
                     continue;
 
-                auto mod = LoadModInfo(dirname);
-                LoadMod(*mod.get());
+                auto&& mod = LoadModInfo(dirname);
+                LoadMod(mod);
 
-                LOG(INFO) << "Loaded mod '" << mod->m_name << "'";
-
-                m_mods.insert({ mod->m_name, std::move(mod) });
+                LOG(INFO) << "Loaded mod '" << mod.m_name << "'";
             }
-        //}
-        //catch (const std::exception& e) {
-        //    LOG(ERROR) << "Failed to load mod: " << e.what() << " (" << dir.path().c_str() << ")";
-        //}
+        }
+        catch (const std::exception& e) {
+            LOG(ERROR) << "Failed to load mod: " << e.what() << " (" << dir.path().c_str() << ")";
+        }
     }
 
     LOG(INFO) << "Loaded " << m_mods.size() << " mods";

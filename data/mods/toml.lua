@@ -18,37 +18,37 @@ string.lines = function(self)
   return self:gmatch('(.-)\n')
 end
 
-local toml = {}
+local TOML = {}
 
-toml.read = function(file)
+TOML.read = function(file)
   local map = {}
   
   local section = ''
   
   for line in io.lines(file) do 
-    section = toml.parseline(section, map, line)
+    section = TOML.parseline(section, map, line)
   end
   
   return map
 end
 
-toml.parse = function(str)
-  return toml.parselines(str:lines())
+TOML.parse = function(str)
+  return TOML.parselines(str:lines())
 end
 
-toml.parselines = function(lines)
+TOML.parselines = function(lines)
   local map = {}
   
   local section = ''
     
   for line in lines do 
-    section = toml.parseline(section, map, line)
+    section = TOML.parseline(section, map, line)
   end
   
   return map
 end
 
-toml.parseline = function(section, map, line)
+TOML.parseline = function(section, map, line)
   line = line:trim()
   -- skip comments and blanks
   if #line > 0 and not line:startswith('#') then
@@ -90,4 +90,4 @@ if true then
   print(map)
 end--]]
 
-return toml
+return TOML
