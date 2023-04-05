@@ -3,19 +3,15 @@
 local TOML = require 'toml'
 
 --[[
- Constants
+  Constants
 --]]
 local SIG_VersionCheck = MethodSig.new('ServerSync VersionCheck', Type.BYTES)
 
--- table<name, config>
 local CONFIGS = {}
-
--- table<peer.socket.host, table<name, true>> of each peers currently verified mods
---local PEERS = {}
 
 local Config = {}
 
-Config.new = function(name, configPath, version, minVersion, modRequired)
+Config.new = function(name, configPath, version, minVersion, modRequired, locked)
   local self = {}
   
   print('registering sync config for ' .. name)
@@ -24,48 +20,86 @@ Config.new = function(name, configPath, version, minVersion, modRequired)
   self.version = version
   self.minVersion = minVersion
   self.modRequired = modRequired
+  self.locked = locked
   
   CONFIGS[name] = self
+  
+  RouteManager:Register(MethodSig.new(name .. ' ConfigSync', Type.BYTES), function(peer, bytes)
+    if not self.locked or peer.admin then
+      --then update config values sent by peer
+      
+    end
+  end)
   
   return self
 end
 
--- strange findings against my initial implementation:
---  server sends version, client receives
---  client NEVER sends version
--- 
--- a vanilla client allowed on modded server is allowed
--- a vanilla server accepting a modded player is allowed...
--- then wtf is the point of mod required?
 
---
+
+-- https://github.com/blaxxun-boop/ServerSync/blob/5fc2d710f44c6fe9b35fc707217879f8576414e9/ConfigSync.cs#L949
+local ConfigToBytes = function(config)
+  local bytes = Bytes.new()
+  local writer = DataWriter.new(bytes)
+  
+  for section, map in pairs(config.cfg) do
+    writer:Write(section)
+  end
+  
+  return bytes
+end
+
+
+
+-- L 451
+local BytesToConfig = function(bytes)
+  local reader = DataReader.new(bytes)
+  
+  local count = reader:ReadUInt() assert(count < 1024, 'config count seems too large')
+  for i=1, #count do
+    local groupName = reader:ReadString()
+    local configName = reader:ReadString()
+    local typeName = reader:ReadString()
+    
+    
+  end
+end
+
+-- most frequent used types:
+--  bool, int32, string, float
+--[[
+local QUALIFIED_TYPES_CONVERTERS = {
+  'System.String' = function(reader) end,
+  'System.Boolean' = function(reader) end,
+  'System.Byte' = function(reader) end,
+  'System.SByte' = function(reader) end,
+  'System.Int16' = function(reader) end,
+  'System.UInt16' = function(reader) end,
+  'System.Int32' = function(reader) end,
+  'System.UInt32' = function(reader) end,
+  'System.Int64' = function(reader) end,
+  'System.UInt64' = function(reader) end,
+  'System.Single' = function(reader) end,
+  'System.Double' = function(reader) end,
+  --'System.Decimal' = function(reader) end,
+  'System.Enum' = function(reader) end
+}--]]
+
+-- L 1013
+local BytesToType = function(reader, typeName)
+  --if typeName
+end
+
+
+local sendZPackage = function(peer, bytes)
+  if #bytes > 10000 then
+    bytes:Move(Deflater.raw():Compress(bytes))
+    --bytes:
+  end
+end
 
 Valhalla:Subscribe('Connect', function(peer)
   local map = {}
   PEERS[peer.socket.host] = map
-  
-  --[[
-  peer:Register(SIG_VersionCheck, function(peer, bytes)
-    local reader = DataReader.new(bytes)
-    
-    local name = reader:ReadString()
-    
-    local config = CONFIGS[name]
-    
-    print('received mod from peer ' .. name)
-    
-    if config then
-      local minVersion = reader:ReadString() -- semver is more to implement...
-      local version = reader:ReadString()
-      
-      print('Received', name, version, 'from peer')
-      
-      -- peer is good 
-      if config.version == version then
-        map[name] = true
-      end
-    end
-  end)--]]
 
   for name, config in pairs(CONFIGS) do
     if config.modRequired then
@@ -84,26 +118,8 @@ Valhalla:Subscribe('Connect', function(peer)
   end
 end)
 
---[[
-Valhalla:Subscribe('Join', function(peer)
-  local map = PEERS[peer.socket.host]
+local RPC_ConfigSync = function(peer, bytes)
   
-  local result = true
-  
-  for name, config in pairs(CONFIGS) do
-    if config.modRequired then
-      if not map[name] then
-        print('peer missing mod ' .. name)
-        result = false
-        break
-      end
-    end
-  end
-  
-  PEERS[peer.socket.host] = nil
-  
-  return result
-end)
---]]
+end
 
 return Config
