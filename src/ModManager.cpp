@@ -237,7 +237,15 @@ void IModManager::LoadAPI() {
         "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
         "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
 
-        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write)
+        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write),
+
+        "Serialize", sol::overload(
+            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::SerializeOneLua),
+            [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
+                return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
+            }
+            //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::SerializeLuaImpl)
+        )
     );
 
     // Package read/write types
@@ -274,7 +282,12 @@ void IModManager::LoadAPI() {
         "ReadFloat", &DataReader::ReadFloat,
         "ReadDouble", &DataReader::ReadDouble,
                 
-        "ReadChar", &DataReader::ReadChar
+        "ReadChar", &DataReader::ReadChar,
+
+        "Deserialize", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
+            return self.DeserializeLua(state, IModManager::Types(args.begin(), args.end()));
+        }
+        
     );
 
     //m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",

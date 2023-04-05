@@ -27,87 +27,75 @@ DataWriter DataReader::ToWriter() {
     return DataWriter(this->m_provider, this->m_pos);
 }
 
-sol::variadic_results DataReader::DeserializeLua(sol::state_view state, DataReader& reader, const IModManager::Types& types) {
+
+
+sol::object DataReader::DeserializeOneLua(sol::state_view state, IModManager::Type type) {
+    switch (type) {
+    case IModManager::Type::BYTES:
+        // Will be interpreted as sol container type
+        // see https://sol2.readthedocs.io/en/latest/containers.html
+        return sol::make_object(state, ReadBytes());
+    case IModManager::Type::STRING:
+        // Primitive: string
+        return sol::make_object(state, ReadString());
+    case IModManager::Type::ZDOID:
+        // Userdata: ZDOID
+        return sol::make_object(state, ReadZDOID());
+    case IModManager::Type::VECTOR3f:
+        // Userdata: Vector3f
+        return sol::make_object(state, ReadVector3f());
+    case IModManager::Type::VECTOR2i:
+        // Userdata: Vector2i
+        return sol::make_object(state, ReadVector2i());
+    case IModManager::Type::QUATERNION:
+        // Userdata: Quaternion
+        return sol::make_object(state, ReadQuaternion());
+    case IModManager::Type::STRINGS:
+        // Container type of Primitive: string
+        return sol::make_object(state, ReadStrings());
+    case IModManager::Type::BOOL:
+        // Primitive: boolean
+        return sol::make_object(state, ReadBool());
+    case IModManager::Type::INT8:
+        // Primitive: number
+        return sol::make_object(state, ReadInt8());
+    case IModManager::Type::INT16:
+        // Primitive: number
+        return sol::make_object(state, ReadInt16());
+    case IModManager::Type::INT32:
+        // Primitive: number
+        return sol::make_object(state, ReadInt32());
+    case IModManager::Type::INT64:
+        // Userdata: Int64Wrapper
+        return sol::make_object(state, ReadInt64());
+    case IModManager::Type::UINT8:
+        // Primitive: number
+        return sol::make_object(state, ReadUInt8());
+    case IModManager::Type::UINT16:
+        // Primitive: number
+        return sol::make_object(state, ReadUInt16());
+    case IModManager::Type::UINT32:
+        // Primitive: number
+        return sol::make_object(state, ReadUInt32());
+    case IModManager::Type::UINT64:
+        // Userdata: UInt64Wrapper
+        return sol::make_object(state, ReadUInt64Wrapper());
+    case IModManager::Type::FLOAT:
+        // Primitive: number
+        return sol::make_object(state, Read<float>());
+    case IModManager::Type::DOUBLE:
+        // Primitive: number
+        return sol::make_object(state, Read<double>());
+    default:
+        throw std::runtime_error("invalid mod DataReader type");
+    }
+}
+
+sol::variadic_results DataReader::DeserializeLua(sol::state_view state, const IModManager::Types& types) {
     sol::variadic_results results;
     
     for (auto&& type : types) {
-        switch (type) {
-        case IModManager::Type::BYTES:
-            // Will be interpreted as sol container type
-            // see https://sol2.readthedocs.io/en/latest/containers.html
-            results.push_back(sol::make_object(state, reader.ReadBytes()));
-            break;
-        case IModManager::Type::STRING:
-            // Primitive: string
-            results.push_back(sol::make_object(state, reader.ReadString()));
-            break;
-        case IModManager::Type::ZDOID:
-            // Userdata: ZDOID
-            results.push_back(sol::make_object(state, reader.ReadZDOID()));
-            break;
-        case IModManager::Type::VECTOR3f:
-            // Userdata: Vector3f
-            results.push_back(sol::make_object(state, reader.ReadVector3f()));
-            break;
-        case IModManager::Type::VECTOR2i:
-            // Userdata: Vector2i
-            results.push_back(sol::make_object(state, reader.ReadVector2i()));
-            break;
-        case IModManager::Type::QUATERNION:
-            // Userdata: Quaternion
-            results.push_back(sol::make_object(state, reader.ReadQuaternion()));
-            break;
-        case IModManager::Type::STRINGS:
-            // Container type of Primitive: string
-            results.push_back(sol::make_object(state, reader.ReadStrings()));
-            break;
-        case IModManager::Type::BOOL:
-            // Primitive: boolean
-            results.push_back(sol::make_object(state, reader.ReadBool()));
-            break;
-        case IModManager::Type::INT8:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadInt8()));
-            break;
-        case IModManager::Type::INT16:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadInt16()));
-            break;
-        case IModManager::Type::INT32:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadInt32()));
-            break;
-        case IModManager::Type::INT64:
-            // Userdata: Int64Wrapper
-            results.push_back(sol::make_object(state, reader.ReadInt64()));
-            break;
-        case IModManager::Type::UINT8:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadUInt8()));
-            break;
-        case IModManager::Type::UINT16:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadUInt16()));
-            break;
-        case IModManager::Type::UINT32:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.ReadUInt32()));
-            break;
-        case IModManager::Type::UINT64:
-            // Userdata: UInt64Wrapper
-            results.push_back(sol::make_object(state, reader.ReadUInt64Wrapper()));
-            break;
-        case IModManager::Type::FLOAT:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.Read<float>()));
-            break;
-        case IModManager::Type::DOUBLE:
-            // Primitive: number
-            results.push_back(sol::make_object(state, reader.Read<double>()));
-            break;
-        default:
-            throw std::runtime_error("invalid mod DataReader type");
-        }
+        results.push_back(DeserializeOneLua(state, type));
     }
 
     return results;

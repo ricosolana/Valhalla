@@ -101,7 +101,7 @@ public:
     bool Invoke(T t, DataReader &reader) override {
         auto&& state = m_func.lua_state();
 
-        auto results(DataReader::DeserializeLua(state, reader, m_types));
+        auto results(reader.DeserializeLua(state, m_types));
 
         // Prefix
 #ifdef MOD_EVENT_RESPONSE

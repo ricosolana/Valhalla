@@ -224,13 +224,17 @@ public:
         return BYTES_t{};
     }
 
-    static void SerializeLuaImpl(DataWriter& writer, const IModManager::Types& types, const sol::variadic_results& results);
 
-    static decltype(auto) SerializeLua(const IModManager::Types& types, const sol::variadic_results& results) {
+
+    void SerializeOneLua(IModManager::Type type, sol::object object);
+
+    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results);
+
+    static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
         BYTES_t bytes;
         DataWriter params(bytes);
 
-        SerializeLuaImpl(params, types, results);
+        params.SerializeLua(types, results);
 
         return bytes;
     }

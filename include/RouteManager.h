@@ -92,7 +92,7 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(SERVER_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, results));
+			auto bytes = Serialize(SERVER_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);

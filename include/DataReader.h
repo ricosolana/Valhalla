@@ -236,7 +236,11 @@ public:
         return { reader.template Read<Ts>()... };
     }
 
-    static sol::variadic_results DeserializeLua(sol::state_view state, DataReader& reader, const IModManager::Types& types);
+
+
+    sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type);
+
+    sol::variadic_results DeserializeLua(sol::state_view state, const IModManager::Types& types);
 
     // verbose extension methods
     //  I want these to actually all be in lua

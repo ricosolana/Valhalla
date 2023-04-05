@@ -88,74 +88,68 @@ void DataWriter::Write(const Quaternion& in) {
     Write(in.w);
 }
 
-void DataWriter::SerializeLuaImpl(DataWriter& params, const IModManager::Types&types, const sol::variadic_results &results) {
-    for (int i = 0; i < results.size(); i++) {
-        auto&& arg = results[i];
-        auto argType = arg.get_type();
-        auto&& expectType = types[i];
 
-        // A vector of types and vector of values are used because Lua makes no distinction
-        if (argType == sol::type::number) {
-            switch (expectType) {
-                // TODO add recent unsigned types
-            case IModManager::Type::UINT8:
-                params.Write(arg.as<uint8_t>());
-                break;
-            case IModManager::Type::UINT16:
-                params.Write(arg.as<uint16_t>());
-                break;
-            case IModManager::Type::UINT32:
-                params.Write(arg.as<uint32_t>());
-                break;
-            case IModManager::Type::UINT64:
-                params.Write(arg.as<uint64_t>());
-                break;
-            case IModManager::Type::INT8:
-                params.Write(arg.as<int8_t>());
-                break;
-            case IModManager::Type::INT16:
-                params.Write(arg.as<int16_t>());
-                break;
-            case IModManager::Type::INT32:
-                params.Write(arg.as<int32_t>());
-                break;
-            case IModManager::Type::INT64:
-                params.Write(arg.as<int64_t>());
-                break;
-            case IModManager::Type::FLOAT:
-                params.Write(arg.as<float>());
-                break;
-            case IModManager::Type::DOUBLE:
-                params.Write(arg.as<double>());
-                break;
-            default:
-                throw std::runtime_error("incorrect type at position (or bad DataFlag?)");
-            }
-        }
-        else if (argType == sol::type::string && expectType == IModManager::Type::STRING) {
-            params.Write(arg.as<std::string>());
-        }
-        else if (argType == sol::type::boolean && expectType == IModManager::Type::BOOL) {
-            params.Write(arg.as<bool>());
-        }
-        // TODO can remove checks as sol safe mode already checks
-        else if (arg.is<BYTES_t>() && expectType == IModManager::Type::BYTES) {
-            params.Write(arg.as<BYTES_t>());
-        }
-        else if (arg.is<ZDOID>() && expectType == IModManager::Type::ZDOID) {
-            params.Write(arg.as<ZDOID>());
-        }
-        else if (arg.is<Vector3f>() && expectType == IModManager::Type::VECTOR3f) {
-            params.Write(arg.as<Vector3f>());
-        }
-        else if (arg.is<Vector2i>() && expectType == IModManager::Type::VECTOR2i) {
-            params.Write(arg.as<Vector2i>());
-        }
-        else if (arg.is<Quaternion>() && expectType == IModManager::Type::QUATERNION) {
-            params.Write(arg.as<Quaternion>());
-        }
-        else {
-            throw std::runtime_error("unsupported type, or incorrect type at position");
-        }
+void DataWriter::SerializeOneLua(IModManager::Type type, sol::object arg) {
+    switch (type) {
+        // TODO add recent unsigned types
+    case IModManager::Type::UINT8:
+        Write(arg.as<uint8_t>());
+        break;
+    case IModManager::Type::UINT16:
+        Write(arg.as<uint16_t>());
+        break;
+    case IModManager::Type::UINT32:
+        Write(arg.as<uint32_t>());
+        break;
+    case IModManager::Type::UINT64:
+        Write(arg.as<uint64_t>());
+        break;
+    case IModManager::Type::INT8:
+        Write(arg.as<int8_t>());
+        break;
+    case IModManager::Type::INT16:
+        Write(arg.as<int16_t>());
+        break;
+    case IModManager::Type::INT32:
+        Write(arg.as<int32_t>());
+        break;
+    case IModManager::Type::INT64:
+        Write(arg.as<int64_t>());
+        break;
+    case IModManager::Type::FLOAT:
+        Write(arg.as<float>());
+        break;
+    case IModManager::Type::DOUBLE:
+        Write(arg.as<double>());
+        break;
+    case IModManager::Type::STRING:
+        Write(arg.as<std::string>());
+        break;
+    case IModManager::Type::BOOL:
+        Write(arg.as<bool>());
+        break;
+    case IModManager::Type::BYTES:
+        Write(arg.as<BYTES_t>());
+        break;
+    case IModManager::Type::ZDOID:
+        Write(arg.as<ZDOID>());
+        break;
+    case IModManager::Type::VECTOR3f:
+        Write(arg.as<Vector3f>());
+        break;
+    case IModManager::Type::VECTOR2i:
+        Write(arg.as<Vector2i>());
+        break;
+    case IModManager::Type::QUATERNION:
+        Write(arg.as<Quaternion>());
+        break;
+    default:
+        throw std::runtime_error("Invalid data type");
+    }
+}
+
+void DataWriter::SerializeLua(const IModManager::Types& types, const sol::variadic_results &results) {
+    for (int i = 0; i < results.size(); i++) {
+        SerializeOneLua(types[i], results[i]);
     }
 }
