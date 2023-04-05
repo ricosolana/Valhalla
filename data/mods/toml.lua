@@ -143,7 +143,7 @@ TOML.parseline = function(lineNumber, section, tomlTypeName, customTomlConverter
   
   -- skip comments and blanks
   if #line > 0 then
-    -- try to extract type information from comment
+    -- try to extract type hint information from comment
     if line:startswith('#') then
       local S = '# Setting type:'
       if line:startswith(S) then
@@ -169,7 +169,7 @@ TOML.parseline = function(lineNumber, section, tomlTypeName, customTomlConverter
             if conv then
               entry.value = assert(conv.from(rawValue), 'failed to parse type L' .. lineNumber)
             else              
-              print('no toml converter for ' .. tomlTypeName .. ' L' .. lineNumber .. ' (using value as-is)')
+              print('no toml converter for ' .. tomlTypeName .. ' L' .. lineNumber .. ' (using raw)')
               entry.value = FROM_TOML_DEFAULT(rawValue)
             end
           end
@@ -185,15 +185,5 @@ TOML.parseline = function(lineNumber, section, tomlTypeName, customTomlConverter
   
   return section, tomlTypeName
 end
-
---local map = toml.read('WackyMole.RareMagicPortal.cfg')
-
---local map = toml.parse(io.lines('WackyMole.RareMagicPortal.cfg'))
---[[
-local map = toml.parse(io.open('WackyMole.RareMagicPortal.cfg', 'r'):read('*all'))
-
-if true then
-  print(map)
-end--]]
 
 return TOML
