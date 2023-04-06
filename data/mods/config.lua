@@ -62,7 +62,8 @@ local DATA_CONVERTERS = {
     end
   },
   DamageModifier = { 
-    qualifier = 'HitData+DamageModifier',
+    --qualifier = 'HitData+DamageModifier',
+    qualifier = 'ItemManager.Item+DamageModifier',
     serialize = function(writer, value)
       writer:WriteInt32(DamageModifier[value])
     end,
@@ -152,6 +153,8 @@ Config.SerializeEntry = function(writer, dataConverters, section, key, entry)
   writer:Write(key)
   writer:Write(cvt.qualifier)
   
+  print(entry.value)
+  
   local func = cvt.serialize
   if type(func) == 'string' then
     writer[func](writer, entry.value)
@@ -206,7 +209,7 @@ Config.sendZPackage = function(peer, config, bytes)
     local writer = DataWriter.new(newBytes)
     
     writer:WriteUInt8(CONFIG_COMPRESSED)
-    writer:Write(Deflater.raw():Compress(bytes))
+    writer:Write(Deflater.raw:Compress(bytes))
     
     bytes = newBytes
   end

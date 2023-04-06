@@ -71,6 +71,7 @@ BuildPieceCategory = {
   Custom = 101,
 }
 
+-- ItemManager.Item+DamageModifier
 DamageModifier = {
 	Normal = 0,
 	Resistant = 1,
@@ -79,6 +80,7 @@ DamageModifier = {
 	Ignore = 4,
 	VeryResistant = 5,
 	VeryWeak = 6,
+  None = 7,
 }
 
 local TOML = {}
@@ -233,7 +235,7 @@ TOML.parseline = function(line, cfg, temp)
   end
 end
 
-local map = TOML.read('C:/Users/Rico/Documents/CLionProjects/Valhalla/out/build/x64-Debug/data/mods/PotionsPlus/com.odinplus.potionsplus.cfg')
+--local map = TOML.read('C:/Users/Rico/Documents/CLionProjects/Valhalla/out/build/x64-Debug/data/mods/PotionsPlus/com.odinplus.potionsplus.cfg')
 
 --local map = toml.parse(io.lines('WackyMole.RareMagicPortal.cfg'))
 --[[

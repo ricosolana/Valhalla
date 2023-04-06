@@ -8,9 +8,9 @@ local mod = ModManager:GetMod('PotionsPlus')
 local toggleDataConverter = {
   qualifier = 'PotionsPlus+Toggle',
   serialize = function(writer, value) 
-    if value == 'off' then
+    if value == 'Off' then
       writer:WriteInt32(0)
-    elseif value == 'on' then
+    elseif value == 'On' then
       writer:WriteInt32(1)
     else
       error('bad Toggle ' .. value)
@@ -20,9 +20,9 @@ local toggleDataConverter = {
     local value = reader:ReadInt32()
     
     if value == 0 then
-      return 'off'
+      return 'Off'
     elseif value == 1 then
-      return 'on'
+      return 'On'
     else
       error('bad toggle ' .. value)
     end
