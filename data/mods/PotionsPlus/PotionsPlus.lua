@@ -1,3 +1,14 @@
+if not Valhalla then
+  package.path = package.path .. ';C:/Users/Rico/Documents/CLionProjects/Valhalla/out/build/x64-Debug/data/mods/?.lua'
+  
+  MethodSig = { new = function() end }
+  Valhalla = { Subscribe = function() end }
+  Type = {}
+  ModManager = { GetMod = function() end }
+end
+
+require('mobdebug').start()
+
 Config = require 'config'
 TOML = require 'toml'
 

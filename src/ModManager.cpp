@@ -925,7 +925,8 @@ void IModManager::LoadAPI() {
 
     // toml wrapper
     //toml::parse
-    m_state["package"]["searchers"] = m_state.create_table_with(1, LoadFileRequire);
+    //m_state["package"]["searchers"] = m_state.create_table_with(1, LoadFileRequire);
+
     /*
     m_state["package"]["searchers"] = m_state.create_table_with(1, sol::as_function([this](std::string path, sol::this_environment te) {
         

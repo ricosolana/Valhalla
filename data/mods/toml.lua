@@ -1,6 +1,6 @@
---require 'stringext'
+require 'stringext'
 
-
+--[[
 -- https://stackoverflow.com/a/22843701
 string.startswith = function(self, str)
   --return self:find('^' .. str) ~= nil
@@ -40,7 +40,7 @@ table.size = function(self)
   end
   return count
 end
-
+--]]
 
 
 

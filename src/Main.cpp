@@ -2,6 +2,8 @@
 #define SOL_ALL_SAFETIES_ON 1
 
 #include <csignal>
+#include <stdlib.h>
+
 #include <optick.h>
 #include <easylogging++.h>
 #include <toml++/toml.h>
@@ -106,6 +108,25 @@ int main(int argc, char **argv) {
     //auto opt = VUtils::Resource::ReadFile<std::string>(
     //    R"(\mods\RareMagicPortal\WackyMole.RareMagicPortal.cfg)");
     //auto cfg = toml::parse(*opt);
+    //std::string env = "LUA_PATH=" + (fs::current_path() / VALHALLA_LUA_PATH).string() + "/?.lua";
+    {
+        std::string path = (fs::current_path() / VALHALLA_LUA_PATH).string();
+        std::string path2 = (fs::current_path() / VALHALLA_MOD_PATH).string();
+        std::string env = "LUA_PATH=" 
+            + path + "/?.lua;" 
+            + path + "/?/?.lua;"
+            + path2 + "/?.lua;"
+            + path2 + "/?/?.lua";
+        putenv(env.c_str());
+    }
+
+    {
+        std::string path = (fs::current_path() / VALHALLA_LUA_CPATH).string();
+        std::string env = "LUA_CPATH=" 
+            + path + "/?.dll;" 
+            + path + "/?/?.dll";
+        putenv(env.c_str());
+    }
 
     // set basic defaults
     initLogger(argc, argv);

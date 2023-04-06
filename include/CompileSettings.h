@@ -26,6 +26,8 @@ using namespace std::chrono_literals;
 //  not exactly implemented
 #define VALHALLA_GENERATE_FEATURES
 
+#define VALHALLA_LUA_PATH "lua"
+#define VALHALLA_LUA_CPATH "bin"
 #define VALHALLA_MOD_PATH "mods"
 
 // Whether to evoke callbacks for RPC/route/event handlers invoked from within Lua 
