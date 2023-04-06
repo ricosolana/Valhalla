@@ -7,10 +7,10 @@ if not Valhalla then
   ModManager = { GetMod = function() end }
 end
 
-require('mobdebug').start()
-
 Config = require 'config'
 TOML = require 'toml'
+
+require('mobdebug').start()
 
 local peers = {}
 

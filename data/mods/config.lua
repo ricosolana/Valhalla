@@ -124,7 +124,7 @@ Config.SerializeConfig = function(config, extra)
   local writer = DataWriter.new(bytes)
   
   writer:WriteUInt8(0)
-  writer:WriteInt32(#config + table.size(extra))
+  writer:WriteInt32(table.size(config.cfg) + table.size(extra))
   
   for section, map in pairs(config.cfg) do
     for key, entry in pairs(map) do
