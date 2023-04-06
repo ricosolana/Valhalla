@@ -25,3 +25,15 @@ end
 string.contains = function(self, str)
   return self:find(str, 1, true) ~= nil
 end
+
+
+
+table.size = function(self)
+  if not self then return 0 end
+  
+  local count = 0
+  for k, v in pairs(self) do
+    count = count + 1
+  end
+  return count
+end

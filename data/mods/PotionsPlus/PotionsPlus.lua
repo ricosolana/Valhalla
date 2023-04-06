@@ -1,36 +1,54 @@
-ConfigSync = require 'config'
+Config = require 'config'
+TOML = require 'toml'
 
 local peers = {}
 
 local mod = ModManager:GetMod('PotionsPlus')
 
-local toggleType = { 
+local toggleDataConverter = {
+  qualifier = 'PotionsPlus+Toggle',
   serialize = function(writer, value) 
     if value == 'off' then
-      writer:WriteInt(0)
+      writer:WriteInt32(0)
     elseif value == 'on' then
-      writer:WriteInt(1)
+      writer:WriteInt32(1)
     else
-      error('bad Toggle')
+      error('bad Toggle ' .. value)
     end
   end,
   deserialize = function(reader) 
-    local value = reader:ReadInt()
+    local value = reader:ReadInt32()
     
     if value == 0 then
       return 'off'
     elseif value == 1 then
       return 'on'
     else
-      error('bad toggle')
+      error('bad toggle ' .. value)
     end
   end
 }
 
-local customDataConverters = { Toggle = toggleType }
+-- Adds global toml converters
+--  Not recommended because some mod types might collide if they have the same name
+--TOML.CONVERTERS['Toggle'] = { from = FROM_TOML_DEFAULT }
 
-local config = ConfigSync.new(mod.name, mod.version, mod.version, false)
-config:loadFile('PotionsPlus/com.odinplus.potionsplus.cfg', nil, customDataConverters)
+local typeConverters = {
+  ['Toggle'] = { from = TOML.FROM_DEFAULT }
+}
 
+local dataConverters = { 
+  ['Toggle'] = toggleDataConverter
+}
 
+local info = {
+  name = mod.name,
+  version = mod.version,
+  minVersion = mod.version,
+  modRequired = false,
+  locked = true,
+  dataConverters = dataConverters,
+}
 
+local config = Config.new(info)
+config:loadFile('./mods/PotionsPlus/com.odinplus.potionsplus.cfg', typeConverters)
