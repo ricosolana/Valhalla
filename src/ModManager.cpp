@@ -784,7 +784,7 @@ void IModManager::LoadAPI() {
         "GetPeer", sol::overload(
             [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeer(owner); },
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
-            sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeer)
+            sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeerByName)
         ),
         "peers", sol::readonly(&INetManager::m_peers)
     );

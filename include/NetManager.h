@@ -44,8 +44,10 @@ public:
     void Update();
     void Uninit();
 
-    Peer* GetPeer(const std::string& name);
+    Peer* GetPeerByName(const std::string& name);
     Peer* GetPeer(OWNER_t uuid);
+    Peer* GetPeerByHost(const std::string& host);
+
     std::vector<Peer*> GetPeers(const std::string &addr);
 
     //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();

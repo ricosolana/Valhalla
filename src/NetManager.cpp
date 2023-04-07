@@ -24,7 +24,7 @@ INetManager* NetManager() {
 
 
 bool INetManager::Kick(std::string user) {
-    auto&& peer = GetPeer(user);
+    auto&& peer = GetPeerByName(user);
     try {
         if (!peer) peer = GetPeer(std::stoll(user));
     }
@@ -52,7 +52,7 @@ bool INetManager::Kick(std::string user) {
 
 bool INetManager::Ban(std::string user) {
     {
-        auto&& peer = GetPeer(user);
+        auto&& peer = GetPeerByName(user);
         try {
             if (!peer) peer = GetPeer(std::stoll(user));
         }
@@ -279,7 +279,7 @@ void INetManager::OnNewPeer(Peer& peer) {
 
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeer(const std::string& name) {
+Peer* INetManager::GetPeerByName(const std::string& name) {
     for (auto&& peer : m_peers) {
         if (peer->m_name == name)
             return peer;
@@ -291,6 +291,14 @@ Peer* INetManager::GetPeer(const std::string& name) {
 Peer* INetManager::GetPeer(OWNER_t uuid) {
     for (auto&& peer : m_peers) {
         if (peer->m_uuid == uuid)
+            return peer;
+    }
+    return nullptr;
+}
+
+Peer* INetManager::GetPeerByHost(const std::string& host) {
+    for (auto&& peer : m_peers) {
+        if (peer->m_socket->GetHostName() == host)
             return peer;
     }
     return nullptr;

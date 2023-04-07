@@ -66,8 +66,10 @@ Peer::Peer(ISocket::Ptr socket)
 
 
             // if peer already connected
-            if (NetManager()->GetPeer(rpc->m_uuid))
+            if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()) || NetManager()->GetPeer(rpc->m_uuid) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+
+
 
             // if whitelist enabled
             if (SERVER_SETTINGS.playerWhitelist
