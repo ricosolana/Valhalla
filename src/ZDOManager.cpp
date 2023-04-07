@@ -277,9 +277,10 @@ ZDO& IZDOManager::Instantiate(HASH_t hash, const Vector3f& pos, const Quaternion
 ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 	auto&& copy = Instantiate(zdo.m_prefab, zdo.m_pos, zdo.m_rotation);
 
-	const ZDOID temp = copy.m_id; // Copying copies everything (including UID, which MUST be unique for every ZDO)
+	ZDOID temp = copy.ID(); // Copying copies everything (including UID, which MUST be unique for every ZDO)
 	copy = zdo;
-	copy.m_id = temp;
+	copy.m_uuid = temp.m_uuid;
+	copy.m_id = temp.m_id;
 
 	return copy;
 }

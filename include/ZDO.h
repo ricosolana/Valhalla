@@ -419,7 +419,9 @@ private:    Ordinal m_ordinalMask = 0;
 private:    Vector3f m_pos;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-private:     ZDOID m_id;
+//private:     ZDOID m_id;
+private: OWNER_t m_uuid = 0;
+private: uint32_t m_id = 0;
 
 public:
     ZDO();
@@ -560,7 +562,7 @@ public:
     //  prefab checking...
 
     ZDOID ID() const {
-        return m_id;
+        return ZDOID(this->m_uuid, this->m_id);
     }
 
     Vector3f Position() const {

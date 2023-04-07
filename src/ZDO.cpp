@@ -26,6 +26,7 @@ ZDO::ZDO()
 
 ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
     : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
+    : m_uuid(id.m_uuid), m_id(id.m_id), m_pos(pos)
 {
     m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
@@ -101,14 +102,14 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     this->m_rotation = pkg.Read<Quaternion>();
 
     _TryReadType<float,         char16_t>(pkg);
-    _TryReadType<Vector3f,       char16_t>(pkg);
+    _TryReadType<Vector3f,      char16_t>(pkg);
     _TryReadType<Quaternion,    char16_t>(pkg);
     _TryReadType<int32_t,       char16_t>(pkg);
     _TryReadType<int64_t,       char16_t>(pkg);
     _TryReadType<std::string,   char16_t>(pkg);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t, char16_t>(pkg);
+        _TryReadType<BYTES_t,   char16_t>(pkg);
 
     if (worldVersion < 17)
         this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
