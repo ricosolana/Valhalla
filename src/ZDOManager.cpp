@@ -819,8 +819,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 						// check-test
 						//	if ZDO was created (presumably by the client)
 						//	zdoid.uuid should match
-						if (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid)
-							throw std::runtime_error("newly created ZDO.owner or uuid does not match peer id");
+						//if (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid)
+							//throw std::runtime_error("newly created ZDO.owner or uuid does not match peer id");
 
 						AddZDOToZone(zdo);
 						m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
@@ -835,9 +835,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	theoretical: sessioned ZDOs are pretty much clients-only
 					//	if sessioned/temporary ZDO was modified by the client
 					//	zdoid.uuid should match (because temps are used only by local-client)
-					if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED) 
-						&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
-							throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");
+					//if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED) 
+						//&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
+							//throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");
 				}
 			}
 			catch (const std::runtime_error& e) {
