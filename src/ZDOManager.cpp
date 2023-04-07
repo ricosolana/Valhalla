@@ -279,8 +279,7 @@ ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 
 	ZDOID temp = copy.ID(); // Copying copies everything (including UID, which MUST be unique for every ZDO)
 	copy = zdo;
-	copy.m_uuid = temp.m_uuid;
-	copy.m_id = temp.m_id;
+	copy.m_id = temp;
 
 	return copy;
 }

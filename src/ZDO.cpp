@@ -26,7 +26,6 @@ ZDO::ZDO()
 
 ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
     : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
-    : m_uuid(id.m_uuid), m_id(id.m_id), m_pos(pos)
 {
     m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }

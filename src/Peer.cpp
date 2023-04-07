@@ -137,6 +137,7 @@ void Peer::Update() {
                 writer.Write<HASH_t>(0);
                 writer.Write<bool>(false);
                 m_socket->Send(std::move(bytes));
+                static constexpr int h = sizeof(ZDO);
             }
             else {
                 m_lastPing = now;

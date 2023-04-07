@@ -409,19 +409,59 @@ private:
             _Set(hash, type);
         }
     }
+    /*
+// 136 bytes
+private:    Quaternion m_rotation;
+private:    uint8_t m_ownerIdx;
+private:    uint8_t m_uuidIdx;
+private:    uint8_t m_ordinalMask;
+private:    uint32_t m_id;
+//private:    OWNER_t m_owner = 0;
+//private:    int64_t m_
+private:    std::reference_wrapper<const Prefab> m_prefab;
+private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
+//private:    Ordinal m_ordinalMask = 0;
+private:    Vector3f m_pos;
 
+public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
+//private:     ZDOID m_id;
+//private: OWNER_t m_uuid = 0;
+//private: uint32_t m_id = 0;
+*/
+
+
+
+/*
+// 152 bytes:
+private:    Quaternion m_rotation;
 private:    OWNER_t m_owner = 0;
 private:    std::reference_wrapper<const Prefab> m_prefab;
-//private:    const Prefab* m_prefab = nullptr;
-private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
 private:    Vector3f m_pos;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-//private:     ZDOID m_id;
-private: OWNER_t m_uuid = 0;
-private: uint32_t m_id = 0;
+private:     ZDOID m_id;
+      //private: OWNER_t m_uuid = 0;
+      //private: uint32_t m_id = 0;
+*/
+
+
+
+
+// 160 bytes:
+private:    Quaternion m_rotation;
+private:    OWNER_t m_owner = 0;
+private:    std::reference_wrapper<const Prefab> m_prefab;
+private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
+private:    Vector3f m_pos;
+
+public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
+private:    ZDOID m_id;
+private:    Ordinal m_ordinalMask = 0;
+
+
+
 
 public:
     ZDO();
@@ -562,7 +602,7 @@ public:
     //  prefab checking...
 
     ZDOID ID() const {
-        return ZDOID(this->m_uuid, this->m_id);
+        return m_id;
     }
 
     Vector3f Position() const {
