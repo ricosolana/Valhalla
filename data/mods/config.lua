@@ -20,14 +20,15 @@ local DATA_CONVERTERS = {
   Byte =     { qualifier = 'System.Byte',     serialize = 'WriteUInt8',   deserialize = 'ReadUInt8'   }, 
   Int16 =    { qualifier = 'System.Int16',    serialize = 'WriteInt16',   deserialize = 'ReadInt16'   },
   UInt16 =   { qualifier = 'System.UInt16',   serialize = 'WriteUInt16',  deserialize = 'ReadUInt16'  },
-  Int32 =    { qualifier = 'System.Int32',    serialize = 'WriteInt32',   deserialize = 'ReadInt32'   },
+  Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'WriteInt32',   deserialize = 'ReadInt32'   },
   UInt32 =   { qualifier = 'System.UInt32',   serialize = 'WriteUInt32',  deserialize = 'ReadUInt32'  },
   Int64 =    { qualifier = 'System.Int64',    serialize = 'Write',        deserialize = 'ReadInt64'   },
   UInt64 =   { qualifier = 'System.UInt64',   serialize = 'Write',        deserialize = 'ReadUInt64'  },
-  Single =   { qualifier = 'System.Single',   serialize = 'WriteFloat',   deserialize = 'ReadFloat'   },
+  Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'WriteFloat',   deserialize = 'ReadFloat'   },
   Double =   { qualifier = 'System.Double',   serialize = 'WriteDouble',  deserialize = 'ReadDouble'  },
   CraftingTable = { 
     qualifier = 'ItemManager.CraftingTable',
+    underlying = 'System.Int32',
     serialize = function(writer, value)
       writer:WriteInt32(CraftingTableType[value])
     end,
@@ -54,6 +55,7 @@ local DATA_CONVERTERS = {
   },
   BuildPieceCategory = { 
     qualifier = 'PieceManager.BuildPieceCategory',
+    underlying = 'System.Int32',
     serialize = function(writer, value)
       writer:WriteInt32(BuildPieceCategory[value])
     end,
@@ -64,6 +66,7 @@ local DATA_CONVERTERS = {
   DamageModifier = { 
     --qualifier = 'HitData+DamageModifier',
     qualifier = 'ItemManager.Item+DamageModifier',
+    underlying = 'System.Int32',
     serialize = function(writer, value)
       writer:WriteInt32(DamageModifier[value])
     end,
@@ -151,7 +154,7 @@ Config.SerializeEntry = function(writer, dataConverters, section, key, entry)
 
   writer:Write(section)
   writer:Write(key)
-  writer:Write(cvt.qualifier)
+  writer:Write(cvt.underlying or cvt.qualifier)
   
   print(entry.value)
   
