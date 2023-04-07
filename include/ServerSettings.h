@@ -32,6 +32,7 @@ struct ServerSettings {
     milliseconds    zdoSendInterval;
     seconds         zdoAssignInterval;
     bool            zdoSmartAssign;     // experimental feature that attempts to reduce lagg
+    bool            zdoEnforcePrefabs;
 
     bool            spawningCreatures;
     bool            spawningLocations;

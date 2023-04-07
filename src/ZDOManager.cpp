@@ -259,7 +259,7 @@ std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vecto
 ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3f& pos, const Quaternion& rot) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
 	zdo.m_rotation = rot;
-	zdo.m_prefab = prefab;
+	zdo.m_prefab = prefab.m_hash;
 
 	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE))
 		zdo.Set("scale", prefab.m_localScale);

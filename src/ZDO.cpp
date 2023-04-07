@@ -19,13 +19,9 @@ std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
 
 
 
-ZDO::ZDO() 
-    : m_prefab(Prefab::NONE) {
-
-}
+ZDO::ZDO() {}
 
 ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
-    : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
     : m_uuid(id.m_uuid), m_id(id.m_id), m_pos(pos)
 {
     m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
@@ -94,8 +90,12 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
 
     //auto fn = static_cast<std::optional<BYTES_t>()(const fs::path&)>(VUtils::Resource::ReadFile);
     
-    if (worldVersion >= 17)
-        this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
+    if (worldVersion >= 17) {
+        HASH_t prefabHash = pkg.Read<HASH_t>();
+        if (SERVER_SETTINGS.zdoEnforcePrefabs) PrefabManager()->RequirePrefab(prefabHash);
+
+        this->m_prefab = prefabHash;
+    }
 
     pkg.Read<ZoneID>(); // m_sector
     this->m_pos = pkg.Read<Vector3f>();
@@ -111,8 +111,12 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 27)
         _TryReadType<BYTES_t,   char16_t>(pkg);
 
-    if (worldVersion < 17)
-        this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
+    if (worldVersion < 17) {
+        HASH_t prefabHash = GetInt("prefab");
+        if (SERVER_SETTINGS.zdoEnforcePrefabs) PrefabManager()->RequirePrefab(prefabHash);
+
+        this->m_prefab = prefabHash;
+    }
 
     return modern;
 }
@@ -182,8 +186,10 @@ void ZDO::Deserialize(DataReader& pkg) {
     pkg.Read<int32_t>();    // m_pgwVersion
     pkg.Read<Prefab::Type>(); // this->m_type
     HASH_t prefabHash = pkg.Read<HASH_t>();
-    if (!m_prefab.get())
-        this->m_prefab = PrefabManager()->RequirePrefab(prefabHash);
+    if (!this->m_prefab) {
+        if (SERVER_SETTINGS.zdoEnforcePrefabs) PrefabManager()->RequirePrefab(prefabHash);
+        this->m_prefab = prefabHash;
+    }
     
     this->m_rotation = pkg.Read<Quaternion>();
     this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
@@ -203,4 +209,8 @@ void ZDO::Deserialize(DataReader& pkg) {
         _TryReadType<std::string,   uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
         _TryReadType<BYTES_t,       uint8_t>(pkg);
+}
+
+const Prefab& ZDO::GetPrefab() const {
+    return PrefabManager()->RequirePrefab(this->m_prefab);
 }

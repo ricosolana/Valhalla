@@ -411,17 +411,19 @@ private:
     }
 
 private:    OWNER_t m_owner = 0;
-private:    std::reference_wrapper<const Prefab> m_prefab;
+//private:    std::reference_wrapper<const Prefab> m_prefab;
 //private:    const Prefab* m_prefab = nullptr;
 private:    Quaternion m_rotation;
 private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
 private:    Ordinal m_ordinalMask = 0;
 private:    Vector3f m_pos;
+       //HASH_t m_prefab;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
 //private:     ZDOID m_id;
 private: OWNER_t m_uuid = 0;
 private: uint32_t m_id = 0;
+private: HASH_t m_prefab = 0;
 
 public:
     ZDO();
@@ -584,9 +586,11 @@ public:
         }
     }
 
-    const Prefab& GetPrefab() const {
-        return m_prefab;
+    HASH_t GetPrefabHash() const {
+        return this->m_prefab;
     }
+
+    const Prefab* GetPrefab() const;
 
     OWNER_t Owner() const {
         return m_owner;
