@@ -238,7 +238,11 @@ public:
 
 	// Erases a ZDO on clients and server
 	//	Warning: the target ZDO is freed from memory and will become no longer accessible
-	void DestroyZDO(ZDO& zdo);
+	//void DestroyZDO(ZDO& zdo);
+	void DestroyZDO(const ZDOID& zdoid);
+	void DestroyZDO(ZDO& zdo) {
+		DestroyZDO(zdo.ID());
+	}
 	decltype(m_objectsByID)::iterator DestroyZDO(decltype(m_objectsByID)::iterator itr);
 
 	size_t GetSumZDOMembers();

@@ -764,7 +764,11 @@ void IModManager::LoadAPI() {
             [](IZDOManager& self, const Vector3f& pos, float radius, const std::string& name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", &IZDOManager::ForceSendZDO,
-        "DestroyZDO", &IZDOManager::DestroyZDO,
+        //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
+        "DestroyZDO", sol::overload(
+            sol::resolve<void (const ZDOID&)>(&IZDOManager::DestroyZDO),
+            sol::resolve<void(ZDO&)>(&IZDOManager::DestroyZDO)
+        ),
         "Instantiate", sol::overload(
             sol::resolve<ZDO& (const Prefab&, const Vector3f&, const Quaternion&)>(&IZDOManager::Instantiate),
             sol::resolve<ZDO& (const Prefab&, const Vector3f&)>(&IZDOManager::Instantiate),

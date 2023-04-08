@@ -791,17 +791,16 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					.m_syncTime = time
 				};
 
-				// Only set position if ZDO has previously existed
-				if (!created)
-					zdo.SetPosition(pos);
-
-				// TODO extract deserialize directly here, 
-				//	and use to construct ZDOs directly, with a non-null prefab to guarantee safety
+				// Unpack the ZDOs primary data
 				zdo.Deserialize(des);
 
+				// Only disperse through world if ZDO is new
 				if (created) {
 					AddZDOToZone(zdo);
 					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);					
+				}
+				else {
+					zdo.SetPosition(pos);
 				}
 			}
 			catch (const std::runtime_error& e) {
@@ -840,9 +839,9 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 	}
 }
 
-void IZDOManager::DestroyZDO(ZDO& zdo) {
-	m_destroySendList.push_back(zdo.m_id);
-	EraseZDO(zdo.m_id);
+void IZDOManager::DestroyZDO(const ZDOID& zdoid) {
+	m_destroySendList.push_back(zdoid);
+	EraseZDO(zdoid);
 }
 
 decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::DestroyZDO(decltype(IZDOManager::m_objectsByID)::iterator itr) {
