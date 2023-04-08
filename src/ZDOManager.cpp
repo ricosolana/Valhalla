@@ -785,11 +785,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				zdo.m_rev = rev;
 
 				// Peer should be at local revision based on what they initially notified with
-				peer->m_zdos[zdoid] = {
-					.m_dataRev = rev.m_dataRev,
-					.m_ownerRev = rev.m_ownerRev,
-					.m_syncTime = time
-				};
+				//peer->m_zdos[zdoid] = {
+				//	.m_dataRev = rev.m_dataRev,
+				//	.m_ownerRev = rev.m_ownerRev,
+				//	.m_syncTime = time
+				//};
 
 				// Unpack the ZDOs primary data
 				zdo.Deserialize(des);
@@ -797,11 +797,17 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				// Only disperse through world if ZDO is new
 				if (created) {
 					AddZDOToZone(zdo);
-					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);					
+					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
 				}
 				else {
 					zdo.SetPosition(pos);
 				}
+
+				peer->m_zdos[zdoid] = {
+					.m_dataRev = zdo.m_rev.m_dataRev,
+					.m_ownerRev = zdo.m_rev.m_ownerRev,
+					.m_syncTime = time
+				};
 			}
 			catch (const std::runtime_error& e) {
 				// erase the zdo from map

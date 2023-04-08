@@ -9,7 +9,10 @@ public:
 
     OWNER_t m_uuid = 0;
     uint32_t m_id = 0;
+private:
+    uint32_t pad = 0;
 
+public:
     constexpr ZDOID() = default;
 
     constexpr ZDOID(OWNER_t userID, uint32_t id)
