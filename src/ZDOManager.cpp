@@ -243,15 +243,16 @@ ZDO* IZDOManager::GetZDO(const ZDOID& id) {
 
 
 
-std::pair<ZDO&, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3f& def) {
+std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3f& def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
-	auto&& zdo = pair.first->second;
 	if (!pair.second) // if new insert failed, return it
-		return { *zdo.get(), false };
+		return pair;
+
+	auto&& zdo = pair.first->second;
 
 	zdo = std::make_unique<ZDO>(id, def);
-	return { *zdo.get(), true };
+	return pair;
 }
 
 
@@ -359,29 +360,19 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 }
 
-void IZDOManager::EraseZDO(const ZDOID& zdoid) {
-	// If id is none, do nothing
-	if (!zdoid)
-		return;
+decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZDOManager::m_objectsByID)::iterator itr) {
+	auto&& zdoid = itr->first;
+	auto&& zdo = itr->second;
 
+	// TODO I dont really understand the point of this
 	if (zdoid.m_uuid == SERVER_ID && zdoid.m_id >= m_nextUid)
 		m_nextUid = zdoid.m_uuid + 1;
 
-	{
-		auto&& find = m_objectsByID.find(zdoid);
-		if (find == m_objectsByID.end())
-			return;
+	VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
-		auto&& zdo = find->second;
-
-		VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
-
-		RemoveFromSector(*zdo);
-		auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefab().m_hash);
-		if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
-
-		m_objectsByID.erase(find);
-	}
+	RemoveFromSector(*zdo);
+	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefab().m_hash);
+	if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
 
 	// cleans up some zdos
 	for (auto&& peer : NetManager()->GetPeers()) {
@@ -389,6 +380,13 @@ void IZDOManager::EraseZDO(const ZDOID& zdoid) {
 	}
 
 	m_erasedZDOs.insert(zdoid);
+	return m_objectsByID.erase(itr);
+}
+
+void IZDOManager::EraseZDO(const ZDOID& zdoid) {
+	auto&& find = m_objectsByID.find(zdoid);
+	if (find != m_objectsByID.end())
+		EraseZDO(find);
 }
 
 void IZDOManager::SendAllZDOs(Peer& peer) {
@@ -751,10 +749,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				.m_ownerRev = ownerRev, 
 				.m_syncTime = time 
 			};
-						
+
 			auto&& pair = this->GetOrInstantiate(zdoid, pos);
 
-			auto&& zdo = pair.first;
+			auto&& zdo = *pair.first->second.get();
 			auto&& created = pair.second;
 
 			if (!created) {
@@ -812,8 +810,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				zdo.Deserialize(des);
 
 				if (created) {
+					// TODO could move this up a bit because deserialization is a waste
+					//	if this is reached
 					if (m_erasedZDOs.contains(zdoid)) {
-						DestroyZDO(zdo);
+						DestroyZDO(pair.first);
 					}
 					else {
 						// check-test
@@ -843,7 +843,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			catch (const std::runtime_error& e) {
 				// erase the zdo from map
 				if (created) // if the zdo was just created, throw it away
-					EraseZDO(zdoid);
+					EraseZDO(pair.first);
 				else zdo = copy; // else, restore the ZDO to the prior revision
 
 				// This will kick the malicious peer
@@ -854,7 +854,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {
-	for (auto&& pair : m_objectsByID) {
+	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end(); ) {
+		auto&& pair = *itr;
+
 		auto&& zdo = *pair.second.get();
 		auto&& prefab = zdo.GetPrefab();
 		
@@ -867,8 +869,10 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		if (prefab.AllFlagsPresent(Prefab::Flag::SESSIONED) 
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeer(zdo.Owner())))
 		{
-			DestroyZDO(zdo);
+			itr = DestroyZDO(itr);
 		}
+		else
+			++itr;
 	}
 }
 
@@ -876,6 +880,13 @@ void IZDOManager::DestroyZDO(ZDO& zdo) {
 	m_destroySendList.push_back(zdo.m_id);
 	EraseZDO(zdo.m_id);
 }
+
+decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::DestroyZDO(decltype(IZDOManager::m_objectsByID)::iterator itr) {
+	m_destroySendList.push_back(itr->first);
+	return EraseZDO(itr);
+}
+
+
 
 size_t IZDOManager::GetSumZDOMembers() {
 	size_t res = 0;

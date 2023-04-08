@@ -66,6 +66,9 @@ private:
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
 
+	// Performs an unchecked erasure
+	//	Does not check whether the iterator is at end of container
+	decltype(m_objectsByID)::iterator EraseZDO(decltype(m_objectsByID)::iterator itr);
 	void EraseZDO(const ZDOID& uid);
 	void SendAllZDOs(Peer& peer);
 	bool SendZDOs(Peer& peer, bool flush);
@@ -77,7 +80,7 @@ private:
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
-	std::pair<ZDO&, bool> GetOrInstantiate(const ZDOID& id, const Vector3f& def);
+	std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> GetOrInstantiate(const ZDOID& id, const Vector3f& def);
 
 	// Performs a coordinate to pitch conversion
 	int SectorToIndex(const ZoneID& zone) const;
@@ -236,6 +239,7 @@ public:
 	// Erases a ZDO on clients and server
 	//	Warning: the target ZDO is freed from memory and will become no longer accessible
 	void DestroyZDO(ZDO& zdo);
+	decltype(m_objectsByID)::iterator DestroyZDO(decltype(m_objectsByID)::iterator itr);
 
 	size_t GetSumZDOMembers();
 	float GetMeanZDOMembers();
