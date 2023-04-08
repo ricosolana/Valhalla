@@ -762,21 +762,17 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 					// If the owner has changed, keep a copy
 					if (ownerRev > zdo.m_rev.m_ownerRev) {
-						//if (ModManager()->CallEvent(IModManager::Events::ZDOOwnerChange, &copy, zdo) == EventStatus::CANCEL)
-							//*zdo = copy; // if zdo modification was to be cancelled
-
-						// ensure that owner change is legal
-						//	owner will only change if the ZDO was handed over to another client by the controlling client
-						//if (!zdo.IsOwner(peer->m_uuid))
-						//	throw std::runtime_error("non-owning peer tried changing ZDO ownership");
-						//
-						//if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED))
-						//	throw std::runtime_error("peer tried changing ownership of session ZDO");
-
 						zdo.m_owner = owner;
 						zdo.m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos[zdoid] = rev;
 					}
+					continue;
+				}
+			}
+			else {
+				if (m_erasedZDOs.contains(zdoid)) {
+					m_destroySendList.push_back(zdoid);
+					m_objectsByID.erase(pair.first);
 					continue;
 				}
 			}
@@ -785,13 +781,6 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			ZDO copy(zdo);
 
 			try {
-				// if peer tries changing owner without revision set
-				//	hmm
-				// Findings:
-				//	seagul had a 0-owner, peer tried claiming it however
-				//if (!created && zdo.HasOwner() && owner != zdo.Owner())
-					//throw std::runtime_error("peer tried checkless changing owner");
-
 				zdo.m_owner = owner;
 				zdo.m_rev = rev;
 
@@ -810,34 +799,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				zdo.Deserialize(des);
 
 				if (created) {
-					// TODO could move this up a bit because deserialization is a waste
-					//	if this is reached
-					if (m_erasedZDOs.contains(zdoid)) {
-						DestroyZDO(pair.first);
-					}
-					else {
-						// check-test
-						//	if ZDO was created (presumably by the client)
-						//	zdoid.uuid should match
-						//if (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid)
-							//throw std::runtime_error("newly created ZDO.owner or uuid does not match peer id");
-
-						AddZDOToZone(zdo);
-						m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
-					}
-				}
-				else {
-					// maybe too expensive? create another that polls for specific zdos with prefab/flags...
-					//if (ModManager()->CallEvent(IModManager::Events::ZDOChange, &copy, zdo))
-						//zdo = copy; // if zdo modification was to be cancelled
-
-					// check-test
-					//	theoretical: sessioned ZDOs are pretty much clients-only
-					//	if sessioned/temporary ZDO was modified by the client
-					//	zdoid.uuid should match (because temps are used only by local-client)
-					//if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED) 
-						//&& (zdoid.m_uuid != peer->m_uuid || owner != peer->m_uuid))
-							//throw std::runtime_error("existing sessioned ZDO.owner or uuid does not match peer id");
+					AddZDOToZone(zdo);
+					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);					
 				}
 			}
 			catch (const std::runtime_error& e) {

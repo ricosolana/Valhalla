@@ -292,13 +292,13 @@ private:
 
         size_t GetTotalAlloc() {
             switch (*_Ordinal()) {
-            case ORD_FLOAT: return sizeof(Ordinal) + sizeof(float);
-            case ORD_VECTOR3: return sizeof(Ordinal) + sizeof(Vector3f);
-            case ORD_QUATERNION: return sizeof(Ordinal) + sizeof(Quaternion);
-            case ORD_INT: return sizeof(Ordinal) + sizeof(int32_t);
-            case ORD_LONG: return sizeof(Ordinal) + sizeof(int64_t);
-            case ORD_STRING: return sizeof(Ordinal) + sizeof(std::string) + _Member<std::string>()->capacity();
-            case ORD_ARRAY: return sizeof(Ordinal) + sizeof(BYTES_t) + _Member<BYTES_t>()->capacity();
+            case ORD_FLOAT:         return sizeof(Ordinal) + sizeof(float);
+            case ORD_VECTOR3:       return sizeof(Ordinal) + sizeof(Vector3f);
+            case ORD_QUATERNION:    return sizeof(Ordinal) + sizeof(Quaternion);
+            case ORD_INT:           return sizeof(Ordinal) + sizeof(int32_t);
+            case ORD_LONG:          return sizeof(Ordinal) + sizeof(int64_t);
+            case ORD_STRING:        return sizeof(Ordinal) + sizeof(std::string) + _Member<std::string>()->capacity();
+            case ORD_ARRAY:         return sizeof(Ordinal) + sizeof(BYTES_t) + _Member<BYTES_t>()->capacity();
             default:
                 assert(false && "reached impossible case");
             }
