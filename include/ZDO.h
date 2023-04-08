@@ -655,7 +655,7 @@ public:
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
-        return IsOwner(0);
+        return !IsOwner(0);
     }
 
     // Claim ownership over this ZDO
