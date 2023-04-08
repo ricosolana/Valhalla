@@ -769,11 +769,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 						// ensure that owner change is legal
 						//	owner will only change if the ZDO was handed over to another client by the controlling client
-						if (!zdo.IsOwner(peer->m_uuid))
-							throw std::runtime_error("non-owning peer tried changing ZDO ownership");
-
-						if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED))
-							throw std::runtime_error("peer tried changing ownership of session ZDO");
+						//if (!zdo.IsOwner(peer->m_uuid))
+						//	throw std::runtime_error("non-owning peer tried changing ZDO ownership");
+						//
+						//if (zdo.GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED))
+						//	throw std::runtime_error("peer tried changing ownership of session ZDO");
 
 						zdo.m_owner = owner;
 						zdo.m_rev.m_ownerRev = ownerRev;
