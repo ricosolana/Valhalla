@@ -95,40 +95,17 @@ private:
     static constexpr Ordinal GetOrdinalMask() {
         return 0b1 << GetOrdinal<T>();
     }
-
+    
     template<TrivialSyncType T>
     static constexpr SHIFTHASH_t ToShiftHash(HASH_t hash) {
-        size_t key = std::hash<Ordinal>{}(GetOrdinal<T>());
-                
-        auto mut = static_cast<SHIFTHASH_t>(hash);
-
-        // mutate deterministically so that this process is reversible
-        mut ^= key;
-        mut ^= ((key >> 0) & 0xFF) << 56;
-        //mut ^= ((mut >> 7) & 0xFF) << 28;
-        mut ^= ((key >> 14) & 0xFF) << 14;
-        //mut ^= ((mut >> 28) & 0xFF) << 7;
-        mut ^= ((key >> 56) & 0xFF) << 0;
-        mut ^= key;
-
-        return mut;
+        size_t key = ankerl::unordered_dense::hash<Ordinal>{}(GetOrdinal<T>());
+        return static_cast<SHIFTHASH_t>(hash) ^ key;
     }
 
     template<TrivialSyncType T>
     static constexpr HASH_t FromShiftHash(SHIFTHASH_t hash) {
-        size_t key = std::hash<Ordinal>{}(GetOrdinal<T>());
-
-        auto mut = static_cast<SHIFTHASH_t>(hash);
-
-        mut ^= key;
-        mut ^= ((key >> 56) & 0xFF) << 0;
-        //mut ^= ((mut >> 28) & 0xFF) << 7;
-        mut ^= ((key >> 14) & 0xFF) << 14;
-        //mut ^= ((mut >> 7) & 0xFF) << 28;
-        mut ^= ((key >> 0) & 0xFF) << 56;
-        mut ^= key;
-        
-        return static_cast<HASH_t>(mut & 0xFFFFFFFF);
+        size_t key = ankerl::unordered_dense::hash<Ordinal>{}(GetOrdinal<T>());
+        return static_cast<HASH_t>(hash ^ key);
     }
 
 
@@ -191,8 +168,6 @@ private:
             // https://stackoverflow.com/questions/2494471/c-is-it-possible-to-call-a-constructor-directly-without-new
             new (this->_Member<T>()) T(type);
         }
-
-
 
     public:
         Ord() : m_contiguous(nullptr) {}
