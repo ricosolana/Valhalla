@@ -1,7 +1,5 @@
 #pragma once
 
-#include <robin_hood.h>
-
 #include "VUtils.h"
 #include "Prefab.h"
 #include "Dungeon.h"
@@ -12,7 +10,7 @@ class IDungeonManager {
 	friend class IZoneManager;
 
 private:
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
+	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
 
 	//robin_hood::unordered_set<ZDOID> m_dungeonInstances;
 	std::vector<ZDOID> m_dungeonInstances;

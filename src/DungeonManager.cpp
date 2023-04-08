@@ -73,7 +73,7 @@ void IDungeonManager::Init() {
         dungeon->m_perimeterBuffer = pkg.Read<float>();
         dungeon->m_perimeterSections = pkg.Read<int32_t>();
         
-        dungeon->m_requiredRooms = pkg.Read<robin_hood::unordered_set<std::string>>();
+        dungeon->m_requiredRooms = pkg.Read<UNORDERED_SET_t<std::string>>();
 
         dungeon->m_spawnChance = pkg.Read<float>();
         dungeon->m_themes = (Room::Theme) pkg.Read<int32_t>();

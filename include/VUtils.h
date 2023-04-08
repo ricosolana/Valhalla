@@ -14,6 +14,7 @@
 #include <sol/sol.hpp>
 #include <zstd.h>
 #include <zlib.h>
+#include <ankerl/unordered_dense.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"
@@ -29,6 +30,12 @@ using PLAYER_ID_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 
 using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
+
+template<typename K, typename V>
+using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V>;
+
+template<typename K>
+using UNORDERED_SET_t = ankerl::unordered_dense::set<K>;
 
 //constexpr TICKS_t operator"" t(unsigned long long _Val) noexcept {
 //    return TICKS_t(_Val);

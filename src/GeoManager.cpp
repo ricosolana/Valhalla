@@ -262,7 +262,7 @@ bool IGeoManager::IsRiverAllowed(const Vector2f& p0, const Vector2f& p1, float s
 
 void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers) {
 	//Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
-	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> dictionary;
+	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> dictionary;
 	for (auto&& river : rivers) {
 
 		float num = river.widthMin / 8.f;
@@ -286,7 +286,7 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	}
 }
 
-void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
+void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
 	const Vector2f& p,
 	float r)
 {
@@ -303,7 +303,7 @@ void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<
 	}
 }
 
-void IGeoManager::AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r) {
+void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r) {
 	riverPoints[grid].push_back({ p, r });
 }
 

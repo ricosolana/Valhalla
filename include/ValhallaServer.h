@@ -2,8 +2,6 @@
 
 #include <thread>
 
-#include <robin_hood.h>
-
 #include "Task.h"
 #include "ServerSettings.h"
 #include "NetAcceptor.h"
@@ -80,9 +78,9 @@ public:
         return m_settings;
     }
 
-    robin_hood::unordered_set<std::string> m_blacklist; // banned steam ids
-    robin_hood::unordered_set<std::string> m_admin;     // admin steam ids
-    robin_hood::unordered_set<std::string> m_whitelist; // whitelisted steam ids
+    UNORDERED_SET_t<std::string> m_blacklist; // banned steam ids
+    UNORDERED_SET_t<std::string> m_admin;     // admin steam ids
+    UNORDERED_SET_t<std::string> m_whitelist; // whitelisted steam ids
     //robin_hood::unordered_set<std::string> m_bypass;    // password-bypass steam ids
 
     // Get the time since the server started

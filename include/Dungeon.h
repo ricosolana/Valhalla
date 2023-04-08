@@ -1,7 +1,5 @@
 #pragma once
 
-#include <robin_hood.h>
-
 #include "VUtils.h"
 #include "Prefab.h"
 #include "Room.h"
@@ -35,7 +33,7 @@ public:
 
 	int m_minRequiredRooms;
 
-	robin_hood::unordered_set<std::string> m_requiredRooms;
+	UNORDERED_SET_t<std::string> m_requiredRooms;
 
 	bool m_alternativeFunctionality;
 

@@ -4,7 +4,6 @@
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "Biome.h"
-#include "robin_hood.h"
 
 class IEventManager {
 	class Event {
@@ -32,11 +31,11 @@ class IEventManager {
 
 		//[Header("( Keys required to be TRUE )")]
 		// could use hashes
-		robin_hood::unordered_set<std::string> m_presentGlobalKeys;
+		UNORDERED_SET_t<std::string> m_presentGlobalKeys;
 
 		//[Header("( Keys required to be FALSE )")]
 		// could use hashes
-		robin_hood::unordered_set<std::string> m_absentGlobalKeys;
+		UNORDERED_SET_t<std::string> m_absentGlobalKeys;
 
 		//[Space(20f)]
 		//std::string m_startMessage = "";
@@ -52,7 +51,7 @@ class IEventManager {
 	};
 
 public:
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<Event>> m_events;
+	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Event>> m_events;
 
 	// Event timer for chance of next event
 	float m_eventIntervalTimer = 0;

@@ -18,7 +18,7 @@ public:
 	static constexpr OWNER_t EVERYBODY = 0;
 
 private:	
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
+	UNORDERED_MAP_t<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 private:
 	// Called from NetManager

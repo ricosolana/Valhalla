@@ -100,7 +100,7 @@ bool IHeightmapManager::GetAverageHeight(const Vector3f& worldPos, float radius,
 */
 
 // public static
-robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
+UNORDERED_MAP_t<Vector2i, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
     return m_heightmaps;
 }
 

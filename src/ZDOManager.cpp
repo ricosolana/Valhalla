@@ -54,7 +54,7 @@ void IZDOManager::Update() {
 
 	PERIODIC_NOW(1min, {
 		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
-		LOG(INFO) << "ZDO members (sum: " << GetSumZDOMembers() 
+		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers() 
 			<< ", mean: " << GetMeanZDOMembers() 
 			<< ", stdev: " << GetStDevZDOMembers() 
 			<< ", empty: " << GetCountEmptyZDOs()

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <robin_hood.h>
 
 #include "VUtilsResource.h"
 

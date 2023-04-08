@@ -1,6 +1,5 @@
 #pragma once
 
-#include <robin_hood.h>
 #include <type_traits>
 #include <algorithm>
 

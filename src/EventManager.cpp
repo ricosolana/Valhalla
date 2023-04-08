@@ -43,8 +43,8 @@ void IEventManager::Init() {
 			e->m_pauseIfNoPlayerInArea = pkg.Read<bool>();
 			e->m_biome = (Biome) pkg.Read<int32_t>();
 			
-			e->m_presentGlobalKeys = pkg.Read<robin_hood::unordered_set<std::string>>();
-			e->m_absentGlobalKeys = pkg.Read<robin_hood::unordered_set<std::string>>();
+			e->m_presentGlobalKeys = pkg.Read<UNORDERED_SET_t<std::string>>();
+			e->m_absentGlobalKeys = pkg.Read<UNORDERED_SET_t<std::string>>();
 
 			m_events.insert({ VUtils::String::GetStableHashCode(e->m_name), std::move(e) });
 		}

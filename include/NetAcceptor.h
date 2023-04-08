@@ -4,8 +4,6 @@
 #include <thread>
 #include <steam_gameserver.h>
 
-#include <robin_hood.h>
-
 #include "NetSocket.h"
 
 
@@ -28,8 +26,8 @@ private:
     const uint16_t m_port;
     HSteamListenSocket m_listenSocket;
 
-    robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
-    robin_hood::unordered_map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
+    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
+    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
 
 
 

@@ -57,13 +57,13 @@ void ZDO::Save(DataWriter& pkg) const {
     pkg.Write(this->m_rotation);
     
     // Save uses 2 bytes for counts (char in c# is 2 bytes..)
-    _TryWriteType<float,        uint16_t>(pkg);
-    _TryWriteType<Vector3f,      uint16_t>(pkg);
-    _TryWriteType<Quaternion,   uint16_t>(pkg);
-    _TryWriteType<int32_t,      uint16_t>(pkg);
-    _TryWriteType<int64_t,      uint16_t>(pkg);
-    _TryWriteType<std::string,  uint16_t>(pkg);
-    _TryWriteType<BYTES_t,      uint16_t>(pkg);
+    _TryWriteType<float,        char16_t>(pkg);
+    _TryWriteType<Vector3f,     char16_t>(pkg);
+    _TryWriteType<Quaternion,   char16_t>(pkg);
+    _TryWriteType<int32_t,      char16_t>(pkg);
+    _TryWriteType<int64_t,      char16_t>(pkg);
+    _TryWriteType<std::string,  char16_t>(pkg);
+    _TryWriteType<BYTES_t,      char16_t>(pkg);
 }
 
 bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {

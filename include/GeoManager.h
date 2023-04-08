@@ -45,7 +45,7 @@ private:
 	std::vector<Vector2f> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
-	robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>> m_riverPoints;
+	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
@@ -124,10 +124,10 @@ private:
 	bool HaveRiver(const std::vector<River>& rivers, const Vector2f& p0, const Vector2f& p1) const;
 	bool IsRiverAllowed(const Vector2f& p0, const Vector2f& p1, float step, float heightLimit) const;
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints,
+	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
 		const Vector2f& p,
 		float r);
-	void AddRiverPoint(robin_hood::unordered_map<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r);
+	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r);
 	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	//Vector2i GetRiverGrid(float wx, float wy);

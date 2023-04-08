@@ -1,7 +1,5 @@
 #pragma once
 
-#include <robin_hood.h>
-
 #include "VUtilsString.h"
 #include "VUtils.h"
 #include "Prefab.h"
@@ -13,7 +11,7 @@
 class IPrefabManager {
 
 private:
-	robin_hood::unordered_map<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
+	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 
 public:
 	void Init();

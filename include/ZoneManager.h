@@ -136,19 +136,19 @@ private:
 	std::vector<std::unique_ptr<const Feature>> m_features;
 
 	// All Features within a world hashed by name
-	robin_hood::unordered_map<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
+	UNORDERED_MAP_t<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
 
 	// All Foliage within a world capable of generation
 	std::vector<std::unique_ptr<const Foliage>> m_foliage;
 
 	// All the generated Features in a world
-	robin_hood::unordered_map<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
+	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
 
 	// Which Zones have already been generated
-	robin_hood::unordered_set<ZoneID> m_generatedZones;
+	UNORDERED_SET_t<ZoneID> m_generatedZones;
 
 	// Game-state global keys
-	robin_hood::unordered_set<std::string> m_globalKeys;
+	UNORDERED_SET_t<std::string> m_globalKeys;
 
 private:
 	void SendGlobalKeys();
@@ -197,7 +197,7 @@ public:
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
-	robin_hood::unordered_set<std::string>& GlobalKeys() {
+	UNORDERED_SET_t<std::string>& GlobalKeys() {
 		return m_globalKeys;
 	}
 

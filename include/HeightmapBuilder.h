@@ -7,8 +7,8 @@
 
 class IHeightmapBuilder {
 private:
-    robin_hood::unordered_set<ZoneID> m_toBuild;
-    robin_hood::unordered_map<ZoneID, std::unique_ptr<Heightmap>> m_ready;
+    UNORDERED_SET_t<ZoneID> m_toBuild;
+    UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_ready;
 
     std::thread m_builder;
     std::mutex m_lock;

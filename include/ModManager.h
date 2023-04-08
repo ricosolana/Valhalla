@@ -1,7 +1,6 @@
 #pragma once 
 
 #include <sol/sol.hpp>
-#include <robin_hood.h>
 
 #include "VUtils.h"
 #include "VUtilsString.h"
@@ -120,8 +119,8 @@ public:
     };
 
 private:
-    robin_hood::unordered_map<std::string, std::unique_ptr<Mod>> m_mods;
-    robin_hood::unordered_map<HASH_t, std::list<EventHandle>> m_callbacks;
+    UNORDERED_MAP_t<std::string, std::unique_ptr<Mod>> m_mods;
+    UNORDERED_MAP_t<HASH_t, std::list<EventHandle>> m_callbacks;
 
     bool m_unsubscribeCurrentEvent;
 

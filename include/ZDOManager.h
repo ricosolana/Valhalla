@@ -32,18 +32,18 @@ private:
 	uint32_t m_nextUid = 1;
 
 	// Responsible for managing ZDOs lifetimes
-	robin_hood::unordered_map<ZDOID, std::unique_ptr<ZDO>> m_objectsByID;
+	UNORDERED_MAP_t<ZDOID, std::unique_ptr<ZDO>> m_objectsByID;
 
 	// Contains ZDOs according to Zone
-	std::array<robin_hood::unordered_set<ZDO*>, 
+	std::array<UNORDERED_SET_t<ZDO*>,
 		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector; // takes up around 5MB; could be around 72 bytes with map
 
 	// Contains ZDOs according to prefab
-	robin_hood::unordered_map<HASH_t, robin_hood::unordered_set<ZDO*>> m_objectsByPrefab;
+	UNORDERED_MAP_t<HASH_t, UNORDERED_SET_t<ZDO*>> m_objectsByPrefab;
 
 	// Primarily used in RPC_ZDOData
 	//robin_hood::unordered_map<ZDOID, TICKS_t> m_erasedZDOs;
-	robin_hood::unordered_set<ZDOID> m_erasedZDOs;
+	UNORDERED_SET_t<ZDOID> m_erasedZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;

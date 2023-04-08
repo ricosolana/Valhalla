@@ -293,7 +293,7 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    m_generatedZones = reader.Read<robin_hood::unordered_set<Vector2i>>();
+    m_generatedZones = reader.Read<UNORDERED_SET_t<Vector2i>>();
 
     if (version >= 13) {
         const auto pgwVersion = reader.Read<int32_t>(); // 99
@@ -302,7 +302,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
             LOG(WARNING) << "Loading unsupported pgw version";
 
         if (version >= 14) {
-            m_globalKeys = reader.Read<robin_hood::unordered_set<std::string>>();
+            m_globalKeys = reader.Read<UNORDERED_SET_t<std::string>>();
 
 #ifndef ELPP_DISABLE_VERBOSE_LOGS
             VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");

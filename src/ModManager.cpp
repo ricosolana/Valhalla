@@ -1,5 +1,4 @@
 #include <easylogging++.h>
-#include <robin_hood.h>
 #include <yaml-cpp/yaml.h>
 #include <toml++/toml.h>
 

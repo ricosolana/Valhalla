@@ -9,7 +9,7 @@
 
 
 class IHeightmapManager {
-	robin_hood::unordered_map<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
+	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
 
 public:
 	//void ForceGenerateAll();
@@ -34,7 +34,7 @@ public:
 	//float GetHeight(const Vector3f& worldPos);
 
 	//static std::vector<Heightmap> GetAllHeightmaps();
-	robin_hood::unordered_map<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
+	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
 
 	//Heightmap* GetOrCreateHeightmap(const Vector2i& zoneID);
 

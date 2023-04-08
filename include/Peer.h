@@ -1,6 +1,6 @@
 #pragma once
 
-#include <robin_hood.h>
+// TODO use a wrapper method?
 #include <openssl/md5.h>
 
 #include "VUtils.h"
@@ -53,7 +53,7 @@ private:
 private:
     std::chrono::steady_clock::time_point m_lastPing;
 
-    robin_hood::unordered_map<HASH_t, std::unique_ptr<Method>> m_methods;
+    UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
     ISocket::Ptr m_socket;
@@ -68,9 +68,9 @@ public:
     ZDOID m_characterID;
     bool m_admin = false;
 
-    robin_hood::unordered_map<ZDOID, ZDO::Rev> m_zdos;
-    robin_hood::unordered_set<ZDOID> m_forceSend;
-    robin_hood::unordered_set<ZDOID> m_invalidSector;
+    UNORDERED_MAP_t<ZDOID, ZDO::Rev> m_zdos;
+    UNORDERED_SET_t<ZDOID> m_forceSend;
+    UNORDERED_SET_t<ZDOID> m_invalidSector;
 
 private:
     void Update();
