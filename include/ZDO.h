@@ -161,10 +161,30 @@ private:
             return (T*)(m_contiguous + sizeof(Ordinal));
         }
 
-    public:
         template<TrivialSyncType T>
-        Ord(const T &type) {
-            this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(T));
+        void _ForceReAssign(const T &type) {
+            if (HasValue()) {
+                if (*_Ordinal() != GetOrdinal<T>()) {
+                    // call destructor of self
+                    switch (*_Ordinal()) {
+                    case ORD_STRING: _Member<std::string>()->~basic_string(); break;
+                    case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
+                    default:
+                        assert(false);
+                    }
+
+                    // try resizing memory
+
+                    if (auto mem = (BYTE_t*) std::realloc(this->m_contiguous, sizeof(Ordinal) + sizeof(T)))
+                        this->m_contiguous = mem;
+                    else
+                        throw std::runtime_error("failed to realloc zdo");
+                }
+            } 
+            else {// allocate a new block
+                if (!(this->m_contiguous = (BYTE_t*)std::malloc(sizeof(Ordinal) + sizeof(T))))
+                    throw std::runtime_error("failed to malloc zdo");
+            }
 
             *this->_Ordinal() = GetOrdinal<T>();
 
@@ -172,21 +192,18 @@ private:
             new (this->_Member<T>()) T(type);
         }
 
-        Ord(const Ord& other) {
-            const auto ord = *other._Ordinal();
-            switch (ord) {
-            case ORD_FLOAT:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(float));          *_Member<float>() = *other._Member<float>(); break;
-            case ORD_VECTOR3:       this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Vector3f));        *_Member<Vector3f>() = *other._Member<Vector3f>(); break;
-            case ORD_QUATERNION:    this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(Quaternion));     *_Member<Quaternion>() = *other._Member<Quaternion>(); break;
-            case ORD_INT:           this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int32_t));        *_Member<int32_t>() = *other._Member<int32_t>(); break;
-            case ORD_LONG:          this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(int64_t));        *_Member<int64_t>() = *other._Member<int64_t>(); break;
-            case ORD_STRING:        this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(std::string));    new (this->_Member<std::string>()) std::string(*other._Member<std::string>()); break;
-            case ORD_ARRAY:         this->m_contiguous = (BYTE_t*)malloc(sizeof(Ordinal) + sizeof(BYTES_t));        new (this->_Member<BYTES_t>()) BYTES_t(*other._Member<BYTES_t>()); break;
-            default:
-                assert(false && "reached impossible case");
-            }
 
-            *this->_Ordinal() = ord;
+
+    public:
+        Ord() : m_contiguous(nullptr) {}
+
+        template<TrivialSyncType T>
+        Ord(const T &type) : m_contiguous(nullptr) {
+            _ForceReAssign(type);
+        }
+
+        Ord(const Ord& other) : m_contiguous(nullptr) {
+            *this = other;
         }
 
         Ord(Ord&& other) noexcept {
@@ -195,10 +212,8 @@ private:
         }
 
         ~Ord() {
-            if (!m_contiguous)
-                return;
-
-            switch (*_Ordinal()) {
+            if (HasValue()) {
+                switch (*_Ordinal()) {
                 case ORD_FLOAT: break;
                 case ORD_VECTOR3: break;
                 case ORD_QUATERNION: break;
@@ -208,23 +223,46 @@ private:
                 case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
                 default:
                     assert(false && "reached impossible case");
-            }
+                }
 
-            free(m_contiguous);
+                free(m_contiguous);
+            }
         }
 
+        void operator=(const Ord& other) {
+            if (HasValue()) {
+                const auto ord = *other._Ordinal();
+                switch (ord) {
+                case ORD_FLOAT:         _ForceReAssign(*other._Member<float>()); break;
+                case ORD_VECTOR3:       _ForceReAssign(*other._Member<Vector3f>()); break;
+                case ORD_QUATERNION:    _ForceReAssign(*other._Member<Quaternion>()); break;
+                case ORD_INT:           _ForceReAssign(*other._Member<int32_t>()); break;
+                case ORD_LONG:          _ForceReAssign(*other._Member<int64_t>()); break;
+                case ORD_STRING:        _ForceReAssign(*other._Member<std::string>()); break;
+                case ORD_ARRAY:         _ForceReAssign(*other._Member<BYTES_t>()); break;
+                default:
+                    assert(false && "reached impossible case");
+                }
+            }
+            else {
+                this->~Ord();
+                this->m_contiguous = nullptr;
+            }
+        }
 
+        bool HasValue() const {
+            return static_cast<bool>(this->m_contiguous);
+        }
 
         template<TrivialSyncType T>
         bool IsType() const {
-            return *_Ordinal() == GetOrdinal<T>();
+            return HasValue() && * _Ordinal() == GetOrdinal<T>();
         }
 
         // Ensure the underlying type matches
         //  Will throw on type mismatch
         template<TrivialSyncType T>
         void AssertType() const {
-            //assert(IsType<T>() && "type has collision; bad algo or peer zdo is malicious");
             if (!IsType<T>())
                 throw std::runtime_error("zdo typemask mismatch");
         }
@@ -452,7 +490,7 @@ private:     ZDOID m_id;
 private:    Quaternion m_rotation;
 private:    OWNER_t m_owner = 0;
 private:    std::reference_wrapper<const Prefab> m_prefab;
-private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
+private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members;
 private:    Vector3f m_pos;
 
 public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated

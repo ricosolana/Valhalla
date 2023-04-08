@@ -22,7 +22,6 @@ Peer::Peer(ISocket::Ptr socket)
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, BYTES_t bytes) {
             // Forward call to rpc
-
             DataReader reader(bytes);
 
             rpc->m_uuid = reader.Read<OWNER_t>();
