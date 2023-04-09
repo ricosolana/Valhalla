@@ -1,4 +1,56 @@
 todo:
+    - take a snapshot of everything in the world
+        capture every ZDO in world to set the precedent/base
+        
+        then record changes taking place
+            zdo change/create/destroy
+            znetview calls (via routed rpc)
+                if target was everyone, record it
+    
+            later on:
+                capture damagetext, setevent, spawnobject, chatmessage...
+                
+        think about this in the 3rd person:
+            anything that an outside silent observer can capture should be 
+            the baseline for determining what must be captured
+            
+        AN ALTERNATE APPROACH:
+            capture every timestamped packet from every peer, then replay those 
+            the packets will easily filter through the system of intended
+            recipients and observers
+            
+            PROS:
+                easy af to miplement, everything is captured verbatim, nothing missing
+            
+            CONS:
+                everything is captured... including redundant non-changed information
+                only con really is disk space
+                
+        so a fake Socket will be required
+        probably a ReplaySocket that will
+        send payloads at specified matching 
+        relative times
+         
+         
+         
+    
+
+    - packet capture and replays
+        This will take up a lot of disk space over time. Capturing a simple 1 hours worth of data for every player and changed objects is hmmm
+        
+        ideas for reducing consumption:
+            - ONLY track changes in ZDOs, not every single little thing
+            
+        there are 2 aspects to capturing:
+            - capturing ZDOs to replay the world and events taking place over time.
+                basically capturing objectschanging in game (will be the simplest and most straight-forward approach)
+            - capturing "PACKETS" and replaying from there
+                this will capture EVERYTHING that EVERY player does. This includes rpc calls, 
+                
+        must capture every ZNetView routed method call aimed towards @EVERYONE
+        capture every ZDO creation/change/destroy of Rpc::ZDOData and Route::DestroyZDO
+        
+
     - server-side player inventories and metering
         player defaultingly spawns in with nothing (except for rag cloth)
         

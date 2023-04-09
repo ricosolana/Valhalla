@@ -68,6 +68,14 @@ public:
     ZDOID m_characterID;
     bool m_admin = false;
 
+    // Whether to log/save the current processed packet for later replay
+    bool m_recordPacket = false;
+private:
+    std::jthread m_recordThread;
+    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
+    std::mutex m_recordmux;
+
+public:
     UNORDERED_MAP_t<ZDOID, ZDO::Rev> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend;
     UNORDERED_SET_t<ZDOID> m_invalidSector;

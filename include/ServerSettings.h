@@ -2,6 +2,12 @@
 
 #include "VUtils.h"
 
+enum class WorldMode : int32_t {
+    NORMAL,
+    CAPTURE,
+    PLAYBACK,
+};
+
 struct ServerSettings {
     std::string     serverName;
     uint16_t        serverPort;
@@ -14,6 +20,7 @@ struct ServerSettings {
     bool            worldSave;
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
+    WorldMode       worldMode;
     
     //bool            playerAutoPassword;
     bool            playerWhitelist;

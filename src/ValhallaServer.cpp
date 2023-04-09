@@ -73,6 +73,7 @@ void IValhalla::LoadFiles(bool fresh) {
             m_settings.worldSave = loadNode["world-save"].as<bool>(true);
             m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
             m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
+            if (fresh) m_settings.worldMode = (WorldMode) loadNode["world-mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
 
             //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
             m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist

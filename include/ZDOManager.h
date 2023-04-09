@@ -11,6 +11,7 @@
 
 class IZDOManager {
 	friend class INetManager;
+	friend class IValhalla;
 	friend class ZDO;
 
 	//friend void AddZDOToZone(ZDO* zdo);

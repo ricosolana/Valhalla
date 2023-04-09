@@ -34,6 +34,7 @@ class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
     friend class Tests;
+    friend class IValhalla;
 
 public:
     struct Rev {

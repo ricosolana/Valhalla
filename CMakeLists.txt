@@ -121,6 +121,7 @@ add_executable(${PROJECT_NAME}
     "src/Peer.cpp"
     "src/PrefabManager.cpp"
     "src/Quaternion.cpp"
+    "src/ReplaySocket.cpp"
     "src/Room.cpp"
     "src/RouteManager.cpp"
     "src/Task.cpp"
@@ -138,7 +139,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"    
-)
+ "src/CaptureSteamSocket.cpp")
 
 # change this to wherever your sol is
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")

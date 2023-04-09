@@ -2,6 +2,7 @@
 #include "NetManager.h"
 #include "ZDOManager.h"
 #include "RouteManager.h"
+#include "VUtilsResource.h"
 
 static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
     "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword",
@@ -110,6 +111,50 @@ Peer::Peer(ISocket::Ptr socket)
         return false;
     });
 
+    if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+        this->m_recordThread = std::jthread([this](std::stop_token token, std::string host) {
+            size_t chunkIndex = 0;
+
+            const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host;
+            fs::create_directories(root);
+
+            while (!token.stop_requested()) {
+                bool flag;
+                {
+                    std::scoped_lock<std::mutex> scoped(m_recordmux);
+                    flag = m_recordBuffer.size() >= 100;
+                }
+
+                if (flag) {
+                    BYTES_t bytes;
+                    DataWriter writer(bytes);
+
+                    for (int i = 0; i < 100; i++) {
+                        nanoseconds ns;
+                        BYTES_t packet;
+                        {
+                            std::scoped_lock<std::mutex> scoped(m_recordmux);
+
+                            auto&& front = m_recordBuffer.front();
+                            ns = front.first;
+                            packet = std::move(front.second);
+
+                            m_recordBuffer.pop_front();
+                        }
+                        writer.Write(ns.count());
+                        writer.Write(packet);
+                    }
+
+                    fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
+
+                    VUtils::Resource::WriteFile(path, bytes);
+                }
+
+                std::this_thread::sleep_for(1ms);
+            }
+        }, m_socket->GetHostName());
+    }
+
     VLOG(1) << "Peer()";
 }
 
@@ -143,7 +188,18 @@ void Peer::Update() {
             }
         }
         else {
+            assert(!m_recordPacket);
+
             InternalInvoke(hash, reader);
+            if (m_recordPacket) {
+                assert(SERVER_SETTINGS.worldMode == WorldMode::CAPTURE);
+                
+                auto ns(Valhalla()->Nanos());
+
+                m_recordPacket = false;
+                std::scoped_lock<std::mutex> scoped(m_recordmux);
+                this->m_recordBuffer.push_back({ ns, std::move(bytes) });
+            }
         }
     }
 
