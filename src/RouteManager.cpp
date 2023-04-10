@@ -37,11 +37,13 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			if (!(hash == Hashes::Routed::C2S_RequestIcon
 				|| hash == Hashes::Routed::C2S_RequestZDO
 				|| hash == Hashes::Routed::ChatMessage
-				|| hash == Hashes::Routed::C2S_RequestIcon)) 
+				|| hash == Hashes::Routed::C2S_RequestIcon
+				|| hash == Hashes::View::Talker::Chat))
 			{
 				// Only replay sockets allowed to do anything
-				if (!std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+				if (!std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) {
 					return;
+				}
 			}
 		}
 

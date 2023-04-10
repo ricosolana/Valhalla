@@ -85,7 +85,7 @@ Peer::Peer(ISocket::Ptr socket)
 
             //NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
 
-            NetManager()->OnNewPeer(*rpc);
+            NetManager()->OnPeerConnect(*rpc);
 
             return false;
         });
@@ -132,7 +132,7 @@ void Peer::Update() {
         auto&& bytes = opt.value();
         DataReader reader(bytes);
 
-        auto hash = reader.Read<HASH_t>();                
+        auto hash = reader.Read<HASH_t>();
         if (hash == 0) {
             if (reader.Read<bool>()) {
                 // Reply to the server with a pong

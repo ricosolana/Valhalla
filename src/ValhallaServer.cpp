@@ -374,6 +374,12 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(false);
     }
 
+    if (m_settings.worldMode == WorldMode::PLAYBACK) {
+        PERIODIC_NOW(7s, {
+            Broadcast(UIMsgType::TopLeft, std::string("World playback ") + std::to_string(duration_cast<seconds>(Valhalla()->Nanos()).count()) + "s");
+        });
+    }
+
     if (m_settings.worldSave) {
         // save warming message
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {

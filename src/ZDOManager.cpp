@@ -23,7 +23,12 @@ void IZDOManager::Init() {
 		[this](Peer*, BYTES_t bytes) {
 			// TODO constraint check
 			DataReader(bytes).AsEach([this](const ZDOID& zdoid) {
-				EraseZDO(zdoid);
+				if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+					if (auto&& zdo = GetZDO(zdoid))
+						Instantiate(Hashes::Object::piece_jackoturnip, zdo->Position());
+					DestroyZDO(zdoid);
+				} else 
+					EraseZDO(zdoid);
 			});
 		}
 	);
@@ -727,9 +732,9 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, BYTES_t bytes) {
 		// Only allow if normal mode
-		if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK 
-			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
-			return;
+		//if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK 
+		//	&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+		//	return;
 
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
@@ -785,6 +790,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					continue;
 				}
 			}
+
+
 
 			// Also used as restore point if this ZDO breaks during deserialization
 			ZDO copy(zdo);

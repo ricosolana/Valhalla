@@ -15,10 +15,10 @@ private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
     //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
-    //std::list<std::unique_ptr<Peer>> m_peers;
+    //std::list<std::unique_ptr<Peer>> m_onlinePeers;
 
-    std::vector<std::unique_ptr<Peer>> m_clients;
-    std::vector<Peer*> m_peers;
+    std::vector<std::unique_ptr<Peer>> m_connectedPeers;
+    std::vector<Peer*> m_onlinePeers;
 
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
     UNORDERED_MAP_t<std::string, int32_t> m_sessionIndexes;
@@ -38,7 +38,8 @@ private:
     void SendNetTime();
     void SendPeerInfo(Peer &peer);
 
-    void CleanupPeer(Peer& peer);
+    void OnPeerQuit(Peer& peer);
+    void OnPeerDisconnect(Peer& peer);
 
     //void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
@@ -55,15 +56,15 @@ public:
 
     //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 
-    //void OnNewPeer(std::unique_ptr<Peer> peer);
+    //void OnPeerConnect(std::unique_ptr<Peer> peer);
 
     //void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3f &pos);
-    void OnNewPeer(Peer& peer);
+    void OnPeerConnect(Peer& peer);
 
     //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3f& pos);
 
     const auto& GetPeers() {
-        return m_peers;
+        return m_onlinePeers;
     }
 };
 

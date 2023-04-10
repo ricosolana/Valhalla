@@ -789,7 +789,7 @@ void IModManager::LoadAPI() {
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeerByName)
         ),
-        "peers", sol::readonly(&INetManager::m_peers)
+        "peers", sol::readonly(&INetManager::m_onlinePeers)
     );
 
 

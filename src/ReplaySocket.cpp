@@ -11,7 +11,7 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
 
     const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host / std::to_string(session);
 
-    m_thread = std::jthread([this, root](std::stop_token token) {
+    m_thread = std::jthread([this, host, root](std::stop_token token) {
         size_t chunkIndex = 0;
 
         if (!fs::exists(root) || !fs::is_directory(root)) {
@@ -19,9 +19,11 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
             return;
         }
 
-        fs::path path = root / (std::to_string(chunkIndex) + ".cap");
+        //fs::path path = root / (std::to_string(chunkIndex) + ".cap");
 
         while (!token.stop_requested()) {
+            fs::path path = root / (std::to_string(chunkIndex) + ".cap");
+
             bool flag;
             {
                 std::scoped_lock<std::mutex> scoped(m_mux);
@@ -31,7 +33,7 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
             if (flag) {
                 if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
                     if (auto decompressed = ZStdDecompressor().Decompress(*opt)) {
-                        DataReader reader(opt.value());
+                        DataReader reader(*decompressed);
 
                         auto count = reader.Read<int32_t>();
                         for (int i = 0; i < count; i++) {
@@ -43,26 +45,32 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
                         }
 
                         chunkIndex++;
+
+                        //fs::path path = root / (std::to_string(++chunkIndex) + ".cap");
                     }
                     else {
                         LOG(WARNING) << "Failed to decompress capture chunk " << path.c_str();
-                        return;
+                        break;
                     }
 
                 }
                 else {
-                    LOG(WARNING) << "Failed to find " << path.c_str() << " or no more packets";
-                    return;
+                    LOG(WARNING) << "Finished replay for " << host;
+                    break;
                 }
             }
             std::this_thread::sleep_for(1ms);
         }
+
+        LOG(WARNING) << "Terminating async capture reader " << host;
     });
 
     // Wait for some packets to prepare before returning
     while (true) {
-        std::scoped_lock<std::mutex> scoped(m_mux);
-        if (!m_ready.empty()) break;
+        {
+            std::scoped_lock<std::mutex> scoped(m_mux);
+            if (!m_ready.empty()) break;
+        }
         std::this_thread::sleep_for(1ms);
     }
 
