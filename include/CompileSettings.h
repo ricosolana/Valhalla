@@ -34,7 +34,7 @@ using namespace std::chrono_literals;
 //  this is named terribly
 //#define MOD_EVENT_RESPONSE
 
-#define VALHALLA_WORLD_RECORDING_PATH "recording"
+#define VALHALLA_WORLD_RECORDING_PATH "captures"
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

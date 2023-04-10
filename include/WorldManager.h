@@ -55,6 +55,7 @@ public:
     //  threadsafe
     void BackupFileWorldDB(const std::string& name) const;
 
+    // Write the db of the current world to disk
     // Threadsafe
     void WriteFileWorldDB(bool sync);
 

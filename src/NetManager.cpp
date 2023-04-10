@@ -350,9 +350,46 @@ void INetManager::Update() {
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
         auto&& peer = std::make_unique<Peer>(std::move(*opt));
-        if (ModManager()->CallEvent(IModManager::Events::Connect, peer.get()))
+        if (ModManager()->CallEvent(IModManager::Events::Connect, peer.get())) {
+
+            if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+                // record peer joindata
+                m_connectCapturedPeers.push_back({ Valhalla()->Nanos(), peer->m_socket->GetHostName() });
+            }
+
             m_clients.push_back(std::move(peer));
-    }       
+        }
+    }
+
+    // try accepting replay peers
+    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+        {
+            auto&& front = m_connectCapturedPeers.front();
+            if (Valhalla()->Nanos() >= front.first) {
+                m_clients.push_back(std::make_unique<Peer>(
+                    std::make_shared<ReplaySocket>(front.second)));
+                m_connectCapturedPeers.pop_front();
+            }
+        }
+
+        {
+            auto&& front = m_disconnectCapturedPeers.front();
+            if (Valhalla()->Nanos() >= front.first) {
+                if (auto peer = GetPeerByHost(front.second)) {
+                    m_clients.push_back(std::make_unique<Peer>(
+                        std::make_shared<ReplaySocket>(front.second)));
+                }
+                else {
+                    LOG(WARNING) << "Disconnecting replay peer not found";
+                }
+                m_disconnectCapturedPeers.pop_front();
+            }
+        }
+
+
+    }
+
+
 
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
@@ -409,6 +446,11 @@ void INetManager::Update() {
             assert(peer);
             if (!(peer->m_socket && peer->m_socket->Connected())) {
                 ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
+
+                if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+                    // record peer joindata
+                    m_disconnectCapturedPeers.push_back({ Valhalla()->Nanos(), peer->m_socket->GetHostName() });
+                }
 
                 itr = m_clients.erase(itr);
             }

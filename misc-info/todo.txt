@@ -1,4 +1,31 @@
 todo:
+    - navigate through handshake-rpcs, making sure things would go perfectly for a replaying client
+    
+        remove password restrictions
+        
+        must do some client renaming or something for replayed clients
+            (assuming a client with same name and same host joins
+                while a replay is happening...)
+            that would be weird, so do something... frick
+
+    - best alternate to world recording:
+        record the world-as-is
+        
+        record all current online peers
+        
+        record Rpc from peer:
+            record ZDOData
+                
+        record RoutedRpc from peer:
+            record EVERYONE DamageText
+            record EVERYONE DestroyZDO
+            record EVERYONE SpawnObject
+            record EVERYONE ChatMessage
+            
+            record EVERYONE NetView...
+                important: ZSyncAnimation
+                
+
     - take a snapshot of everything in the world
         capture every ZDO in world to set the precedent/base
         

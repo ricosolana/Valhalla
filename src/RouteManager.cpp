@@ -32,11 +32,34 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*	Similarly, what about missing RoutedRpc handlers?
 		*/
 
+		if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+			// Only allow "read-only" RoutedRpcs (where client is requesting data and not changing anything)
+			// Client is an observer in this scenario
+			if (!(hash == Hashes::Routed::C2S_RequestIcon
+				|| hash == Hashes::Routed::C2S_RequestZDO
+				|| hash == Hashes::Routed::ChatMessage
+				|| hash == Hashes::Routed::C2S_RequestIcon)) 
+			{
+				// Only replay sockets allowed to do anything
+				if (!std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+					return;
+			}
+		}
+
 		if (target == EVERYBODY) {
 			// Confirmed: targetZDO CAN have a value when globally routed
 			//assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");
 			if (!ModManager()->CallEvent(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
 				return;
+
+			//if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK
+			//	&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+			//	return;
+
+			if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+				// capture changes
+				peer->m_recordPacket = true;
+			}
 
 			// 'EVERYBODY' also targets the server
 			if (!targetZDO) {
@@ -65,6 +88,20 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			}
 			else {
 				if (!targetZDO) {
+					if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+
+						// If RoutedRpc is a modification packet then capture
+						// This isnt all that too significant, but it slightly reduces sizes
+						//if (!(hash == Hashes::Routed::C2S_RequestZDO
+						//	//|| hash == Hashes::Routed::Pong
+						//	|| hash == Hashes::Routed::C2S_RequestIcon)) 
+						//{
+						//	// capture changes
+						//	peer->m_recordPacket = true;
+						//}
+						peer->m_recordPacket = true;
+					}
+
 					auto&& find = m_methods.find(hash);
 					if (find != m_methods.end()) {
 						find->second->Invoke(peer, params);

@@ -20,6 +20,11 @@ private:
     std::vector<std::unique_ptr<Peer>> m_clients;
     std::vector<Peer*> m_peers;
 
+    //std::vector<Peer*> m_replayPeers;
+
+    std::list<std::pair<nanoseconds, std::string>> m_connectCapturedPeers;
+    std::list<std::pair<nanoseconds, std::string>> m_disconnectCapturedPeers;
+
 private:
     // Kick a player by name
     bool Kick(std::string user);

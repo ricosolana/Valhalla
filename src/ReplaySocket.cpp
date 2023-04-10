@@ -23,8 +23,10 @@ ReplaySocket::ReplaySocket(std::string host) {
         const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host;
 
         while (!token.stop_requested()) {
-            assert(fs::exists(root));
-            assert(fs::is_directory(root));
+            if (!fs::exists(root) || !fs::is_directory(root)) {
+                LOG(WARNING) << "Failed to find dir " << root.c_str();
+                return;
+            }
 
             fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
 
@@ -36,14 +38,24 @@ ReplaySocket::ReplaySocket(std::string host) {
 
             if (flag) {
                 if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-                    DataReader reader(opt.value());
-                    for (int i = 0; i < 100; i++) {
-                        auto ns = nanoseconds(reader.ReadInt64());
-                        auto packet = reader.Read<BYTES_t>();
+                    if (auto decompressed = ZStdDecompressor().Decompress(*opt)) {
 
-                        std::scoped_lock<std::mutex> scoped(m_mux);
-                        m_ready.push_back({ ns, packet });
+                        DataReader reader(opt.value());
+
+                        auto count = reader.Read<int32_t>();
+                        for (int i = 0; i < count; i++) {
+                            auto ns = nanoseconds(reader.ReadInt64());
+                            auto packet = reader.Read<BYTES_t>();
+
+                            std::scoped_lock<std::mutex> scoped(m_mux);
+                            m_ready.push_back({ ns, packet });
+                        }
                     }
+                    else {
+                        LOG(WARNING) << "Failed to decompress capture chunk " << path.c_str();
+                        return;
+                    }
+
                 }
                 else {
                     LOG(WARNING) << "Failed to find " << path.c_str() << " or no more packets";
@@ -53,6 +65,8 @@ ReplaySocket::ReplaySocket(std::string host) {
             std::this_thread::sleep_for(1ms);
         }
     });
+
+    this->m_originalHost = "REPLAY_" + host;
 }
 
 void ReplaySocket::Close(bool flush) {
@@ -69,7 +83,7 @@ std::optional<BYTES_t> ReplaySocket::Recv() {
     std::scoped_lock<std::mutex> scoped(m_mux);
     if (m_ready.empty()) {
         LOG(WARNING) << "No packets queued for replay";
-        return;
+        return std::nullopt;
     }
 
     auto&& ref = m_ready.front();

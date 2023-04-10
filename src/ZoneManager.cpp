@@ -168,13 +168,13 @@ void IZoneManager::Init() {
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
         throw std::runtime_error("prefabs missing");
 
-    RouteManager()->Register(Hashes::Routed::SetGlobalKey, [this](Peer* peer, std::string name) {
+    RouteManager()->Register(Hashes::Routed::C2S_SetGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.insert(name).second)
             SendGlobalKeys(); // Notify clients
     });
 
-    RouteManager()->Register(Hashes::Routed::RemoveGlobalKey, [this](Peer* peer, std::string name) {
+    RouteManager()->Register(Hashes::Routed::C2S_RemoveGlobalKey, [this](Peer* peer, std::string name) {
         // TODO constraint check
         if (m_globalKeys.erase(name))
             SendGlobalKeys(); // Notify clients
@@ -345,7 +345,11 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
         for (auto&& peer : NetManager()->GetPeers()) {
-            TryGenerateNearbyZones(peer->m_pos);
+            if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK
+                || std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) 
+            {
+                TryGenerateNearbyZones(peer->m_pos);
+            }
         }
     });
 }

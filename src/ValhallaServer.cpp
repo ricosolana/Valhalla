@@ -54,25 +54,25 @@ void IValhalla::LoadFiles(bool fresh) {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         if (fresh || !fileError) {
-            m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
+            if (fresh) m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
             if (m_settings.serverName.empty()
                 || m_settings.serverName.length() < 3
                 || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
-            m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+            if (fresh) m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
             //m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
-            m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
-            if (!m_settings.serverPassword.empty()
+            if (fresh) m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
+            if (fresh && !m_settings.serverPassword.empty()
                 && (m_settings.serverPassword.length() < 5
                     || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
-            m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
+            if (fresh) m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
 
-            m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
+            if (fresh) m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
             if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
-            m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
+            if (fresh) m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
             if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
             m_settings.worldSave = loadNode["world-save"].as<bool>(true);
             m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
-            m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
+            if (fresh) m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
             if (fresh) m_settings.worldMode = (WorldMode) loadNode["world-mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
 
             //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
@@ -85,7 +85,7 @@ void IValhalla::LoadFiles(bool fresh) {
             //m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
             //m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
 
-            m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
+            if (fresh) m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
 
             m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int>(10240);
             m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int>(2048);
@@ -114,6 +114,18 @@ void IValhalla::LoadFiles(bool fresh) {
             m_settings.eventsInterval = seconds(std::max(60, loadNode["events-interval-m"].as<int>(46)) * 60);
             m_settings.eventsRange = std::clamp(loadNode["events-range"].as<float>(96), 1.f, 96.f * 4);
             //m_settings.eventsSendInterval = loadNode["events-enabled"].as<bool>(true);
+
+            if (m_settings.serverPassword.empty())
+                LOG(WARNING) << "Server does not have a password";
+            else
+                LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+
+            if (m_settings.worldMode == WorldMode::CAPTURE) {
+                LOG(WARNING) << "Experimental packet capture enabled";
+            }
+            else if (m_settings.worldMode == WorldMode::PLAYBACK) {
+                LOG(WARNING) << "Experimental packet playback enabled";
+            }
         }
     }
     
@@ -239,31 +251,14 @@ void IValhalla::Start() {
 
     HeightmapBuilder()->Init();
     NetManager()->Init();
-
-    if (m_settings.serverPassword.empty())
-        LOG(WARNING) << "Server does not have a password";
-    else
-        LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
-
-    // Basically, allow players who have already logged in before, unless the password has changed
-    //if (m_settings.playerAutoPassword) {
-    //    const char* prevPassword = getenv("valhalla-prev-password");
-    //
-    //    // Clear the allow list on password change
-    //    if (prevPassword && m_settings.serverPassword != prevPassword) {
-    //        m_bypass.clear();
-    //    }
-    //
-    //    // Put the env
-    //    std::string kv = "valhalla-prev-password=" + m_settings.serverPassword;
-    //    if (putenv(kv.c_str())) {
-    //        char* msg = strerror(errno);
-    //        LOG(ERROR) << "Failed to set env: " << msg;
-    //    }
-    //    else {
-    //        LOG(INFO) << "Player auto password is enabled";
-    //    }
-    //}
+        
+    /*
+    if (SERVER_SETTINGS.worldRecording) {
+        World* world = WorldManager()->GetWorld();
+        VUtils::Resource::WriteFile(
+            fs::path(VALHALLA_WORLD_RECORDING_PATH) / world->m_name / (world->m_name + ".db"),
+            WorldManager()->SaveWorldDB());
+    }*/
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();

@@ -67,6 +67,8 @@ private:
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
 
+	decltype(m_objectsByID)::iterator DestroyZDO(decltype(m_objectsByID)::iterator itr);
+
 	// Performs an unchecked erasure
 	//	Does not check whether the iterator is at end of container
 	decltype(m_objectsByID)::iterator EraseZDO(decltype(m_objectsByID)::iterator itr);
@@ -244,7 +246,6 @@ public:
 	void DestroyZDO(ZDO& zdo) {
 		DestroyZDO(zdo.ID());
 	}
-	decltype(m_objectsByID)::iterator DestroyZDO(decltype(m_objectsByID)::iterator itr);
 
 	size_t GetSumZDOMembers();
 	float GetMeanZDOMembers();

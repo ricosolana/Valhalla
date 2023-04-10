@@ -60,12 +60,14 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (password != PASSWORD)
+            if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK && password != PASSWORD)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
 
             // if peer already connected
+            //  peers with a new character can connect while replaying,
+            //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
             if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()) || NetManager()->GetPeer(rpc->m_uuid) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
@@ -118,18 +120,21 @@ Peer::Peer(ISocket::Ptr socket)
             const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host;
             fs::create_directories(root);
 
+#define CHUNK_COUNT 1000
+
             while (!token.stop_requested()) {
                 bool flag;
                 {
                     std::scoped_lock<std::mutex> scoped(m_recordmux);
-                    flag = m_recordBuffer.size() >= 100;
+                    flag = m_recordBuffer.size() >= CHUNK_COUNT;
                 }
 
                 if (flag) {
-                    BYTES_t bytes;
-                    DataWriter writer(bytes);
+                    BYTES_t chunk;
+                    DataWriter writer(chunk);
 
-                    for (int i = 0; i < 100; i++) {
+                    writer.Write((int32_t)CHUNK_COUNT);
+                    for (int i = 0; i < CHUNK_COUNT; i++) {
                         nanoseconds ns;
                         BYTES_t packet;
                         {
@@ -147,12 +152,21 @@ Peer::Peer(ISocket::Ptr socket)
 
                     fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
 
-                    VUtils::Resource::WriteFile(path, bytes);
+                    if (auto compressed = ZStdCompressor().Compress(chunk)) {
+                        if (VUtils::Resource::WriteFile(path, *compressed))
+                            LOG(WARNING) << "Saving " << path.c_str();
+                        else
+                            LOG(ERROR) << "Failed to save " << path.c_str();
+                    }
+                    else
+                        LOG(ERROR) << "Failed to compress packet capture chunk";
                 }
 
                 std::this_thread::sleep_for(1ms);
             }
         }, m_socket->GetHostName());
+
+        LOG(WARNING) << "Starting capture for " << m_socket->GetHostName();
     }
 
     VLOG(1) << "Peer()";
@@ -171,8 +185,27 @@ void Peer::Update() {
 
         auto&& bytes = opt.value();
         DataReader reader(bytes);
-
         auto hash = reader.Read<HASH_t>();
+
+        /*
+        assert(!m_recordPacket);
+
+        if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+            // Allow replay packets establishing a replay handshake through
+            //  since no explicit peer-capture is taking place, all imperative rpc packets are required
+            //  to perfectly replay everything in the game
+            if (hash == Hashes::Rpc::C2S_Handshake
+                || hash == Hashes::Rpc::C2S_UpdateID
+                || hash == Hashes::Rpc::C2S_UpdatePos
+                || hash == Hashes::Rpc::PeerInfo
+                || hash == Hashes::Rpc::Disconnect)
+            {
+                this->m_recordPacket = true;
+            }
+        }*/
+
+
+        
         if (hash == 0) {
             if (reader.Read<bool>()) {
                 // Reply to the server with a pong
@@ -181,25 +214,52 @@ void Peer::Update() {
                 writer.Write<HASH_t>(0);
                 writer.Write<bool>(false);
                 m_socket->Send(std::move(bytes));
-                static constexpr int h = sizeof(ZDO);
             }
             else {
                 m_lastPing = now;
             }
         }
         else {
+            /*
             assert(!m_recordPacket);
 
+            if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+                // Allow replay packets establishing a replay handshake through
+                //  since no explicit peer-capture is taking place, all imperative rpc packets are required
+                //  to perfectly replay everything in the game
+                if (hash == Hashes::Rpc::C2S_Handshake
+                    || hash == Hashes::Rpc::C2S_UpdateID
+                    || hash == Hashes::Rpc::C2S_UpdatePos
+                    || hash == Hashes::Rpc::PeerInfo
+                    || hash == Hashes::Rpc::Disconnect) 
+                {
+                    this->m_recordPacket = true;
+                }
+            }*/
+
             InternalInvoke(hash, reader);
-            if (m_recordPacket) {
+            /*
+            if (this->m_recordPacket) {
                 assert(SERVER_SETTINGS.worldMode == WorldMode::CAPTURE);
                 
                 auto ns(Valhalla()->Nanos());
 
-                m_recordPacket = false;
+                this->m_recordPacket = false;
                 std::scoped_lock<std::mutex> scoped(m_recordmux);
                 this->m_recordBuffer.push_back({ ns, std::move(bytes) });
-            }
+            }*/
+        }
+
+
+
+        if (this->m_recordPacket) {
+            assert(SERVER_SETTINGS.worldMode == WorldMode::CAPTURE);
+
+            auto ns(Valhalla()->Nanos());
+
+            this->m_recordPacket = false;
+            std::scoped_lock<std::mutex> scoped(m_recordmux);
+            this->m_recordBuffer.push_back({ ns, std::move(bytes) });
         }
     }
 

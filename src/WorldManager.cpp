@@ -231,7 +231,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 
 	LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(now - start).count() << "ms";
 
-	m_saveThread = std::jthread([](const std::string &name, const BYTES_t& bytes) {
+	m_saveThread = std::jthread([](const std::string &name, BYTES_t bytes) {
 		try {
 			el::Helpers::setThreadName("save");
 
@@ -248,7 +248,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 		catch (const std::exception& e) {
 			LOG(ERROR) << "Severe error while saving world: " << e.what();
 		}
-	}, m_world->m_name, bytes);
+	}, m_world->m_name, std::move(bytes));
 
 	if (sync && m_saveThread.joinable())
 		m_saveThread.join();

@@ -94,12 +94,12 @@ namespace Hashes {
 
         // Regularly called
         static constexpr HASH_t DestroyZDO = __H("DestroyZDO");
-        static constexpr HASH_t RequestZDO = __H("RequestZDO");
+        static constexpr HASH_t C2S_RequestZDO = __H("RequestZDO");
         static constexpr HASH_t SpawnObject = __H("SpawnObject");
 
         // Permissions / Meter / Gamestate
-        static constexpr HASH_t SetGlobalKey = __H("SetGlobalKey");
-        static constexpr HASH_t RemoveGlobalKey = __H("RemoveGlobalKey");
+        static constexpr HASH_t C2S_SetGlobalKey = __H("SetGlobalKey");
+        static constexpr HASH_t C2S_RemoveGlobalKey = __H("RemoveGlobalKey");
         static constexpr HASH_t Pong = __H("Pong");
         static constexpr HASH_t ChatMessage = __H("ChatMessage");
 
