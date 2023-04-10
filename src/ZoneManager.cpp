@@ -346,7 +346,7 @@ void IZoneManager::Update() {
     PERIODIC_NOW(100ms, {
         for (auto&& peer : NetManager()->GetPeers()) {
             if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK
-                || std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) 
+                || std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
             {
                 TryGenerateNearbyZones(peer->m_pos);
             }

@@ -11,6 +11,7 @@
 #include "ZDOManager.h"
 #include "RouteManager.h"
 #include "ZoneManager.h"
+#include "VUtilsResource.h"
 
 using namespace std::chrono;
 
@@ -340,6 +341,22 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
 void INetManager::Init() {
     LOG(INFO) << "Initializing NetManager";
 
+    // load session file if replaying
+    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+        if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(fs::path(VALHALLA_WORLD_RECORDING_PATH) / "sessions.pkg")) {
+            DataReader reader(*opt);
+
+            auto count = reader.Read<int32_t>();
+            for (int i = 0; i < count; i++) {
+                auto host = reader.Read<std::string>();
+                auto nsStart = nanoseconds(reader.Read<int64_t>());
+                auto nsEnd = nanoseconds(reader.Read<int64_t>());
+
+                m_sortedSessions.push_back( { host, { nsStart, nsEnd } } );
+            }
+        }        
+    }
+
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
 }
@@ -354,39 +371,109 @@ void INetManager::Update() {
 
             if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
                 // record peer joindata
-                m_connectCapturedPeers.push_back({ Valhalla()->Nanos(), peer->m_socket->GetHostName() });
+                m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
+                    { Valhalla()->Nanos(), 0ns } });
+                peer->m_disconnectCapture = &m_sortedSessions.back().second.second;
+
+                const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / peer->m_socket->GetHostName() / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
+                Peer* ptr = peer.get();
+                peer->m_recordThread = std::jthread([root, ptr](std::stop_token token) {
+                    size_t chunkIndex = 0;
+
+                    fs::create_directories(root);
+
+#define CHUNK_COUNT 500
+
+                    auto&& saveBuffered = [&](int count) {
+                        BYTES_t chunk;
+                        DataWriter writer(chunk);
+
+                        writer.Write((int32_t)count);
+                        for (int i = 0; i < count; i++) {
+                            nanoseconds ns;
+                            BYTES_t packet;
+                            {
+                                std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
+
+                                auto&& front = ptr->m_recordBuffer.front();
+                                ns = front.first;
+                                packet = std::move(front.second);
+                                ptr->m_captureQueueSize -= packet.size();
+
+                                ptr->m_recordBuffer.pop_front();
+                            }
+                            writer.Write(ns.count());
+                            writer.Write(packet);
+                        }
+
+                        fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
+
+                        if (auto compressed = ZStdCompressor().Compress(chunk)) {
+                            if (VUtils::Resource::WriteFile(path, *compressed))
+                                LOG(WARNING) << "Saving " << path.c_str();
+                            else
+                                LOG(ERROR) << "Failed to save " << path.c_str();
+                        }
+                        else
+                            LOG(ERROR) << "Failed to compress packet capture chunk";
+                    };
+
+                    // Primary occasional saving of captured packets
+                    while (!token.stop_requested()) {
+                        size_t size = 0;
+                        size_t captureQueueSize = 0;
+                        {
+                            std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
+                            size = ptr->m_recordBuffer.size();
+                            captureQueueSize = ptr->m_captureQueueSize;
+                        }
+
+                        /*
+                        if (size >= CHUNK_COUNT) {
+                            saveBuffered(chunkIndex <= 5 
+                                ? (CHUNK_COUNT / 10) // save first few packets in smaller increments for fast loads
+                                : CHUNK_COUNT);
+                        }*/
+
+                        // save at ~256Kb increments
+                        if (captureQueueSize > 256000) {
+                            saveBuffered(size);
+                        }
+
+                        std::this_thread::sleep_for(1ms);
+                    }
+
+                    // Save any buffered captures before exit
+                    int size = 0;
+                    {
+                        std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
+                        size = ptr->m_recordBuffer.size();
+                    }
+
+                    if (size)
+                        saveBuffered(size);
+
+                });
+
+                LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
             }
 
             m_clients.push_back(std::move(peer));
         }
     }
 
-    // try accepting replay peers
+    // accept replay peers
     if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
-        {
-            auto&& front = m_connectCapturedPeers.front();
-            if (Valhalla()->Nanos() >= front.first) {
-                m_clients.push_back(std::make_unique<Peer>(
-                    std::make_shared<ReplaySocket>(front.second)));
-                m_connectCapturedPeers.pop_front();
+        if (!m_sortedSessions.empty()) {
+            auto&& front = m_sortedSessions.front();
+            if (Valhalla()->Nanos() >= front.second.first) {
+                auto&& peer = std::make_unique<Peer>(
+                    std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
+
+                m_clients.push_back(std::move(peer));
+                m_sortedSessions.pop_front();
             }
         }
-
-        {
-            auto&& front = m_disconnectCapturedPeers.front();
-            if (Valhalla()->Nanos() >= front.first) {
-                if (auto peer = GetPeerByHost(front.second)) {
-                    m_clients.push_back(std::make_unique<Peer>(
-                        std::make_shared<ReplaySocket>(front.second)));
-                }
-                else {
-                    LOG(WARNING) << "Disconnecting replay peer not found";
-                }
-                m_disconnectCapturedPeers.pop_front();
-            }
-        }
-
-
     }
 
 
@@ -447,10 +534,12 @@ void INetManager::Update() {
             if (!(peer->m_socket && peer->m_socket->Connected())) {
                 ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
 
+                
                 if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
-                    // record peer joindata
-                    m_disconnectCapturedPeers.push_back({ Valhalla()->Nanos(), peer->m_socket->GetHostName() });
+                    *peer->m_disconnectCapture = Valhalla()->Nanos();
                 }
+                
+                LOG(INFO) << peer->m_socket->GetHostName() << " disconnected";
 
                 itr = m_clients.erase(itr);
             }
@@ -474,6 +563,20 @@ void INetManager::CleanupPeer(Peer& peer) {
 
 void INetManager::Uninit() {
     SendDisconnect();
+
+    {
+        // save sessions
+        BYTES_t bytes;
+        DataWriter writer(bytes);
+        writer.Write((int)m_sortedSessions.size());
+        for (auto&& session : m_sortedSessions) {
+            writer.Write(session.first);
+            writer.Write(session.second.first.count());
+            writer.Write(session.second.second.count());
+        }
+
+        VUtils::Resource::WriteFile(fs::path(VALHALLA_WORLD_RECORDING_PATH) / "sessions.pkg", bytes);
+    }
 
     for (auto&& peer : m_peers) {
         CleanupPeer(*peer);

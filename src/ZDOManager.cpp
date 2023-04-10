@@ -731,11 +731,6 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 			return;
 
-		if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
-			// capture changes
-			peer->m_recordPacket = true;
-		}
-
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
 		DataReader reader(bytes);

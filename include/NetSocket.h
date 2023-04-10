@@ -125,13 +125,15 @@ private:
     std::string m_originalHost;
     std::string m_originalAddress;
 
+    nanoseconds m_disconnectTime;
+
     // async disk packet stuff
     std::list<std::pair<nanoseconds, BYTES_t>> m_ready;
-    std::jthread m_thread;
     std::mutex m_mux;
+    std::jthread m_thread;
 
 public:
-    ReplaySocket(std::string host);
+    ReplaySocket(std::string host, int session, nanoseconds disconnectTime);
 
     void Close(bool flush) override;
 

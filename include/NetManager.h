@@ -20,10 +20,8 @@ private:
     std::vector<std::unique_ptr<Peer>> m_clients;
     std::vector<Peer*> m_peers;
 
-    //std::vector<Peer*> m_replayPeers;
-
-    std::list<std::pair<nanoseconds, std::string>> m_connectCapturedPeers;
-    std::list<std::pair<nanoseconds, std::string>> m_disconnectCapturedPeers;
+    std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
+    UNORDERED_MAP_t<std::string, int32_t> m_sessionIndexes;
 
 private:
     // Kick a player by name

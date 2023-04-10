@@ -3,43 +3,34 @@
 #include "DataReader.h"
 #include "ValhallaServer.h"
 
-ReplaySocket::ReplaySocket(std::string host) {
-    // How will be the packet storage format?
+ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnectTime) {
 
-    // individual files is inefficient and cluttering
+    // trial is the connect/disconnect index
 
-    // im thinking full packets clumped together in 1Mb each?
-    
-    // depends on avg size of each packet
+    this->m_disconnectTime = disconnectTime;
 
-    // prepare thread to read zstd compressed packets within path
-    // path refers to a specific socket by hostname to read
+    const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host / std::to_string(session);
 
-    //m_startTime = steady_clock::now();
-
-    m_thread = std::jthread([this, host](std::stop_token token) {
+    m_thread = std::jthread([this, root](std::stop_token token) {
         size_t chunkIndex = 0;
 
-        const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host;
+        if (!fs::exists(root) || !fs::is_directory(root)) {
+            LOG(WARNING) << "Failed to find dir capture " << root.c_str();
+            return;
+        }
+
+        fs::path path = root / (std::to_string(chunkIndex) + ".cap");
 
         while (!token.stop_requested()) {
-            if (!fs::exists(root) || !fs::is_directory(root)) {
-                LOG(WARNING) << "Failed to find dir " << root.c_str();
-                return;
-            }
-
-            fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
-
             bool flag;
             {
                 std::scoped_lock<std::mutex> scoped(m_mux);
-                flag = m_ready.size() < 1000;
+                flag = m_ready.size() < 200;
             }
 
             if (flag) {
                 if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
                     if (auto decompressed = ZStdDecompressor().Decompress(*opt)) {
-
                         DataReader reader(opt.value());
 
                         auto count = reader.Read<int32_t>();
@@ -50,6 +41,8 @@ ReplaySocket::ReplaySocket(std::string host) {
                             std::scoped_lock<std::mutex> scoped(m_mux);
                             m_ready.push_back({ ns, packet });
                         }
+
+                        chunkIndex++;
                     }
                     else {
                         LOG(WARNING) << "Failed to decompress capture chunk " << path.c_str();
@@ -66,6 +59,13 @@ ReplaySocket::ReplaySocket(std::string host) {
         }
     });
 
+    // Wait for some packets to prepare before returning
+    while (true) {
+        std::scoped_lock<std::mutex> scoped(m_mux);
+        if (!m_ready.empty()) break;
+        std::this_thread::sleep_for(1ms);
+    }
+
     this->m_originalHost = "REPLAY_" + host;
 }
 
@@ -74,7 +74,9 @@ void ReplaySocket::Close(bool flush) {
 }
 
 void ReplaySocket::Update() {
-
+    if (Valhalla()->Nanos() >= m_disconnectTime) {
+        this->Close(false);
+    }
 }
 
 void ReplaySocket::Send(BYTES_t) {}
