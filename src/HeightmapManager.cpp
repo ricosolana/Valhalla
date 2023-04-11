@@ -145,7 +145,9 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
 
 Heightmap* IHeightmapManager::PollHeightmap(const ZoneID& zone) {
     auto&& insert = m_heightmaps.insert({ zone, nullptr });
-    if (!insert.first->second) // if heightmap is null, try polling it
+    //auto&& pop = m_population.insert(zone);
+    //if (!insert.first->second && pop.second) // if heightmap is null, try polling it
+    if (!insert.first->second)
         insert.first->second = HeightmapBuilder()->PollHeightmap(zone);
 
     return insert.first->second.get();

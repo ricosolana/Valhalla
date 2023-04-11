@@ -9,6 +9,7 @@
 
 
 class IHeightmapManager {
+	//UNORDERED_SET_t<ZoneID> m_population;
 	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
 
 public:

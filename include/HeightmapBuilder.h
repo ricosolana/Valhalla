@@ -8,12 +8,21 @@
 #include "ZoneManager.h"
 
 class IHeightmapBuilder {
+    struct Shared {
+        std::vector<ZoneID> m_waiting;
+        //std::vector<std::unique_ptr<Heightmap>> m_waiting;
+        std::mutex m_mux;
+        std::jthread m_thread;
+    };
+
 private:
-    UNORDERED_SET_t<ZoneID> m_toBuild;
+    //UNORDERED_SET_t<ZoneID> m_toBuild;
+    UNORDERED_SET_t<ZoneID> m_building;
     UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_ready;
     
-    std::list<std::jthread> m_builders;
-    std::mutex m_lock;
+    std::mutex m_mux;
+    std::vector<std::unique_ptr<Shared>> m_builders;
+    decltype(m_builders)::iterator m_nextBuilder;
 
 private:
     static void Build(BaseHeightmap* data, const ZoneID& zone);
@@ -24,6 +33,8 @@ public:
 
     void Update();
     
+    //void QueueBatch(const std::ZoneID& zone);
+
     std::unique_ptr<Heightmap> PollHeightmap(const ZoneID& zone);
 
     //std::unique_ptr<HMBuildData> RequestTerrainBlocking(const ZoneID& zone);

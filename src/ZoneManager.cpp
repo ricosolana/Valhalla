@@ -689,34 +689,31 @@ void IZoneManager::PostGeoInit() {
 
     if ((SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK)
         && (SERVER_SETTINGS.worldPregenerate || SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) 
-        && m_generatedZones.empty()) {
-        LOG(WARNING) << "Pregenerating world...";
+        && m_generatedZones.empty()) 
+    {
+        auto now(steady_clock::now());
         int prevCount = 0;
+
+        LOG(WARNING) << "Pregenerating world...";
         while (m_generatedZones.size() < WORLD_RADIUS_IN_ZONES*2* WORLD_RADIUS_IN_ZONES*2) {
             for (int y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
                 for (int x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
                     TryGenerateZone({ x, y });
                     PERIODIC_NOW(3s, {
-
+                        
                         // print a cool grid
-                        for (int iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy+=10) {
-                            for (int ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix+=10) {
-                                if (m_generatedZones.contains({ ix, iy })) {
-                                    if (ix == x && iy == y) {
-                                        std::cout << COLOR_GOLD << "O ";
-                                    }
-                                    else {
-                                        std::cout << COLOR_GREEN << "O ";
-                                    }
+                        for (int iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy += 6) {
+                            for (int ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix += 6) {
+                                if (std::abs(ix - x) < 3 && std::abs(iy - y) < 3) {
+                                    std::cout << COLOR_GOLD;
+                                }
+                                else if (m_generatedZones.contains({ ix, iy })) {
+                                    std::cout << COLOR_GREEN;
                                 }
                                 else {
-                                    if (ix == x && iy == y) {
-                                        std::cout << COLOR_GOLD << "O ";
-                                    }
-                                    else {
-                                        std::cout << COLOR_GRAY << "O ";
-                                    }
+                                    std::cout << COLOR_GRAY;
                                 }
+                                std::cout << "O ";
                             }
                             std::cout << COLOR_RESET << "\n";
                         }
@@ -730,7 +727,7 @@ void IZoneManager::PostGeoInit() {
             }
         }
 
-
+        LOG(WARNING) << "Pregeneration took " << duration_cast<seconds>(steady_clock::now() - now);
     }
 }
 
