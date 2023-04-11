@@ -32,6 +32,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*	Similarly, what about missing RoutedRpc handlers?
 		*/
 
+		
 		if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
 			// If this is a real peer, allow ONLY read-only actions
 			if (!(hash == Hashes::Routed::C2S_RequestIcon

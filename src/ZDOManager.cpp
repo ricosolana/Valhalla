@@ -23,12 +23,12 @@ void IZDOManager::Init() {
 		[this](Peer*, BYTES_t bytes) {
 			// TODO constraint check
 			DataReader(bytes).AsEach([this](const ZDOID& zdoid) {
-				if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
-					if (auto&& zdo = GetZDO(zdoid))
-						Instantiate(Hashes::Object::piece_jackoturnip, zdo->Position());
-					DestroyZDO(zdoid);
-				} else 
-					EraseZDO(zdoid);
+				//if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+				//	if (auto&& zdo = GetZDO(zdoid))
+				//		Instantiate(Hashes::Object::piece_jackoturnip, zdo->Position());
+				//	DestroyZDO(zdoid);
+				//} else 
+				EraseZDO(zdoid);
 			});
 		}
 	);
@@ -51,16 +51,15 @@ void IZDOManager::Update() {
 	});
 
 	auto&& peers = NetManager()->GetPeers();
-
-	if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK) {
-
-		// Occasionally release ZDOs
-		PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
-			for (auto&& peer : peers) {
-				AssignOrReleaseZDOs(*peer);
-			}
-		});
-	}
+	
+	// Occasionally release ZDOs
+	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
+		for (auto&& peer : peers) {
+			if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK
+				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+			AssignOrReleaseZDOs(*peer);
+		}
+	});
 
 	// Send ZDOS:
 	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
