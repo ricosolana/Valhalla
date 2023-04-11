@@ -70,10 +70,12 @@ void IValhalla::LoadFiles(bool fresh) {
             if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
             if (fresh) m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
             if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
+            if (fresh) m_settings.worldPregenerate = loadNode["world-pregenerate"].as<bool>(false);
             m_settings.worldSave = loadNode["world-save"].as<bool>(true);
             m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
             if (fresh) m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
             if (fresh) m_settings.worldMode = (WorldMode) loadNode["world-mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
+            if (fresh) m_settings.worldCaptureDumpSize = std::clamp(loadNode["world-capture-dump-size"].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
 
             //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
             m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
@@ -239,19 +241,21 @@ void IValhalla::Start() {
 
     m_worldTime = 2040;
 
-    PrefabManager()->Init();
     ZDOManager()->Init();
-    ZoneManager()->Init();
     EventManager()->Init();
-    WorldManager()->Init();
-    GeoManager()->Init();
-    ZoneManager()->PrepareAllFeatures();
-    DungeonManager()->Init();
-    ModManager()->Init();
+    PrefabManager()->Init();
 
-    HeightmapBuilder()->Init();
-    NetManager()->Init();
-        
+    ZoneManager()->PostPrefabInit();
+    DungeonManager()->PostPrefabInit();
+
+    WorldManager()->PostZoneInit();
+    GeoManager()->PostWorldInit();
+    HeightmapBuilder()->PostGeoInit();
+    ZoneManager()->PostGeoInit();
+
+    NetManager()->PostInit();
+    ModManager()->PostInit();
+
     /*
     if (SERVER_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();

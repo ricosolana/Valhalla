@@ -44,7 +44,7 @@ private:
     //void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
 
 public:
-    void Init();
+    void PostInit();
     void Update();
     void Uninit();
 

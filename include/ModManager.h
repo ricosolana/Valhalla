@@ -134,7 +134,7 @@ private:
     void LoadMod(Mod& mod);
 
 public:
-    void Init();
+    void PostInit();
     void Uninit();
     void Update();
 

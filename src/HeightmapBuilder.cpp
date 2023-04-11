@@ -13,7 +13,7 @@ IHeightmapBuilder* HeightmapBuilder() {
 }
 
 // public
-void IHeightmapBuilder::Init() {
+void IHeightmapBuilder::PostGeoInit() {
     m_builder = std::thread([this]() {
         OPTICK_THREAD("HMBuilder");
         el::Helpers::setThreadName("HMBuilder");

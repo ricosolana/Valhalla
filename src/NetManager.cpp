@@ -338,7 +338,7 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
     return peers;
 }
 
-void INetManager::Init() {
+void INetManager::PostInit() {
     LOG(INFO) << "Initializing NetManager";
 
     // load session file if replaying
@@ -428,7 +428,7 @@ void INetManager::Update() {
                         }
 
                         // save at ~256Kb increments
-                        if (captureQueueSize > 256000) {
+                        if (captureQueueSize > SERVER_SETTINGS.worldCaptureDumpSize) {
                             saveBuffered(size);
                         }
 

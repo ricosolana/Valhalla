@@ -17,7 +17,7 @@ private:
 	size_t m_nextIndex = 0;
 
 public:
-    void Init();
+    void PostPrefabInit();
 
 	const Dungeon* GetDungeon(HASH_t hash) const {
 		auto&& find = m_dungeons.find(hash);

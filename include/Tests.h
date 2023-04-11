@@ -792,7 +792,7 @@ public:
         Valhalla()->LoadFiles(true);
 
         PrefabManager()->Init();
-        DungeonManager()->Init();
+        DungeonManager()->PostPrefabInit();
 
         //DungeonManager()->GetDungeon(
         //    //VUtils::String::GetStableHashCode("DG_Cave")

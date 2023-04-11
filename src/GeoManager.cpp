@@ -13,7 +13,7 @@ IGeoManager* GeoManager() {
 
 
 
-void IGeoManager::Init() {
+void IGeoManager::PostWorldInit() {
 	LOG(INFO) << "Initializing GeoManager";
 
 	m_world = WorldManager()->GetWorld();

@@ -59,7 +59,7 @@ public:
     // Threadsafe
     void WriteFileWorldDB(bool sync);
 
-    void Init();
+    void PostZoneInit();
 };
 
 // Manager class for everything related to world file loading and file saving

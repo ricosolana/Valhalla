@@ -154,7 +154,7 @@ private:
 	float GetDeepNorthHeight(float wx, float wy);
 
 public:
-	void Init();
+	void PostWorldInit();
 
 	bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 

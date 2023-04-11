@@ -831,7 +831,7 @@ void IModManager::LoadAPI() {
 
     m_state["ZoneManager"] = ZoneManager();
     m_state.new_usertype<IZoneManager>("IZoneManager",
-        "GenerateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::GenerateZone),
+        "PopulateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::PopulateZone),
         "GetNearestFeature", &IZoneManager::GetNearestFeature,
         //"RegenerateZone", &IZoneManager::RegenerateZone,
         "WorldToZonePos", &IZoneManager::WorldToZonePos,
@@ -1057,7 +1057,7 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
     return sol::stack::push(L, description);
 }
 
-void IModManager::Init() {
+void IModManager::PostInit() {
     LOG(INFO) << "Initializing ModManager";
 
     m_state.set_exception_handler(&my_exception_handler);

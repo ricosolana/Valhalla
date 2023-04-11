@@ -256,7 +256,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 
 
 
-void IWorldManager::Init() {
+void IWorldManager::PostZoneInit() {
 	LOG(INFO) << "Initializing WorldManager";
 
 	m_world = RetrieveWorld(SERVER_SETTINGS.worldName, SERVER_SETTINGS.worldSeed);
