@@ -14,62 +14,66 @@ IHeightmapBuilder* HeightmapBuilder() {
 
 // public
 void IHeightmapBuilder::PostGeoInit() {
-    m_builder = std::thread([this]() {
-        OPTICK_THREAD("HMBuilder");
-        el::Helpers::setThreadName("HMBuilder");
+    for (int i = 0; i < std::max(1, (int)std::thread::hardware_concurrency()) * 2; i++) {
 
-        LOG(INFO) << "Builder started";
-        while (!m_stop) {
-            OPTICK_FRAME("BuilderThread");
-            bool buildMore;
-            {
-                std::scoped_lock<std::mutex> scoped(m_lock);
-                buildMore = !m_toBuild.empty();
+        m_builders.push_back(std::jthread([this, i](std::stop_token token) {
+            std::string name = "HMBuilder" + std::to_string(i);
+
+            OPTICK_THREAD(name.c_str());
+            el::Helpers::setThreadName(name);
+
+            LOG(INFO) << "Builder started";
+            while (!token.stop_requested()) {
+                //OPTICK_FRAME("BuilderThread");
+                bool buildMore;
+                {
+                    std::scoped_lock<std::mutex> scoped(m_lock);
+                    buildMore = !m_toBuild.empty();
+                }
+
+                if (buildMore) {
+                    ZoneID zone;
+                    {
+                        std::scoped_lock<std::mutex> scoped(m_lock);
+
+                        auto&& begin = m_toBuild.begin();
+
+                        zone = *begin;
+                        m_toBuild.erase(begin);
+                    }
+
+                    auto base(std::make_unique<BaseHeightmap>());
+                    Build(base.get(), zone);
+                    auto heightmap(std::make_unique<Heightmap>(zone, std::move(base)));
+
+                    {
+                        std::scoped_lock<std::mutex> scoped(m_lock);
+                        m_ready[zone] = std::move(heightmap);
+
+                        // start dropping uneaten heightmaps (poor heightmaps)
+                        // not really necessary? Why dorp heightmaps?
+                        //while (m_ready.size() > 16) {
+                        //    m_ready.erase(m_ready.begin());
+                        //}
+                    }
+                }
+                std::this_thread::sleep_for(1ms);
             }
-
-            if (buildMore) {
-                ZoneID zone;
-                {
-                    std::scoped_lock<std::mutex> scoped(m_lock);
-
-                    auto&& begin = m_toBuild.begin();
-
-                    zone = *begin;
-                    m_toBuild.erase(begin);
-                }
-
-                auto base(std::make_unique<BaseHeightmap>());
-                Build(base.get(), zone);
-
-                {
-                    std::scoped_lock<std::mutex> scoped(m_lock);
-                    m_ready[zone] = std::make_unique<Heightmap>(zone, std::move(base));
-
-                    //static auto prev(steady_clock::now());
-                    //auto now(steady_clock::now());
-                    //if (now - prev > 1min && m_ready.size() > 32) {
-                    //    m_ready.clear();
-                    //    prev = now;
-                    //}
-
-                        
-
-                    // start dropping uneaten heightmaps (poor heightmaps)
-                    // not really necessary? Why dorp heightmaps?
-                    //while (m_ready.size() > 16) {
-                    //    m_ready.erase(m_ready.begin());
-                    //}
-                }
-            }  
-            std::this_thread::sleep_for(1ms);
-        }
-    });
+        }));
+    }
 }
 
 void IHeightmapBuilder::Uninit() {
-    m_stop = true;
-    if (m_builder.joinable())
-        m_builder.join();
+    // First request all to stop
+    for (auto&& builder : m_builders) {
+        builder.request_stop();
+    }
+
+    // Then join each 
+    for (auto&& builder : m_builders) {
+        if (builder.joinable())
+            builder.join();
+    }
 }
 
 

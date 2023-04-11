@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 #include "HeightmapManager.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -9,10 +11,9 @@ class IHeightmapBuilder {
 private:
     UNORDERED_SET_t<ZoneID> m_toBuild;
     UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_ready;
-
-    std::thread m_builder;
+    
+    std::list<std::jthread> m_builders;
     std::mutex m_lock;
-    std::atomic_bool m_stop;
 
 private:
     static void Build(BaseHeightmap* data, const ZoneID& zone);
