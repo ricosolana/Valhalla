@@ -14,7 +14,7 @@ IHeightmapBuilder* HeightmapBuilder() {
 
 // public
 void IHeightmapBuilder::PostGeoInit() {
-    for (int i = 0; i < std::max(1, (int)std::thread::hardware_concurrency()) * 2; i++) {
+    for (int i = 0; i < std::max(1, (int)std::thread::hardware_concurrency()) * 5; i++) {
 
         m_builders.push_back(std::jthread([this, i](std::stop_token token) {
             std::string name = "HMBuilder" + std::to_string(i);
@@ -76,7 +76,17 @@ void IHeightmapBuilder::Uninit() {
     }
 }
 
+void IHeightmapBuilder::Update() {
+    PERIODIC_NOW(1min, {
+        {
+            std::scoped_lock<std::mutex> scoped(m_lock);
+            m_ready.clear();
+        }
 
+        while (m_builders.size() > std::thread::hardware_concurrency() - 1)
+            m_builders.pop_back();
+    });
+}
 
 // private
 void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {

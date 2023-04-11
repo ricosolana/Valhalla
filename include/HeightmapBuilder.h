@@ -21,6 +21,8 @@ private:
 public:
     void PostGeoInit();
     void Uninit();
+
+    void Update();
     
     std::unique_ptr<Heightmap> PollHeightmap(const ZoneID& zone);
 

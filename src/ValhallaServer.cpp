@@ -359,6 +359,7 @@ void IValhalla::Update() {
     ZDOManager()->Update();
     ZoneManager()->Update();
     EventManager()->Update();
+    HeightmapBuilder()->Update();
 }
 
 void IValhalla::PeriodUpdate() {
