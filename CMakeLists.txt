@@ -27,6 +27,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_steamapi)
 include(get_cpm)
 
+
+
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
@@ -42,12 +44,66 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 #find_package(robin_hood CONFIG REQUIRED)
 find_package(ZLIB REQUIRED) # able to remove; nothing *has* to be compressed, could include as a side-package?
-find_package(lua CONFIG REQUIRED)
-#find_package(sol2 CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
-find_package(tomlplusplus CONFIG REQUIRED)
+
+
+#find_package(Lua CONFIG REQUIRED)
+CPMAddPackage(
+    NAME Lua
+    GITHUB_REPOSITORY lua/lua
+    VERSION 5.4.4
+    DOWNLOAD_ONLY YES
+)
+if(Lua_ADDED)
+    file(GLOB Lua_sources ${Lua_SOURCE_DIR}/*.c)
+    list(REMOVE_ITEM Lua_sources "${Lua_SOURCE_DIR}/lua.c" "${Lua_SOURCE_DIR}/luac.c" "${Lua_SOURCE_DIR}/onelua.c")
+    add_library(lua STATIC ${Lua_sources})
+    target_include_directories(lua SYSTEM PUBLIC $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>)
+    install(TARGETS lua
+		EXPORT lua-targets
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+    install(EXPORT lua-targets DESTINATION ${LIB_INSTALL_DIR}/lua_ac/cmake)
+    export(EXPORT lua-targets)
+endif()
+
+
+CPMAddPackage(
+    NAME sol2
+    GITHUB_REPOSITORY ThePhD/sol2
+    VERSION 3.2.2
+    DOWNLOAD_ONLY YES
+)
+if(sol2_ADDED)
+    add_library(sol2 INTERFACE IMPORTED)
+    target_include_directories(sol2 SYSTEM INTERFACE ${sol2_SOURCE_DIR}/include)
+    target_link_libraries(sol2 INTERFACE lua)
+endif()
+
+
+#find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
+CPMAddPackage(
+    NAME yaml-cpp
+    GITHUB_REPOSITORY jbeder/yaml-cpp
+    #VERSION 0.7.0
+    GIT_TAG yaml-cpp-0.7.0
+)
+target_include_directories(yaml-cpp PUBLIC ${yamlcpp_SOURCE_DIR}/src)
+
+
+#find_package(tomlplusplus CONFIG REQUIRED)
     
-find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
+#find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
+
+CPMAddPackage(
+    NAME zstd
+    GITHUB_REPOSITORY facebook/zstd
+    VERSION 1.5.5
+)
+#target_include_directories(zstd PUBLIC ${zstd_SOURCE_DIR})
+add_library(zstd INTERFACE)
+target_include_directories(zstd INTERFACE ${zstd_SOURCE_DIR})
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
 
@@ -142,7 +198,7 @@ add_executable(${PROJECT_NAME}
  "src/CaptureSteamSocket.cpp")
 
 # change this to wherever your sol is
-set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
+#set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
 
 # change to wherever your ankerl is
 set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
@@ -150,25 +206,49 @@ set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMAPI_SOURCE_DIR}
-    ${SOL2_ROOT_DIR}/include
+    #${SOL2_ROOT_DIR}/include
     ${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
 )
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+# linux?
+#set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std=c++2a")
+#set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std=gnu++2a")
 
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC Threads::Threads
+#target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+
+#target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+
+#set(CMAKE_CXX_STANDARD 23)
+
+#set(CMAKE_CXX23_STANDARD_COMPILE_OPTION "-std=c++23")
+#set(CMAKE_CXX23_EXTENSION_COMPILE_OPTION "-std=gnu++23")
+#
+#set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
+#set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
+#
+
+set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+    Threads::Threads
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
     #robin_hood::robin_hood
     ZLIB::ZLIB
-    PUBLIC lua
-    #sol2
-    yaml-cpp
-    PRIVATE tomlplusplus::tomlplusplus
+    #PUBLIC lua
+    sol2
+    yamlcpp
+    #PRIVATE tomlplusplus::tomlplusplus
     easyloggingpp
     OptickCore
-    PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
+    #PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
+    zstd
 )
 
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
