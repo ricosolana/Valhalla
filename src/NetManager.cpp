@@ -237,7 +237,9 @@ void INetManager::OnPeerConnect(Peer& peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
-        WorldManager()->WriteFileWorldDB(true);
+        //WorldManager()->WriteFileWorldDB(true);
+
+        WorldManager()->GetWorld()->WriteFiles();
 
         peer->ConsoleMessage("Saved the world");
         });
@@ -343,7 +345,11 @@ void INetManager::PostInit() {
 
     // load session file if replaying
     if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
-        if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(fs::path(VALHALLA_WORLD_RECORDING_PATH) / "sessions.pkg")) {
+        auto path = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
+            / WorldManager()->GetWorld()->m_name 
+            / "sessions.pkg";
+
+        if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
             DataReader reader(*opt);
 
             auto count = reader.Read<int32_t>();
@@ -366,19 +372,24 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        auto&& peer = std::make_unique<Peer>(std::move(*opt));
-        if (ModManager()->CallEvent(IModManager::Events::Connect, peer.get())) {
-
+        auto&& ptr = std::make_unique<Peer>(std::move(*opt));
+        if (ModManager()->CallEvent(IModManager::Events::Connect, ptr.get())) {
+            Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
+            
             if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
                 // record peer joindata
                 m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
                     { Valhalla()->Nanos(), 0ns } });
                 peer->m_disconnectCapture = &m_sortedSessions.back().second.second;
 
-                const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / peer->m_socket->GetHostName() / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
-                Peer* ptr = peer.get();
+                const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
+                    / WorldManager()->GetWorld()->m_name 
+                    / peer->m_socket->GetHostName() 
+                    / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
+
                 std::string host = ptr->m_socket->GetHostName();
-                peer->m_recordThread = std::jthread([root, ptr, host](std::stop_token token) {
+
+                peer->m_recordThread = std::jthread([root, peer, host](std::stop_token token) {
                     size_t chunkIndex = 0;
 
                     fs::create_directories(root);
@@ -392,14 +403,14 @@ void INetManager::Update() {
                             nanoseconds ns;
                             BYTES_t packet;
                             {
-                                std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
+                                std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
 
-                                auto&& front = ptr->m_recordBuffer.front();
+                                auto&& front = peer->m_recordBuffer.front();
                                 ns = front.first;
                                 packet = std::move(front.second);
-                                ptr->m_captureQueueSize -= packet.size();
+                                peer->m_captureQueueSize -= packet.size();
 
-                                ptr->m_recordBuffer.pop_front();
+                                peer->m_recordBuffer.pop_front();
                             }
                             writer.Write(ns.count());
                             writer.Write(packet);
@@ -422,9 +433,9 @@ void INetManager::Update() {
                         size_t size = 0;
                         size_t captureQueueSize = 0;
                         {
-                            std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
-                            size = ptr->m_recordBuffer.size();
-                            captureQueueSize = ptr->m_captureQueueSize;
+                            std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
+                            size = peer->m_recordBuffer.size();
+                            captureQueueSize = peer->m_captureQueueSize;
                         }
 
                         // save at ~256Kb increments
@@ -440,8 +451,8 @@ void INetManager::Update() {
                     // Save any buffered captures before exit
                     int size = 0;
                     {
-                        std::scoped_lock<std::mutex> scoped(ptr->m_recordmux);
-                        size = ptr->m_recordBuffer.size();
+                        std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
+                        size = peer->m_recordBuffer.size();
                     }
 
                     if (size)
@@ -451,8 +462,6 @@ void INetManager::Update() {
 
                 LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
             }
-
-            m_connectedPeers.push_back(std::move(peer));
         }
     }
 
@@ -466,6 +475,11 @@ void INetManager::Update() {
 
                 m_connectedPeers.push_back(std::move(peer));
                 m_sortedSessions.pop_front();
+            }
+            else {
+                PERIODIC_NOW(30s, {
+                    LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
+                });
             }
         }
     }
@@ -582,7 +596,11 @@ void INetManager::Uninit() {
             writer.Write(session.second.second.count());
         }
 
-        VUtils::Resource::WriteFile(fs::path(VALHALLA_WORLD_RECORDING_PATH) / "sessions.pkg", bytes);
+        auto path = fs::path(VALHALLA_WORLD_RECORDING_PATH)
+            / WorldManager()->GetWorld()->m_name
+            / "sessions.pkg";
+
+        VUtils::Resource::WriteFile(path, bytes);
     }
 
     m_acceptor.reset();

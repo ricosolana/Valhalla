@@ -2,6 +2,7 @@
 #include "VUtilsResource.h"
 #include "DataReader.h"
 #include "ValhallaServer.h"
+#include "WorldManager.h"
 
 ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnectTime) {
 
@@ -9,7 +10,10 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
 
     this->m_disconnectTime = disconnectTime;
 
-    const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) / host / std::to_string(session);
+    const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
+        / WorldManager()->GetWorld()->m_name 
+        / host 
+        / std::to_string(session);
 
     m_thread = std::jthread([this, host, root](std::stop_token token) {
         size_t chunkIndex = 0;

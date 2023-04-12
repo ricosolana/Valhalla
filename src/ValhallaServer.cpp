@@ -239,7 +239,10 @@ void IValhalla::Start() {
 
     this->LoadFiles(true);
 
-    m_worldTime = 2040;
+    //m_worldTime = 2040;
+    m_worldTime = GetMorning(1);
+
+    m_serverTimeMultiplier = 3;
 
     ZDOManager()->Init();
     EventManager()->Init();
@@ -332,7 +335,8 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    WorldManager()->WriteFileWorldDB(true);
+    if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK)
+        WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
     VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
@@ -381,7 +385,7 @@ void IValhalla::PeriodUpdate() {
 
     if (m_settings.worldMode == WorldMode::PLAYBACK) {
         PERIODIC_NOW(7s, {
-            Broadcast(UIMsgType::TopLeft, std::string("World playback ") + std::to_string(duration_cast<seconds>(Valhalla()->Nanos()).count()) + "s");
+            Broadcast(UIMsgType::TopLeft, "World playback " + std::to_string(duration_cast<seconds>(Valhalla()->Nanos()).count()) + "s");
         });
     }
 
@@ -390,10 +394,10 @@ void IValhalla::PeriodUpdate() {
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
             LOG(INFO) << "World saving in 30s";
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-            });
+        });
 
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
-            WorldManager()->WriteFileWorldDB(false);
+            WorldManager()->GetWorld()->WriteFiles();
         });
     }
 }

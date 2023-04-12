@@ -727,6 +727,17 @@ void IZoneManager::PostGeoInit() {
             }
         }
 
+        if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+            // then save world as a copy to captures
+            auto world(WorldManager()->GetWorld());
+            auto root(fs::path(VALHALLA_WORLD_RECORDING_PATH) / world->m_name);
+
+            fs::create_directories(root);
+
+            // save world
+            world->WriteFiles(root);
+        }
+
         LOG(WARNING) << "Pregeneration took " << duration_cast<seconds>(steady_clock::now() - now);
     }
 }
