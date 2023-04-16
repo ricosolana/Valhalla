@@ -58,13 +58,15 @@ void IValhalla::LoadFiles(bool fresh) {
             if (m_settings.serverName.empty()
                 || m_settings.serverName.length() < 3
                 || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
-            m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+            if (fresh) m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
             //m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
-            m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
-            if (!m_settings.serverPassword.empty()
-                && (m_settings.serverPassword.length() < 5
-                    || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
-            m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
+            if (fresh) {
+                m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
+                if (!m_settings.serverPassword.empty()
+                    && (m_settings.serverPassword.length() < 5
+                        || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
+            }
+            if (fresh) m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
             if (fresh) m_settings.serverDedicated = loadNode["server-dedicated"].as<bool>(true);
 
             m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
