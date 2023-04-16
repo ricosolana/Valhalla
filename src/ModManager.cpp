@@ -251,8 +251,8 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<DataReader>("DataReader",
         sol::constructors<DataReader(BYTES_t&)>(),
 
-        "ToWriter", &DataReader::ToWriter,
-        "provider", &DataReader::m_provider,
+        //"ToWriter", &DataReader::ToWriter,
+        "buf", &DataReader::m_buf,
         "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
         "ReadBool", &DataReader::ReadBool,

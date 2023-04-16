@@ -63,7 +63,7 @@ private:
     fs::file_time_type m_settingsLastTime {};
 
 private:
-    void LoadFiles(bool fresh);
+    void LoadFiles(bool reloading);
 
 public:
     void Start();

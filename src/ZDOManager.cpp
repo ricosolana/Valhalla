@@ -157,7 +157,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 		zdo->m_id = reader.Read<ZDOID>();
-		auto zdoReader = reader.SubRead();
+		auto zdoReader = reader.Read<DataReader>();
 
 		bool modern = zdo->Load(zdoReader, version);
 
@@ -742,7 +742,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			auto owner = reader.Read<OWNER_t>();		// owner
 			auto pos = reader.Read<Vector3f>();			// position
 
-			auto des = reader.SubRead();				// dont move this
+			auto des = reader.Read<DataReader>();				// dont move this
 
 			ZDO::Rev rev = { 
 				.m_dataRev = dataRev, 

@@ -137,7 +137,7 @@ namespace VUtils::Random {
 
 
     void GenerateBytes(BYTE_t* out, unsigned int count) {
-        RAND_bytes(out, count);
+        RAND_bytes(reinterpret_cast<unsigned char*>(out), count);
     }
 
     BYTES_t GenerateBytes(unsigned int count) {

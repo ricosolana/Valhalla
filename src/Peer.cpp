@@ -20,35 +20,43 @@ Peer::Peer(ISocket::Ptr socket)
     });
 
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
-        rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, BYTES_t bytes) {
+        rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader)
+        //rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, BYTES_t bytes)
+            //int32_t,
+            //OWNER_t uuid, std::string version, uint32_t nversion, Vector3f pos, std::string name, std::string password, BYTES_t ticket) 
+            {
             // Forward call to rpc
-            DataReader reader(bytes);
+            //DataReader reader(bytes);
+
+                //std::string()
+                //std::string_view()
 
             rpc->m_uuid = reader.Read<OWNER_t>();
             if (!rpc->m_uuid)
                 throw std::runtime_error("peer provided 0 owner");
 
-            auto version = reader.Read<std::string>();
-            auto nversion = reader.Read<uint32_t>();
+            auto version = reader.Read<std::string_view>();
             LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
+
+            auto nversion = reader.Read<uint32_t>();
 
             rpc->m_pos = reader.Read<Vector3f>();
             rpc->m_name = reader.Read<std::string>();
             //if (!(name.length() >= 3 && name.length() <= 15))
                 //throw std::runtime_error("peer provided invalid length name");
-
-            auto password = reader.Read<std::string>();
-            auto ticket = reader.Read<BYTES_t>(); // read in the dummy ticket
+            
+            auto password = reader.Read<std::string_view>();
 
             if (SERVER_SETTINGS.playerAuth) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
+                auto ticket = reader.Read<BYTE_VIEW_t>();
                 if (steamSocket 
                     && (SERVER_SETTINGS.serverDedicated
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
                         : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
-                    return rpc->Close(ConnectionStatus::ErrorBanned);
+                    return rpc->Close(ConnectionStatus::ErrorDisconnected);
             }
 
             if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))

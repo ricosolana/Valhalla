@@ -30,7 +30,7 @@ void DataWriter::WriteSomeBytes(const BYTE_t* buffer, size_t count) {
 
 
 DataReader DataWriter::ToReader() {
-    return DataReader(this->m_provider, this->m_pos);
+    return DataReader(this->m_provider.get(), this->m_pos);
 }
 
 void DataWriter::Write(const BYTE_t* in, size_t count) {

@@ -25,7 +25,7 @@ IValhalla* Valhalla() {
 
 
 
-void IValhalla::LoadFiles(bool fresh) {
+void IValhalla::LoadFiles(bool reloading) {
     bool fileError = false;
     
     {
@@ -41,7 +41,7 @@ void IValhalla::LoadFiles(bool fresh) {
                 }
             }
             else {
-                if (fresh) {
+                if (!reloading) {
                     LOG(INFO) << "Server config not found, creating...";
                 }
                 fileError = true;
@@ -53,39 +53,34 @@ void IValhalla::LoadFiles(bool fresh) {
         //  to not pollute the primary base server code
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
-        if (fresh || !fileError) {
-            m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
-            if (m_settings.serverName.empty()
-                || m_settings.serverName.length() < 3
-                || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
-            if (fresh) m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
-            //m_settings.serverPassword = loadNode["server-password"].as<std::string>("secret");
-            if (fresh) {
+        if (!reloading || !fileError) {
+            if (!reloading) {
+                m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
+                if (m_settings.serverName.empty()
+                    || m_settings.serverName.length() < 3
+                    || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
+                m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+            
                 m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
                 if (!m_settings.serverPassword.empty()
                     && (m_settings.serverPassword.length() < 5
                         || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
+            
+                m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
+                m_settings.serverDedicated = loadNode["server-dedicated"].as<bool>(true);
+                            
+                m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
+                if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
+                m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
+                if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
             }
-            if (fresh) m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
-            if (fresh) m_settings.serverDedicated = loadNode["server-dedicated"].as<bool>(true);
-
-            m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
-            if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
-            m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
-            if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
             m_settings.worldSave = loadNode["world-save"].as<bool>(true);
             m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
             m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
-            //m_settings.playerAutoPassword = loadNode["player-auto-password"].as<bool>(true);
             m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
             m_settings.playerMax = std::clamp(loadNode["player-max"].as<int>(10), 1, 99999);     // max allowed players
             m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
-            //m_settings.playerList = loadNode["player-list"].as<bool>(true);                     // does not send player list to players
-            //m_settings.playerArrivePing = loadNode["player-arrive-ping"].as<bool>(true);        // prevent player join ping
-            //m_settings.playerForceVisible = loadNode["player-map-visible"].as<bool>(false);   // force players to be visible on map # TODO put this in lua?
-            //m_settings.playerSleep = loadNode["player-sleep"].as<bool>(true);
-            //m_settings.playerSleepSolo = loadNode["player-sleep-solo"].as<bool>(false);
 
             m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
 
@@ -121,7 +116,7 @@ void IValhalla::LoadFiles(bool fresh) {
     
     LOG(INFO) << "Server config loaded";
 
-    if (fresh && fileError) {
+    if (!reloading && fileError) {
         YAML::Node saveNode;
         
         saveNode["server-name"] = m_settings.serverName;
@@ -195,7 +190,7 @@ void IValhalla::LoadFiles(bool fresh) {
         m_admin = *opt;
     }
 
-    if (!fresh) {
+    if (reloading) {
         // then iterate players, settings active and inactive
         for (auto&& peer : NetManager()->GetPeers()) {
             peer->m_admin = m_admin.contains(peer->m_name);
@@ -225,7 +220,7 @@ void IValhalla::Start() {
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
 
-    this->LoadFiles(true);
+    this->LoadFiles(false);
 
     m_worldTime = 2040;
 
@@ -378,7 +373,7 @@ void IValhalla::PeriodUpdate() {
     auto lastWriteTime = fs::last_write_time("server.yml", err);
     if (lastWriteTime != this->m_settingsLastTime) {
         // reload the file
-        LoadFiles(false);
+        LoadFiles(true);
     }
 
     if (m_settings.worldSave) {

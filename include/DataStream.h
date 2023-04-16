@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include "VUtils.h"
 
 class DataStream {
@@ -38,15 +40,19 @@ protected:
     }
 
 public:
-    std::reference_wrapper<BYTES_t> m_provider;
-    size_t m_pos;
+    //std::reference_wrapper<BYTES_t> m_provider;
+    //BYTE_VIEW_t m_buf;
+    size_t m_pos {};
 
 public:
-    DataStream(BYTES_t &bytes) : m_provider(bytes), m_pos(0) {}
+    //DataStream(BYTES_t &bytes) : m_provider(bytes), m_pos(0) {}
+    //DataStream(BYTE_VIEW_t buf) : m_buf(buf), m_pos(0) {}
 
     // Returns the length of this stream
-    size_t Length() const {
-        return m_provider.get().size(); // static_cast<int32_t>(m_provider.get().size());
+    virtual size_t Length() const {
+        //return m_provider.get().size(); // static_cast<int32_t>(m_provider.get().size());
+        //return m_buf.size();
+        return 0;
     }
 
     // Returns the position of this stream
@@ -60,6 +66,11 @@ public:
         AssertPosition(pos);
 
         m_pos = pos;
+    }
+
+    const BYTE_t* Data() const {
+        //return m_buf.data();
+        return nullptr;
     }
 
 };

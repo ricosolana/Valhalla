@@ -18,11 +18,12 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, BYTES_t bytes) {
 		DataReader reader(bytes);
 		reader.Read<int64_t>(); // skip msgid
-		reader.ToWriter().Write(peer->m_uuid); reader.Read<OWNER_t>(); // force sender in place
+		//reader.ToWriter().Write(peer->m_uuid); reader.Read<OWNER_t>(); // force sender in place
+		reader.Read<OWNER_t>();
 		auto target = reader.Read<OWNER_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
-		auto params = reader.SubRead();
+		auto params = reader.Read<DataReader>();
 
 		/*
 		* Rpc and multi-execution dilemna

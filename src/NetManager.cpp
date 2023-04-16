@@ -159,12 +159,6 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnNewPeer(Peer& peer) {
-    //auto peer(std::make_unique<Peer>(std::move(socket)));
-
-    //peer->m_uuid = uuid;
-    //peer->m_name = name;
-    //peer->m_pos = pos;
-
     peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
 
     if (!ModManager()->CallEvent(IModManager::Events::Join, peer)) {

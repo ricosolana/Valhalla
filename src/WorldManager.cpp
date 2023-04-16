@@ -27,7 +27,7 @@ World::World(const std::string& name, const std::string& seedName) {
 }
 
 World::World(DataReader reader) {
-	reader = reader.SubRead();
+	reader = reader.Read<DataReader>();
 
 	auto worldVersion = reader.Read<int32_t>();
 
