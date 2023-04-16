@@ -41,26 +41,26 @@ class IValhalla {
     friend class Tests;
 
 private:
-    std::atomic_bool m_terminate;
+    std::atomic_bool m_terminate {};
 
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
 
-    ServerSettings m_settings;
-    OWNER_t m_serverID; // const
+    ServerSettings m_settings {};
+    OWNER_t m_serverID {}; // const
 
     steady_clock::time_point m_startTime; // const
     steady_clock::time_point m_prevUpdate;
     steady_clock::time_point m_nowUpdate;
 
-    WorldTime m_worldTime = 0;
+    WorldTime m_worldTime {};
 
-    bool m_playerSleep = false;
-    double m_playerSleepUntil = 0;
+    bool m_playerSleep {};
+    double m_playerSleepUntil {};
 
     double m_worldTimeMultiplier = 1;
 
-    fs::file_time_type m_settingsLastTime;
+    fs::file_time_type m_settingsLastTime {};
 
 private:
     void LoadFiles(bool fresh);

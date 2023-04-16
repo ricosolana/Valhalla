@@ -29,6 +29,7 @@ Peer::Peer(ISocket::Ptr socket)
                 throw std::runtime_error("peer provided 0 owner");
 
             auto version = reader.Read<std::string>();
+            auto nversion = reader.Read<uint32_t>();
             LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
@@ -43,7 +44,10 @@ Peer::Peer(ISocket::Ptr socket)
 
             if (SERVER_SETTINGS.playerAuth) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-                if (steamSocket && SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID()) != k_EBeginAuthSessionResultOK)
+                if (steamSocket 
+                    && (SERVER_SETTINGS.serverDedicated
+                        ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
+                        : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
                     return rpc->Close(ConnectionStatus::ErrorBanned);
             }
 

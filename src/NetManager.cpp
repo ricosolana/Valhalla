@@ -134,11 +134,12 @@ void INetManager::SendNetTime() {
 
 
 void INetManager::SendPeerInfo(Peer& peer) {
-    static BYTES_t bytes; bytes.clear();
+    BYTES_t bytes;
     DataWriter writer(bytes);
 
     writer.Write(Valhalla()->ID());
     writer.Write(VConstants::GAME);
+    writer.Write(VConstants::NETWORK);
     writer.Write(Vector3f::Zero()); // dummy
     writer.Write(""); // dummy
 
@@ -340,7 +341,10 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
 void INetManager::Init() {
     LOG(INFO) << "Initializing NetManager";
 
-    m_acceptor = std::make_unique<AcceptorSteam>();
+    if (SERVER_SETTINGS.serverDedicated)
+        m_acceptor = std::make_unique<AcceptorSteamDedicated>();
+    else 
+        m_acceptor = std::make_unique<AcceptorSteamP2P>();
     m_acceptor->Listen();
 }
 
@@ -385,7 +389,10 @@ void INetManager::Update() {
     }
 
     // TODO I think this is in the correct location?
-    SteamGameServer_RunCallbacks();
+    if (SERVER_SETTINGS.serverDedicated)
+        SteamGameServer_RunCallbacks();
+    else 
+        SteamAPI_RunCallbacks();
 
     // Cleanup
     {

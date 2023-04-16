@@ -65,6 +65,7 @@ void IValhalla::LoadFiles(bool fresh) {
                 && (m_settings.serverPassword.length() < 5
                     || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
             m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
+            if (fresh) m_settings.serverDedicated = loadNode["server-dedicated"].as<bool>(true);
 
             m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
             if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";

@@ -138,7 +138,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"    
-)
+ "src/AcceptorSteamP2P.cpp")
 
 # change this to wherever your sol is
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")

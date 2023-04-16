@@ -7,6 +7,7 @@ struct ServerSettings {
     uint16_t        serverPort;
     std::string     serverPassword;
     bool            serverPublic;
+    bool            serverDedicated;
 
     std::string     worldName;
     std::string     worldSeed;
