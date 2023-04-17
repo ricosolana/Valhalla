@@ -20,9 +20,9 @@ void IZDOManager::Init() {
 	LOG(INFO) << "Initializing ZDOManager";
 
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
-		[this](Peer*, BYTES_t bytes) {
+		[this](Peer*, DataReader reader) {
 			// TODO constraint check
-			DataReader(bytes).AsEach([this](const ZDOID& zdoid) {
+			reader.AsEach([this](const ZDOID& zdoid) {
 				EraseZDO(zdoid);
 			});
 		}
@@ -67,13 +67,12 @@ void IZDOManager::Update() {
 	// TODO make a member variable?
 	//	think about emulated zdo containers (like replaying actions to specific peers)
 	//	this is a functionality I might be planning on into the future
-	BYTES_t bytes;
 
-	DataWriter writer(bytes);
-	writer.Write(m_destroySendList);
+	m_temp.clear();
+	DataWriter(m_temp).Write(m_destroySendList);
 
 	m_destroySendList.clear();
-	RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, bytes);
+	RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
 }
 
 
@@ -104,27 +103,27 @@ void IZDOManager::InvalidateZDOZone(ZDO& zdo) {
 
 
 
-void IZDOManager::Save(DataWriter& pkg) {
+void IZDOManager::Save(DataWriter& writer) {
 	//pkg.Write(Valhalla()->ID());
-	pkg.Write<OWNER_t>(0);
-	pkg.Write(m_nextUid);
+	writer.Write<OWNER_t>(0);
+	writer.Write(m_nextUid);
 	
 	{
 		// Write zdos (persistent)
-		const auto start = pkg.Position();
+		const auto start = writer.Position();
 
 		int32_t count = 0;
-		pkg.Write(count);
+		writer.Write(count);
 
 		{
 			//NetPackage zdoPkg;
 			for (auto&& sectorObjects : m_objectsBySector) {
 				for (auto zdo : sectorObjects) {
 					if (zdo->m_prefab.get().AnyFlagsAbsent(Prefab::Flag::SESSIONED)) {
-						pkg.Write(zdo->ID());
-						pkg.SubWrite(
+						writer.Write(zdo->ID());
+						writer.SubWrite(
 							[&]() {
-								zdo->Save(pkg);
+								zdo->Save(writer);
 							}
 						);
 						count++;
@@ -134,13 +133,13 @@ void IZDOManager::Save(DataWriter& pkg) {
 		}
 
 		//const auto end = pkg.Position();
-		pkg.SetPos(start);
-		pkg.Write(count);
+		writer.SetPos(start);
+		writer.Write(count);
 		//pkg.SetPos(end);
-		pkg.SetPos(pkg.m_provider.get().size());
+		writer.SetPos(writer.Length());
 	}
 
-	pkg.Write<int32_t>(0);
+	writer.Write<int32_t>(0);
 }
 
 
@@ -678,8 +677,12 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	if (syncList.empty() && peer.m_invalidSector.empty())
 		return false;
 
-	static BYTES_t bytes; bytes.clear();
-	DataWriter writer(bytes);
+	// TODO a better optimization would be to use write a special
+	//	preserializer that prepends packet data to the peer-buffer
+	//	to avoid a few buffer allocs
+	//	this only matters if performance is upmost concern, which it is because c :>
+	m_temp.clear();
+	DataWriter writer(m_temp);
 
 	writer.Write(peer.m_invalidSector);
 
@@ -709,10 +712,10 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			.m_syncTime = time
 		};
 	}
-	writer.Write(ZDOID()); // null terminator
+	writer.Write(ZDOID::NONE); // null terminator
 
 	if (!peer.m_invalidSector.empty() || !syncList.empty()) {
-		peer.Invoke(Hashes::Rpc::ZDOData, bytes);
+		peer.Invoke(Hashes::Rpc::ZDOData, m_temp);
 		peer.m_invalidSector.clear();
 
 		return true;
@@ -722,10 +725,8 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 }
 
 void IZDOManager::OnNewPeer(Peer& peer) {
-	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, BYTES_t bytes) {
+	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
-
-		DataReader reader(bytes);
 
 		{
 			reader.AsEach([this](const ZDOID& zdoid) {

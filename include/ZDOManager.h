@@ -48,6 +48,8 @@ private:
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
 
+	BYTES_t m_temp;
+
 	//static const std::function<bool(const ZDO&, HASH_t, Prefab::FLAG_t, Prefab::FLAG_t)> PREFAB_FUNCTION;
 
 private:
