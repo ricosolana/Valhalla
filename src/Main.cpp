@@ -70,17 +70,17 @@ void initLogger(int argc, char** argv) {
 
         auto now(std::to_string(steady_clock::now().time_since_epoch().count()));
 
-        fs::path path = std::string(VALHALLA_LOGFILE_NAME) + "-" + now + ".zstd";
+        fs::path path = std::string(VH_LOGFILE_PATH) + "-" + now + ".zstd";
 
         fs::create_directories(path.parent_path(), ec);
 
-        if (auto log = VUtils::Resource::ReadFile<BYTES_t>(VALHALLA_LOGFILE_NAME)) {
+        if (auto log = VUtils::Resource::ReadFile<BYTES_t>(VH_LOGFILE_PATH)) {
             if (auto opt = ZStdCompressor().Compress(*log))
                 VUtils::Resource::WriteFile(path, *opt);
         }
     }
 
-    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, VALHALLA_LOGFILE_NAME);
+    loggerConfiguration.setGlobally(el::ConfigurationType::Filename, VH_LOGFILE_PATH);
     loggerConfiguration.setGlobally(el::ConfigurationType::ToFile, "true");
     loggerConfiguration.setGlobally(el::ConfigurationType::Enabled, "true");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);

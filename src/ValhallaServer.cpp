@@ -222,7 +222,7 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {
-    LOG(INFO) << "Starting Valhalla " << VALHALLA_SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
+    LOG(INFO) << "Starting Valhalla " << VH_SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
     
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
@@ -359,7 +359,8 @@ void IValhalla::Update() {
         m_worldTime += Delta() * m_worldTimeMultiplier;
     }
     
-    ModManager()->Update();
+    VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
+
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
@@ -371,7 +372,7 @@ void IValhalla::PeriodUpdate() {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
 
-    ModManager()->CallEvent(IModManager::Events::PeriodicUpdate);
+    VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
     if (m_settings.dungeonReset)
         DungeonManager()->TryRegenerateDungeons();

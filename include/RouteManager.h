@@ -58,7 +58,7 @@ public:
 		// Prefix
 		if (target == EVERYBODY) {
 			// targetZDO can have a value apparently
-			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
+			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
 
 			auto bytes = Serialize(SERVER_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
@@ -88,7 +88,7 @@ public:
 			auto results = sol::variadic_results(args.begin(), args.end());
 
 #ifdef MOD_EVENT_RESPONSE
-			if (!ModManager()->CallEvent(IModManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
+			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
 				return;
 #endif
 

@@ -26,7 +26,6 @@ IModManager* ModManager() {
 }
 
 IModManager::Mod& IModManager::LoadModInfo(const std::string& folderName) {
-
     YAML::Node loadNode;
 
     auto modPath = fs::path("mods") / folderName;
@@ -926,51 +925,6 @@ void IModManager::LoadAPI() {
 
 
 
-    // toml wrapper
-    //toml::parse
-    //m_state["package"]["searchers"] = m_state.create_table_with(1, LoadFileRequire);
-
-    /*
-    m_state["package"]["searchers"] = m_state.create_table_with(1, sol::as_function([this](std::string path, sol::this_environment te) {
-        
-        Mod* mod = nullptr;
-
-        if (te) {
-            sol::environment& env = te;
-            mod = env["this"].get<Mod*>();
-        }
-            
-        //sol::environment& env = te;
-
-        // first look in the sub mod dir
-        //  ./mods/MyExampleMod/
-        if (auto opt = VUtils::Resource::ReadFile<std::string>("./mods/" + (mod ? mod->m_name + "/" : "") + path + ".lua")) {
-            m_state.load(opt.value(), path);
-            //luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
-        }
-        else {
-            throw std::runtime_error("Module '" + path + "' not found");
-        }
-    }));*/
-
-    /*
-    m_state["package"]["searchers"][1] = [this](sol::this_environment te, const std::string& path) {
-        sol::environment& env = te;
-
-        Mod* mod = env["this"].get<Mod*>();
-
-        // first look in the sub mod dir
-        //  ./mods/MyExampleMod/
-        if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + (mod ? mod->m_name + "/" : "") + path + ".lua")) {
-            return m_state.load(opt.value(), path);
-        }
-        else {
-            throw std::runtime_error("Module " + path + " not found");
-        }
-    };*/
-
-
-
     {
         auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
 
@@ -1058,6 +1012,7 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
 }
 
 void IModManager::Init() {
+#ifdef VH_OPTION_ENABLE_MODS
     LOG(INFO) << "Initializing ModManager";
 
     m_state.set_exception_handler(&my_exception_handler);
@@ -1095,67 +1050,14 @@ void IModManager::Init() {
 
     LOG(INFO) << "Loaded " << m_mods.size() << " mods";
 
-    CallEvent(IModManager::Events::Enable);
+    VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
+#endif
 }
 
 void IModManager::Uninit() {
-    CallEvent(IModManager::Events::Disable);
+#ifdef VH_OPTION_ENABLE_MODS
+    VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
     m_callbacks.clear();
     m_mods.clear();
-}
-
-void IModManager::Update() {
-    ModManager()->CallEvent(IModManager::Events::Update);
-
-    // why is this proving to be such a pain
-    /*
-    if (m_reload) {
-        // first release all callbacks associated with the mod
-        for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-            auto&& callbacks = itr->second;
-            for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-                if (itr1->m_mod.get().m_reload) {
-                    itr1 = callbacks.erase(itr1);
-                }
-                else
-                    ++itr1;
-            }
-
-            // Pop callback set for tidy
-            if (callbacks.empty())
-                itr = m_callbacks.erase(itr);
-            else
-                ++itr;
-        }
-
-
-        // Unregister all Lua Rpcs
-        for (auto&& peer : NetManager()->GetPeers()) {
-            for (auto&& itr = peer->m_methods.begin(); itr != peer->m_methods.end(); ) {
-                auto method = dynamic_cast<MethodImplLua<Peer*>*>(itr->second.get());
-                if (method && method->m_mod->m_reload) {
-                    itr = peer->m_methods.erase(itr);
-                }
-                else
-                    ++itr;
-            }
-        }
-
-
-        for (auto&& pair : m_mods) {
-            auto&& mod = *pair.second.get();
-
-            if (mod.m_reload) {
-                LOG(INFO) << "Reloading mod " << mod.m_name;
-
-                mod.m_env.reset();
-                LoadMod(mod);
-                mod.m_reload = false;
-            }
-        }
-
-        m_state.collect_gc();
-
-        m_reload = false;
-    }*/
+#endif
 }

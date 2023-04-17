@@ -6,33 +6,36 @@ using namespace std::chrono_literals;
 
 //#define RUN_TESTS
 
-#define VALHALLA_SERVER_VERSION "v1.0.4"
-
-// Interval for RPC pinging
-// Should be inlined
-//#define RPC_PING_INTERVAL 1s
-
-// Enable AsyncQueue wait
-//#define USE_DEQUE_WAIT
-
-// DO NOT CHANGE THIS VALUE!
-//#define VALHEIM_APP_ID 892970
+#define VH_SERVER_VERSION "v1.0.4"
 
 // ELPP log file name
-#define VALHALLA_LOGFILE_NAME "logs/log.txt"
-
-// Whether to enable or disable
-//  Will explicitly enable 
-//  not exactly implemented
-#define VALHALLA_GENERATE_FEATURES
+#define VH_LOGFILE_PATH "logs/log.txt"
 
 #define VALHALLA_LUA_PATH "lua"
 #define VALHALLA_LUA_CPATH "bin"
 #define VALHALLA_MOD_PATH "mods"
 
-// Whether to evoke callbacks for RPC/route/event handlers invoked from within Lua 
-//  this is named terribly
-//#define MOD_EVENT_RESPONSE
+
+
+// Enable the zone subsystem
+#define VH_OPTION_ENABLE_ZONES
+
+// Enable zone subsystem generation
+#define VH_OPTION_ENABLE_ZONE_GENERATION
+
+// Enable the ZoneManager features
+#define VH_OPTION_ENABLE_ZONE_FEATURES
+
+// Enable the ZoneManager vegetation
+#define VH_OPTION_ENABLE_ZONE_VEGETATION
+
+
+
+// Enable the mod subsystem
+//#define VH_OPTION_ENABLE_MODS
+
+// Enable mod simulated mod rpc events
+//#define VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

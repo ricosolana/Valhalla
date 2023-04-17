@@ -36,7 +36,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		if (target == EVERYBODY) {
 			// Confirmed: targetZDO CAN have a value when globally routed
 			//assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");
-			if (!ModManager()->CallEvent(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
+			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
 				return;
 
 			// 'EVERYBODY' also targets the server
@@ -58,7 +58,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		else {
 			if (target != SERVER_ID) {
 				if (auto other = NetManager()->GetPeer(target)) {
-					if (!ModManager()->CallEvent(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
+					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
 						return;
 
 					other->Invoke(Hashes::Rpc::RoutedRPC, bytes);

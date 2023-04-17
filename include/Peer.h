@@ -126,7 +126,7 @@ public:
             return;
 
         // Prefix
-        if (!ModManager()->CallEvent(IModManager::Events::RpcOut ^ hash, this, params...))
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
             return;
 
         VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
@@ -134,7 +134,7 @@ public:
         m_socket->Send(DataWriter::Serialize(hash, params...));
 
         // Postfix
-        ModManager()->CallEvent(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
+        VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
     }
 
     template <typename... Types>
@@ -154,7 +154,7 @@ public:
             throw std::runtime_error("mismatched number of args");
 
         // Prefix
-        //if (!ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
+        //if (!VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
         //    return;
 
         VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
@@ -166,7 +166,7 @@ public:
         m_socket->Send(std::move(bytes));
 
         // Postfix
-        //ModManager()->CallEvent(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
+        //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
     }
 
 
@@ -278,7 +278,7 @@ public:
 
     template <typename... Types>
     void RouteView(const ZDOID& targetZDO, HASH_t hash, Types&&... params) {
-        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
         RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
@@ -308,7 +308,7 @@ public:
         auto results = sol::variadic_results(args.begin(), args.end());
 
 #ifdef MOD_EVENT_RESPONSE
-        if (!ModManager()->CallEvent(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO, sol::as_args(results)))
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO, sol::as_args(results)))
             return;
 #endif
 

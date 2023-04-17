@@ -60,7 +60,7 @@ public:
             << reader.Length() << "/" << reader.Position();
 
         // Prefix
-        if (!ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash, tuple))
+        if (!VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
             return true;
 
         bool result = true;
@@ -71,7 +71,7 @@ public:
             std::apply(m_func, tuple);
     
         // Postfix
-        ModManager()->CallEventTuple(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, tuple);
+        VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, tuple);
 
         return result;
     }
@@ -104,8 +104,8 @@ public:
         auto results(reader.DeserializeLua(state, m_types));
 
         // Prefix
-#ifdef MOD_EVENT_RESPONSE
-        if (!ModManager()->CallEvent(m_categoryHash ^ m_methodHash, sol::as_args(results))) 
+#ifdef VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
+        if (!VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash, sol::as_args(results)))
             return;
 #endif
 
@@ -117,8 +117,8 @@ public:
         }
 
         // Postfix
-#ifdef MOD_EVENT_RESPONSE
-        ModManager()->CallEvent(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results));
+#ifdef VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
+        VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results));
 #endif
 
         if (result.get_type() == sol::type::boolean)

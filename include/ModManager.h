@@ -42,9 +42,8 @@ public:
     };
 
     enum class EventStatus {
-        NONE = 0,
-        CANCEL = 1 << 0,
-        UNSUBSCRIBE = 1 << 1, // Set only when calling function self unsubscribes
+        NONE,
+        UNSUBSCRIBE, // Set only when calling function self unsubscribes
     };
 
     using Types = std::vector<Type>;
@@ -136,7 +135,6 @@ private:
 public:
     void Init();
     void Uninit();
-    void Update();
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
@@ -213,6 +211,14 @@ public:
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 };
+
+#ifdef VH_OPTION_ENABLE_MODS
+#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent(name, __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple(name, __VA_ARGS__)
+#else
+#define VH_DISPATCH_MOD_EVENT(name, ...) true
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) true
+#endif
 
 // Manager class for everything related to mods which affect server functionality
 IModManager* ModManager();

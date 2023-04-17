@@ -24,6 +24,7 @@ void IZoneManager::Init() {
     LOG(INFO) << "Initializing ZoneManager";
 
     {
+#ifdef VH_OPTION_ENABLE_ZONE_FEATURES
         // load ZoneLocations:
         auto opt = VUtils::Resource::ReadFile<BYTES_t>("features.pkg");
         if (!opt)
@@ -79,11 +80,7 @@ void IZoneManager::Init() {
 
                 auto hash = pkg.Read<HASH_t>();
 
-                piece.m_prefab = PrefabManager()->GetPrefab(hash);
-                if (!piece.m_prefab) {
-                    LOG(ERROR) << "Feature prefab instance missing prefab '" << loc->m_name << "' " << hash;
-                    throw std::runtime_error("prefab instance missing prefab");
-                }
+                piece.m_prefab = &PrefabManager()->RequirePrefab(hash);
 
                 piece.m_pos = pkg.Read<Vector3f>();
                 piece.m_rot = pkg.Read<Quaternion>();
@@ -95,9 +92,12 @@ void IZoneManager::Init() {
         }
 
         LOG(INFO) << "Loaded " << count << " features";
+
+#endif
     }    
 
     {
+#ifdef VH_OPTION_ENABLE_ZONE_VEGETATION
         // load Foliage:
         auto opt = VUtils::Resource::ReadFile<BYTES_t>("vegetation.pkg");
         if (!opt)
@@ -116,13 +116,7 @@ void IZoneManager::Init() {
 
             auto prefabName = pkg.Read<std::string>();
 
-            veg->m_prefab = PrefabManager()->GetPrefab(prefabName);
-            //assert(veg->m_prefab && "missing vegetation prefab");
-
-            if (!veg->m_prefab) {
-                LOG(ERROR) << "vegetation missing prefab '" << prefabName << "'";
-                throw std::runtime_error("prefab missing");
-            }
+            veg->m_prefab = &PrefabManager()->RequirePrefab(prefabName);
 
             veg->m_biome = (Biome) pkg.Read<int32_t>();
             veg->m_biomeArea = (BiomeArea) pkg.Read<int32_t>();
@@ -160,6 +154,7 @@ void IZoneManager::Init() {
         }
 
         LOG(INFO) << "Loaded " << count << " vegetation";
+#endif
     }
 
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
@@ -229,7 +224,7 @@ bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
 
 // private
 void IZoneManager::SendGlobalKeys() {
-    RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
 void IZoneManager::SendGlobalKeys(Peer& peer) {
@@ -250,7 +245,7 @@ void IZoneManager::SendLocationIcons() {
         writer.Write(instance.get().m_feature.get().m_name);
     }
 
-    RouteManager()->Invoke(IRouteManager::EVERYBODY, Hashes::Routed::S2C_UpdateIcons, bytes);
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
 }
 
 // private
@@ -398,16 +393,22 @@ bool IZoneManager::TryGenerateZone(const ZoneID& zone) {
 }
 
 void IZoneManager::GenerateZone(Heightmap &heightmap) {
+#ifdef VH_OPTION_ENABLE_ZONE_GENERATION
     std::vector<ClearArea> m_tempClearAreas;
 
+#ifdef VH_OPTION_ENABLE_ZONE_FEATURES
     if (SERVER_SETTINGS.spawningLocations)
         m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
+#endif
 
+#ifdef VH_OPTION_ENABLE_ZONE_VEGETATION
     if (SERVER_SETTINGS.spawningVegetation)
         GenerateFoliage(heightmap, m_tempClearAreas);
+#endif
 
     if (SERVER_SETTINGS.spawningCreatures)
         GenerateZoneCtrl(heightmap.GetZone());
+#endif
 }
 
 void IZoneManager::GenerateZone(const ZoneID& zone) {
@@ -664,6 +665,7 @@ void IZoneManager::PrepareAllFeatures() {
         PrepareFeatures(spawnLoc->second);
     }
     else {
+#ifdef VH_OPTION_ENABLE_ZONE_GENERATION
         auto now(steady_clock::now());
 
         // Already presorted by priority
@@ -672,6 +674,7 @@ void IZoneManager::PrepareAllFeatures() {
         }
 
         LOG(INFO) << "Location generation took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
+#endif
     }
 }
 
