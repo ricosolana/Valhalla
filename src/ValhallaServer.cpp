@@ -14,7 +14,6 @@
 #include "RouteManager.h"
 #include "Hashes.h"
 #include "HeightmapBuilder.h"
-#include "ModManager.h"
 #include "DungeonManager.h"
 #include "EventManager.h"
 
@@ -239,7 +238,6 @@ void IValhalla::Start() {
     GeoManager()->Init();
     ZoneManager()->PrepareAllFeatures();
     DungeonManager()->Init();
-    ModManager()->Init();
 
     HeightmapBuilder()->Init();
     NetManager()->Init();
@@ -335,8 +333,6 @@ void IValhalla::Start() {
     NetManager()->Uninit();
     HeightmapBuilder()->Uninit();
 
-    ModManager()->Uninit();
-
     WorldManager()->WriteFileWorldDB(true);
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
@@ -359,8 +355,6 @@ void IValhalla::Update() {
         m_worldTime += Delta() * m_worldTimeMultiplier;
     }
     
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
-
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
@@ -371,8 +365,6 @@ void IValhalla::PeriodUpdate() {
     PERIODIC_NOW(180s, {
         LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
     });
-
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
     if (m_settings.dungeonReset)
         DungeonManager()->TryRegenerateDungeons();

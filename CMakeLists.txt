@@ -40,12 +40,8 @@ endif()
 ############
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
-#find_package(robin_hood CONFIG REQUIRED)
-find_package(ZLIB REQUIRED) # able to remove; nothing *has* to be compressed, could include as a side-package?
-find_package(lua CONFIG REQUIRED)
-#find_package(sol2 CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
-find_package(tomlplusplus CONFIG REQUIRED)
     
 find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
 
@@ -114,7 +110,6 @@ add_executable(${PROJECT_NAME}
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
     "src/Main.cpp"
-    "src/ModManager.cpp"
     "src/NetAcceptorSteam.cpp"
     "src/NetManager.cpp"    
     "src/NetSteamSocket.cpp"
@@ -139,17 +134,13 @@ add_executable(${PROJECT_NAME}
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"    
  "src/AcceptorSteamP2P.cpp")
-
-# change this to wherever your sol is
-set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
-
+ 
 # change to wherever your ankerl is
 set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMAPI_SOURCE_DIR}
-    ${SOL2_ROOT_DIR}/include
     ${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
 )
 
@@ -159,12 +150,8 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
-    #robin_hood::robin_hood
     ZLIB::ZLIB
-    PUBLIC lua
-    #sol2
     yaml-cpp
-    PRIVATE tomlplusplus::tomlplusplus
     easyloggingpp
     OptickCore
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>

@@ -7,7 +7,6 @@
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
-#include "ModManager.h"
 
 class DataReader;
 
@@ -282,20 +281,5 @@ public:
     // empty full template
     static decltype(auto) Serialize() {
         return BYTES_t{};
-    }
-
-
-
-    void SerializeOneLua(IModManager::Type type, sol::object object);
-
-    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results);
-
-    static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
-        BYTES_t bytes;
-        DataWriter params(bytes);
-
-        params.SerializeLua(types, results);
-
-        return bytes;
     }
 };

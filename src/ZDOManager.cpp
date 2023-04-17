@@ -681,41 +681,43 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	//	preserializer that prepends packet data to the peer-buffer
 	//	to avoid a few buffer allocs
 	//	this only matters if performance is upmost concern, which it is because c :>
-	m_temp.clear();
-	DataWriter writer(m_temp);
-
-	writer.Write(peer.m_invalidSector);
-
-	const auto time = Valhalla()->Time();
-
-	for (auto&& itr = syncList.begin(); 
-		itr != syncList.end() && writer.Length() <= availableSpace;
-		itr++) {
-
-		auto &&zdo = itr->first.get();
-
-		peer.m_forceSend.erase(zdo.ID());
-
-		writer.Write(zdo.m_id);
-		writer.Write(zdo.m_rev.m_ownerRev);
-		writer.Write(zdo.m_rev.m_dataRev);
-		writer.Write(zdo.m_owner);
-		writer.Write(zdo.m_pos);
-
-		writer.SubWrite([&]() {
-			zdo.Serialize(writer);
-		});
-
-		peer.m_zdos[zdo.m_id] = ZDO::Rev {
-			.m_dataRev = zdo.m_rev.m_dataRev,
-			.m_ownerRev = zdo.m_rev.m_ownerRev,
-			.m_syncTime = time
-		};
-	}
-	writer.Write(ZDOID::NONE); // null terminator
+	//m_temp.clear();
+	//DataWriter writer(m_temp);
 
 	if (!peer.m_invalidSector.empty() || !syncList.empty()) {
-		peer.Invoke(Hashes::Rpc::ZDOData, m_temp);
+		
+		peer.PrepInvoke(Hashes::Rpc::ZDOData, [&](DataWriter& writer) {
+			writer.Write(peer.m_invalidSector);
+
+			const auto time = Valhalla()->Time();
+
+			for (auto&& itr = syncList.begin();
+				itr != syncList.end() && writer.Length() <= availableSpace;
+				itr++) {
+
+				auto&& zdo = itr->first.get();
+
+				peer.m_forceSend.erase(zdo.ID());
+
+				writer.Write(zdo.m_id);
+				writer.Write(zdo.m_rev.m_ownerRev);
+				writer.Write(zdo.m_rev.m_dataRev);
+				writer.Write(zdo.m_owner);
+				writer.Write(zdo.m_pos);
+
+				writer.SubWrite([&]() {
+					zdo.Serialize(writer);
+				});
+
+				peer.m_zdos[zdo.m_id] = ZDO::Rev{
+					.m_dataRev = zdo.m_rev.m_dataRev,
+					.m_ownerRev = zdo.m_rev.m_ownerRev,
+					.m_syncTime = time
+				};
+			}
+			writer.Write(ZDOID::NONE); // null terminator
+		});
+
 		peer.m_invalidSector.clear();
 
 		return true;

@@ -98,9 +98,6 @@ void INetManager::SendDisconnect() {
 
 void INetManager::SendPlayerList() {
     if (!m_peers.empty()) {
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
-            return;
-
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
         writer.Write((int)m_peers.size());
@@ -160,10 +157,6 @@ void INetManager::SendPeerInfo(Peer& peer) {
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnNewPeer(Peer& peer) {
     peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
-
-    if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
-        return peer.Disconnect();
-    }
 
     // Important
     peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3f pos, bool publicRefPos) {
@@ -347,9 +340,7 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        auto&& peer = std::make_unique<Peer>(std::move(*opt));
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, peer.get()))
-            m_clients.push_back(std::move(peer));
+        m_clients.push_back(std::make_unique<Peer>(std::move(*opt)));
     }       
 
     // Send periodic data (2s)
@@ -409,8 +400,6 @@ void INetManager::Update() {
             Peer* peer = itr->get();
             assert(peer);
             if (!(peer->m_socket && peer->m_socket->Connected())) {
-                VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
-
                 itr = m_clients.erase(itr);
             }
             else {
@@ -422,7 +411,6 @@ void INetManager::Update() {
 
 void INetManager::CleanupPeer(Peer& peer) {
     LOG(INFO) << "Cleaning up peer";
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
 
     if (peer.m_admin)

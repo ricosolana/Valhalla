@@ -7,7 +7,6 @@
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "DataStream.h"
-#include "ModManager.h"
 
 class DataWriter;
 
@@ -321,10 +320,6 @@ public:
     }
 
 
-
-    sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type);
-
-    sol::variadic_results DeserializeLua(sol::state_view state, const IModManager::Types& types);
 
     // verbose extension methods
     //  I want these to actually all be in lua

@@ -12,7 +12,6 @@
 
 #include <optick.h>
 #include <easylogging++.h>
-#include <sol/sol.hpp>
 #include <zstd.h>
 #include <zlib.h>
 #include <ankerl/unordered_dense.h>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
+#include "VUtilsString.h"
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "Biome.h"

@@ -104,18 +104,12 @@ public:
     template<typename F>
     void Register(HASH_t hash, F func) {
         VLOG(1) << "Register, hash: " << hash;
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func);
     }
 
     template<typename F>
     decltype(auto) Register(const std::string& name, F func) {
         return Register(VUtils::String::GetStableHashCode(name), func);
-    }
-
-    void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
-        VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
-        
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
 
@@ -125,16 +119,9 @@ public:
         if (!m_socket->Connected())
             return;
 
-        // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
-            return;
-
         VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
         m_socket->Send(DataWriter::Serialize(hash, params...));
-
-        // Postfix
-        VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
     }
 
     template <typename... Types>
@@ -144,44 +131,19 @@ public:
 
 
 
-    //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-
-    void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        if (!m_socket->Connected())
-            return;
-
-        if (args.size() != repr.m_types.size())
-            throw std::runtime_error("mismatched number of args");
-
-        // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
-        //    return;
-
-        VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
-
+    // Invoke method with pre-initialized packet data
+    //  To be used when invoking a method that takes a BYTES_t or other large types
+    template <typename Func>
+    void PrepInvoke(HASH_t hash, Func func) {
         BYTES_t bytes;
-        DataWriter params(bytes);
-        params.Write(repr.m_hash);
-        params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
+        DataWriter writer(bytes);
+
+        writer.Write(hash);
+
+        func(writer);
+
         m_socket->Send(std::move(bytes));
-
-        // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
     }
-
-
-    /*
-    Method* GetMethod(HASH_t hash) {
-        auto&& find = m_methods.find(hash);
-        if (find != m_methods.end()) {
-            return find->second.get();
-        }
-        return nullptr;
-    }
-
-    decltype(auto) GetMethod(const std::string& name) {
-        return GetMethod(VUtils::String::GetStableHashCode(name));
-    }*/
 
 
 
@@ -278,9 +240,6 @@ public:
 
     template <typename... Types>
     void RouteView(const ZDOID& targetZDO, HASH_t hash, Types&&... params) {
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
-            return;
-
         RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
     }
 
@@ -297,25 +256,5 @@ public:
     template <typename... Types>
     decltype(auto) Route(const std::string& name, Types&&... params) {
         return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
-    }
-
-
-
-    void RouteViewLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        if (args.size() != repr.m_types.size())
-            throw std::runtime_error("mismatched number of args");
-
-        auto results = sol::variadic_results(args.begin(), args.end());
-
-#ifdef MOD_EVENT_RESPONSE
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO, sol::as_args(results)))
-            return;
-#endif
-
-        RouteParams(targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
-    }
-
-    decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        return RouteViewLua(ZDOID::NONE, repr, args);
     }
 };
