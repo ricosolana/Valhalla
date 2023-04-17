@@ -45,12 +45,6 @@ namespace ankerl::unordered_dense {
 
 } // namespace ankerl::unordered_dense
 
-template<typename ...Args>
-using UNORDERED_MAP_t = ankerl::unordered_dense::map<Args...>;
-
-template<typename ...Args>
-using UNORDERED_SET_t = ankerl::unordered_dense::set<Args...>;
-
 /*
 template<typename K, typename V> 
     requires std::is_same_v<K, std::string>

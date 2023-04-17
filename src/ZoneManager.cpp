@@ -32,8 +32,8 @@ void IZoneManager::Init() {
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string>(); // comment
-        std::string ver = pkg.Read<std::string>();
+        pkg.Read<std::string_view>(); // comment
+        auto ver = pkg.Read<std::string_view>();
         if (ver != VConstants::GAME)
             LOG(WARNING) << "features.pkg uses different game version than server (" << ver << ")";
 
@@ -242,7 +242,7 @@ void IZoneManager::SendLocationIcons() {
     writer.Write<int32_t>(icons.size());
     for (auto&& instance : icons) {
         writer.Write(instance.get().m_pos);
-        writer.Write(instance.get().m_feature.get().m_name);
+        writer.Write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
     RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
@@ -260,7 +260,7 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
     writer.Write<int32_t>(icons.size());
     for (auto&& instance : icons) {
         writer.Write(instance.get().m_pos);
-        writer.Write(instance.get().m_feature.get().m_name);
+        writer.Write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
     //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
@@ -280,7 +280,7 @@ void IZoneManager::Save(DataWriter& pkg) {
         auto&& inst = pair.second;
         auto&& location = inst->m_feature.get();
 
-        pkg.Write(location.m_name);
+        pkg.Write(std::string_view(location.m_name));
         pkg.Write(inst->m_pos);
         pkg.Write(m_generatedZones.contains(WorldToZonePos(inst->m_pos)));
     }
@@ -311,7 +311,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 
                 const auto countLocations = reader.Read<int32_t>();
                 for (int i = 0; i < countLocations; i++) {
-                    auto text = reader.Read<std::string>();
+                    auto text = reader.Read<std::string_view>();
                     auto pos = reader.Read<Vector3f>();
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
 

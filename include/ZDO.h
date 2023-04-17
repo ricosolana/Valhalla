@@ -22,6 +22,7 @@ concept TrivialSyncType =
     || std::same_as<T, int32_t>
     || std::same_as<T, int64_t>
     || std::same_as<T, std::string>
+    //|| std::same_as<T, std::string_view>
     || std::same_as<T, BYTES_t>;
 
 class IZDOManager;
@@ -280,13 +281,17 @@ private:
 
         // Used when saving or serializing internal ZDO information
         //  Returns whether write was successful (if type match)
+        //template<TrivialSyncType T>
         template<TrivialSyncType T>
         bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
             if (!IsType<T>())
                 return false;
 
             writer.Write(FromShiftHash<T>(shiftHash));
-            writer.Write(*_Member<T>());
+            if constexpr (std::is_same_v<T, std::string>)
+                writer.Write(std::string_view(*_Member<T>()));
+            else 
+                writer.Write(*_Member<T>());
             return true;
         }
 
@@ -376,6 +381,15 @@ private:
             for (auto&& pair : m_members) {
                 if (pair.second.Write<T>(writer, pair.first))
                     count++;
+                /*
+                if constexpr (!std::is_same_v<T, std::string>) {
+                    if (pair.second.Write<T>(writer, pair.first))
+                        count++;
+                }
+                else {
+                    if (pair.second.Write<std::string_view>(writer, pair.first))
+                        count++;
+                }*/
             }
 
             if (count) {

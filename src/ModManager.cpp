@@ -208,8 +208,8 @@ void IModManager::LoadAPI() {
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
             static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
 
-            static_cast<void (DataWriter::*)(const std::string&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::Write),
+            //static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             
@@ -945,7 +945,7 @@ void IModManager::LoadAPI() {
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
-            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string&)>(VUtils::String::GetStableHashCode);
+            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(std::string_view)>(VUtils::String::GetStableHashCode);
         }
 
         {

@@ -166,7 +166,8 @@ public:
     //void Write(const NetPackage& in);
 
     // Writes a string
-    void Write(const std::string& in);
+    void Write(std::string_view in);
+
     // Writes a ZDOID
     //  12 bytes total are written:
     //  int64_t:    owner (8 bytes)
@@ -199,13 +200,16 @@ public:
     //  T...:       value_type
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
-                && !std::is_same_v<typename Iterable::value_type, BYTE_t>)
+                && !std::is_arithmetic_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
         Assert31U(size);
         Write(static_cast<int32_t>(size));
         for (auto&& v : in) {
-            Write(v);
+            if constexpr (std::is_same_v<typename Iterable::value_type, std::string>)
+                Write(std::string_view(v));
+            else
+                Write(v);
         }
     }
 
@@ -239,9 +243,9 @@ public:
     }
 
     void Write(const UserProfile &in) {
-        Write(in.m_name);
-        Write(in.m_gamerTag);
-        Write(in.m_networkUserId);
+        Write(std::string_view(in.m_name));
+        Write(std::string_view(in.m_gamerTag));
+        Write(std::string_view(in.m_networkUserId));
     }
 
     void Write(const UInt64Wrapper& in) {

@@ -1,32 +1,36 @@
 
 #include "VUtils.h"
+#include "VUtilsString.h"
 
 namespace VUtils::String {
-    HASH_t GetStableHashCode(const std::string& str) {
-        int num = 5381;
-        int num2 = num;
-        int num3 = 0;
-        while (str[num3] != '\0')
+    HASH_t GetStableHashCode(std::string_view str) {
+        //return GetStableHashCodeCT(str.data());
+
+        uint32_t num = 5381;
+        uint32_t num2 = num;
+        uint32_t num3 = 0;
+        while (num3 < str.length() && str[num3] != '\0')
         {
-            num = ((num << 5) + num) ^ (int)str[num3];
-            if (str[num3 + 1] == '\0')
+            num = ((num << 5) + num) ^ (uint32_t)str[num3];
+            if (num3 == str.length() - 1 || str[num3 + 1] == '\0')
             {
                 break;
             }
-            num2 = ((num2 << 5) + num2) ^ (int)str[num3 + 1];
+            num2 = ((num2 << 5) + num2) ^ (uint32_t)str[num3 + 1];
             num3 += 2;
         }
-        return num + num2 * 1566083941;
+        return static_cast<HASH_t>(num + num2 * 1566083941);
     }
 
-    HASH_t GetStableHashCode(const std::string_view& str) {
+    /*
+    HASH_t GetStableHashCode(std::string_view str) {
         int num = 5381;
         int num2 = num;
         int num3 = 0;
-        while (num3 != str.size())
+        while (num3 < str.size() && str[num3])
         {
             num = ((num << 5) + num) ^ (int)str[num3];
-            if (num3 + 1 != str.size())
+            if (num3 + 1 < str.size() && str[num3])
             {
                 break;
             }
@@ -34,7 +38,7 @@ namespace VUtils::String {
             num3 += 2;
         }
         return num + num2 * 1566083941;
-    }
+    }*/
 
 
     std::vector<std::string_view> Split(std::string_view s, const std::string &delim) {

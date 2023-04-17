@@ -48,8 +48,8 @@ BYTES_t World::SaveMeta() {
 	DataWriter writer(bytes);
 	writer.SubWrite([&]() {
 		writer.Write(VConstants::WORLD);
-		writer.Write(m_name);
-		writer.Write(m_seedName);
+		writer.Write(std::string_view(m_name));
+		writer.Write(std::string_view(m_seedName));
 		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
 		writer.Write(m_uid);
 		writer.Write(m_worldGenVersion);

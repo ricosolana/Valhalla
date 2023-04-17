@@ -3,14 +3,39 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
-#define __H(str) VUtils::String::GetStableHashCode(str)
+#define __H(str) VUtils::String::GetStableHashCodeCT(str)
 
 namespace VUtils::String {
-    constexpr HASH_t GetStableHashCode(const char *str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
+    // Get the compile-time Valheim hash of the string
+    constexpr HASH_t GetStableHashCodeCT(const char *str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
         if (str[idx] != '\0') {
-            num = ((num << 5) + num) ^ (unsigned) str[idx];
+            num = ((num << 5) + num) ^ (uint32_t) str[idx];
             if (str[idx + 1] != '\0') {
-                num2 = ((num2 << 5) + num2) ^ (unsigned) str[idx + 1];
+                num2 = ((num2 << 5) + num2) ^ (uint32_t) str[idx + 1];
+                idx += 2;
+                return GetStableHashCodeCT(str, num, num2, idx);
+            }
+        }
+        return static_cast<HASH_t>(num + num2 * 1566083941);
+    }
+
+    // Get the compile-time Valheim hash of the string
+    constexpr HASH_t GetStableHashCodeCT(const char *str) {
+        uint32_t num = 5381;
+        uint32_t num2 = num;
+        uint32_t idx = 0;
+
+        return GetStableHashCodeCT(str, num, num2, idx);
+    }
+
+    HASH_t GetStableHashCode(std::string_view s);
+
+    /*
+    constexpr HASH_t GetStableHashCode(std::string_view str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
+        if (str[idx] != '\0') {
+            num = ((num << 5) + num) ^ (unsigned)str[idx];
+            if (str[idx + 1] != '\0') {
+                num2 = ((num2 << 5) + num2) ^ (unsigned)str[idx + 1];
                 idx += 2;
                 return GetStableHashCode(str, num, num2, idx);
             }
@@ -18,13 +43,13 @@ namespace VUtils::String {
         return static_cast<HASH_t>(num + num2 * 1566083941);
     }
 
-    constexpr HASH_t GetStableHashCode(const char *str) {
+    constexpr HASH_t GetStableHashCode(std::string_view str) {
         uint32_t num = 5381;
         uint32_t num2 = num;
         uint32_t idx = 0;
 
         return GetStableHashCode(str, num, num2, idx);
-    }
+    }*/
 
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable_v<T>
@@ -43,9 +68,7 @@ namespace VUtils::String {
         return Join(delimiter.c_str(), container);
     }
 
-    HASH_t GetStableHashCode(const std::string &s);
-
-    HASH_t GetStableHashCode(const std::string_view& s);
+    
 
     std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
 

@@ -427,5 +427,5 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
 }
 
 void IValhalla::Broadcast(UIMsgType type, const std::string& text) {
-    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, text);
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, std::string_view(text));
 }

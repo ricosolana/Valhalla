@@ -50,7 +50,7 @@ void DataWriter::Write(const BYTES_t& in) {
 //    Write(in.m_stream.m_buf);
 //}
 
-void DataWriter::Write(const std::string& in) {
+void DataWriter::Write(std::string_view in) {
     auto length = in.length();
     //Assert31U(length);
 
@@ -123,7 +123,7 @@ void DataWriter::SerializeOneLua(IModManager::Type type, sol::object arg) {
         Write(arg.as<double>());
         break;
     case IModManager::Type::STRING:
-        Write(arg.as<std::string>());
+        Write(arg.as<std::string_view>());
         break;
     case IModManager::Type::BOOL:
         Write(arg.as<bool>());

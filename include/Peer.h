@@ -257,7 +257,7 @@ public:
     }
     // Show a console message
     decltype(auto) ConsoleMessage(const std::string& msg) {
-        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
+        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, std::string_view(msg));
     }
     // Show a screen message
     void UIMessage(const std::string& text, UIMsgType type);

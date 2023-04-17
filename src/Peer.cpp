@@ -117,7 +117,7 @@ Peer::Peer(ISocket::Ptr socket)
             }
         }
 
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, SALT);
+        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(SALT));
 
         return false;
     });
@@ -175,17 +175,17 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 void Peer::ChatMessage(const std::string& text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, const std::string& senderID) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::ChatMessage,
+    this->Route(Hashes::Routed::ChatMessage,
         pos, //Vector3f(10000, 10000, 10000),
         type,
         profile, //"<color=yellow><b>SERVER</b></color>",
-        text,
-        senderID //""
+        std::string_view(text),
+        std::string_view(senderID) //""
     );
 }
 
 void Peer::UIMessage(const std::string& text, UIMsgType type) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_UIMessage, type, text);
+    this->Route(Hashes::Routed::S2C_UIMessage, type, std::string_view(text));
 }
 
 ZDO* Peer::GetZDO() {
@@ -193,7 +193,7 @@ ZDO* Peer::GetZDO() {
 }
 
 void Peer::Teleport(const Vector3f& pos, const Quaternion& rot, bool animation) {
-    RouteManager()->Invoke(m_uuid, Hashes::Routed::S2C_RequestTeleport,
+    this->Route(Hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,
         animation

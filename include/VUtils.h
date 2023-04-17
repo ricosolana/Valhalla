@@ -39,7 +39,11 @@ using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
 //template<typename K>
 //using UNORDERED_SET_t = ankerl::unordered_dense::set<K>;
 
+template<typename K, typename V, typename Hash = ankerl::unordered_dense::hash<K>>
+using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, Hash>;
 
+template<typename K, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
+using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 //constexpr TICKS_t operator"" t(unsigned long long _Val) noexcept {
 //    return TICKS_t(_Val);

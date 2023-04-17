@@ -150,7 +150,7 @@ bool IEventManager::CheckGlobalKeys(const Event& e) {
 
 void IEventManager::Save(DataWriter& writer) {
 	writer.Write(m_eventIntervalTimer);
-	writer.Write(m_activeEvent ? m_activeEvent->m_name : "");
+	writer.Write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
 	writer.Write(m_activeEventTimer);
 	writer.Write(m_activeEventPos);
 }
@@ -171,7 +171,7 @@ void IEventManager::Load(DataReader& reader, int version) {
 void IEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
 		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent, 
-			m_activeEvent->m_name,
+			std::string_view(m_activeEvent->m_name),
 			m_activeEventTimer,
 			m_activeEventPos
 		);
