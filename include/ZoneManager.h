@@ -140,15 +140,15 @@ private:
 
 	// All Foliage within a world capable of generation
 	std::vector<std::unique_ptr<const Foliage>> m_foliage;
-
+	
 	// All the generated Features in a world
 	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
 
 	// Which Zones have already been generated
 	UNORDERED_SET_t<ZoneID> m_generatedZones;
-
+	
 	// Game-state global keys
-	UNORDERED_SET_t<std::string> m_globalKeys;
+	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
 
 private:
 	void SendGlobalKeys();
@@ -173,7 +173,7 @@ private:
 	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3f& pos, float range);
 
 	const Feature* GetFeature(HASH_t hash);
-	const Feature* GetFeature(const std::string& name);
+	const Feature* GetFeature(std::string_view name);
 
 	void PrepareFeatures(const Feature &feature);
 	ZoneID GetRandomZone(VUtils::Random::State &state, float range);
@@ -197,7 +197,7 @@ public:
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
-	UNORDERED_SET_t<std::string>& GlobalKeys() {
+	auto& GlobalKeys() {
 		return m_globalKeys;
 	}
 
@@ -216,7 +216,7 @@ public:
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance *GetNearestFeature(const std::string& name, const Vector3f& pos);
+	Feature::Instance *GetNearestFeature(std::string_view name, const Vector3f& pos);
 
 	static ZoneID WorldToZonePos(const Vector3f& pos);
 	static Vector3f ZoneToWorldPos(const ZoneID& zone);

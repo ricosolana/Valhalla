@@ -198,7 +198,8 @@ public:
     //  uint32_t:   size
     //  T...:       value_type
     template<typename Iterable> 
-        requires (VUtils::Traits::is_iterable_v<Iterable> && !std::is_same_v<Iterable, std::string> && !std::is_same_v<Iterable, BYTES_t>)
+        requires (VUtils::Traits::is_iterable_v<Iterable> 
+                && !std::is_same_v<typename Iterable::value_type, BYTE_t>)
     void Write(const Iterable& in) {
         size_t size = in.size();
         Assert31U(size);

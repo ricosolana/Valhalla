@@ -62,7 +62,7 @@ void DataWriter::Write(const std::string& in) {
     if (byteCount == 0)
         return;
 
-    WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.c_str()), byteCount);
+    WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
 }
 
 void DataWriter::Write(const ZDOID& in) {

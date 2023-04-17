@@ -163,19 +163,19 @@ void IZoneManager::Init() {
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
         throw std::runtime_error("prefabs missing");
 
-    RouteManager()->Register(Hashes::Routed::SetGlobalKey, [this](Peer* peer, std::string name) {
+    RouteManager()->Register(Hashes::Routed::SetGlobalKey, [this](Peer* peer, std::string_view name) {
         // TODO constraint check
         if (m_globalKeys.insert(name).second)
             SendGlobalKeys(); // Notify clients
     });
 
-    RouteManager()->Register(Hashes::Routed::RemoveGlobalKey, [this](Peer* peer, std::string name) {
+    RouteManager()->Register(Hashes::Routed::RemoveGlobalKey, [this](Peer* peer, std::string_view name) {
         // TODO constraint check
         if (m_globalKeys.erase(name))
             SendGlobalKeys(); // Notify clients
     });
 
-    RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string locationName, Vector3f point, std::string pinName, int pinType, bool showMap) {
+    RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string_view locationName, Vector3f point, std::string_view pinName, int pinType, bool showMap) {
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG(INFO) << "Found location: '" << locationName << "'";
             RouteManager()->Invoke(peer->m_uuid, 
@@ -288,7 +288,7 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    m_generatedZones = reader.Read<UNORDERED_SET_t<Vector2i>>();
+    m_generatedZones = reader.Read<decltype(m_generatedZones)>();
 
     if (version >= 13) {
         const auto pgwVersion = reader.Read<int32_t>(); // 99
@@ -297,7 +297,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
             LOG(WARNING) << "Loading unsupported pgw version";
 
         if (version >= 14) {
-            m_globalKeys = reader.Read<UNORDERED_SET_t<std::string>>();
+            m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
 #ifndef ELPP_DISABLE_VERBOSE_LOGS
             VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
@@ -643,7 +643,7 @@ const IZoneManager::Feature* IZoneManager::GetFeature(HASH_t hash) {
 }
 
 // private
-const IZoneManager::Feature* IZoneManager::GetFeature(const std::string& name) {
+const IZoneManager::Feature* IZoneManager::GetFeature(std::string_view name) {
     return GetFeature(VUtils::String::GetStableHashCode(name));
 }
 
@@ -1066,7 +1066,7 @@ Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& bio
 }
 
 // public
-IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(const std::string& name, const Vector3f& point) {
+IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_view name, const Vector3f& point) {
     float closestDist = std::numeric_limits<float>::max();
     
     IZoneManager::Feature::Instance* closest = nullptr;
