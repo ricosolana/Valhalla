@@ -162,12 +162,13 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		bool modern = zdo->Load(zdoReader, version);
 
 		// TODO redundant?
-		if (zdo->ID().m_uuid == SERVER_ID
-			&& zdo->ID().m_id >= m_nextUid)
-		{
-			assert(false && "looks like this might be significant");
-			m_nextUid = zdo->ID().m_id + 1;
-		}
+		//	thinking about it, this might be for very old versions where the ID is not normal
+		//if (zdo->ID().m_uuid == SERVER_ID
+		//	&& zdo->ID().m_id >= m_nextUid)
+		//{
+		//	assert(false && "looks like this might be significant");
+		//	m_nextUid = zdo->ID().m_id + 1;
+		//}
 
 		if (modern || !SERVER_SETTINGS.worldModern) {
 			auto&& prefab = zdo->GetPrefab();
@@ -316,7 +317,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		}
 	}
 
-	if (SERVER_SETTINGS.zdoSmartAssign) {
+	if (SERVER_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
 		float minSqDist = std::numeric_limits<float>::max();
 		Vector3f closestPos;

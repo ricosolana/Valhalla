@@ -32,7 +32,7 @@ AcceptorSteamDedicated::AcceptorSteamDedicated()
     SteamGameServer()->SetGameTags(VConstants::GAME);
     SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
-    auto timeout = (float)Valhalla()->Settings().socketTimeout.count();
+    auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;
     int32 sendrate = 153600;
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,

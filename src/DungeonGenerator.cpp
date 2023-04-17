@@ -22,12 +22,13 @@ DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 
 // TODO generate seed during start
 HASH_t DungeonGenerator::GetSeed() {
-	if (SERVER_SETTINGS.dungeonRandomGeneration)
-		return VUtils::Random::State().Range(INT_MIN, INT_MAX);
-	else {
+	if (SERVER_SETTINGS.dungeonSeededRandom) {
 		auto seed = GeoManager()->GetSeed();
 		auto zone = IZoneManager::WorldToZonePos(m_pos);
 		return seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
+	}
+	else {
+		return VUtils::Random::State().Range(INT_MIN, INT_MAX);
 	}
 }
 

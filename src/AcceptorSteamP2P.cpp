@@ -20,10 +20,10 @@ AcceptorSteamP2P::AcceptorSteamP2P() {
     LOG(INFO) << "Authentication status: " << SteamNetworkingSockets()->InitAuthentication();
 
     //auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 64);
-    auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypeFriendsOnly, 64);
+    auto handle = SteamMatchmaking()->CreateLobby(SERVER_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
     m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteamP2P::OnLobbyCreated);
     
-    auto timeout = (float)Valhalla()->Settings().socketTimeout.count();
+    auto timeout = (float) duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;
     int32 sendrate = 153600;
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,

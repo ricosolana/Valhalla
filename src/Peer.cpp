@@ -159,7 +159,7 @@ void Peer::Update() {
         }
     }
 
-    if (now - m_lastPing > SERVER_SETTINGS.socketTimeout) {
+    if (now - m_lastPing > SERVER_SETTINGS.playerTimeout) {
         LOG(INFO) << "Client RPC timeout";
         Disconnect();
     }

@@ -2,6 +2,11 @@
 
 #include "VUtils.h"
 
+enum class AssignAlgorithm {
+    NONE,
+    DYNAMIC_RADIUS
+};
+
 struct ServerSettings {
     std::string     serverName;
     uint16_t        serverPort;
@@ -12,7 +17,7 @@ struct ServerSettings {
     std::string     worldName;
     std::string     worldSeed;
     //HASH_t          worldSeed;
-    bool            worldSave;
+    //bool            worldSave;
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
     
@@ -20,19 +25,21 @@ struct ServerSettings {
     bool            playerWhitelist;
     unsigned int    playerMax;
     bool            playerAuth;
+    seconds         playerTimeout;
     //bool            playerList;
     //bool            playerArrivePing;
     //bool            playerForceVisible;
     //bool            playerSleep;        // enable time skip when all players sleeping
     //bool            playerSleepSolo;    // whether only 1 player needs to sleep to enable time skip
     
-    milliseconds    socketTimeout;          // ms
+    //milliseconds    socketTimeout;          // ms
 
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
     seconds         zdoAssignInterval;
-    bool            zdoSmartAssign;     // experimental feature that attempts to reduce lagg
+    //bool            zdoSmartAssign;     // experimental feature that attempts to reduce lagg
+    AssignAlgorithm zdoAssignAlgorithm;
 
     bool            spawningCreatures;
     bool            spawningLocations;
@@ -48,7 +55,7 @@ struct ServerSettings {
     seconds         dungeonResetTime;
     //milliseconds    dungeonIncrementalResetTime;
     int             dungeonIncrementalResetCount;
-    bool            dungeonRandomGeneration;
+    bool            dungeonSeededRandom;
 
     bool            eventsEnabled;
     float           eventsChance;

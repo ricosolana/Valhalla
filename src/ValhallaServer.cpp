@@ -54,63 +54,70 @@ void IValhalla::LoadFiles(bool reloading) {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         if (!reloading || !fileError) {
+            auto&& server = loadNode["server"];
+            auto&& world = loadNode["world"];
+            auto&& player = loadNode["player"];
+            auto&& zdo = loadNode["zdo"];
+            auto&& spawning = loadNode["spawning"];
+            auto&& dungeons = loadNode["dungeons"];
+            auto&& events = loadNode["events"];
+
             if (!reloading) {
-                m_settings.serverName = VUtils::String::ToAscii(loadNode["server-name"].as<std::string>(""));
+                m_settings.serverName = VUtils::String::ToAscii(server["name"].as<std::string>(""));
                 if (m_settings.serverName.empty()
                     || m_settings.serverName.length() < 3
                     || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
-                m_settings.serverPort = loadNode["server-port"].as<uint16_t>(2456);
+                m_settings.serverPort = server["port"].as<uint16_t>(2456);
             
-                m_settings.serverPassword = loadNode["server-password"].as<std::string>("s");
+                m_settings.serverPassword = server["password"].as<std::string>("s");
                 if (!m_settings.serverPassword.empty()
                     && (m_settings.serverPassword.length() < 5
                         || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
             
-                m_settings.serverPublic = loadNode["server-public"].as<bool>(false);
-                m_settings.serverDedicated = loadNode["server-dedicated"].as<bool>(true);
-                            
-                m_settings.worldName = VUtils::String::ToAscii(loadNode["world-name"].as<std::string>(""));
+                m_settings.serverPublic = server["public"].as<bool>(false);
+                m_settings.serverDedicated = server["dedicated"].as<bool>(true);
+
+                m_settings.worldName = VUtils::String::ToAscii(world["name"].as<std::string>(""));
                 if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
-                m_settings.worldSeed = loadNode["world-seed-name"].as<std::string>("");
+                m_settings.worldSeed = world["seed"].as<std::string>("");
                 if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
+
+                m_settings.worldModern = world["modern"].as<bool>(true);
             }
-            m_settings.worldSave = loadNode["world-save"].as<bool>(true);
-            m_settings.worldSaveInterval = seconds(std::clamp(loadNode["world-save-interval-s"].as<int>(1800), 60, 60 * 60));
-            m_settings.worldModern = loadNode["world-modern"].as<bool>(true);
 
-            m_settings.playerWhitelist = loadNode["player-whitelist"].as<bool>(false);          // enable whitelist
-            m_settings.playerMax = std::clamp(loadNode["player-max"].as<int>(10), 1, 99999);     // max allowed players
-            m_settings.playerAuth = loadNode["player-auth"].as<bool>(true);                     // allow authed players only
+            m_settings.worldSaveInterval = seconds(std::clamp(world["save-interval-s"].as<int>(1800), 60, 60 * 60));
 
-            m_settings.socketTimeout = milliseconds(std::max(1000, loadNode["socket-timeout-ms"].as<int>(30000)));
+            m_settings.playerWhitelist = player["whitelist"].as<bool>(false);          // enable whitelist
+            m_settings.playerMax = std::clamp(player["max"].as<int>(10), 1, 99999);     // max allowed players
+            m_settings.playerAuth = player["auth"].as<bool>(true);                     // allow authed players only
+            m_settings.playerTimeout = seconds(loadNode["timeout-s"].as<int>(30));
 
-            m_settings.zdoMaxCongestion = loadNode["zdo-max-congestion"].as<int>(10240);
-            m_settings.zdoMinCongestion = loadNode["zdo-min-congestion"].as<int>(2048);
-            m_settings.zdoSendInterval = milliseconds(loadNode["zdo-send-interval-ms"].as<int>(50));
-            m_settings.zdoAssignInterval = seconds(std::clamp(loadNode["zdo-assign-interval-s"].as<int>(2), 1, 60));
-            m_settings.zdoSmartAssign = loadNode["zdo-smart-assign"].as<bool>(false);
+            m_settings.zdoMaxCongestion = zdo["max-congestion"].as<int>(10240);
+            m_settings.zdoMinCongestion = zdo["min-congestion"].as<int>(2048);
+            m_settings.zdoSendInterval = milliseconds(zdo["send-interval-ms"].as<int>(50));
+            m_settings.zdoAssignInterval = seconds(std::clamp(zdo["assign-interval-s"].as<int>(2), 1, 60));
+            m_settings.zdoAssignAlgorithm = (AssignAlgorithm) zdo["assign-algorithm"].as<int>(std::to_underlying(AssignAlgorithm::NONE));
 
-            m_settings.spawningCreatures = loadNode["spawning-creatures"].as<bool>(true);
-            m_settings.spawningLocations = loadNode["spawning-locations"].as<bool>(true);
-            m_settings.spawningVegetation = loadNode["spawning-vegetation"].as<bool>(true);
-            m_settings.spawningDungeons = loadNode["spawning-dungeons"].as<bool>(true);
+            m_settings.spawningCreatures = spawning["creatures"].as<bool>(true);
+            m_settings.spawningLocations = spawning["locations"].as<bool>(true);
+            m_settings.spawningVegetation = spawning["vegetation"].as<bool>(true);
+            m_settings.spawningDungeons = spawning["dungeons"].as<bool>(true);
 
-            m_settings.dungeonEndCaps = loadNode["dungeon-end-caps"].as<bool>(true);
-            m_settings.dungeonDoors = loadNode["dungeon-doors"].as<bool>(true);
-            m_settings.dungeonFlipRooms = loadNode["dungeon-flip-rooms"].as<bool>(true);
-            m_settings.dungeonZoneLimit = loadNode["dungeon-zone-limit"].as<bool>(true);
-            m_settings.dungeonRoomShrink = loadNode["dungeon-room-shrink"].as<bool>(true);
-            m_settings.dungeonReset = loadNode["dungeon-reset"].as<bool>(true);
-            m_settings.dungeonResetTime = seconds(std::max(60, loadNode["dungeon-reset-time-s"].as<int>(3600 * 72)));
+            m_settings.dungeonEndCaps = dungeons["end-caps"].as<bool>(true);
+            m_settings.dungeonDoors = dungeons["doors"].as<bool>(true);
+            m_settings.dungeonFlipRooms = dungeons["flip-rooms"].as<bool>(true);
+            m_settings.dungeonZoneLimit = dungeons["zone-limit"].as<bool>(true);
+            m_settings.dungeonRoomShrink = dungeons["room-shrink"].as<bool>(true);
+            m_settings.dungeonReset = dungeons["reset"].as<bool>(true);
+            m_settings.dungeonResetTime = seconds(std::max(60, dungeons["reset-time-s"].as<int>(3600 * 72)));
             //m_settings.dungeonIncrementalResetTime = seconds(std::max(1, loadNode["dungeon-incremental-reset-time-s"].as<int>(5)));
-            m_settings.dungeonIncrementalResetCount = std::min(20, loadNode["dungeon-incremental-reset-count"].as<int>(3));
-            m_settings.dungeonRandomGeneration = loadNode["dungeon-random-generation"].as<bool>(true);
+            m_settings.dungeonIncrementalResetCount = std::min(20, dungeons["incremental-reset-count"].as<int>(3));
+            m_settings.dungeonSeededRandom = dungeons["seeded-random"].as<bool>(true); // TODO rename seeded
 
-            m_settings.eventsEnabled = loadNode["events-enabled"].as<bool>(true);
-            m_settings.eventsChance = std::clamp(loadNode["events-chance"].as<float>(.2f), 0.f, 1.f);
-            m_settings.eventsInterval = seconds(std::max(60, loadNode["events-interval-m"].as<int>(46)) * 60);
-            m_settings.eventsRange = std::clamp(loadNode["events-range"].as<float>(96), 1.f, 96.f * 4);
-            //m_settings.eventsSendInterval = loadNode["events-enabled"].as<bool>(true);
+            m_settings.eventsEnabled = events["enabled"].as<bool>(true);
+            m_settings.eventsChance = std::clamp(events["chance"].as<float>(.2f), 0.f, 1.f);
+            m_settings.eventsInterval = minutes(std::max(1, events["interval-m"].as<int>(46)));
+            m_settings.eventsRange = std::clamp(events["range"].as<float>(96), 1.f, 96.f * 4);
         }
     }
     
@@ -118,57 +125,57 @@ void IValhalla::LoadFiles(bool reloading) {
 
     if (!reloading && fileError) {
         YAML::Node saveNode;
+
+        auto&& server = saveNode["server"];
+        auto&& world = saveNode["world"];
+        auto&& player = saveNode["player"];
+        auto&& zdo = saveNode["zdo"];
+        auto&& spawning = saveNode["spawning"];
+        auto&& dungeons = saveNode["dungeons"];
+        auto&& events = saveNode["events"];
         
-        saveNode["server-name"] = m_settings.serverName;
-        saveNode["server-port"] = m_settings.serverPort;
-        saveNode["server-password"] = m_settings.serverPassword;
-        saveNode["server-public"] = m_settings.serverPublic;
+        server["name"] = m_settings.serverName;
+        server["port"] = m_settings.serverPort;
+        server["password"] = m_settings.serverPassword;
+        server["public"] = m_settings.serverPublic;
+        server["dedicated"] = m_settings.serverDedicated;
 
-        saveNode["world-name"] = m_settings.worldName;
-        saveNode["world-seed"] = m_settings.worldSeed;
-        saveNode["world-save"] = m_settings.worldSave;
-        saveNode["world-save-interval-s"] = m_settings.worldSaveInterval.count();
-        saveNode["world-modern"] = m_settings.worldModern;
-        //saveNode["world-seed"] = m_settings.worldSeed;
+        world["name"] = m_settings.worldName;
+        world["seed"] = m_settings.worldSeed;
+        world["save-interval-s"] = m_settings.worldSaveInterval.count();
+        world["modern"] = m_settings.worldModern;
 
-        //saveNode["player-auto-password"] = m_settings.playerAutoPassword;
-        saveNode["player-whitelist"] = m_settings.playerWhitelist;
-        saveNode["player-max"] = m_settings.playerMax;
-        saveNode["player-auth"] = m_settings.playerAuth;
-        //saveNode["player-list"] = m_settings.playerList;
-        //saveNode["player-map-visible"] = m_settings.playerForceVisible;
-        //saveNode["player-arrive-ping"] = m_settings.playerArrivePing;
-        //saveNode["player-sleep"] = m_settings.playerSleep;
-        //saveNode["player-sleep-solo"] = m_settings.playerSleepSolo;
+        player["whitelist"] = m_settings.playerWhitelist;
+        player["max"] = m_settings.playerMax;
+        player["auth"] = m_settings.playerAuth;
+        player["timeout-s"] = m_settings.playerTimeout.count();
 
-        saveNode["socket-timeout-ms"] = m_settings.socketTimeout.count();
+        zdo["max-congestion"] = m_settings.zdoMaxCongestion;
+        zdo["min-congestion"] = m_settings.zdoMinCongestion;
+        zdo["send-interval-ms"] = m_settings.zdoSendInterval.count();
+        zdo["assign-interval-s"] = m_settings.zdoAssignInterval.count();
+        zdo["assign-algorithm"] = std::to_underlying(m_settings.zdoAssignAlgorithm);
 
-        saveNode["zdo-max-congestion"] = m_settings.zdoMaxCongestion;
-        saveNode["zdo-min-congestion"] = m_settings.zdoMinCongestion;
-        saveNode["zdo-send-interval-ms"] = m_settings.zdoSendInterval.count();
-        saveNode["zdo-assign-interval-s"] = m_settings.zdoAssignInterval.count();
-        saveNode["zdo-smart-assign"] = m_settings.zdoSmartAssign;
+        spawning["creatures"] = m_settings.spawningCreatures;
+        spawning["locations"] = m_settings.spawningLocations;
+        spawning["vegetation"] = m_settings.spawningVegetation;
+        spawning["dungeons"] = m_settings.spawningDungeons;
 
-        saveNode["spawning-creatures"] = m_settings.spawningCreatures;
-        saveNode["spawning-locations"] = m_settings.spawningLocations;
-        saveNode["spawning-vegetation"] = m_settings.spawningVegetation;
-        saveNode["spawning-dungeons"] = m_settings.spawningDungeons;
-
-        saveNode["dungeon-end-caps"] = m_settings.dungeonEndCaps;
-        saveNode["dungeon-doors"] = m_settings.dungeonDoors;
-        saveNode["dungeon-flip-rooms"] = m_settings.dungeonFlipRooms;
-        saveNode["dungeon-zone-limit"] = m_settings.dungeonZoneLimit;
-        saveNode["dungeon-room-shrink"] = m_settings.dungeonRoomShrink;
-        saveNode["dungeon-reset"] = m_settings.dungeonReset;
-        saveNode["dungeon-reset-time-s"] = m_settings.dungeonResetTime.count();
+        dungeons["end-caps"] = m_settings.dungeonEndCaps;
+        dungeons["doors"] = m_settings.dungeonDoors;
+        dungeons["flip-rooms"] = m_settings.dungeonFlipRooms;
+        dungeons["zone-limit"] = m_settings.dungeonZoneLimit;
+        dungeons["room-shrink"] = m_settings.dungeonRoomShrink;
+        dungeons["reset"] = m_settings.dungeonReset;
+        dungeons["reset-time-s"] = m_settings.dungeonResetTime.count();
         //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
-        saveNode["dungeon-incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
-        saveNode["dungeon-random-generation"] = m_settings.dungeonRandomGeneration;
+        dungeons["incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
+        dungeons["seeded-random"] = m_settings.dungeonSeededRandom;
 
-        saveNode["events-enabled"] = m_settings.eventsEnabled;
-        saveNode["events-chance"] = m_settings.eventsChance;
-        saveNode["events-interval-m"] = m_settings.eventsInterval.count() / 60;
-        saveNode["events-range"] = m_settings.eventsRange;
+        events["enabled"] = m_settings.eventsEnabled;
+        events["chance"] = m_settings.eventsChance;
+        events["interval-m"] = duration_cast<minutes>(m_settings.eventsInterval).count();
+        events["range"] = m_settings.eventsRange;
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -376,7 +383,7 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
-    if (m_settings.worldSave) {
+    if (m_settings.worldSaveInterval > 0s) {
         // save warming message
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
             LOG(INFO) << "World saving in 30s";
