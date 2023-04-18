@@ -66,7 +66,7 @@ namespace VUtils::String {
         bool modif = false;
         auto data = reinterpret_cast<BYTE_t*>(in.data());
         for (int i = 0; i < in.size(); i++) {
-            if (data[i] > 127) {
+            if (static_cast<uint8_t>(data[i]) > 127U) {
                 modif = true;
                 data[i] = 63;
             }
