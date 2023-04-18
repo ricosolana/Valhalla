@@ -67,6 +67,15 @@ public:
     ZDOID m_characterID;
     bool m_admin = false;
 
+public:
+    nanoseconds* m_disconnectCapture = nullptr;
+    size_t m_captureQueueSize = 0;
+private:
+    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
+    std::mutex m_recordmux;
+    std::jthread m_recordThread;
+
+public:
     UNORDERED_MAP_t<ZDOID, ZDO::Rev> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend;
     UNORDERED_SET_t<ZDOID> m_invalidSector;

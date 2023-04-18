@@ -14,7 +14,7 @@ IDungeonManager* DungeonManager() {
 
 
 
-void IDungeonManager::Init() {
+void IDungeonManager::PostPrefabInit() {
     // load dungeons:
     auto opt = VUtils::Resource::ReadFile<BYTES_t>("dungeons.pkg");
     if (!opt)

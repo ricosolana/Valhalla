@@ -28,7 +28,7 @@ void IZDOManager::Init() {
 		}
 	);
 
-	RouteManager()->Register(Hashes::Routed::RequestZDO, 
+	RouteManager()->Register(Hashes::Routed::C2S_RequestZDO, 
 		[this](Peer* peer, ZDOID id) {
 			peer->ForceSendZDO(id);
 		}
@@ -36,11 +36,22 @@ void IZDOManager::Init() {
 }
 
 void IZDOManager::Update() {
-	auto&& peers = NetManager()->GetPeers();
+	PERIODIC_NOW(1min, {
+		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
+		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
+			<< ", mean: " << GetMeanZDOMembers()
+			<< ", stdev: " << GetStDevZDOMembers()
+			<< ", empty: " << GetCountEmptyZDOs()
+			<< ")";
+	});
 
+	auto&& peers = NetManager()->GetPeers();
+	
 	// Occasionally release ZDOs
 	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
+			if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK
+				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 			AssignOrReleaseZDOs(*peer);
 		}
 	});
@@ -51,28 +62,21 @@ void IZDOManager::Update() {
 			SendZDOs(*peer, false);
 		}
 	});
+	
 
-	PERIODIC_NOW(1min, {
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
-		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers() 
-			<< ", mean: " << GetMeanZDOMembers() 
-			<< ", stdev: " << GetStDevZDOMembers() 
-			<< ", empty: " << GetCountEmptyZDOs()
-			<< ")";
-	});
+	if (!m_destroySendList.empty()) {
 
-	if (m_destroySendList.empty())
-		return;
+		// TODO make a member variable?
+		//	think about emulated zdo containers (like replaying actions to specific peers)
+		//	this is a functionality I might be planning on into the future
+		BYTES_t bytes;
 
-	// TODO make a member variable?
-	//	think about emulated zdo containers (like replaying actions to specific peers)
-	//	this is a functionality I might be planning on into the future
+		m_temp.clear();
+		DataWriter(m_temp).Write(m_destroySendList);
 
-	m_temp.clear();
-	DataWriter(m_temp).Write(m_destroySendList);
-
-	m_destroySendList.clear();
-	RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
+		m_destroySendList.clear();
+		RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
+	}
 }
 
 
@@ -726,6 +730,11 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
+		// Only allow if normal mode
+		//if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK 
+		//	&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+		//	return;
+
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
 		{
@@ -779,6 +788,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 			}
 
+
+
 			// Also used as restore point if this ZDO breaks during deserialization
 			ZDO copy(zdo);
 
@@ -821,7 +832,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				std::rethrow_exception(std::make_exception_ptr(e));
 			}
 		}
-	});		
+	});
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {

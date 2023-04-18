@@ -788,7 +788,7 @@ void IModManager::LoadAPI() {
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeerByName)
         ),
-        "peers", sol::readonly(&INetManager::m_peers)
+        "peers", sol::readonly(&INetManager::m_onlinePeers)
     );
 
 
@@ -830,7 +830,7 @@ void IModManager::LoadAPI() {
 
     m_state["ZoneManager"] = ZoneManager();
     m_state.new_usertype<IZoneManager>("IZoneManager",
-        "GenerateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::GenerateZone),
+        "PopulateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::PopulateZone),
         "GetNearestFeature", &IZoneManager::GetNearestFeature,
         //"RegenerateZone", &IZoneManager::RegenerateZone,
         "WorldToZonePos", &IZoneManager::WorldToZonePos,
@@ -1011,7 +1011,7 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
     return sol::stack::push(L, description);
 }
 
-void IModManager::Init() {
+void IModManager::PostInit() {
 #ifdef VH_OPTION_ENABLE_MODS
     LOG(INFO) << "Initializing ModManager";
 

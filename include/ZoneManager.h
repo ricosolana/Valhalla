@@ -161,10 +161,16 @@ private:
 
 	void TryGenerateNearbyZones(const Vector3f& pos);
 
+
+	// Generate a zone if it is not already generated
+	//	Returns whether the zone was successfully generated
+	bool GenerateZone(const ZoneID& zone);
+	// Generate a zone if it is not already geenrated
+	//	Returns if zone was successfully generated given heightmap is ready
 	bool TryGenerateZone(const ZoneID& zone);
-	void GenerateZone(Heightmap& heightmap);
+	void PopulateZone(Heightmap& heightmap);
 	std::vector<ClearArea> TryGenerateFeature(const ZoneID& zone);
-	void GenerateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
+	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
 	bool HaveLocationInRange(const Feature& feature, const Vector3f& pos);
 	Vector3f GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
@@ -186,13 +192,13 @@ private:
 	bool IsZoneGenerated(const ZoneID& zone);
 
 	void GenerateLocationProxy(const Feature& feature, HASH_t seed, const Vector3f& pos, const Quaternion& rot);
-	void GenerateZoneCtrl(const ZoneID& zone);
+	//void GenerateZoneCtrl(const ZoneID& zone);
 
 public:
-	void Init();
+	void PostPrefabInit();
 	void Update();
 
-	void PrepareAllFeatures();
+	void PostGeoInit();
 
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
@@ -203,7 +209,7 @@ public:
 
 	//void RegenerateZone(const ZoneID& zone);
 
-	void GenerateZone(const ZoneID& zone);
+	void PopulateZone(const ZoneID& zone);
 
 	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();

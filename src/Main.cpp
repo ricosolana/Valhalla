@@ -3,6 +3,7 @@
 
 #include <csignal>
 #include <stdlib.h>
+#include <format>
 
 #include <optick.h>
 #include <easylogging++.h>
@@ -18,18 +19,6 @@
 #include "Tests.h"
 
 INITIALIZE_EASYLOGGINGPP
-
-// https://stackoverflow.com/a/17350413
-#define RESET "\033[0m"
-#define BLACK "\033[30m"
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define GOLD "\033[33m"
-#define BLUE "\033[34m"
-#define PURPLE "\033[35m"
-#define CYAN "\033[36m"
-#define WHITE "\033[37m"
-#define GRAY "\033[90m"
 
 // https://github.com/amrayn/easyloggingpp
 void initLogger(int argc, char** argv) {
@@ -50,12 +39,12 @@ void initLogger(int argc, char** argv) {
     
     std::string format = "[%datetime{%H:%m:%s}] [%thread thread/%level]: %msg";
     loggerConfiguration.set(el::Level::Info, el::ConfigurationType::Format, format);
-    loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
-    loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, (colors ? RED : "") + format + (colors ? RESET : ""));
-    loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, (colors ? GOLD : "") + format + (colors ? RESET : ""));
+    loggerConfiguration.set(el::Level::Error, el::ConfigurationType::Format, (colors ? COLOR_RED : "") + format + (colors ? COLOR_RESET : ""));
+    loggerConfiguration.set(el::Level::Fatal, el::ConfigurationType::Format, (colors ? COLOR_RED : "") + format + (colors ? COLOR_RESET : ""));
+    loggerConfiguration.set(el::Level::Warning, el::ConfigurationType::Format, (colors ? COLOR_GOLD : "") + format + (colors ? COLOR_RESET : ""));
     
-    loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? GRAY : "") +
-        std::string("[%datetime{%H:%m:%s}] [%thread thread/v%vlevel] %fbase:L%line: %msg") + (colors ? RESET : ""));
+    loggerConfiguration.set(el::Level::Verbose, el::ConfigurationType::Format, (colors ? COLOR_GRAY : "") +
+        std::string("[%datetime{%H:%m:%s}] [%thread thread/v%vlevel] %fbase:L%line: %msg") + (colors ? COLOR_RESET : ""));
 
     el::Helpers::setThreadName("main");
     el::Loggers::reconfigureAllLoggers(loggerConfiguration);

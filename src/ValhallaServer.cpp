@@ -81,8 +81,9 @@ void IValhalla::LoadFiles(bool reloading) {
                 if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
                 m_settings.worldSeed = world["seed"].as<std::string>("");
                 if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-
                 m_settings.worldModern = world["modern"].as<bool>(true);
+                m_settings.worldMode = (WorldMode) world["mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
+                m_settings.worldCaptureDumpSize = std::clamp(world["capture-dump-size"].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
             }
 
             m_settings.worldSaveInterval = seconds(std::clamp(world["save-interval-s"].as<int>(1800), 60, 60 * 60));
@@ -118,6 +119,18 @@ void IValhalla::LoadFiles(bool reloading) {
             m_settings.eventsChance = std::clamp(events["chance"].as<float>(.2f), 0.f, 1.f);
             m_settings.eventsInterval = minutes(std::max(1, events["interval-m"].as<int>(46)));
             m_settings.eventsRange = std::clamp(events["range"].as<float>(96), 1.f, 96.f * 4);
+
+            if (m_settings.serverPassword.empty())
+                LOG(WARNING) << "Server does not have a password";
+            else
+                LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+
+            if (m_settings.worldMode == WorldMode::CAPTURE) {
+                LOG(WARNING) << "Experimental packet capture enabled";
+            }
+            else if (m_settings.worldMode == WorldMode::PLAYBACK) {
+                LOG(WARNING) << "Experimental packet playback enabled";
+            }
         }
     }
     
@@ -229,45 +242,33 @@ void IValhalla::Start() {
 
     this->LoadFiles(false);
 
-    m_worldTime = 2040;
+    //m_worldTime = 2040;
+    m_worldTime = GetMorning(1);
 
-    PrefabManager()->Init();
+    m_serverTimeMultiplier = 3;
+
     ZDOManager()->Init();
-    ZoneManager()->Init();
     EventManager()->Init();
-    WorldManager()->Init();
-    GeoManager()->Init();
-    ZoneManager()->PrepareAllFeatures();
-    DungeonManager()->Init();
-    ModManager()->Init();
+    PrefabManager()->Init();
 
-    HeightmapBuilder()->Init();
-    NetManager()->Init();
+    ZoneManager()->PostPrefabInit();
+    DungeonManager()->PostPrefabInit();
 
-    if (m_settings.serverPassword.empty())
-        LOG(WARNING) << "Server does not have a password";
-    else
-        LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+    WorldManager()->PostZoneInit();
+    GeoManager()->PostWorldInit();
+    HeightmapBuilder()->PostGeoInit();
+    ZoneManager()->PostGeoInit();
 
-    // Basically, allow players who have already logged in before, unless the password has changed
-    //if (m_settings.playerAutoPassword) {
-    //    const char* prevPassword = getenv("valhalla-prev-password");
-    //
-    //    // Clear the allow list on password change
-    //    if (prevPassword && m_settings.serverPassword != prevPassword) {
-    //        m_bypass.clear();
-    //    }
-    //
-    //    // Put the env
-    //    std::string kv = "valhalla-prev-password=" + m_settings.serverPassword;
-    //    if (putenv(kv.c_str())) {
-    //        char* msg = strerror(errno);
-    //        LOG(ERROR) << "Failed to set env: " << msg;
-    //    }
-    //    else {
-    //        LOG(INFO) << "Player auto password is enabled";
-    //    }
-    //}
+    NetManager()->PostInit();
+    ModManager()->PostInit();
+
+    /*
+    if (SERVER_SETTINGS.worldRecording) {
+        World* world = WorldManager()->GetWorld();
+        VUtils::Resource::WriteFile(
+            fs::path(VALHALLA_WORLD_RECORDING_PATH) / world->m_name / (world->m_name + ".db"),
+            WorldManager()->SaveWorldDB());
+    }*/
 
     m_prevUpdate = steady_clock::now();
     m_nowUpdate = steady_clock::now();
@@ -337,7 +338,8 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    WorldManager()->WriteFileWorldDB(true);
+    if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK)
+        WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
     VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
@@ -365,6 +367,7 @@ void IValhalla::Update() {
     ZDOManager()->Update();
     ZoneManager()->Update();
     EventManager()->Update();
+    HeightmapBuilder()->Update();
 }
 
 void IValhalla::PeriodUpdate() {
@@ -384,15 +387,21 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
+    if (m_settings.worldMode == WorldMode::PLAYBACK) {
+        PERIODIC_NOW(7s, {
+            Broadcast(UIMsgType::TopLeft, "World playback " + std::to_string(duration_cast<seconds>(Valhalla()->Nanos()).count()) + "s");
+        });
+    }
+
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
             LOG(INFO) << "World saving in 30s";
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-            });
+        });
 
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
-            WorldManager()->WriteFileWorldDB(false);
+            WorldManager()->GetWorld()->WriteFiles();
         });
     }
 }

@@ -33,6 +33,22 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*	Similarly, what about missing RoutedRpc handlers?
 		*/
 
+		
+		if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+			// If this is a real peer, allow ONLY read-only actions
+			if (!(hash == Hashes::Routed::C2S_RequestIcon
+				|| hash == Hashes::Routed::C2S_RequestZDO
+				|| hash == Hashes::Routed::ChatMessage
+				|| hash == Hashes::Routed::C2S_RequestIcon
+				|| hash == Hashes::View::Talker::Chat))
+			{
+				// Only replay sockets allowed to do anything
+				if (!std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) {
+					return;
+				}
+			}
+		}
+
 		if (target == EVERYBODY) {
 			// Confirmed: targetZDO CAN have a value when globally routed
 			//assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");

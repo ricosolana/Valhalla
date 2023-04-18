@@ -13,66 +13,95 @@ IHeightmapBuilder* HeightmapBuilder() {
 }
 
 // public
-void IHeightmapBuilder::Init() {
-    m_builder = std::thread([this]() {
-        OPTICK_THREAD("HMBuilder");
-        el::Helpers::setThreadName("HMBuilder");
+void IHeightmapBuilder::PostGeoInit() {
+    int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
-        LOG(INFO) << "Builder started";
-        while (!m_stop) {
-            OPTICK_FRAME("BuilderThread");
-            bool buildMore;
-            {
-                std::scoped_lock<std::mutex> scoped(m_lock);
-                buildMore = !m_toBuild.empty();
+    for (int i = 0; i < TC; i++) {
+        auto&& insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
+
+        Shared* shared = insert->get();
+
+        shared->m_thread = std::jthread([this, i, shared](std::stop_token token) {
+            std::string name = "HMBuilder" + std::to_string(i);
+
+            OPTICK_THREAD(name.c_str());
+            el::Helpers::setThreadName(name);
+
+            std::vector<ZoneID> next;
+            
+            LOG(INFO) << "Builder started";
+            while (!token.stop_requested()) {
+
+                // Reassign pending heightmaps
+                if (next.empty()) {
+                    std::scoped_lock<std::mutex> scoped(shared->m_mux);
+                    next = std::move(shared->m_waiting);
+                }
+
+                std::vector<std::unique_ptr<Heightmap>> baked;
+
+                // Bake any pending heightmaps 
+                for (int i = next.size() - 1; i >= 0; --i) {
+                    auto&& zone = next[i];
+                    auto base(std::make_unique<BaseHeightmap>());
+                    Build(base.get(), zone);
+                    baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
+                    //if (baked.size() > next.size() / 10)
+                    if (baked.size() > 10)
+                        break;
+
+                    // early stop
+                    if (token.stop_requested())
+                        return;
+                }
+
+                next.resize(next.size() - baked.size());
+
+                /*
+                for (auto&& zone : next) {
+                    auto base(std::make_unique<BaseHeightmap>());
+                    Build(base.get(), zone);
+                    baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
+                    if (baked.size() > next.size() / 10)
+                        break;
+                }*/
+
+                // Add to the pool of ready heightmaps
+                {
+                    std::scoped_lock<std::mutex> scoped(m_mux);
+                    for (auto&& heightmap : baked)
+                        m_ready[heightmap->GetZone()] = std::move(heightmap);
+                }
+
+                std::this_thread::sleep_for(1ms);
             }
+        });
+    }
 
-            if (buildMore) {
-                ZoneID zone;
-                {
-                    std::scoped_lock<std::mutex> scoped(m_lock);
-
-                    auto&& begin = m_toBuild.begin();
-
-                    zone = *begin;
-                    m_toBuild.erase(begin);
-                }
-
-                auto base(std::make_unique<BaseHeightmap>());
-                Build(base.get(), zone);
-
-                {
-                    std::scoped_lock<std::mutex> scoped(m_lock);
-                    m_ready[zone] = std::make_unique<Heightmap>(zone, std::move(base));
-
-                    //static auto prev(steady_clock::now());
-                    //auto now(steady_clock::now());
-                    //if (now - prev > 1min && m_ready.size() > 32) {
-                    //    m_ready.clear();
-                    //    prev = now;
-                    //}
-
-                        
-
-                    // start dropping uneaten heightmaps (poor heightmaps)
-                    // not really necessary? Why dorp heightmaps?
-                    //while (m_ready.size() > 16) {
-                    //    m_ready.erase(m_ready.begin());
-                    //}
-                }
-            }  
-            std::this_thread::sleep_for(1ms);
-        }
-    });
+    m_nextBuilder = m_builders.begin();
 }
 
 void IHeightmapBuilder::Uninit() {
-    m_stop = true;
-    if (m_builder.joinable())
-        m_builder.join();
+    // First request all to stop
+    for (auto&& shared : m_builders) {
+        shared->m_thread.request_stop();
+    }
+
+    // Then join each 
+    for (auto&& builder : m_builders) {
+        if (builder->m_thread.joinable())
+            builder->m_thread.join();
+    }
 }
 
-
+void IHeightmapBuilder::Update() {
+    PERIODIC_NOW(1min, {
+        {
+            std::scoped_lock<std::mutex> scoped(m_mux);
+            m_ready.clear();
+        }
+    });
+}
 
 // private
 void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {
@@ -154,17 +183,48 @@ std::unique_ptr<HMBuildData> IHeightmapBuilder::RequestTerrainBlocking(const Zon
     return hmbuildData;
 }*/
 
+/*
+void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
+    for (auto&& shared : m_builders) {
+        std::scoped_lock<std::mutex> scoped(shared.m_mux);
+
+        for (int i=0; i < )
+        shared.m_waiting.push_back
+    }
+}*/
+
 std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(const ZoneID& zone) {
-    std::scoped_lock<std::mutex> scoped(m_lock);
-    auto&& find = m_ready.find(zone);
-    if (find != m_ready.end()) {
-        auto heightmap = std::move(find->second);
-        m_ready.erase(find);
-        return heightmap;;
+    {
+        std::unique_ptr<Heightmap> result;
+        {
+            std::scoped_lock<std::mutex> scoped(m_mux);
+            auto&& find = m_ready.find(zone);
+            if (find != m_ready.end()) {
+                result = std::move(find->second);
+                m_ready.erase(find);
+            }
+        }
+
+        if (result) {
+            m_building.erase(zone);
+            return result;
+        }
     }
 
-    // Will not insert if absent, which is intended
-    m_toBuild.insert(zone);
+    auto&& insert = m_building.insert(zone);    
+    if (insert.second) {
+        if (m_nextBuilder == m_builders.end()) m_nextBuilder = m_builders.begin();
+
+        // Give the next builder a job
+        //  Ideally, the builder with the least work should be doing this job...
+        //  solve problems first
+        {
+            std::scoped_lock<std::mutex> scoped((*m_nextBuilder)->m_mux);
+            (*m_nextBuilder)->m_waiting.push_back(zone);
+        }
+
+        ++m_nextBuilder;
+    }
 
     return nullptr;
 }

@@ -2,6 +2,7 @@
 #include "NetManager.h"
 #include "ZDOManager.h"
 #include "RouteManager.h"
+#include "VUtilsResource.h"
 
 static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
     "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword",
@@ -71,12 +72,14 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (password != PASSWORD)
+            if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK && password != PASSWORD)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
 
             // if peer already connected
+            //  peers with a new character can connect while replaying,
+            //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
             if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()) || NetManager()->GetPeer(rpc->m_uuid) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
@@ -94,7 +97,7 @@ Peer::Peer(ISocket::Ptr socket)
 
             //NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
 
-            NetManager()->OnNewPeer(*rpc);
+            NetManager()->OnPeerConnect(*rpc);
 
             return false;
         });
@@ -122,7 +125,9 @@ Peer::Peer(ISocket::Ptr socket)
         return false;
     });
 
-    VLOG(1) << "Peer()";
+    //VLOG(1) << "Peer()";
+
+    LOG(WARNING) << m_socket->GetHostName() << " has connected";
 }
 
 void Peer::Update() {
@@ -143,12 +148,11 @@ void Peer::Update() {
         if (hash == 0) {
             if (reader.Read<bool>()) {
                 // Reply to the server with a pong
-                bytes.clear();
-                DataWriter writer(bytes);
+                BYTES_t pong;
+                DataWriter writer(pong);
                 writer.Write<HASH_t>(0);
                 writer.Write<bool>(false);
-                m_socket->Send(std::move(bytes));
-                static constexpr int h = sizeof(ZDO);
+                m_socket->Send(std::move(pong));
             }
             else {
                 m_lastPing = now;
@@ -156,6 +160,16 @@ void Peer::Update() {
         }
         else {
             InternalInvoke(hash, reader);
+        }
+
+        if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE
+            && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
+        {
+            auto ns(Valhalla()->Nanos());
+
+            std::scoped_lock<std::mutex> scoped(m_recordmux);
+            this->m_captureQueueSize += bytes.size();
+            this->m_recordBuffer.push_back({ ns, std::move(bytes) });
         }
     }
 

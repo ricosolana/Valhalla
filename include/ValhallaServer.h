@@ -39,6 +39,7 @@ class IValhalla {
     friend class IModManager;
     friend class IWorldManager;
     friend class Tests;
+    friend class World;
 
 private:
     std::atomic_bool m_terminate {};
@@ -61,6 +62,8 @@ private:
     double m_worldTimeMultiplier = 1;
 
     fs::file_time_type m_settingsLastTime {};
+
+    double m_serverTimeMultiplier = 1;
 
 private:
     void LoadFiles(bool reloading);
@@ -86,7 +89,8 @@ public:
     // Get the time since the server started
     // Updated once per frame
     auto Elapsed() {
-        return m_nowUpdate - m_startTime;
+        //return m_nowUpdate - m_startTime;
+        return nanoseconds((int64_t)(duration_cast<nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
     }
 
     auto Nanos() {
@@ -105,8 +109,9 @@ public:
 
     // Get the time in seconds since the last frame
     float Delta() {
+        //auto elapsed = Elapsed();
         auto elapsed = m_nowUpdate - m_prevUpdate;
-        return (double)elapsed.count() / (double)duration_cast<decltype(elapsed)>(1s).count();
+        return ((double)elapsed.count() * m_serverTimeMultiplier) / (double)duration_cast<decltype(elapsed)>(1s).count();
     }
 
 

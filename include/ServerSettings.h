@@ -7,6 +7,12 @@ enum class AssignAlgorithm {
     DYNAMIC_RADIUS
 };
 
+enum class WorldMode : int32_t {
+    NORMAL,
+    CAPTURE,
+    PLAYBACK,
+};
+
 struct ServerSettings {
     std::string     serverName;
     uint16_t        serverPort;
@@ -16,10 +22,11 @@ struct ServerSettings {
 
     std::string     worldName;
     std::string     worldSeed;
-    //HASH_t          worldSeed;
-    //bool            worldSave;
+    bool            worldPregenerate;
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
+    WorldMode       worldMode;
+    size_t          worldCaptureDumpSize;
     
     //bool            playerAutoPassword;
     bool            playerWhitelist;

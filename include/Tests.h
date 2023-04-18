@@ -792,7 +792,7 @@ public:
         Valhalla()->LoadFiles(true);
 
         PrefabManager()->Init();
-        DungeonManager()->Init();
+        DungeonManager()->PostPrefabInit();
 
         //DungeonManager()->GetDungeon(
         //    //VUtils::String::GetStableHashCode("DG_Cave")
@@ -1240,10 +1240,10 @@ public:
     }
 
     void Test_World() {
-        WorldManager()->BackupFileWorldDB("world");
+        //WorldManager()->BackupFileWorldDB("world");
 
         auto world = WorldManager()->RetrieveWorld("privUWorld", "");
-        WorldManager()->LoadFileWorldDB("02129");
+        //WorldManager()->LoadFileWorldDB("02129");
     }
 
     void Test_ZDO() {

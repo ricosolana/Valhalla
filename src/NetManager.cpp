@@ -11,6 +11,7 @@
 #include "ZDOManager.h"
 #include "RouteManager.h"
 #include "ZoneManager.h"
+#include "VUtilsResource.h"
 
 using namespace std::chrono;
 
@@ -89,7 +90,7 @@ bool INetManager::Unban(const std::string& user) {
 void INetManager::SendDisconnect() {
     LOG(INFO) << "Sending disconnect msg";
 
-    for (auto&& peer : m_clients) {
+    for (auto&& peer : m_connectedPeers) {
         peer->SendDisconnect();
     }
 }
@@ -97,15 +98,15 @@ void INetManager::SendDisconnect() {
 
 
 void INetManager::SendPlayerList() {
-    if (!m_peers.empty()) {
+    if (!m_onlinePeers.empty()) {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
 
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
-        writer.Write((int)m_peers.size());
+        writer.Write((int)m_onlinePeers.size());
 
-        for (auto&& peer : m_peers) {
+        for (auto&& peer : m_onlinePeers) {
             writer.Write(std::string_view(peer->m_name));
             writer.Write(std::string_view(peer->m_socket->GetHostName()));
             writer.Write(peer->m_characterID);
@@ -118,7 +119,7 @@ void INetManager::SendPlayerList() {
                 writer.Write(peer->m_pos);
         }
 
-        for (auto&& peer : m_peers) {
+        for (auto&& peer : m_onlinePeers) {
             // this is the problem
             peer->Invoke(Hashes::Rpc::S2C_UpdatePlayerList, bytes);
         }
@@ -126,7 +127,7 @@ void INetManager::SendPlayerList() {
 }
 
 void INetManager::SendNetTime() {
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_onlinePeers) {
         peer->Invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
 }
@@ -158,7 +159,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
-void INetManager::OnNewPeer(Peer& peer) {
+void INetManager::OnPeerConnect(Peer& peer) {
     peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
 
     if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
@@ -231,7 +232,9 @@ void INetManager::OnNewPeer(Peer& peer) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
-        WorldManager()->WriteFileWorldDB(true);
+        //WorldManager()->WriteFileWorldDB(true);
+
+        WorldManager()->GetWorld()->WriteFiles();
 
         peer->ConsoleMessage("Saved the world");
         });
@@ -269,13 +272,13 @@ void INetManager::OnNewPeer(Peer& peer) {
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
 
-    m_peers.push_back(&peer);
+    m_onlinePeers.push_back(&peer);
 }
 
 
 // Return the peer or nullptr
 Peer* INetManager::GetPeerByName(const std::string& name) {
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_onlinePeers) {
         if (peer->m_name == name)
             return peer;
     }
@@ -284,7 +287,7 @@ Peer* INetManager::GetPeerByName(const std::string& name) {
 
 // Return the peer or nullptr
 Peer* INetManager::GetPeer(OWNER_t uuid) {
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_onlinePeers) {
         if (peer->m_uuid == uuid)
             return peer;
     }
@@ -292,7 +295,7 @@ Peer* INetManager::GetPeer(OWNER_t uuid) {
 }
 
 Peer* INetManager::GetPeerByHost(const std::string& host) {
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_onlinePeers) {
         if (peer->m_socket->GetHostName() == host)
             return peer;
     }
@@ -304,7 +307,7 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
 
     std::vector<Peer*> peers;
 
-    for (auto&& peer : m_peers) {
+    for (auto&& peer : m_onlinePeers) {
 
         // use wildcards too
         std::string p = peer->m_socket->GetAddress();
@@ -332,13 +335,32 @@ std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
     return peers;
 }
 
-void INetManager::Init() {
+void INetManager::PostInit() {
     LOG(INFO) << "Initializing NetManager";
 
-    if (SERVER_SETTINGS.serverDedicated)
-        m_acceptor = std::make_unique<AcceptorSteamDedicated>();
-    else 
-        m_acceptor = std::make_unique<AcceptorSteamP2P>();
+    // load session file if replaying
+    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+        auto path = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
+            / WorldManager()->GetWorld()->m_name 
+            / "sessions.pkg";
+
+        if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
+            DataReader reader(*opt);
+
+            auto count = reader.Read<int32_t>();
+            for (int i = 0; i < count; i++) {
+                auto host = reader.Read<std::string>();
+                auto nsStart = nanoseconds(reader.Read<int64_t>());
+                auto nsEnd = nanoseconds(reader.Read<int64_t>());
+
+                m_sortedSessions.push_back( { host, { nsStart, nsEnd } } );
+            }
+        }        
+    }
+
+    if (SERVER_SETTINGS.serverDedicated) m_acceptor = std::make_unique<AcceptorSteamDedicated>();
+    else m_acceptor = std::make_unique<AcceptorSteamP2P>();
+
     m_acceptor->Listen();
 }
 
@@ -347,10 +369,119 @@ void INetManager::Update() {
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
-        auto&& peer = std::make_unique<Peer>(std::move(*opt));
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, peer.get()))
-            m_clients.push_back(std::move(peer));
-    }       
+        auto&& ptr = std::make_unique<Peer>(std::move(*opt));
+        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
+            Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
+            
+            if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+                // record peer joindata
+                m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
+                    { Valhalla()->Nanos(), 0ns } });
+                peer->m_disconnectCapture = &m_sortedSessions.back().second.second;
+
+                const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
+                    / WorldManager()->GetWorld()->m_name 
+                    / peer->m_socket->GetHostName() 
+                    / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
+
+                std::string host = ptr->m_socket->GetHostName();
+
+                peer->m_recordThread = std::jthread([root, peer, host](std::stop_token token) {
+                    size_t chunkIndex = 0;
+
+                    fs::create_directories(root);
+
+                    auto&& saveBuffered = [&](int count) {
+                        BYTES_t chunk;
+                        DataWriter writer(chunk);
+
+                        writer.Write((int32_t)count);
+                        for (int i = 0; i < count; i++) {
+                            nanoseconds ns;
+                            BYTES_t packet;
+                            {
+                                std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
+
+                                auto&& front = peer->m_recordBuffer.front();
+                                ns = front.first;
+                                packet = std::move(front.second);
+                                peer->m_captureQueueSize -= packet.size();
+
+                                peer->m_recordBuffer.pop_front();
+                            }
+                            writer.Write(ns.count());
+                            writer.Write(packet);
+                        }
+
+                        fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
+
+                        if (auto compressed = ZStdCompressor().Compress(chunk)) {
+                            if (VUtils::Resource::WriteFile(path, *compressed))
+                                LOG(WARNING) << "Saving " << path.c_str();
+                            else
+                                LOG(ERROR) << "Failed to save " << path.c_str();
+                        }
+                        else
+                            LOG(ERROR) << "Failed to compress packet capture chunk";
+                    };
+
+                    // Primary occasional saving of captured packets
+                    while (!token.stop_requested()) {
+                        size_t size = 0;
+                        size_t captureQueueSize = 0;
+                        {
+                            std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
+                            size = peer->m_recordBuffer.size();
+                            captureQueueSize = peer->m_captureQueueSize;
+                        }
+
+                        // save at ~256Kb increments
+                        if (captureQueueSize > SERVER_SETTINGS.worldCaptureDumpSize) {
+                            saveBuffered(size);
+                        }
+
+                        std::this_thread::sleep_for(1ms);
+                    }
+
+                    LOG(WARNING) << "Terminating async capture writer " << host;
+
+                    // Save any buffered captures before exit
+                    int size = 0;
+                    {
+                        std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
+                        size = peer->m_recordBuffer.size();
+                    }
+
+                    if (size)
+                        saveBuffered(size);
+
+                });
+
+                LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
+            }
+        }
+    }
+
+    // accept replay peers
+    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+        if (!m_sortedSessions.empty()) {
+            auto&& front = m_sortedSessions.front();
+            if (Valhalla()->Nanos() >= front.second.first) {
+                auto&& peer = std::make_unique<Peer>(
+                    std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
+
+                m_connectedPeers.push_back(std::move(peer));
+                m_sortedSessions.pop_front();
+            }
+            else {
+                PERIODIC_NOW(30s, {
+                    LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
+                });
+            }
+        }
+    }
+
+
 
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
@@ -365,13 +496,13 @@ void INetManager::Update() {
         writer.Write<HASH_t>(0);
         writer.Write(true);
 
-        for (auto&& peer : m_clients) {
+        for (auto&& peer : m_connectedPeers) {
             peer->m_socket->Send(bytes);
         }
     });
 
     // Update peers
-    for (auto&& peer : m_clients) {
+    for (auto&& peer : m_connectedPeers) {
         try {
             peer->Update();
         }
@@ -390,13 +521,13 @@ void INetManager::Update() {
 
     // Cleanup
     {
-        for (auto&& itr = m_peers.begin(); itr != m_peers.end(); ) {
+        for (auto&& itr = m_onlinePeers.begin(); itr != m_onlinePeers.end(); ) {
             Peer& peer = *(*itr);
 
             if (!peer.m_socket->Connected()) {
-                CleanupPeer(peer);
+                OnPeerQuit(peer);
 
-                itr = m_peers.erase(itr);
+                itr = m_onlinePeers.erase(itr);
             }
             else {
                 ++itr;
@@ -405,13 +536,15 @@ void INetManager::Update() {
     }
 
     {
-        for (auto&& itr = m_clients.begin(); itr != m_clients.end(); ) {
-            Peer* peer = itr->get();
-            assert(peer);
-            if (!(peer->m_socket && peer->m_socket->Connected())) {
+        for (auto&& itr = m_connectedPeers.begin(); itr != m_connectedPeers.end(); ) {
+            Peer& peer = *(*itr);
+
+            if (!peer.m_socket->Connected()) {
                 VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
 
-                itr = m_clients.erase(itr);
+                OnPeerDisconnect(peer);
+
+                itr = m_connectedPeers.erase(itr);
             }
             else {
                 ++itr;
@@ -420,7 +553,7 @@ void INetManager::Update() {
     }
 }
 
-void INetManager::CleanupPeer(Peer& peer) {
+void INetManager::OnPeerQuit(Peer& peer) {
     LOG(INFO) << "Cleaning up peer";
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
@@ -431,11 +564,45 @@ void INetManager::CleanupPeer(Peer& peer) {
         Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
 }
 
+void INetManager::OnPeerDisconnect(Peer& peer) {
+    ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
+
+    if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+        *(peer.m_disconnectCapture) = Valhalla()->Nanos();
+    }
+
+    peer.SendDisconnect();
+
+    LOG(INFO) << peer.m_socket->GetHostName() << " disconnected";
+}
+
 void INetManager::Uninit() {
     SendDisconnect();
 
-    for (auto&& peer : m_peers) {
-        CleanupPeer(*peer);
+    for (auto&& peer : m_onlinePeers) {
+        OnPeerQuit(*peer);
+    }
+
+    for (auto&& peer : m_connectedPeers) {
+        OnPeerDisconnect(*peer);
+    }
+
+    {
+        // save sessions
+        BYTES_t bytes;
+        DataWriter writer(bytes);
+        writer.Write((int)m_sortedSessions.size());
+        for (auto&& session : m_sortedSessions) {
+            writer.Write(session.first);
+            writer.Write(session.second.first.count());
+            writer.Write(session.second.second.count());
+        }
+
+        auto path = fs::path(VALHALLA_WORLD_RECORDING_PATH)
+            / WorldManager()->GetWorld()->m_name
+            / "sessions.pkg";
+
+        VUtils::Resource::WriteFile(path, bytes);
     }
 
     m_acceptor.reset();

@@ -104,3 +104,48 @@ private:
 //    STEAM_CALLBACK(SteamSocket, OnPersonaStateChange, PersonaStateChange_t);
 //#endif
 };
+
+/*
+class CaptureSteamSocket : public SteamSocket {
+private:
+    std::jthread m_recordThread;
+    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
+    std::mutex m_recordmux;
+
+public:
+    bool m_recordPacket = false;
+
+public:
+    CaptureSteamSocket(HSteamNetConnection hConn); // : SteamSocket(hConn) {}
+};*/
+
+// Experimental class for replaying client actions
+class ReplaySocket : public ISocket {
+private:
+    std::string m_originalHost;
+    std::string m_originalAddress;
+
+    nanoseconds m_disconnectTime;
+
+    // async disk packet stuff
+    std::list<std::pair<nanoseconds, BYTES_t>> m_ready;
+    std::mutex m_mux;
+    std::jthread m_thread;
+
+public:
+    ReplaySocket(std::string host, int session, nanoseconds disconnectTime);
+
+    void Close(bool flush) override;
+
+    void Update() override;
+    void Send(BYTES_t) override;
+    std::optional<BYTES_t> Recv() override;
+
+    std::string GetHostName() const override;
+    std::string GetAddress() const override;
+    bool Connected() const override;
+
+    unsigned int GetSendQueueSize() const override;
+    unsigned int GetPing() const override;
+
+};
