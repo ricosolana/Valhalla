@@ -34,7 +34,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*/
 
 		
-		if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+		if (VH_SETTINGS.worldCaptureMode == WorldMode::PLAYBACK) {
 			// If this is a real peer, allow ONLY read-only actions
 			if (!(hash == Hashes::Routed::C2S_RequestIcon
 				|| hash == Hashes::Routed::C2S_RequestZDO

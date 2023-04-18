@@ -1,42 +1,46 @@
-server-name: Valhalla server
-server-port: 2456
-server-password: ''
-server-public: false
-
-world-name: world
-world-save: false
-world-save-interval-s: 1800
-world-modern: true
-
-player-whitelist: false
-player-max: 10
-player-auth: true
-player-list: true
-player-map-visible: false
-
-socket-timeout-ms: 300000000
-zdo-max-congestion: 10240
-zdo-min-congestion: 2048
-zdo-send-interval-ms: 50
-zdo-assign-interval-s: 2
-zdo-smart-assign: false
-
-spawning-creatures: true
-spawning-locations: false
-spawning-vegetation: true
-spawning-dungeons: false
-
-dungeon-end-caps: true
-dungeon-doors: true
-dungeon-flip-rooms: true
-dungeon-zone-limit: true
-dungeon-room-shrink: true
-dungeon-reset: true
-dungeon-reset-time-s: 259200
-dungeon-incremental-reset-count: 3
-dungeon-random-generation: true
-
-events-enabled: true
-events-chance: 0.200000003
-events-interval-m: 46
-events-range: 96
+server:
+    name: Valhalla server
+    port: 2456
+    password: dak3cW
+    public: false
+    dedicated: true
+world:
+    name: world
+    seed: JQjLbVBWV4
+    save-interval-s: 1800
+    modern: true
+    capture-mode: 1
+    capture-size-bytes: 256000
+    capture-session: 2
+    playback-session: -1
+player:
+    whitelist: false
+    max: 10
+    auth: true
+    timeout-s: 30
+zdo:
+    max-congestion: 10240
+    min-congestion: 2048
+    send-interval-ms: 50
+    assign-interval-s: 2
+    assign-algorithm: 0
+spawning:
+    creatures: true
+    locations: true
+    vegetation: true
+    dungeons: true
+dungeons:
+    end-caps: true
+    doors: true
+    flip-rooms: true
+    zone-limit: true
+    room-shrink: true
+    reset: true
+    reset-time-s: 259200
+    incremental-reset-count: 3
+    seeded-random: true
+events:
+    enabled: true
+    chance: 0.200000003
+    interval-m: 46
+    range: 96

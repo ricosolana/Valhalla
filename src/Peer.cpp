@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK && password != PASSWORD)
+            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != PASSWORD)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -162,7 +162,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
-        if (VH_SETTINGS.worldMode == WorldMode::CAPTURE
+        if (VH_SETTINGS.worldCaptureMode == WorldMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {
             auto ns(Valhalla()->Nanos());

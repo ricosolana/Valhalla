@@ -10,10 +10,11 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
 
     this->m_disconnectTime = disconnectTime;
 
-    const fs::path root = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
-        / WorldManager()->GetWorld()->m_name 
-        / host 
-        / std::to_string(session);
+    const fs::path root = fs::path(VH_CAPTURE_PATH) 
+        / WorldManager()->GetWorld()->m_name                    // the world being replayed
+        / std::to_string(VH_SETTINGS.worldPlaybackSession)      // the world session being replayed
+        / host                                                  // the player being replayed
+        / std::to_string(session);                              // the player session being replayed
 
     m_thread = std::jthread([this, host, root](std::stop_token token) {
         size_t chunkIndex = 0;

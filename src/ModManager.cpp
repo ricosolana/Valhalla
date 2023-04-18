@@ -651,6 +651,7 @@ void IModManager::LoadAPI() {
         "id", sol::property([](IValhalla& self) { return Int64Wrapper(self.ID()); }),
         "nanos", sol::property([](IValhalla& self) { return Int64Wrapper(self.Nanos().count()); }),
         "time", sol::property(&IValhalla::Time),
+        "timeMultiplier", &IValhalla::m_serverTimeMultiplier,
         // world time functions
         "worldTime", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
         "worldTimeMultiplier", sol::property([](IValhalla& self) { return self.m_worldTimeMultiplier; }, [](IValhalla& self, double mul) { if (mul <= 0.001) throw std::runtime_error("multiplier too small"); self.m_worldTimeMultiplier = mul; }),

@@ -1,4 +1,33 @@
 todo:
+    - ideas for dynamic playback:
+        support for:
+            realtime changing playback speeds
+            playback in reverse
+            playback from set time points
+            
+        ways for rewinding playback might be possible by
+        taking snapshots of world and its state at preset time
+        so that fast-forwarding playback by 2 hours doesnt take forever to process
+        
+        because the current system takes into account ALL packets, and 
+        not particularly how the way the world changes to the packets
+        
+        an example of this is the current lack of recording for:
+            RandomEvents
+            WorldTime
+            ZDOs
+            
+        additionally the current system will need changes to 
+        support the above, remarks:
+            - activating a middle snapshot might have online peers
+                need a way to add those peers anytime
+                
+        all of this might be unfeasable because the observing client keeps already-created zdoids in circulation until disconnect
+        this breaks any rewinding capabilities
+        
+        a system like this would require some kind of nested zdo system within the primary manager, ie. sandboxing simulated zdos
+        and creating new zdos with ever-increasing ids to correctly reflect created or destroyed objects client-side
+
     - navigate through handshake-rpcs, making sure things would go perfectly for a replaying client
     
         remove password restrictions

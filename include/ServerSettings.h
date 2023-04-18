@@ -25,8 +25,10 @@ struct ServerSettings {
     bool            worldPregenerate;
     seconds         worldSaveInterval;  // set to 0 to disable
     bool            worldModern;        // whether to purge old objects on load
-    WorldMode       worldMode;
-    size_t          worldCaptureDumpSize;
+    WorldMode       worldCaptureMode;
+    size_t          worldCaptureSize;
+    int             worldCaptureSession;
+    int             worldPlaybackSession;
     
     //bool            playerAutoPassword;
     bool            playerWhitelist;

@@ -45,6 +45,8 @@ private:
 	std::vector<Vector2f> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
+
+	std::mutex m_mutRiverCache;
 	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;

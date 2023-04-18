@@ -50,7 +50,7 @@ void IZDOManager::Update() {
 	// Occasionally release ZDOs
 	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK
+			if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK
 				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 			AssignOrReleaseZDOs(*peer);
 		}
@@ -731,9 +731,9 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
 		// Only allow if normal mode
-		//if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK 
-		//	&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
-		//	return;
+		if (VH_SETTINGS.worldCaptureMode == WorldMode::PLAYBACK 
+			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+			return;
 
 		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 

@@ -80,6 +80,8 @@ public:
     //void WriteFileWorldDB(bool sync);
 
     void PostZoneInit();
+
+    void PostInit();
 };
 
 // Manager class for everything related to world file loading and file saving

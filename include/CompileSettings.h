@@ -37,7 +37,7 @@ using namespace std::chrono_literals;
 // Enable mod simulated mod rpc events
 //#define VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
 
-#define VALHALLA_WORLD_RECORDING_PATH "captures"
+#define VH_CAPTURE_PATH "captures"
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

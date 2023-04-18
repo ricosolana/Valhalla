@@ -145,7 +145,7 @@ void World::LoadFileDB(const fs::path& root) {
 }
 
 void World::CopyCompressDB(const fs::path& root) {
-	auto path = WorldManager()->GetWorldsPath() / (m_name + ".db");
+	auto path = root / (m_name + ".db");
 
 	if (fs::exists(path)) {
 		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
@@ -260,76 +260,6 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, con
 	return world;
 }
 
-
-
-/*
-void IWorldManager::LoadFileWorldDB(const fs::path& path) const {
-	LOG(INFO) << "Loading world from " << path.c_str();
-
-	auto&& opt = VUtils::Resource::ReadFile<BYTES_t>(path);
-
-	auto now(steady_clock::now());
-
-	if (opt) {
-		try {
-			DataReader reader(opt.value());
-
-			auto worldVersion = reader.Read<int32_t>();
-			if (worldVersion != VConstants::WORLD) {
-				LOG(WARNING) << "Loading unsupported world version " << worldVersion;
-				if (!VH_SETTINGS.worldModern)
-					LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
-			}
-			else
-				LOG(INFO) << "Loading world version " << worldVersion;
-
-			if (worldVersion >= 4)
-				Valhalla()->m_worldTime = reader.Read<double>();
-
-			VLOG(1) << "World time: " << Valhalla()->m_worldTime;
-
-			ZDOManager()->Load(reader, worldVersion);
-
-			if (worldVersion >= 12)
-				ZoneManager()->Load(reader, worldVersion);
-
-			if (worldVersion >= 15)
-				EventManager()->Load(reader, worldVersion);
-
-		} catch (const std::runtime_error& e) {
-			LOG(ERROR) << "Failed to load world: " << e.what();
-		}
-	}
-
-	LOG(INFO) << "World loading took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
-}*/
-
-
-/*
-void IWorldManager::BackupFileWorldDB() const {
-	auto path = GetWorldsPath() / m_world->m_name;
-
-	if (fs::exists(path)) {
-		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-			auto compressed = ZStdCompressor().Compress(*oldSave);
-			if (!compressed) {
-				LOG(ERROR) << "Failed to compress world backup " << path;
-				return;
-			}
-
-			auto now(std::to_string(steady_clock::now().time_since_epoch().count()));
-			auto backup = path.string() + "-" + now + ".zstd";
-			if (VUtils::Resource::WriteFile(backup, *compressed))
-				LOG(INFO) << "Saved world backup as '" << backup << "'";
-			else
-				LOG(ERROR) << "Failed to save world backup to " << backup;
-		}
-		else {
-			LOG(ERROR) << "Failed to load old world for backup";
-		}
-	}
-}*/
-
 BYTES_t IWorldManager::SaveWorldDB() const {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
@@ -397,8 +327,11 @@ void IWorldManager::PostZoneInit() {
 
 	m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 
-	if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
-		auto root(fs::path(VALHALLA_WORLD_RECORDING_PATH) / m_world->m_name);
+	if (VH_SETTINGS.worldCaptureMode == WorldMode::PLAYBACK) {
+		fs::path root = fs::path(VH_CAPTURE_PATH) 
+			/ m_world->m_name
+			/ std::to_string(VH_SETTINGS.worldPlaybackSession);
+
 		if (LoadWorldMeta(root))
 			m_world->LoadFileDB(root);
 		else
@@ -406,4 +339,19 @@ void IWorldManager::PostZoneInit() {
 	}
 	else
 		m_world->LoadFileDB();
+}
+
+void IWorldManager::PostInit() {
+	if (VH_SETTINGS.worldCaptureMode == WorldMode::CAPTURE) {
+		// then save world as a copy to captures
+		auto world(WorldManager()->GetWorld());
+		fs::path root = fs::path(VH_CAPTURE_PATH) 
+			/ world->m_name 
+			/ std::to_string(VH_SETTINGS.worldCaptureSession);
+
+		fs::create_directories(root);
+
+		// save world
+		world->WriteFiles(root);
+	}
 }

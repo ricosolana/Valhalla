@@ -307,7 +307,6 @@ void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint
 	riverPoints[grid].push_back({ p, r });
 }
 
-std::mutex m_mutRiverCache;
 void IGeoManager::GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth) {
 	Vector2i riverGrid = GetRiverGrid(wx, wy);
 

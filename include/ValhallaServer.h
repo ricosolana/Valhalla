@@ -56,8 +56,6 @@ private:
 
     fs::file_time_type m_settingsLastTime {};
 
-    double m_serverTimeMultiplier = 1;
-
 private:
     void LoadFiles(bool reloading);
 
@@ -73,6 +71,8 @@ public:
     ServerSettings& Settings() {
         return m_settings;
     }
+
+    double m_serverTimeMultiplier = 1;
 
     UNORDERED_SET_t<std::string> m_blacklist; // banned steam ids
     UNORDERED_SET_t<std::string> m_admin;     // admin steam ids

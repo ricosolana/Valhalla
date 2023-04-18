@@ -82,8 +82,13 @@ void IValhalla::LoadFiles(bool reloading) {
                 m_settings.worldSeed = world["seed"].as<std::string>("");
                 if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
                 m_settings.worldModern = world["modern"].as<bool>(true);
-                m_settings.worldMode = (WorldMode) world["mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
-                m_settings.worldCaptureDumpSize = std::clamp(world["capture-dump-size"].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
+                m_settings.worldCaptureMode = (WorldMode) world["capture-mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
+                m_settings.worldCaptureSize = std::clamp(world["capture-size-bytes"].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
+                m_settings.worldCaptureSession = world["capture-session"].as<int>(-1);
+                m_settings.worldPlaybackSession = world["playback-session"].as<int>(-1);
+
+                if (m_settings.worldCaptureMode == WorldMode::CAPTURE)
+                    m_settings.worldCaptureSession++;
             }
 
             m_settings.worldSaveInterval = seconds(std::clamp(world["save-interval-s"].as<int>(1800), 60, 60 * 60));
@@ -125,10 +130,10 @@ void IValhalla::LoadFiles(bool reloading) {
             else
                 LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
-            if (m_settings.worldMode == WorldMode::CAPTURE) {
+            if (m_settings.worldCaptureMode == WorldMode::CAPTURE) {
                 LOG(WARNING) << "Experimental packet capture enabled";
             }
-            else if (m_settings.worldMode == WorldMode::PLAYBACK) {
+            else if (m_settings.worldCaptureMode == WorldMode::PLAYBACK) {
                 LOG(WARNING) << "Experimental packet playback enabled";
             }
         }
@@ -136,7 +141,8 @@ void IValhalla::LoadFiles(bool reloading) {
     
     LOG(INFO) << "Server config loaded";
 
-    if (!reloading && fileError) {
+    //if (!reloading && fileError) {
+    if (!reloading) {
         YAML::Node saveNode;
 
         auto&& server = saveNode["server"];
@@ -157,6 +163,10 @@ void IValhalla::LoadFiles(bool reloading) {
         world["seed"] = m_settings.worldSeed;
         world["save-interval-s"] = m_settings.worldSaveInterval.count();
         world["modern"] = m_settings.worldModern;
+        world["capture-mode"] = std::to_underlying(m_settings.worldCaptureMode);
+        world["capture-size-bytes"] = m_settings.worldCaptureSize;
+        world["capture-session"] = m_settings.worldCaptureSession;
+        world["playback-session"] = m_settings.worldPlaybackSession;
 
         player["whitelist"] = m_settings.playerWhitelist;
         player["max"] = m_settings.playerMax;
@@ -245,7 +255,7 @@ void IValhalla::Start() {
     //m_worldTime = 2040;
     m_worldTime = GetMorning(1);
 
-    m_serverTimeMultiplier = 3;
+    m_serverTimeMultiplier = 1;
 
     ZDOManager()->Init();
     EventManager()->Init();
@@ -259,6 +269,7 @@ void IValhalla::Start() {
     HeightmapBuilder()->PostGeoInit();
     ZoneManager()->PostGeoInit();
 
+    WorldManager()->PostInit();
     NetManager()->PostInit();
     ModManager()->PostInit();
 
@@ -266,7 +277,7 @@ void IValhalla::Start() {
     if (VH_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();
         VUtils::Resource::WriteFile(
-            fs::path(VALHALLA_WORLD_RECORDING_PATH) / world->m_name / (world->m_name + ".db"),
+            fs::path(VH_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
             WorldManager()->SaveWorldDB());
     }*/
 
@@ -338,7 +349,7 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK)
+    if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK)
         WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
@@ -387,9 +398,11 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
-    if (m_settings.worldMode == WorldMode::PLAYBACK) {
-        PERIODIC_NOW(7s, {
-            Broadcast(UIMsgType::TopLeft, "World playback " + std::to_string(duration_cast<seconds>(Valhalla()->Nanos()).count()) + "s");
+    if (m_settings.worldCaptureMode == WorldMode::PLAYBACK) {
+        PERIODIC_NOW(333ms, {
+            char message[32];
+            std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));
+            Broadcast(UIMsgType::TopLeft, message);
         });
     }
 
