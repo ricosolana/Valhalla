@@ -4,19 +4,17 @@
 
 #include "Task.h"
 #include "ServerSettings.h"
-#include "NetAcceptor.h"
 #include "VUtilsRandom.h"
 #include "VUtilsMathf.h"
 
-#define SERVER_ID Valhalla()->ID()
-#define SERVER_SETTINGS Valhalla()->Settings()
+#define VH_ID Valhalla()->ID()
+#define VH_SETTINGS Valhalla()->Settings()
 
 enum class UIMsgType : int32_t {
     TopLeft = 1,
     Center
 };
 
-class IWorldManager;
 
 
 using WorldTime = double;
@@ -28,12 +26,7 @@ static constexpr TimeOfDay TIME_DAY = 270;
 static constexpr TimeOfDay TIME_AFTERNOON = 900;
 static constexpr TimeOfDay TIME_NIGHT = 1530;
 
-//enum class TimeOfDay {
-//    MORNING = 240,
-//    DAY = 270,
-//    AFTERNOON = 900,
-//    NIGHT = 1530
-//};
+
 
 class IValhalla {
     friend class IModManager;

@@ -60,7 +60,7 @@ void IEventManager::Update() {
 	if (m_activeEvent) {
 		// Update the timer of the current event
 		if (!m_activeEvent->m_pauseIfNoPlayerInArea
-			|| ZDOManager()->AnyZDO(this->m_activeEventPos, SERVER_SETTINGS.eventsRange, 0, Prefab::Flag::PLAYER, Prefab::Flag::NONE))
+			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRange, 0, Prefab::Flag::PLAYER, Prefab::Flag::NONE))
 			m_activeEventTimer += Valhalla()->Delta();
 
 		if (m_activeEventTimer > this->m_activeEvent->m_duration) {
@@ -68,11 +68,11 @@ void IEventManager::Update() {
 			m_activeEventPos = Vector3f::Zero();
 		}
 	}
-	else if (SERVER_SETTINGS.eventsEnabled) {
+	else if (VH_SETTINGS.eventsEnabled) {
 		// try to set a new current event
-		if (m_eventIntervalTimer > SERVER_SETTINGS.eventsInterval.count()) {
+		if (m_eventIntervalTimer > VH_SETTINGS.eventsInterval.count()) {
 			m_eventIntervalTimer = 0;
-			if (VUtils::Random::State().NextFloat() <= SERVER_SETTINGS.eventsChance) {
+			if (VUtils::Random::State().NextFloat() <= VH_SETTINGS.eventsChance) {
 
 				if (auto opt = GetPossibleRandomEvent()) {
 					auto&& e = opt.value().first;

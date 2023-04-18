@@ -1,5 +1,7 @@
 #include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
+#include <isteamuser.h>
+#include <steam_gameserver.h>
 
 #include "NetSocket.h"
 #include "ValhallaServer.h"
@@ -10,7 +12,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 
     // This constructor doesnt do anything special
     SteamNetConnectionInfo_t info;
-    if (SERVER_SETTINGS.serverDedicated)
+    if (VH_SETTINGS.serverDedicated)
         SteamGameServerNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
     else
         SteamNetworkingSockets()->GetConnectionInfo(m_hConn, &info);
@@ -45,7 +47,7 @@ void SteamSocket::Close(bool flush) {
 
     auto self(shared_from_this());
     auto&& close = [this, self, steamID]() { 
-        if (SERVER_SETTINGS.serverDedicated) {
+        if (VH_SETTINGS.serverDedicated) {
             SteamGameServerNetworkingSockets()->CloseConnection(m_hConn, 0, "", false);
             SteamGameServer()->EndAuthSession(steamID);
         }
@@ -57,7 +59,7 @@ void SteamSocket::Close(bool flush) {
 
     if (flush) {
         SendQueued();
-        if (SERVER_SETTINGS.serverDedicated)
+        if (VH_SETTINGS.serverDedicated)
             SteamGameServerNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
         else SteamNetworkingSockets()->FlushMessagesOnConnection(m_hConn);
                 
@@ -89,7 +91,7 @@ std::optional<BYTES_t> SteamSocket::Recv() {
     if (Connected()) {
 #define MSG_COUNT 1
         SteamNetworkingMessage_t* msg; // will point to allocated messages
-        if ((SERVER_SETTINGS.serverDedicated 
+        if ((VH_SETTINGS.serverDedicated 
             ? SteamGameServerNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) 
             : SteamNetworkingSockets()->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT)) == MSG_COUNT) {
             BYTES_t bytes; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
@@ -130,7 +132,7 @@ unsigned int SteamSocket::GetSendQueueSize() const {
             num += (int)bytes.size();
         }
         SteamNetConnectionRealTimeStatus_t rt{};
-        if ((SERVER_SETTINGS.serverDedicated 
+        if ((VH_SETTINGS.serverDedicated 
             ? SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) 
             : SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr)) == k_EResultOK) {
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
@@ -143,7 +145,7 @@ unsigned int SteamSocket::GetSendQueueSize() const {
 
 unsigned int SteamSocket::GetPing() const {
     SteamNetConnectionRealTimeStatus_t rt{};
-    if ((SERVER_SETTINGS.serverDedicated
+    if ((VH_SETTINGS.serverDedicated
         ? SteamGameServerNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr)
         : SteamNetworkingSockets()->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr)) == k_EResultOK) {
         return rt.m_nPing;
@@ -179,7 +181,7 @@ void SteamSocket::SendQueued() {
         //int64_t state = 0;
         //SteamGameServerNetworkingSockets()->SendMessages(1, msg, );
 
-        if ((SERVER_SETTINGS.serverDedicated
+        if ((VH_SETTINGS.serverDedicated
             ? SteamGameServerNetworkingSockets()->SendMessageToConnection(
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) 
             : SteamNetworkingSockets()->SendMessageToConnection(

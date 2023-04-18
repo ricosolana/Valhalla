@@ -263,7 +263,7 @@ void IValhalla::Start() {
     ModManager()->PostInit();
 
     /*
-    if (SERVER_SETTINGS.worldRecording) {
+    if (VH_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();
         VUtils::Resource::WriteFile(
             fs::path(VALHALLA_WORLD_RECORDING_PATH) / world->m_name / (world->m_name + ".db"),
@@ -338,7 +338,7 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK)
+    if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK)
         WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);

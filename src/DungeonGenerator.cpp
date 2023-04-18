@@ -22,7 +22,7 @@ DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 
 // TODO generate seed during start
 HASH_t DungeonGenerator::GetSeed() {
-	if (SERVER_SETTINGS.dungeonSeededRandom) {
+	if (VH_SETTINGS.dungeonSeededRandom) {
 		auto seed = GeoManager()->GetSeed();
 		auto zone = IZoneManager::WorldToZonePos(m_pos);
 		return seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
@@ -88,10 +88,10 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 	this->PlaceStartRoom(state);
 	this->PlaceRooms(state);
 
-	if (SERVER_SETTINGS.dungeonEndCaps)
+	if (VH_SETTINGS.dungeonEndCaps)
 		this->PlaceEndCaps(state);
 
-	if (SERVER_SETTINGS.dungeonDoors)
+	if (VH_SETTINGS.dungeonDoors)
 		this->PlaceDoors(state);
 }
 
@@ -491,7 +491,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openCo
 	Vector3f pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(connection2,
-		connection.m_pos, connection.m_rot * (SERVER_SETTINGS.dungeonFlipRooms ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
+		connection.m_pos, connection.m_rot * (VH_SETTINGS.dungeonFlipRooms ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
 		pos, rot);
 
 	// this is making me want to rip my hair out
@@ -659,7 +659,7 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3f& pos, cons
 			std::tie(newPos, newRot) = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
 
 		// Constrain dungeon within zone
-		if (SERVER_SETTINGS.dungeonZoneLimit && !this->IsInsideZone(room, newPos, newRot))
+		if (VH_SETTINGS.dungeonZoneLimit && !this->IsInsideZone(room, newPos, newRot))
 			return true;
 	}
 
@@ -685,7 +685,7 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3f& pos, cons
 	else
 		size -= Vector3f(.1f, .1f, .1f);
 
-	//if (SERVER_SETTINGS.dungeonRoomShrink)
+	//if (VH_SETTINGS.dungeonRoomShrink)
 		//size -= Vector3f(.1f, .1f, .1f);
 	//if (room.m_endCap)
 		//size -= Vector3f(.2f, .2f, .2f); // subtract because edge touching rectangles always overlap (so prevent that)

@@ -48,16 +48,16 @@ void IZDOManager::Update() {
 	auto&& peers = NetManager()->GetPeers();
 	
 	// Occasionally release ZDOs
-	PERIODIC_NOW(SERVER_SETTINGS.zdoAssignInterval, {
+	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK
+			if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK
 				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 			AssignOrReleaseZDOs(*peer);
 		}
 	});
 
 	// Send ZDOS:
-	PERIODIC_NOW(SERVER_SETTINGS.zdoSendInterval, {
+	PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
 		for (auto&& peer : peers) {
 			SendZDOs(*peer, false);
 		}
@@ -73,8 +73,8 @@ void IZDOManager::Update() {
 
 		m_temp.clear();
 		DataWriter(m_temp).Write(m_destroySendList);
-
 		m_destroySendList.clear();
+
 		RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
 	}
 }
@@ -166,14 +166,14 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		// TODO redundant?
 		//	thinking about it, this might be for very old versions where the ID is not normal
-		//if (zdo->ID().m_uuid == SERVER_ID
+		//if (zdo->ID().m_uuid == VH_ID
 		//	&& zdo->ID().m_id >= m_nextUid)
 		//{
 		//	assert(false && "looks like this might be significant");
 		//	m_nextUid = zdo->ID().m_id + 1;
 		//}
 
-		if (modern || !SERVER_SETTINGS.worldModern) {
+		if (modern || !VH_SETTINGS.worldModern) {
 			auto&& prefab = zdo->GetPrefab();
 
 			AddZDOToZone(*zdo.get());
@@ -202,7 +202,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 }
 
 ZDO& IZDOManager::Instantiate(const Vector3f& position) {
-	ZDOID zdoid = ZDOID(Valhalla()->ID(), 0);
+	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
 		zdoid.m_id = m_nextUid++;
 		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
@@ -320,7 +320,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		}
 	}
 
-	if (SERVER_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+	if (VH_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
 		float minSqDist = std::numeric_limits<float>::max();
 		Vector3f closestPos;
@@ -369,7 +369,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	auto&& zdo = itr->second;
 
 	// TODO I dont really understand the point of this
-	if (zdoid.m_uuid == SERVER_ID && zdoid.m_id >= m_nextUid)
+	if (zdoid.m_uuid == VH_ID && zdoid.m_id >= m_nextUid)
 		m_nextUid = zdoid.m_uuid + 1;
 
 	VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
@@ -667,12 +667,12 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	auto sendQueueSize = peer.m_socket->GetSendQueueSize();
 
 	// flushing forces a packet send
-	const auto threshold = SERVER_SETTINGS.zdoMaxCongestion;
+	const auto threshold = VH_SETTINGS.zdoMaxCongestion;
 	if (!flush && sendQueueSize > threshold)
 		return false;
 
 	auto availableSpace = threshold - sendQueueSize;
-	if (availableSpace < SERVER_SETTINGS.zdoMinCongestion)
+	if (availableSpace < VH_SETTINGS.zdoMinCongestion)
 		return false;
 
 	auto syncList = CreateSyncList(peer);
@@ -731,7 +731,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
 		// Only allow if normal mode
-		//if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK 
+		//if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK 
 		//	&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 		//	return;
 

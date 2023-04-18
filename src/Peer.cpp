@@ -50,11 +50,11 @@ Peer::Peer(ISocket::Ptr socket)
             
             auto password = reader.Read<std::string_view>();
 
-            if (SERVER_SETTINGS.playerAuth) {
+            if (VH_SETTINGS.playerAuth) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
                 auto ticket = reader.Read<BYTE_VIEW_t>();
                 if (steamSocket 
-                    && (SERVER_SETTINGS.serverDedicated
+                    && (VH_SETTINGS.serverDedicated
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
                         : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
                     return rpc->Close(ConnectionStatus::ErrorDisconnected);
@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (SERVER_SETTINGS.worldMode != WorldMode::PLAYBACK && password != PASSWORD)
+            if (VH_SETTINGS.worldMode != WorldMode::PLAYBACK && password != PASSWORD)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -86,13 +86,13 @@ Peer::Peer(ISocket::Ptr socket)
 
 
             // if whitelist enabled
-            if (SERVER_SETTINGS.playerWhitelist
+            if (VH_SETTINGS.playerWhitelist
                 && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
                 return rpc->Close(ConnectionStatus::ErrorFull);
             }
 
             // if too many players online
-            if (NetManager()->GetPeers().size() >= SERVER_SETTINGS.playerMax)
+            if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
                 return rpc->Close(ConnectionStatus::ErrorFull);
 
             //NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
@@ -102,14 +102,14 @@ Peer::Peer(ISocket::Ptr socket)
             return false;
         });
 
-        bool hasPassword = !SERVER_SETTINGS.serverPassword.empty();
+        bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
         if (hasPassword) {
             // Init password statically once
             if (PASSWORD.empty()) {
                 SALT = VUtils::Random::GenerateAlphaNum(16);
 
-                const auto merge = SERVER_SETTINGS.serverPassword + SALT;
+                const auto merge = VH_SETTINGS.serverPassword + SALT;
 
                 // Hash a salted password
                 PASSWORD.resize(16);
@@ -162,7 +162,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
-        if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE
+        if (VH_SETTINGS.worldMode == WorldMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {
             auto ns(Valhalla()->Nanos());
@@ -173,7 +173,7 @@ void Peer::Update() {
         }
     }
 
-    if (now - m_lastPing > SERVER_SETTINGS.playerTimeout) {
+    if (now - m_lastPing > VH_SETTINGS.playerTimeout) {
         LOG(INFO) << "Client RPC timeout";
         Disconnect();
     }
@@ -217,7 +217,7 @@ void Peer::Teleport(const Vector3f& pos, const Quaternion& rot, bool animation) 
 
 
 void Peer::RouteParams(const ZDOID& targetZDO, HASH_t hash, BYTES_t params) {
-    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(SERVER_ID, this->m_uuid, targetZDO, hash, std::move(params)));
+    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->m_uuid, targetZDO, hash, std::move(params)));
 }
 
 

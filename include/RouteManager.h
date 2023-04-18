@@ -60,7 +60,7 @@ public:
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
 
-			auto bytes = Serialize(SERVER_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
+			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -91,7 +91,7 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(SERVER_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+			auto bytes = Serialize(VH_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -102,7 +102,7 @@ public:
 				peer->RouteViewLua(targetZDO, repr, args);
 		}
 		
-		//Serialize(SERVER_ID, target, targetZDO, repr.m_hash,
+		//Serialize(VH_ID, target, targetZDO, repr.m_hash,
 			//DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 		
 		//Invoke(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));

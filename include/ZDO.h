@@ -665,7 +665,7 @@ public:
 
     // Return whether the ZDO instance is self hosted or remotely hosted
     bool IsLocal() const {
-        return IsOwner(SERVER_ID);
+        return IsOwner(VH_ID);
     }
 
     // Whether an owner has been assigned to this ZDO
@@ -675,7 +675,7 @@ public:
 
     // Claim ownership over this ZDO
     bool SetLocal() {
-        return SetOwner(SERVER_ID);
+        return SetOwner(VH_ID);
     }
 
     // Should name better

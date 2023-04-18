@@ -110,8 +110,8 @@ void INetManager::SendPlayerList() {
             writer.Write(std::string_view(peer->m_name));
             writer.Write(std::string_view(peer->m_socket->GetHostName()));
             writer.Write(peer->m_characterID);
-            //writer.Write(peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible);
-            //if (peer->m_visibleOnMap || SERVER_SETTINGS.playerForceVisible) {
+            //writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerForceVisible);
+            //if (peer->m_visibleOnMap || VH_SETTINGS.playerForceVisible) {
             //    writer.Write(peer->m_pos);
             //}
             writer.Write(peer->m_visibleOnMap);
@@ -252,7 +252,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
             }
         }
 
-        if (!SERVER_SETTINGS.playerWhitelist)
+        if (!VH_SETTINGS.playerWhitelist)
             peer->ConsoleMessage("Whitelist is disabled");
         else {
             if (Valhalla()->m_whitelist.empty())
@@ -339,7 +339,7 @@ void INetManager::PostInit() {
     LOG(INFO) << "Initializing NetManager";
 
     // load session file if replaying
-    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+    if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
         auto path = fs::path(VALHALLA_WORLD_RECORDING_PATH) 
             / WorldManager()->GetWorld()->m_name 
             / "sessions.pkg";
@@ -358,7 +358,7 @@ void INetManager::PostInit() {
         }        
     }
 
-    if (SERVER_SETTINGS.serverDedicated) m_acceptor = std::make_unique<AcceptorSteamDedicated>();
+    if (VH_SETTINGS.serverDedicated) m_acceptor = std::make_unique<AcceptorSteamDedicated>();
     else m_acceptor = std::make_unique<AcceptorSteamP2P>();
 
     m_acceptor->Listen();
@@ -373,7 +373,7 @@ void INetManager::Update() {
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
             
-            if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+            if (VH_SETTINGS.worldMode == WorldMode::CAPTURE) {
                 // record peer joindata
                 m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
                     { Valhalla()->Nanos(), 0ns } });
@@ -436,7 +436,7 @@ void INetManager::Update() {
                         }
 
                         // save at ~256Kb increments
-                        if (captureQueueSize > SERVER_SETTINGS.worldCaptureDumpSize) {
+                        if (captureQueueSize > VH_SETTINGS.worldCaptureDumpSize) {
                             saveBuffered(size);
                         }
 
@@ -463,7 +463,7 @@ void INetManager::Update() {
     }
 
     // accept replay peers
-    if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+    if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
         if (!m_sortedSessions.empty()) {
             auto&& front = m_sortedSessions.front();
             if (Valhalla()->Nanos() >= front.second.first) {
@@ -514,7 +514,7 @@ void INetManager::Update() {
     }
 
     // TODO I think this is in the correct location?
-    if (SERVER_SETTINGS.serverDedicated)
+    if (VH_SETTINGS.serverDedicated)
         SteamGameServer_RunCallbacks();
     else 
         SteamAPI_RunCallbacks();
@@ -567,7 +567,7 @@ void INetManager::OnPeerQuit(Peer& peer) {
 void INetManager::OnPeerDisconnect(Peer& peer) {
     ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
 
-    if (SERVER_SETTINGS.worldMode == WorldMode::CAPTURE) {
+    if (VH_SETTINGS.worldMode == WorldMode::CAPTURE) {
         *(peer.m_disconnectCapture) = Valhalla()->Nanos();
     }
 
@@ -593,7 +593,7 @@ void INetManager::Uninit() {
         DataWriter writer(bytes);
         writer.Write((int)m_sortedSessions.size());
         for (auto&& session : m_sortedSessions) {
-            writer.Write(session.first);
+            writer.Write(std::string_view(session.first));
             writer.Write(session.second.first.count());
             writer.Write(session.second.second.count());
         }

@@ -20,7 +20,7 @@ AcceptorSteamP2P::AcceptorSteamP2P() {
     LOG(INFO) << "Authentication status: " << SteamNetworkingSockets()->InitAuthentication();
 
     //auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 64);
-    auto handle = SteamMatchmaking()->CreateLobby(SERVER_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
+    auto handle = SteamMatchmaking()->CreateLobby(VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
     m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteamP2P::OnLobbyCreated);
     
     auto timeout = (float) duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
@@ -145,9 +145,9 @@ void AcceptorSteamP2P::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
         LOG(INFO) << "Created lobby";
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", SERVER_SETTINGS.serverName.c_str()))
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str()))
             LOG(ERROR) << "Failed to set lobby name";
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", SERVER_SETTINGS.serverPassword.empty() ? "0" : "1"))
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1"))
             LOG(ERROR) << "Unable to set lobby password flag";
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME))
             LOG(ERROR) << "Unable to set lobby version";

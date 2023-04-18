@@ -117,7 +117,7 @@ void World::LoadFileDB(const fs::path& root) {
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 				LOG(WARNING) << "Loading unsupported world version " << worldVersion;
-				if (!SERVER_SETTINGS.worldModern)
+				if (!VH_SETTINGS.worldModern)
 					LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
 			}
 			else
@@ -216,7 +216,7 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 
 
 bool IWorldManager::LoadWorldMeta(const fs::path& root) {
-	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(root / (SERVER_SETTINGS.worldName + ".fwl"))) {
+	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(root / (VH_SETTINGS.worldName + ".fwl"))) {
 		try {
 			this->m_world = std::make_unique<World>(DataReader(*opt));
 		}
@@ -277,7 +277,7 @@ void IWorldManager::LoadFileWorldDB(const fs::path& path) const {
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 				LOG(WARNING) << "Loading unsupported world version " << worldVersion;
-				if (!SERVER_SETTINGS.worldModern)
+				if (!VH_SETTINGS.worldModern)
 					LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
 			}
 			else
@@ -395,9 +395,9 @@ void IWorldManager::WriteWorldFiles(const fs::path& root) {
 void IWorldManager::PostZoneInit() {
 	LOG(INFO) << "Initializing WorldManager";
 
-	m_world = RetrieveWorld(SERVER_SETTINGS.worldName, SERVER_SETTINGS.worldSeed);
+	m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 
-	if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+	if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
 		auto root(fs::path(VALHALLA_WORLD_RECORDING_PATH) / m_world->m_name);
 		if (LoadWorldMeta(root))
 			m_world->LoadFileDB(root);

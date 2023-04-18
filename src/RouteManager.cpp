@@ -34,7 +34,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*/
 
 		
-		if (SERVER_SETTINGS.worldMode == WorldMode::PLAYBACK) {
+		if (VH_SETTINGS.worldMode == WorldMode::PLAYBACK) {
 			// If this is a real peer, allow ONLY read-only actions
 			if (!(hash == Hashes::Routed::C2S_RequestIcon
 				|| hash == Hashes::Routed::C2S_RequestZDO
@@ -72,7 +72,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			}
 		}
 		else {
-			if (target != SERVER_ID) {
+			if (target != VH_ID) {
 				if (auto other = NetManager()->GetPeer(target)) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
 						return;
