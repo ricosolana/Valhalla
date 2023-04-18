@@ -32,7 +32,7 @@ using namespace std::chrono_literals;
 
 
 // Enable the mod subsystem
-//#define VH_OPTION_ENABLE_MODS
+#define VH_OPTION_ENABLE_MODS
 
 // Enable mod simulated mod rpc events
 //#define VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS

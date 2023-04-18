@@ -12,7 +12,6 @@
 #include "ValhallaServer.h"
 #include "Hashes.h"
 #include "ZDO.h"
-#include "RouteData.h"
 
 enum class ChatMsgType : int32_t {
     Whisper,

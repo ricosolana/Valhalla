@@ -6,7 +6,6 @@
 #include "Quaternion.h"
 #include "UserData.h"
 #include "VUtilsTraits.h"
-#include "DataStream.h"
 #include "ModManager.h"
 
 class DataWriter;
