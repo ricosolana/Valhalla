@@ -1,4 +1,11 @@
 todo:
+    - debug mode is slow    
+        compression suffers especially, and is noticeable when many clients join and capture mode is active. This is expected but annoying
+
+    - add a guaranteed unique world playback session selector (inc until no folder found)
+
+    - put lua socket packet on send/recv capture in peer instead of SteamSocket
+
     - ideas for dynamic playback:
         support for:
             realtime changing playback speeds
