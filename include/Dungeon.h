@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 #include "Prefab.h"
-#include "Room.h"
+#include "DungeonRoom.h"
 
 class Dungeon {
 public:

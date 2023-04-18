@@ -105,20 +105,6 @@ private:
 //#endif
 };
 
-/*
-class CaptureSteamSocket : public SteamSocket {
-private:
-    std::jthread m_recordThread;
-    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
-    std::mutex m_recordmux;
-
-public:
-    bool m_recordPacket = false;
-
-public:
-    CaptureSteamSocket(HSteamNetConnection hConn); // : SteamSocket(hConn) {}
-};*/
-
 // Experimental class for replaying client actions
 class ReplaySocket : public ISocket {
 private:

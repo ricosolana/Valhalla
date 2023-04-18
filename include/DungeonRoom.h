@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RoomConnection.h"
+#include "DungeonRoomConnection.h"
 
 #include "VUtilsRandom.h"
 #include "Quaternion.h"

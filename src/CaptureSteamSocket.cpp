@@ -1,3 +1,0 @@
-#include "NetSocket.h"
-
-//CaptureSteamSocket::

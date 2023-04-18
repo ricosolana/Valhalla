@@ -115,14 +115,14 @@ add_executable(${PROJECT_NAME}
     "src/HeightmapManager.cpp"
     "src/Main.cpp"
     "src/ModManager.cpp"
-    "src/NetAcceptorSteam.cpp"
+    "src/NetAcceptorSteamDedicated.cpp"
     "src/NetManager.cpp"    
-    "src/NetSteamSocket.cpp"
+    "src/NetSocketSteam.cpp"
     "src/Peer.cpp"
     "src/PrefabManager.cpp"
     "src/Quaternion.cpp"
-    "src/ReplaySocket.cpp"
-    "src/Room.cpp"
+    "src/NetSocketPlayback.cpp"
+    "src/DungeonRoom.cpp"
     "src/RouteManager.cpp"
     "src/Task.cpp"
     "src/ValhallaServer.cpp"
@@ -139,8 +139,8 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"    
-    "src/AcceptorSteamP2P.cpp"
-    "src/CaptureSteamSocket.cpp"
+    "src/NetAcceptorSteamP2P.cpp"
+    
 )
 
 # change this to wherever your sol is

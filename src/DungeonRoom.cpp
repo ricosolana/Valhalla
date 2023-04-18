@@ -1,4 +1,4 @@
-#include "Room.h"
+#include "DungeonRoom.h"
 #include "VUtilsString.h"
 
 HASH_t Room::GetHash() const {
