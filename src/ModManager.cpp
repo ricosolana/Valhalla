@@ -473,8 +473,8 @@ void IModManager::LoadAPI() {
         //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
         "HasOwner", &ZDO::HasOwner,
         "Disown", &ZDO::Disown,
-        "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
-        "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
+        "dataRev", sol::readonly(&ZDO::m_dataRev),
+        "ownerRev", sol::property(&ZDO::GetOwnerRevision),
         //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters

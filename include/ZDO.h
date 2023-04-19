@@ -58,7 +58,7 @@ private:
 
     static constexpr uint64_t ENCODED_OWNER_MASK =      0b1000000000000000000000000000000011111111111111111111111111111111ULL;
     static constexpr uint64_t ENCODED_ORDINAL_MASK =    0b0111111100000000000000000000000000000000000000000000000000000000ULL;
-    //static constexpr uint64_t ENCODED_UID_MASK =        0b0000000011111111111111111111111100000000000000000000000000000000ULL;
+    static constexpr uint64_t ENCODED_OWNER_REV_MASK =  0b0000000011111111111111111111111100000000000000000000000000000000ULL;
 
     using SHIFTHASH_t = uint64_t;
 
@@ -369,7 +369,25 @@ private:
 
 private:
     void Revise() {
-        m_rev.m_dataRev++;
+        m_dataRev++;
+    }
+
+public:
+    uint32_t GetOwnerRevision() const {
+        return static_cast<uint32_t>((this->m_encoded >> 32) & 0xFFFFFF);
+    }
+
+private:
+    void SetOwnerRevision(uint32_t ownerRev) {
+        // Zero out owner rev bits
+        this->m_encoded &= ~ENCODED_OWNER_REV_MASK;
+
+        // Set owner rev bits
+        this->m_encoded |= (static_cast<uint64_t>(ownerRev) << 32) & ENCODED_OWNER_REV_MASK;
+    }
+
+    void ReviseOwner() {
+        this->m_encoded += 0b0000000000000000000000000000000100000000000000000000000000000000ULL;
     }
 
     template<typename T, typename CountType>
@@ -452,10 +470,9 @@ private:
 private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members; // 64 bytes
 private:    Quaternion m_rotation; // 16 bytes
 private:    Vector3f m_pos; // 12 bytes (not aligned; +4 bytes)
-private:    uint32_t m_PADDING1 {}; // 4 bytes
-public:     Rev m_rev {}; // 8 bytes 
+public:     uint32_t m_dataRev {}; // 4 bytes
 public:     ZDOID m_id; // 8 bytes (encoded)
-private:    uint64_t m_encoded {}; // combination owner, ordinal
+private:    uint64_t m_encoded {}; // encoded<owner, ordinal, ownerRev>
 private:    std::reference_wrapper<const Prefab> m_prefab; // 8 bytes
 
 
@@ -700,7 +717,7 @@ public:
         if (this->Owner() != owner) {
             this->_SetOwner(owner);
 
-            this->m_rev.m_ownerRev++;
+            ReviseOwner();
             return true;
         }
         return false;

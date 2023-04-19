@@ -239,6 +239,6 @@ bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
     outItr = find;
 
     return find == m_zdos.end()
-        || zdo.m_rev.m_ownerRev > find->second.first.m_ownerRev
-        || zdo.m_rev.m_dataRev > find->second.first.m_dataRev;
+        || zdo.GetOwnerRevision() > find->second.first.m_ownerRev
+        || zdo.m_dataRev > find->second.first.m_dataRev;
 }

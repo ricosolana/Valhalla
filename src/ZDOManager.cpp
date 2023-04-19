@@ -179,13 +179,13 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		//	m_nextUid = zdo->ID().m_id + 1;
 		//}
 
-		if (zdo->m_rev.m_dataRev >= maxDataRev) {
-			maxDataRev = zdo->m_rev.m_dataRev;
+		if (zdo->m_dataRev >= maxDataRev) {
+			maxDataRev = zdo->m_dataRev;
 			maxDataRevPrefab = &zdo->GetPrefab();
 		}
 
-		if (zdo->m_rev.m_ownerRev >= maxOwnerRev) {
-			maxOwnerRev = zdo->m_rev.m_ownerRev;
+		if (zdo->GetOwnerRevision() >= maxOwnerRev) {
+			maxOwnerRev = zdo->GetOwnerRevision();
 			maxOwnerRevPrefab = &zdo->GetPrefab();
 		}
 
@@ -720,8 +720,8 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		peer.m_forceSend.erase(zdo.ID());
 
 		writer.Write(zdo.ID());
-		writer.Write(zdo.m_rev.m_ownerRev);
-		writer.Write(zdo.m_rev.m_dataRev);
+		writer.Write(zdo.GetOwnerRevision());
+		writer.Write(zdo.m_dataRev);
 		writer.Write(zdo.Owner());
 		writer.Write(zdo.m_pos);
 
@@ -730,8 +730,8 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		});
 
 		peer.m_zdos[zdo.ID()] = { ZDO::Rev{
-			.m_dataRev = zdo.m_rev.m_dataRev,
-			.m_ownerRev = zdo.m_rev.m_ownerRev
+			.m_dataRev = zdo.m_dataRev,
+			.m_ownerRev = zdo.GetOwnerRevision()
 		}, time };
 	}
 	writer.Write(ZDOID::NONE); // null terminator
@@ -788,12 +788,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			if (!created) {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
-				if (dataRev <= zdo.m_rev.m_dataRev) {
+				if (dataRev <= zdo.m_dataRev) {
 
 					// If the owner has changed, keep a copy
-					if (ownerRev > zdo.m_rev.m_ownerRev) {
+					if (ownerRev > zdo.GetOwnerRevision()) {
 						zdo._SetOwner(owner);
-						zdo.m_rev.m_ownerRev = ownerRev;
+						zdo.SetOwnerRevision(ownerRev);
 						peer->m_zdos[zdoid] = { 
 							ZDO::Rev {.m_dataRev = dataRev, .m_ownerRev = ownerRev}, 
 							time 
@@ -817,7 +817,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			try {
 				zdo._SetOwner(owner);
-				zdo.m_rev = ZDO::Rev{ .m_dataRev = dataRev, .m_ownerRev = ownerRev };
+				zdo.m_dataRev = dataRev;
+				zdo.SetOwnerRevision(ownerRev);
 
 				// Unpack the ZDOs primary data
 				zdo.Deserialize(des);
@@ -832,7 +833,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 
 				peer->m_zdos[zdoid] = {
-					ZDO::Rev{ .m_dataRev = zdo.m_rev.m_dataRev, .m_ownerRev = zdo.m_rev.m_ownerRev },
+					ZDO::Rev{ .m_dataRev = zdo.m_dataRev, .m_ownerRev = zdo.GetOwnerRevision() },
 					time 
 				};
 			}

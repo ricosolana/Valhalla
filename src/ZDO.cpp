@@ -39,8 +39,8 @@ ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
 void ZDO::Save(DataWriter& pkg) const {
     auto&& prefab = GetPrefab();
 
-    pkg.Write(this->m_rev.m_ownerRev);
-    pkg.Write(this->m_rev.m_dataRev);
+    pkg.Write(this->GetOwnerRevision());
+    pkg.Write(this->m_dataRev);
 
     pkg.Write(prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED));
 
@@ -68,12 +68,10 @@ void ZDO::Save(DataWriter& pkg) const {
 }
 
 bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
-    this->m_rev.m_ownerRev = pkg.Read<uint32_t>();  // TODO redundant?
-    this->m_rev.m_dataRev = pkg.Read<uint32_t>();   // redundant?
-    pkg.Read<bool>(); //this->m_persistent
-    //this->m_owner = pkg.Read<OWNER_t>();
-    pkg.Read<OWNER_t>(); // unused owner
-    //this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>()); // necessary for TerrainComp (order)
+    this->SetOwnerRevision(pkg.Read<uint32_t>());   // ownerRev; TODO redundant?
+    this->m_dataRev = pkg.Read<uint32_t>();   // dataRev; TODO redundant?
+    pkg.Read<bool>();       // persistent
+    pkg.Read<OWNER_t>();    // owner
     auto timeCreated = TICKS_t(pkg.Read<int64_t>());
     bool modern = pkg.Read<int32_t>() == VConstants::PGW;
 
@@ -91,10 +89,6 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-    //sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFile);
-
-    //auto fn = static_cast<std::optional<BYTES_t>()(const fs::path&)>(VUtils::Resource::ReadFile);
-    
     if (worldVersion >= 17)
         this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
