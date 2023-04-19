@@ -163,13 +163,13 @@ void ZDO::Serialize(DataWriter& pkg) const {
     //  same when positive (for both)
     pkg.Write((int32_t) m_ordinalMask);
 
-    _TryWriteType<float,            BYTE_t>(pkg);
-    _TryWriteType<Vector3f,         BYTE_t>(pkg);
-    _TryWriteType<Quaternion,       BYTE_t>(pkg);
-    _TryWriteType<int32_t,          BYTE_t>(pkg);
-    _TryWriteType<int64_t,          BYTE_t>(pkg);
-    _TryWriteType<std::string,      BYTE_t>(pkg);
-    _TryWriteType<BYTES_t,          BYTE_t>(pkg);
+    _TryWriteType<float,            uint8_t>(pkg);
+    _TryWriteType<Vector3f,         uint8_t>(pkg);
+    _TryWriteType<Quaternion,       uint8_t>(pkg);
+    _TryWriteType<int32_t,          uint8_t>(pkg);
+    _TryWriteType<int64_t,          uint8_t>(pkg);
+    _TryWriteType<std::string,      uint8_t>(pkg);
+    _TryWriteType<BYTES_t,          uint8_t>(pkg);
 }
 
 void ZDO::Deserialize(DataReader& pkg) {
@@ -189,17 +189,17 @@ void ZDO::Deserialize(DataReader& pkg) {
 
     // double check this; 
     if (m_ordinalMask & GetOrdinalMask<float>())
-        _TryReadType<float,         BYTE_t>(pkg);
+        _TryReadType<float,         uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<Vector3f>())
-        _TryReadType<Vector3f,      BYTE_t>(pkg);
+        _TryReadType<Vector3f,      uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<Quaternion>())
-        _TryReadType<Quaternion,    BYTE_t>(pkg);
+        _TryReadType<Quaternion,    uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<int32_t>())
-        _TryReadType<int32_t,       BYTE_t>(pkg);
+        _TryReadType<int32_t,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<int64_t>())
-        _TryReadType<int64_t,       BYTE_t>(pkg);
+        _TryReadType<int64_t,       uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<std::string>())
-        _TryReadType<std::string,   BYTE_t>(pkg);
+        _TryReadType<std::string,   uint8_t>(pkg);
     if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
-        _TryReadType<BYTES_t,       BYTE_t>(pkg);
+        _TryReadType<BYTES_t,       uint8_t>(pkg);
 }
