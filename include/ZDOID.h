@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 
-// TODO rename back to ZDOID
+//#pragma pack(push, 1)
 class ZDOID {
 public:
     // TODO make this structure more efficient, currently padding takes up 1/4 of the size
@@ -35,5 +35,6 @@ public:
 
     static const ZDOID NONE;
 };
+//#pragma pack(pop)
 
 std::ostream& operator<<(std::ostream& st, ZDOID& zdoid);

@@ -25,8 +25,9 @@ ZDO::ZDO()
 }
 
 ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
-    : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
+    : m_pos(pos), m_prefab(Prefab::NONE)
 {
+    this->_SetID(id);
     m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
 
@@ -161,7 +162,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     
     // Writing a signed/unsigned mask doesnt matter
     //  same when positive (for both)
-    pkg.Write((int32_t) m_ordinalMask);
+    pkg.Write(static_cast<int32_t>(GetOrdinalMask()));
 
     _TryWriteType<float,            BYTE_t>(pkg);
     _TryWriteType<Vector3f,         BYTE_t>(pkg);
@@ -185,21 +186,23 @@ void ZDO::Deserialize(DataReader& pkg) {
         this->m_prefab = PrefabManager()->RequirePrefab(prefabHash);
     
     this->m_rotation = pkg.Read<Quaternion>();
-    this->m_ordinalMask = (Ordinal) pkg.Read<int32_t>();
+
+    auto ordinalMask = static_cast<Ordinal>(pkg.Read<int32_t>());
+    this->SetOrdinalMask(ordinalMask);
 
     // double check this; 
-    if (m_ordinalMask & GetOrdinalMask<float>())
+    if (ordinalMask & GetOrdinalMask<float>())
         _TryReadType<float,         BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<Vector3f>())
+    if (ordinalMask & GetOrdinalMask<Vector3f>())
         _TryReadType<Vector3f,      BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<Quaternion>())
+    if (ordinalMask & GetOrdinalMask<Quaternion>())
         _TryReadType<Quaternion,    BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<int32_t>())
+    if (ordinalMask & GetOrdinalMask<int32_t>())
         _TryReadType<int32_t,       BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<int64_t>())
+    if (ordinalMask & GetOrdinalMask<int64_t>())
         _TryReadType<int64_t,       BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<std::string>())
+    if (ordinalMask & GetOrdinalMask<std::string>())
         _TryReadType<std::string,   BYTE_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
+    if (ordinalMask & GetOrdinalMask<BYTES_t>())
         _TryReadType<BYTES_t,       BYTE_t>(pkg);
 }

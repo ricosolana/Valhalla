@@ -1,7 +1,7 @@
 server:
     name: Valhalla server
     port: 2456
-    password: dak3cW
+    password: ''
     public: false
     dedicated: true
 world:
@@ -9,9 +9,9 @@ world:
     seed: JQjLbVBWV4
     save-interval-s: 1800
     modern: true
-    capture-mode: 1
+    capture-mode: 0
     capture-size-bytes: 256000
-    capture-session: 2
+    capture-session: -1
     playback-session: -1
 player:
     whitelist: false
@@ -26,7 +26,7 @@ zdo:
     assign-algorithm: 0
 spawning:
     creatures: true
-    locations: true
+    locations: false
     vegetation: true
     dungeons: true
 dungeons:

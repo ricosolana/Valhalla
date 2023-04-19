@@ -54,6 +54,10 @@ public:
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
+    static constexpr uint64_t ENCODED_OWNER_MASK =      0b1000000000000000000000000000000011111111111111111111111111111111ULL;
+    static constexpr uint64_t ENCODED_ORDINAL_MASK =    0b0111111100000000000000000000000000000000000000000000000000000000ULL;
+    static constexpr uint64_t ENCODED_UID_MASK =        0b0000000011111111111111111111111100000000000000000000000000000000ULL;
+
     using SHIFTHASH_t = uint64_t;
 
     using Ordinal = uint8_t;
@@ -322,7 +326,7 @@ private:
         auto mut = ToShiftHash<T>(key);
 
         // Quickly check whether type is in map
-        if (m_ordinalMask & GetOrdinalMask<T>()) {
+        if (GetOrdinalMask() & GetOrdinalMask<T>()) {
 
             // Check whether the exact hash is in map
             //  If map contains, assumed a value reassignment (of same type)
@@ -332,7 +336,8 @@ private:
             }
         }
         else {
-            m_ordinalMask |= GetOrdinalMask<T>();
+            this->m_encoded |= (static_cast<uint64_t>(GetOrdinalMask<T>()) << (8 * 7));
+            assert(GetOrdinalMask() & GetOrdinalMask<T>());
         }
         bool insert = m_members.insert({ mut, Ord(value) }).second;
         assert(insert); // It must be uniquely inserted
@@ -368,7 +373,7 @@ private:
         if constexpr (sizeof(CountType) == 2)
             writer.Write((BYTE_t)0); // placeholder byte; iffy for c# char (2 bytes .. encoded to max 3)
 
-        if (m_ordinalMask & GetOrdinalMask<T>()) {
+        if (GetOrdinalMask() & GetOrdinalMask<T>()) {
             // Save structure per each type:
             //  char: count
             //      string: key
@@ -475,20 +480,69 @@ private:     ZDOID m_id;
 
 
 
-
 // 160 bytes:
-private:    Quaternion m_rotation;
-private:    OWNER_t m_owner = 0;
-private:    std::reference_wrapper<const Prefab> m_prefab;
-private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members;
-private:    Vector3f m_pos;
+private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members; // 64 bytes
+private:    Quaternion m_rotation; // 16 bytes
+public:     Rev m_rev = {}; // 16 bytes // TODO use smaller timeCreated type
+//private:    ZDOID m_id; // 12 bytes (packed)
+private:    Vector3f m_pos; // 12 bytes
+//private:    OWNER_t m_owner = 0; // 8 bytes
+private:    uint64_t m_encoded {}; // combination owner, ordinal, and partial zdoid-uid
+private:    std::reference_wrapper<const Prefab> m_prefab; // 8 bytes
+private:    OWNER_t m_id{};
+//private:    uint32_t m_uid;
+//private:    Ordinal m_ordinalMask = 0; // 1 byte
 
-public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-private:    ZDOID m_id;
-private:    Ordinal m_ordinalMask = 0;
+private:
+    Ordinal GetOrdinalMask() const {
+        return static_cast<Ordinal>((this->m_encoded >> (8 * 7)) & 0b01111111);
+    }
 
+    void SetOrdinalMask(Ordinal ord) {
+        assert(std::make_signed_t<decltype(ord)>(ord) >= 0);
 
+        // Set ORDINAL bits to 0
+        this->m_encoded &= ~ENCODED_ORDINAL_MASK;
 
+        assert(GetOrdinalMask() == 0);
+
+        // Set ordinal bits accordingly
+        this->m_encoded |= (static_cast<uint64_t>(ord) << (8 * 7));
+
+        assert(GetOrdinalMask() == ord);
+    }
+
+    // Set the owner without revising
+    void _SetOwner(OWNER_t owner) {
+        // Remove this test later and instead check client-sent owners to ensure data is as intended
+        // 
+        //assert(!(owner & ~ENCODED_OWNER_MASK) && "Bad owner provided");
+
+        // Zero out the owner bytes (including sign)
+        this->m_encoded &= ~ENCODED_OWNER_MASK;
+        assert(Owner() == 0);
+
+        // Set the owner bytes
+        //  ignore the 2's complement middle bytes
+        this->m_encoded |= (static_cast<uint64_t>(owner) & ENCODED_OWNER_MASK);
+
+        assert(Owner() == owner);
+    }
+
+    void _SetID(ZDOID zdoid) {
+        assert(zdoid.m_id <= 0b111111111111111111111111);
+
+        this->m_id = zdoid.m_uuid;
+
+        // Clear uid bits
+        this->m_encoded &= ~ENCODED_UID_MASK;
+        assert(this->ID().m_id == 0);
+
+        // Set uid bits
+        this->m_encoded |= (static_cast<uint64_t>(zdoid.m_id) << (8 * 4)) & ENCODED_UID_MASK;
+
+        assert(this->ID() == zdoid);
+    }
 
 public:
     ZDO();
@@ -518,7 +572,7 @@ public:
     //  Throws on type mismatch
     template<TrivialSyncType T>
     const T* Get(HASH_t key) const {
-        if (m_ordinalMask & GetOrdinalMask<T>()) {
+        if (GetOrdinalMask() & GetOrdinalMask<T>()) {
             auto mut = ToShiftHash<T>(key);
             auto&& find = m_members.find(mut);
             if (find != m_members.end()) {
@@ -629,7 +683,7 @@ public:
     //  prefab checking...
 
     ZDOID ID() const {
-        return m_id;
+        return ZDOID(m_id, (m_encoded >> 32) & 0xFFFFFF);
     }
 
     Vector3f Position() const {
@@ -656,11 +710,15 @@ public:
     }
 
     OWNER_t Owner() const {
-        return m_owner;
+        // If owner is negative (sign bit)
+        //  Then return a 1-bit unused middle portion of bits to maintain negative number)
+        if (std::make_signed_t<decltype(m_encoded)>(m_encoded) < 0)
+            return static_cast<OWNER_t>((m_encoded & ENCODED_OWNER_MASK) | ~ENCODED_OWNER_MASK);
+        return static_cast<OWNER_t>(m_encoded & ENCODED_OWNER_MASK);
     }
 
     bool IsOwner(OWNER_t owner) const {
-        return this->m_owner == owner;
+        return owner == this->Owner();
     }
 
     // Return whether the ZDO instance is self hosted or remotely hosted
@@ -686,17 +744,12 @@ public:
     // set the owner of the ZDO
     bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
-        if (this->m_owner != owner) {
-            this->m_owner = owner;
+        if (this->Owner() != owner) {
+            this->_SetOwner(owner);
+
             this->m_rev.m_ownerRev++;
             return true;
         }
-        return false;
-    }
-
-    bool Valid() const {
-        if (m_id)
-            return true;
         return false;
     }
 

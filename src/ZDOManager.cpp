@@ -159,7 +159,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
-		zdo->m_id = reader.Read<ZDOID>();
+		auto zdoid = reader.Read<ZDOID>();
+		zdo->_SetID(zdoid);
+		assert(zdo->ID() == zdoid);
 		auto zdoReader = reader.Read<DataReader>();
 
 		bool modern = zdo->Load(zdoReader, version);
@@ -284,7 +286,7 @@ ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 
 	ZDOID temp = copy.ID(); // Copying copies everything (including UID, which MUST be unique for every ZDO)
 	copy = zdo;
-	copy.m_id = temp;
+	copy._SetID(temp);
 
 	return copy;
 }
@@ -311,7 +313,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
-				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.m_owner))
+				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.Owner()))
 					&& ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					
 					zdo.SetOwner(peer.m_uuid);
@@ -700,17 +702,17 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 		peer.m_forceSend.erase(zdo.ID());
 
-		writer.Write(zdo.m_id);
+		writer.Write(zdo.ID());
 		writer.Write(zdo.m_rev.m_ownerRev);
 		writer.Write(zdo.m_rev.m_dataRev);
-		writer.Write(zdo.m_owner);
+		writer.Write(zdo.Owner());
 		writer.Write(zdo.m_pos);
 
 		writer.SubWrite([&]() {
 			zdo.Serialize(writer);
 		});
 
-		peer.m_zdos[zdo.m_id] = ZDO::Rev {
+		peer.m_zdos[zdo.ID()] = ZDO::Rev{
 			.m_dataRev = zdo.m_rev.m_dataRev,
 			.m_ownerRev = zdo.m_rev.m_ownerRev,
 			.m_syncTime = time
@@ -773,7 +775,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 					// If the owner has changed, keep a copy
 					if (ownerRev > zdo.m_rev.m_ownerRev) {
-						zdo.m_owner = owner;
+						zdo._SetOwner(owner);
 						zdo.m_rev.m_ownerRev = ownerRev;
 						peer->m_zdos[zdoid] = rev;
 					}
@@ -794,7 +796,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			ZDO copy(zdo);
 
 			try {
-				zdo.m_owner = owner;
+				zdo._SetOwner(owner);
 				zdo.m_rev = rev;
 
 				// Peer should be at local revision based on what they initially notified with
@@ -832,7 +834,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				std::rethrow_exception(std::make_exception_ptr(e));
 			}
 		}
-	});
+	}); static constexpr size_t sse = sizeof(::ZDO);
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {
