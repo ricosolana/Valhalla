@@ -475,7 +475,7 @@ void IModManager::LoadAPI() {
         "Disown", &ZDO::Disown,
         "dataRev", sol::property([](ZDO& self) { return self.m_rev.m_dataRev; }),
         "ownerRev", sol::property([](ZDO& self) { return self.m_rev.m_ownerRev; }),
-        "ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
+        //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
         "GetFloat", sol::overload(

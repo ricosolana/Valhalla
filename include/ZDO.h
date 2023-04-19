@@ -41,19 +41,21 @@ public:
     struct Rev {
         uint32_t m_dataRev = 0;
         uint32_t m_ownerRev = 0;
-
+        /*
         union {
             // Ticks is used for ZDO creationTime
             TICKS_t m_ticksCreated;
 
             // Time is used for Peer last ZDO update time
             float m_syncTime;
-        };
+        };*/
     };
 
     static std::pair<HASH_t, HASH_t> ToHashPair(const std::string& key);
 
 private:
+    static constexpr HASH_t HASH_TIME_CREATED = __H("__VH_TIME_CREATED__");
+
     static constexpr uint64_t ENCODED_OWNER_MASK =      0b1000000000000000000000000000000011111111111111111111111111111111ULL;
     static constexpr uint64_t ENCODED_ORDINAL_MASK =    0b0111111100000000000000000000000000000000000000000000000000000000ULL;
     static constexpr uint64_t ENCODED_UID_MASK =        0b0000000011111111111111111111111100000000000000000000000000000000ULL;
@@ -480,18 +482,16 @@ private:     ZDOID m_id;
 
 
 
-// 160 bytes:
+// 128 bytes:
 private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members; // 64 bytes
 private:    Quaternion m_rotation; // 16 bytes
-public:     Rev m_rev = {}; // 16 bytes // TODO use smaller timeCreated type
-//private:    ZDOID m_id; // 12 bytes (packed)
 private:    Vector3f m_pos; // 12 bytes
-//private:    OWNER_t m_owner = 0; // 8 bytes
+public:     Rev m_rev {}; // 8 bytes 
 private:    uint64_t m_encoded {}; // combination owner, ordinal, and partial zdoid-uid
 private:    std::reference_wrapper<const Prefab> m_prefab; // 8 bytes
 private:    OWNER_t m_id{};
-//private:    uint32_t m_uid;
-//private:    Ordinal m_ordinalMask = 0; // 1 byte
+
+
 
 private:
     Ordinal GetOrdinalMask() const {
@@ -751,6 +751,17 @@ public:
             return true;
         }
         return false;
+    }
+
+    TICKS_t GetTimeCreated() const {
+        if (GetPrefab().AllFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+            return TICKS_t(GetLong(HASH_TIME_CREATED));
+        return {};
+    }
+
+    void SetTimeCreated(TICKS_t ticks) {
+        if (GetPrefab().AllFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+            Set(HASH_TIME_CREATED, ticks.count());
     }
 
 

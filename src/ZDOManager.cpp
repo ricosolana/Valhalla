@@ -457,7 +457,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 
 			float weight = 150;
 			if (outItr != peer.m_zdos.end())
-				weight = std::min(time - outItr->second.m_syncTime, 100.f) * 1.5f;
+				weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
 			result.push_back({ zdo, zdo.Position().SqDistance(peer.m_pos) - weight * weight });
 		}
@@ -712,11 +712,10 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			zdo.Serialize(writer);
 		});
 
-		peer.m_zdos[zdo.ID()] = ZDO::Rev{
+		peer.m_zdos[zdo.ID()] = { ZDO::Rev{
 			.m_dataRev = zdo.m_rev.m_dataRev,
-			.m_ownerRev = zdo.m_rev.m_ownerRev,
-			.m_syncTime = time
-		};
+			.m_ownerRev = zdo.m_rev.m_ownerRev
+		}, time };
 	}
 	writer.Write(ZDOID::NONE); // null terminator
 
@@ -757,11 +756,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			auto des = reader.Read<DataReader>();				// dont move this
 
+			/*
 			ZDO::Rev rev = { 
 				.m_dataRev = dataRev, 
 				.m_ownerRev = ownerRev, 
 				.m_syncTime = time 
-			};
+			};*/
 
 			auto&& pair = this->GetOrInstantiate(zdoid, pos);
 
@@ -777,7 +777,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					if (ownerRev > zdo.m_rev.m_ownerRev) {
 						zdo._SetOwner(owner);
 						zdo.m_rev.m_ownerRev = ownerRev;
-						peer->m_zdos[zdoid] = rev;
+						peer->m_zdos[zdoid] = { 
+							ZDO::Rev {.m_dataRev = dataRev, .m_ownerRev = ownerRev}, 
+							time 
+						};
 					}
 					continue;
 				}
@@ -797,14 +800,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			try {
 				zdo._SetOwner(owner);
-				zdo.m_rev = rev;
-
-				// Peer should be at local revision based on what they initially notified with
-				//peer->m_zdos[zdoid] = {
-				//	.m_dataRev = rev.m_dataRev,
-				//	.m_ownerRev = rev.m_ownerRev,
-				//	.m_syncTime = time
-				//};
+				zdo.m_rev = ZDO::Rev{ .m_dataRev = dataRev, .m_ownerRev = ownerRev };
 
 				// Unpack the ZDOs primary data
 				zdo.Deserialize(des);
@@ -819,9 +815,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 
 				peer->m_zdos[zdoid] = {
-					.m_dataRev = zdo.m_rev.m_dataRev,
-					.m_ownerRev = zdo.m_rev.m_ownerRev,
-					.m_syncTime = time
+					ZDO::Rev{ .m_dataRev = zdo.m_rev.m_dataRev, .m_ownerRev = zdo.m_rev.m_ownerRev },
+					time 
 				};
 			}
 			catch (const std::runtime_error& e) {
@@ -834,7 +829,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				std::rethrow_exception(std::make_exception_ptr(e));
 			}
 		}
-	}); static constexpr size_t sse = sizeof(::ZDO);
+	}); 
+	static constexpr size_t sse = sizeof(::ZDO);
+	static constexpr size_t sse2 = sizeof(::ZDO::Rev);
+	//static constexpr size_t ss3e = sizeof(std::pair<::ZDO::Rev, float>); // pair seems to be the summed size of both a and b
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {

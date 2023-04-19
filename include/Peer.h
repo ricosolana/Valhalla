@@ -76,7 +76,7 @@ private:
     std::jthread m_recordThread;
 
 public:
-    UNORDERED_MAP_t<ZDOID, ZDO::Rev> m_zdos;
+    UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend;
     UNORDERED_SET_t<ZDOID> m_invalidSector;
 

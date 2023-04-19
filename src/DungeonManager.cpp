@@ -131,9 +131,13 @@ void IDungeonManager::PostPrefabInit() {
 }
 
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
+    assert(false && "Must implement dungeon reset time/ticks");
+
     auto&& netTicksNow = Valhalla()->GetWorldTicks();
 
-    auto&& ticksDungeon = dungeonZdo.m_rev.m_ticksCreated;
+    //auto&& ticksDungeon = dungeonZdo.m_rev.m_ticksCreated;
+
+    TICKS_t ticksDungeon;
 
     // Reset dungeons after a time
     if (ticksDungeon + VH_SETTINGS.dungeonResetTime < netTicksNow) {
