@@ -283,17 +283,17 @@ public:
     //  Will advance 1 -> 3 bytes, depending on size of first char
     template<typename T> requires std::is_same_v<T, char16_t>
     decltype(auto) Read() {
-        auto b1 = Read<BYTE_t>();
+        auto b1 = Read<uint8_t>();
 
         // 3 byte
         if (b1 >= 0xE0) {
-            auto b2 = Read<BYTE_t>() & 0x3F;
-            auto b3 = Read<BYTE_t>() & 0x3F;
+            auto b2 = Read<uint8_t>() & 0x3F;
+            auto b3 = Read<uint8_t>() & 0x3F;
             return ((b1 & 0xF) << 12) | (b2 << 6) | b3;
         }
         // 2 byte
         else if (b1 >= 0xC0) {
-            auto b2 = Read<BYTE_t>() & 0x3F;
+            auto b2 = Read<uint8_t>() & 0x3F;
             return ((b1 & 0x1F) << 6) | b2;
         }
         // 1 byte

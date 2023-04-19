@@ -430,7 +430,7 @@ private:
     }
 
     template<typename T, typename CountType>
-        requires std::same_as<CountType, char16_t> || std::same_as<CountType, BYTE_t>
+        requires std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>
     void _TryReadType(DataReader& reader) {
         //CountType count = sizeof(CountType) == 2 ? reader.ReadChar() : reader.Read<BYTE_t>();
         decltype(auto) count = reader.Read<CountType>();

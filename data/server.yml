@@ -7,7 +7,7 @@ server:
 world:
     name: world
     seed: JQjLbVBWV4
-    save-interval-s: 1800
+    save-interval-s: 0
     modern: true
     capture-mode: 0
     capture-size-bytes: 256000
@@ -28,7 +28,7 @@ spawning:
     creatures: true
     locations: false
     vegetation: true
-    dungeons: true
+    dungeons: false
 dungeons:
     end-caps: true
     doors: true
