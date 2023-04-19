@@ -1,4 +1,41 @@
 todo:
+    Utils.GenerateUID() has some interesting things:
+        is equal to the long sum of c# hashcode and UnityEngine.Random.Range
+        
+        ip.GetHashCode() + UnityEngine.Random.Range(1, MAX_VALUE)
+
+        [INT_MIN, INT_MAX] + [1, INT_MAX)
+
+        [INT_MIN + 1, INT_MAX + INT_MAX)
+
+        [-2147483647, 2147483647 + 2147483647)
+
+        [-2147483647, 2147483647 + 2147483647)
+
+        [-2147483647, 4294967294)
+
+        [-2147483647LL, 4294967293LL]
+
+        modified bits are marked by a X:
+
+            negative portion modified:
+                0b 11111111 11111111 11111111 11111111 XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+                   ^ important sign bit
+                   
+            positive portion modified:
+                0b 00000000 00000000 00000000 00000000 XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+                
+            total signed modified portion:
+                0b X0000000 00000000 00000000 00000000 XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+            
+
+        correctly utilize bits to make most of unused space:
+            topmost bits (except signum) can be used for ORDINAL (only 3 bits needed)
+
+            3 unused bytes can be used for zdoid uid (as uid will hardly reach 32 bit size)
+        
+        
+
     - debug mode is slow    
         compression suffers especially, and is noticeable when many clients join and capture mode is active. This is expected but annoying
 

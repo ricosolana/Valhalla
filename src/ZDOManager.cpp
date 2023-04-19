@@ -165,9 +165,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
-		auto zdoid = reader.Read<ZDOID>();
-		zdo->_SetID(zdoid);
-		assert(zdo->ID() == zdoid);
+		zdo->m_id = reader.Read<ZDOID>();
 		auto zdoReader = reader.Read<DataReader>();
 
 		bool modern = zdo->Load(zdoReader, version);
@@ -225,7 +223,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 ZDO& IZDOManager::Instantiate(const Vector3f& position) {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
-		zdoid.m_id = m_nextUid++;
+		zdoid.SetUID(m_nextUid++);
 		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
 		if (!pair.second) // if insert failed, keep looping
 			continue;
@@ -305,7 +303,7 @@ ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 
 	ZDOID temp = copy.ID(); // Copying copies everything (including UID, which MUST be unique for every ZDO)
 	copy = zdo;
-	copy._SetID(temp);
+	copy.m_id = temp;
 
 	return copy;
 }
@@ -390,8 +388,8 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	auto&& zdo = itr->second;
 
 	// TODO I dont really understand the point of this
-	if (zdoid.m_uuid == VH_ID && zdoid.m_id >= m_nextUid)
-		m_nextUid = zdoid.m_uuid + 1;
+	//if (zdoid.m_uuid == VH_ID && zdoid.m_id >= m_nextUid)
+		//m_nextUid = zdoid.m_uuid + 1;
 
 	VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
@@ -851,6 +849,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 	}); 
 	static constexpr size_t sse = sizeof(::ZDO);
 	static constexpr size_t sse2 = sizeof(::ZDO::Rev);
+	static constexpr size_t sse23 = sizeof(::Vector3f);
 	//static constexpr size_t ss3e = sizeof(std::pair<::ZDO::Rev, float>); // pair seems to be the summed size of both a and b
 }
 

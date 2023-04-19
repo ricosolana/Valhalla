@@ -2,25 +2,22 @@
 
 #include "VUtils.h"
 
-//#pragma pack(push, 1)
 class ZDOID {
-public:
-    // TODO make this structure more efficient, currently padding takes up 1/4 of the size
+    static constexpr uint64_t ENCODED_OWNER_MASK =  0b1000000000000000000000000000000011111111111111111111111111111111ULL;
 
-    OWNER_t m_uuid = 0;
-    uint32_t m_id = 0;
-private:
-    uint32_t pad = 0;
+public:
+    uint64_t m_encoded {};
 
 public:
     constexpr ZDOID() = default;
 
-    constexpr ZDOID(OWNER_t userID, uint32_t id)
-        : m_uuid(userID), m_id(id) {}
+    constexpr ZDOID(OWNER_t owner, uint32_t uid) {
+        this->SetOwner(owner);
+        this->SetUID(uid);
+    }
 
     bool operator==(const ZDOID& other) const {
-        return this->m_uuid == other.m_uuid
-            && this->m_id == other.m_id;
+        return this->m_encoded == other.m_encoded;
     }
 
     bool operator!=(const ZDOID& other) const {
@@ -29,12 +26,42 @@ public:
 
     // Return whether this has a value besides NONE
     explicit operator bool() const noexcept {
-        return this->m_uuid != 0;
-        //return *this != NONE;
+        return static_cast<bool>(this->m_encoded);
+    }
+
+    constexpr OWNER_t GetOwner() const {
+        if (std::make_signed_t<decltype(this->m_encoded)>(this->m_encoded) < 0)
+            return static_cast<OWNER_t>((this->m_encoded & ENCODED_OWNER_MASK) | ~ENCODED_OWNER_MASK);
+        return static_cast<OWNER_t>(this->m_encoded & ENCODED_OWNER_MASK);
+    }
+
+    constexpr void SetOwner(OWNER_t owner) {
+        // Set owner bits to 0
+        this->m_encoded &= ~ENCODED_OWNER_MASK;
+        //assert(GetOwner() == 0);
+
+        // Set the owner bits
+        //  ignore the 2's complement middle bytes
+        this->m_encoded |= (static_cast<uint64_t>(owner) & ENCODED_OWNER_MASK);
+
+        //assert(GetOwner() == owner);
+    }
+
+    constexpr uint32_t GetUID() const {
+        return static_cast<uint32_t>((this->m_encoded >> 32) & 0x7FFFFFFF);
+    }
+
+    constexpr void SetUID(uint32_t uid) {
+        // Set uid bits to 0
+        this->m_encoded &= ENCODED_OWNER_MASK;
+        //assert(this->GetUID() == 0);
+
+        // Set the uid bits
+        this->m_encoded |= (static_cast<uint64_t>(uid) << (8 * 4)) & ~ENCODED_OWNER_MASK;
+        //assert(this->GetUID() == uid);
     }
 
     static const ZDOID NONE;
 };
-//#pragma pack(pop)
 
 std::ostream& operator<<(std::ostream& st, ZDOID& zdoid);

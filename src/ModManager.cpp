@@ -147,8 +147,8 @@ void IModManager::LoadAPI() {
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
         sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID(uuid, id); }),
         "NONE", sol::property([]() { return ZDOID::NONE; }),
-        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.m_uuid;}, [](ZDOID& self, const Int64Wrapper& value) { self.m_uuid = value; }),
-        "id", &ZDOID::m_id
+        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, const Int64Wrapper& value) { self.SetOwner(value); }),
+        "id", sol::property(&ZDOID::GetUID, &ZDOID::SetUID)
     );
 
     m_state.new_enum("Type",

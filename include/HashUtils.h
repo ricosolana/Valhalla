@@ -11,8 +11,7 @@ namespace ankerl::unordered_dense {
         using is_avalanching = void;
 
         auto operator()(const ZDOID& v) const noexcept -> uint64_t {
-            //return ankerl::unordered_dense::detail::wyhash::mix(v.m_id, v.m_uuid);
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
+            return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
         }
     };
 

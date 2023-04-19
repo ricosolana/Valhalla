@@ -25,9 +25,8 @@ ZDO::ZDO()
 }
 
 ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
-    : m_pos(pos), m_prefab(Prefab::NONE)
+    : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
 {
-    this->_SetID(id);
     //m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
 
@@ -164,7 +163,12 @@ void ZDO::Serialize(DataWriter& pkg) const {
     
     // Writing a signed/unsigned mask doesnt matter
     //  same when positive (for both)
-    pkg.Write(static_cast<int32_t>(GetOrdinalMask()));
+    auto ordinalMask = GetOrdinalMask();
+    if (ordinalMask & GetOrdinalMask<BYTES_t>()) {
+        ordinalMask &= ~GetOrdinalMask<BYTES_t>();
+        ordinalMask |= 0b10000000;
+    }
+    pkg.Write(static_cast<int32_t>(ordinalMask));
 
     _TryWriteType<float,            uint8_t>(pkg);
     _TryWriteType<Vector3f,         uint8_t>(pkg);
@@ -193,21 +197,26 @@ void ZDO::Deserialize(DataReader& pkg) {
     this->m_rotation = pkg.Read<Quaternion>();
 
     auto ordinalMask = static_cast<Ordinal>(pkg.Read<int32_t>());
+    if (ordinalMask & 0b10000000) {
+        ordinalMask &= 0b01111111; // Clear the top array bit
+        ordinalMask |= GetOrdinalMask<BYTES_t>(); // reassign the array bit to 5th
+    }
+
     this->SetOrdinalMask(ordinalMask);
 
     // double check this; 
-    if (m_ordinalMask & GetOrdinalMask<float>())
+    if (ordinalMask & GetOrdinalMask<float>())
         _TryReadType<float,         uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<Vector3f>())
+    if (ordinalMask & GetOrdinalMask<Vector3f>())
         _TryReadType<Vector3f,      uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<Quaternion>())
+    if (ordinalMask & GetOrdinalMask<Quaternion>())
         _TryReadType<Quaternion,    uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<int32_t>())
+    if (ordinalMask & GetOrdinalMask<int32_t>())
         _TryReadType<int32_t,       uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<int64_t>())
+    if (ordinalMask & GetOrdinalMask<int64_t>())
         _TryReadType<int64_t,       uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<std::string>())
+    if (ordinalMask & GetOrdinalMask<std::string>())
         _TryReadType<std::string,   uint8_t>(pkg);
-    if (m_ordinalMask & GetOrdinalMask<BYTES_t>())
+    if (ordinalMask & GetOrdinalMask<BYTES_t>())
         _TryReadType<BYTES_t,       uint8_t>(pkg);
 }

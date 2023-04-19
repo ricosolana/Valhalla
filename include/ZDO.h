@@ -58,7 +58,7 @@ private:
 
     static constexpr uint64_t ENCODED_OWNER_MASK =      0b1000000000000000000000000000000011111111111111111111111111111111ULL;
     static constexpr uint64_t ENCODED_ORDINAL_MASK =    0b0111111100000000000000000000000000000000000000000000000000000000ULL;
-    static constexpr uint64_t ENCODED_UID_MASK =        0b0000000011111111111111111111111100000000000000000000000000000000ULL;
+    //static constexpr uint64_t ENCODED_UID_MASK =        0b0000000011111111111111111111111100000000000000000000000000000000ULL;
 
     using SHIFTHASH_t = uint64_t;
 
@@ -69,8 +69,8 @@ private:
     static constexpr Ordinal ORD_QUATERNION = 2;
     static constexpr Ordinal ORD_INT = 3;
     static constexpr Ordinal ORD_STRING = 4;
-    static constexpr Ordinal ORD_LONG = 6;    
-    static constexpr Ordinal ORD_ARRAY = 7;
+    static constexpr Ordinal ORD_LONG = 6;  
+    static constexpr Ordinal ORD_ARRAY = 5; // *IMPORTANT: Valheim member 'mask 'Byte array' mask is 7
 
 
 
@@ -327,6 +327,8 @@ private:
     bool _Set(HASH_t key, const T& value) {
         auto mut = ToShiftHash<T>(key);
 
+        // TODO put a null insert up here, then set val or not based on initially present or absent
+
         // Quickly check whether type is in map
         if (GetOrdinalMask() & GetOrdinalMask<T>()) {
 
@@ -443,53 +445,18 @@ private:
             _Set(hash, type);
         }
     }
-    /*
-// 136 bytes
-private:    Quaternion m_rotation;
-private:    uint8_t m_ownerIdx;
-private:    uint8_t m_uuidIdx;
-private:    uint8_t m_ordinalMask;
-private:    uint32_t m_id;
-//private:    OWNER_t m_owner = 0;
-//private:    int64_t m_
-private:    std::reference_wrapper<const Prefab> m_prefab;
-private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
-//private:    Ordinal m_ordinalMask = 0;
-private:    Vector3f m_pos;
-
-public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-//private:     ZDOID m_id;
-//private: OWNER_t m_uuid = 0;
-//private: uint32_t m_id = 0;
-*/
-
-
-
-/*
-// 152 bytes:
-private:    Quaternion m_rotation;
-private:    OWNER_t m_owner = 0;
-private:    std::reference_wrapper<const Prefab> m_prefab;
-private:    robin_hood::unordered_map<SHIFTHASH_t, Ord> m_members;
-private:    Ordinal m_ordinalMask = 0;
-private:    Vector3f m_pos;
-
-public:     Rev m_rev = {}; // TODO use smaller type for rev and timeCreated
-private:     ZDOID m_id;
-      //private: OWNER_t m_uuid = 0;
-      //private: uint32_t m_id = 0;
-*/
 
 
 
 // 128 bytes:
 private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members; // 64 bytes
 private:    Quaternion m_rotation; // 16 bytes
-private:    Vector3f m_pos; // 12 bytes
+private:    Vector3f m_pos; // 12 bytes (not aligned; +4 bytes)
+private:    uint32_t m_PADDING1 {}; // 4 bytes
 public:     Rev m_rev {}; // 8 bytes 
-private:    uint64_t m_encoded {}; // combination owner, ordinal, and partial zdoid-uid
+public:     ZDOID m_id; // 8 bytes (encoded)
+private:    uint64_t m_encoded {}; // combination owner, ordinal
 private:    std::reference_wrapper<const Prefab> m_prefab; // 8 bytes
-private:    OWNER_t m_id{};
 
 
 
@@ -499,7 +466,8 @@ private:
     }
 
     void SetOrdinalMask(Ordinal ord) {
-        assert(std::make_signed_t<decltype(ord)>(ord) >= 0);
+        //assert(std::make_signed_t<decltype(ord)>(ord) >= 0);
+        assert((ord & 0b10000000) == 0);
 
         // Set ORDINAL bits to 0
         this->m_encoded &= ~ENCODED_ORDINAL_MASK;
@@ -527,21 +495,6 @@ private:
         this->m_encoded |= (static_cast<uint64_t>(owner) & ENCODED_OWNER_MASK);
 
         assert(Owner() == owner);
-    }
-
-    void _SetID(ZDOID zdoid) {
-        assert(zdoid.m_id <= 0b111111111111111111111111);
-
-        this->m_id = zdoid.m_uuid;
-
-        // Clear uid bits
-        this->m_encoded &= ~ENCODED_UID_MASK;
-        assert(this->ID().m_id == 0);
-
-        // Set uid bits
-        this->m_encoded |= (static_cast<uint64_t>(zdoid.m_id) << (8 * 4)) & ENCODED_UID_MASK;
-
-        assert(this->ID() == zdoid);
     }
 
 public:
@@ -610,7 +563,7 @@ public:
     std::string         GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
     const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
-    ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) const {  return ZDOID(GetLong(key.first, value.m_uuid), GetLong(key.second, value.m_id)); }
+    ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) const {  return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
 
     // Hash-key default getters
     float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
@@ -658,8 +611,8 @@ public:
     // Special hash setters
     void Set(HASH_t key, bool value) { Set(key, value ? (int32_t)1 : 0); }
     void Set(const std::pair<HASH_t, HASH_t>& key, const ZDOID& value) {
-        Set(key.first, value.m_uuid);
-        Set(key.second, (int64_t)value.m_id);
+        Set(key.first, value.GetOwner());
+        Set(key.second, (int64_t)value.GetUID());
     }
 
     // Trivial hey-string setters (+bool)
@@ -683,7 +636,7 @@ public:
     //  prefab checking...
 
     ZDOID ID() const {
-        return ZDOID(m_id, (m_encoded >> 32) & 0xFFFFFF);
+        return this->m_id;
     }
 
     Vector3f Position() const {

@@ -179,7 +179,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         //if (!characterID)
             //throw std::runtime_error("charac")
 
-        LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.m_uuid << ":" << characterID.m_id << ")";
+        LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.GetOwner() << ":" << characterID.GetUID() << ")";
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
@@ -543,8 +543,6 @@ void INetManager::Update() {
             Peer& peer = *(*itr);
 
             if (!peer.m_socket->Connected()) {
-                VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
-
                 OnPeerDisconnect(peer);
 
                 itr = m_connectedPeers.erase(itr);

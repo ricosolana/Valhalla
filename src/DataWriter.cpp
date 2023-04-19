@@ -66,8 +66,8 @@ void DataWriter::Write(std::string_view in) {
 }
 
 void DataWriter::Write(const ZDOID& in) {
-    Write(in.m_uuid);
-    Write(in.m_id);
+    Write(in.GetOwner());
+    Write(in.GetUID());
 }
 
 void DataWriter::Write(const Vector3f& in) {
