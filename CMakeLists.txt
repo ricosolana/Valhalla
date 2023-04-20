@@ -108,7 +108,7 @@ add_executable(${PROJECT_NAME}
     "src/DataWriter.cpp"
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"
-    "src/EventManager.cpp"
+    "src/RandomEventManager.cpp"
     "src/GeoManager.cpp"
     "src/Heightmap.cpp"
     "src/HeightmapBuilder.cpp"

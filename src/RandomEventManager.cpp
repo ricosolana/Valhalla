@@ -1,4 +1,4 @@
-#include "EventManager.h"
+#include "RandomEventManager.h"
 #include "RouteManager.h"
 #include "Hashes.h"
 #include "NetManager.h"
@@ -8,12 +8,12 @@
 #include "ZDOManager.h"
 #include "Prefab.h"
 
-auto EVENT_MANAGER(std::make_unique<IEventManager>());
-IEventManager *EventManager() {
-	return EVENT_MANAGER.get();
+auto RANDOM_EVENT_MANAGER(std::make_unique<IRandomEventManager>());
+IRandomEventManager *RandomEventManager() {
+	return RANDOM_EVENT_MANAGER.get();
 }
 
-void IEventManager::Init() {
+void IRandomEventManager::Init() {
 	// interval: 46
 	// chance: 20
 	// range: 96
@@ -53,7 +53,7 @@ void IEventManager::Init() {
 	}
 }
 
-void IEventManager::Update() {
+void IRandomEventManager::Update() {
 	m_eventIntervalTimer += Valhalla()->Delta();
 
 	// update event timer if an event is active
@@ -94,7 +94,7 @@ void IEventManager::Update() {
 	PERIODIC_NOW(1s, { SendCurrentRandomEvent(); });
 }
 
-std::optional<std::pair<std::reference_wrapper<const IEventManager::Event>, Vector3f>> IEventManager::GetPossibleRandomEvent() {
+std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>, Vector3f>> IRandomEventManager::GetPossibleRandomEvent() {
 	std::vector<std::pair<std::reference_wrapper<const Event>, Vector3f>> result;
 	
 	for (auto&& pair : this->m_events) {
@@ -134,7 +134,7 @@ std::optional<std::pair<std::reference_wrapper<const IEventManager::Event>, Vect
 	return std::nullopt;
 }
 
-bool IEventManager::CheckGlobalKeys(const Event& e) {
+bool IRandomEventManager::CheckGlobalKeys(const Event& e) {
 	for (auto&& key : e.m_presentGlobalKeys) {
 		if (!ZoneManager()->GlobalKeys().contains(key))
 			return false;
@@ -148,14 +148,14 @@ bool IEventManager::CheckGlobalKeys(const Event& e) {
 	return true;
 }
 
-void IEventManager::Save(DataWriter& writer) {
+void IRandomEventManager::Save(DataWriter& writer) {
 	writer.Write(m_eventIntervalTimer);
 	writer.Write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
 	writer.Write(m_activeEventTimer);
 	writer.Write(m_activeEventPos);
 }
 
-void IEventManager::Load(DataReader& reader, int version) {
+void IRandomEventManager::Load(DataReader& reader, int version) {
 	m_eventIntervalTimer = reader.Read<float>();
 	if (version >= 25) {
 		this->m_activeEvent = GetEvent(reader.Read<std::string>());
@@ -168,7 +168,7 @@ void IEventManager::Load(DataReader& reader, int version) {
 		<< ", pos: " << this->m_activeEventPos;
 }
 
-void IEventManager::SendCurrentRandomEvent() {
+void IRandomEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
 		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent, 
 			std::string_view(m_activeEvent->m_name),

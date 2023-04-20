@@ -16,7 +16,7 @@
 #include "HeightmapBuilder.h"
 #include "ModManager.h"
 #include "DungeonManager.h"
-#include "EventManager.h"
+#include "RandomEventManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -230,10 +230,7 @@ void IValhalla::LoadFiles(bool reloading) {
     std::error_code err;
     this->m_settingsLastTime = fs::last_write_time("server.yml", err);
 
-    //if (m_settings.playerAutoPassword)
-    //    if (auto opt = VUtils::Resource::ReadFile<decltype(m_bypass)>("bypass.txt")) {
-    //        m_bypass = *opt;
-    //    }
+
 }
 
 void IValhalla::Stop() {
@@ -258,7 +255,7 @@ void IValhalla::Start() {
     m_serverTimeMultiplier = 1;
 
     ZDOManager()->Init();
-    EventManager()->Init();
+    RandomEventManager()->Init();
     PrefabManager()->Init();
 
     ZoneManager()->PostPrefabInit();
@@ -377,7 +374,7 @@ void IValhalla::Update() {
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
-    EventManager()->Update();
+    RandomEventManager()->Update();
     HeightmapBuilder()->Update();
 }
 

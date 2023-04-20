@@ -9,7 +9,7 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 #include "NetManager.h"
-#include "EventManager.h"
+#include "RandomEventManager.h"
 
 auto WORLD_MANAGER(std::make_unique<IWorldManager>());
 IWorldManager* WorldManager() {
@@ -134,7 +134,7 @@ void World::LoadFileDB(const fs::path& root) {
 				ZoneManager()->Load(reader, worldVersion);
 
 			if (worldVersion >= 15)
-				EventManager()->Load(reader, worldVersion);
+				RandomEventManager()->Load(reader, worldVersion);
 
 			LOG(INFO) << "World loading took " << duration_cast<seconds>(steady_clock::now() - now);
 		}
@@ -269,7 +269,7 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);	
-	EventManager()->Save(writer);
+	RandomEventManager()->Save(writer);
 	
 	return bytes;
 }

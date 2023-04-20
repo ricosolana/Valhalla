@@ -5,7 +5,7 @@
 #include "DataWriter.h"
 #include "Biome.h"
 
-class IEventManager {
+class IRandomEventManager {
 	class Event {
 	private:
 		bool m_firstActivation = true;
@@ -89,4 +89,4 @@ public:
     void Load(DataReader& reader, int version);
 };
 
-IEventManager *EventManager();
+IRandomEventManager *RandomEventManager();
