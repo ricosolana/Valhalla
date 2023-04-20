@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <format>
 
-#include <optick.h>
 #include <easylogging++.h>
 #include <toml++/toml.h>
 
@@ -88,7 +87,7 @@ int main(int argc, char **argv) {
 #ifdef RUN_TESTS
     Tests().RunTests();
 #else // !RUN_TESTS
-    OPTICK_THREAD("main");
+    tracy::SetThreadName("main");
     
     fs::current_path("./data/");
     

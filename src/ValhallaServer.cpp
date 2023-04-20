@@ -1,4 +1,3 @@
-#include <optick.h>
 #include <yaml-cpp/yaml.h>
 
 #include <stdlib.h>
@@ -309,7 +308,7 @@ void IValhalla::Start() {
 
     m_terminate = false;
     while (!m_terminate) {
-        OPTICK_FRAME("main");
+        //FrameMarkStart("mainloop");
 
         auto now = steady_clock::now();
         auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
@@ -347,7 +346,11 @@ void IValhalla::Start() {
             PeriodUpdate();
         });
 
+        //FrameMarkEnd("mainloop");
+
         std::this_thread::sleep_for(1ms);
+
+        FrameMark;
     }
             
     LOG(INFO) << "Terminating server";
@@ -375,6 +378,8 @@ void IValhalla::Start() {
 
 
 void IValhalla::Update() {
+    ZoneScoped;
+
     // This is important to processing RPC remote invocations
 
     if (!NetManager()->GetPeers().empty()) {

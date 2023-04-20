@@ -61,7 +61,6 @@ void AcceptorSteamP2P::Listen() {
 }
 
 std::optional<ISocket::Ptr> AcceptorSteamP2P::Accept() {
-    OPTICK_EVENT();
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
         return std::nullopt;

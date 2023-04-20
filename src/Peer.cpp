@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != NetManager()->m_salt)
+            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != NetManager()->m_password)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -115,7 +115,7 @@ Peer::Peer(ISocket::Ptr socket)
 }
 
 void Peer::Update() {
-    OPTICK_EVENT();
+    ZoneScoped;
 
     auto now(steady_clock::now());
 

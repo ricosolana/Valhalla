@@ -140,7 +140,7 @@ public:
     //  Returns false if the event requested cancellation
     template <class... Args>
     bool CallEvent(HASH_t name, Args&&... params) {
-        OPTICK_EVENT();
+        ZoneScoped;
 
         this->m_unsubscribeCurrentEvent = false;
 

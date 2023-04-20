@@ -196,6 +196,7 @@ public:
     bool InternalInvoke(HASH_t hash, DataReader &reader) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
+            ZoneScoped;
             VLOG(2) << "InternalInvoke, hash: " << hash;
 
             auto result = find->second->Invoke(this, reader);

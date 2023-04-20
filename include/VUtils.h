@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <span>
 
-#include <optick.h>
+#include <tracy/Tracy.hpp>
 #include <easylogging++.h>
 #include <sol/sol.hpp>
 #include <zstd.h>

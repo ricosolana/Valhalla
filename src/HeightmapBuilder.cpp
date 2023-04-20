@@ -24,13 +24,15 @@ void IHeightmapBuilder::PostGeoInit() {
         shared->m_thread = std::jthread([this, i, shared](std::stop_token token) {
             std::string name = "HMBuilder" + std::to_string(i);
 
-            OPTICK_THREAD(name.c_str());
+            tracy::SetThreadName(name.c_str());
             el::Helpers::setThreadName(name);
 
             std::vector<ZoneID> next;
-            
+           
+
             LOG(INFO) << "Builder started";
             while (!token.stop_requested()) {
+                FrameMarkStart(name.c_str());
 
                 // Reassign pending heightmaps
                 if (next.empty()) {
@@ -51,8 +53,10 @@ void IHeightmapBuilder::PostGeoInit() {
                         break;
 
                     // early stop
-                    if (token.stop_requested())
+                    if (token.stop_requested()) {
+                        FrameMarkEnd(name.c_str());
                         return;
+                    }
                 }
 
                 next.resize(next.size() - baked.size());
@@ -72,6 +76,8 @@ void IHeightmapBuilder::PostGeoInit() {
                     for (auto&& heightmap : baked)
                         m_ready[heightmap->GetZone()] = std::move(heightmap);
                 }
+
+                FrameMarkEnd(name.c_str());
 
                 std::this_thread::sleep_for(1ms);
             }

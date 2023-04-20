@@ -1,4 +1,3 @@
-#include <optick.h>
 #include <openssl/md5.h>
 #include <openssl/rand.h>
 #include <isteamgameserver.h>
@@ -366,7 +365,7 @@ void INetManager::PostInit() {
 }
 
 void INetManager::Update() {
-    OPTICK_CATEGORY("NetManagerUpdate", Optick::Category::Network);    
+    ZoneScoped;
 
     // Accept new connections
     while (auto opt = m_acceptor->Accept()) {
@@ -389,11 +388,15 @@ void INetManager::Update() {
                 std::string host = peer->m_socket->GetHostName();
 
                 peer->m_recordThread = std::jthread([root, peer, host](std::stop_token token) {
+                    tracy::SetThreadName(("Recorder" + host).c_str());
+
                     size_t chunkIndex = 0;
 
                     fs::create_directories(root);
 
                     auto&& saveBuffered = [&](int count) {
+                        //ZoneScoped;
+
                         BYTES_t chunk;
                         DataWriter writer(chunk);
 
@@ -443,6 +446,8 @@ void INetManager::Update() {
                         }
 
                         std::this_thread::sleep_for(1ms);
+
+                        FrameMark;
                     }
 
                     LOG(WARNING) << "Terminating async capture writer " << host;

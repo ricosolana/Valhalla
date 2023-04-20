@@ -74,7 +74,6 @@ void SteamSocket::Close(bool flush) {
 
 
 void SteamSocket::Update() {
-    OPTICK_EVENT();
     SendQueued();
 }
 
@@ -87,7 +86,6 @@ void SteamSocket::Send(BYTES_t bytes) {
 }
 
 std::optional<BYTES_t> SteamSocket::Recv() {
-    OPTICK_EVENT();
     if (Connected()) {
 #define MSG_COUNT 1
         SteamNetworkingMessage_t* msg; // will point to allocated messages

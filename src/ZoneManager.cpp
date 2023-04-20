@@ -336,6 +336,8 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 
 // private
 void IZoneManager::Update() {
+    ZoneScoped;
+
     PERIODIC_NOW(100ms, {
         for (auto&& peer : NetManager()->GetPeers()) {
             if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK)
@@ -411,6 +413,8 @@ bool IZoneManager::TryGenerateZone(const ZoneID& zone) {
 }
 
 void IZoneManager::PopulateZone(Heightmap &heightmap) {
+    ZoneScoped;
+
 #ifdef VH_OPTION_ENABLE_ZONE_GENERATION
     std::vector<ClearArea> m_tempClearAreas;
 

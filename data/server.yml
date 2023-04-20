@@ -1,13 +1,13 @@
 server:
-    name: Valhalla server
+    name: <color=#FF1111>VH dedicated</color>
     port: 2456
-    password: ''
-    public: false
-    dedicated: true
+    password: secret
+    public: true
+    dedicated: false
 world:
     name: world
     seed: JQjLbVBWV4
-    save-interval-s: 0
+    save-interval-s: 60
     modern: true
     capture-mode: 0
     capture-size-bytes: 256000

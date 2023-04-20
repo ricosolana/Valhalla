@@ -45,7 +45,8 @@ find_package(ZLIB REQUIRED) # able to remove; nothing *has* to be compressed, co
 find_package(lua CONFIG REQUIRED)
 #find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
-find_package(tomlplusplus CONFIG REQUIRED)
+#find_package(tomlplusplus CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)    
     
 find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
 
@@ -93,7 +94,9 @@ endif ()
 
 
 # optick profiler
-CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
+#   seems abandoned since last year
+#   and client is buggy and crashes frequently
+#CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
 
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
 #target_compile_definitions(WIN32 INTERFACE WIN32_LEAN_AND_MEAN)
@@ -167,9 +170,10 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC lua
     #sol2
     yaml-cpp
-    PRIVATE tomlplusplus::tomlplusplus
+    #PRIVATE tomlplusplus::tomlplusplus
     easyloggingpp
-    OptickCore
+    PRIVATE Tracy::TracyClient
+    #OptickCore
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
 )
 
@@ -195,9 +199,17 @@ endif()
 
 
 
-set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+#set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
+    #RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+#)
+
+
+
+set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
+    TRACY_ENABLE ON
 )
+#add_definitions(TRACY_ENABLE)
+
 
 
 # steam stuff

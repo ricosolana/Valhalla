@@ -71,7 +71,6 @@ void AcceptorSteamDedicated::Listen() {
 }
 
 std::optional<ISocket::Ptr> AcceptorSteamDedicated::Accept() {
-    OPTICK_EVENT();
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
         return std::nullopt;

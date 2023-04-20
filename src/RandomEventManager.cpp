@@ -54,6 +54,8 @@ void IRandomEventManager::Init() {
 }
 
 void IRandomEventManager::Update() {
+	ZoneScoped;
+
 	m_eventIntervalTimer += Valhalla()->Delta();
 
 	// update event timer if an event is active

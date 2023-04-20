@@ -36,6 +36,8 @@ void IZDOManager::Init() {
 }
 
 void IZDOManager::Update() {
+	ZoneScoped;
+
 	PERIODIC_NOW(1min, {
 		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
 		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
@@ -292,6 +294,8 @@ ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 
 
 void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
+	ZoneScoped;
+
 	auto&& zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	std::list<std::reference_wrapper<ZDO>> m_tempNearObjects;
@@ -664,6 +668,8 @@ int IZDOManager::SectorToIndex(const ZoneID& s) const {
 }
 
 bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
+	ZoneScoped;
+
 	auto sendQueueSize = peer.m_socket->GetSendQueueSize();
 
 	// flushing forces a packet send
@@ -729,12 +735,12 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
+		ZoneScoped;
+
 		// Only allow if normal mode
 		if (VH_SETTINGS.worldCaptureMode == WorldMode::PLAYBACK 
 			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
 			return;
-
-		OPTICK_CATEGORY("RPC_ZDOData", Optick::Category::Network);
 
 		{
 			reader.AsEach([this](const ZDOID& zdoid) {
