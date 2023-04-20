@@ -9,8 +9,8 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
     "ErrorAlreadyConnected", "ErrorBanned", "ErrorFull" };
 
 // Static globals initialized once
-std::string Peer::PASSWORD;
-std::string Peer::SALT;
+//std::string Peer::PASSWORD;
+//std::string Peer::SALT;
 
 Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now())
@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != PASSWORD)
+            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != NetManager()->m_salt)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -104,23 +104,7 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        if (hasPassword) {
-            // Init password statically once
-            if (PASSWORD.empty()) {
-                SALT = VUtils::Random::GenerateAlphaNum(16);
-
-                const auto merge = VH_SETTINGS.serverPassword + SALT;
-
-                // Hash a salted password
-                PASSWORD.resize(16);
-                MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-                    merge.size(), reinterpret_cast<uint8_t*>(PASSWORD.data()));
-                
-                VUtils::String::FormatAscii(PASSWORD);
-            }
-        }
-
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(SALT));
+        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_salt));
 
         return false;
     });

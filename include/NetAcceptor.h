@@ -17,6 +17,8 @@ public:
     // Poll for a ready and newly accepted connection
     virtual std::optional<ISocket::Ptr> Accept() = 0;
 
+    virtual void OnConfigLoad(bool reloading) {}
+
     // Do not use
     //virtual void Cleanup(ISocket* socket) = 0;
 };
@@ -70,6 +72,8 @@ public:
     void Listen() override;
 
     std::optional<ISocket::Ptr> Accept() override;
+
+    void OnConfigLoad(bool reloading) override;
 
     //void Cleanup(ISocket* socket) override;
 

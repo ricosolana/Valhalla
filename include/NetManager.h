@@ -23,6 +23,10 @@ private:
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
     UNORDERED_MAP_t<std::string, int32_t> m_sessionIndexes;
 
+public:
+    std::string m_password;
+    std::string m_salt;
+
 private:
     // Kick a player by name
     bool Kick(std::string user);
@@ -47,6 +51,8 @@ public:
     void PostInit();
     void Update();
     void Uninit();
+    
+    void OnConfigLoad(bool reloading);
 
     Peer* GetPeerByName(const std::string& name);
     Peer* GetPeer(OWNER_t uuid);

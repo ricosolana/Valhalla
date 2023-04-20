@@ -46,8 +46,8 @@ public:
     using Method = IMethod<Peer*>;
 
 private:
-    static std::string SALT;
-    static std::string PASSWORD;
+    //static std::string SALT;
+    //static std::string PASSWORD;
 
 private:
     std::chrono::steady_clock::time_point m_lastPing;

@@ -157,12 +157,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 	int purgeCount = 0;
 
-	uint32_t maxDataRev = 0;
-	const Prefab* maxDataRevPrefab = nullptr;
-
-	uint32_t maxOwnerRev = 0;
-	const Prefab* maxOwnerRevPrefab = nullptr;
-
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 		zdo->m_id = reader.Read<ZDOID>();
@@ -178,16 +172,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		//	assert(false && "looks like this might be significant");
 		//	m_nextUid = zdo->ID().m_id + 1;
 		//}
-
-		if (zdo->m_dataRev >= maxDataRev) {
-			maxDataRev = zdo->m_dataRev;
-			maxDataRevPrefab = &zdo->GetPrefab();
-		}
-
-		if (zdo->GetOwnerRevision() >= maxOwnerRev) {
-			maxOwnerRev = zdo->GetOwnerRevision();
-			maxOwnerRevPrefab = &zdo->GetPrefab();
-		}
 
 		if (modern || !VH_SETTINGS.worldModern) {
 			auto&& prefab = zdo->GetPrefab();
@@ -205,9 +189,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		}
 		else purgeCount++;
 	}
-
-	LOG(WARNING) << "Max dataRev: " << maxDataRev << ", prefab: " << maxDataRevPrefab->m_name;
-	LOG(WARNING) << "Max ownerRev: " << maxOwnerRev << ", prefab: " << maxOwnerRevPrefab->m_name;
 
 	auto deadCount = reader.Read<int32_t>();
 	for (int j = 0; j < deadCount; j++) {

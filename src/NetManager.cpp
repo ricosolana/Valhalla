@@ -609,3 +609,23 @@ void INetManager::Uninit() {
 
     m_acceptor.reset();
 }
+
+void INetManager::OnConfigLoad(bool reloading) {
+    bool hasPassword = !VH_SETTINGS.serverPassword.empty();
+
+    if (hasPassword) {
+        m_salt = VUtils::Random::GenerateAlphaNum(16);
+
+        const auto merge = VH_SETTINGS.serverPassword + m_salt;
+
+        // Hash a salted password
+        m_password.resize(16);
+        MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+            merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
+
+        VUtils::String::FormatAscii(m_password);
+    }
+
+    if (m_acceptor)
+        m_acceptor->OnConfigLoad(reloading);
+}

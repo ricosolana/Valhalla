@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 #include <utility>
+#ifdef _WIN32
+#include <winstring.h>
+#endif
 
 #include "ValhallaServer.h"
 #include "VUtilsResource.h"
@@ -62,17 +65,18 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& dungeons = loadNode["dungeons"];
             auto&& events = loadNode["events"];
 
+            m_settings.serverName = VUtils::String::ToAscii(server["name"].as<std::string>(""));
+            if (m_settings.serverName.empty()
+                || m_settings.serverName.length() < 3
+                || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
+
+            m_settings.serverPassword = server["password"].as<std::string>("s");
+            if (!m_settings.serverPassword.empty()
+                && (m_settings.serverPassword.length() < 5
+                    || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
+
             if (!reloading) {
-                m_settings.serverName = VUtils::String::ToAscii(server["name"].as<std::string>(""));
-                if (m_settings.serverName.empty()
-                    || m_settings.serverName.length() < 3
-                    || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
                 m_settings.serverPort = server["port"].as<uint16_t>(2456);
-            
-                m_settings.serverPassword = server["password"].as<std::string>("s");
-                if (!m_settings.serverPassword.empty()
-                    && (m_settings.serverPassword.length() < 5
-                        || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
             
                 m_settings.serverPublic = server["public"].as<bool>(false);
                 m_settings.serverDedicated = server["dedicated"].as<bool>(true);
@@ -227,10 +231,18 @@ void IValhalla::LoadFiles(bool reloading) {
         }
     }
 
+    NetManager()->OnConfigLoad(reloading);
+
+#ifdef _WIN32
+    {
+        //std::string title = m_settings.serverName + " - " + VConstants::GAME;
+        std::string title = "Valhalla " + std::string(VH_SERVER_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+        SetConsoleTitle(title.c_str());
+    }
+#endif
+
     std::error_code err;
     this->m_settingsLastTime = fs::last_write_time("server.yml", err);
-
-
 }
 
 void IValhalla::Stop() {
