@@ -425,7 +425,7 @@ private:
                 writer.SetPos(size_mark);
 
                 if constexpr (sizeof(CountType) == 2) {
-                    auto&& vec = writer.m_provider.get();
+                    auto&& vec = writer.m_buf.get();
                     auto extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
                     if (extraCount) {
                         assert(count >= 0x80);

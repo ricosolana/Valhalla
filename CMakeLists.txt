@@ -108,7 +108,7 @@ endif ()
 ##########
 add_executable(${PROJECT_NAME}
     "src/DataReader.cpp"
-    "src/DataWriter.cpp"
+    
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"
     "src/RandomEventManager.cpp"

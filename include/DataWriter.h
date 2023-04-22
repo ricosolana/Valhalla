@@ -7,8 +7,9 @@
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "ModManager.h"
+#include "DataStream.h"
 
-class DataReader;
+//class DataReader;
 
 /*
 template <class T>
@@ -24,48 +25,36 @@ struct Serializer
     }
 };*/
 
-class DataWriter {
+template<typename T>
+    requires (std::is_same_v<T, std::reference_wrapper<BYTES_t>> || std::is_same_v<T, BYTE_VIEW_t>)
+class IDataWriter : public DataStream {
 public:
-    std::reference_wrapper<BYTES_t> m_provider;
-    size_t m_pos{};
-
-private:
-    static bool Check31U(size_t count) {
-        return count > static_cast<size_t>(std::numeric_limits<int32_t>::max());
-    }
-
-    // Throws if the count exceeds int32_t::max signed size
-    static void Assert31U(size_t count) {
-        if (Check31U(count))
-            throw std::runtime_error("count is negative or exceeds 2^32 - 1");
-    }
-
-    // Returns whether the specified position exceeds container length
-    bool CheckPosition(size_t pos) const {
-        return pos > Length();
-    }
-
-    // Throws if the specified position exceeds container length
-    void AssertPosition(size_t pos) const {
-        if (CheckPosition(pos))
-            throw std::runtime_error("position exceeds length");
-    }
-
-    // Returns whether the specified offset from m_pos exceeds container length
-    bool CheckOffset(size_t offset) const {
-        return CheckPosition(m_pos + offset);
-    }
-
-    // Throws if the specified offset from m_pos exceeds container length
-    void AssertOffset(size_t offset) const {
-        if (CheckOffset(offset))
-            throw std::runtime_error("offset from position exceeds length");
-    }
+    T m_buf;
 
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteSomeBytes(const BYTE_t* buffer, size_t count);
+    void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
+        Assert31U(count);
+
+        Assert31U(m_pos + count);
+
+        // this copies in place, without relocating bytes exceeding m_pos
+        // resize, ensuring capacity for copy operation
+
+        //vector::assign only works starting at beginning... so cant use it...
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>) {
+            AssertOffset(count);
+            std::copy(buffer, buffer + count, m_buf.begin() + m_pos);
+        }
+        else {
+            if (CheckOffset(count))
+                m_buf.get().resize(m_pos + count);
+            std::copy(buffer, buffer + count, m_buf.get().begin() + m_pos);
+        }
+
+        m_pos += count;
+    }
 
     // Write count bytes from the specified vector
     // Bytes are written in place, making space as necessary
@@ -88,16 +77,18 @@ private:
     }
 
 public:
-    DataWriter(BYTES_t& bytes) : m_provider(bytes) {}
+    IDataWriter(T buf) : m_buf(buf) {}
 
-    DataWriter(BYTES_t& bytes, size_t pos) : m_provider(bytes) {
+    IDataWriter(T buf, size_t pos) : m_buf(buf) {
         SetPos(pos);
     }
 
     // Clears the underlying container and resets position
     void Clear() {
-        m_pos = 0;
-        m_provider.get().clear();
+        if constexpr (std::is_same_v<T, std::reference_wrapper<BYTES_t>>) {
+            this->m_pos = 0;
+            m_buf.get().clear();
+        }
     }
 
     // Sets the length of this stream
@@ -106,25 +97,21 @@ public:
     //}
 
 public:
-    virtual size_t Length() const {
-        return m_provider.get().size();
-    }
-
-    // Returns the position of this stream
-    size_t Position() const {
-        return m_pos;
-    }
-
-    // Sets the positino of this stream
-    void SetPos(size_t pos) {
-        Assert31U(pos);
-        AssertPosition(pos);
-
-        m_pos = pos;
+    size_t Length() const override {
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
+            return m_buf.size();
+        else
+            return m_buf.get().size();
     }
 
 public:
-    DataReader ToReader();
+    /*
+    DataReader ToReader() {
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
+            return DataReader(this->m_buf, this->m_pos);
+        else
+            return DataReader(this->m_buf.get(), this->m_pos);
+    }*/
 
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
@@ -147,17 +134,24 @@ public:
     // Writes a BYTE_t* as byte array of length
     //  uint32_t:   size
     //  BYTES_t:    data
-    void Write(const BYTE_t* in, size_t count);
+    void Write(const BYTE_t* in, size_t count) {
+        Write<int32_t>(count);
+        WriteSomeBytes(in, count);
+    }
 
     // Writes a BYTES_t* as byte array of length
     //  uint32_t:   size
     //  BYTES_t:    data
-    void Write(const BYTES_t& in, size_t count);
+    void Write(const BYTES_t& in, size_t count) {
+        Write(in.data(), count);
+    }
 
     // Writes a BYTE_t* as byte array
     //  uint32_t:   size
     //  BYTES_t:    data
-    void Write(const BYTES_t& in);
+    void Write(const BYTES_t& in) {
+        Write(in.data(), in.size());
+    }
 
     // Writes a NetPackage as byte array
     //  uint32_t:   size
@@ -165,26 +159,50 @@ public:
     //void Write(const NetPackage& in);
 
     // Writes a string
-    void Write(std::string_view in);
+    void Write(std::string_view in) {
+        auto length = in.length();
+        //Assert31U(length);
+
+        //auto byteCount = static_cast<int32_t>(VUtils::String::GetUTF8ByteCount());
+
+        auto byteCount = static_cast<int32_t>(length);
+
+        Write7BitEncodedInt(byteCount);
+        if (byteCount == 0)
+            return;
+
+        WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
+
+    }
 
     // Writes a ZDOID
     //  12 bytes total are written:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
-    void Write(const ZDOID& id);
+    void Write(const ZDOID& in) {
+        Write(in.GetOwner());
+        Write(in.GetUID());
+    }
 
     // Writes a Vector3f
     //  12 bytes total are written:
     //  float: x (4 bytes)
     //  float: y (4 bytes)
     //  float: z (4 bytes)
-    void Write(const Vector3f& in);
+    void Write(const Vector3f& in) {
+        Write(in.x);
+        Write(in.y);
+        Write(in.z);
+    }
 
     // Writes a Vector2i
     //  8 bytes total are written:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
-    void Write(const Vector2i& in);
+    void Write(const Vector2i& in) {
+        Write(in.x);
+        Write(in.y);
+    }
 
     // Writes a Quaternion
     //  16 bytes total are written:
@@ -192,7 +210,12 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     //  float: w (4 bytes)
-    void Write(const Quaternion& in);
+    void Write(const Quaternion& in) {
+        Write(in.x);
+        Write(in.y);
+        Write(in.z);
+        Write(in.w);
+    }
 
     // Writes a container of supported types
     //  uint32_t:   size
@@ -258,11 +281,11 @@ public:
 
 
     // Empty template
-    static void SerializeImpl(DataWriter& pkg) {}
+    static void SerializeImpl(IDataWriter<std::reference_wrapper<BYTES_t>>& pkg) {}
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static decltype(auto) SerializeImpl(DataWriter& pkg, const T &var1, const Types&... var2) {
+    static decltype(auto) SerializeImpl(IDataWriter<std::reference_wrapper<BYTES_t>>& pkg, const T &var1, const Types&... var2) {
         pkg.Write(var1);
 
         return SerializeImpl(pkg, var2...);
@@ -272,7 +295,7 @@ public:
     template <typename T, typename... Types>
     static decltype(auto) Serialize(const T &var1, const Types&... var2) {
         BYTES_t bytes;
-        DataWriter writer(bytes);
+        IDataWriter<std::reference_wrapper<BYTES_t>> writer(bytes);
 
         SerializeImpl(writer, var1, var2...);
         return bytes;
@@ -285,16 +308,80 @@ public:
 
 
 
-    void SerializeOneLua(IModManager::Type type, sol::object object);
+    void SerializeOneLua(IModManager::Type type, sol::object arg) {
+        switch (type) {
+            // TODO add recent unsigned types
+        case IModManager::Type::UINT8:
+            Write(arg.as<uint8_t>());
+            break;
+        case IModManager::Type::UINT16:
+            Write(arg.as<uint16_t>());
+            break;
+        case IModManager::Type::UINT32:
+            Write(arg.as<uint32_t>());
+            break;
+        case IModManager::Type::UINT64:
+            Write(arg.as<uint64_t>());
+            break;
+        case IModManager::Type::INT8:
+            Write(arg.as<int8_t>());
+            break;
+        case IModManager::Type::INT16:
+            Write(arg.as<int16_t>());
+            break;
+        case IModManager::Type::INT32:
+            Write(arg.as<int32_t>());
+            break;
+        case IModManager::Type::INT64:
+            Write(arg.as<int64_t>());
+            break;
+        case IModManager::Type::FLOAT:
+            Write(arg.as<float>());
+            break;
+        case IModManager::Type::DOUBLE:
+            Write(arg.as<double>());
+            break;
+        case IModManager::Type::STRING:
+            Write(arg.as<std::string_view>());
+            break;
+        case IModManager::Type::BOOL:
+            Write(arg.as<bool>());
+            break;
+        case IModManager::Type::BYTES:
+            Write(arg.as<BYTES_t>());
+            break;
+        case IModManager::Type::ZDOID:
+            Write(arg.as<ZDOID>());
+            break;
+        case IModManager::Type::VECTOR3f:
+            Write(arg.as<Vector3f>());
+            break;
+        case IModManager::Type::VECTOR2i:
+            Write(arg.as<Vector2i>());
+            break;
+        case IModManager::Type::QUATERNION:
+            Write(arg.as<Quaternion>());
+            break;
+        default:
+            throw std::runtime_error("Invalid data type");
+        }
+    }
 
-    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results);
+    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results) {
+        for (int i = 0; i < results.size(); i++) {
+            SerializeOneLua(types[i], results[i]);
+        }
+    }
 
     static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
         BYTES_t bytes;
-        DataWriter params(bytes);
+        IDataWriter<std::reference_wrapper<BYTES_t>> params(bytes);
 
         params.SerializeLua(types, results);
 
         return bytes;
     }
 };
+
+using DataWriter = IDataWriter<std::reference_wrapper<BYTES_t>>;
+using DataWriterStatic = IDataWriter<BYTE_VIEW_t>;
