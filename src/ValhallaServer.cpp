@@ -174,12 +174,12 @@ void IValhalla::LoadFiles(bool reloading) {
         player["whitelist"] = m_settings.playerWhitelist;
         player["max"] = m_settings.playerMax;
         player["auth"] = m_settings.playerAuth;
-        player["timeout-s"] = m_settings.playerTimeout.count();
+        player["timeout-s"] = duration_cast<seconds>(m_settings.playerTimeout).count();
 
         zdo["max-congestion"] = m_settings.zdoMaxCongestion;
         zdo["min-congestion"] = m_settings.zdoMinCongestion;
-        zdo["send-interval-ms"] = m_settings.zdoSendInterval.count();
-        zdo["assign-interval-s"] = m_settings.zdoAssignInterval.count();
+        zdo["send-interval-ms"] = duration_cast<milliseconds>(m_settings.zdoSendInterval).count();
+        zdo["assign-interval-s"] = duration_cast<seconds>(m_settings.zdoAssignInterval).count();
         zdo["assign-algorithm"] = std::to_underlying(m_settings.zdoAssignAlgorithm);
 
         spawning["creatures"] = m_settings.spawningCreatures;
@@ -193,7 +193,7 @@ void IValhalla::LoadFiles(bool reloading) {
         dungeons["zone-limit"] = m_settings.dungeonZoneLimit;
         dungeons["room-shrink"] = m_settings.dungeonRoomShrink;
         dungeons["reset"] = m_settings.dungeonReset;
-        dungeons["reset-time-s"] = m_settings.dungeonResetTime.count();
+        dungeons["reset-time-s"] = duration_cast<seconds>(m_settings.dungeonResetTime).count();
         //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
         dungeons["incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
         dungeons["seeded-random"] = m_settings.dungeonSeededRandom;
