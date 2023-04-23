@@ -18,8 +18,9 @@ protected:
 
     // Throws if the count exceeds int32_t::max signed size
     void Assert31U(size_t count) {
-        if (Check31U(count))
-            throw std::runtime_error("count is negative or exceeds 2^32 - 1");
+        assert(!Check31U(count) && "count is negative or exceeds 2^32 - 1");
+        //if (Check31U(count))
+            //throw std::runtime_error("count is negative or exceeds 2^32 - 1");
     }
 
     // Returns whether the specified position exceeds container length

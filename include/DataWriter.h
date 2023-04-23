@@ -31,8 +31,8 @@ private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-        this->Assert31U(count);
-        this->Assert31U(this->m_pos + count);
+        //this->Assert31U(count);
+        //this->Assert31U(this->m_pos + count);
 
         // this copies in place, without relocating bytes exceeding m_pos
         // resize, ensuring capacity for copy operation
@@ -46,7 +46,7 @@ private:
                 this->m_buf.get().resize(this->m_pos + count);
         }
 
-        std::copy(buffer, 
+        std::copy(buffer,
                   buffer + count, 
                   this->data() + this->m_pos);
 
@@ -118,6 +118,14 @@ public:
         this->SetPos(end);
     }
 
+    template<typename T>
+        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
+    void Write(const T& in) {
+        Write<int32_t>(in.size());
+        WriteSomeBytes(in.data(), in.size());
+    }
+
+    /*
     // Writes a BYTE_t* as byte array of length
     //  uint32_t:   size
     //  BYTES_t:    data
@@ -138,7 +146,7 @@ public:
     //  BYTES_t:    data
     void Write(const BYTES_t& in) {
         Write(in.data(), in.size());
-    }
+    }*/
 
     // Writes a NetPackage as byte array
     //  uint32_t:   size
@@ -150,8 +158,6 @@ public:
         auto length = in.length();
         //Assert31U(length);
 
-        //auto byteCount = static_cast<int32_t>(VUtils::String::GetUTF8ByteCount());
-
         auto byteCount = static_cast<int32_t>(length);
 
         Write7BitEncodedInt(byteCount);
@@ -159,7 +165,6 @@ public:
             return;
 
         WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
-
     }
 
     // Writes a ZDOID
@@ -212,7 +217,7 @@ public:
                 && !std::is_arithmetic_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
-        this->Assert31U(size);
+        //this->Assert31U(size);
         Write(static_cast<int32_t>(size));
         for (auto&& v : in) {
             if constexpr (std::is_same_v<typename Iterable::value_type, std::string>)

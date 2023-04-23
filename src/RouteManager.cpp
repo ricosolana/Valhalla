@@ -16,6 +16,7 @@ IRouteManager* RouteManager() {
 
 void IRouteManager::OnNewPeer(Peer &peer) {
 	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
+	//peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, int64_t, ) {
 		//DataReader reader(bytes);
 		reader.Read<int64_t>(); // skip msgid
 		DataWriterStatic(reader.m_buf, reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();

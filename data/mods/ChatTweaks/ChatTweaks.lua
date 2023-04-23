@@ -20,8 +20,6 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     end
     
     peers[peer.socket.host] = true
-    
-    local writer = DataWriter.new(params.provider)
 
     local pos = params:ReadVector3f()
     local msgtype = params:ReadInt32()
@@ -29,15 +27,8 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     local msg = params:ReadString()
     local nid = params:ReadString()
     
-    --print('got msg: ' .. msg)
-    
     if msgtype == ChatMsgType.SHOUT then
-        -- then set the pos to 0,0,0 then display as a simple chat message
-        writer:Write(Vector3f.ZERO)
-        writer:WriteInt32(ChatMsgType.NORMAL)
-        writer:Write(profile)
-        writer:Write(msg)
-        writer:Write(nid)
+        return false
     end
 end)
 
