@@ -15,11 +15,10 @@ IRouteManager* RouteManager() {
 
 
 void IRouteManager::OnNewPeer(Peer &peer) {
-	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, BYTES_t bytes) {
-		DataReader reader(bytes);
+	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
+		//DataReader reader(bytes);
 		reader.Read<int64_t>(); // skip msgid
-		//reader.ToWriter().Write(peer->m_uuid); reader.Read<OWNER_t>(); // force sender in place
-		reader.Read<OWNER_t>();
+		DataWriterStatic(reader.m_buf, reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
 		auto target = reader.Read<OWNER_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
@@ -39,7 +38,6 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			if (!(hash == Hashes::Routed::C2S_RequestIcon
 				|| hash == Hashes::Routed::C2S_RequestZDO
 				|| hash == Hashes::Routed::ChatMessage
-				|| hash == Hashes::Routed::C2S_RequestIcon
 				|| hash == Hashes::View::Talker::Chat))
 			{
 				// Only replay sockets allowed to do anything
@@ -67,7 +65,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			for (auto&& other : peers) {
 				// Ignore the src peer
 				if (peer->m_uuid != other->m_uuid) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+					other->Invoke(Hashes::Rpc::RoutedRPC, reader.m_buf);
 				}
 			}
 		}
@@ -77,7 +75,9 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
 						return;
 
-					other->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+
+
+					other->Invoke(Hashes::Rpc::RoutedRPC, reader.m_buf);
 				}
 			}
 			else {

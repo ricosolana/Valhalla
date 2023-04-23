@@ -26,34 +26,31 @@ struct Serializer
 };*/
 
 template<typename T>
-    requires (std::is_same_v<T, std::reference_wrapper<BYTES_t>> || std::is_same_v<T, BYTE_VIEW_t>)
-class IDataWriter : public DataStream {
-public:
-    T m_buf;
-
+class IDataWriter : public IDataStream<T> {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-        Assert31U(count);
-
-        Assert31U(m_pos + count);
+        this->Assert31U(count);
+        this->Assert31U(this->m_pos + count);
 
         // this copies in place, without relocating bytes exceeding m_pos
         // resize, ensuring capacity for copy operation
 
         //vector::assign only works starting at beginning... so cant use it...
         if constexpr (std::is_same_v<T, BYTE_VIEW_t>) {
-            AssertOffset(count);
-            std::copy(buffer, buffer + count, m_buf.begin() + m_pos);
+            this->AssertOffset(count);
         }
         else {
-            if (CheckOffset(count))
-                m_buf.get().resize(m_pos + count);
-            std::copy(buffer, buffer + count, m_buf.get().begin() + m_pos);
+            if (this->CheckOffset(count))
+                this->m_buf.get().resize(this->m_pos + count);
         }
 
-        m_pos += count;
+        std::copy(buffer, 
+                  buffer + count, 
+                  this->data() + this->m_pos);
+
+        this->m_pos += count;
     }
 
     // Write count bytes from the specified vector
@@ -77,17 +74,15 @@ private:
     }
 
 public:
-    IDataWriter(T buf) : m_buf(buf) {}
+    IDataWriter(T buf) : IDataStream<T>(buf) {}
 
-    IDataWriter(T buf, size_t pos) : m_buf(buf) {
-        SetPos(pos);
-    }
+    IDataWriter(T buf, size_t pos) : IDataStream<T>(buf, pos) {}
 
     // Clears the underlying container and resets position
     void Clear() {
         if constexpr (std::is_same_v<T, std::reference_wrapper<BYTES_t>>) {
             this->m_pos = 0;
-            m_buf.get().clear();
+            this->m_buf.get().clear();
         }
     }
 
@@ -95,14 +90,6 @@ public:
     //void SetLength(uint32_t length) {
     //    m_provider.get().resize(length);
     //}
-
-public:
-    size_t Length() const override {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return m_buf.size();
-        else
-            return m_buf.get().size();
-    }
 
 public:
     /*
@@ -116,19 +103,19 @@ public:
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
     void SubWrite(F func) {
-        const auto start = Position();
+        const auto start = this->Position();
         int32_t count = 0;
         Write(count);
 
         // call func...
         func();
 
-        const auto end = Position();
-        SetPos(start);
+        const auto end = this->Position();
+        this->SetPos(start);
         count = end - start - sizeof(count);
         assert(count >= 0);
         Write(count);
-        SetPos(end);
+        this->SetPos(end);
     }
 
     // Writes a BYTE_t* as byte array of length
@@ -225,7 +212,7 @@ public:
                 && !std::is_arithmetic_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
-        Assert31U(size);
+        this->Assert31U(size);
         Write(static_cast<int32_t>(size));
         for (auto&& v : in) {
             if constexpr (std::is_same_v<typename Iterable::value_type, std::string>)

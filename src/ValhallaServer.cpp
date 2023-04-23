@@ -94,7 +94,7 @@ void IValhalla::LoadFiles(bool reloading) {
                     m_settings.worldCaptureSession++;
             }
 
-            m_settings.worldSaveInterval = seconds(std::clamp(world["save-interval-s"].as<int>(1800), 60, 60 * 60));
+            m_settings.worldSaveInterval = minutes(std::clamp(world["save-interval-m"].as<int>(1800), 0, 60 * 24 * 7));
 
             m_settings.playerWhitelist = player["whitelist"].as<bool>(false);          // enable whitelist
             m_settings.playerMax = std::clamp(player["max"].as<int>(10), 1, 99999);     // max allowed players
@@ -164,7 +164,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
         world["name"] = m_settings.worldName;
         world["seed"] = m_settings.worldSeed;
-        world["save-interval-s"] = m_settings.worldSaveInterval.count();
+        world["save-interval-m"] = duration_cast<minutes>(m_settings.worldSaveInterval).count();
         world["modern"] = m_settings.worldModern;
         world["capture-mode"] = std::to_underlying(m_settings.worldCaptureMode);
         world["capture-size-bytes"] = m_settings.worldCaptureSize;

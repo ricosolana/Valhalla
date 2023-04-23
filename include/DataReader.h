@@ -12,12 +12,22 @@
 
 //class DataWriter;
 
-class DataReader : public DataStream {
-public:
-    BYTE_VIEW_t m_buf;
+template<typename T>
+class IDataReader : public IDataStream<T> {
+    using ReaderType = IDataReader<T>;
 
 private:
-    void ReadSomeBytes(BYTE_t* buffer, size_t count);
+    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+        this->Assert31U(count);
+        this->AssertOffset(count);
+
+        // read into 'buffer'
+        std::copy(this->data() + this->m_pos,
+            this->data() + this->m_pos + count,
+            buffer);
+
+        this->m_pos += count;
+    }
 
     // Read a single byte from the buffer (slow if used to read a bunch of bytes)
     // Throws if end of buffer is reached
@@ -25,7 +35,15 @@ private:
 
     // Reads count bytes overriding the specified vector
     // Throws if not enough bytes to read
-    void ReadSomeBytes(BYTES_t& vec, size_t count);
+    void ReadSomeBytes(BYTES_t& vec, size_t count) {
+        this->Assert31U(count);
+        this->AssertOffset(count);
+
+        vec = BYTES_t(this->data() + this->m_pos,
+            this->data() + this->m_pos + count);
+
+        this->m_pos += count;
+    }
 
     // Reads count bytes overriding the specified string
     // '\0' is not included in count (raw bytes only)
@@ -48,26 +66,9 @@ private:
     }
 
 public:
-    DataReader(BYTE_VIEW_t buf) : m_buf(buf) {}
+    IDataReader(T buf) : IDataStream<T>(buf) {}
 
-    DataReader(BYTE_VIEW_t buf, size_t pos) : m_buf(buf) {
-        SetPos(pos);
-    }
-
-public:
-    // Returns the length of this stream
-    size_t Length() const override {
-        return m_buf.size();
-    }
-
-    /*
-    BYTE_t* data() override {
-        return m_buf.data();
-    }
-
-    const BYTE_t* data() const override {
-        return m_buf.data();
-    }*/
+    IDataReader(T buf, size_t pos) : IDataStream<T>(buf, pos) {}
 
 public:
     //DataWriter ToWriter();
@@ -77,12 +78,12 @@ public:
     decltype(auto) Read() {
         auto count = Read<int32_t>();
 
-        Assert31U(count);
-        AssertOffset(count);
+        this->Assert31U(count);
+        this->AssertOffset(count);
 
-        auto result = BYTE_VIEW_t(m_buf.begin() + m_pos, count);
+        auto result = BYTE_VIEW_t(this->data() + this->m_pos, count);
 
-        this->SetPos(m_pos + count);
+        this->SetPos(this->m_pos + count);
 
         return result;
     }
@@ -91,18 +92,9 @@ public:
     //  int32_t:   size
     //  BYTES_t:    data
     template<typename T>
-        requires std::is_same_v<T, DataReader>
+        requires std::is_same_v<T, ReaderType>
     decltype(auto) Read() {
-        return DataReader(Read<BYTE_VIEW_t>());
-        /*
-        auto count = Read<int32_t>();
-
-        Assert31U(count);
-        AssertOffset(count);
-
-        auto other = DataReader(BYTE_VIEW_t(m_buf.begin() + m_pos, count));
-        this->SetPos(m_pos + count);
-        return other;*/
+        return ReaderType(Read<BYTE_VIEW_t>());
     }
 
 
@@ -121,15 +113,15 @@ public:
             || std::same_as<T, std::string_view>)
     decltype(auto) Read() {
         auto count = Read7BitEncodedInt();
-        if (count == 0) return T(m_buf.begin() + m_pos, m_buf.begin() + m_pos);
+        //if (count == 0) return T(data() + m_pos, data() + m_pos);
 
-        Assert31U(count);
-        AssertOffset(count);
+        this->Assert31U(count);
+        this->AssertOffset(count);
 
-        T s = T(m_buf.begin() + m_pos,
-            m_buf.begin() + m_pos + count);
+        T s = T(this->data() + this->m_pos,
+            this->data() + this->m_pos + count);
 
-        m_pos += count;
+        this->m_pos += count;
         return s;
     }
 
@@ -151,7 +143,7 @@ public:
             && !std::is_same_v<typename Iterable::value_type, BYTE_t>)
     decltype(auto) Read() {
         const auto count = Read<int32_t>();
-        Assert31U(count);
+        this->Assert31U(count);
 
         using Type = Iterable::value_type;
 
@@ -175,7 +167,7 @@ public:
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
         const auto count = Read<int32_t>();
-        Assert31U(count);
+        this->Assert31U(count);
 
         for (int32_t i = 0; i < count; i++) {
             func(Read<Type>());
@@ -281,9 +273,77 @@ public:
 
 
 
-    sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type);
+    sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type) {
+        switch (type) {
+        case IModManager::Type::BYTES:
+            // Will be interpreted as sol container type
+            // see https://sol2.readthedocs.io/en/latest/containers.html
+            return sol::make_object(state, ReadBytes());
+        case IModManager::Type::STRING:
+            // Primitive: string
+            return sol::make_object(state, ReadString());
+        case IModManager::Type::ZDOID:
+            // Userdata: ZDOID
+            return sol::make_object(state, ReadZDOID());
+        case IModManager::Type::VECTOR3f:
+            // Userdata: Vector3f
+            return sol::make_object(state, ReadVector3f());
+        case IModManager::Type::VECTOR2i:
+            // Userdata: Vector2i
+            return sol::make_object(state, ReadVector2i());
+        case IModManager::Type::QUATERNION:
+            // Userdata: Quaternion
+            return sol::make_object(state, ReadQuaternion());
+        case IModManager::Type::STRINGS:
+            // Container type of Primitive: string
+            return sol::make_object(state, ReadStrings());
+        case IModManager::Type::BOOL:
+            // Primitive: boolean
+            return sol::make_object(state, ReadBool());
+        case IModManager::Type::INT8:
+            // Primitive: number
+            return sol::make_object(state, ReadInt8());
+        case IModManager::Type::INT16:
+            // Primitive: number
+            return sol::make_object(state, ReadInt16());
+        case IModManager::Type::INT32:
+            // Primitive: number
+            return sol::make_object(state, ReadInt32());
+        case IModManager::Type::INT64:
+            // Userdata: Int64Wrapper
+            return sol::make_object(state, ReadInt64());
+        case IModManager::Type::UINT8:
+            // Primitive: number
+            return sol::make_object(state, ReadUInt8());
+        case IModManager::Type::UINT16:
+            // Primitive: number
+            return sol::make_object(state, ReadUInt16());
+        case IModManager::Type::UINT32:
+            // Primitive: number
+            return sol::make_object(state, ReadUInt32());
+        case IModManager::Type::UINT64:
+            // Userdata: UInt64Wrapper
+            return sol::make_object(state, ReadUInt64Wrapper());
+        case IModManager::Type::FLOAT:
+            // Primitive: number
+            return sol::make_object(state, Read<float>());
+        case IModManager::Type::DOUBLE:
+            // Primitive: number
+            return sol::make_object(state, Read<double>());
+        default:
+            throw std::runtime_error("invalid mod DataReader type");
+        }
+    }
 
-    sol::variadic_results DeserializeLua(sol::state_view state, const IModManager::Types& types);
+    sol::variadic_results DeserializeLua(sol::state_view state, const IModManager::Types& types) {
+        sol::variadic_results results;
+
+        for (auto&& type : types) {
+            results.push_back(DeserializeOneLua(state, type));
+        }
+
+        return results;
+    }
 
     // verbose extension methods
     //  I want these to actually all be in lua
@@ -319,3 +379,6 @@ public:
     
     decltype(auto) ReadChar() { return Read<char16_t>(); }
 };
+
+using DataReader = IDataReader<BYTE_VIEW_t>;
+using DataReaderDynamic = IDataReader<std::reference_wrapper<BYTES_t>>;

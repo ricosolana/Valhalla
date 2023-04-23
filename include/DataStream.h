@@ -2,17 +2,22 @@
 
 #include "VUtils.h"
 
-class DataStream {
+template<typename T>
+    requires (std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, std::reference_wrapper<BYTES_t>>)
+class IDataStream {
+public:
+    T m_buf;
+
 protected:
     size_t m_pos{};
 
 protected:
-    static bool Check31U(size_t count) {
+    bool Check31U(size_t count) {
         return count > static_cast<size_t>(std::numeric_limits<int32_t>::max());
     }
 
     // Throws if the count exceeds int32_t::max signed size
-    static void Assert31U(size_t count) {
+    void Assert31U(size_t count) {
         if (Check31U(count))
             throw std::runtime_error("count is negative or exceeds 2^32 - 1");
     }
@@ -40,8 +45,13 @@ protected:
     }
 
 public:
-    DataStream() {}
+    IDataStream(T buf) : m_buf(buf) {}
 
+    IDataStream(T buf, size_t pos) : m_buf(buf) {
+        SetPos(pos);
+    }
+
+public:
     size_t Position() const {
         return this->m_pos;
     }
@@ -54,11 +64,26 @@ public:
         this->m_pos = pos;
     }
 
-    virtual size_t Length() const = 0;
+    size_t Length() const {
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
+            return m_buf.size();
+        else
+            return m_buf.get().size();
+    }
 
-    //virtual BYTE_t* data() = 0;
+    BYTE_t* data() {
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
+            return m_buf.data();
+        else
+            return m_buf.get().data();
+    }
 
-    //virtual const BYTE_t* data() const = 0;
+    const BYTE_t* data() const {
+        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
+            return m_buf.data();
+        else
+            return m_buf.get().data();
+    }
 
     size_t Skip(size_t offset) {
         this->SetPos(this->Position() + offset);
