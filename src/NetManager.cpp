@@ -401,8 +401,9 @@ void INetManager::Update() {
                         DataWriter writer(chunk);
 
                         auto&& writeBlock = [&](uint32_t type, auto func) {
-                            auto&& byteCount = writer.Write(type);
-                            func();
+                            writer.Write(type);
+
+                            auto&& byteCount = writer.SubWrite(func);
                             byteCount += 12;
                             writer.Write(byteCount);
                         };
@@ -518,11 +519,14 @@ void INetManager::Update() {
                                 w2.Write(ns.count());
                                 w2.Write(packet);
 
+                                uint32_t len = static_cast<uint32_t>(w2.Length());
+
                                 // 32-bit Padding
                                 while ((w2.Position() + 1) % 4 != 0) {
                                     w2.Write<uint8_t>(0);
                                 }
-                                writer.Write<BYTES_t, uint32_t, false>(w2.m_buf.get());
+                                writer.Write(len);
+                                writer.Write<BYTES_t, void>(w2.m_buf.get());
                             });
 
                             /*

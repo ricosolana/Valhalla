@@ -126,10 +126,11 @@ public:
         return result;
     }
 
-    template<typename T, typename SizeType = uint32_t, bool DoWriteSize = true>
-        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
+    template<typename T, typename SizeType = uint32_t>
+        requires ((std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
+            && (std::is_arithmetic_v<SizeType> || std::is_void_v<SizeType>))
     void Write(const T& in) {
-        if constexpr (DoWriteSize)
+        if constexpr (!std::is_void_v<SizeType>)
             Write<SizeType>(in.size());
         WriteSomeBytes(in.data(), in.size());
     }
