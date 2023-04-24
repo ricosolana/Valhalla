@@ -281,7 +281,7 @@ Valhalla:Subscribe('Join', function(peer)
                         end
                         
                         if command.usage then
-                            peer:ConsoleMessage('<color=#FFAA00>Usage: ' .. label .. ' ' .. (command.usage or ''))
+                            peer:ConsoleMessage('<color=#FFAA00>Usage: ' .. label .. ' ' .. (command.usage or '') .. '</color>')
                         end
                     end
                 else

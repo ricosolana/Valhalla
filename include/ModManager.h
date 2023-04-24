@@ -84,6 +84,11 @@ public:
         // General game events
         static constexpr HASH_t PlayerList = __H("PlayerList");
 
+        static constexpr HASH_t ZDOCreated = __H("ZDOCreated");
+        static constexpr HASH_t ZDOModified = __H("ZDOModified");
+        static constexpr HASH_t SendingZDO = __H("SendingZDO");
+        //static constexpr HASH_t ZDODestroyed = __H("ZDODestroyed");
+
         // Socket methods events
         static constexpr HASH_t Send = __H("Send");
         static constexpr HASH_t Recv = __H("Recv");

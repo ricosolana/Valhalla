@@ -147,7 +147,7 @@ private:
         }
 
         template<TrivialSyncType T>
-        void _ForceReAssign(const T &type) {
+        void _ForceReAssign(T type) {
             if (HasValue()) {
                 if (*_Ordinal() != GetOrdinal<T>()) {
                     // call destructor of self
@@ -174,7 +174,7 @@ private:
             *this->_Ordinal() = GetOrdinal<T>();
 
             // https://stackoverflow.com/questions/2494471/c-is-it-possible-to-call-a-constructor-directly-without-new
-            new (this->_Member<T>()) T(type);
+            new (this->_Member<T>()) T(std::move(type));
         }
 
     public:
@@ -213,7 +213,7 @@ private:
         }
 
         void operator=(const Ord& other) {
-            if (HasValue()) {
+            if (other.HasValue()) {
                 const auto ord = *other._Ordinal();
                 switch (ord) {
                 case ORD_FLOAT:         _ForceReAssign(*other._Member<float>()); break;
@@ -231,6 +231,35 @@ private:
                 this->~Ord();
                 this->m_contiguous = nullptr;
             }
+        }
+
+        void operator=(Ord&& other) {
+            this->~Ord();
+            this->m_contiguous = other.m_contiguous;
+            other.m_contiguous = nullptr;
+
+            /*
+            if (other.HasValue()) {
+                const auto ord = *other._Ordinal();
+                switch (ord) {
+                case ORD_FLOAT:         _ForceReAssign(std::move(*other._Member<float>())); break;
+                case ORD_VECTOR3:       _ForceReAssign(std::move(*other._Member<Vector3f>())); break;
+                case ORD_QUATERNION:    _ForceReAssign(std::move(*other._Member<Quaternion>())); break;
+                case ORD_INT:           _ForceReAssign(std::move(*other._Member<int32_t>())); break;
+                case ORD_LONG:          _ForceReAssign(std::move(*other._Member<int64_t>())); break;
+                case ORD_STRING:        _ForceReAssign(std::move(*other._Member<std::string>())); break;
+                case ORD_ARRAY:         _ForceReAssign(std::move(*other._Member<BYTES_t>())); break;
+                default:
+                    assert(false && "reached impossible case");
+                }
+
+                other.~Ord();
+                other.m_contiguous = nullptr;
+            }
+            else {
+                this->~Ord();
+                this->m_contiguous = nullptr;
+            }*/
         }
 
         bool HasValue() const {
@@ -330,7 +359,25 @@ private:
         auto mut = ToShiftHash<T>(key);
 
         // TODO put a null insert up here, then set val or not based on initially present or absent
+        //this->m_members[mut] = Ord(value);
 
+        //this->m_encoded |= (static_cast<uint64_t>(GetOrdinalMask<T>()) << (8 * 7));
+        //assert(GetOrdinalMask() & GetOrdinalMask<T>());
+
+        auto &&insert = this->m_members.insert({ mut, Ord() });
+        if (insert.second) {
+            // Manually initial-set
+            insert.first->second = Ord(value);
+            this->m_encoded |= (static_cast<uint64_t>(GetOrdinalMask<T>()) << (8 * 7));
+            assert(GetOrdinalMask() & GetOrdinalMask<T>());
+            return true;
+        }
+        else {
+            assert(GetOrdinalMask() & GetOrdinalMask<T>());
+            return insert.first->second.Set<T>(value);
+        }
+        
+        /*
         // Quickly check whether type is in map
         if (GetOrdinalMask() & GetOrdinalMask<T>()) {
 
@@ -346,7 +393,7 @@ private:
             assert(GetOrdinalMask() & GetOrdinalMask<T>());
         }
         bool insert = m_members.insert({ mut, Ord(value) }).second;
-        assert(insert); // It must be uniquely inserted
+        assert(insert); // It must be uniquely inserted*/
         return true;
     }
 

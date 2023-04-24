@@ -27,7 +27,9 @@ void IZDOManager::Init() {
 			});
 		}
 	);
-
+	//auto&& insert = ZDOManager()->m_objectsByID.begin()->second->
+		//m_members.insert({0, ZDO::Ord()});
+	//insert.first->second.Get
 	RouteManager()->Register(Hashes::Routed::C2S_RequestZDO, 
 		[this](Peer* peer, ZDOID id) {
 			peer->ForceSendZDO(id);
@@ -706,6 +708,10 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 		peer.m_forceSend.erase(zdo.ID());
 
+		if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
+			continue;
+		}
+
 		writer.Write(zdo.ID());
 		writer.Write(zdo.GetOwnerRevision());
 		writer.Write(zdo.m_dataRev);
@@ -812,10 +818,20 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 				// Only disperse through world if ZDO is new
 				if (created) {
+					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOCreated, peer, zdo)) {
+						EraseZDO(pair.first);
+						continue;
+					}
+
 					AddZDOToZone(zdo);
 					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
 				}
 				else {
+					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {
+						zdo = std::move(copy);
+						continue;
+					}
+
 					zdo.SetPosition(pos);
 				}
 
