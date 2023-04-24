@@ -400,91 +400,25 @@ void INetManager::Update() {
                         BYTES_t chunk;
                         DataWriter writer(chunk);
 
-                        auto&& writeBlock = [&](uint32_t type, auto func) {
-                            writer.Write(type);
+                        // File Header
 
-                            auto&& byteCount = writer.SubWrite(func);
-                            byteCount += 12;
-                            writer.Write(byteCount);
-                        };
+                        // Magic Number
+                        //  seconds/nanoseconds
+                        writer.Write<uint32_t>(0xA1B23C4D);
 
-                        // https://www.ietf.org/staging/draft-tuexen-opsawg-pcapng-02.html#name-general-file-structure
-                        // pcapng header
+                        // Major / Minor
+                        writer.Write<uint16_t>(2);
+                        writer.Write<uint16_t>(4);
 
-                        // Section Header Block
-                        writeBlock(0x0A0D0D0A, [&]() {
-                            // Byte-Order Magic
-                            writer.Write<uint32_t>(0x1A2B3C4D);
+                        // Reserved 1/2
+                        writer.Write<uint32_t>(0);
+                        writer.Write<uint32_t>(0);
 
-                            // Major and Minor version
-                            writer.Write<uint16_t>(1);
-                            writer.Write<uint16_t>(0);
+                        // SnapLen
+                        writer.Write<uint32_t>(std::numeric_limits<int32_t>::max());
 
-                            // Options
-                            writer.SubWrite<uint64_t>([&]() {
-                                // opt_endofopt
-                                writer.Write<uint16_t>(0); // code
-                                writer.Write<uint16_t>(0); // length
-                            });
-                        });
-
-                        /*
-                        {
-                            writer.Write<uint32_t>(0x0A0D0D0A);
-                            auto&& byteCount = writer.SubWrite([&]() {
-                                // Byte-Order Magic
-                                writer.Write<uint32_t>(0x1A2B3C4D);
-
-                                // Major and Minor version
-                                writer.Write<uint16_t>(1);
-                                writer.Write<uint16_t>(0);
-
-                                writer.SubWrite<uint64_t>([&]() {
-                                    // opt_endofopt
-                                    writer.Write<uint16_t>(0); // code
-                                    writer.Write<uint16_t>(0); // length
-                                    });
-                                });
-                            byteCount += 12;
-                            writer.Write(byteCount);
-                        }*/
-
-                        // Interface Description Block
-                        writeBlock(1, [&]() {
-                            // LINKTYPE_ETHERNET
-                            writer.Write<uint16_t>(1);
-
-                            // Reserved
-                            writer.Write<uint16_t>(0);
-
-                            // SnapLen
-                            writer.Write<uint32_t>(0);
-
-                            // Options
-                            writer.SubWrite<uint64_t>([&]() {
-                                // opt_endofopt
-                                writer.Write<uint16_t>(0); // code
-                                writer.Write<uint16_t>(0); // length
-                            });
-                        });
-
-                        /*
-                        {
-                            writer.Write<uint32_t>(1);
-                            auto&& byteCount = writer.SubWrite([&]() {
-                                // LinkType 
-                                //  LINKTYPE_ETHERNET
-                                writer.Write<uint16_t>(1);
-
-                                // Reserved
-                                writer.Write<uint16_t>(0);
-
-                                // SnapLen
-                                writer.Write<uint32_t>(0);
-                            });
-                            byteCount += 12;
-                            writer.Write(byteCount);
-                        }*/
+                        // LinkType
+                        writer.Write<uint32_t>(1);
 
                         // Packets
                         for (int i = 0; i < count; i++) {
@@ -501,53 +435,29 @@ void INetManager::Update() {
                                 peer->m_recordBuffer.pop_front();
                             }
 
-                            // Interface Description Block
+                            auto sec = duration_cast<seconds>(ns);
 
+                            // Packet Record
 
-                            // Enhanced Packet Block
-                            //writer.Write<uint32_t>(6);
+                            // Timestamp (Seconds / nanoseconds)
+                            writer.Write<uint32_t>(sec.count());
+                            writer.Write<uint32_t>((ns - duration_cast<nanoseconds>(sec)).count());
 
-                            //writer.SubWrite([&]() {
-                            //    writer.Write()
-                            //    });
-
-                            // Simple Packet Block
-                            writeBlock(3, [&]() {
-                                BYTES_t b2;
-                                DataWriter w2(b2);
-
-                                w2.Write(ns.count());
-                                w2.Write(packet);
-
-                                uint32_t len = static_cast<uint32_t>(w2.Length());
-
-                                // 32-bit Padding
-                                while ((w2.Position() + 1) % 4 != 0) {
-                                    w2.Write<uint8_t>(0);
-                                }
-                                writer.Write(len);
-                                writer.Write<BYTES_t, void>(w2.m_buf.get());
+                            // Captured Packet Length
+                            auto&& pos = writer.Position();
+                            writer.Write<uint32_t>(0);
+                            auto&& count = writer.SubWrite([&]() {
+                                writer.Write<BYTES_t, void>(packet);
                             });
 
-                            /*
-                            writer.Write<uint32_t>(3);
-                            auto s = writer.SubWrite([&]() {
-                                BYTES_t b2;
-                                DataWriter w2(b2);
-
-                                w2.Write(ns.count());
-                                w2.Write(packet);
-
-                                // 32-bit Padding
-                                while ((w2.Position() + 1) % 4 != 0) {
-                                    w2.Write<uint8_t>(0);
-                                }
-                                writer.Write<BYTES_t, uint32_t, false>(w2.m_buf.get());
-                            });
-                            writer.Write(s);*/
+                            // Original
+                            auto&& end = writer.Position();
+                            writer.SetPos(pos);
+                            writer.Write(count);
+                            writer.SetPos(end);
                         }
                         
-                        fs::path path = root / (std::to_string(chunkIndex++) + ".pcapng");
+                        fs::path path = root / (std::to_string(chunkIndex++) + ".pcap");
 
                         if (VUtils::Resource::WriteFile(path, chunk))
                             LOG(WARNING) << "Saving " << path.c_str();
