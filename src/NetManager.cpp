@@ -400,7 +400,92 @@ void INetManager::Update() {
                         BYTES_t chunk;
                         DataWriter writer(chunk);
 
-                        writer.Write((int32_t)count);
+                        auto&& writeBlock = [&](uint32_t type, auto func) {
+                            auto&& byteCount = writer.Write(type);
+                            func();
+                            byteCount += 12;
+                            writer.Write(byteCount);
+                        };
+
+                        // https://www.ietf.org/staging/draft-tuexen-opsawg-pcapng-02.html#name-general-file-structure
+                        // pcapng header
+
+                        // Section Header Block
+                        writeBlock(0x0A0D0D0A, [&]() {
+                            // Byte-Order Magic
+                            writer.Write<uint32_t>(0x1A2B3C4D);
+
+                            // Major and Minor version
+                            writer.Write<uint16_t>(1);
+                            writer.Write<uint16_t>(0);
+
+                            // Options
+                            writer.SubWrite<uint64_t>([&]() {
+                                // opt_endofopt
+                                writer.Write<uint16_t>(0); // code
+                                writer.Write<uint16_t>(0); // length
+                            });
+                        });
+
+                        /*
+                        {
+                            writer.Write<uint32_t>(0x0A0D0D0A);
+                            auto&& byteCount = writer.SubWrite([&]() {
+                                // Byte-Order Magic
+                                writer.Write<uint32_t>(0x1A2B3C4D);
+
+                                // Major and Minor version
+                                writer.Write<uint16_t>(1);
+                                writer.Write<uint16_t>(0);
+
+                                writer.SubWrite<uint64_t>([&]() {
+                                    // opt_endofopt
+                                    writer.Write<uint16_t>(0); // code
+                                    writer.Write<uint16_t>(0); // length
+                                    });
+                                });
+                            byteCount += 12;
+                            writer.Write(byteCount);
+                        }*/
+
+                        // Interface Description Block
+                        writeBlock(1, [&]() {
+                            // LINKTYPE_ETHERNET
+                            writer.Write<uint16_t>(1);
+
+                            // Reserved
+                            writer.Write<uint16_t>(0);
+
+                            // SnapLen
+                            writer.Write<uint32_t>(0);
+
+                            // Options
+                            writer.SubWrite<uint64_t>([&]() {
+                                // opt_endofopt
+                                writer.Write<uint16_t>(0); // code
+                                writer.Write<uint16_t>(0); // length
+                            });
+                        });
+
+                        /*
+                        {
+                            writer.Write<uint32_t>(1);
+                            auto&& byteCount = writer.SubWrite([&]() {
+                                // LinkType 
+                                //  LINKTYPE_ETHERNET
+                                writer.Write<uint16_t>(1);
+
+                                // Reserved
+                                writer.Write<uint16_t>(0);
+
+                                // SnapLen
+                                writer.Write<uint32_t>(0);
+                            });
+                            byteCount += 12;
+                            writer.Write(byteCount);
+                        }*/
+
+                        // Packets
                         for (int i = 0; i < count; i++) {
                             nanoseconds ns;
                             BYTES_t packet;
@@ -414,12 +499,58 @@ void INetManager::Update() {
 
                                 peer->m_recordBuffer.pop_front();
                             }
-                            writer.Write(ns.count());
-                            writer.Write(packet);
+
+                            // Interface Description Block
+
+
+                            // Enhanced Packet Block
+                            //writer.Write<uint32_t>(6);
+
+                            //writer.SubWrite([&]() {
+                            //    writer.Write()
+                            //    });
+
+                            // Simple Packet Block
+                            writeBlock(3, [&]() {
+                                BYTES_t b2;
+                                DataWriter w2(b2);
+
+                                w2.Write(ns.count());
+                                w2.Write(packet);
+
+                                // 32-bit Padding
+                                while ((w2.Position() + 1) % 4 != 0) {
+                                    w2.Write<uint8_t>(0);
+                                }
+                                writer.Write<BYTES_t, uint32_t, false>(w2.m_buf.get());
+                            });
+
+                            /*
+                            writer.Write<uint32_t>(3);
+                            auto s = writer.SubWrite([&]() {
+                                BYTES_t b2;
+                                DataWriter w2(b2);
+
+                                w2.Write(ns.count());
+                                w2.Write(packet);
+
+                                // 32-bit Padding
+                                while ((w2.Position() + 1) % 4 != 0) {
+                                    w2.Write<uint8_t>(0);
+                                }
+                                writer.Write<BYTES_t, uint32_t, false>(w2.m_buf.get());
+                            });
+                            writer.Write(s);*/
                         }
+                        
+                        fs::path path = root / (std::to_string(chunkIndex++) + ".pcapng");
 
-                        fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
+                        if (VUtils::Resource::WriteFile(path, chunk))
+                            LOG(WARNING) << "Saving " << path.c_str();
+                        else
+                            LOG(ERROR) << "Failed to save " << path.c_str();
 
+                        /*
                         if (auto compressed = ZStdCompressor().Compress(chunk)) {
                             if (VUtils::Resource::WriteFile(path, *compressed))
                                 LOG(WARNING) << "Saving " << path.c_str();
@@ -427,7 +558,7 @@ void INetManager::Update() {
                                 LOG(ERROR) << "Failed to save " << path.c_str();
                         }
                         else
-                            LOG(ERROR) << "Failed to compress packet capture chunk";
+                            LOG(ERROR) << "Failed to compress packet capture chunk";*/
                     };
 
                     // Primary occasional saving of captured packets

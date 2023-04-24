@@ -206,7 +206,7 @@ void IModManager::LoadAPI() {
         "Write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
+            static_cast<bool& (DataWriter::*)(bool)>(&DataWriter::Write),
 
             static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::Write),
             //static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
@@ -222,18 +222,18 @@ void IModManager::LoadAPI() {
             static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write)
         ),
 
-        "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
-        "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
-        "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
+        "WriteInt8", static_cast<int8_t& (DataWriter::*)(int8_t)>(&DataWriter::Write),
+        "WriteInt16", static_cast<int16_t& (DataWriter::*)(int16_t)>(&DataWriter::Write),
+        "WriteInt32", static_cast<int32_t& (DataWriter::*)(int32_t)>(&DataWriter::Write),
         "WriteInt64", static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
 
-        "WriteUInt8", static_cast<void (DataWriter::*)(uint8_t)>(&DataWriter::Write),
-        "WriteUInt16", static_cast<void (DataWriter::*)(uint16_t)>(&DataWriter::Write),
-        "WriteUInt32", static_cast<void (DataWriter::*)(uint32_t)>(&DataWriter::Write),
+        "WriteUInt8", static_cast<uint8_t& (DataWriter::*)(uint8_t)>(&DataWriter::Write),
+        "WriteUInt16", static_cast<uint16_t& (DataWriter::*)(uint16_t)>(&DataWriter::Write),
+        "WriteUInt32", static_cast<uint32_t& (DataWriter::*)(uint32_t)>(&DataWriter::Write),
         "WriteUInt64", static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write),
 
-        "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
-        "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
+        "WriteFloat", static_cast<float& (DataWriter::*)(float)>(&DataWriter::Write),
+        "WriteDouble", static_cast<double& (DataWriter::*)(double)>(&DataWriter::Write),
 
         "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write),
 

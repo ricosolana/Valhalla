@@ -30,7 +30,7 @@ class IDataWriter : public IDataStream<T> {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
+    BYTE_t* WriteSomeBytes(const BYTE_t* buffer, size_t count) {
         //this->Assert31U(count);
         //this->Assert31U(this->m_pos + count);
 
@@ -46,22 +46,26 @@ private:
                 this->m_buf.get().resize(this->m_pos + count);
         }
 
+        auto&& data = this->data() + this->m_pos;
+
         std::copy(buffer,
                   buffer + count, 
-                  this->data() + this->m_pos);
+                  data);
 
         this->m_pos += count;
+
+        return data;
     }
 
     // Write count bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteSomeBytes(const BYTES_t& vec, size_t count) {
+    decltype(auto) WriteSomeBytes(const BYTES_t& vec, size_t count) {
         return WriteSomeBytes(vec.data(), count);
     }
 
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteSomeBytes(const BYTES_t& vec) {
+    decltype(auto) WriteSomeBytes(const BYTES_t& vec) {
         return WriteSomeBytes(vec, vec.size());
     }
 
@@ -100,11 +104,13 @@ public:
             return DataReader(this->m_buf.get(), this->m_pos);
     }*/
 
-    template<typename F>
-        requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
-    void SubWrite(F func) {
+    //template<typename F>
+        //requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
+    //void SubWrite(F func) {
+    template<typename SizeType = uint32_t>
+    decltype(auto) SubWrite(std::function<void()> func) {
         const auto start = this->Position();
-        int32_t count = 0;
+        SizeType count = 0;
         Write(count);
 
         // call func...
@@ -114,14 +120,17 @@ public:
         this->SetPos(start);
         count = end - start - sizeof(count);
         assert(count >= 0);
-        Write(count);
+        auto&& result = Write(count);
         this->SetPos(end);
+
+        return result;
     }
 
-    template<typename T>
+    template<typename T, typename SizeType = uint32_t, bool DoWriteSize = true>
         requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
     void Write(const T& in) {
-        Write<int32_t>(in.size());
+        if constexpr (DoWriteSize)
+            Write<SizeType>(in.size());
         WriteSomeBytes(in.data(), in.size());
     }
 
@@ -230,7 +239,7 @@ public:
     // Writes a primitive type
     template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
+    T& Write(T in) { return *reinterpret_cast<T*>(WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T))); }
 
     // Writes an enum
     //  Bytes written depend on the underlying value
