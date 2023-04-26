@@ -161,23 +161,28 @@ void SteamSocket::SendQueued() {
     while (!m_sendQueue.empty()) {
         auto&& front = m_sendQueue.front();
 
+
+
         // TODO use SendMessage(); does not copy message structure buffer
         //  But memory container must not be vector
         //  A vector can ONLY be used, given that ownership is handed over to steamlib, or i multithread this
         //  
         // https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages
-        //SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
-        //msg->m_conn = m_hConn;          // set the intended recipient
-        //msg->m_pData = front.data();    // set the buffer
-        //msg->m_cbSize = front.size();   // set the buffer size
-        //msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
+        SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
+        msg->m_conn = m_hConn;          // set the intended recipient
+        msg->m_pData = front.data();    // set the buffer
+        msg->m_cbSize = front.size();   // set the buffer size
+        msg->m_nUserData = reinterpret_cast<std::intptr_t>(new BYTES_t(std::move(front)));
+        msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
         //msg->m_nUserData = reinterpret_cast<std::intptr_t>(&front); // send the destruction message data
-        //msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
-        //    
-        //};
-        //int64_t state = 0;
-        //SteamGameServerNetworkingSockets()->SendMessages(1, msg, );
+        msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
+            delete reinterpret_cast<BYTES_t*>(msg->m_nUserData);
+        };
 
+        int64_t state[1]{};
+        SteamGameServerNetworkingSockets()->SendMessages(1, &msg, state);
+
+        /*
         if ((VH_SETTINGS.serverDedicated
             ? SteamGameServerNetworkingSockets()->SendMessageToConnection(
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr) 
@@ -185,7 +190,7 @@ void SteamSocket::SendQueued() {
                 m_hConn, front.data(), front.size(), k_nSteamNetworkingSend_Reliable, nullptr)) != k_EResultOK) {
             LOG(DEBUG) << "Failed to send message";
             return;
-        }
+        }*/
 
         m_sendQueue.pop_front();
     }
