@@ -6,6 +6,7 @@
 #include "ServerSettings.h"
 #include "VUtilsRandom.h"
 #include "VUtilsMathf.h"
+#include "HashUtils.h"
 
 #define VH_ID Valhalla()->ID()
 #define VH_SETTINGS Valhalla()->Settings()
@@ -74,9 +75,9 @@ public:
 
     double m_serverTimeMultiplier = 1;
 
-    UNORDERED_SET_t<std::string> m_blacklist; // banned steam ids
-    UNORDERED_SET_t<std::string> m_admin;     // admin steam ids
-    UNORDERED_SET_t<std::string> m_whitelist; // whitelisted steam ids
+    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
+    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
+    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
     //robin_hood::unordered_set<std::string> m_bypass;    // password-bypass steam ids
 
     // Get the time since the server started

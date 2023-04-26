@@ -35,6 +35,9 @@ struct ServerSettings {
     unsigned int    playerMax;
     bool            playerAuth;
     seconds         playerTimeout;
+    milliseconds    playerListSendInterval;
+    bool            playerListForceVisible;
+    
     //bool            playerList;
     //bool            playerArrivePing;
     //bool            playerForceVisible;

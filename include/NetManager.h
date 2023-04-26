@@ -29,13 +29,13 @@ public:
 
 private:
     // Kick a player by name
-    bool Kick(std::string user);
+    bool Kick(std::string_view user);
 
     // Ban a player by name
-    bool Ban(std::string user);
+    bool Ban(std::string_view user);
 
     // Unban a player by name
-    bool Unban(const std::string& user);
+    bool Unban(std::string_view user);
 
     void SendDisconnect();
     void SendPlayerList();
@@ -54,11 +54,11 @@ public:
     
     void OnConfigLoad(bool reloading);
 
-    Peer* GetPeerByName(const std::string& name);
+    Peer* GetPeerByName(std::string_view name);
     Peer* GetPeer(OWNER_t uuid);
-    Peer* GetPeerByHost(const std::string& host);
+    Peer* GetPeerByHost(std::string_view host);
 
-    std::vector<Peer*> GetPeers(const std::string &addr);
+    //std::vector<Peer*> GetPeers(const std::string &addr);
 
     //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
 

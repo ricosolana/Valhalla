@@ -99,7 +99,8 @@ void IValhalla::LoadFiles(bool reloading) {
             m_settings.playerWhitelist = player["whitelist"].as<bool>(false);          // enable whitelist
             m_settings.playerMax = std::clamp(player["max"].as<int>(10), 1, 99999);     // max allowed players
             m_settings.playerAuth = player["auth"].as<bool>(true);                     // allow authed players only
-            m_settings.playerTimeout = seconds(loadNode["timeout-s"].as<int>(30));
+            m_settings.playerTimeout = seconds(player["timeout-s"].as<int>(30));
+            m_settings.playerListSendInterval = milliseconds(std::clamp(player["player-list-send-interval-ms"].as<int>(2000), 0, 1000*10));
 
             m_settings.zdoMaxCongestion = zdo["max-congestion"].as<int>(10240);
             m_settings.zdoMinCongestion = zdo["min-congestion"].as<int>(2048);
@@ -175,6 +176,7 @@ void IValhalla::LoadFiles(bool reloading) {
         player["max"] = m_settings.playerMax;
         player["auth"] = m_settings.playerAuth;
         player["timeout-s"] = duration_cast<seconds>(m_settings.playerTimeout).count();
+        player["player-list-send-interval-ms"] = duration_cast<milliseconds>(m_settings.playerListSendInterval).count();
 
         zdo["max-congestion"] = m_settings.zdoMaxCongestion;
         zdo["min-congestion"] = m_settings.zdoMinCongestion;

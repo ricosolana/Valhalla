@@ -333,9 +333,11 @@ void IModManager::LoadAPI() {
         "ChatMessage", sol::overload(
             // TODO fix this
             //sol::resolve<void(const std::string&, ChatMsgType, const Vector3f&, const std::string&, const std::string&)>(&Peer::ChatMessage),
-            sol::resolve<void (const std::string&)>(&Peer::ChatMessage)
+            sol::resolve<void (std::string_view)>(&Peer::ChatMessage)
         ),
-        "ConsoleMessage", &Peer::ConsoleMessage,
+        "ConsoleMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::ConsoleMessage),
+        //"ConsoleMessage", sol::resolve<void(std::string_view)>(&Peer::ConsoleMessage),
+        //"ConsoleMessage", &Peer::ConsoleMessage,
         "CornerMessage", &Peer::CornerMessage,
         "CenterMessage", &Peer::CenterMessage,
         // misc functions
@@ -787,7 +789,7 @@ void IModManager::LoadAPI() {
         "GetPeer", sol::overload(
             [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeer(owner); },
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
-            sol::resolve<Peer* (const std::string&)>(&INetManager::GetPeerByName)
+            sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
         ),
         "peers", sol::readonly(&INetManager::m_onlinePeers)
     );

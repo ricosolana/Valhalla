@@ -127,6 +127,25 @@ public:
     }
 
 
+    /*
+    template <typename Func, typename... Types>
+    void PrepareInvoke(HASH_t hash, Func func) {
+        if (!m_socket->Connected())
+            return;
+
+        // Prefix
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
+            return;
+
+
+
+        VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
+
+        m_socket->Send(DataWriter::Serialize(hash, params...));
+
+        // Postfix
+        VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
+    }*/
 
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
@@ -255,9 +274,9 @@ public:
     }
 
     // Show a specific chat message
-    void ChatMessage(const std::string& text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, const std::string& senderID);
+    void ChatMessage(std::string_view text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, std::string_view senderID);
     // Show a chat message
-    void ChatMessage(const std::string& text) {
+    void ChatMessage(std::string_view text) {
         //ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
 
         auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
@@ -265,17 +284,22 @@ public:
         ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), profile, "");
     }
     // Show a console message
-    decltype(auto) ConsoleMessage(const std::string& msg) {
-        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, std::string_view(msg));
+    template<typename ...Strings>
+    void ConsoleMessage(const std::tuple<Strings...>& msg) {
+        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
     }
+    void ConsoleMessage(std::string_view msg) {
+        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
+    }
+
     // Show a screen message
-    void UIMessage(const std::string& text, UIMsgType type);
+    void UIMessage(std::string_view text, UIMsgType type);
     // Show a corner screen message
-    decltype(auto) CornerMessage(const std::string& text) {
+    decltype(auto) CornerMessage(std::string_view text) {
         return UIMessage(text, UIMsgType::TopLeft);
     }
     // Show a center screen message
-    decltype(auto) CenterMessage(const std::string& text) {
+    decltype(auto) CenterMessage(std::string_view text) {
         return UIMessage(text, UIMsgType::Center);
     }
 

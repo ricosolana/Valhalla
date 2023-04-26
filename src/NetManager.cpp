@@ -23,64 +23,45 @@ INetManager* NetManager() {
 
 
 
-bool INetManager::Kick(std::string user) {
+bool INetManager::Kick(std::string_view user) {
     auto&& peer = GetPeerByName(user);
-    try {
-        if (!peer) peer = GetPeer(std::stoll(user));
+    
+    if (!peer) {
+        OWNER_t uuid;
+        auto ec = std::from_chars(user.data(), user.data() + user.length(), uuid).ec;
+        if (ec != std::errc::invalid_argument && ec != std::errc::result_out_of_range)
+            peer = GetPeer(uuid);
     }
-    catch (std::exception&) {}
 
     if (peer) {
-        user = peer->m_socket->GetHostName();
         peer->Kick();
         return true;
-    }
-    else {
-        auto peers = GetPeers(user);
-
-        for (auto&& peer : peers) {
-            user = peer->m_socket->GetHostName();
-            peer->Kick();
-        }
-
-        if (!peers.empty())
-            return true;
     }
 
     return false;
 }
 
-bool INetManager::Ban(std::string user) {
-    {
-        auto&& peer = GetPeerByName(user);
-        try {
-            if (!peer) peer = GetPeer(std::stoll(user));
-        }
-        catch (const std::exception&) {}
+bool INetManager::Ban(std::string_view user) {
+    auto&& peer = GetPeerByName(user);
 
-        if (peer) {
-            user = peer->m_socket->GetHostName();
-            peer->Kick();
-            Valhalla()->m_blacklist.insert(user);
-            return true;
-        }
+    if (!peer) {
+        OWNER_t uuid;
+        auto ec = std::from_chars(user.data(), user.data() + user.length(), uuid).ec;
+        if (ec != std::errc::invalid_argument && ec != std::errc::result_out_of_range)
+            peer = GetPeer(uuid);
     }
 
-    auto peers = GetPeers(user);
-
-    for (auto&& peer : peers) {
-        user = peer->m_socket->GetHostName();
-        peer->Kick();
-    }
-
-    if (!peers.empty())
+    if (peer) {
+        Valhalla()->m_blacklist.insert(peer->m_socket->GetHostName());
+        peer->Close(ConnectionStatus::ErrorBanned);
         return true;
+    }
     
     Valhalla()->m_blacklist.insert(user);
     return false;
 }
 
-bool INetManager::Unban(const std::string& user) {
+bool INetManager::Unban(std::string_view user) {
     return Valhalla()->m_blacklist.erase(user);
 }
 
@@ -103,19 +84,24 @@ void INetManager::SendPlayerList() {
 
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
-        writer.Write((int)m_onlinePeers.size());
+        writer.Write<int32_t>(m_onlinePeers.size());
 
         for (auto&& peer : m_onlinePeers) {
             writer.Write(std::string_view(peer->m_name));
             writer.Write(std::string_view(peer->m_socket->GetHostName()));
             writer.Write(peer->m_characterID);
-            //writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerForceVisible);
-            //if (peer->m_visibleOnMap || VH_SETTINGS.playerForceVisible) {
-            //    writer.Write(peer->m_pos);
-            //}
-            writer.Write(peer->m_visibleOnMap);
-            if (peer->m_visibleOnMap)
-                writer.Write(peer->m_pos);
+            writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible);
+            if (peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible) {
+                if (VH_SETTINGS.playerListSendInterval >= 2s)
+                    writer.Write(peer->m_pos);
+                else {
+                    auto&& zdo = peer->GetZDO();
+                    if (zdo)
+                        writer.Write(zdo->Position());
+                    else
+                        writer.Write(peer->m_pos);
+                }
+            }
         }
 
         for (auto&& peer : m_onlinePeers) {
@@ -181,51 +167,41 @@ void INetManager::OnPeerConnect(Peer& peer) {
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.GetOwner() << ":" << characterID.GetUID() << ")";
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
         // TODO maybe permissions tree in future?
         //  lua? ...
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
-        auto split = VUtils::String::Split(user, " ");
-
-        if (Kick(std::string(split[0]))) {
-            peer->ConsoleMessage("Kicked '" + user + "'");
+        if (Kick(user)) {
+            peer->ConsoleMessage(std::make_tuple("Kicked '", user, "'"));
         }
         else {
             peer->ConsoleMessage("Player not found");
         }
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
-        auto split = VUtils::String::Split(user, " ");
-
-        if (Ban(std::string(split[0]))) {
-            peer->ConsoleMessage("Banned '" + user + "'");
+        if (Ban(user)) {
+            peer->ConsoleMessage(std::make_tuple("Banned '", user, "'"));
         }
         else {
             peer->ConsoleMessage("Player not found");
         }
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string user) {
+    peer.Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
         if (!peer->m_admin)
             return peer->ConsoleMessage("You are not admin");
 
         // devcommands requires an exact format...
         Unban(user);
-        peer->ConsoleMessage("Unbanning user " + user);
 
-        //if (Unban(user)) {
-        //    peer->ConsoleMessage("Unbanning user " + user);
-        //}
-        //else {
-        //    peer->ConsoleMessage("Player is not banned");
-        //}
-        });
+        peer->ConsoleMessage(std::make_tuple("Unbanning user ", user));
+    });
 
     peer.Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
         if (!peer->m_admin)
@@ -276,7 +252,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByName(const std::string& name) {
+Peer* INetManager::GetPeerByName(std::string_view name) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_name == name)
             return peer;
@@ -293,45 +269,12 @@ Peer* INetManager::GetPeer(OWNER_t uuid) {
     return nullptr;
 }
 
-Peer* INetManager::GetPeerByHost(const std::string& host) {
+Peer* INetManager::GetPeerByHost(std::string_view host) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_socket->GetHostName() == host)
             return peer;
     }
     return nullptr;
-}
-
-std::vector<Peer*> INetManager::GetPeers(const std::string& addr) {
-    auto addrSplit = VUtils::String::Split(addr, ".");
-
-    std::vector<Peer*> peers;
-
-    for (auto&& peer : m_onlinePeers) {
-
-        // use wildcards too
-        std::string p = peer->m_socket->GetAddress();
-        auto peerSplit = VUtils::String::Split(p, ".");
-
-        bool match = true;
-
-        for (auto&& sub1 = peerSplit.begin(), sub2 = addrSplit.begin(); 
-            sub1 != peerSplit.end() && sub2 != addrSplit.end();
-            sub1++, sub2++) 
-        {
-            if (*sub2 == "*") continue;
-            if (*sub2 != *sub1) {
-                match = false;
-                break;
-            }
-        }
-
-        if (match)
-            peers.push_back(peer);
-
-        //if (peer->m_socket->GetAddress() == buf)
-            //return peer.get();
-    }
-    return peers;
 }
 
 void INetManager::PostInit() {
@@ -494,8 +437,13 @@ void INetManager::Update() {
     // Send periodic data (2s)
     PERIODIC_NOW(2s, {
         SendNetTime();
-        SendPlayerList();
     });
+
+    if (VH_SETTINGS.playerListSendInterval > 0s) {
+        PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
+            SendPlayerList();
+        });
+    }
 
     // Send periodic pings (1s)
     PERIODIC_NOW(1s, {

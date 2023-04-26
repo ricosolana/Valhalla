@@ -156,7 +156,7 @@ public:
     // Writes a string
     void Write(std::string_view in) {
         auto length = in.length();
-        //Assert31U(length);
+        IDataStream<T>::Assert31U(length);
 
         auto byteCount = static_cast<int32_t>(length);
 
@@ -165,6 +165,59 @@ public:
             return;
 
         WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
+    }
+
+private:
+    void svUnpack() {}
+
+    template<typename A, typename ...B>
+    void svUnpack(const A& a, const B&... b) {
+        auto&& sv = std::string_view(a);
+        WriteSomeBytes(reinterpret_cast<const BYTE_t*>(sv.data()), sv.length());
+
+        svUnpack(b...);
+    }
+
+public:
+    // Writes a tuple of strings as a singular concatenated string
+    template<typename ...Strings>
+    void Write(const std::tuple<Strings...> &in) {
+        //static_assert(
+        //        std::is_same_v<std::tuple_element_t<0, decltype(in)>, std::string_view>
+        //    ||  std::is_same_v<std::tuple_element_t<0, decltype(in)>, std::string_view>
+        //);
+        // Unpack the tuple and sum length using a fold
+        auto length = std::apply([](const auto&... args) {
+            return (std::string_view(args).length() + ...);
+        }, in);
+
+        IDataStream<T>::Assert31U(length);
+
+        auto byteCount = static_cast<int32_t>(length);
+
+        Write7BitEncodedInt(byteCount);
+        if (byteCount == 0)
+            return;
+
+        /*
+        // Unpack the tuple and write all bytes using a fold
+        std::apply([this](const auto&... args) {
+            auto&& view = std::string_view(args);
+            //(WriteSomeBytes(reinterpret_cast<const BYTE_t*>(view.data()), view.length()), ...);
+            svUnpack(args...);
+
+            
+            if constexpr (std::is_same_v<decltype(args), std::string_view>)
+                (WriteSomeBytes(reinterpret_cast<const BYTE_t*>(args.data()), args.length()), ...);
+            else {
+                auto&& view(std::string_view(args));
+                (WriteSomeBytes(reinterpret_cast<const BYTE_t*>(view.data()), view.length()), ...);
+            }*
+        }, in);*/
+        //std::apply(std::bind_front(&IDataWriter<T>::svUnpack<Strings, Strings...>, this), in);
+        std::apply([this](const auto& ... args) {
+            svUnpack(args...);
+        }, in);
     }
 
     // Writes a ZDOID
