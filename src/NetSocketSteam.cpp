@@ -156,8 +156,34 @@ void SteamSocket::SendQueued() {
     if (!Connected())
         return;
 
-    //OPTICK_CATEGORY("SocketUpdate", Optick::Category::Network);
+    SteamNetworkingMessage_t* messages[10] {};
+    int count = std::min(m_sendQueue.size(), sizeof(messages) / sizeof(messages[0]));
+    for (int i = 0; i < count; i++) {
+        auto&& front = m_sendQueue.front();
 
+        SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
+        msg->m_conn = m_hConn;          // set the intended recipient
+        msg->m_pData = front.data();    // set the buffer
+        msg->m_cbSize = front.size();   // set the buffer size
+        msg->m_nUserData = reinterpret_cast<std::intptr_t>(new BYTES_t(std::move(front)));
+        msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
+        //msg->m_nUserData = reinterpret_cast<std::intptr_t>(&front); // send the destruction message data
+        msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
+            delete reinterpret_cast<BYTES_t*>(msg->m_nUserData);
+        };
+
+        messages[i] = msg;
+
+        m_sendQueue.pop_front();
+    }
+
+    if (count) {
+        int64_t state[sizeof(messages) / sizeof(messages[0])]{};
+        SteamGameServerNetworkingSockets()->SendMessages(count, messages, state);
+    }
+
+    return;
+    
     while (!m_sendQueue.empty()) {
         auto&& front = m_sendQueue.front();
 
