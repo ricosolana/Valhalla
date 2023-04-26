@@ -101,14 +101,14 @@ public:
     }*/
 
     template<typename F>
-        requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 0)
+        requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
     void SubWrite(F func) {
         const auto start = this->Position();
         int32_t count = 0;
         Write(count);
 
         // call func...
-        func();
+        func(std::ref(*this));
 
         const auto end = this->Position();
         this->SetPos(start);

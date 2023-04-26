@@ -123,7 +123,7 @@ void Peer::Update() {
     m_socket->Update();
 
     // Read packets
-    while (auto opt = m_socket->Recv()) {
+    while (auto opt = this->Recv()) {
 
         auto&& bytes = opt.value();
         DataReader reader(bytes);
@@ -136,7 +136,7 @@ void Peer::Update() {
                 DataWriter writer(pong);
                 writer.Write<HASH_t>(0);
                 writer.Write<bool>(false);
-                m_socket->Send(std::move(pong));
+                this->Send(std::move(pong));
             }
             else {
                 m_lastPing = now;

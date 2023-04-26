@@ -129,11 +129,9 @@ void IZDOManager::Save(DataWriter& writer) {
 				for (auto zdo : sectorObjects) {
 					if (zdo->m_prefab.get().AnyFlagsAbsent(Prefab::Flag::SESSIONED)) {
 						writer.Write(zdo->ID());
-						writer.SubWrite(
-							[&]() {
-								zdo->Save(writer);
-							}
-						);
+						writer.SubWrite([&zdo](DataWriter& writer) {
+							zdo->Save(writer);
+						});
 						count++;
 					}
 				}
@@ -718,7 +716,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		writer.Write(zdo.Owner());
 		writer.Write(zdo.m_pos);
 
-		writer.SubWrite([&]() {
+		writer.SubWrite([&zdo](DataWriter& writer) {
 			zdo.Serialize(writer);
 		});
 
@@ -851,10 +849,6 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			}
 		}
 	}); 
-	static constexpr size_t sse = sizeof(::ZDO);
-	static constexpr size_t sse2 = sizeof(::ZDO::Rev);
-	static constexpr size_t sse23 = sizeof(::Vector3f);
-	//static constexpr size_t ss3e = sizeof(std::pair<::ZDO::Rev, float>); // pair seems to be the summed size of both a and b
 }
 
 void IZDOManager::OnPeerQuit(Peer& peer) {

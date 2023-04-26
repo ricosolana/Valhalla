@@ -48,7 +48,7 @@ World::World(DataReader reader) {
 BYTES_t World::SaveMeta() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
-	writer.SubWrite([&]() {
+	writer.SubWrite([this](DataWriter& writer) {
 		writer.Write(VConstants::WORLD);
 		writer.Write(std::string_view(m_name));
 		writer.Write(std::string_view(m_seedName));

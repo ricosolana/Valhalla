@@ -85,7 +85,7 @@ private:
 
     void ZDOSectorInvalidated(ZDO& zdo);
 
-    void ForceSendZDO(const ZDOID& id) {
+    void ForceSendZDO(ZDOID id) {
         m_forceSend.insert(id);
     }
 
@@ -111,7 +111,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        VLOG(1) << "Register, hash: " << hash;
+        VLOG(1) << hash;
         m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
     }
 
@@ -121,31 +121,33 @@ public:
     }
 
     void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
-        VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
+        VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
         
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
 
-    /*
+
     template <typename Func, typename... Types>
-    void PrepareInvoke(HASH_t hash, Func func) {
+    void SubInvoke(HASH_t hash, Func func) {
         if (!m_socket->Connected())
             return;
 
+        BYTES_t bytes;
+        DataWriter writer(bytes);
+
+        writer.Write(hash);
+        writer.SubWrite(func);
+
         // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
-            return;
+        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, writer))
+            //return;
 
-
-
-        VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
-
-        m_socket->Send(DataWriter::Serialize(hash, params...));
+        this->Send(std::move(bytes));
 
         // Postfix
-        VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
-    }*/
+        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
+    }
 
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {
@@ -158,7 +160,7 @@ public:
 
         VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
-        m_socket->Send(DataWriter::Serialize(hash, params...));
+        this->Send(DataWriter::Serialize(hash, params...));
 
         // Postfix
         VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
@@ -190,7 +192,7 @@ public:
         DataWriter params(bytes);
         params.Write(repr.m_hash);
         params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
-        m_socket->Send(std::move(bytes));
+        this->Send(std::move(bytes));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
@@ -235,6 +237,20 @@ public:
     }
 
 
+
+    void Send(BYTES_t bytes) {
+        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, bytes))
+            this->m_socket->Send(std::move(bytes));
+    }
+
+    std::optional<BYTES_t> Recv() {
+        if (auto&& opt = this->m_socket->Recv()) {
+            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, opt)) {
+                return opt;
+            }
+        }
+        return {};
+    }
 
     void Disconnect() {
         m_socket->Close(true);

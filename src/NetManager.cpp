@@ -82,6 +82,8 @@ void INetManager::SendPlayerList() {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
 
+        
+
         static BYTES_t bytes; bytes.clear();
         DataWriter writer(bytes);
         writer.Write<int32_t>(m_onlinePeers.size());
@@ -120,25 +122,22 @@ void INetManager::SendNetTime() {
 
 
 void INetManager::SendPeerInfo(Peer& peer) {
-    BYTES_t bytes;
-    DataWriter writer(bytes);
+    peer.SubInvoke(Hashes::Rpc::PeerInfo, [](DataWriter& writer) {
+        writer.Write(Valhalla()->ID());
+        writer.Write(VConstants::GAME);
+        writer.Write(VConstants::NETWORK);
+        writer.Write(Vector3f::Zero()); // dummy
+        writer.Write(""); // dummy
 
-    writer.Write(Valhalla()->ID());
-    writer.Write(VConstants::GAME);
-    writer.Write(VConstants::NETWORK);
-    writer.Write(Vector3f::Zero()); // dummy
-    writer.Write(""); // dummy
+        auto world = WorldManager()->GetWorld();
 
-    auto world = WorldManager()->GetWorld();
-
-    writer.Write(std::string_view(world->m_name));
-    writer.Write(world->m_seed);
-    writer.Write(std::string_view(world->m_seedName)); // Peer does not seem to use
-    writer.Write(world->m_uid);
-    writer.Write(world->m_worldGenVersion);
-    writer.Write(Valhalla()->GetWorldTime());
-
-    peer.Invoke(Hashes::Rpc::PeerInfo, bytes);
+        writer.Write(std::string_view(world->m_name));
+        writer.Write(world->m_seed);
+        writer.Write(std::string_view(world->m_seedName)); // Peer does not seem to use
+        writer.Write(world->m_uid);
+        writer.Write(world->m_worldGenVersion);
+        writer.Write(Valhalla()->GetWorldTime());
+    });
 }
 
 

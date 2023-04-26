@@ -80,8 +80,8 @@ void SteamSocket::Update() {
 void SteamSocket::Send(BYTES_t bytes) {
     if (!bytes.empty()) {
         // SteamSocket is not implemented in modman, so pass parent class
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, static_cast<ISocket*>(this), std::ref(bytes)))
-            m_sendQueue.push_back(std::move(bytes));
+        //if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, static_cast<ISocket*>(this), std::ref(bytes)))
+        m_sendQueue.push_back(std::move(bytes));
     }
 }
 
@@ -97,8 +97,7 @@ std::optional<BYTES_t> SteamSocket::Recv() {
                 reinterpret_cast<BYTE_t*>(msg->m_pData), 
                 reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
             msg->Release();
-            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, static_cast<ISocket*>(this), std::ref(bytes)))
-                return bytes;
+            return bytes;
         }
         else {
             LOG(DEBUG) << "Failed to receive message";
