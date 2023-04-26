@@ -691,44 +691,43 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	//	preserializer that prepends packet data to the peer-buffer
 	//	to avoid a few buffer allocs
 	//	this only matters if performance is upmost concern, which it is because c :>
-	m_temp.clear();
-	DataWriter writer(m_temp);
 
-	writer.Write(peer.m_invalidSector);
+	peer.SubInvoke(Hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter& writer) {
+		writer.Write(peer.m_invalidSector);
 
-	const auto time = Valhalla()->Time();
+		const auto time = Valhalla()->Time();
 
-	for (auto&& itr = syncList.begin(); 
-		itr != syncList.end() && writer.Length() <= availableSpace;
-		itr++) {
+		for (auto&& itr = syncList.begin();
+			itr != syncList.end() && writer.Length() <= availableSpace;
+			itr++) {
 
-		auto &&zdo = itr->first.get();
+			auto&& zdo = itr->first.get();
 
-		peer.m_forceSend.erase(zdo.ID());
+			peer.m_forceSend.erase(zdo.ID());
 
-		if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
-			continue;
+			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
+				continue;
+			}
+
+			writer.Write(zdo.ID());
+			writer.Write(zdo.GetOwnerRevision());
+			writer.Write(zdo.m_dataRev);
+			writer.Write(zdo.Owner());
+			writer.Write(zdo.m_pos);
+
+			writer.SubWrite([&zdo](DataWriter& writer) {
+				zdo.Serialize(writer);
+				});
+
+			peer.m_zdos[zdo.ID()] = { ZDO::Rev{
+				.m_dataRev = zdo.m_dataRev,
+				.m_ownerRev = zdo.GetOwnerRevision()
+			}, time };
 		}
-
-		writer.Write(zdo.ID());
-		writer.Write(zdo.GetOwnerRevision());
-		writer.Write(zdo.m_dataRev);
-		writer.Write(zdo.Owner());
-		writer.Write(zdo.m_pos);
-
-		writer.SubWrite([&zdo](DataWriter& writer) {
-			zdo.Serialize(writer);
-		});
-
-		peer.m_zdos[zdo.ID()] = { ZDO::Rev{
-			.m_dataRev = zdo.m_dataRev,
-			.m_ownerRev = zdo.GetOwnerRevision()
-		}, time };
-	}
-	writer.Write(ZDOID::NONE); // null terminator
+		writer.Write(ZDOID::NONE); // null terminator
+	});
 
 	if (!peer.m_invalidSector.empty() || !syncList.empty()) {
-		peer.Invoke(Hashes::Rpc::ZDOData, m_temp);
 		peer.m_invalidSector.clear();
 
 		return true;

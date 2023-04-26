@@ -82,33 +82,35 @@ void INetManager::SendPlayerList() {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
 
-        
-
-        static BYTES_t bytes; bytes.clear();
+        BYTES_t bytes;
         DataWriter writer(bytes);
-        writer.Write<int32_t>(m_onlinePeers.size());
 
-        for (auto&& peer : m_onlinePeers) {
-            writer.Write(std::string_view(peer->m_name));
-            writer.Write(std::string_view(peer->m_socket->GetHostName()));
-            writer.Write(peer->m_characterID);
-            writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible);
-            if (peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible) {
-                if (VH_SETTINGS.playerListSendInterval >= 2s)
-                    writer.Write(peer->m_pos);
-                else {
-                    auto&& zdo = peer->GetZDO();
-                    if (zdo)
-                        writer.Write(zdo->Position());
-                    else
+        writer.Write(Hashes::Rpc::S2C_UpdatePlayerList);
+
+        writer.SubWrite([this](DataWriter& writer) {
+            writer.Write<int32_t>(m_onlinePeers.size());
+
+            for (auto&& peer : m_onlinePeers) {
+                writer.Write(std::string_view(peer->m_name));
+                writer.Write(std::string_view(peer->m_socket->GetHostName()));
+                writer.Write(peer->m_characterID);
+                writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible);
+                if (peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible) {
+                    if (VH_SETTINGS.playerListSendInterval >= 2s)
                         writer.Write(peer->m_pos);
+                    else {
+                        auto&& zdo = peer->GetZDO();
+                        if (zdo)
+                            writer.Write(zdo->Position());
+                        else
+                            writer.Write(peer->m_pos);
+                    }
                 }
             }
-        }
+        });
 
         for (auto&& peer : m_onlinePeers) {
-            // this is the problem
-            peer->Invoke(Hashes::Rpc::S2C_UpdatePlayerList, bytes);
+            peer->Send(bytes);
         }
     }
 }
