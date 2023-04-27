@@ -28,8 +28,8 @@ void IRandomEventManager::Init() {
 
 		DataReader pkg(*opt);
 
-		pkg.Read<std::string>(); // comment
-		std::string ver = pkg.Read<std::string>();
+		pkg.Read<std::string_view>(); // comment
+		auto ver = pkg.Read<std::string_view>();
 		if (ver != VConstants::GAME)
 			LOG(WARNING) << "randomEvents.pkg uses different game version than server (" << ver << ")";
 
@@ -62,7 +62,7 @@ void IRandomEventManager::Update() {
 	if (m_activeEvent) {
 		// Update the timer of the current event
 		if (!m_activeEvent->m_pauseIfNoPlayerInArea
-			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRange, 0, Prefab::Flag::PLAYER, Prefab::Flag::NONE))
+			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius, 0, Prefab::Flag::PLAYER, Prefab::Flag::NONE))
 			m_activeEventTimer += Valhalla()->Delta();
 
 		if (m_activeEventTimer > this->m_activeEvent->m_duration) {
@@ -137,14 +137,16 @@ std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>
 }
 
 bool IRandomEventManager::CheckGlobalKeys(const Event& e) {
-	for (auto&& key : e.m_presentGlobalKeys) {
-		if (!ZoneManager()->GlobalKeys().contains(key))
-			return false;
-	}
+	if (VH_SETTINGS.eventsRequireKeys) {
+		for (auto&& key : e.m_presentGlobalKeys) {
+			if (!ZoneManager()->GlobalKeys().contains(key))
+				return false;
+		}
 
-	for (auto&& key : e.m_absentGlobalKeys) {
-		if (ZoneManager()->GlobalKeys().contains(key))
-			return false;
+		for (auto&& key : e.m_absentGlobalKeys) {
+			if (ZoneManager()->GlobalKeys().contains(key))
+				return false;
+		}
 	}
 
 	return true;

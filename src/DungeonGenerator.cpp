@@ -22,7 +22,7 @@ DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
 
 // TODO generate seed during start
 HASH_t DungeonGenerator::GetSeed() {
-	if (VH_SETTINGS.dungeonSeededRandom) {
+	if (VH_SETTINGS.dungeonsSeeded) {
 		auto seed = GeoManager()->GetSeed();
 		auto zone = IZoneManager::WorldToZonePos(m_pos);
 		return seed + (int)m_pos.x * -4271 + (int)m_pos.y * 9187 + (int)m_pos.z * -2134;
@@ -88,10 +88,10 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State& state) {
 	this->PlaceStartRoom(state);
 	this->PlaceRooms(state);
 
-	if (VH_SETTINGS.dungeonEndCaps)
+	if (VH_SETTINGS.dungeonsEndcapsEnabled)
 		this->PlaceEndCaps(state);
 
-	if (VH_SETTINGS.dungeonDoors)
+	if (VH_SETTINGS.dungeonsDoors)
 		this->PlaceDoors(state);
 }
 
@@ -491,7 +491,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openCo
 	Vector3f pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(connection2,
-		connection.m_pos, connection.m_rot * (VH_SETTINGS.dungeonFlipRooms ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
+		connection.m_pos, connection.m_rot * (VH_SETTINGS.dungeonsRoomsFlipped ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
 		pos, rot);
 
 	// this is making me want to rip my hair out
@@ -559,14 +559,16 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot,
 	//for (auto&& randomSpawn : room.m_randomSpawns)
 	//	randomSpawn.Randomize();
 
-	for (auto&& view : room.m_netViews) {
-		Vector3f pos1 = pos + rot * view.m_pos;
-		Quaternion rot1 = rot * view.m_rot;
+	if (VH_SETTINGS.dungeonsRoomsFurnishing) {
+		for (auto&& view : room.m_netViews) {
+			Vector3f pos1 = pos + rot * view.m_pos;
+			Quaternion rot1 = rot * view.m_rot;
 
-		// Prefabs can be instantiated exactly in world space (not local room space)
-		auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
+			// Prefabs can be instantiated exactly in world space (not local room space)
+			auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
-		ZDOManager()->Instantiate(*view.m_prefab, global.first, global.second);
+			ZDOManager()->Instantiate(*view.m_prefab, global.first, global.second);
+		}
 	}
 
 	auto component2 = std::make_unique<RoomInstance>(room, pos, rot, fromConnection.m_placeOrder + 1, seed);
@@ -593,10 +595,13 @@ void DungeonGenerator::AddOpenConnections(RoomInstance& newRoom, const RoomConne
 // TODO rename something better, wtf is 'IsInsideDungeon'
 //	this just makes sure that a rotated rectangle is within the zone
 bool DungeonGenerator::IsInsideZone(const Room& room, const Vector3f& pos, const Quaternion& rot) {
+	if (!VH_SETTINGS.dungeonsRoomsZoneBounded)
+		return true;
+
 	Vector3f semiSize = room.m_size * .5f;
 
 	if (room.m_endCap)
-		semiSize *= .5f;
+		semiSize *= VH_SETTINGS.dungeonsEndcapsInsetFrac;
 
 	if (pos.y + semiSize.y < m_zoneCenter.y - m_zoneSize.y * .5f
 		|| pos.y - semiSize.y > m_zoneCenter.y + m_zoneSize.y * .5f)
@@ -659,7 +664,7 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3f& pos, cons
 			std::tie(newPos, newRot) = VUtils::Physics::LocalToGlobal(pos, rot, this->m_pos, this->m_rot);
 
 		// Constrain dungeon within zone
-		if (VH_SETTINGS.dungeonZoneLimit && !this->IsInsideZone(room, newPos, newRot))
+		if (!this->IsInsideZone(room, newPos, newRot))
 			return true;
 	}
 
@@ -681,11 +686,13 @@ bool DungeonGenerator::TestCollision(const Room& room, const Vector3f& pos, cons
 	}
 
 	if (room.m_endCap)
-		size *= .5f;
+		//size *= .5f;
+		size *= VH_SETTINGS.dungeonsEndcapsInsetFrac;
 	else
-		size -= Vector3f(.1f, .1f, .1f);
+		//size -= Vector3f(.1f, .1f, .1f);
+		size -= Vector3f(1, 1, 1) * VH_SETTINGS.dungeonsRoomsInsetSize;
 
-	//if (VH_SETTINGS.dungeonRoomShrink)
+	//if (VH_SETTINGS.dungeonsRoomsInsetSize)
 		//size -= Vector3f(.1f, .1f, .1f);
 	//if (room.m_endCap)
 		//size -= Vector3f(.2f, .2f, .2f); // subtract because edge touching rectangles always overlap (so prevent that)

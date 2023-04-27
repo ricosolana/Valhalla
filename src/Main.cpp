@@ -19,6 +19,28 @@
 
 INITIALIZE_EASYLOGGINGPP
 
+/*
+class GlobalLogDispatcher : public el::LogDispatchCallback
+{
+protected:
+    void handle(const el::LogDispatchData* data) noexcept override {
+        //if (data->dispatchAction())
+        //data->logMessage()->
+        el::Level::Info
+        // Dispatch using default log builder of logger
+        dispatch(data->logMessage()->logger()->logBuilder()->build(data->logMessage(),
+            data->dispatchAction() == el::base::DispatchAction::NormalLog));
+    }
+private:
+    boost::asio::io_service m_svc;
+    std::unique_ptr<Client> m_client;
+
+    void dispatch(el::base::type::string_t&& logLine) noexcept
+    {
+        m_client->send(logLine);
+    }
+};*/
+
 // https://github.com/amrayn/easyloggingpp
 void initLogger(int argc, char** argv) {
     bool colors = true;
@@ -51,6 +73,8 @@ void initLogger(int argc, char** argv) {
 
     // Load overrides prior to any logging
     START_EASYLOGGINGPP(argc, argv);
+
+
 
     // backup old logs
     if (log_backup) {
@@ -91,12 +115,6 @@ int main(int argc, char **argv) {
     
     fs::current_path("./data/");
     
-    // this throws because toml is cool
-    //  why doesnt bepin use yaml or json...
-    //auto opt = VUtils::Resource::ReadFile<std::string>(
-    //    R"(\mods\RareMagicPortal\WackyMole.RareMagicPortal.cfg)");
-    //auto cfg = toml::parse(*opt);
-    //std::string env = "LUA_PATH=" + (fs::current_path() / VALHALLA_LUA_PATH).string() + "/?.lua";
     {
         std::string path = (fs::current_path() / VALHALLA_LUA_PATH).string();
         std::string path2 = (fs::current_path() / VALHALLA_MOD_PATH).string();

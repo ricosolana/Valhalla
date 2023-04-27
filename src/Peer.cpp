@@ -50,7 +50,7 @@ Peer::Peer(ISocket::Ptr socket)
             
             auto password = reader.Read<std::string_view>();
 
-            if (VH_SETTINGS.playerAuth) {
+            if (VH_SETTINGS.playerOffline) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
                 auto ticket = reader.Read<BYTE_VIEW_t>();
                 if (steamSocket 
@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK && password != NetManager()->m_password)
+            if (VH_SETTINGS.packetMode != WorldMode::PLAYBACK && password != NetManager()->m_password)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -146,7 +146,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
-        if (VH_SETTINGS.worldCaptureMode == WorldMode::CAPTURE
+        if (VH_SETTINGS.packetMode == WorldMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {
             auto ns(Valhalla()->Nanos());

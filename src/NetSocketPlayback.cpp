@@ -12,7 +12,7 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
 
     const fs::path root = fs::path(VH_CAPTURE_PATH) 
         / WorldManager()->GetWorld()->m_name                    // the world being replayed
-        / std::to_string(VH_SETTINGS.worldPlaybackSession)      // the world session being replayed
+        / std::to_string(VH_SETTINGS.packetPlaybackSessionIndex)      // the world session being replayed
         / host                                                  // the player being replayed
         / std::to_string(session);                              // the player session being replayed
 

@@ -57,91 +57,121 @@ void IValhalla::LoadFiles(bool reloading) {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         if (!reloading || !fileError) {
-            auto&& server = loadNode["server"];
-            auto&& discord = loadNode["discord"];
-            auto&& world = loadNode["world"];
-            auto&& player = loadNode["player"];
-            auto&& zdo = loadNode["zdo"];
-            auto&& spawning = loadNode["spawning"];
-            auto&& dungeons = loadNode["dungeons"];
-            auto&& events = loadNode["events"];
 
-            m_settings.serverName = VUtils::String::ToAscii(server["name"].as<std::string>(""));
-            if (m_settings.serverName.empty()
-                || m_settings.serverName.length() < 3
-                || m_settings.serverName.length() > 64) m_settings.serverName = "Valhalla server";
 
-            m_settings.serverPassword = server["password"].as<std::string>("s");
-            if (!m_settings.serverPassword.empty()
-                && (m_settings.serverPassword.length() < 5
-                    || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
+            auto a = [](YAML::Node& node, std::string_view key, auto&& def, std::string_view comment = "") {
+                auto&& mapping = node[key];
+
+                try {
+                    return mapping.as<decltype(def)>();
+                }
+                catch (const std::exception& e) {
+                    mapping = def;
+                }
+
+                assert(node[key].IsDefined());
+
+                return def;
+            };
+
+            //std::string k = a(loadNode, "mykey", "mydef");
+
+            auto&& server = loadNode[VH_SETTING_KEY_SERVER];
+            auto&& discord = loadNode[VH_SETTING_KEY_DISCORD];
+            auto&& world = loadNode[VH_SETTING_KEY_WORLD];
+            auto&& packet = loadNode[VH_SETTING_KEY_PACKET];
+            auto&& player = loadNode[VH_SETTING_KEY_PLAYER];
+            auto&& zdo = loadNode[VH_SETTING_KEY_ZDO];
+            auto&& dungeons = loadNode[VH_SETTING_KEY_DUNGEONS];
+            auto&& events = loadNode[VH_SETTING_KEY_EVENTS];
+
+            //m_settings.serverName = VUtils::String::ToAscii(server[VH_SETTING_KEY_SERVER_NAME].as<std::string>(""));
+            m_settings.serverName = server[VH_SETTING_KEY_SERVER_NAME].as<std::string>("");
+            if (m_settings.serverName.empty() || m_settings.serverName.length() < 3 || m_settings.serverName.length() > 64) 
+                m_settings.serverName = "Valhalla server";
+
+            m_settings.serverPassword = server[VH_SETTING_KEY_SERVER_PASSWORD].as<std::string>("");
+            if (!m_settings.serverPassword.empty() && (m_settings.serverPassword.length() < 5 || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
 
             if (!reloading) {
-                m_settings.serverPort = server["port"].as<uint16_t>(2456);
+                m_settings.serverPort = server[VH_SETTING_KEY_SERVER_PORT].as<uint16_t>(2456);
             
-                m_settings.serverPublic = server["public"].as<bool>(false);
-                m_settings.serverDedicated = server["dedicated"].as<bool>(true);
+                m_settings.serverPublic = server[VH_SETTING_KEY_SERVER_PUBLIC].as<bool>(false);
+                m_settings.serverDedicated = server[VH_SETTING_KEY_SERVER_DEDICATED].as<bool>(true);
 
-                m_settings.worldName = VUtils::String::ToAscii(world["name"].as<std::string>(""));
+                m_settings.worldName = VUtils::String::ToAscii(world[VH_SETTING_KEY_WORLD].as<std::string>(""));
                 if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
-                m_settings.worldSeed = world["seed"].as<std::string>("");
+                m_settings.worldSeed = world[VH_SETTING_KEY_WORLD_SEED].as<std::string>("");
                 if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-                m_settings.worldModern = world["modern"].as<bool>(true);
-                m_settings.worldCaptureMode = (WorldMode) world["capture-mode"].as<std::underlying_type_t<WorldMode>>(std::to_underlying(WorldMode::NORMAL));
-                m_settings.worldCaptureSize = std::clamp(world["capture-size-bytes"].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
-                m_settings.worldCaptureSession = world["capture-session"].as<int>(-1);
-                m_settings.worldPlaybackSession = world["playback-session"].as<int>(-1);
+                m_settings.worldModern = world[VH_SETTING_KEY_WORLD_MODERN].as<bool>(true);
 
-                if (m_settings.worldCaptureMode == WorldMode::CAPTURE)
-                    m_settings.worldCaptureSession++;
+                m_settings.packetMode = (PacketMode) packet[VH_SETTING_KEY_PACKET_MODE].as<std::underlying_type_t<PacketMode>>(std::to_underlying(PacketMode::NORMAL));
+                m_settings.packetFileUpperSize = std::clamp(world[VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
+                m_settings.packetCaptureSessionIndex = world[VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX].as<int>(-1);
+                m_settings.packetPlaybackSessionIndex = world[VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX].as<int>(-1);
+
+                if (m_settings.packetMode == PacketMode::CAPTURE)
+                    m_settings.packetCaptureSessionIndex++;
             }
 
-            m_settings.discordWebhook = discord["webhook"].as<std::string>("");
+            m_settings.discordWebhook = discord[VH_SETTING_KEY_DISCORD_WEBHOOK].as<std::string>("");
 
-            m_settings.worldSaveInterval = minutes(std::clamp(world["save-interval-m"].as<int>(1800), 0, 60 * 24 * 7));
+            m_settings.worldFeatures = world[VH_SETTING_KEY_WORLD_FEATURES].as<bool>(true);
+            m_settings.worldVegetation = world[VH_SETTING_KEY_WORLD_VEGETATION].as<bool>(true);
+            m_settings.worldCreatures = world[VH_SETTING_KEY_WORLD_CREATURES].as<bool>(true);           
 
-            m_settings.playerWhitelist = player["whitelist"].as<bool>(false);          // enable whitelist
-            m_settings.playerMax = std::clamp(player["max"].as<int>(10), 1, 99999);     // max allowed players
-            m_settings.playerAuth = player["auth"].as<bool>(true);                     // allow authed players only
-            m_settings.playerTimeout = seconds(player["timeout-s"].as<int>(30));
-            m_settings.playerListSendInterval = milliseconds(std::clamp(player["player-list-send-interval-ms"].as<int>(2000), 0, 1000*10));
+            m_settings.worldSaveInterval = seconds(std::clamp(world[VH_SETTING_KEY_WORLD_SAVE_INTERVAL].as<int>(1800), 0, 60 * 60 * 24 * 7));
 
-            m_settings.zdoMaxCongestion = zdo["max-congestion"].as<int>(10240);
-            m_settings.zdoMinCongestion = zdo["min-congestion"].as<int>(2048);
-            m_settings.zdoSendInterval = milliseconds(zdo["send-interval-ms"].as<int>(50));
-            m_settings.zdoAssignInterval = seconds(std::clamp(zdo["assign-interval-s"].as<int>(2), 1, 60));
-            m_settings.zdoAssignAlgorithm = (AssignAlgorithm) zdo["assign-algorithm"].as<int>(std::to_underlying(AssignAlgorithm::NONE));
+            m_settings.playerWhitelist = player[VH_SETTING_KEY_PLAYER_WHITELIST].as<bool>(true);          // enable whitelist
+            m_settings.playerMax = std::max(player[VH_SETTING_KEY_PLAYER_MAX].as<int>(10), 1);     // max allowed players
+            m_settings.playerOffline = player[VH_SETTING_KEY_PLAYER_OFFLINE].as<bool>(true);                     // allow authed players only
+            m_settings.playerTimeout = seconds(std::clamp(player[VH_SETTING_KEY_PLAYER_TIMEOUT].as<int>(30), 1, 60*60));
+            m_settings.playerListSendInterval = milliseconds(std::clamp(player[VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL].as<int>(2000), 0, 1000*10));
+            m_settings.playerListForceVisible = player[VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE].as<bool>(false);
 
-            m_settings.spawningCreatures = spawning["creatures"].as<bool>(true);
-            m_settings.spawningLocations = spawning["locations"].as<bool>(true);
-            m_settings.spawningVegetation = spawning["vegetation"].as<bool>(true);
-            m_settings.spawningDungeons = spawning["dungeons"].as<bool>(true);
+            m_settings.zdoMaxCongestion = zdo[VH_SETTING_KEY_ZDO_MAX_CONGESTION].as<int>(10240);
+            m_settings.zdoMinCongestion = zdo[VH_SETTING_KEY_ZDO_MIN_CONGESTION].as<int>(2048);
+            m_settings.zdoSendInterval = milliseconds(zdo[VH_SETTING_KEY_ZDO_SEND_INTERVAL].as<int>(50));
+            m_settings.zdoAssignInterval = seconds(std::clamp(zdo[VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL].as<int>(2), 1, 60));
+            m_settings.zdoAssignAlgorithm = (AssignAlgorithm) zdo[VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM].as<int>(std::to_underlying(AssignAlgorithm::NONE));
+                        
+            m_settings.dungeonsEnabled = dungeons[VH_SETTING_KEY_DUNGEONS_ENABLED].as<bool>(true);
+            {
+                auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
+                m_settings.dungeonsEndcapsEnabled = endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED].as<bool>(true);
+                m_settings.dungeonsEndcapsInsetFrac = std::clamp(endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC].as<float>(.5f), 0.f, 1.f);
+            }
 
-            m_settings.dungeonEndCaps = dungeons["end-caps"].as<bool>(true);
-            m_settings.dungeonDoors = dungeons["doors"].as<bool>(true);
-            m_settings.dungeonFlipRooms = dungeons["flip-rooms"].as<bool>(true);
-            m_settings.dungeonZoneLimit = dungeons["zone-limit"].as<bool>(true);
-            m_settings.dungeonRoomShrink = dungeons["room-shrink"].as<bool>(true);
-            m_settings.dungeonReset = dungeons["reset"].as<bool>(true);
-            m_settings.dungeonResetTime = seconds(std::max(60, dungeons["reset-time-s"].as<int>(3600 * 72)));
-            //m_settings.dungeonIncrementalResetTime = seconds(std::max(1, loadNode["dungeon-incremental-reset-time-s"].as<int>(5)));
-            m_settings.dungeonIncrementalResetCount = std::min(20, dungeons["incremental-reset-count"].as<int>(3));
-            m_settings.dungeonSeededRandom = dungeons["seeded-random"].as<bool>(true); // TODO rename seeded
+            m_settings.dungeonsDoors = dungeons[VH_SETTING_KEY_DUNGEONS_DOORS].as<bool>(true);
 
-            m_settings.eventsEnabled = events["enabled"].as<bool>(true);
-            m_settings.eventsChance = std::clamp(events["chance"].as<float>(.2f), 0.f, 1.f);
-            m_settings.eventsInterval = minutes(std::max(1, events["interval-m"].as<int>(46)));
-            m_settings.eventsRange = std::clamp(events["range"].as<float>(96), 1.f, 96.f * 4);
+            {
+                auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
+                m_settings.dungeonsRoomsFlipped = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED].as<int>(true);
+                m_settings.dungeonsRoomsZoneBounded = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_ZONEBOUNDED].as<int>(true);
+                m_settings.dungeonsRoomsInsetSize = std::max(rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_INSETSIZE].as<float>(.1f), 0.f);
+            }
+
+            {
+                auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
+                m_settings.dungeonsRegenerationInterval = seconds(std::clamp(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_INTERVAL].as<int64_t>(60LL*60LL*24LL*3LL), 0LL, 60LL*60LL*24LL*30LL));
+                m_settings.dungeonsRegenerationMaxSteps = std::max(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP].as<int>(3), 0);
+            }
+            m_settings.dungeonsSeeded = dungeons[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true); // TODO rename seeded
+
+            m_settings.eventsChance = std::clamp(events[VH_SETTING_KEY_EVENTS_CHANCE].as<float>(.2f), 0.f, 1.f);
+            m_settings.eventsInterval = seconds(std::max(0, events[VH_SETTING_KEY_EVENTS_INTERVAL].as<int>(60 * 46)));
+            m_settings.eventsRadius = std::clamp(events[VH_SETTING_KEY_EVENTS_RADIUS].as<float>(96), 1.f, 96.f * 4);
+            m_settings.eventsRequireKeys = events[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true);
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
             else
                 LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
-            if (m_settings.worldCaptureMode == WorldMode::CAPTURE) {
+            if (m_settings.packetMode == PacketMode::CAPTURE) {
                 LOG(WARNING) << "Experimental packet capture enabled";
             }
-            else if (m_settings.worldCaptureMode == WorldMode::PLAYBACK) {
+            else if (m_settings.packetMode == PacketMode::PLAYBACK) {
                 LOG(WARNING) << "Experimental packet playback enabled";
             }
         }
@@ -174,14 +204,14 @@ void IValhalla::LoadFiles(bool reloading) {
         world["seed"] = m_settings.worldSeed;
         world["save-interval-m"] = duration_cast<minutes>(m_settings.worldSaveInterval).count();
         world["modern"] = m_settings.worldModern;
-        world["capture-mode"] = std::to_underlying(m_settings.worldCaptureMode);
-        world["capture-size-bytes"] = m_settings.worldCaptureSize;
-        world["capture-session"] = m_settings.worldCaptureSession;
-        world["playback-session"] = m_settings.worldPlaybackSession;
+        world["capture-mode"] = std::to_underlying(m_settings.packetMode);
+        world["capture-size-bytes"] = m_settings.packetFileUpperSize;
+        world["capture-session"] = m_settings.packetCaptureSessionIndex;
+        world["playback-session"] = m_settings.packetPlaybackSessionIndex;
 
         player["whitelist"] = m_settings.playerWhitelist;
         player["max"] = m_settings.playerMax;
-        player["auth"] = m_settings.playerAuth;
+        player["auth"] = m_settings.playerOffline;
         player["timeout-s"] = duration_cast<seconds>(m_settings.playerTimeout).count();
         player["player-list-send-interval-ms"] = duration_cast<milliseconds>(m_settings.playerListSendInterval).count();
 
@@ -191,26 +221,26 @@ void IValhalla::LoadFiles(bool reloading) {
         zdo["assign-interval-s"] = duration_cast<seconds>(m_settings.zdoAssignInterval).count();
         zdo["assign-algorithm"] = std::to_underlying(m_settings.zdoAssignAlgorithm);
 
-        spawning["creatures"] = m_settings.spawningCreatures;
-        spawning["locations"] = m_settings.spawningLocations;
-        spawning["vegetation"] = m_settings.spawningVegetation;
-        spawning["dungeons"] = m_settings.spawningDungeons;
+        spawning["creatures"] = m_settings.worldCreatures;
+        spawning["locations"] = m_settings.worldFeatures;
+        spawning["vegetation"] = m_settings.worldVegetation;
+        spawning["dungeons"] = m_settings.dungeonsEnabled;
 
-        dungeons["end-caps"] = m_settings.dungeonEndCaps;
-        dungeons["doors"] = m_settings.dungeonDoors;
-        dungeons["flip-rooms"] = m_settings.dungeonFlipRooms;
-        dungeons["zone-limit"] = m_settings.dungeonZoneLimit;
-        dungeons["room-shrink"] = m_settings.dungeonRoomShrink;
-        dungeons["reset"] = m_settings.dungeonReset;
-        dungeons["reset-time-s"] = duration_cast<seconds>(m_settings.dungeonResetTime).count();
+        dungeons["end-caps"] = m_settings.dungeonsEndcapsEnabled;
+        dungeons["doors"] = m_settings.dungeonsDoors;
+        dungeons["flip-rooms"] = m_settings.dungeonsRoomsFlipped;
+        dungeons["zone-limit"] = m_settings.dungeonsRoomsZoneBounded;
+        dungeons["room-shrink"] = m_settings.dungeonsRoomsInsetSize;
+        //dungeons["reset"] = m_settings.dungeonsRegenerationEnabled;
+        dungeons["reset-time-s"] = duration_cast<seconds>(m_settings.dungeonsRegenerationInterval).count();
         //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
-        dungeons["incremental-reset-count"] = m_settings.dungeonIncrementalResetCount;
-        dungeons["seeded-random"] = m_settings.dungeonSeededRandom;
+        dungeons["incremental-reset-count"] = m_settings.dungeonsRegenerationMaxSteps;
+        dungeons["seeded-random"] = m_settings.dungeonsSeeded;
 
         events["enabled"] = m_settings.eventsEnabled;
         events["chance"] = m_settings.eventsChance;
         events["interval-m"] = duration_cast<minutes>(m_settings.eventsInterval).count();
-        events["range"] = m_settings.eventsRange;
+        events["range"] = m_settings.eventsRadius;
 
         YAML::Emitter out;
         out.SetIndent(4);
@@ -374,7 +404,7 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    if (VH_SETTINGS.worldCaptureMode != WorldMode::PLAYBACK)
+    if (VH_SETTINGS.packetMode != WorldMode::PLAYBACK)
         WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
@@ -415,7 +445,7 @@ void IValhalla::PeriodUpdate() {
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
-    if (m_settings.dungeonReset)
+    if (m_settings.dungeonsRegenerationEnabled)
         DungeonManager()->TryRegenerateDungeons();
     
     std::error_code err;
@@ -425,7 +455,7 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
-    if (m_settings.worldCaptureMode == WorldMode::PLAYBACK) {
+    if (m_settings.packetMode == WorldMode::PLAYBACK) {
         PERIODIC_NOW(333ms, {
             char message[32];
             std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));

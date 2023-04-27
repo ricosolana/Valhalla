@@ -22,15 +22,14 @@ concept TrivialSyncType =
     || std::same_as<T, int32_t>
     || std::same_as<T, int64_t>
     || std::same_as<T, std::string>
-    //|| std::same_as<T, std::string_view>
     || std::same_as<T, BYTES_t>;
 
-class IZDOManager;
-
-// 500+ bytes (7 maps)
-// 168 bytes (1 map)
-// 112 bytes (1 map, majorly reduced members; affecting functionality)
-// Currently 160 bytes
+// The 'butter' of Valheim
+// This class has been refactored numerous times 
+//  Performance is important but memory usage has been highly prioritized here
+// This class used to be 500+ bytes
+//  It is now 120 bytes 
+// This class is finally the smallest it could possibly be (I hope so).
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
@@ -515,14 +514,14 @@ private:
 
 
 
-// 128 bytes:
-private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members; // 64 bytes
-private:    Quaternion m_rotation; // 16 bytes
-private:    Vector3f m_pos; // 12 bytes (not aligned; +4 bytes)
-public:     uint32_t m_dataRev {}; // 4 bytes
-public:     ZDOID m_id; // 8 bytes (encoded)
-private:    uint64_t m_encoded {}; // encoded<owner, ordinal, ownerRev>
-private:    std::reference_wrapper<const Prefab> m_prefab; // 8 bytes
+// 120 bytes:
+private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members;    // 64 bytes (excluding internal alloc)
+private:    Quaternion m_rotation;                          // 16 bytes
+private:    Vector3f m_pos;                                 // 12 bytes
+public:     uint32_t m_dataRev {};                          // 4 bytes (PADDING)
+public:     ZDOID m_id;                                     // 8 bytes (encoded)
+private:    uint64_t m_encoded {};                          // 8 bytes (encoded<owner, ordinal, ownerRev>)
+private:    std::reference_wrapper<const Prefab> m_prefab;  // 8 bytes
 
 
 
@@ -773,13 +772,13 @@ public:
     }
 
     TICKS_t GetTimeCreated() const {
-        if (GetPrefab().AllFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER | Prefab::Flag::DUNGEON))
             return TICKS_t(GetLong(HASH_TIME_CREATED));
         return {};
     }
 
     void SetTimeCreated(TICKS_t ticks) {
-        if (GetPrefab().AllFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER | Prefab::Flag::DUNGEON))
             Set(HASH_TIME_CREATED, ticks.count());
     }
 

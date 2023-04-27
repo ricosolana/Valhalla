@@ -131,16 +131,13 @@ void IDungeonManager::PostPrefabInit() {
 }
 
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
-    assert(false && "Must implement dungeon reset time/ticks");
-
+    static constexpr int s = sizeof(ZDO);
     auto&& netTicksNow = Valhalla()->GetWorldTicks();
 
-    //auto&& ticksDungeon = dungeonZdo.m_rev.m_ticksCreated;
-
-    TICKS_t ticksDungeon;
+    auto&& ticksDungeon = dungeonZdo.GetTimeCreated();
 
     // Reset dungeons after a time
-    if (ticksDungeon + VH_SETTINGS.dungeonResetTime < netTicksNow) {
+    if (ticksDungeon + VH_SETTINGS.dungeonsRegenerationInterval < netTicksNow) {
         bool playerNear = false;
 
         // if a player is inside, do not reset
@@ -193,7 +190,7 @@ void IDungeonManager::TryRegenerateDungeons() {
     //    )
 
     size_t idx = m_nextIndex;
-    while (idx < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonIncrementalResetCount)) 
+    while (idx < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonsRegenerationMaxSteps)) 
     {
         auto&& itr = m_dungeonInstances.begin() + idx;
 
