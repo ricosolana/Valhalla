@@ -28,6 +28,8 @@ void IHeightmapBuilder::PostGeoInit() {
             el::Helpers::setThreadName(name);
 
             std::vector<ZoneID> next;
+
+            std::vector<std::unique_ptr<Heightmap>> baked;
            
 
             LOG(INFO) << "Builder started";
@@ -40,7 +42,7 @@ void IHeightmapBuilder::PostGeoInit() {
                     next = std::move(shared->m_waiting);
                 }
 
-                std::vector<std::unique_ptr<Heightmap>> baked;
+                baked.clear();
 
                 // Bake any pending heightmaps 
                 for (int i = next.size() - 1; i >= 0; --i) {

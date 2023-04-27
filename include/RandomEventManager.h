@@ -7,15 +7,8 @@
 
 class IRandomEventManager {
 	class Event {
-	private:
-		bool m_firstActivation = true;
-
-		bool m_active;
 	public:
 		std::string m_name = "";
-
-		// dumb
-		//bool m_enabled = true;
 
 		// redundant? arent all events random?
 		//bool m_random = true;
@@ -26,28 +19,11 @@ class IRandomEventManager {
 
 		bool m_pauseIfNoPlayerInArea = true;
 
-		//[BitMask(typeof(Heightmap.Biome))]
 		Biome m_biome;
 
-		//[Header("( Keys required to be TRUE )")]
-		// could use hashes
 		UNORDERED_SET_t<std::string> m_presentGlobalKeys;
 
-		//[Header("( Keys required to be FALSE )")]
-		// could use hashes
 		UNORDERED_SET_t<std::string> m_absentGlobalKeys;
-
-		//[Space(20f)]
-		//std::string m_startMessage = "";
-
-		//std::string m_endMessage = "";
-
-		//std::string m_forceMusic = "";
-
-		//std::string m_forceEnvironment = "";
-
-		// Used by client ZoneCtrl.SpawnSystem
-		//std::vector<SpawnSystem.SpawnData> m_spawn;
 	};
 
 public:

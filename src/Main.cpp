@@ -91,10 +91,6 @@ int main(int argc, char **argv) {
     
     fs::current_path("./data/");
     
-    std::pair<int, int> p;
-    auto p1 = std::pair<int, int>(0, 0);
-    p = p1;
-    
     // this throws because toml is cool
     //  why doesnt bepin use yaml or json...
     //auto opt = VUtils::Resource::ReadFile<std::string>(
