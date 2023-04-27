@@ -26,7 +26,28 @@ IValhalla* Valhalla() {
     return VALHALLA_INSTANCE.get();
 }
 
+// Retrieve a config value
+//  Returns the value or the default
+//  The key will be set in the config
+//  Accepts an optional predicate for whether to use the default value
+template<typename T, bool once = false>
+void a(T& set, YAML::Node & node, const std::string &key, T&& def = T{}, std::function<bool(const T&)> defPred = nullptr, std::string_view comment = "") {
+    auto&& mapping = node[key];
 
+    try {
+        auto&& val = mapping.as<T>();
+        if (!defPred || !defPred(val))
+            set = val;
+            //return val;
+    }
+    catch (const YAML::InvalidNode&) {}
+
+    mapping = def;
+    
+    assert(node[key].IsDefined());
+
+    set = def;
+};
 
 void IValhalla::LoadFiles(bool reloading) {
     bool fileError = false;
@@ -57,23 +78,27 @@ void IValhalla::LoadFiles(bool reloading) {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         if (!reloading || !fileError) {
-            auto a = [](YAML::Node node, std::string_view key, auto&& def, bool skip = false, std::string_view comment = "") {
+            /*
+            auto a = []<typename T>(YAML::Node & node, std::string_view key, const T & def = T{}, bool skip = false, std::string_view comment = "") {
                 auto&& mapping = node[key];
-
+                
                 try {
-                    return mapping.as<decltype(def)>();
+                    return mapping.as<T>();
+                    //return mapping.as<YAML::Node>();
                 }
-                catch (const std::exception& e) {
+                //catch (const std::exception&) {
+                catch (const YAML::InvalidNode&) {
                     mapping = def;
                 }
 
                 assert(node[key].IsDefined());
 
                 return def;
-            };
+            };*/
 
             //std::string k = a(loadNode, "mykey", "mydef");
 
+            //auto&& server = a(loadNode, VH_SETTING_KEY_SERVER, YAML::Node());
             auto&& server = loadNode[VH_SETTING_KEY_SERVER];
             auto&& discord = loadNode[VH_SETTING_KEY_DISCORD];
             auto&& world = loadNode[VH_SETTING_KEY_WORLD];
@@ -84,10 +109,8 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& events = loadNode[VH_SETTING_KEY_EVENTS];
 
             //m_settings.serverName = VUtils::String::ToAscii(server[VH_SETTING_KEY_SERVER_NAME].as<std::string>(""));
-            m_settings.serverName = server[VH_SETTING_KEY_SERVER_NAME].as<std::string>("");
-            if (m_settings.serverName.empty() || m_settings.serverName.length() < 3 || m_settings.serverName.length() > 64) 
-                m_settings.serverName = "Valhalla server";
-
+            m_settings.serverName = a<std::string>(server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            m_settings.serverPassword = a<std::string>(server, )
             m_settings.serverPassword = server[VH_SETTING_KEY_SERVER_PASSWORD].as<std::string>("");
             if (!m_settings.serverPassword.empty() && (m_settings.serverPassword.length() < 5 || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
 
