@@ -72,7 +72,7 @@ Peer::Peer(ISocket::Ptr socket)
             //}
 
 
-            if (VH_SETTINGS.packetMode != WorldMode::PLAYBACK && password != NetManager()->m_password)
+            if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK && password != NetManager()->m_password)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
 
@@ -146,7 +146,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
-        if (VH_SETTINGS.packetMode == WorldMode::CAPTURE
+        if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {
             auto ns(Valhalla()->Nanos());

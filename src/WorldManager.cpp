@@ -327,7 +327,7 @@ void IWorldManager::PostZoneInit() {
 
 	m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 
-	if (VH_SETTINGS.packetMode == WorldMode::PLAYBACK) {
+	if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
 		fs::path root = fs::path(VH_CAPTURE_PATH) 
 			/ m_world->m_name
 			/ std::to_string(VH_SETTINGS.packetPlaybackSessionIndex);
@@ -342,7 +342,7 @@ void IWorldManager::PostZoneInit() {
 }
 
 void IWorldManager::PostInit() {
-	if (VH_SETTINGS.packetMode == WorldMode::CAPTURE) {
+	if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
 		// then save world as a copy to captures
 		auto world(WorldManager()->GetWorld());
 		fs::path root = fs::path(VH_CAPTURE_PATH) 

@@ -57,9 +57,7 @@ void IValhalla::LoadFiles(bool reloading) {
         //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
 
         if (!reloading || !fileError) {
-
-
-            auto a = [](YAML::Node& node, std::string_view key, auto&& def, std::string_view comment = "") {
+            auto a = [](YAML::Node node, std::string_view key, auto&& def, bool skip = false, std::string_view comment = "") {
                 auto&& mapping = node[key];
 
                 try {
@@ -179,6 +177,7 @@ void IValhalla::LoadFiles(bool reloading) {
     
     LOG(INFO) << "Server config loaded";
 
+    /*
     //if (!reloading && fileError) {
     if (!reloading) {
         YAML::Node saveNode;
@@ -247,7 +246,7 @@ void IValhalla::LoadFiles(bool reloading) {
         out << saveNode;
 
         VUtils::Resource::WriteFile("server.yml", out.c_str());
-    }
+    }*/
 
     if (auto opt = VUtils::Resource::ReadFile<decltype(m_blacklist)>("blacklist.txt")) {
         m_blacklist = *opt;
@@ -404,7 +403,7 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
-    if (VH_SETTINGS.packetMode != WorldMode::PLAYBACK)
+    if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
         WorldManager()->GetWorld()->WriteFiles();
 
     VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
@@ -445,7 +444,7 @@ void IValhalla::PeriodUpdate() {
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
-    if (m_settings.dungeonsRegenerationEnabled)
+    if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
     
     std::error_code err;
@@ -455,7 +454,7 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
-    if (m_settings.packetMode == WorldMode::PLAYBACK) {
+    if (m_settings.packetMode == PacketMode::PLAYBACK) {
         PERIODIC_NOW(333ms, {
             char message[32];
             std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));

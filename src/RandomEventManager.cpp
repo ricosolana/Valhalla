@@ -70,7 +70,7 @@ void IRandomEventManager::Update() {
 			m_activeEventPos = Vector3f::Zero();
 		}
 	}
-	else if (VH_SETTINGS.eventsEnabled) {
+	else if (VH_SETTINGS.eventsInterval > 0s) {
 		// try to set a new current event
 		if (m_eventIntervalTimer > VH_SETTINGS.eventsInterval.count()) {
 			m_eventIntervalTimer = 0;

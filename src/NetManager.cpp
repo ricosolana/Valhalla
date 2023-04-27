@@ -289,7 +289,7 @@ void INetManager::PostInit() {
     LOG(INFO) << "Initializing NetManager";
 
     // load session file if replaying
-    if (VH_SETTINGS.packetMode == WorldMode::PLAYBACK) {
+    if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         auto path = fs::path(VH_CAPTURE_PATH)
             / WorldManager()->GetWorld()->m_name
             / std::to_string(VH_SETTINGS.packetCaptureSessionIndex)
@@ -324,7 +324,7 @@ void INetManager::Update() {
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
             
-            if (VH_SETTINGS.packetMode == WorldMode::CAPTURE) {
+            if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
                 // record peer joindata
                 m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
                     { Valhalla()->Nanos(), 0ns } });
@@ -421,7 +421,7 @@ void INetManager::Update() {
     }
 
     // accept replay peers
-    if (VH_SETTINGS.packetMode == WorldMode::PLAYBACK) {
+    if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         if (!m_sortedSessions.empty()) {
             auto&& front = m_sortedSessions.front();
             if (Valhalla()->Nanos() >= front.second.first) {
@@ -531,7 +531,7 @@ void INetManager::OnPeerQuit(Peer& peer) {
 void INetManager::OnPeerDisconnect(Peer& peer) {
     ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
 
-    if (VH_SETTINGS.packetMode == WorldMode::CAPTURE) {
+    if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         *(peer.m_disconnectCapture) = Valhalla()->Nanos();
     }
 
@@ -551,7 +551,7 @@ void INetManager::Uninit() {
         OnPeerDisconnect(*peer);
     }
 
-    if (VH_SETTINGS.packetMode == WorldMode::CAPTURE) {
+    if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         // save sessions
         BYTES_t bytes;
         DataWriter writer(bytes);

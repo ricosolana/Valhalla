@@ -97,7 +97,7 @@ struct ServerSettings {
     bool            worldVegetation;
     bool            worldCreatures;
 
-    WorldMode       packetMode;
+    PacketMode      packetMode;
     size_t          packetFileUpperSize;
     int             packetCaptureSessionIndex;
     int             packetPlaybackSessionIndex;
