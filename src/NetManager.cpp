@@ -11,6 +11,7 @@
 #include "RouteManager.h"
 #include "ZoneManager.h"
 #include "VUtilsResource.h"
+#include "DiscordManager.h"
 
 using namespace std::chrono;
 
@@ -152,6 +153,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
         return peer.Disconnect();
     }
 
+    VH_DISPATCH_WEBHOOK(peer.m_name + " has joined");
+
     // Important
     peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3f pos, bool publicRefPos) {
         peer->m_pos = pos;
@@ -160,10 +163,12 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
     // Important
     peer.Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
+        // Peer sends 0,0 on death
+        
+        if (peer->m_characterID)
+            VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+
         peer->m_characterID = characterID;
-        // Peer does send 0,0 on death
-        //if (!characterID)
-            //throw std::runtime_error("charac")
 
         LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.GetOwner() << ":" << characterID.GetUID() << ")";
         });
@@ -176,6 +181,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
         if (Kick(user)) {
             peer->ConsoleMessage(std::make_tuple("Kicked '", user, "'"));
+            VH_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
         }
         else {
             peer->ConsoleMessage("Player not found");
@@ -188,6 +194,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
         if (Ban(user)) {
             peer->ConsoleMessage(std::make_tuple("Banned '", user, "'"));
+            VH_DISPATCH_WEBHOOK(std::string(user) + " was banned");
         }
         else {
             peer->ConsoleMessage("Player not found");
@@ -297,7 +304,7 @@ void INetManager::PostInit() {
                 auto nsStart = nanoseconds(reader.Read<int64_t>());
                 auto nsEnd = nanoseconds(reader.Read<int64_t>());
 
-                m_sortedSessions.push_back( { host, { nsStart, nsEnd } } );
+                m_sortedSessions.push_back( { std::move(host), { nsStart, nsEnd } } );
             }
         }        
     }
@@ -509,6 +516,8 @@ void INetManager::Update() {
 }
 
 void INetManager::OnPeerQuit(Peer& peer) {
+    VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
+
     LOG(INFO) << "Cleaning up peer";
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);

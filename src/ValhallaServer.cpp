@@ -315,6 +315,8 @@ void IValhalla::Start() {
     });
 #endif // !_WIN32
 
+    VH_DISPATCH_WEBHOOK("Server started");
+
     m_terminate = false;
     while (!m_terminate) {
         //FrameMarkStart("mainloop");
@@ -361,6 +363,8 @@ void IValhalla::Start() {
 
         FrameMark;
     }
+
+    VH_DISPATCH_WEBHOOK("Server stopping");
             
     LOG(INFO) << "Terminating server";
 
@@ -428,10 +432,10 @@ void IValhalla::PeriodUpdate() {
             Broadcast(UIMsgType::TopLeft, message);
         });
     }
-   
+    /*
     PERIODIC_NOW(5s, {
         DiscordManager()->SendSimpleMessage("Hello Valhalla!");
-    });
+    });*/
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message

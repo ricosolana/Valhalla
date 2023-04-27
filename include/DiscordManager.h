@@ -17,4 +17,6 @@ public:
     void DispatchRequest(std::string_view webhook, BYTES_t payload);
 };
 
+#define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->SendSimpleMessage((msg));
+
 IDiscordManager* DiscordManager();
