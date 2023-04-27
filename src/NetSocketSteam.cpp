@@ -157,8 +157,9 @@ void SteamSocket::SendQueued() {
         return;
 
     SteamNetworkingMessage_t* messages[10] {};
-    int count = std::min(m_sendQueue.size(), sizeof(messages) / sizeof(messages[0]));
-    for (int i = 0; i < count; i++) {
+    auto count = std::min(m_sendQueue.size(), sizeof(messages) / sizeof(messages[0]));
+
+    for (auto i = 0; i < count; i++) {
         auto&& front = m_sendQueue.front();
 
         SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
@@ -177,11 +178,9 @@ void SteamSocket::SendQueued() {
         m_sendQueue.pop_front();
     }
 
-    if (count) {
-        int64_t state[sizeof(messages) / sizeof(messages[0])]{};
-        SteamGameServerNetworkingSockets()->SendMessages(count, messages, state);
-    }
-
+    int64_t state[sizeof(messages) / sizeof(messages[0])]{};
+    SteamGameServerNetworkingSockets()->SendMessages(count, messages, state);
+    
     return;
     
     while (!m_sendQueue.empty()) {

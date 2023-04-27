@@ -256,6 +256,12 @@ local commands = {
         end,
         usage = '[peer]',
         desc = 'destroy a players zdo; WARNING: this will brick the players session'
+    },
+    gc = {
+        func = function(peer, cmd, args)
+            collectgarbage("collect")
+        end,
+        desc = 'runs lua garbage collector'
     }
 }
 
