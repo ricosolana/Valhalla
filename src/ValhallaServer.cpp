@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <utility>
+#include <charconv>
 #ifdef _WIN32
 #include <winstring.h>
 #endif
@@ -26,19 +27,151 @@ IValhalla* Valhalla() {
     return VALHALLA_INSTANCE.get();
 }
 
+namespace YAML {
+    template<>
+    struct convert<PacketMode> {
+        static Node encode(const PacketMode& rhs) {
+            return Node(std::to_underlying(rhs));
+        }
+
+        static bool decode(const Node& node, PacketMode& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            rhs = PacketMode(node.as<std::underlying_type_t<PacketMode>>());
+
+            return true;
+        }
+    };
+
+    template<typename T>
+    static T parse(const std::string& s) {
+        int64_t num = 0;
+        size_t index = 0;
+        for (; index < s.length(); index++) {
+            const int64_t ch = (int64_t)s[index];
+            if (ch >= '0' && ch <= '9')
+                num += (ch - '0') * (index + 1);
+            else {
+                switch (ch)
+                if (ch == 'n')
+                    return duration_cast<T>(nanoseconds(num));
+                else if (ch == 'u')
+                    return duration_cast<T>(microseconds(num));
+                else if (ch == 's')
+                    return duration_cast<T>(seconds(num));
+                else if (ch == 'm')
+                    return duration_cast<T>(minutes(num));
+                else if (ch == 'h')
+                    return duration_cast<T>(hours(num));
+                else if (ch == 'd')
+                    return duration_cast<T>(days(num));
+                else if (ch == 'w')
+                    return duration_cast<T>(weeks(num));
+                else if (ch == 'e')
+                    return duration_cast<T>(months(num));
+                else if (ch == 'y')
+                    return duration_cast<T>(years(num));
+                
+                break;
+            }
+        }
+
+        if (index == 0)
+            return { false, 0, -1 };
+
+        return { true, num, index };
+    };
+
+    template<>
+    struct convert<seconds> {
+        static Node encode(const seconds& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
+
+        static bool decode(const Node& node, seconds& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+            
+            auto parse = [](const std::string& s) -> std::tuple<bool, int64_t, size_t> { 
+                int64_t num = 0;
+                size_t index = 0;
+                for (; index < s.length(); index++) {
+                    const int64_t ch = (int64_t)s[index] - (int64_t)'0';
+                    if (ch >= 0 && ch <= 9)
+                        num += ch * (index + 1);
+                    else
+                        break;
+                }
+
+                if (index == 0)
+                    return { false, 0, -1 };
+
+                return { true, num, index };
+            };
+
+
+
+
+
+
+            // 10ms
+            // 213us
+            // 51s
+
+            seconds::
+
+
+            int64_t t;
+            auto res = std::from_chars(s.c_str(), s.c_str() + s.length(), t);
+            if (res.ec != std::errc())
+
+
+            if (s.ends_with("ms"))
+                rhs = seconds(std::)
+
+            rhs = PacketMode(node.as<std::underlying_type_t<PacketMode>>());
+
+            return true;
+        }
+    };
+}
+
 // Retrieve a config value
 //  Returns the value or the default
 //  The key will be set in the config
 //  Accepts an optional predicate for whether to use the default value
-template<typename T, bool once = false>
-void a(T& set, YAML::Node & node, const std::string &key, T&& def = T{}, std::function<bool(const T&)> defPred = nullptr, std::string_view comment = "") {
+//template<typename T, typename Func = decltype([](const T&) -> bool {})>
+template<typename T, typename Func = std::nullptr_t>
+//void a(T& set, YAML::Node & node, const std::string &key, const auto& def = {}, std::function<bool(const F&)> defPred = nullptr, bool reloading = false, std::string_view comment = "") {
+void a(T& set, YAML::Node& node, const std::string& key, const auto& def, Func defPred = nullptr, bool reloading = false, std::string_view comment = "") {
+    if (reloading)
+        return;
+    
     auto&& mapping = node[key];
 
     try {
         auto&& val = mapping.as<T>();
-        if (!defPred || !defPred(val))
+
+        if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
+            if (!defPred || !defPred(val)) {
+                set = val;
+                return;
+                //return val;
+            }
+        }
+        else {
             set = val;
+            return;
+        }
+        /*
+        if (!defPred || !defPred(val)) {
+            set = val;
+            return;
             //return val;
+        }*/
     }
     catch (const YAML::InvalidNode&) {}
 
@@ -109,10 +242,23 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& events = loadNode[VH_SETTING_KEY_EVENTS];
 
             //m_settings.serverName = VUtils::String::ToAscii(server[VH_SETTING_KEY_SERVER_NAME].as<std::string>(""));
-            m_settings.serverName = a<std::string>(server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            m_settings.serverPassword = a<std::string>(server, )
-            m_settings.serverPassword = server[VH_SETTING_KEY_SERVER_PASSWORD].as<std::string>("");
-            if (!m_settings.serverPassword.empty() && (m_settings.serverPassword.length() < 5 || m_settings.serverPassword.length() > 11)) m_settings.serverPassword = VUtils::Random::GenerateAlphaNum(6);
+            a(m_settings.serverName, server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server"); //, [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            a(m_settings.serverPassword, server, VH_SETTING_KEY_SERVER_PASSWORD, "secret", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
+            a(m_settings.serverPort, server, VH_SETTING_KEY_SERVER_PORT, 2456, nullptr, reloading);
+            a(m_settings.serverPublic, server, VH_SETTING_KEY_SERVER_PUBLIC, false, nullptr, reloading);
+            a(m_settings.serverDedicated, server, VH_SETTING_KEY_SERVER_DEDICATED, true, nullptr, reloading);
+
+            a(m_settings.worldName, world, VH_SETTING_KEY_WORLD, "world", [](const std::string& val) { return val.empty() || val.length() < 3; });
+            a(m_settings.worldSeed, world, VH_SETTING_KEY_WORLD_SEED, VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); });
+            a(m_settings.worldModern, world, VH_SETTING_KEY_WORLD_MODERN, true);
+
+            a(m_settings.packetMode, packet, VH_SETTING_KEY_PACKET_MODE, PacketMode::NORMAL, nullptr, reloading);
+            a(m_settings.packetFileUpperSize, packet, VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE, 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);
+            a(m_settings.packetCaptureSessionIndex, packet, VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX, -1);
+            a(m_settings.packetPlaybackSessionIndex, packet, VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX, -1);
+
+            if (m_settings.packetMode == PacketMode::CAPTURE)
+                m_settings.packetCaptureSessionIndex++;
 
             if (!reloading) {
                 m_settings.serverPort = server[VH_SETTING_KEY_SERVER_PORT].as<uint16_t>(2456);
@@ -135,6 +281,19 @@ void IValhalla::LoadFiles(bool reloading) {
                     m_settings.packetCaptureSessionIndex++;
             }
 
+            a(m_settings.discordWebhook, discord, VH_SETTING_KEY_DISCORD_WEBHOOK, "");
+
+            a(m_settings.worldFeatures, world, VH_SETTING_KEY_WORLD_FEATURES, true);
+            a(m_settings.worldVegetation, world, VH_SETTING_KEY_WORLD_VEGETATION, true);
+            a(m_settings.worldCreatures, world, VH_SETTING_KEY_WORLD_CREATURES, true);
+            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 1800, [](int val) { return val < 0 || val > 60 * 60 * 24 * 7; });
+
+            a(m_settings.playerWhitelist, player, VH_SETTING_KEY_PLAYER_WHITELIST, true);
+            a(m_settings.playerMax, player, VH_SETTING_KEY_PLAYER_MAX, 10, [](int val) { return val < 1; });
+            a(m_settings.playerOnline, player, VH_SETTING_KEY_PLAYER_OFFLINE, true);
+            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 3600)
+
+
             m_settings.discordWebhook = discord[VH_SETTING_KEY_DISCORD_WEBHOOK].as<std::string>("");
 
             m_settings.worldFeatures = world[VH_SETTING_KEY_WORLD_FEATURES].as<bool>(true);
@@ -145,7 +304,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             m_settings.playerWhitelist = player[VH_SETTING_KEY_PLAYER_WHITELIST].as<bool>(true);          // enable whitelist
             m_settings.playerMax = std::max(player[VH_SETTING_KEY_PLAYER_MAX].as<int>(10), 1);     // max allowed players
-            m_settings.playerOffline = player[VH_SETTING_KEY_PLAYER_OFFLINE].as<bool>(true);                     // allow authed players only
+            m_settings.playerOnline = player[VH_SETTING_KEY_PLAYER_OFFLINE].as<bool>(true);                     // allow authed players only
             m_settings.playerTimeout = seconds(std::clamp(player[VH_SETTING_KEY_PLAYER_TIMEOUT].as<int>(30), 1, 60*60));
             m_settings.playerListSendInterval = milliseconds(std::clamp(player[VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL].as<int>(2000), 0, 1000*10));
             m_settings.playerListForceVisible = player[VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE].as<bool>(false);
@@ -233,7 +392,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
         player["whitelist"] = m_settings.playerWhitelist;
         player["max"] = m_settings.playerMax;
-        player["auth"] = m_settings.playerOffline;
+        player["auth"] = m_settings.playerOnline;
         player["timeout-s"] = duration_cast<seconds>(m_settings.playerTimeout).count();
         player["player-list-send-interval-ms"] = duration_cast<milliseconds>(m_settings.playerListSendInterval).count();
 

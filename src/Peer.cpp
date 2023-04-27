@@ -50,7 +50,7 @@ Peer::Peer(ISocket::Ptr socket)
             
             auto password = reader.Read<std::string_view>();
 
-            if (VH_SETTINGS.playerOffline) {
+            if (VH_SETTINGS.playerOnline) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
                 auto ticket = reader.Read<BYTE_VIEW_t>();
                 if (steamSocket 

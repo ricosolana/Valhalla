@@ -105,7 +105,7 @@ struct ServerSettings {
     //bool            playerAutoPassword;
     bool            playerWhitelist;
     unsigned int    playerMax;
-    bool            playerOffline;
+    bool            playerOnline;
     seconds         playerTimeout;
     milliseconds    playerListSendInterval;
     bool            playerListForceVisible;
