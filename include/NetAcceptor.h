@@ -12,10 +12,13 @@ public:
     virtual ~IAcceptor() = default;
 
     // Init listening and queueing any accepted connections
+    //  Should be non-blocking
     virtual void Listen() = 0;
 
     // Poll for a ready and newly accepted connection
-    virtual std::optional<ISocket::Ptr> Accept() = 0;
+    //  Should be non-blocking
+    //  Nullable
+    virtual ISocket::Ptr Accept() = 0;
 
     virtual void OnConfigLoad(bool reloading) {}
 
@@ -39,7 +42,7 @@ public:
 
     void Listen() override;
 
-    std::optional<ISocket::Ptr> Accept() override;
+    ISocket::Ptr Accept() override;
 
     //void Cleanup(ISocket* socket) override;
 
@@ -71,7 +74,7 @@ public:
 
     void Listen() override;
 
-    std::optional<ISocket::Ptr> Accept() override;
+    ISocket::Ptr Accept() override;
 
     void OnConfigLoad(bool reloading) override;
 

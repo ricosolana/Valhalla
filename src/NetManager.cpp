@@ -312,8 +312,8 @@ void INetManager::Update() {
     ZoneScoped;
 
     // Accept new connections
-    while (auto opt = m_acceptor->Accept()) {
-        auto&& ptr = std::make_unique<Peer>(std::move(*opt));
+    while (auto sock = m_acceptor->Accept()) {
+        auto&& ptr = std::make_unique<Peer>(std::move(sock));
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
             

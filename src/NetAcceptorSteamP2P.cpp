@@ -60,12 +60,12 @@ void AcceptorSteamP2P::Listen() {
     this->m_listenSocket = SteamNetworkingSockets()->CreateListenSocketP2P(0, 0, nullptr);
 }
 
-std::optional<ISocket::Ptr> AcceptorSteamP2P::Accept() {
+ISocket::Ptr AcceptorSteamP2P::Accept() {
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
-        return std::nullopt;
-    auto socket = pair->second;
-    auto itr = m_connected.erase(pair);
+        return nullptr;
+    auto&& socket = std::move(pair->second);
+    m_connected.erase(pair);
     return socket;
 }
 
@@ -102,7 +102,7 @@ void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallb
         if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             LOG(INFO) << data->m_info.m_szEndDebug;
 
-        auto pair = m_sockets.find(data->m_hConn);
+        auto&& pair = m_sockets.find(data->m_hConn);
 
         if (pair != m_sockets.end()) {
             pair->second->Close(false);
