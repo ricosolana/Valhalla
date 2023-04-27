@@ -144,7 +144,7 @@ add_executable(${PROJECT_NAME}
     "src/ZoneManager.cpp"    
     "src/NetAcceptorSteamP2P.cpp"
     
- "include/EventManager.h")
+ "include/EventManager.h" "include/DiscordManager.h" "src/DiscordManager.cpp")
 
 # change this to wherever your sol is
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")

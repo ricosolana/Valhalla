@@ -20,6 +20,8 @@ struct ServerSettings {
     bool            serverPublic;
     bool            serverDedicated;
 
+    std::string     discordWebhook;
+
     std::string     worldName;
     std::string     worldSeed;
     bool            worldPregenerate;

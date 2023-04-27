@@ -19,6 +19,7 @@
 #include "ModManager.h"
 #include "DungeonManager.h"
 #include "RandomEventManager.h"
+#include "DiscordManager.h"
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -57,6 +58,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
         if (!reloading || !fileError) {
             auto&& server = loadNode["server"];
+            auto&& discord = loadNode["discord"];
             auto&& world = loadNode["world"];
             auto&& player = loadNode["player"];
             auto&& zdo = loadNode["zdo"];
@@ -93,6 +95,8 @@ void IValhalla::LoadFiles(bool reloading) {
                 if (m_settings.worldCaptureMode == WorldMode::CAPTURE)
                     m_settings.worldCaptureSession++;
             }
+
+            m_settings.discordWebhook = discord["webhook"].as<std::string>("");
 
             m_settings.worldSaveInterval = minutes(std::clamp(world["save-interval-m"].as<int>(1800), 0, 60 * 24 * 7));
 
@@ -150,6 +154,7 @@ void IValhalla::LoadFiles(bool reloading) {
         YAML::Node saveNode;
 
         auto&& server = saveNode["server"];
+        auto&& discord = saveNode["discord"];
         auto&& world = saveNode["world"];
         auto&& player = saveNode["player"];
         auto&& zdo = saveNode["zdo"];
@@ -162,6 +167,8 @@ void IValhalla::LoadFiles(bool reloading) {
         server["password"] = m_settings.serverPassword;
         server["public"] = m_settings.serverPublic;
         server["dedicated"] = m_settings.serverDedicated;
+
+        discord["webhook"] = m_settings.discordWebhook;
 
         world["name"] = m_settings.worldName;
         world["seed"] = m_settings.worldSeed;
@@ -421,6 +428,10 @@ void IValhalla::PeriodUpdate() {
             Broadcast(UIMsgType::TopLeft, message);
         });
     }
+   
+    PERIODIC_NOW(5s, {
+        DiscordManager()->SendSimpleMessage("Hello Valhalla!");
+    });
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
