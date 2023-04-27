@@ -1,3 +1,5 @@
+#include <isteamgameserver.h>
+
 #include "DiscordManager.h"
 #include "ValhallaServer.h"
 
@@ -15,15 +17,16 @@ void IDiscordManager::SendSimpleMessage(std::string_view msg) {
 	DispatchRequest(VH_SETTINGS.discordWebhook, std::move(bytes));
 }
 
-void IDiscordManager::DispatchRequest(std::string_view webhook, BYTES_t payload) {
-	auto&& http = SteamGameServerHTTP();
-	auto&& req = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodPOST, webhook.data());
+void IDiscordManager::DispatchRequest(std::string_view webhook, BYTES_t payload) {	
+	auto&& client = VH_SETTINGS.serverDedicated ? SteamGameServerHTTP() : SteamHTTP();
 
-	if (!SteamHTTP()->SetHTTPRequestRawPostBody(req, "application/json", reinterpret_cast<uint8_t*>(payload.data()), payload.size()))
+	auto&& req = client->CreateHTTPRequest(k_EHTTPMethodPOST, webhook.data());
+
+	if (!client->SetHTTPRequestRawPostBody(req, "application/json", reinterpret_cast<uint8_t*>(payload.data()), payload.size()))
 		LOG(WARNING) << "Failed to set http content";
 
 	SteamAPICall_t handle{};
-	if (!SteamHTTP()->SendHTTPRequest(req, &handle))
+	if (!client->SendHTTPRequest(req, &handle))
 		LOG(WARNING) << "Failed to send webhook http request";
 
 	m_httpRequestCompletedCallResult.Set(handle, this, &IDiscordManager::OnHTTPRequestCompleted);
