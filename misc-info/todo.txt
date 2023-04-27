@@ -1,4 +1,78 @@
 todo:
+    methods to mapping playback zdoids to physical zdoids
+        requirements:
+            this system is perfect except for:
+                system currently only supports forward playback
+                
+            sequential playback in forward of backwards requires a list-like structure
+            deque can also work (probably better because it supports random access
+                so playback at a specific position is quicker)
+                
+            record the type of change and the data of zdos: for instance
+                zdos that dont exist but are created are CREATED
+                zdos that exist and are changed are MODIFIED
+                zdos that exist but are erased within DestroyZDO are DELETED
+                
+                this will allow for correct reverse playback
+                
+            a replay system tied to some kind of region-area, 
+            
+            STATES:
+                zdos represent objects and rudimentary data
+                                
+                rpcs represent utility actions
+                
+                routedrpcs represent client-visible actions
+                    capture destroy
+                rpc-znetviews represent client-visible object actions
+                
+            this is complicated because 'reversing' or moving the game state
+            back to a previous state will break things as-is unless major changes
+            are made
+            
+            raw packet replay using fake clients is easy and represents the 
+            live game as it was played in the past, but an effective viewer
+            must use a different kind of system
+            
+            zdos are mutated in batches (many at once), includes:
+                created (ZDOData)
+                changed (ZDOData)
+                destroy (DestroyZDO)
+                
+                packets represent this fine
+                
+                when thinking about it, replay should be easy enough
+                
+                zdo packets contain everything to perfectly create a zdo
+                
+                a tiny zdo change prompts an entire zdo packet to be sent
+                    possibilities for compression? actual compression probably
+                        -handles this ok
+                
+                the only thing to map zdos should be the translation map
+                    how to handle this?
+                    packets contain zdos from the past (including id)
+                    to show destroyed packets on client, must map new ids
+                        to these zdos (just how valhiem works which sucks)
+                        
+            i think this nicely encapsulates the zdo- regarded packet structure
+            
+            still need a way to load packets from memory better
+                depending on server time, make sure packets are loaded
+                from current time, have some packets in past and future loaded, ready to go
+                on demand
+                
+            
+
+    memory leaks
+        socket shared ptr not being automatically freed from lua gc? 
+        
+        no longer a problem; it was lua gc...
+        
+        msvc also appears to be misleading with memory usage in profiler
+        
+        heap usage seems stable but the trendline keeps increasing; upwards of 10GB of memory consumption...
+
     Utils.GenerateUID() has some interesting things:
         is equal to the long sum of c# hashcode and UnityEngine.Random.Range
         
