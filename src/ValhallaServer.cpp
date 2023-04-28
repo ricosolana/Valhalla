@@ -44,43 +44,100 @@ namespace YAML {
         }
     };
 
+    template<>
+    struct convert<AssignAlgorithm> {
+        static Node encode(const AssignAlgorithm& rhs) {
+            return Node(std::to_underlying(rhs));
+        }
+
+        static bool decode(const Node& node, AssignAlgorithm& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            rhs = AssignAlgorithm(node.as<std::underlying_type_t<AssignAlgorithm>>());
+
+            return true;
+        }
+    };
+
+
+
+
+
     template<typename T>
-    static T parse(const std::string& s) {
-        int64_t num = 0;
+    static bool parseDuration(const std::string& s, T& out) {
+        int64_t dur = 0;
         size_t index = 0;
         for (; index < s.length(); index++) {
             const int64_t ch = (int64_t)s[index];
             if (ch >= '0' && ch <= '9')
-                num += (ch - '0') * (index + 1);
-            else {
-                switch (ch)
-                if (ch == 'n')
-                    return duration_cast<T>(nanoseconds(num));
-                else if (ch == 'u')
-                    return duration_cast<T>(microseconds(num));
-                else if (ch == 's')
-                    return duration_cast<T>(seconds(num));
-                else if (ch == 'm')
-                    return duration_cast<T>(minutes(num));
-                else if (ch == 'h')
-                    return duration_cast<T>(hours(num));
-                else if (ch == 'd')
-                    return duration_cast<T>(days(num));
-                else if (ch == 'w')
-                    return duration_cast<T>(weeks(num));
-                else if (ch == 'e')
-                    return duration_cast<T>(months(num));
-                else if (ch == 'y')
-                    return duration_cast<T>(years(num));
-                
+                dur += (ch - '0') * (index + 1);
+            else if (index > 0) {
+                switch (ch) {
+                case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
+                case 'u': out = duration_cast<T>(microseconds(dur)); return true;
+                case 'm': out = duration_cast<T>(milliseconds(dur)); return true;
+                case 's': out = duration_cast<T>(seconds(dur)); return true;
+                case 'M': out = duration_cast<T>(minutes(dur)); return true;
+                case 'h': out = duration_cast<T>(hours(dur)); return true;
+                case 'd': out = duration_cast<T>(days(dur)); return true;
+                case 'w': out = duration_cast<T>(weeks(dur)); return true;
+                case 'o': out = duration_cast<T>(months(dur)); return true;
+                case 'y': out = duration_cast<T>(years(dur)); return true;
+                }
                 break;
             }
         }
+        out = T(dur);
+        return false;
+    };
 
-        if (index == 0)
-            return { false, 0, -1 };
+    template<>
+    struct convert<nanoseconds> {
+        static Node encode(const nanoseconds& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
 
-        return { true, num, index };
+        static bool decode(const Node& node, nanoseconds& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
+
+    template<>
+    struct convert<microseconds> {
+        static Node encode(const microseconds& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
+
+        static bool decode(const Node& node, microseconds& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
+
+    template<>
+    struct convert<milliseconds> {
+        static Node encode(const milliseconds& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
+
+        static bool decode(const Node& node, milliseconds& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
+        }
     };
 
     template<>
@@ -94,59 +151,128 @@ namespace YAML {
                 return false;
 
             auto&& s = node.Scalar();
-            
-            auto parse = [](const std::string& s) -> std::tuple<bool, int64_t, size_t> { 
-                int64_t num = 0;
-                size_t index = 0;
-                for (; index < s.length(); index++) {
-                    const int64_t ch = (int64_t)s[index] - (int64_t)'0';
-                    if (ch >= 0 && ch <= 9)
-                        num += ch * (index + 1);
-                    else
-                        break;
-                }
 
-                if (index == 0)
-                    return { false, 0, -1 };
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
 
-                return { true, num, index };
-            };
+    template<>
+    struct convert<minutes> {
+        static Node encode(const minutes& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
 
+        static bool decode(const Node& node, minutes& rhs) {
+            if (!node.IsScalar())
+                return false;
 
+            auto&& s = node.Scalar();
 
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
 
+    template<>
+    struct convert<hours> {
+        static Node encode(const hours& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
 
+        static bool decode(const Node& node, hours& rhs) {
+            if (!node.IsScalar())
+                return false;
 
-            // 10ms
-            // 213us
-            // 51s
+            auto&& s = node.Scalar();
 
-            seconds::
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
 
+    template<>
+    struct convert<days> {
+        static Node encode(const days& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
 
-            int64_t t;
-            auto res = std::from_chars(s.c_str(), s.c_str() + s.length(), t);
-            if (res.ec != std::errc())
+        static bool decode(const Node& node, days& rhs) {
+            if (!node.IsScalar())
+                return false;
 
+            auto&& s = node.Scalar();
 
-            if (s.ends_with("ms"))
-                rhs = seconds(std::)
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
 
-            rhs = PacketMode(node.as<std::underlying_type_t<PacketMode>>());
+    template<>
+    struct convert<weeks> {
+        static Node encode(const weeks& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
 
-            return true;
+        static bool decode(const Node& node, weeks& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
+
+    template<>
+    struct convert<months> {
+        static Node encode(const months& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
+
+        static bool decode(const Node& node, months& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
+
+    template<>
+    struct convert<years> {
+        static Node encode(const years& rhs) {
+            return Node(std::to_string(rhs.count()) + "s");
+        }
+
+        static bool decode(const Node& node, years& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& s = node.Scalar();
+
+            return parseDuration(node.Scalar(), rhs);
         }
     };
 }
+
+template<class T>
+struct is_duration : std::false_type {};
+
+template<class Rep, class Period>
+struct is_duration<duration<Rep, Period>> : std::true_type {};
 
 // Retrieve a config value
 //  Returns the value or the default
 //  The key will be set in the config
 //  Accepts an optional predicate for whether to use the default value
 //template<typename T, typename Func = decltype([](const T&) -> bool {})>
-template<typename T, typename Func = std::nullptr_t>
-//void a(T& set, YAML::Node & node, const std::string &key, const auto& def = {}, std::function<bool(const F&)> defPred = nullptr, bool reloading = false, std::string_view comment = "") {
-void a(T& set, YAML::Node& node, const std::string& key, const auto& def, Func defPred = nullptr, bool reloading = false, std::string_view comment = "") {
+
+
+
+template<typename T, typename Def, typename Func = std::nullptr_t>
+    requires (std::is_same_v<Func, std::nullptr_t> 
+    //|| (std::tuple_size<typename VUtils::Traits::func_traits<Func>::args_type>{} == 1 
+        //&& is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value))
+    || is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value)
+void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = nullptr, bool reloading = false, std::string_view comment = "") {
     if (reloading)
         return;
     
@@ -156,10 +282,29 @@ void a(T& set, YAML::Node& node, const std::string& key, const auto& def, Func d
         auto&& val = mapping.as<T>();
 
         if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
-            if (!defPred || !defPred(val)) {
+            using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
+
+            static constexpr auto T_IS_DUR = is_duration<T>::value;
+            static constexpr auto PARAM0_IS_DUR = is_duration<Param0>::value;
+
+            //static_assert(T_IS_DUR == PARAM0_IS_DUR && "Both types must be durations or something else");
+            /*
+            if (!defPred || !defPred(duration_cast<Param0>(val))) {
                 set = val;
                 return;
-                //return val;
+            }*/
+
+            if constexpr (T_IS_DUR && PARAM0_IS_DUR) {
+                if (!defPred || !defPred(duration_cast<Param0>(val))) {
+                    set = val;
+                    return;
+                }
+            }
+            else {
+                if (!defPred || !defPred(static_cast<Param0>(val))) {
+                    set = val;
+                    return;
+                }
             }
         }
         else {
@@ -173,13 +318,24 @@ void a(T& set, YAML::Node& node, const std::string& key, const auto& def, Func d
             //return val;
         }*/
     }
-    catch (const YAML::InvalidNode&) {}
+    catch (const YAML::Exception&) {}
 
     mapping = def;
     
     assert(node[key].IsDefined());
+    
+    if constexpr (is_duration<T>::value && is_duration<Def>::value) {
+        //duration_cast<seconds>(1d);
+        set = duration_cast<T>(def);
+    }
+    else
+        set = T(def);
 
-    set = def;
+    //set = static_cast<decltype(set)>(def);
+    //set = static_cast<T>(def);
+    //set = static_cast<decltype(T)>(def);
+    //set = static_cast<T>(decltype(def){ def });
+    //set = def;
 };
 
 void IValhalla::LoadFiles(bool reloading) {
@@ -257,9 +413,12 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.packetCaptureSessionIndex, packet, VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX, -1);
             a(m_settings.packetPlaybackSessionIndex, packet, VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX, -1);
 
+            //a(m_settings.packetFileUpperSize, packet, VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE, 256000ULL, [](milliseconds val) { return val < 0s || val > 25600000s; }, reloading);
+
             if (m_settings.packetMode == PacketMode::CAPTURE)
                 m_settings.packetCaptureSessionIndex++;
 
+            /*
             if (!reloading) {
                 m_settings.serverPort = server[VH_SETTING_KEY_SERVER_PORT].as<uint16_t>(2456);
             
@@ -279,21 +438,30 @@ void IValhalla::LoadFiles(bool reloading) {
 
                 if (m_settings.packetMode == PacketMode::CAPTURE)
                     m_settings.packetCaptureSessionIndex++;
-            }
+            }*/
 
             a(m_settings.discordWebhook, discord, VH_SETTING_KEY_DISCORD_WEBHOOK, "");
 
             a(m_settings.worldFeatures, world, VH_SETTING_KEY_WORLD_FEATURES, true);
             a(m_settings.worldVegetation, world, VH_SETTING_KEY_WORLD_VEGETATION, true);
             a(m_settings.worldCreatures, world, VH_SETTING_KEY_WORLD_CREATURES, true);
-            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 1800, [](int val) { return val < 0 || val > 60 * 60 * 24 * 7; });
+            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 30min, [](seconds val) { return val < 0s || val > seconds(60 * 60 * 24 * 7); });
 
             a(m_settings.playerWhitelist, player, VH_SETTING_KEY_PLAYER_WHITELIST, true);
             a(m_settings.playerMax, player, VH_SETTING_KEY_PLAYER_MAX, 10, [](int val) { return val < 1; });
             a(m_settings.playerOnline, player, VH_SETTING_KEY_PLAYER_OFFLINE, true);
-            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 3600)
+            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 1h);
+            a(m_settings.playerListSendInterval, player, VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL, 2s, [](milliseconds val) { return val < 0s || val > seconds(1000 * 10); });
+            a(m_settings.playerListForceVisible, player, VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE, false);
+            
+            a(m_settings.zdoMaxCongestion, zdo, VH_SETTING_KEY_ZDO_MAX_CONGESTION, 10240, [](int val) { return val < 1000; });
+            a(m_settings.zdoMinCongestion, zdo, VH_SETTING_KEY_ZDO_MIN_CONGESTION, 2048, [](int val) { return val < 1000; });
+            a(m_settings.zdoSendInterval, zdo, VH_SETTING_KEY_ZDO_SEND_INTERVAL, 50ms, [](milliseconds val) { return val <= 0ms || val >= 1s; });
+            a(m_settings.zdoAssignInterval, zdo, VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL, 2s, [](seconds val) { return val <= 0s || val > 10s; });
+            a(m_settings.zdoAssignAlgorithm, zdo, VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM, AssignAlgorithm::NONE);
+            
 
-
+            /*
             m_settings.discordWebhook = discord[VH_SETTING_KEY_DISCORD_WEBHOOK].as<std::string>("");
 
             m_settings.worldFeatures = world[VH_SETTING_KEY_WORLD_FEATURES].as<bool>(true);
@@ -314,34 +482,70 @@ void IValhalla::LoadFiles(bool reloading) {
             m_settings.zdoSendInterval = milliseconds(zdo[VH_SETTING_KEY_ZDO_SEND_INTERVAL].as<int>(50));
             m_settings.zdoAssignInterval = seconds(std::clamp(zdo[VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL].as<int>(2), 1, 60));
             m_settings.zdoAssignAlgorithm = (AssignAlgorithm) zdo[VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM].as<int>(std::to_underlying(AssignAlgorithm::NONE));
-                        
+            */
+
+            a(m_settings.dungeonsEnabled, dungeons, VH_SETTING_KEY_DUNGEONS_ENABLED, true);
+            {
+                auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
+                a(m_settings.dungeonsEndcapsEnabled, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED, true);
+                a(m_settings.dungeonsEndcapsInsetFrac, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC, .5f, [](float val) { return val < 0.f || val > 1.f; });
+            }
+            /*
             m_settings.dungeonsEnabled = dungeons[VH_SETTING_KEY_DUNGEONS_ENABLED].as<bool>(true);
             {
                 auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
                 m_settings.dungeonsEndcapsEnabled = endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED].as<bool>(true);
                 m_settings.dungeonsEndcapsInsetFrac = std::clamp(endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC].as<float>(.5f), 0.f, 1.f);
+            }*/
+
+            a(m_settings.dungeonsDoors, dungeons, VH_SETTING_KEY_DUNGEONS_DOORS, true);
+
+            //m_settings.dungeonsDoors = dungeons[VH_SETTING_KEY_DUNGEONS_DOORS].as<bool>(true);
+
+            {
+                auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
+                a(m_settings.dungeonsRoomsFlipped, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, true);
+                a(m_settings.dungeonsRoomsZoneBounded, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, true);
+                a(m_settings.dungeonsRoomsInsetSize, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, .1f, [](float val) { return val < 0; });
             }
 
-            m_settings.dungeonsDoors = dungeons[VH_SETTING_KEY_DUNGEONS_DOORS].as<bool>(true);
-
+            /*
             {
                 auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
                 m_settings.dungeonsRoomsFlipped = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED].as<int>(true);
                 m_settings.dungeonsRoomsZoneBounded = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_ZONEBOUNDED].as<int>(true);
                 m_settings.dungeonsRoomsInsetSize = std::max(rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_INSETSIZE].as<float>(.1f), 0.f);
+            }*/
+
+            {
+                auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
+                a(m_settings.dungeonsRegenerationInterval, regeneration, VH_SETTING_KEY_DUNGEONS_REGENERATION_INTERVAL, days(3), [](minutes val) { return val < 1min; });
+                a(m_settings.dungeonsRegenerationMaxSteps, regeneration, VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP, 3, [](int val) { return val < 1; });
             }
 
+            /*
             {
                 auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
                 m_settings.dungeonsRegenerationInterval = seconds(std::clamp(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_INTERVAL].as<int64_t>(60LL*60LL*24LL*3LL), 0LL, 60LL*60LL*24LL*30LL));
                 m_settings.dungeonsRegenerationMaxSteps = std::max(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP].as<int>(3), 0);
-            }
-            m_settings.dungeonsSeeded = dungeons[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true); // TODO rename seeded
+            }*/
 
+            a(m_settings.dungeonsSeeded, dungeons, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
+
+            //m_settings.dungeonsSeeded = dungeons[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true); // TODO rename seeded
+
+            a(m_settings.eventsChance, events, VH_SETTING_KEY_EVENTS_CHANCE, .2f, [](float val) { return val < 0 || val > 1; });
+            a(m_settings.eventsInterval, events, VH_SETTING_KEY_EVENTS_INTERVAL, 46min, [](seconds val) { return val < 0s; });
+            a(m_settings.eventsRadius, events, VH_SETTING_KEY_EVENTS_RADIUS, 96, [](float val) { return val < 1 || val > 96 * 4; });
+            a(m_settings.eventsRequireKeys, events, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
+
+            /*
             m_settings.eventsChance = std::clamp(events[VH_SETTING_KEY_EVENTS_CHANCE].as<float>(.2f), 0.f, 1.f);
             m_settings.eventsInterval = seconds(std::max(0, events[VH_SETTING_KEY_EVENTS_INTERVAL].as<int>(60 * 46)));
             m_settings.eventsRadius = std::clamp(events[VH_SETTING_KEY_EVENTS_RADIUS].as<float>(96), 1.f, 96.f * 4);
-            m_settings.eventsRequireKeys = events[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true);
+            m_settings.eventsRequireKeys = events[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true);*/
+
+
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
@@ -358,6 +562,10 @@ void IValhalla::LoadFiles(bool reloading) {
     }
     
     LOG(INFO) << "Server config loaded";
+
+    if (!reloading) {
+
+    }
 
     /*
     //if (!reloading && fileError) {

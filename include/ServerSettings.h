@@ -134,5 +134,5 @@ struct ServerSettings {
     float           eventsChance;
     seconds         eventsInterval;
     float           eventsRadius;
-    float           eventsRequireKeys;
+    bool            eventsRequireKeys;
 };
