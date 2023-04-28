@@ -271,32 +271,28 @@ template<typename T, typename Def, typename Func = std::nullptr_t>
     requires (std::is_same_v<Func, std::nullptr_t> 
     //|| (std::tuple_size<typename VUtils::Traits::func_traits<Func>::args_type>{} == 1 
         //&& is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value))
-    || is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value)
-void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = nullptr, bool reloading = false, std::string_view comment = "") {
+
+    || ((is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value && is_duration<T>::value) == is_duration<Def>::value))
+    //|| (is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value))
+void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = nullptr, bool reloading = false, std::string comment = "") {
+    static constexpr auto T_IS_DUR = is_duration<T>::value;
+        
     if (reloading)
         return;
-    
-    auto&& mapping = node[key];
 
+    auto&& mapping = node[key];
+    
     try {
         auto&& val = mapping.as<T>();
 
         if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
             using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
 
-            static constexpr auto T_IS_DUR = is_duration<T>::value;
-            static constexpr auto PARAM0_IS_DUR = is_duration<Param0>::value;
-
-            //static_assert(T_IS_DUR == PARAM0_IS_DUR && "Both types must be durations or something else");
-            /*
-            if (!defPred || !defPred(duration_cast<Param0>(val))) {
-                set = val;
-                return;
-            }*/
-
-            if constexpr (T_IS_DUR && PARAM0_IS_DUR) {
+            if constexpr (T_IS_DUR) {
                 if (!defPred || !defPred(duration_cast<Param0>(val))) {
                     set = val;
+                    //if (!comment.empty()) emitter << YAML::Comment(std::string(comment));
+                    //emitter << YAML::
                     return;
                 }
             }
@@ -311,12 +307,6 @@ void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = 
             set = val;
             return;
         }
-        /*
-        if (!defPred || !defPred(val)) {
-            set = val;
-            return;
-            //return val;
-        }*/
     }
     catch (const YAML::Exception&) {}
 
@@ -324,29 +314,22 @@ void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = 
     
     assert(node[key].IsDefined());
     
-    if constexpr (is_duration<T>::value && is_duration<Def>::value) {
-        //duration_cast<seconds>(1d);
+    if constexpr (T_IS_DUR) {
         set = duration_cast<T>(def);
     }
     else
         set = T(def);
-
-    //set = static_cast<decltype(set)>(def);
-    //set = static_cast<T>(def);
-    //set = static_cast<decltype(T)>(def);
-    //set = static_cast<T>(decltype(def){ def });
-    //set = def;
 };
 
 void IValhalla::LoadFiles(bool reloading) {
     bool fileError = false;
     
     {
-        YAML::Node loadNode;
+        YAML::Node node;
         {
             if (auto opt = VUtils::Resource::ReadFile<std::string>("server.yml")) {
                 try {
-                    loadNode = YAML::Load(opt.value());
+                    node = YAML::Load(opt.value());
                 }
                 catch (const YAML::ParserException& e) {
                     LOG(INFO) << e.what();
@@ -361,44 +344,17 @@ void IValhalla::LoadFiles(bool reloading) {
             }
         }
 
-        // TODO:
-        // consider moving extraneous features into a separate lua mod group
-        //  to not pollute the primary base server code
-        //  crucial quality of life features are fine however to remain in c++  (zdos/send rates/...)
-
         if (!reloading || !fileError) {
-            /*
-            auto a = []<typename T>(YAML::Node & node, std::string_view key, const T & def = T{}, bool skip = false, std::string_view comment = "") {
-                auto&& mapping = node[key];
-                
-                try {
-                    return mapping.as<T>();
-                    //return mapping.as<YAML::Node>();
-                }
-                //catch (const std::exception&) {
-                catch (const YAML::InvalidNode&) {
-                    mapping = def;
-                }
+            auto&& server = node[VH_SETTING_KEY_SERVER];
+            auto&& discord = node[VH_SETTING_KEY_DISCORD];
+            auto&& world = node[VH_SETTING_KEY_WORLD];
+            auto&& packet = node[VH_SETTING_KEY_PACKET];
+            auto&& player = node[VH_SETTING_KEY_PLAYER];
+            auto&& zdo = node[VH_SETTING_KEY_ZDO];
+            auto&& dungeons = node[VH_SETTING_KEY_DUNGEONS];
+            auto&& events = node[VH_SETTING_KEY_EVENTS];
 
-                assert(node[key].IsDefined());
-
-                return def;
-            };*/
-
-            //std::string k = a(loadNode, "mykey", "mydef");
-
-            //auto&& server = a(loadNode, VH_SETTING_KEY_SERVER, YAML::Node());
-            auto&& server = loadNode[VH_SETTING_KEY_SERVER];
-            auto&& discord = loadNode[VH_SETTING_KEY_DISCORD];
-            auto&& world = loadNode[VH_SETTING_KEY_WORLD];
-            auto&& packet = loadNode[VH_SETTING_KEY_PACKET];
-            auto&& player = loadNode[VH_SETTING_KEY_PLAYER];
-            auto&& zdo = loadNode[VH_SETTING_KEY_ZDO];
-            auto&& dungeons = loadNode[VH_SETTING_KEY_DUNGEONS];
-            auto&& events = loadNode[VH_SETTING_KEY_EVENTS];
-
-            //m_settings.serverName = VUtils::String::ToAscii(server[VH_SETTING_KEY_SERVER_NAME].as<std::string>(""));
-            a(m_settings.serverName, server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server"); //, [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            a(m_settings.serverName, server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
             a(m_settings.serverPassword, server, VH_SETTING_KEY_SERVER_PASSWORD, "secret", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
             a(m_settings.serverPort, server, VH_SETTING_KEY_SERVER_PORT, 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, VH_SETTING_KEY_SERVER_PUBLIC, false, nullptr, reloading);
@@ -413,109 +369,44 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.packetCaptureSessionIndex, packet, VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX, -1);
             a(m_settings.packetPlaybackSessionIndex, packet, VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX, -1);
 
-            //a(m_settings.packetFileUpperSize, packet, VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE, 256000ULL, [](milliseconds val) { return val < 0s || val > 25600000s; }, reloading);
-
             if (m_settings.packetMode == PacketMode::CAPTURE)
                 m_settings.packetCaptureSessionIndex++;
-
-            /*
-            if (!reloading) {
-                m_settings.serverPort = server[VH_SETTING_KEY_SERVER_PORT].as<uint16_t>(2456);
-            
-                m_settings.serverPublic = server[VH_SETTING_KEY_SERVER_PUBLIC].as<bool>(false);
-                m_settings.serverDedicated = server[VH_SETTING_KEY_SERVER_DEDICATED].as<bool>(true);
-
-                m_settings.worldName = VUtils::String::ToAscii(world[VH_SETTING_KEY_WORLD].as<std::string>(""));
-                if (m_settings.worldName.empty() || m_settings.worldName.length() < 3) m_settings.worldName = "world";
-                m_settings.worldSeed = world[VH_SETTING_KEY_WORLD_SEED].as<std::string>("");
-                if (m_settings.worldSeed.empty()) m_settings.worldSeed = VUtils::Random::GenerateAlphaNum(10);
-                m_settings.worldModern = world[VH_SETTING_KEY_WORLD_MODERN].as<bool>(true);
-
-                m_settings.packetMode = (PacketMode) packet[VH_SETTING_KEY_PACKET_MODE].as<std::underlying_type_t<PacketMode>>(std::to_underlying(PacketMode::NORMAL));
-                m_settings.packetFileUpperSize = std::clamp(world[VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE].as<size_t>(256000ULL), 64000ULL, 256000000ULL);
-                m_settings.packetCaptureSessionIndex = world[VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX].as<int>(-1);
-                m_settings.packetPlaybackSessionIndex = world[VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX].as<int>(-1);
-
-                if (m_settings.packetMode == PacketMode::CAPTURE)
-                    m_settings.packetCaptureSessionIndex++;
-            }*/
 
             a(m_settings.discordWebhook, discord, VH_SETTING_KEY_DISCORD_WEBHOOK, "");
 
             a(m_settings.worldFeatures, world, VH_SETTING_KEY_WORLD_FEATURES, true);
             a(m_settings.worldVegetation, world, VH_SETTING_KEY_WORLD_VEGETATION, true);
             a(m_settings.worldCreatures, world, VH_SETTING_KEY_WORLD_CREATURES, true);
-            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 30min, [](seconds val) { return val < 0s || val > seconds(60 * 60 * 24 * 7); });
+            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 30min, [](seconds val) { return val < 0s; });
 
             a(m_settings.playerWhitelist, player, VH_SETTING_KEY_PLAYER_WHITELIST, true);
             a(m_settings.playerMax, player, VH_SETTING_KEY_PLAYER_MAX, 10, [](int val) { return val < 1; });
             a(m_settings.playerOnline, player, VH_SETTING_KEY_PLAYER_OFFLINE, true);
-            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 1h);
-            a(m_settings.playerListSendInterval, player, VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL, 2s, [](milliseconds val) { return val < 0s || val > seconds(1000 * 10); });
+            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 30s, [](seconds val) { return val < 0s || val > 1h; });
+            a(m_settings.playerListSendInterval, player, VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL, 2s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE, false);
             
             a(m_settings.zdoMaxCongestion, zdo, VH_SETTING_KEY_ZDO_MAX_CONGESTION, 10240, [](int val) { return val < 1000; });
             a(m_settings.zdoMinCongestion, zdo, VH_SETTING_KEY_ZDO_MIN_CONGESTION, 2048, [](int val) { return val < 1000; });
-            a(m_settings.zdoSendInterval, zdo, VH_SETTING_KEY_ZDO_SEND_INTERVAL, 50ms, [](milliseconds val) { return val <= 0ms || val >= 1s; });
+            a(m_settings.zdoSendInterval, zdo, VH_SETTING_KEY_ZDO_SEND_INTERVAL, 50ms, [](seconds val) { return val <= 0s || val > 1s; });
             a(m_settings.zdoAssignInterval, zdo, VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL, 2s, [](seconds val) { return val <= 0s || val > 10s; });
             a(m_settings.zdoAssignAlgorithm, zdo, VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM, AssignAlgorithm::NONE);
             
-
-            /*
-            m_settings.discordWebhook = discord[VH_SETTING_KEY_DISCORD_WEBHOOK].as<std::string>("");
-
-            m_settings.worldFeatures = world[VH_SETTING_KEY_WORLD_FEATURES].as<bool>(true);
-            m_settings.worldVegetation = world[VH_SETTING_KEY_WORLD_VEGETATION].as<bool>(true);
-            m_settings.worldCreatures = world[VH_SETTING_KEY_WORLD_CREATURES].as<bool>(true);           
-
-            m_settings.worldSaveInterval = seconds(std::clamp(world[VH_SETTING_KEY_WORLD_SAVE_INTERVAL].as<int>(1800), 0, 60 * 60 * 24 * 7));
-
-            m_settings.playerWhitelist = player[VH_SETTING_KEY_PLAYER_WHITELIST].as<bool>(true);          // enable whitelist
-            m_settings.playerMax = std::max(player[VH_SETTING_KEY_PLAYER_MAX].as<int>(10), 1);     // max allowed players
-            m_settings.playerOnline = player[VH_SETTING_KEY_PLAYER_OFFLINE].as<bool>(true);                     // allow authed players only
-            m_settings.playerTimeout = seconds(std::clamp(player[VH_SETTING_KEY_PLAYER_TIMEOUT].as<int>(30), 1, 60*60));
-            m_settings.playerListSendInterval = milliseconds(std::clamp(player[VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL].as<int>(2000), 0, 1000*10));
-            m_settings.playerListForceVisible = player[VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE].as<bool>(false);
-
-            m_settings.zdoMaxCongestion = zdo[VH_SETTING_KEY_ZDO_MAX_CONGESTION].as<int>(10240);
-            m_settings.zdoMinCongestion = zdo[VH_SETTING_KEY_ZDO_MIN_CONGESTION].as<int>(2048);
-            m_settings.zdoSendInterval = milliseconds(zdo[VH_SETTING_KEY_ZDO_SEND_INTERVAL].as<int>(50));
-            m_settings.zdoAssignInterval = seconds(std::clamp(zdo[VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL].as<int>(2), 1, 60));
-            m_settings.zdoAssignAlgorithm = (AssignAlgorithm) zdo[VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM].as<int>(std::to_underlying(AssignAlgorithm::NONE));
-            */
-
             a(m_settings.dungeonsEnabled, dungeons, VH_SETTING_KEY_DUNGEONS_ENABLED, true);
             {
                 auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
                 a(m_settings.dungeonsEndcapsEnabled, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED, true);
                 a(m_settings.dungeonsEndcapsInsetFrac, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC, .5f, [](float val) { return val < 0.f || val > 1.f; });
             }
-            /*
-            m_settings.dungeonsEnabled = dungeons[VH_SETTING_KEY_DUNGEONS_ENABLED].as<bool>(true);
-            {
-                auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
-                m_settings.dungeonsEndcapsEnabled = endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED].as<bool>(true);
-                m_settings.dungeonsEndcapsInsetFrac = std::clamp(endcaps[VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC].as<float>(.5f), 0.f, 1.f);
-            }*/
 
             a(m_settings.dungeonsDoors, dungeons, VH_SETTING_KEY_DUNGEONS_DOORS, true);
-
-            //m_settings.dungeonsDoors = dungeons[VH_SETTING_KEY_DUNGEONS_DOORS].as<bool>(true);
 
             {
                 auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
                 a(m_settings.dungeonsRoomsFlipped, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, true);
-                a(m_settings.dungeonsRoomsZoneBounded, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, true);
-                a(m_settings.dungeonsRoomsInsetSize, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, .1f, [](float val) { return val < 0; });
+                a(m_settings.dungeonsRoomsZoneBounded, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_ZONEBOUNDED, true);
+                a(m_settings.dungeonsRoomsInsetSize, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_INSETSIZE, .1f, [](float val) { return val < 0; });
             }
-
-            /*
-            {
-                auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
-                m_settings.dungeonsRoomsFlipped = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED].as<int>(true);
-                m_settings.dungeonsRoomsZoneBounded = rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_ZONEBOUNDED].as<int>(true);
-                m_settings.dungeonsRoomsInsetSize = std::max(rooms[VH_SETTING_KEY_DUNGEONS_ROOMS_INSETSIZE].as<float>(.1f), 0.f);
-            }*/
 
             {
                 auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
@@ -523,29 +414,12 @@ void IValhalla::LoadFiles(bool reloading) {
                 a(m_settings.dungeonsRegenerationMaxSteps, regeneration, VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP, 3, [](int val) { return val < 1; });
             }
 
-            /*
-            {
-                auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
-                m_settings.dungeonsRegenerationInterval = seconds(std::clamp(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_INTERVAL].as<int64_t>(60LL*60LL*24LL*3LL), 0LL, 60LL*60LL*24LL*30LL));
-                m_settings.dungeonsRegenerationMaxSteps = std::max(regeneration[VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP].as<int>(3), 0);
-            }*/
-
             a(m_settings.dungeonsSeeded, dungeons, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
-
-            //m_settings.dungeonsSeeded = dungeons[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true); // TODO rename seeded
 
             a(m_settings.eventsChance, events, VH_SETTING_KEY_EVENTS_CHANCE, .2f, [](float val) { return val < 0 || val > 1; });
             a(m_settings.eventsInterval, events, VH_SETTING_KEY_EVENTS_INTERVAL, 46min, [](seconds val) { return val < 0s; });
             a(m_settings.eventsRadius, events, VH_SETTING_KEY_EVENTS_RADIUS, 96, [](float val) { return val < 1 || val > 96 * 4; });
             a(m_settings.eventsRequireKeys, events, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
-
-            /*
-            m_settings.eventsChance = std::clamp(events[VH_SETTING_KEY_EVENTS_CHANCE].as<float>(.2f), 0.f, 1.f);
-            m_settings.eventsInterval = seconds(std::max(0, events[VH_SETTING_KEY_EVENTS_INTERVAL].as<int>(60 * 46)));
-            m_settings.eventsRadius = std::clamp(events[VH_SETTING_KEY_EVENTS_RADIUS].as<float>(96), 1.f, 96.f * 4);
-            m_settings.eventsRequireKeys = events[VH_SETTING_KEY_DUNGEONS_SEEDED].as<bool>(true);*/
-
-
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
@@ -559,6 +433,15 @@ void IValhalla::LoadFiles(bool reloading) {
                 LOG(WARNING) << "Experimental packet playback enabled";
             }
         }
+
+        if (!reloading) {
+            YAML::Emitter out;
+            out.SetIndent(2);
+            out << node;
+
+            VUtils::Resource::WriteFile("server.yml", out.c_str());
+        }
+
     }
     
     LOG(INFO) << "Server config loaded";
