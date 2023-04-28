@@ -547,9 +547,12 @@ private:
 
     // Set the owner without revising
     void _SetOwner(OWNER_t owner) {
-        // Remove this test later and instead check client-sent owners to ensure data is as intended
-        // 
-        //assert(!(owner & ~ENCODED_OWNER_MASK) && "Bad owner provided");
+        if (!(owner >= -2147483647LL && owner <= 4294967293LL)) {
+            // Ensure filler complement bits are all the same (full negative or full positive)
+            //if ((owner < 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) != ~ENCODED_OWNER_MASK)
+                //|| (owner >= 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) == ~ENCODED_OWNER_MASK))
+            throw std::runtime_error("OWNER_t unexpected encoding (client Utils.GenerateUID() differs?)");
+        }
 
         // Zero out the owner bytes (including sign)
         this->m_encoded &= ~ENCODED_OWNER_MASK;

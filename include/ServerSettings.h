@@ -13,6 +13,7 @@ enum class PacketMode : int32_t {
     PLAYBACK,
 };
 
+/*
 static constexpr const char* VH_SETTING_KEY_SERVER = "server";
 static constexpr const char* VH_SETTING_KEY_SERVER_NAME = "name";
 static constexpr const char* VH_SETTING_KEY_SERVER_PORT = "port";
@@ -77,7 +78,7 @@ static constexpr const char* VH_SETTING_KEY_EVENTS = "events";
 static constexpr const char* VH_SETTING_KEY_EVENTS_CHANCE = "chance";
 static constexpr const char* VH_SETTING_KEY_EVENTS_INTERVAL = "interval-dS";
 static constexpr const char* VH_SETTING_KEY_EVENTS_RADIUS = "radius";
-static constexpr const char* VH_SETTING_KEY_EVENTS_REQUIREKEYS = "require-keys";
+static constexpr const char* VH_SETTING_KEY_EVENTS_REQUIREKEYS = "require-keys";*/
 
 struct ServerSettings {
     std::string     serverName;
@@ -86,7 +87,12 @@ struct ServerSettings {
     bool            serverPublic;
     bool            serverDedicated;
 
-    std::string     discordWebhook;
+    bool            playerWhitelist;
+    unsigned int    playerMax;
+    bool            playerOnline;
+    seconds         playerTimeout;
+    milliseconds    playerListSendInterval;
+    bool            playerListForceVisible;
 
     std::string     worldName;
     std::string     worldSeed;
@@ -95,26 +101,12 @@ struct ServerSettings {
     bool            worldModern;        // whether to purge old objects on load
     bool            worldFeatures;
     bool            worldVegetation;
-    bool            worldCreatures;
-
-    PacketMode      packetMode;
-    size_t          packetFileUpperSize;
-    int             packetCaptureSessionIndex;
-    int             packetPlaybackSessionIndex;
-    
-    //bool            playerAutoPassword;
-    bool            playerWhitelist;
-    unsigned int    playerMax;
-    bool            playerOnline;
-    seconds         playerTimeout;
-    milliseconds    playerListSendInterval;
-    bool            playerListForceVisible;
+    bool            worldCreatures;   
     
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
     milliseconds    zdoSendInterval;
     seconds         zdoAssignInterval;
-    //bool            zdoSmartAssign;     // experimental feature that attempts to reduce lagg
     AssignAlgorithm zdoAssignAlgorithm;
         
     bool            dungeonsEnabled;
@@ -125,14 +117,19 @@ struct ServerSettings {
     bool            dungeonsRoomsZoneBounded;
     bool            dungeonsRoomsInsetSize;
     bool            dungeonsRoomsFurnishing;
-    //bool            dungeonsRegenerationEnabled;
     seconds         dungeonsRegenerationInterval;
     int             dungeonsRegenerationMaxSteps;
     bool            dungeonsSeeded;
 
-    //bool            eventsEnabled;
     float           eventsChance;
     seconds         eventsInterval;
     float           eventsRadius;
     bool            eventsRequireKeys;
+
+    PacketMode      packetMode;
+    size_t          packetFileUpperSize;
+    int             packetCaptureSessionIndex;
+    int             packetPlaybackSessionIndex;
+
+    std::string     discordWebhook;
 };

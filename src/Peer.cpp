@@ -22,16 +22,7 @@ Peer::Peer(ISocket::Ptr socket)
 
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader)
-        //rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, BYTES_t bytes)
-            //int32_t,
-            //OWNER_t uuid, std::string version, uint32_t nversion, Vector3f pos, std::string name, std::string password, BYTES_t ticket) 
             {
-            // Forward call to rpc
-            //DataReader reader(bytes);
-
-                //std::string()
-                //std::string_view()
-
             rpc->m_uuid = reader.Read<OWNER_t>();
             if (!rpc->m_uuid)
                 throw std::runtime_error("peer provided 0 owner");
@@ -41,7 +32,7 @@ Peer::Peer(ISocket::Ptr socket)
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
-            auto nversion = reader.Read<uint32_t>();
+            reader.Read<uint32_t>(); // network version
 
             rpc->m_pos = reader.Read<Vector3f>();
             rpc->m_name = reader.Read<std::string>();
@@ -60,47 +51,35 @@ Peer::Peer(ISocket::Ptr socket)
                     return rpc->Close(ConnectionStatus::ErrorDisconnected);
             }
 
-            if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
-                return rpc->Close(ConnectionStatus::ErrorBanned);
-
-            // sanitize name (spaces, any ascii letters)
-            //for (auto ch : name) {
-            //    if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) {
-            //        LOG(INFO) << "Player has unsupported name character: " << (int)ch;
-            //        return rpc->Close(ConnectionStatus::ErrorDisconnected);
-            //    }
-            //}
-
-
             if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK && password != NetManager()->m_password)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
-
-
 
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()) || NetManager()->GetPeer(rpc->m_uuid) || NetManager()->GetPeerByName(rpc->m_name))
+            if (NetManager()->GetPeer(rpc->m_uuid) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
-
-
-
-            // if whitelist enabled
-            if (VH_SETTINGS.playerWhitelist
-                && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
-                return rpc->Close(ConnectionStatus::ErrorFull);
-            }
-
-            // if too many players online
-            if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
-                return rpc->Close(ConnectionStatus::ErrorFull);
-
-            //NetManager()->OnNewClient(rpc->m_socket, uuid, name, pos);
 
             NetManager()->OnPeerConnect(*rpc);
 
             return false;
         });
+
+        if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
+            return rpc->Close(ConnectionStatus::ErrorBanned);
+
+        if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()))
+            return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+
+        // if whitelist enabled
+        if (VH_SETTINGS.playerWhitelist
+            && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
+            return rpc->Close(ConnectionStatus::ErrorFull);
+        }
+
+        // if too many players online
+        if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
+            return rpc->Close(ConnectionStatus::ErrorFull);
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
@@ -108,8 +87,6 @@ Peer::Peer(ISocket::Ptr socket)
 
         return false;
     });
-
-    //VLOG(1) << "Peer()";
 
     LOG(WARNING) << m_socket->GetHostName() << " has connected";
 }

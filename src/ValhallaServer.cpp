@@ -71,7 +71,7 @@ namespace YAML {
         for (; index < s.length(); index++) {
             const int64_t ch = (int64_t)s[index];
             if (ch >= '0' && ch <= '9')
-                dur += (ch - '0') * (index + 1);
+                dur += (ch - '0') * (index + 1) * 10;
             else if (index > 0) {
                 switch (ch) {
                 case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
@@ -95,7 +95,7 @@ namespace YAML {
     template<>
     struct convert<nanoseconds> {
         static Node encode(const nanoseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "ns");
         }
 
         static bool decode(const Node& node, nanoseconds& rhs) {
@@ -111,7 +111,7 @@ namespace YAML {
     template<>
     struct convert<microseconds> {
         static Node encode(const microseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "us");
         }
 
         static bool decode(const Node& node, microseconds& rhs) {
@@ -127,7 +127,7 @@ namespace YAML {
     template<>
     struct convert<milliseconds> {
         static Node encode(const milliseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "ms");
         }
 
         static bool decode(const Node& node, milliseconds& rhs) {
@@ -159,7 +159,7 @@ namespace YAML {
     template<>
     struct convert<minutes> {
         static Node encode(const minutes& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "Min");
         }
 
         static bool decode(const Node& node, minutes& rhs) {
@@ -175,7 +175,7 @@ namespace YAML {
     template<>
     struct convert<hours> {
         static Node encode(const hours& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "hours");
         }
 
         static bool decode(const Node& node, hours& rhs) {
@@ -191,7 +191,7 @@ namespace YAML {
     template<>
     struct convert<days> {
         static Node encode(const days& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "days");
         }
 
         static bool decode(const Node& node, days& rhs) {
@@ -207,7 +207,7 @@ namespace YAML {
     template<>
     struct convert<weeks> {
         static Node encode(const weeks& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "weeks");
         }
 
         static bool decode(const Node& node, weeks& rhs) {
@@ -223,7 +223,7 @@ namespace YAML {
     template<>
     struct convert<months> {
         static Node encode(const months& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "onths");
         }
 
         static bool decode(const Node& node, months& rhs) {
@@ -239,7 +239,7 @@ namespace YAML {
     template<>
     struct convert<years> {
         static Node encode(const years& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+            return Node(std::to_string(rhs.count()) + "years");
         }
 
         static bool decode(const Node& node, years& rhs) {
@@ -345,81 +345,82 @@ void IValhalla::LoadFiles(bool reloading) {
         }
 
         if (!reloading || !fileError) {
-            auto&& server = node[VH_SETTING_KEY_SERVER];
-            auto&& discord = node[VH_SETTING_KEY_DISCORD];
-            auto&& world = node[VH_SETTING_KEY_WORLD];
-            auto&& packet = node[VH_SETTING_KEY_PACKET];
-            auto&& player = node[VH_SETTING_KEY_PLAYER];
-            auto&& zdo = node[VH_SETTING_KEY_ZDO];
-            auto&& dungeons = node[VH_SETTING_KEY_DUNGEONS];
-            auto&& events = node[VH_SETTING_KEY_EVENTS];
+            auto&& server = node["server"];
+            auto&& player = node["players"];
+            auto&& world = node["world"];
+            auto&& zdo = node["zdos"];
+            auto&& dungeons = node["dungeons"];
+            auto&& events = node["events"];
+            auto&& packet = node["packets"];
+            auto&& discord = node["discord"];
 
-            a(m_settings.serverName, server, VH_SETTING_KEY_SERVER_NAME, "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            a(m_settings.serverPassword, server, VH_SETTING_KEY_SERVER_PASSWORD, "secret", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
-            a(m_settings.serverPort, server, VH_SETTING_KEY_SERVER_PORT, 2456, nullptr, reloading);
-            a(m_settings.serverPublic, server, VH_SETTING_KEY_SERVER_PUBLIC, false, nullptr, reloading);
-            a(m_settings.serverDedicated, server, VH_SETTING_KEY_SERVER_DEDICATED, true, nullptr, reloading);
+            a(m_settings.serverName, server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            a(m_settings.serverPassword, server, "password", "secret", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
+            a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
+            a(m_settings.serverPublic, server, "public", false, nullptr, reloading);
+            a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
 
-            a(m_settings.worldName, world, VH_SETTING_KEY_WORLD, "world", [](const std::string& val) { return val.empty() || val.length() < 3; });
-            a(m_settings.worldSeed, world, VH_SETTING_KEY_WORLD_SEED, VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); });
-            a(m_settings.worldModern, world, VH_SETTING_KEY_WORLD_MODERN, true);
+            a(m_settings.playerWhitelist, player, "whitelist", true);
+            a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
+            a(m_settings.playerOnline, player, "offline", true);
+            a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s || val > 1h; });
+            a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
+            a(m_settings.playerListForceVisible, player, "list-force-visible", false);
 
-            a(m_settings.packetMode, packet, VH_SETTING_KEY_PACKET_MODE, PacketMode::NORMAL, nullptr, reloading);
-            a(m_settings.packetFileUpperSize, packet, VH_SETTING_KEY_PACKET_FILE_UPPER_SIZE, 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);
-            a(m_settings.packetCaptureSessionIndex, packet, VH_SETTING_KEY_PACKET_CAPTURE_SESSION_INDEX, -1);
-            a(m_settings.packetPlaybackSessionIndex, packet, VH_SETTING_KEY_PACKET_PLAYBACK_SESSION_INDEX, -1);
+            a(m_settings.worldName, world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
+            a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
+            a(m_settings.worldPregenerate, world, "pregenerate", false, nullptr, reloading);
+            a(m_settings.worldSaveInterval, world, "save-interval", 30min, [](seconds val) { return val < 0s; });
+            a(m_settings.worldModern, world, "modern", true, nullptr, reloading);
+            a(m_settings.worldFeatures, world, "features", true);
+            a(m_settings.worldVegetation, world, "vegetation", true);
+            a(m_settings.worldCreatures, world, "creatures", true);
 
             if (m_settings.packetMode == PacketMode::CAPTURE)
-                m_settings.packetCaptureSessionIndex++;
-
-            a(m_settings.discordWebhook, discord, VH_SETTING_KEY_DISCORD_WEBHOOK, "");
-
-            a(m_settings.worldFeatures, world, VH_SETTING_KEY_WORLD_FEATURES, true);
-            a(m_settings.worldVegetation, world, VH_SETTING_KEY_WORLD_VEGETATION, true);
-            a(m_settings.worldCreatures, world, VH_SETTING_KEY_WORLD_CREATURES, true);
-            a(m_settings.worldSaveInterval, world, VH_SETTING_KEY_WORLD_SAVE_INTERVAL, 30min, [](seconds val) { return val < 0s; });
-
-            a(m_settings.playerWhitelist, player, VH_SETTING_KEY_PLAYER_WHITELIST, true);
-            a(m_settings.playerMax, player, VH_SETTING_KEY_PLAYER_MAX, 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, player, VH_SETTING_KEY_PLAYER_OFFLINE, true);
-            a(m_settings.playerTimeout, player, VH_SETTING_KEY_PLAYER_TIMEOUT, 30s, [](seconds val) { return val < 0s || val > 1h; });
-            a(m_settings.playerListSendInterval, player, VH_SETTING_KEY_PLAYER_LIST_SEND_INTERVAL, 2s, [](seconds val) { return val < 0s; });
-            a(m_settings.playerListForceVisible, player, VH_SETTING_KEY_PLAYER_LIST_FORCE_VISIBLE, false);
+                m_settings.packetCaptureSessionIndex++;           
             
-            a(m_settings.zdoMaxCongestion, zdo, VH_SETTING_KEY_ZDO_MAX_CONGESTION, 10240, [](int val) { return val < 1000; });
-            a(m_settings.zdoMinCongestion, zdo, VH_SETTING_KEY_ZDO_MIN_CONGESTION, 2048, [](int val) { return val < 1000; });
-            a(m_settings.zdoSendInterval, zdo, VH_SETTING_KEY_ZDO_SEND_INTERVAL, 50ms, [](seconds val) { return val <= 0s || val > 1s; });
-            a(m_settings.zdoAssignInterval, zdo, VH_SETTING_KEY_ZDO_ASSIGN_INTERVAL, 2s, [](seconds val) { return val <= 0s || val > 10s; });
-            a(m_settings.zdoAssignAlgorithm, zdo, VH_SETTING_KEY_ZDO_ASSIGN_ALGORITHM, AssignAlgorithm::NONE);
+            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s || val > 1s; });
+            a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
+            a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
+            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](seconds val) { return val <= 0s || val > 10s; });
+            a(m_settings.zdoAssignAlgorithm, zdo, "assign-algorithm", AssignAlgorithm::NONE);
             
-            a(m_settings.dungeonsEnabled, dungeons, VH_SETTING_KEY_DUNGEONS_ENABLED, true);
+            a(m_settings.dungeonsEnabled, dungeons, "enabled", true);
             {
-                auto&& endcaps = dungeons[VH_SETTING_KEY_DUNGEONS_ENDCAPS];
-                a(m_settings.dungeonsEndcapsEnabled, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_ENABLED, true);
-                a(m_settings.dungeonsEndcapsInsetFrac, endcaps, VH_SETTING_KEY_DUNGEONS_ENDCAPS_INSETFRAC, .5f, [](float val) { return val < 0.f || val > 1.f; });
+                auto&& endcaps = dungeons["endcaps"];
+                a(m_settings.dungeonsEndcapsEnabled, endcaps, "enabled", true);
+                a(m_settings.dungeonsEndcapsInsetFrac, endcaps, "inset-ratio", .5f, [](float val) { return val < 0.f || val > 1.f; });
             }
 
-            a(m_settings.dungeonsDoors, dungeons, VH_SETTING_KEY_DUNGEONS_DOORS, true);
+            a(m_settings.dungeonsDoors, dungeons, "doors", true);
 
             {
-                auto&& rooms = dungeons[VH_SETTING_KEY_DUNGEONS_ROOMS];
-                a(m_settings.dungeonsRoomsFlipped, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_FLIPPED, true);
-                a(m_settings.dungeonsRoomsZoneBounded, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_ZONEBOUNDED, true);
-                a(m_settings.dungeonsRoomsInsetSize, rooms, VH_SETTING_KEY_DUNGEONS_ROOMS_INSETSIZE, .1f, [](float val) { return val < 0; });
+                auto&& rooms = dungeons["rooms"];
+                a(m_settings.dungeonsRoomsFlipped, rooms, "flipped", true);
+                a(m_settings.dungeonsRoomsZoneBounded, rooms, "zone-bounded", true);
+                a(m_settings.dungeonsRoomsInsetSize, rooms, "inset-size", .1f, [](float val) { return val < 0; });
+                a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true);
             }
 
             {
-                auto&& regeneration = dungeons[VH_SETTING_KEY_DUNGEONS_REGENERATION];
-                a(m_settings.dungeonsRegenerationInterval, regeneration, VH_SETTING_KEY_DUNGEONS_REGENERATION_INTERVAL, days(3), [](minutes val) { return val < 1min; });
-                a(m_settings.dungeonsRegenerationMaxSteps, regeneration, VH_SETTING_KEY_DUNGEONS_REGENERATION_MAXSTEP, 3, [](int val) { return val < 1; });
+                auto&& regeneration = dungeons["regeneration"];
+                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", days(3), [](minutes val) { return val < 1min; });
+                a(m_settings.dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
             }
 
-            a(m_settings.dungeonsSeeded, dungeons, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
+            a(m_settings.dungeonsSeeded, dungeons, "seeded", true);
 
-            a(m_settings.eventsChance, events, VH_SETTING_KEY_EVENTS_CHANCE, .2f, [](float val) { return val < 0 || val > 1; });
-            a(m_settings.eventsInterval, events, VH_SETTING_KEY_EVENTS_INTERVAL, 46min, [](seconds val) { return val < 0s; });
-            a(m_settings.eventsRadius, events, VH_SETTING_KEY_EVENTS_RADIUS, 96, [](float val) { return val < 1 || val > 96 * 4; });
-            a(m_settings.eventsRequireKeys, events, VH_SETTING_KEY_DUNGEONS_SEEDED, true);
+            a(m_settings.eventsChance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
+            a(m_settings.eventsInterval, events, "interval", 46min, [](seconds val) { return val < 0s; });
+            a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
+            a(m_settings.eventsRequireKeys, events, "require-keys", true);
+
+            a(m_settings.packetMode, packet, "mode", PacketMode::NORMAL, nullptr, reloading);
+            a(m_settings.packetFileUpperSize, packet, "file-size", 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);
+            a(m_settings.packetCaptureSessionIndex, packet, "capture-session", -1, nullptr, reloading);
+            a(m_settings.packetPlaybackSessionIndex, packet, "playback-session", -1, nullptr, reloading);
+
+            a(m_settings.discordWebhook, discord, "webhook", "");
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";

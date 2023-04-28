@@ -36,9 +36,17 @@ public:
     }
 
     constexpr void SetOwner(OWNER_t owner) {
+        if (!(owner >= -2147483647LL && owner <= 4294967293LL)) {
+            // Ensure filler complement bits are all the same (full negative or full positive)
+            //if ((owner < 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) != ~ENCODED_OWNER_MASK)
+                //|| (owner >= 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) == ~ENCODED_OWNER_MASK))
+            throw std::runtime_error("OWNER_t unexpected encoding (client Utils.GenerateUID() differs?)");
+        }
+
         // Set owner bits to 0
         this->m_encoded &= ~ENCODED_OWNER_MASK;
         //assert(GetOwner() == 0);
+
 
         // Set the owner bits
         //  ignore the 2's complement middle bytes
