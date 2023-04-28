@@ -4,6 +4,7 @@
 #include <csignal>
 #include <stdlib.h>
 #include <format>
+#include <Windows.h>
 
 #include <easylogging++.h>
 #include <toml++/toml.h>

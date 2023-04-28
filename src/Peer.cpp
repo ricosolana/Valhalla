@@ -134,7 +134,7 @@ void Peer::Update() {
         }
     }
 
-    if (now - m_lastPing > VH_SETTINGS.playerTimeout) {
+    if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) {
         LOG(INFO) << "Client RPC timeout";
         Disconnect();
     }

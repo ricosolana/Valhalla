@@ -132,4 +132,5 @@ struct ServerSettings {
     int             packetPlaybackSessionIndex;
 
     std::string     discordWebhook;
+    std::string     discordToken;
 };

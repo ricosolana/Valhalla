@@ -421,6 +421,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.packetPlaybackSessionIndex, packet, "playback-session", -1, nullptr, reloading);
 
             a(m_settings.discordWebhook, discord, "webhook", "");
+            a(m_settings.discordToken, discord, "token", "");
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
@@ -592,6 +593,8 @@ void IValhalla::Start() {
     WorldManager()->PostInit();
     NetManager()->PostInit();
     ModManager()->PostInit();
+
+    DiscordManager()->Init();
 
     /*
     if (VH_SETTINGS.worldRecording) {

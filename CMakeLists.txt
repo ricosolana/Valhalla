@@ -32,7 +32,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 
-#add_compile_definitions(WIN32_LEAN_AND_MEAN)
+add_compile_definitions(WIN32_LEAN_AND_MEAN)
 #add_compile_definitions(VC_EXTRALEAN)
 
 ############
@@ -49,6 +49,8 @@ find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
 find_package(Tracy CONFIG REQUIRED)    
     
 find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
+
+find_package(dpp CONFIG REQUIRED)
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
 
@@ -175,6 +177,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE Tracy::TracyClient
     #OptickCore
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
+    PRIVATE dpp::dpp
 )
 
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
