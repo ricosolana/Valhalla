@@ -57,8 +57,60 @@ namespace VUtils::String {
             result.push_back(remaining);
         return result;
     }
+    
+    // Java code ported from Apache commons-lang-3.12.0
+    int LevenshteinDistance(std::string_view s, std::string_view t) {
+        int n = s.length();
+        int m = t.length();
 
+        if (n == 0) {
+            return m;
+        }
+        else if (m == 0) {
+            return n;
+        }
 
+        if (n > m) {
+            std::swap(s, t);
+            std::swap(m, n);
+        }
+
+        std::vector<int> p;
+        
+        //final int[] p = new int[n + 1];
+        // indexes into strings s and t
+        int i {}; // iterates through s
+        int j {}; // iterates through t
+        int upper_left {};
+        int upper {};
+
+        char t_j {}; // jth character of t
+        int cost {};
+
+        for (i = 0; i <= n; i++) {
+            //p[i] = i;
+            p.push_back(i);
+        }
+
+        for (j = 1; j <= m; j++) {
+            upper_left = p[0];
+            //t_j = t.charAt(j - 1);
+            t_j = t[j - 1];
+            p[0] = j;
+
+            for (i = 1; i <= n; i++) {
+                upper = p[i];
+                //cost = s.charAt(i - 1) == t_j ? 0 : 1;
+                cost = s[i - 1] == t_j ? 0 : 1;
+                // minimum of cell to the left+1, to the top+1, diagonally left and up +cost
+                //p[i] = Math.min(Math.min(p[i - 1] + 1, p[i] + 1), upper_left + cost);
+                p[i] = std::min(std::min(p[i - 1] + 1, p[i] + 1), upper_left + cost);
+                upper_left = upper;
+            }
+        }
+
+        return p[n];
+    }
     
 
 

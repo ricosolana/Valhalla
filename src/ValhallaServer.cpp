@@ -422,6 +422,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             a(m_settings.discordWebhook, discord, "webhook", "");
             a(m_settings.discordToken, discord, "token", "");
+            a(m_settings.discordGuild, discord, "guild", 0);
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";

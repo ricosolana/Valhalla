@@ -70,6 +70,8 @@ namespace VUtils::String {
 
     
 
+    int LevenshteinDistance(std::string_view s, std::string_view t);
+
     std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
 
     template<typename Iterable = std::vector<std::string_view>>

@@ -787,7 +787,7 @@ void IModManager::LoadAPI() {
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
-            [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeer(owner); },
+            [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeerByUUID(owner); },
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
         ),

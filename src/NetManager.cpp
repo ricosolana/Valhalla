@@ -24,42 +24,25 @@ INetManager* NetManager() {
 
 
 
-bool INetManager::Kick(std::string_view user) {
-    auto&& peer = GetPeerByName(user);
-    
-    if (!peer) {
-        OWNER_t uuid;
-        auto ec = std::from_chars(user.data(), user.data() + user.length(), uuid).ec;
-        if (ec != std::errc::invalid_argument && ec != std::errc::result_out_of_range)
-            peer = GetPeer(uuid);
-    }
-
+Peer* INetManager::Kick(std::string_view user) {
+    auto&& peer = GetPeer(user);
     if (peer) {
         peer->Kick();
-        return true;
     }
 
-    return false;
+    return peer;
 }
 
-bool INetManager::Ban(std::string_view user) {
-    auto&& peer = GetPeerByName(user);
-
-    if (!peer) {
-        OWNER_t uuid;
-        auto ec = std::from_chars(user.data(), user.data() + user.length(), uuid).ec;
-        if (ec != std::errc::invalid_argument && ec != std::errc::result_out_of_range)
-            peer = GetPeer(uuid);
-    }
+Peer* INetManager::Ban(std::string_view user) {
+    auto&& peer = GetPeer(user);
 
     if (peer) {
         Valhalla()->m_blacklist.insert(peer->m_socket->GetHostName());
         peer->Close(ConnectionStatus::ErrorBanned);
-        return true;
-    }
-    
-    Valhalla()->m_blacklist.insert(user);
-    return false;
+    } else    
+        Valhalla()->m_blacklist.insert(user);
+
+    return peer;
 }
 
 bool INetManager::Unban(std::string_view user) {
@@ -258,6 +241,12 @@ void INetManager::OnPeerConnect(Peer& peer) {
     m_onlinePeers.push_back(&peer);
 }
 
+Peer* INetManager::GetPeer(std::string_view any) {
+    Peer* peer = GetPeerByHost(any);
+    if (!peer) peer = GetPeerByName(any);
+    if (!peer) peer = GetPeerByUUID(std::atoll(any.data()));
+    return peer;
+}
 
 // Return the peer or nullptr
 Peer* INetManager::GetPeerByName(std::string_view name) {
@@ -269,7 +258,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeer(OWNER_t uuid) {
+Peer* INetManager::GetPeerByUUID(OWNER_t uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_uuid == uuid)
             return peer;

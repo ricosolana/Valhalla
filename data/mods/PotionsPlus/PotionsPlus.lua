@@ -10,7 +10,7 @@ end
 Config = require 'config'
 TOML = require 'toml'
 
-require('mobdebug').start()
+--require('mobdebug').start()
 
 local peers = {}
 

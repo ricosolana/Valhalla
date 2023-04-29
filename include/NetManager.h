@@ -28,15 +28,6 @@ public:
     std::string m_salt;
 
 private:
-    // Kick a player by name
-    bool Kick(std::string_view user);
-
-    // Ban a player by name
-    bool Ban(std::string_view user);
-
-    // Unban a player by name
-    bool Unban(std::string_view user);
-
     void SendDisconnect();
     void SendPlayerList();
     void SendNetTime();
@@ -45,8 +36,6 @@ private:
     void OnPeerQuit(Peer& peer);
     void OnPeerDisconnect(Peer& peer);
 
-    //void RPC_PeerInfo(NetRpc* rpc, BYTES_t bytes);
-
 public:
     void PostInit();
     void Update();
@@ -54,20 +43,22 @@ public:
     
     void OnConfigLoad(bool reloading);
 
+    // Finds a peer by either name, uuid or host
+    Peer* GetPeer(std::string_view any);
+    Peer* GetPeerByUUID(OWNER_t uuid);
     Peer* GetPeerByName(std::string_view name);
-    Peer* GetPeer(OWNER_t uuid);
     Peer* GetPeerByHost(std::string_view host);
 
-    //std::vector<Peer*> GetPeers(const std::string &addr);
-
-    //const robin_hood::unordered_map<OWNER_t, std::unique_ptr<Peer>>& GetPeers();
-
-    //void OnPeerConnect(std::unique_ptr<Peer> peer);
-
-    //void OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string& name, const Vector3f &pos);
     void OnPeerConnect(Peer& peer);
 
-    //void OnNewClient(NetRpc* rpc, OWNER_t uuid, const std::string& name, const Vector3f& pos);
+    // Kick a player by identifier
+    Peer* Kick(std::string_view user);
+
+    // Ban a player by identifier
+    Peer* Ban(std::string_view user);
+
+    // Unban a player by identifier
+    bool Unban(std::string_view user);
 
     const auto& GetPeers() {
         return m_onlinePeers;

@@ -72,7 +72,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		}
 		else {
 			if (target != VH_ID) {
-				if (auto other = NetManager()->GetPeer(target)) {
+				if (auto other = NetManager()->GetPeerByUUID(target)) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
 						return;
 

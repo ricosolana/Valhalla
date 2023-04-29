@@ -67,7 +67,7 @@ public:
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeer(target)) {
+			if (auto peer = NetManager()->GetPeerByUUID(target)) {
 				peer->RouteView(targetZDO, hash, std::forward<Args>(params)...);
 			}
 		}
@@ -98,7 +98,7 @@ public:
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeer(target))
+			if (auto peer = NetManager()->GetPeerByUUID(target))
 				peer->RouteViewLua(targetZDO, repr, args);
 		}
 		

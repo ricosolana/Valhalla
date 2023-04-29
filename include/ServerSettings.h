@@ -133,4 +133,5 @@ struct ServerSettings {
 
     std::string     discordWebhook;
     std::string     discordToken;
+    int64_t         discordGuild;
 };

@@ -864,7 +864,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		//if (prefab.FlagsPresent(Prefab::Flag::SESSIONED)
 			//&& (zdo.IsOwner(peer.m_uuid)))
 		if (prefab.AllFlagsPresent(Prefab::Flag::SESSIONED) 
-			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeer(zdo.Owner())))
+			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeerByUUID(zdo.Owner())))
 		{
 			itr = DestroyZDO(itr);
 		}
