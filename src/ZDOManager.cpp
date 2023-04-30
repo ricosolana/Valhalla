@@ -54,8 +54,9 @@ void IZDOManager::Update() {
 	// Occasionally release ZDOs
 	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK
+			if ((VH_SETTINGS.packetMode != PacketMode::PLAYBACK
 				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+				&& !peer->m_gatedPlaythrough)
 			AssignOrReleaseZDOs(*peer);
 		}
 	});
@@ -741,8 +742,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		ZoneScoped;
 
 		// Only allow if normal mode
-		if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK
+		if ((VH_SETTINGS.packetMode == PacketMode::PLAYBACK
 			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+			|| peer->m_gatedPlaythrough)
 			return;
 
 		{

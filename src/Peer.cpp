@@ -149,20 +149,6 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 
-void Peer::ChatMessage(std::string_view text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, std::string_view senderID) {
-    this->Route(Hashes::Routed::ChatMessage,
-        pos, //Vector3f(10000, 10000, 10000),
-        type,
-        profile, //"<color=yellow><b>SERVER</b></color>",
-        text,
-        senderID //""
-    );
-}
-
-void Peer::UIMessage(std::string_view text, UIMsgType type) {
-    this->Route(Hashes::Routed::S2C_UIMessage, type, text);
-}
-
 ZDO* Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }

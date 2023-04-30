@@ -238,6 +238,13 @@ void INetManager::OnPeerConnect(Peer& peer) {
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
 
+    if (VH_SETTINGS.discordAccountLinking) {
+        peer.m_gatedPlaythrough = !DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName());
+        if (peer.m_gatedPlaythrough) {
+            DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = VUtils::Random::GenerateAlphaNum(4);
+        }
+    }
+
     m_onlinePeers.push_back(&peer);
 }
 

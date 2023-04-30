@@ -423,6 +423,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordWebhook, discord, "webhook", "");
             a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
             a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
+            a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
 
             if (m_settings.serverPassword.empty())
@@ -722,6 +723,8 @@ void IValhalla::PeriodUpdate() {
     });
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
+
+    DiscordManager()->PeriodUpdate();
 
     if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();

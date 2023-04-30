@@ -76,6 +76,9 @@ private:
     std::jthread m_recordThread;
 
 public:
+    bool m_gatedPlaythrough = false;
+
+public:
     UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend;
     UNORDERED_SET_t<ZDOID> m_invalidSector;
@@ -290,15 +293,37 @@ public:
     }
 
     // Show a specific chat message
-    void ChatMessage(std::string_view text, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, std::string_view senderID);
-    // Show a chat message
-    void ChatMessage(std::string_view text) {
-        //ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), "<color=yellow><b>SERVER</b></color>", "");
-
-        auto profile = UserProfile("", "<color=yellow><b>SERVER</b></color>", "");
-
-        ChatMessage(text, ChatMsgType::Normal, Vector3f(10000, 10000, 10000), profile, "");
+    void ChatMessage(std::string_view msg, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, std::string_view senderID) {
+        this->Route(Hashes::Routed::ChatMessage,
+            pos,
+            type,
+            profile,
+            msg,
+            senderID
+        );
     }
+    // Show a chat message (string, string_view, tuple<Strings...>
+    void ChatMessage(std::string_view msg) {
+        this->Route(Hashes::Routed::ChatMessage,
+            Vector3f(10000, 10000, 10000),
+            ChatMsgType::Normal,
+            std::string_view(""), std::string_view("<color=yellow><b>SERVER</b></color>"), std::string_view(""),
+            msg,
+            ""
+        );
+    }
+    // Show a chat message (string concat pack)
+    template<typename ...Strings>
+    void ChatMessage(const std::tuple<Strings...>& msg) {
+        this->Route(Hashes::Routed::ChatMessage,
+            Vector3f(10000, 10000, 10000),
+            ChatMsgType::Normal,
+            std::string_view(""), std::string_view("<color=yellow><b>SERVER</b></color>"), std::string_view(""),
+            msg,
+            ""
+        );
+    }
+
     // Show a console message
     template<typename ...Strings>
     void ConsoleMessage(const std::tuple<Strings...>& msg) {
@@ -308,15 +333,34 @@ public:
         return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
     }
 
+private:
     // Show a screen message
-    void UIMessage(std::string_view text, UIMsgType type);
+    void UIMessage(std::string_view msg, UIMsgType type) {
+        this->Route(Hashes::Routed::S2C_UIMessage, type, msg);
+    }
+    template<typename ...Strings>
+    void UIMessage(const std::tuple<Strings...>& msg, UIMsgType type) {
+        this->Route(Hashes::Routed::S2C_UIMessage, type, msg);
+    }
+
+public:
     // Show a corner screen message
-    decltype(auto) CornerMessage(std::string_view text) {
-        return UIMessage(text, UIMsgType::TopLeft);
+    void CornerMessage(std::string_view msg) {
+        return UIMessage(msg, UIMsgType::TopLeft);
+    }
+    template<typename ...Strings>
+    void CornerMessage(const std::tuple<Strings...>& msg) {
+        return UIMessage(msg, UIMsgType::TopLeft);
+    }
+
+    // Show a center screen message
+    void CenterMessage(std::string_view msg) {
+        return UIMessage(msg, UIMsgType::Center);
     }
     // Show a center screen message
-    decltype(auto) CenterMessage(std::string_view text) {
-        return UIMessage(text, UIMsgType::Center);
+    template<typename ...Strings>
+    void CenterMessage(const std::tuple<Strings...>& msg) {
+        return UIMessage(msg, UIMsgType::Center);
     }
 
 

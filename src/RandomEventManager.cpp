@@ -7,6 +7,7 @@
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
 #include "Prefab.h"
+#include "DiscordManager.h"
 
 auto RANDOM_EVENT_MANAGER(std::make_unique<IRandomEventManager>());
 IRandomEventManager *RandomEventManager() {
@@ -66,6 +67,8 @@ void IRandomEventManager::Update() {
 			m_activeEventTimer += Valhalla()->Delta();
 
 		if (m_activeEventTimer > this->m_activeEvent->m_duration) {
+			VH_DISPATCH_WEBHOOK("Random event stopped: `" + this->m_activeEvent->m_name + "`");
+
 			m_activeEvent = nullptr;
 			m_activeEventPos = Vector3f::Zero();
 		}
@@ -85,6 +88,8 @@ void IRandomEventManager::Update() {
 					this->m_activeEventTimer = 0;
 
 					LOG(INFO) << "Set current random event: " << e.get().m_name;
+
+					VH_DISPATCH_WEBHOOK("Random event started in world `" + this->m_activeEvent->m_name + "`");
 
 					// send event
 					//SendCurrentRandomEvent();

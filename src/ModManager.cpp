@@ -330,16 +330,12 @@ void IModManager::LoadAPI() {
         // member functions
         "Kick", sol::resolve<void ()>(&Peer::Kick),
         // message functions
-        "ChatMessage", sol::overload(
-            // TODO fix this
-            //sol::resolve<void(const std::string&, ChatMsgType, const Vector3f&, const std::string&, const std::string&)>(&Peer::ChatMessage),
-            sol::resolve<void (std::string_view)>(&Peer::ChatMessage)
-        ),
+        "ChatMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::ChatMessage),
         "ConsoleMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::ConsoleMessage),
         //"ConsoleMessage", sol::resolve<void(std::string_view)>(&Peer::ConsoleMessage),
         //"ConsoleMessage", &Peer::ConsoleMessage,
-        "CornerMessage", &Peer::CornerMessage,
-        "CenterMessage", &Peer::CenterMessage,
+        "CornerMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::CornerMessage),
+        "CenterMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::CenterMessage),
         // misc functions
         "Teleport", sol::overload(
             sol::resolve<void (const Vector3f& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
