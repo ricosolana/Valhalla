@@ -40,27 +40,47 @@ void IDiscordManager::Init() {
 		}
 	});
 
-	m_bot->on_slashcommand([](const dpp::slashcommand_t& event) {
-		Valhalla()->RunTask([=](Task&) {
-			auto&& label = event.command.get_command_name();
+	m_bot->on_slashcommand([this](const dpp::slashcommand_t& event) {
+		//event.thinking(true);
+
+		auto&& label = event.command.get_command_name();
+
+		if (label == "vhfreset") {
+			event.reply("Deleted all commands");
+			auto&& commands = m_bot->global_commands_get_sync();
+			for (auto&& command : commands) {
+				if (command.second.name == "vhfreset"
+					|| command.second.name == "vhfreg")
+					continue;
+				m_bot->global_command_delete_sync(command.first);
+			}
+		}
+		else {
+			Valhalla()->RunTask([=](Task&) {
 
 			if (label == "vhkick") {
 				auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 				if (auto peer = NetManager()->Kick(identifier))
-					event.reply("Kicked " + peer->m_name + "(" + peer->m_socket->GetHostName() + ")");
-				else 
+					event.reply("Kicked " + peer->m_name + " (" + peer->m_socket->GetHostName() + ")");
+				else
 					event.reply("Player not found");
 			}
 			else if (label == "vhban") {
 				auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 				if (auto peer = NetManager()->Ban(identifier))
-					event.reply("Banned " + peer->m_name + "(" + peer->m_socket->GetHostName() + ")");
+					event.reply("Banned " + peer->m_name + " (" + peer->m_socket->GetHostName() + ")");
 				else
 					event.reply("Player not found");
 			}
 			else if (label == "vhwhitelist") {
-				VH_SETTINGS.playerWhitelist = std::get<bool>(event.get_parameter("flag"));
-				event.reply(std::string("Whitelist ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+				auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+				if (flag) {
+					VH_SETTINGS.playerWhitelist = *flag;
+					event.reply(std::string("Whitelist is now ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+				}
+				else {
+					event.reply(std::string("The whitelist is ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+				}
 			}
 			else if (label == "vhpardon") {
 				auto&& host = std::get<std::string>(event.get_parameter("host"));
@@ -84,28 +104,97 @@ void IDiscordManager::Init() {
 			}
 			else if (label == "vhmessage") {
 				auto&& message = std::get<std::string>(event.get_parameter("message"));
-				auto&& identifier = std::get<std::string>(event.get_parameter("message"));
+				auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 				if (auto peer = NetManager()->GetPeer(identifier)) {
 					peer->CenterMessage(message);
 					event.reply("Sent message to player");
-				} else 
+				}
+				else
 					event.reply("Player not found");
 			}
 			else if (label == "vhwhois") {
 				auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 				if (auto peer = NetManager()->GetPeer(identifier)) {
 					event.reply("Name: " + peer->m_name + "\n"
-							+ "Uuid: " + std::to_string(peer->m_uuid) + "\n"
-							+ "Host: " + peer->m_socket->GetHostName() + "\n"
-							+ "Address" + peer->m_socket->GetAddress());
+						+ "Uuid: " + std::to_string(peer->m_uuid) + "\n"
+						+ "Host: " + peer->m_socket->GetHostName() + "\n"
+						+ "Address: " + peer->m_socket->GetAddress());
 				}
 				else
 					event.reply("Player not found");
 			}
 			else if (label == "vhtime") {
-				//auto&& time = 
+				event.reply("Server time is "
+					+ std::to_string(duration_cast<seconds>(Valhalla()->Elapsed()).count()) + "s");
 			}
-		});
+			else if (label == "vhworldtime") {
+				auto&& time = std::get_if<double>(&event.get_parameter("time"));
+				if (time) {
+					Valhalla()->SetWorldTime(*time);
+					event.reply("Set world time to " + std::to_string(*time));
+				}
+				else {
+					event.reply("World time is " + std::to_string(Valhalla()->GetWorldTime()));
+				}
+			}
+			else if (label == "vhtod") {
+				auto&& time = std::get_if<std::string>(&event.get_parameter("time"));
+				if (time) {
+					char ch = (*time)[0];
+					Valhalla()->SetTimeOfDay(ch == 'M' ? TIME_MORNING : ch == 'D' ? TIME_DAY : ch == 'A' ? TIME_AFTERNOON : TIME_NIGHT);
+					event.reply("Set world time to " + *time);
+				}
+				else {
+					event.reply(std::string("It is currently ") 
+						+ (Valhalla()->IsMorning() ? "morning" : Valhalla()->IsDay() ? "day" : Valhalla()->IsAfternoon() ? "afternoon" : "night"));
+				}
+			}
+			else if (label == "vhlua") {
+				event.thinking(true);
+				auto&& script = std::get<std::string>(event.get_parameter("script"));
+				try {
+					ModManager()->m_state.safe_script(script);
+					m_bot->interaction_followup_create(event.command.token, 
+						std::string("Script success"), 
+						[](const dpp::confirmation_callback_t&) {});
+				}
+				catch (const std::exception& e) {
+					//event.reply(std::string("Script failed to run: \n") + e.what());
+					m_bot->interaction_followup_create(event.command.token, 
+						std::string("Script error: \n") + e.what(), 
+						[](const dpp::confirmation_callback_t&) {});
+				}
+			}
+			else if (label == "vhscript") {
+				event.thinking(true);
+				auto&& script = std::get<std::string>(event.get_parameter("script"));
+				try {
+					ModManager()->m_state.safe_script(script);
+					m_bot->interaction_followup_create(event.command.token,
+						std::string("Script success"),
+						[](const dpp::confirmation_callback_t&) {});
+				}
+				catch (const std::exception& e) {
+					//event.reply(std::string("Script failed to run: \n") + e.what());
+					m_bot->interaction_followup_create(event.command.token,
+						std::string("Script error: \n") + e.what(),
+						[](const dpp::confirmation_callback_t&) {});
+				}
+			}
+			else if (label == "vhlist") {
+				if (NetManager()->GetPeers().empty()) {
+					event.reply("No players are online");
+				}
+				else {
+					std::string msg = std::to_string(NetManager()->GetPeers().size()) + " players are online\n";
+					for (auto&& peer : NetManager()->GetPeers()) {
+						msg += " - " + peer->m_name + "\n";
+					}
+					event.reply(msg);
+				}
+			}
+			});
+		}
 	});
 
 	m_bot->on_autocomplete([this](const dpp::autocomplete_t& evt) {
@@ -150,20 +239,43 @@ void IDiscordManager::Init() {
 
 	m_bot->on_ready([this](const dpp::ready_t& evt) {
 		if (dpp::run_once<struct register_bot_commands>()) {
+			//LOG(WARNING) << "Deleting old guild commands...";
+
+			/*
+			m_bot->guild_commands_get(VH_SETTINGS.discordGuild, [this](const dpp::confirmation_callback_t& event) {
+				if (event.is_error()) {
+					LOG(WARNING) << "Failed to get slash command map";
+				}
+				else {
+					auto&& commands = std::get<dpp::slashcommand_map>(event.value);
+					for (auto&& command : commands) {
+						m_bot->guild_command_delete(command.first, VH_SETTINGS.discordGuild);
+					}
+				}
+			});*/
+			//static constexpr int szzsd = sizeof(std::variant<int, float, std::string>);
+			//if (VH_SETTINGS.discordDeleteCommands) {
+			//	auto&& commands = m_bot->global_commands_get_sync();
+			//	for (auto&& command : commands) {
+			//		m_bot->global_command_delete_sync(command.first);
+			//	}
+			//}
 
 			m_bot->guild_bulk_command_create({
+				dpp::slashcommand("vhfreset", "Delete all commands", m_bot->me.id)
+					.set_default_permissions(0),
 				dpp::slashcommand("vhkick", "Kick a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host", true).set_auto_complete(true))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_kick_members), // 0 is admins only
 				dpp::slashcommand("vhban", "Ban a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host", true).set_auto_complete(true))
-					.set_default_permissions(0), // 0 is admins only
-				dpp::slashcommand("vhwhitelist", "Enable/disable whitelist", m_bot->me.id)
-					.add_option(dpp::command_option(dpp::co_boolean, "flag", "enable/disable", true))
+					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
+				dpp::slashcommand("vhwhitelist", "Whitelist information", m_bot->me.id)
+					.add_option(dpp::command_option(dpp::co_boolean, "flag", "enable/disable"))
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhpardon", "Unban a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "host", "host", true))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
 				dpp::slashcommand("vhsave", "Save the world", m_bot->me.id)
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhstop", "Shutdown the server", m_bot->me.id)
@@ -178,11 +290,11 @@ void IDiscordManager::Init() {
 				dpp::slashcommand("vhwhois", "Get player information", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host", true).set_auto_complete(true))
 					.set_default_permissions(0), // 0 is admins only
-				dpp::slashcommand("vhtime", "Get or set server time", m_bot->me.id)
-					.add_option(dpp::command_option(dpp::co_number, "time", "server time"))
-					.set_default_permissions(0), // 0 is admins only
+				dpp::slashcommand("vhtime", "Get the server time", m_bot->me.id)
+					//.add_option(dpp::command_option(dpp::co_number, "time", "server time"))
+					.set_default_permissions(dpp::permissions::p_use_application_commands), // 0 is admins only
 				dpp::slashcommand("vhworldtime", "Get or set world time", m_bot->me.id)
-					.add_option(dpp::command_option(dpp::co_number, "identifier", "world time"))
+					.add_option(dpp::command_option(dpp::co_number, "time", "world time"))
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhtod", "Get or set time of day", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "time", "time of day")
@@ -191,15 +303,15 @@ void IDiscordManager::Init() {
 						.add_choice(dpp::command_option_choice("Afternoon", std::string("Afternoon")))
 						.add_choice(dpp::command_option_choice("Night", std::string("Night")))
 					).set_default_permissions(0), // 0 is admins only
-				dpp::slashcommand("vhlua", "Run a Lua sample", m_bot->me.id)
+				dpp::slashcommand("vhlua", "Run a Lua script from string", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "script", "script text", true))
 					.set_default_permissions(0), // 0 is admins only
-				dpp::slashcommand("vhscript", "Run a Lua script file", m_bot->me.id)
+				dpp::slashcommand("vhscript", "Run a Lua script from file", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_attachment, "script", "lua file", true))
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhlist", "List currently online players", m_bot->me.id)
 			}, VH_SETTINGS.discordGuild);
-
+			
 			//dpp::slashcommand cmd("vh", "The Valhalla server command", m_bot->me.id);
 
 			/*
@@ -251,9 +363,18 @@ void IDiscordManager::SendSimpleMessage(std::string_view msg) {
 	if (VH_SETTINGS.discordWebhook.empty())
 		return;
 
+	auto&& webhook = dpp::webhook(VH_SETTINGS.discordWebhook);
+
+	m_bot->execute_webhook(webhook, dpp::message(std::string(msg)));
+
+	/*
+	if (VH_SETTINGS.discordWebhook.empty())
+		return;
+
 	std::string json = "{ \"content\": \"" + std::string(msg) + "\" }";
 	auto bytes = BYTES_t(json.data(), json.data() + json.length());
 	DispatchRequest(VH_SETTINGS.discordWebhook, std::move(bytes));
+	*/
 }
 
 void IDiscordManager::DispatchRequest(std::string_view webhook, BYTES_t payload) {	

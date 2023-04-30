@@ -32,7 +32,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 
-add_compile_definitions(WIN32_LEAN_AND_MEAN)
+#add_compile_definitions(WIN32_LEAN_AND_MEAN)
 #add_compile_definitions(VC_EXTRALEAN)
 
 ############
@@ -54,7 +54,7 @@ find_package(dpp CONFIG REQUIRED)
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
 
-remove_definitions(SOL_PRINT_ERRORS)
+#remove_definitions(SOL_PRINT_ERRORS)
 
 #target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
 
@@ -92,8 +92,6 @@ if (LINUX)
         ELPP_STL_LOGGING
     )
 endif ()
-
-
 
 # optick profiler
 #   seems abandoned since last year
@@ -205,7 +203,6 @@ endif()
 #set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
     #RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 #)
-
 
 
 set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 

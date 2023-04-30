@@ -421,8 +421,9 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.packetPlaybackSessionIndex, packet, "playback-session", -1, nullptr, reloading);
 
             a(m_settings.discordWebhook, discord, "webhook", "");
-            a(m_settings.discordToken, discord, "token", "");
-            a(m_settings.discordGuild, discord, "guild", 0);
+            a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
+            a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
+            //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
 
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
