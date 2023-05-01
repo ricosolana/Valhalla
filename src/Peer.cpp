@@ -51,7 +51,11 @@ Peer::Peer(ISocket::Ptr socket)
                     return rpc->Close(ConnectionStatus::ErrorDisconnected);
             }
 
-            if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK && password != NetManager()->m_password)
+            if (
+#ifdef VH_OPTION_ENABLE_CAPTURE
+                VH_SETTINGS.packetMode != PacketMode::PLAYBACK && 
+#endif
+                password != NetManager()->m_password)
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
@@ -123,6 +127,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
         if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {
@@ -132,6 +137,7 @@ void Peer::Update() {
             this->m_captureQueueSize += bytes.size();
             this->m_recordBuffer.push_back({ ns, std::move(bytes) });
         }
+#endif
     }
 
     if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) {

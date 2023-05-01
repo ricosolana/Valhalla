@@ -105,6 +105,7 @@ private:
 //#endif
 };
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
 // Experimental class for replaying client actions
 class ReplaySocket : public ISocket {
 private:
@@ -135,3 +136,4 @@ public:
     unsigned int GetPing() const override;
 
 };
+#endif

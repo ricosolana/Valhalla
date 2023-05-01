@@ -1,3 +1,4 @@
+#ifdef VH_OPTION_ENABLE_CAPTURE
 #include "NetSocket.h"
 #include "VUtilsResource.h"
 #include "DataReader.h"
@@ -121,3 +122,5 @@ bool ReplaySocket::Connected() const { return !m_thread.get_stop_token().stop_re
 unsigned int ReplaySocket::GetSendQueueSize() const { return 0; }
 
 unsigned int ReplaySocket::GetPing() const { return 0; }
+
+#endif 

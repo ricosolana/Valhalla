@@ -137,33 +137,29 @@ namespace VUtils::Resource {
         }
 
         return VUtils::String::template Split<Iterable>(out, '\n', includeBlanks);
-
-        /*
-        auto size = out.size();
-        auto data = out.data();
-
-        Iterable lines{};
-
-        int lineIdx = -1;
-        int lineSize = 0;
-        for (int i = 0; i < size; i++) {
-            lineSize = i - lineIdx - 1;
-
-            if (data[i] == '\n') {
-                if (lineSize || includeBlanks) {
-                    lines.push_back(Iterable::value_type(data + lineIdx + 1, lineSize));
-                }
-                lineIdx = i;
-            }
-        }
-
-        // this includes last line ONLY if it is not blank (has at least 1 character)
-        if (lineIdx < size - 1) {
-            lines.push_back(Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
-        }
-
-        return lines;*/
     }
+
+    /*
+    // Map overload to read in pairs
+    template<typename Iterable> requires
+        (VUtils::Traits::is_iterable_v<Iterable>
+            && VUtils::Traits::has_key_type_v<Iterable>)
+        std::optional<Iterable> ReadFile(const fs::path& path) 
+    {
+        auto opt = ReadFile<std::string>(path);
+        if (opt) {
+            Iterable result{};
+            for 
+
+            //out = std::move(opt.value());
+
+
+
+
+            return VUtils::String::template Split<Iterable>(out, '\n', includeBlanks);
+        }
+    }*/
+
 
 
         

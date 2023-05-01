@@ -114,5 +114,19 @@ namespace VUtils {
         template <typename T>
         constexpr bool has_value_type_v = has_value_type<T>::value;
 
+
+
+        template <typename T, typename = void>
+        struct has_key_type : std::false_type {};
+
+        template <typename T>
+        struct has_key_type<T, std::void_t<typename T::key_type
+        >
+        > : std::true_type {};
+
+        // Here is a helper:
+        template <typename T>
+        constexpr bool has_key_type_v = has_key_type<T>::value;
+
     }
 }

@@ -51,15 +51,25 @@ void IZDOManager::Update() {
 
 	auto&& peers = NetManager()->GetPeers();
 	
+#ifdef VH_OPTION_ENABLE_CAPTURE
 	// Occasionally release ZDOs
 	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			if ((VH_SETTINGS.packetMode != PacketMode::PLAYBACK
-				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
+			if (
+				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK
+				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) 
 				&& !peer->m_gatedPlaythrough)
 			AssignOrReleaseZDOs(*peer);
 		}
 	});
+#else // macro expansion screwed this up
+	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
+		for (auto&& peer : peers) {
+			if (!peer->m_gatedPlaythrough)
+				AssignOrReleaseZDOs(*peer);
+		}
+	});
+#endif
 
 	// Send ZDOS:
 	PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
@@ -742,9 +752,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		ZoneScoped;
 
 		// Only allow if normal mode
-		if ((VH_SETTINGS.packetMode == PacketMode::PLAYBACK
-			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))
-			|| peer->m_gatedPlaythrough)
+		if (
+#ifdef VH_OPTION_ENABLE_CAPTURE
+			(VH_SETTINGS.packetMode == PacketMode::PLAYBACK
+			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) ||
+#endif
+			peer->m_gatedPlaythrough)
 			return;
 
 		{

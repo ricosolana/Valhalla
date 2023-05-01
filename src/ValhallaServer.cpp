@@ -60,7 +60,19 @@ namespace YAML {
         }
     };
 
+    // TODO see
+    // ...\vcpkg\installed\x64-windows\include\yaml-cpp\binary.h
+    // some ideas for datareader/datawriter buffer ownership
+    //  basically use to have a single simple class for reading and another for writing, instead of 2 for ownership/observing
+    //  it will *really* simplify the flow
+    //  just use throws when doing an illegal operation?
+    //      i like performance though, not sure how much of a difference it makes
+    //      
 
+    // also see
+    // ...\vcpkg\installed\x64-windows\include\yaml-cpp\convert.h
+    // some ideas for more specific generics within a known type
+    //  basically use to remove a bunch of std::chrono::duration template overloads below
 
 
 
@@ -75,6 +87,7 @@ namespace YAML {
             else if (index > 0) {
                 switch (ch) {
                 case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
+                case 't': out = duration_cast<T>(TICKS_t(dur)); return true;
                 case 'u': out = duration_cast<T>(microseconds(dur)); return true;
                 case 'm': out = duration_cast<T>(milliseconds(dur)); return true;
                 case 's': out = duration_cast<T>(seconds(dur)); return true;
@@ -92,13 +105,42 @@ namespace YAML {
         return false;
     };
 
-    template<>
-    struct convert<nanoseconds> {
-        static Node encode(const nanoseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "ns");
+    template<typename Rep, typename Period>
+    struct convert<duration<Rep, Period>> {
+        static Node encode(const duration<Rep, Period>& rhs) {
+            //using D = std::remove_reference_t<std::remove_const_t<decltype(rhs)>>;
+            using D = std::remove_cvref_t<decltype(rhs)>;
+
+            if constexpr (std::is_same_v<D, nanoseconds>)
+                return Node(std::to_string(rhs.count()) + "ns");
+            else if constexpr (std::is_same_v<D, TICKS_t>)
+                return Node(std::to_string(rhs.count()) + "ticks");
+            else if constexpr (std::is_same_v<D, microseconds>)
+                return Node(std::to_string(rhs.count()) + "us");
+            else if constexpr (std::is_same_v<D, milliseconds>)
+                return Node(std::to_string(rhs.count()) + "ms");
+            else if constexpr (std::is_same_v<D, seconds>)
+                return Node(std::to_string(rhs.count()) + "s");
+            else if constexpr (std::is_same_v<D, minutes>)
+                return Node(std::to_string(rhs.count()) + "Minutes");
+            else if constexpr (std::is_same_v<D, hours>)
+                return Node(std::to_string(rhs.count()) + "hours");
+            else if constexpr (std::is_same_v<D, days>)
+                return Node(std::to_string(rhs.count()) + "days");
+            else if constexpr (std::is_same_v<D, weeks>)
+                return Node(std::to_string(rhs.count()) + "weeks");
+            else if constexpr (std::is_same_v<D, months>)
+                return Node(std::to_string(rhs.count()) + "onths");
+            else if constexpr (std::is_same_v<D, years>)
+                return Node(std::to_string(rhs.count()) + "years");
+
+            assert(false);
+            return Node(std::to_string(rhs.count()) + "?durationtype");
+            //else if constexpr (true)
+                //static_assert(false, "Unsupported type provided to convert");
         }
 
-        static bool decode(const Node& node, nanoseconds& rhs) {
+        static bool decode(const Node& node, duration<Rep, Period>& rhs) {
             if (!node.IsScalar())
                 return false;
 
@@ -109,148 +151,73 @@ namespace YAML {
     };
 
     template<>
-    struct convert<microseconds> {
-        static Node encode(const microseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "us");
+    struct convert<dpp::snowflake> {
+        static Node encode(const dpp::snowflake& rhs) {
+            return Node(std::to_string((uint64_t)rhs));
         }
 
-        static bool decode(const Node& node, microseconds& rhs) {
+        static bool decode(const Node& node, dpp::snowflake& rhs) {
             if (!node.IsScalar())
                 return false;
 
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
+            rhs = node.as<int64_t>();
+            return true;
         }
     };
 
-    template<>
-    struct convert<milliseconds> {
-        static Node encode(const milliseconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "ms");
+    template<typename K, typename V, typename Hash, typename Eq, typename Alloc, typename Bucket> // = ankerl::unordered_dense::hash<K>>
+    struct convert<ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket>> {
+        static Node encode(const ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket>& rhs) {
+            Node node(NodeType::Map);
+            for (const auto& element : rhs)
+                node.force_insert(element.first, element.second);
+            return node;
         }
 
-        static bool decode(const Node& node, milliseconds& rhs) {
-            if (!node.IsScalar())
+        static bool decode(const Node& node, ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket>& rhs) {
+            if (!node.IsMap())
                 return false;
 
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
+            rhs.clear();
+            for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+                // workaround for GCC 3:
+                rhs[element.first.template as<K>()] = element.second.template as<V>();
+#else
+                rhs[element.first.as<K>()] = element.second.as<V>();
+#endif
+            return true;
         }
     };
 
-    template<>
-    struct convert<seconds> {
-        static Node encode(const seconds& rhs) {
-            return Node(std::to_string(rhs.count()) + "s");
+    template<typename K, typename Hash, typename Eq, typename Alloc, typename Bucket> // = ankerl::unordered_dense::hash<K>>
+    struct convert<ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket>> {
+        static Node encode(const ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket>& rhs) {
+            Node node(NodeType::Sequence);
+            for (const auto& element : rhs)
+                node.push_back(element);
+            return node;
         }
 
-        static bool decode(const Node& node, seconds& rhs) {
-            if (!node.IsScalar())
+        static bool decode(const Node& node, ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket>& rhs) {
+            if (!node.IsSequence())
                 return false;
 
-            auto&& s = node.Scalar();
+            rhs.clear();
+            for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+                // workaround for GCC 3:
 
-            return parseDuration(node.Scalar(), rhs);
+                rhs.insert(element.template as<K>());
+#else
+                rhs.insert(element.as<K>());
+#endif
+            return true;
         }
     };
 
-    template<>
-    struct convert<minutes> {
-        static Node encode(const minutes& rhs) {
-            return Node(std::to_string(rhs.count()) + "Min");
-        }
 
-        static bool decode(const Node& node, minutes& rhs) {
-            if (!node.IsScalar())
-                return false;
 
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-    template<>
-    struct convert<hours> {
-        static Node encode(const hours& rhs) {
-            return Node(std::to_string(rhs.count()) + "hours");
-        }
-
-        static bool decode(const Node& node, hours& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-    template<>
-    struct convert<days> {
-        static Node encode(const days& rhs) {
-            return Node(std::to_string(rhs.count()) + "days");
-        }
-
-        static bool decode(const Node& node, days& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-    template<>
-    struct convert<weeks> {
-        static Node encode(const weeks& rhs) {
-            return Node(std::to_string(rhs.count()) + "weeks");
-        }
-
-        static bool decode(const Node& node, weeks& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-    template<>
-    struct convert<months> {
-        static Node encode(const months& rhs) {
-            return Node(std::to_string(rhs.count()) + "onths");
-        }
-
-        static bool decode(const Node& node, months& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-    template<>
-    struct convert<years> {
-        static Node encode(const years& rhs) {
-            return Node(std::to_string(rhs.count()) + "years");
-        }
-
-        static bool decode(const Node& node, years& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            auto&& s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
 }
 
 template<class T>
@@ -376,8 +343,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.worldVegetation, world, "vegetation", true);
             a(m_settings.worldCreatures, world, "creatures", true);
 
-            if (m_settings.packetMode == PacketMode::CAPTURE)
-                m_settings.packetCaptureSessionIndex++;           
+
             
             a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s || val > 1s; });
             a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
@@ -415,29 +381,46 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
             a(m_settings.eventsRequireKeys, events, "require-keys", true);
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
             a(m_settings.packetMode, packet, "mode", PacketMode::NORMAL, nullptr, reloading);
             a(m_settings.packetFileUpperSize, packet, "file-size", 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);
             a(m_settings.packetCaptureSessionIndex, packet, "capture-session", -1, nullptr, reloading);
             a(m_settings.packetPlaybackSessionIndex, packet, "playback-session", -1, nullptr, reloading);
+
+            if (m_settings.packetMode == PacketMode::CAPTURE)
+                m_settings.packetCaptureSessionIndex++;
+#endif
 
             a(m_settings.discordWebhook, discord, "webhook", "");
             a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
             a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
             a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
-
+             
             if (m_settings.serverPassword.empty())
                 LOG(WARNING) << "Server does not have a password";
             else
                 LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
             if (m_settings.packetMode == PacketMode::CAPTURE) {
                 LOG(WARNING) << "Experimental packet capture enabled";
             }
             else if (m_settings.packetMode == PacketMode::PLAYBACK) {
                 LOG(WARNING) << "Experimental packet playback enabled";
             }
+#endif
         }
+        // DataReader = 24bytes
+        static constexpr int sfdds = sizeof(DataReader);
+
+        // vector = 32 bytes
+        //  8bytes: buffer
+        //  8bytes: capacity
+        //  8bytes: size
+        //  8bytes: ?
+        //static constexpr int sfdds2 = sizeof(std::vector<char>::);
+        BYTES_t vec;
 
         if (!reloading) {
             YAML::Emitter out;
@@ -446,8 +429,11 @@ void IValhalla::LoadFiles(bool reloading) {
 
             VUtils::Resource::WriteFile("server.yml", out.c_str());
         }
-
+        //auto mymap = node.as<UNORDERED_MAP_t<std::string, uint64_t>>();
+        //auto&& mymap = node.as<std::map<std::string, uint64_t>>();
     }
+
+    
     
     LOG(INFO) << "Server config loaded";
 
@@ -525,7 +511,65 @@ void IValhalla::LoadFiles(bool reloading) {
 
         VUtils::Resource::WriteFile("server.yml", out.c_str());
     }*/
+    
+    // TODO use containers yml directly 
+    //std::vector<int> vec = discord.as<std::vector<int>>();
+    // ...
+    
+    if (auto&& opt = VUtils::Resource::ReadFile<std::string>("blacklist.yml")) {
+        try {
+            auto node = YAML::Load(*opt);
+            m_blacklist = node.as<decltype(m_blacklist)>();
+        }
+        catch (const YAML::Exception& e) {
+            LOG(ERROR) << e.what();
+        }
+    }
 
+    if (auto&& opt = VUtils::Resource::ReadFile<std::string>("whitelist.yml")) {
+        try {
+            auto node = YAML::Load(*opt);
+            m_whitelist = node.as<decltype(m_whitelist)>();
+        }
+        catch (const YAML::Exception& e) {
+            LOG(ERROR) << e.what();
+        }
+    }
+
+    if (auto&& opt = VUtils::Resource::ReadFile<std::string>("admin.yml")) {
+        try {
+            auto node = YAML::Load(*opt);
+            m_admin = node.as<decltype(m_admin)>();
+        }
+        catch (const YAML::Exception& e) {
+            LOG(ERROR) << e.what();
+        }
+    }
+
+    /*
+    if (auto&& opt = VUtils::Resource::ReadFile<std::string>("users.yml")) {
+        try {
+            auto node = YAML::Load(*opt);
+            m_admin = node.as<decltype(m_admin)>();
+        }
+        catch (const YAML::Exception& e) {
+            LOG(ERROR) << e.what();
+        }
+    }*/
+
+    if (m_settings.discordAccountLinking) {
+        if (auto&& opt = VUtils::Resource::ReadFile<std::string>("linked.yml")) {
+            try {
+                auto node = YAML::Load(*opt);
+                DiscordManager()->m_linkedAccounts = node.as<decltype(IDiscordManager::m_linkedAccounts)>();
+            }
+            catch (const YAML::Exception& e) {
+                LOG(ERROR) << e.what();
+            }
+        }
+    }
+
+    /*
     if (auto opt = VUtils::Resource::ReadFile<decltype(m_blacklist)>("blacklist.txt")) {
         m_blacklist = *opt;
     }
@@ -537,7 +581,14 @@ void IValhalla::LoadFiles(bool reloading) {
 
     if (auto opt = VUtils::Resource::ReadFile<decltype(m_admin)>("admin.txt")) {
         m_admin = *opt;
-    }
+    }*/
+
+    /*
+    if (m_settings.discordAccountLinking) {
+        if (auto opt = VUtils::Resource::ReadFile<) {
+
+        }
+    }*/
 
     if (reloading) {
         // then iterate players, settings active and inactive
@@ -551,7 +602,7 @@ void IValhalla::LoadFiles(bool reloading) {
 #ifdef _WIN32
     {
         //std::string title = m_settings.serverName + " - " + VConstants::GAME;
-        std::string title = "Valhalla " + std::string(VH_SERVER_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+        std::string title = "Valhalla " + std::string(VH_VERSION) + " - Valheim " + std::string(VConstants::GAME);
         SetConsoleTitle(title.c_str());
     }
 #endif
@@ -569,7 +620,7 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {
-    LOG(INFO) << "Starting Valhalla " << VH_SERVER_VERSION << " (Valheim " << VConstants::GAME << ")";
+    LOG(INFO) << "Starting Valhalla " << VH_VERSION << " (Valheim " << VConstants::GAME << ")";
     
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
@@ -683,13 +734,55 @@ void IValhalla::Start() {
 
     ModManager()->Uninit();
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
+#endif
         WorldManager()->GetWorld()->WriteFiles();
 
-    VUtils::Resource::WriteFile("blacklist.txt", m_blacklist);
-    VUtils::Resource::WriteFile("whitelist.txt", m_whitelist);
-    VUtils::Resource::WriteFile("admin.txt", m_admin);
-    //VUtils::Resource::WriteFile("bypass.txt", m_bypass);
+    {
+        YAML::Node node(m_blacklist);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("blacklist.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(m_whitelist);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("whitelist.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(m_admin);
+        
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("admin.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(DiscordManager()->m_linkedAccounts);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+
+        emit << YAML::Comment("Discord-linked accounts") 
+             << YAML::Newline
+             << YAML::Comment("Entries are in the form of 'steam-id: discord-id'")
+             << node;
+
+        VUtils::Resource::WriteFile("linked.yml", emit.c_str());
+    }
+    static constexpr auto szii = sizeof(Peer);
 
     LOG(INFO) << "Server was gracefully terminated";
 
@@ -736,6 +829,7 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     if (m_settings.packetMode == PacketMode::PLAYBACK) {
         PERIODIC_NOW(333ms, {
             char message[32];
@@ -743,10 +837,7 @@ void IValhalla::PeriodUpdate() {
             Broadcast(UIMsgType::TopLeft, message);
         });
     }
-    /*
-    PERIODIC_NOW(5s, {
-        DiscordManager()->SendSimpleMessage("Hello Valhalla!");
-    });*/
+#endif
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message

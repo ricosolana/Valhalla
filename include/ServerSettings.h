@@ -126,10 +126,12 @@ struct ServerSettings {
     float           eventsRadius;
     bool            eventsRequireKeys;
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     PacketMode      packetMode;
     size_t          packetFileUpperSize;
     int             packetCaptureSessionIndex;
     int             packetPlaybackSessionIndex;
+#endif
 
     std::string     discordWebhook;
     std::string     discordToken;

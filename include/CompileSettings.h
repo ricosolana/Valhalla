@@ -6,14 +6,14 @@ using namespace std::chrono_literals;
 
 //#define RUN_TESTS
 
-#define VH_SERVER_VERSION "v1.0.4"
+#define VH_VERSION "v1.0.4"
 
 // ELPP log file name
 #define VH_LOGFILE_PATH "logs/log.txt"
 
-#define VALHALLA_LUA_PATH "lua"
-#define VALHALLA_LUA_CPATH "bin"
-#define VALHALLA_MOD_PATH "mods"
+#define VH_LUA_PATH "lua"
+#define VH_LUA_CPATH "bin"
+#define VH_MOD_PATH "mods"
 
 
 
@@ -37,7 +37,11 @@ using namespace std::chrono_literals;
 // Enable mod simulated mod rpc events
 //#define VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
 
+// Packet capture path
 #define VH_CAPTURE_PATH "captures"
+
+// Enable incoming packet capture
+//#define VH_OPTION_ENABLE_CAPTURE
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

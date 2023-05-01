@@ -16,6 +16,14 @@ enum class UIMsgType : int32_t {
     Center
 };
 
+/*
+// Will contain a bunch of logged player data, such as playtime, markers of position over time
+//  Maybe draw a graphical map to show position over time? sounds cool...
+//  Could consider using bStats to log misc information
+struct PlayerInfo_t {
+
+};*/
+
 
 
 using WorldTime = double;
@@ -78,7 +86,7 @@ public:
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
-    //robin_hood::unordered_set<std::string> m_bypass;    // password-bypass steam ids
+    //ankerl::unordered_dense::map<std::string, PlayerInfo_t, ankerl::unordered_dense::string_hash, std::equal_to<>> m_users;
 
     // Get the time since the server started
     // Updated once per frame

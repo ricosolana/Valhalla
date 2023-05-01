@@ -201,7 +201,8 @@ void IDiscordManager::Init() {
 							auto&& host = itr->first;
 							auto&& vkey = itr->second;
 							if (vkey == *key) {
-								m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), dpp::comple);
+								event.reply("Accounts successfully linked!");
+								//m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), );
 								m_linkedAccounts[host] = event.command.get_issuing_user().id;
 								if (auto&& peer = NetManager()->GetPeerByHost(host)) {
 									peer->m_gatedPlaythrough = false;
@@ -215,11 +216,55 @@ void IDiscordManager::Init() {
 							}
 						}
 
-						m_bot->interaction_followup_create(event.command.token, dpp::message("Invalid key"), [](const dpp::confirmation_callback_t&) {});
-						//event.reply("That key has not been issued (maybe join again?)");
+						//m_bot->interaction_followup_create(event.command.token, dpp::message("Invalid key"), [](const dpp::confirmation_callback_t&) {});
+						event.reply("Invalid key.");
 					}
 					else {
 						event.reply("Join the in-game server and enter the provided key here to link your account");
+					}
+				}
+				else if (label == "vhadmin") {
+					auto&& admin = Valhalla()->m_admin;
+
+					auto&& identifier = std::get_if<std::string>(&event.get_parameter("identifier"));
+					auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+					if (identifier) {
+						if (auto&& peer = NetManager()->GetPeer(*identifier)) {
+							if (flag) {
+								peer->m_admin = *flag;
+								if (*flag)
+									event.reply("Granted admin to player");
+								else
+									event.reply("Revoked admin from player");
+							}
+							else {
+								event.reply(std::string("Player is ") + (peer->m_admin ? "" : "not ") + "an admin");
+							}
+						}
+						else {
+							event.reply("Player not found");
+						}
+
+						/*
+						if (flag) {
+							if (*flag) {
+								admin.insert(identifier)
+							}
+						}*/
+
+					}
+					else {
+						// reply with a list of all admins
+						if (admin.empty()) {
+							event.reply("There are no players with admin privileges");
+						}
+						else {
+							std::string msg = "Players with admin: \n";
+							for (auto&& host : admin) {
+								msg += " - " + msg + "\n";
+							}
+							event.reply(msg);
+						}
 					}
 				}
 				else {
@@ -338,6 +383,10 @@ void IDiscordManager::Init() {
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhscript", "Run a Lua script from file", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_attachment, "script", "lua file", true))
+					.set_default_permissions(0), // 0 is admins only
+				dpp::slashcommand("vhadmin", "See which players are admin", m_bot->me.id)
+					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host").set_auto_complete(true))
+					.add_option(dpp::command_option(dpp::co_boolean, "flag", "grant/revoke admin"))
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhlist", "List currently online players", m_bot->me.id),
 				dpp::slashcommand("vhlink", "Links your Steam-id to Discord", m_bot->me.id)

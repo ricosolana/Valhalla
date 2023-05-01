@@ -284,6 +284,7 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
 void INetManager::PostInit() {
     LOG(INFO) << "Initializing NetManager";
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     // load session file if replaying
     if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         auto path = fs::path(VH_CAPTURE_PATH)
@@ -304,6 +305,7 @@ void INetManager::PostInit() {
             }
         }        
     }
+#endif
 
     if (VH_SETTINGS.serverDedicated) m_acceptor = std::make_unique<AcceptorSteamDedicated>();
     else m_acceptor = std::make_unique<AcceptorSteamP2P>();
@@ -320,6 +322,7 @@ void INetManager::Update() {
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
             
+#ifdef VH_OPTION_ENABLE_CAPTURE
             if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
                 // record peer joindata
                 m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
@@ -413,9 +416,11 @@ void INetManager::Update() {
 
                 LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
             }
+#endif
         }
     }
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     // accept replay peers
     if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         if (!m_sortedSessions.empty()) {
@@ -435,7 +440,7 @@ void INetManager::Update() {
             }
         }
     }
-
+#endif
 
 
     // Send periodic data (2s)
@@ -527,9 +532,11 @@ void INetManager::OnPeerQuit(Peer& peer) {
 void INetManager::OnPeerDisconnect(Peer& peer) {
     ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         *(peer.m_disconnectCapture) = Valhalla()->Nanos();
     }
+#endif
 
     peer.SendDisconnect();
 
@@ -547,6 +554,7 @@ void INetManager::Uninit() {
         OnPeerDisconnect(*peer);
     }
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
     if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         // save sessions
         BYTES_t bytes;
@@ -565,6 +573,7 @@ void INetManager::Uninit() {
 
         VUtils::Resource::WriteFile(path, bytes);
     }
+#endif
 
     m_acceptor.reset();
 }

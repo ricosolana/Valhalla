@@ -117,8 +117,8 @@ int main(int argc, char **argv) {
     fs::current_path("./data/");
     
     {
-        std::string path = (fs::current_path() / VALHALLA_LUA_PATH).string();
-        std::string path2 = (fs::current_path() / VALHALLA_MOD_PATH).string();
+        std::string path = (fs::current_path() / VH_LUA_PATH).string();
+        std::string path2 = (fs::current_path() / VH_MOD_PATH).string();
         std::string env = "LUA_PATH=" 
             + path + "/?.lua;" 
             + path + "/?/?.lua;"
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     }
 
     {
-        std::string path = (fs::current_path() / VALHALLA_LUA_CPATH).string();
+        std::string path = (fs::current_path() / VH_LUA_CPATH).string();
         std::string env = "LUA_CPATH=" 
             + path + "/?.dll;" 
             + path + "/?/?.dll";

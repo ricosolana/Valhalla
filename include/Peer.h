@@ -67,6 +67,7 @@ public:
     ZDOID m_characterID;
     bool m_admin = false;
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
 public:
     nanoseconds* m_disconnectCapture = nullptr;
     size_t m_captureQueueSize = 0;
@@ -74,6 +75,7 @@ private:
     std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
     std::mutex m_recordmux;
     std::jthread m_recordThread;
+#endif
 
 public:
     bool m_gatedPlaythrough = false;

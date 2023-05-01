@@ -327,6 +327,7 @@ void IWorldManager::PostZoneInit() {
 
 	m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 
+#ifdef VH_OPTION_ENABLE_CAPTURE
 	if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
 		fs::path root = fs::path(VH_CAPTURE_PATH) 
 			/ m_world->m_name
@@ -338,10 +339,12 @@ void IWorldManager::PostZoneInit() {
 			LOG(FATAL) << "Failed to load world for playback";
 	}
 	else
+#endif
 		m_world->LoadFileDB();
 }
 
 void IWorldManager::PostInit() {
+#ifdef VH_OPTION_ENABLE_CAPTURE
 	if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
 		// then save world as a copy to captures
 		auto world(WorldManager()->GetWorld());
@@ -354,4 +357,5 @@ void IWorldManager::PostInit() {
 		// save world
 		world->WriteFiles(root);
 	}
+#endif
 }

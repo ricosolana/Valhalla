@@ -1018,13 +1018,13 @@ void IModManager::PostInit() {
     LoadAPI();
 
     std::error_code ec;
-    fs::create_directories(VALHALLA_MOD_PATH, ec);
+    fs::create_directories(VH_MOD_PATH, ec);
     
     if (ec)
         return;
 
     for (const auto& dir
-        : fs::directory_iterator(VALHALLA_MOD_PATH, ec)) {
+        : fs::directory_iterator(VH_MOD_PATH, ec)) {
 
         try {
             if (dir.exists(ec) && dir.is_directory(ec)) {
