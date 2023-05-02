@@ -198,10 +198,10 @@ void IModManager::LoadAPI() {
         sol::constructors<DataWriter(BYTES_t&)>(),
 
         //"ToReader", &DataWriter::ToReader,
-        "buf", &DataWriter::m_buf,
+        //"buf", &DataWriter::m_buf,
         "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
 
-        "Clear", &DataWriter::Clear,
+        //"Clear", &DataWriter::Clear,
 
         "Write", sol::overload(
             // templated functions are too complex for resolve
@@ -251,7 +251,8 @@ void IModManager::LoadAPI() {
         sol::constructors<DataReader(BYTES_t&)>(),
 
         //"ToWriter", &DataReader::ToWriter,
-        "buf", &DataReader::m_buf,
+        //"buf", &DataReader::m_buf,
+        //"buf", [](DataReader& self, BYTES_t ) { return },
         "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
         "ReadBool", &DataReader::ReadBool,

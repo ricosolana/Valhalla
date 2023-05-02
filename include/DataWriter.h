@@ -8,6 +8,7 @@
 #include "VUtilsTraits.h"
 #include "ModManager.h"
 #include "DataStream.h"
+#include "DataReader.h"
 
 //class DataReader;
 
@@ -25,8 +26,7 @@ struct Serializer
     }
 };*/
 
-template<typename T>
-class IDataWriter : public IDataStream<T> {
+class DataWriter : public virtual DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
@@ -38,12 +38,12 @@ private:
         // resize, ensuring capacity for copy operation
 
         //vector::assign only works starting at beginning... so cant use it...
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>) {
-            this->AssertOffset(count);
+        if (this->owned()) {
+            if (this->CheckOffset(count))
+                this->m_ownedBuf.resize(this->m_pos + count);
         }
         else {
-            if (this->CheckOffset(count))
-                this->m_buf.get().resize(this->m_pos + count);
+            this->AssertOffset(count);
         }
 
         std::copy(buffer,
@@ -74,17 +74,24 @@ private:
     }
 
 public:
-    IDataWriter(T buf) : IDataStream<T>(buf) {}
+    DataWriter() {}
+    explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
+    explicit DataWriter(BYTES_t buf) : DataStream(std::move(buf)) {}
+    explicit DataWriter(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataWriter(BYTES_t buf, size_t pos) : DataStream(std::move(buf), pos) {}
 
-    IDataWriter(T buf, size_t pos) : IDataStream<T>(buf, pos) {}
-
+    /*
     // Clears the underlying container and resets position
+    // TODO standardize by renaming to 'clear'
     void Clear() {
-        if constexpr (std::is_same_v<T, std::reference_wrapper<BYTES_t>>) {
+        if (this->owned()) {
             this->m_pos = 0;
-            this->m_buf.get().clear();
+            this->m_ownedBuf.clear();
         }
-    }
+        else {
+            throw std::runtime_error("tried calling Clear() on unownedBuf DataWriter");
+        }
+    }*/
 
     // Sets the length of this stream
     //void SetLength(uint32_t length) {
@@ -118,12 +125,23 @@ public:
         this->SetPos(end);
     }
 
-    template<typename T>
-        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
-    void Write(const T& in) {
-        Write<int32_t>(in.size());
-        WriteSomeBytes(in.data(), in.size());
+    void Write(const BYTE_t* in, size_t length) {
+        Write<int32_t>(length);
+        WriteSomeBytes(in, length);
     }
+
+    template<typename T>
+        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
+    void Write(const T& in) {
+        //Write(in.data(), )
+        //Write<int32_t>(in.size());
+        //WriteSomeBytes(in.data(), in.size());
+        Write(in.data(), in.size());
+    }
+
+    // Write a DataReader to the array
+    //  The data() and Length() are used to determine data to write 
+    //void Write(DataReader in);
 
     /*
     // Writes a BYTE_t* as byte array of length
@@ -156,7 +174,7 @@ public:
     // Writes a string
     void Write(std::string_view in) {
         auto length = in.length();
-        IDataStream<T>::Assert31U(length);
+        Assert31U(length);
 
         auto byteCount = static_cast<int32_t>(length);
 
@@ -191,7 +209,7 @@ public:
             return (std::string_view(args).length() + ...);
         }, in);
 
-        IDataStream<T>::Assert31U(length);
+        Assert31U(length);
 
         auto byteCount = static_cast<int32_t>(length);
 
@@ -326,11 +344,11 @@ public:
 
 
     // Empty template
-    static void SerializeImpl(IDataWriter<std::reference_wrapper<BYTES_t>>& pkg) {}
+    static void SerializeImpl(DataWriter& pkg) {}
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static decltype(auto) SerializeImpl(IDataWriter<std::reference_wrapper<BYTES_t>>& pkg, const T &var1, const Types&... var2) {
+    static decltype(auto) SerializeImpl(DataWriter& pkg, const T &var1, const Types&... var2) {
         pkg.Write(var1);
 
         return SerializeImpl(pkg, var2...);
@@ -339,11 +357,12 @@ public:
     // Serialize variadic types to an array
     template <typename T, typename... Types>
     static decltype(auto) Serialize(const T &var1, const Types&... var2) {
-        BYTES_t bytes;
-        IDataWriter<std::reference_wrapper<BYTES_t>> writer(bytes);
+        //BYTES_t bytes;
+        //DataWriter writer(bytes);
+        DataWriter writer;
 
         SerializeImpl(writer, var1, var2...);
-        return bytes;
+        return writer.m_ownedBuf;
     }
 
     // empty full template
@@ -420,13 +439,10 @@ public:
 
     static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
         BYTES_t bytes;
-        IDataWriter<std::reference_wrapper<BYTES_t>> params(bytes);
+        DataWriter params(bytes);
 
         params.SerializeLua(types, results);
 
         return bytes;
     }
 };
-
-using DataWriter = IDataWriter<std::reference_wrapper<BYTES_t>>;
-using DataWriterStatic = IDataWriter<BYTE_VIEW_t>;

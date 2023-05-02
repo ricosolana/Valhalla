@@ -380,7 +380,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.eventsInterval, events, "interval", 46min, [](seconds val) { return val < 0s; });
             a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
             a(m_settings.eventsRequireKeys, events, "require-keys", true);
-
+            
 #ifdef VH_OPTION_ENABLE_CAPTURE
             a(m_settings.packetMode, packet, "mode", PacketMode::NORMAL, nullptr, reloading);
             a(m_settings.packetFileUpperSize, packet, "file-size", 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);

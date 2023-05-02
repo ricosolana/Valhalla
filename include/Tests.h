@@ -444,7 +444,9 @@ public:
     void RunTests() {
         fs::current_path("./data/tests/");
 
-        Test_ZStdCompressorDecompressor();
+        //Test_ZStdCompressorDecompressor();
+
+        Test_DataBuffer();
 
         //Tests().Test_FileWriteLines();
 
@@ -1225,18 +1227,28 @@ public:
 
         //std::iter_value_t<int>
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         //int count = 1114111;
         //int count = 111111;
 
-        int count = 0xFFF1;
+        writer.Write((char16_t)0xFFF1);
+        writer.Write<int8_t>(1);        
+        writer.Write<int16_t>(1231);
+        writer.Write<int32_t>(0x3F11F111);
+        writer.Write<int64_t>(0x1234567891234567);
+        writer.Write("test");
+        writer.Write(ZDOID(43, 6));
 
-        writer.Write((char16_t)count);
+        DataReader reader(writer.m_ownedBuf);
 
-        assert(count == DataReader(bytes).ReadChar());
-
+        assert(0xFFF1 == reader.ReadChar());
+        assert(1 == reader.ReadInt8());
+        assert(1231 == reader.ReadInt16());
+        assert(0x3F11F111 == reader.ReadInt32());
+        assert(0x1234567891234567 == reader.ReadInt64());
+        assert("test" == reader.Read<std::string_view>());
+        assert(ZDOID(43, 6) == reader.Read<ZDOID>());
     }
 
     void Test_World() {

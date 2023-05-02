@@ -2,9 +2,9 @@
 
 #include "VUtils.h"
 
-template<typename T>
-    requires (std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, std::reference_wrapper<BYTES_t>>)
-class IDataStream {
+// 56 Bytes w/ <vec, view>
+// 32 Bytes w/ <vec&, view>
+class DataStream {
 public:
     T m_buf;
 
@@ -25,7 +25,7 @@ protected:
 
     // Returns whether the specified position exceeds container length
     bool CheckPosition(size_t pos) const {
-        return pos > Length();
+        return pos > size();
     }
 
     // Throws if the specified position exceeds container length
@@ -46,13 +46,21 @@ protected:
     }
 
 public:
-    IDataStream(T buf) : m_buf(buf) {}
+    DataStream() {}
+    explicit DataStream(BYTE_VIEW_t buf) : m_unownedBuf(buf) {}
+    explicit DataStream(BYTES_t buf) : m_ownedBuf(std::move(buf)) {}
 
-    IDataStream(T buf, size_t pos) : m_buf(buf) {
+    explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_unownedBuf(buf) {
+        SetPos(pos);
+    }
+
+    explicit DataStream(BYTES_t buf, size_t pos) : m_ownedBuf(std::move(buf)) {
         SetPos(pos);
     }
 
 public:
+    bool owned() const { return !this->m_unownedBuf.data(); }
+
     size_t Position() const {
         return this->m_pos;
     }
@@ -65,25 +73,17 @@ public:
         this->m_pos = pos;
     }
 
-    size_t Length() const {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return m_buf.size();
-        else
-            return m_buf.get().size();
+    // TODO rename size() for standard conformance
+    size_t size() const {
+        return this->owned() ? this->m_ownedBuf.size() : this->m_unownedBuf.size();
     }
 
     BYTE_t* data() {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return m_buf.data();
-        else
-            return m_buf.get().data();
+        return this->owned() ? this->m_ownedBuf.data() : this->m_unownedBuf.data();
     }
 
     const BYTE_t* data() const {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return m_buf.data();
-        else
-            return m_buf.get().data();
+        return this->owned() ? this->m_ownedBuf.data() : this->m_unownedBuf.data();
     }
 
     size_t Skip(size_t offset) {

@@ -94,7 +94,7 @@ public:
         static constexpr HASH_t Recv = __H("Recv");
 
         // Event postfix handler
-        static constexpr HASH_t POSTFIX = __H("POST");
+        //static constexpr HASH_t POSTFIX = __H("POST");
     };
 
     struct Mod {

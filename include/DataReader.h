@@ -12,10 +12,7 @@
 
 //class DataWriter;
 
-template<typename T>
-class IDataReader : public IDataStream<T> {
-    using ReaderType = IDataReader<T>;
-
+class DataReader : public virtual DataStream {
 private:
     void ReadSomeBytes(BYTE_t* buffer, size_t count) {
         //this->Assert31U(count);
@@ -67,13 +64,13 @@ private:
     }
 
 public:
-    IDataReader(T buf) : IDataStream<T>(buf) {}
-
-    IDataReader(T buf, size_t pos) : IDataStream<T>(buf, pos) {}
+    DataReader() {}
+    explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
+    explicit DataReader(BYTES_t buf) : DataStream(std::move(buf)) {}
+    explicit DataReader(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataReader(BYTES_t buf, size_t pos) : DataStream(std::move(buf), pos) {}
 
 public:
-    //DataWriter ToWriter();
-
     template<typename T>
         requires 
             (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
@@ -94,12 +91,15 @@ public:
         return result;
     }
 
+    
     // Reads a byte array as a Reader (more efficient than ReadBytes())
     //  int32_t:   size
     //  BYTES_t:    data
     template<typename T>
-        requires std::is_same_v<T, ReaderType>
+        requires std::is_same_v<T, DataReader>
     decltype(auto) Read() {
+        if (this->owned())
+            return T(Read<BYTES_t>());
         return T(Read<BYTE_VIEW_t>());
     }
 
@@ -273,6 +273,42 @@ public:
 
 
 
+    // verbose extension methods
+    //  I want these to actually all be in lua
+    //  templates in c, wrappers for lua in modman
+
+    decltype(auto) ReadBool() { return Read<bool>(); }
+
+    decltype(auto) ReadString() { return Read<std::string>(); }
+    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
+
+    decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
+
+    decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
+    decltype(auto) ReadVector3f() { return Read<Vector3f>(); }
+    decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
+    decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
+    decltype(auto) ReadProfile() { return Read<UserProfile>(); }
+
+    decltype(auto) ReadInt8() { return Read<int8_t>(); }
+    decltype(auto) ReadInt16() { return Read<int16_t>(); }
+    decltype(auto) ReadInt32() { return Read<int32_t>(); }
+    decltype(auto) ReadInt64() { return Read<int64_t>(); }
+    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
+
+    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
+    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
+    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
+    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
+    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) Read<uint64_t>(); }
+
+    decltype(auto) ReadFloat() { return Read<float>(); }
+    decltype(auto) ReadDouble() { return Read<double>(); }
+    
+    decltype(auto) ReadChar() { return Read<char16_t>(); }
+
+
+
     // Deserialize a reader to a tuple of types
     template<class...Ts, class RD>
     static std::tuple<Ts...> Deserialize(RD& reader) {
@@ -334,10 +370,10 @@ public:
             return sol::make_object(state, ReadUInt64Wrapper());
         case IModManager::Type::FLOAT:
             // Primitive: number
-            return sol::make_object(state, Read<float>());
+            return sol::make_object(state, ReadFloat());
         case IModManager::Type::DOUBLE:
             // Primitive: number
-            return sol::make_object(state, Read<double>());
+            return sol::make_object(state, ReadDouble());
         default:
             throw std::runtime_error("invalid mod DataReader type");
         }
@@ -352,41 +388,4 @@ public:
 
         return results;
     }
-
-    // verbose extension methods
-    //  I want these to actually all be in lua
-    //  templates in c, wrappers for lua in modman
-
-    decltype(auto) ReadBool() { return Read<bool>(); }
-
-    decltype(auto) ReadString() { return Read<std::string>(); }
-    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
-
-    decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
-
-    decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
-    decltype(auto) ReadVector3f() { return Read<Vector3f>(); }
-    decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
-    decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
-    decltype(auto) ReadProfile() { return Read<UserProfile>(); }
-
-    decltype(auto) ReadInt8() { return Read<int8_t>(); }
-    decltype(auto) ReadInt16() { return Read<int16_t>(); }
-    decltype(auto) ReadInt32() { return Read<int32_t>(); }
-    decltype(auto) ReadInt64() { return Read<int64_t>(); }
-    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
-
-    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
-    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
-    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
-    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
-    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) Read<uint64_t>(); }
-
-    decltype(auto) ReadFloat() { return Read<float>(); }
-    decltype(auto) ReadDouble() { return Read<double>(); }
-    
-    decltype(auto) ReadChar() { return Read<char16_t>(); }
 };
-
-using DataReader = IDataReader<BYTE_VIEW_t>;
-using DataReaderDynamic = IDataReader<std::reference_wrapper<BYTES_t>>;

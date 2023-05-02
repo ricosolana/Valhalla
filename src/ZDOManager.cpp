@@ -153,7 +153,7 @@ void IZDOManager::Save(DataWriter& writer) {
 		writer.SetPos(start);
 		writer.Write(count);
 		//pkg.SetPos(end);
-		writer.SetPos(writer.Length());
+		writer.SetPos(writer.size());
 	}
 
 	writer.Write<int32_t>(0);
@@ -709,7 +709,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 		const auto time = Valhalla()->Time();
 
 		for (auto&& itr = syncList.begin();
-			itr != syncList.end() && writer.Length() <= availableSpace;
+			itr != syncList.end() && writer.size() <= availableSpace;
 			itr++) {
 
 			auto&& zdo = itr->first.get();

@@ -138,17 +138,16 @@ public:
         if (!m_socket->Connected())
             return;
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         writer.Write(hash);
         writer.SubWrite(func);
 
         // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, writer))
-            //return;
-
-        this->Send(std::move(bytes));
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, writer.m_unownedBuf))
+            return;
+        
+        this->Send(std::move(writer.m_ownedBuf));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
@@ -168,7 +167,7 @@ public:
         this->Send(DataWriter::Serialize(hash, params...));
 
         // Postfix
-        VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
+        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
     }
 
     template <typename... Types>

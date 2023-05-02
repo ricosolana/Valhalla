@@ -20,7 +20,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			return;
 
 		reader.Read<int64_t>(); // skip msgid
-		DataWriterStatic(reader.m_buf, reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
+		DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
 		auto target = reader.Read<OWNER_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
@@ -52,7 +52,6 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 
 		if (target == EVERYBODY) {
 			// Confirmed: targetZDO CAN have a value when globally routed
-			//assert(!targetZDO && "might have to change the logic; routed zdos might be globally invoked...");
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
 				return;
 
@@ -68,25 +67,25 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			for (auto&& other : peers) {
 				// Ignore the src peer
 				if (peer->m_uuid != other->m_uuid) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, reader.m_buf);
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_uuid, target, targetZDO, hash, params);
 				}
 			}
 		}
 		else {
 			if (target != VH_ID) {
 				if (auto other = NetManager()->GetPeerByUUID(target)) {
-					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, other, targetZDO, params))
+					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
 						return;
 
-
-
-					other->Invoke(Hashes::Rpc::RoutedRPC, reader.m_buf);
+					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_uuid, target, targetZDO, hash, params);
 				}
 			}
 			else {
 				if (!targetZDO) {
 					auto&& find = m_methods.find(hash);
 					if (find != m_methods.end()) {
+						//find->second->Invoke(peer, reader.Read<DataReader>());
 						find->second->Invoke(peer, params);
 					}
 				} //else ... // netview is not currently supported

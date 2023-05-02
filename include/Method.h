@@ -55,9 +55,9 @@ public:
             impl_tail<args_type>(reader,
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
-        if (reader.Position() != reader.Length())
+        if (reader.Position() != reader.size())
             LOG(WARNING) << "Peer Rpc Invoke has more data than expected "
-            << reader.Length() << "/" << reader.Position();
+            << reader.size() << "/" << reader.Position();
 
         // Prefix
         if (!VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
@@ -70,8 +70,10 @@ public:
         } else
             std::apply(m_func, tuple);
     
+        /*
         // Postfix
         VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, tuple);
+        */
 
         return result;
     }
@@ -117,9 +119,10 @@ public:
         }
 
         // Postfix
+        /*
 #ifdef VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
         VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results));
-#endif
+#endif*/
 
         if (result.get_type() == sol::type::boolean)
             return result.get<bool>();

@@ -440,7 +440,7 @@ private:
 
     template<typename T, typename CountType>
     void _TryWriteType(DataWriter& writer) const {
-        if constexpr (sizeof(CountType) == 2)
+        if constexpr (std::is_same_v<CountType, char16_t>)
             writer.Write((BYTE_t)0); // placeholder byte; iffy for c# char (2 bytes .. encoded to max 3)
 
         if (GetOrdinalMask() & GetOrdinalMask<T>()) {
@@ -449,7 +449,7 @@ private:
             //      string: key
             //      F V Q I L S A: value
 
-            if constexpr (sizeof(CountType) == 1)
+            if constexpr (!std::is_same_v<CountType, char16_t>)
                 writer.Write((BYTE_t)0); // placeholder byte; also 0 byte
                         
             const auto size_mark = writer.Position() - sizeof(BYTE_t);
@@ -472,8 +472,8 @@ private:
                 auto end_mark = writer.Position();
                 writer.SetPos(size_mark);
 
-                if constexpr (sizeof(CountType) == 2) {
-                    auto&& vec = writer.m_buf.get();
+                if constexpr (std::is_same_v<CountType, char16_t>) {
+                    auto&& vec = writer.m_ownedBuf;
                     auto extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
                     if (extraCount) {
                         assert(count >= 0x80);
