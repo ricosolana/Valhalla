@@ -6,10 +6,11 @@
     Ported by crzi for use on the C++ Valhalla server
 --]]
 
+require('mobdebug').start()
+
 local COMPRESSION_VERSION = 6
 
 local compressor = ZStdCompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
-
 local decompressor = ZStdDecompressor.new(VUtils.Resource.ReadFileBytes('mods/BetterNetworking/small'))
 
 local peers = {}
@@ -79,9 +80,9 @@ Valhalla:Subscribe('Connect', function(peer)
     peer:Invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
 end)
 
-Valhalla:Subscribe('Send', function(socket, bytes)
+Valhalla:Subscribe('Send', function(peer, bytes)
     -- compress data if peer is started
-    local status = peers[tostring(socket.host)]
+    local status = peers[peer.socket.host]
     
     if status and status.o then
         local com = compressor:Compress(bytes)
@@ -94,19 +95,27 @@ Valhalla:Subscribe('Send', function(socket, bytes)
     end
 end)
 
-Valhalla:Subscribe('Recv', function(socket, bytes)
+Valhalla:Subscribe('Recv', function(peer, bytes)
     local decom = decompressor:Decompress(bytes)
 
-    local status = peers[socket.host]
+    local host = peer.socket.host
+
+    local status = peers[host]
     
     if decom then
+        --print('got compressed message')
+    
         VUtils.Swap(bytes, decom)
+        
+        --print('Recv swapped messages')
         if not status.i then
-            print('Received unexpected compressed message from ' .. socket.host)
+            print('Received unexpected compressed message from ' .. host)
+            status.i = true
         end
     else
         if status.i then
-            print('Received unexpected uncompressed message from ' .. socket.host)
+            print('Received unexpected uncompressed message from ' .. host)
+            status.i = false
         end
     end
 end)
