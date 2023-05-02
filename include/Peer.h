@@ -272,10 +272,6 @@ public:
         Invoke(Hashes::Rpc::S2C_ResponseKicked);
     }
 
-    void RequestSave() {
-        Invoke(Hashes::Rpc::C2S_RequestSave);
-    }
-
     void Kick() {
         SendKicked();
         Disconnect();
