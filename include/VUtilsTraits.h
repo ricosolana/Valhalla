@@ -128,5 +128,9 @@ namespace VUtils {
         template <typename T>
         constexpr bool has_key_type_v = has_key_type<T>::value;
 
+
+
+        template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+        template<class... Ts> overload(Ts...)->overload<Ts...>; // line not needed in C++20...
     }
 }

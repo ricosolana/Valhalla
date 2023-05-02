@@ -82,6 +82,7 @@ void SteamSocket::Send(BYTES_t bytes) {
         // SteamSocket is not implemented in modman, so pass parent class
         //if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, static_cast<ISocket*>(this), std::ref(bytes)))
         m_sendQueue.push_back(std::move(bytes));
+        SendQueued();
     }
 }
 

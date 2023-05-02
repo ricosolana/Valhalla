@@ -38,13 +38,13 @@ private:
         // resize, ensuring capacity for copy operation
 
         //vector::assign only works starting at beginning... so cant use it...
-        if (this->owned()) {
-            if (this->CheckOffset(count))
-                this->m_ownedBuf.resize(this->m_pos + count);
-        }
-        else {
-            this->AssertOffset(count);
-        }
+        std::visit(VUtils::Traits::overload{
+            [this, count](std::reference_wrapper<BYTES_t> buf) { 
+                if (this->CheckOffset(count))
+                    buf.get().resize(this->m_pos + count);
+            },
+            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
+        }, this->m_data);
 
         std::copy(buffer,
                   buffer + count, 
@@ -74,11 +74,10 @@ private:
     }
 
 public:
-    DataWriter() {}
     explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
-    explicit DataWriter(BYTES_t buf) : DataStream(std::move(buf)) {}
+    explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
     explicit DataWriter(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataWriter(BYTES_t buf, size_t pos) : DataStream(std::move(buf), pos) {}
+    explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
     /*
     // Clears the underlying container and resets position
@@ -357,12 +356,11 @@ public:
     // Serialize variadic types to an array
     template <typename T, typename... Types>
     static decltype(auto) Serialize(const T &var1, const Types&... var2) {
-        //BYTES_t bytes;
-        //DataWriter writer(bytes);
-        DataWriter writer;
+        BYTES_t bytes;
+        DataWriter writer(bytes);
 
         SerializeImpl(writer, var1, var2...);
-        return writer.m_ownedBuf;
+        return bytes;
     }
 
     // empty full template

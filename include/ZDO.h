@@ -473,7 +473,7 @@ private:
                 writer.SetPos(size_mark);
 
                 if constexpr (std::is_same_v<CountType, char16_t>) {
-                    auto&& vec = writer.m_ownedBuf;
+                    auto&& vec = std::get<std::reference_wrapper<BYTES_t>>(writer.m_data).get();
                     auto extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
                     if (extraCount) {
                         assert(count >= 0x80);

@@ -6,7 +6,9 @@
 // 32 Bytes w/ <vec&, view>
 class DataStream {
 public:
-    T m_buf;
+    std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t> m_data;
+    //BYTES_t *m_ownedBuf;
+    //BYTE_VIEW_t m_unownedBuf;
 
 protected:
     size_t m_pos{};
@@ -46,20 +48,19 @@ protected:
     }
 
 public:
-    DataStream() {}
-    explicit DataStream(BYTE_VIEW_t buf) : m_unownedBuf(buf) {}
-    explicit DataStream(BYTES_t buf) : m_ownedBuf(std::move(buf)) {}
+    explicit DataStream(BYTE_VIEW_t buf) : m_data(buf) {}
+    explicit DataStream(BYTES_t& buf) : m_data(std::ref(buf)) {}
 
-    explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_unownedBuf(buf) {
+    explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_data(buf) {
         SetPos(pos);
     }
 
-    explicit DataStream(BYTES_t buf, size_t pos) : m_ownedBuf(std::move(buf)) {
+    explicit DataStream(BYTES_t& buf, size_t pos) : m_data(std::ref(buf)) {
         SetPos(pos);
     }
 
 public:
-    bool owned() const { return !this->m_unownedBuf.data(); }
+    //bool owned() const { return std::get_if< !this->m_data.data(); }
 
     size_t Position() const {
         return this->m_pos;
@@ -75,15 +76,24 @@ public:
 
     // TODO rename size() for standard conformance
     size_t size() const {
-        return this->owned() ? this->m_ownedBuf.size() : this->m_unownedBuf.size();
+        return std::visit(VUtils::Traits::overload{
+            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
+            [](BYTE_VIEW_t buf) { return buf.size(); }
+        }, this->m_data);
     }
 
     BYTE_t* data() {
-        return this->owned() ? this->m_ownedBuf.data() : this->m_unownedBuf.data();
+        return std::visit(VUtils::Traits::overload{
+            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
+            [](BYTE_VIEW_t buf) { return buf.data(); }
+        }, this->m_data);
     }
 
     const BYTE_t* data() const {
-        return this->owned() ? this->m_ownedBuf.data() : this->m_unownedBuf.data();
+        return std::visit(VUtils::Traits::overload{
+            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
+            [](BYTE_VIEW_t buf) { return buf.data(); }
+        }, this->m_data);
     }
 
     size_t Skip(size_t offset) {

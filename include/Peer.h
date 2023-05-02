@@ -138,16 +138,17 @@ public:
         if (!m_socket->Connected())
             return;
 
-        DataWriter writer;
+        BYTES_t bytes;
+        DataWriter writer(bytes);
 
         writer.Write(hash);
         writer.SubWrite(func);
 
         // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, writer.m_unownedBuf))
+        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
             return;
         
-        this->Send(std::move(writer.m_ownedBuf));
+        this->Send(std::move(bytes));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
@@ -243,17 +244,20 @@ public:
 
 
     void Send(BYTES_t bytes) {
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, bytes))
+        assert(!bytes.empty());
+
+        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
             this->m_socket->Send(std::move(bytes));
     }
 
     std::optional<BYTES_t> Recv() {
         if (auto&& opt = this->m_socket->Recv()) {
-            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, opt)) {
+            auto&& bytes = *opt;
+            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
                 return opt;
             }
         }
-        return {};
+        return std::nullopt;
     }
 
     void Disconnect() {

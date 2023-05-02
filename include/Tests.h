@@ -1227,7 +1227,8 @@ public:
 
         //std::iter_value_t<int>
 
-        DataWriter writer;
+        BYTES_t bytes;
+        DataWriter writer(bytes);
 
         //int count = 1114111;
         //int count = 111111;
@@ -1240,7 +1241,7 @@ public:
         writer.Write("test");
         writer.Write(ZDOID(43, 6));
 
-        DataReader reader(writer.m_ownedBuf);
+        DataReader reader(bytes);
 
         assert(0xFFF1 == reader.ReadChar());
         assert(1 == reader.ReadInt8());

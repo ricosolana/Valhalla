@@ -462,7 +462,7 @@ void INetManager::Update() {
         writer.Write(true);
 
         for (auto&& peer : m_connectedPeers) {
-            peer->m_socket->Send(bytes);
+            peer->Send(bytes);
         }
     });
 

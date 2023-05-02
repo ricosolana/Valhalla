@@ -12,7 +12,7 @@
 
 //class DataWriter;
 
-class DataReader : public virtual DataStream {
+class DataReader : public DataStream {
 private:
     void ReadSomeBytes(BYTE_t* buffer, size_t count) {
         //this->Assert31U(count);
@@ -64,11 +64,10 @@ private:
     }
 
 public:
-    DataReader() {}
     explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
-    explicit DataReader(BYTES_t buf) : DataStream(std::move(buf)) {}
+    explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
     explicit DataReader(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataReader(BYTES_t buf, size_t pos) : DataStream(std::move(buf), pos) {}
+    explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
 public:
     template<typename T>
@@ -98,8 +97,6 @@ public:
     template<typename T>
         requires std::is_same_v<T, DataReader>
     decltype(auto) Read() {
-        if (this->owned())
-            return T(Read<BYTES_t>());
         return T(Read<BYTE_VIEW_t>());
     }
 

@@ -252,7 +252,20 @@ void IModManager::LoadAPI() {
 
         //"ToWriter", &DataReader::ToWriter,
         //"buf", &DataReader::m_buf,
-        //"buf", [](DataReader& self, BYTES_t ) { return },
+        /*
+        "buf", sol::property(
+            sol::overload(
+                [](DataReader& self, BYTES_t& value) { self.m_data = std::ref(value); },
+                [](DataReader& self, BYTE_VIEW_t value) { self.m_data = value; }
+            ),
+            [this](DataReader& self) {
+                return std::visit(VUtils::Traits::overload{
+                    [this](std::reference_wrapper<BYTES_t> buf) { return sol::make_object(m_state, buf); },
+                    [this](BYTE_VIEW_t buf) { return sol::make_object(m_state, buf); }
+                }, self.m_data);
+            }
+        ),*/
+        "buf", &DataReader::m_data,
         "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
         "ReadBool", &DataReader::ReadBool,
