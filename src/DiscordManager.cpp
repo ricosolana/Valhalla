@@ -20,13 +20,11 @@ public:
 };*/
 
 void IDiscordManager::Init() {
-	if (VH_SETTINGS.discordToken.empty() || VH_SETTINGS.discordGuild == 0)
+	if (VH_SETTINGS.discordToken.empty())
 		return;
 
 	// https://dpp.dev/slashcommands.html
-	//dpp::cluster bot(VH_SETTINGS.discordToken);
 
-	//m_bot->get_shards().begin()->second->
 	m_bot = std::make_unique<dpp::cluster>(VH_SETTINGS.discordToken);
 	
 	m_bot->on_log([](const dpp::log_t& log) {
@@ -301,43 +299,13 @@ void IDiscordManager::Init() {
 					}
 
 				});
-
-				//LOG(INFO) << "Option name: " << opt.name << ", sub-option name: " << (opt.options.empty() ? "NONE" : opt.options.front().name);
-
-				//m_bot->log(dpp::ll_debug, "Autocomplete " + opt.name + " with value '" + val + "' in field " + evt.name);
 				break;
 			}
 		}
 	});
 
-	//m_bot->on_guild_member_remove([](const dpp::guild_member_remove_t& event) {
-
-	//});
-
 	m_bot->on_ready([this](const dpp::ready_t& evt) {
 		if (dpp::run_once<struct register_bot_commands>()) {
-			//LOG(WARNING) << "Deleting old guild commands...";
-
-			/*
-			m_bot->guild_commands_get(VH_SETTINGS.discordGuild, [this](const dpp::confirmation_callback_t& event) {
-				if (event.is_error()) {
-					LOG(WARNING) << "Failed to get slash command map";
-				}
-				else {
-					auto&& commands = std::get<dpp::slashcommand_map>(event.value);
-					for (auto&& command : commands) {
-						m_bot->guild_command_delete(command.first, VH_SETTINGS.discordGuild);
-					}
-				}
-			});*/
-			//static constexpr int szzsd = sizeof(std::variant<int, float, std::string>);
-			//if (VH_SETTINGS.discordDeleteCommands) {
-			//	auto&& commands = m_bot->global_commands_get_sync();
-			//	for (auto&& command : commands) {
-			//		m_bot->global_command_delete_sync(command.first);
-			//	}
-			//}
-
 			m_bot->guild_bulk_command_create({
 				dpp::slashcommand("vhfreset", "Delete all commands", m_bot->me.id)
 					.set_default_permissions(0),
@@ -392,48 +360,6 @@ void IDiscordManager::Init() {
 				dpp::slashcommand("vhlink", "Links your Steam-id to Discord", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "key", "Verification key from server"))
 			}, VH_SETTINGS.discordGuild);
-			
-			//dpp::slashcommand cmd("vh", "The Valhalla server command", m_bot->me.id);
-
-			/*
-			newcommand.add_option(
-				dpp::command_option(dpp::co_string, "save", "Saves the world")
-					//add_choice(dpp::command_option_choice("Dog", std::string("animal_dog"))).
-					//add_choice(dpp::command_option_choice("Cat", std::string("animal_cat"))).
-					//add_choice(dpp::command_option_choice("Penguin", std::string("animal_penguin")))
-			);*/
-
-			/*
-			cmd.add_option(dpp::command_option(dpp::co_sub_command, "save", "Saves the world"))
-				.add_option(dpp::command_option(dpp::co_sub_command, "list", "Lists all online players"))
-				.add_option(dpp::command_option(dpp::co_sub_command, "kick", "Kicks a player")
-					.add_option(dpp::command_option(dpp::co_string, "user", "The name of player to kick", true).set_auto_complete(true)).set_auto_complete(true)
-				);*/
-
-			/*
-			cmd.add_option(dpp::command_option(dpp::co_sub_command, "save", "Saves the world"))
-				.add_option(dpp::command_option(dpp::co_sub_command, "list", "Lists all online players"))
-				.add_option(dpp::command_option(dpp::co_sub_command, "kick", "Kicks a player")
-					.add_option(dpp::command_option(dpp::co_string, "user", "The name of player to kick", true).set_auto_complete(true))
-				);
-				
-			dpp::slashcommand drinkcmd("drink", "Test drink command", m_bot->me.id);
-			drinkcmd.add_option(dpp::command_option(dpp::co_string, "item", "Choose a drink").set_auto_complete(true));
-			*/
-
-			/*
-			newcommand.add_option(
-					dpp::command_option(dpp::co_string, "animal", "The type of animal", true).
-						add_choice(dpp::command_option_choice("Dog", std::string("animal_dog"))).
-						add_choice(dpp::command_option_choice("Cat", std::string("animal_cat"))).
-						add_choice(dpp::command_option_choice("Penguin", std::string("animal_penguin")
-					)
-				)
-			);*/
-
-			/* Register the command */
-			//m_bot->global_command_create(cmd);
-			//m_bot->global_command_create(drinkcmd);
 		}
 	});
 
