@@ -18,7 +18,7 @@ The server is in a currently in a functional state and somewhat usable. I would 
 ## Manual Installation/Building
 I've been developing on Windows so these steps are specific to it.
 
-Clone this project.
+Clone Valhalla:
 ```bash
 git clone https://github.com/PeriodicSeizures/Valhalla
 ```
@@ -40,20 +40,21 @@ Install the required libraries:
 .\vcpkg\vcpkg.exe install dpp --triplet=x64-windows
 ```
 
-Clone sol2:
-```bash
-git clone https://github.com/ThePhD/sol2
-```
-
 Download and build [Lua](https://www.lua.org/download.html) or install the [precompiled](https://luabinaries.sourceforge.net) binaries. I followed **everything** in [this](https://www.youtube.com/watch?v=TALXtup2CjI) Youtube video.
 
-Clone [sol2](https://github.com/ThePhD/sol2) and [ankerl::unordered_dense](https://github.com/martinus/unordered_dense). Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be prompted to sign into Steamworks).
+Clone [sol2](https://github.com/ThePhD/sol2) and [ankerl::unordered_dense](https://github.com/martinus/unordered_dense). 
+```bash
+git clone https://github.com/ThePhD/sol2
+git clone https://github.com/martinus/unordered_dense
+```
 
-Open Visual Studio. In File->Open->CMake find and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build and fail.
+Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be prompted to sign into Steamworks).
+
+In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build. It will fail because sol2, ankerl and steamsdk have not been found yet.
 
 Manually specify path to sol2 and ankerl in CMakeLists.txt around line 150. In cmake/get_steamapi specify the path to steamsdk around line 7. Follow the patterns.
 
-I'm sorry this process isn't an expedited all-in-one simple installation. Numerous errors and my infamiliarity with CMake has led to this. I will try to improve the process in time but for now this works.
+I'm sorry this isn't an expedited installation. Numerous errors and infamiliarity with CMake led to this. The process will improve over time.
 
 ## Usage
 Command line arguments (all optional):
