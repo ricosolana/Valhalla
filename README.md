@@ -15,6 +15,46 @@ Documentation is currently underway. I will also be trying to fully flesh-out th
 
 The server is in a currently in a functional state and somewhat usable. I would give it a 70% right now in terms of stability when compared with the Valheim dedicated server. Feel free to play around with it.
 
+## Manual Installation/Building
+I've been developing on Windows so these steps are specific to it.
+
+Clone this project.
+```bash
+git clone https://github.com/PeriodicSeizures/Valhalla
+```
+
+Install vcpkg:
+```bash
+git clone https://github.com/microsoft/vcpkg
+.\vcpkg\bootstrap-vcpkg.bat
+.\vcpkg\vcpkg.exe integrate install
+```
+
+Install the required libraries:
+```bash
+.\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
+.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
+.\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
+.\vcpkg\vcpkg.exe install tracy --triplet=x64-windows
+.\vcpkg\vcpkg.exe install zstd --triplet=x64-windows
+.\vcpkg\vcpkg.exe install dpp --triplet=x64-windows
+```
+
+Clone sol2:
+```bash
+git clone https://github.com/ThePhD/sol2
+```
+
+Download and build [Lua](https://www.lua.org/download.html) or install the [precompiled](https://luabinaries.sourceforge.net) binaries. I followed **everything** in [this](https://www.youtube.com/watch?v=TALXtup2CjI) Youtube video.
+
+Clone [sol2](https://github.com/ThePhD/sol2) and [ankerl::unordered_dense](https://github.com/martinus/unordered_dense). Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be prompted to sign into Steamworks).
+
+Open Visual Studio. In File->Open->CMake find and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build and fail.
+
+Manually specify path to sol2 and ankerl in CMakeLists.txt around line 150. In cmake/get_steamapi specify the path to steamsdk around line 7. Follow the patterns.
+
+I'm sorry this process isn't an expedited all-in-one simple installation. Numerous errors and my infamiliarity with CMake has led to this. I will try to improve the process in time but for now this works.
+
 ## Usage
 Command line arguments (all optional):
  - `-root [path]`: Sets the working directory
@@ -282,19 +322,3 @@ As for my previous TODO, the Heightmap will be challenging. It is also pretty cr
 ### 10/7/2022 - The client can join and finally see the world, albeit is an ocean.
 
 ![Ocean spawn image](/docs/pics/ocean_spawn.jpg)
-
-## Building
-Install vcpkg:
-```bash
-git clone https://github.com/microsoft/vcpkg
-.\vcpkg\bootstrap-vcpkg.bat
-.\vcpkg\vcpkg.exe integrate install
-```
-Install the required libraries:
-```bash
-.\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
-.\vcpkg\vcpkg.exe install robin-hood-hashing --triplet=x64-windows
-.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
-.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
-.\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
-```
