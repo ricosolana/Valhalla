@@ -119,163 +119,55 @@ private:
 private:
     class Ord {
     private:
-        // Allocated bytes of [Ordinal, member...]
-        //  First byte is Ordinal
-        //  Remaining allocation is type
-        
-        BYTE_t* m_contiguous;
-
-        static_assert(sizeof(*m_contiguous) == 1);
-
-        Ordinal* _Ordinal() {
-            return (Ordinal*)m_contiguous;
-        }
-
-        const Ordinal* _Ordinal() const {
-            return (Ordinal*)m_contiguous;
-        }
-
-        template<TrivialSyncType T>
-        T* _Member() {
-            return (T*)(m_contiguous + sizeof(Ordinal));
-        }
-
-        template<TrivialSyncType T>
-        const T* _Member() const {
-            return (T*)(m_contiguous + sizeof(Ordinal));
-        }
-
-        template<TrivialSyncType T>
-        void _ForceReAssign(T type) {
-            if (HasValue()) {
-                if (*_Ordinal() != GetOrdinal<T>()) {
-                    // call destructor of self
-                    switch (*_Ordinal()) {
-                    case ORD_STRING: _Member<std::string>()->~basic_string(); break;
-                    case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
-                    default:
-                        assert(false);
-                    }
-
-                    // try resizing memory
-
-                    if (auto mem = (BYTE_t*) std::realloc(this->m_contiguous, sizeof(Ordinal) + sizeof(T)))
-                        this->m_contiguous = mem;
-                    else
-                        throw std::runtime_error("failed to realloc zdo");
-                }
-            } 
-            else {// allocate a new block
-                if (!(this->m_contiguous = (BYTE_t*)std::malloc(sizeof(Ordinal) + sizeof(T))))
-                    throw std::runtime_error("failed to malloc zdo");
-            }
-
-            *this->_Ordinal() = GetOrdinal<T>();
-
-            // https://stackoverflow.com/questions/2494471/c-is-it-possible-to-call-a-constructor-directly-without-new
-            new (this->_Member<T>()) T(std::move(type));
-        }
+        std::variant<std::monostate, float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t> m_data;
 
     public:
-        Ord() : m_contiguous(nullptr) {}
+        Ord() {}
 
         template<TrivialSyncType T>
-        Ord(const T &type) : m_contiguous(nullptr) {
-            _ForceReAssign(type);
-        }
+        Ord(const T &type) : m_data(type) {}
 
-        Ord(const Ord& other) : m_contiguous(nullptr) {
-            *this = other;
-        }
-
-        Ord(Ord&& other) noexcept {
-            this->m_contiguous = other.m_contiguous;
-            other.m_contiguous = nullptr;
-        }
-
-        ~Ord() {
-            if (HasValue()) {
-                switch (*_Ordinal()) {
-                case ORD_FLOAT: break;
-                case ORD_VECTOR3: break;
-                case ORD_QUATERNION: break;
-                case ORD_INT: break;
-                case ORD_LONG: break;
-                case ORD_STRING: _Member<std::string>()->~basic_string(); break;
-                case ORD_ARRAY: _Member<BYTES_t>()->~vector(); break;
-                default:
-                    assert(false && "reached impossible case");
-                }
-
-                free(m_contiguous);
-            }
-        }
+        Ord(const Ord& other) = default;
+        Ord(Ord&& other) = default;
 
         void operator=(const Ord& other) {
-            if (other.HasValue()) {
-                const auto ord = *other._Ordinal();
-                switch (ord) {
-                case ORD_FLOAT:         _ForceReAssign(*other._Member<float>()); break;
-                case ORD_VECTOR3:       _ForceReAssign(*other._Member<Vector3f>()); break;
-                case ORD_QUATERNION:    _ForceReAssign(*other._Member<Quaternion>()); break;
-                case ORD_INT:           _ForceReAssign(*other._Member<int32_t>()); break;
-                case ORD_LONG:          _ForceReAssign(*other._Member<int64_t>()); break;
-                case ORD_STRING:        _ForceReAssign(*other._Member<std::string>()); break;
-                case ORD_ARRAY:         _ForceReAssign(*other._Member<BYTES_t>()); break;
-                default:
-                    assert(false && "reached impossible case");
-                }
-            }
-            else {
-                this->~Ord();
-                this->m_contiguous = nullptr;
-            }
-        }
-
-        void operator=(Ord&& other) {
-            this->~Ord();
-            this->m_contiguous = other.m_contiguous;
-            other.m_contiguous = nullptr;
-
-            /*
-            if (other.HasValue()) {
-                const auto ord = *other._Ordinal();
-                switch (ord) {
-                case ORD_FLOAT:         _ForceReAssign(std::move(*other._Member<float>())); break;
-                case ORD_VECTOR3:       _ForceReAssign(std::move(*other._Member<Vector3f>())); break;
-                case ORD_QUATERNION:    _ForceReAssign(std::move(*other._Member<Quaternion>())); break;
-                case ORD_INT:           _ForceReAssign(std::move(*other._Member<int32_t>())); break;
-                case ORD_LONG:          _ForceReAssign(std::move(*other._Member<int64_t>())); break;
-                case ORD_STRING:        _ForceReAssign(std::move(*other._Member<std::string>())); break;
-                case ORD_ARRAY:         _ForceReAssign(std::move(*other._Member<BYTES_t>())); break;
-                default:
-                    assert(false && "reached impossible case");
-                }
-
-                other.~Ord();
-                other.m_contiguous = nullptr;
-            }
-            else {
-                this->~Ord();
-                this->m_contiguous = nullptr;
-            }*/
+            this->m_data = other.m_data;
         }
 
         bool HasValue() const {
-            return static_cast<bool>(this->m_contiguous);
+            return static_cast<bool>(std::get_if<std::monostate>(&this->m_data));
         }
 
         template<TrivialSyncType T>
         bool IsType() const {
-            return HasValue() && * _Ordinal() == GetOrdinal<T>();
+            return static_cast<bool>(std::get_if<T>(&this->m_data));
         }
 
+        /*
         // Ensure the underlying type matches
         //  Will throw on type mismatch
         template<TrivialSyncType T>
         void AssertType() const {
             if (!IsType<T>())
                 throw std::runtime_error("zdo typemask mismatch");
+        }*/
+
+        template<TrivialSyncType T>
+        T* Get() {
+            auto&& data = std::get_if<T>(&this->m_data);
+            if (data) {
+                return data;
+            }
+            throw std::runtime_error("zdo typemask mismatch");
+        }
+
+        template<TrivialSyncType T>
+        const T* Get() const {
+            auto&& data = std::get_if<T>(&this->m_data);
+            if (data) {
+                return data;
+            }
+            throw std::runtime_error("zdo typemask mismatch");
         }
 
         // Reassign the underlying member value
@@ -283,19 +175,20 @@ private:
         //  Will throw on type mismatch
         template<TrivialSyncType T>
         bool Set(const T& type) {
-            AssertType<T>();
+            auto&& data = Get<T>();
 
             // if fairly trivial 
             //  not BYTES or string because equality operator for them is O(N)
             if ((!std::is_same_v<T, BYTES_t> && !std::is_same_v<T, std::string>)
-                || *_Member<T>() != type) {
-                *_Member<T>() = type;
+                || *data != type) {
+                *data = type;
                 return true;
             }
 
             return false;
         }
 
+        /*
         // Get the underlying member
         //  Will throw on type mismatch
         template<TrivialSyncType T>
@@ -312,39 +205,28 @@ private:
             AssertType<T>();
 
             return _Member<T>();
-        }
+        }*/
 
         // Used when saving or serializing internal ZDO information
         //  Returns whether write was successful (if type match)
         //template<TrivialSyncType T>
         template<TrivialSyncType T>
         bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
-            if (!IsType<T>())
-                return false;
+            auto&& data = Get<T>();
 
             writer.Write(FromShiftHash<T>(shiftHash));
             if constexpr (std::is_same_v<T, std::string>)
-                writer.Write(std::string_view(*_Member<T>()));
+                writer.Write(std::string_view(*data));
             else 
-                writer.Write(*_Member<T>());
+                writer.Write(*data);
             return true;
         }
 
         size_t GetTotalAlloc() {
-            if (this->HasValue()) {
-                switch (*_Ordinal()) {
-                case ORD_FLOAT:         return sizeof(Ordinal) + sizeof(float);
-                case ORD_VECTOR3:       return sizeof(Ordinal) + sizeof(Vector3f);
-                case ORD_QUATERNION:    return sizeof(Ordinal) + sizeof(Quaternion);
-                case ORD_INT:           return sizeof(Ordinal) + sizeof(int32_t);
-                case ORD_LONG:          return sizeof(Ordinal) + sizeof(int64_t);
-                case ORD_STRING:        return sizeof(Ordinal) + sizeof(std::string) + _Member<std::string>()->capacity();
-                case ORD_ARRAY:         return sizeof(Ordinal) + sizeof(BYTES_t) + _Member<BYTES_t>()->capacity();
-                default:
-                    assert(false && "reached impossible case");
-                }
-            }
-            return 0;
+            return std::visit(
+                [](const auto& value) -> size_t { if constexpr (VUtils::Traits::is_iterable_v<decltype(value)>) return value.capacity(); else return 0; },
+                this->m_data
+            );
         }
     };
 
@@ -789,7 +671,7 @@ public:
 
     size_t GetTotalAlloc() {
         size_t size = 0;
-        for (auto&& pair : m_members) size += pair.second.GetTotalAlloc();
+        for (auto&& pair : m_members) size += sizeof(Ord) + pair.second.GetTotalAlloc();
         return size;
     }
 
