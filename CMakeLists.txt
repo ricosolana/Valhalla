@@ -107,6 +107,8 @@ endif ()
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/Main.cpp"
+
     "src/DataReader.cpp"
     
     "src/DungeonGenerator.cpp"
@@ -116,7 +118,7 @@ add_executable(${PROJECT_NAME}
     "src/Heightmap.cpp"
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
-    "src/Main.cpp"
+    
     "src/ModManager.cpp"
     "src/NetAcceptorSteamDedicated.cpp"
     "src/NetManager.cpp"    
@@ -144,7 +146,9 @@ add_executable(${PROJECT_NAME}
     "src/ZoneManager.cpp"    
     "src/NetAcceptorSteamP2P.cpp"
     
- "include/EventManager.h" "include/DiscordManager.h" "src/DiscordManager.cpp" "src/DataWriter.cpp")
+    "src/DiscordManager.cpp" 
+    "src/DataWriter.cpp"
+)
 
 # change this to wherever your sol is
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
