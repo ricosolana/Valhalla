@@ -1,14 +1,14 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <string>
 #include <memory>
 #include <optional>
 #include <queue>
 
 #include <steamnetworkingtypes.h>
-#include <isteamfriends.h>
-
-#include "VUtils.h"
+//#include <isteamfriends.h>
 
 // All ISocket functions are expected to:
 // - return instantly without blocking

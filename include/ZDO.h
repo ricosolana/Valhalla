@@ -1,9 +1,9 @@
 #pragma once
 
+#include "VUtils.h"
 #include <type_traits>
 #include <algorithm>
 
-#include "VUtils.h"
 #include "VUtilsString.h"
 #include "HashUtils.h"
 #include "Quaternion.h"

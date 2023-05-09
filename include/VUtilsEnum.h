@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <concepts>
 
 // A bunch of enum helper methods to make masks and bitshifts way fricking easier

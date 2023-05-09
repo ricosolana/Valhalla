@@ -1,8 +1,8 @@
 #pragma once 
 
+#include "VUtils.h"
 #include <sol/sol.hpp>
 
-#include "VUtils.h"
 #include "VUtilsString.h"
 
 

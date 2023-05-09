@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <ranges>
 
 #include "Peer.h"

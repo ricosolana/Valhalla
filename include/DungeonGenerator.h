@@ -1,8 +1,9 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <vector>
 
-#include "VUtils.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "PrefabManager.h"

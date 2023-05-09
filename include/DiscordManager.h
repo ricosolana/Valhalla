@@ -1,11 +1,11 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <string>
 
-#include <isteamhttp.h>
-#include <dpp/dpp.h>
-
-#include "VUtils.h"
+//#include <isteamhttp.h>
+//#include <dpp/dpp.h>
 
 class IDiscordManager {
 private:

@@ -1,5 +1,14 @@
 #pragma once
 
+//#define WIN32_LEAN_AND_MEAN
+//#include <WinSock2.h>
+//#include <Windows.h>
+
+// lovely redefinitions errors
+#ifdef _WIN32
+    //#include <WinSock2.h>
+#endif
+
 #include <chrono>
 #include <iostream>
 #include <type_traits>
@@ -10,7 +19,9 @@
 #include <filesystem>
 #include <span>
 
-#include <tracy/Tracy.hpp>
+
+//#include <dpp/dpp.h>
+#include <Tracy.hpp>
 #include <easylogging++.h>
 #include <sol/sol.hpp>
 #include <zstd.h>
@@ -18,7 +29,6 @@
 #include <ankerl/unordered_dense.h>
 
 #include "CompileSettings.h"
-#include "VUtilsEnum.h"
 
 namespace fs = std::filesystem;
 using namespace std::chrono;

@@ -1,11 +1,11 @@
 #pragma once
 
+#include "VUtils.h"
 #include <tuple>
 #include <functional>
 #include <type_traits>
 #include <concepts>
 
-#include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "DataReader.h"
 #include "ModManager.h"

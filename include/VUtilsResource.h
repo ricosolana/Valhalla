@@ -1,11 +1,11 @@
 #pragma once
 
+#include "VUtils.h"
 #include <map>
 #include <string>
 #include <vector>
 #include <filesystem>
 
-#include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "VUtilsString.h"
 

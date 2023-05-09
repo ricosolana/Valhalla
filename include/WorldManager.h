@@ -1,9 +1,9 @@
 #pragma once
 
+#include "VUtils.h"
 #include <future>
 #include <thread>
 
-#include "VUtils.h"
 #include "DataReader.h"
 #include "DataWriter.h"
 

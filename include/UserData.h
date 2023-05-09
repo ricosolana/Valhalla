@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VUtils.h"
+
 class UserProfile {
 public:
 	// all relatively confusing verbose names

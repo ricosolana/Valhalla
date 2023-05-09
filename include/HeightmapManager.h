@@ -1,7 +1,7 @@
 #pragma once
 
-#include "HashUtils.h"
 #include "VUtils.h"
+#include "HashUtils.h"
 #include "HeightMap.h"
 #include "TerrainModifier.h"
 #include "Biome.h"

@@ -1,10 +1,11 @@
 #pragma once
 
+#include "VUtils.h"
+
 #include <stdint.h>
 #include <cmath>
 #include <ostream>
 
-#include "VUtils.h"
 #include "VUtilsMath.h"
 
 template<typename T> requires std::is_arithmetic_v<T>

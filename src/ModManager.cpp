@@ -1,6 +1,5 @@
 #include <easylogging++.h>
 #include <yaml-cpp/yaml.h>
-#include <toml++/toml.h>
 
 #include "ModManager.h"
 #include "VUtilsResource.h"

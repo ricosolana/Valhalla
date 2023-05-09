@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VUtilsString.h"
 #include "VUtils.h"
+#include "VUtilsString.h"
 #include "Prefab.h"
 #include "DataReader.h"
 

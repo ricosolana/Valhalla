@@ -2,9 +2,9 @@
 
 #include <thread>
 
+#include "VUtils.h"
 #include "HeightmapManager.h"
 #include "Vector.h"
-#include "VUtils.h"
 #include "ZoneManager.h"
 
 class IHeightmapBuilder {

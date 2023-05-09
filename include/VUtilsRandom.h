@@ -3,9 +3,9 @@
 // reverse engineered implementation of Unity Random and associated functions
 // these are algorithms only, not steps, so shoo patent lawyers!
 
+#include "VUtils.h"
 #include <random>
 
-#include "VUtils.h"
 #include "Vector.h"
 
 namespace VUtils::Random {

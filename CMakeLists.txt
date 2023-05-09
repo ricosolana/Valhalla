@@ -35,6 +35,10 @@ endif()
 #add_compile_definitions(WIN32_LEAN_AND_MEAN)
 #add_compile_definitions(VC_EXTRALEAN)
 
+#add_definitions(WIN32_LEAN_AND_MEAN)
+
+#add_compile_definitions(WIN32_LEAN_AND_MEAN)
+
 ############
 # Libraries
 ############
@@ -51,6 +55,8 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
 
 find_package(dpp CONFIG REQUIRED)
+
+#target_compile_definitions(dpp PUBLIC WIN32_LEAN_AND_MEAN)
 
 #add_compile_definitions(SOL_PRINT_ERRORS)
 
@@ -80,7 +86,7 @@ CPMAddPackage(
 target_include_directories(easyloggingpp PUBLIC ${easyloggingpp_SOURCE_DIR}/src)
 target_compile_definitions(easyloggingpp PUBLIC 
     ELPP_THREAD_SAFE 
-    ELPP_FEATURE_PERFORMANCE_TRACKING
+    #ELPP_FEATURE_PERFORMANCE_TRACKING
     ELPP_DISABLE_DEBUG_LOGS
     ELPP_NO_DEFAULT_LOG_FILE
     ELPP_NO_LOG_TO_FILE
@@ -103,10 +109,14 @@ endif ()
 
 #add_definitions(WIN32_LEAN_AND_MEAN)
 
+#add_compile_definitions(WIN32_LEAN_AND_MEAN)
+
 ##########
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/Main.cpp"
+
     "src/DataReader.cpp"
     
     "src/DungeonGenerator.cpp"
@@ -116,7 +126,6 @@ add_executable(${PROJECT_NAME}
     "src/Heightmap.cpp"
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
-    "src/Main.cpp"
     "src/ModManager.cpp"
     "src/NetAcceptorSteamDedicated.cpp"
     "src/NetManager.cpp"    
@@ -144,7 +153,7 @@ add_executable(${PROJECT_NAME}
     "src/ZoneManager.cpp"    
     "src/NetAcceptorSteamP2P.cpp"
     
- "include/EventManager.h" "include/DiscordManager.h" "src/DiscordManager.cpp" "src/DataWriter.cpp")
+    "src/DiscordManager.cpp" "src/DataWriter.cpp")
 
 # change this to wherever your sol is
 set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
@@ -178,7 +187,19 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE dpp::dpp
 )
 
+#target_compile_definitions(${PROJECT_NAME} PUBLIC WIN32_LEAN_AND_MEAN)
+#set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_LEAN_AND_MEAN 1)
+
+#target_compile_definitions(dpp INTERFACE WIN32_LEAN_AND_MEAN)
+
+#set_target_properties(${PROJECT_NAME} dpp PROPERTIES WIN32_LEAN_AND_MEAN 1)
+#set_target_properties(${PROJECT_NAME} easyloggingpp PROPERTIES WIN32_LEAN_AND_MEAN 1)
+
 #target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
+
+#add_compile_definitions(WIN32_LEAN_AND_MEAN)
+
+#target_compile_definitions(dpp::dpp PUBLIC WIN32_LEAN_AND_MEAN)
 
 
 ##########

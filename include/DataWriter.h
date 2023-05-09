@@ -1,13 +1,12 @@
 #pragma once
 
-#include "VUtils.h"
+#include "DataStream.h"
 #include "ZDOID.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "UserData.h"
 #include "VUtilsTraits.h"
 #include "ModManager.h"
-#include "DataStream.h"
 #include "DataReader.h"
 
 //class DataReader;

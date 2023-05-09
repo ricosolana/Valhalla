@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector.h"
 #include "VUtils.h"
+#include "Vector.h"
 #include "HashUtils.h"
 #include "ValhallaServer.h"
 #include "TerrainModifier.h"

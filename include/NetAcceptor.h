@@ -1,11 +1,13 @@
 #pragma once
 
+#include "VUtils.h"
 #include <memory>
 #include <thread>
 #include <steam_gameserver.h>
+//#include <steam_api_common.h>
+//#include <steamnetworkingtypes.h>
 
 #include "NetSocket.h"
-
 
 class IAcceptor {
 public:
