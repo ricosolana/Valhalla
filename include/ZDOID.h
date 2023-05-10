@@ -72,4 +72,7 @@ public:
     static const ZDOID NONE;
 };
 
-std::ostream& operator<<(std::ostream& st, ZDOID& zdoid);
+std::ostream& operator<<(std::ostream& st, const ZDOID& zdoid);
+
+template <> struct quill::copy_loggable<ZDOID> : std::true_type {};
+template <> struct fmt::formatter<ZDOID> : ostream_formatter {};

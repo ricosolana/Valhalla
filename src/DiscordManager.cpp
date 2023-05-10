@@ -26,18 +26,17 @@ void IDiscordManager::Init() {
 	// https://dpp.dev/slashcommands.html
 
 	m_bot = std::make_unique<dpp::cluster>(VH_SETTINGS.discordToken);
-	
-	/*
+		
 	m_bot->on_log([](const dpp::log_t& log) {
 		switch (log.severity) {
-		case dpp::loglevel::ll_trace: //LOG(TRACE) << log.message; break;
-		case dpp::loglevel::ll_debug: //LOG(DEBUG) << log.message; break;
-		case dpp::loglevel::ll_info: //LOG(INFO) << log.message; break;
-		case dpp::loglevel::ll_warning: //LOG(WARNING) << log.message; break;
-		case dpp::loglevel::ll_error: // fallthrough
-		case dpp::loglevel::ll_critical: //LOG(ERROR) << log.message; break;
+		case dpp::loglevel::ll_trace: LOG_TRACE_L1(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_debug: LOG_DEBUG(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_info: LOG_INFO(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_warning: LOG_WARNING(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_error: LOG_ERROR(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_critical: LOG_CRITICAL(LOGGER, "{}", log.message); break;
 		}
-	});*/
+	});
 
 	m_bot->on_slashcommand([this](const dpp::slashcommand_t& event) {
 		//event.thinking(true);

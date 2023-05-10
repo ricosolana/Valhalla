@@ -35,8 +35,6 @@ static constexpr TimeOfDay TIME_DAY = 270;
 static constexpr TimeOfDay TIME_AFTERNOON = 900;
 static constexpr TimeOfDay TIME_NIGHT = 1530;
 
-
-
 class IValhalla {
     friend class IModManager;
     friend class IWorldManager;

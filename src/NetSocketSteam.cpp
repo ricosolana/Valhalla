@@ -176,7 +176,10 @@ void SteamSocket::SendQueued() {
     }
 
     int64_t state[sizeof(messages) / sizeof(messages[0])]{};
-    SteamGameServerNetworkingSockets()->SendMessages(count, messages, state);
+    if (VH_SETTINGS.serverDedicated)
+        SteamGameServerNetworkingSockets()->SendMessages(count, messages, state);
+    else
+        SteamNetworkingSockets()->SendMessages(count, messages, state);
 }
 
 //#ifndef ELPP_DISABLE_VERBOSE_LOGS

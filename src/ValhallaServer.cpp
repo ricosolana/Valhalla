@@ -22,6 +22,8 @@
 #include "RandomEventManager.h"
 #include "DiscordManager.h"
 
+quill::Logger *LOGGER = nullptr;
+
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
     return VALHALLA_INSTANCE.get();
@@ -299,13 +301,13 @@ void IValhalla::LoadFiles(bool reloading) {
                     node = YAML::Load(opt.value());
                 }
                 catch (const YAML::ParserException& e) {
-                    //LOG(INFO) << e.what();
+                    LOG_INFO(LOGGER, "{}", e.what());
                     fileError = true;
                 }
             }
             else {
                 if (!reloading) {
-                    //LOG(INFO) << "Server config not found, creating...";
+                    LOG_INFO(LOGGER, "Server config not found, creating...");
                 }
                 fileError = true;
             }
@@ -397,10 +399,12 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
-            //if (m_settings.serverPassword.empty())
-                //LOG(WARNING) << "Server does not have a password";
-            //else
-                //LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
+            if (m_settings.serverPassword.empty()) {
+                LOG_WARNING(LOGGER, "Server does not have a password");
+            }
+            else {
+                LOG_INFO(LOGGER, "Server password is '{}'", m_settings.serverPassword);
+            }
 
 #ifdef VH_OPTION_ENABLE_CAPTURE
             if (m_settings.packetMode == PacketMode::CAPTURE) {
@@ -522,7 +526,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_blacklist = node.as<decltype(m_blacklist)>();
         }
         catch (const YAML::Exception& e) {
-            //LOG(ERROR) << e.what();
+            LOG_ERROR(LOGGER, "{}", e.what());
         }
     }
 
@@ -532,7 +536,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_whitelist = node.as<decltype(m_whitelist)>();
         }
         catch (const YAML::Exception& e) {
-            //LOG(ERROR) << e.what();
+            LOG_ERROR(LOGGER, "{}", e.what());
         }
     }
 
@@ -542,7 +546,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_admin = node.as<decltype(m_admin)>();
         }
         catch (const YAML::Exception& e) {
-            //LOG(ERROR) << e.what();
+            LOG_ERROR(LOGGER, "{}", e.what());
         }
     }
 
@@ -564,7 +568,7 @@ void IValhalla::LoadFiles(bool reloading) {
                 DiscordManager()->m_linkedAccounts = node.as<decltype(IDiscordManager::m_linkedAccounts)>();
             }
             catch (const YAML::Exception& e) {
-                //LOG(ERROR) << e.what();
+                LOG_ERROR(LOGGER, "{}", e.what());
             }
         }
     }
@@ -621,10 +625,12 @@ void IValhalla::Stop() {
         m_terminate.wait(true);
 }
 
-void IValhalla::Start() {
-    //LOG(INFO) << "Starting Valhalla " << VH_VERSION << " (Valheim " << VConstants::GAME << ")";
-    
+void IValhalla::Start() {    
     MAIN_THREAD = std::this_thread::get_id();
+    
+
+
+    LOG_INFO(LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
 
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
@@ -670,7 +676,8 @@ void IValhalla::Start() {
 #else // !_WIN32
     signal(SIGINT, [](int) {
 #endif // !_WIN32
-        //el::Helpers::setThreadName("system");
+        tracy::SetThreadName("system");
+
         Valhalla()->Stop();
 #ifdef _WIN32
         return TRUE;
@@ -730,7 +737,7 @@ void IValhalla::Start() {
 
     VH_DISPATCH_WEBHOOK("Server stopping");
             
-    //LOG(INFO) << "Terminating server";
+    LOG_INFO(LOGGER, "Terminating server");
 
     // Cleanup 
     NetManager()->Uninit();
@@ -786,9 +793,8 @@ void IValhalla::Start() {
 
         VUtils::Resource::WriteFile("linked.yml", emit.c_str());
     }
-    static constexpr auto szii = sizeof(Peer);
 
-    //LOG(INFO) << "Server was gracefully terminated";
+    LOG_INFO(LOGGER, "Server was gracefully terminated");
 
     // signal any other dummy thread to continue
     m_terminate = false;
@@ -816,7 +822,7 @@ void IValhalla::Update() {
 
 void IValhalla::PeriodUpdate() {
     PERIODIC_NOW(180s, {
-        //LOG(INFO) << "There are a total of " << NetManager()->GetPeers().size() << " peers online";
+        LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     });
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
@@ -846,7 +852,7 @@ void IValhalla::PeriodUpdate() {
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
         PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
-            //LOG(INFO) << "World saving in 30s";
+            LOG_INFO(LOGGER, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         });
 

@@ -26,6 +26,26 @@ int main(int argc, char **argv) {
     Tests().RunTests();
 #else // !RUN_TESTS
     tracy::SetThreadName("main");
+
+    {        
+        quill::Config cfg;
+        cfg.enable_console_colours = true;
+        cfg.backend_thread_yield = false;
+        cfg.backend_thread_sleep_duration = 1ms;
+
+        //auto&& handler = quill::stdout_handler();
+        //handler->set_pattern("%(ascii_time) [%(process)] [%(thread)] %(logger_name) - %(message)", // format
+        //    "%D %H:%M:%S.%Qms %z",     // timestamp format
+        //    quill::Timezone::GmtTime); // timestamp's timezone
+        //
+        //cfg.default_handlers.emplace_back(std::move(handler));
+
+        quill::configure(cfg);
+        quill::start();
+
+        LOGGER = quill::get_logger();
+        LOGGER->set_log_level(quill::LogLevel::TraceL3);
+    }
     
     fs::current_path("./data/");
     
@@ -55,7 +75,7 @@ int main(int argc, char **argv) {
 #ifndef _DEBUG
     }
     catch (const std::exception& e) {
-        //LOG(ERROR) << e.what();
+        LOG_ERROR(LOGGER, "{}", e.what());
         return 1;
     }
 #endif // _DEBUG

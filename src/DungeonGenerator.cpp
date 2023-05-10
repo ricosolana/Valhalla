@@ -44,10 +44,8 @@ void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
 
 	//this->m_generatedTime = steady_clock::now();
 
-	//LOG(INFO) << "Finished generating dungeon: '" << m_dungeon.m_prefab->m_name
-	//	<< "', pos: " << m_pos
-	//	<< ", seed: " << seed
-	//	<< ", rooms: " << m_placedRooms.size() << "/" << m_dungeon.m_maxRooms;
+	LOG_INFO(LOGGER, "Finished generating dungeon: '{}', pos: {}, seed: {}, rooms: {}/{}", 
+		m_dungeon.m_prefab->m_name, m_pos, seed, m_placedRooms.size(), m_dungeon.m_maxRooms);
 }
 
 //
@@ -254,7 +252,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		auto&& doorDef = this->FindDoorType(state, roomConnection.get().m_connection.get().m_type);
 		if (!doorDef)
 		{
-			//LOG(INFO) << "No door type for connection: " << roomConnection.get().m_connection.get().m_type;
+			LOG_INFO(LOGGER, "No door type for connection: {}", roomConnection.get().m_connection.get().m_type);
 		}
 		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance)
 			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon.m_doorChance))
@@ -267,7 +265,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		}
 	}
 
-	//LOG(INFO) << "Placed " << num << " doors";
+	LOG_INFO(LOGGER, "Placed {} doors", num);
 }
 
 void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
@@ -309,11 +307,17 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 						}
 					}
 
-					//if (!flag) LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
+					if (!flag) {
+						LOG_WARNING(LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+					}
 				}
-				//else LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
+				else {
+					LOG_WARNING(LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+				}
 			}
-			//else LOG(INFO) << "Cyclic detected: Door types successfully match";
+			else {
+				LOG_INFO(LOGGER, "Cyclic detected: Door types successfully match");
+			}
 
 			++itr1;
 		}
@@ -350,8 +354,9 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 				}
 			}
 
-			if (!flag2)
-				//LOG(WARNING) << "Failed to place end cap";
+			if (!flag2) {
+				LOG_WARNING(LOGGER, "Failed to place end cap");
+			}
 
 			if (!erased) {
 				++itr1;
@@ -408,7 +413,7 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
 		if (this->CheckRequiredRooms()
 			&& m_placedRooms.size() > this->m_dungeon.m_minRooms)
 		{
-			//LOG(INFO) << "All required rooms have been placed, stopping generation";
+			LOG_INFO(LOGGER, "All required rooms have been placed, stopping generation");
 			return;
 		}
 	}
@@ -439,7 +444,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 
 		size *= .5f;
 
-		////LOG(INFO) << "start: " 
+		//LOG(INFO) << "start: " 
 		//	<< "polygon(("
 		//	<< pos.x - size.x << "," << pos.z - size.z << "),("
 		//	<< pos.x - size.x << "," << pos.z + size.z << "),("

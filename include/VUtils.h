@@ -16,9 +16,14 @@
 #include <ankerl/unordered_dense.h>
 #include <dpp/dpp.h>
 #include <tracy/Tracy.hpp>
+#include <quill/Quill.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"
+
+// global logger
+//  I don't know where else to put it; this seems fine
+extern quill::Logger* LOGGER;
 
 namespace fs = std::filesystem;
 using namespace std::chrono;

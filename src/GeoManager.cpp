@@ -14,7 +14,7 @@ IGeoManager* GeoManager() {
 
 
 void IGeoManager::PostWorldInit() {
-	//LOG(INFO) << "Initializing GeoManager";
+	LOG_INFO(LOGGER, "Initializing GeoManager");
 
 	m_world = WorldManager()->GetWorld();
 	assert(m_world);

@@ -12,12 +12,13 @@ AcceptorSteamP2P::AcceptorSteamP2P() {
     //}
 
     if (!SteamAPI_Init()) {
-        //LOG(FATAL) << "Failed to init steam api as client (not logged in?)";
+        LOG_CRITICAL(LOGGER, "Failed to init steam api (steam_appid.txt missing or not logged in?)");
+        std::exit(0);
     }
 
-    //LOG(INFO) << "Logged into steam as " << SteamFriends()->GetPersonaName();
+    LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
     
-    //LOG(INFO) << "Authentication status: " << SteamNetworkingSockets()->InitAuthentication();
+    LOG_INFO(LOGGER, "Authentication status: {}", SteamNetworkingSockets()->InitAuthentication());
 
     //auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 64);
     auto handle = SteamMatchmaking()->CreateLobby(VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
@@ -82,7 +83,7 @@ static const char* stateToString(ESteamNetworkingConnectionState state) {
 }
 
 void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* data) {
-    //LOG(INFO) << "NetConnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
+    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: ", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
         && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute 
@@ -99,8 +100,8 @@ void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallb
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
     {
-        //if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
-            //LOG(INFO) << data->m_info.m_szEndDebug;
+        if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+            LOG_INFO(LOGGER, "{}", data->m_info.m_szEndDebug);
 
         auto&& pair = m_sockets.find(data->m_hConn);
 
@@ -114,15 +115,15 @@ void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallb
 }
 
 void AcceptorSteamP2P::OnSteamServersConnected(SteamServersConnected_t* data) {
-    //LOG(INFO) << "Steam server connected";
+    LOG_INFO(LOGGER, "Steam server connected");
 }
 
 void AcceptorSteamP2P::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
-    //LOG(WARNING) << "Steam server disconnected";
+    LOG_INFO(LOGGER, "Steam server disconnected");
 }
 
 void AcceptorSteamP2P::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
-    //LOG(ERROR) << "Steam server connect failure";
+    LOG_WARNING(LOGGER, "Steam server connect failure");
 }
 
 
@@ -130,32 +131,32 @@ void AcceptorSteamP2P::OnSteamServerConnectFailure(SteamServerConnectFailure_t* 
 // call results
 void AcceptorSteamP2P::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
     if (failure) {
-        //LOG(ERROR) << "Failed to create lobby";
+        LOG_ERROR(LOGGER, "Failed to create lobby");
     }
     else if (data->m_eResult == k_EResultNoConnection) {
-        //LOG(ERROR) << "Failed to connect to Steam to register lobby";
+        LOG_ERROR(LOGGER, "Failed to connect to Steam to register lobby");
     }
     else {
         this->m_lobbyID = CSteamID(data->m_ulSteamIDLobby);
 
-        //LOG(INFO) << "Created lobby";
+        LOG_INFO(LOGGER, "Created lobby");
 
         this->OnConfigLoad(false);
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
-            //LOG(WARNING) << "Unable to set lobby version";
+            LOG_WARNING(LOGGER, "Unable to set lobby version");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
-            //LOG(WARNING) << "Failed to set lobby networkversion";
+            LOG_WARNING(LOGGER, "Failed to set lobby networkversion");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user")) {
-            //LOG(WARNING) << "Failed to set lobby serverType";
+            LOG_WARNING(LOGGER, "Failed to set lobby serverType");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", "")) {
-            //LOG(WARNING) << "Failed to set lobby host";
+            LOG_WARNING(LOGGER, "Failed to set lobby host");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
-            //LOG(WARNING) << "Failed to set lobby isCrossplay";
+            LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
         }
 
         SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
@@ -166,10 +167,10 @@ void AcceptorSteamP2P::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
 void AcceptorSteamP2P::OnConfigLoad(bool reloading) {
     if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
-        //LOG(ERROR) << "Failed to set lobby name";
+        LOG_ERROR(LOGGER, "Failed to set lobby name");
     }
     
     if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1")) {
-        //LOG(ERROR) << "Unable to set lobby password flag";
+        LOG_ERROR(LOGGER, "Unable to set lobby password flag");
     }
 }

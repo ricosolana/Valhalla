@@ -133,6 +133,18 @@ using Vector2i = Vector2<int32_t>;
 std::ostream& operator<<(std::ostream& st, const Vector2f& vec);
 std::ostream& operator<<(std::ostream& st, const Vector2i& vec);
 
+template <> struct fmt::formatter<Vector2f> : ostream_formatter {};
+template <> struct fmt::formatter<Vector2i> : ostream_formatter {};
+
+namespace quill {
+    template <>
+    struct copy_loggable<Vector2f> : std::true_type {};
+
+    template <>
+    struct copy_loggable<Vector2i> : std::true_type {};
+}
+
+
 
 template<typename T> requires std::is_arithmetic_v<T>
 struct Vector3 {
@@ -285,3 +297,6 @@ struct Vector3 {
 using Vector3f = Vector3<float>;
 
 std::ostream& operator<<(std::ostream& st, const Vector3f& vec);
+
+template <> struct quill::copy_loggable<Vector3f> : std::true_type {};
+template <> struct fmt::formatter<Vector3f> : ostream_formatter {};

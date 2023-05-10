@@ -21,7 +21,7 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
         size_t chunkIndex = 0;
 
         if (!fs::exists(root) || !fs::is_directory(root)) {
-            //LOG(WARNING) << "Failed to find dir capture " << root.c_str();
+            LOG_WARNING(LOGGER, "Failed to find dir capture {}", root.c_str());
             return;
         }
 
@@ -55,20 +55,20 @@ ReplaySocket::ReplaySocket(std::string host, int session, nanoseconds disconnect
                         //fs::path path = root / (std::to_string(++chunkIndex) + ".cap");
                     }
                     else {
-                        //LOG(WARNING) << "Failed to decompress capture chunk " << path.c_str();
+                        LOG_WARNING(LOGGER, "Failed to decompress capture chunk {}", path.c_str());
                         break;
                     }
 
                 }
                 else {
-                    //LOG(WARNING) << "Finished replay for " << host;
+                    LOG_WARNING(LOGGER, "Finished replay for {}", host);
                     break;
                 }
             }
             std::this_thread::sleep_for(1ms);
         }
 
-        //LOG(WARNING) << "Terminating async capture reader " << host;
+        LOG_WARNING(LOGGER, "Terminating async capture reader {}", host);
     });
 
     // Wait for some packets to prepare before returning
@@ -98,7 +98,7 @@ void ReplaySocket::Send(BYTES_t) {}
 std::optional<BYTES_t> ReplaySocket::Recv() {
     std::scoped_lock<std::mutex> scoped(m_mux);
     if (m_ready.empty()) {
-        //LOG(WARNING) << "No packets queued for replay";
+        LOG_WARNING(LOGGER, "No packets queued for replay");
         return std::nullopt;
     }
 
