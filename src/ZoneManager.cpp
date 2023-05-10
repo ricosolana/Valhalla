@@ -21,7 +21,7 @@ IZoneManager* ZoneManager() {
 
 // private
 void IZoneManager::PostPrefabInit() {
-    //LOG(INFO) << "Initializing ZoneManager";
+    LOG_INFO(LOGGER, "Initializing ZoneManager");
 
     {
 #ifdef VH_OPTION_ENABLE_ZONE_FEATURES
@@ -34,8 +34,8 @@ void IZoneManager::PostPrefabInit() {
 
         pkg.Read<std::string_view>(); // comment
         auto ver = pkg.Read<std::string_view>();
-        //if (ver != VConstants::GAME)
-            //LOG(WARNING) << "features.pkg uses different game version than server (" << ver << ")";
+        if (ver != VConstants::GAME)
+            LOG_WARNING(LOGGER, "features.pkg uses different game version than server ({})", ver);
 
         auto count = pkg.Read<int32_t>();
         for (int i=0; i < count; i++) {
@@ -91,8 +91,7 @@ void IZoneManager::PostPrefabInit() {
             m_features.push_back(std::move(loc));
         }
 
-        //LOG(INFO) << "Loaded " << count << " features";
-
+        LOG_INFO(LOGGER, "Loaded {} features", count);
 #endif
     }    
 
@@ -108,7 +107,7 @@ void IZoneManager::PostPrefabInit() {
         pkg.Read<std::string>(); // comment
         std::string ver = pkg.Read<std::string>();
         if (ver != VConstants::GAME) {
-            //LOG(WARNING) << "vegetation.pkg uses different game version than server (" << ver << ")";
+            LOG_WARNING(LOGGER, "vegetation.pkg uses different game version than server ({})", ver);
         }
 
         auto count = pkg.Read<int32_t>();
@@ -154,7 +153,7 @@ void IZoneManager::PostPrefabInit() {
             m_foliage.push_back(std::move(veg));
         }
 
-        //LOG(INFO) << "Loaded " << count << " vegetation";
+        LOG_INFO(LOGGER, "Loaded {} vegetation", count);
 #endif
     }
 
@@ -178,7 +177,7 @@ void IZoneManager::PostPrefabInit() {
 
     RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string_view locationName, Vector3f point, std::string_view pinName, int pinType, bool showMap) {
         if (auto&& instance = GetNearestFeature(locationName, point)) {
-            //LOG(INFO) << "Found location: '" << locationName << "'";
+            LOG_INFO(LOGGER, "Found location: '{}'", locationName);
             RouteManager()->Invoke(peer->m_uuid, 
                 Hashes::Routed::S2C_ResponseIcon, 
                 pinName, 
@@ -188,7 +187,7 @@ void IZoneManager::PostPrefabInit() {
             );
         }
         else {
-            //LOG(INFO) << "Failed to find location: '" << locationName << "'";
+            LOG_INFO(LOGGER, "Failed to find location: '{}'", locationName);
         }
     });
 
@@ -251,7 +250,7 @@ void IZoneManager::SendLocationIcons() {
 
 // private
 void IZoneManager::SendLocationIcons(Peer& peer) {
-    //LOG(INFO) << "Sending location icons to " << peer.m_name;
+    LOG_INFO(LOGGER, "Sending location icons to {}", peer.m_name);
 
     BYTES_t bytes;
     DataWriter writer(bytes);
@@ -295,7 +294,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
         const auto pgwVersion = reader.Read<int32_t>(); // 99
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
         if (pgwVersion != VConstants::PGW)
-            //LOG(WARNING) << "Loading unsupported pgw version";
+            LOG_WARNING(LOGGER, "Loading unsupported pgw version");
 
         if (version >= 14) {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
@@ -322,11 +321,11 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                             std::make_unique<Feature::Instance>(*location, pos);
                     }
                     else {
-                        //LOG(ERROR) << "Failed to find location " << text;
+                        LOG_ERROR(LOGGER, "Failed to find location {}", text);
                     }
                 }
 
-                //LOG(INFO) << "Loaded " << countLocations << " ZoneLocation instances";
+                LOG_INFO(LOGGER, "Loaded {} ZoneLocation instances", countLocations);
                 if (pgwVersion != VConstants::PGW) {
                   m_generatedFeatures.clear();
                 }
@@ -695,7 +694,7 @@ void IZoneManager::PostGeoInit() {
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 
     if (!VH_SETTINGS.worldFeatures) {
-        //LOG(WARNING) << "Location generation is disabled";
+        LOG_WARNING(LOGGER, "Location generation is disabled");
         PrepareFeatures(spawnLoc->second);
     }
     else {
@@ -707,7 +706,7 @@ void IZoneManager::PostGeoInit() {
             PrepareFeatures(*loc.get());
         }
 
-        //LOG(INFO) << "Location generation took " << duration_cast<seconds>(steady_clock::now() - now).count() << "s";
+        LOG_INFO(LOGGER, "Location generation took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 #endif
     }
 
@@ -722,12 +721,11 @@ void IZoneManager::PostGeoInit() {
         auto now(steady_clock::now());
         int prevCount = 0;
 
-        //LOG(WARNING) << "Pregenerating world...";
+        LOG_WARNING(LOGGER, "Pregenerating world...");
         while (m_generatedZones.size() < WORLD_RADIUS_IN_ZONES*2* WORLD_RADIUS_IN_ZONES*2) {
             for (int y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
                 for (int x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
                     TryGenerateZone({ x, y });
-                    /*
                     PERIODIC_NOW(3s, {
                         
                         // print a cool grid
@@ -747,16 +745,16 @@ void IZoneManager::PostGeoInit() {
                             std::cout << COLOR_RESET << "\n";
                         }
 
-                        //LOG(WARNING) << m_generatedZones.size() << "/" << (WORLD_RADIUS_IN_ZONES * 2 * WORLD_RADIUS_IN_ZONES * 2)
-                            << " zones generated \t(" << ((m_generatedZones.size() - prevCount) / 3) << "z/s)";
+                        LOG_WARNING(LOGGER, "{}/{} zones generated \t({} z/s)", 
+                            m_generatedZones.size(), (WORLD_RADIUS_IN_ZONES * 2 * WORLD_RADIUS_IN_ZONES * 2), 
+                            ((m_generatedZones.size() - prevCount) / 3));
                         prevCount = m_generatedZones.size();
-
-                    });*/
+                    });
                 }
             }
         }
 
-        //LOG(WARNING) << "Pregeneration took " << duration_cast<seconds>(steady_clock::now() - now);
+        LOG_WARNING(LOGGER, "Pregeneration took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
     }
 }
 
@@ -855,8 +853,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     }
 
     if (spawnedLocations < feature.m_quantity) {
-        //LOG(WARNING) << "Failed to place all " << feature.m_name << ", placed " 
-            //<< spawnedLocations << "/" << feature.m_quantity;
+        LOG_WARNING(LOGGER, "Failed to place all {}, placed {}/{}", feature.m_name, spawnedLocations, feature.m_quantity);
 
         ////LOG(ERROR) << "errLocations " << errLocations;
         ////LOG(ERROR) << "errCenterDistances " << errCenterDistances;
@@ -951,7 +948,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(const Zone
         HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         GenerateFeature(location, seed, position, rot);
 
-        //LOG(INFO) << "Placed '" << location.m_name << "' in zone (" << zoneID.x << ", " << zoneID.y << ") at height " << position.y;
+        LOG_INFO(LOGGER, "Placed '{}' in zone {} ({})", location.m_name, zoneID, position);
 
         // Remove all other Haldor locations, etc...
         if (location.m_unique) {
@@ -982,7 +979,7 @@ void IZoneManager::RemoveUngeneratedFeatures(const Feature& feature) {
         else ++itr;
     }
 
-    //LOG(INFO) << "Removed " << count << " unplaced '" << feature.m_name << "'";
+    LOG_INFO(LOGGER, "Removed {} unplaced '{}'", count, feature.m_name);
 }
 
 // private

@@ -212,17 +212,19 @@ private:
         //template<TrivialSyncType T>
         template<TrivialSyncType T>
         bool Write(DataWriter& writer, SHIFTHASH_t shiftHash) const {
-            auto&& data = Get<T>();
-
-            writer.Write(FromShiftHash<T>(shiftHash));
-            if constexpr (std::is_same_v<T, std::string>)
-                writer.Write(std::string_view(*data));
-            else 
-                writer.Write(*data);
-            return true;
+            auto&& data = std::get_if<T>(&this->m_data);
+            if (data) {
+                writer.Write(FromShiftHash<T>(shiftHash));
+                if constexpr (std::is_same_v<T, std::string>)
+                    writer.Write(std::string_view(*data));
+                else
+                    writer.Write(*data);
+                return true;
+            }
+            return false;
         }
 
-        size_t GetTotalAlloc() {
+        size_t GetTotalAlloc() const {
             return std::visit(
                 [](const auto& value) -> size_t { if constexpr (VUtils::Traits::is_iterable_v<decltype(value)>) return value.capacity(); else return 0; },
                 this->m_data

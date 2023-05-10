@@ -19,7 +19,7 @@ const Prefab* IPrefabManager::GetPrefab(HASH_t hash) {
 }
 
 void IPrefabManager::Init() {
-    //LOG(INFO) << "Initializing PrefabManager";
+    LOG_INFO(LOGGER, "Initializing PrefabManager");
 
     auto opt = VUtils::Resource::ReadFile<BYTES_t>("prefabs.pkg");
 
@@ -31,13 +31,13 @@ void IPrefabManager::Init() {
 
     pkg.Read<std::string>(); // comment
     std::string ver = pkg.Read<std::string>();
-    //if (ver != VConstants::GAME)
-        //LOG(WARNING) << "prefabs.pkg uses different game version than server (" << ver << ")";
+    if (ver != VConstants::GAME)
+        LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver);
 
     auto count = pkg.Read<int32_t>();
     for (int i=0; i < count; i++) {
         Register(pkg, true);
     }
 
-    //LOG(INFO) << "Loaded " << count << " prefabs";
+    LOG_INFO(LOGGER, "Loaded {} prefabs", count);
 }

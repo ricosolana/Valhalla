@@ -31,13 +31,13 @@ World::World(DataReader reader) {
 
 	auto worldVersion = reader.Read<int32_t>();
 
-	//if (worldVersion != VConstants::WORLD)
-		////LOG(WARNING) << "Loading unsupported world meta version: " << worldVersion;
+	if (worldVersion != VConstants::WORLD) {
+		LOG_WARNING(LOGGER, "Loading unsupported world meta version: {}", worldVersion);
+	}
 
 	m_name = reader.Read<std::string>();
 	m_seedName = reader.Read<std::string>();
-	//m_seed = reader.Read<int32_t>();
-	reader.Read<HASH_t>();
+	reader.Read<HASH_t>(); // seed
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
 	m_uid = reader.Read<OWNER_t>();
 	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
@@ -86,10 +86,10 @@ void World::WriteFileMeta(const fs::path& root) {
 
 	// create fwl
 	if (VUtils::Resource::WriteFile(path, bytes)) {
-		//LOG(INFO) << "Wrote world meta to " << path.c_str();
+		LOG_INFO(LOGGER, "Wrote world meta to {}", path.string());
 	}
 	else {
-		//LOG(ERROR) << "Failed to write world meta to " << path.c_str();
+		LOG_ERROR(LOGGER, "Failed to write world meta to {}", path.string());
 	}
 }
 
@@ -103,10 +103,10 @@ void World::WriteFileDB(const fs::path& root) {
 	auto path(root / (m_name + ".db"));
 
 	if (VUtils::Resource::WriteFile(path, bytes)) {
-		//LOG(INFO) << "World save to " << path.c_str() << " in " << duration_cast<milliseconds>(finishTime - startTime);
+		LOG_INFO(LOGGER, "World save to {} took {}s", path.string(), duration_cast<milliseconds>(finishTime - startTime).count());
 	}
 	else {
-		//LOG(WARNING) << "Failed to save world to " << path.c_str();
+		LOG_WARNING(LOGGER, "Failed to save world to {}", path.string());
 	}
 }
 
@@ -120,13 +120,14 @@ void World::LoadFileDB(const fs::path& root) {
 
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
-				//LOG(WARNING) << "Loading unsupported world version " << worldVersion;
+				LOG_WARNING(LOGGER, "Loading unsupported world version ", worldVersion);
 				if (!VH_SETTINGS.worldModern) {
-					//LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
+					LOG_WARNING(LOGGER, "Legacy ZDOs enabled. Networked objects might not behave as expected");
 				}
 			}
-			else
-				//LOG(INFO) << "Loading world version " << worldVersion;
+			else {
+				LOG_INFO(LOGGER, "Loading world version ", worldVersion);
+			}
 
 			if (worldVersion >= 4)
 				Valhalla()->m_worldTime = reader.Read<double>();
@@ -141,10 +142,10 @@ void World::LoadFileDB(const fs::path& root) {
 			if (worldVersion >= 15)
 				RandomEventManager()->Load(reader, worldVersion);
 
-			//LOG(INFO) << "World loading took " << duration_cast<seconds>(steady_clock::now() - now);
+			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
-			//LOG(ERROR) << "Failed to load world: " << e.what();
+			LOG_ERROR(LOGGER, "Failed to load world: ", e.what());
 		}
 	}	
 }
@@ -156,21 +157,21 @@ void World::CopyCompressDB(const fs::path& root) {
 		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
 			auto compressed = ZStdCompressor().Compress(*oldSave);
 			if (!compressed) {
-				//LOG(ERROR) << "Failed to compress world backup " << path;
+				LOG_ERROR(LOGGER, "Failed to compress world backup {}", path);
 				return;
 			}
 
 			auto now(std::to_string(steady_clock::now().time_since_epoch().count()));
 			auto backup = path.string() + "-" + now + ".zstd";
 			if (VUtils::Resource::WriteFile(backup, *compressed)) {
-				//LOG(INFO) << "Saved world backup as '" << backup << "'";
+				LOG_INFO(LOGGER, "Saved world backup as '{}'", backup);
 			}
 			else {
-				//LOG(ERROR) << "Failed to save world backup to " << backup;
+				LOG_ERROR(LOGGER, "Failed to save world backup to {}", backup);
 			}
 		}
 		else {
-			//LOG(ERROR) << "Failed to load old world for backup";
+			LOG_ERROR(LOGGER, "Failed to load old world for backup");
 		}
 	}
 }
@@ -228,7 +229,7 @@ bool IWorldManager::LoadWorldMeta(const fs::path& root) {
 			this->m_world = std::make_unique<World>(DataReader(*opt));
 		}
 		catch (const std::runtime_error& e) {
-			//LOG(ERROR) << "Failed to load world meta: " << e.what();
+			LOG_ERROR(LOGGER, "Failed to load world meta: {}", e.what());
 		}
 	}
 		
@@ -245,24 +246,23 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, con
 			world = std::make_unique<World>(DataReader(*opt));
 		}
 		catch (const std::runtime_error& e) {
-			//LOG(ERROR) << "Failed to load world meta: " << e.what();
+			LOG_ERROR(LOGGER, "Failed to load world meta: {}", e.what());
 		}
 	}
 
 	if (!world) {
-		//LOG(INFO) << "Creating a new world meta";
+		LOG_INFO(LOGGER, "Creating a new world meta");
 		world = std::make_unique<World>(name, fallbackSeedName);
 
 		try {
 			world->WriteFileMeta();
 		}
 		catch (const std::exception& e) {
-			//LOG(ERROR) << "Failed to write world meta: " << e.what();
+			LOG_ERROR(LOGGER, "Failed to write world meta: {}", e.what());
 		}
 	}
 
-	//LOG(INFO) << "Loaded world meta with seed " 
-		//<< world->m_seedName << " (" << world->m_seed << ")";
+	LOG_INFO(LOGGER, "Loaded world meta with seed {} ({})", world->m_seedName, world->m_seed);
 
 	return world;
 }
@@ -330,7 +330,7 @@ void IWorldManager::WriteWorldFiles(const fs::path& root) {
 
 
 void IWorldManager::PostZoneInit() {
-	//LOG(INFO) << "Initializing WorldManager";
+	LOG_INFO(LOGGER, "Initializing WorldManager");
 
 	m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 
@@ -343,7 +343,7 @@ void IWorldManager::PostZoneInit() {
 		if (LoadWorldMeta(root))
 			m_world->LoadFileDB(root);
 		else
-			//LOG(FATAL) << "Failed to load world for playback";
+			LOG_FATAL(LOGGER, "Failed to load world for playback");
 	}
 	else
 #endif
