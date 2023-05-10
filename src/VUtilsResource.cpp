@@ -23,7 +23,7 @@ namespace VUtils::Resource {
         if (!file)
             return false;
 
-        VLOG(1) << "Writing file " << path << " (" << size << " bytes)";
+        //VLOG(1) << "Writing file " << path << " (" << size << " bytes)";
 
         file.write(reinterpret_cast<const char*>(buf), size);
 

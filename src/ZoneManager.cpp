@@ -300,9 +300,9 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
 #ifndef ELPP_DISABLE_VERBOSE_LOGS
-            VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
+            //VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
             for (auto&& key : this->m_globalKeys) {
-                VLOG(1) << " - " << key;
+                //VLOG(1) << " - " << key;
             }
 #endif
 

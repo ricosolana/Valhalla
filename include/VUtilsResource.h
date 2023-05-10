@@ -69,7 +69,7 @@ namespace VUtils::Resource {
         auto fileSize = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        VLOG(1) << "Reading file " << path << " (" << fileSize << " bytes)";
+        //VLOG(1) << "Reading file " << path << " (" << fileSize << " bytes)";
 
         Buffer result {};
         result.resize(fileSize);
@@ -187,7 +187,7 @@ namespace VUtils::Resource {
             auto fileSize = file.tellp();
             file.seekp(0, std::ios::beg);
 
-            VLOG(1) << "Writing txt file " << path << " (" << fileSize << " bytes)";
+            //VLOG(1) << "Writing txt file " << path << " (" << fileSize << " bytes)";
         }
 #endif
 

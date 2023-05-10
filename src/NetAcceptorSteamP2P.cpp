@@ -42,7 +42,7 @@ AcceptorSteamP2P::AcceptorSteamP2P() {
 
 AcceptorSteamP2P::~AcceptorSteamP2P() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
-        VLOG(1) << "~AcceptorSteamP2P()";
+        //VLOG(1) << "~AcceptorSteamP2P()";
         for (auto&& socket : m_sockets)
             socket.second->Close(true);
 

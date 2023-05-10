@@ -106,7 +106,7 @@ public:
     Peer(const Peer& other) = delete; // copy
 
     ~Peer() {
-        VLOG(1) << "~Peer()";
+        //VLOG(1) << "~Peer()";
     }
 
     /**
@@ -116,7 +116,7 @@ public:
     */
     template<typename F>
     void Register(HASH_t hash, F func) {
-        VLOG(1) << hash;
+        //VLOG(1) << hash;
         m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
     }
 
@@ -126,7 +126,7 @@ public:
     }
 
     void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
-        VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
+        //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
         
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
@@ -163,7 +163,7 @@ public:
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
             return;
 
-        VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
+        //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
         this->Send(DataWriter::Serialize(hash, params...));
 
@@ -191,7 +191,7 @@ public:
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
         //    return;
 
-        VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
+        //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
 
         BYTES_t bytes;
         DataWriter params(bytes);
@@ -223,7 +223,7 @@ public:
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             ZoneScoped;
-            VLOG(2) << "InternalInvoke, hash: " << hash;
+            //VLOG(2) << "InternalInvoke, hash: " << hash;
 
             auto result = find->second->Invoke(this, reader);
             if (!result) {

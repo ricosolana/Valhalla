@@ -42,7 +42,7 @@ void IZDOManager::Update() {
 
 	PERIODIC_NOW(1min, {
 		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
-		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
+		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
 			<< ", mean: " << GetMeanZDOMembers()
 			<< ", stdev: " << GetStDevZDOMembers()
 			<< ", empty: " << GetCountEmptyZDOs()
@@ -387,7 +387,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	//if (zdoid.m_uuid == VH_ID && zdoid.m_id >= m_nextUid)
 		//m_nextUid = zdoid.m_uuid + 1;
 
-	VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
+	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
 	RemoveFromSector(*zdo);
 	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefab().m_hash);

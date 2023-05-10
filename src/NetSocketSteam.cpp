@@ -25,7 +25,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 
     m_connected = true;
 
-    VLOG(2) << "SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
+    //VLOG(2) << "SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
 
 //#ifndef ELPP_DISABLE_VERBOSE_LOGS
 //    SteamFriends()->RequestUserInformation(this->m_steamNetId.GetSteamID(), true);
@@ -33,7 +33,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 }
 
 SteamSocket::~SteamSocket() {
-    VLOG(2) << "~SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
+    //VLOG(2) << "~SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
     Close(true);
 }
 
@@ -183,7 +183,7 @@ void SteamSocket::SendQueued() {
 //void SteamSocket::OnPersonaStateChange(PersonaStateChange_t* params) {
 //    auto persona = SteamFriends()->GetFriendPersonaName(params->m_ulSteamID);
 //
-//    VLOG(1) << "host: " << this->GetHostName()
+//    //VLOG(1) << "host: " << this->GetHostName()
 //        << ", address: " << this->GetAddress()
 //        << ", persona: " << persona;
 //}

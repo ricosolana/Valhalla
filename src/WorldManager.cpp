@@ -126,7 +126,7 @@ void World::LoadFileDB(const fs::path& root) {
 			if (worldVersion >= 4)
 				Valhalla()->m_worldTime = reader.Read<double>();
 
-			VLOG(1) << "World time: " << Valhalla()->m_worldTime;
+			//VLOG(1) << "World time: " << Valhalla()->m_worldTime;
 
 			ZDOManager()->Load(reader, worldVersion);
 

@@ -172,7 +172,7 @@ void IRandomEventManager::Load(DataReader& reader, int version) {
 		this->m_activeEventPos = reader.Read<Vector3f>();
 	}
 
-	VLOG(1) << "interval: " << this->m_eventIntervalTimer
+	//VLOG(1) << "interval: " << this->m_eventIntervalTimer
 		<< ", event: " << (this->m_activeEvent ? this->m_activeEvent->m_name : "none")
 		<< ", pos: " << this->m_activeEventPos;
 }

@@ -54,7 +54,7 @@ public:
 		prefab.m_localScale = scale;
 		prefab.m_flags = flags;
 
-		VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
+		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 
 	void Register(DataReader& reader, bool overwrite) {
@@ -74,7 +74,7 @@ public:
 		prefab.m_localScale = reader.Read<Vector3f>();
 		prefab.m_flags = reader.Read<Prefab::Flag>();
 
-		VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
+		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 
 };
