@@ -151,10 +151,10 @@ add_executable(${PROJECT_NAME}
 )
 
 # change this to wherever your sol is
-set(SOL2_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/sol2")
+set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")
 
 # change to wherever your ankerl is
-set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/Rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
+set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
