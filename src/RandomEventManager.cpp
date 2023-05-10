@@ -31,7 +31,7 @@ void IRandomEventManager::Init() {
 
 		pkg.Read<std::string_view>(); // comment
 		auto ver = pkg.Read<std::string_view>();
-		if (ver != VConstants::GAME)
+		//if (ver != VConstants::GAME)
 			//LOG(WARNING) << "randomEvents.pkg uses different game version than server (" << ver << ")";
 
 		auto count = pkg.Read<int32_t>();
@@ -173,8 +173,8 @@ void IRandomEventManager::Load(DataReader& reader, int version) {
 	}
 
 	//VLOG(1) << "interval: " << this->m_eventIntervalTimer
-		<< ", event: " << (this->m_activeEvent ? this->m_activeEvent->m_name : "none")
-		<< ", pos: " << this->m_activeEventPos;
+		//<< ", event: " << (this->m_activeEvent ? this->m_activeEvent->m_name : "none")
+		//<< ", pos: " << this->m_activeEventPos;
 }
 
 void IRandomEventManager::SendCurrentRandomEvent() {

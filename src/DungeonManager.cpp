@@ -25,7 +25,7 @@ void IDungeonManager::PostPrefabInit() {
     pkg.Read<std::string>(); // date/comment
     std::string ver = pkg.Read<std::string>();
     //LOG(INFO) << "dungeons.pkg has game version " << ver;
-    if (ver != VConstants::GAME)
+    //if (ver != VConstants::GAME)
         //LOG(WARNING) << "dungeons.pkg uses different game version than server";
 
     int32_t count = pkg.Read<int32_t>();

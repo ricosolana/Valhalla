@@ -267,9 +267,9 @@ namespace VUtils::Physics {
             //    << v3_a_bl.x << "," << v3_a_bl.z << "))";
         
             //LOG(INFO) << " - polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
-                << v3_b_ur.x << "," << v3_b_ur.z << "),("
-                << v3_b_ul.x << "," << v3_b_ul.z << "),("
-                << v3_b_bl.x << "," << v3_b_bl.z << "))";
+                //<< v3_b_ur.x << "," << v3_b_ur.z << "),("
+                //<< v3_b_ul.x << "," << v3_b_ul.z << "),("
+                //<< v3_b_bl.x << "," << v3_b_bl.z << "))";
 
             ////LOG(INFO) << "";
         }

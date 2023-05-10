@@ -397,9 +397,9 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
-            if (m_settings.serverPassword.empty())
+            //if (m_settings.serverPassword.empty())
                 //LOG(WARNING) << "Server does not have a password";
-            else
+            //else
                 //LOG(INFO) << "Server password is '" << m_settings.serverPassword << "'";
 
 #ifdef VH_OPTION_ENABLE_CAPTURE
@@ -611,17 +611,21 @@ void IValhalla::LoadFiles(bool reloading) {
     this->m_settingsLastTime = fs::last_write_time("server.yml", err);
 }
 
+std::thread::id MAIN_THREAD;
+
 void IValhalla::Stop() {
     m_terminate = true;
 
     // prevent deadlock
-    if (el::Helpers::getThreadName() != "main")
+    if (std::this_thread::get_id() != MAIN_THREAD)
         m_terminate.wait(true);
 }
 
 void IValhalla::Start() {
     //LOG(INFO) << "Starting Valhalla " << VH_VERSION << " (Valheim " << VConstants::GAME << ")";
     
+    MAIN_THREAD = std::this_thread::get_id();
+
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
 
@@ -666,7 +670,7 @@ void IValhalla::Start() {
 #else // !_WIN32
     signal(SIGINT, [](int) {
 #endif // !_WIN32
-        el::Helpers::setThreadName("system");
+        //el::Helpers::setThreadName("system");
         Valhalla()->Stop();
 #ifdef _WIN32
         return TRUE;

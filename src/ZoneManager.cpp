@@ -34,7 +34,7 @@ void IZoneManager::PostPrefabInit() {
 
         pkg.Read<std::string_view>(); // comment
         auto ver = pkg.Read<std::string_view>();
-        if (ver != VConstants::GAME)
+        //if (ver != VConstants::GAME)
             //LOG(WARNING) << "features.pkg uses different game version than server (" << ver << ")";
 
         auto count = pkg.Read<int32_t>();
@@ -107,8 +107,9 @@ void IZoneManager::PostPrefabInit() {
 
         pkg.Read<std::string>(); // comment
         std::string ver = pkg.Read<std::string>();
-        if (ver != VConstants::GAME)
+        if (ver != VConstants::GAME) {
             //LOG(WARNING) << "vegetation.pkg uses different game version than server (" << ver << ")";
+        }
 
         auto count = pkg.Read<int32_t>();
         for (int i=0; i < count; i++) {
@@ -726,6 +727,7 @@ void IZoneManager::PostGeoInit() {
             for (int y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
                 for (int x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
                     TryGenerateZone({ x, y });
+                    /*
                     PERIODIC_NOW(3s, {
                         
                         // print a cool grid
@@ -749,7 +751,7 @@ void IZoneManager::PostGeoInit() {
                             << " zones generated \t(" << ((m_generatedZones.size() - prevCount) / 3) << "z/s)";
                         prevCount = m_generatedZones.size();
 
-                    });
+                    });*/
                 }
             }
         }
@@ -854,7 +856,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
 
     if (spawnedLocations < feature.m_quantity) {
         //LOG(WARNING) << "Failed to place all " << feature.m_name << ", placed " 
-            << spawnedLocations << "/" << feature.m_quantity;
+            //<< spawnedLocations << "/" << feature.m_quantity;
 
         ////LOG(ERROR) << "errLocations " << errLocations;
         ////LOG(ERROR) << "errCenterDistances " << errCenterDistances;

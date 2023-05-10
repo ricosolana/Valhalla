@@ -43,10 +43,10 @@ void IZDOManager::Update() {
 	PERIODIC_NOW(1min, {
 		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
 		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
-			<< ", mean: " << GetMeanZDOMembers()
-			<< ", stdev: " << GetStDevZDOMembers()
-			<< ", empty: " << GetCountEmptyZDOs()
-			<< ")";
+			//<< ", mean: " << GetMeanZDOMembers()
+			//<< ", stdev: " << GetStDevZDOMembers()
+			//<< ", empty: " << GetCountEmptyZDOs()
+			//<< ")";
 	});
 
 	auto&& peers = NetManager()->GetPeers();
@@ -210,8 +210,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	}
 
 	//LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
-	if (purgeCount)
+	if (purgeCount) {
 		//LOG(INFO) << "Purged " << purgeCount << " old zdos";
+	}
 }
 
 ZDO& IZDOManager::Instantiate(const Vector3f& position) {

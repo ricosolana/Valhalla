@@ -25,7 +25,7 @@ void IHeightmapBuilder::PostGeoInit() {
             std::string name = "HMBuilder" + std::to_string(i);
 
             tracy::SetThreadName(name.c_str());
-            el::Helpers::setThreadName(name);
+            //el::Helpers::setThreadName(name);
 
             std::vector<ZoneID> next;
 

@@ -108,7 +108,7 @@ void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChange
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
     {
-        if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+        //if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             //LOG(INFO) << data->m_info.m_szEndDebug;
 
         auto &&pair = m_sockets.find(data->m_hConn);

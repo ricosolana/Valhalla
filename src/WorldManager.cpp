@@ -85,10 +85,12 @@ void World::WriteFileMeta(const fs::path& root) {
 	auto path(root / (m_name + ".fwl"));
 
 	// create fwl
-	if (VUtils::Resource::WriteFile(path, bytes))
+	if (VUtils::Resource::WriteFile(path, bytes)) {
 		//LOG(INFO) << "Wrote world meta to " << path.c_str();
-	else
+	}
+	else {
 		//LOG(ERROR) << "Failed to write world meta to " << path.c_str();
+	}
 }
 
 void World::WriteFileDB(const fs::path& root) {
@@ -100,10 +102,12 @@ void World::WriteFileDB(const fs::path& root) {
 
 	auto path(root / (m_name + ".db"));
 
-	if (VUtils::Resource::WriteFile(path, bytes))
+	if (VUtils::Resource::WriteFile(path, bytes)) {
 		//LOG(INFO) << "World save to " << path.c_str() << " in " << duration_cast<milliseconds>(finishTime - startTime);
-	else
+	}
+	else {
 		//LOG(WARNING) << "Failed to save world to " << path.c_str();
+	}
 }
 
 void World::LoadFileDB(const fs::path& root) {
@@ -117,8 +121,9 @@ void World::LoadFileDB(const fs::path& root) {
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 				//LOG(WARNING) << "Loading unsupported world version " << worldVersion;
-				if (!VH_SETTINGS.worldModern)
+				if (!VH_SETTINGS.worldModern) {
 					//LOG(WARNING) << "Legacy ZDOs enabled. Networked objects might not behave as expected";
+				}
 			}
 			else
 				//LOG(INFO) << "Loading world version " << worldVersion;
@@ -157,10 +162,12 @@ void World::CopyCompressDB(const fs::path& root) {
 
 			auto now(std::to_string(steady_clock::now().time_since_epoch().count()));
 			auto backup = path.string() + "-" + now + ".zstd";
-			if (VUtils::Resource::WriteFile(backup, *compressed))
+			if (VUtils::Resource::WriteFile(backup, *compressed)) {
 				//LOG(INFO) << "Saved world backup as '" << backup << "'";
-			else
+			}
+			else {
 				//LOG(ERROR) << "Failed to save world backup to " << backup;
+			}
 		}
 		else {
 			//LOG(ERROR) << "Failed to load old world for backup";
@@ -255,7 +262,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, con
 	}
 
 	//LOG(INFO) << "Loaded world meta with seed " 
-		<< world->m_seedName << " (" << world->m_seed << ")";
+		//<< world->m_seedName << " (" << world->m_seed << ")";
 
 	return world;
 }

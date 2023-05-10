@@ -99,7 +99,7 @@ void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallb
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
     {
-        if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
+        //if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             //LOG(INFO) << data->m_info.m_szEndDebug;
 
         auto&& pair = m_sockets.find(data->m_hConn);
@@ -142,16 +142,21 @@ void AcceptorSteamP2P::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
         this->OnConfigLoad(false);
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME))
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
             //LOG(WARNING) << "Unable to set lobby version";
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str()))
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
             //LOG(WARNING) << "Failed to set lobby networkversion";
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user"))
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user")) {
             //LOG(WARNING) << "Failed to set lobby serverType";
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", ""))
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", "")) {
             //LOG(WARNING) << "Failed to set lobby host";
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0"))
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
             //LOG(WARNING) << "Failed to set lobby isCrossplay";
+        }
 
         SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
     }
@@ -160,8 +165,11 @@ void AcceptorSteamP2P::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
 
 void AcceptorSteamP2P::OnConfigLoad(bool reloading) {
-    if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str()))
+    if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
         //LOG(ERROR) << "Failed to set lobby name";
-    if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1"))
+    }
+    
+    if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1")) {
         //LOG(ERROR) << "Unable to set lobby password flag";
+    }
 }

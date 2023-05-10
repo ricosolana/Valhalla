@@ -45,9 +45,9 @@ void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
 	//this->m_generatedTime = steady_clock::now();
 
 	//LOG(INFO) << "Finished generating dungeon: '" << m_dungeon.m_prefab->m_name
-		<< "', pos: " << m_pos
-		<< ", seed: " << seed
-		<< ", rooms: " << m_placedRooms.size() << "/" << m_dungeon.m_maxRooms;
+	//	<< "', pos: " << m_pos
+	//	<< ", seed: " << seed
+	//	<< ", rooms: " << m_placedRooms.size() << "/" << m_dungeon.m_maxRooms;
 }
 
 //
@@ -309,11 +309,11 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 						}
 					}
 
-					if (!flag) //LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
+					//if (!flag) LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
 				}
-				else //LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
+				//else LOG(WARNING) << "Cyclic detected: Door mismatch for cyclic room";
 			}
-			else //LOG(INFO) << "Cyclic detected: Door types successfully match";
+			//else LOG(INFO) << "Cyclic detected: Door types successfully match";
 
 			++itr1;
 		}

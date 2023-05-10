@@ -181,6 +181,7 @@ namespace VUtils::Resource {
             file << str << "\n";
         }
 
+        /*
 #ifndef ELPP_DISABLE_VERBOSE_LOGS
         if (el::Loggers::verboseLevel() == 1) {
             file.seekp(0, std::ios::end);
@@ -189,7 +190,7 @@ namespace VUtils::Resource {
 
             //VLOG(1) << "Writing txt file " << path << " (" << fileSize << " bytes)";
         }
-#endif
+#endif*/
 
         file.close();
 

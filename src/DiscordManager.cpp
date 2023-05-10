@@ -27,6 +27,7 @@ void IDiscordManager::Init() {
 
 	m_bot = std::make_unique<dpp::cluster>(VH_SETTINGS.discordToken);
 	
+	/*
 	m_bot->on_log([](const dpp::log_t& log) {
 		switch (log.severity) {
 		case dpp::loglevel::ll_trace: //LOG(TRACE) << log.message; break;
@@ -36,7 +37,7 @@ void IDiscordManager::Init() {
 		case dpp::loglevel::ll_error: // fallthrough
 		case dpp::loglevel::ll_critical: //LOG(ERROR) << log.message; break;
 		}
-	});
+	});*/
 
 	m_bot->on_slashcommand([this](const dpp::slashcommand_t& event) {
 		//event.thinking(true);
