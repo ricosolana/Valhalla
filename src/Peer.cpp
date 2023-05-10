@@ -16,7 +16,7 @@ Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now())
 {
     this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
-        LOG(INFO) << "RPC_Disconnect";
+        //LOG(INFO) << "RPC_Disconnect";
         self->Disconnect();
     });
 
@@ -28,7 +28,7 @@ Peer::Peer(ISocket::Ptr socket)
                 throw std::runtime_error("peer provided 0 owner");
 
             auto version = reader.Read<std::string_view>();
-            LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
+            //LOG(INFO) << "Client " << rpc->m_socket->GetHostName() << " has version " << version;
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
@@ -92,7 +92,7 @@ Peer::Peer(ISocket::Ptr socket)
         return false;
     });
 
-    LOG(WARNING) << m_socket->GetHostName() << " has connected";
+    //LOG(WARNING) << m_socket->GetHostName() << " has connected";
 }
 
 void Peer::Update() {
@@ -141,13 +141,13 @@ void Peer::Update() {
     }
 
     if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) {
-        LOG(INFO) << "Client RPC timeout";
+        //LOG(INFO) << "Client RPC timeout";
         Disconnect();
     }
 }
 
 bool Peer::Close(ConnectionStatus status) {
-    LOG(INFO) << "Peer error: " << STATUS_STRINGS[(int)status];
+    //LOG(INFO) << "Peer error: " << STATUS_STRINGS[(int)status];
     Invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;

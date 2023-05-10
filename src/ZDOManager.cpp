@@ -17,7 +17,7 @@ IZDOManager* ZDOManager() {
 
 
 void IZDOManager::Init() {
-	LOG(INFO) << "Initializing ZDOManager";
+	//LOG(INFO) << "Initializing ZDOManager";
 
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
@@ -41,7 +41,7 @@ void IZDOManager::Update() {
 	ZoneScoped;
 
 	PERIODIC_NOW(1min, {
-		LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
+		//LOG(INFO) << "Currently " << m_objectsByID.size() << " zdos (~" << (GetTotalZDOAlloc() / 1000000.f) << "Mb)";
 		VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
 			<< ", mean: " << GetMeanZDOMembers()
 			<< ", stdev: " << GetStDevZDOMembers()
@@ -209,9 +209,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		TICKS_t(reader.Read<int64_t>());
 	}
 
-	LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
+	//LOG(INFO) << "Loaded " << m_objectsByID.size() << " zdos";
 	if (purgeCount)
-		LOG(INFO) << "Purged " << purgeCount << " old zdos";
+		//LOG(INFO) << "Purged " << purgeCount << " old zdos";
 }
 
 ZDO& IZDOManager::Instantiate(const Vector3f& position) {

@@ -8,12 +8,12 @@ AcceptorSteamDedicated::AcceptorSteamDedicated()
 
     // This forces the Valheim Client to startup for some reason
     //if (SteamAPI_RestartAppIfNecessary(VALHEIM_APP_ID)) {
-    //    LOG(INFO) << "Restarting app through Steam";
+    //    //LOG(INFO) << "Restarting app through Steam";
     //    exit(0);
     //}
 
     if (!SteamGameServer_Init(0, m_port, m_port + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
-        LOG(FATAL) << "Failed to init steam game server (steam_appid.txt missing?)";
+        //LOG(FATAL) << "Failed to init steam game server (steam_appid.txt missing?)";
     }
 
     SteamGameServer()->SetProduct("valheim");   // for version checking
@@ -22,9 +22,9 @@ AcceptorSteamDedicated::AcceptorSteamDedicated()
     SteamGameServer()->SetMaxPlayerCount(64);
     SteamGameServer()->LogOnAnonymous();        // no steam login necessary
 
-    LOG(INFO) << "Starting server on port " << m_port;
-    LOG(INFO) << "Server ID: " << SteamGameServer()->GetSteamID().ConvertToUint64();
-    LOG(INFO) << "Authentication status: " << SteamGameServerNetworkingSockets()->InitAuthentication();
+    //LOG(INFO) << "Starting server on port " << m_port;
+    //LOG(INFO) << "Server ID: " << SteamGameServer()->GetSteamID().ConvertToUint64();
+    //LOG(INFO) << "Authentication status: " << SteamGameServerNetworkingSockets()->InitAuthentication();
 
     SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
     SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
@@ -51,7 +51,7 @@ AcceptorSteamDedicated::AcceptorSteamDedicated()
 
 AcceptorSteamDedicated::~AcceptorSteamDedicated() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
-        LOG(DEBUG) << "Destroying";
+        //LOG(DEBUG) << "Destroying";
         for (auto &&socket : m_sockets)
             socket.second->Close(true);
 
@@ -92,7 +92,7 @@ static const char* stateToString(ESteamNetworkingConnectionState state) {
 }
 
 void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-    LOG(INFO) << "NetConnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
+    //LOG(INFO) << "NetConnectionStatusChanged: " << stateToString(data->m_info.m_eState) << ", old: " << stateToString(data->m_eOldState);
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
         && data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
@@ -109,7 +109,7 @@ void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChange
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
     {
         if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
-            LOG(INFO) << data->m_info.m_szEndDebug;
+            //LOG(INFO) << data->m_info.m_szEndDebug;
 
         auto &&pair = m_sockets.find(data->m_hConn);
 
@@ -123,13 +123,13 @@ void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChange
 }
 
 void AcceptorSteamDedicated::OnSteamServersConnected(SteamServersConnected_t* data) {
-    LOG(INFO) << "Steam server connected";
+    //LOG(INFO) << "Steam server connected";
 }
 
 void AcceptorSteamDedicated::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
-    LOG(INFO) << "Steam server disconnected";
+    //LOG(INFO) << "Steam server disconnected";
 }
 
 void AcceptorSteamDedicated::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
-    LOG(INFO) << "Steam server connect failure";
+    //LOG(INFO) << "Steam server connect failure";
 }

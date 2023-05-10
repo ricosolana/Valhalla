@@ -32,7 +32,7 @@ void IHeightmapBuilder::PostGeoInit() {
             std::vector<std::unique_ptr<Heightmap>> baked;
            
 
-            LOG(INFO) << "Builder started";
+            //LOG(INFO) << "Builder started";
             while (!token.stop_requested()) {
                 FrameMarkStart(name.c_str());
 

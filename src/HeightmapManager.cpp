@@ -23,8 +23,8 @@ void IHeightmapManager::ForceQueuedRegeneration() {
     //for (auto&& pair : m_heightmaps) {
     //    auto&& heightmap = pair.second;
     //    if (heightmap->IsRegenerateQueued()) {
-    //        LOG(INFO) << "Force generating hmap " << heightmap->m_zone.x << " " << heightmap->m_zone.y;
-    //        //LOG(INFO) << "Force generating hmap " << heightmap.transform.position.ToString();
+    //        //LOG(INFO) << "Force generating hmap " << heightmap->m_zone.x << " " << heightmap->m_zone.y;
+    //        ////LOG(INFO) << "Force generating hmap " << heightmap.transform.position.ToString();
     //        heightmap->Regenerate();
     //    }
     //}
@@ -69,7 +69,7 @@ float IHeightmapManager::GetHeight(const Vector3f& worldPos) {
     assert(false);
 
     //throw std::runtime_error("Unexpected: Failed to get guaranteed heightmap at position (should not see this)");
-    LOG(ERROR) << "Failed to get guaranteed heightmap at position";
+    //LOG(ERROR) << "Failed to get guaranteed heightmap at position";
     exit(0);
 }
 */

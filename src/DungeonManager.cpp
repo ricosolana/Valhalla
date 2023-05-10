@@ -24,12 +24,12 @@ void IDungeonManager::PostPrefabInit() {
 
     pkg.Read<std::string>(); // date/comment
     std::string ver = pkg.Read<std::string>();
-    LOG(INFO) << "dungeons.pkg has game version " << ver;
+    //LOG(INFO) << "dungeons.pkg has game version " << ver;
     if (ver != VConstants::GAME)
-        LOG(WARNING) << "dungeons.pkg uses different game version than server";
+        //LOG(WARNING) << "dungeons.pkg uses different game version than server";
 
     int32_t count = pkg.Read<int32_t>();
-    LOG(INFO) << "Loading " << count << " dungeons";
+    //LOG(INFO) << "Loading " << count << " dungeons";
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
@@ -170,12 +170,12 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
                 ZDOManager()->DestroyZDO(zdo);
             }
 
-            LOG(INFO) << "Regenerated " << dungeon.m_prefab->m_name << " at " << pos;
+            //LOG(INFO) << "Regenerated " << dungeon.m_prefab->m_name << " at " << pos;
 
             return &Generate(dungeon, pos, rot);
         }
         else {
-            LOG(INFO) << "Unable to regenerate " << dungeon.m_prefab->m_name << " at " << pos << " (peer is inside)";
+            //LOG(INFO) << "Unable to regenerate " << dungeon.m_prefab->m_name << " at " << pos << " (peer is inside)";
         }
     }
 
@@ -197,7 +197,7 @@ void IDungeonManager::TryRegenerateDungeons() {
         ZDO* dungeonZdo = ZDOManager()->GetZDO(*itr);
         if (!dungeonZdo) {
             m_dungeonInstances.erase(itr);
-            LOG(WARNING) << "Dungeon ZDO no longer exists";
+            //LOG(WARNING) << "Dungeon ZDO no longer exists";
             break;
         }
         else {
@@ -224,7 +224,7 @@ void IDungeonManager::TryRegenerateDungeons() {
         ZDO* dungeonZdo = ZDOManager()->GetZDO(*itr);
         if (!dungeonZdo) {
             m_dungeonInstances.erase(itr);
-            LOG(WARNING) << "Dungeon ZDO no longer exists";
+            //LOG(WARNING) << "Dungeon ZDO no longer exists";
         }
         else {
             if (ZDO* newDungeon = TryRegenerateDungeon(*dungeonZdo)) {

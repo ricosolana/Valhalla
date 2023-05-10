@@ -21,7 +21,7 @@ const RoomConnection& Room::GetConnection(VUtils::Random::State& state, const Ro
 }
 
 const RoomConnection &Room::GetEntrance() const {
-	LOG(INFO) <<  "Room connections: " << m_roomConnections.size();
+	//LOG(INFO) <<  "Room connections: " << m_roomConnections.size();
 	for (auto&& roomConnection : m_roomConnections) {
 		if (roomConnection->m_entrance)
 			return *roomConnection.get();

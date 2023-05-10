@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 #ifndef _DEBUG
     }
     catch (const std::exception& e) {
-        LOG(ERROR) << e.what();
+        //LOG(ERROR) << e.what();
         return 1;
     }
 #endif // _DEBUG

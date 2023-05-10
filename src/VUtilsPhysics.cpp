@@ -261,17 +261,17 @@ namespace VUtils::Physics {
 
         if (!overlaps) {
             // easy desmos copy/paste
-            //LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
+            ////LOG(INFO) << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),("
             //    << v3_a_ur.x << "," << v3_a_ur.z << "),("
             //    << v3_a_ul.x << "," << v3_a_ul.z << "),("
             //    << v3_a_bl.x << "," << v3_a_bl.z << "))";
         
-            LOG(INFO) << " - polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
+            //LOG(INFO) << " - polygon((" << v3_b_br.x << "," << v3_b_br.z << "),("
                 << v3_b_ur.x << "," << v3_b_ur.z << "),("
                 << v3_b_ul.x << "," << v3_b_ul.z << "),("
                 << v3_b_bl.x << "," << v3_b_bl.z << "))";
 
-            //LOG(INFO) << "";
+            ////LOG(INFO) << "";
         }
 
         std::stringstream ss;

@@ -156,10 +156,10 @@ public:
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
-                    LOG(WARNING) << "Event error: ";
+                    //LOG(WARNING) << "Event error: ";
 
                     sol::error error = result;
-                    LOG(ERROR) << error.what();
+                    //LOG(ERROR) << error.what();
                     this->m_unsubscribeCurrentEvent = true;
                 }
                 else {

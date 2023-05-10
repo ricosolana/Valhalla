@@ -29,12 +29,12 @@ void IDiscordManager::Init() {
 	
 	m_bot->on_log([](const dpp::log_t& log) {
 		switch (log.severity) {
-		case dpp::loglevel::ll_trace: LOG(TRACE) << log.message; break;
-		case dpp::loglevel::ll_debug: LOG(DEBUG) << log.message; break;
-		case dpp::loglevel::ll_info: LOG(INFO) << log.message; break;
-		case dpp::loglevel::ll_warning: LOG(WARNING) << log.message; break;
+		case dpp::loglevel::ll_trace: //LOG(TRACE) << log.message; break;
+		case dpp::loglevel::ll_debug: //LOG(DEBUG) << log.message; break;
+		case dpp::loglevel::ll_info: //LOG(INFO) << log.message; break;
+		case dpp::loglevel::ll_warning: //LOG(WARNING) << log.message; break;
 		case dpp::loglevel::ll_error: // fallthrough
-		case dpp::loglevel::ll_critical: LOG(ERROR) << log.message; break;
+		case dpp::loglevel::ll_critical: //LOG(ERROR) << log.message; break;
 		}
 	});
 

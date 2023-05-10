@@ -52,7 +52,7 @@ bool INetManager::Unban(std::string_view user) {
 
 
 void INetManager::SendDisconnect() {
-    LOG(INFO) << "Sending disconnect msg";
+    //LOG(INFO) << "Sending disconnect msg";
 
     for (auto&& peer : m_connectedPeers) {
         peer->SendDisconnect();
@@ -153,7 +153,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
         peer->m_characterID = characterID;
 
-        LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.GetOwner() << ":" << characterID.GetUID() << ")";
+        //LOG(INFO) << "Got CharacterID from " << peer->m_name << " ( " << characterID.GetOwner() << ":" << characterID.GetUID() << ")";
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
@@ -282,7 +282,7 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
 }
 
 void INetManager::PostInit() {
-    LOG(INFO) << "Initializing NetManager";
+    //LOG(INFO) << "Initializing NetManager";
 
 #ifdef VH_OPTION_ENABLE_CAPTURE
     // load session file if replaying
@@ -372,12 +372,12 @@ void INetManager::Update() {
 
                         if (auto compressed = ZStdCompressor().Compress(chunk)) {
                             if (VUtils::Resource::WriteFile(path, *compressed))
-                                LOG(WARNING) << "Saving " << path.c_str();
+                                //LOG(WARNING) << "Saving " << path.c_str();
                             else
-                                LOG(ERROR) << "Failed to save " << path.c_str();
+                                //LOG(ERROR) << "Failed to save " << path.c_str();
                         }
                         else
-                            LOG(ERROR) << "Failed to compress packet capture chunk";
+                            //LOG(ERROR) << "Failed to compress packet capture chunk";
                     };
 
                     // Primary occasional saving of captured packets
@@ -400,7 +400,7 @@ void INetManager::Update() {
                         FrameMark;
                     }
 
-                    LOG(WARNING) << "Terminating async capture writer " << host;
+                    //LOG(WARNING) << "Terminating async capture writer " << host;
 
                     // Save any buffered captures before exit
                     int size = 0;
@@ -414,7 +414,7 @@ void INetManager::Update() {
 
                 });
 
-                LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
+                //LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
             }
 #endif
         }
@@ -435,7 +435,7 @@ void INetManager::Update() {
             }
             else {
                 PERIODIC_NOW(30s, {
-                    LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
+                    //LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
                 });
             }
         }
@@ -472,8 +472,8 @@ void INetManager::Update() {
             peer->Update();
         }
         catch (const std::runtime_error& e) {
-            LOG(WARNING) << "Peer error";
-            LOG(WARNING) << e.what();
+            //LOG(WARNING) << "Peer error";
+            //LOG(WARNING) << e.what();
             peer->m_socket->Close(false);
         }
     }
@@ -519,7 +519,7 @@ void INetManager::Update() {
 void INetManager::OnPeerQuit(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
 
-    LOG(INFO) << "Cleaning up peer";
+    //LOG(INFO) << "Cleaning up peer";
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
 
@@ -540,7 +540,7 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
 
     peer.SendDisconnect();
 
-    LOG(INFO) << peer.m_socket->GetHostName() << " disconnected";
+    //LOG(INFO) << peer.m_socket->GetHostName() << " disconnected";
 }
 
 void INetManager::Uninit() {

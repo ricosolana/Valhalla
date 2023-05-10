@@ -56,7 +56,7 @@ public:
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
         if (reader.Position() != reader.size())
-            LOG(WARNING) << "Peer Rpc Invoke has more data than expected "
+            //LOG(WARNING) << "Peer Rpc Invoke has more data than expected "
             << reader.size() << "/" << reader.Position();
 
         // Prefix

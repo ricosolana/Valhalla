@@ -347,7 +347,7 @@ private:
         auto sizeWritten = fwrite(buf, 1, size, file);
         if (sizeWritten != size) {
             fclose(file);
-            LOG(ERROR) << "File write error";
+            //LOG(ERROR) << "File write error";
             return false;
         }
 
@@ -475,7 +475,7 @@ public:
         //Tests::Test_Random();
         //Tests::Test_Perlin();
 
-        LOG(INFO) << "All tests passed!";
+        //LOG(INFO) << "All tests passed!";
     }
 
 
@@ -531,11 +531,11 @@ public:
     void Test_ResourceReadBytes() {
         static constexpr int TRIALS = 10;
 
-        LOG(INFO) << "Starting trials in 3s";
+        //LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
 
         {
-            LOG(INFO) << "Starting ResourceBytes1...";
+            //LOG(INFO) << "Starting ResourceBytes1...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -544,11 +544,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceBytes1: " << ((float)duration_cast<milliseconds>(now - start).count())/1000.f << "s";
+            //LOG(INFO) << "Test_ResourceBytes1: " << ((float)duration_cast<milliseconds>(now - start).count())/1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting ResourceBytes2...";
+            //LOG(INFO) << "Starting ResourceBytes2...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -557,11 +557,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting ResourceBytes3...";
+            //LOG(INFO) << "Starting ResourceBytes3...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -570,11 +570,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting ResourceBytes4";
+            //LOG(INFO) << "Starting ResourceBytes4";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -583,11 +583,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceBytes4: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceBytes4: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting ResourceBytes5";
+            //LOG(INFO) << "Starting ResourceBytes5";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -596,7 +596,7 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceBytes5: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceBytes5: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 
@@ -611,12 +611,12 @@ public:
 
 
 
-        LOG(INFO) << "Starting trials in 3s";
+        //LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
 
         /*
         {
-            LOG(INFO) << "Starting ResourceLines1...";
+            //LOG(INFO) << "Starting ResourceLines1...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -625,11 +625,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting ResourceLines2...";
+            //LOG(INFO) << "Starting ResourceLines2...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -638,12 +638,12 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
         */
 
         //{
-        //    LOG(INFO) << "Starting ResourceLines3...";
+        //    //LOG(INFO) << "Starting ResourceLines3...";
         //
         //    auto start(std::chrono::steady_clock::now());
         //    for (int i = 0; i < TRIALS; i++) {
@@ -653,11 +653,11 @@ public:
         //            printf(""); // maybe prevents optimizizing away opt
         //    }
         //    auto now(std::chrono::steady_clock::now());
-        //    LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+        //    //LOG(INFO) << "Test_ResourceLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         //}
 
         {
-            LOG(INFO) << "Starting ReadFileLines...";
+            //LOG(INFO) << "Starting ReadFileLines...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -667,21 +667,21 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_ResourceLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 
     void Test_FileWriteBytes() {
         static constexpr int TRIALS = 5;
 
-        LOG(INFO) << "Generating random file data...";
+        //LOG(INFO) << "Generating random file data...";
         auto val = VUtils::Random::GenerateAlphaNum(30000000);
 
-        LOG(INFO) << "Starting trials in 3s";
+        //LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
 
         {
-            LOG(INFO) << "Starting FileWriteBytes1...";
+            //LOG(INFO) << "Starting FileWriteBytes1...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -691,11 +691,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_WriteFileBytes1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_WriteFileBytes1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting FileWriteBytes2...";
+            //LOG(INFO) << "Starting FileWriteBytes2...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -705,11 +705,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_WriteFileBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_WriteFileBytes2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting FileWriteBytes3...";
+            //LOG(INFO) << "Starting FileWriteBytes3...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -719,24 +719,24 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "Test_WriteFileBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "Test_WriteFileBytes3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 
     void Test_FileWriteLines() {
         static constexpr int TRIALS = 2000;
 
-        LOG(INFO) << "Generating random file data...";
+        //LOG(INFO) << "Generating random file data...";
         std::list<std::string> val;
         for (int i = 0; i < 1000; i++) {
             val.push_back(VUtils::Random::GenerateAlphaNum(300 + (i%100)));
         }
 
-        LOG(INFO) << "Starting trials in 3s";
+        //LOG(INFO) << "Starting trials in 3s";
         std::this_thread::sleep_for(3s);
 
         {
-            LOG(INFO) << "Starting FileWriteLines0...";
+            //LOG(INFO) << "Starting FileWriteLines0...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -745,11 +745,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "FileWriteLines0: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "FileWriteLines0: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting FileWriteLines1...";
+            //LOG(INFO) << "Starting FileWriteLines1...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -758,11 +758,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "FileWriteLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "FileWriteLines1: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting FileWriteLines2...";
+            //LOG(INFO) << "Starting FileWriteLines2...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -771,11 +771,11 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "FileWriteLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "FileWriteLines2: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
 
         {
-            LOG(INFO) << "Starting FileWriteLines3...";
+            //LOG(INFO) << "Starting FileWriteLines3...";
 
             auto start(std::chrono::steady_clock::now());
             for (int i = 0; i < TRIALS; i++) {
@@ -784,7 +784,7 @@ public:
                     printf(""); // maybe prevents optimizizing away opt
             }
             auto now(std::chrono::steady_clock::now());
-            LOG(INFO) << "FileWriteLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
+            //LOG(INFO) << "FileWriteLines3: " << ((float)duration_cast<milliseconds>(now - start).count()) / 1000.f << "s";
         }
     }
 

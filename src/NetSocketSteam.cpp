@@ -98,7 +98,7 @@ std::optional<BYTES_t> SteamSocket::Recv() {
             return bytes;
         }
         else {
-            LOG(DEBUG) << "Failed to receive message";
+            //LOG(DEBUG) << "Failed to receive message";
         }
     }
     return std::nullopt;
