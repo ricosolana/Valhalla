@@ -1,4 +1,3 @@
-#include <easylogging++.h>
 #include <yaml-cpp/yaml.h>
 
 #include "ModManager.h"
@@ -899,7 +898,7 @@ void IModManager::LoadAPI() {
             s += tostring(arg);
         }
 
-        LOG(INFO) << "[Lua] " << s;
+        //LOG(INFO) << "[Lua] " << s;
     };
 
 

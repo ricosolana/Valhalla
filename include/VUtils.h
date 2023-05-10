@@ -16,7 +16,6 @@
 #include <ankerl/unordered_dense.h>
 #include <dpp/dpp.h>
 #include <tracy/Tracy.hpp>
-#include <easylogging++.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"

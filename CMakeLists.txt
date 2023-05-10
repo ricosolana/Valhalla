@@ -25,7 +25,6 @@ cmake_minimum_required (VERSION 3.14)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_steamapi)
-include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
@@ -40,26 +39,16 @@ endif()
 ############
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
-#find_package(robin_hood CONFIG REQUIRED)
-find_package(ZLIB REQUIRED) # able to remove; nothing *has* to be compressed, could include as a side-package?
+find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
-#find_package(sol2 CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED) # might be able to remove
-#find_package(tomlplusplus CONFIG REQUIRED)
-find_package(Tracy CONFIG REQUIRED)    
-    
-find_package(zstd CONFIG REQUIRED) # also could remove; zstd used primarily only for lua
-
+find_package(yaml-cpp CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)
+find_package(zstd CONFIG REQUIRED)
 find_package(dpp CONFIG REQUIRED)
-
-#add_compile_definitions(SOL_PRINT_ERRORS)
-
-#remove_definitions(SOL_PRINT_ERRORS)
-
-#target_compile_definitions(asio INTERFACE WIN32_LEAN_AND_MEAN)
+find_package(quill CONFIG REQUIRED)
 
 # remove annoying min/max getting in the way of other min/max functions
-add_compile_definitions(NOMINMAX)
+add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
 
 # ignore annoying msvc warnings
 if(WIN32)
@@ -68,40 +57,7 @@ if(WIN32)
     add_definitions("/wd4996") # c functions it seems unsafe
 endif()
 
-#IF(NOT(CMAKE_BUILD_TYPE MATCHES DEBUG))
-#ENDIF()
 
-CPMAddPackage(
-    NAME easyloggingpp
-    GITHUB_REPOSITORY amrayn/easyloggingpp
-    VERSION 9.97.0
-    OPTIONS "build_static_lib ON"
-)
-target_include_directories(easyloggingpp PUBLIC ${easyloggingpp_SOURCE_DIR}/src)
-target_compile_definitions(easyloggingpp PUBLIC 
-    ELPP_THREAD_SAFE 
-    ELPP_FEATURE_PERFORMANCE_TRACKING
-    ELPP_DISABLE_DEBUG_LOGS
-    ELPP_NO_DEFAULT_LOG_FILE
-    ELPP_NO_LOG_TO_FILE
-    ELPP_FRESH_LOG_FILE
-)
-if (LINUX)
-    target_compile_definitions(easyloggingpp PUBLIC 
-        ELPP_FEATURE_CRASH_LOG 
-        ELPP_STL_LOGGING
-    )
-endif ()
-
-# optick profiler
-#   seems abandoned since last year
-#   and client is buggy and crashes frequently
-#CPMAddPackage("gh:bombomby/optick@1.4.0.0#1.4.0.0")
-
-#target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
-#target_compile_definitions(WIN32 INTERFACE WIN32_LEAN_AND_MEAN)
-
-#add_definitions(WIN32_LEAN_AND_MEAN)
 
 ##########
 # Linking
@@ -169,20 +125,15 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
-    #robin_hood::robin_hood
     ZLIB::ZLIB
-    PUBLIC lua
-    #sol2
+    PRIVATE lua
     yaml-cpp
-    #PRIVATE tomlplusplus::tomlplusplus
-    easyloggingpp
     PRIVATE Tracy::TracyClient
-    #OptickCore
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     PRIVATE dpp::dpp
+    PRIVATE quill::quill
 )
 
-#target_compile_definitions(${PROJECT_NAME} INTERFACE WIN32_LEAN_AND_MEAN)
 
 
 ##########
@@ -204,15 +155,9 @@ endif()
 
 
 
-#set_target_properties(${PROJECT_NAME} OptickCore PROPERTIES
-    #RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-#)
-
-
 set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
     TRACY_ENABLE ON
 )
-#add_definitions(TRACY_ENABLE)
 
 
 
@@ -223,6 +168,8 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
 file(COPY ${STEAMAPI_SHARED_DIR}
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+
 
 # working directory and resources
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
