@@ -83,7 +83,7 @@ static const char* stateToString(ESteamNetworkingConnectionState state) {
 }
 
 void AcceptorSteamP2P::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* data) {
-    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: ", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
+    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: {}", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
         && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute 
