@@ -689,7 +689,7 @@ void IZoneManager::PostGeoInit() {
 
     // Crucially important Location
     // So check that it exists period
-    auto&& spawnLoc = m_featuresByHash.find(VUtils::String::GetStableHashCode("StartTemple"));
+    auto&& spawnLoc = m_featuresByHash.find(VUtils::String::GetStableHashCodeCT("StartTemple"));
     if (spawnLoc == m_featuresByHash.end())
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 

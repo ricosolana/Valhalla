@@ -170,6 +170,24 @@ public:
     //  BYTES_t:    data
     //void Write(const NetPackage& in);
 
+    /*
+    template<StringLike S>
+    void Write(const S& in) {
+        auto length = in.length();
+        Assert31U(length);
+
+        auto byteCount = static_cast<int32_t>(length);
+
+        Write7BitEncodedInt(byteCount);
+        if (byteCount == 0)
+            return;
+
+        for (auto&& ch : in) {
+            static_assert(std::is_same_v<decltype(ch), char>, "Stringlike write requires char");
+            Write(ch);
+        }
+    }*/
+        
     // Writes a string
     void Write(std::string_view in) {
         auto length = in.length();

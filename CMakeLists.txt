@@ -156,7 +156,7 @@ endif()
 
 
 set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
-    TRACY_ENABLE ON
+    TRACY_ENABLE OFF
 )
 
 
