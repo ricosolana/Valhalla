@@ -3,6 +3,7 @@
 #include "VUtilsString.h"
 
 namespace VUtils::String {
+    /*
     HASH_t GetStableHashCode(std::string_view str) {
         //return GetStableHashCodeCT(str.data());
 
@@ -20,7 +21,7 @@ namespace VUtils::String {
             num3 += 2;
         }
         return static_cast<HASH_t>(num + num2 * 1566083941);
-    }
+    }*/
 
     /*
     HASH_t GetStableHashCode(std::string_view str) {

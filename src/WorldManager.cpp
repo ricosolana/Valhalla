@@ -120,13 +120,13 @@ void World::LoadFileDB(const fs::path& root) {
 
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
-				LOG_WARNING(LOGGER, "Loading unsupported world version ", worldVersion);
+				LOG_WARNING(LOGGER, "Loading unsupported world version {}", worldVersion);
 				if (!VH_SETTINGS.worldModern) {
 					LOG_WARNING(LOGGER, "Legacy ZDOs enabled. Networked objects might not behave as expected");
 				}
 			}
 			else {
-				LOG_INFO(LOGGER, "Loading world version ", worldVersion);
+				LOG_INFO(LOGGER, "Loading world version {}", worldVersion);
 			}
 
 			if (worldVersion >= 4)
@@ -145,7 +145,7 @@ void World::LoadFileDB(const fs::path& root) {
 			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
-			LOG_ERROR(LOGGER, "Failed to load world: ", e.what());
+			LOG_ERROR(LOGGER, "Failed to load world: {}", e.what());
 		}
 	}	
 }

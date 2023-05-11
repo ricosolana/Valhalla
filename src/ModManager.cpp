@@ -953,7 +953,7 @@ void IModManager::LoadAPI() {
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
-            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(std::string_view)>(VUtils::String::GetStableHashCode);
+            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string_view&)>(VUtils::String::GetStableHashCode);
         }
 
         {

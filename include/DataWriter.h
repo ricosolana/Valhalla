@@ -199,10 +199,6 @@ public:
     // Writes a tuple of strings as a singular concatenated string
     template<typename ...Strings>
     void Write(const std::tuple<Strings...> &in) {
-        //static_assert(
-        //        std::is_same_v<std::tuple_element_t<0, decltype(in)>, std::string_view>
-        //    ||  std::is_same_v<std::tuple_element_t<0, decltype(in)>, std::string_view>
-        //);
         // Unpack the tuple and sum length using a fold
         auto length = std::apply([](const auto&... args) {
             return (std::string_view(args).length() + ...);
@@ -216,22 +212,6 @@ public:
         if (byteCount == 0)
             return;
 
-        /*
-        // Unpack the tuple and write all bytes using a fold
-        std::apply([this](const auto&... args) {
-            auto&& view = std::string_view(args);
-            //(WriteSomeBytes(reinterpret_cast<const BYTE_t*>(view.data()), view.length()), ...);
-            svUnpack(args...);
-
-            
-            if constexpr (std::is_same_v<decltype(args), std::string_view>)
-                (WriteSomeBytes(reinterpret_cast<const BYTE_t*>(args.data()), args.length()), ...);
-            else {
-                auto&& view(std::string_view(args));
-                (WriteSomeBytes(reinterpret_cast<const BYTE_t*>(view.data()), view.length()), ...);
-            }*
-        }, in);*/
-        //std::apply(std::bind_front(&IDataWriter<T>::svUnpack<Strings, Strings...>, this), in);
         std::apply([this](const auto& ... args) {
             svUnpack(args...);
         }, in);

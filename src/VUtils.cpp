@@ -37,6 +37,13 @@ std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val) {
 }
 
 namespace VUtils {
-    // nothing for now
-    // :(
+    bool SetEnv(const std::string &key, const std::string &value) {
+        return putenv((key + "=" + value).c_str()) == 0;
+    }
+
+    std::string GetEnv(const std::string& key) {
+        auto&& env = getenv(key.c_str());
+        if (env) return env;
+        return "";
+    }
 }

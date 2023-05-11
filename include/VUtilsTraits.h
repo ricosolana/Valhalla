@@ -130,6 +130,20 @@ namespace VUtils {
 
 
 
+        template <typename T, typename = void>
+        struct has_traits_type : std::false_type {};
+
+        template <typename T>
+        struct has_traits_type<T, std::void_t<typename T::traits_type
+        >
+        > : std::true_type {};
+
+        // Here is a helper:
+        template <typename T>
+        constexpr bool has_traits_type_v = has_traits_type<T>::value;
+
+
+
         template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
         template<class... Ts> overload(Ts...)->overload<Ts...>; // line not needed in C++20...
     }

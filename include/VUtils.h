@@ -659,7 +659,8 @@ public:
 
 
 
-
+static_assert(std::endian::native == std::endian::little, 
+    "System must be little endian (big endian not supported for networking (who uses big endian anyways?)");
 
 namespace VUtils {
     // Returns the smallest 1-value bitshift
@@ -675,4 +676,11 @@ namespace VUtils {
         return shift;
     }
     
+    // Set an environment variable
+    //  Returns whether the assignment was successful
+    bool SetEnv(const std::string& key, const std::string& value);
+
+    // Retrieve an environment variable
+    //  Returns the variable or an empty string
+    std::string GetEnv(const std::string& key);
 }

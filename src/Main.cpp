@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
 #ifdef RUN_TESTS
     Tests().RunTests();
 #else // !RUN_TESTS
+    fs::current_path("./data/");
+
     tracy::SetThreadName("main");
 
     {        
@@ -39,6 +41,12 @@ int main(int argc, char **argv) {
         //    quill::Timezone::GmtTime); // timestamp's timezone
         //
         //cfg.default_handlers.emplace_back(std::move(handler));
+        cfg.default_handlers.push_back(quill::stdout_handler());
+        
+        cfg.default_handlers.push_back(
+            quill::time_rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
+            
+        //cfg.default_handlers.push_back(quill::file_handler("server.log", "w"));
 
         quill::configure(cfg);
         quill::start();
@@ -47,27 +55,25 @@ int main(int argc, char **argv) {
         LOGGER->set_log_level(quill::LogLevel::TraceL3);
     }
     
-    fs::current_path("./data/");
-    
     {
         std::string path = (fs::current_path() / VH_LUA_PATH).string();
         std::string path2 = (fs::current_path() / VH_MOD_PATH).string();
-        std::string env = "LUA_PATH=" 
-            + path + "/?.lua;" 
+        if (!VUtils::SetEnv("LUA_PATH",
+            path + "/?.lua;"
             + path + "/?/?.lua;"
             + path2 + "/?.lua;"
-            + path2 + "/?/?.lua";
-        putenv(env.c_str());
+            + path2 + "/?/?.lua"))
+            LOG_ERROR(LOGGER, "Failed to set Lua path");
     }
 
     {
         std::string path = (fs::current_path() / VH_LUA_CPATH).string();
-        std::string env = "LUA_CPATH=" 
-            + path + "/?.dll;" 
-            + path + "/?/?.dll";
-        putenv(env.c_str());
+        if (!VUtils::SetEnv("LUA_CPATH",
+            path + "/?.dll;"
+            + path + "/?/?.dll"))
+            LOG_ERROR(LOGGER, "Failed to set Lua cpath");
     }
-
+    
 #ifndef _DEBUG
     try {
 #endif // _DEBUG

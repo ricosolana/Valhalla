@@ -6,6 +6,9 @@ class ZDOID {
     static constexpr uint64_t ENCODED_OWNER_MASK =  0b1000000000000000000000000000000011111111111111111111111111111111ULL;
 
 public:
+    static const ZDOID NONE;
+
+public:
     uint64_t m_encoded {};
 
 public:
@@ -69,10 +72,10 @@ public:
         //assert(this->GetUID() == uid);
     }
 
-    static const ZDOID NONE;
+    friend std::ostream& operator<<(std::ostream& st, const ZDOID& zdoid) {
+        return st << zdoid.GetOwner() << ":" << zdoid.GetUID();
+    }
 };
-
-std::ostream& operator<<(std::ostream& st, const ZDOID& zdoid);
 
 template <> struct quill::copy_loggable<ZDOID> : std::true_type {};
 template <> struct fmt::formatter<ZDOID> : ostream_formatter {};

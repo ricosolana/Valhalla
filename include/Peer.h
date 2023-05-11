@@ -412,4 +412,10 @@ public:
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         return RouteViewLua(ZDOID::NONE, repr, args);
     }
+
+
+    /*
+    friend std::ostream& operator<<(std::ostream& ost, const Peer& peer) {
+        return ost << peer.m_name << " (" << peer.m_socket << ")";
+    }*/
 };
