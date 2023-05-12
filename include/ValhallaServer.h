@@ -254,6 +254,7 @@ public:
     }
 
 
+
     // Get the next immediate morning time
     double GetNextMorning() const {
         return GetNextTime(m_worldTime, TIME_MORNING);
@@ -277,7 +278,7 @@ public:
     Task& RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period);
     Task& RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
 
-    void Broadcast(UIMsgType type, const std::string &text);
+    void Broadcast(UIMsgType type, std::string_view text);
 
 private:
     void Update();

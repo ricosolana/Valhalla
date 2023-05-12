@@ -412,23 +412,13 @@ void IValhalla::LoadFiles(bool reloading) {
 
 #ifdef VH_OPTION_ENABLE_CAPTURE
             if (m_settings.packetMode == PacketMode::CAPTURE) {
-                //LOG(WARNING) << "Experimental packet capture enabled";
+                LOG_WARNING(LOGGER, "Experimental packet capture enabled");
             }
             else if (m_settings.packetMode == PacketMode::PLAYBACK) {
-                //LOG(WARNING) << "Experimental packet playback enabled";
+                LOG_WARNING(LOGGER, "Experimental packet playback enabled");
             }
 #endif
         }
-        // DataReader = 24bytes
-        static constexpr int sfdds = sizeof(DataReader);
-
-        // vector = 32 bytes
-        //  8bytes: buffer
-        //  8bytes: capacity
-        //  8bytes: size
-        //  8bytes: ?
-        //static constexpr int sfdds2 = sizeof(std::vector<char>::);
-        BYTES_t vec;
 
         if (!reloading) {
             YAML::Emitter out;
@@ -437,92 +427,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             VUtils::Resource::WriteFile("server.yml", out.c_str());
         }
-        //auto mymap = node.as<UNORDERED_MAP_t<std::string, uint64_t>>();
-        //auto&& mymap = node.as<std::map<std::string, uint64_t>>();
     }
-
-    
-    
-    //LOG(INFO) << "Server config loaded";
-
-    if (!reloading) {
-
-    }
-
-    /*
-    //if (!reloading && fileError) {
-    if (!reloading) {
-        YAML::Node saveNode;
-
-        auto&& server = saveNode["server"];
-        auto&& discord = saveNode["discord"];
-        auto&& world = saveNode["world"];
-        auto&& player = saveNode["player"];
-        auto&& zdo = saveNode["zdo"];
-        auto&& spawning = saveNode["spawning"];
-        auto&& dungeons = saveNode["dungeons"];
-        auto&& events = saveNode["events"];
-        
-        server["name"] = m_settings.serverName;
-        server["port"] = m_settings.serverPort;
-        server["password"] = m_settings.serverPassword;
-        server["public"] = m_settings.serverPublic;
-        server["dedicated"] = m_settings.serverDedicated;
-
-        discord["webhook"] = m_settings.discordWebhook;
-
-        world["name"] = m_settings.worldName;
-        world["seed"] = m_settings.worldSeed;
-        world["save-interval-m"] = duration_cast<minutes>(m_settings.worldSaveInterval).count();
-        world["modern"] = m_settings.worldModern;
-        world["capture-mode"] = std::to_underlying(m_settings.packetMode);
-        world["capture-size-bytes"] = m_settings.packetFileUpperSize;
-        world["capture-session"] = m_settings.packetCaptureSessionIndex;
-        world["playback-session"] = m_settings.packetPlaybackSessionIndex;
-
-        player["whitelist"] = m_settings.playerWhitelist;
-        player["max"] = m_settings.playerMax;
-        player["auth"] = m_settings.playerOnline;
-        player["timeout-s"] = duration_cast<seconds>(m_settings.playerTimeout).count();
-        player["player-list-send-interval-ms"] = duration_cast<milliseconds>(m_settings.playerListSendInterval).count();
-
-        zdo["max-congestion"] = m_settings.zdoMaxCongestion;
-        zdo["min-congestion"] = m_settings.zdoMinCongestion;
-        zdo["send-interval-ms"] = duration_cast<milliseconds>(m_settings.zdoSendInterval).count();
-        zdo["assign-interval-s"] = duration_cast<seconds>(m_settings.zdoAssignInterval).count();
-        zdo["assign-algorithm"] = std::to_underlying(m_settings.zdoAssignAlgorithm);
-
-        spawning["creatures"] = m_settings.worldCreatures;
-        spawning["locations"] = m_settings.worldFeatures;
-        spawning["vegetation"] = m_settings.worldVegetation;
-        spawning["dungeons"] = m_settings.dungeonsEnabled;
-
-        dungeons["end-caps"] = m_settings.dungeonsEndcapsEnabled;
-        dungeons["doors"] = m_settings.dungeonsDoors;
-        dungeons["flip-rooms"] = m_settings.dungeonsRoomsFlipped;
-        dungeons["zone-limit"] = m_settings.dungeonsRoomsZoneBounded;
-        dungeons["room-shrink"] = m_settings.dungeonsRoomsInsetSize;
-        //dungeons["reset"] = m_settings.dungeonsRegenerationEnabled;
-        dungeons["reset-time-s"] = duration_cast<seconds>(m_settings.dungeonsRegenerationInterval).count();
-        //saveNode["dungeon-incremental-reset-time-s"] = m_settings.dungeonIncrementalResetTime.count();
-        dungeons["incremental-reset-count"] = m_settings.dungeonsRegenerationMaxSteps;
-        dungeons["seeded-random"] = m_settings.dungeonsSeeded;
-
-        events["enabled"] = m_settings.eventsEnabled;
-        events["chance"] = m_settings.eventsChance;
-        events["interval-m"] = duration_cast<minutes>(m_settings.eventsInterval).count();
-        events["range"] = m_settings.eventsRadius;
-
-        YAML::Emitter out;
-        out.SetIndent(4);
-        out << saveNode;
-
-        VUtils::Resource::WriteFile("server.yml", out.c_str());
-    }*/
-    
-    // TODO use containers yml directly 
-    //std::vector<int> vec = discord.as<std::vector<int>>();
-    // ...
     
     if (auto&& opt = VUtils::Resource::ReadFile<std::string>("blacklist.yml")) {
         try {
@@ -554,17 +459,6 @@ void IValhalla::LoadFiles(bool reloading) {
         }
     }
 
-    /*
-    if (auto&& opt = VUtils::Resource::ReadFile<std::string>("users.yml")) {
-        try {
-            auto node = YAML::Load(*opt);
-            m_admin = node.as<decltype(m_admin)>();
-        }
-        catch (const YAML::Exception& e) {
-            //LOG(ERROR) << e.what();
-        }
-    }*/
-
     if (m_settings.discordAccountLinking) {
         if (auto&& opt = VUtils::Resource::ReadFile<std::string>("linked.yml")) {
             try {
@@ -576,27 +470,6 @@ void IValhalla::LoadFiles(bool reloading) {
             }
         }
     }
-
-    /*
-    if (auto opt = VUtils::Resource::ReadFile<decltype(m_blacklist)>("blacklist.txt")) {
-        m_blacklist = *opt;
-    }
-
-    if (m_settings.playerWhitelist)
-        if (auto opt = VUtils::Resource::ReadFile<decltype(m_whitelist)>("whitelist.txt")) {
-            m_whitelist = *opt;
-        }
-
-    if (auto opt = VUtils::Resource::ReadFile<decltype(m_admin)>("admin.txt")) {
-        m_admin = *opt;
-    }*/
-
-    /*
-    if (m_settings.discordAccountLinking) {
-        if (auto opt = VUtils::Resource::ReadFile<) {
-
-        }
-    }*/
 
     if (reloading) {
         // then iterate players, settings active and inactive
@@ -694,8 +567,6 @@ void IValhalla::Start() {
 
     m_terminate = false;
     while (!m_terminate) {
-        //FrameMarkStart("mainloop");
-
         auto now = steady_clock::now();
         auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
 
@@ -731,8 +602,6 @@ void IValhalla::Start() {
         PERIODIC_NOW(1s, {
             PeriodUpdate();
         });
-
-        //FrameMarkEnd("mainloop");
 
         std::this_thread::sleep_for(1ms);
 
@@ -810,7 +679,6 @@ void IValhalla::Update() {
     ZoneScoped;
 
     // This is important to processing RPC remote invocations
-
     if (!NetManager()->GetPeers().empty()) {
         m_worldTime += Delta() * m_worldTimeMultiplier;
     }
@@ -895,6 +763,6 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
     return *task;
 }
 
-void IValhalla::Broadcast(UIMsgType type, const std::string& text) {
-    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, std::string_view(text));
+void IValhalla::Broadcast(UIMsgType type, std::string_view text) {
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, text);
 }
