@@ -6,6 +6,7 @@
 #include <dpp/dpp.h>
 
 #include "VUtils.h"
+#include "HashUtils.h"
 
 class IDiscordManager {
 private:
@@ -13,17 +14,17 @@ private:
 
 public:
     // Linked account map
-    UNORDERED_MAP_t<std::string, dpp::snowflake> m_linkedAccounts;
+    UNORDERED_MAP_t<std::string, dpp::snowflake, ankerl::unordered_dense::string_hash, std::equal_to<>> m_linkedAccounts;
 
     // Every time an joins they will be sent a key
     //                  host,        key
-    UNORDERED_MAP_t<std::string, std::string> m_tempLinkingKeys;
+    UNORDERED_MAP_t<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_tempLinkingKeys;
 
 public:
     void Init();
     void PeriodUpdate();
 
-    void SendSimpleMessage(std::string msg);
+    void SendSimpleMessage(std::string_view msg);
 };
 
 #define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->SendSimpleMessage((msg));

@@ -31,13 +31,13 @@ void IHeightmapManager::ForceQueuedRegeneration() {
 }
 
 // public static 
-float IHeightmapManager::GetOceanDepthAll(const Vector3f& worldPos) {
+float IHeightmapManager::GetOceanDepthAll(Vector3f worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.GetOceanDepth(worldPos);
 }
 
 // public static
-bool IHeightmapManager::AtMaxLevelDepth(const Vector3f& worldPos) {
+bool IHeightmapManager::AtMaxLevelDepth(Vector3f worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.AtMaxWorldLevelDepth(worldPos);
 }
@@ -143,7 +143,7 @@ Heightmap* IHeightmapManager::GetOrCreateHeightmap(const Vector2i& zoneID) {
     //return CreateHeightmap(IZoneManager::WorldToZonePos(point));
 }*/
 
-Heightmap* IHeightmapManager::PollHeightmap(const ZoneID& zone) {
+Heightmap* IHeightmapManager::PollHeightmap(ZoneID zone) {
     auto&& insert = m_heightmaps.insert({ zone, nullptr });
     //auto&& pop = m_population.insert(zone);
     //if (!insert.first->second && pop.second) // if heightmap is null, try polling it
@@ -154,11 +154,11 @@ Heightmap* IHeightmapManager::PollHeightmap(const ZoneID& zone) {
 }
 
 // public static
-Heightmap& IHeightmapManager::GetHeightmap(const Vector3f& point) {
+Heightmap& IHeightmapManager::GetHeightmap(Vector3f point) {
     return GetHeightmap(IZoneManager::WorldToZonePos(point));
 }
 
-Heightmap& IHeightmapManager::GetHeightmap(const ZoneID& zone) {
+Heightmap& IHeightmapManager::GetHeightmap(ZoneID zone) {
     auto&& insert = m_heightmaps.insert({ zone, nullptr });
 
     while (!insert.first->second) { // if heightmap is null, try polling it
@@ -171,7 +171,7 @@ Heightmap& IHeightmapManager::GetHeightmap(const ZoneID& zone) {
 }
 
 // public static
-std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(const Vector3f& point, float radius) {
+std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(Vector3f point, float radius) {
     throw std::runtime_error("not implemented");
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
@@ -194,7 +194,7 @@ Biome IHeightmapManager::FindBiome(const Vector3f& point) {
 }*/
 
 // public static
-bool IHeightmapManager::IsRegenerateQueued(const Vector3f& point, float radius) {
+bool IHeightmapManager::IsRegenerateQueued(Vector3f point, float radius) {
     assert(false);
     return false;
     //auto heightmaps = GetHeightmaps(point, radius);

@@ -86,31 +86,6 @@ namespace VUtils::Random {
         float d = sqrtf(ze);
 
         return Vector2f(x * d, y * d);
-        /*
-        uint32_t uVar1;
-        uint32_t* seed;
-        uint32_t uVar2;
-        uint32_t uVar3;
-        float fVar4;
-        float fVar5;
-        float rad;
-
-        uVar1 = seed[3];
-        uVar3 = *seed << 0xb ^ *seed;
-        uVar3 = (uVar1 >> 0xb ^ uVar3) >> 8 ^ uVar1 ^ uVar3;
-        fVar4 = (float)(uint64_t)(uVar3 & 0x7fffff) * 1.192093e-07;
-        rad = (1.0 - fVar4) * 6.283185 + fVar4 * 0.0;
-        fVar4 = cosf(rad);
-        rad = sinf(rad);
-        *seed = seed[2];
-        uVar2 = seed[1] << 0xb ^ seed[1];
-        seed[1] = uVar1;
-        seed[2] = uVar3;
-        uVar2 = (uVar3 >> 0xb ^ uVar2) >> 8 ^ uVar3 ^ uVar2;
-        seed[3] = uVar2;
-        fVar5 = (float)(uint64_t)(uVar2 & 0x7fffff) * 1.192093e-07;
-        fVar5 = sqrtf((1.0 - fVar5) + fVar5 * 0.0);
-        *param_1 = CONCAT44(rad * fVar5, fVar4 * fVar5);*/
     }
 
     Vector3f State::OnUnitSphere() {
@@ -130,9 +105,6 @@ namespace VUtils::Random {
         float dist = powf(NextFloat(), 1.f / 3.f);
         return vec * dist;
     }
-
-
-
 
 
 
@@ -169,16 +141,10 @@ namespace VUtils::Random {
         [-2,147,483,647, +4,294,967,293]
     */
     OWNER_t GenerateUID() {
-
         State state;
         return (int64_t) state.Range(
             std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()) +
             (int64_t) state.Range(1, std::numeric_limits<int32_t>::max());
-
-        //OWNER_t result = 0;
-        //while (!result)
-        //    GenerateBytes(reinterpret_cast<BYTE_t*>(&result), sizeof(result));
-        //return result;
     }
 
     std::string GenerateAlphaNum(unsigned int count) {

@@ -18,9 +18,9 @@ IWorldManager* WorldManager() {
 
 
 
-World::World(const std::string& name, const std::string& seedName) {
-	m_name = name;
-	m_seedName = seedName;
+World::World(std::string name, std::string seedName) {
+	m_name = std::move(name);
+	m_seedName = std::move(seedName);
 	m_seed = VUtils::String::GetStableHashCode(seedName);
 	m_uid = VUtils::Random::GenerateUID();
 	m_worldGenVersion = VConstants::WORLDGEN;
@@ -236,12 +236,12 @@ bool IWorldManager::LoadWorldMeta(const fs::path& root) {
 	return m_world.get();
 }
 
-std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, const std::string& fallbackSeedName) const {
+std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name, std::string_view fallbackSeedName) const {
 	// load world from file
 
 	std::unique_ptr<World> world;
 
-	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(GetWorldsPath() / (name + ".fwl"))) {
+	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(GetWorldsPath() / (std::string(name) + ".fwl"))) {
 		try {
 			world = std::make_unique<World>(DataReader(*opt));
 		}
@@ -252,7 +252,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(const std::string& name, con
 
 	if (!world) {
 		LOG_INFO(LOGGER, "Creating a new world meta");
-		world = std::make_unique<World>(name, fallbackSeedName);
+		world = std::make_unique<World>(std::string(name), std::string(fallbackSeedName));
 
 		try {
 			world->WriteFileMeta();

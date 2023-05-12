@@ -65,7 +65,7 @@ endif()
 add_executable(${PROJECT_NAME}
     "src/Main.cpp"
 
-    "src/DataReader.cpp"
+    
     
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"
@@ -85,7 +85,7 @@ add_executable(${PROJECT_NAME}
     "src/NetSocketPlayback.cpp"
     "src/DungeonRoom.cpp"
     "src/RouteManager.cpp"
-    "src/Task.cpp"
+    
     "src/ValhallaServer.cpp"
     "src/Vector.cpp"
     "src/VUtils.cpp"
@@ -103,7 +103,7 @@ add_executable(${PROJECT_NAME}
     
     
     "src/DiscordManager.cpp" 
-    "src/DataWriter.cpp"
+    
 )
 
 # change this to wherever your sol is

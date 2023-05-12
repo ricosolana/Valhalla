@@ -3,46 +3,24 @@
 #include "VUtilsString.h"
 
 namespace VUtils::String {
-    /*
-    HASH_t GetStableHashCode(std::string_view str) {
-        //return GetStableHashCodeCT(str.data());
 
+    HASH_t GetStableHashCode(std::string_view s) {
         uint32_t num = 5381;
         uint32_t num2 = num;
-        uint32_t num3 = 0;
-        while (num3 < str.length() && str[num3] != '\0')
-        {
-            num = ((num << 5) + num) ^ (uint32_t)str[num3];
-            if (num3 == str.length() - 1 || str[num3 + 1] == '\0')
-            {
+
+        for (auto&& itr = s.begin(); itr != s.end(); ) {
+            num = ((num << 5) + num) ^ (uint32_t) * (itr++);
+            if (itr == s.end()) {
                 break;
             }
-            num2 = ((num2 << 5) + num2) ^ (uint32_t)str[num3 + 1];
-            num3 += 2;
+            else {
+                num2 = ((num2 << 5) + num2) ^ ((uint32_t) * (itr++));
+            }
         }
         return static_cast<HASH_t>(num + num2 * 1566083941);
-    }*/
+    }
 
-    /*
-    HASH_t GetStableHashCode(std::string_view str) {
-        int num = 5381;
-        int num2 = num;
-        int num3 = 0;
-        while (num3 < str.size() && str[num3])
-        {
-            num = ((num << 5) + num) ^ (int)str[num3];
-            if (num3 + 1 < str.size() && str[num3])
-            {
-                break;
-            }
-            num2 = ((num2 << 5) + num2) ^ (int)str[num3 + 1];
-            num3 += 2;
-        }
-        return num + num2 * 1566083941;
-    }*/
-
-
-    std::vector<std::string_view> Split(std::string_view s, const std::string &delim) {
+    std::vector<std::string_view> Split(std::string_view s, std::string_view delim) {
         std::string_view remaining(s);
         std::vector<std::string_view> result;
         int pos = 0;
@@ -127,10 +105,9 @@ namespace VUtils::String {
         return modif;
     }
 
-    std::string ToAscii(const std::string& in) {
-        std::string ret = in;
-        FormatAscii(ret); 
-        return ret;
+    std::string ToAscii(std::string in) {
+        FormatAscii(in); 
+        return in;
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
@@ -182,7 +159,6 @@ namespace VUtils::String {
         return count;
     }
 
-
     unsigned int GetUTF8ByteCount(uint16_t i) {
         if (i < 0x80) {
             return 1;
@@ -194,27 +170,4 @@ namespace VUtils::String {
             return 3;
         //}
     }
-
-    unsigned int GetUTF8ByteCount(const std::u32string& s) {
-        assert(false);
-
-        int count = 0;
-        //int index = 0;
-        //for (; count < s.length();) {
-        //    uint8_t ch = s[index];
-        //    if (ch < 0x80) {
-        //        count += 1;
-        //    }
-        //    else if (ch < 0x0800) {
-        //        count += 2;
-        //    }
-        //    else if (ch < 0x010000) {
-        //        count += 3;
-        //    }
-        //
-        //}
-
-        return count;
-    }
-
 }

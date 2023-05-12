@@ -3,6 +3,7 @@
 #include "VUtils.h"
 #include "Prefab.h"
 #include "DungeonRoom.h"
+#include "HashUtils.h"
 
 class Dungeon {
 public:
@@ -33,7 +34,7 @@ public:
 
 	int m_minRequiredRooms;
 
-	UNORDERED_SET_t<std::string> m_requiredRooms;
+	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash> m_requiredRooms;
 
 	bool m_alternativeFunctionality;
 

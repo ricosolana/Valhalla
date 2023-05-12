@@ -23,7 +23,7 @@ IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
 
-IModManager::Mod& IModManager::LoadModInfo(const std::string& folderName) {
+IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
     YAML::Node loadNode;
 
     auto modPath = fs::path("mods") / folderName;
@@ -211,24 +211,24 @@ void IModManager::LoadAPI() {
 
             static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
             
-            static_cast<void (DataWriter::*)(const ZDOID&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Vector3f&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Vector2i&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Quaternion&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(ZDOID)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(Vector3f)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(Vector2i)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(Quaternion)>(&DataWriter::Write),
             static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write)
+            static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write)
         ),
 
         "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
         "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
         "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
-        "WriteInt64", static_cast<void (DataWriter::*)(const Int64Wrapper&)>(&DataWriter::Write),
+        "WriteInt64", static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
 
         "WriteUInt8", static_cast<void (DataWriter::*)(uint8_t)>(&DataWriter::Write),
         "WriteUInt16", static_cast<void (DataWriter::*)(uint16_t)>(&DataWriter::Write),
         "WriteUInt32", static_cast<void (DataWriter::*)(uint32_t)>(&DataWriter::Write),
-        "WriteUInt64", static_cast<void (DataWriter::*)(const UInt64Wrapper&)>(&DataWriter::Write),
+        "WriteUInt64", static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write),
 
         "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
         "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
@@ -350,8 +350,8 @@ void IModManager::LoadAPI() {
         "CenterMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::CenterMessage),
         // misc functions
         "Teleport", sol::overload(
-            sol::resolve<void (const Vector3f& pos, const Quaternion& rot, bool animation)>(&Peer::Teleport),
-            sol::resolve<void (const Vector3f& pos)>(&Peer::Teleport)
+            sol::resolve<void (Vector3f pos, Quaternion rot, bool animation)>(&Peer::Teleport),
+            sol::resolve<void (Vector3f pos)>(&Peer::Teleport)
         ),
         //"MoveTo", sol::overload(
         //    sol::resolve<void(const Vector3f& pos, const Quaternion& rot)>(&Peer::MoveTo),
@@ -360,7 +360,7 @@ void IModManager::LoadAPI() {
         "Disconnect", &Peer::Disconnect,
         "InvokeSelf", sol::overload(
             sol::resolve<bool (HASH_t, DataReader&)>(&Peer::InternalInvoke),
-            sol::resolve<bool (const std::string&, DataReader&)>(&Peer::InternalInvoke)
+            sol::resolve<bool (std::string_view, DataReader&)>(&Peer::InternalInvoke)
         ),
 
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
@@ -453,11 +453,11 @@ void IModManager::LoadAPI() {
     m_state["PrefabManager"] = PrefabManager();
     m_state.new_usertype<IPrefabManager>("IPrefabManager",
         "GetPrefab", sol::overload(
-            sol::resolve<const Prefab* (const std::string&)>(&IPrefabManager::GetPrefab),
+            sol::resolve<const Prefab* (std::string_view)>(&IPrefabManager::GetPrefab),
             sol::resolve<const Prefab* (HASH_t)>(&IPrefabManager::GetPrefab)
         ),
         "Register", sol::overload(
-            sol::resolve<void(const std::string&, Prefab::Type, const Vector3f&, Prefab::Flag, bool)>(&IPrefabManager::Register),
+            sol::resolve<void(std::string_view, Prefab::Type, Vector3f, Prefab::Flag, bool)>(&IPrefabManager::Register),
             sol::resolve<void(DataReader&, bool)>(&IPrefabManager::Register)
         )
     );
@@ -729,63 +729,63 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<IZDOManager>("IZDOManager",
         "GetZDO", &IZDOManager::GetZDO,
         "SomeZDOs", sol::overload(
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float, size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const Vector3f& pos, float radius, size_t max, const std::string& name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const ZoneID& zone, size_t max, const std::string& name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const Vector3f&, float)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, size_t, const Vector3f&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, size_t max, const Vector3f& pos, float radius, const std::string& name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            [](IZDOManager& self, ZoneID zone, size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(HASH_t)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const std::string& name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
+            [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const Vector3f&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const Vector3f& pos, float radius, const std::string& name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const Vector3f&, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(const ZoneID&, const Vector3f&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, const ZoneID& zone, const Vector3f& pos, float radius, const std::string& name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "AnyZDO", sol::overload(
-            sol::resolve<ZDO* (const Vector3f&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, const Vector3f& pos, float radius, const std::string& name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<ZDO* (const ZoneID&, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, const ZoneID& zone, const std::string& name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<ZDO* (ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "NearestZDO", sol::overload(
-            sol::resolve<ZDO* (const Vector3f&, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::NearestZDO),
-            sol::resolve<ZDO* (const Vector3f&, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
-            [](IZDOManager& self, const Vector3f& pos, float radius, const std::string& name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<ZDO* (Vector3f, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::NearestZDO),
+            sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
         "DestroyZDO", sol::overload(
-            sol::resolve<void (const ZDOID&)>(&IZDOManager::DestroyZDO),
-            sol::resolve<void(ZDO&)>(&IZDOManager::DestroyZDO)
+            sol::resolve<void (ZDOID)>(&IZDOManager::DestroyZDO),
+            sol::resolve<void(const ZDO&)>(&IZDOManager::DestroyZDO)
         ),
         "Instantiate", sol::overload(
-            sol::resolve<ZDO& (const Prefab&, const Vector3f&, const Quaternion&)>(&IZDOManager::Instantiate),
-            sol::resolve<ZDO& (const Prefab&, const Vector3f&)>(&IZDOManager::Instantiate),
-            [](IZDOManager& self, const std::string& name, const Vector3f& pos, const Quaternion& rot) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos, rot); },
-            [](IZDOManager& self, const std::string& name, const Vector3f& pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
-            sol::resolve<ZDO& (HASH_t, const Vector3f&, const Quaternion&)>(&IZDOManager::Instantiate),
-            sol::resolve<ZDO& (HASH_t, const Vector3f&)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (const Prefab&, Vector3f, Quaternion)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
+            [](IZDOManager& self, std::string_view name, Vector3f pos, Quaternion rot) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos, rot); },
+            [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
+            sol::resolve<ZDO& (HASH_t, Vector3f, Quaternion)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO& (HASH_t, Vector3f)>(&IZDOManager::Instantiate),
             sol::resolve<ZDO& (const ZDO&)>(&IZDOManager::Instantiate)
         )
     );
@@ -795,7 +795,7 @@ void IModManager::LoadAPI() {
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
-            [](INetManager& self, const Int64Wrapper& owner) { return self.GetPeerByUUID(owner); },
+            [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUUID(owner); },
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
         ),
@@ -806,7 +806,7 @@ void IModManager::LoadAPI() {
 
     m_state["ModManager"] = ModManager();
     m_state.new_usertype<IModManager>("IModManager",
-        "GetMod", [](IModManager& self, const std::string& name) {
+        "GetMod", [](IModManager& self, std::string_view name) {
             auto&& find = self.m_mods.find(name);
             if (find != self.m_mods.end())
                 return find->second.get();
@@ -829,8 +829,8 @@ void IModManager::LoadAPI() {
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
-        "GetDungeon", [](IDungeonManager& self, const std::string& name) { return self.GetDungeon(VUtils::String::GetStableHashCode(name)); },
-        "Generate", [](IDungeonManager& self, Dungeon& dungeon, const Vector3f& pos, const Quaternion& rot) { self.Generate(dungeon, pos, rot); }
+        "GetDungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(VUtils::String::GetStableHashCode(name)); },
+        "Generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
     );
 
 
@@ -841,7 +841,7 @@ void IModManager::LoadAPI() {
 
     m_state["ZoneManager"] = ZoneManager();
     m_state.new_usertype<IZoneManager>("IZoneManager",
-        "PopulateZone", sol::resolve<void(const ZoneID&)>(&IZoneManager::PopulateZone),
+        "PopulateZone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
         "GetNearestFeature", &IZoneManager::GetNearestFeature,
         "WorldToZonePos", &IZoneManager::WorldToZonePos,
         "ZoneToWorldPos", &IZoneManager::ZoneToWorldPos,
@@ -953,7 +953,7 @@ void IModManager::LoadAPI() {
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
-            stringUtilsTable["GetStableHashCode"] = sol::resolve<HASH_t(const std::string_view&)>(VUtils::String::GetStableHashCode);
+            stringUtilsTable["GetStableHashCode"] = VUtils::String::GetStableHashCode;
         }
 
         {

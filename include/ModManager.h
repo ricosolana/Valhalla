@@ -4,7 +4,7 @@
 
 #include "VUtils.h"
 #include "VUtilsString.h"
-
+#include "HashUtils.h"
 
 //int GetCurrentLuaLine(lua_State* L);
 
@@ -123,7 +123,7 @@ public:
     };
 
 private:
-    UNORDERED_MAP_t<std::string, std::unique_ptr<Mod>> m_mods;
+    UNORDERED_MAP_t<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
     UNORDERED_MAP_t<HASH_t, std::list<EventHandle>> m_callbacks;
 
     bool m_unsubscribeCurrentEvent;
@@ -132,7 +132,7 @@ public:
     sol::state m_state;
 
 private:
-    Mod& LoadModInfo(const std::string &folderName);
+    Mod& LoadModInfo(std::string_view folderName);
 
     void LoadAPI();
     void LoadMod(Mod& mod);
@@ -185,7 +185,7 @@ public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <typename... Args>
-    auto CallEvent(const std::string& name, Args&&... params) {
+    auto CallEvent(std::string_view name, Args&&... params) {
         return CallEvent(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
     }
 
@@ -210,7 +210,7 @@ public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <class Tuple>
-    auto CallEventTuple(const std::string& name, const Tuple& t) {
+    auto CallEventTuple(std::string_view name, const Tuple& t) {
         return CallEventTupleImpl(VUtils::String::GetStableHashCode(name),
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
@@ -218,8 +218,8 @@ public:
 };
 
 #ifdef VH_OPTION_ENABLE_MODS
-#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent(name, __VA_ARGS__)
-#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple(name, __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent((name), __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple((name), __VA_ARGS__)
 #else
 #define VH_DISPATCH_MOD_EVENT(name, ...) true
 #define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) true

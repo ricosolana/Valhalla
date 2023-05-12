@@ -215,7 +215,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	}
 }
 
-ZDO& IZDOManager::Instantiate(const Vector3f& position) {
+ZDO& IZDOManager::Instantiate(Vector3f position) {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
 		zdoid.SetUID(m_nextUid++);
@@ -231,7 +231,7 @@ ZDO& IZDOManager::Instantiate(const Vector3f& position) {
 	}
 }
 
-ZDO& IZDOManager::Instantiate(const ZDOID& uid, const Vector3f& position) {
+ZDO& IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
@@ -250,7 +250,7 @@ ZDO& IZDOManager::Instantiate(const ZDOID& uid, const Vector3f& position) {
 	return *zdo.get();
 }
 
-ZDO* IZDOManager::GetZDO(const ZDOID& id) {
+ZDO* IZDOManager::GetZDO(ZDOID id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
@@ -261,7 +261,7 @@ ZDO* IZDOManager::GetZDO(const ZDOID& id) {
 
 
 
-std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::GetOrInstantiate(const ZDOID& id, const Vector3f& def) {
+std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::GetOrInstantiate(ZDOID id, Vector3f def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
 	if (!pair.second) // if new insert failed, return it
@@ -275,7 +275,7 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 
 
-ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3f& pos, const Quaternion& rot) {
+ZDO& IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos, Quaternion rot) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
 	zdo.m_rotation = rot;
 	zdo.m_prefab = prefab;
@@ -286,7 +286,7 @@ ZDO& IZDOManager::Instantiate(const Prefab& prefab, const Vector3f& pos, const Q
 	return zdo;
 }
 
-ZDO& IZDOManager::Instantiate(HASH_t hash, const Vector3f& pos, const Quaternion& rot, const Prefab** outPrefab) {
+ZDO& IZDOManager::Instantiate(HASH_t hash, Vector3f pos, Quaternion rot, const Prefab** outPrefab) {
 	auto&& prefab = PrefabManager()->RequirePrefab(hash);
 	if (outPrefab) *outPrefab = &prefab;
 
@@ -403,7 +403,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	return m_objectsByID.erase(itr);
 }
 
-void IZDOManager::EraseZDO(const ZDOID& zdoid) {
+void IZDOManager::EraseZDO(ZDOID zdoid) {
 	auto&& find = m_objectsByID.find(zdoid);
 	if (find != m_objectsByID.end())
 		EraseZDO(find);
@@ -413,7 +413,7 @@ void IZDOManager::SendAllZDOs(Peer& peer) {
 	while (SendZDOs(peer, true));
 }
 
-void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out, std::list<std::reference_wrapper<ZDO>>& outDistant) {
+void IZDOManager::GetZDOs_ActiveZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out, std::list<std::reference_wrapper<ZDO>>& outDistant) {
 	// Add ZDOs from immediate sector
 	GetZDOs_Zone(zone, out);
 
@@ -424,7 +424,7 @@ void IZDOManager::GetZDOs_ActiveZones(const ZoneID& zone, std::list<std::referen
 	GetZDOs_DistantZones(zone, outDistant);
 }
 
-void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<std::reference_wrapper<ZDO>>& sectorObjects) {
+void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& sectorObjects) {
 	for (auto z = zone.y - IZoneManager::NEAR_ACTIVE_AREA; z <= zone.y + IZoneManager::NEAR_ACTIVE_AREA; z++) {
 		for (auto x = zone.x - IZoneManager::NEAR_ACTIVE_AREA; x <= zone.x + IZoneManager::NEAR_ACTIVE_AREA; x++) {
 			auto current = ZoneID(x, z);
@@ -437,7 +437,7 @@ void IZDOManager::GetZDOs_NeighborZones(const ZoneID &zone, std::list<std::refer
 	}
 }
 
-void IZDOManager::GetZDOs_DistantZones(const ZoneID& zone, std::list<std::reference_wrapper<ZDO>>& out) {
+void IZDOManager::GetZDOs_DistantZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out) {
 	for (auto r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
 		r <= IZoneManager::NEAR_ACTIVE_AREA + IZoneManager::DISTANT_ACTIVE_AREA; 
 		r++) {
@@ -536,7 +536,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 	return result;
 }
 
-void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects) {
+void IZDOManager::GetZDOs_Zone(ZoneID sector, std::list<std::reference_wrapper<ZDO>>& objects) {
 	int num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& obj = m_objectsBySector[num];
@@ -544,7 +544,7 @@ void IZDOManager::GetZDOs_Zone(const ZoneID& sector, std::list<std::reference_wr
 	}
 }
 
-void IZDOManager::GetZDOs_Distant(const ZoneID& sector, std::list<std::reference_wrapper<ZDO>>& objects) {
+void IZDOManager::GetZDOs_Distant(ZoneID sector, std::list<std::reference_wrapper<ZDO>>& objects) {
 	auto num = SectorToIndex(sector);
 	if (num != -1) {
 		auto&& list = m_objectsBySector[num];
@@ -570,7 +570,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 
 
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const Vector3f& pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(Vector3f pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	const float sqRadius = radius * radius;
@@ -600,7 +600,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const Vector3f& pos
 	return out;
 }
 
-std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const ZoneID& zone, size_t max, const std::function<bool(const ZDO&)>& pred) {
+std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(ZoneID zone, size_t max, const std::function<bool(const ZDO&)>& pred) {
 	std::list<std::reference_wrapper<ZDO>> out;
 
 	int num = SectorToIndex(zone);
@@ -621,7 +621,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::SomeZDOs(const ZoneID& zone,
 
 
 
-ZDO* IZDOManager::NearestZDO(const Vector3f& pos, float radius, const std::function<bool(const ZDO&)>& pred) {
+ZDO* IZDOManager::NearestZDO(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred) {
 	//std::list<std::reference_wrapper<ZDO>> out;
 
 	const float sqRadius = radius * radius;
@@ -657,13 +657,13 @@ ZDO* IZDOManager::NearestZDO(const Vector3f& pos, float radius, const std::funct
 
 
 // Global send
-void IZDOManager::ForceSendZDO(const ZDOID& id) {
+void IZDOManager::ForceSendZDO(ZDOID id) {
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ForceSendZDO(id);
 	}
 }
 
-int IZDOManager::SectorToIndex(const ZoneID& s) const {
+int IZDOManager::SectorToIndex(ZoneID s) const {
 	if (s.x * s.x + s.y * s.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
 		return -1;
 
@@ -889,7 +889,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 	}
 }
 
-void IZDOManager::DestroyZDO(const ZDOID& zdoid) {
+void IZDOManager::DestroyZDO(ZDOID zdoid) {
 	m_destroySendList.push_back(zdoid);
 	EraseZDO(zdoid);
 }

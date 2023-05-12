@@ -10,7 +10,7 @@ namespace ankerl::unordered_dense {
     struct hash<ZDOID> {
         using is_avalanching = void;
 
-        auto operator()(const ZDOID& v) const noexcept -> uint64_t {
+        auto operator()(ZDOID v) const noexcept -> uint64_t {
             return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
         }
     };
@@ -19,7 +19,7 @@ namespace ankerl::unordered_dense {
     struct hash<Vector2i> {
         using is_avalanching = void;
 
-        auto operator()(const Vector2i& v) const noexcept -> uint64_t {
+        auto operator()(Vector2i v) const noexcept -> uint64_t {
             return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
         }
     };
@@ -28,7 +28,7 @@ namespace ankerl::unordered_dense {
     struct hash<Vector3f> {
         using is_avalanching = void;
 
-        auto operator()(const Vector3f& v) const noexcept -> uint64_t {
+        auto operator()(Vector3f v) const noexcept -> uint64_t {
             return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
         }
     };

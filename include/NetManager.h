@@ -21,7 +21,7 @@ private:
     std::vector<Peer*> m_onlinePeers;
 
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
-    UNORDERED_MAP_t<std::string, int32_t> m_sessionIndexes;
+    UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
 
 public:
     std::string m_password;

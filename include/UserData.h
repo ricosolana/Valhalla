@@ -8,10 +8,10 @@ public:
 	std::string m_gamerTag;
 	std::string m_networkUserId;
 
-	UserProfile(const std::string& name,
-		const std::string& gamerTag, 
-		const std::string& networkUserId)
-	: m_name(name), m_gamerTag(gamerTag), m_networkUserId(networkUserId) {
+	UserProfile(std::string name,
+		std::string gamerTag, 
+		std::string networkUserId)
+	: m_name(std::move(name)), m_gamerTag(std::move(gamerTag)), m_networkUserId(std::move(networkUserId)) {
 
 	}
 

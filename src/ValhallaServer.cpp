@@ -578,14 +578,14 @@ void IValhalla::Start() {
             std::scoped_lock lock(m_taskMutex);
             for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
                 auto ptr = itr->get();
-                if (ptr->at < now) {
-                    if (ptr->period == milliseconds::min()) { // if task cancelled
+                if (ptr->m_at < now) {
+                    if (ptr->m_period == milliseconds::min()) { // if task cancelled
                         itr = m_tasks.erase(itr);
                     }
                     else {
-                        ptr->function(*ptr);
+                        ptr->m_func(*ptr);
                         if (ptr->Repeats()) {
-                            ptr->at += ptr->period;
+                            ptr->m_at += ptr->m_period;
                             ++itr;
                         }
                         else
@@ -758,9 +758,8 @@ Task& IValhalla::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds 
 
 Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
     std::scoped_lock lock(m_taskMutex);
-    Task* task = new Task{std::move(f), at, period};
-    m_tasks.push_back(std::unique_ptr<Task>(task));
-    return *task;
+    m_tasks.push_back(std::make_unique<Task>(f, at, period));
+    return *m_tasks.back();
 }
 
 void IValhalla::Broadcast(UIMsgType type, std::string_view text) {

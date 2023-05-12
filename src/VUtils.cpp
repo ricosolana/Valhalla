@@ -37,12 +37,12 @@ std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val) {
 }
 
 namespace VUtils {
-    bool SetEnv(const std::string &key, const std::string &value) {
-        return putenv((key + "=" + value).c_str()) == 0;
+    bool SetEnv(std::string_view key, std::string_view value) {
+        return putenv((key.data() + std::string("=") + value.data()).c_str()) == 0;
     }
 
-    std::string GetEnv(const std::string& key) {
-        auto&& env = getenv(key.c_str());
+    std::string GetEnv(std::string_view key) {
+        auto&& env = getenv(key.data());
         if (env) return env;
         return "";
     }

@@ -4,26 +4,19 @@
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "Biome.h"
+#include "RandomEventManager.h"
 
 class IRandomEventManager {
 	class Event {
 	public:
 		std::string m_name = "";
-
-		// redundant? arent all events random?
-		//bool m_random = true;
-
 		float m_duration = 60;
-
 		bool m_nearBaseOnly = true;
-
 		bool m_pauseIfNoPlayerInArea = true;
-
 		Biome m_biome;
 
-		UNORDERED_SET_t<std::string> m_presentGlobalKeys;
-
-		UNORDERED_SET_t<std::string> m_absentGlobalKeys;
+		UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_presentGlobalKeys;
+		UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_absentGlobalKeys;
 	};
 
 public:
@@ -50,7 +43,7 @@ private:
 
 	// Get an event by name
 	//	Returns null if not found
-	const Event* GetEvent(const std::string& name) {
+	const Event* GetEvent(std::string_view name) {
 		auto&& find = m_events.find(VUtils::String::GetStableHashCode(name));
 		if (find != m_events.end())
 			return find->second.get();

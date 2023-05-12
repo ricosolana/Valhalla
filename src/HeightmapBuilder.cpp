@@ -112,7 +112,7 @@ void IHeightmapBuilder::Update() {
 }
 
 // private
-void IHeightmapBuilder::Build(BaseHeightmap *base, const ZoneID& zone) {
+void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
     //OPTICK_EVENT();
 
     auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
@@ -201,7 +201,7 @@ void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
     }
 }*/
 
-std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(const ZoneID& zone) {
+std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone) {
     {
         std::unique_ptr<Heightmap> result;
         {

@@ -29,8 +29,8 @@ void IPrefabManager::Init() {
 
     DataReader pkg(opt.value());
 
-    pkg.Read<std::string>(); // comment
-    std::string ver = pkg.Read<std::string>();
+    pkg.Read<std::string_view>(); // comment
+    auto ver = pkg.Read<std::string_view>();
     if (ver != VConstants::GAME)
         LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver);
 

@@ -115,21 +115,21 @@ private:
 	//void GenerateMountains();
 	void GenerateLakes();
 	std::vector<Vector2f> MergePoints(std::vector<Vector2f>& points, float range);
-	int FindClosest(const std::vector<Vector2f>& points, const Vector2f& p, float maxDistance);
+	int FindClosest(const std::vector<Vector2f>& points, Vector2f p, float maxDistance);
 	void GenerateStreams();
-	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, const Vector2f& start, float minLength, float maxLength, Vector2f& end);
+	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f start, float minLength, float maxLength, Vector2f& end);
 	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth);
 	void GenerateRivers();
 	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f>& points, 
-		const Vector2f& p, float maxDistance, float heightLimit, float checkStep) const;
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2f& p0) const;
-	bool HaveRiver(const std::vector<River>& rivers, const Vector2f& p0, const Vector2f& p1) const;
-	bool IsRiverAllowed(const Vector2f& p0, const Vector2f& p1, float step, float heightLimit) const;
+		Vector2f p, float maxDistance, float heightLimit, float checkStep) const;
+	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0) const;
+	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vector2f p1) const;
+	bool IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const;
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
 	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
-		const Vector2f& p,
+		Vector2f p,
 		float r);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, const Vector2i& grid, const Vector2f& p, float r);
+	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
 	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	//Vector2i GetRiverGrid(float wx, float wy);
@@ -158,14 +158,14 @@ private:
 public:
 	void PostWorldInit();
 
-	bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
+	bool InsideRiverGrid(Vector2i grid, Vector2f p, float r);
 
 	Vector2i GetRiverGrid(float wx, float wy);
 
-	BiomeArea GetBiomeArea(const Vector3f& point);
+	BiomeArea GetBiomeArea(Vector3f point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(const Vector3f& point);
+	Biome GetBiome(Vector3f point);
 
 	// Get the biome at world coordinates
 	Biome GetBiome(float x, float z);
@@ -183,11 +183,11 @@ public:
 	float GetHeight(float x, float z, float& mask);
 	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
 
-	bool InForest(const Vector3f& pos);
+	bool InForest(Vector3f pos);
 
-	float GetForestFactor(const Vector3f& pos);
+	float GetForestFactor(Vector3f pos);
 
-	void GetTerrainDelta(VUtils::Random::State& state, const Vector3f& center, float radius, float& delta, Vector3f& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection);
 
 	int GetSeed();
 

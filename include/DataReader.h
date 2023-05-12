@@ -15,7 +15,6 @@
 class DataReader : public DataStream {
 private:
     void ReadSomeBytes(BYTE_t* buffer, size_t count) {
-        //this->Assert31U(count);
         this->AssertOffset(count);
 
         // read into 'buffer'
@@ -25,28 +24,6 @@ private:
 
         this->m_pos += count;
     }
-
-    // Read a single byte from the buffer (slow if used to read a bunch of bytes)
-    // Throws if end of buffer is reached
-    //BYTE_t ReadByte();
-
-    /*
-    // Reads count bytes overriding the specified vector
-    // Throws if not enough bytes to read
-    void ReadSomeBytes(BYTES_t& vec, size_t count) {
-        this->Assert31U(count);
-        this->AssertOffset(count);
-
-        vec = BYTES_t(this->data() + this->m_pos,
-            this->data() + this->m_pos + count);
-
-        this->m_pos += count;
-    }*/
-
-    // Reads count bytes overriding the specified string
-    // '\0' is not included in count (raw bytes only)
-    // Will throw if count exceeds end
-    //void Read(std::string& s, uint32_t count);
 
     uint32_t Read7BitEncodedInt() {
         uint32_t out = 0;
@@ -79,7 +56,6 @@ public:
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
 
-        //this->Assert31U(count);
         this->AssertOffset(count);
 
         auto result = T(this->data() + this->m_pos,
@@ -106,39 +82,10 @@ public:
     template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
-        T out;
+        T out{};
         ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
-
-    /*
-    template<typename T> 
-        requires (std::same_as<T, std::string>
-            || std::same_as<T, std::string_view>)
-    decltype(auto) Read() {
-        auto count = Read7BitEncodedInt();
-        //if (count == 0) return T(data() + m_pos, data() + m_pos);
-
-        this->Assert31U(count);
-        this->AssertOffset(count);
-
-        T s = T(this->data() + this->m_pos,
-            this->data() + this->m_pos + count);
-
-        this->m_pos += count;
-        return s;
-    }*/
-
-    /*
-    // Reads a byte array
-    //  int32_t:   size
-    //  BYTES_t:    data
-    template<typename T> requires std::same_as<T, BYTES_t>
-    decltype(auto) Read() {
-        T out{};
-        ReadSomeBytes(out, Read<int32_t>());
-        return out;
-    }*/
 
     // Reads a container of supported types
     //  int32_t:   size
@@ -150,7 +97,6 @@ public:
         using Type = Iterable::value_type;
 
         const auto count = Read<int32_t>();
-        //this->Assert31U(count);
 
         Iterable out;
 
@@ -167,12 +113,10 @@ public:
 
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
-        //requires (std::is_same_typename VUtils::Traits::func_traits<F>::args_type)
     void AsEach(F func) {
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
         const auto count = Read<int32_t>();
-        //this->Assert31U(count);
 
         for (int32_t i = 0; i < count; i++) {
             func(Read<Type>());
@@ -265,7 +209,7 @@ public:
         auto gamerTag = Read<std::string>();
         auto networkUserId = Read<std::string>();
 
-        return UserProfile(name, gamerTag, networkUserId);
+        return UserProfile(std::move(name), std::move(gamerTag), std::move(networkUserId));
     }
 
 

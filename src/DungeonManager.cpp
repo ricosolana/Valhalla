@@ -22,8 +22,8 @@ void IDungeonManager::PostPrefabInit() {
 
     DataReader pkg(opt.value());
 
-    pkg.Read<std::string>(); // date/comment
-    std::string ver = pkg.Read<std::string>();
+    pkg.Read<std::string_view>(); // date/comment
+    auto ver = pkg.Read<std::string_view>();
     LOG_INFO(LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME)
         LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
@@ -35,7 +35,7 @@ void IDungeonManager::PostPrefabInit() {
 
         //HASH_t hash = pkg.Read<HASH_t>();
 
-        auto name = pkg.Read<std::string>();
+        auto name = pkg.Read<std::string_view>();
 
         dungeon->m_prefab = &PrefabManager()->RequirePrefab(name);
 
@@ -72,8 +72,8 @@ void IDungeonManager::PostPrefabInit() {
         dungeon->m_minRooms = pkg.Read<int32_t>();
         dungeon->m_perimeterBuffer = pkg.Read<float>();
         dungeon->m_perimeterSections = pkg.Read<int32_t>();
-        
-        dungeon->m_requiredRooms = pkg.Read<UNORDERED_SET_t<std::string>>();
+        //decltype(Dungeon::m_requiredRooms)::be
+        dungeon->m_requiredRooms = pkg.Read<decltype(Dungeon::m_requiredRooms)>();
 
         dungeon->m_spawnChance = pkg.Read<float>();
         dungeon->m_themes = (Room::Theme) pkg.Read<int32_t>();
@@ -237,7 +237,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3f& pos, const Quaternion& rot) {
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
@@ -245,7 +245,7 @@ ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3f& pos, cons
     return zdo;
 }
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, const Vector3f& pos, const Quaternion& rot, HASH_t seed) {
+ZDO& IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);

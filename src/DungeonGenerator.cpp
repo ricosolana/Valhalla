@@ -158,7 +158,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 		this->PlaceWall(state, num, this->m_dungeon.m_perimeterSections);
 }
 
-Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, const Room& room, const Vector3f& pos) {
+Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, const Room& room, Vector3f pos) {
 	if (room.m_faceCenter) {
 		Vector3f vector = m_pos - pos;
 		vector.y = 0;
@@ -231,7 +231,7 @@ void DungeonGenerator::Save() {
 
 
 
-const Dungeon::DoorDef* DungeonGenerator::FindDoorType(VUtils::Random::State& state, const std::string& type) {
+const Dungeon::DoorDef* DungeonGenerator::FindDoorType(VUtils::Random::State& state, std::string_view type) {
 	std::vector<std::reference_wrapper<const Dungeon::DoorDef>> list;
 	for (auto&& doorDef : this->m_dungeon.m_doorTypes) {
 		if (doorDef.m_connectionType == type) {
@@ -479,7 +479,7 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 	return false;
 }
 
-void DungeonGenerator::CalculateRoomPosRot(const RoomConnection& roomCon, const Vector3f& pos, const Quaternion& rot, Vector3f& outPos, Quaternion& outRot) {
+void DungeonGenerator::CalculateRoomPosRot(const RoomConnection& roomCon, Vector3f pos, Quaternion rot, Vector3f& outPos, Quaternion& outRot) {
 	outRot = rot * Quaternion::Inverse(roomCon.m_localRot);
 	outPos = pos - outRot * roomCon.m_localPos;
 }
@@ -599,7 +599,7 @@ void DungeonGenerator::AddOpenConnections(RoomInstance& newRoom, const RoomConne
 // Determine whether a room (with center at origin of room) is completely contained within a zone
 // TODO rename something better, wtf is 'IsInsideDungeon'
 //	this just makes sure that a rotated rectangle is within the zone
-bool DungeonGenerator::IsInsideZone(const Room& room, const Vector3f& pos, const Quaternion& rot) {
+bool DungeonGenerator::IsInsideZone(const Room& room, Vector3f pos, Quaternion rot) {
 	if (!VH_SETTINGS.dungeonsRoomsZoneBounded)
 		return true;
 
@@ -659,7 +659,7 @@ static bool RectOverlapRect(Vector3f size1, Vector3f pos1, Vector3f size2, Vecto
 		|| pos1.z - size1.z > pos2.z + size2.z);
 }
 
-bool DungeonGenerator::TestCollision(const Room& room, const Vector3f& pos, const Quaternion& rot) {
+bool DungeonGenerator::TestCollision(const Room& room, Vector3f pos, Quaternion rot) {
 
 	{
 		Vector3f newPos = pos;

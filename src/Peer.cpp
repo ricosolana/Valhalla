@@ -159,7 +159,7 @@ ZDO* Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
-void Peer::Teleport(const Vector3f& pos, const Quaternion& rot, bool animation) {
+void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
     this->Route(Hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,
@@ -169,7 +169,7 @@ void Peer::Teleport(const Vector3f& pos, const Quaternion& rot, bool animation) 
 
 
 
-void Peer::RouteParams(const ZDOID& targetZDO, HASH_t hash, BYTES_t params) {
+void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
     Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->m_uuid, targetZDO, hash, std::move(params)));
 }
 

@@ -16,9 +16,9 @@ public:
 	//void ForceGenerateAll();
 	void ForceQueuedRegeneration();
 
-	float GetOceanDepthAll(const Vector3f& worldPos);
+	float GetOceanDepthAll(Vector3f worldPos);
 
-	bool AtMaxLevelDepth(const Vector3f& worldPos);
+	bool AtMaxLevelDepth(Vector3f worldPos);
 
 	//Vector3f GetNormal(const Vector3f& pos);
 
@@ -39,14 +39,14 @@ public:
 
 	//Heightmap* GetOrCreateHeightmap(const Vector2i& zoneID);
 
-	Heightmap* PollHeightmap(const ZoneID& zone);
+	Heightmap* PollHeightmap(ZoneID zone);
 
-	Heightmap &GetHeightmap(const Vector3f& point);
-	Heightmap &GetHeightmap(const ZoneID& zone);
-	std::vector<Heightmap*> GetHeightmaps(const Vector3f& point, float radius);
+	Heightmap &GetHeightmap(Vector3f point);
+	Heightmap &GetHeightmap(ZoneID zone);
+	std::vector<Heightmap*> GetHeightmaps(Vector3f point, float radius);
 	//Biome FindBiome(const Vector3f& point);
 
-	bool IsRegenerateQueued(const Vector3f& point, float radius);
+	bool IsRegenerateQueued(Vector3f point, float radius);
 
 	//Heightmap* CreateHeightmap(const Vector2i& zone);
 };

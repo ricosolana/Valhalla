@@ -56,6 +56,8 @@ void IDiscordManager::Init() {
 		else {
 			Valhalla()->RunTask([=](Task&) {
 				if (label == "vhkick") {
+					// TODO use get_if to get pointers and not newly allocated strings
+
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 					if (auto peer = NetManager()->Kick(identifier))
 						event.reply("Kicked " + peer->m_name + " (" + peer->m_socket->GetHostName() + ")");
@@ -372,16 +374,16 @@ void IDiscordManager::PeriodUpdate() {
 		auto&& peer = NetManager()->GetPeerByHost(pair.first);
 		if (peer) {
 			//peer->CenterMessage(std::string("Verification required: <color=#FF1111>") + pair.second + "</color>");
-			peer->CenterMessage(std::make_tuple("Verification required: <color=#FF1111>", pair.second, "</color>"));
+			peer->CenterMessage("Verification required: <color=#FF1111>" + pair.second + "</color>");
 		}
 	}
 }
 
-void IDiscordManager::SendSimpleMessage(std::string msg) {
+void IDiscordManager::SendSimpleMessage(std::string_view msg) {
 	if (VH_SETTINGS.discordWebhook.empty())
 		return;
 
 	auto&& webhook = dpp::webhook(VH_SETTINGS.discordWebhook);
 
-	m_bot->execute_webhook(webhook, dpp::message(msg));
+	m_bot->execute_webhook(webhook, dpp::message(std::string(msg)));
 }

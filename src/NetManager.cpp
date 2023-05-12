@@ -163,7 +163,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
             return peer->ConsoleMessage("You are not admin");
 
         if (Kick(user)) {
-            peer->ConsoleMessage(std::make_tuple("Kicked '", user, "'"));
+            peer->ConsoleMessage("Kicked '" + std::string(user) + "'");
             VH_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
         }
         else {
@@ -176,7 +176,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
             return peer->ConsoleMessage("You are not admin");
 
         if (Ban(user)) {
-            peer->ConsoleMessage(std::make_tuple("Banned '", user, "'"));
+            peer->ConsoleMessage("Banned '" + std::string(user) + "'");
             VH_DISPATCH_WEBHOOK(std::string(user) + " was banned");
         }
         else {
@@ -191,7 +191,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         // devcommands requires an exact format...
         Unban(user);
 
-        peer->ConsoleMessage(std::make_tuple("Unbanning user ", user));
+        peer->ConsoleMessage("Unbanning user " +  std::string(user));
     });
 
     peer.Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {

@@ -44,8 +44,8 @@ void IRandomEventManager::Init() {
 			e->m_pauseIfNoPlayerInArea = pkg.Read<bool>();
 			e->m_biome = (Biome) pkg.Read<int32_t>();
 			
-			e->m_presentGlobalKeys = pkg.Read<UNORDERED_SET_t<std::string>>();
-			e->m_absentGlobalKeys = pkg.Read<UNORDERED_SET_t<std::string>>();
+			e->m_presentGlobalKeys = pkg.Read<decltype(Event::m_presentGlobalKeys)>();
+			e->m_absentGlobalKeys = pkg.Read<decltype(Event::m_absentGlobalKeys)>();
 
 			m_events.insert({ VUtils::String::GetStableHashCode(e->m_name), std::move(e) });
 		}
@@ -167,7 +167,7 @@ void IRandomEventManager::Save(DataWriter& writer) {
 void IRandomEventManager::Load(DataReader& reader, int version) {
 	m_eventIntervalTimer = reader.Read<float>();
 	if (version >= 25) {
-		this->m_activeEvent = GetEvent(reader.Read<std::string>());
+		this->m_activeEvent = GetEvent(reader.Read<std::string_view>());
 		this->m_activeEventTimer = reader.Read<float>();
 		this->m_activeEventPos = reader.Read<Vector3f>();
 	}

@@ -72,7 +72,7 @@ class IZoneManager {
 			const Vector3f m_pos;
 			//bool m_placed = false; // if m_generatedZones contains position
 
-			Instance(const Feature& location, const Vector3f &pos)
+			Instance(const Feature& location, const Vector3f& pos)
 				: m_feature(location), m_pos(pos) {}
 		};
 	};
@@ -140,13 +140,13 @@ private:
 
 	// All Foliage within a world capable of generation
 	std::vector<std::unique_ptr<const Foliage>> m_foliage;
-	
+
 	// All the generated Features in a world
 	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
 
 	// Which Zones have already been generated
 	UNORDERED_SET_t<ZoneID> m_generatedZones;
-	
+
 	// Game-state global keys
 	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
 
@@ -159,40 +159,40 @@ private:
 
 	void OnNewPeer(Peer& peer);
 
-	void TryGenerateNearbyZones(const Vector3f& pos);
+	void TryGenerateNearbyZones(Vector3f pos);
 
 
 	// Generate a zone if it is not already generated
 	//	Returns whether the zone was successfully generated
-	bool GenerateZone(const ZoneID& zone);
+	bool GenerateZone(ZoneID zone);
 	// Generate a zone if it is not already geenrated
 	//	Returns if zone was successfully generated given heightmap is ready
-	bool TryGenerateZone(const ZoneID& zone);
+	bool TryGenerateZone(ZoneID zone);
 	void PopulateZone(Heightmap& heightmap);
-	std::vector<ClearArea> TryGenerateFeature(const ZoneID& zone);
+	std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
 	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
-	bool HaveLocationInRange(const Feature& feature, const Vector3f& pos);
-	Vector3f GetRandomPointInZone(VUtils::Random::State& state, const ZoneID &zone, float range);
-	Vector3f GetRandomPointInRadius(VUtils::Random::State& state, const Vector3f& pos, float range);
-	bool InsideClearArea(const std::vector<ClearArea>& areas, const Vector3f& pos);
-	bool OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3f& pos, float range);
+	bool HaveLocationInRange(const Feature& feature, Vector3f pos);
+	Vector3f GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float range);
+	Vector3f GetRandomPointInRadius(VUtils::Random::State& state, Vector3f pos, float range);
+	bool InsideClearArea(const std::vector<ClearArea>& areas, Vector3f pos);
+	bool OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f pos, float range);
 
 	const Feature* GetFeature(HASH_t hash);
 	const Feature* GetFeature(std::string_view name);
 
-	void PrepareFeatures(const Feature &feature);
-	ZoneID GetRandomZone(VUtils::Random::State &state, float range);
+	void PrepareFeatures(const Feature& feature);
+	ZoneID GetRandomZone(VUtils::Random::State& state, float range);
 
 	void RemoveUngeneratedFeatures(const Feature& feature);
-	void GenerateFeature(const Feature& feature, HASH_t seed, const Vector3f &pos, const Quaternion &rot);
+	void GenerateFeature(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
 
-	void GetTerrainDelta(VUtils::Random::State& state, const Vector3f& pos, float range, float& delta, Vector3f& slopeDirection);
+	void GetTerrainDelta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
 
-	bool IsZoneGenerated(const ZoneID& zone);
+	bool IsZoneGenerated(ZoneID zone);
 
-	void GenerateLocationProxy(const Feature& feature, HASH_t seed, const Vector3f& pos, const Quaternion& rot);
-	//void GenerateZoneCtrl(const ZoneID& zone);
+	void GenerateLocationProxy(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
+	//void GenerateZoneCtrl(ZoneID zone);
 
 public:
 	void PostPrefabInit();
@@ -207,30 +207,30 @@ public:
 		return m_globalKeys;
 	}
 
-	//void RegenerateZone(const ZoneID& zone);
+	//void RegenerateZone(ZoneID zone);
 
-	void PopulateZone(const ZoneID& zone);
+	void PopulateZone(ZoneID zone);
 
 	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
 
 	// Get world height at location
-	float GetGroundHeight(const Vector3f& pos);
+	float GetGroundHeight(Vector3f pos);
 
 	// Get specific height information at position
 	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance *GetNearestFeature(std::string_view name, const Vector3f& pos);
+	Feature::Instance* GetNearestFeature(std::string_view name, Vector3f pos);
 
-	static ZoneID WorldToZonePos(const Vector3f& pos);
-	static Vector3f ZoneToWorldPos(const ZoneID& zone);
+	static ZoneID WorldToZonePos(Vector3f pos);
+	static Vector3f ZoneToWorldPos(ZoneID zone);
 
-	bool ZonesOverlap(const ZoneID& zone, const Vector3f& areaPoint);
-	bool ZonesOverlap(const ZoneID& zone, const ZoneID& areaZone);
+	bool ZonesOverlap(ZoneID zone, Vector3f areaPoint);
+	bool ZonesOverlap(ZoneID zone, ZoneID areaZone);
 
-	bool IsPeerNearby(const ZoneID& zone, OWNER_t uid);
+	bool IsPeerNearby(ZoneID zone, OWNER_t uid);
 };
 
 // Manager class for everything related to world generation

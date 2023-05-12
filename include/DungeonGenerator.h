@@ -59,14 +59,14 @@ private:
 
 	void GenerateCampRadial(VUtils::Random::State& state);
 
-	Quaternion GetCampRoomRotation(VUtils::Random::State& state, const Room &room, const Vector3f &pos);
+	Quaternion GetCampRoomRotation(VUtils::Random::State& state, const Room &room, Vector3f pos);
 
 	void PlaceWall(VUtils::Random::State& state, float radius, int sections);
 
 	void Save();
 
 	// Nullable
-	const Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, const std::string& type);
+	const Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, std::string_view type);
 
 	void PlaceDoors(VUtils::Random::State& state);
 
@@ -82,7 +82,7 @@ private:
 
 	bool PlaceOneRoom(VUtils::Random::State& state);
 
-	void CalculateRoomPosRot(const RoomConnection &roomCon, const Vector3f &pos, const Quaternion &rot, Vector3f &outPos, Quaternion &outRot);
+	void CalculateRoomPosRot(const RoomConnection &roomCon, Vector3f pos, Quaternion rot, Vector3f &outPos, Quaternion &outRot);
 
 	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
@@ -94,9 +94,9 @@ private:
 
 	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
-	bool IsInsideZone(const Room &room, const Vector3f &pos, const Quaternion &rot);
+	bool IsInsideZone(const Room &room, Vector3f pos, Quaternion rot);
 
-	bool TestCollision(const Room& room, const Vector3f& pos, const Quaternion& rot);
+	bool TestCollision(const Room& room, Vector3f pos, Quaternion rot);
 
 	// Nullable
 	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);

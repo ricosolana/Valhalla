@@ -73,7 +73,7 @@ namespace VUtils::Math {
 
 
 
-    float Fbm(const Vector3f &p, int octaves, float lacunarity, float gain) {
+    float Fbm(Vector3f p, int octaves, float lacunarity, float gain) {
         return Fbm(Vector2f(p.x, p.z), octaves, lacunarity, gain);
     }
 
@@ -88,15 +88,14 @@ namespace VUtils::Math {
         return num;
     }
 
-    float Fbm(const Vector2f& p, int octaves, float lacunarity, float gain) {
+    float Fbm(Vector2f p, int octaves, float lacunarity, float gain) {
         float num = 0;
         float num2 = 1;
-        Vector2f vector = p;
         for (int i = 0; i < octaves; i++)
         {
-            num += num2 * VUtils::Math::PerlinNoise(vector.x, vector.y);
+            num += num2 * VUtils::Math::PerlinNoise(p.x, p.y);
             num2 *= gain;
-            vector *= lacunarity;
+            p *= lacunarity;
         }
         return num;
     }
@@ -218,7 +217,7 @@ namespace VUtils::Math {
         return p_Angle;
     }
 
-    float YawFromDirection(const Vector3f &dir) {
+    float YawFromDirection(Vector3f dir) {
         float num = std::atan2(dir.x, dir.z);
         return FixDegAngle(57.29578f * num);
     }

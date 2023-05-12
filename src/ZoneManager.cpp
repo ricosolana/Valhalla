@@ -202,12 +202,12 @@ void IZoneManager::OnNewPeer(Peer& peer) {
     SendLocationIcons(peer);
 }
 
-bool IZoneManager::ZonesOverlap(const ZoneID& zone, const Vector3f& refPoint) {
+bool IZoneManager::ZonesOverlap(ZoneID zone, Vector3f refPoint) {
     return ZonesOverlap(zone,
         WorldToZonePos(refPoint));
 }
 
-bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone) {
+bool IZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone) {
     int num = NEAR_ACTIVE_AREA - 1;
     return zone.x >= refCenterZone.x - num
         && zone.x <= refCenterZone.x + num
@@ -215,7 +215,7 @@ bool IZoneManager::ZonesOverlap(const ZoneID& zone, const ZoneID& refCenterZone)
         && zone.y >= refCenterZone.y - num;
 }
 
-bool IZoneManager::IsPeerNearby(const ZoneID& zone, OWNER_t uid) {
+bool IZoneManager::IsPeerNearby(ZoneID zone, OWNER_t uid) {
     auto&& peer = NetManager()->GetPeerByUUID(uid);
     //assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer) return ZonesOverlap(zone, peer->m_pos);
@@ -379,7 +379,7 @@ void IZoneManager::RegenerateZone(const ZoneID& zone) {
 }*/
 
 // Rename?
-void IZoneManager::TryGenerateNearbyZones(const Vector3f& refPoint) {
+void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
     // Prioritize center zone
@@ -400,7 +400,7 @@ void IZoneManager::TryGenerateNearbyZones(const Vector3f& refPoint) {
     }
 }
 
-bool IZoneManager::GenerateZone(const ZoneID& zone) {
+bool IZoneManager::GenerateZone(ZoneID zone) {
     if ((zone.x > -WORLD_RADIUS_IN_ZONES && zone.y > -WORLD_RADIUS_IN_ZONES
         && zone.x < WORLD_RADIUS_IN_ZONES && zone.y < WORLD_RADIUS_IN_ZONES)) 
     {
@@ -413,7 +413,7 @@ bool IZoneManager::GenerateZone(const ZoneID& zone) {
     return false;
 }
 
-bool IZoneManager::TryGenerateZone(const ZoneID& zone) {
+bool IZoneManager::TryGenerateZone(ZoneID zone) {
     if ((zone.x >= -WORLD_RADIUS_IN_ZONES && zone.y >= -WORLD_RADIUS_IN_ZONES
         && zone.x <= WORLD_RADIUS_IN_ZONES && zone.y <= WORLD_RADIUS_IN_ZONES)
         && !IsZoneGenerated(zone)) {
@@ -451,14 +451,14 @@ void IZoneManager::PopulateZone(Heightmap &heightmap) {
 #endif // VH_OPTION_ENABLE_ZONE_GENERATION
 }
 
-void IZoneManager::PopulateZone(const ZoneID& zone) {
+void IZoneManager::PopulateZone(ZoneID zone) {
     this->PopulateZone(HeightmapManager()->GetHeightmap(zone));
 }
 
 
 
 // private
-Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, const Vector3f& center, float radius) {
+Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, Vector3f center, float radius) {
     float f = state.NextFloat() * PI * 2.f;
     float num = state.Range(0.f, radius);
     return center + Vector3f(std::sin(f) * num, 0.f, std::cos(f) * num);
@@ -642,7 +642,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 }
 
 // private
-bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Vector3f& point) {
+bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, Vector3f point) {
     for (auto&& clearArea : areas) {
         if (point.x > clearArea.m_center.x - clearArea.m_semiWidth
             && point.x < clearArea.m_center.x + clearArea.m_semiWidth
@@ -654,7 +654,7 @@ bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, const Ve
     return false;
 }
 
-bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, const Vector3f& point, float radius) {
+bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f point, float radius) {
     for (auto&& area : areas) {
 
         float d = VUtils::Math::SqDistance(point.x, point.z, area.m_center.x, area.m_center.z);
@@ -866,7 +866,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     }
 }
 
-bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3f &p) {
+bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
     for (auto&& pair : m_generatedFeatures) {
         auto&& locationInstance = pair.second;
         auto&& location = locationInstance->m_feature.get();
@@ -881,7 +881,7 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, const Vector3f &p) {
     return false;
 }
 
-Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, const ZoneID& zone, float locationRadius) {
+Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float locationRadius) {
     auto pos = ZoneToWorldPos(zone);
     float num = ZONE_SIZE / 2.f;
     float x = state.Range(-num + locationRadius, num - locationRadius);
@@ -901,7 +901,7 @@ Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) 
 }
 
 // private
-std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(const ZoneID &zoneID)
+std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zoneID)
 {
     auto now(steady_clock::now());
 
@@ -983,7 +983,7 @@ void IZoneManager::RemoveUngeneratedFeatures(const Feature& feature) {
 }
 
 // private
-void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const Vector3f& pos, const Quaternion& rot) {
+void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
 
     //location->m_prefab.transform.position = Vector3f::ZERO;
     //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
@@ -1072,7 +1072,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, const V
 
 // could be inlined...
 // private
-void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, const Vector3f& pos, const Quaternion& rot) {
+void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
     
     zdo.Set("location", location.m_hash);
@@ -1100,7 +1100,7 @@ std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager:
 }
 
 // private
-void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3f& center, float radius, float& delta, Vector3f& slopeDirection) {
+void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection) {
     float num2 = std::numeric_limits<float>::min();
     float num3 = std::numeric_limits<float>::max();
     Vector3f b = center;
@@ -1124,7 +1124,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, const Vector3f&
 
 // used importantly for snapping and location/vegetation generation
 // public
-float IZoneManager::GetGroundHeight(const Vector3f& p) {
+float IZoneManager::GetGroundHeight(Vector3f p) {
     return GeoManager()->GetHeight(p.x, p.z);
 }
 
@@ -1145,7 +1145,7 @@ Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& bio
 }
 
 // public
-IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_view name, const Vector3f& point) {
+IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_view name, Vector3f point) {
     float closestDist = std::numeric_limits<float>::max();
     
     IZoneManager::Feature::Instance* closest = nullptr;
@@ -1167,7 +1167,7 @@ IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_vie
 // public
 // this is world position to zone position
 // formerly GetZone
-Vector2i IZoneManager::WorldToZonePos(const Vector3f& point) {
+Vector2i IZoneManager::WorldToZonePos(Vector3f point) {
     int32_t x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
     int32_t y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
     return Vector2i(x, y);
@@ -1176,11 +1176,11 @@ Vector2i IZoneManager::WorldToZonePos(const Vector3f& point) {
 // public
 // zone position to ~world position
 // GetZonePos
-Vector3f IZoneManager::ZoneToWorldPos(const ZoneID& id) {
+Vector3f IZoneManager::ZoneToWorldPos(ZoneID id) {
     return Vector3f(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
 }
 
 // private
-bool IZoneManager::IsZoneGenerated(const ZoneID& zoneID) {
+bool IZoneManager::IsZoneGenerated(ZoneID zoneID) {
     return m_generatedZones.contains(zoneID);
 }

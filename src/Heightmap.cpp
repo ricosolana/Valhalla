@@ -31,7 +31,7 @@
 // This is essentially a one-off function once constructed
 // so its use is kinda redundant continually in Generate()
 //void Heightmap::Initialize() {
-Heightmap::Heightmap(const ZoneID& zoneID, std::unique_ptr<BaseHeightmap> base)
+Heightmap::Heightmap(ZoneID zoneID, std::unique_ptr<BaseHeightmap> base)
     : m_zone(zoneID), m_base(std::move(base)) {
     Regenerate();
 }
@@ -102,7 +102,7 @@ std::array<float, 4>& Heightmap::GetOceanDepth() {
 
 
 // public
-float Heightmap::GetOceanDepth(const Vector3f& worldPos) {
+float Heightmap::GetOceanDepth(Vector3f worldPos) {
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
@@ -166,7 +166,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
 }
 
 // public
-Biome Heightmap::GetBiome(const Vector3f& point) {
+Biome Heightmap::GetBiome(Vector3f point) {
     //if all biomes are the same, return same/any
     if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] 
         && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] 
@@ -361,7 +361,7 @@ void Heightmap::RebuildCollisionMesh() {
 }
 
 // private
-void Heightmap::SmoothTerrain2(const Vector3f& worldPos, float radius, 
+void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius, 
     BaseHeightmap::Heights_t* levelOnlyHeights, float power) {
     
     assert(false);
@@ -405,7 +405,7 @@ void Heightmap::SmoothTerrain2(const Vector3f& worldPos, float radius,
 }
 
 // private
-bool Heightmap::AtMaxWorldLevelDepth(const Vector3f& worldPos) {
+bool Heightmap::AtMaxWorldLevelDepth(Vector3f worldPos) {
     float num;
     this->GetWorldHeight(worldPos, num);
     float num2;
@@ -414,7 +414,7 @@ bool Heightmap::AtMaxWorldLevelDepth(const Vector3f& worldPos) {
 }
 
 // private
-bool Heightmap::GetWorldBaseHeight(const Vector3f& worldPos, float& height) {
+bool Heightmap::GetWorldBaseHeight(Vector3f worldPos, float& height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -429,7 +429,7 @@ bool Heightmap::GetWorldBaseHeight(const Vector3f& worldPos, float& height) {
 }
 
 
-bool Heightmap::GetWorldNormal(const Vector3f& worldPos, Vector3f& normal) {
+bool Heightmap::GetWorldNormal(Vector3f worldPos, Vector3f& normal) {
     //float y;
     Vector3f a = worldPos;
     if (!GetWorldHeight(worldPos, a.y))
@@ -479,7 +479,7 @@ bool Heightmap::GetWorldHeight(const Vector3f& worldPos, float& height) {
 }
 
 // private
-bool Heightmap::GetAverageWorldHeight(const Vector3f& worldPos, float radius, float &height) {
+bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -508,7 +508,7 @@ bool Heightmap::GetAverageWorldHeight(const Vector3f& worldPos, float radius, fl
 }
 
 // private
-bool Heightmap::GetMinWorldHeight(const Vector3f& worldPos, float radius, float &height) {
+bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -534,7 +534,7 @@ bool Heightmap::GetMinWorldHeight(const Vector3f& worldPos, float radius, float 
 }
 
 // private
-bool Heightmap::GetMaxWorldHeight(const Vector3f& worldPos, float radius, float &height) {
+bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -561,7 +561,7 @@ bool Heightmap::GetMaxWorldHeight(const Vector3f& worldPos, float radius, float 
 
 
 // private
-void Heightmap::SmoothTerrain(const Vector3f& worldPos, float radius, bool square, float intensity) {
+void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -606,7 +606,7 @@ float Heightmap::GetAvgHeight(int32_t cx, int32_t cy, int32_t w) {
 }
 
 // private
-float Heightmap::GroundHeight(const Vector3f& point) {
+float Heightmap::GroundHeight(Vector3f point) {
     assert(false);
 
     //Ray ray = new Ray(point + Vector3f::UP * 100.f, Vector3f::DOWN);
@@ -685,7 +685,7 @@ void Heightmap::PaintCleared(Vector3f worldPos, float radius,
 }
 
 // public
-float Heightmap::GetVegetationMask(const Vector3f& worldPos) {
+float Heightmap::GetVegetationMask(Vector3f worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
@@ -695,7 +695,7 @@ float Heightmap::GetVegetationMask(const Vector3f& worldPos) {
 }
 
 // public
-bool Heightmap::IsCleared(const Vector3f& worldPos) {
+bool Heightmap::IsCleared(Vector3f worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
@@ -709,7 +709,7 @@ bool Heightmap::IsCleared(const Vector3f& worldPos) {
 }
 
 // public
-bool Heightmap::IsCultivated(const Vector3f& worldPos) {
+bool Heightmap::IsCultivated(Vector3f worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -718,21 +718,21 @@ bool Heightmap::IsCultivated(const Vector3f& worldPos) {
 }
 
 // public
-void Heightmap::WorldToVertex(const Vector3f& worldPos, int32_t& x, int32_t &y) {
+void Heightmap::WorldToVertex(Vector3f worldPos, int32_t& x, int32_t &y) {
     Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = floor(vector.x + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
     y = floor(vector.z + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
 }
 
 // private
-void Heightmap::WorldToNormalizedHM(const Vector3f& worldPos, float& x, float &y) {
+void Heightmap::WorldToNormalizedHM(Vector3f worldPos, float& x, float &y) {
     Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = vector.x / IZoneManager::ZONE_SIZE + 0.5f;
     y = vector.z / IZoneManager::ZONE_SIZE + 0.5f;
 }
 
 // private
-void Heightmap::LevelTerrain(const Vector3f& worldPos, float radius, bool square, 
+void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square, 
     BaseHeightmap::Heights_t* levelOnly) {
 
     int32_t num;
@@ -791,7 +791,7 @@ void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
 }
 
 // public
-bool Heightmap::IsPointInside(const Vector3f& point, float radius) {
+bool Heightmap::IsPointInside(Vector3f point, float radius) {
     //throw std::runtime_error("not implemented");
 
     float num = (float)IZoneManager::ZONE_SIZE * 0.5f;

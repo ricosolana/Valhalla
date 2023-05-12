@@ -121,7 +121,7 @@ public:
     }
 
     template<typename F>
-    decltype(auto) Register(const std::string& name, F func) {
+    decltype(auto) Register(std::string_view name, F func) {
         return Register(VUtils::String::GetStableHashCode(name), func);
     }
 
@@ -172,7 +172,7 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) Invoke(const std::string& name, const Types&... params) {
+    decltype(auto) Invoke(std::string_view name, const Types&... params) {
         return Invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
@@ -237,7 +237,7 @@ public:
         return true;
     }
 
-    decltype(auto) InternalInvoke(const std::string& name, DataReader& reader) {
+    decltype(auto) InternalInvoke(std::string_view name, DataReader& reader) {
         return InternalInvoke(VUtils::String::GetStableHashCode(name), reader);
     }
 
@@ -287,14 +287,14 @@ public:
 
     ZDO* GetZDO();
 
-    void Teleport(const Vector3f& pos, const Quaternion& rot, bool animation);
+    void Teleport(Vector3f pos, Quaternion rot, bool animation);
 
-    void Teleport(const Vector3f& pos) {
+    void Teleport(Vector3f pos) {
         Teleport(pos, Quaternion::IDENTITY, false);
     }
 
     // Show a specific chat message
-    void ChatMessage(std::string_view msg, ChatMsgType type, const Vector3f& pos, const UserProfile& profile, std::string_view senderID) {
+    void ChatMessage(std::string_view msg, ChatMsgType type, Vector3f pos, const UserProfile& profile, std::string_view senderID) {
         this->Route(Hashes::Routed::ChatMessage,
             pos,
             type,
@@ -313,23 +313,8 @@ public:
             ""
         );
     }
-    // Show a chat message (string concat pack)
-    template<typename ...Strings>
-    void ChatMessage(const std::tuple<Strings...>& msg) {
-        this->Route(Hashes::Routed::ChatMessage,
-            Vector3f(10000, 10000, 10000),
-            ChatMsgType::Normal,
-            std::string_view(""), std::string_view("<color=yellow><b>SERVER</b></color>"), std::string_view(""),
-            msg,
-            ""
-        );
-    }
 
     // Show a console message
-    template<typename ...Strings>
-    void ConsoleMessage(const std::tuple<Strings...>& msg) {
-        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
-    }
     void ConsoleMessage(std::string_view msg) {
         return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
     }
@@ -339,18 +324,10 @@ private:
     void UIMessage(std::string_view msg, UIMsgType type) {
         this->Route(Hashes::Routed::S2C_UIMessage, type, msg);
     }
-    template<typename ...Strings>
-    void UIMessage(const std::tuple<Strings...>& msg, UIMsgType type) {
-        this->Route(Hashes::Routed::S2C_UIMessage, type, msg);
-    }
 
 public:
     // Show a corner screen message
     void CornerMessage(std::string_view msg) {
-        return UIMessage(msg, UIMsgType::TopLeft);
-    }
-    template<typename ...Strings>
-    void CornerMessage(const std::tuple<Strings...>& msg) {
         return UIMessage(msg, UIMsgType::TopLeft);
     }
 
@@ -358,20 +335,15 @@ public:
     void CenterMessage(std::string_view msg) {
         return UIMessage(msg, UIMsgType::Center);
     }
-    // Show a center screen message
-    template<typename ...Strings>
-    void CenterMessage(const std::tuple<Strings...>& msg) {
-        return UIMessage(msg, UIMsgType::Center);
-    }
 
 
 
-    void RouteParams(const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
+    void RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params);
 
 
 
     template <typename... Types>
-    void RouteView(const ZDOID& targetZDO, HASH_t hash, Types&&... params) {
+    void RouteView(ZDOID targetZDO, HASH_t hash, Types&&... params) {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
@@ -379,7 +351,7 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) RouteView(const ZDOID& targetZDO, const std::string& name, Types&&... params) {
+    decltype(auto) RouteView(ZDOID targetZDO, std::string_view name, Types&&... params) {
         return RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
@@ -389,13 +361,13 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) Route(const std::string& name, Types&&... params) {
+    decltype(auto) Route(std::string_view name, Types&&... params) {
         return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
 
 
-    void RouteViewLua(const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+    void RouteViewLua(ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 

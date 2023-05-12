@@ -10,34 +10,11 @@
 #include "DataStream.h"
 #include "DataReader.h"
 
-//class DataReader;
-
-/*
-template <class T>
-struct Serializer;
-
-template <class T>
-struct Serializer
-    : _Conditionally_enabled_hash<_Kty,
-    !is_const_v<_Kty> && !is_volatile_v<_Kty> && (is_enum_v<_Kty> || is_integral_v<_Kty> || is_pointer_v<_Kty>)> {
-    // hash functor primary template (handles enums, integrals, and pointers)
-    static size_t _Do_hash(const _Kty& _Keyval) noexcept {
-        return _Hash_representation(_Keyval);
-    }
-};*/
-
 class DataWriter : public virtual DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-        //this->Assert31U(count);
-        //this->Assert31U(this->m_pos + count);
-
-        // this copies in place, without relocating bytes exceeding m_pos
-        // resize, ensuring capacity for copy operation
-
-        //vector::assign only works starting at beginning... so cant use it...
         std::visit(VUtils::Traits::overload{
             [this, count](std::reference_wrapper<BYTES_t> buf) { 
                 if (this->CheckOffset(count))
@@ -132,66 +109,14 @@ public:
     template<typename T>
         requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
     void Write(const T& in) {
-        //Write(in.data(), )
+        Write(in.data(), in.size());
         //Write<int32_t>(in.size());
         //WriteSomeBytes(in.data(), in.size());
-        Write(in.data(), in.size());
     }
 
-    // Write a DataReader to the array
-    //  The data() and Length() are used to determine data to write 
-    //void Write(DataReader in);
-
-    /*
-    // Writes a BYTE_t* as byte array of length
-    //  uint32_t:   size
-    //  BYTES_t:    data
-    void Write(const BYTE_t* in, size_t count) {
-        Write<int32_t>(count);
-        WriteSomeBytes(in, count);
-    }
-
-    // Writes a BYTES_t* as byte array of length
-    //  uint32_t:   size
-    //  BYTES_t:    data
-    void Write(const BYTES_t& in, size_t count) {
-        Write(in.data(), count);
-    }
-
-    // Writes a BYTE_t* as byte array
-    //  uint32_t:   size
-    //  BYTES_t:    data
-    void Write(const BYTES_t& in) {
-        Write(in.data(), in.size());
-    }*/
-
-    // Writes a NetPackage as byte array
-    //  uint32_t:   size
-    //  BYTES_t:    data
-    //void Write(const NetPackage& in);
-
-    /*
-    template<StringLike S>
-    void Write(const S& in) {
-        auto length = in.length();
-        Assert31U(length);
-
-        auto byteCount = static_cast<int32_t>(length);
-
-        Write7BitEncodedInt(byteCount);
-        if (byteCount == 0)
-            return;
-
-        for (auto&& ch : in) {
-            static_assert(std::is_same_v<decltype(ch), char>, "Stringlike write requires char");
-            Write(ch);
-        }
-    }*/
-        
     // Writes a string
     void Write(std::string_view in) {
         auto length = in.length();
-        Assert31U(length);
 
         auto byteCount = static_cast<int32_t>(length);
 
@@ -202,44 +127,11 @@ public:
         WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
     }
 
-private:
-    void svUnpack() {}
-
-    template<typename A, typename ...B>
-    void svUnpack(const A& a, const B&... b) {
-        auto&& sv = std::string_view(a);
-        WriteSomeBytes(reinterpret_cast<const BYTE_t*>(sv.data()), sv.length());
-
-        svUnpack(b...);
-    }
-
-public:
-    // Writes a tuple of strings as a singular concatenated string
-    template<typename ...Strings>
-    void Write(const std::tuple<Strings...> &in) {
-        // Unpack the tuple and sum length using a fold
-        auto length = std::apply([](const auto&... args) {
-            return (std::string_view(args).length() + ...);
-        }, in);
-
-        Assert31U(length);
-
-        auto byteCount = static_cast<int32_t>(length);
-
-        Write7BitEncodedInt(byteCount);
-        if (byteCount == 0)
-            return;
-
-        std::apply([this](const auto& ... args) {
-            svUnpack(args...);
-        }, in);
-    }
-
     // Writes a ZDOID
     //  12 bytes total are written:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
-    void Write(const ZDOID& in) {
+    void Write(ZDOID in) {
         Write(in.GetOwner());
         Write(in.GetUID());
     }
@@ -249,7 +141,7 @@ public:
     //  float: x (4 bytes)
     //  float: y (4 bytes)
     //  float: z (4 bytes)
-    void Write(const Vector3f& in) {
+    void Write(Vector3f in) {
         Write(in.x);
         Write(in.y);
         Write(in.z);
@@ -259,7 +151,7 @@ public:
     //  8 bytes total are written:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
-    void Write(const Vector2i& in) {
+    void Write(Vector2i in) {
         Write(in.x);
         Write(in.y);
     }
@@ -270,7 +162,7 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     //  float: w (4 bytes)
-    void Write(const Quaternion& in) {
+    void Write(Quaternion in) {
         Write(in.x);
         Write(in.y);
         Write(in.z);
@@ -285,13 +177,9 @@ public:
                 && !std::is_arithmetic_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
-        //this->Assert31U(size);
         Write(static_cast<int32_t>(size));
         for (auto&& v : in) {
-            if constexpr (std::is_same_v<typename Iterable::value_type, std::string>)
-                Write(std::string_view(v));
-            else
-                Write(v);
+            Write(v);
         }
     }
 
@@ -330,11 +218,11 @@ public:
         Write(std::string_view(in.m_networkUserId));
     }
 
-    void Write(const UInt64Wrapper& in) {
+    void Write(UInt64Wrapper in) {
         Write((uint64_t)in);
     }
 
-    void Write(const Int64Wrapper& in) {
+    void Write(Int64Wrapper in) {
         Write((int64_t)in);
     }
 
@@ -402,7 +290,7 @@ public:
             Write(arg.as<double>());
             break;
         case IModManager::Type::STRING:
-            Write(arg.as<std::string_view>());
+            Write(arg.as<std::string>());
             break;
         case IModManager::Type::BOOL:
             Write(arg.as<bool>());

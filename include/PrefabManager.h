@@ -20,7 +20,7 @@ public:
 
 	// Get a prefab by name
 	//	Returns the prefab or null
-	const Prefab* GetPrefab(const std::string& name) {
+	const Prefab* GetPrefab(std::string_view name) {
 		return GetPrefab(VUtils::String::GetStableHashCode(name));
 	}
 
@@ -35,11 +35,11 @@ public:
 
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefab(const std::string& name) {
+	const Prefab& RequirePrefab(std::string_view name) {
 		return RequirePrefab(VUtils::String::GetStableHashCode(name));
 	}
 
-	void Register(const std::string& name, Prefab::Type type, const Vector3f &scale, Prefab::Flag flags, bool overwrite) {
+	void Register(std::string_view name, Prefab::Type type, Vector3f scale, Prefab::Flag flags, bool overwrite) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
 		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
 
@@ -48,7 +48,7 @@ public:
 
 		auto&& prefab = *insert.first->second;
 		
-		prefab.m_name = name;
+		prefab.m_name = std::string(name);
 		prefab.m_hash = hash;
 		prefab.m_type = type;
 		prefab.m_localScale = scale;
@@ -68,7 +68,7 @@ public:
 
 		auto&& prefab = *insert.first->second;
 
-		prefab.m_name = name;
+		prefab.m_name = std::move(name);
 		prefab.m_hash = hash;
 		prefab.m_type = (Prefab::Type) reader.Read<int32_t>();
 		prefab.m_localScale = reader.Read<Vector3f>();

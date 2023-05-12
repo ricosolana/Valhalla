@@ -7,24 +7,11 @@
 class DataStream {
 public:
     std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t> m_data;
-    //BYTES_t *m_ownedBuf;
-    //BYTE_VIEW_t m_unownedBuf;
 
 protected:
     size_t m_pos{};
 
 protected:
-    bool Check31U(size_t count) {
-        return count > static_cast<size_t>(std::numeric_limits<int32_t>::max());
-    }
-
-    // Throws if the count exceeds int32_t::max signed size
-    void Assert31U(size_t count) {
-        assert(!Check31U(count) && "count is negative or exceeds 2^32 - 1");
-        //if (Check31U(count))
-            //throw std::runtime_error("count is negative or exceeds 2^32 - 1");
-    }
-
     // Returns whether the specified position exceeds container length
     bool CheckPosition(size_t pos) const {
         return pos > size();
@@ -68,7 +55,6 @@ public:
 
     // Sets the position of this stream
     void SetPos(size_t pos) {
-        Assert31U(pos);
         AssertPosition(pos);
 
         this->m_pos = pos;

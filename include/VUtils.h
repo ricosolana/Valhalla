@@ -56,8 +56,8 @@ using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
 //template<typename K>
 //using UNORDERED_SET_t = ankerl::unordered_dense::set<K>;
 
-template<typename K, typename V, typename Hash = ankerl::unordered_dense::hash<K>>
-using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, Hash>;
+template<typename K, typename V, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
+using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, Hash, Equal>;
 
 template<typename K, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
 using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
@@ -275,15 +275,16 @@ public:
     constexpr IntegralWrapper(uint32_t high, uint32_t low)
         : m_value((static_cast<T>(high) << 32) | static_cast<T>(low)) {}
 
-    constexpr IntegralWrapper(const std::string &hex) {
+    constexpr IntegralWrapper(std::string_view raw) {
         // high and low should be bounded around 2^32
 
         // number accepts '0x...', 'bases...'
         // when radix is 0, radix will be deduced from the initial base '0x...'
+        // TODO use from_chars ? or something possibly safer 
         if constexpr (std::is_unsigned_v<T>)
-            this->m_value = std::strtoull(hex.c_str() + 2, nullptr, 0);
+            this->m_value = std::strtoull(raw.data(), nullptr, 0);
         else 
-            this->m_value = std::strtoll(hex.c_str() + 2, nullptr, 0);
+            this->m_value = std::strtoll(raw.data(), nullptr, 0);
     }
 
 
@@ -678,9 +679,9 @@ namespace VUtils {
     
     // Set an environment variable
     //  Returns whether the assignment was successful
-    bool SetEnv(const std::string& key, const std::string& value);
+    bool SetEnv(std::string_view key, std::string_view value);
 
     // Retrieve an environment variable
     //  Returns the variable or an empty string
-    std::string GetEnv(const std::string& key);
+    std::string GetEnv(std::string_view key);
 }

@@ -5,6 +5,7 @@
 
 #define __H(str) VUtils::String::GetStableHashCodeCT(str)
 
+/*
 template<typename T, size_t N, typename C = typename T::value_type>
     requires (N >= 1)
 class ConcatPack {
@@ -99,9 +100,10 @@ template<typename T>
 concept StringLike = 
        VUtils::Traits::has_traits_type_v<T> 
     && std::is_same_v<typename T::value_type, char>;
+    */
 
 namespace VUtils::String {
-    // Get the compile-time Valheim hash of the string
+    // INTERNAL: Do not use unless you know what you are doing
     constexpr HASH_t GetStableHashCodeCT(const char *str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
         if (str[idx] != '\0') {
             num = ((num << 5) + num) ^ (uint32_t) str[idx];
@@ -114,7 +116,8 @@ namespace VUtils::String {
         return static_cast<HASH_t>(num + num2 * 1566083941);
     }
 
-    // Get the compile-time Valheim hash of the string
+    // Calculate the Valheim-hash of a string
+    //  This is the compile time overload
     constexpr HASH_t GetStableHashCodeCT(const char *str) {
         uint32_t num = 5381;
         uint32_t num2 = num;
@@ -123,53 +126,14 @@ namespace VUtils::String {
         return GetStableHashCodeCT(str, num, num2, idx);
     }
 
-    //template<typename Strings> requires
-    //HASH_t GetStableHashCode()
+    // Calculate the Valheim-hash of a string
+    HASH_t GetStableHashCode(std::string_view s);
 
-    //HASH_t GetStableHashCode(std::string_view s);
 
-    //template<std::size_t N>
-    template<StringLike S>
-    HASH_t GetStableHashCode(const S& s) {
-        uint32_t num = 5381;
-        uint32_t num2 = num;
-
-        for (auto&& itr = s.begin(); itr != s.end(); ) {
-            num = ((num << 5) + num) ^ (uint32_t)*(itr++);
-            if (itr == s.end()) {
-                break;
-            }
-            else {
-                num2 = ((num2 << 5) + num2) ^ ((uint32_t) * (itr++));
-            }                
-        }
-        return static_cast<HASH_t>(num + num2 * 1566083941);
-    }
-
-    /*
-    constexpr HASH_t GetStableHashCode(std::string_view str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
-        if (str[idx] != '\0') {
-            num = ((num << 5) + num) ^ (unsigned)str[idx];
-            if (str[idx + 1] != '\0') {
-                num2 = ((num2 << 5) + num2) ^ (unsigned)str[idx + 1];
-                idx += 2;
-                return GetStableHashCode(str, num, num2, idx);
-            }
-        }
-        return static_cast<HASH_t>(num + num2 * 1566083941);
-    }
-
-    constexpr HASH_t GetStableHashCode(std::string_view str) {
-        uint32_t num = 5381;
-        uint32_t num2 = num;
-        uint32_t idx = 0;
-
-        return GetStableHashCode(str, num, num2, idx);
-    }*/
 
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable_v<T>
-    std::string Join(const char* delimiter, T container) {
+    std::string Join(std::string_view delimiter, T container) {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
             result += std::string(*(container.begin() + i)) + delimiter;
@@ -188,7 +152,7 @@ namespace VUtils::String {
 
     int LevenshteinDistance(std::string_view s, std::string_view t);
 
-    std::vector<std::string_view> Split(std::string_view s, const std::string &delim);
+    std::vector<std::string_view> Split(std::string_view s, std::string_view delim);
 
     template<typename Iterable = std::vector<std::string_view>>
         requires (VUtils::Traits::is_iterable_v<Iterable>)
@@ -228,7 +192,7 @@ namespace VUtils::String {
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns a transformed string
-    std::string ToAscii(const std::string& in);
+    std::string ToAscii(std::string in);
 
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding
@@ -237,6 +201,4 @@ namespace VUtils::String {
     // Gets the unicode byte count needed to encode uint16_t or C# char 
     //  Returns 1, 2 or 3
     unsigned int GetUTF8ByteCount(uint16_t i);
-
-    //unsigned int GetUTF8ByteCount(const std::string& s);
 }

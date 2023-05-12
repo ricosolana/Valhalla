@@ -25,7 +25,7 @@ private:
     decltype(m_builders)::iterator m_nextBuilder;
 
 private:
-    static void Build(BaseHeightmap* data, const ZoneID& zone);
+    static void Build(BaseHeightmap* data, ZoneID zone);
 
 public:
     void PostGeoInit();
@@ -35,7 +35,7 @@ public:
     
     //void QueueBatch(const std::ZoneID& zone);
 
-    std::unique_ptr<Heightmap> PollHeightmap(const ZoneID& zone);
+    std::unique_ptr<Heightmap> PollHeightmap(ZoneID zone);
 
     //std::unique_ptr<HMBuildData> RequestTerrainBlocking(const ZoneID& zone);
     //std::unique_ptr<HMBuildData> RequestTerrain(const ZoneID& zone);
