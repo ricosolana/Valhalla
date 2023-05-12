@@ -10,13 +10,6 @@
 #include "NetManager.h"
 #include "VUtilsResource.h"
 
-std::pair<HASH_t, HASH_t> ZDO::ToHashPair(const std::string& key) {
-    return {
-        VUtils::String::GetStableHashCode(key + "_u"),
-        VUtils::String::GetStableHashCode(key + "_i") 
-    };
-}
-
 
 
 ZDO::ZDO() 
@@ -24,7 +17,7 @@ ZDO::ZDO()
 
 }
 
-ZDO::ZDO(const ZDOID& id, const Vector3f& pos)
+ZDO::ZDO(ZDOID id, Vector3f pos)
     : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
 {
     //m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
