@@ -41,7 +41,10 @@ private:
     void OnLobbyCreated(LobbyCreated_t* pCallback, bool failure);
     CCallResult<AcceptorSteam, LobbyCreated_t> m_lobbyCreatedCallResult;
 
-    ISteamNetworkingSockets* m_steamNetworkingSockets;
+    //ISteamNetworkingSockets* m_steamNetworkingSockets;
+
+public:
+    static ISteamNetworkingSockets* STEAM_NETWORKING_SOCKETS;
 
 public:
     AcceptorSteam();

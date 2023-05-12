@@ -484,6 +484,9 @@ void INetManager::Update() {
     else
         SteamAPI_RunCallbacks();
 
+    // doesnt seem to work
+    //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();
+
 
 
     // Cleanup

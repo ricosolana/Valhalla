@@ -3,6 +3,8 @@
 #include "NetAcceptor.h"
 #include "ValhallaServer.h"
 
+ISteamNetworkingSockets* AcceptorSteam::STEAM_NETWORKING_SOCKETS {};
+
 AcceptorSteam::AcceptorSteam() {
 
     // This forces the Valheim Client to startup for some reason
@@ -20,7 +22,8 @@ AcceptorSteam::AcceptorSteam() {
     }
 
     if (VH_SETTINGS.serverDedicated) {
-        this->m_steamNetworkingSockets = SteamGameServerNetworkingSockets();
+        //this->m_steamNetworkingSockets = SteamGameServerNetworkingSockets();
+        STEAM_NETWORKING_SOCKETS = SteamGameServerNetworkingSockets();
 
         SteamGameServer()->SetProduct("valheim");   // for version checking
         SteamGameServer()->SetModDir("valheim");    // game save location
@@ -38,7 +41,8 @@ AcceptorSteam::AcceptorSteam() {
         LOG_INFO(LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
     }
     else {
-        this->m_steamNetworkingSockets = SteamNetworkingSockets();
+        //this->m_steamNetworkingSockets = SteamNetworkingSockets();
+        STEAM_NETWORKING_SOCKETS = SteamNetworkingSockets();
 
         auto handle = SteamMatchmaking()->CreateLobby(VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
         m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteam::OnLobbyCreated);
@@ -46,7 +50,7 @@ AcceptorSteam::AcceptorSteam() {
         LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
     }
 
-    LOG_INFO(LOGGER, "Authentication status: {}", m_steamNetworkingSockets->InitAuthentication());
+    LOG_INFO(LOGGER, "Authentication status: {}", STEAM_NETWORKING_SOCKETS->InitAuthentication());
     
     auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;
@@ -74,7 +78,7 @@ AcceptorSteam::~AcceptorSteam() {
         // hmm
         std::this_thread::sleep_for(1s);
 
-        this->m_steamNetworkingSockets->CloseListenSocket(m_listenSocket);
+        STEAM_NETWORKING_SOCKETS->CloseListenSocket(m_listenSocket);
 
         m_listenSocket = k_HSteamListenSocket_Invalid;
     }
@@ -88,10 +92,10 @@ AcceptorSteam::~AcceptorSteam() {
 void AcceptorSteam::Listen() {
     if (VH_SETTINGS.serverDedicated) {
         SteamNetworkingIPAddr steamNetworkingIPAddr{ .m_port = VH_SETTINGS.serverPort };
-        this->m_listenSocket = m_steamNetworkingSockets->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
+        this->m_listenSocket = STEAM_NETWORKING_SOCKETS->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
     }
     else {
-        this->m_listenSocket = m_steamNetworkingSockets->CreateListenSocketP2P(0, 0, nullptr);
+        this->m_listenSocket = STEAM_NETWORKING_SOCKETS->CreateListenSocketP2P(0, 0, nullptr);
     }
 }
 
@@ -128,7 +132,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
         && data->m_eOldState == k_ESteamNetworkingConnectionState_None)
     {
-        if (m_steamNetworkingSockets->AcceptConnection(data->m_hConn) == k_EResultOK)
+        if (STEAM_NETWORKING_SOCKETS->AcceptConnection(data->m_hConn) == k_EResultOK)
             m_sockets[data->m_hConn] = std::make_shared<SteamSocket>(data->m_hConn);
     }
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally

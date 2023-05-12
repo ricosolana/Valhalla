@@ -72,6 +72,8 @@ private:
     bool m_connected;
     std::string m_address;
 
+    //static ISteamNetworkingSockets* STEAM_NETWORKING_SOCKETS;
+
 public:
     HSteamNetConnection m_hConn;
     SteamNetworkingIdentity m_steamNetId;
