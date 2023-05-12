@@ -57,29 +57,32 @@ Install the required libraries:
 ```bash
 .\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
+.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
 .\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
 .\vcpkg\vcpkg.exe install tracy --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zstd --triplet=x64-windows
 .\vcpkg\vcpkg.exe install dpp --triplet=x64-windows
-```
-
-Download and build [Lua](https://www.lua.org/download.html) or install the [precompiled](https://luabinaries.sourceforge.net) binaries. I followed **everything** in [this](https://www.youtube.com/watch?v=TALXtup2CjI) Youtube video.
-
-Clone [sol2](https://github.com/ThePhD/sol2) and [ankerl::unordered_dense](https://github.com/martinus/unordered_dense). 
-```bash
-git clone https://github.com/ThePhD/sol2
-git clone https://github.com/martinus/unordered_dense
+.\vcpkg\vcpkg.exe install quill --triplet=x64-windows
 ```
 
 Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be prompted to sign into Steamworks).
 
-In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build. It will fail because sol2, ankerl and steamsdk have not been found yet.
+In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build. It will fail because steamsdk has not been found (yet).
 
-Manually specify path to sol2 and ankerl in CMakeLists.txt around line 150. In cmake/get_steamapi specify the path to steamsdk around line 7. Follow the patterns.
-
-I'm sorry this isn't an expedited installation. Numerous errors and infamiliarity with CMake led to this. The process will improve over time.
+In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 5/12/2023 + TODO
+It's been a while since the last release and todo list, so here's the progress and planned work so far:
+ - Discord server integration and minimal ingame interactions
+ - Optimized ZDOs and safer
+ - Better maps thanks to `ankerl::unordered_dense`
+ - Installation is almost just a clone from Git (steamapi is the only manual install required)
+ - Added a bunch of micro optimizations throughout (`std::string_view` instead of `const std::string&`, and `Vector3` instead of `const Vector3&`). This applies to the sol-Lua API so hopefully string_views make things faster).
+ - Finally fixed the winsock redefinition problem. I am 100% certain it was easyloggingpp causing the problem, so I am using quill instead.
+
+I have been thinking about server-side simulations recently, such as using the server as the primary actor in the game instead of clients. The important interactions here are simulations involving players who are nearby other players while fighting creatures. The server could handle simple combat, animation, transform, pathfinding, and AI. Some differences between this and Unity is the absence of a a Navmesh. I am certain that Valhiem uses a Navmesh for pathfinding creatures, so I am not sure how to fully implement a complex pathing approach. I might just settle on something similar to early Minecraft AI where zombies walk straight into lava. This will be interesting to solve and try to implement. If done correctly, it will reduce perceived lagg and hopefully improves the clients experience.
+
 ### 3/22/2023 + TODO
 
 I've implemented a lot of stuff in Lua and made many misc fixes throughout. I essentially want to move all non-essential core server features into Lua. Some of these things include portal linking, sleeping, and eventually random event system. I have not listed some stuff but that's the basic idea. I will try to figure out compression and how to get the Valheim BetterNetworking mod to work with clients who join the server.
