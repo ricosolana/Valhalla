@@ -55,7 +55,6 @@ void IDiscordManager::Init() {
 		}
 		else {
 			Valhalla()->RunTask([=](Task&) {
-
 				if (label == "vhkick") {
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 					if (auto peer = NetManager()->Kick(identifier))
@@ -147,6 +146,7 @@ void IDiscordManager::Init() {
 							+ (Valhalla()->IsMorning() ? "morning" : Valhalla()->IsDay() ? "day" : Valhalla()->IsAfternoon() ? "afternoon" : "night"));
 					}
 				}
+#ifdef VH_OPTION_ENABLE_MODS
 				else if (label == "vhlua") {
 					event.thinking(true);
 					auto&& script = std::get<std::string>(event.get_parameter("script"));
@@ -179,6 +179,7 @@ void IDiscordManager::Init() {
 							[](const dpp::confirmation_callback_t&) {});
 					}
 				}
+#endif
 				else if (label == "vhlist") {
 					if (NetManager()->GetPeers().empty()) {
 						event.reply("No players are online");
@@ -266,7 +267,7 @@ void IDiscordManager::Init() {
 					}
 				}
 				else {
-					event.reply("This command is not implemented");
+					event.reply("Sorry, command is not implemented");
 				}
 			});
 		}
@@ -317,7 +318,7 @@ void IDiscordManager::Init() {
 					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
 				dpp::slashcommand("vhwhitelist", "Whitelist information", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_boolean, "flag", "enable/disable"))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
 				dpp::slashcommand("vhpardon", "Unban a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "host", "host", true))
 					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
@@ -327,14 +328,14 @@ void IDiscordManager::Init() {
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhbroadcast", "Broadcast a message to all players", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "message", "the message to broadcast", true))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_manage_messages), // 0 is admins only
 				dpp::slashcommand("vhmessage", "Message a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host", true).set_auto_complete(true))
 					.add_option(dpp::command_option(dpp::co_string, "message", "the message to send", true))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_manage_messages), // 0 is admins only
 				dpp::slashcommand("vhwhois", "Get player information", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host", true).set_auto_complete(true))
-					.set_default_permissions(0), // 0 is admins only
+					.set_default_permissions(dpp::permissions::p_kick_members), // 0 is admins only
 				dpp::slashcommand("vhtime", "Get the server time", m_bot->me.id),
 				dpp::slashcommand("vhworldtime", "Get or set world time", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_number, "time", "world time"))

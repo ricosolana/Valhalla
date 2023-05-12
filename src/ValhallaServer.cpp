@@ -399,6 +399,10 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
+            //a(m_settings.discordDevAccount, discord, "dev-account", UNORDERED_SET_t<std::string>());
+
+            //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
+
             if (m_settings.serverPassword.empty()) {
                 LOG_WARNING(LOGGER, "Server does not have a password");
             }

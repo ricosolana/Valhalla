@@ -3,36 +3,51 @@
 #include "NetAcceptor.h"
 #include "ValhallaServer.h"
 
-AcceptorSteamDedicated::AcceptorSteamDedicated()
-    : m_port(Valhalla()->Settings().serverPort) {
+AcceptorSteam::AcceptorSteam() {
 
     // This forces the Valheim Client to startup for some reason
+    //  TODO fix this properly
     //if (SteamAPI_RestartAppIfNecessary(VALHEIM_APP_ID)) {
     //    //LOG(INFO) << "Restarting app through Steam";
     //    exit(0);
     //}
 
-    if (!SteamGameServer_Init(0, m_port, m_port + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")) {
-        LOG_CRITICAL(LOGGER, "Failed to init steam game server (steam_appid.txt missing?)");
+    if (!(VH_SETTINGS.serverDedicated 
+        ? SteamGameServer_Init(0, VH_SETTINGS.serverPort, VH_SETTINGS.serverPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")
+        : SteamAPI_Init())) {
+        LOG_CRITICAL(LOGGER, "Failed to init steam");
         std::exit(0);
     }
 
-    SteamGameServer()->SetProduct("valheim");   // for version checking
-    SteamGameServer()->SetModDir("valheim");    // game save location
-    SteamGameServer()->SetDedicatedServer(true);
-    SteamGameServer()->SetMaxPlayerCount(64);
-    SteamGameServer()->LogOnAnonymous();        // no steam login necessary
+    if (VH_SETTINGS.serverDedicated) {
+        this->m_steamNetworkingSockets = SteamGameServerNetworkingSockets();
 
-    LOG_INFO(LOGGER, "Starting server on port {}", m_port);
-    LOG_INFO(LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
-    LOG_INFO(LOGGER, "Authentication status: {}", SteamGameServerNetworkingSockets()->InitAuthentication());
+        SteamGameServer()->SetProduct("valheim");   // for version checking
+        SteamGameServer()->SetModDir("valheim");    // game save location
+        SteamGameServer()->SetDedicatedServer(true);
+        SteamGameServer()->SetMaxPlayerCount(64);
+        SteamGameServer()->LogOnAnonymous();        // no steam login necessary
 
-    SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
-    SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
-    SteamGameServer()->SetPasswordProtected(!Valhalla()->Settings().serverPassword.empty());
-    SteamGameServer()->SetGameTags(VConstants::GAME);
-    SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
+        SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
+        SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
+        SteamGameServer()->SetPasswordProtected(!Valhalla()->Settings().serverPassword.empty());
+        SteamGameServer()->SetGameTags(VConstants::GAME);
+        SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
+        LOG_INFO(LOGGER, "Starting server on port {}", VH_SETTINGS.serverPort);
+        LOG_INFO(LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
+    }
+    else {
+        this->m_steamNetworkingSockets = SteamNetworkingSockets();
+
+        auto handle = SteamMatchmaking()->CreateLobby(VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
+        m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteam::OnLobbyCreated);
+
+        LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
+    }
+
+    LOG_INFO(LOGGER, "Authentication status: {}", m_steamNetworkingSockets->InitAuthentication());
+    
     auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;
     int32 sendrate = 153600;
@@ -50,28 +65,37 @@ AcceptorSteamDedicated::AcceptorSteamDedicated()
         k_ESteamNetworkingConfig_Int32, &sendrate);
 }
 
-AcceptorSteamDedicated::~AcceptorSteamDedicated() {
+AcceptorSteam::~AcceptorSteam() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
         //LOG(DEBUG) << "Destroying";
         for (auto &&socket : m_sockets)
             socket.second->Close(true);
 
-        SteamGameServerNetworkingSockets()->CloseListenSocket(m_listenSocket);
+        // hmm
+        std::this_thread::sleep_for(1s);
+
+        this->m_steamNetworkingSockets->CloseListenSocket(m_listenSocket);
 
         m_listenSocket = k_HSteamListenSocket_Invalid;
     }
 
-    SteamGameServer_Shutdown();
+    if (VH_SETTINGS.serverDedicated)
+        SteamGameServer_Shutdown();
+    else
+        SteamAPI_Shutdown();
 }
 
-void AcceptorSteamDedicated::Listen() {
-    SteamNetworkingIPAddr steamNetworkingIPAddr{};    // nullify or whatever (default)
-    steamNetworkingIPAddr.Clear();                  // this is important, otherwise bind is invalid
-    steamNetworkingIPAddr.m_port = m_port;          // it is later reassigned by FejdManager
-    this->m_listenSocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
+void AcceptorSteam::Listen() {
+    if (VH_SETTINGS.serverDedicated) {
+        SteamNetworkingIPAddr steamNetworkingIPAddr{ .m_port = VH_SETTINGS.serverPort };
+        this->m_listenSocket = m_steamNetworkingSockets->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
+    }
+    else {
+        this->m_listenSocket = m_steamNetworkingSockets->CreateListenSocketP2P(0, 0, nullptr);
+    }
 }
 
-ISocket::Ptr AcceptorSteamDedicated::Accept() {
+ISocket::Ptr AcceptorSteam::Accept() {
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
         return nullptr;
@@ -92,18 +116,19 @@ static const char* stateToString(ESteamNetworkingConnectionState state) {
     return messages[5 + (-state)];
 }
 
-void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: ", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
+void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
+    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: {}", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
-        && data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)
+        && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute ||
+            data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting))
     {
         m_connected[data->m_hConn] = m_sockets[data->m_hConn];
     }
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
         && data->m_eOldState == k_ESteamNetworkingConnectionState_None)
     {
-        if (SteamGameServerNetworkingSockets()->AcceptConnection(data->m_hConn) == k_EResultOK)
+        if (m_steamNetworkingSockets->AcceptConnection(data->m_hConn) == k_EResultOK)
             m_sockets[data->m_hConn] = std::make_shared<SteamSocket>(data->m_hConn);
     }
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
@@ -123,14 +148,66 @@ void AcceptorSteamDedicated::OnSteamStatusChanged(SteamNetConnectionStatusChange
     }
 }
 
-void AcceptorSteamDedicated::OnSteamServersConnected(SteamServersConnected_t* data) {
+/*
+void AcceptorSteam::OnSteamServersConnected(SteamServersConnected_t* data) {
     LOG_INFO(LOGGER, "Steam server connected");
 }
 
-void AcceptorSteamDedicated::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
+void AcceptorSteam::OnSteamServersDisconnected(SteamServersDisconnected_t* data) {
     LOG_INFO(LOGGER, "Steam server disconnected");
 }
 
-void AcceptorSteamDedicated::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
+void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* data) {
     LOG_WARNING(LOGGER, "Steam server connect failure");
+}*/
+
+
+
+// call results
+void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
+    if (failure) {
+        LOG_ERROR(LOGGER, "Failed to create lobby");
+    }
+    else if (data->m_eResult == k_EResultNoConnection) {
+        LOG_ERROR(LOGGER, "Failed to connect to Steam to register lobby");
+    }
+    else {
+        this->m_lobbyID = CSteamID(data->m_ulSteamIDLobby);
+
+        LOG_INFO(LOGGER, "Created lobby");
+
+        this->OnConfigLoad(false);
+
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
+            LOG_WARNING(LOGGER, "Unable to set lobby version");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
+            LOG_WARNING(LOGGER, "Failed to set lobby networkversion");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user")) {
+            LOG_WARNING(LOGGER, "Failed to set lobby serverType");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", "")) {
+            LOG_WARNING(LOGGER, "Failed to set lobby host");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
+            LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
+        }
+
+        SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
+    }
+}
+
+
+
+void AcceptorSteam::OnConfigLoad(bool reloading) {
+    if (!VH_SETTINGS.serverDedicated) {
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
+            LOG_ERROR(LOGGER, "Failed to set lobby name");
+        }
+
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1")) {
+            LOG_ERROR(LOGGER, "Unable to set lobby password flag");
+        }
+    }
 }

@@ -5,7 +5,7 @@
 #include <steam_gameserver.h>
 
 #include "NetSocket.h"
-
+#include "ValhallaServer.h"
 
 class IAcceptor {
 public:
@@ -28,36 +28,9 @@ public:
 
 
 
-class AcceptorSteamDedicated : public IAcceptor {
+class AcceptorSteam : public IAcceptor {
 private:
-    const uint16_t m_port;
-    HSteamListenSocket m_listenSocket;
-
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
-
-public:
-    AcceptorSteamDedicated();
-    ~AcceptorSteamDedicated() override;
-
-    void Listen() override;
-
-    ISocket::Ptr Accept() override;
-
-    //void Cleanup(ISocket* socket) override;
-
-private:
-    // https://partner.steamgames.com/doc/sdk/api#callbacks
-    STEAM_GAMESERVER_CALLBACK(AcceptorSteamDedicated, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
-
-    // status logs
-    STEAM_GAMESERVER_CALLBACK(AcceptorSteamDedicated, OnSteamServersConnected, SteamServersConnected_t);
-    STEAM_GAMESERVER_CALLBACK(AcceptorSteamDedicated, OnSteamServersDisconnected, SteamServersDisconnected_t);
-    STEAM_GAMESERVER_CALLBACK(AcceptorSteamDedicated, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
-};
-
-class AcceptorSteamP2P : public IAcceptor {
-private:
+    //const uint16_t m_port;
     HSteamListenSocket m_listenSocket;
 
     UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
@@ -66,11 +39,13 @@ private:
     CSteamID m_lobbyID;
 
     void OnLobbyCreated(LobbyCreated_t* pCallback, bool failure);
-    CCallResult<AcceptorSteamP2P, LobbyCreated_t> m_lobbyCreatedCallResult;
+    CCallResult<AcceptorSteam, LobbyCreated_t> m_lobbyCreatedCallResult;
+
+    ISteamNetworkingSockets* m_steamNetworkingSockets;
 
 public:
-    AcceptorSteamP2P();
-    ~AcceptorSteamP2P() override;
+    AcceptorSteam();
+    ~AcceptorSteam() override;
 
     void Listen() override;
 
@@ -81,11 +56,28 @@ public:
     //void Cleanup(ISocket* socket) override;
 
 private:
+    // Expanded from the STEAM_CALLBACK macro
     // https://partner.steamgames.com/doc/sdk/api#callbacks
-    STEAM_CALLBACK(AcceptorSteamP2P, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
-
+    //STEAM_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
+    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
+    struct CCallbackInternal_OnSteamStatusChanged : private CCallbackImpl< sizeof(SteamNetConnectionStatusChangedCallback_t) > {
+        CCallbackInternal_OnSteamStatusChanged() {
+            if (VH_SETTINGS.serverDedicated)
+                this->SetGameserverFlag();
+            SteamAPI_RegisterCallback(this, SteamNetConnectionStatusChangedCallback_t::k_iCallback);
+        } CCallbackInternal_OnSteamStatusChanged(const CCallbackInternal_OnSteamStatusChanged&) {
+            if (VH_SETTINGS.serverDedicated)
+                this->SetGameserverFlag();
+            SteamAPI_RegisterCallback(this, SteamNetConnectionStatusChangedCallback_t::k_iCallback);
+        } CCallbackInternal_OnSteamStatusChanged& operator=(const CCallbackInternal_OnSteamStatusChanged&) {
+            return *this;
+        } private: virtual void Run(void* pvParam) {
+            AcceptorSteam* pOuter = reinterpret_cast<AcceptorSteam*>(reinterpret_cast<char*>(this) - ((::size_t) & reinterpret_cast<char const volatile&>((((AcceptorSteam*)0)->m_steamcallback_OnSteamStatusChanged)))); pOuter->OnSteamStatusChanged(reinterpret_cast<SteamNetConnectionStatusChangedCallback_t*>(pvParam));
+        }
+    } m_steamcallback_OnSteamStatusChanged; void OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* pParam);
+    
     // status logs
-    STEAM_CALLBACK(AcceptorSteamP2P, OnSteamServersConnected, SteamServersConnected_t);
-    STEAM_CALLBACK(AcceptorSteamP2P, OnSteamServersDisconnected, SteamServersDisconnected_t);
-    STEAM_CALLBACK(AcceptorSteamP2P, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
+    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersConnected, SteamServersConnected_t);
+    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
+    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
 };

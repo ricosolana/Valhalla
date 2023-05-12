@@ -100,7 +100,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"    
-    "src/NetAcceptorSteamP2P.cpp"
+    
     
     "src/DiscordManager.cpp" 
     "src/DataWriter.cpp"

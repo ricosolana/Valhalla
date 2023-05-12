@@ -135,7 +135,9 @@ struct ServerSettings {
 
     std::string     discordWebhook;
     std::string     discordToken;
-    int64_t         discordGuild;
+    dpp::snowflake  discordGuild;
     bool            discordAccountLinking;
+    //bool            discordEnableDevCommands;
+    //UNORDERED_SET_t<dpp::snowflake> discordDevAccount;
     //bool            discordDeleteCommands;
 };

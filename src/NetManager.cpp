@@ -307,9 +307,7 @@ void INetManager::PostInit() {
     }
 #endif
 
-    if (VH_SETTINGS.serverDedicated) m_acceptor = std::make_unique<AcceptorSteamDedicated>();
-    else m_acceptor = std::make_unique<AcceptorSteamP2P>();
-
+    m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
 }
 
