@@ -25,6 +25,7 @@ cmake_minimum_required (VERSION 3.14)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_steamapi)
+include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
@@ -41,11 +42,23 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(lua CONFIG REQUIRED)
+find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(dpp CONFIG REQUIRED)
 find_package(quill CONFIG REQUIRED)
+
+#CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
+CPMAddPackage(
+    NAME unordered_dense
+    GITHUB_REPOSITORY martinus/unordered_dense
+    VERSION 4.0.0
+)
+
+#CPMAddPackage(
+    #unordered_dense
+    #"gc:martinus/unordered-dense#v4.0.0")
 
 # remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
@@ -107,16 +120,17 @@ add_executable(${PROJECT_NAME}
 )
 
 # change this to wherever your sol is
-set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")
+#set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")
 
 # change to wherever your ankerl is
-set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
+#set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMAPI_SOURCE_DIR}
-    ${SOL2_ROOT_DIR}/include
-    ${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
+    #${SOL2_ROOT_DIR}/include
+    #${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
+    PUBLIC ankerl::unordered_dense
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
@@ -126,12 +140,13 @@ target_link_libraries(${PROJECT_NAME}
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
     ZLIB::ZLIB
-    PRIVATE lua
+    PUBLIC lua sol2
     yaml-cpp
     PRIVATE Tracy::TracyClient
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     PRIVATE dpp::dpp
     PRIVATE quill::quill
+    PRIVATE unordered_dense
 )
 
 
