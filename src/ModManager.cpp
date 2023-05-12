@@ -519,16 +519,16 @@ void IModManager::LoadAPI() {
             sol::resolve<Vector3f (std::string_view) const>(&ZDO::GetVector3)
         ),
         "GetString", sol::overload(
-            sol::resolve<std::string (HASH_t, const std::string&) const>(&ZDO::GetString),
-            sol::resolve<std::string (HASH_t) const>(&ZDO::GetString),
-            sol::resolve<std::string (std::string_view, const std::string&) const>(&ZDO::GetString),
-            sol::resolve<std::string (std::string_view) const>(&ZDO::GetString)
+            sol::resolve<std::string_view (HASH_t, std::string_view) const>(&ZDO::GetString),
+            sol::resolve<std::string_view (HASH_t) const>(&ZDO::GetString),
+            sol::resolve<std::string_view (std::string_view, std::string_view) const>(&ZDO::GetString),
+            sol::resolve<std::string_view (std::string_view) const>(&ZDO::GetString)
         ),
         "GetBytes", sol::overload(
-            //sol::resolve<const BYTES_t* (HASH_t) const>(&ZDO::GetBytes),
-            //sol::resolve<const BYTES_t* (const std::string&) const>(&ZDO::GetBytes)
-            [](ZDO& self, HASH_t key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; },
-            [](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; }
+            sol::resolve<const BYTES_t* (HASH_t) const>(&ZDO::GetBytes),
+            sol::resolve<const BYTES_t* (std::string_view) const>(&ZDO::GetBytes)
+            //[](ZDO& self, HASH_t key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; },
+            //[](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(BYTES_t(*bytes)) : std::nullopt; }
         ),
         "GetBool", sol::overload(
             sol::resolve<bool (HASH_t, bool) const>(&ZDO::GetBool),

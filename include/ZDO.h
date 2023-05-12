@@ -518,7 +518,7 @@ public:
     Int64Wrapper        GetLongWrapper( HASH_t key, Int64Wrapper value) const {                     return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  HASH_t key, Quaternion value) const {                       return Get<Quaternion>(key, value); }
     Vector3f            GetVector3(     HASH_t key, Vector3f value) const {                         return Get<Vector3f>(key, value); }
-    std::string         GetString(      HASH_t key, const std::string& value) const {               return Get<std::string>(key, value); }
+    std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
     ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
@@ -530,7 +530,7 @@ public:
     Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
-    std::string         GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
+    std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, ""); }
     bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
     ZDOID               GetZDOID(       const std::pair<HASH_t, HASH_t>& key) const {               return ZDOID(GetLong(key.first), GetLong(key.second)); }
 
@@ -541,7 +541,7 @@ public:
     Int64Wrapper        GetLongWrapper( std::string_view key, Int64Wrapper value) const {           return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  std::string_view key, Quaternion value) const {             return Get<Quaternion>(key, value); }
     Vector3f            GetVector3(     std::string_view key, Vector3f value) const {               return Get<Vector3f>(key, value); }
-    std::string         GetString(      std::string_view key, const std::string &value) const {     return Get<std::string>(key, std::move(value)); }
+    std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     const BYTES_t*      GetBytes(       std::string_view key) const {                               return Get<BYTES_t>(key); }
     bool                GetBool(        std::string_view key, bool value) const {                   return Get<int32_t>(key, value); }
     ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(ToHashPair(key), value); }
@@ -553,11 +553,9 @@ public:
     Int64Wrapper        GetLongWrapper( std::string_view key) const {                               return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  std::string_view key) const {                               return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     std::string_view key) const {                               return Get<Vector3f>(key, {}); }
-    std::string         GetString(      std::string_view key) const {                               return Get<std::string>(key, {}); }
+    std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, ""); }
     bool                GetBool(        std::string_view key) const {                               return Get<int32_t>(key, {}); }
     ZDOID               GetZDOID(       std::string_view key) const {                               return GetZDOID(key, {}); }
-
-
 
     // Trivial hash setters
     template<TrivialSyncType T>
