@@ -57,6 +57,12 @@ Manually specify path to sol2 and ankerl in CMakeLists.txt around line 150. In c
 I'm sorry this isn't an expedited installation. Numerous errors and infamiliarity with CMake led to this. The process will improve over time.
 
 ## Usage
+when dedicated:
+udp 2456: server game port
+udp 2457: server data port
+
+p2p requires no forwarding on your part
+
 Command line arguments (all optional):
  - `-root [path]`: Sets the working directory
  - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)

@@ -31,10 +31,13 @@ AcceptorSteam::AcceptorSteam() {
         SteamGameServer()->SetMaxPlayerCount(64);
         SteamGameServer()->LogOnAnonymous();        // no steam login necessary
 
-        SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
-        SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
-        SteamGameServer()->SetPasswordProtected(!Valhalla()->Settings().serverPassword.empty());
-        SteamGameServer()->SetGameTags(VConstants::GAME);
+        this->OnConfigLoad(false);
+
+        //SteamGameServer()->SetGameTags(VConstants::GAME);
+        SteamGameServer()->SetGameTags(("\"gameversion\"=\"" 
+            + std::string(VConstants::GAME) + "\",\"networkversion\"=\""
+            + std::to_string(VConstants::NETWORK) + "\"").c_str()
+        );
         SteamGameServer()->SetAdvertiseServerActive(Valhalla()->Settings().serverPublic);
 
         LOG_INFO(LOGGER, "Starting server on port {}", VH_SETTINGS.serverPort);
@@ -205,7 +208,11 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
 
 void AcceptorSteam::OnConfigLoad(bool reloading) {
-    if (!VH_SETTINGS.serverDedicated) {
+    if (VH_SETTINGS.serverDedicated) {
+        SteamGameServer()->SetServerName(Valhalla()->Settings().serverName.c_str());
+        SteamGameServer()->SetMapName(Valhalla()->Settings().serverName.c_str());
+        SteamGameServer()->SetPasswordProtected(!Valhalla()->Settings().serverPassword.empty());
+    } else {
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
             LOG_ERROR(LOGGER, "Failed to set lobby name");
         }
