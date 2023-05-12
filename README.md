@@ -15,8 +15,31 @@ Documentation is currently underway. I will also be trying to fully flesh-out th
 
 The server is in a currently in a functional state and somewhat usable. I would give it a 70% right now in terms of stability when compared with the Valheim dedicated server. Feel free to play around with it.
 
+## Usage
+This server includes two hosting modes:
+ - Dedicated: 
+   - Requires `dedicated: true` in config
+   - Address will be visible to clients
+   - Anonymous account, no logged in Steam account needed.
+   - Hosted on a home network (or other private network)
+   - Must open UDP ports 2456-2457 on router for friends outside your network to play.
+ - P2P: 
+   - Requires `dedicated: false` in config
+   - Clients and server are separated by the Steam backend
+   - You must own a legitimate copy of Valheim that is available to play (Valheim installation not required)
+   - Port forwarding and routing is handled automagically.
+
+Command line arguments (all optional):
+ - `-root [path]`: Sets the working directory
+ - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
+ - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
+ 
+All other settings are set in the `server.yml`. I periodically add new options every commit or release, so try deleting this file to generate a freshly populated config, or looking at https://github.com/PeriodicSeizures/Valhalla/blob/9b6dc31cc87a614422491d6024a216acab671a20/src/ValhallaServer.cpp#L327 for config keys and their values.
+
+Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
+
 ## Manual Installation/Building
-I've been developing on Windows so these steps are specific to it.
+These steps are Windows-specific:
 
 Clone Valhalla:
 ```bash
@@ -55,22 +78,6 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 Manually specify path to sol2 and ankerl in CMakeLists.txt around line 150. In cmake/get_steamapi specify the path to steamsdk around line 7. Follow the patterns.
 
 I'm sorry this isn't an expedited installation. Numerous errors and infamiliarity with CMake led to this. The process will improve over time.
-
-## Usage
-when dedicated:
-udp 2456: server game port
-udp 2457: server data port
-
-p2p requires no forwarding on your part
-
-Command line arguments (all optional):
- - `-root [path]`: Sets the working directory
- - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
- - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
- 
-All other settings are set in the `server.yml`. I periodically add new options every commit or release, so try deleting this file to generate a freshly populated config, or looking at https://github.com/PeriodicSeizures/Valhalla/blob/48a985f4d2ae0f3eac90cf4382e6c1d6d55ca3b8/src/ValhallaServer.cpp#L56 for config keys and their values.
-
-Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
 
 ## Progress
 ### 3/22/2023 + TODO
