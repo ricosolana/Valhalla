@@ -1,4 +1,6 @@
 todo:
+	modify zdo to accept forwarded && types for string and vector
+
     methods to mapping playback zdoids to physical zdoids
         requirements:
             this system is perfect except for:

@@ -101,7 +101,8 @@ struct ServerSettings {
     bool            worldModern;        // whether to purge old objects on load
     bool            worldFeatures;
     bool            worldVegetation;
-    bool            worldCreatures;   
+    bool            worldCreatures;
+    uint32_t        worldHeightmapThreads;
     
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate

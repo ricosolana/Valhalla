@@ -14,9 +14,9 @@ IHeightmapBuilder* HeightmapBuilder() {
 
 // public
 void IHeightmapBuilder::PostGeoInit() {
-    int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
+    //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
-    for (int i = 0; i < TC; i++) {
+    for (int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
         auto&& insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
         Shared* shared = insert->get();

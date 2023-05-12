@@ -1,9 +1,6 @@
 // main.cpp
 #define SOL_ALL_SAFETIES_ON 1
 
-//#define WIN32_LEAN_AND_MEAN
-//#include <WinSock2.h>
-
 #include "VUtils.h"
 
 #include "VUtilsResource.h"

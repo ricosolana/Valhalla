@@ -33,7 +33,7 @@ IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
         loadNode = YAML::Load(opt.value());
     }
     else {
-        throw std::runtime_error(std::string("unable to open ") + modInfoPath.string());
+        throw std::runtime_error("unable to open " + modInfoPath.string());
     }
 
     auto name = loadNode["name"].as<std::string>();
@@ -61,7 +61,7 @@ int LoadFileRequire(lua_State* L) {
 
     // first look in the sub mod dir
     //  ./mods/MyExampleMod/
-    if (auto opt = VUtils::Resource::ReadFile<std::string>(std::string("./mods/") + path + ".lua"))
+    if (auto opt = VUtils::Resource::ReadFile<std::string>("./mods/" + path + ".lua"))
         luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
     else {
         sol::stack::push(L, "Module '" + path + "' not found");
@@ -196,7 +196,7 @@ void IModManager::LoadAPI() {
         sol::constructors<DataWriter(BYTES_t&)>(),
 
         //"ToReader", &DataWriter::ToReader,
-        //"buf", &DataWriter::m_buf,
+        "buf", &DataWriter::m_data,
         "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
 
         //"Clear", &DataWriter::Clear,
@@ -313,7 +313,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](const std::string &name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
+        sol::factories([](std::string_view name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
     );
 
     m_state.new_enum("ChatMsgType",

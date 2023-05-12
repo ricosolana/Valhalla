@@ -313,6 +313,7 @@ void IValhalla::LoadFiles(bool reloading) {
             }
         }
 
+        // If the server has just started or theres no config error
         if (!reloading || !fileError) {
             auto&& server = node["server"];
             auto&& player = node["players"];
@@ -344,9 +345,8 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.worldFeatures, world, "features", true);
             a(m_settings.worldVegetation, world, "vegetation", true);
             a(m_settings.worldCreatures, world, "creatures", true);
-
-
-            
+            a(m_settings.worldHeightmapThreads, world, "heightmap-threads", 1, [](uint32_t val) { return val == 0 || val >= std::jthread::hardware_concurrency(); }, reloading);
+                        
             a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s || val > 1s; });
             a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
             a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
