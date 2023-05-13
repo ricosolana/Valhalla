@@ -70,10 +70,11 @@ class SteamSocket : public ISocket {
 private:
     std::list<BYTES_t> m_sendQueue;
     std::string m_address;
+    bool m_connected{};
 
 public:
-    HSteamNetConnection m_hConn;
-    SteamNetworkingIdentity m_steamNetId;
+    const HSteamNetConnection m_hConn;
+    SteamNetworkingIdentity m_steamNetId{};
 
 public:
     explicit SteamSocket(HSteamNetConnection hConn);

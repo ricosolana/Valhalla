@@ -23,7 +23,7 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
     info.m_addrRemote.ToString(buf, sizeof(buf), false);
     this->m_address = std::string(buf);
 
-    //m_connected = true;
+    m_connected = true;
 
     //VLOG(2) << "SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
 
@@ -57,7 +57,7 @@ void SteamSocket::Close(bool flush) {
             SteamUser()->EndAuthSession(steamID);
         }
 
-        m_hConn = 0;
+        //m_hConn = 0;
     };
 
     if (flush) {
@@ -70,7 +70,7 @@ void SteamSocket::Close(bool flush) {
         close();
     }
 
-    //m_connected = false;
+    m_connected = false;
 }
 
 
@@ -115,7 +115,8 @@ std::string SteamSocket::GetAddress() const {
 }
 
 bool SteamSocket::Connected() const {
-    return m_hConn;
+    //return m_hConn;
+    return this->m_connected;
 }
 
 
