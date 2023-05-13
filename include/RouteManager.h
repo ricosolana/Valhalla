@@ -36,11 +36,11 @@ public:
 	}
 
 	template<typename F>
-	decltype(auto) Register(const std::string& name, F func) {
+	decltype(auto) Register(std::string_view name, F func) {
 		return Register(VUtils::String::GetStableHashCode(name), func);
 	}
 
-	void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
+	void RegisterLua(const IModManager::MethodSig& sig, sol::function func) {
 		//VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
 		m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
@@ -53,7 +53,7 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, Args&&... params) {
+	void InvokeView(OWNER_t target, ZDOID targetZDO, HASH_t hash, Args&&... params) {
 		// Prefix
 		if (target == EVERYBODY) {
 			// targetZDO can have a value apparently
@@ -75,11 +75,11 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, const ZDOID& targetZDO, const std::string& name, Args&&... params) {
+	void InvokeView(OWNER_t target, ZDOID targetZDO, std::string_view name, Args&&... params) {
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeViewLua(const Int64Wrapper& target, const ZDOID& targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
+	void InvokeViewLua(Int64Wrapper target, ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
 		if ((OWNER_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
 				throw std::runtime_error("mismatched number of args");
@@ -118,11 +118,11 @@ public:
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, const std::string& name, Args&&... params) {
+	void Invoke(OWNER_t target, std::string_view name, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
-	void InvokeLua(const Int64Wrapper& target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeLua(Int64Wrapper target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeViewLua(target, ZDOID::NONE, repr, args);
 	}
 
@@ -136,7 +136,7 @@ public:
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
-	void InvokeAll(const std::string& name, Args&&... params) {
+	void InvokeAll(std::string_view name, Args&&... params) {
 		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
@@ -144,7 +144,7 @@ public:
 		InvokeLua(EVERYBODY, repr, args);
 	}
 
-	BYTES_t Serialize(OWNER_t sender, OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params) {
+	BYTES_t Serialize(OWNER_t sender, OWNER_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 		BYTES_t bytes;
 		DataWriter writer(bytes);
 

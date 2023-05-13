@@ -144,9 +144,9 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZDOID>("ZDOID",
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
-        sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID(uuid, id); }),
+        sol::factories([](Int64Wrapper uuid, uint32_t id) { return ZDOID(uuid, id); }),
         "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
-        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, const Int64Wrapper& value) { self.SetOwner(value); }),
+        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, Int64Wrapper value) { self.SetOwner(value); }),
         "id", sol::property(&ZDOID::GetUID, &ZDOID::SetUID)
     );
 
@@ -187,7 +187,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<UserProfile>("UserProfile",
-        sol::constructors<UserProfile(const std::string&, const std::string&, const std::string&)>(),
+        sol::constructors<UserProfile(std::string, std::string, std::string)>(),
         "name", &UserProfile::m_name,
         "ign", &UserProfile::m_gamerTag,
         "nid", &UserProfile::m_networkUserId
