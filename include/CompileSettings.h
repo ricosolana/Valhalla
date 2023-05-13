@@ -6,7 +6,7 @@
 
 //#define RUN_TESTS
 
-#define VH_VERSION "v1.0.4"
+#define VH_VERSION "v1.0.5"
 
 // ELPP log file name
 #define VH_LOGFILE_PATH "logs/log.txt"
