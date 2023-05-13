@@ -29,6 +29,8 @@ This server includes two hosting modes:
    - You must own a legitimate copy of Valheim that is available to play (Valheim installation not required)
    - Port forwarding and routing is handled automagically.
 
+If connecting to the server fails, try updating your device's version of Steam. For instance, Valheim on Steam Deck worked fine for me a few hours earlier but an update was seemingly released a few hours later which might have prevented connection. Updating appears to have fixed this.
+
 Command line arguments (all optional):
  - `-root [path]`: Sets the working directory
  - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
