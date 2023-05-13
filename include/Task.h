@@ -19,10 +19,11 @@ public:
         : m_func(func), m_at(at), m_period(period) {}
 
     bool Repeats() const {
-        return m_period.count() == 0;
+        return m_period >= 0ms;
     }
 
     void Cancel() {
-        m_period = milliseconds::min();
+        //m_period = milliseconds::min();
+        m_period = -1ms;
     }
 };

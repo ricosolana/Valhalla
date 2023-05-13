@@ -38,7 +38,9 @@ int main(int argc, char **argv) {
         //    quill::Timezone::GmtTime); // timestamp's timezone
         //
         //cfg.default_handlers.emplace_back(std::move(handler));
-        cfg.default_handlers.push_back(quill::stdout_handler());
+        auto&& colours = quill::ConsoleColours();
+        colours.set_default_colours();
+        cfg.default_handlers.push_back(quill::stdout_handler("colourout", std::move(colours)));
         
         cfg.default_handlers.push_back(
             quill::time_rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));

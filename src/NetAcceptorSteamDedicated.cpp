@@ -46,7 +46,7 @@ AcceptorSteam::AcceptorSteam() {
         //this->m_steamNetworkingSockets = SteamNetworkingSockets();
         STEAM_NETWORKING_SOCKETS = SteamNetworkingSockets();
 
-        auto handle = SteamMatchmaking()->CreateLobby(VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly, 64);
+        auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePrivate, 64);
         m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteam::OnLobbyCreated);
 
         LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
@@ -199,7 +199,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
             LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
         }
-
+        
         SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
     }
 }
@@ -214,6 +214,10 @@ void AcceptorSteam::OnConfigLoad(bool reloading) {
 
         SteamGameServer()->SetAdvertiseServerActive(VH_SETTINGS.serverPublic);
     } else {
+        if (!SteamMatchmaking()->SetLobbyType(m_lobbyID, VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
+            LOG_ERROR(LOGGER, "Failed to set lobby visibility");
+        }
+
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
             LOG_ERROR(LOGGER, "Failed to set lobby name");
         }

@@ -741,11 +741,11 @@ Task& IValhalla::RunTask(Task::F f) {
 }
 
 Task& IValhalla::RunTaskLater(Task::F f, milliseconds after) {
-    return RunTaskLaterRepeat(std::move(f), after, 0ms);
+    return RunTaskLaterRepeat(std::move(f), after, -1ms);
 }
 
 Task& IValhalla::RunTaskAt(Task::F f, steady_clock::time_point at) {
-    return RunTaskAtRepeat(std::move(f), at, 0ms);
+    return RunTaskAtRepeat(std::move(f), at, -1ms);
 }
 
 Task& IValhalla::RunTaskRepeat(Task::F f, milliseconds period) {

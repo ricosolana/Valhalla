@@ -262,7 +262,7 @@ void IDiscordManager::Init() {
 						else {
 							std::string msg = "Players with admin: \n";
 							for (auto&& host : admin) {
-								msg += " - " + msg + "\n";
+								msg += " - " + host + "\n";
 							}
 							event.reply(msg);
 						}
