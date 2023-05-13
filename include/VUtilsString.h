@@ -141,15 +141,7 @@ namespace VUtils::String {
         result += *(container.end() - 1);
         return result;
     }
-
-    // Join a container consisting of strings separated by delimiter
-    template<typename T> requires VUtils::Traits::is_iterable_v<T>
-    std::string Join(std::string &delimiter, T container) {
-        return Join(delimiter.c_str(), container);
-    }
-
     
-
     int LevenshteinDistance(std::string_view s, std::string_view t);
 
     std::vector<std::string_view> Split(std::string_view s, std::string_view delim);
@@ -192,7 +184,7 @@ namespace VUtils::String {
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns a transformed string
-    std::string ToAscii(std::string in);
+    std::string ToAscii(std::string_view in);
 
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding

@@ -11,9 +11,9 @@ struct Quaternion {
 
     Quaternion(float x, float y, float z, float w);
 
-    Quaternion(const Vector3f& v, float w);
+    Quaternion(Vector3f v, float w);
 
-    Quaternion(const Quaternion& other) 
+    Quaternion(const Quaternion &other) 
         : x(other.x), y(other.y), z(other.z), w(other.w) {
 
     }
@@ -21,13 +21,13 @@ struct Quaternion {
     float LengthSquared() const;
     Vector3f xyz() const;
 
-    Vector3f operator*(const Vector3f& other) const;
-    Quaternion operator*(const Quaternion& rhs) const;
+    Vector3f operator*(Vector3f other) const;
+    Quaternion operator*(Quaternion rhs) const;
 
-    void operator*=(const Quaternion& rhs);
+    void operator*=(Quaternion rhs);
 
-    bool operator==(const Quaternion& other) const;
-    bool operator!=(const Quaternion& other) const;
+    bool operator==(Quaternion other) const;
+    bool operator!=(Quaternion other) const;
 
     // Returns a Quaternion rotation accepting degrees in z -> x -> y (applied in order)
     static Quaternion Euler(float x, float y, float z);
@@ -35,7 +35,7 @@ struct Quaternion {
     static Quaternion LookRotation(Vector3f forward) {
         return LookRotation(forward, Vector3f::Up());
     }
-    static Quaternion Inverse(const Quaternion& rotation);
+    static Quaternion Inverse(Quaternion rotation);
 };
 
-std::ostream& operator<<(std::ostream& st, const Quaternion& quat);
+std::ostream& operator<<(std::ostream& st, Quaternion quat);

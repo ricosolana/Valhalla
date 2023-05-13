@@ -86,10 +86,10 @@ void IModManager::LoadAPI() {
         "Dot", &Vector3f::Dot,
         "Cross", &Vector3f::Cross,
         sol::meta_function::addition, &Vector3f::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector3f() const>(&Vector3f::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator*),
-        sol::meta_function::division, sol::resolve<Vector3f(const Vector3f&) const>(&Vector3f::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator*),
+        sol::meta_function::division, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator/),
         sol::meta_function::equal_to, &Vector3f::operator==
     );
 
@@ -105,10 +105,10 @@ void IModManager::LoadAPI() {
         "SqDistance", &Vector2f::SqDistance,
         "Dot", &Vector2f::Dot,
         sol::meta_function::addition, &Vector2f::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector2f() const>(&Vector2f::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator*),
-        sol::meta_function::division, sol::resolve<Vector2f(const Vector2f&) const>(&Vector2f::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator*),
+        sol::meta_function::division, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator/),
         sol::meta_function::equal_to, &Vector2f::operator==
     );
 
@@ -124,27 +124,28 @@ void IModManager::LoadAPI() {
         "SqDistance", &Vector2i::SqDistance,
         "Dot", &Vector2i::Dot,
         sol::meta_function::addition, &Vector2i::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector2i() const>(&Vector2i::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator*),
-        sol::meta_function::division, sol::resolve<Vector2i(const Vector2i&) const>(&Vector2i::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator*),
+        sol::meta_function::division, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator/),
         sol::meta_function::equal_to, &Vector2i::operator==
     );
 
     m_state.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
-        "IDENTITY", sol::property([]() { return Quaternion::IDENTITY; }),
+        //"IDENTITY", sol::property([]() { return Quaternion::IDENTITY; }),
+        "IDENTITY", sol::var(Quaternion::IDENTITY),
         "x", &Quaternion::x,
         "y", &Quaternion::y,
         "z", &Quaternion::z,
         "w", &Quaternion::w,
-        sol::meta_function::multiplication, sol::resolve<Quaternion(const Quaternion&) const>(&Quaternion::operator*)
+        sol::meta_function::multiplication, sol::resolve<Quaternion(Quaternion) const>(&Quaternion::operator*)
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
         sol::factories([](const Int64Wrapper& uuid, uint32_t id) { return ZDOID(uuid, id); }),
-        "NONE", sol::property([]() { return ZDOID::NONE; }),
+        "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
         "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, const Int64Wrapper& value) { self.SetOwner(value); }),
         "id", sol::property(&ZDOID::GetUID, &ZDOID::SetUID)
     );
@@ -476,7 +477,7 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, const Int64Wrapper &owner) { self.SetOwner(owner); }),
+        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, Int64Wrapper owner) { self.SetOwner(owner); }),
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
         "SetLocal", &ZDO::SetLocal,
@@ -700,12 +701,12 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const Vector3f& pos, float radius, size_t max, const std::string& name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, const Vector3f& pos, float radius, size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, size_t max, const std::string& name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, const ZoneID& zone, size_t max, std::string_view name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
@@ -931,13 +932,13 @@ void IModManager::LoadAPI() {
             //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
             //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
             
-            resourceUtilsTable["ReadFileBytes"] = [](const std::string& path) { return VUtils::Resource::ReadFile<BYTES_t>(path); };
-            resourceUtilsTable["ReadFileString"] = [](const std::string& path) { return VUtils::Resource::ReadFile<std::string>(path); };
-            resourceUtilsTable["ReadFileLines"] = [](const std::string& path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
+            resourceUtilsTable["ReadFileBytes"] = [](std::string_view path) { return VUtils::Resource::ReadFile<BYTES_t>(path); };
+            resourceUtilsTable["ReadFileString"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::string>(path); };
+            resourceUtilsTable["ReadFileLines"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
 
             resourceUtilsTable["WriteFile"] = sol::overload(
                 sol::resolve<bool(const fs::path&, const BYTES_t&)>(VUtils::Resource::WriteFile),
-                sol::resolve<bool(const fs::path&, const std::string&)>(VUtils::Resource::WriteFile),
+                sol::resolve<bool(const fs::path&, std::string_view)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::list<std::string>&)>(VUtils::Resource::WriteFile)
             );

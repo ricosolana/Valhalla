@@ -16,13 +16,13 @@ IHeightmapBuilder* HeightmapBuilder() {
 void IHeightmapBuilder::PostGeoInit() {
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
-    for (int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
+    for (unsigned int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
         auto&& insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
         Shared* shared = insert->get();
 
         shared->m_thread = std::jthread([this, i, shared](std::stop_token token) {
-            std::string name = "HMBuilder" + std::to_string(i);
+            std::string name = "HMBuilder" + std::to_string(i); 
 
             tracy::SetThreadName(name.c_str());
             //el::Helpers::setThreadName(name);

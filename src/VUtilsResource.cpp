@@ -34,7 +34,7 @@ namespace VUtils::Resource {
         return WriteFile(path, vec.data(), vec.size());
     }
 
-    bool WriteFile(const fs::path& path, const std::string& str) {
+    bool WriteFile(const fs::path& path, std::string_view str) {
         return WriteFile(path, reinterpret_cast<const BYTE_t*>(str.data()), str.size());
     }
 

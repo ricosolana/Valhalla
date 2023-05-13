@@ -13,7 +13,7 @@ Quaternion::Quaternion()
 Quaternion::Quaternion(float x, float y, float z, float w) 
     : x(x), y(y), z(z), w(w) {}
 
-Quaternion::Quaternion(const Vector3f &v, float w)
+Quaternion::Quaternion(Vector3f v, float w)
 {
     this->x = v.x;
     this->y = v.y;
@@ -33,7 +33,7 @@ Vector3f Quaternion::xyz() const {
 
 
 
-Vector3f Quaternion::operator*(const Vector3f& point) const {
+Vector3f Quaternion::operator*(Vector3f point) const {
     float x2 = x * 2.f;
     float y2 = y * 2.f;
     float z2 = z * 2.f;
@@ -55,26 +55,26 @@ Vector3f Quaternion::operator*(const Vector3f& point) const {
                 (xz2 - wy2) * point.x           + (yz2 + wx2) * point.y             + (1.f - (x2s + y2s)) * point.z };
 }
 
-Quaternion Quaternion::operator*(const Quaternion &rhs) const {
+Quaternion Quaternion::operator*(Quaternion rhs) const {
     return Quaternion(w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y, 
         w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z, 
         w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x, 
         w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
 }
 
-void Quaternion::operator*=(const Quaternion& rhs) {
+void Quaternion::operator*=(Quaternion rhs) {
     *this = *this * rhs;
 }
 
 
 
-bool Quaternion::operator==(const Quaternion& other) const {
+bool Quaternion::operator==(Quaternion other) const {
     return x == other.x
         && y == other.y
         && z == other.z
         && w == other.w;
 }
-bool Quaternion::operator!=(const Quaternion & other) const {
+bool Quaternion::operator!=(Quaternion other) const {
     return !(*this == other);
 }
 
@@ -86,7 +86,7 @@ bool Quaternion::operator!=(const Quaternion & other) const {
 
 
 Quaternion FromEulerRad_Impl(
-    const Vector3f& refVec,
+    Vector3f refVec,
     int dims) {
 
     float sx;
@@ -346,7 +346,7 @@ Quaternion Quaternion::LookRotation(Vector3f forward, Vector3f up) {
     }
 }
 
-Quaternion Quaternion::Inverse(const Quaternion& rotation) {
+Quaternion Quaternion::Inverse(Quaternion rotation) {
     float lengthSq = rotation.LengthSquared();
     if (lengthSq != 0.0) {
         float i = 1.0f / lengthSq;
@@ -355,6 +355,6 @@ Quaternion Quaternion::Inverse(const Quaternion& rotation) {
     return rotation;
 }
 
-std::ostream& operator<<(std::ostream& st, const Quaternion& quat) {
+std::ostream& operator<<(std::ostream& st, Quaternion quat) {
     return st << "(" << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << ")";
 }

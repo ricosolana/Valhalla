@@ -2,14 +2,14 @@
 #include "VUtils.h"
 #include "VUtilsMath.h"
 
-std::ostream& operator<<(std::ostream& st, const Vector2f& vec) {
+std::ostream& operator<<(std::ostream& st, Vector2f vec) {
     return st << "(" << vec.x << ", " << vec.y << ")";
 }
 
-std::ostream& operator<<(std::ostream& st, const Vector2i& vec) {
+std::ostream& operator<<(std::ostream& st, Vector2i vec) {
     return st << "(" << vec.x << ", " << vec.y << ")";
 }
 
-std::ostream& operator<<(std::ostream& st, const Vector3f& vec) {
+std::ostream& operator<<(std::ostream& st, Vector3f vec) {
     return st << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 }

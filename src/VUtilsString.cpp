@@ -105,9 +105,10 @@ namespace VUtils::String {
         return modif;
     }
 
-    std::string ToAscii(std::string in) {
-        FormatAscii(in); 
-        return in;
+    std::string ToAscii(std::string_view in) {
+        std::string ret = std::string(in);
+        FormatAscii(ret); 
+        return ret;
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding

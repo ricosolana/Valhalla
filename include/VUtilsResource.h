@@ -165,7 +165,7 @@ namespace VUtils::Resource {
         
     bool WriteFile(const fs::path& path, const BYTE_t* buf, size_t size);
     bool WriteFile(const fs::path& path, const BYTES_t& buffer);
-    bool WriteFile(const fs::path& path, const std::string& str);
+    bool WriteFile(const fs::path& path, std::string_view str);
 
     // Write a Container<std::string> as lines to a file
     template<typename Iterable> requires 

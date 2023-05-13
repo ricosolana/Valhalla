@@ -15,18 +15,18 @@ struct Vector2 {
     constexpr Vector2(const T x, const T y) : x(x), y(y) {}
         
     // vector arithmetic
-    void operator=(const Vector2<T>& other) {
+    void operator=(Vector2<T> other) {
         this->x = other.x;
         this->y = other.y;
     }
 
 
 
-    Vector2<T> operator+(const Vector2<T>& rhs) const {
+    Vector2<T> operator+(Vector2<T> rhs) const {
         return Vector2<T>(this->x + rhs.x, this->y + rhs.y);
     }
 
-    Vector2<T> operator-(const Vector2<T>& rhs) const {
+    Vector2<T> operator-(Vector2<T> rhs) const {
         return Vector2<T>(this->x - rhs.x, this->y - rhs.y);
     }
 
@@ -34,61 +34,61 @@ struct Vector2 {
         return Vector2<T>(-this->x, -this->y);
     }
 
-    Vector2<T> operator*(const Vector2<T>& rhs) const {
+    Vector2<T> operator*(Vector2<T> rhs) const {
         return Vector2<T>(this->x * rhs.x, this->y * rhs.y);
     }
 
-    Vector2<T> operator/(const Vector2<T>& rhs) const {
+    Vector2<T> operator/(Vector2<T> rhs) const {
         return Vector2<T>(this->x / rhs.x, this->y / rhs.y);
     }
     
-    Vector2<T> operator*(const float rhs) const {
+    Vector2<T> operator*(float rhs) const {
         return Vector2<T>(this->x * rhs, this->y * rhs);
     }
 
-    Vector2<T> operator/(const float rhs) const {
+    Vector2<T> operator/(float rhs) const {
         return Vector2<T>(this->x / rhs, this->y / rhs);
     }
 
 
 
-    void operator+=(const Vector2<T>& rhs) {
+    void operator+=(Vector2<T> rhs) {
         *this = *this + rhs;
     }
 
-    void operator-=(const Vector2<T>& rhs) {
+    void operator-=(Vector2<T> rhs) {
         *this = *this - rhs;
     }
 
-    void operator*=(const Vector2<T>& rhs) {
+    void operator*=(Vector2<T> rhs) {
         *this = *this * rhs;
     }
 
-    void operator/=(const Vector2<T>& rhs) {
+    void operator/=(Vector2<T> rhs) {
         *this = *this / rhs;
     }
 
-    void operator*=(const float rhs) {
+    void operator*=(float rhs) {
         *this = *this * rhs;
     }
 
-    void operator/=(const float rhs) {
+    void operator/=(float rhs) {
         *this = *this / rhs;
     }
 
 
 
-    constexpr bool operator==(const Vector2<T>& rhs) const {
+    constexpr bool operator==(Vector2<T> rhs) const {
         return this->x == rhs.x && this->y == rhs.y;
     }
 
-    constexpr bool operator!=(const Vector2<T>& rhs) const {
+    constexpr bool operator!=(Vector2<T>& rhs) const {
         return !(*this == rhs);
     }
 
 
 
-    constexpr float Dot(const Vector2<T>& rhs) const {
+    constexpr float Dot(Vector2<T> rhs) const {
         return (float)this->x * rhs.x + (float)this->y * rhs.y;
     }
 
@@ -100,11 +100,11 @@ struct Vector2 {
         return std::sqrt(this->SqMagnitude());
     }
     
-    constexpr float SqDistance(const Vector2<T>& rhs) const {
+    constexpr float SqDistance(Vector2<T> rhs) const {
         return (this->x - rhs.x) * (this->x - rhs.x) + (this->y - rhs.y) * (this->y - rhs.y);
     }
 
-    constexpr float Distance(const Vector2<T>& rhs) const {
+    constexpr float Distance(Vector2<T> rhs) const {
         return std::sqrt(this->SqDistance(rhs));
     }
 
@@ -130,8 +130,8 @@ struct Vector2 {
 using Vector2f = Vector2<float>;
 using Vector2i = Vector2<int32_t>;
 
-std::ostream& operator<<(std::ostream& st, const Vector2f& vec);
-std::ostream& operator<<(std::ostream& st, const Vector2i& vec);
+std::ostream& operator<<(std::ostream& st, Vector2f vec);
+std::ostream& operator<<(std::ostream& st, Vector2i vec);
 
 template <> struct fmt::formatter<Vector2f> : ostream_formatter {};
 template <> struct fmt::formatter<Vector2i> : ostream_formatter {};
@@ -155,7 +155,7 @@ struct Vector3 {
         : x(x), y(y), z(z) {}
 
     // vector arithmetic
-    void operator=(const Vector3<T>& other) {
+    void operator=(Vector3<T> other) {
         this->x = other.x;
         this->y = other.y;
         this->z = other.z;
@@ -163,11 +163,11 @@ struct Vector3 {
 
 
 
-    Vector3<T> operator+(const Vector3<T>& rhs) const {
+    Vector3<T> operator+(Vector3<T> rhs) const {
         return Vector3<T>(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);
     }
 
-    Vector3<T> operator-(const Vector3<T>& rhs) const {
+    Vector3<T> operator-(Vector3<T> rhs) const {
         return Vector3<T>(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
     }
 
@@ -175,61 +175,61 @@ struct Vector3 {
         return Vector3<T>(-this->x, -this->y, -this->z);
     }
 
-    Vector3<T> operator*(const Vector3<T>& rhs) const {
+    Vector3<T> operator*(Vector3<T> rhs) const {
         return Vector3<T>(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);
     }
 
-    Vector3<T> operator/(const Vector3<T>& rhs) const {
+    Vector3<T> operator/(Vector3<T> rhs) const {
         return Vector3<T>(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z);
     }
 
-    Vector3<T> operator*(const float rhs) const {
+    Vector3<T> operator*(float rhs) const {
         return Vector3<T>(this->x * rhs, this->y * rhs, this->z * rhs);
     }
 
-    Vector3<T> operator/(const float rhs) const {
+    Vector3<T> operator/(float rhs) const {
         return Vector3<T>(this->x / rhs, this->y / rhs, this->z / rhs);
     }
 
 
 
-    void operator+=(const Vector3<T>& rhs) {
+    void operator+=(Vector3<T> rhs) {
         *this = *this + rhs;
     }
 
-    void operator-=(const Vector3<T>& rhs) {
+    void operator-=(Vector3<T> rhs) {
         *this = *this - rhs;
     }
 
-    void operator*=(const Vector3<T>& rhs) {
+    void operator*=(Vector3<T> rhs) {
         *this = *this * rhs;
     }
 
-    void operator/=(const Vector3<T>& rhs) {
+    void operator/=(Vector3<T> rhs) {
         *this = *this / rhs;
     }
 
-    void operator*=(const float rhs) {
+    void operator*=(float rhs) {
         *this = *this * rhs;
     }
 
-    void operator/=(const float rhs) {
+    void operator/=(float rhs) {
         *this = *this / rhs;
     }
 
 
     
-    constexpr bool operator==(const Vector3<T>& rhs) const {
+    constexpr bool operator==(Vector3<T> rhs) const {
         return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z;
     }
 
-    constexpr bool operator!=(const Vector3<T>& rhs) const {
+    constexpr bool operator!=(Vector3<T> rhs) const {
         return !(*this == rhs);
     }
 
 
 
-    constexpr Vector3<T> Cross(const Vector3<T>& rhs) const {
+    constexpr Vector3<T> Cross(Vector3<T> rhs) const {
         return Vector3<T>(
             this->y * rhs.z - this->z * rhs.y,
             this->z * rhs.x - this->x * rhs.z,
@@ -237,7 +237,7 @@ struct Vector3 {
         );
     }
 
-    constexpr float Dot(const Vector3<T>& rhs) const {
+    constexpr float Dot(Vector3<T> rhs) const {
         return this->x * rhs.x 
             + this->y * rhs.y 
             + this->z * rhs.z;
@@ -253,13 +253,13 @@ struct Vector3 {
         return std::sqrt(this->SqMagnitude());
     }
 
-    constexpr float SqDistance(const Vector3<T>& rhs) const {
+    constexpr float SqDistance(Vector3<T> rhs) const {
         return (this->x - rhs.x) * (this->x - rhs.x) 
             + (this->y - rhs.y) * (this->y - rhs.y) 
             + (this->z - rhs.z) * (this->z - rhs.z);
     }
 
-    constexpr float Distance(const Vector3<T>& rhs) const {
+    constexpr float Distance(Vector3<T> rhs) const {
         return std::sqrt(this->SqDistance(rhs));
     }
 
@@ -296,7 +296,7 @@ struct Vector3 {
 
 using Vector3f = Vector3<float>;
 
-std::ostream& operator<<(std::ostream& st, const Vector3f& vec);
+std::ostream& operator<<(std::ostream& st, Vector3f vec);
 
 template <> struct quill::copy_loggable<Vector3f> : std::true_type {};
 template <> struct fmt::formatter<Vector3f> : ostream_formatter {};

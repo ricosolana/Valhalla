@@ -84,8 +84,6 @@ void IZDOManager::Update() {
 		// TODO make a member variable?
 		//	think about emulated zdo containers (like replaying actions to specific peers)
 		//	this is a functionality I might be planning on into the future
-		BYTES_t bytes;
-
 		m_temp.clear();
 		DataWriter(m_temp).Write(m_destroySendList);
 		m_destroySendList.clear();
@@ -220,8 +218,9 @@ ZDO& IZDOManager::Instantiate(Vector3f position) {
 	for(;;) {
 		zdoid.SetUID(m_nextUid++);
 		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
-		if (!pair.second) // if insert failed, keep looping
+		if (!pair.second) { // if insert failed, keep looping
 			continue;
+		}
 
 		auto&& zdo = pair.first->second;
 
