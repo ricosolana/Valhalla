@@ -19,15 +19,14 @@ The server is in a currently in a functional state and somewhat usable. I would 
 This server includes two hosting modes:
  - Dedicated: 
    - Requires `dedicated: true` in config
-   - Address will be visible to clients
-   - Anonymous account, no logged in Steam account needed.
-   - Hosted on a home network (or other private network)
-   - Must open UDP ports 2456-2457 on router for friends outside your network to play.
+   - Address is visible to clients
+   - Anonymous account; no login needed
+   - Must open TCP/UDP ports 2456-2457 on router for friends outside your network to play. Ports 2456 are required for game server, whereas 2457 are optional for server browser.
  - P2P: 
    - Requires `dedicated: false` in config
-   - Clients and server are separated by the Steam backend
-   - You must own a legitimate copy of Valheim that is available to play (Valheim installation not required)
-   - Port forwarding and routing is handled automagically.
+   - Address is hidden from clients; clients and server are separated by the Steam backend
+   - Valheim must be available on a logged in Steam account
+   - Port forwarding and routing is handled automagically
 
 If connecting to the server fails, try updating your device's version of Steam. For instance, Valheim on Steam Deck worked fine for me a few hours earlier but an update was seemingly released a few hours later which might have prevented connection. Updating appears to have fixed this.
 
