@@ -24,8 +24,11 @@
 cmake_minimum_required (VERSION 3.14)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-include(get_steamapi)
 include(get_cpm)
+#include(get_luajit)
+include(get_steamapi)
+
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
@@ -41,7 +44,8 @@ endif()
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(lua CONFIG REQUIRED)
+#find_package(LuaJIT REQUIRED)
+find_package(lua51 REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
@@ -131,6 +135,7 @@ target_include_directories(${PROJECT_NAME}
     #${SOL2_ROOT_DIR}/include
     #${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
     PUBLIC ankerl::unordered_dense
+    ${LUA_INCLUDE_DIR}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
@@ -140,7 +145,10 @@ target_link_libraries(${PROJECT_NAME}
     ${STEAMAPI_BINARY_DIR}
     PUBLIC OpenSSL::SSL OpenSSL::Crypto
     ZLIB::ZLIB
-    PUBLIC lua sol2
+    #PUBLIC ${LUAJIT_BINARY_DIR} sol2
+    PUBLIC ${LUA_LIBRARIES} sol2
+    #PUBLIC luajit sol2
+    PUBLIC 
     yaml-cpp
     PRIVATE Tracy::TracyClient
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
