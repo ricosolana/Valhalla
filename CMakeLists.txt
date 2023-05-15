@@ -48,6 +48,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(dpp CONFIG REQUIRED)
 find_package(quill CONFIG REQUIRED)
+find_package(range-v3 CONFIG REQUIRED)
 
 #CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
 CPMAddPackage(
@@ -133,6 +134,9 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC ankerl::unordered_dense
 )
 
+
+
+set(CMAKE_CXX_STANDARD 23)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 target_link_libraries(${PROJECT_NAME}
@@ -147,6 +151,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE dpp::dpp
     PRIVATE quill::quill
     PRIVATE unordered_dense
+    PRIVATE range-v3::meta range-v3::concepts range-v3::range-v3
 )
 
 

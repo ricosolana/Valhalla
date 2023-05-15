@@ -97,6 +97,12 @@ public:
         return duration_cast<nanoseconds>(Elapsed());
     }
 
+    auto DeltaNanos() {
+        return duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+    }
+
+
+
     // Get the time in Ticks (C# DateTime.Ticks)
     //auto Ticks() {
     //    return duration_cast<TICKS_t>(Nanos());

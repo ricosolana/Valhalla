@@ -1,11 +1,13 @@
 #include <isteamgameserver.h>
 #include <dpp/dpp.h>
 #include <dpp/dispatcher.h>
+#include <range/v3/all.hpp>
 
 #include "DiscordManager.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
 #include "Peer.h"
+#include "RandomEventManager.h"
 
 auto DISCORD_MANAGER(std::make_unique<IDiscordManager>());
 IDiscordManager* DiscordManager() {
@@ -79,6 +81,19 @@ void IDiscordManager::Init() {
 					}
 					else {
 						event.reply(std::string("The whitelist is ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+					}
+				}
+				else if (label == "vhevent") {
+					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
+						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
+						//seconds duration = duration_cast<seconds>(e->m_duration);
+						auto&& dur = std::get_if<int64_t>(&event.get_parameter("duration"));
+						RandomEventManager()->SetCurrentRandomEvent(*e, peer->m_pos,
+							dur ? seconds(*dur) : duration_cast<seconds>(e->m_duration));
+						event.reply("Started event in world");
+					}
+					else {
+						event.reply("Event does not exist");
 					}
 				}
 				else if (label == "vhpardon") {
@@ -218,7 +233,7 @@ void IDiscordManager::Init() {
 						}
 
 						//m_bot->interaction_followup_create(event.command.token, dpp::message("Invalid key"), [](const dpp::confirmation_callback_t&) {});
-						event.reply("Invalid key.");
+						event.reply("Invalid key");
 					}
 					else {
 						event.reply("Join the in-game server and enter the provided key here to link your account");
@@ -279,28 +294,109 @@ void IDiscordManager::Init() {
 		for (auto& opt : evt.options) {
 			if (opt.focused) {
 				Valhalla()->RunTask([=](Task&) {
+					auto&& base = std::get<std::string>(opt.value);
+					auto irsp = dpp::interaction_response(dpp::ir_autocomplete_reply);
+					auto&& choices = irsp.autocomplete_choices;
+
+					// Custom autocomplete reply lambda
+					//	Automatically sorts response based off base string and sends to client
+					auto&& reply = [&]() {
+						/*
+						auto leven = std::vector<int>(); leven.reserve(choices.size());
+						for (auto&& choice : choices) {
+							leven.push_back(VUtils::String::LevenshteinDistance(choice.name, base));
+						}
+
+						// https://codereview.stackexchange.com/a/281701
+						ranges::sort(
+							ranges::views::zip(leven, choices),
+							std::less{}, 
+							[](auto&& p) { return std::get<0>(p); }
+						);*/
+
+						if (choices.size() > AUTOCOMPLETE_MAX_CHOICES)
+							choices.resize(AUTOCOMPLETE_MAX_CHOICES);
+
+						m_bot->interaction_response_create(evt.command.id, evt.command.token, irsp);
+					};
+
+					/*
+					auto&& similarity = [&](std::string_view first, std::string_view base) -> size_t {
+						// return a relative number referencing the similarity of the 'input 'first' string to 'base'
+						//	starts with is first
+						//	then contains
+						//	then length
+						size_t weight = 0;
+						for (size_t i = 0; i < std::min(first.size(), base.size()); i++) {
+							for (size_t j = 0; j < std::min(first.size(), base.size()); j++) {
+								if (first[i] == base[i])
+									weight += 2;
+								else if (std::tolower(first[i]) == std::tolower(base[i]))
+									weight += 1;
+							}
+						}
+
+						return weight;
+					};
+
+					//auto&& sorter = [&](const auto& view) {
+					//	for (auto&& choice : view) {
+					//		if (choice.contains(base))
+					//	}
+					//};
+					*/
+
+
+					auto&& add_choice = [&](auto&& choice, bool force) -> bool {
+						if (choices.size() < AUTOCOMPLETE_MAX_CHOICES && (choice.contains(base) || force)) {
+							choices.push_back(dpp::command_option_choice(std::string(choice), std::string(choice)));
+						}
+
+						return choices.size() < AUTOCOMPLETE_MAX_CHOICES;
+					};
+
+					auto&& add_choices = [&](auto&& view) {
+						//if (view.size() > AUTOCOMPLETE_MAX_CHOICES) {
+							for (auto&& s : view) {
+								if (!add_choice(s, view.size() <= AUTOCOMPLETE_MAX_CHOICES))
+									break;
+							}
+						//}
+					};
+
 					if (opt.name == "identifier") {
-						auto&& val = std::get<std::string>(opt.value);
-						// responses to be alphabetical
-						auto&& response = dpp::interaction_response(dpp::ir_autocomplete_reply);
+						const bool has_num = std::any_of(base.begin(), base.end(), ::isdigit);
 
-						auto sorted = std::vector<std::pair<Peer*, int>>();
+						// Populate choices
 						for (auto&& peer : NetManager()->GetPeers()) {
-							sorted.push_back({ peer, VUtils::String::LevenshteinDistance(peer->m_name, val) });
+							auto&& kw = peer->m_name;
+							choices.emplace_back(dpp::command_option_choice(
+								has_num ? peer->m_socket->GetHostName() : peer->m_name,
+								peer->m_socket->GetHostName()
+							));
 						}
-
-						std::sort(sorted.begin(), sorted.end(), [](const std::pair<Peer*, int>& a, const std::pair<Peer*, int>& b) {
-							return a.second < b.second;
-						});
-
-						for (auto&& pair : sorted) {
-							auto&& peer = pair.first;
-							response.add_autocomplete_choice(dpp::command_option_choice(peer->m_name, peer->m_socket->GetHostName()));
+					}
+					else if (opt.name == "event") {
+						add_choices(ranges::views::keys(RandomEventManager()->m_events));
+						//for (auto&& e : ranges::views::keys(RandomEventManager()->m_events)) {
+							//choices.emplace_back(dpp::command_option_choice(std::string(e), std::string(e)));
+							//add_choice(e);
+						//}
+					}
+					else if (opt.name == "prefab") {
+						//add_choices(ranges::views ranges::views::values(PrefabManager()->m_prefabs));
+						for (auto&& prefab : ranges::views::values(PrefabManager()->m_prefabs)) {
+							if (!add_choice(prefab->m_name, false))
+								break;
+							//choices.emplace_back(dpp::command_option_choice(prefab->m_name, prefab->m_name));
 						}
-
-						m_bot->interaction_response_create(evt.command.id, evt.command.token, response);
+					}
+					else {
+						LOG_WARNING(LOGGER, "autocomplete not registered");
+						return;
 					}
 
+					reply();
 				});
 				break;
 			}
@@ -321,6 +417,14 @@ void IDiscordManager::Init() {
 				dpp::slashcommand("vhwhitelist", "Whitelist information", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_boolean, "flag", "enable/disable"))
 					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only
+				dpp::slashcommand("vhevent", "Set event in world", m_bot->me.id)
+					.add_option(dpp::command_option(dpp::co_string, "event", "Name of event", true).set_auto_complete(true))
+					.add_option(dpp::command_option(dpp::co_string, "identifier", "Player to start event nearby", true).set_auto_complete(true))
+					.add_option(dpp::command_option(dpp::co_integer, "seconds", "Duration in seconds"))
+					.set_default_permissions(0), // 0 is admins only
+				dpp::slashcommand("vhzdos", "View zdos in world", m_bot->me.id)
+					.add_option(dpp::command_option(dpp::co_string, "prefab", "Name of prefab", true).set_auto_complete(true))
+					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhpardon", "Unban a player", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "host", "host", true))
 					.set_default_permissions(dpp::permissions::p_ban_members), // 0 is admins only

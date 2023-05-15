@@ -151,6 +151,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
         if (peer->m_characterID)
             VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
+        LOG_INFO(LOGGER, "Player ZDO exists: {}", (ZDOManager()->GetZDO(characterID) == nullptr ? "false" : "true"));
+
         peer->m_characterID = characterID;
 
         LOG_INFO(LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);

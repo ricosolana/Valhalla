@@ -9,8 +9,7 @@
 //	this class doesnt do much besides try to simulate Unity in appearance
 //		which is not the desired result...
 class IPrefabManager {
-
-private:
+public:
 	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 
 public:
