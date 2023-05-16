@@ -13,6 +13,7 @@
 #include "VUtilsPhysics.h"
 #include "DungeonManager.h"
 #include "VUtils.h"
+#include "ZDOManager.h"
 
 class Tests {
 private:
@@ -1436,6 +1437,33 @@ public:
                 }
                 next++;
             }
+        }
+    }
+
+    void Test_ZDOPool() {
+        Valhalla()->m_serverID = 69; // nice
+
+        std::cout << "Starting zdopool test in 3s\n";
+        std::this_thread::sleep_for(3s);
+
+        int COUNT = 999999;
+
+        for (int i = 0; i < 10; i++) {
+            auto&& MANAGER = std::make_unique<IZDOManager>();
+
+            auto start(steady_clock::now());
+            for (int i = 0; i < COUNT; i++) {
+                auto&& zdo = MANAGER->Instantiate(Prefab::NONE, Vector3f::Zero());
+            }
+            for (int i = 0; i < COUNT; i++) {
+                MANAGER->DestroyZDO(ZDOID(VH_ID, i));
+            }
+            for (int i = 0; i < COUNT; i++) {
+                auto&& zdo = MANAGER->Instantiate(Prefab::NONE, Vector3f::Zero());
+            }
+            auto finish(steady_clock::now());
+
+            std::cout << "Time: " << duration_cast<milliseconds>(finish - start).count() << "ms\n";
         }
     }
 };

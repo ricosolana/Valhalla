@@ -4,7 +4,7 @@
 
 //using namespace std::chrono_literals;
 
-//#define RUN_TESTS
+#define RUN_TESTS
 
 #define VH_VERSION "v1.0.5"
 
@@ -31,7 +31,9 @@
 
 
 // Whether to use shared ptr zdos where destroyed zdos are reused
-#define VH_OPTION_ENABLE_POOLED_ZDOS
+//  This does not seem to offer much if any benefit
+//  Seems to perform the same regardless
+//#define VH_OPTION_ENABLE_POOLED_ZDOS
 
 
 

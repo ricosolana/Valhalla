@@ -225,7 +225,7 @@ ZDO& IZDOManager::Instantiate(Vector3f position) {
 		auto&& zdo = pair.first->second;
 
 #ifdef VH_OPTION_ENABLE_POOLED_ZDOS
-		assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+		//assert(false && "still need to reinit the zdo (pos, id, member clear...)");
 		// Recycle zdos
 		auto&& freeItr = m_freeObjects.begin();
 		if (freeItr != m_freeObjects.end()) {
@@ -260,7 +260,7 @@ ZDO& IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
 	auto&& zdo = pair.first->second; 
 	
 #ifdef VH_OPTION_ENABLE_POOLED_ZDOS
-	assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+	//assert(false && "still need to reinit the zdo (pos, id, member clear...)");
 	// Recycle zdos
 	auto&& freeItr = m_freeObjects.begin();
 	if (freeItr != m_freeObjects.end()) {
@@ -300,7 +300,7 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 	auto&& zdo = pair.first->second;
 
 #ifdef VH_OPTION_ENABLE_POOLED_ZDOS
-	assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+	//assert(false && "still need to reinit the zdo (pos, id, member clear...)");
 	// Recycle zdos
 	auto&& freeItr = m_freeObjects.begin();
 	if (freeItr != m_freeObjects.end()) {
@@ -444,7 +444,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	}
 
 #ifdef VH_OPTION_ENABLE_POOLED_ZDOS
-	assert(false && "not fully implemented");
+	//assert(false && "not fully implemented");
 	// Recycle zdos
 	zdo->m_dataRev = 0;
 	zdo->m_encoded = 0;

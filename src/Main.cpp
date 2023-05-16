@@ -20,7 +20,8 @@
 */
 int main(int argc, char **argv) {
 #ifdef RUN_TESTS
-    Tests().RunTests();
+    //Tests().RunTests();
+    Tests().Test_ZDOPool();
 #else // !RUN_TESTS
     fs::current_path("./data/");
 
