@@ -48,6 +48,10 @@ private:
 
 	BYTES_t m_temp;
 
+#ifdef VH_OPTION_ENABLE_POOLED_ZDOS
+	std::list<std::unique_ptr<ZDO>> m_freeObjects;
+#endif
+
 	//static const std::function<bool(const ZDO&, HASH_t, Prefab::FLAG_t, Prefab::FLAG_t)> PREFAB_FUNCTION;
 
 private:
@@ -75,6 +79,8 @@ private:
 	void SendAllZDOs(Peer& peer);
 	bool SendZDOs(Peer& peer, bool flush);
 	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
+
+	//void AddZDOToWorld(std::unique_ptr<ZDO> zdo, Vector3f pos);
 
 	ZDO& Instantiate(Vector3f position);
 	ZDO& Instantiate(ZDOID uid, Vector3f position);

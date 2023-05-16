@@ -224,12 +224,28 @@ ZDO& IZDOManager::Instantiate(Vector3f position) {
 
 		auto&& zdo = pair.first->second;
 
-		zdo = std::make_unique<ZDO>(zdoid, position);
+#ifdef VH_OPTION_ENABLE_POOLED_ZDOS
+		assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+		// Recycle zdos
+		auto&& freeItr = m_freeObjects.begin();
+		if (freeItr != m_freeObjects.end()) {
+			zdo = std::move(*freeItr);
+			zdo->m_pos = position;
+			zdo->m_id = zdoid;
+			m_freeObjects.erase(freeItr);
+		}
+		else
+#endif
+			// TODO remove ZDO ctor (manually assign zdoid and pos instead)
+			// Else alloc a new
+			zdo = std::make_unique<ZDO>(zdoid, position);
+		
 		AddZDOToZone(*zdo.get());
 		return *zdo.get();
 	}
 }
 
+// TODO rename locals properly
 ZDO& IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
@@ -241,7 +257,22 @@ ZDO& IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
 	if (!pair.second) // if insert failed, throw
 		throw std::runtime_error("zdo id already exists");
 
-	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
+	auto&& zdo = pair.first->second; 
+	
+#ifdef VH_OPTION_ENABLE_POOLED_ZDOS
+	assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+	// Recycle zdos
+	auto&& freeItr = m_freeObjects.begin();
+	if (freeItr != m_freeObjects.end()) {
+		zdo = std::move(*freeItr);
+		zdo->m_pos = position;
+		zdo->m_id = uid;
+		m_freeObjects.erase(freeItr);
+	}
+	else
+#endif
+		// Else alloc a new
+		zdo = std::make_unique<ZDO>(uid, position);
 
 	AddZDOToZone(*zdo.get());
 	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
@@ -268,7 +299,21 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 	auto&& zdo = pair.first->second;
 
-	zdo = std::make_unique<ZDO>(id, def);
+#ifdef VH_OPTION_ENABLE_POOLED_ZDOS
+	assert(false && "still need to reinit the zdo (pos, id, member clear...)");
+	// Recycle zdos
+	auto&& freeItr = m_freeObjects.begin();
+	if (freeItr != m_freeObjects.end()) {
+		zdo = std::move(*freeItr);
+		zdo->m_pos = def;
+		zdo->m_id = id;
+		m_freeObjects.erase(freeItr);
+	}
+	else
+#endif
+		// Else alloc a new
+		zdo = std::make_unique<ZDO>(id, def);
+
 	return pair;
 }
 
@@ -397,6 +442,16 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->m_zdos.erase(zdoid);
 	}
+
+#ifdef VH_OPTION_ENABLE_POOLED_ZDOS
+	assert(false && "not fully implemented");
+	// Recycle zdos
+	zdo->m_dataRev = 0;
+	zdo->m_encoded = 0;
+	zdo->m_members.clear();
+	zdo->m_prefab = Prefab::NONE;
+	m_freeObjects.push_back(std::move(zdo));
+#endif
 
 	m_erasedZDOs.insert(zdoid);
 	return m_objectsByID.erase(itr);

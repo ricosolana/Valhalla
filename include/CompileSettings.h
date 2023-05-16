@@ -30,6 +30,10 @@
 #define VH_OPTION_ENABLE_ZONE_VEGETATION
 
 
+// Whether to use shared ptr zdos where destroyed zdos are reused
+#define VH_OPTION_ENABLE_POOLED_ZDOS
+
+
 
 // Enable the mod subsystem
 #define VH_OPTION_ENABLE_MODS
