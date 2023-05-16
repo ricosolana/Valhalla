@@ -87,7 +87,7 @@ void IDiscordManager::Init() {
 					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
 						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
 						//seconds duration = duration_cast<seconds>(e->m_duration);
-						auto&& dur = std::get_if<int64_t>(&event.get_parameter("duration"));
+						auto&& dur = std::get_if<int64_t>(&event.get_parameter("seconds"));
 						RandomEventManager()->SetCurrentRandomEvent(*e, peer->m_pos,
 							dur ? seconds(*dur) : duration_cast<seconds>(e->m_duration));
 						event.reply("Started event in world");
@@ -132,7 +132,9 @@ void IDiscordManager::Init() {
 						event.reply("Name: " + peer->m_name + "\n"
 							+ "Uuid: " + std::to_string(peer->m_uuid) + "\n"
 							+ "Host: " + peer->m_socket->GetHostName() + "\n"
-							+ "Address: " + peer->m_socket->GetAddress());
+							+ "Address: " + peer->m_socket->GetAddress() + "\n"
+							+ "Ping: " + std::to_string(peer->m_socket->GetPing()) + "ms"
+						);
 					}
 					else
 						event.reply("Player not found");
