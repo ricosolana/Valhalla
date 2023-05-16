@@ -376,6 +376,20 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			}
 		}
 	}
+	else if (VH_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::PRIORITIZE_LEAST_LATENCY) {
+		// if this players latency is larger than the cumulative avg of other surrounding players
+		//	then reassign to the best-latency player
+
+		// if a majority of the players are having a substantially bad experience due to the terrible latency of 1 player, then reassign
+
+		//float pdiff = 0;
+		//for (auto&& otherPeer : NetManager()->GetPeers()) {
+		//	pdiff += otherPeer->m_socket->GetPing();
+		//}
+		//pdiff /= 
+		//
+		//if (peer.m_socket->GetPing())
+	}
 
 }
 

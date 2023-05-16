@@ -14,9 +14,9 @@
 // - return instantly without blocking
 // - be thread safe
 // - be fully implemented
-class ISocket : public std::enable_shared_from_this<ISocket> {
-public:
-    using Ptr = std::shared_ptr<ISocket>;
+class ISocket {
+//public:
+    //using Ptr = std::shared_ptr<ISocket>;
 
 public:
     virtual ~ISocket() = default;

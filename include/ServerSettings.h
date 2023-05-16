@@ -4,7 +4,8 @@
 
 enum class AssignAlgorithm {
     NONE,
-    DYNAMIC_RADIUS
+    DYNAMIC_RADIUS,
+    PRIORITIZE_LEAST_LATENCY
 };
 
 enum class PacketMode : int32_t {

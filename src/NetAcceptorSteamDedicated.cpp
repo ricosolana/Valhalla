@@ -74,8 +74,10 @@ AcceptorSteam::AcceptorSteam() {
 AcceptorSteam::~AcceptorSteam() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
         //LOG(DEBUG) << "Destroying";
-        for (auto &&socket : m_sockets)
-            socket.second->Close(true);
+        m_pending.clear();
+
+        for (auto &&pair : m_sockets)
+            pair.second.first->Close(true);
 
         // hmm
         std::this_thread::sleep_for(1s);
@@ -101,12 +103,12 @@ void AcceptorSteam::Listen() {
     }
 }
 
-ISocket::Ptr AcceptorSteam::Accept() {
-    auto pair = m_connected.begin();
-    if (pair == m_connected.end())
+SteamSocket* AcceptorSteam::Accept() {
+    auto pair = m_pending.begin();
+    if (pair == m_pending.end())
         return nullptr;
     auto &&socket = std::move(pair->second);
-    m_connected.erase(pair);
+    m_pending.erase(pair);
     return socket;
 }
 
@@ -129,13 +131,16 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute ||
             data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting))
     {
-        m_connected[data->m_hConn] = m_sockets[data->m_hConn];
+        auto&& pair = m_sockets[data->m_hConn];
+        m_pending[data->m_hConn] = pair.first.get();
+        pair.second = true;
     }
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting 
         && data->m_eOldState == k_ESteamNetworkingConnectionState_None)
     {
-        if (STEAM_NETWORKING_SOCKETS->AcceptConnection(data->m_hConn) == k_EResultOK)
-            m_sockets[data->m_hConn] = std::make_shared<SteamSocket>(data->m_hConn);
+        if (STEAM_NETWORKING_SOCKETS->AcceptConnection(data->m_hConn) == k_EResultOK) {
+            m_sockets[data->m_hConn] = std::make_pair(std::make_unique<SteamSocket>(data->m_hConn), false);
+        }
     }
     else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
@@ -146,10 +151,16 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         auto &&pair = m_sockets.find(data->m_hConn);
 
         if (pair != m_sockets.end()) {
-            pair->second->Close(false);
+            pair->second.first->Close(false);
 
-            m_connected.erase(data->m_hConn);
-            m_sockets.erase(pair);
+            // if socket was not pending, then erase it
+            if (!pair->second.second) {
+                m_pending.erase(data->m_hConn);
+                m_sockets.erase(pair);
+            }
+
+            //m_connected.erase(data->m_hConn);
+            //m_sockets.erase(pair);
         }
     }
 }

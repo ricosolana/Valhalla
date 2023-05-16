@@ -550,6 +550,8 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
 
     peer.SendDisconnect();
 
+    m_acceptor->Dispose(peer.m_socket);
+
     LOG_INFO(LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
 }
 

@@ -18,12 +18,12 @@ public:
     // Poll for a ready and newly accepted connection
     //  Should be non-blocking
     //  Nullable
-    virtual ISocket::Ptr Accept() = 0;
+    virtual ISocket* Accept() = 0;
 
     virtual void OnConfigLoad(bool reloading) {}
 
     // Do not use
-    //virtual void Cleanup(ISocket* socket) = 0;
+    virtual void Dispose(ISocket* socket) = 0;
 };
 
 
@@ -33,8 +33,10 @@ private:
     //const uint16_t m_port;
     HSteamListenSocket m_listenSocket;
 
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
+    // Sockets and whether they are accepted or pending accept or not
+    UNORDERED_MAP_t<HSteamNetConnection, std::pair<std::unique_ptr<SteamSocket>, bool>> m_sockets;    // holds all sockets and manages lifetime
+    UNORDERED_MAP_t<HSteamNetConnection, SteamSocket*> m_pending;
+    //std::list<SteamSocket> m_pending;
 
     CSteamID m_lobbyID;
 
@@ -52,11 +54,11 @@ public:
 
     void Listen() override;
 
-    ISocket::Ptr Accept() override;
+    SteamSocket* Accept() override;
 
     void OnConfigLoad(bool reloading) override;
 
-    //void Cleanup(ISocket* socket) override;
+    void Dispose(ISocket* socket) override;
 
 private:
     // Expanded from the STEAM_CALLBACK macro
