@@ -76,6 +76,3 @@ public:
         return st << zdoid.GetOwner() << ":" << zdoid.GetUID();
     }
 };
-
-template <> struct quill::copy_loggable<ZDOID> : std::true_type {};
-template <> struct fmt::formatter<ZDOID> : ostream_formatter {};

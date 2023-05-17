@@ -515,7 +515,6 @@ public:
     float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
     int32_t             GetInt(         HASH_t key, int32_t value) const {                          return Get<int32_t>(key, value); }
     int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
-    Int64Wrapper        GetLongWrapper( HASH_t key, Int64Wrapper value) const {                     return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  HASH_t key, Quaternion value) const {                       return Get<Quaternion>(key, value); }
     Vector3f            GetVector3(     HASH_t key, Vector3f value) const {                         return Get<Vector3f>(key, value); }
     std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
@@ -527,7 +526,6 @@ public:
     float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
     int32_t             GetInt(         HASH_t key) const {                                         return Get<int32_t>(key, {}); }
     int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
-    Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
     std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, ""); }
@@ -538,7 +536,6 @@ public:
     float               GetFloat(       std::string_view key, float value) const {                  return Get<float>(key, value); }
     int32_t             GetInt(         std::string_view key, int32_t value) const {                return Get<int32_t>(key, value); }
     int64_t             GetLong(        std::string_view key, int64_t value) const {                return Get<int64_t>(key, value); }
-    Int64Wrapper        GetLongWrapper( std::string_view key, Int64Wrapper value) const {           return Get<int64_t>(key, value); }
     Quaternion          GetQuaternion(  std::string_view key, Quaternion value) const {             return Get<Quaternion>(key, value); }
     Vector3f            GetVector3(     std::string_view key, Vector3f value) const {               return Get<Vector3f>(key, value); }
     std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
@@ -550,7 +547,6 @@ public:
     float               GetFloat(       std::string_view key) const {                               return Get<float>(key, {}); }
     int32_t             GetInt(         std::string_view key) const {                               return Get<int32_t>(key, {}); }
     int64_t             GetLong(        std::string_view key) const {                               return Get<int64_t>(key, {}); }
-    Int64Wrapper        GetLongWrapper( std::string_view key) const {                               return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  std::string_view key) const {                               return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     std::string_view key) const {                               return Get<Vector3f>(key, {}); }
     std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, ""); }
@@ -663,13 +659,13 @@ public:
     }
 
     TICKS_t GetTimeCreated() const {
-        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER | Prefab::Flag::DUNGEON))
+        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
             return TICKS_t(GetLong(HASH_TIME_CREATED));
         return {};
     }
 
     void SetTimeCreated(TICKS_t ticks) {
-        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER | Prefab::Flag::DUNGEON))
+        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
             Set(HASH_TIME_CREATED, ticks.count());
     }
 

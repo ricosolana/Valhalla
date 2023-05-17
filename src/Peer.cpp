@@ -55,7 +55,7 @@ Peer::Peer(ISocket::Ptr socket)
 #ifdef VH_OPTION_ENABLE_CAPTURE
                 VH_SETTINGS.packetMode != PacketMode::PLAYBACK && 
 #endif
-                password != NetManager()->m_password)
+                password != std::string_view(NetManager()->m_passwordHash))
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
@@ -87,7 +87,7 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_salt));
+        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
 
         return false;
     });

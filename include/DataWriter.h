@@ -6,7 +6,6 @@
 #include "Quaternion.h"
 #include "UserData.h"
 #include "VUtilsTraits.h"
-#include "ModManager.h"
 #include "DataStream.h"
 #include "DataReader.h"
 
@@ -218,14 +217,6 @@ public:
         Write(std::string_view(in.m_networkUserId));
     }
 
-    void Write(UInt64Wrapper in) {
-        Write((uint64_t)in);
-    }
-
-    void Write(Int64Wrapper in) {
-        Write((int64_t)in);
-    }
-
 
 
     // Empty template
@@ -252,81 +243,5 @@ public:
     // empty full template
     static decltype(auto) Serialize() {
         return BYTES_t{};
-    }
-
-
-
-    void SerializeOneLua(IModManager::Type type, sol::object arg) {
-        switch (type) {
-            // TODO add recent unsigned types
-        case IModManager::Type::UINT8:
-            Write(arg.as<uint8_t>());
-            break;
-        case IModManager::Type::UINT16:
-            Write(arg.as<uint16_t>());
-            break;
-        case IModManager::Type::UINT32:
-            Write(arg.as<uint32_t>());
-            break;
-        case IModManager::Type::UINT64:
-            Write(arg.as<uint64_t>());
-            break;
-        case IModManager::Type::INT8:
-            Write(arg.as<int8_t>());
-            break;
-        case IModManager::Type::INT16:
-            Write(arg.as<int16_t>());
-            break;
-        case IModManager::Type::INT32:
-            Write(arg.as<int32_t>());
-            break;
-        case IModManager::Type::INT64:
-            Write(arg.as<int64_t>());
-            break;
-        case IModManager::Type::FLOAT:
-            Write(arg.as<float>());
-            break;
-        case IModManager::Type::DOUBLE:
-            Write(arg.as<double>());
-            break;
-        case IModManager::Type::STRING:
-            Write(arg.as<std::string>());
-            break;
-        case IModManager::Type::BOOL:
-            Write(arg.as<bool>());
-            break;
-        case IModManager::Type::BYTES:
-            Write(arg.as<BYTES_t>());
-            break;
-        case IModManager::Type::ZDOID:
-            Write(arg.as<ZDOID>());
-            break;
-        case IModManager::Type::VECTOR3f:
-            Write(arg.as<Vector3f>());
-            break;
-        case IModManager::Type::VECTOR2i:
-            Write(arg.as<Vector2i>());
-            break;
-        case IModManager::Type::QUATERNION:
-            Write(arg.as<Quaternion>());
-            break;
-        default:
-            throw std::runtime_error("Invalid data type");
-        }
-    }
-
-    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results) {
-        for (int i = 0; i < results.size(); i++) {
-            SerializeOneLua(types[i], results[i]);
-        }
-    }
-
-    static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
-        BYTES_t bytes;
-        DataWriter params(bytes);
-
-        params.SerializeLua(types, results);
-
-        return bytes;
     }
 };

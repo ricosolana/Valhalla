@@ -24,7 +24,6 @@
 cmake_minimum_required (VERSION 3.14)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-include(get_steamapi)
 include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -32,34 +31,18 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 
-#add_compile_definitions(WIN32_LEAN_AND_MEAN)
-#add_compile_definitions(VC_EXTRALEAN)
+# https://github.com/erhankur/esp32-spdlog/tree/master
+# Add spdlog support for logging
 
 ############
 # Libraries
 ############
-find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(lua CONFIG REQUIRED)
-find_package(sol2 CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(Tracy CONFIG REQUIRED)
-find_package(zstd CONFIG REQUIRED)
-find_package(dpp CONFIG REQUIRED)
-find_package(quill CONFIG REQUIRED)
-find_package(range-v3 CONFIG REQUIRED)
 
-#CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
 CPMAddPackage(
     NAME unordered_dense
     GITHUB_REPOSITORY martinus/unordered_dense
     VERSION 4.0.0
 )
-
-#CPMAddPackage(
-    #unordered_dense
-    #"gc:martinus/unordered-dense#v4.0.0")
 
 # remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
@@ -78,26 +61,13 @@ endif()
 ##########
 add_executable(${PROJECT_NAME}
     "src/Main.cpp"
-
-    
-    
-    "src/DungeonGenerator.cpp"
-    "src/DungeonManager.cpp"
-    "src/RandomEventManager.cpp"
-    "src/GeoManager.cpp"
-    "src/Heightmap.cpp"
-    "src/HeightmapBuilder.cpp"
-    "src/HeightmapManager.cpp"
-    
-    "src/ModManager.cpp"
-    "src/NetAcceptorSteamDedicated.cpp"
+        
     "src/NetManager.cpp"    
-    "src/NetSocketSteam.cpp"
+    
     "src/Peer.cpp"
-    "src/PrefabManager.cpp"
-    "src/Quaternion.cpp"
-    "src/NetSocketPlayback.cpp"
-    "src/DungeonRoom.cpp"
+    
+    "src/Quaternion.cpp"    
+    
     "src/RouteManager.cpp"
     
     "src/ValhallaServer.cpp"
@@ -105,7 +75,7 @@ add_executable(${PROJECT_NAME}
     "src/VUtils.cpp"
     "src/VUtilsMath.cpp"
     "src/VUtilsMathf.cpp"
-    "src/VUtilsPhysics.cpp" 
+     
     "src/VUtilsRandom.cpp"
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
@@ -116,7 +86,7 @@ add_executable(${PROJECT_NAME}
     "src/ZoneManager.cpp"    
     
     
-    "src/DiscordManager.cpp" 
+     
     
 )
 
@@ -128,31 +98,15 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    PUBLIC ${STEAMAPI_SOURCE_DIR}
-    #${SOL2_ROOT_DIR}/include
-    #${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
     PUBLIC ankerl::unordered_dense
 )
 
 
 
-set(CMAKE_CXX_STANDARD 23)
+#set(CMAKE_CXX_STANDARD 23)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC Threads::Threads
-    ${STEAMAPI_BINARY_DIR}
-    PUBLIC OpenSSL::SSL OpenSSL::Crypto
-    ZLIB::ZLIB
-    PUBLIC lua sol2
-    yaml-cpp
-    PRIVATE Tracy::TracyClient
-    PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    PRIVATE dpp::dpp
-    PRIVATE quill::quill
-    PRIVATE unordered_dense
-    PRIVATE range-v3::meta range-v3::concepts range-v3::range-v3
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE unordered_dense)
 
 
 
@@ -172,22 +126,6 @@ endif()
 if(MSVC AND CMAKE_BUILD_TYPE MATCHES Release)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)
 endif()
-
-
-
-set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
-    TRACY_ENABLE OFF
-)
-
-
-
-# steam stuff
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-file(COPY ${STEAMAPI_SHARED_DIR}
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
 
 
 

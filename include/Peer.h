@@ -1,7 +1,7 @@
 #pragma once
 
 // TODO use a wrapper method?
-#include <openssl/md5.h>
+//#include <openssl/md5.h>
 
 #include "VUtils.h"
 #include "VUtilsString.h"
@@ -55,7 +55,7 @@ private:
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
-    ISocket::Ptr m_socket;
+    ISocket* m_socket;
 
     // Immutable variables
     OWNER_t m_uuid;
@@ -66,19 +66,6 @@ public:
     bool m_visibleOnMap = false;
     ZDOID m_characterID;
     bool m_admin = false;
-
-#ifdef VH_OPTION_ENABLE_CAPTURE
-public:
-    nanoseconds* m_disconnectCapture = nullptr;
-    size_t m_captureQueueSize = 0;
-private:
-    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
-    std::mutex m_recordmux;
-    std::jthread m_recordThread;
-#endif
-
-public:
-    bool m_gatedPlaythrough = false;
 
 public:
     UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
@@ -101,7 +88,7 @@ private:
     }
 
 public:
-    Peer(ISocket::Ptr socket);
+    Peer(ISocket* socket);
 
     Peer(const Peer& other) = delete; // copy
 
@@ -123,12 +110,6 @@ public:
     template<typename F>
     decltype(auto) Register(std::string_view name, F func) {
         return Register(VUtils::String::GetStableHashCode(name), func);
-    }
-
-    void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
-        //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
-        
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
 
 
@@ -178,51 +159,9 @@ public:
 
 
 
-    //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-
-    void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        if (!m_socket->Connected())
-            return;
-
-        if (args.size() != repr.m_types.size())
-            throw std::runtime_error("mismatched number of args");
-
-        // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
-        //    return;
-
-        //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
-
-        BYTES_t bytes;
-        DataWriter params(bytes);
-        params.Write(repr.m_hash);
-        params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
-        this->Send(std::move(bytes));
-
-        // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
-    }
-
-
-    /*
-    Method* GetMethod(HASH_t hash) {
-        auto&& find = m_methods.find(hash);
-        if (find != m_methods.end()) {
-            return find->second.get();
-        }
-        return nullptr;
-    }
-
-    decltype(auto) GetMethod(const std::string& name) {
-        return GetMethod(VUtils::String::GetStableHashCode(name));
-    }*/
-
-
-
     bool InternalInvoke(HASH_t hash, DataReader &reader) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
-            ZoneScoped;
             //VLOG(2) << "InternalInvoke, hash: " << hash;
 
             auto result = find->second->Invoke(this, reader);
@@ -365,25 +304,6 @@ public:
         return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
-
-
-    void RouteViewLua(ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        if (args.size() != repr.m_types.size())
-            throw std::runtime_error("mismatched number of args");
-
-        auto results = sol::variadic_results(args.begin(), args.end());
-
-#ifdef MOD_EVENT_RESPONSE
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO, sol::as_args(results)))
-            return;
-#endif
-
-        RouteParams(targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
-    }
-
-    decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        return RouteViewLua(ZDOID::NONE, repr, args);
-    }
 
 
     /*

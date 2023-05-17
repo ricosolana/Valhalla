@@ -1,13 +1,17 @@
 #pragma once
 
+#include <variant>
+#include <fstream>
 #include "VUtils.h"
 
 // 56 Bytes w/ <vec, view>
 // 32 Bytes w/ <vec&, view>
 class DataStream {
 public:
-    std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t> m_data;
-
+    std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t, std::pair<std::FILE*, bool>> m_data;
+    //static constexpr auto sz = sizeof(std::iostream)
+    //static constexpr auto sz1 = sizeof(std::iostream);
+    //static constexpr auto sz31 = sizeof(m_data);
 protected:
     size_t m_pos{};
 
@@ -62,23 +66,28 @@ public:
 
     // TODO rename size() for standard conformance
     size_t size() const {
+        //static constexpr auto s1z = sizeof(std::ifstream);
+        //static constexpr auto sz = sizeof(std::iostream);
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
-            [](BYTE_VIEW_t buf) { return buf.size(); }
+            [](BYTE_VIEW_t buf) { return buf.size(); },
+            [](std::FILE* file) { auto prev = ftell(file); std::fseek(file, 0, SEEK_END); auto s = (size_t) ftell(file); fseek(file, prev, SEEK_SET); return s; }
         }, this->m_data);
     }
 
     BYTE_t* data() {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); }
+            [](BYTE_VIEW_t buf) { return buf.data(); },
+            [](std::pair<std::FILE*, bool>& file) { return nullptr; }
         }, this->m_data);
     }
 
     const BYTE_t* data() const {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); }
+            [](BYTE_VIEW_t buf) { return buf.data(); },
+            [](std::pair<std::FILE*, bool>& file) { return nullptr; }
         }, this->m_data);
     }
 

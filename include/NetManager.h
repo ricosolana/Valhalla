@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ranges>
-
 #include "Peer.h"
 #include "NetAcceptor.h"
 #include "Vector.h"
@@ -12,7 +10,7 @@ class INetManager {
     friend class IModManager;
 
 private:
-    std::unique_ptr<IAcceptor> m_acceptor;
+    std::unique_ptr<NetAcceptor> m_acceptor;
 
     //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
     //std::list<std::unique_ptr<Peer>> m_onlinePeers;
@@ -24,8 +22,10 @@ private:
     UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
 
 public:
-    std::string m_password;
-    std::string m_salt;
+    //std::string m_password;
+    std::array<char, 16> m_passwordHash;
+    std::array<char, 16> m_passwordSalt;
+    //std::string m_salt;
 
 private:
     void SendDisconnect();

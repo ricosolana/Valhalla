@@ -332,7 +332,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, player, "offline", true);
+            a(m_settings.playerOnline, player, "online", true);
             a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s || val > 1h; });
             a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, "list-force-visible", false);
@@ -524,19 +524,12 @@ void IValhalla::Start() {
     PrefabManager()->Init();
 
     ZoneManager()->PostPrefabInit();
-    DungeonManager()->PostPrefabInit();
 
     WorldManager()->PostZoneInit();
-    GeoManager()->PostWorldInit();
-    HeightmapBuilder()->PostGeoInit();
     ZoneManager()->PostGeoInit();
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
-    ModManager()->PostInit();
-
-    DiscordManager()->Init();
-
     /*
     if (VH_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();

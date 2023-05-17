@@ -7,7 +7,6 @@
 #include "ZoneManager.h"
 #include "RouteManager.h"
 #include "HashUtils.h"
-#include "DungeonManager.h"
 
 auto ZDO_MANAGER(std::make_unique<IZDOManager>());
 IZDOManager* ZDOManager() {
@@ -38,8 +37,6 @@ void IZDOManager::Init() {
 }
 
 void IZDOManager::Update() {
-	ZoneScoped;
-
 	PERIODIC_NOW(3min, {
 		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
 		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
@@ -65,8 +62,7 @@ void IZDOManager::Update() {
 #else // macro expansion screwed this up
 	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
-			if (!peer->m_gatedPlaythrough)
-				AssignOrReleaseZDOs(*peer);
+			AssignOrReleaseZDOs(*peer);
 		}
 	});
 #endif
@@ -190,12 +186,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			AddZDOToZone(*zdo.get());
 			m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
 
-			if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
-				// Only add real sky dungeon
-				if (zdo->Position().y > 4000)
-					DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
-			}
-
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
 		else purgeCount++;
@@ -305,8 +295,6 @@ ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
 
 
 void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
-	ZoneScoped;
-
 	auto&& zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	std::list<std::reference_wrapper<ZDO>> m_tempNearObjects;
@@ -334,49 +322,6 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			}
 		}
 	}
-
-	if (VH_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
-
-		float minSqDist = std::numeric_limits<float>::max();
-		Vector3f closestPos;
-
-		// get the distance to the closest peer
-		for (auto&& otherPeer : NetManager()->GetPeers()) {
-			if (otherPeer == &peer)
-				continue;
-
-			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.m_uuid))
-				continue;
-
-			float sqDist = otherPeer->m_pos.SqDistance(peer.m_pos);
-			if (sqDist < minSqDist) {
-				minSqDist = sqDist;
-				closestPos = otherPeer->m_pos;
-
-				if (minSqDist <= 12 * 12) {
-					break;
-				}
-			}
-		}
-
-		if (minSqDist != std::numeric_limits<float>::max() 
-			&& minSqDist > 12 * 12) {
-			// Get zdos immediate to this peer
-			auto zdos = GetZDOs(peer.m_pos,
-				std::sqrt(minSqDist) * 0.5f - 2.f);
-
-			// Basically reassign zdos from another owner to me instead
-			for (auto&& ref : zdos) {
-				auto&& zdo = ref.get();
-				if (zdo.GetPrefab().AnyFlagsAbsent(Prefab::Flag::SESSIONED)
-					&& zdo.m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
-					) {
-					zdo.SetOwner(peer.m_uuid);
-				}
-			}
-		}
-	}
-
 }
 
 decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZDOManager::m_objectsByID)::iterator itr) {
@@ -679,8 +624,6 @@ int IZDOManager::SectorToIndex(ZoneID s) const {
 }
 
 bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
-	ZoneScoped;
-
 	auto sendQueueSize = peer.m_socket->GetSendQueueSize();
 
 	// flushing forces a packet send
@@ -716,10 +659,6 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 			peer.m_forceSend.erase(zdo.ID());
 
-			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
-				continue;
-			}
-
 			writer.Write(zdo.ID());
 			writer.Write(zdo.GetOwnerRevision());
 			writer.Write(zdo.m_dataRev);
@@ -749,24 +688,11 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 void IZDOManager::OnNewPeer(Peer& peer) {
 	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
-		ZoneScoped;
-
-		// Only allow if normal mode
-		if (
-#ifdef VH_OPTION_ENABLE_CAPTURE
-			(VH_SETTINGS.packetMode == PacketMode::PLAYBACK
-			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) ||
-#endif
-			peer->m_gatedPlaythrough)
-			return;
-
-		{
-			reader.AsEach([this](const ZDOID& zdoid) {
-				if (auto zdo = GetZDO(zdoid))
-					InvalidateZDOZone(*zdo);
-				}
-			);
-		}
+		reader.AsEach([this](const ZDOID& zdoid) {
+			if (auto zdo = GetZDO(zdoid))
+				InvalidateZDOZone(*zdo);
+			}
+		);
 
 		auto time = Valhalla()->Time();
 
@@ -830,20 +756,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 				// Only disperse through world if ZDO is new
 				if (created) {
-					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOCreated, peer, zdo)) {
-						EraseZDO(pair.first);
-						continue;
-					}
-
 					AddZDOToZone(zdo);
 					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
 				}
 				else {
-					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {
-						zdo = std::move(copy);
-						continue;
-					}
-
 					zdo.SetPosition(pos);
 				}
 

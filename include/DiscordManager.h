@@ -2,9 +2,6 @@
 
 #include <string>
 
-#include <isteamhttp.h>
-#include <dpp/dpp.h>
-
 #include "VUtils.h"
 #include "HashUtils.h"
 

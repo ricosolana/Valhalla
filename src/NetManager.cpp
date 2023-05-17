@@ -1,5 +1,5 @@
-#include <openssl/md5.h>
-#include <openssl/rand.h>
+//#include <openssl/md5.h>
+//#include <openssl/rand.h>
 #include <isteamgameserver.h>
 
 #include "NetManager.h"
@@ -592,16 +592,17 @@ void INetManager::OnConfigLoad(bool reloading) {
     bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {
-        m_salt = VUtils::Random::GenerateAlphaNum(16);
+        VUtils::Random::GenerateAlphaNum(m_passwordSalt.data(), m_passwordSalt.size());
 
-        const auto merge = VH_SETTINGS.serverPassword + m_salt;
+        const auto merge = VH_SETTINGS.serverPassword + std::string(m_passwordSalt.data(), m_passwordSalt.size());
 
         // Hash a salted password
-        m_password.resize(16);
-        MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-            merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
+        //m_password.resize(16);
+        VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<uint8_t*>(m_passwordHash.data()));
+        //MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+            //merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
 
-        VUtils::String::FormatAscii(m_password);
+        VUtils::String::FormatAscii(m_passwordHash.data(), m_passwordHash.size());
     }
 
     if (m_acceptor)
