@@ -27,11 +27,11 @@ public:
     BYTES_t SaveMeta();
     //BYTES_t SaveDB();
 
-    void WriteFileMeta(const fs::path& root);
-    void WriteFileDB(const fs::path& root);
-    void LoadFileDB(const fs::path& root);
-    void CopyCompressDB(const fs::path& root);
-    void WriteFiles(const fs::path& root);
+    void WriteFileMeta(const std::filesystem::path& root);
+    void WriteFileDB(const std::filesystem::path& root);
+    void LoadFileDB(const std::filesystem::path& root);
+    void CopyCompressDB(const std::filesystem::path& root);
+    void WriteFiles(const std::filesystem::path& root);
 
     void WriteFileMeta();
     void WriteFileDB();
@@ -49,20 +49,20 @@ public:
 
     // Get root path of worlds
     //  threadsafe
-    fs::path GetWorldsPath() const;
+    std::filesystem::path GetWorldsPath() const;
     // Get meta path of world
     //  threadsafe
-    //fs::path GetWorldMetaPath(const std::string& name) const;
+    //std::filesystem::path GetWorldMetaPath(const std::string& name) const;
     // Get db path of world
     //  threadsafe
-    //fs::path GetWorldDBPath(const std::string& name) const;
+    //std::filesystem::path GetWorldDBPath(const std::string& name) const;
 
-    bool LoadWorldMeta(const fs::path &root);
+    bool LoadWorldMeta(const std::filesystem::path &root);
 
     std::unique_ptr<World> RetrieveWorld(std::string_view name, std::string_view fallbackSeedName) const;
 
     BYTES_t SaveWorldDB() const;
-    //void LoadFileWorldDB(const fs::path& path) const;
+    //void LoadFileWorldDB(const std::filesystem::path& path) const;
 
     // Create a copy of a world by name
     //  threadsafe
@@ -71,7 +71,7 @@ public:
     // Write the db of the current world to disk
     //  The world is only saved
     //  Threadsafe
-    //void WriteFileWorldDB(const fs::path& path, bool sync);
+    //void WriteFileWorldDB(const std::filesystem::path& path, bool sync);
 
     // Write the db of the current world to disk
     //  This is the go-to method to save the world to disk
@@ -80,8 +80,6 @@ public:
     //void WriteFileWorldDB(bool sync);
 
     void PostZoneInit();
-
-    void PostInit();
 };
 
 // Manager class for everything related to world file loading and file saving

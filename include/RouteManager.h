@@ -4,7 +4,6 @@
 #include "ValhallaServer.h"
 #include "DataReader.h"
 #include "DataWriter.h"
-#include "ModManager.h"
 #include "Hashes.h"
 #include "NetManager.h"
 
@@ -32,7 +31,7 @@ public:
 	*/
 	template<typename F>
 	void Register(HASH_t hash, F func) {
-		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RouteIn, hash);
+		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
 	}
 
 	template<typename F>
@@ -50,9 +49,6 @@ public:
 		// Prefix
 		if (target == EVERYBODY) {
 			// targetZDO can have a value apparently
-			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
-				return;
-
 			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {

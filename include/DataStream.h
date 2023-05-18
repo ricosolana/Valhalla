@@ -2,18 +2,25 @@
 
 #include <variant>
 #include <fstream>
+#ifdef ESP_PLATFORM
+//#include "esp_vfs_fat.h"
+//#include "sdmmc_cmd.h"
+//#include "driver/sdmmc_host.h"
+#endif
 #include "VUtils.h"
 
-// 56 Bytes w/ <vec, view>
-// 32 Bytes w/ <vec&, view>
 class DataStream {
 public:
-    std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t, std::pair<std::FILE*, bool>> m_data;
-    //static constexpr auto sz = sizeof(std::iostream)
-    //static constexpr auto sz1 = sizeof(std::iostream);
-    //static constexpr auto sz31 = sizeof(m_data);
-protected:
-    size_t m_pos{};
+    enum class Type : uint8_t {
+        READ,
+        WRITE
+    };
+
+    std::variant<
+        std::pair<std::reference_wrapper<BYTES_t>, size_t>, 
+        std::pair<BYTE_VIEW_t, size_t>, 
+        std::pair<std::FILE*, Type>
+    > m_data;
 
 protected:
     // Returns whether the specified position exceeds container length
@@ -39,59 +46,105 @@ protected:
     }
 
 public:
-    explicit DataStream(BYTE_VIEW_t buf) : m_data(buf) {}
-    explicit DataStream(BYTES_t& buf) : m_data(std::ref(buf)) {}
-
-    explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_data(buf) {
-        SetPos(pos);
-    }
-
-    explicit DataStream(BYTES_t& buf, size_t pos) : m_data(std::ref(buf)) {
-        SetPos(pos);
-    }
+    explicit DataStream(BYTE_VIEW_t buf) : m_data(std::make_pair(buf, 0ULL)) {}
+    explicit DataStream(BYTES_t& buf) : m_data(std::pair(std::ref(buf), 0ULL)) {}
+    explicit DataStream(std::FILE* file, Type type) : m_data(std::make_pair(file, type)) {}
 
 public:
-    //bool owned() const { return std::get_if< !this->m_data.data(); }
-
     size_t Position() const {
-        return this->m_pos;
+        return std::visit(VUtils::Traits::overload{
+            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &pair) { return pair.second; },
+            [](const std::pair<BYTE_VIEW_t, size_t> &pair) { return pair.second; },
+            [](const std::pair<std::FILE*, const char*> &pair) { 
+                auto pos = ftell(pair.first); 
+                if (pos == -1)
+                    throw std::runtime_error("failed to get file pos");
+
+                return (size_t) pos;
+            }
+        }, this->m_data);
     }
 
     // Sets the position of this stream
-    void SetPos(size_t pos) {
-        AssertPosition(pos);
+    void SetPos(size_t newpos) {
+        //AssertPosition(pos);
 
-        this->m_pos = pos;
+        std::visit(VUtils::Traits::overload{
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { 
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
+
+                if (newpos > buf.size())
+                    throw std::runtime_error("position exceeds vector bounds");
+                pos = newpos; 
+            },
+            [&](std::pair<BYTE_VIEW_t, size_t>& pair) { 
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                if (newpos > buf.size())
+                    throw std::runtime_error("position exceeds array bounds");
+                pos = newpos; 
+            },
+            [&](std::pair<std::FILE*, const char*> &pair) {
+                if (std::fseek(pair.first, newpos, SEEK_SET) != 0)
+                    throw std::runtime_error("failed to fseek to pos");
+            }
+        }, this->m_data);
     }
 
-    // TODO rename size() for standard conformance
     size_t size() const {
-        //static constexpr auto s1z = sizeof(std::ifstream);
-        //static constexpr auto sz = sizeof(std::iostream);
         return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
-            [](BYTE_VIEW_t buf) { return buf.size(); },
-            [](std::FILE* file) { auto prev = ftell(file); std::fseek(file, 0, SEEK_END); auto s = (size_t) ftell(file); fseek(file, prev, SEEK_SET); return s; }
+            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { return pair.first.get().size(); },
+            [](const std::pair<BYTE_VIEW_t, size_t>& pair) { return pair.first.size(); },
+            [](const std::pair<std::FILE*, Type*>& pair) { 
+                auto&& file = pair.first;
+
+                auto prev = ftell(file); 
+                if (prev == -1)
+                    throw std::runtime_error("failed to set file pos (0)");
+                if (std::fseek(file, 0, SEEK_END) != 0)
+                    throw std::runtime_error("failed to set file pos (1)");
+
+                auto s = (size_t) ftell(file); 
+                if (s == -1)
+                    throw std::runtime_error("failed to set file pos (2)");
+                if (fseek(file, prev, SEEK_SET) != 0);
+                    throw std::runtime_error("failed to set file pos (3)");
+                
+                return s; 
+            }
         }, this->m_data);
     }
 
-    BYTE_t* data() {
-        return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); },
-            [](std::pair<std::FILE*, bool>& file) { return nullptr; }
-        }, this->m_data);
-    }
+    // Skip ahead x bytes
+    void Skip(size_t offset) {
 
-    const BYTE_t* data() const {
-        return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); },
-            [](std::pair<std::FILE*, bool>& file) { return nullptr; }
-        }, this->m_data);
-    }
+        /*
+        std::visit(VUtils::Traits::overload{
+            [](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { return pair.first.get().size(); },
+            [](std::pair<BYTE_VIEW_t, size_t>& pair) { return pair.first.size(); },
+            [](std::pair<std::FILE*, Type*>& pair) { 
+                auto&& file = pair.first;
 
-    size_t Skip(size_t offset) {
+                auto prev = ftell(file); 
+                if (prev == -1)
+                    throw std::runtime_error("failed to set file pos (0)");
+                if (std::fseek(file, 0, SEEK_END) != 0)
+                    throw std::runtime_error("failed to set file pos (1)");
+
+                auto s = (size_t) ftell(file); 
+                if (s == -1)
+                    throw std::runtime_error("failed to set file pos (2)")
+                if (fseek(file, prev, SEEK_SET) != 0);
+                    throw std::runtime_error("failed to set file pos (3)")
+                
+                return s; 
+            }
+        }, this->m_data);*/
+
+        // This is slow, two visits are performed 
+        // not really slow just redundant, and 2 potential file seeks are done (which is almost guaranteed to be slow)
         this->SetPos(this->Position() + offset);
     }
 };

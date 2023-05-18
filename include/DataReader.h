@@ -6,23 +6,51 @@
 #include "Quaternion.h"
 #include "UserData.h"
 #include "VUtilsTraits.h"
-#include "ModManager.h"
 #include "DataStream.h"
-//#include "DataWriter.h"
-
-//class DataWriter;
 
 class DataReader : public DataStream {
 private:
-    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
-        this->AssertOffset(count);
+    bool ReadSomeBytes(BYTE_t* buffer, size_t count) {
+        std::visit(VUtils::Traits::overload{
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { 
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
 
-        // read into 'buffer'
-        std::copy(this->data() + this->m_pos,
-            this->data() + this->m_pos + count,
-            buffer);
+                // A vector is dynamic
+                if (pos + count > buf.size())
+                    throw std::runtime_error("no more to read");
+                
+                std::copy(buf.data() + pos,
+                    buf.data() + pos + count,
+                    buffer);
 
-        this->m_pos += count;
+                pos += count;
+            },
+            [&](std::pair<BYTE_VIEW_t, size_t>& pair) { 
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                // An array is fixed (error if exceeded)
+                if (pos + count > buf.size())
+                    throw std::runtime_error("read exceeds array bounds");
+
+                std::copy(buf.data() + pos,
+                    buf.data() + pos + count,
+                    buffer);
+
+                pos += count;
+            },
+            [&](std::pair<std::FILE*, Type>& pair) {
+                // just write file
+                if (pair.second == Type::READ) {
+                    if (std::fread(buffer, count, 1, pair.first) != 1) {
+                        throw std::runtime_error("error while reading from file");
+                    }
+                } else {
+                    throw std::runtime_error("expected file reader got writer");
+                }
+            }
+        }, this->m_data);
     }
 
     uint32_t Read7BitEncodedInt() {
@@ -43,8 +71,7 @@ private:
 public:
     explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataReader(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataReader(FILE* file, Type type) : DataStream(file, type) {}
 
 public:
     template<typename T>
@@ -56,14 +83,60 @@ public:
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
 
-        this->AssertOffset(count);
+        //this->AssertOffset(count);
 
-        auto result = T(this->data() + this->m_pos,
-            this->data() + this->m_pos + count);
+        // use visit
+        return std::visit(VUtils::Traits::overload{
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
 
-        this->SetPos(this->m_pos + count);
+                // throw if end reached
+                if (pos + count > buf.size())
+                    throw std::runtime_error("read exceeds vector bounds");
 
-        return result;
+                auto result = T(buf.data() + pos,
+                    buf.data() + pos + count);
+
+                pos += count;
+
+                return result;
+            },
+            [&](std::pair<BYTE_VIEW_t, size_t>& pair) {
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                // throw if end reached
+                if (pos + count > buf.size())
+                    throw std::runtime_error("read exceeds array bounds");
+
+                auto result = T(buf.data() + pos,
+                    buf.data() + pos + count);
+
+                pos += count;
+
+                return result;
+            },
+            [&](std::pair<std::FILE*, Type>& pair) {
+                if constexpr (std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, std::string_view>) {
+                    throw std::runtime_error("tried reading observer buffer from file");
+                }
+                else {
+                    T result{};
+                    result.resize(count);
+                    // just write file
+                    if (pair.second == Type::READ) {
+                        if (std::fread(result.data(), count, 1, pair.first) != 1) {
+                            throw std::runtime_error("error while reading string from file");
+                        }
+                        return result;
+                    }
+                    else {
+                        throw std::runtime_error("expected file reader got writer");
+                    }
+                }
+            }
+        }, this->m_data);
     }
 
     

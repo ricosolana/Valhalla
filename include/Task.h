@@ -15,7 +15,7 @@ public:
     std::chrono::milliseconds m_period; // 0 = no repeat
 
 public:
-    Task(F func, steady_clock::time_point at, milliseconds period) 
+    Task(F func, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) 
         : m_func(func), m_at(at), m_period(period) {}
 
     bool Repeats() const {

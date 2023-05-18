@@ -11,9 +11,10 @@
 // - return instantly without blocking
 // - be thread safe
 // - be fully implemented
-class ISocket {
+class NetSocket {
 public:
-    ~ISocket();
+    NetSocket();
+    ~NetSocket();
 
 
 

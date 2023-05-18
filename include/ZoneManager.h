@@ -1,127 +1,143 @@
 #pragma once
 
+#include <string.h>
+
 #include "VUtils.h"
 #include "VUtilsRandom.h"
-#include "Biome.h"
 #include "HashUtils.h"
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "Vector.h"
 #include "Quaternion.h"
-#include "Prefab.h"
 
 using ZoneID = Vector2i;
 
 class Heightmap;
 class Peer;
 
+template<typename SizeType, size_t EXT = 0>
+	requires std::is_integral_v<SizeType>
+class VHString {
+private:
+	char* m_encoded;
+
+	bool same(const char* a, const char* b, SizeType size) const {
+		for (SizeType i = 0; i < size; i++) {
+			if (a[i] != b[i])
+				return false;
+		}
+		return true;
+	}
+
+public:
+	VHString(const char* str, SizeType length) {
+		// If length is 0, encoded will be null (instead of allocating SizeType bytes for nothing)
+		if (length || EXT) {
+			assert(str);
+			m_encoded = (char*) std::malloc(sizeof(SizeType) + length + EXT);
+			if (m_encoded) {
+				if (length) {
+					// Copy length into encoded
+					std::memcpy(this->m_encoded + EXT, &length, sizeof(length));
+					// Copy string data afterwards
+					std::memcpy(this->m_encoded + sizeof(length) + EXT, str, length);
+				}
+				else {
+					std::memset(this->m_encoded, 0, EXT);
+				}
+			}
+		}
+		else {
+			m_encoded = nullptr;
+		}
+	}
+
+	VHString() : VHString(nullptr, 0) {}
+
+	template<typename T>
+		requires std::is_integral_v<T>
+	VHString(const VHString<T>& other) : VHString(other., other.m_size) {}
+
+
+
+	~VHString() {
+		free(m_str);
+	}
+
+	size_t size() const {
+		if (m_encoded)
+			return *reinterpret_cast<SizeType*>(m_encoded + EXT);
+		else
+			return 0;
+	}
+
+	const char* data() const {
+		if (m_encoded)
+			return m_encoded + sizeof(SizeType) + EXT;
+		return nullptr;
+	}
+
+	char* data() {
+		if (m_encoded)
+			return m_encoded + sizeof(SizeType) + EXT;
+		return nullptr;
+	}
+
+	bool operator==(const VHString& other) const {
+		// If memory addresses are same
+		//	OR
+		//		lengths are equal and string payloads are equal
+		if (this == &other)
+			return true;
+				
+		auto sz = this->size();
+		return sz == other.size() 
+			&& same(this->data(), other.data(), sz);
+	}
+
+	//bool operator==(const char* other) const {
+	//	return std::strcmp(this->m_str, other) == 0;
+	//}
+
+	bool operator==(std::string_view other) const {
+		auto sz = this->size();
+		return sz == other.size() 
+			&& same(this->m_str + sizeof(SizeType), other.data(), sz);
+	}
+};
+
+using VHString8 = VHString<uint8_t>;
+using VHString16 = VHString<uint16_t>;
+
 class IZoneManager {
 	friend class INetManager;
 	friend class IModManager;
 
+public:
 	class Feature {
 		friend class IModManager;
 
 	public:
-		std::string m_name;
-		HASH_t m_hash;
+		//std::string m_name;
+		//char* m_name;
 
-		Biome m_biome;
-		BiomeArea m_biomeArea = BiomeArea::Everything;
-		bool m_applyRandomDamage;
-		bool m_centerFirst;
-		bool m_clearArea;
-		//bool m_useCustomInteriorTransform;
-
-		float m_exteriorRadius = 10;
-		float m_interiorRadius = 10;
-		float m_forestTresholdMin;
-		float m_forestTresholdMax = 1;
-		//Vector3f m_interiorPosition;
-		//Vector3f m_generatorPosition;
-		std::string m_group = "";
-		bool m_iconAlways;
-		bool m_iconPlaced;
-		bool m_inForest;
-		float m_minAltitude = -1000;
-		float m_maxAltitude = 1000;
-		float m_minDistance;
-		float m_maxDistance;
-		float m_minTerrainDelta;
-		float m_maxTerrainDelta = 2;
-		float m_minDistanceFromSimilar;
-		//bool m_prioritized;
-		int32_t m_spawnAttempts; // 200000 or 100000 depending on priority
-		int32_t m_quantity;
-		bool m_randomRotation = true;
-		//std::vector<RandomSpawn> m_randomSpawns;
-		bool m_slopeRotation;
-		bool m_snapToWater;
-		bool m_unique;
-		std::vector<Prefab::Instance> m_pieces;
+		//uint8_t m_flags;
+		VHString8 m_name;
+		//HASH_t m_hash;
+		//bool m_iconAlways;
+		//bool m_iconPlaced;
+		//bool m_unique;
 
 		bool operator==(const Feature& other) const {
-			return this->m_name == other.m_name;
+			return this == &other;
+			//return this->m_name == other.m_name;
+			//return this->m_hash == other.m_hash;
 		}
-
-		class Instance {
-			friend class IModManager;
-
-		public:
-			std::reference_wrapper<const Feature> m_feature;
-			const Vector3f m_pos;
-			//bool m_placed = false; // if m_generatedZones contains position
-
-			Instance(const Feature& location, const Vector3f& pos)
-				: m_feature(location), m_pos(pos) {}
-		};
 	};
+	static constexpr auto szzz = sizeof(Feature);
+	static constexpr auto szzz1 = sizeof(std::string);
 
-	// Rename this to VegetationFeature
-	class Foliage {
-	public:
-		const Prefab* m_prefab = nullptr;
-
-		Biome m_biome = Biome::None;
-		BiomeArea m_biomeArea = BiomeArea::Everything;
-		float m_radius = 0; // My custom impl
-		float m_min = 0;
-		float m_max = 10;
-		float m_minTilt = 0;
-		float m_maxTilt = 90;
-		float m_groupRadius = 0;
-		bool m_forcePlacement = false;
-		int32_t m_groupSizeMin = 1;
-		int32_t m_groupSizeMax = 1;
-		float m_scaleMin = 1;
-		float m_scaleMax = 1;
-		float m_randTilt = 0;
-		bool m_blockCheck = true;
-		float m_minAltitude = -1000;
-		float m_maxAltitude = 1000;
-		float m_minOceanDepth = 0;
-		float m_maxOceanDepth = 0;
-		float m_terrainDeltaRadius = 0;
-		float m_minTerrainDelta = 0;
-		float m_maxTerrainDelta = 2;
-		bool m_inForest = false;
-		float m_forestTresholdMin = 0;
-		float m_forestTresholdMax = 1;
-		bool m_snapToWater = false;
-		bool m_snapToStaticSolid = false;
-		float m_groundOffset = 0;
-		float m_chanceToUseGroundTilt = 0;
-		float m_minVegetation = 0;
-		float m_maxVegetation = 0;
-	};
-
-	struct ClearArea {
-		Vector3f m_center;
-		float m_semiWidth;
-	};
-
-	const Prefab* LOCATION_PROXY_PREFAB = nullptr;
-	const Prefab* ZONE_CTRL_PREFAB = nullptr;
+	using Instance = std::pair<std::reference_wrapper<const Feature>, Vector3f>;
 
 public:
 	static constexpr int NEAR_ACTIVE_AREA = 2;
@@ -132,20 +148,11 @@ public:
 	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
 
 private:
-	// All Features within a world capable of generation
-	std::vector<std::unique_ptr<const Feature>> m_features;
-
-	// All Features within a world hashed by name
-	UNORDERED_MAP_t<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
-
-	// All Foliage within a world capable of generation
-	std::vector<std::unique_ptr<const Foliage>> m_foliage;
+	std::list<std::unique_ptr<const Feature>> m_corefeatures;
 
 	// All the generated Features in a world
-	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
-
-	// Which Zones have already been generated
-	UNORDERED_SET_t<ZoneID> m_generatedZones;
+	//UNORDERED_MAP_t<ZoneID, Instance> m_generatedFeatures;
+	//std::list<
 
 	// Game-state global keys
 	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
@@ -159,46 +166,10 @@ private:
 
 	void OnNewPeer(Peer& peer);
 
-	void TryGenerateNearbyZones(Vector3f pos);
-
-
-	// Generate a zone if it is not already generated
-	//	Returns whether the zone was successfully generated
-	bool GenerateZone(ZoneID zone);
-	// Generate a zone if it is not already geenrated
-	//	Returns if zone was successfully generated given heightmap is ready
-	bool TryGenerateZone(ZoneID zone);
-	void PopulateZone(Heightmap& heightmap);
-	std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
-	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
-
-	bool HaveLocationInRange(const Feature& feature, Vector3f pos);
-	Vector3f GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float range);
-	Vector3f GetRandomPointInRadius(VUtils::Random::State& state, Vector3f pos, float range);
-	bool InsideClearArea(const std::vector<ClearArea>& areas, Vector3f pos);
-	bool OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f pos, float range);
-
-	const Feature* GetFeature(HASH_t hash);
-	const Feature* GetFeature(std::string_view name);
-
-	void PrepareFeatures(const Feature& feature);
-	ZoneID GetRandomZone(VUtils::Random::State& state, float range);
-
-	void RemoveUngeneratedFeatures(const Feature& feature);
-	void GenerateFeature(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
-
-	void GetTerrainDelta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
-
-	bool IsZoneGenerated(ZoneID zone);
-
-	void GenerateLocationProxy(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
-	//void GenerateZoneCtrl(ZoneID zone);
+	bool HaveLocationInRange(HASH_t feature, Vector3f pos);
 
 public:
 	void PostPrefabInit();
-	void Update();
-
-	void PostGeoInit();
 
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
@@ -207,22 +178,12 @@ public:
 		return m_globalKeys;
 	}
 
-	//void RegenerateZone(ZoneID zone);
-
-	void PopulateZone(ZoneID zone);
-
 	// Get the client based icons for minimap
-	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
-
-	// Get world height at location
-	float GetGroundHeight(Vector3f pos);
-
-	// Get specific height information at position
-	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
+	std::list<Instance> GetFeatureIcons();
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance* GetNearestFeature(std::string_view name, Vector3f pos);
+	Instance *GetNearestFeature(std::string_view name, Vector3f pos);
 
 	static ZoneID WorldToZonePos(Vector3f pos);
 	static Vector3f ZoneToWorldPos(ZoneID zone);

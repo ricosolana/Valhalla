@@ -12,7 +12,6 @@
 #include "DataReader.h"
 #include "ValhallaServer.h"
 #include "ZoneManager.h"
-#include "PrefabManager.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -32,11 +31,17 @@ concept TrivialSyncType =
 // This class is finally the smallest it could possibly be (I hope so).
 class ZDO {
     friend class IZDOManager;
-    friend class IPrefabManager;
     friend class Tests;
-    friend class IValhalla;
+    friend class IValhalla;   
 
 public:
+    enum class Type : uint8_t {
+        DEFAULT,
+        PRIORITIZED,
+        SOLID,
+        TERRAIN
+    };
+
     struct Rev {
         uint32_t m_dataRev = 0;
         uint32_t m_ownerRev = 0;
@@ -411,8 +416,11 @@ private:    Vector3f m_pos;                                 // 12 bytes
 public:     uint32_t m_dataRev {};                          // 4 bytes (PADDING)
 public:     ZDOID m_id;                                     // 8 bytes (encoded)
 private:    uint64_t m_encoded {};                          // 8 bytes (encoded<owner, ordinal, ownerRev>)
-private:    std::reference_wrapper<const Prefab> m_prefab;  // 8 bytes
-
+private:    HASH_t m_prefabHash {};                            // 4 bytes
+public:    Type m_type {};
+public:    bool m_distant {};
+public:    bool m_persistent {};
+                                                            // (4 bytes padding)
 
 
 private:
@@ -610,8 +618,8 @@ public:
         }
     }
 
-    const Prefab& GetPrefab() const {
-        return m_prefab;
+    HASH_t GetPrefabHash() const {
+        return m_prefabHash;
     }
 
     OWNER_t Owner() const {
@@ -659,14 +667,12 @@ public:
     }
 
     TICKS_t GetTimeCreated() const {
-        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
-            return TICKS_t(GetLong(HASH_TIME_CREATED));
-        return {};
+        return TICKS_t(0);
     }
 
     void SetTimeCreated(TICKS_t ticks) {
-        if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
-            Set(HASH_TIME_CREATED, ticks.count());
+        //if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+            //Set(HASH_TIME_CREATED, ticks.count());
     }
 
 
@@ -682,4 +688,12 @@ public:
 
     // Load ZDO from network packet
     void Deserialize(DataReader& pkg);
+};
+
+
+class Zone {
+public:
+    UNORDERED_SET_t<ZDO*> m_objects;
+    IZoneManager::Instance m_generatedFeature;
+    bool m_generated;
 };

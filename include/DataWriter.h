@@ -15,18 +15,50 @@ private:
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
         std::visit(VUtils::Traits::overload{
-            [this, count](std::reference_wrapper<BYTES_t> buf) { 
-                if (this->CheckOffset(count))
-                    buf.get().resize(this->m_pos + count);
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { 
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
+                
+                // It would be better if there was a vector<>::insert
+                //  that overwrites elements instead of needing to
+                //  allocate then copy in place
+
+                // A vector is dynamic
+                if (pos + count > buf.size())
+                    buf.resize(pos + count);
+
+                std::copy(buffer,
+                    buffer + count, 
+                    buf.data() + pos);
+
+                pos += count;
             },
-            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
+            [&](std::pair<BYTE_VIEW_t, size_t>& pair) { 
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                // An array is fixed (error if exceeded)
+                if (pos + count > buf.size())
+                    throw std::runtime_error("write exceeds array bounds");
+
+                std::copy(buffer,
+                    buffer + count, 
+                    buf.data() + pos);
+
+                pos += count;
+            },
+            [&](std::pair<std::FILE*, Type>& pair) {
+                // just write file
+                if (pair.second == Type::WRITE) {
+                    if (std::fwrite(buffer, count, 1, pair.first) != 1) {
+                        throw std::runtime_error("error while writing to file");
+                    }
+                } else {
+                    throw std::runtime_error("expected file writer got reader");
+                }
+
+            }
         }, this->m_data);
-
-        std::copy(buffer,
-                  buffer + count, 
-                  this->data() + this->m_pos);
-
-        this->m_pos += count;
     }
 
     // Write count bytes from the specified vector
@@ -74,14 +106,6 @@ public:
     //}
 
 public:
-    /*
-    DataReader ToReader() {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return DataReader(this->m_buf, this->m_pos);
-        else
-            return DataReader(this->m_buf.get(), this->m_pos);
-    }*/
-
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
     void SubWrite(F func) {

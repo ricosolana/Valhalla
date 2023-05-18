@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <WinSock2.h>
 #include <chrono>
 #include <iostream>
 #include <type_traits>
@@ -10,18 +9,21 @@
 #include <array>
 #include <filesystem>
 #include <span>
+#include <list>
 
 #include <ankerl/unordered_dense.h>
 
 #include "CompileSettings.h"
 
+// Dummy loggers
 #define LOGGER 0
-#define LOG_INFO
-#define LOG_WARNING
-#define LOG_ERROR
+#define LOG_INFO(logger, ...)
+#define LOG_WARNING(logger, ...)
+#define LOG_ERROR(logger, ...)
 
-namespace fs = std::filesystem;
-using namespace std::chrono;
+// Dummy webhook
+#define VH_DISPATCH_WEBHOOK
+
 using namespace std::chrono_literals;
 
 using BYTE_t = char; // Unsigned 8 bit
@@ -31,7 +33,7 @@ using PLAYER_ID_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 using BYTE_VIEW_t = std::span<BYTE_t>;
 
-using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
+using TICKS_t = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
 template<typename K, typename V, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
 using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, Hash, Equal>;
@@ -45,9 +47,9 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 // Runs a static periodic task later
 #define PERIODIC_LATER(__period, __initial, ...) {\
-    auto __now = steady_clock::now();\
+    auto __now = std::chrono::steady_clock::now();\
     static auto __last_run = __now + __initial;\
-    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    auto __elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(__now - __last_run);\
     if (__elapsed > __period) {\
         __last_run = __now;\
         { __VA_ARGS__ }\
@@ -58,7 +60,7 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 #define PERIODIC_NOW(__period, ...) {\
     auto __now = steady_clock::now();\
     static auto __last_run = __now;\
-    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    auto __elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(__now - __last_run);\
     if (__elapsed > __period) {\
         __last_run = __now;\
         { __VA_ARGS__ }\
@@ -67,11 +69,11 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 // Runs a static task later
 #define DISPATCH_LATER(__initial, ...) {\
-    auto __now = steady_clock::now();\
+    auto __now = std::chrono::steady_clock::now();\
     static auto __last_run = __now;\
-    auto __elapsed = duration_cast<milliseconds>(__now - __last_run);\
+    auto __elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(__now - __last_run);\
     if (__elapsed > __initial) {\
-        __last_run = steady_clock::time_point::max();\
+        __last_run = std::chrono::steady_clock::time_point::max();\
         { __VA_ARGS__ }\
     }\
 }

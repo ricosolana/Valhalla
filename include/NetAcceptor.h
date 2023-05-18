@@ -7,8 +7,8 @@
 #include "ValhallaServer.h"
 
 class NetAcceptor {
-#ifdef USE_STEAM_NETWORKING_SOCKETS
-
+#ifdef ESP_PLATFORM
+// esp sockets...
 #endif
 
 public:
@@ -23,5 +23,5 @@ public:
     // Poll for a ready and newly accepted connection
     //  Should be non-blocking
     //  Nullable
-    ISocket::Ptr Accept();
+    NetSocket* Accept();
 };

@@ -33,7 +33,7 @@ namespace VUtils::String {
     HASH_t GetStableHashCode(std::string_view s);
 
 
-
+/*
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable_v<T>
     std::string Join(std::string_view delimiter, T container) {
@@ -45,7 +45,7 @@ namespace VUtils::String {
         return result;
     }
     
-    int LevenshteinDistance(std::string_view s, std::string_view t);
+    int LevenshteinDistance(std::string_view s, std::string_view t);*/
 
     std::vector<std::string_view> Split(std::string_view s, std::string_view delim);
 

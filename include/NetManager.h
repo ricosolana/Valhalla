@@ -7,25 +7,15 @@
 #include "HashUtils.h"
 
 class INetManager {
-    friend class IModManager;
-
 private:
     std::unique_ptr<NetAcceptor> m_acceptor;
-
-    //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
-    //std::list<std::unique_ptr<Peer>> m_onlinePeers;
 
     std::vector<std::unique_ptr<Peer>> m_connectedPeers;
     std::vector<Peer*> m_onlinePeers;
 
-    std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
-    UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
-
 public:
-    //std::string m_password;
     std::array<char, 16> m_passwordHash;
     std::array<char, 16> m_passwordSalt;
-    //std::string m_salt;
 
 private:
     void SendDisconnect();

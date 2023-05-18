@@ -1,6 +1,7 @@
 #pragma once
 
 #include <thread>
+#include <mutex>
 
 #include "Task.h"
 #include "ServerSettings.h"
@@ -15,14 +16,6 @@ enum class UIMsgType : int32_t {
     TopLeft = 1,
     Center
 };
-
-/*
-// Will contain a bunch of logged player data, such as playtime, markers of position over time
-//  Maybe draw a graphical map to show position over time? sounds cool...
-//  Could consider using bStats to log misc information
-struct PlayerInfo_t {
-
-};*/
 
 
 
@@ -50,18 +43,11 @@ private:
     ServerSettings m_settings {};
     OWNER_t m_serverID {}; // const
 
-    steady_clock::time_point m_startTime; // const
-    steady_clock::time_point m_prevUpdate;
-    steady_clock::time_point m_nowUpdate;
+   std::chrono::steady_clock::time_point m_startTime; // const
+   std::chrono::steady_clock::time_point m_prevUpdate;
+   std::chrono::steady_clock::time_point m_nowUpdate;
 
     WorldTime m_worldTime {};
-
-    bool m_playerSleep {};
-    double m_playerSleepUntil {};
-
-    double m_worldTimeMultiplier = 1;
-
-    fs::file_time_type m_settingsLastTime {};
 
 private:
     void LoadFiles(bool reloading);
@@ -84,21 +70,20 @@ public:
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
     UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
-    //ankerl::unordered_dense::map<std::string, PlayerInfo_t, ankerl::unordered_dense::string_hash, std::equal_to<>> m_users;
 
     // Get the time since the server started
     // Updated once per frame
     auto Elapsed() {
         //return m_nowUpdate - m_startTime;
-        return nanoseconds((int64_t)(duration_cast<nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
+        return std::chrono::nanoseconds((int64_t)(duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
     }
 
     auto Nanos() {
-        return duration_cast<nanoseconds>(Elapsed());
+        return duration_cast<std::chrono::nanoseconds>(Elapsed());
     }
 
     auto DeltaNanos() {
-        return duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+        return duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
     }
 
 
@@ -110,7 +95,7 @@ public:
 
     // Get the time in seconds (Unity Time.time)
     float Time() {
-        return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
+        return float((double)Nanos().count() / (double)std::chrono::duration_cast<std::chrono::nanoseconds>(1s).count());
     }
 
     // Get the time in seconds since the last frame

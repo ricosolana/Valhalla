@@ -1,8 +1,5 @@
 #pragma once
 
-// TODO use a wrapper method?
-//#include <openssl/md5.h>
-
 #include "VUtils.h"
 #include "VUtilsString.h"
 #include "Method.h"
@@ -46,16 +43,12 @@ public:
     using Method = IMethod<Peer*>;
 
 private:
-    //static std::string SALT;
-    //static std::string PASSWORD;
-
-private:
     std::chrono::steady_clock::time_point m_lastPing;
 
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
-    ISocket* m_socket;
+    NetSocket* m_socket;
 
     // Immutable variables
     OWNER_t m_uuid;
@@ -88,7 +81,7 @@ private:
     }
 
 public:
-    Peer(ISocket* socket);
+    Peer(NetSocket* socket);
 
     Peer(const Peer& other) = delete; // copy
 
@@ -104,7 +97,7 @@ public:
     template<typename F>
     void Register(HASH_t hash, F func) {
         //VLOG(1) << hash;
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
     }
 
     template<typename F>
@@ -124,15 +117,8 @@ public:
 
         writer.Write(hash);
         writer.SubWrite(func);
-
-        // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
-            return;
         
         this->Send(std::move(bytes));
-
-        // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
     }
 
     template <typename... Types>
@@ -140,16 +126,7 @@ public:
         if (!m_socket->Connected())
             return;
 
-        // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
-            return;
-
-        //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
-
         this->Send(DataWriter::Serialize(hash, params...));
-
-        // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
     }
 
     template <typename... Types>
@@ -184,17 +161,12 @@ public:
 
     void Send(BYTES_t bytes) {
         assert(!bytes.empty());
-
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
-            this->m_socket->Send(std::move(bytes));
+        this->m_socket->Send(std::move(bytes));
     }
 
     std::optional<BYTES_t> Recv() {
         if (auto&& opt = this->m_socket->Recv()) {
-            auto&& bytes = *opt;
-            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
-                return opt;
-            }
+            return *opt;
         }
         return std::nullopt;
     }
@@ -283,9 +255,6 @@ public:
 
     template <typename... Types>
     void RouteView(ZDOID targetZDO, HASH_t hash, Types&&... params) {
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
-            return;
-
         RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
     }
 
