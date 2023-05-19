@@ -12,8 +12,8 @@ static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
 //std::string Peer::PASSWORD;
 //std::string Peer::SALT;
 
-Peer::Peer(NetSocket* socket)
-    : m_socket(socket), m_lastPing(std::chrono::steady_clock::now())
+Peer::Peer(NetSocket::Ptr socket)
+    : m_socket(std::move(socket)), m_lastPing(std::chrono::steady_clock::now())
 {
     this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
         //LOG(INFO) << "RPC_Disconnect";

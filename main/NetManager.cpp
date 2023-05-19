@@ -275,9 +275,10 @@ void INetManager::PostInit() {
 
 void INetManager::Update() {
     // Accept new connections
-    while (auto sock = m_acceptor->Accept()) {
-        auto&& ptr = std::make_unique<Peer>(sock);
-        Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
+    while (auto socket = m_acceptor->Accept()) {
+        m_connectedPeers.push_back(
+            std::make_unique<Peer>(std::move(socket))
+        );
     }
 
 

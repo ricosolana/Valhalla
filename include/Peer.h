@@ -48,7 +48,7 @@ private:
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
-    NetSocket* m_socket;
+    NetSocket::Ptr m_socket;
 
     // Immutable variables
     OWNER_t m_uuid;
@@ -81,7 +81,7 @@ private:
     }
 
 public:
-    Peer(NetSocket* socket);
+    Peer(NetSocket::Ptr socket);
 
     Peer(const Peer& other) = delete; // copy
 

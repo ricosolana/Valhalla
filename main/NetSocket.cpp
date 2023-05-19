@@ -10,45 +10,62 @@ NetSocket::~NetSocket() {
 }
 
 void NetSocket::Close(bool flush) {
-
+    if (m_connected) {
+        m_connected = false;
+        m_socket.close();
+    }
 }
 
 void NetSocket::Update() {}
 
 void NetSocket::Send(BYTES_t bytes) {
-    std::scoped_lock scoped(m_mux);
-    bool empty = this->m_send.empty();
-    this->m_send.push_back(std::move(bytes));
-    if (empty) {
-        WritePkgSize();
+    assert(!bytes.empty() && "Should try to avoid sending empty packets");
+
+    {
+        std::scoped_lock scoped(m_mux);
+        m_sendQueueSize += bytes.size();
+        // If not empty the writers are presumably active (and busy)
+        if (!this->m_send.empty()) {
+            this->m_send.push_back(std::move(bytes));
+            return;
+        }
     }
+
+    WritePkgSize(std::move(bytes));
 }
 
 std::optional<BYTES_t> NetSocket::Recv() { 
     std::scoped_lock scoped(m_mux);
-    auto&& begin = m_recv.begin();
-    if (begin != m_recv.end()) {
-        BYTES_t bytes = std::move(*begin);
-        m_recv.erase(begin);
+
+    if (!m_recv.empty()) {
+        BYTES_t bytes = std::move(m_recv.front());
+        m_recv.pop_front();
         return bytes;
     }
+
+    //auto&& begin = m_recv.begin();
+    //if (begin != m_recv.end()) {
+    //    BYTES_t bytes = std::move(*begin);
+    //    m_recv.erase(begin);
+    //    return bytes;
+    //}
     return std::nullopt; 
 }
 
 std::string NetSocket::GetHostName() const {
-    return "";
+    return "host";
 }
 
 std::string NetSocket::GetAddress() const {
-    return "";
+    return "addr";
 }
 
 bool NetSocket::Connected() const {
-    return false;
+    return m_connected;
 }
 
 unsigned int NetSocket::GetSendQueueSize() const {
-    return 0;
+    return m_sendQueueSize;
 }
 
 unsigned int NetSocket::GetPing() const {
@@ -99,50 +116,49 @@ void NetSocket::ReadPkg() {
 
 
 
-void NetSocket::WritePkgSize() {
-    BYTES_t bytes;
-    int left{};
-    {    
-        std::scoped_lock scoped(m_mux);
-        left = m_send.size();
-        if (left) {
-            bytes = std::move(m_send.front());
+void NetSocket::WritePkgSize(BYTES_t bytes) {
+    // https://stackoverflow.com/questions/8640393/move-capture-in-lambda
+    m_tempWriteOffset = bytes.size();
+    m_tempWriteBytes = std::move(bytes);
 
-            m_tempWriteOffset = bytes.size();
-            m_sendQueueSize -= m_tempWriteOffset;
-
-            m_send.erase(m_send.begin());
-        }
-    }
-
-    if (left) {
-        --left;
-        // https://stackoverflow.com/questions/8640393/move-capture-in-lambda
-        auto self(shared_from_this());
-        asio::async_write(m_socket,
-            asio::buffer(&m_tempWriteOffset, sizeof(m_tempWriteOffset)),
-            [this, self, bytes = std::move(bytes), left] (const std::error_code& e, size_t) mutable {
-                if (!e) {
-                    // Call writepkg
-                    WritePkg(std::move(bytes), left);
-                }
-                else {
-                    Close(false);
-                }
-            }
-        );
-    }
-}
-
-void NetSocket::WritePkg(BYTES_t bytes, bool empty) {
     auto self(shared_from_this());
     asio::async_write(m_socket,
-        asio::buffer(std::move(bytes)),
-        [this, self, empty](const std::error_code& e, size_t) {
+        asio::buffer(&m_tempWriteOffset, sizeof(m_tempWriteOffset)),
+        [this, self] (const std::error_code& e, size_t) mutable {
             if (!e) {
-                if (!empty) {
-                    WritePkgSize();
+                // Call writepkg
+                WritePkg();
+            }
+            else {
+                Close(false);
+            }
+        }
+    );
+}
+
+void NetSocket::WritePkg() {
+    auto self(shared_from_this());
+    asio::async_write(m_socket,
+        asio::buffer(m_tempWriteBytes),
+        [this, self](const std::error_code& e, size_t) {
+            if (!e) {
+                BYTES_t bytes;
+
+                {
+                    std::scoped_lock scoped(m_mux);
+                    m_sendQueueSize -= m_tempWriteOffset;
+                    if (!m_send.empty()) {
+                        assert(m_sendQueueSize);
+                        bytes = std::move(m_send.front());
+                        m_send.pop_front();
+                    }
+                    else {
+                        assert(!m_sendQueueSize);
+                        return;
+                    }
                 }
+
+                WritePkgSize(std::move(bytes));
             }
             else {
                 Close(false);

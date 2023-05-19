@@ -20,26 +20,17 @@ private:
     // https://github.com/PeriodicSeizures/Valhalla/blob/server/include/NetSocket.h
     asio::ip::tcp::socket m_socket;
 
-    std::mutex m_mux;
-    std::list<BYTES_t> m_recv;
-    std::list<BYTES_t> m_send;
+    std::mutex m_mux{};
+    std::list<BYTES_t> m_recv{};
+    std::list<BYTES_t> m_send{};
 
-    BYTES_t m_tempReadBytes;
+    BYTES_t m_tempReadBytes{};
+    uint32_t m_tempReadOffset{};
+    BYTES_t m_tempWriteBytes{};
     uint32_t m_tempWriteOffset{};
-    uint32_t m_tempReadOffset;
-    //uint32_t m_sendQueueSize{};
-    //uint32_t m_encoded{}; // Encoded {connected}
-    uint32_t m_sendQueueSize;
-    bool m_connected{};
 
-    //uint64_t m_encoded; // Encoded <connected, temp length, sendQueueSize>
-    //int32_t m_tempOffset{};
-    //bool m_connected{};
-    //uint32_t m_sendQueueSize{};
-
-
-    //int32_t m_tempWriteOffset;
-    //int32_t m_temp
+    std::atomic_uint32_t m_sendQueueSize{};
+    std::atomic_bool m_connected{};
 
 public:
     NetSocket(asio::ip::tcp::socket socket);
@@ -90,6 +81,6 @@ public:
 private:
     void ReadPkgSize();
     void ReadPkg();
-    void WritePkgSize();
-    void WritePkg(BYTES_t buf, bool empty);
+    void WritePkgSize(BYTES_t bytes);
+    void WritePkg();
 };
