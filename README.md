@@ -73,6 +73,21 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 5/19/2023 + TODO
+Valheim had an update 3 days ago that went completely over my head. This is likely the largest refactoring I've seen the game have so far (its also been a long time coming). The most notable changes are:
+ - Removing tacky console logs (they were likely used for debugging early on)
+ - Member renaming
+ - Using capitalized getters/setters
+ - Fixing typos (farewell `DiscoverLocationRespons`...) in strings and members
+ - Moving all ZDO hashes to a consolidated `ZDOVars` class (Valhalla did this since the beginning)
+ - Removing PGW version (I really don't know wtf this was used for) from world saving/loading, 
+ - ZDO saving is changed (from both ZDOMan and ZDO)
+ - Send ZDOs is changed
+ - Portals and Spawning is now in ZDOMan
+ - Something with terrain is modified in ZDOMan (regarding creation time)
+ - Portal linking seems changed
+ - I don't know how I never thought of doing this but ZDO members are now isolated. The devs are really making data oriented design changes to reduce memory usage. This includes all strings/vecs/quats/ints... and owner (probably because unloaded ZDOs are not owned by any player and therefore are a waste of space), and a new Connection type (I'm guessing for Portals). This should reduce memory consumption drastically. Instead of a pointer for every member type in ZDO (even when that member is empty), all is much more efficient now. Having ~7 maps per ZDO was very inefficient, and I tried to combat this by using a single map per ZDO with c++variants to store members. This worked fine but these changes the devs have made are tremendously better.
+
 ### 5/12/2023 + TODO
 It's been a while since the last release and todo list, so here's the progress and planned work so far:
  - Discord server integration and minimal ingame interactions
