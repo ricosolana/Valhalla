@@ -13,7 +13,7 @@
 ZDO::ZDO() {}
 
 ZDO::ZDO(ZDOID id, Vector3f pos)
-    : m_id(id), m_pos(pos),
+    : m_id(id), m_pos(pos)
 {
     //m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
@@ -25,12 +25,10 @@ ZDO::ZDO(ZDOID id, Vector3f pos)
 //}
 
 void ZDO::Save(DataWriter& pkg) const {
-    auto&& prefab = GetPrefab();
-
     pkg.Write(this->GetOwnerRevision());
     pkg.Write(this->m_dataRev);
 
-    pkg.Write(this->m_persistant);
+    pkg.Write(this->m_persistent);
 
     pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
     //pkg.Write(this->m_rev.m_ticksCreated.count());
@@ -126,9 +124,7 @@ ZoneID ZDO::GetZone() const {
 
 void ZDO::Serialize(DataWriter& pkg) const {
     static_assert(sizeof(VConstants::PGW) == 4);
-
-    auto&& prefab = GetPrefab();
-    
+        
     pkg.Write(m_persistent);
     pkg.Write(m_distant);
 
@@ -137,7 +133,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     pkg.Write(VConstants::PGW);
 
     pkg.Write(m_type); // sbyte
-    pkg.Write(prefabHash);
+    pkg.Write(m_prefabHash);
 
     pkg.Write(m_rotation);
 
@@ -171,7 +167,7 @@ void ZDO::Deserialize(DataReader& pkg) {
     //this->m_rev.m_ticksCreated = TICKS_t(pkg.Read<int64_t>());
     SetTimeCreated(TICKS_t(pkg.Read<int64_t>()));
     pkg.Read<int32_t>();    // m_pgwVersion
-    m_type = pkg.Read<Prefab::Type>(); // this->m_type
+    m_type = pkg.Read<Type>(); // this->m_type
     m_prefabHash = pkg.Read<HASH_t>();
     
     this->m_rotation = pkg.Read<Quaternion>();

@@ -318,13 +318,13 @@ void INetManager::Update() {
     }
 
 
-
+    /*
     // Pump steam callbacks
     if (VH_SETTINGS.serverDedicated)
         SteamGameServer_RunCallbacks();
     else
         SteamAPI_RunCallbacks();
-
+        */
     // doesnt seem to work
     //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();
 

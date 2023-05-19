@@ -368,7 +368,7 @@ private:
                 writer.SetPos(size_mark);
 
                 if constexpr (std::is_same_v<CountType, char16_t>) {
-                    auto&& vec = std::get<std::reference_wrapper<BYTES_t>>(writer.m_data).get();
+                    auto&& vec = std::get<std::pair<std::reference_wrapper<BYTES_t>, size_t>>(writer.m_data).first.get();
                     auto extraCount = VUtils::String::GetUTF8ByteCount(count) - 1;
                     if (extraCount) {
                         assert(count >= 0x80);
@@ -411,17 +411,19 @@ private:
 
 // 120 bytes:
 private:    UNORDERED_MAP_t<SHIFTHASH_t, Ord> m_members;    // 64 bytes (excluding internal alloc)
+//private:    std::vector<std::pair<SHIFTHASH_t, Ord>> m_members; // 32 bytes
 private:    Quaternion m_rotation;                          // 16 bytes
 private:    Vector3f m_pos;                                 // 12 bytes
 public:     uint32_t m_dataRev {};                          // 4 bytes (PADDING)
 public:     ZDOID m_id;                                     // 8 bytes (encoded)
 private:    uint64_t m_encoded {};                          // 8 bytes (encoded<owner, ordinal, ownerRev>)
 private:    HASH_t m_prefabHash {};                            // 4 bytes
-public:    Type m_type {};
-public:    bool m_distant {};
-public:    bool m_persistent {};
+public:     Type m_type {};
+public:     bool m_distant {};
+public:     bool m_persistent {};
                                                             // (4 bytes padding)
-
+      //static constexpr size_t se6z = sizeof(::ZDO);
+      //static constexpr size_t s1ez = sizeof(::ZDO::m_members);
 
 private:
     Ordinal GetOrdinalMask() const {
@@ -690,10 +692,36 @@ public:
     void Deserialize(DataReader& pkg);
 };
 
+namespace ankerl::unordered_dense {
+    /*
+    template <>
+    struct hash<std::unique_ptr<ZDO>> {
+        using is_avalanching = void;
 
+        auto operator()(const std::unique_ptr<ZDO>& zdo) const noexcept -> uint64_t {
+            //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
+            return ankerl::unordered_dense::hash<ZDOID>{}(zdo->ID())
+        }
+    };*/
+
+    struct zdo_hash {
+        using is_transparent = void; // enable heterogeneous overloads
+        using is_avalanching = void; // mark class as high quality avalanching hash
+
+        [[nodiscard]] auto operator()(ZDOID zdoid) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(zdoid);
+        }
+
+        [[nodiscard]] auto operator()(const ZDO& zdo) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(zdo.ID());
+        }
+    };
+}
+
+/*
 class Zone {
 public:
     UNORDERED_SET_t<ZDO*> m_objects;
-    IZoneManager::Instance m_generatedFeature;
-    bool m_generated;
-};
+    //IZoneManager::Instance m_generatedFeature = {nullptr, Vector3f::Zero()};
+    bool m_generated = false;
+};*/

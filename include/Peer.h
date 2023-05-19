@@ -106,7 +106,8 @@ public:
     }
 
 
-
+    // More efficient way to send a nested array packet to a peer
+    //  especially on embedded esp32
     template <typename Func, typename... Types>
     void SubInvoke(HASH_t hash, Func func) {
         if (!m_socket->Connected())

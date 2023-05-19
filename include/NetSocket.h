@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <queue>
+#include <asio.hpp>
 
 #include "VUtils.h"
 
@@ -12,6 +13,15 @@
 // - be thread safe
 // - be fully implemented
 class NetSocket {
+private:
+    // https://github.com/PeriodicSeizures/Valhalla/blob/server/include/NetSocket.h
+    //asio::ip::tcp::socket m_socket;
+
+    std::list<BYTES_t> m_recv;
+    std::list<BYTES_t> m_send;
+
+
+
 public:
     NetSocket();
     ~NetSocket();

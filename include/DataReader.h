@@ -10,7 +10,10 @@
 
 class DataReader : public DataStream {
 private:
-    bool ReadSomeBytes(BYTE_t* buffer, size_t count) {
+    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+        // TODO remove exceptions and use error codes instead 
+        //  maybe longjmps if only c objects are used (no complex destructors)
+        //  especially for esp32 performance and sanity
         std::visit(VUtils::Traits::overload{
             [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { 
                 auto&& buf = pair.first.get();
@@ -87,7 +90,7 @@ public:
 
         // use visit
         return std::visit(VUtils::Traits::overload{
-            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) -> T {
                 auto&& buf = pair.first.get();
                 auto&& pos = pair.second;
 
@@ -102,7 +105,7 @@ public:
 
                 return result;
             },
-            [&](std::pair<BYTE_VIEW_t, size_t>& pair) {
+            [&](std::pair<BYTE_VIEW_t, size_t>& pair) -> T {
                 auto&& buf = pair.first;
                 auto&& pos = pair.second;
 
@@ -117,7 +120,7 @@ public:
 
                 return result;
             },
-            [&](std::pair<std::FILE*, Type>& pair) {
+            [&](std::pair<std::FILE*, Type>& pair) -> T {
                 if constexpr (std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, std::string_view>) {
                     throw std::runtime_error("tried reading observer buffer from file");
                 }

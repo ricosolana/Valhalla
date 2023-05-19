@@ -53,9 +53,9 @@ public:
 public:
     size_t Position() const {
         return std::visit(VUtils::Traits::overload{
-            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &pair) { return pair.second; },
-            [](const std::pair<BYTE_VIEW_t, size_t> &pair) { return pair.second; },
-            [](const std::pair<std::FILE*, const char*> &pair) { 
+            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &pair) -> size_t { return pair.second; },
+            [](const std::pair<BYTE_VIEW_t, size_t> &pair) -> size_t { return pair.second; },
+            [](const std::pair<std::FILE*, Type> &pair) -> size_t {
                 auto pos = ftell(pair.first); 
                 if (pos == -1)
                     throw std::runtime_error("failed to get file pos");
@@ -86,7 +86,7 @@ public:
                     throw std::runtime_error("position exceeds array bounds");
                 pos = newpos; 
             },
-            [&](std::pair<std::FILE*, const char*> &pair) {
+            [&](std::pair<std::FILE*, Type> &pair) {
                 if (std::fseek(pair.first, newpos, SEEK_SET) != 0)
                     throw std::runtime_error("failed to fseek to pos");
             }
@@ -97,7 +97,7 @@ public:
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { return pair.first.get().size(); },
             [](const std::pair<BYTE_VIEW_t, size_t>& pair) { return pair.first.size(); },
-            [](const std::pair<std::FILE*, Type*>& pair) { 
+            [](const std::pair<std::FILE*, Type>& pair) { 
                 auto&& file = pair.first;
 
                 auto prev = ftell(file); 

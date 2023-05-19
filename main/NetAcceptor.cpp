@@ -9,5 +9,5 @@ void NetAcceptor::Listen() {
 }
 
 NetSocket* NetAcceptor::Accept() {
-
+	return nullptr;
 }

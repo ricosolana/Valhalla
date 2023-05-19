@@ -37,6 +37,7 @@ void IZDOManager::Init() {
 }
 
 void IZDOManager::Update() {
+	/*
 	PERIODIC_NOW(3min, {
 		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
 		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
@@ -44,36 +45,22 @@ void IZDOManager::Update() {
 			//<< ", stdev: " << GetStDevZDOMembers()
 			//<< ", empty: " << GetCountEmptyZDOs()
 			//<< ")";
-	});
+	});*/
 
 	auto&& peers = NetManager()->GetPeers();
 	
-#ifdef VH_OPTION_ENABLE_CAPTURE
-	// Occasionally release ZDOs
-	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
-		for (auto&& peer : peers) {
-			if (
-				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK
-				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) 
-				&& !peer->m_gatedPlaythrough)
-			AssignOrReleaseZDOs(*peer);
-		}
-	});
-#else // macro expansion screwed this up
 	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
 		for (auto&& peer : peers) {
 			AssignOrReleaseZDOs(*peer);
 		}
 	});
-#endif
 
 	// Send ZDOS:
 	PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
 		for (auto&& peer : peers) {
 			SendZDOs(*peer, false);
 		}
-	});
-	
+	});	
 
 	if (!m_destroySendList.empty()) {
 
@@ -90,20 +77,20 @@ void IZDOManager::Update() {
 
 
 bool IZDOManager::AddZDOToZone(ZDO& zdo) {
-	int num = SectorToIndex(zdo.GetZone());
-	if (num != -1) {
-		auto&& pair = m_objectsBySector[num].insert(&zdo);
+	//int num = SectorToIndex(zdo.GetZone());
+	//if (num != -1) {
+		auto&& pair = m_objectsByZone[zdo.GetZone()].insert(&zdo);
 		assert(pair.second);
-		return true;
-	}
-	return false;
+		//return true;
+	//}
+	return true;
 }
 
 void IZDOManager::RemoveFromSector(ZDO& zdo) {
-	int num = SectorToIndex(zdo.GetZone());
-	if (num != -1) {
-		m_objectsBySector[num].erase(&zdo);
-	}
+	//int num = SectorToIndex(zdo.GetZone());
+	//if (num != -1) {
+		m_objectsByZone[zdo.GetZone()].erase(&zdo);
+	//}
 }
 
 void IZDOManager::InvalidateZDOZone(ZDO& zdo) {
@@ -117,6 +104,7 @@ void IZDOManager::InvalidateZDOZone(ZDO& zdo) {
 
 
 void IZDOManager::Save(DataWriter& writer) {
+	/*
 	//pkg.Write(Valhalla()->ID());
 	writer.Write<OWNER_t>(0);
 	writer.Write(m_nextUid);
@@ -130,7 +118,7 @@ void IZDOManager::Save(DataWriter& writer) {
 
 		{
 			//NetPackage zdoPkg;
-			for (auto&& sectorObjects : m_objectsBySector) {
+			for (auto&& sectorObjects : m_objectsByZone) {
 				for (auto zdo : sectorObjects) {
 					if (zdo->m_prefab.get().AnyFlagsAbsent(Prefab::Flag::SESSIONED)) {
 						writer.Write(zdo->ID());
@@ -151,6 +139,7 @@ void IZDOManager::Save(DataWriter& writer) {
 	}
 
 	writer.Write<int32_t>(0);
+	*/
 }
 
 
@@ -181,10 +170,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		//}
 
 		if (modern || !VH_SETTINGS.worldModern) {
-			auto&& prefab = zdo->GetPrefab();
-
 			AddZDOToZone(*zdo.get());
-			m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
 
 			m_objectsByID[zdo->ID()] = std::move(zdo);
 		}
@@ -201,41 +187,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	if (purgeCount) {
 		LOG_INFO(LOGGER, "Purged {} old zdos", purgeCount);
 	}
-}
-
-ZDO& IZDOManager::Instantiate(Vector3f position) {
-	ZDOID zdoid = ZDOID(VH_ID, 0);
-	for(;;) {
-		zdoid.SetUID(m_nextUid++);
-		auto&& pair = m_objectsByID.insert({ zdoid, nullptr });
-		if (!pair.second) { // if insert failed, keep looping
-			continue;
-		}
-
-		auto&& zdo = pair.first->second;
-
-		zdo = std::make_unique<ZDO>(zdoid, position);
-		AddZDOToZone(*zdo.get());
-		return *zdo.get();
-	}
-}
-
-ZDO& IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
-	// See version #2
-	// ...returns a pair object whose first element is an iterator 
-	//		pointing either to the newly inserted element in the 
-	//		container or to the element whose key is equivalent...
-	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
-
-	auto&& pair = m_objectsByID.insert({ uid, nullptr });
-	if (!pair.second) // if insert failed, throw
-		throw std::runtime_error("zdo id already exists");
-
-	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
-
-	AddZDOToZone(*zdo.get());
-
-	return *zdo.get();
 }
 
 ZDO* IZDOManager::GetZDO(ZDOID id) {
@@ -310,8 +261,11 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 		peer->m_zdos.erase(zdoid);
 	}
 
-	m_erasedZDOs.insert(zdoid);
-	return m_objectsByID.erase(itr);
+	itr->second = nullptr;
+
+	//m_erasedZDOs.insert(zdoid);
+	//return m_objectsByID.erase(itr);
+	return ++itr;
 }
 
 void IZDOManager::EraseZDO(ZDOID zdoid) {
@@ -399,11 +353,11 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 		auto&& a = first.first.get();
 		auto&& b = second.first.get();
 
-		bool flag = a.GetPrefab().m_type == Prefab::Type::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
-		bool flag2 = b.GetPrefab().m_type == Prefab::Type::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
+		bool flag = a.m_type == ZDO::Type::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
+		bool flag2 = b.m_type == ZDO::Type::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
-			if ((flag && flag2) || a.GetPrefab().m_type == b.GetPrefab().m_type) {
+			if ((flag && flag2) || a.m_type == b.m_type) {
 				return first.second < second.second;
 			}
 			else
@@ -415,7 +369,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 				// but with the ZDOManager being bottlenecked by the expensive HeightmapBuilder
 				//	(if Heightmap is not ready, vegetation cannot be generated -> ZDOs cannot be sent)
 				//	this only applies to newly generated areas
-				return a.GetPrefab().m_type >= b.GetPrefab().m_type;
+				return a.m_type >= b.m_type;
 		}
 		else {
 			return flag;
@@ -426,7 +380,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 	if (result.size() < 10) {
 		for (auto&& zdo2 : distantZDOs) {
 			if (peer.IsOutdatedZDO(zdo2)) {
-				result.push_back({ zdo2, 0 });
+				result.push_back({ zdo2, 0.f });
 			}
 		}
 	}
@@ -436,7 +390,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 		auto&& zdoid = *itr;
 		auto zdo = GetZDO(zdoid);
 		if (zdo && peer.IsOutdatedZDO(*zdo)) {
-			result.push_front({ *zdo, 0 });
+			result.push_front({ *zdo, 0.f });
 			++itr;
 		}
 		else {
@@ -448,12 +402,12 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 }
 
 void IZDOManager::GetZDOs_Zone(ZoneID sector, std::list<std::reference_wrapper<ZDO>>& objects) {
-	auto&& obj = m_objectsBySector[sector];
+	auto&& obj = m_objectsByZone[sector];
 	std::transform(obj.begin(), obj.end(), std::back_inserter(objects), [](ZDO* zdo) { return std::ref(*zdo); });
 }
 
 void IZDOManager::GetZDOs_Distant(ZoneID sector, std::list<std::reference_wrapper<ZDO>>& objects) {
-	auto&& list = m_objectsBySector[sector];
+	auto&& list = m_objectsByZone[sector];
 
 	for (auto&& zdo : list) {
 		if (zdo->m_distant)
@@ -569,6 +523,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			auto&& pair = this->GetOrInstantiate(zdoid, pos);
 
+			// If zdo was alreayd destroyed, skip
+			if (!pair.first->second) {
+				m_destroySendList.push_back(zdoid);
+				continue;
+			}
+
 			auto&& zdo = *pair.first->second.get();
 			auto&& created = pair.second;
 
@@ -586,13 +546,6 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 							time 
 						};
 					}
-					continue;
-				}
-			}
-			else {
-				if (m_erasedZDOs.contains(zdoid)) {
-					m_destroySendList.push_back(zdoid);
-					m_objectsByID.erase(pair.first);
 					continue;
 				}
 			}
@@ -627,14 +580,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		auto&& pair = *itr;
 
 		auto&& zdo = *pair.second.get();
-		//auto&& prefab = zdo.GetPrefabHash();
-		
-		// Apparently peer does unclaim sessioned ZDOs (Player zdo had 0 owner)
-		//assert((prefab.FlagsAbsent(Prefab::Flag::SESSIONED) || zdo.HasOwner()) && "Session ZDOs should always be owned");
 
-		// Remove temporary ZDOs belonging to peers (like particles and attack anims, vfx, sfx...)
-		//if (prefab.FlagsPresent(Prefab::Flag::SESSIONED)
-			//&& (zdo.IsOwner(peer.m_uuid)))
 		if (!zdo.m_persistent
 			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeerByUUID(zdo.Owner())))
 		{

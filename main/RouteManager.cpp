@@ -17,7 +17,8 @@ IRouteManager* RouteManager() {
 void IRouteManager::OnNewPeer(Peer &peer) {
 	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
 		reader.Read<int64_t>(); // skip msgid
-		DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
+		//DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
+		reader.Read<OWNER_t>();
 		auto target = reader.Read<OWNER_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();

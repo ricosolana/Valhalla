@@ -10,6 +10,8 @@ if (ESP_PLATFORM)
 						#PRIV_REQUIRES unordered_dense
 	)
 else()
+	find_package(asio CONFIG REQUIRED)
+
 	add_executable (MyValhalla 
 		"NetSocket.cpp" "NetAcceptor.cpp" "WorldManager.cpp" "ZoneManager.cpp" "Peer.cpp" "NetManager.cpp" "Main.cpp"
 		"Quaternion.cpp" "RouteManager.cpp" "ValhallaServer.cpp" "Vector.cpp" "VUtils.cpp" 
@@ -23,6 +25,10 @@ else()
 		PUBLIC ../include
 		#PUBLIC ankerl::unordered_dense
 		${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
+	)
+
+	target_link_libraries(MyValhalla
+		PRIVATE asio::asio
 	)
 	
 	set_property(TARGET MyValhalla PROPERTY CXX_STANDARD 23)

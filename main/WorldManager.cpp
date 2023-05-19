@@ -80,9 +80,9 @@ void World::WriteFileMeta(const std::filesystem::path& root) {
 void World::WriteFileDB(const std::filesystem::path& root) {
 	std::filesystem::create_directories(root);
 
-	auto startTime(steady_clock::now());
+	auto startTime(std::chrono::steady_clock::now());
 	BYTES_t bytes = WorldManager()->SaveWorldDB();
-	auto finishTime = (steady_clock::now());
+	auto finishTime = (std::chrono::steady_clock::now());
 
 	auto path(root / (m_name + ".db"));
 
@@ -95,7 +95,7 @@ void World::WriteFileDB(const std::filesystem::path& root) {
 }
 
 void World::LoadFileDB(const std::filesystem::path& root) {
-	auto now(steady_clock::now());
+	auto now(std::chrono::steady_clock::now());
 
 	auto path(root / (m_name + ".db"));
 	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
@@ -123,8 +123,8 @@ void World::LoadFileDB(const std::filesystem::path& root) {
 			if (worldVersion >= 12)
 				ZoneManager()->Load(reader, worldVersion);
 
-			if (worldVersion >= 15)
-				RandomEventManager()->Load(reader, worldVersion);
+			//if (worldVersion >= 15)
+				//RandomEventManager()->Load(reader, worldVersion);
 
 			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
@@ -135,6 +135,8 @@ void World::LoadFileDB(const std::filesystem::path& root) {
 }
 
 void World::CopyCompressDB(const std::filesystem::path& root) {
+
+	/*
 	auto path = root / (m_name + ".db");
 
 	if (std::filesystem::exists(path)) {
@@ -157,7 +159,7 @@ void World::CopyCompressDB(const std::filesystem::path& root) {
 		else {
 			LOG_ERROR(LOGGER, "Failed to load old world for backup");
 		}
-	}
+	}*/
 }
 
 void World::WriteFiles(const std::filesystem::path& root) {
@@ -252,7 +254,7 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);	
-	RandomEventManager()->Save(writer);
+	//RandomEventManager()->Save(writer);
 	
 	return bytes;
 }

@@ -11,19 +11,17 @@ class IZDOManager {
 	friend class INetManager;
 	friend class IValhalla;
 	friend class ZDO;
+	friend class IZoneManager;
 
 private:
 	// Increments over the course of the game as ZDOs are created
 	uint32_t m_nextUid = 1;
 
 	// Responsible for managing ZDOs lifetimes
+	//	If a value is nullptr, the zdo is considered dead (this is to save memory)
 	UNORDERED_MAP_t<ZDOID, std::unique_ptr<ZDO>> m_objectsByID;
 
-	//UNORDERED_MAP_t<ZoneID, UNORDERED_SET_t<ZDO*>> m_objectsBySector;
-public: UNORDERED_MAP_t<ZoneID, std::unique_ptr<Zone>> m_zones;
-private:
-	// Primarily used in RPC_ZDOData
-	UNORDERED_SET_t<ZDOID> m_erasedZDOs;
+	UNORDERED_MAP_t<ZoneID, UNORDERED_SET_t<ZDO*>> m_objectsByZone;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
@@ -55,13 +53,12 @@ private:
 	void SendAllZDOs(Peer& peer);
 	bool SendZDOs(Peer& peer, bool flush);
 	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
-
-	ZDO& Instantiate(Vector3f position);
-	ZDO& Instantiate(ZDOID uid, Vector3f position);
-		
+			
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
 	//	Returns the ZDO and a bool if newly created
+	//	Returns key: null if the zdoid is none 
+	//	Returns key: null if the zdo is null (zdo is destroyed)
 	std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> GetOrInstantiate(ZDOID id, Vector3f def);
 
 	// Performs a coordinate to pitch conversion

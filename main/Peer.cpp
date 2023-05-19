@@ -40,7 +40,7 @@ Peer::Peer(NetSocket* socket)
                 //throw std::runtime_error("peer provided invalid length name");
             
             auto password = reader.Read<std::string_view>();
-
+            /*
             if (VH_SETTINGS.playerOnline) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
                 auto ticket = reader.Read<BYTE_VIEW_t>();
@@ -49,10 +49,9 @@ Peer::Peer(NetSocket* socket)
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
                         : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
                     return rpc->Close(ConnectionStatus::ErrorDisconnected);
-            }
+            }*/
 
-            if (
-                password != std::string_view(NetManager()->m_passwordHash))
+            if (password != std::string_view(NetManager()->m_passwordHash))
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected

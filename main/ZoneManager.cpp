@@ -72,7 +72,6 @@ bool IZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone) {
 
 bool IZoneManager::IsPeerNearby(ZoneID zone, OWNER_t uid) {
     auto&& peer = NetManager()->GetPeerByUUID(uid);
-    //assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer) return ZonesOverlap(zone, peer->m_pos);
     return false;
 }
@@ -88,37 +87,42 @@ void IZoneManager::SendGlobalKeys(Peer& peer) {
 }
 
 // private
-void IZoneManager::SendLocationIcons() {
-    BYTES_t bytes;
-    DataWriter writer(bytes);
-
-    auto&& icons = GetFeatureIcons();
-
-    writer.Write<int32_t>(icons.size());
-    for (auto&& instance : icons) {
-        writer.Write(instance.second);
-        writer.Write(std::string_view(instance.first.get().m_name));
-    }
-
-    RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
-}
-
-// private
 void IZoneManager::SendLocationIcons(Peer& peer) {
     LOG_INFO(LOGGER, "Sending location icons to {}", peer.m_name);
 
-    BYTES_t bytes;
-    DataWriter writer(bytes);
+    peer.SubInvoke(Hashes::Routed::S2C_UpdateIcons, [this](DataWriter& writer) {
+        const auto PRE = writer.Position();
 
-    auto&& icons = GetFeatureIcons();
+        uint32_t count = 0;
+        writer.Write(count); // dummy
+        for (auto&& pair : m_generatedFeatures) {
+            // If StartTemple
+            //  or Haldor is generated, then send
 
-    writer.Write<int32_t>(icons.size());
-    for (auto&& instance : icons) {
-        writer.Write(instance.second);
-        writer.Write(instance.first.get().m_name);
-    }
+            // I am knowingly doing string pointer comparisons here so shut up
+            if (pair.first == FEATURE_START_TEMPLE
+                || (pair.first == FEATURE_HALDOR && IsZoneGenerated(WorldToZonePos(pair.second))))
+            {
+                writer.Write(pair.second);
+                writer.Write(pair.first);
+                count++;
 
-    peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
+                // Only Haldor is extra, so could break early
+                //if (count == 2) {
+                    //break;
+                //}
+            }
+        }
+
+        const auto POST = writer.Position();
+        writer.SetPos(PRE);
+        writer.Write(count);
+        writer.SetPos(POST);
+    }); 
+}
+
+bool IZoneManager::IsZoneGenerated(ZoneID zone) {
+    return ZDOManager()->m_objectsByZone.contains(zone);
 }
 
 // public
@@ -144,7 +148,13 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    m_generatedZones = reader.Read<decltype(m_generatedZones)>();
+    // Skip generated zones
+    //reader.Read<std::list<ZoneID>>();
+    if (auto count = reader.Read<uint32_t>()) {
+        for (decltype(count) i = 0; i < count; i++) {
+            reader.Read<ZoneID>();
+        }
+    }    
 
     if (version >= 13) {
         const auto pgwVersion = reader.Read<int32_t>(); // 99
@@ -155,13 +165,6 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
         if (version >= 14) {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
-#ifndef ELPP_DISABLE_VERBOSE_LOGS
-            //VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
-            for (auto&& key : this->m_globalKeys) {
-                //VLOG(1) << " - " << key;
-            }
-#endif
-
             if (version >= 18) {
                 if (version >= 20) reader.Read<bool>();
 
@@ -171,86 +174,38 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     auto pos = reader.Read<Vector3f>();
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
 
-                    auto&& location = GetFeature(text);
-                    if (location) {
-                        m_generatedFeatures[WorldToZonePos(pos)] = 
-                            std::make_unique<Feature::Instance>(*location, pos);
-                    }
-                    else {
-                        LOG_ERROR(LOGGER, "Failed to find location {}", text);
-                    }
+                    if (text == FEATURE_START_TEMPLE)
+                        m_generatedFeatures.emplace_back(FEATURE_START_TEMPLE, pos);
+                    else if (text == FEATURE_HALDOR)
+                        m_generatedFeatures.emplace_back(FEATURE_HALDOR, pos);
+                    else if (text == FEATURE_EIKTHYR)
+                        m_generatedFeatures.emplace_back(FEATURE_EIKTHYR, pos);
+                    else if (text == FEATURE_ELDER)
+                        m_generatedFeatures.emplace_back(FEATURE_ELDER, pos);
+                    else if (text == FEATURE_BONEMASS)
+                        m_generatedFeatures.emplace_back(FEATURE_BONEMASS, pos);
+                    else if (text == FEATURE_MODER)
+                        m_generatedFeatures.emplace_back(FEATURE_MODER, pos);
+                    else if (text == FEATURE_YAGLUTH)
+                        m_generatedFeatures.emplace_back(FEATURE_YAGLUTH, pos);
+                    else if (text == FEATURE_QUEEN)
+                        m_generatedFeatures.emplace_back(FEATURE_QUEEN, pos);
                 }
 
                 LOG_INFO(LOGGER, "Loaded {} ZoneLocation instances", countLocations);
-                if (pgwVersion != VConstants::PGW) {
-                  m_generatedFeatures.clear();
-                }
             }
         }
     }
 }
 
-// private
-const IZoneManager::Feature* IZoneManager::GetFeature(HASH_t hash) {
-    auto&& find = m_featuresByHash.find(hash);
-    if (find != m_featuresByHash.end())
-        return &find->second.get();
-
-    return nullptr;
-}
-
-// private
-const IZoneManager::Feature* IZoneManager::GetFeature(std::string_view name) {
-    return GetFeature(VUtils::String::GetStableHashCode(name));
-}
-
-bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
-    for (auto&& pair : m_generatedFeatures) {
-        auto&& locationInstance = pair.second;
-        auto&& location = locationInstance->m_feature.get();
-
-        if ((location == loc 
-            || (!loc.m_group.empty() && loc.m_group == location.m_group)) 
-            && locationInstance->m_pos.Distance(p) < loc.m_minDistanceFromSimilar) // TODO use sqdist
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// public
-// TODO make this batch update every time a new location is added or whatever
-std::list<IZoneManager::Instance> IZoneManager::GetFeatureIcons() {
-    std::list<Instance> result;
-
-    for (auto&& pair : m_generatedFeatures) {
-        auto&& instance = pair.second;
-
-        auto&& feature = instance.first.get();
-        auto&& pos = instance.second;
-
-        auto zone = WorldToZonePos(pos);
-        if (feature.m_iconAlways || feature.m_iconPlaced) {
-            result.push_back(instance);
-        }
-    }
-
-    return result;
-}
-
 // public
 IZoneManager::Instance* IZoneManager::GetNearestFeature(std::string_view name, Vector3f point) {
-    HASH_t hash = VUtils::String::GetStableHashCode(name);    
     float closestDist = std::numeric_limits<float>::max();    
     IZoneManager::Instance* closest = nullptr;
 
-    for (auto&& pair : m_generatedFeatures) {
-        auto&& instance = pair.second;
-        auto&& feature = instance.first.get();
-
+    for (auto&& instance : m_generatedFeatures) {
         float dist = instance.second.SqDistance(point);
-        if (feature.m_hash == hash && dist < closestDist) {
+        if (name == instance.first && dist < closestDist) {
             closestDist = dist;
             closest = &instance;
         }

@@ -22,7 +22,7 @@
 #define LOG_ERROR(logger, ...)
 
 // Dummy webhook
-#define VH_DISPATCH_WEBHOOK
+#define VH_DISPATCH_WEBHOOK(...)
 
 using namespace std::chrono_literals;
 
@@ -58,7 +58,7 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 // Runs a static periodic task
 #define PERIODIC_NOW(__period, ...) {\
-    auto __now = steady_clock::now();\
+    auto __now = std::chrono::steady_clock::now();\
     static auto __last_run = __now;\
     auto __elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(__now - __last_run);\
     if (__elapsed > __period) {\

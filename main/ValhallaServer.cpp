@@ -11,7 +11,7 @@
 #include "RouteManager.h"
 #include "Hashes.h"
 
-quill::Logger *LOGGER = nullptr;
+//quill::Logger *LOGGER = nullptr;
 
 auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
 IValhalla* Valhalla() {
@@ -46,13 +46,8 @@ void IValhalla::Start() {
     m_serverTimeMultiplier = 1;
 
     ZDOManager()->Init();
-
     ZoneManager()->PostPrefabInit();
-
     WorldManager()->PostZoneInit();
-    ZoneManager()->PostGeoInit();
-
-    WorldManager()->PostInit();
     NetManager()->PostInit();
 
     m_prevUpdate = std::chrono::steady_clock::now();
@@ -62,8 +57,8 @@ void IValhalla::Start() {
 
     m_terminate = false;
     while (!m_terminate) {
-        auto now = steady_clock::now();
-        auto elapsed = duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
 
         m_prevUpdate = m_nowUpdate; // old state
         m_nowUpdate = now; // new state
@@ -99,8 +94,6 @@ void IValhalla::Start() {
         });
 
         std::this_thread::sleep_for(1ms);
-
-        FrameMark;
     }
 
     VH_DISPATCH_WEBHOOK("Server stopping");
@@ -111,7 +104,7 @@ void IValhalla::Start() {
     NetManager()->Uninit();
 
     WorldManager()->GetWorld()->WriteFiles();
-
+    /*
     {
         YAML::Node node(m_blacklist);
 
@@ -140,7 +133,7 @@ void IValhalla::Start() {
         emit << node;
 
         VUtils::Resource::WriteFile("admin.yml", emit.c_str());
-    }
+    }*/
 
     LOG_INFO(LOGGER, "Server was gracefully terminated");
 
@@ -153,14 +146,11 @@ void IValhalla::Start() {
 void IValhalla::Update() {
     // This is important to processing RPC remote invocations
     if (!NetManager()->GetPeers().empty()) {
-        m_worldTime += Delta() * m_worldTimeMultiplier;
+        m_worldTime += Delta();
     }
     
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
-
     NetManager()->Update();
     ZDOManager()->Update();
-    ZoneManager()->Update();
 }
 
 void IValhalla::PeriodUpdate() {

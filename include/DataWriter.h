@@ -83,9 +83,8 @@ private:
 
 public:
     explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
-    explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataWriter(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataWriter(BYTES_t& buf) : DataStream(buf) {}
+    explicit DataWriter(FILE* file, Type type) : DataStream(file, type) {}
 
     /*
     // Clears the underlying container and resets position
@@ -130,8 +129,128 @@ public:
     }
 
     template<typename T>
-        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
+        requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>)
     void Write(const T& in) {
+        Write(in.data(), in.size());
+        //Write<int32_t>(in.size());
+        //WriteSomeBytes(in.data(), in.size());
+    } // std::is_same_v<T, DataReader>
+
+    void Write(const DataReader& in) {
+
+        std::visit(VUtils::Traits::overload{
+            [this](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+                Write(pair.first.get());
+            },
+            [this](const std::pair<BYTE_VIEW_t, size_t>& pair) {
+                Write(pair.first);
+            },
+            [&](const std::pair<std::FILE*, Type>& pair) {
+                // Extend underlying structure accordingly if vector
+                auto&& src = pair.first;
+
+                /*
+                std::visit([](auto&& pair1) {
+                    using T = std::decay_t<decltype(pair1)>;
+
+                    if constexpr (!std::is_same_v<T, std::pair<std::FILE*, Type>>) {
+
+                        // Write the outer file to this vector
+                        // extend the vector
+                        BYTE_t* buf;
+
+                        constexpr bool is_bytes = std::is_same_v<T, std::pair<std::reference_wrapper<BYTES_t>, size_t>>;
+                        if constexpr (is_bytes) {
+                            buf = pair1.first.get();
+                        }
+
+                        auto&& buf = pair.first.get();
+                        auto&& pos = pair.second;
+
+                        uint32_t count = 0;
+                        if (std::fread(&count, sizeof(count), 1, src) != 1)
+                            throw std::runtime_error("failed to read count from file");
+
+                        if (pos + count > buf.size())
+                            buf.resize(pos + count);
+
+                        if (std::fread(buf.data(), count, 1, src) != 1)
+                            throw std::runtime_error("failed to read payload data from file");
+
+                        pos += count;
+
+                        if constexpr (!std::is_same_v<T, std::pair<std::reference_wrapper<BYTES_t>, size_t>>) {
+
+                        }
+                    }
+                    else {
+
+                    }                    
+                }, this->m_data);*/
+
+                std::visit(VUtils::Traits::overload{
+                    [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+                        // Write the outer file to this vector
+                        // extend the vector
+                        auto&& buf = pair.first.get();
+                        auto&& pos = pair.second;
+
+                        uint32_t count = 0;
+                        if (std::fread(&count, sizeof(count), 1, src) != 1)
+                            throw std::runtime_error("failed to read count from file");
+
+                        if (pos + count > buf.size())
+                            buf.resize(pos + count);
+
+                        if (std::fread(buf.data(), count, 1, src) != 1)
+                            throw std::runtime_error("failed to read payload data from file");
+
+                        pos += count;
+                    },
+                    [&](std::pair<BYTE_VIEW_t, size_t>& pair) {
+                        auto&& buf = pair.first;
+                        auto&& pos = pair.second;
+
+                        uint32_t count = 0;
+                        if (std::fread(&count, sizeof(count), 1, src) != 1)
+                            throw std::runtime_error("failed to read count from file");
+
+                        if (pos + count > buf.size())
+                            throw std::runtime_error("byte_view will be exceeded");
+
+                        if (std::fread(buf.data(), count, 1, src) != 1)
+                            throw std::runtime_error("failed to read payload data from file");
+
+                        pos += count;
+                    },
+                    [&](std::pair<std::FILE*, Type>& pair) {
+                        auto&& dst = pair.first;
+
+                        // read from in file then write to this->file (dst)
+
+                        uint32_t count = 0;
+                        if (std::fread(&count, sizeof(count), 1, src) != 1)
+                            throw std::runtime_error("failed to read count tf file");
+
+                        int ch = 0;
+                        while ((ch = std::getc(src)) != EOF) {
+                            if (std::putc(ch, dst) == EOF && std::ferror(dst) == 0) {
+                                throw std::runtime_error("error while writing to tf file");
+                            }
+                        }
+
+                        if (std::ferror(src) == 0) {
+                            throw std::runtime_error("error while reading from tf file");
+                        }
+                    }
+                }, this->m_data);
+
+                // Read from file
+
+                // then read the 
+            }
+        }, in.m_data);
+
         Write(in.data(), in.size());
         //Write<int32_t>(in.size());
         //WriteSomeBytes(in.data(), in.size());

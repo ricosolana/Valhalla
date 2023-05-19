@@ -41,7 +41,6 @@ namespace ankerl::unordered_dense {
             return ankerl::unordered_dense::hash<std::string_view>{}(str);
         }
     };
-
 } // namespace ankerl::unordered_dense
 
 /*
