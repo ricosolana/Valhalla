@@ -35,5 +35,8 @@ else()
 
 	add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
 	
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../data
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 	#target_compile_features(MyValhalla PRIVATE cxx_std_23)
 endif()

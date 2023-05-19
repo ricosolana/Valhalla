@@ -4,6 +4,10 @@ NetAcceptor::NetAcceptor() {
 
 }
 
+NetAcceptor::~NetAcceptor() {
+
+}
+
 void NetAcceptor::Listen() {
 
 }

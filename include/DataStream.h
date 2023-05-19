@@ -11,6 +11,53 @@
 
 class DataStream {
 public:
+    struct ScopedFile {
+        std::FILE* m_file;
+        
+        //ScopedFile() : m_file(nullptr) {}
+
+        ScopedFile(const char* name, const char* mode) {
+            m_file = std::fopen(name, mode);
+            if (!m_file)
+                throw std::runtime_error("failed to open scoped file");;
+        }
+
+        ScopedFile(const ScopedFile&) = delete;
+        ScopedFile(ScopedFile&& other) {
+            this->m_file = other.m_file;
+            other.m_file = nullptr;
+        }
+
+        void operator=(ScopedFile&& other) {
+            Close();
+            this->m_file = other.m_file;
+            other.m_file = nullptr;
+        }
+
+        operator FILE* () {
+            return this->m_file;
+        }
+
+        operator FILE* () const {
+            return this->m_file;
+        }
+
+        void Close() {
+            if (this->m_file) {
+                std::fclose(this->m_file);
+                this->m_file = nullptr;
+            }
+        }
+
+        ~ScopedFile() {
+            if (m_file) {
+                if (std::fclose(m_file) != 0) {
+                    //exit(0);
+                }
+            }
+        }
+    };
+
     enum class Type : uint8_t {
         READ,
         WRITE
@@ -19,7 +66,8 @@ public:
     std::variant<
         std::pair<std::reference_wrapper<BYTES_t>, size_t>, 
         std::pair<BYTE_VIEW_t, size_t>, 
-        std::pair<std::FILE*, Type>
+        //std::pair<std::FILE*, Type>
+        ScopedFile
     > m_data;
 
 protected:
@@ -48,15 +96,15 @@ protected:
 public:
     explicit DataStream(BYTE_VIEW_t buf) : m_data(std::make_pair(buf, 0ULL)) {}
     explicit DataStream(BYTES_t& buf) : m_data(std::pair(std::ref(buf), 0ULL)) {}
-    explicit DataStream(std::FILE* file, Type type) : m_data(std::make_pair(file, type)) {}
+    explicit DataStream(ScopedFile file) : m_data(std::move(file)) {}
 
 public:
     size_t Position() const {
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &pair) -> size_t { return pair.second; },
             [](const std::pair<BYTE_VIEW_t, size_t> &pair) -> size_t { return pair.second; },
-            [](const std::pair<std::FILE*, Type> &pair) -> size_t {
-                auto pos = ftell(pair.first); 
+            [](const ScopedFile &file) -> size_t {
+                auto pos = ftell(file);
                 if (pos == -1)
                     throw std::runtime_error("failed to get file pos");
 
@@ -86,8 +134,8 @@ public:
                     throw std::runtime_error("position exceeds array bounds");
                 pos = newpos; 
             },
-            [&](std::pair<std::FILE*, Type> &pair) {
-                if (std::fseek(pair.first, newpos, SEEK_SET) != 0)
+            [&](ScopedFile &file) {
+                if (std::fseek(file, newpos, SEEK_SET) != 0)
                     throw std::runtime_error("failed to fseek to pos");
             }
         }, this->m_data);
@@ -97,9 +145,7 @@ public:
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { return pair.first.get().size(); },
             [](const std::pair<BYTE_VIEW_t, size_t>& pair) { return pair.first.size(); },
-            [](const std::pair<std::FILE*, Type>& pair) { 
-                auto&& file = pair.first;
-
+            [](const ScopedFile& file) { 
                 auto prev = ftell(file); 
                 if (prev == -1)
                     throw std::runtime_error("failed to set file pos (0)");

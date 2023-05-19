@@ -74,7 +74,7 @@ private:
 public:
     explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataReader(FILE* file, Type type) : DataStream(file, type) {}
+    explicit DataReader(std::string_view path) : DataStream(ScopedFile(path.data(), "rb")) {}
 
 public:
     template<typename T>

@@ -17,9 +17,9 @@
 
 // Dummy loggers
 #define LOGGER 0
-#define LOG_INFO(logger, ...)
-#define LOG_WARNING(logger, ...)
-#define LOG_ERROR(logger, ...)
+#define LOG_INFO(logger, ...) {printf("[INFO] "); printf(__VA_ARGS__); printf("\n");}
+#define LOG_WARNING(logger, ...) {printf("[WARNING] "); printf(__VA_ARGS__); printf("\n");}
+#define LOG_ERROR(logger, ...) {printf("[ERROR] "); printf(__VA_ARGS__); printf("\n");}
 
 // Dummy webhook
 #define VH_DISPATCH_WEBHOOK(...)

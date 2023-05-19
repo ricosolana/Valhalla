@@ -14,7 +14,7 @@ void NetSocket::Update() {}
 
 void NetSocket::Send(BYTES_t) {}
 
-std::optional<BYTES_t> Recv() { return std::nullopt; }
+std::optional<BYTES_t> NetSocket::Recv() { return std::nullopt; }
 
 std::string NetSocket::GetHostName() const {
     return "";

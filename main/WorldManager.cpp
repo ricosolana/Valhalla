@@ -87,7 +87,7 @@ void World::WriteFileDB(const std::filesystem::path& root) {
 	auto path(root / (m_name + ".db"));
 
 	if (VUtils::Resource::WriteFile(path, bytes)) {
-		LOG_INFO(LOGGER, "World save to {} took {}s", path.string(), duration_cast<milliseconds>(finishTime - startTime).count());
+		LOG_INFO(LOGGER, "World save to {} took {}s", path.string(), std::chrono::duration_cast<std::chrono::milliseconds>(finishTime - startTime).count());
 	}
 	else {
 		LOG_WARNING(LOGGER, "Failed to save world to {}", path.string());
@@ -126,7 +126,7 @@ void World::LoadFileDB(const std::filesystem::path& root) {
 			//if (worldVersion >= 15)
 				//RandomEventManager()->Load(reader, worldVersion);
 
-			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
+			LOG_INFO(LOGGER, "World loading took {}s", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
 			LOG_ERROR(LOGGER, "Failed to load world: {}", e.what());

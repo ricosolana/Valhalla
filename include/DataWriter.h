@@ -84,7 +84,7 @@ private:
 public:
     explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t& buf) : DataStream(buf) {}
-    explicit DataWriter(FILE* file, Type type) : DataStream(file, type) {}
+    explicit DataWriter(std::string_view path) : DataStream(ScopedFile(path.data(), "wb")) {}
 
     /*
     // Clears the underlying container and resets position
@@ -148,9 +148,7 @@ public:
             [&](const std::pair<std::FILE*, Type>& pair) {
                 // Extend underlying structure accordingly if vector
                 auto&& src = pair.first;
-
-                /*
-                std::visit([](auto&& pair1) {
+                /*std::visit([](auto&& pair1) {
                     using T = std::decay_t<decltype(pair1)>;
 
                     if constexpr (!std::is_same_v<T, std::pair<std::FILE*, Type>>) {
@@ -188,6 +186,8 @@ public:
                     }                    
                 }, this->m_data);*/
 
+
+
                 std::visit(VUtils::Traits::overload{
                     [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
                         // Write the outer file to this vector
@@ -202,7 +202,7 @@ public:
                         if (pos + count > buf.size())
                             buf.resize(pos + count);
 
-                        if (std::fread(buf.data(), count, 1, src) != 1)
+                        if (std::fread(buf.data() + pos, count, 1, src) != 1)
                             throw std::runtime_error("failed to read payload data from file");
 
                         pos += count;
@@ -218,7 +218,7 @@ public:
                         if (pos + count > buf.size())
                             throw std::runtime_error("byte_view will be exceeded");
 
-                        if (std::fread(buf.data(), count, 1, src) != 1)
+                        if (std::fread(buf.data() + pos, count, 1, src) != 1)
                             throw std::runtime_error("failed to read payload data from file");
 
                         pos += count;
@@ -251,7 +251,7 @@ public:
             }
         }, in.m_data);
 
-        Write(in.data(), in.size());
+        //Write(in.data(), in.size());
         //Write<int32_t>(in.size());
         //WriteSomeBytes(in.data(), in.size());
     }
