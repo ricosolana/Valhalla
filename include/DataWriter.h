@@ -47,16 +47,11 @@ private:
 
                 pos += count;
             },
-            [&](std::pair<std::FILE*, Type>& pair) {
+            [&](std::FILE* file) {
                 // just write file
-                if (pair.second == Type::WRITE) {
-                    if (std::fwrite(buffer, count, 1, pair.first) != 1) {
-                        throw std::runtime_error("error while writing to file");
-                    }
-                } else {
-                    throw std::runtime_error("expected file writer got reader");
+                if (std::fwrite(buffer, count, 1, file) != 1) {
+                    throw std::runtime_error("error while writing to file");
                 }
-
             }
         }, this->m_data);
     }
@@ -84,7 +79,8 @@ private:
 public:
     explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t& buf) : DataStream(buf) {}
-    explicit DataWriter(std::string_view path) : DataStream(ScopedFile(path.data(), "wb")) {}
+    //explicit DataWriter(std::string_view path) : DataStream(ScopedFile(path.data(), "wb")) {}
+    explicit DataWriter(std::FILE* file) : DataStream(file) {}
 
     /*
     // Clears the underlying container and resets position
@@ -145,9 +141,9 @@ public:
             [this](const std::pair<BYTE_VIEW_t, size_t>& pair) {
                 Write(pair.first);
             },
-            [&](const std::pair<std::FILE*, Type>& pair) {
+            [&](std::FILE* src) {
                 // Extend underlying structure accordingly if vector
-                auto&& src = pair.first;
+                
                 /*std::visit([](auto&& pair1) {
                     using T = std::decay_t<decltype(pair1)>;
 
@@ -223,9 +219,7 @@ public:
 
                         pos += count;
                     },
-                    [&](std::pair<std::FILE*, Type>& pair) {
-                        auto&& dst = pair.first;
-
+                    [&](std::FILE* dst) {
                         // read from in file then write to this->file (dst)
 
                         uint32_t count = 0;

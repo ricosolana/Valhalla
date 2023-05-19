@@ -11,6 +11,7 @@
 
 class DataStream {
 public:
+    /*
     struct ScopedFile {
         std::FILE* m_file;
         
@@ -61,13 +62,13 @@ public:
     enum class Type : uint8_t {
         READ,
         WRITE
-    };
+    };*/
 
     std::variant<
         std::pair<std::reference_wrapper<BYTES_t>, size_t>, 
         std::pair<BYTE_VIEW_t, size_t>, 
         //std::pair<std::FILE*, Type>
-        ScopedFile
+        std::FILE*
     > m_data;
 
 protected:
@@ -93,17 +94,17 @@ protected:
             throw std::runtime_error("offset from position exceeds length");
     }
 
-public:
+protected:
     explicit DataStream(BYTE_VIEW_t buf) : m_data(std::make_pair(buf, 0ULL)) {}
     explicit DataStream(BYTES_t& buf) : m_data(std::pair(std::ref(buf), 0ULL)) {}
-    explicit DataStream(ScopedFile file) : m_data(std::move(file)) {}
+    explicit DataStream(std::FILE* file) : m_data(file) {}
 
 public:
     size_t Position() const {
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &pair) -> size_t { return pair.second; },
             [](const std::pair<BYTE_VIEW_t, size_t> &pair) -> size_t { return pair.second; },
-            [](const ScopedFile &file) -> size_t {
+            [](std::FILE* file) -> size_t {
                 auto pos = ftell(file);
                 if (pos == -1)
                     throw std::runtime_error("failed to get file pos");
@@ -134,7 +135,7 @@ public:
                     throw std::runtime_error("position exceeds array bounds");
                 pos = newpos; 
             },
-            [&](ScopedFile &file) {
+            [&](std::FILE *file) {
                 if (std::fseek(file, newpos, SEEK_SET) != 0)
                     throw std::runtime_error("failed to fseek to pos");
             }
@@ -145,7 +146,7 @@ public:
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) { return pair.first.get().size(); },
             [](const std::pair<BYTE_VIEW_t, size_t>& pair) { return pair.first.size(); },
-            [](const ScopedFile& file) { 
+            [](std::FILE* file) { 
                 auto prev = ftell(file); 
                 if (prev == -1)
                     throw std::runtime_error("failed to set file pos (0)");

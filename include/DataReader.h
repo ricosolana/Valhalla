@@ -43,14 +43,10 @@ private:
 
                 pos += count;
             },
-            [&](std::pair<std::FILE*, Type>& pair) {
+            [&](std::FILE*& file) {
                 // just write file
-                if (pair.second == Type::READ) {
-                    if (std::fread(buffer, count, 1, pair.first) != 1) {
-                        throw std::runtime_error("error while reading from file");
-                    }
-                } else {
-                    throw std::runtime_error("expected file reader got writer");
+                if (std::fread(buffer, count, 1, file) != 1) {
+                    throw std::runtime_error("error while reading from file");
                 }
             }
         }, this->m_data);
@@ -74,7 +70,8 @@ private:
 public:
     explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataReader(std::string_view path) : DataStream(ScopedFile(path.data(), "rb")) {}
+    //explicit DataReader(std::string_view path) : DataStream(ScopedFile(path.data(), "rb")) {}
+    explicit DataReader(std::FILE* file) : DataStream(file) {}
 
 public:
     template<typename T>
@@ -120,7 +117,7 @@ public:
 
                 return result;
             },
-            [&](std::pair<std::FILE*, Type>& pair) -> T {
+            [&](std::FILE*& file) -> T {
                 if constexpr (std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, std::string_view>) {
                     throw std::runtime_error("tried reading observer buffer from file");
                 }
@@ -128,15 +125,10 @@ public:
                     T result{};
                     result.resize(count);
                     // just write file
-                    if (pair.second == Type::READ) {
-                        if (std::fread(result.data(), count, 1, pair.first) != 1) {
-                            throw std::runtime_error("error while reading string from file");
-                        }
-                        return result;
+                    if (std::fread(result.data(), count, 1, file) != 1) {
+                        throw std::runtime_error("error while reading string from file");
                     }
-                    else {
-                        throw std::runtime_error("expected file reader got writer");
-                    }
+                    return result;
                 }
             }
         }, this->m_data);
