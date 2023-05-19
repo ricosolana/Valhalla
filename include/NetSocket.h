@@ -12,18 +12,37 @@
 // - return instantly without blocking
 // - be thread safe
 // - be fully implemented
-class NetSocket {
+class NetSocket : public std::enable_shared_from_this<NetSocket> {
+public:
+    using Ptr = std::shared_ptr<NetSocket>;
+
 private:
     // https://github.com/PeriodicSeizures/Valhalla/blob/server/include/NetSocket.h
-    //asio::ip::tcp::socket m_socket;
+    asio::ip::tcp::socket m_socket;
 
+    std::mutex m_mux;
     std::list<BYTES_t> m_recv;
     std::list<BYTES_t> m_send;
 
+    BYTES_t m_tempReadBytes;
+    uint32_t m_tempWriteOffset{};
+    uint32_t m_tempReadOffset;
+    //uint32_t m_sendQueueSize{};
+    //uint32_t m_encoded{}; // Encoded {connected}
+    uint32_t m_sendQueueSize;
+    bool m_connected{};
 
+    //uint64_t m_encoded; // Encoded <connected, temp length, sendQueueSize>
+    //int32_t m_tempOffset{};
+    //bool m_connected{};
+    //uint32_t m_sendQueueSize{};
+
+
+    //int32_t m_tempWriteOffset;
+    //int32_t m_temp
 
 public:
-    NetSocket();
+    NetSocket(asio::ip::tcp::socket socket);
     ~NetSocket();
 
 
@@ -67,4 +86,10 @@ public:
     unsigned int GetSendQueueSize() const;
 
     unsigned int GetPing() const;
+
+private:
+    void ReadPkgSize();
+    void ReadPkg();
+    void WritePkgSize();
+    void WritePkg(BYTES_t buf, bool empty);
 };
