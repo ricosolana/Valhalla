@@ -413,6 +413,12 @@ public:     ZDOID m_id;                                     // 8 bytes (encoded)
 private:    uint64_t m_encoded {};                          // 8 bytes (encoded<owner, ordinal, ownerRev>)
 private:    std::reference_wrapper<const Prefab> m_prefab;  // 8 bytes
 
+       /*
+private:    static ankerl::unordered_dense::segmented_map<ZDOID, 
+    UNORDERED_MAP_t<SHIFTHASH_t, 
+        std::variant<OWNER_t char*
+        */
+
 
 
 private:
@@ -474,7 +480,9 @@ public:
 
     // Load ZDO from disk
     //  Returns whether this ZDO is modern
-    bool Load(DataReader& reader, int32_t version);
+    bool Load31Pre(DataReader& reader, int32_t version);
+
+    bool LoadPost31(DataReader& reader, int32_t version);
 
 
 

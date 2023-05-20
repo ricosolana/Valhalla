@@ -129,6 +129,7 @@ struct Vector2 {
 
 using Vector2f = Vector2<float>;
 using Vector2i = Vector2<int32_t>;
+using Vector2s = Vector2<int16_t>;
 
 std::ostream& operator<<(std::ostream& st, Vector2f vec);
 std::ostream& operator<<(std::ostream& st, Vector2i vec);

@@ -271,7 +271,7 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
 // public
 void IZoneManager::Save(DataWriter& pkg) {
     pkg.Write(m_generatedZones);
-    pkg.Write(VConstants::PGW);
+    pkg.Write<int32_t>(0); // PGW
     pkg.Write(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
     pkg.Write(true);
@@ -291,23 +291,16 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
     m_generatedZones = reader.Read<decltype(m_generatedZones)>();
 
     if (version >= 13) {
-        const auto pgwVersion = reader.Read<int32_t>(); // 99
+        reader.Read<int32_t>(); // PGW
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
-        if (pgwVersion != VConstants::PGW)
-            LOG_WARNING(LOGGER, "Loading unsupported pgw version");
+        //if (pgwVersion != VConstants::PGW)
+            //LOG_WARNING(LOGGER, "Loading unsupported pgw version");
 
         if (version >= 14) {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
-#ifndef ELPP_DISABLE_VERBOSE_LOGS
-            //VLOG(1) << "global keys: " << (this->m_globalKeys.empty() ? "none" : "");
-            for (auto&& key : this->m_globalKeys) {
-                //VLOG(1) << " - " << key;
-            }
-#endif
-
             if (version >= 18) {
-                if (version >= 20) reader.Read<bool>();
+                if (version >= 20) reader.Read<bool>(); // locationsGenerated
 
                 const auto countLocations = reader.Read<int32_t>();
                 for (int i = 0; i < countLocations; i++) {
@@ -326,9 +319,14 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                 }
 
                 LOG_INFO(LOGGER, "Loaded {} ZoneLocation instances", countLocations);
-                if (pgwVersion != VConstants::PGW) {
-                  m_generatedFeatures.clear();
+
+                if (locationVersion != VConstants::LOCATION) {
+
                 }
+
+                //if (pgwVersion != VConstants::PGW) {
+                  //m_generatedFeatures.clear();
+                //}
             }
         }
     }

@@ -53,9 +53,9 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.215.2";
+    static const char* GAME = "0.216.5";
 
-    static constexpr uint32_t NETWORK = 1;
+    static constexpr uint32_t NETWORK = 2;
 
     // worldgenerator
     static constexpr int32_t WORLD = 29;
@@ -64,7 +64,7 @@ namespace VConstants {
     static constexpr int32_t WORLDGEN = 2;
 
     // Used in ZDO
-    static constexpr int32_t PGW = 99;
+    //static constexpr int32_t PGW = 99;
 
     // Used in ZoneSystem Feature-Prefabs
     static constexpr int32_t LOCATION = 26;

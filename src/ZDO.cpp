@@ -107,6 +107,28 @@ bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
     return modern;
 }
 
+bool ZDO::LoadPost31(DataReader& reader, int32_t version) {
+    // The (premature) optimizations I tried to 
+    //  implement never went anywhere because
+    //  I never knew what I was doing and 
+    //  it seemed a bit like overkill
+    // -------------------
+    // Some stuff I tried implementing:
+    //  Shrinking ZDOs as much as possible
+    //      encoding ZDOID to save memory (over time I made changes below:)
+    //          i64, i32 (plus i32 for padding) = 128 bits
+    //          i64, i32 packed = 92 bits
+    //          finally u64 by taking advantage of AssemblyUtils GenerateUID algorithm specs regarding summed/set unioned integer range
+    //      Valheim now includes encoded ZDOIDs, but differently:
+    //          One consolidated ZDOID-UserID array for ZDOs to reference
+    //          Returns a u16 index for ZDOs to refer to
+    //          ZDOs still have a u32 member
+    //      This makes little difference in C++ because padding will prevent memory preservation
+    //          I do not know whether C# class structures contain padding or what, so I cant comment on this
+
+
+    this->m_id = reader.Read<
+}
 
 
 
