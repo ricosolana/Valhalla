@@ -48,6 +48,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(dpp CONFIG REQUIRED)
 find_package(quill CONFIG REQUIRED)
+find_package(asio CONFIG REQUIRED)
 
 #CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
 CPMAddPackage(
@@ -147,6 +148,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE dpp::dpp
     PRIVATE quill::quill
     PRIVATE unordered_dense
+    PRIVATE asio::asio
 )
 
 

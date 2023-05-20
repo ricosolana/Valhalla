@@ -3,6 +3,7 @@
 #include <memory>
 #include <thread>
 #include <steam_gameserver.h>
+#include <asio.hpp>
 
 #include "NetSocket.h"
 #include "ValhallaServer.h"
@@ -83,4 +84,32 @@ private:
     //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersConnected, SteamServersConnected_t);
     //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
     //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
+};
+
+#include "ValhallaServer.h"
+
+class AcceptorSteamProxyTCP {
+    asio::io_context m_ctx;
+    std::thread m_thread;
+    asio::ip::tcp::acceptor m_acceptor;
+
+    std::list<NetSocket::Ptr> m_acceptedQueue;
+    std::mutex m_mux;
+
+public:
+    NetAcceptor();
+
+    ~NetAcceptor();
+
+    // Start listening for connections
+    //  Call this once
+    void Listen();
+
+    // Poll for a ready and newly accepted connection
+    //  Call this per frame
+    //  Returns nullptr if no connection is waiting
+    NetSocket::Ptr Accept();
+
+private:
+    void DoAccept();
 };

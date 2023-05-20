@@ -316,6 +316,7 @@ void IValhalla::LoadFiles(bool reloading) {
         // If the server has just started or theres no config error
         if (!reloading || !fileError) {
             auto&& server = node["server"];
+            auto&& proxy = node["proxy"];
             auto&& player = node["players"];
             auto&& world = node["world"];
             auto&& zdo = node["zdos"];
@@ -329,6 +330,10 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
+
+            a(m_settings.proxyEnabled, proxy, "enabled", false, nullptr, reloading);
+            a(m_settings.proxyAddress, proxy, "address", "", nullptr, reloading);
+            a(m_settings.proxyPort, proxy, "port", 0, nullptr, reloading);
 
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });

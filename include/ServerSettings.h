@@ -86,6 +86,10 @@ struct ServerSettings {
     std::string     serverPassword;
     bool            serverPublic;
     bool            serverDedicated;
+    
+    bool            proxyEnabled; // make this server a proxy that forwards connections
+    std::string     proxyAddress;
+    uint16_t        proxyPort;
 
     bool            playerWhitelist;
     unsigned int    playerMax;
