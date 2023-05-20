@@ -60,7 +60,7 @@ void ZDO::Save(DataWriter& pkg) const {
     _TryWriteType<BYTES_t,          char16_t>(pkg);
 }
 
-bool ZDO::Load(DataReader& pkg, int32_t worldVersion) {
+bool ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     this->SetOwnerRevision(pkg.Read<uint32_t>());   // ownerRev; TODO redundant?
     this->m_dataRev = pkg.Read<uint32_t>();   // dataRev; TODO redundant?
     pkg.Read<bool>();       // persistent
@@ -125,9 +125,48 @@ bool ZDO::LoadPost31(DataReader& reader, int32_t version) {
     //          ZDOs still have a u32 member
     //      This makes little difference in C++ because padding will prevent memory preservation
     //          I do not know whether C# class structures contain padding or what, so I cant comment on this
+    //          nvm actually I see '[StructLayout(0, Pack = 1)]'
 
+    // Set the self incremental id (ZDOID is no longer saved to disk)
+    this->m_id.SetUID(ZDOManager()->m_nextUid++);
+    auto mask = reader.Read<uint16_t>();
+    reader.Read<Vector2s>(); // lol why is sector still being saved, kinda redudant given all the other insane optimizations...
+    this->m_pos = reader.Read<Vector3f>();
+    m_prefab = PrefabManager()->RequirePrefab(reader.Read<HASH_t>());
+    if (mask & 4096) this->m_rotation = reader.Read<Quaternion>();
+    //if ((mask & 255) == 0) return;
+    
+    if (mask & 1) {
+        reader.Read<ZDOConnector::Type>();
+        auto hash = reader.Read<HASH_t>();
+    }
 
-    this->m_id = reader.Read<
+    if (mask & 2) {
+        auto count = reader.Read<uint8_t>();
+    }
+}
+
+// maybe rename unpack?
+ZDOConnector::Type ZDO::LoadFrom(DataReader& reader, int32_t version) {
+    // Set the self incremental id (ZDOID is no longer saved to disk)
+    this->m_id.SetUID(ZDOManager()->m_nextUid++);
+
+    auto mask = reader.Read<uint16_t>();
+    if (version)
+        reader.Read<Vector2s>(); // lol why is sector still being saved, kinda redudant given all the other insane optimizations...
+    this->m_pos = reader.Read<Vector3f>();
+    m_prefab = PrefabManager()->RequirePrefab(reader.Read<HASH_t>());
+    if (mask & 4096) this->m_rotation = reader.Read<Quaternion>();
+    //if ((mask & 255) == 0) return;
+
+    if (mask & 1) {
+        reader.Read<ZDOConnector::Type>();
+        auto hash = reader.Read<HASH_t>();
+    }
+
+    if (mask & 2) {
+        auto count = reader.Read<uint8_t>();
+    }
 }
 
 

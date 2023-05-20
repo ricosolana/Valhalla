@@ -13,6 +13,7 @@
 #include "ValhallaServer.h"
 #include "ZoneManager.h"
 #include "PrefabManager.h"
+#include "ZDOConnector.h"
 
 template<typename T>
 concept TrivialSyncType = 
@@ -483,6 +484,11 @@ public:
     bool Load31Pre(DataReader& reader, int32_t version);
 
     bool LoadPost31(DataReader& reader, int32_t version);
+
+    // Initializes the ZDO 
+    //  If version is non zero, the ZDO is unpacked according to file spec
+    //  Otherwise ZDO is loaded unpacked according to network spec
+    ZDOConnector::Type LoadFrom(DataReader& reader, int32_t version);
 
 
 

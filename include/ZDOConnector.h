@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-class ZDOConenctor {
+class ZDOConnector {
 public:
-	public enum ConnectionType : uint8_t {
+	enum class Type : uint8_t {
 		None = 0,
 		Portal = 1,
 		SyncTransform = 2,
