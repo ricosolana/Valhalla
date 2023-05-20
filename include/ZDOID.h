@@ -1,15 +1,51 @@
 #pragma once
 
+#include <cstdint>
+#include <stdexcept>
 #include "VUtils.h"
 
 class ZDOID {
-    static constexpr uint64_t ENCODED_OWNER_MASK =  0b1000000000000000000000000000000011111111111111111111111111111111ULL;
+#if INTPTR_MAX == INT32_MAX
+    // Only 2 players are allowed on a server according to this spec
+    //static constexpr uint16_t ENCODED_ID_MASK = 0b0111111111111111;
+    static constexpr int LEADING_ID_BITS = 15;
+    using T = uint16_t;
+#elif INTPTR_MAX == INT64_MAX
+    //static constexpr uint32_t ENCODED_ID_MASK = 0b00000011111111111111111111111111;
+    static constexpr int LEADING_ID_BITS = 28;
+    using T = uint32_t;
+#else
+#error "Environment not 32 or 64-bit."
+#endif
 
+    //static ankerl::unordered_dense::segmented_vector<OWNER_t> INDEXED_UIDS;
+    static std::array<int64_t, (1 << (sizeof(T) * 8 - LEADING_ID_BITS)) - 1> INDEXED_IDS;
+    
 public:
     static const ZDOID NONE;
 
-public:
-    uint64_t m_encoded {};
+private:
+    //std::remove_cvref_t<decltype(ENCODED_ID_MASK)> m_encoded;
+
+    T m_encoded;
+
+private:
+    uint16_t GetIndex(int64_t owner) {
+        if (!owner)
+            return 0;
+
+        for (int i = 1; i < INDEXED_IDS.size(); i++) {
+            if (!INDEXED_IDS[i]) {
+                INDEXED_IDS[i] = owner;
+                return i;
+            }
+            else if (INDEXED_IDS[i] == owner) {
+                return i;
+            }
+        }
+
+        std::unreachable();
+    }
 
 public:
     constexpr ZDOID() = default;
@@ -19,11 +55,13 @@ public:
         this->SetUID(uid);
     }
 
-    bool operator==(const ZDOID& other) const {
+    constexpr ZDOID(const ZDOID& other) = default;
+
+    bool operator==(ZDOID other) const {
         return this->m_encoded == other.m_encoded;
     }
 
-    bool operator!=(const ZDOID& other) const {
+    bool operator!=(ZDOID other) const {
         return !(*this == other);
     }
 
@@ -32,13 +70,14 @@ public:
         return static_cast<bool>(this->m_encoded);
     }
 
-    constexpr OWNER_t GetOwner() const {
-        if (std::make_signed_t<decltype(this->m_encoded)>(this->m_encoded) < 0)
-            return static_cast<OWNER_t>((this->m_encoded & ENCODED_OWNER_MASK) | ~ENCODED_OWNER_MASK);
-        return static_cast<OWNER_t>(this->m_encoded & ENCODED_OWNER_MASK);
+    OWNER_t GetOwner() const {
+        re
+        //return INDEXED_UIDS[m_encoded >> LEADING_ID_BITS];
     }
 
     constexpr void SetOwner(OWNER_t owner) {
+        
+
         if (!(owner >= -2147483647LL && owner <= 4294967293LL)) {
             // Ensure filler complement bits are all the same (full negative or full positive)
             //if ((owner < 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) != ~ENCODED_OWNER_MASK)

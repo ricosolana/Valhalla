@@ -164,6 +164,8 @@ ZDOConnector::Type ZDO::LoadFrom(DataReader& reader, int32_t version) {
         auto hash = reader.Read<HASH_t>();
     }
 
+    //static constexpr auto sizess = sizeof(std::bitset<24>)
+
     if (mask & 2) {
         auto count = reader.Read<uint8_t>();
     }

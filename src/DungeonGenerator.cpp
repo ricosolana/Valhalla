@@ -760,11 +760,7 @@ const Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state
 			return roomData2;
 	}
 
-	// TODO this seems sus
-	//	weighted search usually failed if this point is ever reach, signaling bad values or bad algo
-	// throw or exit() if this point is reached
-	throw std::runtime_error("unexpected");
-	//return tempRooms[0];
+	std::unreachable();
 }
 
 const Room* DungeonGenerator::GetRandomWeightedRoom(VUtils::Random::State& state, const RoomConnectionInstance* connection) {
@@ -802,7 +798,9 @@ const Room& DungeonGenerator::GetWeightedRoom(VUtils::Random::State& state, cons
 			return roomData2;
 	}
 
-	throw std::runtime_error("unexpected");
+	std::unreachable();
+
+	//throw std::runtime_error("unexpected");
 	//return *m_tempRooms[0];
 }
 

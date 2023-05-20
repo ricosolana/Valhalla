@@ -140,11 +140,16 @@ namespace VUtils::Random {
         signed:
         [-2,147,483,647, +4,294,967,293]
     */
+
+    // Generates a Random UID
+    //  This function is non-conforming to the Valheim spec
+    //  It returns a positive number for conformance with the strict 32-bit OWNER_t
     OWNER_t GenerateUID() {
         State state;
         return (int64_t) state.Range(
             std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()) +
             (int64_t) state.Range(1, std::numeric_limits<int32_t>::max());
+        //return state.Range(1, std::numeric_limits<int32_t>::max());
     }
 
     std::string GenerateAlphaNum(unsigned int count) {
