@@ -84,8 +84,6 @@ namespace VUtils {
 
 
 
-
-
         template <typename T, typename = void>
         struct is_iterable : std::false_type {};
 
@@ -146,5 +144,43 @@ namespace VUtils {
 
         template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
         template<class... Ts> overload(Ts...)->overload<Ts...>; // line not needed in C++20...
+
+
+
+        // Get the index of a type in a tuple
+        template <class T, class Tuple>
+        struct tuple_index;
+        
+        // Get the index of a type in a tuple
+        template <class T, class... Types>
+        struct tuple_index<T, std::tuple<T, Types...>> {
+            static const std::size_t value = 0;
+        };
+        
+        // Get the index of a type in a tuple
+        template <class T, class U, class... Types>
+        struct tuple_index<T, std::tuple<U, Types...>> {
+            static const std::size_t value = 1 + tuple_index<T, std::tuple<Types...>>::value;
+        };
+
+
+
+        // https://stackoverflow.com/questions/25958259/how-do-i-find-out-if-a-tuple-contains-a-type
+        template <typename T, typename Tuple>
+        struct tuple_has_type;
+
+        template <typename T, typename... Us>
+        struct tuple_has_type<T, std::tuple<Us...>> : std::disjunction<std::is_same<T, Us>...> {}; 
+
+
+
+        template <typename Tuple>
+        struct tuple_to_variant;
+
+        template <typename... Ts>
+        struct tuple_to_variant<std::tuple<Ts...>>
+        {
+            using type = std::variant<typename Ts...>;
+        };
     }
 }

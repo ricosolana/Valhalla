@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "VUtils.h"
+
 class ZDOConnector {
 public:
 	enum class Type : uint8_t {
@@ -13,6 +15,6 @@ public:
 	};
 
 public:
-	ConnectionType m_type;
+	Type m_type;
 	HASH_t m_hash;
 };

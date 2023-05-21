@@ -5,28 +5,29 @@
 #include "VUtils.h"
 
 class ZDOID {
+    friend struct ankerl::unordered_dense::hash<ZDOID>;
+
 #if INTPTR_MAX == INT32_MAX
-    // Only 2 players are allowed on a server according to this spec
-    //static constexpr uint16_t ENCODED_ID_MASK = 0b0111111111111111;
+    // 2 players per session
+    // 32,768 ZDOs
     static constexpr int LEADING_ID_BITS = 15;
     using T = uint16_t;
 #elif INTPTR_MAX == INT64_MAX
-    //static constexpr uint32_t ENCODED_ID_MASK = 0b00000011111111111111111111111111;
+    // 16 players per session
+    // ~268 million ZDOs
     static constexpr int LEADING_ID_BITS = 28;
     using T = uint32_t;
 #else
-#error "Environment not 32 or 64-bit."
+#error "Unable to detect 32-bit or 64-bit system"
 #endif
 
     //static ankerl::unordered_dense::segmented_vector<OWNER_t> INDEXED_UIDS;
-    static std::array<int64_t, (1 << (sizeof(T) * 8 - LEADING_ID_BITS)) - 1> INDEXED_IDS;
+    static std::array<int64_t, (1 << (sizeof(T) * 8 - LEADING_ID_BITS)) - 1> INDEXED_USERS;
     
 public:
     static const ZDOID NONE;
 
 private:
-    //std::remove_cvref_t<decltype(ENCODED_ID_MASK)> m_encoded;
-
     T m_encoded;
 
 private:
@@ -34,12 +35,12 @@ private:
         if (!owner)
             return 0;
 
-        for (int i = 1; i < INDEXED_IDS.size(); i++) {
-            if (!INDEXED_IDS[i]) {
-                INDEXED_IDS[i] = owner;
+        for (int i = 1; i < INDEXED_USERS.size(); i++) {
+            if (!INDEXED_USERS[i]) {
+                INDEXED_USERS[i] = owner;
                 return i;
             }
-            else if (INDEXED_IDS[i] == owner) {
+            else if (INDEXED_USERS[i] == owner) {
                 return i;
             }
         }
@@ -71,19 +72,11 @@ public:
     }
 
     OWNER_t GetOwner() const {
-        re
-        //return INDEXED_UIDS[m_encoded >> LEADING_ID_BITS];
+        return INDEXED_USERS[m_encoded >> LEADING_ID_BITS];
     }
 
     constexpr void SetOwner(OWNER_t owner) {
-        
 
-        if (!(owner >= -2147483647LL && owner <= 4294967293LL)) {
-            // Ensure filler complement bits are all the same (full negative or full positive)
-            //if ((owner < 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) != ~ENCODED_OWNER_MASK)
-                //|| (owner >= 0 && (static_cast<uint64_t>(owner) & ~ENCODED_OWNER_MASK) == ~ENCODED_OWNER_MASK))
-            throw std::runtime_error("OWNER_t unexpected encoding (client Utils.GenerateUID() differs?)");
-        }
 
         // Set owner bits to 0
         this->m_encoded &= ~ENCODED_OWNER_MASK;

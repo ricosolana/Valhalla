@@ -10,7 +10,7 @@
 #include "Quaternion.h"
 #include "Prefab.h"
 
-using ZoneID = Vector2i;
+using ZoneID = Vector2s;
 
 class Heightmap;
 class Peer;

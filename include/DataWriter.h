@@ -156,6 +156,15 @@ public:
         Write(in.y);
     }
 
+    // Writes a Vector2s
+    //  4 bytes total are written:
+    //  int16_t: x (2 bytes)
+    //  int16_t: y (2 bytes)
+    void Write(Vector2s in) {
+        Write(in.x);
+        Write(in.y);
+    }
+
     // Writes a Quaternion
     //  16 bytes total are written:
     //  float: x (4 bytes)

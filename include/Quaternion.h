@@ -20,6 +20,7 @@ struct Quaternion {
 
     float LengthSquared() const;
     Vector3f xyz() const;
+    Vector3f EulerAngles() const;
 
     Vector3f operator*(Vector3f other) const;
     Quaternion operator*(Quaternion rhs) const;
@@ -36,6 +37,11 @@ struct Quaternion {
         return LookRotation(forward, Vector3f::Up());
     }
     static Quaternion Inverse(Quaternion rotation);
+
+    static Vector3f Internal_ToEulerRad(Quaternion rotation);
+
+    static Vector3f NormalizeAngles(Vector3f angles);
+    static float NormalizeAngle(float angle);
 };
 
 std::ostream& operator<<(std::ostream& st, Quaternion quat);

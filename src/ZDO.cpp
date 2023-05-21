@@ -12,6 +12,11 @@
 
 
 
+decltype(ZDO::ZDO_TYPES) ZDO::ZDO_TYPES;
+decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
+decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
+//decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
+
 ZDO::ZDO() 
     : m_prefab(Prefab::NONE) {
 
@@ -23,59 +28,64 @@ ZDO::ZDO(ZDOID id, Vector3f pos)
     //m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
 }
 
-//ZDO::ZDO(const ZDOID& id, const Vector3f& pos, HASH_t prefab)
-//    : m_id(id), m_pos(pos), m_prefab(PrefabManager()->RequirePrefab(prefab))
-//{
-//    m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
-//}
-
 void ZDO::Save(DataWriter& pkg) const {
     auto&& prefab = GetPrefab();
 
-    pkg.Write(this->GetOwnerRevision());
-    pkg.Write(this->m_dataRev);
-
-    pkg.Write(prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED));
-
-    pkg.Write<OWNER_t>(0); //pkg.Write(this->m_owner);
-    //pkg.Write(this->m_rev.m_ticksCreated.count());
-    pkg.Write(GetTimeCreated().count());
-    pkg.Write(VConstants::PGW);
-
-    pkg.Write(prefab.m_type);
-    pkg.Write(prefab.AllFlagsPresent(Prefab::Flag::DISTANT));
+    pkg.Write(this->m_flags);
+    pkg.Write(this->GetZone());
+    pkg.Write(this->Position());
     pkg.Write(prefab.m_hash);
 
-    pkg.Write(this->GetZone());              //pkg.Write(IZoneManager::WorldToZonePos(this->m_pos));
-    pkg.Write(this->m_pos);
-    pkg.Write(this->m_rotation);
-    
-    // Save uses 2 bytes for counts (char in c# is 2 bytes..)
-    _TryWriteType<float,            char16_t>(pkg);
-    _TryWriteType<Vector3f,         char16_t>(pkg);
-    _TryWriteType<Quaternion,       char16_t>(pkg);
-    _TryWriteType<int32_t,          char16_t>(pkg);
-    _TryWriteType<int64_t,          char16_t>(pkg);
-    _TryWriteType<std::string,      char16_t>(pkg);
-    _TryWriteType<BYTES_t,          char16_t>(pkg);
+    //if (m_flags & (1 << std::to_underlying(Flags::Data_Rotation)))
+    if (_HasData(Data::Marker_Rotation))
+        pkg.Write(this->m_rotation);
+        
+    // TODO add connector
+    if (_HasData(Data::Member_Connection)) {
+        auto&& find = ZDO_CONNECTORS.find(ID());
+        if (find != ZDO_CONNECTORS.end()) {
+            auto&& connector = find->second;
+            pkg.Write(connector.m_type);
+            pkg.Write(connector.m_hash);
+        }
+        else {
+            LOG_WARNING(LOGGER, "zdo connector flag is set but no connector found");
+        }
+    }        
+    assert(false);
+
+    if (_HasAnyFlags(Flag::Member_Float | Flag::Member_Vec3 | Flag::Member_Quat | Flag::Member_Int | Flag::Member_Long | Flag::Member_String | Flag::Member_ByteArray)) {
+        auto&& find = ZDO_TYPES.find(ID());
+        if (find != ZDO_TYPES.end()) {
+            auto&& types = find->second;
+
+            _TryWriteType<float>(pkg, types);
+            _TryWriteType<Vector3f>(pkg, types);
+            _TryWriteType<Quaternion>(pkg, types);
+            _TryWriteType<int32_t>(pkg, types);
+            _TryWriteType<int64_t>(pkg, types);
+            _TryWriteType<std::string>(pkg, types);
+            _TryWriteType<BYTES_t>(pkg, types);
+        }
+    }
 }
 
-bool ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
-    this->SetOwnerRevision(pkg.Read<uint32_t>());   // ownerRev; TODO redundant?
-    this->m_dataRev = pkg.Read<uint32_t>();   // dataRev; TODO redundant?
-    pkg.Read<bool>();       // persistent
-    pkg.Read<OWNER_t>();    // owner
+void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+    pkg.Read<uint32_t>();   // owner rev
+    pkg.Read<uint32_t>();   // data rev
+    m_flags |= pkg.Read<bool>() ? Flag::Marker_Persistent : (Flag)0;       // persistent
+    pkg.Read<int64_t>();    // owner
     auto timeCreated = TICKS_t(pkg.Read<int64_t>());
-    bool modern = pkg.Read<int32_t>() == VConstants::PGW;
+    pkg.Read<int32_t>();    // pgw
 
     if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        pkg.Read<Prefab::Type>(); // m_type
+        m_flags |= pkg.Read<uint8_t>() << Data::Marker_Type1; // m_type
 
     if (worldVersion >= 22)
-        pkg.Read<bool>(); // m_distant
+        m_flags |= pkg.Read<bool>() ? Flag::Marker_Distant : (Flag)0;   // m_distant
 
     if (worldVersion < 13) {
         pkg.Read<char16_t>();
@@ -85,9 +95,9 @@ bool ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 17)
         this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
 
-    pkg.Read<ZoneID>(); // m_sector
+    pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3f>();
-    this->m_rotation = pkg.Read<Quaternion>();
+    this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
 
     _TryReadType<float,         char16_t>(pkg);
     _TryReadType<Vector3f,      char16_t>(pkg);
@@ -103,11 +113,9 @@ bool ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
 
     SetTimeCreated(timeCreated);
-
-    return modern;
 }
 
-bool ZDO::LoadPost31(DataReader& reader, int32_t version) {
+ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     // The (premature) optimizations I tried to 
     //  implement never went anywhere because
     //  I never knew what I was doing and 
@@ -128,47 +136,43 @@ bool ZDO::LoadPost31(DataReader& reader, int32_t version) {
     //          nvm actually I see '[StructLayout(0, Pack = 1)]'
 
     // Set the self incremental id (ZDOID is no longer saved to disk)
-    this->m_id.SetUID(ZDOManager()->m_nextUid++);
-    auto mask = reader.Read<uint16_t>();
-    reader.Read<Vector2s>(); // lol why is sector still being saved, kinda redudant given all the other insane optimizations...
-    this->m_pos = reader.Read<Vector3f>();
-    m_prefab = PrefabManager()->RequirePrefab(reader.Read<HASH_t>());
-    if (mask & 4096) this->m_rotation = reader.Read<Quaternion>();
-    //if ((mask & 255) == 0) return;
-    
-    if (mask & 1) {
-        reader.Read<ZDOConnector::Type>();
-        auto hash = reader.Read<HASH_t>();
-    }
-
-    if (mask & 2) {
-        auto count = reader.Read<uint8_t>();
-    }
-}
-
-// maybe rename unpack?
-ZDOConnector::Type ZDO::LoadFrom(DataReader& reader, int32_t version) {
-    // Set the self incremental id (ZDOID is no longer saved to disk)
-    this->m_id.SetUID(ZDOManager()->m_nextUid++);
-
-    auto mask = reader.Read<uint16_t>();
     if (version)
-        reader.Read<Vector2s>(); // lol why is sector still being saved, kinda redudant given all the other insane optimizations...
-    this->m_pos = reader.Read<Vector3f>();
+        this->m_id.SetUID(ZDOManager()->m_nextUid++);
+
+    this->m_flags = reader.Read<uint16_t>();
+
+    if (version) {
+        reader.Read<Vector2s>(); // redundant
+        this->m_pos = reader.Read<Vector3f>();
+    }
+
+    // TODO load prefab once
     m_prefab = PrefabManager()->RequirePrefab(reader.Read<HASH_t>());
-    if (mask & 4096) this->m_rotation = reader.Read<Quaternion>();
-    //if ((mask & 255) == 0) return;
 
-    if (mask & 1) {
-        reader.Read<ZDOConnector::Type>();
-        auto hash = reader.Read<HASH_t>();
+    if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
+
+    ZDOConnector::Type type = ZDOConnector::Type::None;
+    if (_HasData(Data::Member_Connection)) {
+        type = reader.Read<ZDOConnector::Type>();
+        if (version) {
+            auto hash = reader.Read<HASH_t>();
+        }
+        else {
+            auto zdoid = reader.Read<ZDOID>();
+            // set connection
+            type &= ~ZDOConnector::Type::Target;
+        }        
     }
 
-    //static constexpr auto sizess = sizeof(std::bitset<24>)
+    if (_HasData(Data::Member_Float)) _TryReadType<float, uint8_t>(reader);
+    if (_HasData(Data::Member_Vec3)) _TryReadType<Vector3f, uint8_t>(reader);
+    if (_HasData(Data::Member_Quat)) _TryReadType<Quaternion, uint8_t>(reader);
+    if (_HasData(Data::Member_Int)) _TryReadType<int32_t, uint8_t>(reader);
+    if (_HasData(Data::Member_Long)) _TryReadType<int64_t, uint8_t>(reader);
+    if (_HasData(Data::Member_String)) _TryReadType<std::string, uint8_t>(reader);
+    if (_HasData(Data::Member_ByteArray)) _TryReadType<BYTES_t, uint8_t>(reader);
 
-    if (mask & 2) {
-        auto count = reader.Read<uint8_t>();
-    }
+    return type;
 }
 
 
@@ -191,8 +195,6 @@ ZoneID ZDO::GetZone() const {
 }
 
 void ZDO::Serialize(DataWriter& pkg) const {
-    static_assert(sizeof(VConstants::PGW) == 4);
-
     auto&& prefab = GetPrefab();
     
     pkg.Write(prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED));
@@ -229,6 +231,7 @@ void ZDO::Serialize(DataWriter& pkg) const {
     _TryWriteType<BYTES_t,          uint8_t>(pkg);
 }
 
+// TODO use Unpack instead with 0 version
 void ZDO::Deserialize(DataReader& pkg) {
     static_assert(sizeof(Prefab::Type) == 1);
     

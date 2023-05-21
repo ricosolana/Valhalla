@@ -98,8 +98,9 @@ public:
 
         const auto count = Read<int32_t>();
 
-        Iterable out;
+        Iterable out{};
 
+        // TODO why is this here? should always reserve regardless
         if constexpr (std::is_same_v<Type, std::string>)
             out.reserve(count);
 
@@ -144,10 +145,10 @@ public:
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
-        return Vector3f{ a, b, c };
+        return Vector3f(a, b, c);
     }
 
-    // Reads a Vector2i
+    // Reads a Vector2s
     //  8 bytes total are read:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
@@ -157,6 +158,20 @@ public:
         auto b(Read<int32_t>());
         return Vector2i(a, b);
     }
+
+
+    // Reads a Vector2s
+    //  4 bytes total are read:
+    //  int16_t: x (2 bytes)
+    //  int16_t: y (2 bytes)
+    template<typename T> requires std::same_as<T, Vector2s>
+    decltype(auto) Read() {
+        auto a(Read<int16_t>());
+        auto b(Read<int16_t>());
+        return Vector2s(a, b);
+    }
+
+
 
     // Reads a Quaternion
     //  16 bytes total are read:

@@ -22,7 +22,7 @@ void IZDOManager::Init() {
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
 			// TODO constraint check
-			reader.AsEach([this](const ZDOID& zdoid) {
+			reader.AsEach([this](ZDOID zdoid) {
 				EraseZDO(zdoid);
 			});
 		}
@@ -160,57 +160,49 @@ void IZDOManager::Save(DataWriter& writer) {
 
 
 void IZDOManager::Load(DataReader& reader, int version) {
-	reader.Read<OWNER_t>(); // skip server id
+	reader.Read<int64_t>(); // server id
 	m_nextUid = reader.Read<uint32_t>();
 	const auto count = reader.Read<int32_t>();
 	if (count < 0)
 		throw std::runtime_error("count must be positive");
 
-	int purgeCount = 0;
-
 	for (int i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
-		zdo->m_id = reader.Read<ZDOID>();
-		auto zdoReader = reader.Read<DataReader>();
 
-		bool modern = zdo->Load(zdoReader, version);
+		if (version < 31) {
+			zdo->m_id = reader.Read<ZDOID>();
+			auto zdoReader = reader.Read<DataReader>();
 
-		// TODO redundant?
-		//	thinking about it, this might be for very old versions where the ID is not normal
-		//if (zdo->ID().m_uuid == VH_ID
-		//	&& zdo->ID().m_id >= m_nextUid)
-		//{
-		//	assert(false && "looks like this might be significant");
-		//	m_nextUid = zdo->ID().m_id + 1;
-		//}
-
-		if (modern || !VH_SETTINGS.worldModern) {
-			auto&& prefab = zdo->GetPrefab();
-
-			AddZDOToZone(*zdo.get());
-			m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
-
-			if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
-				// Only add real sky dungeon
-				if (zdo->Position().y > 4000)
-					DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
-			}
-
-			m_objectsByID[zdo->ID()] = std::move(zdo);
+			zdo->Load31Pre(zdoReader, version);
 		}
-		else purgeCount++;
+		else {
+			zdo->Unpack(reader, version);
+		}
+
+		auto&& prefab = zdo->GetPrefab();
+
+		AddZDOToZone(*zdo.get());
+		m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
+
+		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
+			// Only add real sky dungeon
+			if (zdo->Position().y > 4000)
+				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
+		}
+
+		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
 
-	auto deadCount = reader.Read<int32_t>();
-	for (int j = 0; j < deadCount; j++) {
-		reader.Read<ZDOID>();
-		TICKS_t(reader.Read<int64_t>());
+	if (version < 31) {
+		auto deadCount = reader.Read<int32_t>();
+		for (decltype(deadCount) j = 0; j < deadCount; j++) {
+			reader.Read<int64_t>();
+			reader.Read<uint32_t>();
+			reader.Read<int64_t>();
+		}
 	}
 
 	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
-	if (purgeCount) {
-		LOG_INFO(LOGGER, "Purged {} old zdos", purgeCount);
-	}
 }
 
 ZDO& IZDOManager::Instantiate(Vector3f position) {

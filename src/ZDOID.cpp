@@ -2,4 +2,4 @@
 
 const ZDOID ZDOID::NONE = ZDOID();
 
-ankerl::unordered_dense::segmented_vector<OWNER_t> ZDOID::INDEXED_UIDS;
+decltype(ZDOID::INDEXED_USERS) ZDOID::INDEXED_USERS;

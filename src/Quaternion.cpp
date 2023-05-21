@@ -31,6 +31,56 @@ Vector3f Quaternion::xyz() const {
     return Vector3f(x, y, z);
 }
 
+Vector3f Quaternion::EulerAngles() const {
+    return Internal_ToEulerRad(*this) * (180.f / PI);
+}
+
+Vector3f Quaternion::Internal_ToEulerRad(Quaternion rotation) {
+    float sqw = rotation.w * rotation.w;
+    float sqx = rotation.x * rotation.x;
+    float sqy = rotation.y * rotation.y;
+    float sqz = rotation.z * rotation.z;
+    float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+    float test = rotation.x * rotation.w - rotation.y * rotation.z;
+    Vector3f v;
+
+    if (test > 0.4995f * unit)
+    { // singularity at north pole
+        v.y = 2.f * std::atan2(rotation.y, rotation.x);
+        v.x = PI / 2;
+        v.z = 0;
+        return NormalizeAngles(v * (180.f / PI));
+    }
+    if (test < -0.4995f * unit)
+    { // singularity at south pole
+        v.y = -2.f * std::atan2(rotation.y, rotation.x);
+        v.x = -PI / 2;
+        v.z = 0;
+        return NormalizeAngles(v * (180.f / PI));
+    }
+    auto q = Quaternion(rotation.w, rotation.z, rotation.x, rotation.y);
+    v.y = (float)std::atan2(2.f * q.x * q.w + 2.f * q.y * q.z, 1 - 2.f * (q.z * q.z + q.w * q.w));     // Yaw
+    v.x = (float)std::asin(2.f * (q.x * q.z - q.w * q.y));                             // Pitch
+    v.z = (float)std::atan2(2.f * q.x * q.y + 2.f * q.z * q.w, 1 - 2.f * (q.y * q.y + q.z * q.z));      // Roll
+    return NormalizeAngles(v * (180.f / PI));
+}
+
+Vector3f Quaternion::NormalizeAngles(Vector3f angles) {
+    angles.x = NormalizeAngle(angles.x);
+    angles.y = NormalizeAngle(angles.y);
+    angles.z = NormalizeAngle(angles.z);
+    return angles;
+}
+
+float Quaternion::NormalizeAngle(float angle) {
+    float modAngle = std::fmod(angle, 360.0f);
+
+    if (modAngle < 0.0f)
+        return modAngle + 360.0f;
+    else
+        return modAngle;
+}
+
 
 
 Vector3f Quaternion::operator*(Vector3f point) const {

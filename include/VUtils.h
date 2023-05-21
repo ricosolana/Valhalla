@@ -64,6 +64,7 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 
 
+/*
 class OWNER_t {
     //static constexpr int32_t 
 
@@ -100,6 +101,27 @@ public:
         //    | (m_encoded & ~(0x80000000)) // Least significant bits to form lower portion of number
         //);
         return static_cast<int64_t>(this->m_encoded);
+    }
+};*/
+
+class OWNER_t {
+private:
+    int64_t m_userID;
+
+public:
+    constexpr OWNER_t(int64_t userID) 
+        : m_userID(userID) {}
+
+    constexpr operator int64_t() noexcept {
+        return this->m_userID;
+    }
+
+    constexpr bool operator==(const OWNER_t& other) {
+        return this->m_userID == other.m_userID;
+    }
+
+    constexpr bool operator!=(const OWNER_t& other) {
+        return this->m_userID != other.m_userID;
     }
 };
 
