@@ -610,7 +610,8 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                             }
 
-                            auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos, rotation);
+                            auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
+                            zdo.SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -618,8 +619,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 placedAreas.push_back({ pos, zoneVegetation->m_radius });
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                // this does set the Unity gameobject localscale
-                                zdo.Set("scale", Vector3f(scale, scale, scale));
+                                zdo.SetLocalScale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -781,14 +781,14 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     float range = feature.m_centerFirst ? feature.m_minDistance : 10000;
 
     for (int a = 0; a < feature.m_spawnAttempts && spawnedLocations < feature.m_quantity; a++) {
-        Vector2i randomZone = GetRandomZone(state, range);
+        auto randomZone = GetRandomZone(state, range);
         if (feature.m_centerFirst)
             range++;
 
         if (m_generatedFeatures.contains(randomZone))
             errLocations++;
         else {
-            Vector3f zonePos = ZoneToWorldPos(randomZone);
+            auto zonePos = ZoneToWorldPos(randomZone);
             BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
             if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea)))
@@ -887,15 +887,15 @@ Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, ZoneID
     return pos + Vector3f(x, 0.f, z);
 }
 
-Vector2i IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
+ZoneID IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
     int num = (int32_t)range / (int32_t)ZONE_SIZE;
-    Vector2i vector2i;
+    ZoneID zone;
     do {
         float x = state.Range(-num, num);
         float y = state.Range(-num, num);
-        vector2i = Vector2i(x, y);
-    } while (ZoneToWorldPos(vector2i).Magnitude() >= 10000);
-    return vector2i;
+        zone = ZoneID(x, y);
+    } while (ZoneToWorldPos(zone).Magnitude() >= 10000);
+    return zone;
 }
 
 // private
@@ -1022,7 +1022,8 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
         //          DG_(dungeon)
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
-            ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+            auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
+            zdo.SetRotation(rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
@@ -1045,10 +1046,12 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos, piece.m_rot);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos);
+                zdo->SetRotation(piece.m_rot);
             }
             else {
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos, rot * piece.m_rot);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
+                zdo->SetRotation(rot * piece.m_rot);
             }
 
             assert(zdo);
@@ -1071,7 +1074,8 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 // could be inlined...
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
-    auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos, rot);
+    auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
+    zdo.SetRotation(rot);
     
     zdo.Set("location", location.m_hash);
     zdo.Set("seed", seed);
@@ -1165,10 +1169,10 @@ IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_vie
 // public
 // this is world position to zone position
 // formerly GetZone
-Vector2i IZoneManager::WorldToZonePos(Vector3f point) {
-    int32_t x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
-    int32_t y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
-    return Vector2i(x, y);
+ZoneID IZoneManager::WorldToZonePos(Vector3f point) {
+    auto x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
+    auto y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
+    return ZoneID(x, y);
 }
 
 // public

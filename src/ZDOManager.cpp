@@ -122,7 +122,7 @@ void IZDOManager::InvalidateZDOZone(ZDO& zdo) {
 
 void IZDOManager::Save(DataWriter& writer) {
 	//pkg.Write(Valhalla()->ID());
-	writer.Write<OWNER_t>(0);
+	writer.Write<int64_t>(0);
 	writer.Write(m_nextUid);
 	
 	{
@@ -139,7 +139,7 @@ void IZDOManager::Save(DataWriter& writer) {
 					if (zdo->m_prefab.get().AnyFlagsAbsent(Prefab::Flag::SESSIONED)) {
 						writer.Write(zdo->ID());
 						writer.SubWrite([&zdo](DataWriter& writer) {
-							zdo->Save(writer);
+							zdo->Pack(writer, false);
 						});
 						count++;
 					}
@@ -266,26 +266,26 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 
 
-ZDO& IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos, Quaternion rot) {
+ZDO& IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
-	zdo.m_rotation = rot;
 	zdo.m_prefab = prefab;
 
-	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE))
-		zdo.Set("scale", prefab.m_localScale);
+	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
+		zdo.SetLocalScale(prefab.m_localScale, false);
+	}
 
 	return zdo;
 }
 
-ZDO& IZDOManager::Instantiate(HASH_t hash, Vector3f pos, Quaternion rot, const Prefab** outPrefab) {
+ZDO& IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab) {
 	auto&& prefab = PrefabManager()->RequirePrefab(hash);
 	if (outPrefab) *outPrefab = &prefab;
 
-	return Instantiate(prefab, pos, rot);
+	return Instantiate(prefab, pos);
 }
 
 ZDO& IZDOManager::Instantiate(const ZDO& zdo) {
-	auto&& copy = Instantiate(zdo.m_prefab, zdo.m_pos, zdo.m_rotation);
+	auto&& copy = Instantiate(zdo.m_prefab, zdo.m_pos);
 
 	ZDOID temp = copy.ID(); // Copying copies everything (including UID, which MUST be unique for every ZDO)
 	copy = zdo;
@@ -713,19 +713,16 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			}
 
 			writer.Write(zdo.ID());
-			writer.Write(zdo.GetOwnerRevision());
-			writer.Write(zdo.m_dataRev);
+			writer.Write(zdo.m_rev.GetOwnerRevision());
+			writer.Write(zdo.m_rev.GetDataRevision());
 			writer.Write(zdo.Owner());
-			writer.Write(zdo.m_pos);
+			writer.Write(zdo.Position());
 
 			writer.SubWrite([&zdo](DataWriter& writer) {
-				zdo.Serialize(writer);
-				});
+				zdo.Pack(writer, true);
+			});
 
-			peer.m_zdos[zdo.ID()] = { ZDO::Rev{
-				.m_dataRev = zdo.m_dataRev,
-				.m_ownerRev = zdo.GetOwnerRevision()
-			}, time };
+			peer.m_zdos[zdo.ID()] = { zdo.m_rev, time };
 		}
 		writer.Write(ZDOID::NONE); // null terminator
 	});
@@ -765,10 +762,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		while (auto zdoid = reader.Read<ZDOID>()) {
 			auto ownerRev = reader.Read<uint32_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
-			auto owner = reader.Read<OWNER_t>();		// owner
+			auto owner = reader.Read<int64_t>();		// owner
 			auto pos = reader.Read<Vector3f>();			// position
 
-			auto des = reader.Read<DataReader>();				// dont move this
+			auto des = reader.Read<DataReader>();		// dont move this
 
 			/*
 			ZDO::Rev rev = { 
@@ -785,14 +782,14 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			if (!created) {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
-				if (dataRev <= zdo.m_dataRev) {
+				if (dataRev <= zdo.m_rev.GetDataRevision()) {
 
 					// If the owner has changed, keep a copy
-					if (ownerRev > zdo.GetOwnerRevision()) {
+					if (ownerRev > zdo.m_rev.GetOwnerRevision()) {
 						zdo._SetOwner(owner);
-						zdo.SetOwnerRevision(ownerRev);
+						zdo.m_rev.SetOwnerRevision(ownerRev);
 						peer->m_zdos[zdoid] = { 
-							ZDO::Rev {.m_dataRev = dataRev, .m_ownerRev = ownerRev}, 
+							ZDO::Rev(dataRev, ownerRev),
 							time 
 						};
 					}
@@ -814,11 +811,11 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			try {
 				zdo._SetOwner(owner);
-				zdo.m_dataRev = dataRev;
-				zdo.SetOwnerRevision(ownerRev);
+				zdo.m_rev.SetDataRevision(dataRev);
+				zdo.m_rev.SetOwnerRevision(ownerRev);
 
 				// Unpack the ZDOs primary data
-				zdo.Deserialize(des);
+				zdo.Unpack(des, 0);
 
 				// Only disperse through world if ZDO is new
 				if (created) {
@@ -840,7 +837,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 
 				peer->m_zdos[zdoid] = {
-					ZDO::Rev{ .m_dataRev = zdo.m_dataRev, .m_ownerRev = zdo.GetOwnerRevision() },
+					zdo.m_rev,
 					time 
 				};
 			}
@@ -895,7 +892,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::DestroyZDO(decltype(
 size_t IZDOManager::GetSumZDOMembers() {
 	size_t res = 0;
 	for (auto&& zdo : m_objectsByID) {
-		res += zdo.second->m_members.size();
+		//res += zdo.second->m_members.size();
 	}
 	return res;
 }
@@ -910,7 +907,7 @@ float IZDOManager::GetStDevZDOMembers() {
 
 	float res = 0;
 	for (auto&& zdo : m_objectsByID) {
-		res += std::pow((float)zdo.second->m_members.size() - mean, 2.f);
+		//res += std::pow((float)zdo.second->m_members.size() - mean, 2.f);
 	}
 
 	return std::sqrt(res / n);

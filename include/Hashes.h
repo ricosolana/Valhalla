@@ -658,6 +658,10 @@ namespace Hashes {
             static constexpr HASH_t DATA = __H("TCData");
         };
 
+        namespace TerrainModifier {
+            static constexpr HASH_t TIME_CREATED = __H("terrainModifierTimeCreated");
+        }
+
         namespace TombStone {
             static constexpr HASH_t IN_WATER = __H("inWater");
             static constexpr HASH_t OWNER = __H("owner");
@@ -750,6 +754,11 @@ namespace Hashes {
         //namespace Hash_ZSyncTransform {
         // partial
         //};
+
+        namespace ZNetView {
+            static constexpr HASH_t SCALE = __H("scale");
+            static constexpr HASH_t SCALE_SCALAR = __H("scaleScalar");
+        }
 
     }
 

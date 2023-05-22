@@ -40,19 +40,45 @@ class ZDO {
     struct is_zdo_member : VUtils::Traits::tuple_has_type<T, zdo_member_tuple> {};
 
 public:
-    /*
-    struct Rev {
-        uint32_t m_dataRev = 0;
-        uint32_t m_ownerRev = 0;
-        
-        union {
-            // Ticks is used for ZDO creationTime
-            TICKS_t m_ticksCreated;
+    class Rev {
+    private:
+        static constexpr uint32_t LEADING_DATA_BITS = 21;
 
-            // Time is used for Peer last ZDO update time
-            float m_syncTime;
-        };
-    };*/
+        uint32_t m_encoded{};
+        //float m_syncTime{};
+
+    public:
+        constexpr Rev() {}
+
+        constexpr Rev(uint32_t dataRev, uint16_t ownerRev) {
+            SetDataRevision(dataRev);
+            SetOwnerRevision(ownerRev);
+        }
+
+        constexpr uint32_t GetDataRevision() const {
+            return m_encoded & ((1 << LEADING_DATA_BITS) - 1);
+        }
+
+        constexpr uint16_t GetOwnerRevision() const {
+            return m_encoded & ~((1 << LEADING_DATA_BITS) - 1);
+        }
+
+        //constexpr float GetSyncTime() const {
+        //    return m_syncTime;
+        //}
+
+        constexpr void SetDataRevision(uint32_t dataRev) {
+            this->m_encoded &= (dataRev & ((1 << LEADING_DATA_BITS) - 1));
+        }
+
+        constexpr void SetOwnerRevision(uint16_t ownerRev) {
+            this->m_encoded &= ((ownerRev << LEADING_DATA_BITS) & ~((1 << LEADING_DATA_BITS) - 1));
+        }
+
+        //constexpr void SetSyncTime(float syncTime) {
+        //    this->m_syncTime = syncTime;
+        //}
+    };
 
     static std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key) {
         return {
@@ -128,7 +154,7 @@ private:
 
 private:
     void Revise() {
-        m_dataRev++;
+        m_rev.SetDataRevision(m_rev.GetDataRevision() + 1);
     }
 
     template<typename T>
@@ -143,19 +169,6 @@ private:
     HASH_t xhash_to_hash(zdo_xhash in) const {
         return static_cast<HASH_t>(in) 
             ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<T>{}(VUtils::Traits::tuple_index<typename T, zdo_member_tuple>::value));
-    }
-
-public:
-    decltype(auto) GetOwnerRevision() const {
-        return this->m_ownerRev;
-    }
-
-    void SetOwnerRevision(uint16_t rev) {
-        this->m_ownerRev = rev;
-    }
-
-    void SetDataRevision(uint32_t rev) {
-        this->m_dataRev = rev;
     }
 
 private:
@@ -233,11 +246,10 @@ private:
 private:    Vector3f m_pos;                                 // 12 bytes
 public:     ZDOID m_id;                                     // 4 bytes (PADDING)
 private:    Vector3f m_rotation;                            // 12 bytes
-public:     uint32_t m_dataRev{};                           // 4 bytes (PADDING)
+private:    Rev m_rev;                                      // 4 bytes
 private:    std::reference_wrapper<const Prefab> m_prefab;  // 8 bytes
-private:    uint16_t m_ownerRev{};                          // 2 bytes
-private:    zdo_mask m_flags{};                               // 2 bytes
-// padding here                                             // 4 bytes (PADDING)
+private:    zdo_mask m_flags{};                             // 2 bytes
+
 // TODO do something with this padding
 // 16M is the extreme upper bound on data revision
 // IDEAS:
@@ -260,21 +272,19 @@ public:
     
 
 
-    // Save ZDO to disk
-    void Save(DataWriter& writer) const;
-
     // Load ZDO from disk
     //  Returns whether this ZDO is modern
     void Load31Pre(DataReader& reader, int32_t version);
 
-    //bool LoadPost31(DataReader& reader, int32_t version);
-
-    // Initializes the ZDO using the new efficient format (version >= 31)
-    //  version=0: Unpack zdo as a packet
-    //  version>0: Unpack zdo as a file
+    // Reads from a buffer using the new efficient format (version >= 31)
+    //  version=0: Read according to the network deserialize format
+    //  version>0: Read according to the file load format
     ZDOConnector::Type Unpack(DataReader& reader, int32_t version);
 
-
+    // Writes to a buffer using the new efficient format (version >= 31)
+    //  If 'network' is true, write according to the network serialize format
+    //  Otherwise write according to the file save format
+    void Pack(DataWriter& writer, bool network) const;
 
     // Get a member by hash
     //  Returns null if absent 
@@ -403,24 +413,44 @@ public:
         return m_pos;
     }
 
-    void SetPosition(const Vector3f& pos);
+    void SetPosition(Vector3f pos);
 
     ZoneID GetZone() const;
 
-    const Quaternion& Rotation() const {
+    Quaternion Rotation() const {
         return Quaternion::Euler(m_rotation.x, m_rotation.y, m_rotation.z);
     }
 
-    void SetRotation(const Quaternion& rot) {
-
-        if (rot != m_rotation) {
-            m_rotation = rot;
+    void SetRotation(Quaternion rot) {
+        auto&& euler = rot.EulerAngles();
+        if (euler != m_rotation) {
+            m_rotation = euler;
             Revise();
         }
     }
 
     const Prefab& GetPrefab() const {
         return m_prefab;
+    }
+
+    /*
+    void _SetRotation(Quaternion rot) {
+        this->m_rotation = rot;
+    }*/
+
+    void SetLocalScale(Vector3f scale, bool allowIdentity) {
+        // if scale axis' are the same, use scaleScalar
+        if (std::abs(scale.x - scale.y) < std::numeric_limits<float>::epsilon() * 8
+            && std::abs(scale.y - scale.z) < std::numeric_limits<float>::epsilon() * 8) {
+
+            if (allowIdentity || std::abs(scale.x - 1) > std::numeric_limits<float>::epsilon() * 8) {
+                this->Set(Hashes::ZDO::ZNetView::SCALE_SCALAR, scale);
+            }
+        }
+        else {
+            // otherwise use scale
+            this->Set(Hashes::ZDO::ZNetView::SCALE, scale);
+        }
     }
 
     OWNER_t Owner() const {
@@ -433,6 +463,8 @@ public:
         }
         return 0;
     }
+
+
 
     bool IsOwner(OWNER_t owner) const {
         return owner == this->Owner();
@@ -462,29 +494,21 @@ public:
     bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
         if (this->Owner() != owner) {
-            //this->_SetOwner(owner);
+            _SetOwner(owner);
 
-            ZDO_OWNERS[ID()] = owner;
-
-            ReviseOwner();
+            m_rev.SetOwnerRevision(m_rev.GetOwnerRevision() + 1);
             return true;
         }
         return false;
     }
 
-    TICKS_t GetTimeCreated() const {
-        if (_HasData(Data::Marker_Age)) {
-            auto&& find = ZDO_AGES.find(ID());
-            if (find != ZDO_AGES.end()) {
-                return find->second;
-            }
-            assert(false);
-        }
-        return {};
-    }
+    void _SetOwner(OWNER_t owner) {
+        ZDO_OWNERS[ID()] = owner;
 
-    void SetTimeCreated(TICKS_t ticks) {
-        ZDO_AGES[ID()] = ticks;
+        if (owner)
+            m_flags |= Flag::Marker_Owner;
+        else
+            m_flags &= ~Flag::Marker_Owner;
     }
 
 
@@ -494,10 +518,4 @@ public:
         //for (auto&& pair : m_members) size += sizeof(Ord) + pair.second.GetTotalAlloc();
         return size;
     }
-
-    // Save ZDO to network packet
-    void Serialize(DataWriter& pkg) const;
-
-    // Load ZDO from network packet
-    void Deserialize(DataReader& pkg);
 };
