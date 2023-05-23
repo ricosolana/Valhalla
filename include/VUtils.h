@@ -64,6 +64,9 @@ using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 
 
+//template<uint64_t MASK>
+
+
 /*
 class OWNER_t {
     //static constexpr int32_t 
@@ -106,9 +109,11 @@ public:
 
 class OWNER_t {
 private:
-    int64_t m_userID;
+    int64_t m_userID{};
 
 public:
+    constexpr OWNER_t() {}
+
     constexpr OWNER_t(int64_t userID) 
         : m_userID(userID) {}
 

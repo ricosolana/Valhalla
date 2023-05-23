@@ -148,5 +148,5 @@ public:
         return this->m_hash != 0;
     }
 
-    static const Prefab NONE;
+    //static const Prefab NONE;
 };

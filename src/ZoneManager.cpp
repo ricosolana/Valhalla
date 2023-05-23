@@ -80,7 +80,7 @@ void IZoneManager::PostPrefabInit() {
 
                 auto hash = pkg.Read<HASH_t>();
 
-                piece.m_prefab = &PrefabManager()->RequirePrefab(hash);
+                piece.m_prefab = &PrefabManager()->RequirePrefabByHash(hash);
 
                 piece.m_pos = pkg.Read<Vector3f>();
                 piece.m_rot = pkg.Read<Quaternion>();
@@ -116,7 +116,7 @@ void IZoneManager::PostPrefabInit() {
 
             auto prefabName = pkg.Read<std::string>();
 
-            veg->m_prefab = &PrefabManager()->RequirePrefab(prefabName);
+            veg->m_prefab = &PrefabManager()->RequirePrefabByName(prefabName);
 
             veg->m_biome = (Biome) pkg.Read<int32_t>();
             veg->m_biomeArea = (BiomeArea) pkg.Read<int32_t>();

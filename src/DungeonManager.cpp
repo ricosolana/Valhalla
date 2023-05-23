@@ -37,7 +37,7 @@ void IDungeonManager::PostPrefabInit() {
 
         auto name = pkg.Read<std::string_view>();
 
-        dungeon->m_prefab = &PrefabManager()->RequirePrefab(name);
+        dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
@@ -110,7 +110,7 @@ void IDungeonManager::PostPrefabInit() {
             for (int i3 = 0; i3 < viewCount; i3++) {
                 Prefab::Instance instance;
                 
-                instance.m_prefab = &PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
+                instance.m_prefab = &PrefabManager()->RequirePrefabByHash(pkg.Read<HASH_t>());
                 instance.m_pos = pkg.Read<Vector3f>();
                 instance.m_rot = pkg.Read<Quaternion>();
 

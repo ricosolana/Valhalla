@@ -278,7 +278,7 @@ ZDO& IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 }
 
 ZDO& IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab) {
-	auto&& prefab = PrefabManager()->RequirePrefab(hash);
+	auto&& prefab = PrefabManager()->RequirePrefabByHash(hash);
 	if (outPrefab) *outPrefab = &prefab;
 
 	return Instantiate(prefab, pos);

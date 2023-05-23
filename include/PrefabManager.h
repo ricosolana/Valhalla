@@ -9,34 +9,60 @@
 //	this class doesnt do much besides try to simulate Unity in appearance
 //		which is not the desired result...
 class IPrefabManager {
-
 private:
 	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 
 public:
 	void Init();
 
-	const Prefab* GetPrefab(HASH_t hash);
+	const Prefab* GetPrefab(HASH_t hash) const;
 
 	// Get a prefab by name
 	//	Returns the prefab or null
-	const Prefab* GetPrefab(std::string_view name) {
+	const Prefab* GetPrefab(std::string_view name) const {
 		return GetPrefab(VUtils::String::GetStableHashCode(name));
 	}
 
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefab(HASH_t hash) {
+	const Prefab& RequirePrefabByHash(HASH_t hash) const {
 		auto prefab = GetPrefab(hash);
 		if (!prefab)
 			throw std::runtime_error("prefab not found");
 		return *prefab;
 	}
 
+	// Retrieve a prefab by index
+	//	Non-stable on container modifications
+	//	Throws if index is out of bounds
+	const Prefab& RequirePrefabByIndex(uint16_t index) const {
+		if (m_prefabs.size() < index) {
+			throw std::runtime_error("prefab index out of bounds");
+		}
+		return *m_prefabs.values()[index].second;
+	}
+
+	uint16_t RequirePrefabIndexByHash(HASH_t hash) const {
+		auto&& find = m_prefabs.find(hash);
+		if (find != m_prefabs.end()) {
+			return find._Ptr - m_prefabs.values().data();
+		}
+		throw std::runtime_error("prefab by hash not found");
+	}
+
+	/*
+	std::pair<const Prefab&, uint16_t> RequirePrefabAndIndexByHash(HASH_t hash) const {
+		auto&& find = m_prefabs.find(hash);
+		if (find != m_prefabs.end()) {
+			return std::make_pair(*find->second, (uint16_t)(find._Ptr - m_prefabs.values().data()));
+		}
+		throw std::runtime_error("prefab by hash not found");
+	}*/
+
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefab(std::string_view name) {
-		return RequirePrefab(VUtils::String::GetStableHashCode(name));
+	const Prefab& RequirePrefabByName(std::string_view name) const {
+		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
 	}
 
 	void Register(std::string_view name, Prefab::Type type, Vector3f scale, Prefab::Flag flags, bool overwrite) {

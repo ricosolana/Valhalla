@@ -724,6 +724,10 @@ namespace Hashes {
             static constexpr HASH_t LAST_SPAWN = __H("LastSpawn");
         };
 
+        namespace ZDO {
+            static constexpr HASH_t PREFAB = __H("prefab");
+        }
+
         //namespace ZNetView {
         //    static constexpr HASH_t SCALE = __H("scale");
         //};

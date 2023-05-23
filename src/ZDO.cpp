@@ -12,48 +12,42 @@
 
 
 
-decltype(ZDO::ZDO_TYPES) ZDO::ZDO_TYPES;
+decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
 decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
-decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
+//decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
-ZDO::ZDO() 
-    : m_prefab(Prefab::NONE) {
+ZDO::ZDO() {}
 
-}
-
-ZDO::ZDO(ZDOID id, Vector3f pos)
-    : m_id(id), m_pos(pos), m_prefab(Prefab::NONE)
-{
-    //m_rev.m_ticksCreated = Valhalla()->GetWorldTicks();
-}
+ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
 
 
 
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
-    pkg.Read<uint32_t>();   // owner rev
-    pkg.Read<uint32_t>();   // data rev
-    m_flags |= pkg.Read<bool>() ? Flag::Marker_Persistent : (Flag)0;       // persistent
-    pkg.Read<int64_t>();    // owner
+    pkg.Read<uint32_t>();       // owner rev
+    pkg.Read<uint32_t>();       // data rev
+    pkg.Read<bool>();           // persistent
+    pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
-    pkg.Read<int32_t>();    // pgw
+    pkg.Read<int32_t>();        // pgw
 
     if (worldVersion >= 16 && worldVersion < 24)
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        m_flags |= pkg.Read<uint8_t>() << Data::Marker_Type1; // m_type
+        pkg.Read<uint8_t>();    // m_type
 
     if (worldVersion >= 22)
-        m_flags |= pkg.Read<bool>() ? Flag::Marker_Distant : (Flag)0;   // m_distant
+        pkg.Read<bool>();       // m_distant
 
     if (worldVersion < 13) {
         pkg.Read<char16_t>();
         pkg.Read<char16_t>();
     }
 
-    if (worldVersion >= 17)
-        this->m_prefab = PrefabManager()->RequirePrefab(pkg.Read<HASH_t>());
+    if (worldVersion >= 17) {
+        _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(pkg.Read<HASH_t>()));
+    }
 
     pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3f>();
@@ -70,7 +64,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         _TryReadType<BYTES_t,   char16_t>(pkg);
 
     if (worldVersion < 17)
-        this->m_prefab = PrefabManager()->RequirePrefab(GetInt("prefab"));
+        _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB)));
 
     if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
          Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
@@ -100,7 +94,7 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     if (version)
         this->m_id.SetUID(ZDOManager()->m_nextUid++);
 
-    this->m_flags = reader.Read<uint16_t>();
+    auto flags = reader.Read<zdo_global_mask>();
 
     if (version) {
         reader.Read<Vector2s>(); // redundant
@@ -108,12 +102,16 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     }
 
     // TODO load prefab once
-    m_prefab = PrefabManager()->RequirePrefab(reader.Read<HASH_t>());
+    _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
 
-    if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
+    //if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
+
+    if (flags & GlobalFlag::Marker_Rotation) {
+        this->m_rotation = reader.Read<Vector3f>();
+    }
 
     ZDOConnector::Type type = ZDOConnector::Type::None;
-    if (_HasData(Data::Member_Connection)) {
+    if (flags & GlobalFlag::Member_Connection) {
         type = reader.Read<ZDOConnector::Type>();
         if (version) {
             auto hash = reader.Read<HASH_t>();
@@ -125,13 +123,13 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
         }        
     }
 
-    if (_HasData(Data::Member_Float)) _TryReadType<float, uint8_t>(reader);
-    if (_HasData(Data::Member_Vec3)) _TryReadType<Vector3f, uint8_t>(reader);
-    if (_HasData(Data::Member_Quat)) _TryReadType<Quaternion, uint8_t>(reader);
-    if (_HasData(Data::Member_Int)) _TryReadType<int32_t, uint8_t>(reader);
-    if (_HasData(Data::Member_Long)) _TryReadType<int64_t, uint8_t>(reader);
-    if (_HasData(Data::Member_String)) _TryReadType<std::string, uint8_t>(reader);
-    if (_HasData(Data::Member_ByteArray)) _TryReadType<BYTES_t, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader);
+    if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader);
 
     return type;
 }
@@ -158,21 +156,38 @@ ZoneID ZDO::GetZone() const {
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
-    writer.Write(m_flags);
+    static_assert(std::same_as<zdo_global_mask, uint16_t>, "mask must be a uint16_t");
+
+    zdo_global_mask flags{};
+    flags |= _HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
+    flags |= _HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+
+    bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
+        || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
+        || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
+
+    auto&& prefab = GetPrefab();
+    flags |= prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED) ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
+    flags |= prefab.AnyFlagsPresent(Prefab::Flag::DISTANT) ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
+    flags |= prefab.m_type << std::to_underlying(GlobalDenotion::Marker_Type1);
+    flags |= hasRot ? GlobalFlag::Marker_Rotation : GlobalFlag(0);
+
+    writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
         writer.Write(Position());
     }
-    writer.Write(GetPrefab().m_hash);
-    if (_HasData(Data::Marker_Rotation))
-        writer.Write(m_rotation);
-
-    //if (m_flags & (1 << std::to_underlying(Flags::Data_Rotation)))
-    if (_HasData(Data::Marker_Rotation))
-        writer.Write(this->m_rotation);
+    writer.Write(prefab.m_hash);
+    if (hasRot) writer.Write(m_rotation);
 
     // TODO add connector
-    if (_HasData(Data::Member_Connection)) {
+    if (_HasDenotion(LocalDenotion::Member_Connection)) {
         auto&& find = ZDO_CONNECTORS.find(ID());
         if (find != ZDO_CONNECTORS.end()) {
             auto&& connector = find->second;
@@ -180,14 +195,13 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             writer.Write(connector.m_hash);
         }
         else {
-            ///LOG_WARNING(LOGGER, "zdo connector flag is set but no connector found");
             assert(false);
         }
     }
 
-    if (_HasAnyFlags(Flag::Member_Float | Flag::Member_Vec3 | Flag::Member_Quat | Flag::Member_Int | Flag::Member_Long | Flag::Member_String | Flag::Member_ByteArray)) {
-        auto&& find = ZDO_TYPES.find(ID());
-        if (find != ZDO_TYPES.end()) {
+    if (_HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
+        auto&& find = ZDO_MEMBERS.find(ID());
+        if (find != ZDO_MEMBERS.end()) {
             auto&& types = find->second;
 
             _TryWriteType<float>(writer, types);

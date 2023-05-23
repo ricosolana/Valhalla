@@ -132,7 +132,7 @@ public:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
     void Write(ZDOID in) {
-        Write(in.GetOwner());
+        Write((int64_t)in.GetOwner());
         Write(in.GetUID());
     }
 

@@ -6,36 +6,53 @@
 
 class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
+    friend class ZDO;
 
 #if INTPTR_MAX == INT32_MAX
     // 2 players per session
     // 32,768 ZDOs
-    static constexpr int LEADING_ID_BITS = 15;
     using T = uint16_t;
+    static constexpr int USER_BIT_COUNT = 1;
 #elif INTPTR_MAX == INT64_MAX
-    // 16 players per session
-    // ~268 million ZDOs
-    static constexpr int LEADING_ID_BITS = 28;
+    // 64 players per session
+    // ~67.1M ZDOs
     using T = uint32_t;
+    static constexpr int USER_BIT_COUNT = 6;
 #else
 #error "Unable to detect 32-bit or 64-bit system"
 #endif
+    static constexpr int USER_BIT_OFFSET = 0;
+    static constexpr int ID_BIT_OFFSET = USER_BIT_COUNT;
 
-    //static ankerl::unordered_dense::segmented_vector<OWNER_t> INDEXED_UIDS;
-    static std::array<int64_t, (1 << (sizeof(T) * 8 - LEADING_ID_BITS)) - 1> INDEXED_USERS;
+    static constexpr int ID_BIT_COUNT = 8 * sizeof(T) - ID_BIT_OFFSET;
+    
+    static constexpr T USER_BIT_MASK = (1 << (USER_BIT_COUNT)) - 1;
+    static constexpr T ID_BIT_MASK = (~USER_BIT_MASK) >> USER_BIT_COUNT;
+
+    // Indexed UserIDs
+    //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
+    static std::array<int64_t, USER_BIT_MASK> INDEXED_USERS;
     
 public:
     static const ZDOID NONE;
 
 private:
-    T m_encoded;
+    // Encoding of ID and USER bits
+    //  iiiiiiii iiiiiiii iiiiiiii iiuuuuuu
+    //  i: ID, u: USER
+    T m_encoded{};
 
 private:
-    uint16_t GetIndex(int64_t owner) {
+    // Get the index of a UserID
+    //  The UserID is inserted if it does not exist
+    //  Returns the insertion index or the existing index of the UserID
+    static T EnsureUserIDIndex(int64_t owner) {
         if (!owner)
             return 0;
 
-        for (int i = 1; i < INDEXED_USERS.size(); i++) {
+        for (T i = 1; i < INDEXED_USERS.size(); i++) {
+            // Assume that a blank index prior to an existing UserID being found
+            //  means that the UserID does not exist (so insert it)
             if (!INDEXED_USERS[i]) {
                 INDEXED_USERS[i] = owner;
                 return i;
@@ -45,7 +62,22 @@ private:
             }
         }
 
+        // TODO this is definitely reachable, assuming the server runs long enough
+        //  for enough unique players to join, causing the INDEXED_USERS loop to completely finish
+        //  and reach this point
         std::unreachable();
+    }
+
+    static int64_t GetUserIDByIndex(T index) {
+        if (!index)
+            return 0;
+
+        //assert((index || (INDEXED_USERS[index] == 0))
+            //&& "Array[0] should be 0 to represent no-owner");
+
+        if (INDEXED_USERS.size() < index)
+            return INDEXED_USERS[index];
+        throw std::runtime_error("user id by index not found");
     }
 
 public:
@@ -56,7 +88,7 @@ public:
         this->SetUID(uid);
     }
 
-    constexpr ZDOID(const ZDOID& other) = default;
+    constexpr ZDOID(const ZDOID&) = default;
 
     bool operator==(ZDOID other) const {
         return this->m_encoded == other.m_encoded;
@@ -65,47 +97,48 @@ public:
     bool operator!=(ZDOID other) const {
         return !(*this == other);
     }
-
+    
     // Return whether this has a value besides NONE
     explicit operator bool() const noexcept {
         return static_cast<bool>(this->m_encoded);
     }
 
+    // TODO rename to User
     OWNER_t GetOwner() const {
-        return INDEXED_USERS[m_encoded >> LEADING_ID_BITS];
+        return INDEXED_USERS[_GetUserIDIndex()];
     }
 
+    // Rename to SetUserID
     constexpr void SetOwner(OWNER_t owner) {
-
-
-        // Set owner bits to 0
-        this->m_encoded &= ~ENCODED_OWNER_MASK;
-        //assert(GetOwner() == 0);
-
-
-        // Set the owner bits
-        //  ignore the 2's complement middle bytes
-        this->m_encoded |= (static_cast<uint64_t>(owner) & ENCODED_OWNER_MASK);
-
-        //assert(GetOwner() == owner);
+        _SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
     }
 
+
+
+    // Retrieve the index of the UserID
+    constexpr T _GetUserIDIndex() const {
+        return (this->m_encoded >> USER_BIT_OFFSET) & USER_BIT_MASK;
+    }
+
+    // Set the associated UserID index 
+    constexpr void _SetUserIDIndex(T index) {
+        this->m_encoded &= (index & USER_BIT_MASK) << USER_BIT_OFFSET;
+    }
+
+    // TODO rename to GetID
     constexpr uint32_t GetUID() const {
-        return static_cast<uint32_t>((this->m_encoded >> 32) & 0x7FFFFFFF);
+        return (this->m_encoded >> ID_BIT_OFFSET) & ID_BIT_MASK;
     }
 
+    // TODO rename to SetID
     constexpr void SetUID(uint32_t uid) {
-        // Set uid bits to 0
-        this->m_encoded &= ENCODED_OWNER_MASK;
-        //assert(this->GetUID() == 0);
-
-        // Set the uid bits
-        this->m_encoded |= (static_cast<uint64_t>(uid) << (8 * 4)) & ~ENCODED_OWNER_MASK;
-        //assert(this->GetUID() == uid);
+        this->m_encoded &= (uid & ID_BIT_MASK) << ID_BIT_OFFSET;
     }
 
-    friend std::ostream& operator<<(std::ostream& st, const ZDOID& zdoid) {
-        return st << zdoid.GetOwner() << ":" << zdoid.GetUID();
+
+
+    friend std::ostream& operator<<(std::ostream& st, ZDOID zdoid) {
+        return st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
     }
 };
 

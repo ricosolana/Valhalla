@@ -9,9 +9,9 @@ IPrefabManager* PrefabManager() {
 
 
 
-const Prefab Prefab::NONE = Prefab();
+//const Prefab Prefab::NONE = Prefab();
 
-const Prefab* IPrefabManager::GetPrefab(HASH_t hash) {
+const Prefab* IPrefabManager::GetPrefab(HASH_t hash) const {
     auto&& find = m_prefabs.find(hash);
     if (find != m_prefabs.end())
         return find->second.get();
