@@ -43,7 +43,7 @@ using namespace std::chrono_literals;
 
 using BYTE_t = char; // Unsigned 8 bit
 using HASH_t = int32_t; // Used for RPC method hashing
-//using OWNER_t = int64_t; // Should rename to UID
+using OWNER_t = int64_t; // Should rename to UID
 using PLAYER_ID_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
 using BYTE_VIEW_t = std::span<BYTE_t>;
@@ -107,6 +107,7 @@ public:
     }
 };*/
 
+/*
 class OWNER_t {
 private:
     int64_t m_userID{};
@@ -128,7 +129,7 @@ public:
     constexpr bool operator!=(const OWNER_t& other) {
         return this->m_userID != other.m_userID;
     }
-};
+};*/
 
 
 

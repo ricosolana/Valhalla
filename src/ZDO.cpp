@@ -24,6 +24,8 @@ ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
 
 
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+    static constexpr auto szzie = sizeof(ZDO);
+
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     pkg.Read<bool>();           // persistent
@@ -45,8 +47,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
+    const Prefab* prefab = nullptr;
+
     if (worldVersion >= 17) {
-        _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(pkg.Read<HASH_t>()));
+        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
+        prefab = &pair.first;
+        m_encoded.SetPrefabIndex(pair.second);
     }
 
     pkg.Read<Vector2i>(); // m_sector
@@ -63,10 +69,15 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 27)
         _TryReadType<BYTES_t,   char16_t>(pkg);
 
-    if (worldVersion < 17)
-        _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB)));
+    if (worldVersion < 17) {
+        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
+        prefab = &pair.first;
+        m_encoded.SetPrefabIndex(pair.second);
+    }
 
-    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
+    assert(prefab);
+
+    if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
          Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
 }
 
@@ -102,7 +113,7 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     }
 
     // TODO load prefab once
-    _SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+    m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
 
     //if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
 
@@ -158,24 +169,24 @@ ZoneID ZDO::GetZone() const {
 void ZDO::Pack(DataWriter& writer, bool network) const {
     static_assert(std::same_as<zdo_global_mask, uint16_t>, "mask must be a uint16_t");
 
-    zdo_global_mask flags{};
-    flags |= _HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
-    flags |= _HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
-
     bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
-    auto&& prefab = GetPrefab();
-    flags |= prefab.AnyFlagsAbsent(Prefab::Flag::SESSIONED) ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
-    flags |= prefab.AnyFlagsPresent(Prefab::Flag::DISTANT) ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
-    flags |= prefab.m_type << std::to_underlying(GlobalDenotion::Marker_Type1);
+    //auto&& prefab = GetPrefab();
+
+    zdo_global_mask flags{};
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
+    flags |= m_encoded.HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+    flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
+    flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
+    flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
     flags |= hasRot ? GlobalFlag::Marker_Rotation : GlobalFlag(0);
 
     writer.Write(flags);
@@ -183,11 +194,11 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         writer.Write(GetZone());
         writer.Write(Position());
     }
-    writer.Write(prefab.m_hash);
+    writer.Write(GetPrefabHash());
     if (hasRot) writer.Write(m_rotation);
 
     // TODO add connector
-    if (_HasDenotion(LocalDenotion::Member_Connection)) {
+    if (m_encoded.HasDenotion(LocalDenotion::Member_Connection)) {
         auto&& find = ZDO_CONNECTORS.find(ID());
         if (find != ZDO_CONNECTORS.end()) {
             auto&& connector = find->second;
@@ -199,7 +210,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
-    if (_HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
+    if (m_encoded.HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
         auto&& find = ZDO_MEMBERS.find(ID());
         if (find != ZDO_MEMBERS.end()) {
             auto&& types = find->second;

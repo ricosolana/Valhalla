@@ -341,7 +341,6 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
             a(m_settings.worldPregenerate, world, "pregenerate", false, nullptr, reloading);
             a(m_settings.worldSaveInterval, world, "save-interval", 30min, [](seconds val) { return val < 0s; });
-            a(m_settings.worldModern, world, "modern", true, nullptr, reloading);
             a(m_settings.worldFeatures, world, "features", true);
             a(m_settings.worldVegetation, world, "vegetation", true);
             a(m_settings.worldCreatures, world, "creatures", true);

@@ -14,7 +14,7 @@ class IRouteManager {
 	friend class INetManager;
 
 public:
-	static constexpr OWNER_t EVERYBODY = 0;
+	static constexpr int64_t EVERYBODY = 0;
 
 private:	
 	UNORDERED_MAP_t<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
@@ -55,7 +55,7 @@ public:
 	template <typename... Args>
 	void InvokeView(OWNER_t target, ZDOID targetZDO, HASH_t hash, Args&&... params) {
 		// Prefix
-		if (target == EVERYBODY) {
+		if ((int64_t)target == EVERYBODY) {
 			// targetZDO can have a value apparently
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
@@ -80,7 +80,7 @@ public:
 	}
 
 	void InvokeViewLua(Int64Wrapper target, ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
-		if ((OWNER_t)target == EVERYBODY) {
+		if ((int64_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
 				throw std::runtime_error("mismatched number of args");
 
@@ -91,14 +91,14 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(VH_ID, (OWNER_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeerByUUID(target))
+			if (auto peer = NetManager()->GetPeerByUUID((int64_t)target))
 				peer->RouteViewLua(targetZDO, repr, args);
 		}
 		

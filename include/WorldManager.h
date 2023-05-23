@@ -16,7 +16,7 @@ public:
     std::string m_name;
     std::string m_seedName;
     HASH_t m_seed;
-    OWNER_t m_uid;
+    int64_t m_uid;
     int32_t m_worldGenVersion;
 
 public:

@@ -58,14 +58,14 @@ public:
     ISocket::Ptr m_socket;
 
     // Immutable variables
-    OWNER_t m_uuid;
+    OWNER_t m_uuid; // TODO use only ZDOID
     std::string m_name;
 
     // Mutable variables
-    Vector3f m_pos;
-    bool m_visibleOnMap = false;
+    Vector3f m_pos; // TODO use ZDO position
+    bool m_visibleOnMap = false; // TODO use mask
     ZDOID m_characterID;
-    bool m_admin = false;
+    bool m_admin = false; // TODO use mask
 
 #ifdef VH_OPTION_ENABLE_CAPTURE
 public:
@@ -78,7 +78,7 @@ private:
 #endif
 
 public:
-    bool m_gatedPlaythrough = false;
+    bool m_gatedPlaythrough = false; // TODO use mask
 
 public:
     UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;

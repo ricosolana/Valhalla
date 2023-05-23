@@ -233,6 +233,10 @@ namespace Hashes {
             static constexpr HASH_t SetPlayed = __H("SetPlayed");
         };
 
+        namespace MusicVolume {
+            static constexpr HASH_t Play = __H("RPC_PlayMusic");
+        };
+        
         namespace Pick {
             static constexpr HASH_t Pick = __H("Pick");
         };
@@ -334,10 +338,6 @@ namespace Hashes {
 
         namespace ZSyncAnim {
             static constexpr HASH_t SetTrigger = __H("SetTrigger");
-        };
-
-        namespace MusicVolume {
-            static constexpr HASH_t Play = __H("RPC_PlayMusic");
         };
 
     } // namespace View
@@ -728,9 +728,15 @@ namespace Hashes {
             static constexpr HASH_t PREFAB = __H("prefab");
         }
 
-        //namespace ZNetView {
-        //    static constexpr HASH_t SCALE = __H("scale");
-        //};
+        namespace ZNetView {
+            static constexpr HASH_t SCALE = __H("scale");
+            static constexpr HASH_t SCALE_SCALAR = __H("scaleScalar");
+        }
+
+        namespace ZoneManager {
+            static constexpr HASH_t LOCATION = __H("location");
+            static constexpr HASH_t SEED = __H("seed");
+        };
 
         namespace ZSyncAnimation {
             static constexpr HASH_t ALERT = 402913258;
@@ -754,16 +760,6 @@ namespace Hashes {
             static constexpr HASH_t STATE_I = -861454496;
             static constexpr HASH_t TURN_SPEED = -1488745797;
         };
-
-        //namespace Hash_ZSyncTransform {
-        // partial
-        //};
-
-        namespace ZNetView {
-            static constexpr HASH_t SCALE = __H("scale");
-            static constexpr HASH_t SCALE_SCALAR = __H("scaleScalar");
-        }
-
     }
 
     namespace Object {

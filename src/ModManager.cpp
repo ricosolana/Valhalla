@@ -131,6 +131,25 @@ void IModManager::LoadAPI() {
         sol::meta_function::equal_to, &Vector2i::operator==
     );
 
+    m_state.new_usertype<Vector2s>("Vector2s",
+        sol::constructors<Vector2s(), Vector2s(int16_t, int16_t)>(),
+        "ZERO", sol::property(&Vector2s::Zero),
+        "x", &Vector2s::x,
+        "y", &Vector2s::y,
+        "magnitude", sol::property(&Vector2s::Magnitude),
+        "sqMagnitude", sol::property(&Vector2s::SqMagnitude),
+        "normal", sol::property(&Vector2s::Normal),
+        "Distance", &Vector2s::Distance,
+        "SqDistance", &Vector2s::SqDistance,
+        "Dot", &Vector2s::Dot,
+        sol::meta_function::addition, &Vector2s::operator+,
+        sol::meta_function::subtraction, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator-),
+        sol::meta_function::unary_minus, sol::resolve<Vector2s() const>(&Vector2s::operator-),
+        sol::meta_function::multiplication, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator*),
+        sol::meta_function::division, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator/),
+        sol::meta_function::equal_to, &Vector2s::operator==
+    );
+
     m_state.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
         //"IDENTITY", sol::property([]() { return Quaternion::IDENTITY; }),
@@ -144,9 +163,9 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZDOID>("ZDOID",
         //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
-        sol::factories([](Int64Wrapper uuid, uint32_t id) { return ZDOID(uuid, id); }),
+        sol::factories([](Int64Wrapper uuid, uint32_t id) { return ZDOID((int64_t)uuid, id); }),
         "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
-        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, Int64Wrapper value) { self.SetOwner(value); }),
+        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, Int64Wrapper value) { self.SetOwner((int64_t)value); }),
         "id", sol::property(&ZDOID::GetUID, &ZDOID::SetUID)
     );
 
@@ -454,8 +473,8 @@ void IModManager::LoadAPI() {
     m_state["PrefabManager"] = PrefabManager();
     m_state.new_usertype<IPrefabManager>("IPrefabManager",
         "GetPrefab", sol::overload(
-            sol::resolve<const Prefab* (std::string_view)>(&IPrefabManager::GetPrefab),
-            sol::resolve<const Prefab* (HASH_t)>(&IPrefabManager::GetPrefab)
+            sol::resolve<const Prefab*(HASH_t) const>(&IPrefabManager::GetPrefab),
+            sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::GetPrefab)
         ),
         "Register", sol::overload(
             sol::resolve<void(std::string_view, Prefab::Type, Vector3f, Prefab::Flag, bool)>(&IPrefabManager::Register),
@@ -477,15 +496,15 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, Int64Wrapper owner) { self.SetOwner(owner); }),
+        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, Int64Wrapper owner) { self.SetOwner((int64_t)owner); }),
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
         "SetLocal", &ZDO::SetLocal,
         //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
         "HasOwner", &ZDO::HasOwner,
         "Disown", &ZDO::Disown,
-        "dataRev", sol::readonly(&ZDO::m_dataRev),
-        "ownerRev", sol::property(&ZDO::GetOwnerRevision),
+        //"dataRev", sol::readonly(&ZDO::m_dataRev),
+        //"ownerRev", sol::property(&ZDO::GetOwnerRevision),
         //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
@@ -749,13 +768,10 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const ZDO&)>(&IZDOManager::DestroyZDO)
         ),
         "Instantiate", sol::overload(
-            sol::resolve<ZDO& (const Prefab&, Vector3f, Quaternion)>(&IZDOManager::Instantiate),
-            sol::resolve<ZDO& (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
-            [](IZDOManager& self, std::string_view name, Vector3f pos, Quaternion rot) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos, rot); },
+            sol::resolve<std::reference_wrapper<ZDO> (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
             [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
-            sol::resolve<ZDO& (HASH_t, Vector3f, Quaternion)>(&IZDOManager::Instantiate),
-            sol::resolve<ZDO& (HASH_t, Vector3f)>(&IZDOManager::Instantiate),
-            sol::resolve<ZDO& (const ZDO&)>(&IZDOManager::Instantiate)
+            sol::resolve<std::reference_wrapper<ZDO> (HASH_t, Vector3f)>(&IZDOManager::Instantiate),
+            sol::resolve<std::reference_wrapper<ZDO> (const ZDO&)>(&IZDOManager::Instantiate)
         )
     );
 
@@ -764,7 +780,7 @@ void IModManager::LoadAPI() {
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
-            [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUUID(owner); },
+            [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUUID((int64_t)owner); },
             //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
         ),

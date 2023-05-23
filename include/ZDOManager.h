@@ -15,10 +15,10 @@ class IZDOManager {
 	friend class ZDO;
 		
 	//static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
-	static constexpr int MAX_DEAD_OBJECTS = 100000;
+	//static constexpr int MAX_DEAD_OBJECTS = 100000;
 
-	static bool PREFAB_CHECK_FUNCTION(const ZDO& zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		auto&& prefab = zdo.GetPrefab();
+	static bool PREFAB_CHECK_FUNCTION(std::reference_wrapper<const ZDO> zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+		auto&& prefab = zdo.get().GetPrefab();
 
 		return prefab.AllFlagsAbsent(flagsAbsent)
 			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
@@ -30,20 +30,23 @@ private:
 	uint32_t m_nextUid = 1;
 
 	// Responsible for managing ZDOs lifetimes
+	//	A segmented map is used instead of a 
 	ankerl::unordered_dense::segmented_map<ZDOID, std::unique_ptr<ZDO>> m_objectsByID;
 
 	// Contains ZDOs according to Zone
-	// TODO use map for esp32 (and lower initial memory usage)
-	std::array<UNORDERED_SET_t<ZDO*>,
-		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector; // takes up around 5MB; could be around 72 bytes with map
+	//	takes up around 5MB; could be around 72 bytes with map
+	//	TODO use map for esp32 (and lower initial memory usage)
+	//	esp only has 5Mb of ram, and this exceeds that
+	std::array <ankerl::unordered_dense::segmented_set<ZDO*>,
+		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
 
 	// Contains ZDOs according to prefab
-	// TODO remove when mods are disabled or ... for esp32
-	UNORDERED_MAP_t<HASH_t, UNORDERED_SET_t<ZDO*>> m_objectsByPrefab;
+	// TODO this specifically exists for the Lua API, remove when MODS_DISABLED and for esp32
+	UNORDERED_MAP_t<HASH_t, ankerl::unordered_dense::segmented_set<ZDO*>> m_objectsByPrefab;
 
 	// Container of retired ZDOs
 	//	TODO benchmark storage here vs keeping ZDOIDs in m_objectsByID map (but setting values to null to diffreenciate between alive/dead)
-	UNORDERED_SET_t<ZDOID> m_erasedZDOs;
+	ankerl::unordered_dense::segmented_set<ZDOID> m_erasedZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
@@ -78,8 +81,8 @@ private:
 	bool SendZDOs(Peer& peer, bool flush);
 	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
 
-	ZDO& Instantiate(Vector3f position);
-	ZDO& Instantiate(ZDOID uid, Vector3f position);
+	std::reference_wrapper<ZDO> Instantiate(Vector3f position);
+	std::reference_wrapper<ZDO> Instantiate(ZDOID uid, Vector3f position);
 		
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
@@ -99,10 +102,10 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	ZDO& Instantiate(const Prefab& prefab, Vector3f pos);
-	ZDO& Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
-	ZDO& Instantiate(HASH_t hash, Vector3f pos) { return Instantiate(hash, pos, nullptr);  }
-	ZDO& Instantiate(const ZDO& zdo);
+	std::reference_wrapper<ZDO> Instantiate(const Prefab& prefab, Vector3f pos);
+	std::reference_wrapper<ZDO> Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
+	std::reference_wrapper<ZDO> Instantiate(HASH_t hash, Vector3f pos) { return Instantiate(hash, pos, nullptr);  }
+	std::reference_wrapper<ZDO> Instantiate(const ZDO& zdo);
 
 	// Get a ZDO by id
 	//	TODO use optional<reference>

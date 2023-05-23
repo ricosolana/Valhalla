@@ -611,7 +611,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             }
 
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
-                            zdo.SetRotation(rotation);
+                            zdo.get().SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -619,7 +619,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 placedAreas.push_back({ pos, zoneVegetation->m_radius });
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                zdo.SetLocalScale(Vector3f(scale, scale, scale), true);
+                                zdo.get().SetLocalScale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -721,14 +721,15 @@ void IZoneManager::PostGeoInit() {
 
         LOG_WARNING(LOGGER, "Pregenerating world...");
         while (m_generatedZones.size() < WORLD_RADIUS_IN_ZONES*2* WORLD_RADIUS_IN_ZONES*2) {
-            for (int y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
-                for (int x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
-                    TryGenerateZone({ x, y });
+            for (int16_t y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
+                for (int16_t x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
+                    TryGenerateZone(ZoneID(x, y));
+                    
                     PERIODIC_NOW(3s, {
                         
                         // print a cool grid
-                        for (int iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy += 6) {
-                            for (int ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix += 6) {
+                        for (int16_t iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy += 6) {
+                            for (int16_t ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix += 6) {
                                 if (std::abs(ix - x) < 3 && std::abs(iy - y) < 3) {
                                     std::cout << COLOR_GOLD;
                                 }
@@ -1023,7 +1024,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
-            zdo.SetRotation(rot * piece.m_rot);
+            zdo.get().SetRotation(rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
@@ -1046,11 +1047,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos).get();
                 zdo->SetRotation(piece.m_rot);
             }
             else {
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
+                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos).get();
                 zdo->SetRotation(rot * piece.m_rot);
             }
 
@@ -1075,10 +1076,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
-    zdo.SetRotation(rot);
+    zdo.get().SetRotation(rot);
     
-    zdo.Set("location", location.m_hash);
-    zdo.Set("seed", seed);
+    zdo.get().Set(Hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
+    zdo.get().Set(Hashes::ZDO::ZoneManager::SEED, seed);
 }
 
 // public

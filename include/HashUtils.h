@@ -4,7 +4,20 @@
 #include "ZDOID.h"
 #include "Vector.h"
 
+class ZDO;
+
 namespace ankerl::unordered_dense {
+
+    /*
+    template<>
+    struct hash<std::reference_wrapper<ZDO>> {
+        using is_avalanching = void;
+
+        auto operator()(std::reference_wrapper<ZDO> v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<std::uintptr_t>{}(v.get());
+            //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
+        }
+    };*/
 
     template <>
     struct hash<ZDOID> {

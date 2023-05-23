@@ -6,6 +6,7 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "VUtilsString.h"
+#include "Hashes.h"
 #include "HashUtils.h"
 #include "Quaternion.h"
 #include "Vector.h"
@@ -39,7 +40,9 @@ class ZDO {
     using zdo_member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
     using zdo_member_variant = VUtils::Traits::tuple_to_variant<zdo_member_tuple>::type;
 
+    // TODO fix this templated thing (zdo_member_variant not working)
     using zdo_member_map = UNORDERED_MAP_t<zdo_xhash, zdo_member_variant>;
+    //using zdo_member_map = UNORDERED_MAP_t<zdo_xhash, std::variant<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>>;
 
     template<typename T>
     struct is_zdo_member : VUtils::Traits::tuple_has_type<T, zdo_member_tuple> {};
@@ -105,6 +108,7 @@ public:
 
 private:
     enum class LocalDenotion {
+        Member_Connection,
         Member_Float,
         Member_Vec3,
         Member_Quat,
@@ -112,8 +116,11 @@ private:
         Member_Long,
         Member_String,
         Member_ByteArray,
-        Member_Connection,
         //Marker_Owner,
+        Marker_Persistent,
+        Marker_Distant,
+        Marker_Type1,
+        Marker_Type2,
     };
 
     // Valheim specific enum for both file/network in newer efficient version
@@ -134,19 +141,25 @@ private:
     };
 
     enum class LocalFlag {
-        Member_Float = 1 << 0,
-        Member_Vec3 = 1 << 1,
-        Member_Quat = 1 << 2,
-        Member_Int = 1 << 3,
-        Member_Long = 1 << 4,
-        Member_String = 1 << 5,
-        Member_ByteArray = 1 << 6,
-        Member_Connection = 1 << 7,
+        None = 0,
+        Member_Connection = 1 << 0,
+        Member_Float = 1 << 1,
+        Member_Vec3 = 1 << 2,
+        Member_Quat = 1 << 3,
+        Member_Int = 1 << 4,
+        Member_Long = 1 << 5,
+        Member_String = 1 << 6,
+        Member_ByteArray = 1 << 7,
         //Marker_Owner = 1 << 8,
+        Marker_Persistent = 1 << 8,
+        Marker_Distant = 1 << 9,
+        Marker_Type1 = 1 << 10,
+        Marker_Type2 = 1 << 11,
     };
 
     // Valheim specific flags for both file/network in newer efficient version
     enum class GlobalFlag : zdo_global_mask {
+        None = 0,
         Member_Connection = 1 << 1,
         Member_Float = 1 << 1,
         Member_Vec3 = 1 << 2,
@@ -178,14 +191,16 @@ private:
         if (insert.second) {
             // Then officially assign
             insert.first->second = std::move(value);
-            SetDenotion(GetMemberDenotion<T>(), true);
+            m_encoded.AddDenotion(GetMemberDenotion<T>());
             return true;
         }
         else {
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
             if (get) {
-                if (*get != value) {
+                if (!std::is_fundamental_v<T> 
+                    || *get != value) 
+                {
                     *get = std::move(value);
                     return true;
                 }
@@ -232,20 +247,20 @@ private:
         requires is_zdo_member<T>::value
     zdo_xhash hash_to_xhash(HASH_t in) const {
         return static_cast<zdo_xhash>(in) 
-            ^ static_cast<zdo_xhash>(ankerl::unordered_dense::hash<T>{}(VUtils::Traits::tuple_index<typename T, zdo_member_tuple>::value));
+            ^ static_cast<zdo_xhash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index<T, zdo_member_tuple>::value));
     }
 
     template<typename T>
         requires is_zdo_member<T>::value
     HASH_t xhash_to_hash(zdo_xhash in) const {
         return static_cast<HASH_t>(in) 
-            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<T>{}(VUtils::Traits::tuple_index<typename T, zdo_member_tuple>::value));
+            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index<T, zdo_member_tuple>::value));
     }
 
     template<typename T>
         requires is_zdo_member<T>::value
     void _TryWriteType(DataWriter& writer, zdo_member_map& members) const {
-        if (_ContainsMember<T>()) {     
+        if (m_encoded.HasMember<T>()) {     
             const auto begin_mark = writer.Position();
             uint8_t count = 0;
             writer.Write(count); // placeholder 0 byte
@@ -288,7 +303,6 @@ private:
 private:
     static ankerl::unordered_dense::segmented_map<ZDOID, zdo_member_map> ZDO_MEMBERS;
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnector> ZDO_CONNECTORS;
-    //static ankerl::unordered_dense::segmented_map<ZDOID, OWNER_t> ZDO_OWNERS; // TODO owners could use a similar zdoid indexing procedure (instead of whole uint64 when specific ids are used)
 
     /*
     * 36 bytes total:
@@ -300,22 +314,121 @@ private:
     Rev m_rev;                                      // 4 bytes
 
     // Encoding of PREFAB, FLAGS, OWNER
-    //  pppppppp pppppppp ffffffff nnuuuuuu
+    //  pppppppp ppppffff ffffffff nnuuuuuu
     //  p: PREFAB, f: FLAGS, n: UNUSED, u: OWNER
-    uint32_t m_encoded{};
+    class _zdoEnc {
+    private:
+        static constexpr uint32_t OWNER_BIT_OFFSET = 0;
+        static constexpr uint32_t OWNER_BIT_COUNT = ZDOID::USER_BIT_COUNT;
 
-    static constexpr uint32_t OWNER_BIT_OFFSET = 0;
-    static constexpr uint32_t OWNER_BIT_COUNT = ZDOID::USER_BIT_COUNT;
-    static constexpr uint32_t OWNER_BIT_MASK = (1 << OWNER_BIT_COUNT) - 1;
+        static constexpr uint32_t FLAG_BIT_OFFSET = 8;
+        static constexpr uint32_t FLAG_BIT_COUNT = 12;
 
-    static constexpr uint32_t FLAG_BIT_OFFSET = 8;
-    static constexpr uint32_t FLAG_BIT_COUNT = 8;
-    static constexpr uint32_t FLAG_BIT_MASK = (1 << FLAG_BIT_COUNT) - 1;
+        static constexpr uint32_t PREFAB_BIT_OFFSET = 20;
+        static constexpr uint32_t PREFAB_BIT_COUNT = 12;
 
-    static constexpr uint32_t PREFAB_BIT_OFFSET = 16;
-    static constexpr uint32_t PREFAB_BIT_COUNT = 16;
-    static constexpr uint32_t PREFAB_BIT_MASK = (1 << PREFAB_BIT_COUNT) - 1;
+    private:
+        uint32_t m_data{};
+
+    private:
+        // Retrive a number by bit offset and bit count from m_data
+        constexpr decltype(m_data) Get(uint8_t offset, uint8_t count) const {
+            return (m_data >> offset) & ((1 << count) - 1);
+        }
+
+        constexpr void Add(decltype(m_data) value, uint8_t offset, uint8_t count) {
+            m_data |= (value & ((1 << count) - 1)) << offset;
+        }
+
+        constexpr void Set(decltype(m_data) value, uint8_t offset, uint8_t count) {
+            assert((value <= static_cast<decltype(m_data)>((1 << count) - 1)) && "data loss");
+
+            // zero out
+            m_data &= ~((1 << count) - 1) << offset;
+
+            // merge portion
+            Add(value, offset, count);
+        }
+
+    public:
+        constexpr _zdoEnc() {}
+
+        constexpr _zdoEnc(const _zdoEnc& other) = default;
+        constexpr _zdoEnc(_zdoEnc&& other) {
+            this->m_data = other.m_data;
+            other.m_data = 0;
+        }
+
+        constexpr void operator=(const _zdoEnc& other) {
+            this->m_data = other.m_data;
+        }
+
+        // Get all machine-representative flags
+        constexpr LocalFlag GetFlags() const {
+            return (LocalFlag) Get(FLAG_BIT_OFFSET, FLAG_BIT_COUNT);
+        }
+
+        // Check whether this ZDO has at least all of the specified flags
+        //  Flags may be xored together
+        bool HasAllFlags(LocalFlag flags) const {
+            return (GetFlags() & flags) == flags;
+        }
+
+        // Check whether this ZDO has any of the specified flags
+        //  Flags may be xored together
+        bool HasAnyFlags(LocalFlag flags) const {
+            return (GetFlags() & flags) != LocalFlag::None;
+        }
+
+        constexpr void AddFlags(LocalFlag flags) {
+            Add(std::to_underlying(flags), FLAG_BIT_OFFSET, FLAG_BIT_COUNT);
+        }
+
+        // Check whether this ZDO has any of the specified data types
+        
+        bool HasDenotion(LocalDenotion denotion) const {
+            return HasAllFlags(LocalFlag(1 << denotion));
+        }
+
+        constexpr void AddDenotion(LocalDenotion denotion) {
+            AddFlags(LocalFlag(1 << denotion));
+        }
+
+        // Check whether this ZDO contains a specific templated member data type
+        template<typename T>
+            requires is_zdo_member<T>::value
+        bool HasMember() const {
+            static_assert(
+                VUtils::Traits::tuple_index<float, zdo_member_tuple>::value + 1 == std::to_underlying(LocalDenotion::Member_Float),
+                "zdo_types type indexes must must zdo enum Flags"
+                );
+
+            return HasDenotion(LocalDenotion(VUtils::Traits::tuple_index<T, zdo_member_tuple>::value + 1));
+        }
+
+
+
+        constexpr decltype(auto) GetPrefabIndex() const {
+            return Get(PREFAB_BIT_OFFSET, PREFAB_BIT_COUNT);
+        }
+
+        constexpr void SetPrefabIndex(decltype(m_data) index) {
+            Set(index, PREFAB_BIT_OFFSET, PREFAB_BIT_COUNT);
+        }
+
+
+
+        constexpr decltype(auto) GetOwnerIndex() const {
+            return Get(OWNER_BIT_OFFSET, OWNER_BIT_COUNT);
+        }
+
+        constexpr void SetOwnerIndex(decltype(m_data) index) {
+            Set(index, OWNER_BIT_OFFSET, OWNER_BIT_COUNT);
+        }
+    } m_encoded;
+
     
+    /*
     // Get all machine-representative flags
     constexpr LocalFlag _GetFlags() const {
         return LocalFlag((m_encoded >> FLAG_BIT_COUNT) & FLAG_BIT_MASK);
@@ -357,9 +470,7 @@ private:
             );
 
         return _HasDenotion(LocalDenotion(VUtils::Traits::tuple_index<T, zdo_member_tuple>::value));
-    }
-
-    
+    }    
 
 
 
@@ -377,7 +488,7 @@ private:
 
     constexpr void _SetOwnerIndex(decltype(m_encoded) index) {
         m_encoded &= ((index & OWNER_BIT_MASK) << OWNER_BIT_OFFSET);
-    }
+    }*/
 
 public:
     ZDO();
@@ -386,6 +497,9 @@ public:
     ZDO(ZDOID id, Vector3f pos);
 
     ZDO(const ZDO& other) = default;
+    ZDO(ZDO&& other) = default;
+
+
     
 
 
@@ -409,11 +523,17 @@ public:
     template<typename T>
         requires is_zdo_member<T>::value
     const T* Get(HASH_t key) const {
-        if (GetOrdinalMask() & GetOrdinalMask<T>()) {
-            auto mut = ToShiftHash<T>(key);
-            auto&& find = m_members.find(mut);
-            if (find != m_members.end()) {
-                return find->second.Get<T>();
+        if (m_encoded.HasMember<T>()) {
+            auto&& members_find= ZDO_MEMBERS.find(ID());
+            if (members_find != ZDO_MEMBERS.end()) {
+                auto&& members = members_find->second;
+
+                auto mut = hash_to_xhash<T>(key);
+
+                auto&& find = members.find(mut);
+                if (find != members.end()) {
+                    return std::get_if<T>(&find->second);
+                }
             }
         }
         return nullptr;
@@ -547,11 +667,11 @@ public:
     }
         
     const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByIndex(_GetPrefabIndex());
+        return PrefabManager()->RequirePrefabByIndex(m_encoded.GetPrefabIndex());
     }
     
     HASH_t GetPrefabHash() const {
-        return PrefabManager()->RequirePrefabByIndex(_GetPrefabIndex()).m_hash;
+        return PrefabManager()->RequirePrefabByIndex(m_encoded.GetPrefabIndex()).m_hash;
     }
 
     /*
@@ -575,12 +695,13 @@ public:
     }
 
     OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(_GetOwnerIndex());
+        return ZDOID::GetUserIDByIndex(m_encoded.GetOwnerIndex());
     }
 
 
 
     bool IsOwner(OWNER_t owner) const {
+        //return m_encoded.GetOwnerIndex() == owner.
         return owner == this->Owner();
     }
 
@@ -591,8 +712,9 @@ public:
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
+        return m_encoded.GetOwnerIndex();
         //return _HasDenotion(LocalDenotion::Marker_Owner);
-        return Owner();
+        //return Owner();
     }
 
     // Claim ownership over this ZDO
@@ -621,7 +743,31 @@ public:
     // Set the owner of the ZDO
     //  The owner revision is unaffected
     void _SetOwner(OWNER_t owner) {
-        _SetOwnerIndex(ZDOID::EnsureUserIDIndex(owner));
+        m_encoded.SetOwnerIndex(ZDOID::EnsureUserIDIndex(owner));
+    }
+
+
+
+    uint16_t GetOwnerRevision() const {
+        return m_rev.GetOwnerRevision();
+    }
+
+    uint32_t GetDataRevision() const {
+        return m_rev.GetDataRevision();
+    }
+
+
+
+    bool IsPersistent() const {
+        return m_encoded.HasDenotion(LocalDenotion::Marker_Persistent);
+    }
+
+    bool IsDistant() const {
+        return m_encoded.HasDenotion(LocalDenotion::Marker_Distant);
+    }
+
+    Prefab::Type GetType() const {
+        return Prefab::Type((m_encoded.GetFlags() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
     }
 
 

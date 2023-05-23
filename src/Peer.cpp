@@ -23,7 +23,7 @@ Peer::Peer(ISocket::Ptr socket)
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader)
             {
-            rpc->m_uuid = reader.Read<OWNER_t>();
+            rpc->m_uuid = reader.Read<int64_t>();
             if (!rpc->m_uuid)
                 throw std::runtime_error("peer provided 0 owner");
 
@@ -192,6 +192,6 @@ bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
     outItr = find;
 
     return find == m_zdos.end()
-        || zdo.GetOwnerRevision() > find->second.first.m_ownerRev
-        || zdo.m_dataRev > find->second.first.m_dataRev;
+        || zdo.GetOwnerRevision() > find->second.first.GetOwnerRevision()
+        || zdo.GetDataRevision() > find->second.first.GetDataRevision();
 }

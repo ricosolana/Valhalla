@@ -133,9 +133,11 @@ using Vector2s = Vector2<int16_t>;
 
 std::ostream& operator<<(std::ostream& st, Vector2f vec);
 std::ostream& operator<<(std::ostream& st, Vector2i vec);
+std::ostream& operator<<(std::ostream& st, Vector2s vec);
 
 template <> struct fmt::formatter<Vector2f> : ostream_formatter {};
 template <> struct fmt::formatter<Vector2i> : ostream_formatter {};
+template <> struct fmt::formatter<Vector2s> : ostream_formatter {};
 
 namespace quill {
     template <>
@@ -143,6 +145,9 @@ namespace quill {
 
     template <>
     struct copy_loggable<Vector2i> : std::true_type {};
+
+    template <>
+    struct copy_loggable<Vector2s> : std::true_type {};
 }
 
 

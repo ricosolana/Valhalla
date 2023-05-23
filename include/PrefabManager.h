@@ -35,14 +35,14 @@ public:
 	// Retrieve a prefab by index
 	//	Non-stable on container modifications
 	//	Throws if index is out of bounds
-	const Prefab& RequirePrefabByIndex(uint16_t index) const {
+	const Prefab& RequirePrefabByIndex(uint32_t index) const {
 		if (m_prefabs.size() < index) {
 			throw std::runtime_error("prefab index out of bounds");
 		}
 		return *m_prefabs.values()[index].second;
 	}
 
-	uint16_t RequirePrefabIndexByHash(HASH_t hash) const {
+	uint32_t RequirePrefabIndexByHash(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end()) {
 			return find._Ptr - m_prefabs.values().data();
@@ -50,14 +50,13 @@ public:
 		throw std::runtime_error("prefab by hash not found");
 	}
 
-	/*
-	std::pair<const Prefab&, uint16_t> RequirePrefabAndIndexByHash(HASH_t hash) const {
+	std::pair<const Prefab&, uint32_t> RequirePrefabAndIndexByHash(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end()) {
-			return std::make_pair(*find->second, (uint16_t)(find._Ptr - m_prefabs.values().data()));
+			return std::make_pair(*find->second, (uint32_t)(find._Ptr - m_prefabs.values().data()));
 		}
 		throw std::runtime_error("prefab by hash not found");
-	}*/
+	}
 
 	// Get a definite prefab
 	//	Throws if prefab not found

@@ -4,6 +4,10 @@
 // Borrowed from
 //  https://github.com/rpclib/rpclib/blob/master/include/rpc/detail/func_traits.h
 
+#include <tuple>
+#include <variant>
+#include <concepts>
+
 namespace VUtils {
     namespace Traits {
 
@@ -180,7 +184,9 @@ namespace VUtils {
         template <typename... Ts>
         struct tuple_to_variant<std::tuple<Ts...>>
         {
-            using type = std::variant<typename Ts...>;
+            // typename fails on msvc
+            // using type = std::variant<typename Ts...>;
+            using type = std::variant<Ts...>;
         };
     }
 }

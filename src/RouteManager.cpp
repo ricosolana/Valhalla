@@ -20,8 +20,8 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			return;
 
 		reader.Read<int64_t>(); // skip msgid
-		DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<OWNER_t>();
-		auto target = reader.Read<OWNER_t>();
+		DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<int64_t>();
+		auto target = reader.Read<int64_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
 		auto params = reader.Read<DataReader>();
@@ -72,7 +72,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			}
 		}
 		else {
-			if (target != VH_ID) {
+			if (target != (int64_t)VH_ID) {
 				if (auto other = NetManager()->GetPeerByUUID(target)) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
 						return;

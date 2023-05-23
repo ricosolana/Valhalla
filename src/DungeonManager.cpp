@@ -134,7 +134,9 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
     static constexpr int s = sizeof(ZDO);
     auto&& netTicksNow = Valhalla()->GetWorldTicks();
 
-    auto&& ticksDungeon = dungeonZdo.GetTimeCreated();
+    assert(false);
+
+    auto&& ticksDungeon = TICKS_t(); // dungeonZdo.GetTimeCreated();
 
     // Reset dungeons after a time
     if (ticksDungeon + VH_SETTINGS.dungeonsRegenerationInterval < netTicksNow) {
@@ -172,7 +174,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
             LOG_INFO(LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
-            return &Generate(dungeon, pos, rot);
+            return &Generate(dungeon, pos, rot).get();
         }
         else {
             LOG_INFO(LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name, pos);
@@ -201,7 +203,7 @@ void IDungeonManager::TryRegenerateDungeons() {
             break;
         }
         else {
-            if (ZDO* newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
+            if (auto&& newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
                 *itr = newDungeon->ID();
             }
             ++idx;
@@ -237,16 +239,18 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
-    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
+    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    zdo.get().SetRotation(rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
 
     return zdo;
 }
 
-ZDO& IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
-    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos, rot);
+std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
+    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    zdo.get().SetRotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
 

@@ -39,7 +39,7 @@ World::World(DataReader reader) {
 	m_seedName = reader.Read<std::string>();
 	reader.Read<HASH_t>(); // seed
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
-	m_uid = reader.Read<OWNER_t>();
+	m_uid = reader.Read<int64_t>();
 	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
 }
 
@@ -121,9 +121,6 @@ void World::LoadFileDB(const fs::path& root) {
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 				LOG_WARNING(LOGGER, "Loading unsupported world version {}", worldVersion);
-				if (!VH_SETTINGS.worldModern) {
-					LOG_WARNING(LOGGER, "Legacy ZDOs enabled. Networked objects might not behave as expected");
-				}
 			}
 			else {
 				LOG_INFO(LOGGER, "Loading world version {}", worldVersion);

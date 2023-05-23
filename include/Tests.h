@@ -1288,7 +1288,8 @@ public:
             ZDO zdo;
             BYTES_t bytes;
             DataReader pkg(opt.value());
-            zdo.Load(pkg, VConstants::WORLD);
+            assert(false);
+            //zdo.Load(pkg, VConstants::WORLD);
 
             assert(zdo.GetFloat("health", 0) == 3.1415926535f);
             assert(zdo.GetInt("weight", 0) == 435);
@@ -1331,12 +1332,13 @@ public:
             BYTES_t bytes;
             {
                 DataWriter pkg(bytes);
-                zdo.Save(pkg);
+                //zdo.Save(pkg);
+                assert(false);
             }
 
             ZDO zdo2;
             DataReader reader(bytes);
-            zdo2.Load(reader, VConstants::WORLD);
+            //zdo2.Load(reader, VConstants::WORLD);
 
             //assert(zdo2.GetFloat("health", 0) == 3.1415926535f);
             //assert(zdo2.GetInt("weight", 0) == 435);
@@ -1359,12 +1361,12 @@ public:
 
             BYTES_t bytes;
             DataWriter writer(bytes);
-            zdo.Serialize(writer);
+            //zdo.Serialize(writer);
             writer.SetPos(0);
 
             DataReader reader(bytes);
             ZDO zdo2;
-            zdo2.Deserialize(reader);
+            //zdo2.Deserialize(reader);
 
             assert(zdo2.GetFloat("health", 0) == 3.1415926535f);
             assert(zdo2.GetInt("weight", 0) == 435);

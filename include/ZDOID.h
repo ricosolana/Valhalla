@@ -122,7 +122,7 @@ public:
 
     // Set the associated UserID index 
     constexpr void _SetUserIDIndex(T index) {
-        this->m_encoded &= (index & USER_BIT_MASK) << USER_BIT_OFFSET;
+        this->m_encoded |= (index & USER_BIT_MASK) << USER_BIT_OFFSET;
     }
 
     // TODO rename to GetID
@@ -132,7 +132,7 @@ public:
 
     // TODO rename to SetID
     constexpr void SetUID(uint32_t uid) {
-        this->m_encoded &= (uid & ID_BIT_MASK) << ID_BIT_OFFSET;
+        this->m_encoded |= (uid & ID_BIT_MASK) << ID_BIT_OFFSET;
     }
 
 

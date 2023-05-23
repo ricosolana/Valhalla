@@ -39,8 +39,8 @@ public:
 	ZDO* TryRegenerateDungeon(ZDO& dungeonZdo);
 	void TryRegenerateDungeons();
 
-	ZDO& Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
-	ZDO& Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
+	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
+	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
 	void Generate(const Dungeon& dungeon, ZDO& zdo);
 };
 

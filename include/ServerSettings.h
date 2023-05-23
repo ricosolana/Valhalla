@@ -98,7 +98,6 @@ struct ServerSettings {
     std::string     worldSeed;
     bool            worldPregenerate;
     seconds         worldSaveInterval;  // set to 0 to disable
-    bool            worldModern;        // whether to purge old objects on load
     bool            worldFeatures;
     bool            worldVegetation;
     bool            worldCreatures;
@@ -112,11 +111,11 @@ struct ServerSettings {
         
     bool            dungeonsEnabled;
     bool            dungeonsEndcapsEnabled;
-    bool            dungeonsEndcapsInsetFrac;
+    float           dungeonsEndcapsInsetFrac;
     bool            dungeonsDoors;
     bool            dungeonsRoomsFlipped;
     bool            dungeonsRoomsZoneBounded;
-    bool            dungeonsRoomsInsetSize;
+    float           dungeonsRoomsInsetSize;
     bool            dungeonsRoomsFurnishing;
     seconds         dungeonsRegenerationInterval;
     int             dungeonsRegenerationMaxSteps;

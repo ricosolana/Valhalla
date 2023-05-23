@@ -183,7 +183,7 @@ public:
     //  T...:       value_type
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
-                && !std::is_arithmetic_v<typename Iterable::value_type>)
+                && !std::is_fundamental_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
         Write(static_cast<int32_t>(size));
@@ -194,7 +194,7 @@ public:
 
     // Writes a primitive type
     template<typename T> 
-        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+        requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
     void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
