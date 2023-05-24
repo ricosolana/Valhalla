@@ -110,7 +110,7 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     if (version)
         this->m_id.SetUID(ZDOManager()->m_nextUid++);
 
-    auto flags = reader.Read<zdo_global_mask>();
+    auto flags = reader.Read<uint16_t>();
 
     if (version) {
         reader.Read<Vector2s>(); // redundant
@@ -184,15 +184,13 @@ ZoneID ZDO::GetZone() const {
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
-    static_assert(std::same_as<zdo_global_mask, uint16_t>, "mask must be a uint16_t");
-
     bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
     //auto&& prefab = GetPrefab();
 
-    zdo_global_mask flags{};
+    uint16_t flags{};
     //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
     //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
     //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;

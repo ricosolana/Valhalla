@@ -148,7 +148,7 @@ namespace VUtils {
 
 
         template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-        template<class... Ts> overload(Ts...)->overload<Ts...>; // line not needed in C++20...
+        template<class... Ts> overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
 
 
@@ -168,6 +168,9 @@ namespace VUtils {
             static const std::size_t value = 1 + tuple_index<T, std::tuple<Types...>>::value;
         };
 
+        template<class T, class U, class... Types>
+        constexpr size_t tuple_index_v = tuple_index<T, U, Types...>::value;
+
 
 
         // https://stackoverflow.com/questions/25958259/how-do-i-find-out-if-a-tuple-contains-a-type
@@ -176,6 +179,9 @@ namespace VUtils {
 
         template <typename T, typename... Us>
         struct tuple_has_type<T, std::tuple<Us...>> : std::disjunction<std::is_same<T, Us>...> {}; 
+
+        template<typename T, typename... Us>
+        constexpr bool tuple_has_type_v = tuple_has_type<T, Us...>::value;
 
 
 
@@ -189,6 +195,9 @@ namespace VUtils {
             // using type = std::variant<typename Ts...>;
             using type = std::variant<Ts...>;
         };
+
+        template<typename... T>
+        using tuple_to_variant_t = tuple_to_variant<T...>::type;
 
 
 
@@ -230,6 +239,9 @@ namespace VUtils {
         struct variadic_value_at_index_reversed<index, F, R...>
             : std::integral_constant<size_t, variadic_value_at_index_reversed<index, R...>::value>
         { };
+
+        template<size_t index, size_t... R>
+        constexpr size_t variadic_value_at_index_reversed_v = variadic_value_at_index_reversed<index, R...>::value;
 
         template <size_t index, size_t... R>
         struct variadic_value_at_index
