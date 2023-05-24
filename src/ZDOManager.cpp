@@ -490,7 +490,7 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 		bool flag2 = b.GetType() == Prefab::Type::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
-			if ((flag && flag2) || a.GetPrefab().m_type == b.GetPrefab().m_type) {
+			if ((flag && flag2) || a.GetType() == b.GetType()) {
 				return first.second < second.second;
 			}
 			else

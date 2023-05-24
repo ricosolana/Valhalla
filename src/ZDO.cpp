@@ -60,15 +60,17 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     this->m_pos = pkg.Read<Vector3f>();
     this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
 
-    _TryReadType<float,         char16_t>(pkg);
-    _TryReadType<Vector3f,      char16_t>(pkg);
-    _TryReadType<Quaternion,    char16_t>(pkg);
-    _TryReadType<int32_t,       char16_t>(pkg);
-    _TryReadType<int64_t,       char16_t>(pkg);
-    _TryReadType<std::string,   char16_t>(pkg);
+    auto&& members = ZDO_MEMBERS[ID()];
+
+    _TryReadType<float,         char16_t>(pkg, members);
+    _TryReadType<Vector3f,      char16_t>(pkg, members);
+    _TryReadType<Quaternion,    char16_t>(pkg, members);
+    _TryReadType<int32_t,       char16_t>(pkg, members);
+    _TryReadType<int64_t,       char16_t>(pkg, members);
+    _TryReadType<std::string,   char16_t>(pkg, members);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t,   char16_t>(pkg);
+        _TryReadType<BYTES_t,   char16_t>(pkg, members);
 
     if (worldVersion < 17) {
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
@@ -134,16 +136,20 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
             auto zdoid = reader.Read<ZDOID>();
             // set connection
             type &= ~ZDOConnector::Type::Target;
-        }        
+        }
     }
 
-    if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader);
-    if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader);
+    if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
+        // Will insert a default if missing (should be missing already)
+        auto&& members = ZDO_MEMBERS[ID()];
+        if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members);
+    }
 
     return type;
 }

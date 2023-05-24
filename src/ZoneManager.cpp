@@ -288,13 +288,20 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    m_generatedZones = reader.Read<decltype(m_generatedZones)>();
+    {    
+        //m_generatedZones = reader.Read<decltype(m_generatedZones)>();
+
+        auto count = reader.Read<uint32_t>();
+        for (decltype(count) i = 0; i < count; i++) {
+            auto x = reader.Read<int32_t>();
+            auto y = reader.Read<int32_t>();
+            m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
+        }
+    }
 
     if (version >= 13) {
         reader.Read<int32_t>(); // PGW
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
-        //if (pgwVersion != VConstants::PGW)
-            //LOG_WARNING(LOGGER, "Loading unsupported pgw version");
 
         if (version >= 14) {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
@@ -302,8 +309,8 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
             if (version >= 18) {
                 if (version >= 20) reader.Read<bool>(); // locationsGenerated
 
-                const auto countLocations = reader.Read<int32_t>();
-                for (int i = 0; i < countLocations; i++) {
+                auto count = reader.Read<int32_t>();
+                for (decltype(count) i = 0; i < count; i++) {
                     auto text = reader.Read<std::string_view>();
                     auto pos = reader.Read<Vector3f>();
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
@@ -314,19 +321,16 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                             std::make_unique<Feature::Instance>(*location, pos);
                     }
                     else {
-                        LOG_ERROR(LOGGER, "Failed to find location {}", text);
+                        LOG_ERROR(LOGGER, "Unknown feature '{}'", text);
                     }
                 }
 
-                LOG_INFO(LOGGER, "Loaded {} ZoneLocation instances", countLocations);
+                LOG_INFO(LOGGER, "Loaded {} features instances ", count);
 
                 if (locationVersion != VConstants::LOCATION) {
-
+                    // regenerate features?
+                    //m_generatedFeatures.clear();
                 }
-
-                //if (pgwVersion != VConstants::PGW) {
-                  //m_generatedFeatures.clear();
-                //}
             }
         }
     }

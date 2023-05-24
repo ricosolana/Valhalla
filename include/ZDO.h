@@ -67,38 +67,38 @@ public:
         //static constexpr decltype(m_encoded) OWNER_MASK = (static_cast<decltype(m_encoded)>(1) << LEADING_OWNER_BITS) - 1;
 
     public:
-        constexpr Rev() {}
+        Rev() {}
 
-        constexpr Rev(uint32_t dataRev, uint16_t ownerRev) {
+        Rev(uint32_t dataRev, uint16_t ownerRev) {
             SetDataRevision(dataRev);
             SetOwnerRevision(ownerRev);
         }
 
-        constexpr uint32_t GetDataRevision() const {
+        uint32_t GetDataRevision() const {
             return m_pack.Get<0>();
         }
 
-        constexpr uint16_t GetOwnerRevision() const {
+        uint16_t GetOwnerRevision() const {
             return m_pack.Get<1>();
         }
 
 
 
-        constexpr void SetDataRevision(uint32_t dataRev) {
+        void SetDataRevision(uint32_t dataRev) {
             m_pack.Set<0>(dataRev);
         }
 
-        constexpr void SetOwnerRevision(uint16_t ownerRev) {
+        void SetOwnerRevision(uint16_t ownerRev) {
             m_pack.Set<1>(ownerRev);
         }
 
 
 
-        constexpr void ReviseData() {
+        void ReviseData() {
             this->SetDataRevision(GetDataRevision() + 1);
         }
 
-        constexpr void ReviseOwner() {
+        void ReviseOwner() {
             this->SetOwnerRevision(GetOwnerRevision() + 1);
         }
     };
@@ -164,7 +164,7 @@ private:
     // Valheim specific flags for both file/network in newer efficient version
     enum class GlobalFlag : zdo_global_mask {
         None = 0,
-        Member_Connection = 1 << 1,
+        Member_Connection = 1 << 0,
         Member_Float = 1 << 1,
         Member_Vec3 = 1 << 2,
         Member_Quat = 1 << 3,
@@ -184,12 +184,12 @@ private:
     // Set the object by hash (Internal use only; does not revise ZDO on changes)
     //  Returns whether the previous value was modified
     //  Throws on type mismatch
-    template<typename T> 
+    template<typename T>
         requires is_zdo_member<T>::value
-    bool _Set(HASH_t key, T value) {
+    bool _Set(HASH_t key, T value, zdo_member_map& members) {
         auto mut = hash_to_xhash<T>(key);
 
-        auto&& members = ZDO_MEMBERS[ID()];
+        //auto&& members = ZDO_MEMBERS[ID()];
 
         auto&& insert = members.insert({ mut, 0.f });
         if (insert.second) {
@@ -205,8 +205,8 @@ private:
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
             if (get) {
-                if (!std::is_fundamental_v<T> 
-                    || *get != value) 
+                if (!std::is_fundamental_v<T>
+                    || *get != value)
                 {
                     *get = std::move(value);
                     return true;
@@ -217,33 +217,12 @@ private:
                 throw std::runtime_error("zdo member type collision; this is very rare; consult a doctor");
             }
         }
+    }
 
-        /*
-        auto&& find = members.find(mut);
-        if (find != members.end()) {
-            auto&& get = std::get_if<T>(&find->second);
-            if (get) {
-                get
-            }
-            else {
-                throw std::runtime_error("zdo member type collision; this is very rare; consult a doctor");
-            }
-        }
-
-        auto &&insert = ZDO_MEMBERS[ID()].insert({mut, });
-        if (insert.second) {
-            // Manually initial-set
-            insert.first->second = Ord(std::move(value));
-            this->m_encoded |= (static_cast<uint64_t>(GetOrdinalMask<T>()) << (8 * 7));
-            assert(GetOrdinalMask() & GetOrdinalMask<T>());
-            return true;
-        }
-        else {
-            assert(GetOrdinalMask() & GetOrdinalMask<T>());
-            return insert.first->second.Set<T>(std::move(value));
-        }*/
-        
-        //return true;
+    template<typename T> 
+        requires is_zdo_member<T>::value
+    bool _Set(HASH_t key, T value) {
+        return _Set(key, std::move(value), ZDO_MEMBERS[ID()]);
     }
 
     void Revise() {
@@ -294,7 +273,7 @@ private:
     // Read a zdo_type from the DataStream
     template<typename T, typename CountType>
         requires std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>
-    void _TryReadType(DataReader& reader) {
+    void _TryReadType(DataReader& reader, zdo_member_map& members) {
         decltype(auto) count = reader.Read<CountType>();
 
         for (int i=0; i < count; i++) {
@@ -302,7 +281,7 @@ private:
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
             auto hash(reader.Read<HASH_t>());
             auto type(reader.Read<T>());
-            _Set(hash, type);
+            _Set(hash, type, members);
         }
     }
 
@@ -784,7 +763,7 @@ public:
     }
 
     Prefab::Type GetType() const {
-        return Prefab::Type((m_pack.Get<0>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+        return Prefab::Type((m_pack.Get<2>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
 
         //return m_pack.Get<2>() >>
         //return Prefab::Type((m_encoded.GetFlags() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);

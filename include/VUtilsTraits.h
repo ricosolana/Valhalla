@@ -7,6 +7,7 @@
 #include <tuple>
 #include <variant>
 #include <concepts>
+#include <type_traits>
 
 namespace VUtils {
     namespace Traits {
@@ -239,13 +240,15 @@ namespace VUtils {
         struct variadic_accumulate_values_until_index_reversed;
 
         template <size_t index, size_t F, size_t...R>
-            requires (index == sizeof...(R) || sizeof...(R) == 0)
+            //requires (index == sizeof...(R) || sizeof...(R) == 0)
+            requires (index >= sizeof...(R))
         struct variadic_accumulate_values_until_index_reversed<index, F, R...>
             : std::integral_constant<size_t, F>
         { };
 
         template <size_t index, size_t F, size_t... R>
-            requires (index < sizeof...(R) && sizeof...(R) > 0)
+            //requires (index < sizeof...(R) && sizeof...(R) > 0)
+                requires (index < sizeof...(R))
         struct variadic_accumulate_values_until_index_reversed<index, F, R...>
             : std::integral_constant<size_t, F + variadic_accumulate_values_until_index_reversed<index, R...>::value>
         { };

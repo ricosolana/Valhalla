@@ -333,7 +333,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
             a(m_settings.playerOnline, player, "offline", true);
-            a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s || val > 1h; });
+            a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, "list-force-visible", false);
 
@@ -346,10 +346,10 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.worldCreatures, world, "creatures", true);
             a(m_settings.worldHeightmapThreads, world, "heightmap-threads", 1, [](uint32_t val) { return val == 0 || val >= std::jthread::hardware_concurrency(); }, reloading);
                         
-            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s || val > 1s; });
+            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s; });
             a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
             a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
-            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](seconds val) { return val <= 0s || val > 10s; });
+            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](seconds val) { return val < 1s; });
             a(m_settings.zdoAssignAlgorithm, zdo, "assign-algorithm", AssignAlgorithm::NONE);
             
             a(m_settings.dungeonsEnabled, dungeons, "enabled", true);
@@ -371,7 +371,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             {
                 auto&& regeneration = dungeons["regeneration"];
-                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", days(3), [](minutes val) { return val < 1min; });
+                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", days(3), [](minutes val) { return val < 0s; });
                 a(m_settings.dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
             }
 

@@ -60,27 +60,27 @@ private:
     }
 
     static int64_t GetUserIDByIndex(size_t index) {
-        if (!index)
-            return 0;
+        //if (!index)
+            //return 0;
 
         //assert((index || (INDEXED_USERS[index] == 0))
             //&& "Array[0] should be 0 to represent no-owner");
 
-        if (INDEXED_USERS.size() < index)
+        if (index < INDEXED_USERS.size())
             return INDEXED_USERS[index];
 
         throw std::runtime_error("user id by index not found");
     }
 
 public:
-    constexpr ZDOID() = default;
+    ZDOID() = default;
 
-    constexpr ZDOID(OWNER_t owner, uint32_t uid) {
+    ZDOID(OWNER_t owner, uint32_t uid) {
         this->SetOwner(owner);
         this->SetUID(uid);
     }
 
-    constexpr ZDOID(const ZDOID&) = default;
+    ZDOID(const ZDOID&) = default;
 
     bool operator==(ZDOID other) const {
         return this->m_pack == other.m_pack;
@@ -101,29 +101,29 @@ public:
     }
 
     // Rename to SetUserID
-    constexpr void SetOwner(OWNER_t owner) {
+    void SetOwner(OWNER_t owner) {
         _SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
     }
 
 
 
     // Retrieve the index of the UserID
-    constexpr uint32_t _GetUserIDIndex() const {
+    uint32_t _GetUserIDIndex() const {
         return m_pack.Get<0>();
     }
 
     // Set the associated UserID index 
-    constexpr void _SetUserIDIndex(decltype(m_pack)::type index) {
+    void _SetUserIDIndex(decltype(m_pack)::type index) {
         m_pack.Set<0>(index);
     }
 
     // TODO rename to GetID
-    constexpr uint32_t GetUID() const {
+    uint32_t GetUID() const {
         return m_pack.Get<1>();
     }
 
     // TODO rename to SetID
-    constexpr void SetUID(uint32_t uid) {
+    void SetUID(uint32_t uid) {
         m_pack.Set<1>(uid);
     }
 

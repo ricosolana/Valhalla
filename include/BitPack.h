@@ -56,19 +56,19 @@ public:
         this->m_data = other.m_data;
     }
 
-    constexpr bool operator==(const BitPack<T, COUNTS...>& other) const {
+    bool operator==(const BitPack<T, COUNTS...>& other) const {
         return m_data == other.m_data;
     }
 
-    constexpr bool operator!=(const BitPack<T, COUNTS...>& other) const {
+    bool operator!=(const BitPack<T, COUNTS...>& other) const {
         return !(*this == other);
     }
 
-    constexpr operator bool() const {
+    operator bool() const {
         return static_cast<bool>(m_data);
     }
 
-    constexpr operator T() const {
+    operator T() const {
         return m_data;
     }
 
@@ -95,7 +95,7 @@ public:
     // Get the value of a specified member at index
     template<uint8_t index>
         requires (index < sizeof...(COUNTS))
-    constexpr type Get() const {
+    type Get() const {
         //return (m_data >> GetOffset<index>()) & ((1 << GetCount<index>()) - 1);
         //return m_data >> offset<index>::value
         return (m_data >> offset<index>::value) & ((1 << count<index>::value) - 1);
@@ -103,24 +103,30 @@ public:
 
     // Set the value of a specified member at index to 0
     template<uint8_t index>
-    constexpr void Clear() {
+    void Clear() {
         //m_data &= ~(((1 << GetCount<index>()) - 1) << GetOffset<index>());
         m_data &= ~(((1 << count<index>::value) - 1) << offset<index>::value);
+
+        assert(Get<index>() == 0);
     }
 
     // Set the value of a specified member at index
     template<uint8_t index>
         requires (index < sizeof...(COUNTS))
-    constexpr void Set(type value) {
+    void Set(type value) {
         Clear<index>();
         Merge<index>(value);
+
+        assert(Get<index>() == value);
     }
 
     // Merge the bits of a specified index with another value
     template<uint8_t index>
-    constexpr void Merge(type value) {
+    void Merge(type value) {
         //m_data |= (value & ((1 << GetCount<index>()) - 1)) << GetOffset<index>();
         m_data |= (value & ((1 << count<index>::value) - 1)) << offset<index>::value;
+
+        assert(Get<index>() & value);
     }
 };
 
