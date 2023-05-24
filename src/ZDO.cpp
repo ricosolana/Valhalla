@@ -14,6 +14,7 @@
 
 decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
 decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
+decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
 //decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
@@ -131,12 +132,19 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
         type = reader.Read<ZDOConnector::Type>();
         if (version) {
             auto hash = reader.Read<HASH_t>();
+            auto&& connector = ZDO_CONNECTORS[ID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
+            connector.m_type = type;
+            connector.m_hash = hash;
         }
         else {
-            auto zdoid = reader.Read<ZDOID>();
+            auto target = reader.Read<ZDOID>();
+            auto&& connector = ZDO_TARGETED_CONNECTORS[ID()];
             // set connection
+            connector.m_type = type;
+            connector.m_target = target;
             type &= ~ZDOConnector::Type::Target;
         }
+        m_pack.Merge<2>(std::to_underlying(LocalFlag::Member_Connection));
     }
 
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
@@ -218,14 +226,27 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     // TODO add connector
     //if (m_encoded.HasDenotion(LocalDenotion::Member_Connection)) {
     if (m_pack.Get<2>() & LocalFlag::Member_Connection) {
-        auto&& find = ZDO_CONNECTORS.find(ID());
-        if (find != ZDO_CONNECTORS.end()) {
-            auto&& connector = find->second;
-            writer.Write(connector.m_type);
-            writer.Write(connector.m_hash);
+        if (network) {
+            auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
+            if (find != ZDO_TARGETED_CONNECTORS.end()) {
+                auto&& connector = find->second;
+                writer.Write(connector.m_type);
+                writer.Write(connector.m_target);
+            }
+            else {
+                assert(false);
+            }
         }
         else {
-            assert(false);
+            auto&& find = ZDO_CONNECTORS.find(ID());
+            if (find != ZDO_CONNECTORS.end()) {
+                auto&& connector = find->second;
+                writer.Write(connector.m_type);
+                writer.Write(connector.m_hash);
+            }
+            else {
+                assert(false);
+            }
         }
     }
 

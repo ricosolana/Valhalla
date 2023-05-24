@@ -191,16 +191,18 @@ private:
 
         //auto&& members = ZDO_MEMBERS[ID()];
 
+        static_assert(GetMemberDenotion<float>() + 1 == LocalDenotion::Member_Float)
+
         auto&& insert = members.insert({ mut, 0.f });
         if (insert.second) {
             // Then officially assign
             insert.first->second = std::move(value);
             //m_encoded.AddDenotion(GetMemberDenotion<T>());
-            m_pack.Merge<2>(1 << GetMemberDenotion<T>());
+            m_pack.Merge<2>(1 << (GetMemberDenotion<T>() + 1));
             return true;
         }
         else {
-            assert(m_pack.Get<2>() & (1 << GetMemberDenotion<T>()));
+            assert(m_pack.Get<2>() & ((1 << GetMemberDenotion<T>()) + 1));
 
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
@@ -289,7 +291,8 @@ private:
 
 private:
     static ankerl::unordered_dense::segmented_map<ZDOID, zdo_member_map> ZDO_MEMBERS;
-    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnector> ZDO_CONNECTORS;
+    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
+    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
     /*
     * 36 bytes total:

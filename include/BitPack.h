@@ -4,23 +4,46 @@
 #include "VUtilsTraits.h"
 
 template<typename T, size_t ...COUNTS>
-    requires std::is_integral_v<T> && std::is_unsigned_v<T>
+    requires std::is_integral_v<T>&& std::is_unsigned_v<T>
 class BitPack {
     //static_assert((COUNTS + ...) > 0, "Counts summed together must be greater than 0");
     //static_assert((COUNTS + ...) <= sizeof(T) * 8, "Counts summed together must fit within mask");
-    
+
     static_assert((COUNTS + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
 
 public:
     using type = T;
 
     template<size_t index>
+        requires (index < sizeof...(COUNTS))
     using count = VUtils::Traits::variadic_value_at_index<index, COUNTS...>;
 
-    template<size_t index>
-    using offset = VUtils::Traits::variadic_accumulate_values_until_index<index, COUNTS...>;
+
+
+    template<size_t...>
+    struct offset;
 
     template<size_t index>
+        requires (index == 0)
+    struct offset<index>
+        : std::integral_constant<size_t, 0>
+    { };
+
+    template<size_t index>
+        requires (index > 0 && index < (sizeof...(COUNTS)))
+    struct offset<index>
+        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1, COUNTS...>
+    { };
+
+
+
+    // require that the offset index not be greater than the container
+
+    //template<size_t index>
+    //using offset = VUtils::Traits::variadic_accumulate_values_to_index<index, COUNTS...>;    
+
+    template<size_t index>
+    //requires (index < sizeof...(COUNTS))
     using capacity = std::integral_constant<size_t, (1 << count<index>::value) - 1>;
 
 private:
@@ -98,14 +121,16 @@ public:
     type Get() const {
         //return (m_data >> GetOffset<index>()) & ((1 << GetCount<index>()) - 1);
         //return m_data >> offset<index>::value
-        return (m_data >> offset<index>::value) & ((1 << count<index>::value) - 1);
+        //return (m_data >> offset<index>::value) & ((1 << count<index>::value) - 1);
+        return (m_data >> offset<index>::value) & capacity<index>::value;
     }
 
     // Set the value of a specified member at index to 0
     template<uint8_t index>
     void Clear() {
         //m_data &= ~(((1 << GetCount<index>()) - 1) << GetOffset<index>());
-        m_data &= ~(((1 << count<index>::value) - 1) << offset<index>::value);
+        //m_data &= ~(((1 << count<index>::value) - 1) << offset<index>::value);
+        m_data &= ~(capacity<index>::value << offset<index>::value);
 
         assert(Get<index>() == 0);
     }
@@ -124,9 +149,9 @@ public:
     template<uint8_t index>
     void Merge(type value) {
         //m_data |= (value & ((1 << GetCount<index>()) - 1)) << GetOffset<index>();
-        m_data |= (value & ((1 << count<index>::value) - 1)) << offset<index>::value;
+        //m_data |= (value & ((1 << count<index>::value) - 1)) << offset<index>::value;
+        m_data |= (value & capacity<index>::value) << offset<index>::value;
 
-        assert(Get<index>() & value);
+        assert((Get<index>() & value) == value);
     }
 };
-

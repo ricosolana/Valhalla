@@ -16,5 +16,26 @@ public:
 
 public:
 	Type m_type;
-	HASH_t m_hash;
+
+public:
+	ZDOConnector() : m_type(Type::None) {}
+	ZDOConnector(Type type) : m_type(type) {}
+};
+
+class ZDOConnectorData : public ZDOConnector {
+public:
+	HASH_t m_hash{};
+
+public:
+	ZDOConnectorData() {}
+	ZDOConnectorData(Type type, HASH_t hash) : ZDOConnector(type), m_hash(hash) {}
+};
+
+class ZDOConnectorTargeted : public ZDOConnector {
+public:
+	ZDOID m_target{};
+
+public:
+	ZDOConnectorTargeted() {}
+	ZDOConnectorTargeted(Type type, ZDOID target) : ZDOConnector(type), m_target(target) {}
 };
