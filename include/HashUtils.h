@@ -18,13 +18,14 @@ namespace ankerl::unordered_dense {
             //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
         }
     };*/
-
+    
     template <>
     struct hash<ZDOID> {
         using is_avalanching = void;
 
         auto operator()(ZDOID v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<decltype(ZDOID::m_encoded)>{}(v.m_encoded);
+            return ankerl::unordered_dense::hash<decltype(ZDOID::m_pack)::type>{}(v.m_pack);
+            //return ankerl::unordered_dense::hash<decltype(ZDOID::m_encoded)>{}(v.m_encoded);
             //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
         }
     };

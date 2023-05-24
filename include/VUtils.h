@@ -731,6 +731,13 @@ public:
 
 
 
+
+
+
+
+
+
+
 static_assert(std::endian::native == std::endian::little, 
     "System must be little endian (big endian not supported for networking (who uses big endian anyways?)");
 

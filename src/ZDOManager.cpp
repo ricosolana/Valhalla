@@ -268,7 +268,8 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
-	zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
+	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
+	zdo.get().m_pack.Set<1>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 
 	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
 		zdo.get().SetLocalScale(prefab.m_localScale, false);
@@ -288,7 +289,8 @@ std::reference_wrapper<ZDO> IZDOManager::Instantiate(HASH_t hash, Vector3f pos, 
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const ZDO& zdo) {
 	auto&& copy = Instantiate(zdo.Position());
 	
-	copy.get().m_encoded = zdo.m_encoded;
+	//copy.get().m_encoded = zdo.m_encoded;
+	copy.get().m_pack = zdo.m_pack;
 	copy.get().m_rotation = zdo.m_rotation;
 
 	return copy;

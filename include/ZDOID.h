@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "VUtils.h"
+#include "BitPack.h"
 
 class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
@@ -11,46 +12,36 @@ class ZDOID {
 #if INTPTR_MAX == INT32_MAX
     // 2 players per session
     // 32,768 ZDOs
-    using T = uint16_t;
-    static constexpr int USER_BIT_COUNT = 1;
+#error "bruh"
+    BitPack<uint16_t, 1, 16 - 1> m_pack;
 #elif INTPTR_MAX == INT64_MAX
     // 64 players per session
     // ~67.1M ZDOs
-    using T = uint32_t;
-    static constexpr int USER_BIT_COUNT = 6;
+    
+    // User: 0, ID: 1
+    BitPack<uint32_t, 6, 32 - 6> m_pack;
 #else
 #error "Unable to detect 32-bit or 64-bit system"
 #endif
-    static constexpr int USER_BIT_OFFSET = 0;
-    static constexpr int ID_BIT_OFFSET = USER_BIT_COUNT;
-
-    static constexpr int ID_BIT_COUNT = 8 * sizeof(T) - ID_BIT_OFFSET;
     
-    static constexpr T USER_BIT_MASK = (1 << (USER_BIT_COUNT)) - 1;
-    static constexpr T ID_BIT_MASK = (~USER_BIT_MASK) >> USER_BIT_COUNT;
-
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
-    static std::array<int64_t, USER_BIT_MASK> INDEXED_USERS;
-    
+    //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;
+
+    static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
+
 public:
     static const ZDOID NONE;
-
-private:
-    // Encoding of ID and USER bits
-    //  iiiiiiii iiiiiiii iiiiiiii iiuuuuuu
-    //  i: ID, u: USER
-    T m_encoded{};
 
 private:
     // Get the index of a UserID
     //  The UserID is inserted if it does not exist
     //  Returns the insertion index or the existing index of the UserID
-    static T EnsureUserIDIndex(int64_t owner) {
+    static size_t EnsureUserIDIndex(int64_t owner) {
         if (!owner)
             return 0;
 
-        for (T i = 1; i < INDEXED_USERS.size(); i++) {
+        for (size_t i = 1; i < INDEXED_USERS.size(); i++) {
             // Assume that a blank index prior to an existing UserID being found
             //  means that the UserID does not exist (so insert it)
             if (!INDEXED_USERS[i]) {
@@ -68,7 +59,7 @@ private:
         std::unreachable();
     }
 
-    static int64_t GetUserIDByIndex(T index) {
+    static int64_t GetUserIDByIndex(size_t index) {
         if (!index)
             return 0;
 
@@ -77,6 +68,7 @@ private:
 
         if (INDEXED_USERS.size() < index)
             return INDEXED_USERS[index];
+
         throw std::runtime_error("user id by index not found");
     }
 
@@ -91,7 +83,7 @@ public:
     constexpr ZDOID(const ZDOID&) = default;
 
     bool operator==(ZDOID other) const {
-        return this->m_encoded == other.m_encoded;
+        return this->m_pack == other.m_pack;
     }
 
     bool operator!=(ZDOID other) const {
@@ -99,8 +91,8 @@ public:
     }
     
     // Return whether this has a value besides NONE
-    explicit operator bool() const noexcept {
-        return static_cast<bool>(this->m_encoded);
+    operator bool() const noexcept {
+        return m_pack;
     }
 
     // TODO rename to User
@@ -116,23 +108,23 @@ public:
 
 
     // Retrieve the index of the UserID
-    constexpr T _GetUserIDIndex() const {
-        return (this->m_encoded >> USER_BIT_OFFSET) & USER_BIT_MASK;
+    constexpr uint32_t _GetUserIDIndex() const {
+        return m_pack.Get<0>();
     }
 
     // Set the associated UserID index 
-    constexpr void _SetUserIDIndex(T index) {
-        this->m_encoded |= (index & USER_BIT_MASK) << USER_BIT_OFFSET;
+    constexpr void _SetUserIDIndex(decltype(m_pack)::type index) {
+        m_pack.Set<0>(index);
     }
 
     // TODO rename to GetID
     constexpr uint32_t GetUID() const {
-        return (this->m_encoded >> ID_BIT_OFFSET) & ID_BIT_MASK;
+        return m_pack.Get<1>();
     }
 
     // TODO rename to SetID
     constexpr void SetUID(uint32_t uid) {
-        this->m_encoded |= (uid & ID_BIT_MASK) << ID_BIT_OFFSET;
+        m_pack.Set<1>(uid);
     }
 
 

@@ -52,7 +52,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 17) {
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-        m_encoded.SetPrefabIndex(pair.second);
+        m_pack.Set<1>(pair.second);
+        //m_encoded.SetPrefabIndex(pair.second);
     }
 
     pkg.Read<Vector2i>(); // m_sector
@@ -72,7 +73,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17) {
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
         prefab = &pair.first;
-        m_encoded.SetPrefabIndex(pair.second);
+        m_pack.Set<1>(pair.second);
+        //m_encoded.SetPrefabIndex(pair.second);
     }
 
     assert(prefab);
@@ -113,7 +115,8 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     }
 
     // TODO load prefab once
-    m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+    //m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+    m_pack.Set<1>(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
 
     //if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
 
@@ -176,14 +179,23 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     //auto&& prefab = GetPrefab();
 
     zdo_global_mask flags{};
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
-    flags |= m_encoded.HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
+    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
     flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
     flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
     flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
@@ -198,7 +210,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) writer.Write(m_rotation);
 
     // TODO add connector
-    if (m_encoded.HasDenotion(LocalDenotion::Member_Connection)) {
+    //if (m_encoded.HasDenotion(LocalDenotion::Member_Connection)) {
+    if (m_pack.Get<2>() & LocalFlag::Member_Connection) {
         auto&& find = ZDO_CONNECTORS.find(ID());
         if (find != ZDO_CONNECTORS.end()) {
             auto&& connector = find->second;
@@ -210,7 +223,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
-    if (m_encoded.HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
+    //if (m_encoded.HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
+    if (m_pack.Get<2>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
         auto&& find = ZDO_MEMBERS.find(ID());
         if (find != ZDO_MEMBERS.end()) {
             auto&& types = find->second;

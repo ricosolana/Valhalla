@@ -117,7 +117,7 @@ add_executable(${PROJECT_NAME}
     
     "src/DiscordManager.cpp" 
     
-)
+ "include/BitPack.h")
 
 # change this to wherever your sol is
 #set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")

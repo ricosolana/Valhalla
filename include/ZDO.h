@@ -6,6 +6,7 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "VUtilsString.h"
+#include "BitPack.h"
 #include "Hashes.h"
 #include "HashUtils.h"
 #include "Quaternion.h"
@@ -56,11 +57,14 @@ class ZDO {
 public:
     class Rev {
     private:
-        static constexpr uint32_t LEADING_OWNER_BITS = 21;
+        //static constexpr uint32_t LEADING_OWNER_BITS = 21;
 
-        uint32_t m_encoded{};
+        // DataRevision: 0, OwnerRevision: 1
+        BitPack<uint32_t, 21, 32 - 21> m_pack;
+
+        //uint32_t m_encoded{};
         
-        static constexpr decltype(m_encoded) OWNER_MASK = (static_cast<decltype(m_encoded)>(1) << LEADING_OWNER_BITS) - 1;
+        //static constexpr decltype(m_encoded) OWNER_MASK = (static_cast<decltype(m_encoded)>(1) << LEADING_OWNER_BITS) - 1;
 
     public:
         constexpr Rev() {}
@@ -71,21 +75,21 @@ public:
         }
 
         constexpr uint32_t GetDataRevision() const {
-            return m_encoded & ~OWNER_MASK;
+            return m_pack.Get<0>();
         }
 
         constexpr uint16_t GetOwnerRevision() const {
-            return m_encoded & OWNER_MASK;
+            return m_pack.Get<1>();
         }
 
 
 
         constexpr void SetDataRevision(uint32_t dataRev) {
-            this->m_encoded &= ((dataRev << LEADING_OWNER_BITS) & ~OWNER_MASK);
+            m_pack.Set<0>(dataRev);
         }
 
         constexpr void SetOwnerRevision(uint16_t ownerRev) {
-            this->m_encoded &= (ownerRev & OWNER_MASK);
+            m_pack.Set<1>(ownerRev);
         }
 
 
@@ -191,10 +195,13 @@ private:
         if (insert.second) {
             // Then officially assign
             insert.first->second = std::move(value);
-            m_encoded.AddDenotion(GetMemberDenotion<T>());
+            //m_encoded.AddDenotion(GetMemberDenotion<T>());
+            m_pack.Merge<2>(1 << GetMemberDenotion<T>());
             return true;
         }
         else {
+            assert(m_pack.Get<2>() & (1 << GetMemberDenotion<T>()));
+
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
             if (get) {
@@ -260,7 +267,8 @@ private:
     template<typename T>
         requires is_zdo_member<T>::value
     void _TryWriteType(DataWriter& writer, zdo_member_map& members) const {
-        if (m_encoded.HasMember<T>()) {     
+        if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
+        //if (m_encoded.HasMember<T>()) {     
             const auto begin_mark = writer.Position();
             uint8_t count = 0;
             writer.Write(count); // placeholder 0 byte
@@ -312,7 +320,10 @@ private:
     ZDOID m_id;                                     // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes
     Rev m_rev;                                      // 4 bytes
+    // Owner: 0, Prefab: 1, Flags: 2
+    BitPack<uint32_t, decltype(ZDOID::m_pack)::count<0>::value, 12, 12, 2> m_pack;
 
+    /*
     // Encoding of PREFAB, FLAGS, OWNER
     //  pppppppp ppppffff ffffffff nnuuuuuu
     //  p: PREFAB, f: FLAGS, n: UNUSED, u: OWNER
@@ -425,7 +436,7 @@ private:
         constexpr void SetOwnerIndex(decltype(m_data) index) {
             Set(index, OWNER_BIT_OFFSET, OWNER_BIT_COUNT);
         }
-    } m_encoded;
+    } m_encoded;*/
 
     
     /*
@@ -523,7 +534,8 @@ public:
     template<typename T>
         requires is_zdo_member<T>::value
     const T* Get(HASH_t key) const {
-        if (m_encoded.HasMember<T>()) {
+        //if (m_encoded.HasMember<T>()) {
+        if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
             auto&& members_find= ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -667,11 +679,12 @@ public:
     }
         
     const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByIndex(m_encoded.GetPrefabIndex());
+        //return PrefabManager()->RequirePrefabByIndex(m_encoded.GetPrefabIndex());
+        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<1>());
     }
     
     HASH_t GetPrefabHash() const {
-        return PrefabManager()->RequirePrefabByIndex(m_encoded.GetPrefabIndex()).m_hash;
+        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<1>()).m_hash;
     }
 
     /*
@@ -695,7 +708,7 @@ public:
     }
 
     OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(m_encoded.GetOwnerIndex());
+        return ZDOID::GetUserIDByIndex(m_pack.Get<0>());
     }
 
 
@@ -712,7 +725,8 @@ public:
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
-        return m_encoded.GetOwnerIndex();
+        return m_pack.Get<0>();
+        //return m_encoded.GetOwnerIndex();
         //return _HasDenotion(LocalDenotion::Marker_Owner);
         //return Owner();
     }
@@ -743,7 +757,8 @@ public:
     // Set the owner of the ZDO
     //  The owner revision is unaffected
     void _SetOwner(OWNER_t owner) {
-        m_encoded.SetOwnerIndex(ZDOID::EnsureUserIDIndex(owner));
+        m_pack.Set<0>(ZDOID::EnsureUserIDIndex(owner));
+        //m_encoded.SetOwnerIndex(ZDOID::EnsureUserIDIndex(owner));
     }
 
 
@@ -759,15 +774,20 @@ public:
 
 
     bool IsPersistent() const {
-        return m_encoded.HasDenotion(LocalDenotion::Marker_Persistent);
+        //return m_encoded.HasDenotion(LocalDenotion::Marker_Persistent);
+        return m_pack.Get<2>() & LocalFlag::Marker_Persistent; //.HasDenotion(LocalDenotion::Marker_Persistent);
     }
 
     bool IsDistant() const {
-        return m_encoded.HasDenotion(LocalDenotion::Marker_Distant);
+        return m_pack.Get<2>() & LocalFlag::Marker_Distant;
+        //return m_encoded.HasDenotion(LocalDenotion::Marker_Distant);
     }
 
     Prefab::Type GetType() const {
-        return Prefab::Type((m_encoded.GetFlags() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+        return Prefab::Type((m_pack.Get<0>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+
+        //return m_pack.Get<2>() >>
+        //return Prefab::Type((m_encoded.GetFlags() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
     }
 
 
