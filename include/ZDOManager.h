@@ -13,6 +13,7 @@ class IZDOManager {
 	friend class INetManager;
 	friend class IValhalla;
 	friend class ZDO;
+	friend class VHTest;
 		
 	//static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
 	//static constexpr int MAX_DEAD_OBJECTS = 100000;
@@ -246,6 +247,8 @@ public:
 	void DestroyZDO(const ZDO& zdo) {
 		DestroyZDO(zdo.ID());
 	}
+
+
 
 	size_t GetSumZDOMembers();
 	float GetMeanZDOMembers();

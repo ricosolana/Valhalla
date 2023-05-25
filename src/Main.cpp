@@ -8,6 +8,7 @@
 #include "VUtilsRandom.h"
 #include "CompileSettings.h"
 #include "PrefabManager.h"
+#include "ZDOManager.h"
 
 #include "Tests.h"
 
@@ -53,7 +54,12 @@ int main(int argc, char **argv) {
         LOGGER = quill::get_logger();
         LOGGER->set_log_level(quill::LogLevel::TraceL3);
     }
-    
+
+    //VHTest().Test_ZDOConnectors();
+
+    //if (true)
+        //return 0;
+
     {
         std::string path = (fs::current_path() / VH_LUA_PATH).string();
         std::string path2 = (fs::current_path() / VH_MOD_PATH).string();

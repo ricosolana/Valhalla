@@ -769,7 +769,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		auto time = Valhalla()->Time();
 
 		while (auto zdoid = reader.Read<ZDOID>()) {
-			auto ownerRev = reader.Read<uint32_t>();	// owner revision
+			auto ownerRev = reader.Read<uint16_t>();	// owner revision
 			auto dataRev = reader.Read<uint32_t>();		// data revision
 			auto owner = reader.Read<int64_t>();		// owner
 			auto pos = reader.Read<Vector3f>();			// position

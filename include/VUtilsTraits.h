@@ -221,55 +221,36 @@ namespace VUtils {
 
         
         
-        template <size_t index, size_t... >
-        struct variadic_value_at_index_reversed;
+        template <size_t index, size_t...>
+        struct variadic_value_at_index;
 
-        // found it
         template <size_t index, size_t F, size_t... R>
-            requires (index >= sizeof...(R))
-        //requires (index == sizeof...(R))
-        struct variadic_value_at_index_reversed<index, F, R...>
+            requires (index == 0)
+        struct variadic_value_at_index<index, F, R...>
             : std::integral_constant<size_t, F>
         { };
 
-        // still looking
         template <size_t index, size_t F, size_t... R>
-            requires (index < sizeof...(R))
-        //requires (index != sizeof...(R))
-        struct variadic_value_at_index_reversed<index, F, R...>
-            : std::integral_constant<size_t, variadic_value_at_index_reversed<index, R...>::value>
-        { };
-
-        template<size_t index, size_t... R>
-        constexpr size_t variadic_value_at_index_reversed_v = variadic_value_at_index_reversed<index, R...>::value;
-
-        template <size_t index, size_t... R>
-        struct variadic_value_at_index
-            : std::integral_constant<size_t, variadic_value_at_index_reversed<sizeof...(R) - index - 1, R...>::value>
+            requires (index > 0)
+        struct variadic_value_at_index<index, F, R...>
+            : variadic_value_at_index<index - 1, R...>
         { };
 
 
 
         template <size_t index, size_t... >
-        struct variadic_accumulate_values_to_index_reversed;
+        struct variadic_accumulate_values_to_index;
 
         template <size_t index, size_t F, size_t...R>
-            requires (index >= sizeof...(R))
-        //requires (index == sizeof...(R))
-        struct variadic_accumulate_values_to_index_reversed<index, F, R...>
+            requires (index == 0)
+        struct variadic_accumulate_values_to_index<index, F, R...>
             : std::integral_constant<size_t, F>
         { };
 
         template <size_t index, size_t F, size_t... R>
-            requires (index < sizeof...(R))
-        //requires (index != sizeof...(R))
-        struct variadic_accumulate_values_to_index_reversed<index, F, R...>
-            : std::integral_constant<size_t, F + variadic_accumulate_values_to_index_reversed<index, R...>::value>
-        { };
-
-        template <size_t index, size_t... R>
-        struct variadic_accumulate_values_to_index
-            : std::integral_constant<size_t, variadic_accumulate_values_to_index_reversed<sizeof...(R) - index, R...>::value>
+            requires (index > 0)
+        struct variadic_accumulate_values_to_index<index, F, R...>
+            : std::integral_constant<size_t, F + variadic_accumulate_values_to_index<index - 1, R...>::value>
         { };
     }
 }
