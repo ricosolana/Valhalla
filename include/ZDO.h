@@ -24,7 +24,9 @@
 // This class used to be 500+ bytes
 //  It is now 120 bytes 
 // This class is finally the smallest it could possibly be (I hope so).
-//  I Lied this class is now
+//  I Lied this class is now 36 bytes 5/24/2023
+//      On embedded systems with max 8MB of RAM (ESP32), ZDOID can be smaller
+//          
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
@@ -53,14 +55,14 @@ class ZDO {
     using member_denotion = std::integral_constant<size_t, VUtils::Traits::tuple_index<T, member_tuple>::value>;
 
     template<typename T>
-    static constexpr bool member_denotion_v = member_denotion<T>::value;
+    static constexpr size_t member_denotion_v = member_denotion<T>::value;
 
     template<typename T>
         requires is_member<T>::value
     using member_flag = std::integral_constant<size_t, 1 << member_denotion_v<T>>;
 
     template<typename T>
-    static constexpr bool member_flag_v = member_flag<T>::value;
+    static constexpr size_t member_flag_v = member_flag<T>::value;
 
 public:
     class Rev {
@@ -195,12 +197,12 @@ private:
             insert.first->second = std::move(value);
 
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
-            m_pack.Merge<2>(member_flag<T>::value);
+            m_pack.Merge<2>(member_flag_v<T>);
             return true;
         }
         else {
             //assert(m_pack.Get<2>() & (1 << member_denotion<T>::value));
-            assert(m_pack.Get<2>() & member_flag<T>::value);
+            assert(m_pack.Get<2>() & member_flag_v<T>);
 
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
@@ -220,7 +222,7 @@ private:
     }
 
     template<typename T> 
-        requires is_member<T>::value
+        requires is_member_v<T>
     bool _Set(HASH_t key, T value) {
         return _Set(key, std::move(value), ZDO_MEMBERS[ID()]);
     }
@@ -230,23 +232,23 @@ private:
     }
 
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     member_hash hash_to_xhash(HASH_t in) const {
         return static_cast<member_hash>(in) 
-            ^ static_cast<member_hash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index<T, member_tuple>::value));
+            ^ static_cast<member_hash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
     }
 
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     HASH_t xhash_to_hash(member_hash in) const {
         return static_cast<HASH_t>(in) 
-            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index<T, member_tuple>::value));
+            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
     }
 
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     void _TryWriteType(DataWriter& writer, member_map& members) const {
-        if (m_pack.Get<2>() & (1 << member_denotion<T>::value)) {
+        if (m_pack.Get<2>() & member_flag_v<T>) {
             const auto begin_mark = writer.Position();
             uint8_t count = 0;
             writer.Write(count); // placeholder 0 byte
@@ -266,12 +268,15 @@ private:
                 writer.Write(count);
                 writer.SetPos(end_mark);
             }
+            else {
+                assert(false);
+            }
         }
     }
 
     // Read a zdo_type from the DataStream
     template<typename T, typename CountType>
-        requires is_member<T>::value && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
+        requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
     void _TryReadType(DataReader& reader, member_map& members) {
         decltype(auto) count = reader.Read<CountType>();
 
@@ -296,7 +301,7 @@ private:
     Vector3f m_pos;                                 // 12 bytes
     ZDOID m_id;                                     // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes
-    Rev m_rev;                                      // 4 bytes
+    Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1, Flags: 2
     BitPack<uint32_t, decltype(ZDOID::m_pack)::count<0>::value, 12, 12, 2> m_pack;
 
@@ -329,14 +334,14 @@ public:
     //  Returns null if absent 
     //  Throws on type mismatch
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     const T* Get(HASH_t key) const {
-        static_assert(member_denotion<float>::value == std::to_underlying(LocalDenotion::Member_Float));
+        static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
 
         //if (m_encoded.HasMember<T>()) {
         //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
-        if (m_pack.Get<2>() & (1 << member_denotion<T>::value)) {
-            auto&& members_find= ZDO_MEMBERS.find(ID());
+        if (m_pack.Get<2>() & member_flag_v<T>) {
+            auto&& members_find = ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
 
@@ -347,7 +352,11 @@ public:
                     return std::get_if<T>(&find->second);
                 }
             }
+            else {
+                assert(false);
+            }
         }
+
         return nullptr;
     }
 
@@ -355,14 +364,14 @@ public:
     //  Returns null if absent 
     //  Throws on type mismatch
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     const T* Get(std::string_view key) const {
         return Get<T>(VUtils::String::GetStableHashCode(key));
     }
 
     // Trivial hash getters
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     const T& Get(HASH_t key, const T& value) const {
         auto&& get = Get<T>(key);
         return get ? *get : value;
@@ -370,7 +379,7 @@ public:
 
     // Hash-key getters
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     const T& Get(std::string_view key, const T &value) const { return Get<T>(VUtils::String::GetStableHashCode(key), value); }
         
     float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
@@ -420,7 +429,7 @@ public:
 
     // Trivial hash setters
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     void Set(HASH_t key, T value) {
         if (_Set(key, std::move(value)))
             Revise();
@@ -436,7 +445,7 @@ public:
 
 
     template<typename T>
-        requires is_member<T>::value
+        requires is_member_v<T>
     void Set(std::string_view key, T value) { Set(VUtils::String::GetStableHashCode(key), std::move(value)); }
 
     void Set(std::string_view key, bool value) { Set(VUtils::String::GetStableHashCode(key), value ? (int32_t)1 : 0); }

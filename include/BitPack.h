@@ -10,7 +10,7 @@ class BitPack {
     //static_assert((COUNTS + ...) <= sizeof(T) * 8, "Counts summed together must fit within mask");
 
     static_assert((COUNTS + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
-
+    
 public:
     using type = T;
 

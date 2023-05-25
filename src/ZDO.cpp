@@ -188,6 +188,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
+    static constexpr auto szzoe = sizeof(ZDO);
+
     //auto&& prefab = GetPrefab();
 
     uint16_t flags{};
@@ -200,7 +202,6 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     //flags |= m_encoded.HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
     //flags |= m_encoded.HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
 
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
@@ -208,6 +209,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     flags |= m_pack.Get<2>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+    flags |= m_pack.Get<2>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
     flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
     flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
     flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
@@ -247,6 +249,10 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             }
         }
     }
+    else {
+        assert(!ZDO_CONNECTORS.contains(ID()) && !ZDO_TARGETED_CONNECTORS.contains(ID()));
+    }
+
 
     //if (m_encoded.HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
     if (m_pack.Get<2>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
@@ -261,6 +267,9 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             _TryWriteType<int64_t>(writer, types);
             _TryWriteType<std::string>(writer, types);
             _TryWriteType<BYTES_t>(writer, types);
+        }
+        else {
+            assert(false);
         }
     }
 }
