@@ -82,11 +82,18 @@ namespace YAML {
     static bool parseDuration(const std::string& s, T& out) {
         int64_t dur = 0;
         size_t index = 0;
+        int64_t sign = 1;
         for (; index < s.length(); index++) {
             const int64_t ch = (int64_t)s[index];
-            if (ch >= '0' && ch <= '9')
-                dur += (ch - '0') * (index + 1) * 10;
+            if (ch == '-') {
+                sign = -1;
+            }
+            else if (ch >= '0' && ch <= '9') {
+                dur *= 10;
+                dur += (ch - '0');
+            }
             else if (index > 0) {
+                dur *= sign;
                 switch (ch) {
                 case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
                 case 't': out = duration_cast<T>(TICKS_t(dur)); return true;
