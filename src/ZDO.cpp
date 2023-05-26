@@ -118,10 +118,23 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     }
 
     // TODO load prefab once
-    //m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
     m_pack.Set<1>(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
 
-    //if (_HasData(Data::Marker_Rotation)) this->m_rotation = reader.Read<Vector3f>();
+    if (flags & GlobalFlag::Marker_Persistent) {
+        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Persistent));
+    }
+
+    if (flags & GlobalFlag::Marker_Distant) {
+        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Distant));
+    }
+
+    if (flags & GlobalFlag::Marker_Type1) {
+        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Type1));
+    }
+
+    if (flags & GlobalFlag::Marker_Type2) {
+        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Type2));
+    }
 
     if (flags & GlobalFlag::Marker_Rotation) {
         this->m_rotation = reader.Read<Vector3f>();
@@ -188,20 +201,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
-    static constexpr auto szzoe = sizeof(ZDO);
-
-    //auto&& prefab = GetPrefab();
-
     uint16_t flags{};
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Connection) ? GlobalFlag::Member_Connection : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Float) ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Vec3) ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Quat) ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Int) ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_Long) ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_String) ? GlobalFlag::Member_String : (GlobalFlag)0;
-    //flags |= m_encoded.HasDenotion(LocalDenotion::Member_ByteArray) ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
-
     flags |= m_pack.Get<2>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
     flags |= m_pack.Get<2>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
@@ -224,7 +224,6 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) writer.Write(m_rotation);
 
     // TODO add connector
-    //if (m_encoded.HasDenotion(LocalDenotion::Member_Connection)) {
     if (m_pack.Get<2>() & LocalFlag::Member_Connection) {
         if (network) {
             auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
