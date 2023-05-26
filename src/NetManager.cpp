@@ -442,18 +442,26 @@ void INetManager::Update() {
 
 
     // Send periodic data (2s)
-    PERIODIC_NOW(2s, {
+    if (VUtils::run_periodic<struct send_peer_time>(2s)) {
         SendNetTime();
-    });
+    }
+
+    //PERIODIC_NOW(2s, {
+    //    SendNetTime();
+    //});
 
     if (VH_SETTINGS.playerListSendInterval > 0s) {
-        PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
+        if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
             SendPlayerList();
-        });
+        }
+
+        //PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
+        //    SendPlayerList();
+        //});
     }
 
     // Send periodic pings (1s)
-    PERIODIC_NOW(1s, {
+    if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
         BYTES_t bytes;
         DataWriter writer(bytes);
         writer.Write<HASH_t>(0);
@@ -462,7 +470,19 @@ void INetManager::Update() {
         for (auto&& peer : m_connectedPeers) {
             peer->Send(bytes);
         }
-    });
+    }
+
+    // Send periodic pings (1s)
+    //PERIODIC_NOW(1s, {
+    //    BYTES_t bytes;
+    //    DataWriter writer(bytes);
+    //    writer.Write<HASH_t>(0);
+    //    writer.Write(true);
+    //
+    //    for (auto&& peer : m_connectedPeers) {
+    //        peer->Send(bytes);
+    //    }
+    //});
 
     // Update peers
     for (auto&& peer : m_connectedPeers) {

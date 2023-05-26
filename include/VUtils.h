@@ -137,6 +137,7 @@ public:
 //    return TICKS_t(_Val);
 //}
 
+/*
 // Runs a static periodic task later
 #define PERIODIC_LATER(__period, __initial, ...) {\
     auto __now = steady_clock::now();\
@@ -168,7 +169,7 @@ public:
         __last_run = steady_clock::time_point::max();\
         { __VA_ARGS__ }\
     }\
-}
+}*/
 
 
 
@@ -742,6 +743,55 @@ static_assert(std::endian::native == std::endian::little,
     "System must be little endian (big endian not supported for networking (who uses big endian anyways?)");
 
 namespace VUtils {
+    // Run a code block once
+    //  if (VUtils::run_once<struct my_unique_struct>()) { /* stuff */ }
+    template <typename T> auto run_once() {
+        static auto called = false;
+        return !std::exchange(called, true);
+    };
+
+    // Run a code block once after an initial delay
+    //  Must be used in a loop to work correctly
+    //  if (VUtils::run_once_later<struct my_unique_struct>(5s)) { /* stuff */ }
+    template <typename T, typename Rep, typename Pd> 
+    auto run_once_later(std::chrono::duration<Rep, Pd> after) {
+        auto now = std::chrono::steady_clock::now();
+        static auto last = now;
+        if (now - last > after) {
+            last = std::chrono::steady_clock::time_point::max();
+            return true;
+        }
+        return false;
+    };
+
+    // Run a code block every so often
+    //  Must be used in a loop to work correctly
+    //  if (VUtils::run_periodic<struct my_unique_struct>(1s)) { /* stuff */ }
+    template <typename T, typename Rep, typename Pd>
+    auto run_periodic(std::chrono::duration<Rep, Pd> period) {
+        auto now = std::chrono::steady_clock::now();
+        static auto last = now;
+        if (now - last > period) {
+            last = now;
+            return true;
+        }
+        return false;
+    };
+
+    // Run a code block every so often after an initial delay
+    //  Must be used in a loop to work correctly
+    //  if (VUtils::run_periodic_later<struct my_unique_struct>(1s, 5s)) { /* stuff */ }
+    template <typename T, typename Rep, typename Pd, typename Rep1, typename Pd1>
+    auto run_periodic_later(std::chrono::duration<Rep, Pd> period, std::chrono::duration<Rep1, Pd1> after) {
+        auto now = std::chrono::steady_clock::now();
+        static auto last = now + after;
+        if (now - last > period) {
+            last = now;
+            return true;
+        }
+        return false;
+    };
+
     // Returns the smallest 1-value bitshift
     template<typename Enum> requires std::is_enum_v<Enum>
     constexpr uint8_t GetShift(Enum value) {

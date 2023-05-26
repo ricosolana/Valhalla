@@ -40,6 +40,10 @@ void IZDOManager::Init() {
 void IZDOManager::Update() {
 	ZoneScoped;
 
+	if (VUtils::run_periodic<struct periodic_zdo_stats>(3min)) {
+		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
+	}
+	/*
 	PERIODIC_NOW(3min, {
 		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
 		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
@@ -47,7 +51,7 @@ void IZDOManager::Update() {
 			//<< ", stdev: " << GetStDevZDOMembers()
 			//<< ", empty: " << GetCountEmptyZDOs()
 			//<< ")";
-	});
+	})*/;
 
 	auto&& peers = NetManager()->GetPeers();
 	
@@ -63,20 +67,32 @@ void IZDOManager::Update() {
 		}
 	});
 #else // macro expansion screwed this up
-	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
+	if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {
 		for (auto&& peer : peers) {
-			if (!peer->m_gatedPlaythrough)
+			if (!peer->m_gatedPlaythrough) {
 				AssignOrReleaseZDOs(*peer);
+			}
 		}
-	});
+	}
+	//{ auto __now = steady_clock::now(); static auto __last_run = __now; auto __elapsed = duration_cast<milliseconds>(__now - __last_run); if (__elapsed > Valhalla()->Settings().zdoAssignInterval) {
+	//	__last_run = __now; { { for (auto&& peer : peers) {
+	//		if (!peer->m_gatedPlaythrough) AssignOrReleaseZDOs(*peer);
+	//	} } }
+	//}};
 #endif
 
-	// Send ZDOS:
-	PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
+	if (VUtils::run_periodic<struct periodic_send_zdos>(VH_SETTINGS.zdoSendInterval)) {
 		for (auto&& peer : peers) {
 			SendZDOs(*peer, false);
 		}
-	});
+	}
+
+	// Send ZDOS:
+	//PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
+	//	for (auto&& peer : peers) {
+	//		SendZDOs(*peer, false);
+	//	}
+	//});
 	
 
 	if (!m_destroySendList.empty()) {
@@ -311,7 +327,6 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		auto&& zdo = ref.get();
 		if (zdo.IsPersistent()) {
 			if (zdo.IsOwner(peer.m_uuid)) {
-				
 				// If peer no longer in area of zdo, unclaim zdo
 				if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					zdo.Disown();

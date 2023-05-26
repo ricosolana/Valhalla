@@ -103,12 +103,17 @@ void IHeightmapBuilder::Uninit() {
 }
 
 void IHeightmapBuilder::Update() {
-    PERIODIC_NOW(1min, {
-        {
-            std::scoped_lock<std::mutex> scoped(m_mux);
-            m_ready.clear();
-        }
-    });
+    if (VUtils::run_periodic<struct clear_heightmaps>(1min)) {
+        std::scoped_lock<std::mutex> scoped(m_mux);
+        m_ready.clear();
+    }
+
+    //PERIODIC_NOW(1min, {
+    //    {
+    //        std::scoped_lock<std::mutex> scoped(m_mux);
+    //        m_ready.clear();
+    //    }
+    //});
 }
 
 // private

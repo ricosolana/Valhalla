@@ -605,9 +605,13 @@ void IValhalla::Start() {
 
         Update();
 
-        PERIODIC_NOW(1s, {
+        if (VUtils::run_periodic<struct server_period_update>(1s)) {
             PeriodUpdate();
-        });
+        }
+
+        //PERIODIC_NOW(1s, {
+        //    PeriodUpdate();
+        //});
 
         std::this_thread::sleep_for(1ms);
 
@@ -699,9 +703,13 @@ void IValhalla::Update() {
 }
 
 void IValhalla::PeriodUpdate() {
-    PERIODIC_NOW(180s, {
+    if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
         LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
-    });
+    }
+
+    //PERIODIC_NOW(180s, {
+    //    LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
+    //});
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
@@ -729,14 +737,23 @@ void IValhalla::PeriodUpdate() {
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
-        PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
+        if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval, m_settings.worldSaveInterval)) {
             LOG_INFO(LOGGER, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-        });
+        }
 
-        PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
+        if (VUtils::run_periodic_later<struct periodic_save>(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s)) {
             WorldManager()->GetWorld()->WriteFiles();
-        });
+        }
+
+        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
+        //    LOG_INFO(LOGGER, "World saving in 30s");
+        //    Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
+        //});
+        //
+        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
+        //    WorldManager()->GetWorld()->WriteFiles();
+        //});
     }
 }
 

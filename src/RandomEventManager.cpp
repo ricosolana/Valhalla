@@ -98,7 +98,10 @@ void IRandomEventManager::Update() {
 		}
 	}
 
-	PERIODIC_NOW(1s, { SendCurrentRandomEvent(); });
+	//PERIODIC_NOW(1s, { SendCurrentRandomEvent(); });
+	if (VUtils::run_periodic<struct send_events>(1s)) {
+		SendCurrentRandomEvent();
+	}
 }
 
 std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>, Vector3f>> IRandomEventManager::GetPossibleRandomEvent() {
