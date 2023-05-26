@@ -87,7 +87,7 @@ void IZoneManager::PostPrefabInit() {
                 loc->m_pieces.push_back(piece);
             }
 
-            m_featuresByHash.insert({ loc->m_hash, *loc.get() });
+            //m_featuresByHash.insert({ loc->m_hash, *loc.get() });
             m_features.push_back(std::move(loc));
         }
 
@@ -104,8 +104,8 @@ void IZoneManager::PostPrefabInit() {
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string>(); // comment
-        std::string ver = pkg.Read<std::string>();
+        pkg.Read<std::string_view>(); // comment
+        auto ver = pkg.Read<std::string_view>();
         if (ver != VConstants::GAME) {
             LOG_WARNING(LOGGER, "vegetation.pkg uses different game version than server ({})", ver);
         }
@@ -669,17 +669,12 @@ bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, Vector
 }
 
 // private
-const IZoneManager::Feature* IZoneManager::GetFeature(HASH_t hash) {
-    auto&& find = m_featuresByHash.find(hash);
-    if (find != m_featuresByHash.end())
-        return &find->second.get();
-
-    return nullptr;
-}
-
-// private
 const IZoneManager::Feature* IZoneManager::GetFeature(std::string_view name) {
-    return GetFeature(VUtils::String::GetStableHashCode(name));
+    for (auto&& feature : m_features) {
+        if (feature->m_name == name)
+            return feature.get();
+    }
+    return nullptr;
 }
 
 // public
@@ -691,13 +686,13 @@ void IZoneManager::PostGeoInit() {
 
     // Crucially important Location
     // So check that it exists period
-    auto&& spawnLoc = m_featuresByHash.find(VUtils::String::GetStableHashCodeCT("StartTemple"));
-    if (spawnLoc == m_featuresByHash.end())
+    auto&& spawnLoc = GetFeature("StartTemple");
+    if (!spawnLoc)
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 
     if (!VH_SETTINGS.worldFeatures) {
         LOG_WARNING(LOGGER, "Location generation is disabled");
-        PrepareFeatures(spawnLoc->second);
+        PrepareFeatures(*spawnLoc);
     }
     else {
 #ifdef VH_OPTION_ENABLE_ZONE_GENERATION

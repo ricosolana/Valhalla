@@ -75,8 +75,8 @@ void INetManager::SendPlayerList() {
             writer.Write<int32_t>(m_onlinePeers.size());
 
             for (auto&& peer : m_onlinePeers) {
-                writer.Write(std::string_view(peer->m_name));
-                writer.Write(std::string_view(peer->m_socket->GetHostName()));
+                writer.Write(peer->m_name);
+                writer.Write(peer->m_socket->GetHostName());
                 writer.Write(peer->m_characterID);
                 writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible);
                 if (peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible) {
@@ -117,9 +117,9 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
         auto world = WorldManager()->GetWorld();
 
-        writer.Write(std::string_view(world->m_name));
+        writer.Write(world->m_name);
         writer.Write(world->m_seed);
-        writer.Write(std::string_view(world->m_seedName)); // Peer does not seem to use
+        writer.Write(world->m_seedName); // Peer does not seem to use
         writer.Write(world->m_uid);
         writer.Write(world->m_worldGenVersion);
         writer.Write(Valhalla()->GetWorldTime());

@@ -136,7 +136,7 @@ private:
 	std::vector<std::unique_ptr<const Feature>> m_features;
 
 	// All Features within a world hashed by name
-	UNORDERED_MAP_t<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
+	//UNORDERED_MAP_t<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
 
 	// All Foliage within a world capable of generation
 	std::vector<std::unique_ptr<const Foliage>> m_foliage;
@@ -178,7 +178,6 @@ private:
 	bool InsideClearArea(const std::vector<ClearArea>& areas, Vector3f pos);
 	bool OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f pos, float range);
 
-	const Feature* GetFeature(HASH_t hash);
 	const Feature* GetFeature(std::string_view name);
 
 	void PrepareFeatures(const Feature& feature);
