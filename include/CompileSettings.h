@@ -29,7 +29,7 @@
 // Enable the ZoneManager vegetation
 #define VH_OPTION_ENABLE_ZONE_VEGETATION
 
-
+#define VH_ZDOID_USER_BITS 6
 
 // Enable the mod subsystem
 //#define VH_OPTION_ENABLE_MODS

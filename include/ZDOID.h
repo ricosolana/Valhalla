@@ -19,7 +19,7 @@ class ZDOID {
     // ~67.1M ZDOs
     
     // User: 0, ID: 1
-    BitPack<uint32_t, 6, 32 - 6> m_pack;
+    BitPack<uint32_t, VH_ZDOID_USER_BITS, 32 - VH_ZDOID_USER_BITS> m_pack;
 #else
 #error "Unable to detect 32-bit or 64-bit system"
 #endif
@@ -29,6 +29,9 @@ class ZDOID {
     //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;
 
     static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
+
+    static constexpr auto USER_PACK_INDEX = 0;
+    static constexpr auto ID_PACK_INDEX = 1;
 
 public:
     static const ZDOID NONE;
@@ -109,22 +112,22 @@ public:
 
     // Retrieve the index of the UserID
     uint32_t _GetUserIDIndex() const {
-        return m_pack.Get<0>();
+        return m_pack.Get<USER_PACK_INDEX>();
     }
 
     // Set the associated UserID index 
     void _SetUserIDIndex(decltype(m_pack)::type index) {
-        m_pack.Set<0>(index);
+        m_pack.Set<USER_PACK_INDEX>(index);
     }
 
     // TODO rename to GetID
     uint32_t GetUID() const {
-        return m_pack.Get<1>();
+        return m_pack.Get<ID_PACK_INDEX>();
     }
 
     // TODO rename to SetID
     void SetUID(uint32_t uid) {
-        m_pack.Set<1>(uid);
+        m_pack.Set<ID_PACK_INDEX>(uid);
     }
 
 

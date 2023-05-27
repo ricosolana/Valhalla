@@ -143,10 +143,4 @@ public:
     bool operator==(const Prefab& other) const {
         return this->m_hash == other.m_hash;
     }
-
-    explicit operator bool() const noexcept {
-        return this->m_hash != 0;
-    }
-
-    //static const Prefab NONE;
 };

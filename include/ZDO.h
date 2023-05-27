@@ -70,6 +70,9 @@ public:
         // DataRevision: 0, OwnerRevision: 1
         BitPack<uint32_t, 21, 32 - 21> m_pack;
 
+        static constexpr auto DATA_REVISION_PACK_INDEX = 0;
+        static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
+
     public:
         Rev() {}
 
@@ -79,21 +82,21 @@ public:
         }
 
         uint32_t GetDataRevision() const {
-            return m_pack.Get<0>();
+            return m_pack.Get<DATA_REVISION_PACK_INDEX>();
         }
 
         uint16_t GetOwnerRevision() const {
-            return m_pack.Get<1>();
+            return m_pack.Get<OWNER_REVISION_PACK_INDEX>();
         }
 
 
 
         void SetDataRevision(uint32_t dataRev) {
-            m_pack.Set<0>(dataRev);
+            m_pack.Set<DATA_REVISION_PACK_INDEX>(dataRev);
         }
 
         void SetOwnerRevision(uint16_t ownerRev) {
-            m_pack.Set<1>(ownerRev);
+            m_pack.Set<OWNER_REVISION_PACK_INDEX>(ownerRev);
         }
 
 
@@ -197,12 +200,12 @@ private:
             insert.first->second = std::move(value);
 
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
-            m_pack.Merge<2>(member_flag_v<T>);
+            m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
             return true;
         }
         else {
             //assert(m_pack.Get<2>() & (1 << member_denotion<T>::value));
-            assert(m_pack.Get<2>() & member_flag_v<T>);
+            assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
 
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
@@ -248,7 +251,7 @@ private:
     template<typename T>
         requires is_member_v<T>
     void _TryWriteType(DataWriter& writer, member_map& members) const {
-        if (m_pack.Get<2>() & member_flag_v<T>) {
+        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             const auto begin_mark = writer.Position();
             uint8_t count = 0;
             writer.Write(count); // placeholder 0 byte
@@ -294,6 +297,10 @@ private:
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
+    static constexpr auto OWNER_PACK_INDEX = 0;
+    static constexpr auto PREFAB_PACK_INDEX = 1;
+    static constexpr auto FLAGS_PACK_INDEX = 2;
+
     /*
     * 36 bytes total:
     */
@@ -303,7 +310,9 @@ private:
     Vector3f m_rotation;                            // 12 bytes
     Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1, Flags: 2
-    BitPack<uint32_t, decltype(ZDOID::m_pack)::count<0>::value, 12, 12, 2> m_pack;
+    //  last 2 bits are unused/reserved for future uses
+    BitPack<uint32_t, VH_ZDOID_USER_BITS, 12, 12,
+        32 - VH_ZDOID_USER_BITS - 12 - 12> m_pack;
 
 public:
     ZDO();
@@ -340,7 +349,7 @@ public:
 
         //if (m_encoded.HasMember<T>()) {
         //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
-        if (m_pack.Get<2>() & member_flag_v<T>) {
+        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -479,11 +488,11 @@ public:
     }
         
     const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<1>());
+        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
     }
     
     HASH_t GetPrefabHash() const {
-        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<1>()).m_hash;
+        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
     }
 
     /*
@@ -507,7 +516,7 @@ public:
     }
 
     OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(m_pack.Get<0>());
+        return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
     }
 
 
@@ -524,7 +533,7 @@ public:
 
     // Whether an owner has been assigned to this ZDO
     bool HasOwner() const {
-        return m_pack.Get<0>();
+        return m_pack.Get<OWNER_PACK_INDEX>();
     }
 
     // Claim ownership over this ZDO
@@ -553,7 +562,7 @@ public:
     // Set the owner of the ZDO
     //  The owner revision is unaffected
     void _SetOwner(OWNER_t owner) {
-        m_pack.Set<0>(ZDOID::EnsureUserIDIndex(owner));
+        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
 
 
@@ -569,15 +578,15 @@ public:
 
 
     bool IsPersistent() const {
-        return m_pack.Get<2>() & LocalFlag::Marker_Persistent;
+        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Persistent;
     }
 
     bool IsDistant() const {
-        return m_pack.Get<2>() & LocalFlag::Marker_Distant;
+        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Distant;
     }
 
     Prefab::Type GetType() const {
-        return Prefab::Type((m_pack.Get<2>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+        return Prefab::Type((m_pack.Get<FLAGS_PACK_INDEX>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
     }
 
 
