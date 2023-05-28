@@ -1,4 +1,6 @@
 #include "HeightmapManager.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
 #include "ZoneManager.h"
 #include "HeightmapBuilder.h"
 
@@ -212,3 +214,4 @@ bool IHeightmapManager::IsRegenerateQueued(Vector3f point, float radius) {
 //    m_heightmaps[zone] = std::unique_ptr<Heightmap>(h);
 //    return h;
 //}
+#endif

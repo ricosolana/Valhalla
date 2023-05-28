@@ -1,5 +1,9 @@
 #pragma once
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
+
 #include "DungeonRoomConnection.h"
 
 #include "VUtilsRandom.h"
@@ -115,3 +119,4 @@ struct RoomInstance {
 		}
 	}
 };
+#endif

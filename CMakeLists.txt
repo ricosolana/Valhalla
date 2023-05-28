@@ -26,27 +26,41 @@ project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(get_steamapi)
 include(get_cpm)
+include(VHSettings)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
 
 
+
 #add_compile_definitions(WIN32_LEAN_AND_MEAN)
 #add_compile_definitions(VC_EXTRALEAN)
+
+#option(VH_USE_PREFABS "")
+
+#target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    #VH_USE_PREFABS=0
+    #VH_ZONE_GENERATION=0
+#)
 
 ############
 # Libraries
 ############
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(lua CONFIG REQUIRED)
-find_package(sol2 CONFIG REQUIRED)
+if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
+    message("Mods are enabled")
+    find_package(lua CONFIG REQUIRED)
+    find_package(sol2 CONFIG REQUIRED)
+endif()
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
-find_package(dpp CONFIG REQUIRED)
+if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
+    message("Discord integration enabled")
+    find_package(dpp CONFIG REQUIRED)
+endif()
 find_package(quill CONFIG REQUIRED)
 
 #CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
@@ -79,7 +93,7 @@ add_executable(${PROJECT_NAME}
     "src/Main.cpp"
 
     
-    
+    "src/DiscordManager.cpp"
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"
     "src/RandomEventManager.cpp"
@@ -112,12 +126,9 @@ add_executable(${PROJECT_NAME}
     "src/ZDO.cpp"
     "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
-    "src/ZoneManager.cpp"    
-    
-    
-    "src/DiscordManager.cpp" 
-    
- "include/BitPack.h" "src/Tests.cpp")
+    "src/ZoneManager.cpp"
+    "src/Tests.cpp"
+)
 
 # change this to wherever your sol is
 #set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")
@@ -135,16 +146,25 @@ target_include_directories(${PROJECT_NAME}
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
+if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
+    target_link_libraries(${PROJECT_NAME}
+        PUBLIC lua sol2
+    )
+endif()
+
+if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE dpp::dpp
+    )
+endif()
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMAPI_BINARY_DIR}
-    PUBLIC OpenSSL::SSL OpenSSL::Crypto
     ZLIB::ZLIB
-    PUBLIC lua sol2
     yaml-cpp
     PRIVATE Tracy::TracyClient
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    PRIVATE dpp::dpp
     PRIVATE quill::quill
     PRIVATE unordered_dense
 )
@@ -188,4 +208,47 @@ file(COPY ${STEAMAPI_SHARED_DIR}
 
 # working directory and resources
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+
+# specific flags
+#set_target_properties($PROJECT_NAME PROPERTIES
+    #VH_USE_PREFABS 0
+#)
+
+#add_compile_options(-D )
+
+#option (VH_USE_MODS "Enable Lua modding subsystem" ON)
+
+if (DEFINED VH_USE_MODS)
+    add_compile_definitions(VH_USE_MODS=$<BOOL:${VH_USE_MODS}>) 
+endif()
+
+if (DEFINED VH_DISCORD_INTEGRATION)
+    add_compile_definitions(VH_DISCORD_INTEGRATION=$<BOOL:${VH_DISCORD_INTEGRATION}>) 
+endif()
+
+if (DEFINED VH_USE_PREFABS)
+    add_compile_definitions(VH_USE_PREFABS=$<BOOL:${VH_USE_PREFABS}>) 
+endif()
+
+if (DEFINED VH_ZONE_GENERATION)
+    add_compile_definitions(VH_ZONE_GENERATION=$<BOOL:${VH_ZONE_GENERATION}>) 
+endif()
+
+#if (DEFINED VH_DISCORD_INTEGRATION) 
+#    add_compile_definitions(VH_DISCORD_INTEGRATION) 
+#endif ()
+
+
+#target_compile_definitions(${PROJECT_NAME} PRIVATE 
+#if (DEFINED VH_USE_PREFABS)
+#    #VH_USE_PREFABS=${VH_USE_PREFABS}
+#    if (VH_USE_PREFABS)
+#        VH_USE_PREFABS=1
+#    else ()
+#        VH_USE_PREFABS=0
+#    endif ()
+#endif ()
+#    #VH_ZONE_GENERATION=0
+#)

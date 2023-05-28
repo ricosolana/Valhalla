@@ -1,8 +1,11 @@
 #pragma once 
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_USE_MODS)
+
 #include <sol/sol.hpp>
 
-#include "VUtils.h"
 #include "VUtilsString.h"
 #include "HashUtils.h"
 
@@ -217,13 +220,13 @@ public:
     }
 };
 
-#ifdef VH_OPTION_ENABLE_MODS
 #define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent((name), __VA_ARGS__)
 #define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple((name), __VA_ARGS__)
-#else
-#define VH_DISPATCH_MOD_EVENT(name, ...) true
-#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) true
-#endif
 
 // Manager class for everything related to mods which affect server functionality
 IModManager* ModManager();
+
+#else // !VH_USE_MODS
+#define VH_DISPATCH_MOD_EVENT(name, ...) true
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) true
+#endif // VH_USE_MODS

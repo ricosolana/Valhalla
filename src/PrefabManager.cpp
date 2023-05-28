@@ -1,4 +1,7 @@
 #include "PrefabManager.h"
+
+#if VH_IS_ON(VH_USE_PREFABS)
+
 #include "ZDOManager.h"
 #include "VUtilsResource.h"
 
@@ -41,3 +44,4 @@ void IPrefabManager::Init() {
 
     LOG_INFO(LOGGER, "Loaded {} prefabs", count);
 }
+#endif

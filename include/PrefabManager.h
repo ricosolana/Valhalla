@@ -1,7 +1,11 @@
 #pragma once
 
-#include "VUtilsString.h"
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_USE_PREFABS)
+
+#include "VUtilsString.h"
+
 #include "Prefab.h"
 #include "DataReader.h"
 
@@ -106,3 +110,5 @@ public:
 
 // Manager class for everything related to ZDO-belonging Prefabs and their base data
 IPrefabManager* PrefabManager();
+
+#endif

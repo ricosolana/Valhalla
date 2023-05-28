@@ -1,4 +1,6 @@
 #include "GeoManager.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
 #include "VUtilsRandom.h"
 #include "HashUtils.h"
 #include "ZoneManager.h"
@@ -808,3 +810,4 @@ int IGeoManager::GetSeed() {
 	return m_world->m_seed;
 #endif
 }
+#endif // VH_GENERATE_ZONES

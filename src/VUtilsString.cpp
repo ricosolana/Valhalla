@@ -105,11 +105,25 @@ namespace VUtils::String {
         return modif;
     }
 
+    bool FormatAscii(char* in, size_t inSize) {
+        bool modif = false;
+        for (size_t i = 0; i < inSize; i++) {
+            auto&& ch = in + i;
+            if (*ch < 0) {
+                *ch = 63;
+                modif = true;
+            }
+        }
+        return modif;
+    }
+
     std::string ToAscii(std::string_view in) {
         std::string ret = std::string(in);
-        FormatAscii(ret); 
+        FormatAscii(ret);
         return ret;
     }
+
+
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
     int GetUTF8CodeCount(const BYTE_t* p) {

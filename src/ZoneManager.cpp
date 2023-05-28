@@ -24,7 +24,7 @@ void IZoneManager::PostPrefabInit() {
     LOG_INFO(LOGGER, "Initializing ZoneManager");
 
     {
-#ifdef VH_OPTION_ENABLE_ZONE_FEATURES
+#if VH_IS_ON(VH_ZONE_GENERATION)
         // load ZoneLocations:
         auto opt = VUtils::Resource::ReadFile<BYTES_t>("features.pkg");
         if (!opt)
@@ -96,7 +96,7 @@ void IZoneManager::PostPrefabInit() {
     }    
 
     {
-#ifdef VH_OPTION_ENABLE_ZONE_VEGETATION
+#if VH_IS_ON(VH_ZONE_GENERATION)
         // load Foliage:
         auto opt = VUtils::Resource::ReadFile<BYTES_t>("vegetation.pkg");
         if (!opt)
@@ -157,11 +157,13 @@ void IZoneManager::PostPrefabInit() {
 #endif
     }
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
     ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::_ZoneCtrl);
     LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(Hashes::Object::LocationProxy);
 
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
         throw std::runtime_error("prefabs missing");
+#endif
 
     RouteManager()->Register(Hashes::Routed::C2S_SetGlobalKey, [this](Peer* peer, std::string_view name) {
         // TODO constraint check
@@ -340,12 +342,13 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 void IZoneManager::Update() {
     ZoneScoped;
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
     // TODO 100ms seems a tad too frequent
     //  peers dont even move that fast
     if (VUtils::run_periodic<struct periodic_zone_generation>(100ms)) {
         for (auto&& peer : NetManager()->GetPeers()) {
             if (
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
                 VH_SETTINGS.packetMode != PacketMode::PLAYBACK &&
 #endif
                 !peer->m_gatedPlaythrough)
@@ -358,6 +361,7 @@ void IZoneManager::Update() {
             }
         }
     }
+#endif
 }
 
 /*
@@ -423,15 +427,12 @@ bool IZoneManager::TryGenerateZone(ZoneID zone) {
 void IZoneManager::PopulateZone(Heightmap &heightmap) {
     ZoneScoped;
 
-#ifdef VH_OPTION_ENABLE_ZONE_GENERATION
+//#if VH_IS_ON(VH_ZONE_GENERATION)
     std::vector<ClearArea> m_tempClearAreas;
 
-#ifdef VH_OPTION_ENABLE_ZONE_FEATURES
     if (VH_SETTINGS.worldFeatures)
         m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
-#endif // VH_OPTION_ENABLE_ZONE_FEATURES
 
-#ifdef VH_OPTION_ENABLE_ZONE_VEGETATION
     if (VH_SETTINGS.worldVegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
@@ -439,8 +440,7 @@ void IZoneManager::PopulateZone(Heightmap &heightmap) {
         ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, 
             ZoneToWorldPos(heightmap.GetZone()));
     }
-#endif // VH_OPTION_ENABLE_ZONE_VEGETATION
-#endif // VH_OPTION_ENABLE_ZONE_GENERATION
+//#endif // VH_OPTION_ENABLE_ZONE_GENERATION
 }
 
 void IZoneManager::PopulateZone(ZoneID zone) {
@@ -685,7 +685,7 @@ void IZoneManager::PostGeoInit() {
         PrepareFeatures(*spawnLoc);
     }
     else {
-#ifdef VH_OPTION_ENABLE_ZONE_GENERATION
+#if VH_IS_ON(VH_ZONE_GENERATION)
         auto now(steady_clock::now());
 
         // Already presorted by priority
@@ -698,7 +698,7 @@ void IZoneManager::PostGeoInit() {
     }
 
     if ((
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
         VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
         && (VH_SETTINGS.packetMode == PacketMode::CAPTURE || 
 #endif

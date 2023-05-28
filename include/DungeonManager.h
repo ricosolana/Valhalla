@@ -1,6 +1,9 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
+
 #include "Prefab.h"
 #include "Dungeon.h"
 #include "ZDO.h"
@@ -46,3 +49,5 @@ public:
 
 // Manager for everything related to dungeon spawning 
 IDungeonManager* DungeonManager();
+
+#endif

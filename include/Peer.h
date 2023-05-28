@@ -67,7 +67,7 @@ public:
     ZDOID m_characterID;
     bool m_admin = false; // TODO use mask
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
 public:
     nanoseconds* m_disconnectCapture = nullptr;
     size_t m_captureQueueSize = 0;
@@ -117,7 +117,11 @@ public:
     template<typename F>
     void Register(HASH_t hash, F func) {
         //VLOG(1) << hash;
+#if VH_IS_ON(VH_USE_MODS)
         m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
+#else
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
+#endif
     }
 
     template<typename F>
@@ -125,11 +129,13 @@ public:
         return Register(VUtils::String::GetStableHashCode(name), func);
     }
 
+#if VH_IS_ON(VH_USE_MODS)
     void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
         
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
     }
+#endif
 
 
 
@@ -179,7 +185,7 @@ public:
 
 
     //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-
+#if VH_IS_ON(VH_USE_MODS)
     void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (!m_socket->Connected())
             return;
@@ -202,7 +208,7 @@ public:
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
     }
-
+#endif
 
     /*
     Method* GetMethod(HASH_t hash) {
@@ -366,7 +372,7 @@ public:
     }
 
 
-
+#if VH_IS_ON(VH_USE_MODS)
     void RouteViewLua(ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
@@ -384,7 +390,7 @@ public:
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
         return RouteViewLua(ZDOID::NONE, repr, args);
     }
-
+#endif
 
     /*
     friend std::ostream& operator<<(std::ostream& ost, const Peer& peer) {

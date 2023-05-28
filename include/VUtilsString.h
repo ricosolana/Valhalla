@@ -179,7 +179,12 @@ namespace VUtils::String {
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns whether any modification was done
-    bool FormatAscii(std::string &in);
+    bool FormatAscii(std::string& in);
+
+    // C# Encoding.ASCII.GetString equivalent:
+    // bytes greater than 127 get turned to literal '?' (63)
+    // Returns whether any modification was done
+    bool FormatAscii(char* in, size_t inSize);
 
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)

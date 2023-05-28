@@ -1,4 +1,6 @@
 #include "DungeonManager.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "VUtilsResource.h"
 #include "DataReader.h"
 #include "PrefabManager.h"
@@ -260,3 +262,4 @@ std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Ve
 void IDungeonManager::Generate(const Dungeon& dungeon, ZDO& zdo) {
     DungeonGenerator(dungeon, zdo).Generate();
 }
+#endif

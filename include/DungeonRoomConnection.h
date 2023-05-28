@@ -1,6 +1,9 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
+
 #include "VUtilsMath.h"
 
 #include "Vector.h"
@@ -38,3 +41,4 @@ public:
 		return m_pos.SqDistance(other.m_pos) < .1f * .1f;
 	}
 };
+#endif

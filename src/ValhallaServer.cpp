@@ -539,7 +539,9 @@ void IValhalla::Start() {
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
+#if VH_IS_ON(VH_USE_MODS)
     ModManager()->PostInit();
+#endif
 
     DiscordManager()->Init();
 
@@ -626,9 +628,11 @@ void IValhalla::Start() {
     NetManager()->Uninit();
     HeightmapBuilder()->Uninit();
 
+#if VH_IS_ON(VH_USE_MODS)
     ModManager()->Uninit();
+#endif
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
 #endif
         WorldManager()->GetWorld()->WriteFiles();
@@ -725,7 +729,7 @@ void IValhalla::PeriodUpdate() {
         LoadFiles(true);
     }
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     if (m_settings.packetMode == PacketMode::PLAYBACK) {
         PERIODIC_NOW(333ms, {
             char message[32];

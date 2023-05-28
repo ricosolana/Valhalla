@@ -9,21 +9,18 @@ class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
 
-#if INTPTR_MAX == INT32_MAX
-    // 2 players per session
-    // 32,768 ZDOs
-#error "bruh"
-    BitPack<uint16_t, 1, 16 - 1> m_pack;
-#elif INTPTR_MAX == INT64_MAX
-    // 64 players per session
+#if VH_IS_ON(VH_PLATFORM_32BIT)
+#error "32-bit not yet implemented"
+#elif VH_IS_ON(VH_PLATFORM_64BIT)
+    // 62 players per session (2 total reserved for null/server)
     // ~67.1M ZDOs
-    
+
     // User: 0, ID: 1
-    BitPack<uint32_t, VH_ZDOID_USER_BITS, 32 - VH_ZDOID_USER_BITS> m_pack;
+    BitPack<uint32_t, VH_USER_BITS_I_, 32 - VH_USER_BITS_I_> m_pack;
 #else
-#error "Unable to detect 32-bit or 64-bit system"
+#error "platform unsupported"
 #endif
-    
+        
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
     //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;

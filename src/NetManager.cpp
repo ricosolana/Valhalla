@@ -284,7 +284,7 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
 void INetManager::PostInit() {
     LOG_INFO(LOGGER, "Initializing NetManager");
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     // load session file if replaying
     if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         auto path = fs::path(VH_CAPTURE_PATH)
@@ -320,7 +320,7 @@ void INetManager::Update() {
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
             
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
             if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
                 // record peer joindata
                 m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
@@ -418,7 +418,7 @@ void INetManager::Update() {
         }
     }
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     // accept replay peers
     if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
         if (!m_sortedSessions.empty()) {
@@ -555,9 +555,11 @@ void INetManager::OnPeerQuit(Peer& peer) {
 }
 
 void INetManager::OnPeerDisconnect(Peer& peer) {
+#if VH_IS_ON(VH_USE_MODS)
     ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
+#endif
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         *(peer.m_disconnectCapture) = Valhalla()->Nanos();
     }
@@ -579,7 +581,7 @@ void INetManager::Uninit() {
         OnPeerDisconnect(*peer);
     }
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
         // save sessions
         BYTES_t bytes;
@@ -607,18 +609,16 @@ void INetManager::OnConfigLoad(bool reloading) {
     bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {
-        m_salt = VUtils::Random::GenerateAlphaNum(16);
+        VUtils::Random::GenerateAlphaNum(m_passwordSalt.data(), m_passwordSalt.size());
 
-        const auto merge = VH_SETTINGS.serverPassword + m_salt;
+        const auto merge = VH_SETTINGS.serverPassword + std::string(m_passwordSalt.data(), m_passwordSalt.size());
 
         // Hash a salted password
-        m_password.resize(16);
-        MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-            merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
+        //m_password.resize(16);
+        VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<uint8_t*>(m_passwordHash.data()));
+        //MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
+            //merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
 
-        VUtils::String::FormatAscii(m_password);
+        VUtils::String::FormatAscii(m_passwordHash.data(), m_passwordHash.size());
     }
-
-    if (m_acceptor)
-        m_acceptor->OnConfigLoad(reloading);
 }

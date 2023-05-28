@@ -264,7 +264,7 @@ public:
     }
 
 
-
+#if VH_IS_ON(VH_USE_MODS)
     void SerializeOneLua(IModManager::Type type, sol::object arg) {
         switch (type) {
             // TODO add recent unsigned types
@@ -338,4 +338,5 @@ public:
 
         return bytes;
     }
+#endif
 };

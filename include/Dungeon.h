@@ -1,6 +1,9 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
+
 #include "Prefab.h"
 #include "DungeonRoom.h"
 #include "HashUtils.h"
@@ -77,3 +80,4 @@ public:
 	//
 	//std::unique_ptr<DungeonGenerator> Generate(ZDO& zdo) const;
 };
+#endif

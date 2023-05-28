@@ -55,31 +55,19 @@ void IZDOManager::Update() {
 
 	auto&& peers = NetManager()->GetPeers();
 	
-#ifdef VH_OPTION_ENABLE_CAPTURE
-	// Occasionally release ZDOs
-	PERIODIC_NOW(VH_SETTINGS.zdoAssignInterval, {
-		for (auto&& peer : peers) {
-			if (
-				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK
-				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) 
-				&& !peer->m_gatedPlaythrough)
-			AssignOrReleaseZDOs(*peer);
-		}
-	});
-#else // macro expansion screwed this up
 	if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {
 		for (auto&& peer : peers) {
-			if (!peer->m_gatedPlaythrough) {
+			if (
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
+				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK 
+				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))) &&
+#endif
+				!peer->m_gatedPlaythrough) 
+			{
 				AssignOrReleaseZDOs(*peer);
 			}
 		}
 	}
-	//{ auto __now = steady_clock::now(); static auto __last_run = __now; auto __elapsed = duration_cast<milliseconds>(__now - __last_run); if (__elapsed > Valhalla()->Settings().zdoAssignInterval) {
-	//	__last_run = __now; { { for (auto&& peer : peers) {
-	//		if (!peer->m_gatedPlaythrough) AssignOrReleaseZDOs(*peer);
-	//	} } }
-	//}};
-#endif
 
 	if (VUtils::run_periodic<struct periodic_send_zdos>(VH_SETTINGS.zdoSendInterval)) {
 		for (auto&& peer : peers) {
@@ -766,7 +754,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 		// Only allow if normal mode
 		if (
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
 			(VH_SETTINGS.packetMode == PacketMode::PLAYBACK
 			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) ||
 #endif

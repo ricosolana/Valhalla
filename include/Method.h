@@ -86,7 +86,7 @@ MethodImpl(F, HASH_t, HASH_t) -> MethodImpl<
 >;
 
 
-
+#if VH_IS_ON(VH_USE_MODS)
 template<class T>
 class MethodImplLua : public IMethod<T> {
     friend class IModManager;
@@ -133,3 +133,4 @@ public:
 
 template<typename T>
 MethodImplLua(sol::function, std::vector<IModManager::Type>) -> MethodImplLua<T>;
+#endif

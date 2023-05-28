@@ -1,10 +1,12 @@
 #pragma once
 
 #include "VUtils.h"
+#include "VUtilsString.h"
 #include "DataReader.h"
 #include "DataWriter.h"
 #include "Biome.h"
 #include "RandomEventManager.h"
+#include "HashUtils.h"
 
 class IRandomEventManager {
 	class Event {

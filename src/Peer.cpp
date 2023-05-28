@@ -4,9 +4,18 @@
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 
-static const char* STATUS_STRINGS[] = { "None", "Connecting", "Connected",
-    "ErrorVersion", "ErrorDisconnected", "ErrorConnectFailed", "ErrorPassword",
-    "ErrorAlreadyConnected", "ErrorBanned", "ErrorFull" };
+static constexpr std::array<std::string_view, 10> STATUS_STRINGS = { 
+    "None", 
+    "Connecting", 
+    "Connected",
+    "ErrorVersion", 
+    "ErrorDisconnected", 
+    "ErrorConnectFailed", 
+    "ErrorPassword",
+    "ErrorAlreadyConnected", 
+    "ErrorBanned", 
+    "ErrorFull" 
+};
 
 // Static globals initialized once
 //std::string Peer::PASSWORD;
@@ -52,10 +61,10 @@ Peer::Peer(ISocket::Ptr socket)
             }
 
             if (
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
                 VH_SETTINGS.packetMode != PacketMode::PLAYBACK && 
 #endif
-                password != NetManager()->m_password)
+                password != std::string_view(NetManager()->m_passwordHash))
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
@@ -87,7 +96,7 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_salt));
+        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
 
         return false;
     });
@@ -127,7 +136,7 @@ void Peer::Update() {
             InternalInvoke(hash, reader);
         }
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
         if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
             && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
         {

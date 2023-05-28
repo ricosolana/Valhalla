@@ -1,8 +1,10 @@
 #pragma once
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include <vector>
 
-#include "VUtils.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "PrefabManager.h"
@@ -135,3 +137,4 @@ public:
 	//static void RegenerateDungeons();
 
 };
+#endif

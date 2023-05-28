@@ -1,8 +1,11 @@
+#include "DiscordManager.h"
+
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+
 #include <isteamgameserver.h>
 #include <dpp/dpp.h>
 #include <dpp/dispatcher.h>
 
-#include "DiscordManager.h"
 #include "ValhallaServer.h"
 #include "NetManager.h"
 #include "Peer.h"
@@ -387,3 +390,4 @@ void IDiscordManager::SendSimpleMessage(std::string_view msg) {
 
 	m_bot->execute_webhook(webhook, dpp::message(std::string(msg)));
 }
+#endif // VH_DISCORD_INTEGRATION

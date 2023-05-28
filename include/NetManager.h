@@ -24,8 +24,11 @@ private:
     UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
 
 public:
-    std::string m_password;
-    std::string m_salt;
+    //std::string m_password;
+    //std::string m_salt;
+
+    std::array<char, 16> m_passwordHash;
+    std::array<char, 16> m_passwordSalt;
 
 private:
     void SendDisconnect();

@@ -1,3 +1,7 @@
+#include "ModManager.h"
+
+#if VH_IS_ON(VH_USE_MODS)
+
 #include <yaml-cpp/yaml.h>
 
 #include "ModManager.h"
@@ -70,8 +74,7 @@ int LoadFileRequire(lua_State* L) {
     return 1;
 }
 
-void IModManager::LoadAPI() {
-    
+void IModManager::LoadAPI() {    
     m_state.new_usertype<Vector3f>("Vector3f",
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(),
         "ZERO", sol::property(&Vector3f::Zero),
@@ -1005,7 +1008,6 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
 }
 
 void IModManager::PostInit() {
-#ifdef VH_OPTION_ENABLE_MODS
     LOG_INFO(LOGGER, "Initializing ModManager");
 
     m_state.set_exception_handler(&my_exception_handler);
@@ -1044,13 +1046,12 @@ void IModManager::PostInit() {
     LOG_INFO(LOGGER, "Loaded {} mods", m_mods.size());
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
-#endif
 }
 
 void IModManager::Uninit() {
-#ifdef VH_OPTION_ENABLE_MODS
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
     m_callbacks.clear();
     m_mods.clear();
-#endif
 }
+
+#endif // VH_USE_MODS

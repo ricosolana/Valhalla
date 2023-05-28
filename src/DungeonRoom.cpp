@@ -1,4 +1,6 @@
 #include "DungeonRoom.h"
+
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "VUtilsString.h"
 
 HASH_t Room::GetHash() const {
@@ -38,3 +40,4 @@ bool Room::HaveConnection(const RoomConnection &other) const {
 
 	return false;
 }
+#endif

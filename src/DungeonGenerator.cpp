@@ -1,5 +1,6 @@
 #include "DungeonGenerator.h"
 
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "ZoneManager.h"
 #include "WorldManager.h"
 #include "GeoManager.h"
@@ -858,3 +859,4 @@ bool DungeonGenerator::CheckRequiredRooms() {
 
 	return num >= this->m_dungeon.m_minRequiredRooms;
 }
+#endif // VH_DUNGEON_GENERATION

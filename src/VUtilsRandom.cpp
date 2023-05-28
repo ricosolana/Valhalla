@@ -107,7 +107,7 @@ namespace VUtils::Random {
     }
 
 
-
+    /*
     void GenerateBytes(BYTE_t* out, unsigned int count) {
         RAND_bytes(reinterpret_cast<unsigned char*>(out), count);
     }
@@ -121,6 +121,9 @@ namespace VUtils::Random {
     }
 
     static const std::string charsAlphaNum = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ023456789";
+    */
+    
+    static constexpr std::string_view CHARS_ALPHA_NUM = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ023456789";
 
     /*
         Valheim GenerateUID method has a sliced probabilistic range:
@@ -152,14 +155,18 @@ namespace VUtils::Random {
         //return state.Range(1, std::numeric_limits<int32_t>::max());
     }
 
-    std::string GenerateAlphaNum(unsigned int count) {
+    void GenerateAlphaNum(char* out, size_t outSize) {
+        VUtils::Random::State state;
+        for (size_t i = 0; i < outSize; i++) {
+            out[i] = CHARS_ALPHA_NUM[state.Range((int32_t)0, (int32_t)CHARS_ALPHA_NUM.length())];
+        }
+    }
+
+    std::string GenerateAlphaNum(size_t count) {
         std::string res;
         res.resize(count);
 
-        VUtils::Random::State state;
-        for (unsigned int i = 0; i < count; i++) {
-            res[i] = charsAlphaNum[state.Range(0, charsAlphaNum.length())];
-        }
+        GenerateAlphaNum(res.data(), count);
 
         return res;
     }

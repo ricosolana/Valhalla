@@ -311,8 +311,8 @@ private:
     Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1, Flags: 2
     //  last 2 bits are unused/reserved for future uses
-    BitPack<uint32_t, VH_ZDOID_USER_BITS, 12, 12,
-        32 - VH_ZDOID_USER_BITS - 12 - 12> m_pack;
+    BitPack<uint32_t, VH_USER_BITS_I_, 12, 12,
+        32 - VH_USER_BITS_I_ - 12 - 12> m_pack;
 
 public:
     ZDO();

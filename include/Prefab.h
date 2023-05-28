@@ -1,5 +1,9 @@
 #pragma once
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_USE_PREFABS)
+
 #include "Vector.h"
 #include "Quaternion.h"
 
@@ -11,6 +15,7 @@ public:
         Quaternion m_rot;
     };
 
+    // TODO move this to ZDO or somewhere outside this class
     enum class Type : BYTE_t {
         DEFAULT,
         PRIORITIZED,
@@ -144,3 +149,4 @@ public:
         return this->m_hash == other.m_hash;
     }
 };
+#endif

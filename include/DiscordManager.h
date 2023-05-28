@@ -1,11 +1,13 @@
 #pragma once
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
 #include <string>
 
 #include <isteamhttp.h>
 #include <dpp/dpp.h>
 
-#include "VUtils.h"
 #include "HashUtils.h"
 
 class IDiscordManager {
@@ -30,3 +32,6 @@ public:
 #define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->SendSimpleMessage((msg));
 
 IDiscordManager* DiscordManager();
+#else
+#define VH_DISPATCH_WEBHOOK(msg) {}
+#endif

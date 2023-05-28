@@ -32,7 +32,11 @@ public:
 	*/
 	template<typename F>
 	void Register(HASH_t hash, F func) {
+#if VH_IS_ON(VH_USE_MODS)
 		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RouteIn, hash);
+#else
+		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
+#endif
 	}
 
 	template<typename F>
@@ -40,12 +44,13 @@ public:
 		return Register(VUtils::String::GetStableHashCode(name), func);
 	}
 
+#if VH_IS_ON(VH_USE_MODS)
 	void RegisterLua(const IModManager::MethodSig& sig, sol::function func) {
 		//VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
 		m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
 	}
-
+#endif
 
 	// Forwards raw data to peer(s) with no Lua handlers
 	//void InvokeParams(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
@@ -79,6 +84,7 @@ public:
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
+#if VH_IS_ON(VH_USE_MODS)
 	void InvokeViewLua(Int64Wrapper target, ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
 		if ((int64_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
@@ -107,6 +113,7 @@ public:
 		
 		//Invoke(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
+#endif
 
 
 
@@ -122,9 +129,11 @@ public:
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
+#if VH_IS_ON(VH_USE_MODS)
 	void InvokeLua(Int64Wrapper target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeViewLua(target, ZDOID::NONE, repr, args);
 	}
+#endif
 
 
 
@@ -140,9 +149,11 @@ public:
 		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
+#if VH_IS_ON(VH_USE_MODS)
 	void InvokeAllLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 		InvokeLua(EVERYBODY, repr, args);
 	}
+#endif
 
 	BYTES_t Serialize(OWNER_t sender, OWNER_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 		BYTES_t bytes;

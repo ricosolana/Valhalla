@@ -1,5 +1,6 @@
-#ifdef VH_OPTION_ENABLE_CAPTURE
 #include "NetSocket.h"
+
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
 #include "VUtilsResource.h"
 #include "DataReader.h"
 #include "ValhallaServer.h"

@@ -1,7 +1,10 @@
+#include "HeightmapBuilder.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
+
 #include <mutex>
 #include <future>
 
-#include "HeightmapBuilder.h"
 #include "GeoManager.h"
 #include "HashUtils.h"
 #include "TerrainModifier.h"
@@ -276,3 +279,4 @@ bool IHeightmapBuilder::IsTerrainReady(const ZoneID& zone) {
     return false;
 }
 */
+#endif

@@ -272,7 +272,7 @@ public:
     }
 
 
-
+#if VH_IS_ON(VH_USE_MODS)
     sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type) {
         switch (type) {
         case IModManager::Type::BYTES:
@@ -344,4 +344,5 @@ public:
 
         return results;
     }
+#endif
 };

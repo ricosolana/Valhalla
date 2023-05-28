@@ -1,4 +1,6 @@
 #include "RandomEventManager.h"
+
+#if VH_IS_ON(VH_RANDOM_EVENTS)
 #include "RouteManager.h"
 #include "Hashes.h"
 #include "NetManager.h"
@@ -196,3 +198,4 @@ void IRandomEventManager::SendCurrentRandomEvent() {
 		);
 	}
 }
+#endif

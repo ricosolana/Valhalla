@@ -1,4 +1,6 @@
 #include "HeightMap.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
 #include "HeightmapBuilder.h"
 #include "ZoneManager.h"
 #include "HeightmapManager.h"
@@ -818,3 +820,4 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler() {
 //        Vector3f(IZoneManager::ZONE_SIZE / 2.f, 0.f, IZoneManager::ZONE_SIZE / 2.f);
 //}
 
+#endif

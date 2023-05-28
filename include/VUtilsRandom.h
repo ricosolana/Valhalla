@@ -35,7 +35,9 @@ namespace VUtils::Random {
 
     OWNER_t GenerateUID();
 
-    std::string GenerateAlphaNum(unsigned int count);
+    void GenerateAlphaNum(char* out, size_t outSize);
+
+    std::string GenerateAlphaNum(size_t count);
 
 }
 
