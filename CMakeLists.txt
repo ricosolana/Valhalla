@@ -1,22 +1,24 @@
-﻿# CLion setup:
+﻿# If using CLion:
 # - use msvc compiler 2022
 # - specify the vcpkg toolchain file location
 # - specify arm64 architecture
 
-# Winsock multiple includes errors:
+# If getting Winsock multiple includes errors:
+# - This setup is not recommended, but sometimes Windows is just too rage-inducing
 # - Locate Windows.h and remove the define section containing WIN32_LEAN_AND_MEAN
 # - Add an '#include <Winsock2.h>' replacing the above section
 # - Some stack overflow 'enthusiasts' dislike this method, however its the only one which worked for me, so yea..
 #   I will be removing asio anyways because I consider RCON to be semi-insecure and too extra/finicky, so the forbidden technique above isnt needed!
 
-# setting command line program arguments (https://unrealistic.dev/posts/setting-debug-parameters-with-cmake-tools-for-visual-studio)
-#   right click the cmakelists.txt -> 'add debug configuration''
-#   add a new key 'args' followed by args
+# To set command line program arguments: 
+# - https://unrealistic.dev/posts/setting-debug-parameters-with-cmake-tools-for-visual-studio
+# - right click the cmakelists.txt -> 'add debug configuration''
+# - add a new key 'args' followed by args
 
-# luasocket install tutorial
-#   just use vcpkg to build, then:
-#   copy the folders from luasocket/bin/ to lua root dir
-#   copy the folders from luasocket/lua/ to lua root dir
+# To use the luasocket library with the Lua mods (useful for debugging with Zerobrane)
+# - Use vcpkg to easily build the sources, then:
+# - Copy the folders from luasocket/bin/ to lua root dir
+# - Copy the folders from luasocket/lua/ to lua root dir
 
 ##########
 # Project
@@ -24,9 +26,9 @@
 cmake_minimum_required (VERSION 3.14)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-include(get_steamapi)
-include(get_cpm)
 include(VHSettings)
+include(get_steamworks_sdk)
+include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
@@ -34,23 +36,13 @@ endif()
 
 
 
-#add_compile_definitions(WIN32_LEAN_AND_MEAN)
-#add_compile_definitions(VC_EXTRALEAN)
-
-#option(VH_USE_PREFABS "")
-
-#target_compile_definitions(${PROJECT_NAME} PRIVATE 
-    #VH_USE_PREFABS=0
-    #VH_ZONE_GENERATION=0
-#)
-
 ############
 # Libraries
 ############
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
-    message("Mods are enabled")
+    message("Mods: enabled")
     find_package(lua CONFIG REQUIRED)
     find_package(sol2 CONFIG REQUIRED)
 endif()
@@ -58,21 +50,16 @@ find_package(yaml-cpp CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
-    message("Discord integration enabled")
+    message("Discord: enabled")
     find_package(dpp CONFIG REQUIRED)
 endif()
 find_package(quill CONFIG REQUIRED)
 
-#CPMAddPackage("gc:martinus/unordered_dense@v4.0.0")
 CPMAddPackage(
     NAME unordered_dense
     GITHUB_REPOSITORY martinus/unordered_dense
     VERSION 4.0.0
 )
-
-#CPMAddPackage(
-    #unordered_dense
-    #"gc:martinus/unordered-dense#v4.0.0")
 
 # remove annoying min/max getting in the way of other min/max functions
 add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
@@ -130,17 +117,9 @@ add_executable(${PROJECT_NAME}
     "src/Tests.cpp"
 )
 
-# change this to wherever your sol is
-#set(SOL2_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/sol2")
-
-# change to wherever your ankerl is
-#set(ANKERL_UNORDERED_DENSE_ROOT_DIR "C:/Users/rico/Documents/Visual Studio 2022/Libraries/unordered_dense")
-
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    PUBLIC ${STEAMAPI_SOURCE_DIR}
-    #${SOL2_ROOT_DIR}/include
-    #${ANKERL_UNORDERED_DENSE_ROOT_DIR}/include
+    PUBLIC ${STEAMWORKS_SDK_SOURCE_DIR}
     PUBLIC ankerl::unordered_dense
 )
 
@@ -160,7 +139,7 @@ endif()
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
-    ${STEAMAPI_BINARY_DIR}
+    ${STEAMWORKS_SDK_BINARY_DIR}
     ZLIB::ZLIB
     yaml-cpp
     PRIVATE Tracy::TracyClient
@@ -178,7 +157,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run/
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
-    #VS_DEBUGGER_COMMAND_ARGUMENTS "-v"
 )
 
 if (MSVC)
@@ -200,7 +178,7 @@ set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-file(COPY ${STEAMAPI_SHARED_DIR}
+file(COPY ${STEAMWORKS_SDK_SHARED_DIR}
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -209,16 +187,6 @@ file(COPY ${STEAMAPI_SHARED_DIR}
 # working directory and resources
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-
-# specific flags
-#set_target_properties($PROJECT_NAME PROPERTIES
-    #VH_USE_PREFABS 0
-#)
-
-#add_compile_options(-D )
-
-#option (VH_USE_MODS "Enable Lua modding subsystem" ON)
 
 if (DEFINED VH_USE_MODS)
     add_compile_definitions(VH_USE_MODS=$<BOOL:${VH_USE_MODS}>) 
@@ -235,20 +203,3 @@ endif()
 if (DEFINED VH_ZONE_GENERATION)
     add_compile_definitions(VH_ZONE_GENERATION=$<BOOL:${VH_ZONE_GENERATION}>) 
 endif()
-
-#if (DEFINED VH_DISCORD_INTEGRATION) 
-#    add_compile_definitions(VH_DISCORD_INTEGRATION) 
-#endif ()
-
-
-#target_compile_definitions(${PROJECT_NAME} PRIVATE 
-#if (DEFINED VH_USE_PREFABS)
-#    #VH_USE_PREFABS=${VH_USE_PREFABS}
-#    if (VH_USE_PREFABS)
-#        VH_USE_PREFABS=1
-#    else ()
-#        VH_USE_PREFABS=0
-#    endif ()
-#endif ()
-#    #VH_ZONE_GENERATION=0
-#)

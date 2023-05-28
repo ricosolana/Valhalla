@@ -42,12 +42,19 @@ class MethodImpl
 private:
     const F m_func;
 
+#if VH_IS_ON(VH_USE_MODS)
     const HASH_t m_categoryHash;
     const HASH_t m_methodHash;
+#endif
 
 public:
+#if VH_IS_ON(VH_USE_MODS)
     MethodImpl(F func, HASH_t categoryHash, HASH_t methodHash)
         : m_func(func), m_categoryHash(categoryHash), m_methodHash(methodHash) {}
+#else
+    MethodImpl(F func)
+        : m_func(func) {}
+#endif
 
     bool Invoke(T t, DataReader reader) override {
         auto tuple = std::tuple_cat(std::forward_as_tuple(t),
@@ -59,9 +66,11 @@ public:
             LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.Position());
         }
 
+#if VH_IS_ON(VH_USE_MODS)
         // Prefix
         if (!VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
             return true;
+#endif
 
         bool result = true;
         
@@ -106,7 +115,7 @@ public:
         auto results(reader.DeserializeLua(state, m_types));
 
         // Prefix
-#ifdef VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
+#if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
         if (!VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash, sol::as_args(results)))
             return;
 #endif

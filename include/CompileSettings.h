@@ -157,19 +157,19 @@
 //  Disabled by default
 //  Enabling will lower performance slightly depending on mods
 //  This name isn't the best
-//#if defined(VH_MOD_EVENTS_VISIBLE)
-//    #if VH_MOD_EVENTS_VISIBLE != 0
-//        #if VH_IS_OFF(VH_USE_MODS)
-//            #error "Mod visible events must have mods enabled"
-//        #else
-//            #define VH_MOD_EVENTS_VISIBLE_I_ VH_ON
-//        #endif
-//    #else
-//        #define VH_MOD_EVENTS_VISIBLE_I_ VH_OFF
-//    #endif
-//#else
-//    #define VH_MOD_EVENTS_VISIBLE_I_ VH_DEFAULT_OFF
-//#endif
+#if defined(VH_REFLECTIVE_MOD_EVENTS)
+    #if VH_REFLECTIVE_MOD_EVENTS != 0
+        #if VH_IS_OFF(VH_USE_MODS)
+            #error "Mod visible events must have mods enabled"
+        #else
+            #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_ON
+        #endif
+    #else
+        #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_OFF
+    #endif
+#else
+    #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
+#endif
 
 //#define VH_USE_PREFABS 0
 

@@ -120,7 +120,7 @@ public:
 #if VH_IS_ON(VH_USE_MODS)
         m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
 #else
-        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
+        m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func);
 #endif
     }
 

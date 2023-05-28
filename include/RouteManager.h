@@ -35,7 +35,7 @@ public:
 #if VH_IS_ON(VH_USE_MODS)
 		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RouteIn, hash);
 #else
-		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, 0, hash);
+		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func);
 #endif
 	}
 
@@ -92,7 +92,7 @@ public:
 
 			auto results = sol::variadic_results(args.begin(), args.end());
 
-#ifdef MOD_EVENT_RESPONSE
+#if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
 				return;
 #endif
