@@ -41,6 +41,7 @@ World::World(DataReader reader) {
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
 	m_uid = reader.Read<int64_t>();
 	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
+	bool needsDB = worldVersion >= 30 ? reader.Read<bool>() : false;
 }
 
 

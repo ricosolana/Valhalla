@@ -18,9 +18,13 @@ decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
 //decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
-ZDO::ZDO() {}
+ZDO::ZDO() {
+    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
+}
 
-ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
+ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
+    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
+}
 
 
 
@@ -29,7 +33,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
-    pkg.Read<bool>();           // persistent
+    if (pkg.Read<bool>())
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));           // persistent
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
     pkg.Read<int32_t>();        // pgw
@@ -38,10 +43,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        pkg.Read<uint8_t>();    // m_type
+        m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << LocalDenotion::Marker_Type1);    // m_type
 
-    if (worldVersion >= 22)
-        pkg.Read<bool>();       // m_distant
+    if (worldVersion >= 22) {
+        if (pkg.Read<bool>())
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));       // m_distant
+    }
 
     if (worldVersion < 13) {
         pkg.Read<char16_t>();
@@ -53,7 +60,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 17) {
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-        m_pack.Set<1>(pair.second);
+        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
         //m_encoded.SetPrefabIndex(pair.second);
     }
 
@@ -76,7 +83,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17) {
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
         prefab = &pair.first;
-        m_pack.Set<1>(pair.second);
+        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
         //m_encoded.SetPrefabIndex(pair.second);
     }
 
@@ -117,23 +124,34 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
         this->m_pos = reader.Read<Vector3f>();
     }
 
-    // TODO load prefab once
-    m_pack.Set<1>(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+    // prefab is loaded once
+    //  If prefabs are disabled, then loading by index wont exactly work
+    //  the way to do it would be by hash
+    //      maybe should remove the prefab dynamic disable/enable as it introduces excessive problems
+    //      prefab system would reduce usage on esp by at most 10% per zdo (-4 bytes)
+    //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
+    //  on esp this might not be viable
+    if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
+        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+    }
+
+    // 72 bytes per prefab
+    static constexpr auto szz01 = sizeof(Prefab);
 
     if (flags & GlobalFlag::Marker_Persistent) {
-        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Persistent));
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
     }
 
     if (flags & GlobalFlag::Marker_Distant) {
-        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Distant));
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
     }
 
     if (flags & GlobalFlag::Marker_Type1) {
-        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Type1));
+        m_pack.Merge<PREFAB_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1));
     }
 
     if (flags & GlobalFlag::Marker_Type2) {
-        m_pack.Merge<2>(std::to_underlying(LocalFlag::Marker_Type2));
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type2));
     }
 
     if (flags & GlobalFlag::Marker_Rotation) {
@@ -202,14 +220,14 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
     uint16_t flags{};
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
-    flags |= m_pack.Get<2>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
     flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
     flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
     flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
@@ -224,7 +242,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) writer.Write(m_rotation);
 
     // TODO add connector
-    if (m_pack.Get<2>() & LocalFlag::Member_Connection) {
+    if (m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection) {
         if (network) {
             auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
             if (find != ZDO_TARGETED_CONNECTORS.end()) {
@@ -254,7 +272,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
 
 
     //if (m_encoded.HasAnyFlags(LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
-    if (m_pack.Get<2>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
+    if (m_pack.Get<FLAGS_PACK_INDEX>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
         auto&& find = ZDO_MEMBERS.find(ID());
         if (find != ZDO_MEMBERS.end()) {
             auto&& types = find->second;

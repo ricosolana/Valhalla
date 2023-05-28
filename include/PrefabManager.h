@@ -40,7 +40,7 @@ public:
 	//	Non-stable on container modifications
 	//	Throws if index is out of bounds
 	const Prefab& RequirePrefabByIndex(uint32_t index) const {
-		if (m_prefabs.size() < index) {
+		if (m_prefabs.size() <= index) {
 			throw std::runtime_error("prefab index out of bounds");
 		}
 		return *m_prefabs.values()[index].second;

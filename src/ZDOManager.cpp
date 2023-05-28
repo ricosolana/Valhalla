@@ -143,10 +143,7 @@ void IZDOManager::Save(DataWriter& writer) {
 					auto&& zdo = *ref;
 					//if (zdo->GetPrefab().AnyFlagsAbsent(Prefab::Flag::SESSIONED)) {
 					if (zdo.IsPersistent()) {
-						writer.Write(zdo.ID());
-						writer.SubWrite([&zdo](DataWriter& writer) {
-							zdo.Pack(writer, false);
-						});
+						zdo.Pack(writer, false);
 						count++;
 					}
 				}
@@ -159,8 +156,6 @@ void IZDOManager::Save(DataWriter& writer) {
 		//pkg.SetPos(end);
 		writer.SetPos(writer.size());
 	}
-
-	writer.Write<int32_t>(0);
 }
 
 
