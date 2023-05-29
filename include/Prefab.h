@@ -114,13 +114,14 @@ public:
 
 	Prefab() = default;
     
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 	std::string m_name;
 	HASH_t m_hash = 0;
 
 	Type m_type = Type::DEFAULT; // TODO store in flags
 
 	Vector3f m_localScale;
-
+#endif
 	Flag m_flags = Flag::NONE;
 
     bool AllFlagsPresent(Flag prefabFlags) const {

@@ -14,9 +14,6 @@ class IZDOManager {
 	friend class IValhalla;
 	friend class ZDO;
 	friend class VHTest;
-		
-	//static constexpr int WIDTH_IN_ZONES = 512; // The width of world in zones (the actual world is smaller than this at 315)
-	//static constexpr int MAX_DEAD_OBJECTS = 100000;
 
 	static bool PREFAB_CHECK_FUNCTION(std::reference_wrapper<const ZDO> zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& prefab = zdo.get().GetPrefab();

@@ -68,6 +68,23 @@
     #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_OFF
 #endif
 
+// Valhalla already ensures rather fine optimal memory usage
+//  But if this server is to run on an embedded system with little ram (esp32)
+//  then prioritize memory as much as possible
+// this will include nuking some core functionalities included within Valhiem
+//      which might affect performance and extents of gameplay
+#if defined(VH_MAX_MEMORY_EFFICIENCY)
+    #if VH_MAX_MEMORY_EFFICIENCY != 0
+        #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_ON
+    #else
+        #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_OFF
+    #endif
+#elif defined(ESP_PLATFORM)
+    #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_DEFAULT_ON
+#else
+    #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_DEFAULT_OFF
+#endif
+
 /*
 #if defined(VH_SMALL_ZDOID)
     #if VH_SMALL_ZDOID != 0
@@ -181,6 +198,19 @@
     #endif
 #else
     #define VH_USE_PREFABS_I_ VH_DEFAULT_ON
+#endif
+
+// Whether to use the smallest form prefabs possible
+//  Each prefab generally takes up min 72 bytes
+//  Each prefab minimally needs only flags to work well (not extra redundant hashes)
+#if defined(VH_STANDARD_PREFABS)
+    #if VH_STANDARD_PREFABS != 0 && VH_IS_ON(VH_USE_PREFABS)
+        #define VH_STANDARD_PREFABS_I_ VH_ON
+    #else
+        #define VH_STANDARD_PREFABS_I_ VH_OFF
+    #endif
+#else
+    #define VH_STANDARD_PREFABS_I_ VH_DEFAULT_ON
 #endif
 
 //#define VH_GENERATE_ZONES 0
@@ -303,13 +333,25 @@
 //  - experimental ZDO assignment algorithm
 //  - 
 #if defined(VH_EXTRA_ADDITIONS)
-#if VH_EXTRA_ADDITIONS != 0
-
+    #if VH_EXTRA_ADDITIONS != 0
+        #define VH_EXTRA_ADDITIONS VH_ON
+    #else
+        #define VH_EXTRA_ADDITIONS VH_OFF
+    #endif
 #else
-
+    #define VH_EXTRA_ADDITIONS VH_DEFAULT_OFF
 #endif
-#else
 
+// Whether to support loading worlds older than the latest version
+//  Can be disabled to very slightly reduce executable size
+#if defined(VH_LEGACY_WORLD_COMPATABILITY)
+    #if VH_LEGACY_WORLD_COMPATABILITY != 0
+        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
+    #else
+        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
+    #endif
+#else
+    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
 #endif
 
 // Enable the zone subsystem
