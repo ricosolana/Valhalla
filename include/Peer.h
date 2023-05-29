@@ -88,14 +88,16 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO& zdo);
+    void ZDOSectorInvalidated(KeyedZDO zdo);
 
     void ForceSendZDO(ZDOID id) {
         m_forceSend.insert(id);
     }
 
-    bool IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr);
-    bool IsOutdatedZDO(ZDO& zdo) {
+
+
+    bool IsOutdatedZDO(KeyedZDO zdo, decltype(m_zdos)::iterator& outItr);
+    bool IsOutdatedZDO(KeyedZDO zdo) {
         decltype(m_zdos)::iterator outItr;
         return IsOutdatedZDO(zdo, outItr);
     }

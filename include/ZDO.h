@@ -306,7 +306,8 @@ private:
     */
 
     Vector3f m_pos;                                 // 12 bytes
-    ZDOID m_id;                                     // 4 bytes (PADDING)
+    // TODO MAX_MEMORY_EFFICIENCY
+    //ZDOID m_id;                                     // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes
     Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1, Flags: 2
@@ -463,9 +464,9 @@ public:
 
 
 
-    ZDOID ID() const {
-        return this->m_id;
-    }
+    //ZDOID ID() const {
+    //    return this->m_id;
+    //}
 
     Vector3f Position() const {
         return m_pos;

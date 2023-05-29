@@ -184,23 +184,23 @@ void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO& zdo) {
-    if (zdo.IsOwner(this->m_uuid))
+void Peer::ZDOSectorInvalidated(KeyedZDO keyed) {
+    if (keyed->IsOwner(this->m_uuid))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {
-        if (m_zdos.erase(zdo.ID())) {
-            m_invalidSector.insert(zdo.ID());
+    if (!ZoneManager()->ZonesOverlap(keyed->GetZone(), m_pos)) {
+        if (m_zdos.erase(keyed.m_id)) {
+            m_invalidSector.insert(keyed.m_id);
         }
     }
 }
 
-bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
-    auto&& find = m_zdos.find(zdo.ID());
+bool Peer::IsOutdatedZDO(KeyedZDO zdo, decltype(m_zdos)::iterator& outItr) {
+    auto&& find = m_zdos.find(zdo.m_id);
 
     outItr = find;
 
     return find == m_zdos.end()
-        || zdo.GetOwnerRevision() > find->second.first.GetOwnerRevision()
-        || zdo.GetDataRevision() > find->second.first.GetDataRevision();
+        || zdo->GetOwnerRevision() > find->second.first.GetOwnerRevision()
+        || zdo->GetDataRevision() > find->second.first.GetDataRevision();
 }

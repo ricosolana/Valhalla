@@ -9,14 +9,32 @@
 #include "PrefabManager.h"
 #include "ZoneManager.h"
 
+class KeyedZDO {
+public:
+	const ZDOID m_id;
+	std::reference_wrapper<ZDO> m_ref;
+
+public:
+	KeyedZDO(ZDOID zdoid, ZDO& zdo) 
+		: m_id(zdoid), m_ref(zdo) {}
+
+	ZDO* Get() const noexcept {
+		return &m_ref.get();
+	}
+
+	ZDO* operator->() const noexcept {
+		return Get();
+	}
+};
+
 class IZDOManager {
 	friend class INetManager;
 	friend class IValhalla;
 	friend class ZDO;
 	friend class VHTest;
 
-	static bool PREFAB_CHECK_FUNCTION(std::reference_wrapper<const ZDO> zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		auto&& prefab = zdo.get().GetPrefab();
+	static bool PREFAB_CHECK_FUNCTION(const KeyedZDO& keyed, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {		
+		auto&& prefab = keyed->GetPrefab();
 
 		return prefab.AllFlagsAbsent(flagsAbsent)
 			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
@@ -35,12 +53,14 @@ private:
 	//	takes up around 5MB; could be around 72 bytes with map
 	//	TODO use map for esp32 (and lower initial memory usage)
 	//	esp only has 5Mb of ram, and this exceeds that
-	std::array <ankerl::unordered_dense::segmented_set<ZDO*>,
-		(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+	UNORDERED_MAP_t<ZoneID, UNORDERED_SET_t<ZDOID>> m_objectsByZone;
+
+	//std::array <ankerl::unordered_dense::segmented_set<ZDO*>,
+		//(IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
 
 	// Contains ZDOs according to prefab
 	// TODO this specifically exists for the Lua API, remove when MODS_DISABLED and for esp32
-	UNORDERED_MAP_t<HASH_t, ankerl::unordered_dense::segmented_set<ZDO*>> m_objectsByPrefab;
+	UNORDERED_MAP_t<HASH_t, ankerl::unordered_dense::segmented_set<ZDOID>> m_objectsByPrefab;
 
 	// Container of retired ZDOs
 	//	TODO benchmark storage here vs keeping ZDOIDs in m_objectsByID map (but setting values to null to diffreenciate between alive/dead)
@@ -60,11 +80,11 @@ private:
 	void OnPeerQuit(Peer& peer);
 
 	// Insert a ZDO into zone (internal)
-	bool AddZDOToZone(ZDO& zdo);
+	void AddZDOToZone(KeyedZDO keyed);
 	// Remove a zdo from a zone (internal)
-	void RemoveFromSector(ZDO& zdo);
+	void RemoveFromSector(KeyedZDO keyed);
 	// Relay a ZDO sector change to clients (internal)
-	void InvalidateZDOZone(ZDO& zdo);
+	void InvalidateZDOZone(KeyedZDO keyed);
 
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
@@ -77,10 +97,10 @@ private:
 	void EraseZDO(ZDOID uid);
 	void SendAllZDOs(Peer& peer);
 	bool SendZDOs(Peer& peer, bool flush);
-	std::list<std::pair<std::reference_wrapper<ZDO>, float>> CreateSyncList(Peer& peer);
+	std::list<std::pair<KeyedZDO, float>> CreateSyncList(Peer& peer);
 
-	std::reference_wrapper<ZDO> Instantiate(Vector3f position);
-	std::reference_wrapper<ZDO> Instantiate(ZDOID uid, Vector3f position);
+	KeyedZDO Instantiate(Vector3f position);
+	KeyedZDO Instantiate(ZDOID uid, Vector3f position);
 		
 	// Get a ZDO by id
 	//	The ZDO will be created if its ID does not exist
@@ -100,38 +120,38 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	std::reference_wrapper<ZDO> Instantiate(const Prefab& prefab, Vector3f pos);
-	std::reference_wrapper<ZDO> Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
-	std::reference_wrapper<ZDO> Instantiate(HASH_t hash, Vector3f pos) { return Instantiate(hash, pos, nullptr);  }
-	std::reference_wrapper<ZDO> Instantiate(const ZDO& zdo);
+	KeyedZDO Instantiate(const Prefab& prefab, Vector3f pos);
+	KeyedZDO Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
+	KeyedZDO Instantiate(HASH_t hash, Vector3f pos) { return Instantiate(hash, pos, nullptr);  }
+	KeyedZDO Instantiate(const ZDO& zdo);
 
 	// Get a ZDO by id
 	//	TODO use optional<reference>
 	ZDO* GetZDO(ZDOID id);
 
 	// Get all ZDOs strictly within a zone
-	void GetZDOs_Zone(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out);
+	void GetZDOs_Zone(ZoneID zone, std::list<KeyedZDO>& out);
 	// Get all ZDOs strictly within neighboring zones
-	void GetZDOs_NeighborZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out);
+	void GetZDOs_NeighborZones(ZoneID zone, std::list<KeyedZDO>& out);
 	// Get all ZDOs strictly within distant zones
-	void GetZDOs_DistantZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out);
+	void GetZDOs_DistantZones(ZoneID zone, std::list<KeyedZDO>& out);
 	// Get all ZDOs strictly within a zone, its neighboring zones, and its distant zones
-	void GetZDOs_ActiveZones(ZoneID zone, std::list<std::reference_wrapper<ZDO>>& out, std::list<std::reference_wrapper<ZDO>>& outDistant);
+	void GetZDOs_ActiveZones(ZoneID zone, std::list<KeyedZDO>& out, std::list<KeyedZDO>& outDistant);
 	// Get all ZDOs strictly within a zone that are distant flagged
-	void GetZDOs_Distant(ZoneID sector, std::list<std::reference_wrapper<ZDO>>& objects);
+	void GetZDOs_Distant(ZoneID sector, std::list<KeyedZDO>& objects);
 	
 
 	// Get a capped number of ZDOs within a radius matching an optional predicate
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(Vector3f pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred);
+	std::list<KeyedZDO> SomeZDOs(Vector3f pos, float radius, size_t max, const std::function<bool(const KeyedZDO&)>& pred);
 	// Get a capped number of ZDOs within a radius
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(Vector3f pos, float radius, size_t max) {
+	std::list<KeyedZDO> SomeZDOs(Vector3f pos, float radius, size_t max) {
 		return SomeZDOs(pos, radius, max, nullptr);
 	}
 	// Get a capped number of ZDOs with prefab and/or flag
 	//	*Note: Prefab or Flag must be non-zero for anything to be returned
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(Vector3f pos, float radius, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	std::list<KeyedZDO> SomeZDOs(Vector3f pos, float radius, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(pos, radius, max, 
-			[&](const ZDO& zdo) {
+			[&](const KeyedZDO& zdo) {
 				return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 			}
 		);
@@ -139,71 +159,71 @@ public:
 
 
 	// Get a capped number of ZDOs within a zone matching an optional predicate
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(ZoneID zone, size_t max, const std::function<bool(const ZDO&)>& pred);
+	std::list<KeyedZDO> SomeZDOs(ZoneID zone, size_t max, const std::function<bool(const KeyedZDO&)>& pred);
 	// Get a capped number of ZDOs within a zone
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(ZoneID zone, size_t max) {
+	std::list<KeyedZDO> SomeZDOs(ZoneID zone, size_t max) {
 		return SomeZDOs(zone, max, nullptr);
 	}
 	// Get a capped number of ZDOs within a radius in zone with prefab and/or flag
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	std::list<KeyedZDO> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
-		return SomeZDOs(zone, max, [&](const ZDO& zdo) {
-			return zdo.Position().SqDistance(pos) <= sqRadius
-				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
+		return SomeZDOs(zone, max, [&](const KeyedZDO &keyed) {
+			return keyed->Position().SqDistance(pos) <= sqRadius
+				&& PREFAB_CHECK_FUNCTION(keyed, prefab, flagsPresent, flagsAbsent);
 		});
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(ZoneID zone, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	std::list<KeyedZDO> SomeZDOs(ZoneID zone, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(zone, max, Vector3f::Zero(), std::numeric_limits<float>::max(), prefab, flagsPresent, flagsAbsent);
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
-	std::list<std::reference_wrapper<ZDO>> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius) {
+	std::list<KeyedZDO> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius) {
 		return SomeZDOs(zone, max, pos, radius, 0, Prefab::Flag::NONE, Prefab::Flag::NONE);
 	}
 
 
 	// Get all ZDOs with prefab
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(HASH_t prefab);
+	std::list<KeyedZDO> GetZDOs(HASH_t prefab);
 
 
 	// Get all ZDOs within a radius matching an optional predicate
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred) {
+	std::list<KeyedZDO> GetZDOs(Vector3f pos, float radius, const std::function<bool(const KeyedZDO&)>& pred) {
 		return SomeZDOs(pos, radius, -1, pred);
 	}
 	// Get all ZDOs within a radius
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(Vector3f pos, float radius) {
+	std::list<KeyedZDO> GetZDOs(Vector3f pos, float radius) {
 		return SomeZDOs(pos, radius, -1, nullptr);
 	}
 	// Get all ZDOs within a radius with prefab and/or flag
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	std::list<KeyedZDO> GetZDOs(Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(pos, radius, -1, prefab, flagsPresent, flagsAbsent);
 	}
 
 
 	// Get all ZDOs within a zone matching an optional predicate
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(ZoneID zone, const std::function<bool(const ZDO&)>& pred) {
+	std::list<KeyedZDO> GetZDOs(ZoneID zone, const std::function<bool(const KeyedZDO&)>& pred) {
 		return SomeZDOs(zone, -1, pred);
 	}
 	// Get all ZDOs within a zone
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(ZoneID zone) {
+	std::list<KeyedZDO> GetZDOs(ZoneID zone) {
 		return SomeZDOs(zone, -1, nullptr);
 	}
 	// Get all ZDOs within a zone of prefab and/or flag
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(ZoneID zone, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		return SomeZDOs(zone, -1, [&](const ZDO& zdo) {
+	std::list<KeyedZDO> GetZDOs(ZoneID zone, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+		return SomeZDOs(zone, -1, [&](const KeyedZDO& zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
 	}
 	// Get all ZDOs within a radius in zone
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(ZoneID zone, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	std::list<KeyedZDO> GetZDOs(ZoneID zone, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
-		return SomeZDOs(zone, -1, [&](const ZDO& zdo) {
-			return zdo.Position().SqDistance(pos) <= sqRadius
-				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
+		return SomeZDOs(zone, -1, [&](const KeyedZDO& keyed) {
+			return keyed->Position().SqDistance(pos) <= sqRadius
+				&& PREFAB_CHECK_FUNCTION(keyed, prefab, flagsPresent, flagsAbsent);
 		});
 	}
 	// Get all ZDOs within a radius in zone
-	std::list<std::reference_wrapper<ZDO>> GetZDOs(ZoneID zone, Vector3f pos, float radius) {
+	std::list<KeyedZDO> GetZDOs(ZoneID zone, Vector3f pos, float radius) {
 		return GetZDOs(zone, pos, radius, 0, Prefab::Flag::NONE, Prefab::Flag::NONE);
 	}
 
@@ -213,23 +233,23 @@ public:
 		auto&& zdos = SomeZDOs(pos, radius, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
 			return nullptr;
-		return &zdos.front().get();
+		return zdos.front().Get();
 	}
 	// Get any ZDO within a zone with prefab and/or flag
 	ZDO* AnyZDO(ZoneID zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& zdos = SomeZDOs(zone, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
 			return nullptr;
-		return &zdos.front().get();
+		return zdos.front().Get();
 	}
 
 
 	// Get the nearest ZDO within a radius matching an optional predicate
-	ZDO* NearestZDO(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred);
+	ZDO* NearestZDO(Vector3f pos, float radius, const std::function<bool(const KeyedZDO&)>& pred);
 	// Get the nearest ZDO within a radius with prefab and/or flag
 	ZDO* NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		return NearestZDO(pos, radius, [&](const ZDO& zdo) {
-			return PREFAB_CHECK_FUNCTION(zdo, prefabHash, flagsPresent, flagsAbsent);
+		return NearestZDO(pos, radius, [&](const KeyedZDO& keyed) {
+			return PREFAB_CHECK_FUNCTION(keyed, prefabHash, flagsPresent, flagsAbsent);
 		});
 	}
 
@@ -241,9 +261,9 @@ public:
 	//	Warning: the target ZDO is freed from memory and will become no longer accessible
 	//void DestroyZDO(ZDO& zdo);
 	void DestroyZDO(ZDOID zdoid);
-	void DestroyZDO(const ZDO& zdo) {
-		DestroyZDO(zdo.ID());
-	}
+	//void DestroyZDO(const ZDO& zdo) {
+	//	DestroyZDO(zdo.ID());
+	//}
 
 
 
