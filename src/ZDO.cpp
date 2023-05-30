@@ -131,29 +131,31 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     //      prefab system would reduce usage on esp by at most 10% per zdo (-4 bytes)
     //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
     //  on esp this might not be viable
+    auto prefabHash = reader.Read<HASH_t>();
     if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
-        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(reader.Read<HASH_t>()));
+        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefabHash));
+
+        if (flags & GlobalFlag::Marker_Persistent) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+        }
+
+        if (flags & GlobalFlag::Marker_Distant) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+        }
+
+        if (flags & GlobalFlag::Marker_Type1) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1));
+        }
+
+        if (flags & GlobalFlag::Marker_Type2) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type2));
+        }
     }
-
-    // 72 bytes per prefab
-    static constexpr auto szz01 = sizeof(Prefab);
-
-    if (flags & GlobalFlag::Marker_Persistent) {
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+    else {
+        // should always run if a version is provided (this assumes that the world is being loaded)
+        assert(version == 0);
     }
-
-    if (flags & GlobalFlag::Marker_Distant) {
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
-    }
-
-    if (flags & GlobalFlag::Marker_Type1) {
-        m_pack.Merge<PREFAB_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1));
-    }
-
-    if (flags & GlobalFlag::Marker_Type2) {
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type2));
-    }
-
+    
     if (flags & GlobalFlag::Marker_Rotation) {
         this->m_rotation = reader.Read<Vector3f>();
     }
@@ -175,7 +177,7 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
             connector.m_target = target;
             type &= ~ZDOConnector::Type::Target;
         }
-        m_pack.Merge<2>(std::to_underlying(LocalFlag::Member_Connection));
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
     }
 
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
