@@ -604,6 +604,10 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
                             }
 
+                            // TODO rotation during generation are not correct
+                            //  this is proven because of the correct world loaded zdos, 
+                            //  however new generated zone zdos are not correctly rotated
+
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
                             zdo.get().SetRotation(rotation);
 

@@ -1,7 +1,5 @@
 #include "PrefabManager.h"
 
-#if VH_IS_ON(VH_USE_PREFABS)
-
 #include "ZDOManager.h"
 #include "VUtilsResource.h"
 
@@ -17,7 +15,7 @@ IPrefabManager* PrefabManager() {
 const Prefab* IPrefabManager::GetPrefab(HASH_t hash) const {
     auto&& find = m_prefabs.find(hash);
     if (find != m_prefabs.end())
-        return find->second.get();
+        return &(*find);
     return nullptr;
 }
 
@@ -44,4 +42,3 @@ void IPrefabManager::Init() {
 
     LOG_INFO(LOGGER, "Loaded {} prefabs", count);
 }
-#endif

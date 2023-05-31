@@ -3,6 +3,7 @@
 #include "VUtils.h"
 #include "ZDOID.h"
 #include "Vector.h"
+#include "Prefab.h"
 
 class ZDO;
 
@@ -19,6 +20,32 @@ namespace ankerl::unordered_dense {
         }
     };*/
     
+    struct prefab_hash {
+        using is_transparent = void; // enable heterogeneous overloads
+        using is_avalanching = void;
+
+        auto operator()(HASH_t v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<HASH_t>{}(v);
+        }
+    };
+
+    template <>
+    struct hash<Prefab> {
+        using is_avalanching = void;
+
+        auto operator()(const std::unique_ptr<Prefab>& v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<HASH_t>{}(v->m_hash);
+        }
+
+        auto operator()(const Prefab& v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<int32_t>{}(v.m_hash);
+        }
+
+        auto operator()(HASH_t v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<int32_t>{}(v);
+        }
+    };
+
     template <>
     struct hash<ZDOID> {
         using is_avalanching = void;

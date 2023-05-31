@@ -190,21 +190,11 @@
 
 //#define VH_USE_PREFABS 0
 
-#if defined(VH_USE_PREFABS)
-    #if VH_USE_PREFABS != 0
-        #define VH_USE_PREFABS_I_ VH_ON
-    #else
-        #define VH_USE_PREFABS_I_ VH_OFF
-    #endif
-#else
-    #define VH_USE_PREFABS_I_ VH_DEFAULT_ON
-#endif
-
 // Whether to use the smallest form prefabs possible
 //  Each prefab generally takes up min 72 bytes
 //  Each prefab minimally needs only flags to work well (not extra redundant hashes)
 #if defined(VH_STANDARD_PREFABS)
-    #if VH_STANDARD_PREFABS != 0 && VH_IS_ON(VH_USE_PREFABS)
+    #if VH_STANDARD_PREFABS != 0
         #define VH_STANDARD_PREFABS_I_ VH_ON
     #else
         #define VH_STANDARD_PREFABS_I_ VH_OFF
@@ -219,8 +209,8 @@
     #if VH_ZONE_GENERATION != 0
         // zone geenration requires prefabs, 
         //  so if its manually disabled, then error
-        #if VH_IS_OFF(VH_USE_PREFABS)
-            #error "Zone generation VH_ZONE_GENERATION requires VH_USE_PREFABS to be on"
+        #if VH_IS_OFF(VH_STANDARD_PREFABS)
+            #error "Zone generation VH_ZONE_GENERATION requires VH_STANDARD_PREFABS to be on"
         #else
             #define VH_ZONE_GENERATION_I_ VH_ON
             //#define VH_USE_HEIGHTMAPS_I_ VH_ON
@@ -232,14 +222,14 @@
         //#define VH_USE_GEOGRAPHY_I_ VH_OFF
     #endif
 #else
-    #if VH_IS_DEFAULT_ON(VH_USE_PREFABS) || VH_IS_ON(VH_USE_PREFABS)
+    #if VH_IS_ON(VH_STANDARD_PREFABS)
         #define VH_ZONE_GENERATION_I_ VH_DEFAULT_ON
         //#define VH_USE_HEIGHTMAPS_I_ VH_DEFAULT_ON
         //#define VH_USE_GEOGRAPHY_I_ VH_DEFAULT_ON
     #else
         // I could disable this by default if prefabs disabled
         //  But I want the user to have full explicit control of their settings
-        #error "VH_ZONE_GENERATION requires VH_USE_PREFABS"
+        #error "VH_ZONE_GENERATION requires VH_STANDARD_PREFABS"
     #endif
 #endif
 

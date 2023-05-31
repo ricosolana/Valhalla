@@ -2,9 +2,8 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_USE_PREFABS)
-
 #include "VUtilsString.h"
+#include "HashUtils.h"
 
 #include "Prefab.h"
 #include "DataReader.h"
@@ -14,7 +13,7 @@
 //		which is not the desired result...
 class IPrefabManager {
 private:
-	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
+	UNORDERED_SET_t<Prefab, ankerl::unordered_dense::prefab_hash, std::equal_to<>> m_prefabs;
 
 public:
 	void Init();
@@ -43,7 +42,7 @@ public:
 		if (m_prefabs.size() <= index) {
 			throw std::runtime_error("prefab index out of bounds");
 		}
-		return *m_prefabs.values()[index].second;
+		return m_prefabs.values()[index];
 	}
 
 	uint32_t RequirePrefabIndexByHash(HASH_t hash) const {
@@ -57,7 +56,7 @@ public:
 	std::pair<const Prefab&, uint32_t> RequirePrefabAndIndexByHash(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end()) {
-			return std::make_pair(*find->second, (uint32_t)(find._Ptr - m_prefabs.values().data()));
+			return std::make_pair(*find, (uint32_t)(find._Ptr - m_prefabs.values().data()));
 		}
 		throw std::runtime_error("prefab by hash not found");
 	}
@@ -68,33 +67,33 @@ public:
 		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
 	}
 
+#if VH_IS_ON(VH_USE_MODS)
 	void Register(std::string_view name, Prefab::Type type, Vector3f scale, Prefab::Flag flags, bool overwrite) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
-		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
+		auto&& insert = m_prefabs.insert(Prefab(name, type, scale, flags)); // insert blank prefab
 
 		if (!overwrite && !insert.second)
 			throw std::runtime_error("prefab already registered");
-
-		auto&& prefab = *insert.first->second;
-		
-		prefab.m_name = std::string(name);
-		prefab.m_hash = hash;
-		prefab.m_type = type;
-		prefab.m_localScale = scale;
-		prefab.m_flags = flags;
 
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
+#endif
 
 	void Register(DataReader& reader, bool overwrite) {
-		auto name = reader.Read<std::string>();
-		auto hash = VUtils::String::GetStableHashCode(name);
+		auto name = reader.Read<std::string_view>();
+		//auto hash = VUtils::String::GetStableHashCode(name);
+		auto type = (Prefab::Type)reader.Read<int32_t>();
+		auto localScale = reader.Read<Vector3f>();
+		auto flags = reader.Read<Prefab::Flag>();
 
-		auto&& insert = m_prefabs.insert({ hash, std::make_unique<Prefab>() });
-
+#if VH_IS_ON(VH_STANDARD_PREFABS)
+		auto&& insert = m_prefabs.insert(Prefab(name, type, localScale, flags));
+#else
+		auto&& insert = m_prefabs.insert(Prefab(VUtils::String::GetStableHashCode(name)));
+#endif
 		if (!overwrite && !insert.second)
 			throw std::runtime_error("prefab already registered");
-
+		/*
 		auto&& prefab = *insert.first->second;
 
 		prefab.m_name = std::move(name);
@@ -102,7 +101,7 @@ public:
 		prefab.m_type = (Prefab::Type) reader.Read<int32_t>();
 		prefab.m_localScale = reader.Read<Vector3f>();
 		prefab.m_flags = reader.Read<Prefab::Flag>();
-
+		*/
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 
@@ -110,5 +109,3 @@ public:
 
 // Manager class for everything related to ZDO-belonging Prefabs and their base data
 IPrefabManager* PrefabManager();
-
-#endif

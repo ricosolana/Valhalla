@@ -1,8 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
-
-#if VH_IS_ON(VH_USE_PREFABS)
+#include "VUtilsString.h"
 
 #include "Vector.h"
 #include "Quaternion.h"
@@ -112,17 +111,35 @@ public:
         //static constexpr FLAG_t DropOnDestroyed = 1ULL << 39;
     };
 
-	Prefab() = default;
+    // TODO remove VH_USE_PREFABS
+    //  replace with VH_COMPACT_PREFAB
+    //  prefabs will always be needed, just a matter of how much is needed
+    //  since prefabs go up to 2271, can simply use indexes instead of large 32 bit hash per zdo (much better this way)
+    //  until the day Valheim has more prefabs than are available in ~12 bits, everything should work
     
+public:
+    const HASH_t m_hash;
+
 #if VH_IS_ON(VH_STANDARD_PREFABS)
-	std::string m_name;
-	HASH_t m_hash = 0;
+    std::string m_name;
 
-	Type m_type = Type::DEFAULT; // TODO store in flags
+    Type m_type = Type::DEFAULT; // TODO store in flags
 
-	Vector3f m_localScale;
+    Vector3f m_localScale;
+    Flag m_flags = Flag::NONE;
 #endif
-	Flag m_flags = Flag::NONE;
+
+public:
+#if VH_IS_ON(VH_STANDARD_PREFABS)
+    Prefab(std::string_view name, Type type, Vector3f localScale, Flag flags)
+        : m_hash(VUtils::String::GetStableHashCode(name)), m_name(std::string(name)), m_type(type), m_localScale(localScale), m_flags(flags) {}
+#else
+    Prefab(HASH_t hash) : m_hash(hash) {}
+#endif
+
+    Prefab(const Prefab& other) = default;
+
+
 
     bool AllFlagsPresent(Flag prefabFlags) const {
         return prefabFlags == Flag::NONE 
@@ -150,4 +167,3 @@ public:
         return this->m_hash == other.m_hash;
     }
 };
-#endif
