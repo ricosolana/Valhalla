@@ -1,10 +1,12 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_RANDOM_EVENTS)
 #include "VUtilsString.h"
 #include "DataReader.h"
 #include "DataWriter.h"
-#include "Biome.h"
+#include "Types.h"
 #include "RandomEventManager.h"
 #include "HashUtils.h"
 
@@ -61,3 +63,4 @@ public:
 };
 
 IRandomEventManager *RandomEventManager();
+#endif

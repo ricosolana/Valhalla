@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
 #include "VUtilsRandom.h"
 #include "WorldManager.h"
 #include "Vector.h"
@@ -198,3 +200,4 @@ public:
 
 // Manager class for everything related to coarse world heights and biomes during initial generation
 IGeoManager* GeoManager();
+#endif

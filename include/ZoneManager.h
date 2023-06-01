@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 #include "VUtilsRandom.h"
-#include "Biome.h"
+#include "Types.h"
 #include "HashUtils.h"
 #include "DataReader.h"
 #include "DataWriter.h"
@@ -19,6 +19,7 @@ class IZoneManager {
 	friend class INetManager;
 	friend class IModManager;
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	class Feature {
 		friend class IModManager;
 
@@ -122,6 +123,7 @@ class IZoneManager {
 
 	const Prefab* LOCATION_PROXY_PREFAB = nullptr;
 	const Prefab* ZONE_CTRL_PREFAB = nullptr;
+#endif
 
 public:
 	static constexpr int NEAR_ACTIVE_AREA = 2;
@@ -132,6 +134,7 @@ public:
 	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
 
 private:
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	// All Features within a world capable of generation
 	std::vector<std::unique_ptr<const Feature>> m_features;
 
@@ -146,6 +149,34 @@ private:
 
 	// Which Zones have already been generated
 	UNORDERED_SET_t<ZoneID> m_generatedZones;
+#else
+	/*
+	enum class SigFeature : uint8_t {
+		SPAWN,
+		HALDOR,
+		EIKTHYR,
+		ELDER,
+		BONEMASS,
+		MODER,
+		YAGLUTH,
+		QUEEN
+	};*/
+
+	//std::array<std::string> m_features = {"StartTemple", };
+
+	static constexpr std::array<const char*, 8> m_features = {
+		"StartTemple",
+		"Vendor_BlackForest",
+		"Eikthyrnir",
+		"GDKing",
+		"Bonemass",
+		"Dragonqueen",
+		"GoblinKing",
+		"DvergrBoss"
+	};
+
+	UNORDERED_MAP_t<ZoneID, std::pair<uint8_t, Vector3f>> m_generatedFeatures;
+#endif
 
 	// Game-state global keys
 	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
@@ -154,11 +185,14 @@ private:
 	void SendGlobalKeys();
 	void SendGlobalKeys(Peer& peer);
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	void SendLocationIcons();
+#endif
 	void SendLocationIcons(Peer& peer);
 
 	void OnNewPeer(Peer& peer);
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	void TryGenerateNearbyZones(Vector3f pos);
 
 
@@ -191,13 +225,15 @@ private:
 	bool IsZoneGenerated(ZoneID zone);
 
 	void GenerateLocationProxy(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
-	//void GenerateZoneCtrl(ZoneID zone);
+#endif
 
 public:
 	void PostPrefabInit();
 	void Update();
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	void PostGeoInit();
+#endif
 
 	void Save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
@@ -208,6 +244,7 @@ public:
 
 	//void RegenerateZone(ZoneID zone);
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 	void PopulateZone(ZoneID zone);
 
 	// Get the client based icons for minimap
@@ -222,6 +259,9 @@ public:
 	// Find the nearest location
 	//	Nullable
 	Feature::Instance* GetNearestFeature(std::string_view name, Vector3f pos);
+#else
+	bool GetNearestFeature(std::string_view name, Vector3f in, Vector3f &out);
+#endif
 
 	static ZoneID WorldToZonePos(Vector3f pos);
 	static Vector3f ZoneToWorldPos(ZoneID zone);

@@ -17,6 +17,7 @@
 #include "ZoneManager.h"
 #include "PrefabManager.h"
 #include "ZDOConnector.h"
+#include "Types.h"
 
 // The 'butter' of Valheim
 // This class has been refactored numerous times 
@@ -292,6 +293,10 @@ private:
         }
     }
 
+    void _SetPrefabHash(HASH_t hash) {
+        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
+    }
+
 private:
     static ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
@@ -487,12 +492,15 @@ public:
         }
     }
         
+#if VH_IS_ON(VH_STANDARD_PREFABS)
     const Prefab& GetPrefab() const {
         return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
     }
+#endif
     
     HASH_t GetPrefabHash() const {
-        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
+        //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
+        return PrefabManager()->RequirePrefabHashByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
     }
 
     /*
@@ -585,8 +593,8 @@ public:
         return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Distant;
     }
 
-    Prefab::Type GetType() const {
-        return Prefab::Type((m_pack.Get<FLAGS_PACK_INDEX>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+    ObjectType GetType() const {
+        return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
     }
 
 

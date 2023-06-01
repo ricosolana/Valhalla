@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 #include "VUtilsString.h"
 
 #include "Vector.h"
@@ -12,14 +14,6 @@ public:
         const Prefab* m_prefab = nullptr;
         Vector3f m_pos;
         Quaternion m_rot;
-    };
-
-    // TODO move this to ZDO or somewhere outside this class
-    enum class Type : BYTE_t {
-        DEFAULT,
-        PRIORITIZED,
-        SOLID,
-        TERRAIN
     };
 
     // MineRock/5 is interesting
@@ -111,6 +105,7 @@ public:
         //static constexpr FLAG_t DropOnDestroyed = 1ULL << 39;
     };
 
+
     // TODO remove VH_USE_PREFABS
     //  replace with VH_COMPACT_PREFAB
     //  prefabs will always be needed, just a matter of how much is needed
@@ -120,22 +115,16 @@ public:
 public:
     const HASH_t m_hash;
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
     std::string m_name;
 
     Type m_type = Type::DEFAULT; // TODO store in flags
 
     Vector3f m_localScale;
     Flag m_flags = Flag::NONE;
-#endif
 
 public:
-#if VH_IS_ON(VH_STANDARD_PREFABS)
     Prefab(std::string_view name, Type type, Vector3f localScale, Flag flags)
         : m_hash(VUtils::String::GetStableHashCode(name)), m_name(std::string(name)), m_type(type), m_localScale(localScale), m_flags(flags) {}
-#else
-    Prefab(HASH_t hash) : m_hash(hash) {}
-#endif
 
     Prefab(const Prefab& other) = default;
 
@@ -167,3 +156,4 @@ public:
         return this->m_hash == other.m_hash;
     }
 };
+#endif

@@ -117,10 +117,13 @@ add_executable(${PROJECT_NAME}
     "src/Tests.cpp"
 )
 
+find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
+
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMWORKS_SDK_SOURCE_DIR}
     PUBLIC ankerl::unordered_dense
+    PRIVATE ${GTL_INCLUDE_DIRS}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)

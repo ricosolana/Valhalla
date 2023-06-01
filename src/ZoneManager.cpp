@@ -178,6 +178,7 @@ void IZoneManager::PostPrefabInit() {
     });
 
     RouteManager()->Register(Hashes::Routed::C2S_RequestIcon, [this](Peer* peer, std::string_view locationName, Vector3f point, std::string_view pinName, int pinType, bool showMap) {
+#if VH_IS_ON(VH_ZONE_GENERATION)        
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG_INFO(LOGGER, "Found location: '{}'", locationName);
             RouteManager()->Invoke(peer->m_uuid, 
@@ -191,6 +192,22 @@ void IZoneManager::PostPrefabInit() {
         else {
             LOG_INFO(LOGGER, "Failed to find location: '{}'", locationName);
         }
+#else
+        Vector3f out;
+        if (GetNearestFeature(locationName, point, out)) {
+            LOG_INFO(LOGGER, "Found location: '{}'", locationName);
+            RouteManager()->Invoke(peer->m_uuid,
+                Hashes::Routed::S2C_ResponseIcon,
+                pinName,
+                pinType,
+                out,
+                showMap
+            );
+        }
+        else {
+            LOG_INFO(LOGGER, "Failed to find location: '{}'", locationName);
+        }
+#endif
     });
 
     RouteManager()->Register(Hashes::Routed::S2C_ResponsePing, [](Peer* peer, float time) {
@@ -234,6 +251,7 @@ void IZoneManager::SendGlobalKeys(Peer& peer) {
     peer.Route(Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 // private
 void IZoneManager::SendLocationIcons() {
     BYTES_t bytes;
@@ -249,11 +267,13 @@ void IZoneManager::SendLocationIcons() {
 
     RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
 }
+#endif
 
 // private
 void IZoneManager::SendLocationIcons(Peer& peer) {
     LOG_INFO(LOGGER, "Sending location icons to {}", peer.m_name);
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
     BYTES_t bytes;
     DataWriter writer(bytes);
 
@@ -268,23 +288,53 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
     //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
 
     peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
+#else
+    peer.SubRoute(Hashes::Routed::S2C_UpdateIcons, [this](DataWriter& writer) {
+        writer.Write<int32_t>(1); // dummy count
+        for (auto&& pair : m_generatedFeatures) {
+            // We only care about StartTemple
+            //if (m_features[pair.second.first] == std::string_view(m_features[0])) {
+            if (pair.second.first == 0) {
+                writer.Write(pair.second.second); // pos
+                writer.Write(m_features[pair.second.first]); // name
+                return;
+            }
+        }
+        assert(false);
+    });
+#endif
 }
 
 // public
 void IZoneManager::Save(DataWriter& pkg) {
+#if VH_IS_ON(VH_ZONE_GENERATION)
+#error "Must write INT coords not SHORT";
     pkg.Write(m_generatedZones);
+#else
+    LOG_WARNING(LOGGER, "Saving while VH_ZONE_GENERATION:0 is not fully portable");
+
+    pkg.Write<int32_t>(0); // 0 count
+#endif
     pkg.Write<int32_t>(0); // PGW
     pkg.Write(VConstants::LOCATION);
     pkg.Write(m_globalKeys);
     pkg.Write(true);
     pkg.Write<int32_t>(m_generatedFeatures.size());
     for (auto&& pair : m_generatedFeatures) {
+#if VH_IS_ON(VH_ZONE_GENERATION)
         auto&& inst = pair.second;
         auto&& location = inst->m_feature.get();
 
         pkg.Write(std::string_view(location.m_name));
         pkg.Write(inst->m_pos);
         pkg.Write(m_generatedZones.contains(WorldToZonePos(inst->m_pos)));
+#else
+        static_assert(std::is_same_v<Vector3f, decltype(decltype(std::remove_cvref_t<decltype(pair)>::second)::second)>);
+
+        pkg.Write(m_features[pair.second.first]);
+        pkg.Write(pair.second.second);
+        pkg.Write(true);
+#endif
     }
 }
 
@@ -297,7 +347,9 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
         for (decltype(count) i = 0; i < count; i++) {
             auto x = reader.Read<int32_t>();
             auto y = reader.Read<int32_t>();
+#if VH_IS_ON(VH_ZONE_GENERATION)
             m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
+#endif
         }
     }
 
@@ -317,6 +369,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     auto pos = reader.Read<Vector3f>();
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
                     auto&& location = GetFeature(text);
                     if (location) {
                         m_generatedFeatures[WorldToZonePos(pos)] = 
@@ -325,9 +378,20 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     else {
                         LOG_ERROR(LOGGER, "Unknown feature '{}'", text);
                     }
+#else
+                    static_assert(std::numeric_limits<uint8_t>::max() > m_features.size());
+                    for (uint8_t i = 0; i < m_features.size(); i++) {
+                        if (text == std::string_view(m_features[i])) {
+                            // register
+                            m_generatedFeatures[WorldToZonePos(pos)] 
+                                = std::pair<uint8_t, Vector3f>(i, pos);
+                            break;
+                        }
+                    }
+#endif
                 }
 
-                LOG_INFO(LOGGER, "Loaded {} features instances ", count);
+                LOG_INFO(LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
 
                 if (locationVersion != VConstants::LOCATION) {
                     // regenerate features?
@@ -373,7 +437,7 @@ void IZoneManager::RegenerateZone(const ZoneID& zone) {
     PopulateZone(HeightmapManager()->GetHeightmap(zone));
     //m_generatedZones.insert(zone);
 }*/
-
+#if VH_IS_ON(VH_ZONE_GENERATION)
 // Rename?
 void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint) {
     auto zone = WorldToZonePos(refPoint);
@@ -637,6 +701,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
     }
 }
 
+
 // private
 bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, Vector3f point) {
     for (auto&& clearArea : areas) {
@@ -689,7 +754,6 @@ void IZoneManager::PostGeoInit() {
         PrepareFeatures(*spawnLoc);
     }
     else {
-#if VH_IS_ON(VH_ZONE_GENERATION)
         auto now(steady_clock::now());
 
         // Already presorted by priority
@@ -698,7 +762,6 @@ void IZoneManager::PostGeoInit() {
         }
 
         LOG_INFO(LOGGER, "Location generation took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
-#endif
     }
 
     if ((
@@ -1142,7 +1205,7 @@ Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& bio
 // public
 IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_view name, Vector3f point) {
     float closestDist = std::numeric_limits<float>::max();
-    
+
     IZoneManager::Feature::Instance* closest = nullptr;
 
     for (auto&& pair : m_generatedFeatures) {
@@ -1158,6 +1221,26 @@ IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_vie
 
     return closest;
 }
+
+#else
+
+// public
+bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3f& out) {
+    float sqMin = std::numeric_limits<float>::max();
+        
+    for (auto&& pair : m_generatedFeatures) {
+        if (m_features[pair.second.first] == name) {
+            float sq = in.SqDistance(pair.second.second);
+            if (sq < sqMin) {
+                out = pair.second.second;
+                sqMin = sq;
+            }
+        }
+    }
+
+    return sqMin < std::numeric_limits<float>::max();
+}
+#endif
 
 // public
 // this is world position to zone position
@@ -1175,7 +1258,9 @@ Vector3f IZoneManager::ZoneToWorldPos(ZoneID id) {
     return Vector3f(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
 }
 
+#if VH_IS_ON(VH_ZONE_GENERATION)
 // private
 bool IZoneManager::IsZoneGenerated(ZoneID zoneID) {
     return m_generatedZones.contains(zoneID);
 }
+#endif

@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Vector.h"
 #include "VUtils.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
+#include "Vector.h"
+
 #include "HashUtils.h"
 #include "ValhallaServer.h"
 #include "TerrainModifier.h"
@@ -152,6 +155,7 @@ public:
 
     bool GetWorldNormal(Vector3f worldPos, Vector3f& normal);
 
-
+    // TOOD either implement or remove
     TerrainComp GetAndCreateTerrainCompiler();
 };
+#endif

@@ -1,4 +1,6 @@
 todo:
+	fix feature sending icons when VH_ZONE_GENERATION disabled
+
 	modify zdo to accept forwarded && types for string and vector
 
     methods to mapping playback zdoids to physical zdoids

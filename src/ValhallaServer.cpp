@@ -511,8 +511,6 @@ void IValhalla::Stop() {
 void IValhalla::Start() {    
     MAIN_THREAD = std::this_thread::get_id();
     
-
-
     LOG_INFO(LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
 
     m_serverID = VUtils::Random::GenerateUID();
@@ -526,16 +524,21 @@ void IValhalla::Start() {
     m_serverTimeMultiplier = 1;
 
     ZDOManager()->Init();
+#if VH_IS_ON(VH_RANDOM_EVENTS)
     RandomEventManager()->Init();
+#endif
     PrefabManager()->Init();
 
     ZoneManager()->PostPrefabInit();
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
     DungeonManager()->PostPrefabInit();
-
+#endif
     WorldManager()->PostZoneInit();
+#if VH_IS_ON(VH_ZONE_GENERATION)
     GeoManager()->PostWorldInit();
     HeightmapBuilder()->PostGeoInit();
     ZoneManager()->PostGeoInit();
+#endif
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
@@ -626,7 +629,9 @@ void IValhalla::Start() {
 
     // Cleanup 
     NetManager()->Uninit();
+#if VH_IS_ON(VH_ZONE_GENERATION)
     HeightmapBuilder()->Uninit();
+#endif
 
 #if VH_IS_ON(VH_USE_MODS)
     ModManager()->Uninit();
@@ -702,8 +707,12 @@ void IValhalla::Update() {
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
+#if VH_IS_ON(VH_RANDOM_EVENTS)
     RandomEventManager()->Update();
+#endif
+#if VH_IS_ON(VH_ZONE_GENERATION)
     HeightmapBuilder()->Update();
+#endif
 }
 
 void IValhalla::PeriodUpdate() {
@@ -719,9 +728,11 @@ void IValhalla::PeriodUpdate() {
 
     DiscordManager()->PeriodUpdate();
 
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
     if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
-    
+#endif
+
     std::error_code err;
     auto lastWriteTime = fs::last_write_time("server.yml", err);
     if (lastWriteTime != this->m_settingsLastTime) {

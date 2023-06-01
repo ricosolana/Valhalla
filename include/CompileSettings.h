@@ -188,7 +188,7 @@
     #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
 #endif
 
-//#define VH_USE_PREFABS 0
+#define VH_STANDARD_PREFABS 0
 
 // Whether to use the smallest form prefabs possible
 //  Each prefab generally takes up min 72 bytes
@@ -203,7 +203,7 @@
     #define VH_STANDARD_PREFABS_I_ VH_DEFAULT_ON
 #endif
 
-//#define VH_GENERATE_ZONES 0
+//#define VH_ZONE_GENERATION 0
 
 #if defined(VH_ZONE_GENERATION)
     #if VH_ZONE_GENERATION != 0
@@ -222,35 +222,32 @@
         //#define VH_USE_GEOGRAPHY_I_ VH_OFF
     #endif
 #else
-    #if VH_IS_ON(VH_STANDARD_PREFABS)
-        #define VH_ZONE_GENERATION_I_ VH_DEFAULT_ON
-        //#define VH_USE_HEIGHTMAPS_I_ VH_DEFAULT_ON
-        //#define VH_USE_GEOGRAPHY_I_ VH_DEFAULT_ON
-    #else
-        // I could disable this by default if prefabs disabled
-        //  But I want the user to have full explicit control of their settings
-        #error "VH_ZONE_GENERATION requires VH_STANDARD_PREFABS"
-    #endif
+    #define VH_ZONE_GENERATION_I_ VH_STANDARD_PREFABS_I_
 #endif
 
 #if defined(VH_RANDOM_EVENTS)
+#error "Not fully implemented"
     #if VH_RANDOM_EVENTS != 0
         #define VH_RANDOM_EVENTS_I_ VH_ON
     #else
         #define VH_RANDOM_EVENTS_I_ VH_OFF
     #endif
 #else
-    #define VH_RANDOM_EVENTS_I_ VH_DEFAULT_ON
+    #define VH_RANDOM_EVENTS_I_ VH_STANDARD_PREFABS_I_
 #endif
 
 #if defined(VH_DUNGEON_GENERATION)
-    #if VH_DUNGEON_GENERATION != 0
-        #define VH_DUNGEON_GENERATION_I_ VH_ON
+    #if VH_IS_ON(VH_STANDARD_PREFABS)
+        #if VH_DUNGEON_GENERATION != 0
+            #define VH_DUNGEON_GENERATION_I_ VH_ON
+        #else
+            #define VH_DUNGEON_GENERATION_I_ VH_OFF
+        #endif
     #else
-        #define VH_DUNGEON_GENERATION_I_ VH_OFF
+        #error("VH_DUNGEON_GENERATION requires VH_STANDARD_PREFABS")
     #endif
 #else
-    #define VH_DUNGEON_GENERATION_I_ VH_DEFAULT_ON
+    #define VH_DUNGEON_GENERATION_I_ VH_STANDARD_PREFABS_I_
 #endif
 
 #if defined(VH_DISCORD_INTEGRATION)
@@ -383,9 +380,9 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.216.7";
+    static const char* GAME = "0.216.8";
 
-    static constexpr uint32_t NETWORK = 3;
+    static constexpr uint32_t NETWORK = 4;
 
     // worldgenerator
     static constexpr int32_t WORLD = 31;

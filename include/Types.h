@@ -1,5 +1,6 @@
 #pragma once
 
+// TODO append ..Type
 enum class Biome : uint16_t {
     None = 0,
     Meadows = 1 << 0,
@@ -14,9 +15,18 @@ enum class Biome : uint16_t {
     BiomesMax // DO NOT USE
 };
 
+// TODO append ..type
 enum class BiomeArea : uint8_t {
     None = 0,
     Edge = 1 << 0,
     Median = 1 << 1,
     Everything = Edge | Median,
+};
+
+// The priority type of this ZDO
+enum class ObjectType : BYTE_t {
+    DEFAULT,
+    PRIORITIZED,
+    SOLID,
+    TERRAIN
 };

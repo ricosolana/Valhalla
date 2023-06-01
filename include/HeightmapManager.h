@@ -4,9 +4,9 @@
 #include "VUtils.h"
 #include "HeightMap.h"
 #include "TerrainModifier.h"
-#include "Biome.h"
+#include "Types.h"
 
-
+#if VH_IS_ON(VH_ZONE_GENERATION)
 
 class IHeightmapManager {
 	//UNORDERED_SET_t<ZoneID> m_population;
@@ -53,3 +53,4 @@ public:
 
 // Manager class for everything related to finely partitioned world heights and biomes during generation
 IHeightmapManager* HeightmapManager();
+#endif

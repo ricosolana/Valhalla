@@ -55,13 +55,22 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
+#if VH_IS_ON(VH_STANDARD_PREFABS)
     const Prefab* prefab = nullptr;
+#endif
 
     if (worldVersion >= 17) {
+#if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
-        //m_encoded.SetPrefabIndex(pair.second);
+
+        m_encoded.SetPrefabIndex(pair.second);
+#else
+        _SetPrefabHash(pkg.Read<HASH_t>());
+        /*
+        auto&& index = PrefabManager()->RequirePrefabIndexByHash(pkg.Read<HASH_t>());
+        m_pack.Set<PREFAB_PACK_INDEX>(index);*/
+#endif
     }
 
     pkg.Read<Vector2i>(); // m_sector
@@ -81,16 +90,24 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         _TryReadType<BYTES_t,   char16_t>(pkg, members);
 
     if (worldVersion < 17) {
+#if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
         prefab = &pair.first;
         m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
-        //m_encoded.SetPrefabIndex(pair.second);
+#else
+        _SetPrefabHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
+        /*
+        auto&& index = PrefabManager()->RequirePrefabIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
+        m_pack.Set<PREFAB_PACK_INDEX>(index);*/
+#endif
     }
 
+#if VH_IS_ON(VH_STANDARD_PREFABS)
     assert(prefab);
 
     if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
          Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+#endif
 }
 
 ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
@@ -133,7 +150,9 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     //  on esp this might not be viable
     auto prefabHash = reader.Read<HASH_t>();
     if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
-        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefabHash));
+        //m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefabHash));
+
+        _SetPrefabHash(prefabHash);
 
         if (flags & GlobalFlag::Marker_Persistent) {
             m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
@@ -178,6 +197,11 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
             type &= ~ZDOConnector::Type::Target;
         }
         m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+    }
+    else {
+        // Remove connector flag
+        m_pack.Set<FLAGS_PACK_INDEX>(
+            m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
 
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {

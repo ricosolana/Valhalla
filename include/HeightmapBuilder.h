@@ -2,9 +2,12 @@
 
 #include <thread>
 
+#include "VUtils.h"
+
+#if VH_IS_ON(VH_ZONE_GENERATION)
 #include "HeightmapManager.h"
 #include "Vector.h"
-#include "VUtils.h"
+
 #include "ZoneManager.h"
 
 class IHeightmapBuilder {
@@ -43,3 +46,4 @@ public:
 };
 
 IHeightmapBuilder* HeightmapBuilder();
+#endif

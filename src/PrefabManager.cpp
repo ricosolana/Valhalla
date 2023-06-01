@@ -12,13 +12,6 @@ IPrefabManager* PrefabManager() {
 
 //const Prefab Prefab::NONE = Prefab();
 
-const Prefab* IPrefabManager::GetPrefab(HASH_t hash) const {
-    auto&& find = m_prefabs.find(hash);
-    if (find != m_prefabs.end())
-        return &(*find);
-    return nullptr;
-}
-
 void IPrefabManager::Init() {
     LOG_INFO(LOGGER, "Initializing PrefabManager");
 
@@ -36,9 +29,28 @@ void IPrefabManager::Init() {
         LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver);
 
     auto count = pkg.Read<int32_t>();
+#if VH_IS_OFF(VH_STANDARD_PREFABS)
+    m_prefabs.reserve(count);
+#endif
+
     for (int i=0; i < count; i++) {
-        Register(pkg, true);
+        //Register(pkg, true);
+        auto name = pkg.Read<std::string_view>();
+        //auto hash = VUtils::String::GetStableHashCode(name);
+        auto type = (ObjectType) pkg.Read<int32_t>();
+        auto localScale = pkg.Read<Vector3f>();
+        auto flags = pkg.Read<uint64_t>();
+
+#if VH_IS_ON(VH_STANDARD_PREFABS)
+        auto&& insert = m_prefabs.insert(Prefab(name, type, localScale, (Prefabs::Flag)flags));
+#else
+        auto&& insert = m_prefabs.insert(m_prefabs.end(), VUtils::String::GetStableHashCode(name));
+#endif
     }
+    
+#if VH_IS_OFF(VH_STANDARD_PREFABS)
+    std::sort(m_prefabs.begin(), m_prefabs.end());
+#endif
 
     LOG_INFO(LOGGER, "Loaded {} prefabs", count);
 }

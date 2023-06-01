@@ -56,6 +56,7 @@ BYTES_t World::SaveMeta() {
 		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
 		writer.Write(m_uid);
 		writer.Write(m_worldGenVersion);
+		writer.Write(true);
 	});
 
 	return bytes;
@@ -137,8 +138,10 @@ void World::LoadFileDB(const fs::path& root) {
 			if (worldVersion >= 12)
 				ZoneManager()->Load(reader, worldVersion);
 
+#if VH_IS_ON(VH_RANDOM_EVENTS)
 			if (worldVersion >= 15)
 				RandomEventManager()->Load(reader, worldVersion);
+#endif
 
 			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
@@ -273,9 +276,12 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	writer.Write(Valhalla()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
-	ZoneManager()->Save(writer);	
+	ZoneManager()->Save(writer);
+	// This omission only works because random events happen to be saved/loaded last
+#if VH_IS_ON(VH_RANDOM_EVENTS)
 	RandomEventManager()->Save(writer);
-	
+#endif
+
 	return bytes;
 }
 

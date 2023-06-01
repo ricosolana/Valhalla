@@ -39,7 +39,7 @@ void IDungeonManager::PostPrefabInit() {
 
         auto name = pkg.Read<std::string_view>();
 
-        dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
+        //dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 

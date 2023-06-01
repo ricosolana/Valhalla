@@ -138,8 +138,9 @@ public:
 #endif
 
 
-
-    template <typename Func, typename... Types>
+    // TODO disable this method if full mod capture is enabled
+    //  allowing this method is better for performance but limits mod catcheability
+    template <typename Func>
     void SubInvoke(HASH_t hash, Func func) {
         if (!m_socket->Connected())
             return;
@@ -151,14 +152,54 @@ public:
         writer.SubWrite(func);
 
         // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
-            return;
+        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
+            //return;
         
         this->Send(std::move(bytes));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
     }
+
+    template <typename Func>
+    void SubRoute(HASH_t hash, ZDOID targetZDO, Func func) {
+        if (!m_socket->Connected())
+            return;
+
+        BYTES_t bytes;
+        DataWriter writer(bytes);
+
+        writer.Write(Hashes::Rpc::RoutedRPC);
+
+        writer.SubWrite([&](DataWriter& writer) {
+            // routed rpc spec
+            writer.Write<int64_t>(0); // msg id
+            writer.Write(VH_ID); // sender
+            writer.Write(m_uuid); // target
+            writer.Write(targetZDO); // target ZDO
+            writer.Write(hash); // routed method hash
+            // FIrst subwrite the routedrpc parameter package then nest the params within it
+            writer.SubWrite([func](DataWriter& writer) {
+                writer.SubWrite(func); // explicit parameter as a package (length + array)
+            });
+        });
+
+        // Prefix
+        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
+            //return;
+
+        this->Send(std::move(bytes));
+
+        // Postfix
+        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
+    }
+
+    template <typename Func>
+    void SubRoute(HASH_t hash, Func func) {
+        SubRoute(hash, ZDOID::NONE, func);
+    }
+
+
 
     template <typename... Types>
     void Invoke(HASH_t hash, const Types&... params) {

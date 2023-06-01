@@ -20,6 +20,7 @@ namespace ankerl::unordered_dense {
         }
     };*/
     
+    /*
     struct prefab_hash {
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void;
@@ -44,7 +45,7 @@ namespace ankerl::unordered_dense {
         auto operator()(HASH_t v) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<int32_t>{}(v);
         }
-    };
+    };*/
 
     template <>
     struct hash<ZDOID> {

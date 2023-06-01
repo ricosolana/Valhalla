@@ -178,16 +178,21 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			zdo->Unpack(reader, version);
 		}
 
+		AddZDOToZone(*zdo.get());
+
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 		auto&& prefab = zdo->GetPrefab();
 
-		AddZDOToZone(*zdo.get());
 		m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
 
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
 			if (zdo->Position().y > 4000)
 				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
 		}
+#endif
+#endif
 
 		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
@@ -265,11 +270,12 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 
 
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
-	zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
-
+	//zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
+	zdo.get()._SetPrefabHash(prefab.m_hash);
 	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
 		zdo.get().SetLocalScale(prefab.m_localScale, false);
 	}
@@ -284,6 +290,7 @@ std::reference_wrapper<ZDO> IZDOManager::Instantiate(HASH_t hash, Vector3f pos, 
 	
 	return Instantiate(prefab, pos);
 }
+#endif
 
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const ZDO& zdo) {
 	auto&& copy = Instantiate(zdo.Position());
@@ -360,7 +367,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& ref : zdos) {
 				auto&& zdo = ref.get();
-				if (zdo.GetPrefab().AnyFlagsAbsent(Prefab::Flag::SESSIONED)
+				if (zdo.IsPersistent()
 					&& zdo.m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo.SetOwner(peer.m_uuid);
@@ -382,8 +389,10 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
 	RemoveFromSector(*zdo);
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefabHash());
 	if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
+#endif
 
 	// cleans up some zdos
 	for (auto&& peer : NetManager()->GetPeers()) {
@@ -484,8 +493,8 @@ std::list<std::pair<std::reference_wrapper<ZDO>, float>> IZDOManager::CreateSync
 		auto&& a = first.first.get();
 		auto&& b = second.first.get();
 
-		bool flag = a.GetType() == Prefab::Type::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
-		bool flag2 = b.GetType() == Prefab::Type::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
+		bool flag = a.GetType() == ObjectType::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
+		bool flag2 = b.GetType() == ObjectType::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetType() == b.GetType()) {
@@ -556,6 +565,7 @@ void IZDOManager::GetZDOs_Distant(ZoneID sector, std::list<std::reference_wrappe
 
 
 
+#if VH_IS_ON(VH_STANDARD_PREFABS)
 std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 	std::list<std::reference_wrapper<ZDO>> out;
 	auto&& find = m_objectsByPrefab.find(prefab);
@@ -565,6 +575,7 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 	}
 	return out;
 }
+#endif
 
 
 
@@ -832,7 +843,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//}
 
 					AddZDOToZone(zdo);
-					m_objectsByPrefab[zdo.GetPrefab().m_hash].insert(&zdo);
+#if VH_IS_ON(VH_STANDARD_PREFABS)
+					m_objectsByPrefab[zdo.GetPrefabHash()].insert(&zdo);
+#endif
 				}
 				else {
 					//if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {
