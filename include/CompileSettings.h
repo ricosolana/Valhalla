@@ -141,6 +141,8 @@
 
 // The default are the remaining bits from VH_USER_BITS
 #if defined(VH_ID_BITS)
+    #error "Setting custom id bits not yet supported"
+
     // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
     #if VH_ID_BITS > 1 && VH_ID_BITS < 8
         #define VH_ID_BITS_I_ VH_ID_BITS
@@ -158,6 +160,29 @@
 
         #define VH_ID_BITS_I_ (32 - VH_USER_BITS_I_)
     //#endif
+#endif
+
+// Whether to include only core Valheim functionality
+// Included:
+//  - World loading/saving
+//  - Zone generation
+//  - Dungeon generation
+//  - Random events
+//  - Core features
+// Excluded:
+//  - Mods
+//  - Extra features
+//  - Dungeon regeneration
+//  - Discord integration
+//  - Player packet capture
+#if defined(VH_TOTALLY_VANILLA)
+    #if VH_TOTALLY_VANILLA != 0
+        #define VH_TOTALLY_VANILLA_I_ VH_ON
+    #else
+        #define VH_TOTALLY_VANILLA_I_ VH_OFF
+    #endif
+#else
+    #define VH_TOTALLY_VANILLA_I_ VH_DEFAULT_OFF
 #endif
 
 #if defined(VH_USE_MODS)
@@ -207,27 +232,24 @@
 
 #if defined(VH_ZONE_GENERATION)
     #if VH_ZONE_GENERATION != 0
-        // zone geenration requires prefabs, 
-        //  so if its manually disabled, then error
         #if VH_IS_OFF(VH_STANDARD_PREFABS)
             #error "Zone generation VH_ZONE_GENERATION requires VH_STANDARD_PREFABS to be on"
-        #else
-            #define VH_ZONE_GENERATION_I_ VH_ON
-            //#define VH_USE_HEIGHTMAPS_I_ VH_ON
-            //#define VH_USE_GEOGRAPHY_I_ VH_ON
         #endif
+
+        #define VH_ZONE_GENERATION_I_ VH_ON
     #else
         #define VH_ZONE_GENERATION_I_ VH_OFF
-        //#define VH_USE_HEIGHTMAPS_I_ VH_OFF
-        //#define VH_USE_GEOGRAPHY_I_ VH_OFF
     #endif
 #else
     #define VH_ZONE_GENERATION_I_ VH_STANDARD_PREFABS_I_
 #endif
 
 #if defined(VH_RANDOM_EVENTS)
-#error "Not fully implemented"
     #if VH_RANDOM_EVENTS != 0
+        #if VH_IS_OFF(VH_STANDARD_PREFABS)
+            #error "VH_RANDOM_EVENTS requires VH_STANDARD_PREFABS"
+        #endif
+
         #define VH_RANDOM_EVENTS_I_ VH_ON
     #else
         #define VH_RANDOM_EVENTS_I_ VH_OFF
@@ -237,14 +259,14 @@
 #endif
 
 #if defined(VH_DUNGEON_GENERATION)
-    #if VH_IS_ON(VH_STANDARD_PREFABS)
-        #if VH_DUNGEON_GENERATION != 0
-            #define VH_DUNGEON_GENERATION_I_ VH_ON
-        #else
-            #define VH_DUNGEON_GENERATION_I_ VH_OFF
+    #if VH_DUNGEON_GENERATION != 0
+        #if VH_IS_OFF(VH_STANDARD_PREFABS)
+            #error("VH_DUNGEON_GENERATION requires VH_STANDARD_PREFABS")
         #endif
+
+        #define VH_DUNGEON_GENERATION_I_ VH_ON
     #else
-        #error("VH_DUNGEON_GENERATION requires VH_STANDARD_PREFABS")
+        #define VH_DUNGEON_GENERATION_I_ VH_OFF
     #endif
 #else
     #define VH_DUNGEON_GENERATION_I_ VH_STANDARD_PREFABS_I_
@@ -273,8 +295,7 @@
 // Whether to enable:
 //  - portal linking
 //  - sleeping/time skip
-
-// Should this be enabled by default if mods are disabled?
+// Disabled by default if mods are enabled
 #if defined(VH_CORE_FEATURES)
     #if VH_CORE_FEATURES != 0
         #define VH_CORE_FEATURES_I_ VH_ON
@@ -282,7 +303,11 @@
         #define VH_CORE_FEATURES_I_ VH_OFF
     #endif
 #else
-    #define VH_CORE_FEATURES_I_ VH_DEFAULT_ON
+    #if VH_IS_ON(VH_USE_MODS)
+        #define VH_CORE_FEATURES_I_ VH_DEFAULT_OFF
+    #else
+        #define VH_CORE_FEATURES_I_ VH_DEFAULT_ON
+    #endif
 #endif
 
 #if defined(VH_PORTAL_LINKING)
@@ -313,8 +338,6 @@
     #endif
 #endif
 
-#define VH_EXTRA_FEATURES 1
-
 // Whether to include extra useful builtins
 //  - Built-in BetterNetworking mod (in C++)
 //  - Dungeon regeneration
@@ -333,18 +356,21 @@
 // https://github.com/T3kla/ValMods/blob/master/~DungeonReset/Scripts/Extensions.cs
 #if defined(VH_DUNGEON_REGENERATION)
     #if VH_DUNGEON_REGENERATION != 0
+        #if VH_IS_OFF(VH_DUNGEON_GENERATION)
+            #error "VH_DUNGEON_REGENERATION requires VH_DUNGEON_GENERATION"
+        #endif
+
         #define VH_DUNGEON_REGENERATION_I_ VH_ON
     #else
         #define VH_DUNGEON_REGENERATION_I_ VH_OFF
     #endif
 #else
     #if VH_IS_ON(VH_EXTRA_FEATURES)
-        #define VH_DUNGEON_REGENERATION_I_ VH_DEFAULT_ON
+        #define VH_DUNGEON_REGENERATION_I_ VH_DUNGEON_GENERATION_I_
     #else
         #define VH_DUNGEON_REGENERATION_I_ VH_DEFAULT_OFF
     #endif
 #endif
-
 
 // Whether to support loading worlds older than the latest version
 //  Can be disabled to very slightly reduce executable size
@@ -358,36 +384,8 @@
 //    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
 //#endif
 
-// Enable the zone subsystem
-//#define VH_OPTION_ENABLE_ZONES
-
-// Enable zone subsystem generation
-//#define VH_OPTION_ENABLE_ZONE_GENERATION
-
-// Enable the ZoneManager features
-//#define VH_OPTION_ENABLE_ZONE_FEATURES
-
-// Enable the ZoneManager vegetation
-//#define VH_OPTION_ENABLE_ZONE_VEGETATION
-
-//#define VH_ZDOID_USER_BITS 6
-
-// Whether to use prefab objects 
-//  They are low overhead but file loading is required
-//  Also required for feature and vegetation generation
-//#define VH_OPTION_ENABLE_PREFABS
-
-// Enable the mod subsystem
-//#define VH_OPTION_ENABLE_MODS
-
-// Enable mod simulated mod rpc events
-//#define VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
-
 // Packet capture path
 #define VH_CAPTURE_PATH "captures"
-
-// Enable incoming packet capture
-//#define VH_OPTION_ENABLE_CAPTURE
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

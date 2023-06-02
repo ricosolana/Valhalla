@@ -731,7 +731,7 @@ void IValhalla::PeriodUpdate() {
 
     DiscordManager()->PeriodUpdate();
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if VH_IS_ON(VH_DUNGEON_REGENERATION)
     if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
 #endif

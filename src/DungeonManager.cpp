@@ -135,9 +135,6 @@ void IDungeonManager::PostPrefabInit() {
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
-    static constexpr int s = sizeof(ZDO);
-    //auto&& netTicksNow = Valhalla()->GetWorldTicks();
-
     static constexpr HASH_t LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
 
     // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86

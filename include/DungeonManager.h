@@ -39,8 +39,10 @@ public:
 	// Try to replace the target dungeon with a newly generated one
 	//	Returns the new dungeon (dungeonZdo is invalidated)
 	//	Returns null if replacement failed (dungeonZdo remains valid)
+#if VH_IS_ON(VH_DUNGEON_REGENERATION)
 	ZDO* TryRegenerateDungeon(ZDO& dungeonZdo);
 	void TryRegenerateDungeons();
+#endif
 
 	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
 	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);

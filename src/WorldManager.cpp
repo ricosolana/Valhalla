@@ -105,7 +105,7 @@ void World::WriteFileDB(const fs::path& root) {
 	auto path(root / (m_name + ".db"));
 
 	if (VUtils::Resource::WriteFile(path, bytes)) {
-		LOG_INFO(LOGGER, "World save to {} took {}s", path.string(), duration_cast<milliseconds>(finishTime - startTime).count());
+		LOG_INFO(LOGGER, "World save {} took {}ms", path.string(), duration_cast<milliseconds>(finishTime - startTime).count());
 	}
 	else {
 		LOG_WARNING(LOGGER, "Failed to save world to {}", path.string());
