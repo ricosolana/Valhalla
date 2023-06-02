@@ -63,8 +63,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-
-        m_encoded.SetPrefabIndex(pair.second);
+        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
 #else
         _SetPrefabHash(pkg.Read<HASH_t>());
         /*

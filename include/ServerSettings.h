@@ -93,6 +93,9 @@ struct ServerSettings {
     seconds         playerTimeout;
     milliseconds    playerListSendInterval;
     bool            playerListForceVisible;
+#if VH_IS_ON(VH_PLAYER_SLEEP)
+    bool            playerSleepSolo;
+#endif
 
     std::string     worldName;
     std::string     worldSeed;
@@ -126,17 +129,19 @@ struct ServerSettings {
     float           eventsRadius;
     bool            eventsRequireKeys;
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     PacketMode      packetMode;
     size_t          packetFileUpperSize;
     int             packetCaptureSessionIndex;
     int             packetPlaybackSessionIndex;
 #endif
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     std::string     discordWebhook;
     std::string     discordToken;
     dpp::snowflake  discordGuild;
     bool            discordAccountLinking;
+#endif
     //bool            discordEnableDevCommands;
     //UNORDERED_SET_t<dpp::snowflake> discordDevAccount;
     //bool            discordDeleteCommands;

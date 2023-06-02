@@ -53,6 +53,15 @@ void IZDOManager::Update() {
 			//<< ")";
 	})*/;
 
+
+
+	// link portals if mode enabled
+#if VH_IS_ON(VH_PORTAL_LINKING)
+
+#endif
+
+
+
 	auto&& peers = NetManager()->GetPeers();
 	
 	if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {

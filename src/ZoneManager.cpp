@@ -308,8 +308,11 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
 // public
 void IZoneManager::Save(DataWriter& pkg) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
-#error "Must write INT coords not SHORT";
-    pkg.Write(m_generatedZones);
+    pkg.Write<int32_t>(m_generatedZones.size());
+    for (auto&& zone : m_generatedZones) {
+        pkg.Write<int32_t>(zone.x);
+        pkg.Write<int32_t>(zone.y);
+    }
 #else
     LOG_WARNING(LOGGER, "Saving while VH_ZONE_GENERATION:0 is not fully portable");
 

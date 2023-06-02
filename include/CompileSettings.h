@@ -188,7 +188,7 @@
     #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
 #endif
 
-#define VH_STANDARD_PREFABS 0
+//#define VH_STANDARD_PREFABS 0
 
 // Whether to use the smallest form prefabs possible
 //  Each prefab generally takes up min 72 bytes
@@ -275,71 +275,88 @@
 //  - sleeping/time skip
 
 // Should this be enabled by default if mods are disabled?
-#if defined(VH_CORE_ADDITIONS)
-    #if VH_CORE_ADDITIONS != 0
-        #define VH_CORE_ADDITIONS_I_ VH_ON
+#if defined(VH_CORE_FEATURES)
+    #if VH_CORE_FEATURES != 0
+        #define VH_CORE_FEATURES_I_ VH_ON
     #else
-        #define VH_CORE_ADDITIONS_I_ VH_OFF
+        #define VH_CORE_FEATURES_I_ VH_OFF
     #endif
 #else
-    #define VH_CORE_ADDITIONS_I_ VH_DEFAULT_ON
+    #define VH_CORE_FEATURES_I_ VH_DEFAULT_ON
 #endif
 
-#if defined(VH_PORTALS)
-    #if VH_PORTALS != 0
-        #define VH_PORTALS_I_ VH_ON
+#if defined(VH_PORTAL_LINKING)
+    #if VH_PORTAL_LINKING != 0
+        #define VH_PORTAL_LINKING_I_ VH_ON
     #else
-        #define VH_PORTALS_I_ VH_OFF
+        #define VH_PORTAL_LINKING_I_ VH_OFF
     #endif
 #else
-    #if VH_IS_ON(VH_CORE_ADDITIONS)
-        #define VH_PORTALS_I_ VH_ON
+    #if VH_IS_ON(VH_CORE_FEATURES)
+        #define VH_PORTAL_LINKING_I_ VH_DEFAULT_ON
     #else
-        #define VH_PORTALS_I_ VH_DEFAULT_ON
-    #endif
-#endif
-
-#if defined(VH_SLEEPING)
-    #if VH_SLEEPING != 0
-        #define VH_SLEEPING_I_ VH_ON
-    #else
-        #define VH_SLEEPING_I_ VH_OFF
-    #endif
-#else
-    #if VH_IS_ON(VH_CORE_ADDITIONS)
-        #define VH_SLEEPING_I_ VH_ON
-    #else
-        #define VH_SLEEPING_I_ VH_DEFAULT_ON
+        #define VH_PORTAL_LINKING_I_ VH_DEFAULT_OFF
     #endif
 #endif
 
+#if defined(VH_PLAYER_SLEEP)
+    #if VH_PLAYER_SLEEP != 0
+        #define VH_PLAYER_SLEEP_I_ VH_ON
+    #else
+        #define VH_PLAYER_SLEEP_I_ VH_OFF
+    #endif
+#else
+    #if VH_IS_ON(VH_CORE_FEATURES)
+        #define VH_PLAYER_SLEEP_I_ VH_DEFAULT_ON
+    #else
+        #define VH_PLAYER_SLEEP_I_ VH_DEFAULT_OFF
+    #endif
+#endif
+
+#define VH_EXTRA_FEATURES 1
 
 // Whether to include extra useful builtins
 //  - Built-in BetterNetworking mod (in C++)
 //  - Dungeon regeneration
 //  - experimental ZDO assignment algorithm
 //  - 
-#if defined(VH_EXTRA_ADDITIONS)
-    #if VH_EXTRA_ADDITIONS != 0
-        #define VH_EXTRA_ADDITIONS VH_ON
+#if defined(VH_EXTRA_FEATURES)
+    #if VH_EXTRA_FEATURES != 0
+        #define VH_EXTRA_FEATURES_I_ VH_ON
     #else
-        #define VH_EXTRA_ADDITIONS VH_OFF
+        #define VH_EXTRA_FEATURES_I_ VH_OFF
     #endif
 #else
-    #define VH_EXTRA_ADDITIONS VH_DEFAULT_OFF
+    #define VH_EXTRA_FEATURES_I_ VH_DEFAULT_OFF
 #endif
+
+// https://github.com/T3kla/ValMods/blob/master/~DungeonReset/Scripts/Extensions.cs
+#if defined(VH_DUNGEON_REGENERATION)
+    #if VH_DUNGEON_REGENERATION != 0
+        #define VH_DUNGEON_REGENERATION_I_ VH_ON
+    #else
+        #define VH_DUNGEON_REGENERATION_I_ VH_OFF
+    #endif
+#else
+    #if VH_IS_ON(VH_EXTRA_FEATURES)
+        #define VH_DUNGEON_REGENERATION_I_ VH_DEFAULT_ON
+    #else
+        #define VH_DUNGEON_REGENERATION_I_ VH_DEFAULT_OFF
+    #endif
+#endif
+
 
 // Whether to support loading worlds older than the latest version
 //  Can be disabled to very slightly reduce executable size
-#if defined(VH_LEGACY_WORLD_COMPATABILITY)
-    #if VH_LEGACY_WORLD_COMPATABILITY != 0
-        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
-    #else
-        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
-    #endif
-#else
-    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
-#endif
+//#if defined(VH_LEGACY_WORLD_COMPATABILITY)
+//    #if VH_LEGACY_WORLD_COMPATABILITY != 0
+//        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
+//    #else
+//        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
+//    #endif
+//#else
+//    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
+//#endif
 
 // Enable the zone subsystem
 //#define VH_OPTION_ENABLE_ZONES

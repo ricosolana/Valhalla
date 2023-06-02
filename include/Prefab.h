@@ -7,6 +7,7 @@
 
 #include "Vector.h"
 #include "Quaternion.h"
+#include "Types.h"
 
 class Prefab {
 public:
@@ -117,13 +118,13 @@ public:
 
     std::string m_name;
 
-    Type m_type = Type::DEFAULT; // TODO store in flags
+    ObjectType m_type = ObjectType::DEFAULT; // TODO store in flags
 
     Vector3f m_localScale;
     Flag m_flags = Flag::NONE;
 
 public:
-    Prefab(std::string_view name, Type type, Vector3f localScale, Flag flags)
+    Prefab(std::string_view name, ObjectType type, Vector3f localScale, Flag flags)
         : m_hash(VUtils::String::GetStableHashCode(name)), m_name(std::string(name)), m_type(type), m_localScale(localScale), m_flags(flags) {}
 
     Prefab(const Prefab& other) = default;

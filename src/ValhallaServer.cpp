@@ -343,6 +343,9 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, "list-force-visible", false);
+#if VH_IS_ON(VH_PLAYER_SLEEP)
+            a(m_settings.playerSleepSolo, player, "player-sleep-solo", false);
+#endif
 
             a(m_settings.worldName, world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
             a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
@@ -732,6 +735,90 @@ void IValhalla::PeriodUpdate() {
     if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
 #endif
+
+
+
+#if VH_IS_ON(VH_PLAYER_SLEEP)
+    //if (m_settings.playerSleep) {
+        if (m_playerSleep) {
+            if (m_worldTime > m_playerSleepUntil) {
+                // Wake up players
+
+                if (m_settings.playerSleepSolo) {
+                    // only awake sleeping players
+                    for (auto&& peer : NetManager()->GetPeers()) {
+                        auto&& zdo = peer->GetZDO();
+                        if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
+                            RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestStopSleep);
+                        }
+                    }
+                }
+                else {
+                    // wake every player
+                    RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestStopSleep);
+                }
+
+                m_playerSleep = false;
+                m_worldTimeMultiplier = 1;
+            }
+        }
+        else {
+            if (IsAfternoon() || IsNight()) {
+                bool allInBed = true;
+                bool anyInBed = false;
+
+                for (auto&& peer : NetManager()->GetPeers()) {
+                    auto&& zdo = peer->GetZDO();
+                    bool inBed = zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false);
+                    if (!inBed) {
+                        allInBed = false;
+                        if (!m_settings.playerSleepSolo) // early break if special sleep mode is not enabled
+                            break;
+                    }
+                    else {
+                        // Early break if the special sleep is enabled
+                        if (m_settings.playerSleepSolo) {
+                            anyInBed = true;
+                            break;
+                        }
+                    }
+                }
+
+                if ((allInBed || (anyInBed && m_settings.playerSleepSolo))
+                    && !NetManager()->GetPeers().empty())
+                {
+                    m_playerSleep = true;
+
+                    // Skip to time
+                    m_playerSleepUntil = GetNextMorning();
+
+                    // Set skip interval
+                    m_worldTimeMultiplier = (m_playerSleepUntil - m_worldTime) / 12.0;
+
+                    if (m_settings.playerSleepSolo) {
+                        // Players who are ALREADY in bed, go ahead and signal them to sleep
+                        for (auto&& peer : NetManager()->GetPeers()) {
+                            auto&& zdo = peer->GetZDO();
+                            if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
+                                RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestSleep);
+                            }
+                            else {
+                                peer->CornerMessage("The world is sleeping");
+                            }
+                        }
+                    }
+                    else {
+                        // Just signal to all players to sleep
+                        //  This assumes they are all already in bed
+                        RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestSleep);
+                    }
+                }
+            }
+        }
+    //}
+#endif
+
+
 
     std::error_code err;
     auto lastWriteTime = fs::last_write_time("server.yml", err);

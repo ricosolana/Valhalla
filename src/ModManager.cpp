@@ -480,8 +480,8 @@ void IModManager::LoadAPI() {
             sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::GetPrefab)
         ),
         "Register", sol::overload(
-            sol::resolve<void(std::string_view, Prefab::Type, Vector3f, Prefab::Flag, bool)>(&IPrefabManager::Register),
-            sol::resolve<void(DataReader&, bool)>(&IPrefabManager::Register)
+            sol::resolve<void(std::string_view, ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
+            sol::resolve<void(DataReader&)>(&IPrefabManager::Register)
         )
     );
 #endif

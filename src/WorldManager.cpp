@@ -280,6 +280,11 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	// This omission only works because random events happen to be saved/loaded last
 #if VH_IS_ON(VH_RANDOM_EVENTS)
 	RandomEventManager()->Save(writer);
+#else
+	writer.Write(0.f);
+	writer.Write("");
+	writer.Write(0.f);
+	writer.Write(Vector3f::Zero());
 #endif
 
 	return bytes;

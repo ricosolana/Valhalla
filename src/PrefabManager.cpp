@@ -34,18 +34,22 @@ void IPrefabManager::Init() {
 #endif
 
     for (int i=0; i < count; i++) {
-        //Register(pkg, true);
+        Register(pkg);
+
+        /*
         auto name = pkg.Read<std::string_view>();
         //auto hash = VUtils::String::GetStableHashCode(name);
         auto type = (ObjectType) pkg.Read<int32_t>();
         auto localScale = pkg.Read<Vector3f>();
         auto flags = pkg.Read<uint64_t>();
 
+
+
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& insert = m_prefabs.insert(Prefab(name, type, localScale, (Prefabs::Flag)flags));
 #else
         auto&& insert = m_prefabs.insert(m_prefabs.end(), VUtils::String::GetStableHashCode(name));
-#endif
+#endif*/
     }
     
 #if VH_IS_OFF(VH_STANDARD_PREFABS)

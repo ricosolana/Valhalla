@@ -39,7 +39,7 @@ void IDungeonManager::PostPrefabInit() {
 
         auto name = pkg.Read<std::string_view>();
 
-        //dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
+        dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
@@ -128,20 +128,25 @@ void IDungeonManager::PostPrefabInit() {
             dungeon->m_availableRooms.push_back(std::move(room));
         }
 
-        m_dungeons.insert({ dungeon->m_prefab->m_hash, std::move(dungeon)});
+        HASH_t hash = dungeon->m_prefab->m_hash;
+        m_dungeons.insert({ hash, std::move(dungeon)});
     }
 }
 
+#if VH_IS_ON(VH_DUNGEON_REGENERATION)
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
     static constexpr int s = sizeof(ZDO);
-    auto&& netTicksNow = Valhalla()->GetWorldTicks();
+    //auto&& netTicksNow = Valhalla()->GetWorldTicks();
 
-    assert(false);
+    static constexpr HASH_t LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
 
-    auto&& ticksDungeon = TICKS_t(); // dungeonZdo.GetTimeCreated();
+    // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86
+    auto&& lastReset = seconds(dungeonZdo.GetLong(LAST_RESET_HASH));
+    auto&& unixTime = steady_clock::now().time_since_epoch();
 
-    // Reset dungeons after a time
-    if (ticksDungeon + VH_SETTINGS.dungeonsRegenerationInterval < netTicksNow) {
+    auto since = duration_cast<seconds>(unixTime) - lastReset;
+
+    if (since > VH_SETTINGS.dungeonsRegenerationInterval) {
         bool playerNear = false;
 
         // if a player is inside, do not reset
@@ -176,7 +181,10 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
             LOG_INFO(LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
-            return &Generate(dungeon, pos, rot).get();
+            auto&& zdo = Generate(dungeon, pos, rot).get();
+            zdo.Set(LAST_RESET_HASH, unixTime.count());
+            
+            return &zdo;
         }
         else {
             LOG_INFO(LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name, pos);
@@ -187,12 +195,6 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 }
 
 void IDungeonManager::TryRegenerateDungeons() {
-    //OPTICK_EVENT();
-
-    //for (auto&& itr = m_dungeonInstances.begin() + m_nextIndex; 
-    //    itr != m_dungeonInstances.begin() + m_nextIndex
-    //    )
-
     size_t idx = m_nextIndex;
     while (idx < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonsRegenerationMaxSteps)) 
     {
@@ -217,28 +219,8 @@ void IDungeonManager::TryRegenerateDungeons() {
     if (m_nextIndex >= m_dungeonInstances.size()) {
         m_nextIndex = 0;
     }
-
-    /*
-    if (m_nextIndex >= m_dungeonInstances.size()) {
-        m_nextIndex = 0;
-    }
-    else {
-        auto&& itr = m_dungeonInstances.begin() + m_nextIndex;
-
-        ZDO* dungeonZdo = ZDOManager()->GetZDO(*itr);
-        if (!dungeonZdo) {
-            m_dungeonInstances.erase(itr);
-            //LOG(WARNING) << "Dungeon ZDO no longer exists";
-        }
-        else {
-            if (ZDO* newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
-                *itr = newDungeon->ID();
-            }
-            m_nextIndex++;
-        }
-    }*/
 }
-
+#endif
 
 
 std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
