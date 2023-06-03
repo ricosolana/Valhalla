@@ -136,7 +136,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 }
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
-ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
+void ZDO::Unpack(DataReader& reader, int32_t version) {
     // The (premature) optimizations I tried to 
     //  implement never went anywhere because
     //  I never knew what I was doing and 
@@ -205,9 +205,9 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
         this->m_rotation = reader.Read<Vector3f>();
     }
 
-    ZDOConnector::Type type = ZDOConnector::Type::None;
+    //ZDOConnector::Type type = ZDOConnector::Type::None;
     if (flags & GlobalFlag::Member_Connection) {
-        type = reader.Read<ZDOConnector::Type>();
+        auto type = reader.Read<ZDOConnector::Type>();
         if (version) {
             auto hash = reader.Read<HASH_t>();
             auto&& connector = ZDO_CONNECTORS[ID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
@@ -220,7 +220,7 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
             // set connection
             connector.m_type = type;
             connector.m_target = target;
-            type &= ~ZDOConnector::Type::Target;
+            //type &= ~ZDOConnector::Type::Target;
         }
         m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
     }
@@ -241,8 +241,6 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
         if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members);
         if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members);
     }
-
-    return type;
 }
 
 
@@ -250,10 +248,15 @@ ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
 // ZDO specific-methods
 
 void ZDO::SetPosition(Vector3f pos) {
-    if (m_pos != pos) {
-        ZDOManager()->InvalidateZDOZone(*this);
-        this->m_pos = pos;
-        ZDOManager()->AddZDOToZone(*this);
+    if (this->m_pos != pos) {
+        if (IZoneManager::WorldToZonePos(pos) == GetZone()) {
+            ZDOManager()->_InvalidateZDOZone(*this);
+            this->m_pos = pos;
+            ZDOManager()->_AddZDOToZone(*this);
+        }
+        else {
+            this->m_pos = pos;
+        }
 
         if (IsLocal())
             Revise();
@@ -261,7 +264,7 @@ void ZDO::SetPosition(Vector3f pos) {
 }
 
 ZoneID ZDO::GetZone() const {
-    return IZoneManager::WorldToZonePos(m_pos);
+    return IZoneManager::WorldToZonePos(this->m_pos);
 }
 
 

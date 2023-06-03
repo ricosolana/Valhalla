@@ -139,7 +139,7 @@ void World::LoadFileDB(const fs::path& root) {
 			{
 				Valhalla()->m_worldTime = reader.Read<double>();
 			}
-
+			static constexpr auto szz = sizeof(IZDOManager);
 			//VLOG(1) << "World time: " << Valhalla()->m_worldTime;
 
 			ZDOManager()->Load(reader, worldVersion);

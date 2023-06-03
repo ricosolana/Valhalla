@@ -325,6 +325,8 @@
     #define VH_PLAYER_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
+#define VH_CORE_FEATURES 1
+
 // Whether to enable:
 //  - portal linking
 //  - sleeping/time skip

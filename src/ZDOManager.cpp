@@ -163,7 +163,7 @@ void IZDOManager::Update() {
 }
 
 
-bool IZDOManager::AddZDOToZone(ZDO& zdo) {
+bool IZDOManager::_AddZDOToZone(ZDO& zdo) {
 	int num = SectorToIndex(zdo.GetZone());
 	if (num != -1) {
 		auto&& pair = m_objectsBySector[num].insert(&zdo);
@@ -173,15 +173,15 @@ bool IZDOManager::AddZDOToZone(ZDO& zdo) {
 	return false;
 }
 
-void IZDOManager::RemoveFromSector(ZDO& zdo) {
+void IZDOManager::_RemoveFromSector(ZDO& zdo) {
 	int num = SectorToIndex(zdo.GetZone());
 	if (num != -1) {
 		m_objectsBySector[num].erase(&zdo);
 	}
 }
 
-void IZDOManager::InvalidateZDOZone(ZDO& zdo) {
-	RemoveFromSector(zdo);
+void IZDOManager::_InvalidateZDOZone(ZDO& zdo) {
+	_RemoveFromSector(zdo);
 
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
@@ -247,7 +247,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			zdo->Unpack(reader, version);
 		}
 
-		AddZDOToZone(*zdo.get());
+		_AddZDOToZone(*zdo.get());
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 		auto&& prefab = zdo->GetPrefab();
@@ -334,7 +334,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
-std::reference_wrapper<ZDO> IZDOManager::Instantiate(Vector3f position) {
+std::reference_wrapper<ZDO> IZDOManager::_Instantiate(Vector3f position) {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
 		zdoid.SetUID(m_nextUid++);
@@ -346,12 +346,12 @@ std::reference_wrapper<ZDO> IZDOManager::Instantiate(Vector3f position) {
 		auto&& zdo = pair.first->second;
 
 		zdo = std::make_unique<ZDO>(zdoid, position);
-		AddZDOToZone(*zdo);
+		_AddZDOToZone(*zdo);
 		return *zdo;
 	}
 }
 
-std::reference_wrapper<ZDO> IZDOManager::Instantiate(ZDOID uid, Vector3f position) {
+std::reference_wrapper<ZDO> IZDOManager::_Instantiate(ZDOID uid, Vector3f position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
 	//		pointing either to the newly inserted element in the 
@@ -364,10 +364,10 @@ std::reference_wrapper<ZDO> IZDOManager::Instantiate(ZDOID uid, Vector3f positio
 
 	auto&& zdo = pair.first->second; zdo = std::make_unique<ZDO>(uid, position);
 
-	AddZDOToZone(*zdo.get());
+	_AddZDOToZone(*zdo);
 	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 
-	return *zdo.get();
+	return *zdo;
 }
 
 ZDO* IZDOManager::GetZDO(ZDOID id) {
@@ -381,7 +381,7 @@ ZDO* IZDOManager::GetZDO(ZDOID id) {
 
 
 
-std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::GetOrInstantiate(ZDOID id, Vector3f def) {
+std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID id, Vector3f def) {
 	auto&& pair = m_objectsByID.insert({ id, nullptr });
 	
 	if (!pair.second) // if new insert failed, return it
@@ -397,7 +397,7 @@ std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> IZDOManager::Get
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
-	auto&& zdo = ZDOManager()->Instantiate(pos);
+	auto&& zdo = ZDOManager()->_Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	//zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	zdo.get()._SetPrefabHash(prefab.m_hash);
@@ -418,7 +418,7 @@ std::reference_wrapper<ZDO> IZDOManager::Instantiate(HASH_t hash, Vector3f pos, 
 #endif
 
 std::reference_wrapper<ZDO> IZDOManager::Instantiate(const ZDO& zdo) {
-	auto&& copy = Instantiate(zdo.Position());
+	auto&& copy = _Instantiate(zdo.Position());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
 	copy.get().m_pack = zdo.m_pack;
@@ -513,7 +513,7 @@ decltype(IZDOManager::m_objectsByID)::iterator IZDOManager::EraseZDO(decltype(IZ
 
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
-	RemoveFromSector(*zdo);
+	_RemoveFromSector(*zdo);
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefabHash());
 	if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
@@ -697,6 +697,17 @@ std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(HASH_t prefab) {
 	if (find != m_objectsByPrefab.end()) {
 		auto&& zdos = find->second;
 		std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), [](ZDO* zdo) { return std::ref(*zdo); });
+	}
+	return out;
+}
+
+std::list<std::reference_wrapper<ZDO>> IZDOManager::GetZDOs(const std::function<bool(const ZDO&)>& pred) {
+	std::list<std::reference_wrapper<ZDO>> out;
+	for (auto&& pair : m_objectsByID) {
+		auto&& zdo = *pair.second;
+		if (!pred || pred(zdo)) {
+			out.push_back(zdo);
+		}
 	}
 	return out;
 }
@@ -893,9 +904,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			return;
 
 		{
-			reader.AsEach([this](const ZDOID& zdoid) {
+			reader.AsEach([this](ZDOID zdoid) {
 				if (auto zdo = GetZDO(zdoid))
-					InvalidateZDOZone(*zdo);
+					_InvalidateZDOZone(*zdo);
 				}
 			);
 		}
@@ -917,7 +928,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				.m_syncTime = time 
 			};*/
 
-			auto&& pair = this->GetOrInstantiate(zdoid, pos);
+			auto&& pair = this->_GetOrInstantiate(zdoid, pos);
 
 			auto&& zdo = *pair.first->second;
 			auto&& created = pair.second;
@@ -967,7 +978,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	continue;
 					//}
 
-					AddZDOToZone(zdo);
+					_AddZDOToZone(zdo);
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 					m_objectsByPrefab[zdo.GetPrefabHash()].insert(&zdo);
 #endif
