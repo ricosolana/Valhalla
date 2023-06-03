@@ -20,6 +20,15 @@ namespace VUtils::String {
         return static_cast<HASH_t>(num + num2 * 1566083941);
     }
 
+    std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key) {
+        return {
+            VUtils::String::GetStableHashCode(std::string(key) + "_u"),
+            VUtils::String::GetStableHashCode(std::string(key) + "_i")
+        };
+    }
+
+
+
     std::vector<std::string_view> Split(std::string_view s, std::string_view delim) {
         std::string_view remaining(s);
         std::vector<std::string_view> result;

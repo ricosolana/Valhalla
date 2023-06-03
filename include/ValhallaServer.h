@@ -56,8 +56,10 @@ private:
 
     WorldTime m_worldTime {};
 
+#if VH_IS_ON(VH_PLAYER_SLEEP)
     bool m_playerSleep {};
     double m_playerSleepUntil {};
+#endif
 
     double m_worldTimeMultiplier = 1;
 

@@ -27,10 +27,8 @@ ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
 }
 
 
-
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
-    static constexpr auto szzie = sizeof(ZDO);
-
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     if (pkg.Read<bool>())
@@ -66,9 +64,6 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
 #else
         _SetPrefabHash(pkg.Read<HASH_t>());
-        /*
-        auto&& index = PrefabManager()->RequirePrefabIndexByHash(pkg.Read<HASH_t>());
-        m_pack.Set<PREFAB_PACK_INDEX>(index);*/
 #endif
     }
 
@@ -95,19 +90,51 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
 #else
         _SetPrefabHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
-        /*
-        auto&& index = PrefabManager()->RequirePrefabIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
-        m_pack.Set<PREFAB_PACK_INDEX>(index);*/
 #endif
     }
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
     assert(prefab);
 
-    if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER))
-         Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+    if (worldVersion < 31) {
+        // Convert owners
+        {
+            auto&& zdoid = GetZDOID("user");
+            if (zdoid) {
+                SetLocal();
+                Set(Hashes::ZDO::USER, zdoid.GetOwner());
+            }
+        }
+
+        {
+            auto&& zdoid = GetZDOID("RodOwner");
+            if (zdoid) {
+                SetLocal();
+                Set(Hashes::ZDO::FishingFloat::ROD_OWNER, zdoid.GetOwner());
+            }
+        }
+
+        // Convert terrains
+        if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
+            || (GetPrefabHash() == Hashes::Object::ship_construction))
+            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+
+        // Convert seeds
+        for (auto&& pair : members) {
+            // TODO include mode for whether to use prefab supported mode
+            //  or headless little prefabs mode
+            //prefab->AnyFlagsPresent(Prefab::Flag::HUMANOID)
+
+            if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
+                // set the character random items seed
+                Set("seed", 
+                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(ID())));
+            }
+        }
+    }
 #endif
 }
+#endif //VH_LEGACY_WORLD_COMPATABILITY
 
 ZDOConnector::Type ZDO::Unpack(DataReader& reader, int32_t version) {
     // The (premature) optimizations I tried to 

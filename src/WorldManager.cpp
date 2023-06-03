@@ -122,27 +122,43 @@ void World::LoadFileDB(const fs::path& root) {
 
 			auto worldVersion = reader.Read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
-				LOG_WARNING(LOGGER, "Loading unsupported world version {}", worldVersion);
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+				LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
+#else // !VH_LEGACY_WORLD_COMPATABILITY
+				//LOG_ERROR(LOGGER, "Requires VH_LEGACY_WORLD_COMPATIBILITY to loaded legacy worlds");
+				throw std::runtime_error("legacy world loading unsupported with current compile settings");
+#endif // VH_LEGACY_WORLD_COMPATABILITY
 			}
 			else {
 				LOG_INFO(LOGGER, "Loading world version {}", worldVersion);
 			}
 
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 			if (worldVersion >= 4)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+			{
 				Valhalla()->m_worldTime = reader.Read<double>();
+			}
 
 			//VLOG(1) << "World time: " << Valhalla()->m_worldTime;
 
 			ZDOManager()->Load(reader, worldVersion);
 
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 			if (worldVersion >= 12)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+			{
 				ZoneManager()->Load(reader, worldVersion);
+			}
 
 #if VH_IS_ON(VH_RANDOM_EVENTS)
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 			if (worldVersion >= 15)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+			{
 				RandomEventManager()->Load(reader, worldVersion);
-#endif
-
+			}
+#endif // VH_RANDOM_EVENTS
 			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
@@ -355,8 +371,10 @@ void IWorldManager::PostZoneInit() {
 			LOG_FATAL(LOGGER, "Failed to load world for playback");
 	}
 	else
-#endif
+#endif //VH_OPTION_ENABLE_CAPTURE
+	{
 		m_world->LoadFileDB();
+	}
 }
 
 void IWorldManager::PostInit() {
@@ -373,5 +391,5 @@ void IWorldManager::PostInit() {
 		// save world
 		world->WriteFiles(root);
 	}
-#endif
+#endif //VH_OPTION_ENABLE_CAPTURE
 }

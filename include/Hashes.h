@@ -410,7 +410,7 @@ namespace Hashes {
 
         namespace CreatureSpawner {
             static constexpr HASH_t ALIVE_TIME = __H("alive_time");
-            static constexpr HASH_t SPAWN_ID = __H("spawn_id");
+            //static constexpr HASH_t SPAWN_ID = __H("spawn_id");
         };
 
         namespace Destructible {
@@ -443,7 +443,7 @@ namespace Hashes {
 
         namespace FishingFloat {
             static constexpr HASH_t CATCH_ID = __H("CatchID");
-            static constexpr HASH_t ROD_OWNER = __H("RodOwner");
+            static constexpr HASH_t ROD_OWNER = __H("rodOwner");
         };
 
         //namespace Game {
@@ -594,7 +594,7 @@ namespace Hashes {
             //ZDOID= __H("-empty");
 
             static constexpr HASH_t STAMINA = __H("stamina");
-            static constexpr HASH_t USER = __H("user");
+            //static constexpr HASH_t USER = __H("user");
         };
 
         namespace StatusEffectManager {
@@ -612,8 +612,12 @@ namespace Hashes {
         };
 
         namespace ShipControls {
-            static constexpr HASH_t USER = __H("user");
+            //static constexpr HASH_t USER = __H("user");
         };
+
+        // ShipControls
+        // Saddle
+        static constexpr HASH_t USER = __H("user");
 
         namespace Sign {
             static constexpr HASH_t AUTHOR = __H("author");
@@ -651,6 +655,7 @@ namespace Hashes {
         namespace TeleportWorld {
             static constexpr HASH_t AUTHOR = __H("tagauthor");
             static constexpr HASH_t TAG = __H("tag");
+            //static constexpr std::pair<HASH_t, HASH_t> TARGET = 
             //static constexpr HASH_t TARGET = __H("target");
         };
 
@@ -760,6 +765,11 @@ namespace Hashes {
             static constexpr HASH_t STATE_I = -861454496;
             static constexpr HASH_t TURN_SPEED = -1488745797;
         };
+
+        namespace ZSyncTransform {
+            // zdoid hashpair
+            //static constexpr HASH_t PARENT_ID =
+        }
     }
 
     namespace Object {

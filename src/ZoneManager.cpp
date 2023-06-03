@@ -343,34 +343,51 @@ void IZoneManager::Save(DataWriter& pkg) {
 
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
-    {    
-        //m_generatedZones = reader.Read<decltype(m_generatedZones)>();
-
+    {
         auto count = reader.Read<uint32_t>();
         for (decltype(count) i = 0; i < count; i++) {
             auto x = reader.Read<int32_t>();
             auto y = reader.Read<int32_t>();
 #if VH_IS_ON(VH_ZONE_GENERATION)
             m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
-#endif
+#endif // VH_ZONE_GENERATION
         }
     }
 
-    if (version >= 13) {
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+    if (version >= 13) 
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+    {
         reader.Read<int32_t>(); // PGW
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
 
-        if (version >= 14) {
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+        if (version >= 14)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+        {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
-            if (version >= 18) {
-                if (version >= 20) reader.Read<bool>(); // locationsGenerated
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+            if (version >= 18) 
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+            {
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+                if (version >= 20) 
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+                {
+                    reader.Read<bool>(); // locationsGenerated
+                }
 
                 auto count = reader.Read<int32_t>();
                 for (decltype(count) i = 0; i < count; i++) {
                     auto text = reader.Read<std::string_view>();
                     auto pos = reader.Read<Vector3f>();
+
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
+#else // !VH_LEGACY_WORLD_COMPATABILITY
+                    bool generated = reader.Read<bool>();
+#endif // VH_LEGACY_WORLD_COMPATABILITY
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
                     auto&& location = GetFeature(text);
@@ -381,7 +398,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     else {
                         LOG_ERROR(LOGGER, "Unknown feature '{}'", text);
                     }
-#else
+#else // !VH_ZONE_GENERATION
                     static_assert(std::numeric_limits<uint8_t>::max() > m_features.size());
                     for (uint8_t i = 0; i < m_features.size(); i++) {
                         if (text == std::string_view(m_features[i])) {
@@ -391,7 +408,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                             break;
                         }
                     }
-#endif
+#endif // VH_ZONE_GENERATION
                 }
 
                 LOG_INFO(LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);

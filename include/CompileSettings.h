@@ -162,6 +162,7 @@
     //#endif
 #endif
 
+/*
 // Whether to include only core Valheim functionality
 // Included:
 //  - World loading/saving
@@ -183,7 +184,39 @@
     #endif
 #else
     #define VH_TOTALLY_VANILLA_I_ VH_DEFAULT_OFF
+#endif*/
+
+/*
+// Controls whether to sanitize internal/external data
+//  This is experimental and designed to
+#if defined(VH_SANITIZE_DATA)
+#if VH_SANITIZE_DATA != 0
+#define VH_SANITIZE_DATA_I_ VH_ON
+#else
+#define VH_SANITIZE_DATA_I_ VH_OFF
 #endif
+#else
+#define VH_SANITIZE_DATA_I_ VH_DEFAULT_OFF
+#endif
+
+// Controls whether to scan player sent data for
+//  obscure patterns of data and/or impossibilities
+//  that would normally affect gameplay of server performance
+// Minor overhead but also experimental if enabled
+#if defined(VH_SANITIZE_EXTERNAL_DATA)
+
+#else
+
+#endif
+
+// Same as VH_SANITIZE_EXTERNAL_DATA but for methods that are 
+//  inherently internal and not likely to be used by an external
+#if defined(VH_SANITIZE_INTERNAL_DATA)
+
+#else
+
+#endif
+*/
 
 #if defined(VH_USE_MODS)
     #if VH_USE_MODS != 0
@@ -374,15 +407,15 @@
 
 // Whether to support loading worlds older than the latest version
 //  Can be disabled to very slightly reduce executable size
-//#if defined(VH_LEGACY_WORLD_COMPATABILITY)
-//    #if VH_LEGACY_WORLD_COMPATABILITY != 0
-//        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
-//    #else
-//        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
-//    #endif
-//#else
-//    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
-//#endif
+#if defined(VH_LEGACY_WORLD_COMPATABILITY)
+    #if VH_LEGACY_WORLD_COMPATABILITY != 0
+        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
+    #else
+        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
+    #endif
+#else
+    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
+#endif
 
 // Packet capture path
 #define VH_CAPTURE_PATH "captures"

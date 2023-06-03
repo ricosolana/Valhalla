@@ -111,13 +111,6 @@ public:
         }
     };
 
-    static std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key) {
-        return {
-            VUtils::String::GetStableHashCode(std::string(key) + "_u"),
-            VUtils::String::GetStableHashCode(std::string(key) + "_i")
-        };
-    }
-
 private:
     enum class LocalDenotion {
         Member_Float,
@@ -330,9 +323,11 @@ public:
         
 
 
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
     // Load ZDO from disk
     //  Returns whether this ZDO is modern
     void Load31Pre(DataReader& reader, int32_t version);
+#endif //VH_LEGACY_WORLD_COMPATABILITY
 
     // Reads from a buffer using the new efficient format (version >= 31)
     //  version=0: Read according to the network deserialize format
@@ -343,6 +338,35 @@ public:
     //  If 'network' is true, write according to the network serialize format
     //  Otherwise write according to the file save format
     void Pack(DataWriter& writer, bool network) const;
+
+    // Erases and returns the value 
+    template<typename T>
+        requires is_member_v<T>
+    bool Extract(HASH_t key, T& out) {
+        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
+            auto&& members_find = ZDO_MEMBERS.find(ID());
+            if (members_find != ZDO_MEMBERS.end()) {
+                auto&& members = members_find->second;
+
+                auto mut = hash_to_xhash<T>(key);
+
+                auto&& find = members.find(mut);
+                if (find != members.end()) {
+                    auto&& get = std::get_if<T>(&find->second);
+                    if (get) {
+                        out = std::move(*get);
+                        members.erase(find);
+                        return true;
+                    }
+                }
+            }
+            else {
+                assert(false);
+            }
+        }
+
+        return false;
+    }
 
     // Get a member by hash
     //  Returns null if absent 
@@ -372,6 +396,12 @@ public:
         }
 
         return nullptr;
+    }
+
+    template<typename T>
+        requires is_member_v<T>
+    bool Extract(std::string_view key, T& out) {
+        return Extract(VUtils::String::GetStableHashCode(key), out);
     }
 
     // Get a member by string
@@ -405,7 +435,7 @@ public:
     std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
-    ZDOID               GetZDOID(const std::pair<HASH_t, HASH_t>& key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
+    ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
 
     // Hash-key default getters
     float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
@@ -414,9 +444,9 @@ public:
     Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
-    std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, ""); }
+    std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
     bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
-    ZDOID               GetZDOID(       const std::pair<HASH_t, HASH_t>& key) const {               return ZDOID(GetLong(key.first), GetLong(key.second)); }
+    ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key) const {                      return GetZDOID(key, {}); }
 
     // String-key getters
     float               GetFloat(       std::string_view key, float value) const {                  return Get<float>(key, value); }
@@ -428,7 +458,7 @@ public:
     std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     const BYTES_t*      GetBytes(       std::string_view key) const {                               return Get<BYTES_t>(key); }
     bool                GetBool(        std::string_view key, bool value) const {                   return Get<int32_t>(key, value); }
-    ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(ToHashPair(key), value); }
+    ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(VUtils::String::ToHashPair(key), value); }
 
     // String-key default getters
     float               GetFloat(       std::string_view key) const {                               return Get<float>(key, {}); }
@@ -437,7 +467,7 @@ public:
     Int64Wrapper        GetLongWrapper( std::string_view key) const {                               return Get<int64_t>(key, {}); }
     Quaternion          GetQuaternion(  std::string_view key) const {                               return Get<Quaternion>(key, {}); }
     Vector3f            GetVector3(     std::string_view key) const {                               return Get<Vector3f>(key, {}); }
-    std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, ""); }
+    std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, {}); }
     bool                GetBool(        std::string_view key) const {                               return Get<int32_t>(key, {}); }
     ZDOID               GetZDOID(       std::string_view key) const {                               return GetZDOID(key, {}); }
 
@@ -464,8 +494,69 @@ public:
 
     void Set(std::string_view key, bool value) { Set(VUtils::String::GetStableHashCode(key), value ? (int32_t)1 : 0); }
 
-    void Set(std::string_view key, ZDOID value) { Set(ToHashPair(key), value); }
+    void Set(std::string_view key, ZDOID value) { Set(VUtils::String::ToHashPair(key), value); }
 
+
+
+    bool Extract(std::pair<HASH_t, HASH_t> key, ZDOID& out) {
+        int64_t userID{};
+        if (Extract(key.first, userID)) {
+            int64_t id{};
+            if (Extract(key.second, id)) {
+                out = ZDOID(userID, id);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool Extract(std::string_view key, ZDOID& out) {
+        return Extract(VUtils::String::ToHashPair(key), out);
+    }
+
+    // Internal use
+    //  Raw sets the connector with no revision
+    bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid) {
+        auto&& insert = ZDO_TARGETED_CONNECTORS.insert({ ID(),
+            ZDOConnectorTargeted(type, zdoid) });
+
+        auto&& connector = insert.first->second;
+
+        // if it was not newly inserted
+        //  check the old values
+        if (!insert.second) {
+            auto&& type2 =  connector.m_type;
+            auto&& zdoid2 = connector.m_target;
+
+            if (type == type2 && zdoid2 == zdoid) {
+                return false;
+            }
+        }
+
+        connector.m_type = type;
+        connector.m_target = zdoid;
+
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+
+        return true;
+    }
+
+    void SetConnection(ZDOConnector::Type type, ZDOID zdoid) {
+        if (_SetConnection(type, zdoid)) {
+            Revise();
+        }
+    }
+
+
+
+    ZDOID GetConnectionZDOID(ZDOConnector::Type type) const {
+        auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
+        if (find != ZDO_TARGETED_CONNECTORS.end()) {
+            if (find->second.m_type == type)
+                return find->second.m_target;
+        }
+        return ZDOID::NONE;
+    }
 
 
     ZDOID ID() const {

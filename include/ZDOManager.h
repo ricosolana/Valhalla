@@ -178,9 +178,17 @@ public:
 
 
 	// Get all ZDOs with prefab
+	//	This method is optimized assuming VH_STANDARD_PREFABS is on
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(HASH_t prefab);
-#endif
+	
+	// Get all ZDOs fulfilling a given predicate
+	//	Try to avoid using this method too frequently (it iterates all ZDOs in the world, which is *very* slow)
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(const std::function<bool(const ZDO&)>& pred);
 
+	// Get all ZDOs matching the given prefab flags
+	//	Try to avoid using this method too frequently (it iterates all ZDOs in the world, which is *very* slow)
+	std::list<std::reference_wrapper<ZDO>> GetZDOs(Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent);
+#endif
 
 	// Get all ZDOs within a radius matching an optional predicate
 	std::list<std::reference_wrapper<ZDO>> GetZDOs(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred) {

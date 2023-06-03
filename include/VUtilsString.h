@@ -131,6 +131,8 @@ namespace VUtils::String {
 
 
 
+    std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key);
+
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable_v<T>
     std::string Join(std::string_view delimiter, T container) {

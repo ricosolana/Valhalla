@@ -55,9 +55,66 @@ void IZDOManager::Update() {
 
 
 
-	// link portals if mode enabled
+	// TODO requires testing
+	//	link portals if mode enabled
 #if VH_IS_ON(VH_PORTAL_LINKING)
+	if (VUtils::run_periodic<struct link_portals>(1s)) {
+		auto&& portals = GetZDOs(Hashes::Object::portal_wood);
 
+		// TODO use the optimized Lua ported code for linking portals
+		//	not the exact code but the way the algo works
+
+		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO* {
+			std::vector<std::reference_wrapper<ZDO>> list;
+			for (auto&& ref : portals) {
+				auto&& zdo = ref.get();
+				if (zdo.ID() != skip
+					&& zdo.GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
+					&& !zdo.GetConnectionZDOID(ZDOConnector::Type::Portal))
+				{
+					list.push_back(zdo);
+				}
+			}
+
+			if (list.empty()) {
+				return nullptr;
+			}
+
+			return &list[VUtils::Random::State().Range(0, list.size())].get();
+		};
+
+		for (auto&& ref : portals) {
+			auto&& zdo = ref.get();
+			auto&& connectionZDOID = zdo.GetConnectionZDOID(ZDOConnector::Type::Portal);
+			auto&& string = zdo.GetString(Hashes::ZDO::TeleportWorld::TAG);
+			if (connectionZDOID) {
+				auto&& zdo2 = GetZDO(connectionZDOID);
+				if (!zdo2 || zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG) != string)
+				{
+					zdo.SetLocal();
+					zdo.SetConnection(ZDOConnector::Type::Portal, ZDOID::NONE);
+					ForceSendZDO(zdo.ID());
+				}
+			}
+		}
+
+		for (auto&& ref : portals) {
+			auto&& zdo3 = ref.get();
+
+			if (!zdo3.GetConnectionZDOID(ZDOConnector::Type::Portal)) {
+				auto&& string2 = zdo3.GetString(Hashes::ZDO::TeleportWorld::TAG);
+				auto&& zdo4 = FindRandomUnconnectedPortal(zdo3.ID(), string2);
+				if (zdo4) {
+					zdo3.SetLocal();
+					zdo4->SetLocal();
+					zdo3.SetConnection(ZDOConnector::Type::Portal, zdo4->ID());
+					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3.ID());
+					ForceSendZDO(zdo3.ID());
+					ForceSendZDO(zdo4->ID());
+				}
+			}
+		}
+	}
 #endif
 
 
@@ -70,7 +127,7 @@ void IZDOManager::Update() {
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
 				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK 
 				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))) &&
-#endif
+#endif // VH_PLAYER_CAPTURE
 				!peer->m_gatedPlaythrough) 
 			{
 				AssignOrReleaseZDOs(*peer);
@@ -177,13 +234,16 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (decltype(count) i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 		if (version < 31) {
 			zdo->m_id = reader.Read<ZDOID>();
 			auto zdoReader = reader.Read<DataReader>();
 
 			zdo->Load31Pre(zdoReader, version);
 		}
-		else {
+		else 
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+		{
 			zdo->Unpack(reader, version);
 		}
 
@@ -194,18 +254,18 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if VH_IS_ON(VH_DUNGEON_REGENERATION)
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
 			if (zdo->Position().y > 4000)
 				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
 		}
-#endif
-#endif
-
+#endif // VH_DUNGEON_REGENERATION
+#endif // VH_STANDARD_PREFABS
 		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
 
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 	if (version < 31) {
 		auto deadCount = reader.Read<int32_t>();
 		for (decltype(deadCount) j = 0; j < deadCount; j++) {
@@ -213,7 +273,63 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			reader.Read<uint32_t>();
 			reader.Read<int64_t>();
 		}
+
+#if VH_IS_ON(VH_STANDARD_PREFABS)
+		// Owners, Terrains, and Seeds have already been converted
+
+		// convert portals
+		for (auto&& ref : GetZDOs(Hashes::Object::portal_wood)) {
+			auto&& zdo = ref.get();
+			
+			auto&& string = zdo.GetString(Hashes::ZDO::TeleportWorld::TAG);
+			ZDOID zdoid; zdo.Extract("target", zdoid);
+			if (zdoid && !string.empty()) {
+				auto&& zdo2 = GetZDO(zdoid);
+				if (zdo2) {
+					auto&& string2 = zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG);
+					ZDOID zdoid2; zdo2->Extract("target", zdoid2);
+					if (string == string2
+						&& zdoid == zdo2->ID()
+						&& zdoid2 == zdo.ID()
+						) 
+					{
+						zdo.SetLocal();
+						zdo2->SetLocal();
+						zdo.SetConnection(ZDOConnector::Type::Portal, zdo2->ID());
+						zdo2->SetConnection(ZDOConnector::Type::Portal, zdo.ID());
+					}
+				}
+			}
+		}
+		
+		// convert spawners
+		for (auto&& ref : GetZDOs(Prefab::Flag::CREATURE_SPAWNER, Prefab::Flag::NONE)) {
+			auto&& zdo = ref.get();
+			zdo.SetLocal();
+			ZDOID zdoid; zdo.Extract("spawn_id", zdoid);
+			auto&& zdo2 = GetZDO(zdoid);
+			zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->ID() : ZDOID::NONE);
+		}
+
+		// convert sync transforms
+		for (auto&& ref : GetZDOs(Prefab::Flag::SYNCED_TRANSFORM, Prefab::Flag::NONE)) {
+			auto&& zdo = ref.get();
+			zdo.SetLocal();
+			ZDOID zdoid; zdo.Extract("parentID", zdoid);
+			auto&& zdo2 = GetZDO(zdoid);
+			if (zdo2) {
+				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->ID());
+			}
+			else {
+				zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
+					// zero out connector bit
+					zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
+				);
+			}
+		}
+#endif // VH_STANDARD_PREFABS
 	}
+#endif // VH_LEGACY_WORLD_COMPATABILITY
 
 	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }

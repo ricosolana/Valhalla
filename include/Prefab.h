@@ -77,6 +77,10 @@ public:
         PLAYER = 1ULL << 34,
         TOMBSTONE = 1ULL << 35,
 
+        // TODO not implemented in dumper or .pkg's yet
+        CREATURE_SPAWNER = 1ULL << 36,
+        SYNCED_TRANSFORM = 1ULL << 37,
+
         // TODO add (order of importance): 
         //  - Container
         //  - Projectile
