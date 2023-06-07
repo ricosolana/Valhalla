@@ -483,7 +483,7 @@ void IValhalla::LoadFiles(bool reloading) {
     if (reloading) {
         // then iterate players, settings active and inactive
         for (auto&& peer : NetManager()->GetPeers()) {
-            peer->m_admin = m_admin.contains(peer->m_name);
+            peer->SetAdmin(m_admin.contains(peer->m_name));
         }
     }
 
@@ -749,7 +749,7 @@ void IValhalla::PeriodUpdate() {
                     for (auto&& peer : NetManager()->GetPeers()) {
                         auto&& zdo = peer->GetZDO();
                         if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestStopSleep);
+                            RouteManager()->Invoke(peer->m_characterID.GetOwner(), Hashes::Routed::S2C_RequestStopSleep);
                         }
                     }
                 }
@@ -800,7 +800,7 @@ void IValhalla::PeriodUpdate() {
                         for (auto&& peer : NetManager()->GetPeers()) {
                             auto&& zdo = peer->GetZDO();
                             if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(peer->m_uuid, Hashes::Routed::S2C_RequestSleep);
+                                RouteManager()->Invoke(peer->m_characterID.GetOwner(), Hashes::Routed::S2C_RequestSleep);
                             }
                             else {
                                 peer->CornerMessage("The world is sleeping");

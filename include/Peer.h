@@ -42,12 +42,12 @@ class Peer {
     friend class INetManager;
     friend class IModManager;
 
+    constexpr static int VISIBLE_PACK_INDEX = 0;
+    constexpr static int ADMIN_PACK_INDEX = 1;
+    constexpr static int GATED_PACK_INDEX = 2;
+
 public:
     using Method = IMethod<Peer*>;
-
-private:
-    //static std::string SALT;
-    //static std::string PASSWORD;
 
 private:
     std::chrono::steady_clock::time_point m_lastPing;
@@ -58,14 +58,14 @@ public:
     ISocket::Ptr m_socket;
 
     // Immutable variables
-    OWNER_t m_uuid; // TODO use only ZDOID
+    //OWNER_t m_uuid; // TODO use only ZDOID
     std::string m_name;
 
     // Mutable variables
     Vector3f m_pos; // TODO use ZDO position
-    bool m_visibleOnMap = false; // TODO use mask
+    //bool m_visibleOnMap = false; // TODO use mask
     ZDOID m_characterID;
-    bool m_admin = false; // TODO use mask
+    //bool m_admin = false; // TODO use mask
 
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
 public:
@@ -78,7 +78,10 @@ private:
 #endif
 
 public:
-    bool m_gatedPlaythrough = false; // TODO use mask
+    //bool m_gatedPlaythrough = false; // TODO use mask
+
+    // Visible: 0, Admin: 1, Gated: 2
+    BitPack<uint8_t, 1, 1, 1, 5> m_pack;
 
 public:
     UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
@@ -107,6 +110,30 @@ public:
 
     ~Peer() {
         //VLOG(1) << "~Peer()";
+    }
+
+    bool IsMapVisible() const {
+        return m_pack.Get<VISIBLE_PACK_INDEX>();
+    }
+
+    bool IsAdmin() const {
+        return m_pack.Get<ADMIN_PACK_INDEX>();
+    }
+
+    bool IsGated() const {
+        return m_pack.Get<GATED_PACK_INDEX>();
+    }
+
+    void SetMapVisible(bool enable) {
+        m_pack.Set<VISIBLE_PACK_INDEX>(enable);
+    }
+
+    void SetAdmin(bool enable) {
+        m_pack.Set<ADMIN_PACK_INDEX>(enable);
+    }
+
+    void SetGated(bool enable) {
+        m_pack.Set<GATED_PACK_INDEX>(enable);
     }
 
     /**
@@ -175,7 +202,7 @@ public:
             // routed rpc spec
             writer.Write<int64_t>(0); // msg id
             writer.Write(VH_ID); // sender
-            writer.Write(m_uuid); // target
+            writer.Write(m_characterID.GetOwner()); // target
             writer.Write(targetZDO); // target ZDO
             writer.Write(hash); // routed method hash
             // FIrst subwrite the routedrpc parameter package then nest the params within it

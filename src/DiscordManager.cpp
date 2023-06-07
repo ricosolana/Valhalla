@@ -118,7 +118,7 @@ void IDiscordManager::Init() {
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 					if (auto peer = NetManager()->GetPeer(identifier)) {
 						event.reply("Name: " + peer->m_name + "\n"
-							+ "Uuid: " + std::to_string(peer->m_uuid) + "\n"
+							+ "Uuid: " + std::to_string(peer->m_characterID.GetOwner()) + "\n"
 							+ "Host: " + peer->m_socket->GetHostName() + "\n"
 							+ "Address: " + peer->m_socket->GetAddress());
 					}
@@ -209,7 +209,7 @@ void IDiscordManager::Init() {
 								//m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), );
 								m_linkedAccounts[host] = event.command.get_issuing_user().id;
 								if (auto&& peer = NetManager()->GetPeerByHost(host)) {
-									peer->m_gatedPlaythrough = false;
+									peer->SetGated(false);
 									peer->CenterMessage("Account verified");
 								}
 								itr = m_tempLinkingKeys.erase(itr);
@@ -235,14 +235,14 @@ void IDiscordManager::Init() {
 					if (identifier) {
 						if (auto&& peer = NetManager()->GetPeer(*identifier)) {
 							if (flag) {
-								peer->m_admin = *flag;
+								peer->SetAdmin(*flag);
 								if (*flag)
 									event.reply("Granted admin to player");
 								else
 									event.reply("Revoked admin from player");
 							}
 							else {
-								event.reply(std::string("Player is ") + (peer->m_admin ? "" : "not ") + "an admin");
+								event.reply(std::string("Player is ") + (peer->IsAdmin() ? "" : "not ") + "an admin");
 							}
 						}
 						else {

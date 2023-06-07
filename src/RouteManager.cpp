@@ -16,11 +16,11 @@ IRouteManager* RouteManager() {
 
 void IRouteManager::OnNewPeer(Peer &peer) {
 	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
-		if (peer->m_gatedPlaythrough)
+		if (peer->IsGated())
 			return;
 
 		reader.Read<int64_t>(); // skip msgid
-		DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid); reader.Read<int64_t>();
+		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid);*/ reader.Read<int64_t>();
 		auto target = reader.Read<int64_t>();
 		auto targetZDO = reader.Read<ZDOID>();
 		auto hash = reader.Read<HASH_t>();
@@ -66,8 +66,8 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			auto&& peers = NetManager()->GetPeers();
 			for (auto&& other : peers) {
 				// Ignore the src peer
-				if (peer->m_uuid != other->m_uuid) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_uuid, target, targetZDO, hash, params);
+				if (peer->m_characterID.GetOwner() != other->m_characterID.GetOwner()) {
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_characterID.GetOwner(), target, targetZDO, hash, params);
 				}
 			}
 		}
@@ -78,7 +78,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 						return;
 
 					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_uuid, target, targetZDO, hash, params);
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_characterID.GetOwner(), target, targetZDO, hash, params);
 				}
 			}
 			else {

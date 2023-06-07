@@ -354,12 +354,14 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<Peer>("Peer",
         // member fields
-        "visibleOnMap", &Peer::m_visibleOnMap,
-        "admin", &Peer::m_admin,
-        "characterID", sol::property([](Peer& self) { return self.m_characterID; }), // return copy
+        //"visibleOnMap", &Peer::m_visibleOnMap,
+        "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),
+        //"admin", &Peer::m_admin,
+        "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin),
+        "characterID", sol::property([](Peer& self) -> ZDOID { return self.m_characterID; }), // return copy
         "name", sol::readonly(&Peer::m_name), // strings are immutable in Lua similarly to Java
         "pos", &Peer::m_pos,
-        "uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
+        //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
         "socket", sol::readonly(&Peer::m_socket),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions

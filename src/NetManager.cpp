@@ -78,8 +78,8 @@ void INetManager::SendPlayerList() {
                 writer.Write(peer->m_name);
                 writer.Write(peer->m_socket->GetHostName());
                 writer.Write(peer->m_characterID);
-                writer.Write(peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible);
-                if (peer->m_visibleOnMap || VH_SETTINGS.playerListForceVisible) {
+                writer.Write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
+                if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
                     if (VH_SETTINGS.playerListSendInterval >= 2s)
                         writer.Write(peer->m_pos);
                     else {
@@ -130,7 +130,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnPeerConnect(Peer& peer) {
-    peer.m_admin = Valhalla()->m_admin.contains(peer.m_socket->GetHostName());
+    peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->GetHostName()));
 
     if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
         return peer.Disconnect();
@@ -141,7 +141,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     // Important
     peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3f pos, bool publicRefPos) {
         peer->m_pos = pos;
-        peer->m_visibleOnMap = publicRefPos; // stupid name
+        peer->SetMapVisible(publicRefPos); // stupid name
         });
 
     // Important
@@ -151,7 +151,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         if (peer->m_characterID)
             VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
-        peer->m_characterID = characterID;
+        peer->m_characterID.SetUID(characterID.GetUID());
 
         LOG_INFO(LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
         });
@@ -159,7 +159,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
         // TODO maybe permissions tree in future?
         //  lua? ...
-        if (!peer->m_admin)
+        if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         if (Kick(user)) {
@@ -172,7 +172,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
-        if (!peer->m_admin)
+        if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         if (Ban(user)) {
@@ -185,7 +185,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
-        if (!peer->m_admin)
+        if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         // devcommands requires an exact format...
@@ -195,7 +195,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     });
 
     peer.Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
-        if (!peer->m_admin)
+        if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         //WorldManager()->WriteFileWorldDB(true);
@@ -206,7 +206,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
-        if (!peer->m_admin)
+        if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         if (Valhalla()->m_blacklist.empty())
@@ -239,8 +239,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
     ZoneManager()->OnNewPeer(peer);
 
     if (VH_SETTINGS.discordAccountLinking) {
-        peer.m_gatedPlaythrough = !DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName());
-        if (peer.m_gatedPlaythrough) {
+        peer.SetGated(!DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName()));
+        if (peer.IsGated()) {
             DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = VUtils::Random::GenerateAlphaNum(4);
         }
     }
@@ -267,7 +267,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 // Return the peer or nullptr
 Peer* INetManager::GetPeerByUUID(OWNER_t uuid) {
     for (auto&& peer : m_onlinePeers) {
-        if (peer->m_uuid == uuid)
+        if (peer->m_characterID.GetOwner() == uuid)
             return peer;
     }
     return nullptr;
@@ -548,7 +548,7 @@ void INetManager::OnPeerQuit(Peer& peer) {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
 
-    if (peer.m_admin)
+    if (peer.IsAdmin())
         Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
     else
         Valhalla()->m_admin.erase(peer.m_socket->GetHostName());

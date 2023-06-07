@@ -128,7 +128,7 @@ void IZDOManager::Update() {
 				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK 
 				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))) &&
 #endif // VH_PLAYER_CAPTURE
-				!peer->m_gatedPlaythrough) 
+				!peer->IsGated()) 
 			{
 				AssignOrReleaseZDOs(*peer);
 			}
@@ -430,7 +430,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 	for (auto&& ref : m_tempNearObjects) {
 		auto&& zdo = ref.get();
 		if (zdo.IsPersistent()) {
-			if (zdo.IsOwner(peer.m_uuid)) {
+			if (zdo.IsOwner(peer.m_characterID.GetOwner())) {
 				// If peer no longer in area of zdo, unclaim zdo
 				if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					zdo.Disown();
@@ -442,7 +442,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.Owner()))
 					&& ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					
-					zdo.SetOwner(peer.m_uuid);
+					zdo.SetOwner(peer.m_characterID.GetOwner());
 				}
 			}
 		}
@@ -458,7 +458,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			if (otherPeer == &peer)
 				continue;
 
-			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.m_uuid))
+			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.m_characterID.GetOwner()))
 				continue;
 
 			float sqDist = otherPeer->m_pos.SqDistance(peer.m_pos);
@@ -484,7 +484,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				if (zdo.IsPersistent()
 					&& zdo.m_pos.SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
-					zdo.SetOwner(peer.m_uuid);
+					zdo.SetOwner(peer.m_characterID.GetOwner());
 				}
 			}
 		}
@@ -595,8 +595,8 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer& pe
 		auto&& a = first.first.get();
 		auto&& b = second.first.get();
 
-		bool flag = a.GetType() == ObjectType::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_uuid);
-		bool flag2 = b.GetType() == ObjectType::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_uuid);
+		bool flag = a.GetType() == ObjectType::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_characterID.GetOwner());
+		bool flag2 = b.GetType() == ObjectType::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_characterID.GetOwner());
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetType() == b.GetType()) {
@@ -849,7 +849,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			(VH_SETTINGS.packetMode == PacketMode::PLAYBACK
 			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) ||
 #endif
-			peer->m_gatedPlaythrough)
+			peer->IsGated())
 			return;
 
 		{
@@ -975,7 +975,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 			//&& (zdo.IsOwner(peer.m_uuid)))
 		//if (prefab.AllFlagsPresent(Prefab::Flag::SESSIONED) 
 		if (!zdo.IsPersistent()
-			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_uuid) || !NetManager()->GetPeerByUUID(zdo.Owner())))
+			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_characterID.GetOwner()) || !NetManager()->GetPeerByUUID(zdo.Owner())))
 		{
 			itr = _DestroyZDO(itr);
 		}
