@@ -66,6 +66,8 @@ class ZDO {
     static constexpr size_t member_flag_v = member_flag<T>::value;
 
 public:
+    using reference = std::reference_wrapper<ZDO>;
+
     class Rev {
     private:
         // DataRevision: 0, OwnerRevision: 1

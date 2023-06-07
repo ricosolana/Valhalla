@@ -158,7 +158,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
     // Set the self incremental id (ZDOID is no longer saved to disk)
     if (version)
-        this->m_id.SetUID(ZDOManager()->m_nextUid++);
+        this->m_id.SetUID(++ZDOManager()->m_nextUid);
 
     auto flags = reader.Read<uint16_t>();
 
