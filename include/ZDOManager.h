@@ -75,7 +75,7 @@ private:
 	//	if createIfNotExists, container will be created if it does not exist
 	//decltype(m_objectsBySector)::iterator _GetZDOZoneContainer(ZoneID zone, bool createIfNotExists);
 	template<bool createIfNotExists = false>
-	[nodiscard] auto _GetZDOContainer(ZoneID zone) -> ZDOContainer* {
+	[[nodiscard]] ZDOContainer* _GetZDOContainer(ZoneID zone) {
 #if VH_IS_ON(VH_BEST_MEMORY)
 		if constexpr (createIfNotExists) {
 			return m_objectsBySector[zone];
@@ -89,7 +89,7 @@ private:
 #else
 		int num = SectorToIndex(zone);
 		if (num != -1) {
-			return m_objectsBySector[num];
+			return &m_objectsBySector[num];
 		}
 #endif
 		return nullptr;

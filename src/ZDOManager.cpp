@@ -164,8 +164,6 @@ void IZDOManager::Update() {
 
 
 
-//decltype(IZDOManager:m_objectsBySector)::iterator _GetZDOZoneContainer(ZoneID zone, bool createIfNotExists);
-
 void IZDOManager::_AddZDOToZone(ZDO& zdo) {
 	if (auto&& container = _GetZDOContainer<true>(zdo.GetZone())) {
 		container->insert(&zdo);
@@ -200,36 +198,18 @@ void IZDOManager::Save(DataWriter& writer) {
 		int32_t count = 0;
 		writer.Write(count);
 
-		{
-			//NetPackage zdoPkg;
-#if VH_IS_ON(VH_BEST_MEMORY)
-			for (auto&& pair1 : m_objectsBySector) {
-				for (auto&& pair2 : pair1.second) {
-					auto&& zdo = *pair2;
-					if (zdo.IsPersistent()) {
-						zdo.Pack(writer, false);
-						count++;
-					}
-				}
+		for (auto&& pair : m_objectsByID) {
+			auto&& zdo = *pair.second;
+			if (zdo.IsPersistent()) {
+				zdo.Pack(writer, false);
+				count++;
 			}
-#else
-			for (auto&& sectorObjects : m_objectsBySector) {
-				for (auto &&ref : sectorObjects) {
-					auto&& zdo = *ref;
-					if (zdo.IsPersistent()) {
-						zdo.Pack(writer, false);
-						count++;
-					}
-				}
-			}
-#endif
 		}
 
-		//const auto end = pkg.Position();
+		const auto end = writer.Position();
 		writer.SetPos(start);
 		writer.Write(count);
-		//pkg.SetPos(end);
-		writer.SetPos(writer.size());
+		writer.SetPos(end);
 	}
 }
 
