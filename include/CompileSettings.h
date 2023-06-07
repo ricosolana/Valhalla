@@ -68,21 +68,23 @@
     #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_OFF
 #endif
 
+//#define VH_BEST_MEMORY 1
+
 // Valhalla already ensures rather fine optimal memory usage
 //  But if this server is to run on an embedded system with little ram (esp32)
 //  then prioritize memory as much as possible
 // this will include nuking some core functionalities included within Valhiem
 //      which might affect performance and extents of gameplay
-#if defined(VH_MAX_MEMORY_EFFICIENCY)
-    #if VH_MAX_MEMORY_EFFICIENCY != 0
-        #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_ON
+#if defined(VH_BEST_MEMORY)
+    #if VH_BEST_MEMORY != 0
+        #define VH_BEST_MEMORY_I_ VH_ON
     #else
-        #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_OFF
+        #define VH_BEST_MEMORY_I_ VH_OFF
     #endif
 #elif defined(ESP_PLATFORM)
-    #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_DEFAULT_ON
+    #define VH_BEST_MEMORY_I_ VH_DEFAULT_ON
 #else
-    #define VH_MAX_MEMORY_EFFICIENCY_I_ VH_DEFAULT_OFF
+    #define VH_BEST_MEMORY_I_ VH_DEFAULT_OFF
 #endif
 
 /*

@@ -25,21 +25,26 @@ class IZDOManager {
 			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
 			&& prefab.AllFlagsPresent(flagsPresent);
 	}
-#endif
+#endif // VH_STANDARD_PREFABS
+
+	using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDO*>;
 
 private:
 	// Contains ZDOs according to Zone
 	//	takes up around 5MB; could be around 72 bytes with map
 	//	TODO use map for esp32 (and lower initial memory usage)
 	//	esp only has 5Mb of ram, and this exceeds that
-	std::array <ankerl::unordered_dense::segmented_set<ZDO*>,
-		(IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+#if VH_IS_ON(VH_BEST_MEMORY)
+	std::unordered_map<ZoneID, ZDOContainer> m_objectsBySector;
+#else // !VH_BEST_MEMORY
+	std::array<ZDOContainer, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+#endif // VH_BEST_MEMORY
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 	// Contains ZDOs according to prefab
 	// TODO this specifically exists for the Lua API, remove when MODS_DISABLED and for esp32
 	UNORDERED_MAP_t<HASH_t, ankerl::unordered_dense::segmented_set<ZDO*>> m_objectsByPrefab;
-#endif
+#endif // VH_STANDARD_PREFABS
 
 	// Responsible for managing ZDOs lifetimes
 	//	A segmented map is used instead of a 
@@ -65,8 +70,33 @@ private:
 	// Called when an authenticated peer leaves (internal)
 	void OnPeerQuit(Peer& peer);
 
+	
+	// Retrieve a zone container for storing zdos
+	//	if createIfNotExists, container will be created if it does not exist
+	//decltype(m_objectsBySector)::iterator _GetZDOZoneContainer(ZoneID zone, bool createIfNotExists);
+	template<bool createIfNotExists = false>
+	[nodiscard] auto _GetZDOContainer(ZoneID zone) -> ZDOContainer* {
+#if VH_IS_ON(VH_BEST_MEMORY)
+		if constexpr (createIfNotExists) {
+			return m_objectsBySector[zone];
+		}
+		else {
+			auto&& find = m_objectsBySector.find(zone);
+			if (find != m_objectsBySector.end()) {
+				return find->second;
+			}
+		}
+#else
+		int num = SectorToIndex(zone);
+		if (num != -1) {
+			return m_objectsBySector[num];
+		}
+#endif
+		return nullptr;
+	}
+
 	// Insert a ZDO into zone (internal)
-	[[maybe_unused]] bool _AddZDOToZone(ZDO& zdo);
+	void _AddZDOToZone(ZDO& zdo);
 	// Remove a zdo from a zone (internal)
 	void _RemoveFromSector(ZDO& zdo);
 	// Relay a ZDO sector change to clients (internal)
@@ -93,8 +123,24 @@ private:
 	//	Returns the ZDO and a bool if newly created
 	[[nodiscard]] std::pair<decltype(IZDOManager::m_objectsByID)::iterator, bool> _GetOrInstantiate(ZDOID id, Vector3f def);
 
+#if !VH_IS_ON(VH_BEST_MEMORY)
 	// Performs a coordinate to pitch conversion
-	[[nodiscard]] int SectorToIndex(ZoneID zone) const;
+	[[nodiscard]] int SectorToIndex(ZoneID zone) const {
+		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
+			return -1;
+
+		int x = zone.x + IZoneManager::WORLD_RADIUS_IN_ZONES;
+		int y = zone.y + IZoneManager::WORLD_RADIUS_IN_ZONES;
+		if (x < 0 || y < 0
+			|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
+			return -1;
+		}
+
+		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES && y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
+
+		return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
+}
+#endif
 
 public:
 	void Init();
