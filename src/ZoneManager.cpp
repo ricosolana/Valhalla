@@ -166,13 +166,14 @@ void IZoneManager::PostPrefabInit() {
 #endif
 
     RouteManager()->Register(Hashes::Routed::C2S_SetGlobalKey, [this](Peer* peer, std::string_view name) {
-        // TODO constraint check
+        // TODO limit keys based on peer and the creature killed
+        //  have this as a compiler macro
         if (m_globalKeys.insert(name).second)
             SendGlobalKeys(); // Notify clients
     });
 
     RouteManager()->Register(Hashes::Routed::C2S_RemoveGlobalKey, [this](Peer* peer, std::string_view name) {
-        // TODO constraint check
+        // TODO limit keys based on peer and the creature killed
         if (m_globalKeys.erase(name))
             SendGlobalKeys(); // Notify clients
     });
@@ -284,8 +285,6 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
         writer.Write(instance.get().m_pos);
         writer.Write(std::string_view(instance.get().m_feature.get().m_name));
     }
-
-    //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateIcons, bytes);
 
     peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
 #else
@@ -929,14 +928,14 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     if (spawnedLocations < feature.m_quantity) {
         LOG_WARNING(LOGGER, "Failed to place all {}, placed {}/{}", feature.m_name, spawnedLocations, feature.m_quantity);
 
-        ////LOG(ERROR) << "errLocations " << errLocations;
-        ////LOG(ERROR) << "errCenterDistances " << errCenterDistances;
-        ////LOG(ERROR) << "errNoneBiomes " << errNoneBiomes;
-        ////LOG(ERROR) << "errBiomeArea " << errBiomeArea;
-        ////LOG(ERROR) << "errAltitude " << errAltitude;
-        ////LOG(ERROR) << "errForestFactor " << errForestFactor;
-        ////LOG(ERROR) << "errSimilarLocation " << errSimilarLocation;
-        ////LOG(ERROR) << "errTerrainDelta " << errTerrainDelta;
+        //LOG(ERROR) << "errLocations " << errLocations;
+        //LOG(ERROR) << "errCenterDistances " << errCenterDistances;
+        //LOG(ERROR) << "errNoneBiomes " << errNoneBiomes;
+        //LOG(ERROR) << "errBiomeArea " << errBiomeArea;
+        //LOG(ERROR) << "errAltitude " << errAltitude;
+        //LOG(ERROR) << "errForestFactor " << errForestFactor;
+        //LOG(ERROR) << "errSimilarLocation " << errSimilarLocation;
+        //LOG(ERROR) << "errTerrainDelta " << errTerrainDelta;
     }
 }
 
@@ -1058,40 +1057,14 @@ void IZoneManager::RemoveUngeneratedFeatures(const Feature& feature) {
 
 // private
 void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
-
-    //location->m_prefab.transform.position = Vector3f::ZERO;
-    //location->m_prefab.transform.rotation = Quaternion::IDENTITY;
-
-    //Location component = location.m_prefab.GetComponent<Location>();
-    //bool flag = component.m_useCustomInteriorTransform && component.m_interiorTransform && component.m_generator;
-    //bool flag = location->m_useCustomInteriorTransform && location->m_generatorPosition;
-    bool flag = false;
-    if (flag) {
-        //LOG(ERROR) << "Tried pre-initializing ZoneLocation Dungeon: " << location.m_name;
-        //Vector2i zone = WorldToZonePos(pos);
-        //Vector3f zonePos = ZoneToWorldPos(zone);
-        //component.m_generator.transform.localPosition = Vector3f::ZERO;
-        //Vector3f vector = zonePos + location.m_interiorPosition + location.m_generatorPosition - pos;
-        //Vector3f localPosition = (Matrix4x4.Rotate(Quaternion.Inverse(rot)) * Matrix4x4.Translate(vector)).GetColumn(3);
-        //localPosition.y = component.m_interiorTransform.localPosition.y;
-        //component.m_interiorTransform.localPosition = localPosition;
-        //component.m_interiorTransform.localRotation = Quaternion.Inverse(rot);
-    }
-
     VUtils::Random::State state(seed);
 
-    //for (auto&& randomSpawn : location.m_randomSpawns) {
-        //randomSpawn.Randomize();
-    //}
-
+    // TODO is random damage really important?
+    //  I don't think it drasically affects much
     //WearNTear.m_randomInitialDamage = location.m_feature.m_applyRandomDamage;
     //for (auto&& znetView2 : location.m_netViews) {
+
     for (auto&& piece : location.m_pieces) {
-        //Vector3f piecePos = piece.m_pos;
-        //Quaternion pieceRot = piece.m_rot;
-
-        //const Dungeon *dungeon = nullptr;
-
         // Dungeon hierarchy:
         //  Location
         //      Interior (InteriorTransform)
@@ -1109,12 +1082,6 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 ZoneID zone = WorldToZonePos(pos);
                 Vector3f zonePos = ZoneToWorldPos(zone);
-
-                //Vector3f localPosition = (zonePos - pos) 
-                //    + dungeon->m_interiorPosition // ( 0, 5000, 0 )
-                //    + dungeon->m_originalPosition; // minor position change (usually height and a horizontal axis)
-
-                //localPosition = Quaternion::Inverse(rot) * localPosition;
 
                 Vector3f piecePos = zonePos
                     + dungeon.m_interiorPosition // ( 0, 5000, 0 )

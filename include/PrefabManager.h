@@ -13,6 +13,8 @@
 //	this class doesnt do much besides try to simulate Unity in appearance
 //		which is not the desired result...
 class IPrefabManager {
+	friend class IDiscordManager;
+
 private:
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 	// TODO use set and use hash within from prefab

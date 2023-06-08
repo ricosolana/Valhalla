@@ -55,17 +55,19 @@ private:
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
+    ankerl::unordered_dense::segmented_map<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
+    UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
+    UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
+
+    // Immutable
+
+    std::string m_name;
     ISocket::Ptr m_socket;
 
-    // Immutable variables
-    //OWNER_t m_uuid; // TODO use only ZDOID
-    std::string m_name;
+    // Mutable
 
-    // Mutable variables
-    Vector3f m_pos; // TODO use ZDO position
-    //bool m_visibleOnMap = false; // TODO use mask
+    Vector3f m_pos;
     ZDOID m_characterID;
-    //bool m_admin = false; // TODO use mask
 
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
 public:
@@ -76,17 +78,9 @@ private:
     std::mutex m_recordmux;
     std::jthread m_recordThread;
 #endif
-
 public:
-    //bool m_gatedPlaythrough = false; // TODO use mask
-
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
-
-public:
-    UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
-    UNORDERED_SET_t<ZDOID> m_forceSend;
-    UNORDERED_SET_t<ZDOID> m_invalidSector;
 
 private:
     void Update();

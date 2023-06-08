@@ -36,11 +36,11 @@ private:
 	//	takes up around 5MB; could be around 72 bytes with map
 	//	TODO use map for esp32 (and lower initial memory usage)
 	//	esp only has 5Mb of ram, and this exceeds that
-#if VH_IS_ON(VH_BEST_MEMORY)
+#if VH_IS_ON(VH_PLATFORM_ESP32)
 	std::unordered_map<ZoneID, ZDOContainer> m_objectsBySector;
-#else // !VH_BEST_MEMORY
+#else // !VH_PLATFORM_ESP32
 	std::array<ZDOContainer, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
-#endif // VH_BEST_MEMORY
+#endif // VH_PLATFORM_ESP32
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 	// Contains ZDOs according to prefab
@@ -78,7 +78,7 @@ private:
 	//decltype(m_objectsBySector)::iterator _GetZDOZoneContainer(ZoneID zone, bool createIfNotExists);
 	template<bool createIfNotExists = false>
 	[[nodiscard]] ZDOContainer* _GetZDOContainer(ZoneID zone) {
-#if VH_IS_ON(VH_BEST_MEMORY)
+#if VH_IS_ON(VH_PLATFORM_ESP32)
 		if constexpr (createIfNotExists) {
 			return m_objectsBySector[zone];
 		}
@@ -137,7 +137,7 @@ private:
 	//	Returns the ZDO and a bool if newly created
 	[[nodiscard]] std::pair<ZDO_iterator, bool> _GetOrInstantiate(ZDOID id, Vector3f def);
 
-#if !VH_IS_ON(VH_BEST_MEMORY)
+#if !VH_IS_ON(VH_PLATFORM_ESP32)
 	// Performs a coordinate to pitch conversion
 	[[nodiscard]] int SectorToIndex(ZoneID zone) const {
 		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
@@ -167,10 +167,10 @@ public:
 	void Load(DataReader& reader, int version);
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
-	[[nodiscard]] ZDO::reference Instantiate(const Prefab& prefab, Vector3f pos);
-	[[nodiscard]] ZDO::reference Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
+	[[maybe_discard]] ZDO::reference Instantiate(const Prefab& prefab, Vector3f pos);
+	[[maybe_discard]] ZDO::reference Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
 #endif // VH_STANDARD_PREFABS
-	[[nodiscard]] ZDO::reference Instantiate(HASH_t hash, Vector3f pos) {
+	[[maybe_discard]] ZDO::reference Instantiate(HASH_t hash, Vector3f pos) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 		return Instantiate(hash, pos, nullptr);
 #else // !VH_STANDARD_PREFABS
@@ -179,7 +179,7 @@ public:
 		return zdo;
 #endif // VH_STANDARD_PREFABS
 	}
-	[[nodiscard]] ZDO::reference Instantiate(const ZDO& zdo);
+	[[maybe_discard]] ZDO::reference Instantiate(const ZDO& zdo);
 
 	// Get a ZDO by id
 	//	TODO use optional<reference>

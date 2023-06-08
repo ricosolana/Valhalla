@@ -41,6 +41,7 @@ endif()
 ############
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(range-v3 CONFIG REQUIRED)
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
     message("Mods: enabled")
     find_package(lua CONFIG REQUIRED)
@@ -126,6 +127,7 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE ${GTL_INCLUDE_DIRS}
 )
 
+set(CMAKE_CXX_STANDARD 23)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
@@ -149,6 +151,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     PRIVATE quill::quill
     PRIVATE unordered_dense
+    PRIVATE range-v3::meta range-v3::concepts range-v3::range-v3
 )
 
 

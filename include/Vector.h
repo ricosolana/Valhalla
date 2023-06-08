@@ -283,6 +283,26 @@ struct Vector3 {
 
 
 
+    constexpr float HSqMagnitude() const {
+        return this->x * this->x
+            + this->z * this->z;
+    }
+
+    constexpr float HMagnitude() const {
+        return std::sqrt(this->HSqMagnitude());
+    }
+
+    constexpr float HSqDistance(Vector3<T> rhs) const {
+        return (this->x - rhs.x) * (this->x - rhs.x)
+            + (this->z - rhs.z) * (this->z - rhs.z);
+    }
+
+    constexpr float HDistance(Vector3<T> rhs) const {
+        return std::sqrt(this->HSqDistance(rhs));
+    }
+
+
+
     static constexpr Vector3<T> Zero() {
         return Vector3<T>(0, 0, 0);
     }

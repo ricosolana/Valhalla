@@ -75,17 +75,17 @@
 //  then prioritize memory as much as possible
 // this will include nuking some core functionalities included within Valhiem
 //      which might affect performance and extents of gameplay
-#if defined(VH_BEST_MEMORY)
-    #if VH_BEST_MEMORY != 0
-        #define VH_BEST_MEMORY_I_ VH_ON
-    #else
-        #define VH_BEST_MEMORY_I_ VH_OFF
-    #endif
-#elif defined(ESP_PLATFORM)
-    #define VH_BEST_MEMORY_I_ VH_DEFAULT_ON
-#else
-    #define VH_BEST_MEMORY_I_ VH_DEFAULT_OFF
-#endif
+//#if defined(VH_BEST_MEMORY)
+//    #if VH_BEST_MEMORY != 0
+//        #define VH_BEST_MEMORY_I_ VH_ON
+//    #else
+//        #define VH_BEST_MEMORY_I_ VH_OFF
+//    #endif
+//#elif defined(ESP_PLATFORM)
+//    #define VH_BEST_MEMORY_I_ VH_DEFAULT_ON
+//#else
+//    #define VH_BEST_MEMORY_I_ VH_DEFAULT_OFF
+//#endif
 
 /*
 #if defined(VH_SMALL_ZDOID)
@@ -188,19 +188,30 @@
     #define VH_TOTALLY_VANILLA_I_ VH_DEFAULT_OFF
 #endif*/
 
-/*
+
 // Controls whether to sanitize internal/external data
 //  This is experimental and designed to
-#if defined(VH_SANITIZE_DATA)
-#if VH_SANITIZE_DATA != 0
-#define VH_SANITIZE_DATA_I_ VH_ON
+#if defined(VH_DISALLOW_MALICIOUS_PLAYERS)
+    #if VH_DISALLOW_MALICIOUS_PLAYERS != 0
+        #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_ON
+    #else
+        #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_OFF
+    #endif
 #else
-#define VH_SANITIZE_DATA_I_ VH_OFF
-#endif
-#else
-#define VH_SANITIZE_DATA_I_ VH_DEFAULT_OFF
+    #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_DEFAULT_ON
 #endif
 
+#if defined(VH_DISALLOW_NON_CONFORMING_PLAYERS)
+    #if VH_DISALLOW_NON_CONFORMING_PLAYERS != 0
+        #define VH_DISALLOW_NON_CONFORMING_PLAYERS_I_ VH_ON
+    #else
+        #define VH_DISALLOW_NON_CONFORMING_PLAYERS_I_ VH_OFF
+    #endif
+#else
+    #define VH_DISALLOW_NON_CONFORMING_PLAYERS_I_ VH_DEFAULT_OFF
+#endif
+
+/*
 // Controls whether to scan player sent data for
 //  obscure patterns of data and/or impossibilities
 //  that would normally affect gameplay of server performance
@@ -327,7 +338,7 @@
     #define VH_PLAYER_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
-#define VH_CORE_FEATURES 1
+//#define VH_CORE_FEATURES 1
 
 // Whether to enable:
 //  - portal linking

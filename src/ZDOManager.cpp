@@ -789,7 +789,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 	auto syncList = CreateSyncList(peer);
 
-	// continue only if there are updated/invalid NetSyncs to send
+	// continue only if there are updated/invalid ZDOs to send
 	if (syncList.empty() && peer.m_invalidSector.empty())
 		return false;
 
@@ -882,7 +882,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			auto&& zdo = *pair.first->second;
 			auto&& created = pair.second;
 
-			if (!created) {
+			if (!created) [[likely]] {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
 				if (dataRev <= zdo.m_rev.GetDataRevision()) {
@@ -899,8 +899,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					continue;
 				}
 			}
-			else {
-				if (m_erasedZDOs.contains(zdoid)) {
+			else [[unlikely]] {
+				if (m_erasedZDOs.contains(zdoid)) [[unlikely]] {
 					m_destroySendList.push_back(zdoid);
 					m_objectsByID.erase(pair.first);
 					continue;

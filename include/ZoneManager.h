@@ -133,6 +133,9 @@ public:
 	static constexpr int WORLD_RADIUS_IN_ZONES = 157;
 	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
 
+	static constexpr int WORLD_RADIUS_IN_METERS = WORLD_RADIUS_IN_ZONES * ZONE_SIZE;
+	static constexpr int WORLD_DIAMETER_IN_METERS = WORLD_DIAMETER_IN_ZONES * ZONE_SIZE;
+
 private:
 #if VH_IS_ON(VH_ZONE_GENERATION)
 	// All Features within a world capable of generation

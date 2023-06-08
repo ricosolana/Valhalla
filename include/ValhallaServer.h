@@ -109,13 +109,16 @@ public:
         return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
     }
 
-    // Get the time in seconds since the last frame
+    // The time in seconds since the last frame
     float Delta() {
-        //auto elapsed = Elapsed();
         auto elapsed = m_nowUpdate - m_prevUpdate;
         return ((double)elapsed.count() * m_serverTimeMultiplier) / (double)duration_cast<decltype(elapsed)>(1s).count();
     }
 
+    // The time in nanoseconds since the last frame
+    auto DeltaNanos() {
+        return duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+    }
 
 
     //static constexpr int WORLD_TIME_MORNING = 240;

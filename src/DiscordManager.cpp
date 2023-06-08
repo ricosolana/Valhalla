@@ -5,10 +5,13 @@
 #include <isteamgameserver.h>
 #include <dpp/dpp.h>
 #include <dpp/dispatcher.h>
+#include <range/v3/all.hpp>
 
 #include "ValhallaServer.h"
 #include "NetManager.h"
 #include "Peer.h"
+#include "RandomEventManager.h"
+#include "ZDOManager.h"
 
 auto DISCORD_MANAGER(std::make_unique<IDiscordManager>());
 IDiscordManager* DiscordManager() {
@@ -271,6 +274,17 @@ void IDiscordManager::Init() {
 						}
 					}
 				}
+				else if (label == "vhsummon") {
+					auto&& name = std::get<std::string>(event.get_parameter("prefab"));
+					auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
+					if (auto&& prefab = PrefabManager()->GetPrefab(name); peer) {
+						ZDOManager()->Instantiate(*prefab, peer->m_pos);
+						event.reply("Object was summoned");
+					}
+					else {
+						event.reply("Either prefab or peer are invalid");
+					}
+				}
 				else {
 					event.reply("Sorry, command is not implemented");
 				}
@@ -282,27 +296,74 @@ void IDiscordManager::Init() {
 		for (auto& opt : evt.options) {
 			if (opt.focused) {
 				Valhalla()->RunTask([=](Task&) {
+
+
+
+					auto&& base = std::get<std::string>(opt.value);
+					auto irsp = dpp::interaction_response(dpp::ir_autocomplete_reply);
+					auto&& choices = irsp.autocomplete_choices;
+
+					// Custom autocomplete reply lambda
+					//	Automatically sorts response based off base string and sends to client
+					auto&& reply = [&]() {
+						if (choices.size() > AUTOCOMPLETE_MAX_CHOICES)
+							choices.resize(AUTOCOMPLETE_MAX_CHOICES);
+
+						m_bot->interaction_response_create(evt.command.id, evt.command.token, irsp);
+					};
+
+					auto&& add_choice = [&](std::string_view choice, bool force) -> bool {
+						if (choices.size() < AUTOCOMPLETE_MAX_CHOICES && (choice.contains(base) || force)) {
+							choices.push_back(dpp::command_option_choice(std::string(choice), std::string(choice)));
+						}
+
+						return choices.size() < AUTOCOMPLETE_MAX_CHOICES;
+					};
+
+					//auto&& add_choices = [&](auto&& view) {
+					//	//if (view.size() > AUTOCOMPLETE_MAX_CHOICES) {
+					//	for (auto&& s : view) {
+					//		if (!add_choice(s, view.size() <= AUTOCOMPLETE_MAX_CHOICES))
+					//			break;
+					//	}
+					//	//}
+					//};
+
 					if (opt.name == "identifier") {
-						auto&& val = std::get<std::string>(opt.value);
-						// responses to be alphabetical
-						auto&& response = dpp::interaction_response(dpp::ir_autocomplete_reply);
+						const bool has_num = std::any_of(base.begin(), base.end(), ::isdigit);
 
-						auto sorted = std::vector<std::pair<Peer*, int>>();
+						// Populate choices
 						for (auto&& peer : NetManager()->GetPeers()) {
-							sorted.push_back({ peer, VUtils::String::LevenshteinDistance(peer->m_name, val) });
+							auto&& kw = peer->m_name;
+							choices.emplace_back(dpp::command_option_choice(
+								has_num ? peer->m_socket->GetHostName() : peer->m_name,
+								peer->m_socket->GetHostName()
+							));
 						}
-
-						std::sort(sorted.begin(), sorted.end(), [](const std::pair<Peer*, int>& a, const std::pair<Peer*, int>& b) {
-							return a.second < b.second;
-						});
-
-						for (auto&& pair : sorted) {
-							auto&& peer = pair.first;
-							response.add_autocomplete_choice(dpp::command_option_choice(peer->m_name, peer->m_socket->GetHostName()));
-						}
-
-						m_bot->interaction_response_create(evt.command.id, evt.command.token, response);
 					}
+					else if (opt.name == "event") {
+						//add_choices(ranges::views::keys(RandomEventManager()->m_events));
+						for (auto&& e : ranges::views::keys(RandomEventManager()->m_events)) {
+							choices.emplace_back(dpp::command_option_choice(std::string(e), std::string(e)));
+							add_choice(e, false);
+						}
+					}
+					else if (opt.name == "prefab") {
+						//add_choices(ranges::views ranges::views::values(PrefabManager()->m_prefabs));
+						for (auto&& prefab : ranges::views::values(PrefabManager()->m_prefabs)) {
+							if (!add_choice(prefab->m_name, false))
+								break;
+							//choices.emplace_back(dpp::command_option_choice(prefab->m_name, prefab->m_name));
+						}
+					}
+					else {
+						LOG_WARNING(LOGGER, "autocomplete not registered");
+						return;
+					}
+
+					reply();
+
+
 
 				});
 				break;
@@ -363,6 +424,10 @@ void IDiscordManager::Init() {
 					.add_option(dpp::command_option(dpp::co_boolean, "flag", "grant/revoke admin"))
 					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhlist", "List currently online players", m_bot->me.id),
+				dpp::slashcommand("vhsummon", "Spawns an object into the world", m_bot->me.id)
+					.add_option(dpp::command_option(dpp::co_string, "prefab", "prefab name", true).set_auto_complete(true))
+					.add_option(dpp::command_option(dpp::co_string, "identifier", "name/uuid/host of player to spawn at", true).set_auto_complete(true))
+					.set_default_permissions(0), // 0 is admins only
 				dpp::slashcommand("vhlink", "Links your Steam-id to Discord", m_bot->me.id)
 					.add_option(dpp::command_option(dpp::co_string, "key", "Verification key from server"))
 			}, VH_SETTINGS.discordGuild);

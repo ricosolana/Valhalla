@@ -32,9 +32,10 @@ Peer::Peer(ISocket::Ptr socket)
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
             rpc->m_characterID.SetOwner(reader.Read<int64_t>());
+#if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
                 throw std::runtime_error("peer provided 0 owner");
-
+#endif
             auto version = reader.Read<std::string_view>();
             LOG_INFO(LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
             if (version != VConstants::GAME)
@@ -43,10 +44,15 @@ Peer::Peer(ISocket::Ptr socket)
             reader.Read<uint32_t>(); // network version
 
             rpc->m_pos = reader.Read<Vector3f>();
+#if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
+            if (rpc->m_pos.HSqMagnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
+                throw std::runtime_error("peer position is outside of map");
+#endif
             rpc->m_name = reader.Read<std::string>();
-            //if (!(name.length() >= 3 && name.length() <= 15))
-                //throw std::runtime_error("peer provided invalid length name");
-            
+#if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
+            if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
+                throw std::runtime_error("peer provided invalid length name");
+#endif            
             auto password = reader.Read<std::string_view>();
 
             if (VH_SETTINGS.playerOnline) {
@@ -113,12 +119,11 @@ void Peer::Update() {
 
     // Read packets
     while (auto opt = this->Recv()) {
-
         auto&& bytes = opt.value();
         DataReader reader(bytes);
 
         auto hash = reader.Read<HASH_t>();
-        if (hash == 0) {
+        if (hash == 0) [[unlikely]] { 
             if (reader.Read<bool>()) {
                 // Reply to the server with a pong
                 BYTES_t pong;
@@ -131,7 +136,7 @@ void Peer::Update() {
                 m_lastPing = now;
             }
         }
-        else {
+        else [[likely]] { 
             InternalInvoke(hash, reader);
         }
 
@@ -148,7 +153,7 @@ void Peer::Update() {
 #endif
     }
 
-    if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) {
+    if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
         LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
         Disconnect();
     }

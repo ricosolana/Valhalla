@@ -619,39 +619,38 @@ public:
         }
     }
 
+    // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
         return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
     }
 
 
-
+    // Whether the ZDO is owned by a specific owner
     [[nodiscard]] bool IsOwner(OWNER_t owner) const {
-        //return m_encoded.GetOwnerIndex() == owner.
         return owner == this->Owner();
     }
 
-    // Return whether the ZDO instance is self hosted or remotely hosted
+    // Returns whether this server is the owner of the ZDO
     [[nodiscard]] bool IsLocal() const {
         return IsOwner(VH_ID);
     }
 
-    // Whether an owner has been assigned to this ZDO
+    // Whether the ZDO has an owner
     [[nodiscard]] bool HasOwner() const {
         return m_pack.Get<OWNER_PACK_INDEX>();
     }
 
-    // Claim ownership over this ZDO
+    // Claim personal ownership over the ZDO
     [[maybe_unused]] bool SetLocal() {
         return SetOwner(VH_ID);
     }
 
-    // Should name better
+    // Clears the owner of this ZDO
     void Disown() {
         SetOwner(0);
     }
 
     // Set the owner of the ZDO
-    //  The owner revision will increase
     [[maybe_unused]] bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
         if (this->Owner() != owner) {
@@ -663,8 +662,7 @@ public:
         return false;
     }
 
-    // Set the owner of the ZDO
-    //  The owner revision is unaffected
+    // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
         m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
