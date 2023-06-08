@@ -501,6 +501,59 @@ void IValhalla::LoadFiles(bool reloading) {
     this->m_settingsLastTime = fs::last_write_time("server.yml", err);
 }
 
+void IValhalla::SaveFiles() {
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
+    if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
+#endif
+    {
+        WorldManager()->GetWorld()->WriteFiles();
+    }
+
+    {
+        YAML::Node node(m_blacklist);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("blacklist.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(m_whitelist);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("whitelist.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(m_admin);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+        emit << node;
+
+        VUtils::Resource::WriteFile("admin.yml", emit.c_str());
+    }
+
+    {
+        YAML::Node node(DiscordManager()->m_linkedAccounts);
+
+        YAML::Emitter emit;
+        emit.SetIndent(2);
+
+        emit << YAML::Comment("Discord-linked accounts")
+            << YAML::Newline
+            << YAML::Comment("Entries are in the form of 'steam-id: discord-id'")
+            << node;
+
+        VUtils::Resource::WriteFile("linked.yml", emit.c_str());
+    }
+}
+
 std::thread::id MAIN_THREAD;
 
 void IValhalla::Stop() {
@@ -640,54 +693,7 @@ void IValhalla::Start() {
     ModManager()->Uninit();
 #endif
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
-#endif
-        WorldManager()->GetWorld()->WriteFiles();
-
-    {
-        YAML::Node node(m_blacklist);
-
-        YAML::Emitter emit;
-        emit.SetIndent(2);
-        emit << node;
-
-        VUtils::Resource::WriteFile("blacklist.yml", emit.c_str());
-    }
-
-    {
-        YAML::Node node(m_whitelist);
-
-        YAML::Emitter emit;
-        emit.SetIndent(2);
-        emit << node;
-
-        VUtils::Resource::WriteFile("whitelist.yml", emit.c_str());
-    }
-
-    {
-        YAML::Node node(m_admin);
-        
-        YAML::Emitter emit;
-        emit.SetIndent(2);
-        emit << node;
-
-        VUtils::Resource::WriteFile("admin.yml", emit.c_str());
-    }
-
-    {
-        YAML::Node node(DiscordManager()->m_linkedAccounts);
-
-        YAML::Emitter emit;
-        emit.SetIndent(2);
-
-        emit << YAML::Comment("Discord-linked accounts") 
-             << YAML::Newline
-             << YAML::Comment("Entries are in the form of 'steam-id: discord-id'")
-             << node;
-
-        VUtils::Resource::WriteFile("linked.yml", emit.c_str());
-    }
+    SaveFiles();
 
     LOG_INFO(LOGGER, "Server was gracefully terminated");
 

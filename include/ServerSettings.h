@@ -7,11 +7,17 @@ enum class AssignAlgorithm {
     DYNAMIC_RADIUS
 };
 
-enum class PacketMode : int32_t {
+enum class PacketMode {
     NORMAL,
     CAPTURE,
     PLAYBACK,
 };
+
+/*
+enum class DiscordPlayerMode {
+    IN_DISCORD_SERVER,
+
+};*/
 
 /*
 static constexpr const char* VH_SETTING_KEY_SERVER = "server";
@@ -141,6 +147,14 @@ struct ServerSettings {
     std::string     discordToken;
     dpp::snowflake  discordGuild;
     bool            discordAccountLinking;
+    // Kick players who leave the Discord server?
+    bool            discordSyncLeaves;
+    // Synchronize kicks between Valhiem and Discord?
+    //  being kicked on one kicks you on the other visa-versa
+    //bool            discordSyncKicks;
+    // Synchronize bans between Valhiem and Discord?
+    //  being banned on one bans you on the other visa-versa
+    //bool            discordSyncBans;
 #endif
     //bool            discordEnableDevCommands;
     //UNORDERED_SET_t<dpp::snowflake> discordDevAccount;

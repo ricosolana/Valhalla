@@ -37,6 +37,7 @@ static constexpr TimeOfDay TIME_NIGHT = 1530;
 
 class IValhalla {
     friend class IModManager;
+    friend class IDiscordManager;
     friend class IWorldManager;
     friend class Tests;
     friend class World;
@@ -67,6 +68,7 @@ private:
 
 private:
     void LoadFiles(bool reloading);
+    void SaveFiles();
 
 public:
     void Start();

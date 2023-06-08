@@ -241,7 +241,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     if (VH_SETTINGS.discordAccountLinking) {
         peer.SetGated(!DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
-            DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = VUtils::Random::GenerateAlphaNum(4);
+            DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = { VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos() };
         }
     }
 
