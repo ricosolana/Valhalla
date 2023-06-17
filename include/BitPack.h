@@ -80,7 +80,6 @@ public:
 
     // Get the value of a specified member at index
     template<uint8_t index>
-        requires (index < sizeof...(COUNTS))
     type Get() const {
         //return (m_data >> offset<index>::value) & capacity<index>::value;
         auto o = offset_v<index>;
@@ -99,12 +98,35 @@ public:
 
     // Set the value of a specified member at index
     template<uint8_t index>
-        requires (index < sizeof...(COUNTS))
     void Set(type value) {
         Clear<index>();
         Merge<index>(value);
 
         assert(Get<index>() == value);
+    }
+
+    // Clear the bits within a specified mask
+    template<uint8_t index>
+    void Unset(type value) {
+        // flip to get negated mask
+        //value ^= std::numeric_limits<type>::max();
+
+        Set<index>(Get<index>() & static_cast<type>(~value));
+
+        //value = ~value;
+
+        // merge negated mask to rid bits
+        //m_data &= (value & capacity_v<index>) << offset_v<index>;
+
+        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+        //assert((Get<index> & value) == 0);
+
+        assert((Get<index>() & value) == 0);
     }
 
     // Merge the bits of a specified index with another value
