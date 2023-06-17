@@ -406,6 +406,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
             a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
             a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
+            a(m_settings.discordSyncLeaves, discord, "sync-leaves", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
             //a(m_settings.discordDevAccount, discord, "dev-account", UNORDERED_SET_t<std::string>());

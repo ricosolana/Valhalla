@@ -1,8 +1,5 @@
 #pragma once
 
-// TODO use a wrapper method?
-#include <openssl/md5.h>
-
 #include "VUtils.h"
 #include "VUtilsString.h"
 #include "Method.h"

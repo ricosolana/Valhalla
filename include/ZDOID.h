@@ -9,17 +9,18 @@ class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
 
-#if VH_IS_ON(VH_PLATFORM_32BIT)
-#error "32-bit not yet implemented"
+#if VH_IS_ON(VH_PLATFORM_ESP32)
+    using UType = uint16_t;
 #elif VH_IS_ON(VH_PLATFORM_64BIT)
     // 62 players per session (2 total reserved for null/server)
     // ~67.1M ZDOs
-
-    // User: 0, ID: 1
-    BitPack<uint32_t, VH_USER_BITS_I_, 32 - VH_USER_BITS_I_> m_pack;
+    using UType = uint32_t;
 #else
 #error "platform unsupported"
 #endif
+
+    // User: 0, ID: 1
+    BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
         
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner

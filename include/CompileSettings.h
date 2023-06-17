@@ -68,59 +68,26 @@
     #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_OFF
 #endif
 
-//#define VH_BEST_MEMORY 1
+#if VH_IS_ON(VH_PLATFORM_WINDOWS) && VH_IS_ON(VH_PLATFORM_ESP32)
+    #error "Platform must be exclusively Windows or ESP32, not both"
+#endif
 
-// Valhalla already ensures rather fine optimal memory usage
-//  But if this server is to run on an embedded system with little ram (esp32)
-//  then prioritize memory as much as possible
-// this will include nuking some core functionalities included within Valhiem
-//      which might affect performance and extents of gameplay
-//#if defined(VH_BEST_MEMORY)
-//    #if VH_BEST_MEMORY != 0
-//        #define VH_BEST_MEMORY_I_ VH_ON
-//    #else
-//        #define VH_BEST_MEMORY_I_ VH_OFF
-//    #endif
-//#elif defined(ESP_PLATFORM)
-//    #define VH_BEST_MEMORY_I_ VH_DEFAULT_ON
-//#else
-//    #define VH_BEST_MEMORY_I_ VH_DEFAULT_OFF
-//#endif
-
-/*
-#if defined(VH_SMALL_ZDOID)
-    #if VH_SMALL_ZDOID != 0
-        #define VH_SMALL_ZDOID_I_ VH_ON
+// Whether to use 4 byte zdoid or 2 byte zdoid
+//  4 byte: capacity for a recommended 64 owners 
+//  2 byte: capacity for a recommended 4 owners
+#if defined(VH_USE_SMALL_ZDOID)
+    #if VH_USE_SMALL_ZDOID != 0
+        #define VH_USE_SMALL_ZDOID_I_ VH_ON
     #else
-        #define VH_SMALL_ZDOID_I_ VH_OFF
+        #define VH_USE_SMALL_ZDOID_I_ VH_OFF
     #endif
 #else
-    #define VH_SMALL_ZDOID_I_ VH_DEFAULT_OFF
-
-    #if defined(VH_STANDARD_ZDOID)
-        #if VH_STANDARD_ZDOID != 0
-            #define VH_STANDARD_ZDOID_I_ VH_ON
-        #else
-            #define VH_STANDARD_ZDOID_I_ VH_OFF
-        #endif
+    #if VH_IS_ON(VH_PLATFORM_ESP32)
+        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_ON
     #else
-      
-        #define VH_STANDARD_ZDOID_I_ VH_DEFAULT_OFF
-
-        #if defined(VH_BIG_ZDOID)
-            #if VH_BIG_ZDOID != 0
-                #define VH_BIG_ZDOID_I_ VH_ON
-            #else
-                #define VH_BIG_ZDOID_I_ VH_OFF
-            #endif    
-        #else
-#define VH_BIG_ZDOID_I_ VH_DEFAULT
-        #endif
-
+        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_OFF
     #endif
-
 #endif
-*/
 
 // Ensure that the bits
 #if defined(VH_USER_BITS)
@@ -128,19 +95,20 @@
     
     // ensure esp32 is always 32 bit
     // 
-    #if VH_USER_BITS > 1 && VH_USER_BITS < 8
+    #if VH_USER_BITS >= 2 && VH_USER_BITS <= 7
         #define VH_USER_BITS_I_ VH_USER_BITS
     #else
-        #error "User bits must be between 1 and 8 (inclusive)"
+        #error "User bits must be between 2 and 7 (inclusive)"
     #endif
 #else
     #if VH_IS_ON(VH_PLATFORM_ESP32)
-        #define VH_USER_BITS_I_ 1
+        #define VH_USER_BITS_I_ 2
     #else
         #define VH_USER_BITS_I_ 6
     #endif
 #endif
 
+/*
 // The default are the remaining bits from VH_USER_BITS
 #if defined(VH_ID_BITS)
     #error "Setting custom id bits not yet supported"
@@ -163,6 +131,7 @@
         #define VH_ID_BITS_I_ (32 - VH_USER_BITS_I_)
     //#endif
 #endif
+*/
 
 /*
 // Whether to include only core Valheim functionality
@@ -189,8 +158,12 @@
 #endif*/
 
 
-// Controls whether to sanitize internal/external data
-//  This is experimental and designed to
+// Whether to disallow potentially malicious modded players
+//  'Malicious' is defined as non-conforming or non-standard 
+//  behaviour which can and will break server functionality,
+//  such as errors, undefined behaviour, and general
+//  strict assumptions about the game that require these standards
+//  to be met
 #if defined(VH_DISALLOW_MALICIOUS_PLAYERS)
     #if VH_DISALLOW_MALICIOUS_PLAYERS != 0
         #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_ON
@@ -201,6 +174,9 @@
     #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_DEFAULT_ON
 #endif
 
+// whether to allow non-standard behaviour that does not cause
+//  conflict with the server or other players
+//  might be an extended name 
 #if defined(VH_DISALLOW_NON_CONFORMING_PLAYERS)
     #if VH_DISALLOW_NON_CONFORMING_PLAYERS != 0
         #define VH_DISALLOW_NON_CONFORMING_PLAYERS_I_ VH_ON
@@ -338,7 +314,7 @@
     #define VH_PLAYER_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
-//#define VH_CORE_FEATURES 1
+#define VH_CORE_FEATURES 1
 
 // Whether to enable:
 //  - portal linking

@@ -56,9 +56,9 @@ git clone https://github.com/microsoft/vcpkg
 
 Install the required libraries:
 ```bash
-.\vcpkg\vcpkg.exe install openssl --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
 .\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
+.\vcpkg\vcpkg.exe install range-v3 --triplet=x64-windows
 .\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
 .\vcpkg\vcpkg.exe install tracy --triplet=x64-windows
 .\vcpkg\vcpkg.exe install zstd --triplet=x64-windows
@@ -73,6 +73,15 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 6/9/2023 + TODO
+We are awaiting the insane ZDO changes featured within the latest betas to be released to production.
+Extending on the optimizations the devs made, I figured ZDOID can be smaller (32 bytes) which also avoids packing.
+There should be a way to remove the redundant ZDOID key in ZDOManager objects as every ZDO already has the same key.
+Assuming this reduces memory, this will also reduce the chance of a ZDO having a different id than its corresponding key.
+
+There are several similar instances of this throughout the sources (such as the prefab map). This might not be possible
+but I am really trying to find a way to remove this redundancy.
+
 ### 5/19/2023 + TODO
 Valheim had an update 3 days ago that went completely over my head. This is likely the largest refactoring I've seen the game have so far (its also been a long time coming). The most notable changes are:
  - Removing tacky console logs (they were likely used for debugging early on)
