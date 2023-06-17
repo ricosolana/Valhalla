@@ -246,10 +246,11 @@ private:
 
     template<typename T>
         requires is_member_v<T>
-    void _TryWriteType(DataWriter& writer, member_map& members) const {
+    uint8_t _TryWriteType(DataWriter& writer, member_map& members) const {
+        uint8_t count = 0;
+
         if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             const auto begin_mark = writer.Position();
-            uint8_t count = 0;
             writer.Write(count); // placeholder 0 byte
 
             for (auto&& pair : members) {
@@ -271,6 +272,8 @@ private:
                 assert(false);
             }
         }
+
+        return count;
     }
 
     // Read a zdo_type from the DataStream

@@ -276,13 +276,14 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
     uint16_t flags{};
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
-    flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
+
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
+    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
     //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
     flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
     flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
@@ -306,6 +307,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
+    auto&& flagPos = writer.Position();
     writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
@@ -359,21 +361,37 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         assert(!ZDO_CONNECTORS.contains(ID()) && !ZDO_TARGETED_CONNECTORS.contains(ID()));
     }*/
 
+    // TODO I hate this approach
+    //  it seems to be failing now that members are now able to be removed
+    //  the only valid way would be to poll every zdo member map (7) and iterate searching for particular types
     if (m_pack.Get<FLAGS_PACK_INDEX>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
         auto&& find = ZDO_MEMBERS.find(ID());
         if (find != ZDO_MEMBERS.end()) {
             auto&& types = find->second;
 
-            _TryWriteType<float>(writer, types);
-            _TryWriteType<Vector3f>(writer, types);
-            _TryWriteType<Quaternion>(writer, types);
-            _TryWriteType<int32_t>(writer, types);
-            _TryWriteType<int64_t>(writer, types);
-            _TryWriteType<std::string>(writer, types);
-            _TryWriteType<BYTES_t>(writer, types);
+            if (_TryWriteType<float>(writer, types))
+                flags |= GlobalFlag::Member_Float;
+            if (_TryWriteType<Vector3f>(writer, types))
+                flags |= GlobalFlag::Member_Vec3;
+            if (_TryWriteType<Quaternion>(writer, types))
+                flags |= GlobalFlag::Member_Quat;
+            if (_TryWriteType<int32_t>(writer, types))
+                flags |= GlobalFlag::Member_Int;
+            if (_TryWriteType<int64_t>(writer, types))
+                flags |= GlobalFlag::Member_Long;
+            if (_TryWriteType<std::string>(writer, types))
+                flags |= GlobalFlag::Member_String;
+            if (_TryWriteType<BYTES_t>(writer, types))
+                flags |= GlobalFlag::Member_ByteArray;
+
+            auto&& endPos = writer.Position();
+            writer.SetPos(flagPos);
+            writer.Write(flags);
+            writer.SetPos(endPos);
         }
         else {
-            assert(false);
+            //m_pack.Unset<FLAGS_PACK_INDEX>(0);
+            //assert(false);
         }
     }
 }
