@@ -30,17 +30,18 @@ This server includes two hosting modes:
 
 If connecting to the server fails, try updating your device's version of Steam. For instance, Valheim on Steam Deck worked fine for me a few hours earlier but an update was seemingly released a few hours later which might have prevented connection. Updating appears to have fixed this.
 
-Command line arguments (all optional):
- - `-root [path]`: Sets the working directory
- - `-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)
- - `-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)
+~Command line arguments (all optional):~
+ - ~`-root [path]`: Sets the working directory~
+ - ~`-colors [0/false 1/true]`: Enable or disable colors (doesnt seem properly formatted in release mode)~
+ - ~`-backup-logs [0/false 1/true]`: Whether to backup and compress old logs (will be saved to /logs)~
+ - Command line arguments were removed a short while ago (elpp was outdated).
  
 All other settings are set in the `server.yml`. I periodically add new options every commit or release, so try deleting this file to generate a freshly populated config, or looking at https://github.com/PeriodicSeizures/Valhalla/blob/9b6dc31cc87a614422491d6024a216acab671a20/src/ValhallaServer.cpp#L327 for config keys and their values.
 
 Properly shutdown the server by using ctrl+c. Exiting the server with anything than either ctrl+c or a SIGINT might not properly save things. Exiting the server prior to the message `[16:12:42] [main thread/INFO]: Press ctrl+c to exit` will not run any shut down routines, and therefore might behave unexpectedly.
 
 ## Manual Installation/Building
-These steps are Windows-specific:
+The installation process is much easier than it has been in the past (thanks to vcpkg and CPM.cmake). These steps are Windows-specific:
 
 Clone Valhalla:
 ```bash
@@ -70,9 +71,12 @@ Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be 
 
 In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt`. It should automatically run the CMake build. It will fail because steamsdk has not been found (yet).
 
-In cmake/get_steamapi specify the path to steamsdk at line 7.
+In `cmake/VHSettings.cmake` specify the path to steamsdk by changing the value of `STEAMWORKS_SDK_LOCATION`.
 
 ## Progress
+### 6/18/2023 + TODO
+I was on vacation when Valheim published the highly optimized release, so I was unable to work on the project for about a week. Also a prerelease for the Hildir update is out, and I will start work on that soon. Luckily, it seems that the devs don't change much across pre-releases to the official release (in terms of drastic functionality), so I can probably port this latest beta without worry.
+
 ### 6/9/2023 + TODO
 We are awaiting the insane ZDO changes featured within the latest betas to be released to production.
 Extending on the optimizations the devs made, I figured ZDOID can be smaller (32 bytes) which also avoids packing.
