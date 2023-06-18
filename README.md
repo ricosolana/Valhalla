@@ -73,6 +73,35 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 6/18/2023 + TODO
+The Hildir beta was released 2 days ago, and it features a lot of new stuff.
+
+Valheim server changes:
+ - New global keys (nomap, noportals, and some player stat settings stored serverside)
+ - Starting global keys (global keys assigned on new worlds)
+ - Global keys can now store corresponding values (instead of key as the value)
+ - DungeonGenerator removal of zdo memberswhile saving rooms in favor of serialized zdo member byte array
+ - Rename of RPC method `DiscoverLocationResponse` to `RPC_DiscoverLocationResponse`
+ - Rename of RPC method `DiscoverClosestLocation` to `RPC_DiscoverClosestLocation`
+ - New DungeonGenerator Room Themes
+   - ForestCryptHildir
+		 - CaveHildir
+		 - PlainsFortHildir
+ - Starting global keys are now saved to the world meta (fwl) file instead of the world (db) file.
+
+Client-network changes:
+ - New RPCs:
+   - Container::RPC_RequestStack
+   - Container::RPC_StackResponse
+ - HitData read/write is changed
+ - MasterClient read/write changes (unused)
+ - New ZDOVar members
+   - `worldLevel`
+   - `pickedUp`
+   - `roomData`
+   - some are not included here because they are used as raw strings instead of hashes (it's a beta)
+ - ZNetView HasFields seems sketchy (why is a zdo member (aka unchecked NETWORK object) being used for reflections?)
+
 ### 6/9/2023 + TODO
 We are awaiting the insane ZDO changes featured within the latest betas to be released to production.
 Extending on the optimizations the devs made, I figured ZDOID can be smaller (32 bytes) which also avoids packing.
