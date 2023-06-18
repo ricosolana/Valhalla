@@ -42,6 +42,11 @@ World::World(DataReader reader) {
 	m_uid = reader.Read<int64_t>();
 	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
 	bool needsDB = worldVersion >= 30 ? reader.Read<bool>() : false;
+	if (worldVersion >= 32) {
+		reader.AsEach([](std::string_view key) {
+			// TODO add starting keys
+		});
+	}
 }
 
 
@@ -51,12 +56,15 @@ BYTES_t World::SaveMeta() {
 	DataWriter writer(bytes);
 	writer.SubWrite([this](DataWriter& writer) {
 		writer.Write(VConstants::WORLD);
-		writer.Write(std::string_view(m_name));
-		writer.Write(std::string_view(m_seedName));
+		writer.Write(m_name);
+		writer.Write(m_seedName);
 		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
 		writer.Write(m_uid);
 		writer.Write(m_worldGenVersion);
 		writer.Write(true);
+		
+		// TODO write starting keys
+		writer.Write(UNORDERED_SET_t<std::string>());
 	});
 
 	return bytes;

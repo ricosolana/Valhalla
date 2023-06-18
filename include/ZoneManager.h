@@ -10,6 +10,50 @@
 #include "Quaternion.h"
 #include "Prefab.h"
 
+enum class GlobalKey {
+	PlayerDamage,
+	EnemyDamage,
+	WorldLevel,
+	EventRate,
+	ResourceRate,
+	StaminaRate,
+	MoveStaminaRate,
+	StaminaRegenRate,
+	SkillGainRate,
+	SkillReductionRate,
+	EnemySpeedSize,
+	PlayerEvents,
+	Fire,
+	DeathKeepEquip,
+	DeathDeleteItems,
+	DeathDeleteUnequipped,
+	DeathSkillsReset,
+	NoBuildCost,
+	NoCraftCost,
+	AllPiecesUnlocked,
+	NoWorkbench,
+	AllRecipesUnlocked,
+	WorldLevelLockedTools,
+	PassiveMobs,
+	NoMap,
+	NoPortals,
+	NoBossPortals,
+	DungeonBuild,
+	TeleportAll,
+	Preset,
+	NonServerOption, // ?
+	defeated_eikthyr,
+	defeated_dragon,
+	defeated_goblinking,
+	defeated_gdking,
+	defeated_bonemass,
+	activeBosses,
+	KilledTroll,
+	killed_surtling,
+	KilledBat,
+	MAX
+};
+
 using ZoneID = Vector2s;
 
 class Heightmap;

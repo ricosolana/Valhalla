@@ -82,7 +82,7 @@ namespace Hashes {
         static constexpr HASH_t S2C_UpdateIcons = __H("LocationIcons");
         static constexpr HASH_t S2C_UIMessage = __H("ShowMessage");
         static constexpr HASH_t S2C_SetEvent = __H("SetEvent");
-        static constexpr HASH_t S2C_ResponseIcon = __H("DiscoverLocationResponse");
+        static constexpr HASH_t S2C_ResponseIcon = __H("RPC_DiscoverLocationResponse");
         static constexpr HASH_t S2C_RequestTeleport = __H("RPC_TeleportPlayer");
 
 
@@ -108,7 +108,7 @@ namespace Hashes {
         // Server
         //
 
-        static constexpr HASH_t C2S_RequestIcon = __H("DiscoverClosestLocation");
+        static constexpr HASH_t C2S_RequestIcon = __H("RPC_DiscoverClosestLocation");
     }
 
 
@@ -157,6 +157,8 @@ namespace Hashes {
             static constexpr HASH_t Open = __H("RequestOpen");
             static constexpr HASH_t TakeAll = __H("RequestTakeAll");
             static constexpr HASH_t TakeAllCallback = __H("TakeAllRespons");
+            static constexpr HASH_t RequestStack = __H("RPC_RequestStack");
+            static constexpr HASH_t RequestStackCallback = __H("RPC_StackResponse");
         };
 
         namespace CookingStation {
@@ -383,6 +385,7 @@ namespace Hashes {
             static constexpr HASH_t NOISE = __H("noise");
             static constexpr HASH_t TAMED = __H("tamed");
             static constexpr HASH_t TILT_ROT = __H("tiltrot");
+            static constexpr HASH_t BOSS_COUNT = __H("bosscount");
         };
 
         namespace CharacterAnimEvent {
@@ -425,6 +428,7 @@ namespace Hashes {
             // index hashes...
 
             static constexpr HASH_t ROOMS = __H("rooms");
+            static constexpr HASH_t ROOM_DATA = __H("roomData");
         };
 
         namespace Fermenter {
@@ -469,6 +473,8 @@ namespace Hashes {
             static constexpr HASH_t SPAWN_TIME = __H("spawntime");
             static constexpr HASH_t STACK = __H("stack");
             static constexpr HASH_t VARIANT = __H("variant");
+            static constexpr HASH_t WORLD_LEVEL = __H("worldLevel");
+            static constexpr HASH_t PICKED_UP = __H("pickedUp");
         };
 
         namespace ItemStand {
@@ -736,6 +742,7 @@ namespace Hashes {
         namespace ZNetView {
             static constexpr HASH_t SCALE = __H("scale");
             static constexpr HASH_t SCALE_SCALAR = __H("scaleScalar");
+            static constexpr HASH_t HAS_FIELDS = __H("HasFields");
         }
 
         namespace ZoneManager {
