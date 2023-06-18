@@ -310,10 +310,10 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->ID());
 			}
 			else {
-				zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
+				//zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
 					// zero out connector bit
-					zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
-				);
+					//zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
+				//);
 			}
 		}
 #endif // VH_STANDARD_PREFABS
@@ -515,7 +515,8 @@ IZDOManager::ZDO_iterator IZDOManager::_EraseZDO(IZDOManager::ZDO_iterator itr) 
 	
 	// erase members and connectors
 	ZDO::ZDO_MEMBERS.erase(zdo->ID());
-	ZDO::ZDO_CONNECTORS.erase(zdo->ID());
+	//ZDO::ZDO_CONNECTORS.erase(zdo->ID());
+	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdo->ID());
 
 	return m_objectsByID.erase(itr);
 }

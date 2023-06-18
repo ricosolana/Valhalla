@@ -222,11 +222,11 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
             connector.m_target = target;
             //type &= ~ZDOConnector::Type::Target;
         }
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
     }
     else {
         // Remove connector flag
-        m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+        //m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
         //m_pack.Set<FLAGS_PACK_INDEX>(
             //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
@@ -285,29 +285,12 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
     //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
     //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
-    flags |= IsPersistent() ? GlobalFlag::Marker_Persistent : (GlobalFlag)0;
-    flags |= IsDistant() ? GlobalFlag::Marker_Distant : (GlobalFlag)0;
+    if (IsPersistent()) flags |= GlobalFlag::Marker_Persistent;
+    if (IsDistant()) flags |= GlobalFlag::Marker_Distant;
     flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
-    flags |= hasRot ? GlobalFlag::Marker_Rotation : GlobalFlag(0);
+    if (hasRot) flags |= GlobalFlag::Marker_Rotation;
 
-    auto&& findConnTarget = ZDO_TARGETED_CONNECTORS.end();
-    auto&& findConn = ZDO_CONNECTORS.end();
-    if (m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection) {
-        if (network) {
-            findConnTarget = ZDO_TARGETED_CONNECTORS.find(ID());
-            if (findConnTarget != ZDO_TARGETED_CONNECTORS.end()) {
-                flags |= GlobalFlag::Member_Connection;
-            }
-        }
-        else {
-            findConn = ZDO_CONNECTORS.find(ID());
-            if (findConn != ZDO_CONNECTORS.end()) {
-                flags |= GlobalFlag::Member_Connection;
-            }
-        }
-    }
-
-    auto&& flagPos = writer.Position();
+    const auto flagPos = writer.Position();
     writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
@@ -316,82 +299,49 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     writer.Write(GetPrefabHash());
     if (hasRot) writer.Write(m_rotation);
 
-    // TODO Im not usre whether this is mandatory
-    if (findConnTarget != ZDO_TARGETED_CONNECTORS.end()) {
-        assert(network);
+    if (network) {
+        auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
+        if (find != ZDO_TARGETED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
+            auto&& connector = find->second;
+            writer.Write(connector.m_type);
+            writer.Write(connector.m_target);
 
-        auto&& connector = findConnTarget->second;
-        writer.Write(connector.m_type);
-        writer.Write(connector.m_target);
-    }
-    else if (findConn != ZDO_CONNECTORS.end()) {
-        assert(!network);
-
-        auto&& connector = findConn->second;
-        writer.Write(connector.m_type);
-        writer.Write(connector.m_hash);
-    }
-
-    /*
-    if (m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection) {
-        if (network) {
-            auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
-            if (find != ZDO_TARGETED_CONNECTORS.end()) {
-                auto&& connector = find->second;
-                writer.Write(connector.m_type);
-                writer.Write(connector.m_target);
-            }
-            else {
-                assert(false);
-            }
-        }
-        else {
-            auto&& find = ZDO_CONNECTORS.find(ID());
-            if (find != ZDO_CONNECTORS.end()) {
-                auto&& connector = find->second;
-                writer.Write(connector.m_type);
-                writer.Write(connector.m_hash);
-            }
-            else {
-                assert(false);
-            }
+            flags |= GlobalFlag::Member_Connection;
         }
     }
     else {
-        assert(!ZDO_CONNECTORS.contains(ID()) && !ZDO_TARGETED_CONNECTORS.contains(ID()));
-    }*/
+        auto&& find = ZDO_CONNECTORS.find(ID());
+        if (find != ZDO_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
+            auto&& connector = find->second;
+            writer.Write(connector.m_type);
+            writer.Write(connector.m_hash);
 
-    // TODO I hate this approach
-    //  it seems to be failing now that members are now able to be removed
-    //  the only valid way would be to poll every zdo member map (7) and iterate searching for particular types
-    if (m_pack.Get<FLAGS_PACK_INDEX>() & (LocalFlag::Member_Float | LocalFlag::Member_Vec3 | LocalFlag::Member_Quat | LocalFlag::Member_Int | LocalFlag::Member_Long | LocalFlag::Member_String | LocalFlag::Member_ByteArray)) {
-        auto&& find = ZDO_MEMBERS.find(ID());
-        if (find != ZDO_MEMBERS.end()) {
-            auto&& types = find->second;
-
-            if (_TryWriteType<float>(writer, types))
-                flags |= GlobalFlag::Member_Float;
-            if (_TryWriteType<Vector3f>(writer, types))
-                flags |= GlobalFlag::Member_Vec3;
-            if (_TryWriteType<Quaternion>(writer, types))
-                flags |= GlobalFlag::Member_Quat;
-            if (_TryWriteType<int32_t>(writer, types))
-                flags |= GlobalFlag::Member_Int;
-            if (_TryWriteType<int64_t>(writer, types))
-                flags |= GlobalFlag::Member_Long;
-            if (_TryWriteType<std::string>(writer, types))
-                flags |= GlobalFlag::Member_String;
-            if (_TryWriteType<BYTES_t>(writer, types))
-                flags |= GlobalFlag::Member_ByteArray;
-
-            auto&& endPos = writer.Position();
-            writer.SetPos(flagPos);
-            writer.Write(flags);
-            writer.SetPos(endPos);
-        }
-        else {
-            //m_pack.Unset<FLAGS_PACK_INDEX>(0);
-            //assert(false);
+            flags |= GlobalFlag::Member_Connection;
         }
     }
+
+    auto&& find = ZDO_MEMBERS.find(ID());
+    if (find != ZDO_MEMBERS.end()) {
+        auto&& types = find->second;
+
+        if (_TryWriteType<float>(writer, types))
+            flags |= GlobalFlag::Member_Float;
+        if (_TryWriteType<Vector3f>(writer, types))
+            flags |= GlobalFlag::Member_Vec3;
+        if (_TryWriteType<Quaternion>(writer, types))
+            flags |= GlobalFlag::Member_Quat;
+        if (_TryWriteType<int32_t>(writer, types))
+            flags |= GlobalFlag::Member_Int;
+        if (_TryWriteType<int64_t>(writer, types))
+            flags |= GlobalFlag::Member_Long;
+        if (_TryWriteType<std::string>(writer, types))
+            flags |= GlobalFlag::Member_String;
+        if (_TryWriteType<BYTES_t>(writer, types))
+            flags |= GlobalFlag::Member_ByteArray;
+    }
+
+    const auto endPos = writer.Position();
+    writer.SetPos(flagPos);
+    writer.Write(flags);
+    writer.SetPos(endPos);
 }

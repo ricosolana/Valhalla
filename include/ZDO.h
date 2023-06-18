@@ -115,14 +115,14 @@ public:
 
 private:
     enum class LocalDenotion {
-        Member_Float,
-        Member_Vec3,
-        Member_Quat,
-        Member_Int,
-        Member_Long,
-        Member_String,
-        Member_ByteArray,
-        Member_Connection,
+        //Member_Float,
+        //Member_Vec3,
+        //Member_Quat,
+        //Member_Int,
+        //Member_Long,
+        //Member_String,
+        //Member_ByteArray,
+        //Member_Connection,
         Marker_Persistent,
         Marker_Distant,
         Marker_Type1,
@@ -148,14 +148,14 @@ private:
 
     enum class LocalFlag {
         None = 0,
-        Member_Float = 1 << std::to_underlying(LocalDenotion::Member_Float),
-        Member_Vec3 = 1 << std::to_underlying(LocalDenotion::Member_Vec3),
-        Member_Quat = 1 << std::to_underlying(LocalDenotion::Member_Quat),
-        Member_Int = 1 << std::to_underlying(LocalDenotion::Member_Int),
-        Member_Long = 1 << std::to_underlying(LocalDenotion::Member_Long),
-        Member_String = 1 << std::to_underlying(LocalDenotion::Member_String),
-        Member_ByteArray = 1 << std::to_underlying(LocalDenotion::Member_ByteArray),
-        Member_Connection = 1 << std::to_underlying(LocalDenotion::Member_Connection),
+        //Member_Float = 1 << std::to_underlying(LocalDenotion::Member_Float),
+        //Member_Vec3 = 1 << std::to_underlying(LocalDenotion::Member_Vec3),
+        //Member_Quat = 1 << std::to_underlying(LocalDenotion::Member_Quat),
+        //Member_Int = 1 << std::to_underlying(LocalDenotion::Member_Int),
+        //Member_Long = 1 << std::to_underlying(LocalDenotion::Member_Long),
+        //Member_String = 1 << std::to_underlying(LocalDenotion::Member_String),
+        //Member_ByteArray = 1 << std::to_underlying(LocalDenotion::Member_ByteArray),
+        //Member_Connection = 1 << std::to_underlying(LocalDenotion::Member_Connection),
         Marker_Persistent = 1 << std::to_underlying(LocalDenotion::Marker_Persistent),
         Marker_Distant = 1 << std::to_underlying(LocalDenotion::Marker_Distant),
         Marker_Type1 = 1 << std::to_underlying(LocalDenotion::Marker_Type1),
@@ -196,12 +196,12 @@ private:
             insert.first->second = std::move(value);
 
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
-            m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
+            //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
             return true;
         }
         else {
             //assert(m_pack.Get<2>() & (1 << member_denotion<T>::value));
-            assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
+            //assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
 
             // else try modifying it ONLY if the member is same type
             auto&& get = std::get_if<T>(&insert.first->second);
@@ -246,31 +246,30 @@ private:
 
     template<typename T>
         requires is_member_v<T>
-    uint8_t _TryWriteType(DataWriter& writer, member_map& members) const {
+    decltype(auto) _TryWriteType(DataWriter& writer, member_map& members) const {
+        const auto begin_mark = writer.Position();
         uint8_t count = 0;
+        //writer.Write(count); // placeholder 0 byte
 
-        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
-            const auto begin_mark = writer.Position();
-            writer.Write(count); // placeholder 0 byte
-
-            for (auto&& pair : members) {
-                auto&& data = std::get_if<T>(&pair.second);
-                if (data) {
-                    writer.Write(this->xhash_to_hash<T>(pair.first));
-                    writer.Write(*data);
-                    count++;
+        for (auto&& pair : members) {
+            auto&& data = std::get_if<T>(&pair.second);
+            if (data) {
+                // Skip 1 byte for count only if member present
+                if (!count) {
+                    writer.Write(count);
                 }
-            }
 
-            if (count) {
-                auto end_mark = writer.Position();
-                writer.SetPos(begin_mark);
-                writer.Write(count);
-                writer.SetPos(end_mark);
+                writer.Write(this->xhash_to_hash<T>(pair.first));
+                writer.Write(*data);
+                count++;
             }
-            else {
-                assert(false);
-            }
+        }
+
+        if (count) {
+            auto end_mark = writer.Position();
+            writer.SetPos(begin_mark);
+            writer.Write(count);
+            writer.SetPos(end_mark);
         }
 
         return count;
@@ -348,7 +347,7 @@ public:
     template<typename T>
         requires is_member_v<T>
     [[maybe_unused]] bool Extract(HASH_t key, T& out) {
-        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
+        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -366,9 +365,9 @@ public:
                 }
             }
             else {
-                assert(false);
+                //assert(false);
             }
-        }
+        //}
 
         return false;
     }
@@ -379,11 +378,11 @@ public:
     template<typename T>
         requires is_member_v<T>
     [[nodiscard]] const T* Get(HASH_t key) const {
-        static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
+        //static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
 
         //if (m_encoded.HasMember<T>()) {
         //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
-        if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
+        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -396,9 +395,9 @@ public:
                 }
             }
             else {
-                assert(false);
+                //assert(false);
             }
-        }
+        //}
 
         return nullptr;
     }
@@ -541,7 +540,7 @@ public:
         connector.m_type = type;
         connector.m_target = zdoid;
 
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
 
         return true;
     }

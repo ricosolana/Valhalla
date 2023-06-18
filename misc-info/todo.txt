@@ -1,4 +1,16 @@
 todo:
+    - consider removing denotions and all hints until stable
+        member hints are not stable (easy to forget to remove or add) 
+        
+        markers could be isolate numerical (separate pack indices instead of entire localdenotions)...
+
+    - reset member flag(s) when member extracted from ZDO
+        also reset connectors
+        
+    - might be able to shrink zdo connector value_type pair    
+        type is a few bits (2 values are significant), 
+        prefab target can be an index instead of 32-bit
+
 	- rotations are screwed up
 		not sure whether this is vegetation-spawning only, must test
 		test with other players and placed items
