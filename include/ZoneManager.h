@@ -9,6 +9,7 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "Prefab.h"
+#include "RandomSpawn.h"
 
 using ZoneID = Vector2s;
 
@@ -40,7 +41,7 @@ class IZoneManager {
 		float m_forestTresholdMax = 1;
 		//Vector3f m_interiorPosition;
 		//Vector3f m_generatorPosition;
-		std::string m_group = "";
+		std::string m_group;
 		bool m_iconAlways;
 		bool m_iconPlaced;
 		bool m_inForest;
@@ -55,7 +56,7 @@ class IZoneManager {
 		int32_t m_spawnAttempts; // 200000 or 100000 depending on priority
 		int32_t m_quantity;
 		bool m_randomRotation = true;
-		//std::vector<RandomSpawn> m_randomSpawns;
+		std::vector<RandomSpawn> m_randomSpawns;
 		bool m_slopeRotation;
 		bool m_snapToWater;
 		bool m_unique;

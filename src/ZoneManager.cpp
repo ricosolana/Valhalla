@@ -42,7 +42,7 @@ void IZoneManager::PostPrefabInit() {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<Feature>();
             loc->m_name = pkg.Read<std::string>();
-            loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
+            //loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
 
             loc->m_biome = (Biome)pkg.Read<int32_t>();            
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
@@ -70,12 +70,42 @@ void IZoneManager::PostPrefabInit() {
             loc->m_spawnAttempts = pkg.Read<int32_t>();
             loc->m_quantity = pkg.Read<int32_t>();
             loc->m_randomRotation = pkg.Read<bool>();
+
+            //bool mode = false;
+            //if (mode) 
+            {
+                auto spawns = pkg.Read<int32_t>();
+                for (decltype(spawns) j = 0; j < spawns; j++) {
+                    RandomSpawn spawn;
+
+                    spawn.m_chance = pkg.Read<float>();
+
+                    auto views = pkg.Read<int32_t>();
+                    for (decltype(views) p = 0; p < views; p++) {
+                        Prefab::Instance piece;
+
+                        auto hash = pkg.Read<HASH_t>();
+
+                        piece.m_prefab = &PrefabManager()->RequirePrefabByHash(hash);
+
+                        piece.m_pos = pkg.Read<Vector3f>();
+                        piece.m_rot = pkg.Read<Quaternion>();
+                        spawn.m_pieces.push_back(piece);
+                    }
+
+                    loc->m_randomSpawns.push_back(std::move(spawn));
+                }
+
+                if (pkg.Read<int32_t>() != 69420)
+                    throw std::runtime_error("Checksum not met");
+            }
+
             loc->m_slopeRotation = pkg.Read<bool>();
             loc->m_snapToWater = pkg.Read<bool>();
             loc->m_unique = pkg.Read<bool>();
 
             auto views = pkg.Read<int32_t>();
-            for (int j=0; j < views; j++) {
+            for (decltype(views) j=0; j < views; j++) {
                 Prefab::Instance piece;
 
                 auto hash = pkg.Read<HASH_t>();
@@ -1070,16 +1100,18 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
+
         if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
             zdo.get().SetRotation(rot * piece.m_rot);
-        } else {
+        }
+#if VH_IS_ON(VH_DUNGEON_GENERATION)
+        else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
             ZDO* zdo = nullptr;
 
             if (dungeon.m_interiorPosition != Vector3f::Zero()) {
-
                 ZoneID zone = WorldToZonePos(pos);
                 Vector3f zonePos = ZoneToWorldPos(zone);
 
@@ -1105,6 +1137,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
             DungeonManager()->Generate(dungeon, *zdo);
         }
+#endif
     }
     //WearNTear.m_randomInitialDamage = false;
 

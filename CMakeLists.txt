@@ -116,7 +116,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"
     "src/Tests.cpp"
-)
+ "include/RandomSpawn.h")
 
 find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 
