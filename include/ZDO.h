@@ -681,12 +681,35 @@ public:
 
 
 
+    void _SetPersistent(bool active) {
+        if (active) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+        }
+        else {
+            m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+        }
+    }
+
     [[nodiscard]] bool IsPersistent() const {
         return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Persistent;
     }
 
+    void _SetDistant(bool active) {
+        if (active) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+        }
+        else {
+            m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+        }
+    }
+
     [[nodiscard]] bool IsDistant() const {
         return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Distant;
+    }
+
+    void _SetType(ObjectType type) {
+        m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1 | LocalFlag::Marker_Type2));
+        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(type) << LocalDenotion::Marker_Type1);
     }
 
     [[nodiscard]] ObjectType GetType() const {
