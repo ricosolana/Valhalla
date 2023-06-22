@@ -5,6 +5,7 @@
 #include "DataWriter.h"
 #include "Types.h"
 #include "RandomEventManager.h"
+#include "HashUtils.h"
 
 class IRandomEventManager {
 public:

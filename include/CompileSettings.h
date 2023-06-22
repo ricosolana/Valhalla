@@ -251,6 +251,8 @@
 #endif
 */
 
+#define VH_USE_MODS 0
+
 #if defined(VH_USE_MODS)
     #if VH_USE_MODS != 0
         #define VH_USE_MODS_I_ VH_ON

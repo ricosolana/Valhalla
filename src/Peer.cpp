@@ -168,7 +168,7 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 
-ZDO* Peer::GetZDO() {
+std::optional<ZDO> Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 

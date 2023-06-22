@@ -722,7 +722,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             //  however new generated zone zdos are not correctly rotated
 
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
-                            zdo.get().SetRotation(rotation);
+                            zdo.SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -730,7 +730,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 placedAreas.push_back({ pos, zoneVegetation->m_radius });
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                zdo.get().SetLocalScale(Vector3f(scale, scale, scale), true);
+                                zdo.SetLocalScale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -1103,13 +1103,13 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
-            zdo.get().SetRotation(rot * piece.m_rot);
+            zdo.SetRotation(rot * piece.m_rot);
         }
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
         else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
-            ZDO* zdo = nullptr;
+            ZDO zdo;
 
             if (dungeon.m_interiorPosition != Vector3f::Zero()) {
                 ZoneID zone = WorldToZonePos(pos);
@@ -1121,7 +1121,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos).get();
+                zdo = ZDOManager()->Instantiate(*piece.m_prefab, piecePos);
                 zdo->SetRotation(piece.m_rot);
             }
             else {

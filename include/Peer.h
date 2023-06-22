@@ -52,7 +52,7 @@ private:
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
-    ankerl::unordered_dense::segmented_map<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
+    ankerl::unordered_dense::segmented_map<ZDOID, std::pair<Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
     UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
 
@@ -350,7 +350,7 @@ public:
 
 
 
-    ZDO* GetZDO();
+    std::optional<ZDO> GetZDO();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 

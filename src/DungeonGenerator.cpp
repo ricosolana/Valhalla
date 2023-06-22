@@ -262,7 +262,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 				this->m_pos, this->m_rot);
 
 			auto&& zdo = ZDOManager()->Instantiate(*doorDef->m_prefab, global.first);
-			zdo.get().SetRotation(global.second);
+			zdo.SetRotation(global.second);
 			num++;
 		}
 	}
@@ -544,7 +544,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot)
 		Quaternion rot1 = rot * view.m_rot;
 
 		auto&& zdo = ZDOManager()->Instantiate(*view.m_prefab, pos1);
-		zdo.get().SetRotation(rot1);
+		zdo.SetRotation(rot1);
 	}
 
 	// TODO this might be redundant for dummy 'dungeons' (plains villages shouldnt be considered dungeons)
@@ -576,7 +576,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot,
 			auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
 			auto&& zdo = ZDOManager()->Instantiate(*view.m_prefab, global.first);
-			zdo.get().SetRotation(global.second);
+			zdo.SetRotation(global.second);
 		}
 	}
 

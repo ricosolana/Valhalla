@@ -19,6 +19,85 @@
 #include "ZDOConnector.h"
 #include "Types.h"
 
+class Rev {
+    using U = uint32_t;
+
+private:
+    // DataRevision: 0 (21 bits)
+    // OwnerRevision: 1 (11 bits)
+    BitPack<U, 21, sizeof(U) * 8 - 21> m_pack;
+    // Regarding the bits allocated, some should be shared with 
+
+
+    static constexpr auto DATA_REVISION_PACK_INDEX = 0;
+    static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
+
+public:
+    Rev() {}
+
+    Rev(uint32_t dataRev, uint16_t ownerRev) {
+        SetDataRevision(dataRev);
+        SetOwnerRevision(ownerRev);
+    }
+
+    [[nodiscard]] uint32_t GetDataRevision() const {
+        return m_pack.Get<DATA_REVISION_PACK_INDEX>();
+    }
+
+    [[nodiscard]] uint16_t GetOwnerRevision() const {
+        return m_pack.Get<OWNER_REVISION_PACK_INDEX>();
+    }
+
+
+
+    void SetDataRevision(uint32_t dataRev) {
+        m_pack.Set<DATA_REVISION_PACK_INDEX>(dataRev);
+    }
+
+    void SetOwnerRevision(uint16_t ownerRev) {
+        m_pack.Set<OWNER_REVISION_PACK_INDEX>(ownerRev);
+    }
+
+
+
+    void ReviseData() {
+        this->SetDataRevision(GetDataRevision() + 1);
+    }
+
+    void ReviseOwner() {
+        this->SetOwnerRevision(GetOwnerRevision() + 1);
+    }
+};
+
+struct ZDOBase {
+#if VH_USER_BITS_I_ <= 4
+    using U = uint16_t;
+#else
+    using U = uint32_t;
+#endif
+    ZDOBase() 
+        : ZDOBase(Vector3f::Zero()) {}
+
+    ZDOBase(Vector3f pos) : m_pos(pos) {
+        m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
+    }
+
+    static constexpr auto OWNER_PACK_INDEX = 0;
+    static constexpr auto PREFAB_PACK_INDEX = 1;
+
+    Vector3f m_pos;                                 // 12 bytes
+    ZDOID m_id;                                     // 4 bytes (PADDING, TODO might be redundant given zdoid also stored in ZDOManager map)
+    Vector3f m_rotation;                            // 12 bytes (TODO could be shrunk to 8-bits per axis (on esp)
+    // TODO Some Rev bits can (and should) probably be shared with m_pack[owner] (or use a larger type). 
+    //  All these bit values are based on data assumptions
+    //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
+    Rev m_rev;                                      // 4 bytes (PADDING)
+    // Owner: 0, Prefab: 1
+    //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
+    BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
+
+};
+
 // The 'butter' of Valheim
 // This class has been refactored numerous times 
 //  Performance is important but memory usage has been highly prioritized here
@@ -27,7 +106,8 @@
 // This class is finally the smallest it could possibly be (I hope so).
 //  I Lied this class is now 36 bytes 5/24/2023
 //      On embedded systems with max 8MB of RAM (ESP32), ZDOID can be smaller
-//          
+//  It seems necessary to declare that this class is (finally/likely) at the lowest is will ever be
+//      32 bytes (6/22/2023) after removing zdoid (could be 30 bytes with 16-bit pack and packed structure)
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
@@ -64,59 +144,6 @@ class ZDO {
 
     template<typename T>
     static constexpr size_t member_flag_v = member_flag<T>::value;
-
-public:
-    using reference = std::reference_wrapper<ZDO>;
-
-    class Rev {
-        using U = uint32_t;
-
-    private:
-        // DataRevision: 0 (21 bits)
-        // OwnerRevision: 1 (11 bits)
-        BitPack<U, 21, sizeof(U) * 8 - 21> m_pack;
-        // Regarding the bits allocated, some should be shared with 
-
-
-        static constexpr auto DATA_REVISION_PACK_INDEX = 0;
-        static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
-
-    public:
-        Rev() {}
-
-        Rev(uint32_t dataRev, uint16_t ownerRev) {
-            SetDataRevision(dataRev);
-            SetOwnerRevision(ownerRev);
-        }
-
-        [[nodiscard]] uint32_t GetDataRevision() const {
-            return m_pack.Get<DATA_REVISION_PACK_INDEX>();
-        }
-
-        [[nodiscard]] uint16_t GetOwnerRevision() const {
-            return m_pack.Get<OWNER_REVISION_PACK_INDEX>();
-        }
-
-
-
-        void SetDataRevision(uint32_t dataRev) {
-            m_pack.Set<DATA_REVISION_PACK_INDEX>(dataRev);
-        }
-
-        void SetOwnerRevision(uint16_t ownerRev) {
-            m_pack.Set<OWNER_REVISION_PACK_INDEX>(ownerRev);
-        }
-
-
-
-        void ReviseData() {
-            this->SetDataRevision(GetDataRevision() + 1);
-        }
-
-        void ReviseOwner() {
-            this->SetOwnerRevision(GetOwnerRevision() + 1);
-        }
-    };
 
 private:
     enum class LocalDenotion {
@@ -186,6 +213,10 @@ private:
     };
 
 private:
+    ZDOBase *m_base;
+    ZDOID m_id;
+
+private:
 
     // Set the object by hash (Internal use only; does not revise ZDO on changes)
     //  Returns whether the previous value was modified
@@ -232,7 +263,7 @@ private:
     }
 
     void Revise() {
-        m_rev.SetDataRevision(m_rev.GetDataRevision() + 1);
+        m_base->m_rev.SetDataRevision(m_base->m_rev.GetDataRevision() + 1);
     }
 
     template<typename T>
@@ -296,7 +327,7 @@ private:
     }
 
     void _SetPrefabHash(HASH_t hash) {
-        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
+        m_base->m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
     }
 
 private:
@@ -304,14 +335,10 @@ private:
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
-    static constexpr auto OWNER_PACK_INDEX = 0;
-    static constexpr auto PREFAB_PACK_INDEX = 1;
+    static constexpr auto OWNER_PACK_INDEX = ZDOBase::OWNER_PACK_INDEX;
+    static constexpr auto PREFAB_PACK_INDEX = ZDOBase::PREFAB_PACK_INDEX;
 
-#if VH_USER_BITS_I_ <= 4
-    using U = uint16_t;
-#else
-    using U = uint32_t;
-#endif
+
 
     /*
     * Sizes:
@@ -323,25 +350,18 @@ private:
     // Ideas for ridding ZDOID:
     //  Remove ZDOID, and port any ZDOID-involved methods to a proxy ZDO type
 
-    Vector3f m_pos;                                 // 12 bytes
-    ZDOID m_id;                                     // 4 bytes (PADDING, TODO might be redundant given zdoid also stored in ZDOManager map)
-    Vector3f m_rotation;                            // 12 bytes (TODO could be shrunk to 8-bits per axis (on esp)
-    // TODO Some Rev bits can (and should) probably be shared with m_pack[owner] (or use a larger type). 
-    //  All these bit values are based on data assumptions
-    //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
-    Rev m_rev;                                      // 4 bytes (PADDING)
-    // Owner: 0, Prefab: 1
-    //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
-    BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
 
 public:
-    ZDO();
+    // TODO should this have a null constructor?
+    //  or guarantee this object is always nonnull?
+    //ZDO();
 
     // ZDOManager constructor
-    ZDO(ZDOID id, Vector3f pos);
+    ZDO(ZDOID id, ZDOBase& base)
+        : m_id(id), m_base(&base) {}
 
-    ZDO(const ZDO& other) = default;
-    ZDO(ZDO&& other) = default;
+    ZDO(const ZDO& other) noexcept = default;
+    ZDO(ZDO&& other) noexcept = default;
         
 
 
@@ -586,7 +606,7 @@ public:
     }
 
     [[nodiscard]] Vector3f Position() const {
-        return m_pos;
+        return m_base->m_pos;
     }
 
     // Set the position of the ZDO
@@ -597,26 +617,27 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion Rotation() const {
-        return Quaternion::Euler(m_rotation.x, m_rotation.y, m_rotation.z);
+        return Quaternion::Euler(m_base->m_rotation.x, m_base->m_rotation.y, m_base->m_rotation.z);
     }
 
     void SetRotation(Quaternion rot) {
         auto&& euler = rot.EulerAngles();
-        if (euler != m_rotation) {
-            m_rotation = euler;
+        if (euler != m_base->m_rotation) {
+            m_base->m_rotation = euler;
             Revise();
         }
     }
         
 #if VH_IS_ON(VH_STANDARD_PREFABS)
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+        return PrefabManager()->RequirePrefabByIndex(m_base->m_pack.Get<PREFAB_PACK_INDEX>());
     }
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
         //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
-        return PrefabManager()->RequirePrefabHashByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+        return PrefabManager()->RequirePrefabHashByIndex(
+            m_base->m_pack.Get<PREFAB_PACK_INDEX>());
     }
 
     /*
@@ -641,7 +662,7 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
+        return ZDOID::GetUserIDByIndex(m_base->m_pack.Get<OWNER_PACK_INDEX>());
     }
 
 
@@ -657,7 +678,7 @@ public:
 
     // Whether the ZDO has an owner
     [[nodiscard]] bool HasOwner() const {
-        return m_pack.Get<OWNER_PACK_INDEX>();
+        return m_base->m_pack.Get<OWNER_PACK_INDEX>();
     }
 
     // Claim personal ownership over the ZDO
@@ -676,7 +697,7 @@ public:
         if (this->Owner() != owner) {
             _SetOwner(owner);
 
-            m_rev.ReviseOwner();
+            m_base->m_rev.ReviseOwner();
             return true;
         }
         return false;
@@ -684,17 +705,17 @@ public:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
+        m_base->m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
 
 
 
     [[nodiscard]] uint16_t GetOwnerRevision() const {
-        return m_rev.GetOwnerRevision();
+        return m_base->m_rev.GetOwnerRevision();
     }
 
     [[nodiscard]] uint32_t GetDataRevision() const {
-        return m_rev.GetDataRevision();
+        return m_base->m_rev.GetDataRevision();
     }
 
 

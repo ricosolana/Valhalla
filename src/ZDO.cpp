@@ -18,13 +18,6 @@ decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
 //decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
-ZDO::ZDO() {
-    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
-}
-
-ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
-    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
-}
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
@@ -61,15 +54,15 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
+        m_base->m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
 #else
         _SetPrefabHash(pkg.Read<HASH_t>());
 #endif
     }
 
     pkg.Read<Vector2i>(); // m_sector
-    this->m_pos = pkg.Read<Vector3f>();
-    this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
+    m_base->m_pos = pkg.Read<Vector3f>();
+    m_base->m_rotation = pkg.Read<Quaternion>().EulerAngles();
 
     auto&& members = ZDO_MEMBERS[ID()];
 
@@ -87,7 +80,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
         prefab = &pair.first;
-        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
+        m_base->m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
 #else
         _SetPrefabHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
 #endif
@@ -164,7 +157,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
     if (version) {
         reader.Read<Vector2s>(); // redundant
-        this->m_pos = reader.Read<Vector3f>();
+        m_base->m_pos = reader.Read<Vector3f>();
     }
 
     // prefab is loaded once
@@ -175,7 +168,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
     //  on esp this might not be viable
     auto prefabHash = reader.Read<HASH_t>();
-    if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
+    if (m_base->m_pack.Get<PREFAB_PACK_INDEX>() == m_base->m_pack.capacity_v<PREFAB_PACK_INDEX>) {
         _SetPrefabHash(prefabHash);
     }
     else {
@@ -184,7 +177,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     }
     
     if (flags & GlobalFlag::Marker_Rotation) {
-        this->m_rotation = reader.Read<Vector3f>();
+        m_base->m_rotation = reader.Read<Vector3f>();
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
@@ -231,14 +224,14 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 // ZDO specific-methods
 
 void ZDO::SetPosition(Vector3f pos) {
-    if (this->m_pos != pos) {
+    if (m_base->m_pos != pos) {
         if (IZoneManager::WorldToZonePos(pos) == GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
-            this->m_pos = pos;
+            m_base->m_pos = pos;
             ZDOManager()->_AddZDOToZone(*this);
         }
         else {
-            this->m_pos = pos;
+            m_base->m_pos = pos;
         }
 
         if (IsLocal())
@@ -247,15 +240,15 @@ void ZDO::SetPosition(Vector3f pos) {
 }
 
 ZoneID ZDO::GetZone() const {
-    return IZoneManager::WorldToZonePos(this->m_pos);
+    return IZoneManager::WorldToZonePos(m_base->m_pos);
 }
 
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
-    bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
-        || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
-        || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
+    bool hasRot = std::abs(m_base->m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
+        || std::abs(m_base->m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
+        || std::abs(m_base->m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
 
     uint16_t flags{};
 
@@ -279,7 +272,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         writer.Write(Position());
     }
     writer.Write(GetPrefabHash());
-    if (hasRot) writer.Write(m_rotation);
+    if (hasRot) writer.Write(m_base->m_rotation);
 
     if (network) {
         auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());

@@ -58,15 +58,15 @@ public:
     constexpr BitPack() {}
     constexpr BitPack(T data) : m_data(data) {}
 
-    void operator=(const BitPack<T, COUNTS...>& other) {
+    void operator=(const BitPack<T, COUNTS...>& other) noexcept {
         this->m_data = other.m_data;
     }
 
-    bool operator==(const BitPack<T, COUNTS...>& other) const {
+    bool operator==(const BitPack<T, COUNTS...>& other) const noexcept {
         return m_data == other.m_data;
     }
 
-    bool operator!=(const BitPack<T, COUNTS...>& other) const {
+    bool operator!=(const BitPack<T, COUNTS...>& other) const noexcept {
         return !(*this == other);
     }
 
