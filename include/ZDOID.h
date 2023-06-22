@@ -7,6 +7,7 @@
 
 class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
+    friend class ZDOBase;
     friend class ZDO;
 
 #if VH_IS_ON(VH_PLATFORM_ESP32)

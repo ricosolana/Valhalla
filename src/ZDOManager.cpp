@@ -66,8 +66,7 @@ void IZDOManager::Update() {
 
 		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO* {
 			std::vector<ZDO> list;
-			for (auto&& ref : portals) {
-				auto&& zdo = ref.get();
+			for (auto&& zdo : portals) {
 				if (zdo.ID() != skip
 					&& zdo.GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
 					&& !zdo.GetConnectionZDOID(ZDOConnector::Type::Portal))

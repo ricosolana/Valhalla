@@ -304,27 +304,27 @@ public:
 
 
 	// Get any ZDO within a radius with prefab and/or flag
-	[[nodiscard]] ZDO AnyZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::optional<ZDO> AnyZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& zdos = SomeZDOs(pos, radius, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
-			return nullptr;
-		return &zdos.front().get();
+			return std::nullopt;
+		return zdos.front();
 	}
 	// Get any ZDO within a zone with prefab and/or flag
-	[[nodiscard]] ZDO AnyZDO(ZoneID zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::optional<ZDO> AnyZDO(ZoneID zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& zdos = SomeZDOs(zone, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
-			return nullptr;
-		return &zdos.front().get();
+			return std::nullopt;
+		return zdos.front();
 	}
 #endif
 
 
 	// Get the nearest ZDO within a radius matching an optional predicate
-	[[nodiscard]] ZDO* NearestZDO(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred);
+	[[nodiscard]] std::optional<ZDO> NearestZDO(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred);
 #if VH_IS_ON(VH_STANDARD_PREFABS)
 	// Get the nearest ZDO within a radius with prefab and/or flag
-	[[nodiscard]] ZDO* NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::optional<ZDO> NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return NearestZDO(pos, radius, [&](const ZDO& zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefabHash, flagsPresent, flagsAbsent);
 		});
