@@ -65,7 +65,7 @@ void IZDOManager::Update() {
 		//	not the exact code but the way the algo works
 
 		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO* {
-			std::vector<ZDO::reference> list;
+			std::vector<ZDO> list;
 			for (auto&& ref : portals) {
 				auto&& zdo = ref.get();
 				if (zdo.ID() != skip
@@ -108,7 +108,7 @@ void IZDOManager::Update() {
 					zdo3.SetLocal();
 					zdo4->SetLocal();
 					zdo3.SetConnection(ZDOConnector::Type::Portal, zdo4->ID());
-					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3.ID());
+					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3->ID());
 					ForceSendZDO(zdo3.ID());
 					ForceSendZDO(zdo4->ID());
 				}
@@ -356,7 +356,7 @@ ZDO::reference IZDOManager::_Instantiate(ZDOID uid, Vector3f position) {
 	_AddZDOToZone(*zdo);
 	//m_objectsByPrefab[zdo->PrefabHash()].insert(zdo.get());
 
-	return *zdo;
+	return zdo;
 }
 
 ZDO* IZDOManager::GetZDO(ZDOID id) {
@@ -411,11 +411,11 @@ ZDO::reference IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab*
 #endif
 
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
-	auto&& copy = _Instantiate(zdo.Position());
+	auto&& copy = _Instantiate(zdo->Position());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
-	copy.get().m_pack = zdo.m_pack;
-	copy.get().m_rotation = zdo.m_rotation;
+	copy.get().m_pack = zdo->m_pack;
+	copy.get().m_rotation = zdo->m_rotation;
 
 	return copy;
 }

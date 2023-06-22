@@ -12,23 +12,23 @@
 
 
 
-decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
-decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
-decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
+decltype(ZDOBase::ZDO_MEMBERS) ZDOBase::ZDO_MEMBERS;
+decltype(ZDOBase::ZDO_CONNECTORS) ZDOBase::ZDO_CONNECTORS;
+decltype(ZDOBase::ZDO_TARGETED_CONNECTORS) ZDOBase::ZDO_TARGETED_CONNECTORS;
 //decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
-ZDO::ZDO() {
+ZDOBase::ZDOBase() {
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 }
 
-ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
+ZDOBase::ZDOBase(Vector3f pos) : m_pos(pos) {
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 }
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+void ZDOBase::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     pkg.Read<bool>();           // persistent
@@ -136,7 +136,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 }
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
-void ZDO::Unpack(DataReader& reader, int32_t version) {
+void ZDOBase::Unpack(DataReader& reader, int32_t version) {
     // The (premature) optimizations I tried to 
     //  implement never went anywhere because
     //  I never knew what I was doing and 
@@ -230,7 +230,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
 // ZDO specific-methods
 
-void ZDO::SetPosition(Vector3f pos) {
+void ZDOBase::SetPosition(Vector3f pos) {
     if (this->m_pos != pos) {
         if (IZoneManager::WorldToZonePos(pos) == GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
@@ -246,13 +246,13 @@ void ZDO::SetPosition(Vector3f pos) {
     }
 }
 
-ZoneID ZDO::GetZone() const {
+ZoneID ZDOBase::GetZone() const {
     return IZoneManager::WorldToZonePos(this->m_pos);
 }
 
 
 
-void ZDO::Pack(DataWriter& writer, bool network) const {
+void ZDOBase::Pack(DataWriter& writer, bool network) const {
     bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;

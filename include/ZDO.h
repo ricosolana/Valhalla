@@ -28,7 +28,7 @@
 //  I Lied this class is now 36 bytes 5/24/2023
 //      On embedded systems with max 8MB of RAM (ESP32), ZDOID can be smaller
 //          
-class ZDO {
+class ZDOBase {
     friend class IZDOManager;
     friend class IPrefabManager;
     friend class Tests;
@@ -66,7 +66,7 @@ class ZDO {
     static constexpr size_t member_flag_v = member_flag<T>::value;
 
 public:
-    using reference = std::reference_wrapper<ZDO>;
+    
 
     class Rev {
         using U = uint32_t;
@@ -324,24 +324,23 @@ private:
     //  Remove ZDOID, and port any ZDOID-involved methods to a proxy ZDO type
 
     Vector3f m_pos;                                 // 12 bytes
-    ZDOID m_id;                                     // 4 bytes (PADDING, TODO might be redundant given zdoid also stored in ZDOManager map)
+    Rev m_rev;                                      // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes (TODO could be shrunk to 8-bits per axis (on esp)
     // TODO Some Rev bits can (and should) probably be shared with m_pack[owner] (or use a larger type). 
     //  All these bit values are based on data assumptions
     //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
-    Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1
     //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
     BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
 
 public:
-    ZDO();
+    ZDOBase();
 
     // ZDOManager constructor
-    ZDO(ZDOID id, Vector3f pos);
+    ZDOBase(Vector3f pos);
 
-    ZDO(const ZDO& other) = default;
-    ZDO(ZDO&& other) = default;
+    ZDOBase(const ZDOBase& other) = default;
+    ZDOBase(ZDOBase&& other) = default;
         
 
 
@@ -581,9 +580,9 @@ public:
     }
 
 
-    [[nodiscard]] ZDOID ID() const {
-        return this->m_id;
-    }
+    //[[nodiscard]] ZDOID ID() const {
+    //    return this->m_id;
+    //}
 
     [[nodiscard]] Vector3f Position() const {
         return m_pos;
@@ -740,5 +739,53 @@ public:
         size_t size = 0;
         //for (auto&& pair : m_members) size += sizeof(Ord) + pair.second.GetTotalAlloc();
         return size;
+    }
+};
+
+
+
+class ZDO {
+public:
+    //using reference = std::reference_wrapper<ZDOBase>;
+
+private:
+    //std::reference_wrapper<ZDOBase> m_ref;
+    ZDOBase* m_zdo{};
+    ZDOID m_id{};
+
+public:
+    ZDO() {}
+
+    ZDO(ZDOBase& zdo, ZDOID id) : m_zdo(&zdo), m_id(id) {}
+
+    // ZDOManager constructor
+    //ZDOBase(ZDOID id, Vector3f pos);
+
+    [[nodiscard]] ZDOID ID() const {
+        return this->m_id;
+    }
+
+    constexpr ZDOBase* Get() const {
+        return m_zdo;
+    }
+
+    constexpr ZDOBase* Get() {
+        return m_zdo;
+    }
+
+    constexpr ZDOBase* operator->() {
+        assert(Get());
+        return Get();
+    }
+
+    constexpr ZDOBase* operator->() const {
+        assert(Get());
+        return Get();
+    }
+
+    constexpr operator bool() const {
+        assert(static_cast<bool>(Get()) == static_cast<bool>(m_id));
+
+        return static_cast<bool>(Get());
     }
 };
