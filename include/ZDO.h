@@ -69,9 +69,14 @@ public:
     using reference = std::reference_wrapper<ZDO>;
 
     class Rev {
+        using U = uint32_t;
+
     private:
-        // DataRevision: 0, OwnerRevision: 1
-        BitPack<uint32_t, 21, 32 - 21> m_pack;
+        // DataRevision: 0 (21 bits)
+        // OwnerRevision: 1 (11 bits)
+        BitPack<U, 21, sizeof(U) * 8 - 21> m_pack;
+        // Regarding the bits allocated, some should be shared with 
+
 
         static constexpr auto DATA_REVISION_PACK_INDEX = 0;
         static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
@@ -301,20 +306,33 @@ private:
 
     static constexpr auto OWNER_PACK_INDEX = 0;
     static constexpr auto PREFAB_PACK_INDEX = 1;
-    static constexpr auto FLAGS_PACK_INDEX = 2;
+
+#if VH_USER_BITS_I_ <= 4
+    using U = uint16_t;
+#else
+    using U = uint32_t;
+#endif
 
     /*
-    * 36 bytes total:
+    * Sizes:
+    *   uint16 pack: 48 bytes 
+    *   uint32 pack: 64 bytes
+    *   packed rotation: 12+4+4+4+2 bytes = 26 bytes (ignoring packing)
     */
 
+    // Ideas for ridding ZDOID:
+    //  Remove ZDOID, and port any ZDOID-involved methods to a proxy ZDO type
+
     Vector3f m_pos;                                 // 12 bytes
-    ZDOID m_id;                                     // 4 bytes (PADDING)
-    Vector3f m_rotation;                            // 12 bytes
+    ZDOID m_id;                                     // 4 bytes (PADDING, TODO might be redundant given zdoid also stored in ZDOManager map)
+    Vector3f m_rotation;                            // 12 bytes (TODO could be shrunk to 8-bits per axis (on esp)
+    // TODO Some Rev bits can (and should) probably be shared with m_pack[owner] (or use a larger type). 
+    //  All these bit values are based on data assumptions
+    //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
     Rev m_rev;                                      // 4 bytes (PADDING)
-    // Owner: 0, Prefab: 1, Flags: 2
-    //  last 2 bits are unused/reserved for future uses
-    BitPack<uint32_t, VH_USER_BITS_I_, 12, 12,
-        32 - VH_USER_BITS_I_ - 12 - 12> m_pack;
+    // Owner: 0, Prefab: 1
+    //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
+    BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
 
 public:
     ZDO();
@@ -681,39 +699,39 @@ public:
 
 
 
-    void _SetPersistent(bool active) {
-        if (active) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
-        }
-        else {
-            m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
-        }
-    }
+    //void _SetPersistent(bool active) {
+    //    if (active) {
+    //        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+    //    }
+    //    else {
+    //        m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+    //    }
+    //}
 
     [[nodiscard]] bool IsPersistent() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Persistent;
+        return !GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED);
     }
 
-    void _SetDistant(bool active) {
-        if (active) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
-        }
-        else {
-            m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
-        }
-    }
+    //void _SetDistant(bool active) {
+    //    if (active) {
+    //        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+    //    }
+    //    else {
+    //        m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+    //    }
+    //}
 
     [[nodiscard]] bool IsDistant() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Distant;
+        return GetPrefab().AllFlagsPresent(Prefab::Flag::DISTANT);
     }
 
-    void _SetType(ObjectType type) {
-        m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1 | LocalFlag::Marker_Type2));
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(type) << LocalDenotion::Marker_Type1);
-    }
+    //void _SetType(ObjectType type) {
+    //    m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1 | LocalFlag::Marker_Type2));
+    //    m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(type) << LocalDenotion::Marker_Type1);
+    //}
 
     [[nodiscard]] ObjectType GetType() const {
-        return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+        return GetPrefab().m_type;
     }
 
 

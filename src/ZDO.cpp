@@ -31,21 +31,21 @@ ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
-    if (pkg.Read<bool>())
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));           // persistent
+    pkg.Read<bool>();           // persistent
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
     pkg.Read<int32_t>();        // pgw
 
-    if (worldVersion >= 16 && worldVersion < 24)
+    if (worldVersion >= 16 && worldVersion < 24) {
         pkg.Read<int32_t>();
+    }
 
-    if (worldVersion >= 23)
-        m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << LocalDenotion::Marker_Type1);    // m_type
+    if (worldVersion >= 23) {
+        pkg.Read<uint8_t>();    // m_type
+    }
 
     if (worldVersion >= 22) {
-        if (pkg.Read<bool>())
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));       // m_distant
+        pkg.Read<bool>();       // m_distant
     }
 
     if (worldVersion < 13) {
@@ -176,25 +176,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     //  on esp this might not be viable
     auto prefabHash = reader.Read<HASH_t>();
     if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
-        //m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefabHash));
-
         _SetPrefabHash(prefabHash);
-
-        if (flags & GlobalFlag::Marker_Persistent) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
-        }
-
-        if (flags & GlobalFlag::Marker_Distant) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
-        }
-
-        if (flags & GlobalFlag::Marker_Type1) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1));
-        }
-
-        if (flags & GlobalFlag::Marker_Type2) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type2));
-        }
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)

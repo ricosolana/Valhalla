@@ -89,7 +89,22 @@
     #endif
 #endif
 
-// Ensure that the bits
+//#if defined(VH_LARGE_PLAYERBASE)
+//    #if VH_LARGE_PLAYERBASE != 0
+//        #define VH_USER_BITS 
+//        #define VH_LARGE_PLAYERBASE_I_ VH_ON
+//    #else
+//        #define VH_
+//    #endif
+//#else
+//
+//#endif
+
+// How many bits to reserve for user in ZDO::m_pack
+//  Default is 4: 2^4: 16 users (actually 14 users because 2 are reserved for both server/nil)
+//      4 bits is ideal for small server expecting no more than 14 unique players (since the server session launched)
+//  Setting to a larger number requires a larger datatype to hold
+//  int32 is the next size, but 
 #if defined(VH_USER_BITS)
     // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
     
@@ -104,9 +119,38 @@
     #if VH_IS_ON(VH_PLATFORM_ESP32)
         #define VH_USER_BITS_I_ 2
     #else
-        #define VH_USER_BITS_I_ 6
+        #define VH_USER_BITS_I_ 4
     #endif
 #endif
+
+#if defined(VH_PREFAB_BITS)
+    #if VH_PREFAB_BITS >= 12
+        #define VH_PREFAB_BITS_I_ VH_PREFAB_BITS
+    #else
+        #error "prefab bits must be great enough to support all the Valheim prefabs"
+    #endif
+#else
+    #if VH_USER_BITS_I_ <= 4
+        #define VH_PREFAB_BITS_I_ 16 - VH_USER_BITS_I_
+    #else
+        #define VH_PREFAB_BITS_I_ 32 - VH_USER_BITS_I_
+    #endif
+#endif
+
+// data that is the same no matter what across prefabs can be omitted to avoid unnecessary redundancy
+//  the only reason against this is whether normally assumed data is required... which would means portions of the game have been 
+//  selectively modified to require persistent/distant/type as they appear when received over network/file
+// this will be behaviour for now on, because prefabs always use this data
+//  the reason is due to how valheim prefabs all start off with the same data regardless of which similar-prefab is being used
+//#if defined(VH_ZDO_ASSUMPTIONS)
+//    #if VH_ZDO_ASSUMPTIONS != 0
+//        #define VH_ZDO_ASSUMPTIONS_I_ VH_ON
+//    #else
+//        #define VH_ZDO_ASSUMPTIONS_I_ VH_OFF
+//    #endif
+//#else
+//    #define VH_ZDO_ASSUMPTIONS_I_ VH_DEFAULT_ON
+//#endif
 
 /*
 // The default are the remaining bits from VH_USER_BITS

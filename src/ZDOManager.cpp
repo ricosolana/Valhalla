@@ -394,9 +394,9 @@ ZDO::reference IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 		zdo.get().SetLocalScale(prefab.m_localScale, false);
 	}
 	
-	zdo.get()._SetPersistent(!prefab.AllFlagsPresent(Prefab::Flag::SESSIONED));
-	zdo.get()._SetDistant(prefab.AllFlagsPresent(Prefab::Flag::DISTANT));
-	zdo.get()._SetType(prefab.m_type);
+	//zdo.get()._SetPersistent(!prefab.AllFlagsPresent(Prefab::Flag::SESSIONED));
+	//zdo.get()._SetDistant(prefab.AllFlagsPresent(Prefab::Flag::DISTANT));
+	//zdo.get()._SetType(prefab.m_type);
 
 	return zdo;
 }
