@@ -63,6 +63,9 @@ namespace VUtils::Resource {
         if (!file)
             return std::nullopt;
 
+        // https://stackoverflow.com/questions/16364301/whats-wrong-with-the-ifstream-seekg
+        file.clear();
+
         file.unsetf(std::ios::skipws);
 
         file.seekg(0, std::ios::end);

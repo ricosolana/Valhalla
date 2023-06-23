@@ -1,4 +1,58 @@
 todo:
+    - use std::hardware_constructive_interference_size
+        = seems 64-bytes
+        
+        remove zdo unique_ptr from zdomanager zdomap (will save 4-8 bytes depending on platform ptr size)
+
+    - create runtime fallback prefab system to dynamically accept any kind of prefab
+        this will basically create new prefabs on the fly for prefabs that dont exist while zdos are being loaded
+        
+        for a prefab binary tree, this complicates things, where any newly added prefab will shift all the other prefabs (once resorted to conform to binary tree spec)
+        
+        new consideration:
+            load all zdos beforehand, querying all missing-prefabs
+            then create all the missing prefabs
+            sort the prefab tree
+            reload the zdos (all prefabs should work now)
+            
+            RESOLVE_PREFABS_RUNTIME            
+            DYNAMIC_PREFAB_RESOLUTION
+            INITIAL_DYNAMIC_PREFABS (loads missing prefabs during world load)
+            RUNTIME_DYNAMIC_PREFABS (loads missing prefabs at any time of the game world/network), not recommended for performant scenarios
+            STORE_ZDO_PREFABS (will store the exact prefab hash within the ZDO as an additional member)
+                if disabled, prefab indices will be stored instead of hashes
+                enabling will increase memory consumption per ZDO
+                
+            experimental?:
+                STORE_ZDO_FLAGS (will store the exact zdo sent flags within the zdo as an additional member)
+                    if disabled, prefab flags will be stored instead of using zdo prefabs
+                    enabling will increase memory consumption per ZDO
+        
+            REDUNDANT_ZDOS
+                will store exact prefab hash, flags, ...
+        
+        perhaps the system used should 
+
+    - consider a deduced system, and how much deducing is acceptable at the cost of memory/perf...
+    
+        have a system of maintaining the zdo's initial data (perhaps in heavily modded games?). In most cases this is extreme and can probably be ignored. 
+        
+        storing 'minimally required' data:
+            persistent/distant/type are required and unable to be assumed based off zdo members
+            
+            terrain/portal... can be deduced based off zdo members (and prefab hash) as there is only a few of these types.
+            
+        the reason for all this is because im still disatisfied with the current pack system. its fine and all, but still seems too manual and tacky.
+        
+        consider grouping as such:
+            - user/flags/prefab
+            
+                type is part of flags
+                
+        the least possible amount of bits is 16:
+            - ~6: user bits (64 unique owners)
+            - ~prefab: 12
+
 	- rotations are screwed up
 		not sure whether this is vegetation-spawning only, must test
 		test with other players and placed items

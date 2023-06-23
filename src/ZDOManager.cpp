@@ -239,11 +239,10 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		_AddZDOToZone(*zdo.get());
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)
-		auto&& prefab = zdo->GetPrefab();
-
-		m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
+		m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo.get());
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
+		auto&& prefab = zdo->GetPrefab();
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
 			if (zdo->Position().y > 4000)

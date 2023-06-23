@@ -134,6 +134,10 @@ public:
     void Merge(type value) {
         m_data |= (value & capacity_v<index>) << offset_v<index>;
 
+        // Hey, you!
+        //  if this fails its either because of one of 2 reasons:
+        //      - the value is larger than the capacity at that PACK index
+        //      - if used within ZDOID user set, the USER_BITS is set too high, possibly offsetting the opposing UID!
         assert((Get<index>() & value) == value);
     }
 };

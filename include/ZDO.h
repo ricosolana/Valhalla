@@ -77,7 +77,6 @@ public:
         BitPack<U, 21, sizeof(U) * 8 - 21> m_pack;
         // Regarding the bits allocated, some should be shared with 
 
-
         static constexpr auto DATA_REVISION_PACK_INDEX = 0;
         static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
 
@@ -296,7 +295,11 @@ private:
     }
 
     void _SetPrefabHash(HASH_t hash) {
+#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+        this->m_prefabHash = hash;
+#else
         m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
+#endif
     }
 
 private:
@@ -305,9 +308,16 @@ private:
     static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
     static constexpr auto OWNER_PACK_INDEX = 0;
-    static constexpr auto PREFAB_PACK_INDEX = 1;
 
-#if VH_USER_BITS_I_ <= 4
+#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+    static constexpr auto PERSISTENT_PACK_INDEX = OWNER_PACK_INDEX + 1;
+    static constexpr auto DISTANT_PACK_INDEX = PERSISTENT_PACK_INDEX + 1;
+    static constexpr auto TYPE_PACK_INDEX = DISTANT_PACK_INDEX + 1;
+#else
+    static constexpr auto PREFAB_PACK_INDEX = OWNER_PACK_INDEX + 1;
+#endif
+
+#if VH_USER_BITS_I_ + VH_PREFAB_BITS_I_ <= 16
     using U = uint16_t;
 #else
     using U = uint32_t;
@@ -330,9 +340,19 @@ private:
     //  All these bit values are based on data assumptions
     //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
     Rev m_rev;                                      // 4 bytes (PADDING)
+
+#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+    HASH_t m_prefabHash{};
+    BitPack<U, sizeof(U) * 8 - (1 + 1 + 2), 1, 1, 2> m_pack;
+
+    //bool m_persistent{};
+    //bool m_distant{};
+    //ObjectType m_type{};
+#else
     // Owner: 0, Prefab: 1
     //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
     BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
+#endif
 
 public:
     ZDO();
@@ -610,13 +630,21 @@ public:
         
 #if VH_IS_ON(VH_STANDARD_PREFABS)
     [[nodiscard]] const Prefab& GetPrefab() const {
+#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+        return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
+#else
         return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+#endif
     }
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
+#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+        return this->m_prefabHash;
+#else
         //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
         return PrefabManager()->RequirePrefabHashByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+#endif
     }
 
     /*

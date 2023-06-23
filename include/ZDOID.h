@@ -19,6 +19,10 @@ class ZDOID {
 #error "platform unsupported"
 #endif
 
+#if VH_USER_BITS_I_ > 7
+#error "too many bits"
+#endif
+
     // User: 0, ID: 1
     BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
         
@@ -53,6 +57,9 @@ private:
                 return i;
             }
         }
+
+        // TODO this will almost definetly be reached quickly given 
+        //  how players generate completely new ids on rejoin (instead of per character)
 
         // TODO this is definitely reachable, assuming the server runs long enough
         //  for enough unique players to join, causing the INDEXED_USERS loop to completely finish

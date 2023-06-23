@@ -240,7 +240,12 @@ public:
 #endif
 
 	void Save(DataWriter& pkg);
-	void Load(DataReader& reader, int32_t version);
+	// Load the world from file with a given version
+	//	if resilient is true, ZoneManager will begin 
+	//	loading from a specific point in file
+	// Useful for working around badly formatted worlds
+	void Load(DataReader& reader, int32_t version, bool resilient);
+	//void ResilientLoad(DataReader& reader, int32_t version);
 
 	auto& GlobalKeys() {
 		return m_globalKeys;

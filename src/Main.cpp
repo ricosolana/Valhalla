@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
         
         cfg.default_handlers.push_back(
             quill::time_rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
-            
+       
         //cfg.default_handlers.push_back(quill::file_handler("server.log", "w"));
 
         quill::configure(cfg);
@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 
         LOGGER = quill::get_logger();
         LOGGER->set_log_level(quill::LogLevel::TraceL3);
+        LOGGER->init_backtrace(16, quill::LogLevel::Error);
     }
 
     //VHTest().Test_ZDOConnectors();

@@ -72,6 +72,17 @@
     #error "Platform must be exclusively Windows or ESP32, not both"
 #endif
 
+// im done naming these properly
+#if defined(VH_RESILIENT_LOADING)
+    #if VH_RESILIENT_LOADING != 0
+        #define VH_RESILIENT_LOADING_I_ VH_ON
+    #else
+        #define VH_RESILIENT_LOADING_I_ VH_OFF
+    #endif
+#else
+    #define VH_RESILIENT_LOADING_I_ VH_DEFAULT_ON
+#endif
+
 // Whether to use 4 byte zdoid or 2 byte zdoid
 //  4 byte: capacity for a recommended 64 owners 
 //  2 byte: capacity for a recommended 4 owners
@@ -100,6 +111,23 @@
 //
 //#endif
 
+#define VH_REDUNDANT_ZDOS 1
+
+// Whether to store all exact ZDO data within zdo without any assumptions:
+//  prefab hash
+//  type
+//  persistent
+//  distant
+#if defined(VH_REDUNDANT_ZDOS)
+    #if VH_REDUNDANT_ZDOS != 0
+        #define VH_REDUNDANT_ZDOS_I_ VH_ON
+    #else
+        #define VH_REDUNDANT_ZDOS_I_ VH_OFF
+    #endif
+#else
+    #define VH_REDUNDANT_ZDOS_I_ VH_DEFAULT_OFF
+#endif
+
 // How many bits to reserve for user in ZDO::m_pack
 //  Default is 4: 2^4: 16 users (actually 14 users because 2 are reserved for both server/nil)
 //      4 bits is ideal for small server expecting no more than 14 unique players (since the server session launched)
@@ -111,15 +139,19 @@
     // ensure esp32 is always 32 bit
     // 
     #if VH_USER_BITS >= 2 && VH_USER_BITS <= 7
-        #define VH_USER_BITS_I_ VH_USER_BITS
+        #define VH_USER_BITS_I_ (VH_USER_BITS)
     #else
         #error "User bits must be between 2 and 7 (inclusive)"
     #endif
 #else
-    #if VH_IS_ON(VH_PLATFORM_ESP32)
-        #define VH_USER_BITS_I_ 2
+    #if VH_IS_ON(VH_REDUNDANT_ZDOS)
+        #define VH_USER_BITS_I_ (14)
     #else
-        #define VH_USER_BITS_I_ 4
+        #if VH_IS_ON(VH_PLATFORM_ESP32)
+            #define VH_USER_BITS_I_ (2)
+        #else
+            #define VH_USER_BITS_I_ (8)
+        #endif
     #endif
 #endif
 
@@ -131,9 +163,9 @@
     #endif
 #else
     #if VH_USER_BITS_I_ <= 4
-        #define VH_PREFAB_BITS_I_ 16 - VH_USER_BITS_I_
+        #define VH_PREFAB_BITS_I_ (16 - (VH_USER_BITS_I_))
     #else
-        #define VH_PREFAB_BITS_I_ 32 - VH_USER_BITS_I_
+        #define VH_PREFAB_BITS_I_ (32 - (VH_USER_BITS_I_))
     #endif
 #endif
 
@@ -281,6 +313,7 @@
 
 //#define VH_STANDARD_PREFABS 0
 
+// TODO consider retiring this?
 // Whether to use the smallest form prefabs possible
 //  Each prefab generally takes up min 72 bytes
 //  Each prefab minimally needs only flags to work well (not extra redundant hashes)

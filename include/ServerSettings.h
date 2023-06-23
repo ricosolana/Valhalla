@@ -111,6 +111,8 @@ struct ServerSettings {
     bool            worldVegetation;
     bool            worldCreatures;
     uint32_t        worldHeightmapThreads;
+
+    size_t          worldResilientHintGlobalKeyCount_Position;
     
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate

@@ -139,16 +139,25 @@ void World::LoadFileDB(const fs::path& root) {
 			{
 				Valhalla()->m_worldTime = reader.Read<double>();
 			}
-			static constexpr auto szz = sizeof(IZDOManager);
-			//VLOG(1) << "World time: " << Valhalla()->m_worldTime;
 
-			ZDOManager()->Load(reader, worldVersion);
+#if VH_IS_ON(VH_RESILIENT_LOADING)
+			try 
+#endif
+			{
+				ZDOManager()->Load(reader, worldVersion); // TODO put try-catch in ZDOManager
+			}
+#if VH_IS_ON(VH_RESILIENT_LOADING)
+			catch (const std::exception& e) {
+				LOG_ERROR(LOGGER, "{}", e.what());
+				LOG_WARNING(LOGGER, "ZDOManager failed to load (resilient NYI)");
+			}
+#endif
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 			if (worldVersion >= 12)
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 			{
-				ZoneManager()->Load(reader, worldVersion);
+				ZoneManager()->Load(reader, worldVersion, false);
 			}
 
 #if VH_IS_ON(VH_RANDOM_EVENTS)
@@ -162,6 +171,15 @@ void World::LoadFileDB(const fs::path& root) {
 			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
+
+//#if VH_IS_ON(VH_PLEASE_I_JUST_WANT_MY_WORLD_TO_LOAD)
+			//LOG_WARNING(LOGGER, "Loading world in desperation mode");
+
+			// will now attempt to load world incrementally, byte by byte, only using values if they make 'sense' (they fit within expect Valheim specific boundaries)
+
+
+//#endif
+
 			LOG_ERROR(LOGGER, "Failed to load world: {}", e.what());
 		}
 	}	

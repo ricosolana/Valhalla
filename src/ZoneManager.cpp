@@ -371,82 +371,115 @@ void IZoneManager::Save(DataWriter& pkg) {
 }
 
 // public
-void IZoneManager::Load(DataReader& reader, int32_t version) {
-    {
-        auto count = reader.Read<uint32_t>();
-        for (decltype(count) i = 0; i < count; i++) {
-            auto x = reader.Read<int32_t>();
-            auto y = reader.Read<int32_t>();
-#if VH_IS_ON(VH_ZONE_GENERATION)
-            m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
-#endif // VH_ZONE_GENERATION
+void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
+    m_generatedZones.clear();
+
+    if (resilient) {
+        // starting at resilient global key
+        reader.SetPos(VH_SETTINGS.worldResilientHintGlobalKeyCount_Position
+            - (4) // location version
+            - (4) // pgw
+            - (4) // possible Zone count read
+        );
+
+        std::reference_wrapper<BYTES_t> bytes = std::get<std::reference_wrapper<BYTES_t>>(reader.m_data);
+
+        // now this is where zone deductions take place
+        size_t inc = 0;
+        while (reader.Read<int32_t>() != inc) {
+            reader.SetPos(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
+            reader.SetPos(reader.Position() - sizeof(Vector2i)); // backward seek 
+            inc++;
         }
+        reader.SetPos(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
     }
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-    if (version >= 13) 
-#endif // VH_LEGACY_WORLD_COMPATABILITY
-    {
-        reader.Read<int32_t>(); // PGW
-        const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
+    try {
+        {
+            auto count = reader.Read<uint32_t>();
+            for (decltype(count) i = 0; i < count; i++) {
+                auto x = reader.Read<int32_t>();
+                auto y = reader.Read<int32_t>();
+#if VH_IS_ON(VH_ZONE_GENERATION)
+                m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
+#endif // VH_ZONE_GENERATION
+            }
+        }
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-        if (version >= 14)
+        if (version >= 13)
 #endif // VH_LEGACY_WORLD_COMPATABILITY
         {
-            m_globalKeys = reader.Read<decltype(m_globalKeys)>();
+            reader.Read<int32_t>(); // PGW
+            const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-            if (version >= 18) 
+            if (version >= 14)
 #endif // VH_LEGACY_WORLD_COMPATABILITY
             {
+                m_globalKeys = reader.Read<decltype(m_globalKeys)>();
+
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-                if (version >= 20) 
+                if (version >= 18)
 #endif // VH_LEGACY_WORLD_COMPATABILITY
                 {
-                    reader.Read<bool>(); // locationsGenerated
-                }
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+                    if (version >= 20)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+                    {
+                        reader.Read<bool>(); // locationsGenerated
+                    }
 
-                auto count = reader.Read<int32_t>();
-                for (decltype(count) i = 0; i < count; i++) {
-                    auto text = reader.Read<std::string_view>();
-                    auto pos = reader.Read<Vector3f>();
+                    auto count = reader.Read<int32_t>();
+                    for (decltype(count) i = 0; i < count; i++) {
+                        auto text = reader.Read<std::string_view>();
+                        auto pos = reader.Read<Vector3f>();
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-                    bool generated = (version >= 19) ? reader.Read<bool>() : false;
+                        bool generated = (version >= 19) ? reader.Read<bool>() : false;
 #else // !VH_LEGACY_WORLD_COMPATABILITY
-                    bool generated = reader.Read<bool>();
+                        bool generated = reader.Read<bool>();
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-                    auto&& location = GetFeature(text);
-                    if (location) {
-                        m_generatedFeatures[WorldToZonePos(pos)] = 
-                            std::make_unique<Feature::Instance>(*location, pos);
-                    }
-                    else {
-                        LOG_ERROR(LOGGER, "Unknown feature '{}'", text);
-                    }
-#else // !VH_ZONE_GENERATION
-                    static_assert(std::numeric_limits<uint8_t>::max() > m_features.size());
-                    for (uint8_t i = 0; i < m_features.size(); i++) {
-                        if (text == std::string_view(m_features[i])) {
-                            // register
-                            m_generatedFeatures[WorldToZonePos(pos)] 
-                                = std::pair<uint8_t, Vector3f>(i, pos);
-                            break;
+                        auto&& location = GetFeature(text);
+                        if (location) {
+                            m_generatedFeatures[WorldToZonePos(pos)] =
+                                std::make_unique<Feature::Instance>(*location, pos);
                         }
-                    }
+                        else {
+                            LOG_ERROR(LOGGER, "Unknown feature '{}'", text);
+                        }
+#else // !VH_ZONE_GENERATION
+                        static_assert(std::numeric_limits<uint8_t>::max() > m_features.size());
+                        for (uint8_t i = 0; i < m_features.size(); i++) {
+                            if (text == std::string_view(m_features[i])) {
+                                // register
+                                m_generatedFeatures[WorldToZonePos(pos)]
+                                    = std::pair<uint8_t, Vector3f>(i, pos);
+                                break;
+                            }
+                        }
 #endif // VH_ZONE_GENERATION
-                }
+                    }
 
-                LOG_INFO(LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
+                    LOG_INFO(LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
 
-                if (locationVersion != VConstants::LOCATION) {
-                    // regenerate features?
-                    //m_generatedFeatures.clear();
+                    if (locationVersion != VConstants::LOCATION) {
+                        // regenerate features?
+                        //m_generatedFeatures.clear();
+                    }
                 }
             }
+        }
+    }
+    catch (const std::exception& e) {
+        if (!resilient) {
+            LOG_WARNING(LOGGER, "Resilient loading ZoneManager...");
+            Load(reader, version, true);
+        }
+        else {
+            LOG_ERROR(LOGGER, "Resilient loading ZoneManager failed");
         }
     }
 }
