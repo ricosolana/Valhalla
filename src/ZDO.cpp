@@ -20,13 +20,13 @@ decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
 //decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
 
 ZDO::ZDO() {
-#if VH_IS_OFF(VH_REDUNDANT_ZDOS)
+#if VH_IS_OFF(VH_ACCURATE_ZDOS)
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 #endif
 }
 
 ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
-#if VH_IS_OFF(VH_REDUNDANT_ZDOS)
+#if VH_IS_OFF(VH_ACCURATE_ZDOS)
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 #endif
 }
@@ -39,7 +39,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     {
         auto persistent = pkg.Read<uint8_t>();        // persistent
         if (persistent > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected persistent value '{}'", persistent);
-#if VH_IS_ON(VH_REDUNDANT_ZDOS) 
+#if VH_IS_ON(VH_ACCURATE_ZDOS) 
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(persistent));
 #endif 
     }
@@ -54,7 +54,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 23) {
         auto type = pkg.Read<uint8_t>();    // m_type
         if (type > 0b11) LOG_BACKTRACE(LOGGER, "Unexpected type value '{}'", type);
-#if VH_IS_ON(VH_REDUNDANT_ZDOS) 
+#if VH_IS_ON(VH_ACCURATE_ZDOS) 
         this->m_pack.Set<TYPE_PACK_INDEX>((type >> GlobalDenotion::Marker_Type1) 
             & (GlobalDenotion::Marker_Type1 | GlobalDenotion::Marker_Type2));
 #endif
@@ -63,7 +63,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 22) {
         auto distant = pkg.Read<uint8_t>();       // m_distant
         if (distant > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected distant value '{}'", distant);
-#if VH_IS_ON(VH_REDUNDANT_ZDOS) 
+#if VH_IS_ON(VH_ACCURATE_ZDOS) 
         this->m_pack.Set<DISTANT_PACK_INDEX>(static_cast<bool>(distant));
 #endif            
     }
@@ -79,7 +79,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion >= 17) {
         HASH_t prefabHash = pkg.Read<HASH_t>();
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
         this->m_prefabHash = prefabHash;
 #else
     #if VH_IS_ON(VH_STANDARD_PREFABS)
@@ -111,7 +111,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17) {
         HASH_t prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
 
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
         this->m_prefabHash = prefabHash;
 #else
     #if VH_IS_ON(VH_STANDARD_PREFABS)
@@ -125,7 +125,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     }
 
     // TODO VH_REDUNDANT_ZDOS or not?
-#if VH_IS_OFF(VH_REDUNDANT_ZDOS) && VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_OFF(VH_ACCURATE_ZDOS) && VH_IS_ON(VH_STANDARD_PREFABS)
     assert(prefab);
 
     if (worldVersion < 31) {
@@ -191,10 +191,6 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     //          I do not know whether C# class structures contain padding or what, so I cant comment on this
     //          nvm actually I see '[StructLayout(0, Pack = 1)]'
 
-    // Set the self incremental id (ZDOID is no longer saved to disk)
-    if (version)
-        this->m_id.SetUID(++ZDOManager()->m_nextUid);
-
     auto flags = reader.Read<uint16_t>();
 
     // Failsafe
@@ -227,7 +223,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
     //  on esp this might not be viable
     auto prefabHash = reader.Read<HASH_t>();
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
     if (this->m_prefabHash == 0) {
         this->m_prefabHash = prefabHash;
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(flags & GlobalFlag::Marker_Persistent));

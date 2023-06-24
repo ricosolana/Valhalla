@@ -19,6 +19,18 @@
 #include "ZDOConnector.h"
 #include "Types.h"
 
+// This class approximates a rotation in 
+//  increments of 1.4 degrees (when 8-bits per gimbal)
+// In 32-bit mode, it can represent 0.35 degree increments
+//  this is good enough
+class PackedRotation {
+private:
+    BitPack<uint32_t, 10, 11, 11> m_pack;
+
+public:
+    PackedRotation() {}
+};
+
 // The 'butter' of Valheim
 // This class has been refactored numerous times 
 //  Performance is important but memory usage has been highly prioritized here
@@ -295,7 +307,7 @@ private:
     }
 
     void _SetPrefabHash(HASH_t hash) {
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
         this->m_prefabHash = hash;
 #else
         m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
@@ -309,7 +321,7 @@ private:
 
     static constexpr auto OWNER_PACK_INDEX = 0;
 
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
     static constexpr auto PERSISTENT_PACK_INDEX = OWNER_PACK_INDEX + 1;
     static constexpr auto DISTANT_PACK_INDEX = PERSISTENT_PACK_INDEX + 1;
     static constexpr auto TYPE_PACK_INDEX = DISTANT_PACK_INDEX + 1;
@@ -317,7 +329,8 @@ private:
     static constexpr auto PREFAB_PACK_INDEX = OWNER_PACK_INDEX + 1;
 #endif
 
-#if VH_USER_BITS_I_ + VH_PREFAB_BITS_I_ <= 16
+#if VH_IS_ON(VH_ACCURATE_ZDOS) \
+    || VH_ZDO_OWNER_BITS_I_ + VH_ZDO_PREFAB_BITS_I_ <= 16
     using U = uint16_t;
 #else
     using U = uint32_t;
@@ -325,33 +338,37 @@ private:
 
     /*
     * Sizes:
-    *   uint16 pack: 48 bytes 
     *   uint32 pack: 64 bytes
     *   packed rotation: 12+4+4+4+2 bytes = 26 bytes (ignoring packing)
     */
 
-    // Ideas for ridding ZDOID:
+    // TODO rid ZDOID:
     //  Remove ZDOID, and port any ZDOID-involved methods to a proxy ZDO type
 
+    // TODO lossy rotation
+    //  Encode rotation in 32-bit number
+
+    // The smallest a ZDO can be (with all lossy optimizations)
+    //  Is 12 + 4 + 4 + 6 + 4 = 
+
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
+    // 40 bytes (with ZDOID packed)
+
     Vector3f m_pos;                                 // 12 bytes
-    ZDOID m_id;                                     // 4 bytes (PADDING, TODO might be redundant given zdoid also stored in ZDOManager map)
-    Vector3f m_rotation;                            // 12 bytes (TODO could be shrunk to 8-bits per axis (on esp)
-    // TODO Some Rev bits can (and should) probably be shared with m_pack[owner] (or use a larger type). 
-    //  All these bit values are based on data assumptions
-    //  11 bits is ok for owner-rev because it doesnt update as frequently as data-rev
     Rev m_rev;                                      // 4 bytes (PADDING)
+    Vector3f m_rotation;                            // 12 bytes
+    HASH_t m_prefabHash{};                          // 4 bytes
+    ZDOID m_id;                                     // 6 bytes (PACKED)
+    BitPack<U, sizeof(U) * 8 - (1 + 1 + 2), 1, 1, 2> m_pack; // 2 bytes
 
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
-    HASH_t m_prefabHash{};
-    BitPack<U, sizeof(U) * 8 - (1 + 1 + 2), 1, 1, 2> m_pack;
-
-    //bool m_persistent{};
-    //bool m_distant{};
-    //ObjectType m_type{};
 #else
-    // Owner: 0, Prefab: 1
-    //BitPack<U, VH_USER_BITS_I_, sizeof(U) * 8 - VH_USER_BITS_I_> m_pack;
-    BitPack<U, VH_USER_BITS_I_, VH_PREFAB_BITS_I_> m_pack;
+    // 36 bytes
+
+    Vector3f m_pos;                                 // 12 bytes
+    Rev m_rev;                                      // 4 bytes (PADDING)
+    Vector3f m_rotation;                            // 12 bytes
+    ZDOID m_id;                                     // 6 bytes (PACKED)
+    BitPack<U, VH_ZDO_OWNER_BITS_I_, VH_ZDO_PREFAB_BITS_I_> m_pack; // 2 bytes (default)
 #endif
 
 public:
@@ -630,7 +647,7 @@ public:
         
 #if VH_IS_ON(VH_STANDARD_PREFABS)
     [[nodiscard]] const Prefab& GetPrefab() const {
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
         return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
 #else
         return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
@@ -639,7 +656,7 @@ public:
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-#if VH_IS_ON(VH_REDUNDANT_ZDOS)
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
         return this->m_prefabHash;
 #else
         //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
@@ -712,7 +729,7 @@ public:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
+        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::GetOrCreateIndexByUserID(owner));
     }
 
 
@@ -737,7 +754,11 @@ public:
     //}
 
     [[nodiscard]] bool IsPersistent() const {
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
+        return m_pack.Get<PERSISTENT_PACK_INDEX>();
+#else
         return !GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED);
+#endif
     }
 
     //void _SetDistant(bool active) {
@@ -750,7 +771,11 @@ public:
     //}
 
     [[nodiscard]] bool IsDistant() const {
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
+        return m_pack.Get<DISTANT_PACK_INDEX>();
+#else
         return GetPrefab().AllFlagsPresent(Prefab::Flag::DISTANT);
+#endif
     }
 
     //void _SetType(ObjectType type) {
@@ -759,7 +784,11 @@ public:
     //}
 
     [[nodiscard]] ObjectType GetType() const {
-        return GetPrefab().m_type;
+#if VH_IS_ON(VH_ACCURATE_ZDOS)
+        return (ObjectType) m_pack.Get<TYPE_PACK_INDEX>();
+#else
+        return GetPrefab().m_type
+#endif
     }
 
 

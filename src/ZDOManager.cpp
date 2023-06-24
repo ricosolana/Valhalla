@@ -187,6 +187,8 @@ void IZDOManager::_InvalidateZDOZone(ZDO& zdo) {
 
 
 void IZDOManager::Save(DataWriter& writer) {
+	static constexpr auto szz = sizeof(ZDO);
+
 	//pkg.Write(Valhalla()->ID());
 	writer.Write<int64_t>(0);
 	writer.Write(m_nextUid);
@@ -223,9 +225,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (decltype(count) i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 
+		zdo->m_id.SetUID(++ZDOManager()->m_nextUid);
+
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 		if (version < 31) {
-			zdo->m_id = reader.Read<ZDOID>();
+			//reader.Read<ZDOID>(); // id
+			reader.Skip(12); // skip 12 ZDOID bytes
 			auto zdoReader = reader.Read<DataReader>();
 
 			zdo->Load31Pre(zdoReader, version);

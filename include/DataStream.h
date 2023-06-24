@@ -49,7 +49,7 @@ public:
 public:
     //bool owned() const { return std::get_if< !this->m_data.data(); }
 
-    size_t Position() const {
+    size_t Position() const noexcept {
         return this->m_pos;
     }
 
@@ -82,7 +82,7 @@ public:
         }, this->m_data);
     }
 
-    size_t Skip(size_t offset) {
+    void Skip(size_t offset) {
         this->SetPos(this->Position() + offset);
     }
 };

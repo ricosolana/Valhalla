@@ -41,6 +41,19 @@ using namespace std::chrono_literals;
 #define COLOR_WHITE "\033[37m"
 #define COLOR_GRAY "\033[90m"
 
+
+// https://stackoverflow.com/questions/1537964/visual-c-equivalent-of-gccs-attribute-packed
+//  doesnt work for some reason, #macros evil
+//#ifdef __GNUC__
+//#define VH_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+//#endif
+//
+//#ifdef _MSC_VER
+//#define VH_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+//#endif
+
+
+
 using BYTE_t = char; // Unsigned 8 bit
 using HASH_t = int32_t; // Used for RPC method hashing
 using OWNER_t = int64_t; // Should rename to UID

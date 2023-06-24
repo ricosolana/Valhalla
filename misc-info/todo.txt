@@ -1,4 +1,31 @@
 todo:
+    - fix the zdo-owner zdoid-userID overlap issue
+        must handle gc and expedient creation
+        
+        either isolate zdo-owner and zdoid-userID pool contingencies or 
+        use wider index types
+        
+        zdoid gets huge (dependent on all prior players) 
+        but zdo-owner does not (dependent on current players)
+
+    - either empty password or changing password during 
+        runtime doesnt change is or something is broken
+
+    - zdo owner vs zdoid userid
+        both using the same id pool
+        zdo owner is directly sourced from user server joins
+        having this number tied in with userid interferes with the maximum expected capacity
+        drasstically increasing it over the normal expected change over time
+        this is only a real issue with large amounts of joins
+        worst case rate:
+            2 joins per hour per player
+            10 players 
+            2*24*10 = 480 players
+            next acceptable power of 2 is 512 (9 bits) as a small server
+            a large server would require a much larger number 
+            
+            or just throwaway this array entirely
+
     - use std::hardware_constructive_interference_size
         = seems 64-bytes
         

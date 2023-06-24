@@ -56,23 +56,11 @@
     #define VH_PLATFORM_WINDOWS_I_ VH_DEFAULT_OFF
 #endif
 
-#if defined(VH_PLATFORM_ESP32)
-    #if VH_PLATFORM_ESP32 != 0
-        #define VH_PLATFORM_ESP32_I_ VH_ON
-    #else
-        #define VH_PLATFORM_ESP32_I_ VH_OFF
-    #endif
-#elif defined(ESP_PLATFORM)
-    #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_ON
-#else
-    #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_OFF
-#endif
-
-#if VH_IS_ON(VH_PLATFORM_WINDOWS) && VH_IS_ON(VH_PLATFORM_ESP32)
-    #error "Platform must be exclusively Windows or ESP32, not both"
-#endif
-
 // im done naming these properly
+// TODO rename 
+//  'VH_WORLD_RECOVERY_MODE'
+//  'VH_RECOVERABLE_WORLDS'
+//  'VH_RECOVER_WORLDS'
 #if defined(VH_RESILIENT_LOADING)
     #if VH_RESILIENT_LOADING != 0
         #define VH_RESILIENT_LOADING_I_ VH_ON
@@ -83,49 +71,23 @@
     #define VH_RESILIENT_LOADING_I_ VH_DEFAULT_ON
 #endif
 
-// Whether to use 4 byte zdoid or 2 byte zdoid
-//  4 byte: capacity for a recommended 64 owners 
-//  2 byte: capacity for a recommended 4 owners
-#if defined(VH_USE_SMALL_ZDOID)
-    #if VH_USE_SMALL_ZDOID != 0
-        #define VH_USE_SMALL_ZDOID_I_ VH_ON
-    #else
-        #define VH_USE_SMALL_ZDOID_I_ VH_OFF
-    #endif
-#else
-    #if VH_IS_ON(VH_PLATFORM_ESP32)
-        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_ON
-    #else
-        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_OFF
-    #endif
-#endif
+#define VH_ACCURATE_ZDOS 1
 
-//#if defined(VH_LARGE_PLAYERBASE)
-//    #if VH_LARGE_PLAYERBASE != 0
-//        #define VH_USER_BITS 
-//        #define VH_LARGE_PLAYERBASE_I_ VH_ON
-//    #else
-//        #define VH_
-//    #endif
-//#else
-//
-//#endif
-
-#define VH_REDUNDANT_ZDOS 1
-
-// Whether to store all exact ZDO data within zdo without any assumptions:
+// Whether to store exact data without rounding/approximations/assumptions
 //  prefab hash
 //  type
 //  persistent
 //  distant
-#if defined(VH_REDUNDANT_ZDOS)
-    #if VH_REDUNDANT_ZDOS != 0
-        #define VH_REDUNDANT_ZDOS_I_ VH_ON
+// might affect memory and performance
+// TODO rename 'VH_FULLY_FLEDGED_ZDOS'
+#if defined(VH_ACCURATE_ZDOS)
+    #if VH_ACCURATE_ZDOS != 0
+        #define VH_ACCURATE_ZDOS_I_ VH_ON
     #else
-        #define VH_REDUNDANT_ZDOS_I_ VH_OFF
+        #define VH_ACCURATE_ZDOS_I_ VH_OFF
     #endif
 #else
-    #define VH_REDUNDANT_ZDOS_I_ VH_DEFAULT_OFF
+    #define VH_ACCURATE_ZDOS_I_ VH_DEFAULT_OFF
 #endif
 
 // How many bits to reserve for user in ZDO::m_pack
@@ -133,40 +95,50 @@
 //      4 bits is ideal for small server expecting no more than 14 unique players (since the server session launched)
 //  Setting to a larger number requires a larger datatype to hold
 //  int32 is the next size, but 
-#if defined(VH_USER_BITS)
-    // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
-    
-    // ensure esp32 is always 32 bit
-    // 
-    #if VH_USER_BITS >= 2 && VH_USER_BITS <= 7
-        #define VH_USER_BITS_I_ (VH_USER_BITS)
+//#if defined(VH_ZDOID_USER_BITS)
+//    // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
+//    
+//    // ensure esp32 is always 32 bit
+//    // 
+//    #if VH_ZDOID_USER_BITS >= 2 && VH_ZDOID_USER_BITS <= 7
+//        #define VH_ZDOID_USER_BITS_I_ (VH_ZDOID_USER_BITS)
+//    #else
+//        #error "VH_ZDOID_USER_BITS must be between 2 and 7 (inclusive)"
+//    #endif
+//#else
+    #define VH_ZDOID_USER_BITS_I_ (16)
+//#endif
+
+#if defined(VH_ZDOID_UID_BITS)
+    #if VH_ZDOID_UID_BITS != 0
+        #define VH_ZDOID_UID_BITS_I_ 
     #else
-        #error "User bits must be between 2 and 7 (inclusive)"
+        #define VH_ZDOID_UID_BITS_I_ 
     #endif
 #else
-    #if VH_IS_ON(VH_REDUNDANT_ZDOS)
-        #define VH_USER_BITS_I_ (14)
-    #else
-        #if VH_IS_ON(VH_PLATFORM_ESP32)
-            #define VH_USER_BITS_I_ (2)
-        #else
-            #define VH_USER_BITS_I_ (8)
-        #endif
-    #endif
+    #define VH_ZDOID_UID_BITS_I_ VH_ZDOID_UID_BITS
 #endif
 
-#if defined(VH_PREFAB_BITS)
-    #if VH_PREFAB_BITS >= 12
-        #define VH_PREFAB_BITS_I_ VH_PREFAB_BITS
+
+
+#if defined(VH_ZDO_OWNER_BITS)
+    #if VH_ZDO_OWNER_BITS < 2
+        #error "VH_ZDO_OWNER_BITS must be at least 2"
     #else
-        #error "prefab bits must be great enough to support all the Valheim prefabs"
+        #define VH_ZDO_OWNER_BITS_I_ VH_ZDO_OWNER_BITS
     #endif
 #else
-    #if VH_USER_BITS_I_ <= 4
-        #define VH_PREFAB_BITS_I_ (16 - (VH_USER_BITS_I_))
+    #define VH_ZDO_OWNER_BITS_I_ 4
+#endif
+
+#if defined(VH_ZDO_PREFAB_BITS)
+    #if VH_ZDO_PREFAB_BITS >= 12
+        #define VH_ZDO_PREFAB_BITS_I_ VH_PREFAB_BITS
     #else
-        #define VH_PREFAB_BITS_I_ (32 - (VH_USER_BITS_I_))
+        #error "prefab bits must be great enough to support all the Valheim prefabs (at least 12 bits)"
     #endif
+#else
+    #define VH_ZDO_PREFAB_BITS_I_ 12
 #endif
 
 // data that is the same no matter what across prefabs can be omitted to avoid unnecessary redundancy
@@ -501,6 +473,10 @@ namespace VConstants {
     static constexpr uint32_t NETWORK = 5;
 
     // worldgenerator
+    //  32: 0.217.4 (Hildir beta) June 16, 2023
+    //  31: 0.216.9 (Long awaited optimizations) June 12, 2023
+    //  29: 0.212.7 (Mistlands) Dec 6, 2022
+    //  28: ? .. 0.211.11 (Playfab fixes) Oct 28, 2022
     static constexpr int32_t WORLD = 31;
 
     // Used in WorldGenerator terrain
