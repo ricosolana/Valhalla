@@ -42,6 +42,7 @@ using namespace std::chrono_literals;
 #define COLOR_GRAY "\033[90m"
 
 
+
 // https://stackoverflow.com/questions/1537964/visual-c-equivalent-of-gccs-attribute-packed
 //  doesnt work for some reason, #macros evil
 //#ifdef __GNUC__
@@ -52,7 +53,11 @@ using namespace std::chrono_literals;
 //#define VH_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 //#endif
 
+//#define VH_WARN_ASSERT(logger, cond, msg, ...) { if (cond) { LOG_WARNING(logger, msg, __VA_ARGS__); } }
+//#define VH_BAD_ASSERT(logger, cond, msg, ...) { if (cond) { DebugBreak(); } }
+//#define VH_ERROR_ASSERT(logger, cond, msg, ...) { if (cond) { LOG_ERROR(logger, msg, __VA_ARGS__); } }
 
+//#define VH_ASSERT_WORLD(logger, cond, msg, ...) { if (cond) { LOG_WARNING(logger, msg) } }
 
 using BYTE_t = char; // Unsigned 8 bit
 using HASH_t = int32_t; // Used for RPC method hashing

@@ -457,6 +457,7 @@ namespace Hashes {
 
         namespace Humanoid {
             static constexpr HASH_t IS_BLOCKING = __H("IsBlocking");
+            static constexpr HASH_t SEED = __H("seed");
         };
 
         namespace ItemDrop {
@@ -1577,6 +1578,7 @@ namespace Hashes {
         static constexpr HASH_t LeatherScraps = 1490625731;
         static constexpr HASH_t Leech = -1537236269;
         static constexpr HASH_t Leech_cave = -98355895;
+        static constexpr HASH_t LevelTerrain = __H("LevelTerrain");
         static constexpr HASH_t Leviathan = 1332964068;
         static constexpr HASH_t lightningAOE = -1940000293;
         static constexpr HASH_t LinenThread = -1376039418;

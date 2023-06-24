@@ -225,12 +225,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (decltype(count) i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 
-		zdo->m_id.SetUID(++ZDOManager()->m_nextUid);
-
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 		if (version < 31) {
-			//reader.Read<ZDOID>(); // id
-			reader.Skip(12); // skip 12 ZDOID bytes
+			zdo->m_id = reader.Read<ZDOID>(); // id
 			auto zdoReader = reader.Read<DataReader>();
 
 			zdo->Load31Pre(zdoReader, version);
@@ -238,23 +235,24 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		else 
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 		{
+			zdo->m_id.SetUID(++ZDOManager()->m_nextUid);
 			zdo->Unpack(reader, version);
 		}
 
 		_AddZDOToZone(*zdo.get());
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 		m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo.get());
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 		auto&& prefab = zdo->GetPrefab();
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
-			if (zdo->Position().y > 4000)
+			if (zdo->GetPosition().y > 4000)
 				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
 		}
 #endif // VH_DUNGEON_REGENERATION
-#endif // VH_STANDARD_PREFABS
+#endif // VH_PREFAB_INFO
 		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
 
@@ -267,7 +265,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			reader.Read<int64_t>();
 		}
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
@@ -320,7 +318,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				//);
 			}
 		}
-#endif // VH_STANDARD_PREFABS
+#endif // VH_PREFAB_INFO
 	}
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 
@@ -388,7 +386,7 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 
 
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 ZDO::reference IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->_Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
@@ -415,7 +413,7 @@ ZDO::reference IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab*
 #endif
 
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
-	auto&& copy = _Instantiate(zdo.Position());
+	auto&& copy = _Instantiate(zdo.GetPosition());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
 	copy.get().m_pack = zdo.m_pack;
@@ -509,7 +507,7 @@ IZDOManager::ZDO_iterator IZDOManager::_EraseZDO(IZDOManager::ZDO_iterator itr) 
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
 	_RemoveFromSector(*zdo);
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefabHash());
 	if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
 #endif
@@ -589,7 +587,7 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer& pe
 			if (outItr != peer.m_zdos.end())
 				weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
-			result.push_back({ zdo, zdo.Position().SqDistance(peer.m_pos) - weight * weight });
+			result.push_back({ zdo, zdo.GetPosition().SqDistance(peer.m_pos) - weight * weight });
 		}
 	}
 
@@ -670,7 +668,7 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::reference>& object
 
 
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 std::list<ZDO::reference> IZDOManager::GetZDOs(HASH_t prefab) {
 	std::list<ZDO::reference> out;
 	auto&& find = m_objectsByPrefab.find(prefab);
@@ -707,7 +705,7 @@ std::list<ZDO::reference> IZDOManager::SomeZDOs(Vector3f pos, float radius, size
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& zdo : *container) {
-					if (zdo->Position().SqDistance(pos) <= sqRadius
+					if (zdo->GetPosition().SqDistance(pos) <= sqRadius
 						&& (!pred || pred(*zdo)))
 					{
 						if (max--)
@@ -757,7 +755,7 @@ ZDO* IZDOManager::NearestZDO(Vector3f pos, float radius, const std::function<boo
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& obj : *container) {
-					float sqDist = obj->Position().SqDistance(pos);
+					float sqDist = obj->GetPosition().SqDistance(pos);
 					if (sqDist <= sqRadius // Filter to ZDO within radius
 						&& sqDist < minSqDist // Filter to closest ZDO
 						&& (!pred || pred(*obj)))
@@ -828,7 +826,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.Write(zdo.GetOwnerRevision());
 			writer.Write(zdo.GetDataRevision());
 			writer.Write(zdo.Owner());
-			writer.Write(zdo.Position());
+			writer.Write(zdo.GetPosition());
 
 			writer.SubWrite([&zdo](DataWriter& writer) {
 				zdo.Pack(writer, true);
@@ -937,7 +935,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//}
 
 					_AddZDOToZone(zdo);
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 					m_objectsByPrefab[zdo.GetPrefabHash()].insert(&zdo);
 #endif
 				}

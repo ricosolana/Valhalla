@@ -418,7 +418,7 @@ void IModManager::LoadAPI() {
         //)
     );
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
     m_state.new_usertype<Prefab>("Prefab",
         sol::no_constructor,
         "name", sol::readonly(&Prefab::m_name),
@@ -497,10 +497,10 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<ZDO>("ZDO",
         sol::no_constructor,
         "id", sol::property(&ZDO::ID),
-        "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
+        "pos", sol::property(&ZDO::GetPosition, &ZDO::SetPosition),
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
         "prefab", sol::property(&ZDO::GetPrefab),
 #endif
         "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, Int64Wrapper owner) { self.SetOwner((int64_t)owner); }),
@@ -726,13 +726,13 @@ void IModManager::LoadAPI() {
         "SomeZDOs", sol::overload(
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t)>(&IZDOManager::SomeZDOs),
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const Vector3f& pos, float radius, size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 #endif
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t)>(&IZDOManager::SomeZDOs)
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             ,sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const ZoneID& zone, size_t max, std::string_view name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
@@ -742,7 +742,7 @@ void IModManager::LoadAPI() {
 #endif
         ),
         "GetZDOs", sol::overload(
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(HASH_t)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 
@@ -753,7 +753,7 @@ void IModManager::LoadAPI() {
 #endif
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID)>(&IZDOManager::GetZDOs)
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             ,sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
@@ -761,7 +761,7 @@ void IModManager::LoadAPI() {
             [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
 #endif
         ),
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
         "AnyZDO", sol::overload(
             sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
@@ -772,7 +772,7 @@ void IModManager::LoadAPI() {
 #endif
         "NearestZDO", sol::overload(
             sol::resolve<ZDO* (Vector3f, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::NearestZDO)
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             ,sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
 #endif
@@ -784,7 +784,7 @@ void IModManager::LoadAPI() {
             sol::resolve<void(const ZDO&)>(&IZDOManager::DestroyZDO)
         ),
         "Instantiate", sol::overload(
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
             sol::resolve<std::reference_wrapper<ZDO> (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
 #endif
             [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },

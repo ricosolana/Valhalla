@@ -13,20 +13,27 @@
 
 
 
-decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
-decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
-decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
-//decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
-//decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
+//decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
+//decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
+//decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
+//
+//decltype(ZDO::ZDO_INDEXED_OWNERS) ZDO::ZDO_INDEXED_OWNERS;
+//decltype(ZDO::HINT_NEXT_EMPTY_INDEX) ZDO::HINT_NEXT_EMPTY_INDEX = 1;
+//decltype(ZDO::HINT_LAST_SET_INDEX) ZDO::HINT_LAST_SET_INDEX = 1;
 
-ZDO::ZDO() {
-#if VH_IS_OFF(VH_ACCURATE_ZDOS)
-    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
-#endif
-}
+//auto ZDO::ZDO_MEMBERS;
+//auto ZDO::ZDO_CONNECTORS;
+//auto ZDO::ZDO_TARGETED_CONNECTORS;
+//
+//auto ZDO::ZDO_INDEXED_OWNERS;
+//auto ZDO::HINT_NEXT_EMPTY_INDEX = 1;
+//auto ZDO::HINT_LAST_SET_INDEX = 1;
+
+ZDO::ZDO() 
+    : ZDO(ZDOID::NONE, Vector3f::Zero()) {}
 
 ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
-#if VH_IS_OFF(VH_ACCURATE_ZDOS)
+#if VH_IS_OFF(VH_ZDO_INFO)
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 #endif
 }
@@ -39,7 +46,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     {
         auto persistent = pkg.Read<uint8_t>();        // persistent
         if (persistent > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected persistent value '{}'", persistent);
-#if VH_IS_ON(VH_ACCURATE_ZDOS) 
+#if VH_IS_ON(VH_ZDO_INFO) 
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(persistent));
 #endif 
     }
@@ -54,7 +61,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 23) {
         auto type = pkg.Read<uint8_t>();    // m_type
         if (type > 0b11) LOG_BACKTRACE(LOGGER, "Unexpected type value '{}'", type);
-#if VH_IS_ON(VH_ACCURATE_ZDOS) 
+#if VH_IS_ON(VH_ZDO_INFO) 
         this->m_pack.Set<TYPE_PACK_INDEX>((type >> GlobalDenotion::Marker_Type1) 
             & (GlobalDenotion::Marker_Type1 | GlobalDenotion::Marker_Type2));
 #endif
@@ -63,7 +70,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 22) {
         auto distant = pkg.Read<uint8_t>();       // m_distant
         if (distant > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected distant value '{}'", distant);
-#if VH_IS_ON(VH_ACCURATE_ZDOS) 
+#if VH_IS_ON(VH_ZDO_INFO) 
         this->m_pack.Set<DISTANT_PACK_INDEX>(static_cast<bool>(distant));
 #endif            
     }
@@ -73,16 +80,16 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_OFF(VH_ZDO_INFO) && VH_IS_ON(VH_PREFAB_INFO)
     const Prefab* prefab = nullptr;
 #endif
 
     if (worldVersion >= 17) {
         HASH_t prefabHash = pkg.Read<HASH_t>();
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         this->m_prefabHash = prefabHash;
 #else
-    #if VH_IS_ON(VH_STANDARD_PREFABS)
+    #if VH_IS_ON(VH_PREFAB_INFO)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
         m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
@@ -111,22 +118,21 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17) {
         HASH_t prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
 
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         this->m_prefabHash = prefabHash;
-#else
-    #if VH_IS_ON(VH_STANDARD_PREFABS)
+#else // !VH_ZDO_INFO
+    #if VH_IS_ON(VH_PREFAB_INFO)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
         m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
-    #else
+    #else // !VH_PREFAB_INFO
         _SetPrefabHash(prefabHash);
-    #endif
-#endif
+    #endif // VH_PREFAB_INFO
+#endif // VH_ZDO_INFO
     }
 
     // TODO VH_REDUNDANT_ZDOS or not?
-#if VH_IS_OFF(VH_ACCURATE_ZDOS) && VH_IS_ON(VH_STANDARD_PREFABS)
-    assert(prefab);
+#if VH_IS_ON(VH_PREFAB_INFO)
 
     if (worldVersion < 31) {
         // Convert owners
@@ -146,25 +152,41 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
 
+        // alternative:
+        //  track exact zdos by prefab hash (slightly more costly but portable)
+#if VH_IS_OFF(VH_ZDO_INFO)
+        assert(prefab);
         // Convert terrains
         if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
             || (GetPrefabHash() == Hashes::Object::ship_construction))
             Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
-
+#else // !VH_ZDO_INFO
+        switch (this->m_prefabHash) {
+        case Hashes::Object::cultivate:
+        case Hashes::Object::raise:
+        case Hashes::Object::path:
+        case Hashes::Object::paved_road:
+        case Hashes::Object::HeathRockPillar:
+        case Hashes::Object::HeathRockPillar_frac:
+        case Hashes::Object::ship_construction:
+        case Hashes::Object::replant:
+        case Hashes::Object::digg:
+        case Hashes::Object::mud_road:
+        case Hashes::Object::LevelTerrain:
+        case Hashes::Object::digg_v2:
+            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+            break;
+        }
+#endif // VH_ZDO_INFO
         // Convert seeds
-        for (auto&& pair : members) {
-            // TODO include mode for whether to use prefab supported mode
-            //  or headless little prefabs mode
-            //prefab->AnyFlagsPresent(Prefab::Flag::HUMANOID)
-
-            if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
-                // set the character random items seed
-                Set("seed", 
-                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(ID())));
+        {
+            auto&& item = Get<int32_t>(Hashes::ZDO::VisEquipment::ITEM_LEFT);
+            if (item) {
+                Set(Hashes::ZDO::Humanoid::SEED, static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(ID())));
             }
         }
     }
-#endif
+#endif // VH_PREFAB_INFO)
 }
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
@@ -172,25 +194,6 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #define VH_ASSERT(cond) if (!(cond)) { }
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
-    // The (premature) optimizations I tried to 
-    //  implement never went anywhere because
-    //  I never knew what I was doing and 
-    //  it seemed a bit like overkill
-    // -------------------
-    // Some stuff I tried implementing:
-    //  Shrinking ZDOs as much as possible
-    //      encoding ZDOID to save memory (over time I made changes below:)
-    //          i64, i32 (plus i32 for padding) = 128 bits
-    //          i64, i32 packed = 92 bits
-    //          finally u64 by taking advantage of AssemblyUtils GenerateUID algorithm specs regarding summed/set unioned integer range
-    //      Valheim now includes encoded ZDOIDs, but differently:
-    //          One consolidated ZDOID-UserID array for ZDOs to reference
-    //          Returns a u16 index for ZDOs to refer to
-    //          ZDOs still have a u32 member
-    //      This makes little difference in C++ because padding will prevent memory preservation
-    //          I do not know whether C# class structures contain padding or what, so I cant comment on this
-    //          nvm actually I see '[StructLayout(0, Pack = 1)]'
-
     auto flags = reader.Read<uint16_t>();
 
     // Failsafe
@@ -215,15 +218,9 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         VH_ASSERT(GetZone() == sector);
     }
 
-    // prefab is loaded once
-    //  If prefabs are disabled, then loading by index wont exactly work
-    //  the way to do it would be by hash
-    //      maybe should remove the prefab dynamic disable/enable as it introduces excessive problems
-    //      prefab system would reduce usage on esp by at most 10% per zdo (-4 bytes)
-    //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
-    //  on esp this might not be viable
-    auto prefabHash = reader.Read<HASH_t>();
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+    // Once initialized info
+    const auto prefabHash = reader.Read<HASH_t>();
+#if VH_IS_ON(VH_ZDO_INFO)
     if (this->m_prefabHash == 0) {
         this->m_prefabHash = prefabHash;
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(flags & GlobalFlag::Marker_Persistent));
@@ -266,15 +263,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
             // set connection
             connector.m_type = type;
             connector.m_target = target;
-            //type &= ~ZDOConnector::Type::Target;
         }
-        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
-    }
-    else {
-        // Remove connector flag
-        //m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
-        //m_pack.Set<FLAGS_PACK_INDEX>(
-            //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
 
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
@@ -337,10 +326,11 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) flags |= GlobalFlag::Marker_Rotation;
 
     const auto flagPos = writer.Position();
+    //writer.Skip(sizeof(flags));
     writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
-        writer.Write(Position());
+        writer.Write(GetPosition());
     }
     writer.Write(GetPrefabHash());
     if (hasRot) writer.Write(m_rotation);

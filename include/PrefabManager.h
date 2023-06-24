@@ -16,7 +16,7 @@ class IPrefabManager {
 	friend class IDiscordManager;
 
 private:
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 	// TODO use set and use hash within from prefab
 	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
 #else
@@ -28,7 +28,7 @@ private:
 public:
 	void Init();
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 	const Prefab* GetPrefab(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end())
@@ -63,7 +63,7 @@ public:
 #endif
 
 	uint32_t RequirePrefabIndexByHash(HASH_t hash) const {
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end()) {
 			return find._Ptr - m_prefabs.values().data();
@@ -80,7 +80,7 @@ public:
 	}
 
 	HASH_t RequirePrefabHashByIndex(uint32_t index) const {
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 		if (index < m_prefabs.size())
 			return m_prefabs.values()[index].first;
 #else
@@ -90,7 +90,7 @@ public:
 		throw std::runtime_error("index exceeds prefabs");
 	}
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 	std::pair<const Prefab&, uint32_t> RequirePrefabAndIndexByHash(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end()) {
@@ -104,9 +104,7 @@ public:
 	const Prefab& RequirePrefabByName(std::string_view name) const {
 		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
 	}
-#endif
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 	void Register(std::string_view name, ObjectType type, Vector3f scale, Prefab::Flag flags) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
 		m_prefabs[hash] = std::make_unique<Prefab>(name, type, scale, flags);
@@ -121,7 +119,7 @@ public:
 		auto localScale = reader.Read<Vector3f>();
 		auto flags = reader.Read<Prefab::Flag>();
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 		auto hash = VUtils::String::GetStableHashCode(name);
 		m_prefabs[hash] = std::make_unique<Prefab>(std::string(name), type, localScale, flags);
 #else

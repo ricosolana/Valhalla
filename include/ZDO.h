@@ -90,7 +90,7 @@ public:
         // Regarding the bits allocated, some should be shared with 
 
         static constexpr auto DATA_REVISION_PACK_INDEX = 0;
-        static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
+        static constexpr auto OWNER_REVISION_PACK_INDEX = DATA_REVISION_PACK_INDEX + 1;
 
     public:
         Rev() {}
@@ -307,7 +307,7 @@ private:
     }
 
     void _SetPrefabHash(HASH_t hash) {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         this->m_prefabHash = hash;
 #else
         m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
@@ -315,13 +315,77 @@ private:
     }
 
 private:
-    static ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
-    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
-    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
+
+    static inline std::array<int64_t, (1 << (VH_ZDO_OWNER_BITS_I_ + 1)) - 1> INDEXED_USERS;
+    static inline uint8_t NEXT_EMPTY_INDEX = 1;
+    static inline decltype(NEXT_EMPTY_INDEX) LAST_SET_INDEX = 1;
+
+    static uint8_t GetOrCreateIndexByUserID(int64_t userID) {
+        if (userID == 0)
+            return 0;
+
+        // Try searching for a preexisting userID
+        for (decltype(LAST_SET_INDEX) i = 1; i <= LAST_SET_INDEX; i++) {
+            if (INDEXED_USERS[i] == userID) {
+                return i;
+            }
+        }
+
+        // Set the userID in the next available slot
+        assert(INDEXED_USERS[NEXT_EMPTY_INDEX] == 0);
+        const auto index = NEXT_EMPTY_INDEX;
+        INDEXED_USERS[NEXT_EMPTY_INDEX] = userID;
+
+        LAST_SET_INDEX = std::max(LAST_SET_INDEX, NEXT_EMPTY_INDEX);
+
+        NEXT_EMPTY_INDEX++;
+
+        // Find the next empty slot starting from the previous empty
+        for (auto i = NEXT_EMPTY_INDEX; i <= LAST_SET_INDEX + 1; i++) {
+            if (INDEXED_USERS[i] == 0) {
+                NEXT_EMPTY_INDEX = i;
+                break;
+            }
+        }
+
+        return index;
+    }
+
+    static void RemoveIndexByUserID(int64_t userID) {
+        if (userID == 0)
+            return;
+
+        // Try searching for a preexisting userID
+        for (decltype(LAST_SET_INDEX) i = 1; i <= LAST_SET_INDEX; i++) {
+            if (INDEXED_USERS[i] == userID) {
+                INDEXED_USERS[i] = 0;
+                NEXT_EMPTY_INDEX = std::min(i, NEXT_EMPTY_INDEX);
+                break;
+            }
+        }
+
+        // Try setting the last index with a value
+        for (auto i = LAST_SET_INDEX; i > 0; i--) {
+            if (INDEXED_USERS[i] != 0) {
+                LAST_SET_INDEX = i;
+                break;
+            }
+        }
+    }
+
+    static int64_t GetOwnerByIndex(uint16_t index) {
+        if (index < INDEXED_USERS.size())
+            return INDEXED_USERS[index];
+
+        throw std::runtime_error("owner index exceeds capacity");
+    }
 
     static constexpr auto OWNER_PACK_INDEX = 0;
 
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
     static constexpr auto PERSISTENT_PACK_INDEX = OWNER_PACK_INDEX + 1;
     static constexpr auto DISTANT_PACK_INDEX = PERSISTENT_PACK_INDEX + 1;
     static constexpr auto TYPE_PACK_INDEX = DISTANT_PACK_INDEX + 1;
@@ -329,8 +393,8 @@ private:
     static constexpr auto PREFAB_PACK_INDEX = OWNER_PACK_INDEX + 1;
 #endif
 
-#if VH_IS_ON(VH_ACCURATE_ZDOS) \
-    || VH_ZDO_OWNER_BITS_I_ + VH_ZDO_PREFAB_BITS_I_ <= 16
+#if VH_IS_ON(VH_ZDO_INFO) \
+    || (VH_ZDO_OWNER_BITS_I_ + VH_ZDO_PREFAB_BITS_I_ <= 16)
     using U = uint16_t;
 #else
     using U = uint32_t;
@@ -351,7 +415,7 @@ private:
     // The smallest a ZDO can be (with all lossy optimizations)
     //  Is 12 + 4 + 4 + 6 + 4 = 
 
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
     // 40 bytes (with ZDOID packed)
 
     Vector3f m_pos;                                 // 12 bytes
@@ -622,7 +686,7 @@ public:
         return this->m_id;
     }
 
-    [[nodiscard]] Vector3f Position() const {
+    [[nodiscard]] Vector3f GetPosition() const {
         return m_pos;
     }
 
@@ -645,9 +709,9 @@ public:
         }
     }
         
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
     [[nodiscard]] const Prefab& GetPrefab() const {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
 #else
         return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
@@ -656,7 +720,7 @@ public:
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         return this->m_prefabHash;
 #else
         //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
@@ -686,7 +750,7 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
+        return GetOwnerByIndex(m_pack.Get<OWNER_PACK_INDEX>());
     }
 
 
@@ -729,7 +793,8 @@ public:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::GetOrCreateIndexByUserID(owner));
+        //assert(false);
+        m_pack.Set<OWNER_PACK_INDEX>(GetOrCreateIndexByUserID(owner));
     }
 
 
@@ -754,7 +819,7 @@ public:
     //}
 
     [[nodiscard]] bool IsPersistent() const {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         return m_pack.Get<PERSISTENT_PACK_INDEX>();
 #else
         return !GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED);
@@ -771,7 +836,7 @@ public:
     //}
 
     [[nodiscard]] bool IsDistant() const {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         return m_pack.Get<DISTANT_PACK_INDEX>();
 #else
         return GetPrefab().AllFlagsPresent(Prefab::Flag::DISTANT);
@@ -784,7 +849,7 @@ public:
     //}
 
     [[nodiscard]] ObjectType GetType() const {
-#if VH_IS_ON(VH_ACCURATE_ZDOS)
+#if VH_IS_ON(VH_ZDO_INFO)
         return (ObjectType) m_pack.Get<TYPE_PACK_INDEX>();
 #else
         return GetPrefab().m_type
@@ -795,7 +860,17 @@ public:
 
     [[nodiscard]] size_t GetTotalAlloc() {
         size_t size = 0;
-        //for (auto&& pair : m_members) size += sizeof(Ord) + pair.second.GetTotalAlloc();
+        auto&& find = ZDO_MEMBERS.find(ID());
+        if (find != ZDO_MEMBERS.end()) {
+            for (auto&& pair : find->second) {
+                std::visit(VUtils::Traits::overload{
+                    [](const std::string& v) -> size_t { return sizeof(std::string) + v.capacity(); },
+                    [](const BYTES_t& v) -> size_t { return sizeof(BYTES_t) + v.capacity(); },
+                    [](const auto& v) -> size_t { return sizeof(std::remove_cvref_t<decltype(v)>); }
+                }, pair.second);
+            }
+        }
+        
         return size;
     }
 };

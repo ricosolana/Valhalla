@@ -85,7 +85,7 @@ void INetManager::SendPlayerList() {
                     else {
                         auto&& zdo = peer->GetZDO();
                         if (zdo)
-                            writer.Write(zdo->Position());
+                            writer.Write(zdo->GetPosition());
                         else
                             writer.Write(peer->m_pos);
                     }

@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_PREFAB_INFO)
 #include "VUtilsString.h"
 
 #include "Vector.h"

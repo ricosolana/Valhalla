@@ -71,7 +71,7 @@
     #define VH_RESILIENT_LOADING_I_ VH_DEFAULT_ON
 #endif
 
-#define VH_ACCURATE_ZDOS 1
+#define VH_ZDO_INFO 1
 
 // Whether to store exact data without rounding/approximations/assumptions
 //  prefab hash
@@ -80,14 +80,14 @@
 //  distant
 // might affect memory and performance
 // TODO rename 'VH_FULLY_FLEDGED_ZDOS'
-#if defined(VH_ACCURATE_ZDOS)
-    #if VH_ACCURATE_ZDOS != 0
-        #define VH_ACCURATE_ZDOS_I_ VH_ON
+#if defined(VH_ZDO_INFO)
+    #if VH_ZDO_INFO != 0
+        #define VH_ZDO_INFO_I_ VH_ON
     #else
-        #define VH_ACCURATE_ZDOS_I_ VH_OFF
+        #define VH_ZDO_INFO_I_ VH_OFF
     #endif
 #else
-    #define VH_ACCURATE_ZDOS_I_ VH_DEFAULT_OFF
+    #define VH_ZDO_INFO_I_ VH_DEFAULT_OFF
 #endif
 
 // How many bits to reserve for user in ZDO::m_pack
@@ -140,6 +140,19 @@
 #else
     #define VH_ZDO_PREFAB_BITS_I_ 12
 #endif
+
+/*
+#if defined(VH_DATA_REV_BITS)
+#define VH_DATA_REV_BITS_I_ VH_DATA_REV_BITS
+#else
+#define VH_DATA_REV_BITS_I_ 21
+#endif
+
+#if defined(VH_OWNER_REV_BITS)
+#define VH_OWNER_REV_BITS_I_ VH_OWNER_REV_BITS
+#else
+#define VH_OWNER_REV_BITS_I_ (VH_DATA_REV_BITS_I_ )
+#endif*/
 
 // data that is the same no matter what across prefabs can be omitted to avoid unnecessary redundancy
 //  the only reason against this is whether normally assumed data is required... which would means portions of the game have been 
@@ -283,28 +296,28 @@
     #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
 #endif
 
-//#define VH_STANDARD_PREFABS 0
+//#define VH_PREFAB_INFO 0
 
 // TODO consider retiring this?
 // Whether to use the smallest form prefabs possible
 //  Each prefab generally takes up min 72 bytes
 //  Each prefab minimally needs only flags to work well (not extra redundant hashes)
-#if defined(VH_STANDARD_PREFABS)
-    #if VH_STANDARD_PREFABS != 0
-        #define VH_STANDARD_PREFABS_I_ VH_ON
+#if defined(VH_PREFAB_INFO)
+    #if VH_PREFAB_INFO != 0
+        #define VH_PREFAB_INFO_I_ VH_ON
     #else
-        #define VH_STANDARD_PREFABS_I_ VH_OFF
+        #define VH_PREFAB_INFO_I_ VH_OFF
     #endif
 #else
-    #define VH_STANDARD_PREFABS_I_ VH_DEFAULT_ON
+    #define VH_PREFAB_INFO_I_ VH_DEFAULT_ON
 #endif
 
 //#define VH_ZONE_GENERATION 0
 
 #if defined(VH_ZONE_GENERATION)
     #if VH_ZONE_GENERATION != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error "Zone generation VH_ZONE_GENERATION requires VH_STANDARD_PREFABS to be on"
+        #if VH_IS_OFF(VH_PREFAB_INFO)
+            #error "Zone generation VH_ZONE_GENERATION requires VH_PREFAB_INFO to be on"
         #endif
 
         #define VH_ZONE_GENERATION_I_ VH_ON
@@ -312,13 +325,13 @@
         #define VH_ZONE_GENERATION_I_ VH_OFF
     #endif
 #else
-    #define VH_ZONE_GENERATION_I_ VH_STANDARD_PREFABS_I_
+    #define VH_ZONE_GENERATION_I_ VH_PREFAB_INFO_I_
 #endif
 
 #if defined(VH_RANDOM_EVENTS)
     #if VH_RANDOM_EVENTS != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error "VH_RANDOM_EVENTS requires VH_STANDARD_PREFABS"
+        #if VH_IS_OFF(VH_PREFAB_INFO)
+            #error "VH_RANDOM_EVENTS requires VH_PREFAB_INFO"
         #endif
 
         #define VH_RANDOM_EVENTS_I_ VH_ON
@@ -326,13 +339,13 @@
         #define VH_RANDOM_EVENTS_I_ VH_OFF
     #endif
 #else
-    #define VH_RANDOM_EVENTS_I_ VH_STANDARD_PREFABS_I_
+    #define VH_RANDOM_EVENTS_I_ VH_PREFAB_INFO_I_
 #endif
 
 #if defined(VH_DUNGEON_GENERATION)
     #if VH_DUNGEON_GENERATION != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error("VH_DUNGEON_GENERATION requires VH_STANDARD_PREFABS")
+        #if VH_IS_OFF(VH_PREFAB_INFO)
+            #error("VH_DUNGEON_GENERATION requires VH_PREFAB_INFO")
         #endif
 
         #define VH_DUNGEON_GENERATION_I_ VH_ON
@@ -340,7 +353,7 @@
         #define VH_DUNGEON_GENERATION_I_ VH_OFF
     #endif
 #else
-    #define VH_DUNGEON_GENERATION_I_ VH_STANDARD_PREFABS_I_
+    #define VH_DUNGEON_GENERATION_I_ VH_PREFAB_INFO_I_
 #endif
 
 #if defined(VH_DISCORD_INTEGRATION)

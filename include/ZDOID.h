@@ -23,13 +23,13 @@ class ZDOID {
     uint16_t m_userIDIndex{};
 
     // Indexed UserIDs
-    static std::array<int64_t, std::numeric_limits<decltype(m_userIDIndex)>::max()> INDEXED_USERS;
+    static inline std::array<int64_t, std::numeric_limits<decltype(m_userIDIndex)>::max()> INDEXED_USERS;
 
-    static decltype(m_userIDIndex) NEXT_EMPTY_INDEX;
-    static decltype(m_userIDIndex) LAST_SET_INDEX;
+    static inline decltype(m_userIDIndex) NEXT_EMPTY_INDEX = 1;
+    static inline decltype(m_userIDIndex) LAST_SET_INDEX = 1;
 
-    static constexpr auto USER_PACK_INDEX = 0;
-    static constexpr auto ID_PACK_INDEX = 1;
+    static inline constexpr auto USER_PACK_INDEX = 0;
+    static inline constexpr auto ID_PACK_INDEX = 1;
 
 public:
     static const ZDOID NONE;
@@ -38,7 +38,7 @@ private:
     static decltype(m_userIDIndex) GetOrCreateIndexByUserID(int64_t userID) {
         if (userID == 0)
             return 0;
-        
+
         // Try searching for a preexisting userID
         for (decltype(LAST_SET_INDEX) i = 1; i <= LAST_SET_INDEX; i++) {
             if (INDEXED_USERS[i] == userID) {
@@ -48,13 +48,15 @@ private:
 
         // Set the userID in the next available slot
         assert(INDEXED_USERS[NEXT_EMPTY_INDEX] == 0);
-        const decltype(NEXT_EMPTY_INDEX) index = NEXT_EMPTY_INDEX;
+        const auto index = NEXT_EMPTY_INDEX;
         INDEXED_USERS[NEXT_EMPTY_INDEX] = userID;
+
+        LAST_SET_INDEX = std::max(LAST_SET_INDEX, NEXT_EMPTY_INDEX);
 
         NEXT_EMPTY_INDEX++;
 
         // Find the next empty slot starting from the previous empty
-        for (auto i = NEXT_EMPTY_INDEX; i <= LAST_SET_INDEX; i++) {
+        for (auto i = NEXT_EMPTY_INDEX; i <= LAST_SET_INDEX + 1; i++) {
             if (INDEXED_USERS[i] == 0) {
                 NEXT_EMPTY_INDEX = i;
                 break;
@@ -78,7 +80,7 @@ private:
         }
 
         // Try setting the last index with a value
-        for (auto i = LAST_SET_INDEX; i >= 0; i--) {
+        for (auto i = LAST_SET_INDEX; i > 0; i--) {
             if (INDEXED_USERS[i] != 0) {
                 LAST_SET_INDEX = i;
                 break;
@@ -90,7 +92,7 @@ private:
         if (index < INDEXED_USERS.size())
             return INDEXED_USERS[index];
 
-        throw std::runtime_error("user bit cap exceeded");
+        throw std::runtime_error("userID index exceeds capacity");
     }
 
     /*

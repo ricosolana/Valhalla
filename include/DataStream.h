@@ -82,7 +82,19 @@ public:
         }, this->m_data);
     }
 
-    void Skip(size_t offset) {
-        this->SetPos(this->Position() + offset);
+    // resize with extra bytes
+    void extend(size_t count) {
+        std::visit(VUtils::Traits::overload{
+            [this, count](std::reference_wrapper<BYTES_t> buf) { 
+                if (this->CheckOffset(count))
+                    buf.get().resize(this->m_pos + count);
+            },
+            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
+        }, this->m_data);
+    }
+
+    void Skip(size_t count) {
+        //extend(count);
+        this->SetPos(this->Position() + count);
     }
 };

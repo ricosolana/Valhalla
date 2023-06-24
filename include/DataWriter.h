@@ -15,13 +15,7 @@ private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-        std::visit(VUtils::Traits::overload{
-            [this, count](std::reference_wrapper<BYTES_t> buf) { 
-                if (this->CheckOffset(count))
-                    buf.get().resize(this->m_pos + count);
-            },
-            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
-        }, this->m_data);
+        extend(count);
 
         std::copy(buffer,
                   buffer + count, 
