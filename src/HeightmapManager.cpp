@@ -13,7 +13,7 @@
 
 //static robin_hood::unordered_map<Vector2i, std::unique_ptr<Heightmap>, HashUtils::Hasher>
 
-auto HEIGHTMAP_MANAGER(std::make_unique<IHeightmapManager>());
+auto HEIGHTMAP_MANAGER = std::make_unique<IHeightmapManager>();
 IHeightmapManager* HeightmapManager() {
     return HEIGHTMAP_MANAGER.get();
 }

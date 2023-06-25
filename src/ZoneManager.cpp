@@ -12,7 +12,7 @@
 #include "DungeonGenerator.h"
 #include "ZDOManager.h"
 
-auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
+auto ZONE_MANAGER = std::make_unique<IZoneManager>(); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
     return ZONE_MANAGER.get();
 }

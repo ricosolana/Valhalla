@@ -9,7 +9,7 @@
 #include "NetManager.h"
 #include "Hashes.h"
 
-auto DUNGEON_MANAGER(std::make_unique<IDungeonManager>()); // TODO stop constructing in global
+auto DUNGEON_MANAGER = std::make_unique<IDungeonManager>(); // TODO stop constructing in global
 IDungeonManager* DungeonManager() {
     return DUNGEON_MANAGER.get();
 }

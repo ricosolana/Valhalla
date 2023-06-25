@@ -3,7 +3,7 @@
 #include "ZDOManager.h"
 #include "VUtilsResource.h"
 
-auto PREFAB_MANAGER(std::make_unique<IPrefabManager>());
+auto PREFAB_MANAGER = std::make_unique<IPrefabManager>();
 IPrefabManager* PrefabManager() {
     return PREFAB_MANAGER.get();
 }
