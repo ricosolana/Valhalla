@@ -304,6 +304,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name, std::
 
 BYTES_t IWorldManager::SaveWorldDB() const {
 	BYTES_t bytes;
+	bytes.reserve(50000000);
 	DataWriter writer(bytes);
 	
 	writer.Write(VConstants::WORLD);

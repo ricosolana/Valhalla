@@ -36,6 +36,8 @@ endif()
 
 
 
+option(TRACY_ENABLE "" OFF)
+
 ############
 # Libraries
 ############
@@ -174,9 +176,11 @@ endif()
 
 
 
-set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
-    TRACY_ENABLE OFF
-)
+#add_compile_definitions(TRACY_ENABLE=0) 
+
+#set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
+#    TRACY_ENABLE OFF
+#)
 
 
 

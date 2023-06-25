@@ -190,10 +190,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 }
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
-//#define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
-#define VH_ASSERT(cond) if (!(cond)) { }
+#define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
+//#define VH_ASSERT(cond) if (!(cond)) { }
 
-static bool TEST_INDEX_EMIT = false;
+bool TEST_INDEX_EMIT = true;
 
 void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     auto flags = reader.Read<uint16_t>();
@@ -215,9 +215,6 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     
     if (version) {
         auto sector = reader.Read<Vector2s>(); // redundant
-
-
-
         this->m_pos = reader.Read<Vector3f>();
 
         // Failsafe
@@ -254,7 +251,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
         this->m_rotation = reader.Read<Vector3f>();
 
         // Failsafe
-        VH_ASSERT(this->m_rotation.SqMagnitude() < 400.f * 400.f * 400.f);
+        //VH_ASSERT(this->m_rotation.SqMagnitude() < 400.f * 400.f * 400.f);
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
