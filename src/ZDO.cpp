@@ -193,8 +193,21 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 //#define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
 #define VH_ASSERT(cond) if (!(cond)) { }
 
-void ZDO::Unpack(DataReader& reader, int32_t version) {
+static bool TEST_INDEX_EMIT = false;
+
+void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     auto flags = reader.Read<uint16_t>();
+
+    // well fuck
+    //  TODO remove this later
+
+    static_assert(_DEBUG, "please remove this");
+    if (TEST_INDEX_EMIT) {
+        auto vChecksum = reader.Read<int32_t>();
+        if (vChecksum != index) {
+            DebugBreak();
+        }
+    }
 
     // Failsafe
     // Whether flags might be invalid
@@ -305,7 +318,7 @@ ZoneID ZDO::GetZone() const {
 
 
 
-void ZDO::Pack(DataWriter& writer, bool network) const {
+void ZDO::Pack(DataWriter& writer, bool network, int32_t index) const {
     bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
@@ -328,6 +341,11 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     const auto flagPos = writer.Position();
     //writer.Skip(sizeof(flags));
     writer.Write(flags);
+    
+    // TODO remove
+    static_assert(_DEBUG, "please remove this");
+    if (TEST_INDEX_EMIT) writer.Write(index);
+    
     if (!network) {
         writer.Write(GetZone());
         writer.Write(GetPosition());

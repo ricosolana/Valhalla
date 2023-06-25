@@ -455,12 +455,12 @@ public:
     // Reads from a buffer using the new efficient format (version >= 31)
     //  version=0: Read according to the network deserialize format
     //  version>0: Read according to the file load format
-    void Unpack(DataReader& reader, int32_t version);
+    void Unpack(DataReader& reader, int32_t version, int32_t index);
 
     // Writes to a buffer using the new efficient format (version >= 31)
     //  If 'network' is true, write according to the network serialize format
     //  Otherwise write according to the file save format
-    void Pack(DataWriter& writer, bool network) const;
+    void Pack(DataWriter& writer, bool network, int32_t index) const;
 
     // Erases and returns the value 
     template<typename T>

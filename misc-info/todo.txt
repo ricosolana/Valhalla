@@ -1,4 +1,7 @@
 todo:
+    - todo create world backups prior to overwriting the source file
+        or do writing to memory first, then write to file
+
     - fix the zdo-owner zdoid-userID overlap issue
         must handle gc and expedient creation
         

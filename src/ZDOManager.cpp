@@ -203,7 +203,7 @@ void IZDOManager::Save(DataWriter& writer) {
 		for (auto&& pair : m_objectsByID) {
 			auto&& zdo = *pair.second;
 			if (zdo.IsPersistent()) {
-				zdo.Pack(writer, false);
+				zdo.Pack(writer, false, count);
 				count++;
 			}
 		}
@@ -236,7 +236,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 		{
 			zdo->m_id.SetUID(++ZDOManager()->m_nextUid);
-			zdo->Unpack(reader, version);
+			zdo->Unpack(reader, version, i);
 		}
 
 		_AddZDOToZone(*zdo.get());
@@ -829,7 +829,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.Write(zdo.GetPosition());
 
 			writer.SubWrite([&zdo](DataWriter& writer) {
-				zdo.Pack(writer, true);
+				zdo.Pack(writer, true, 0);
 			});
 
 			peer.m_zdos[zdo.ID()] = { zdo.m_rev, time };
@@ -925,7 +925,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				zdo.m_rev.SetOwnerRevision(ownerRev);
 
 				// Unpack the ZDOs primary data
-				zdo.Unpack(des, 0);
+				zdo.Unpack(des, 0, 0);
 
 				// Only disperse through world if ZDO is new
 				if (created) {
