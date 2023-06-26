@@ -278,6 +278,10 @@ private:
                 writer.Write(this->xhash_to_hash<T>(pair.first));
                 writer.Write(*data);
                 count++;
+                if (count == std::numeric_limits<decltype(count)>::max()) {
+                    //LOG_WARNING("ZDO member truncation");
+                    break;
+                }
             }
         }
 

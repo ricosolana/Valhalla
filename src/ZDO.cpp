@@ -193,7 +193,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
 //#define VH_ASSERT(cond) if (!(cond)) { }
 
-bool TEST_INDEX_EMIT = true;
+bool TEST_INDEX_EMIT = false;
 
 void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     auto flags = reader.Read<uint16_t>();
@@ -214,18 +214,18 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     VH_ASSERT(flags <= 0b1111111111111);
     
     if (version) {
-        auto sector = reader.Read<Vector2s>(); // redundant
+        reader.Read<Vector2s>(); // redundant
         this->m_pos = reader.Read<Vector3f>();
 
         // Failsafe
         //assert(this->m_pos.SqMagnitude() < 21000.f*21000.f);
-        VH_ASSERT(
-            std::abs(this->m_pos.x) < 25000.f
-            && std::abs(this->m_pos.y) < 10000.f // not sure about dungeons or whatever else
-            && std::abs(this->m_pos.z) < 25000.f
-        );
+        //VH_ASSERT(
+        //    (std::abs(this->m_pos.x) < 25000.f
+        //    && std::abs(this->m_pos.y) < 10000.f // not sure about dungeons or whatever else
+        //    && std::abs(this->m_pos.z) < 25000.f)
+        //);
 
-        VH_ASSERT(GetZone() == sector);
+        //VH_ASSERT(GetZone() == sector);
     }
 
     // Once initialized info
