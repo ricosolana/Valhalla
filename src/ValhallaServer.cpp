@@ -24,7 +24,7 @@
 
 quill::Logger *LOGGER = nullptr;
 
-auto VALHALLA_INSTANCE(std::make_unique<IValhalla>());
+auto VALHALLA_INSTANCE = std::make_unique<IValhalla>();
 IValhalla* Valhalla() {
     return VALHALLA_INSTANCE.get();
 }

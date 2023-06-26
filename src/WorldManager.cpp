@@ -11,7 +11,7 @@
 #include "NetManager.h"
 #include "RandomEventManager.h"
 
-auto WORLD_MANAGER(std::make_unique<IWorldManager>());
+auto WORLD_MANAGER = std::make_unique<IWorldManager>();
 IWorldManager* WorldManager() {
 	return WORLD_MANAGER.get();
 }

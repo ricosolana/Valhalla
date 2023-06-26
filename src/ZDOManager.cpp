@@ -9,7 +9,7 @@
 #include "HashUtils.h"
 #include "DungeonManager.h"
 
-auto ZDO_MANAGER(std::make_unique<IZDOManager>());
+auto ZDO_MANAGER = std::make_unique<IZDOManager>();
 IZDOManager* ZDOManager() {
 	return ZDO_MANAGER.get();
 }

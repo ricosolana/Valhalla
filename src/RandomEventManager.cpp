@@ -9,7 +9,7 @@
 #include "Prefab.h"
 #include "DiscordManager.h"
 
-auto RANDOM_EVENT_MANAGER(std::make_unique<IRandomEventManager>());
+auto RANDOM_EVENT_MANAGER = std::make_unique<IRandomEventManager>();
 IRandomEventManager* RandomEventManager() {
 	return RANDOM_EVENT_MANAGER.get();
 }

@@ -22,7 +22,7 @@
 #include "DungeonManager.h"
 #include "DungeonGenerator.h"
 
-auto MOD_MANAGER(std::make_unique<IModManager>());
+auto MOD_MANAGER = std::make_unique<IModManager>();
 IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
