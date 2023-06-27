@@ -27,6 +27,8 @@ public:
     BYTES_t SaveMeta();
     //BYTES_t SaveDB();
 
+    void LoadDB(DataReader reader, bool recovery);
+
     void WriteFileMeta(const fs::path& root);
     void WriteFileDB(const fs::path& root);
     void LoadFileDB(const fs::path& root);

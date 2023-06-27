@@ -18,12 +18,25 @@ class IZDOManager {
 #if VH_IS_ON(VH_PREFAB_INFO)
 	// Predicate for whether a zdo is a prefab with or without given flags
 	//	prefabHash: if 0, then prefabHash check is skipped
-	static bool PREFAB_CHECK_FUNCTION(std::reference_wrapper<const ZDO> zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		auto&& prefab = zdo.get().GetPrefab();
+	static bool PREFAB_CHECK_FUNCTION(std::reference_wrapper<const ZDO> ref, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+		auto&& zdo = ref.get();
 
-		return prefab.AllFlagsAbsent(flagsAbsent)
-			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
-			&& prefab.AllFlagsPresent(flagsPresent);
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
+		try {
+#endif
+			auto&& prefab = zdo.GetPrefab();
+
+			return prefab.AllFlagsAbsent(flagsAbsent)
+				&& (prefabHash == 0 || prefab.m_hash == prefabHash)
+				&& prefab.AllFlagsPresent(flagsPresent);
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
+		}
+		catch (const std::exception& e) {
+			return flagsAbsent == Prefab::Flag::NONE
+				&& (prefabHash == 0 || zdo.GetPrefabHash() == prefabHash)
+				&& flagsPresent == Prefab::Flag::NONE;
+		}
+#endif
 	}
 #endif // VH_PREFAB_INFO
 
@@ -146,7 +159,7 @@ public:
 	void Save(DataWriter& writer);
 
 	// Used when loading the world from disk
-	void Load(DataReader& reader, int version);
+	void Load(DataReader& reader, int version, bool restore);
 
 #if VH_IS_ON(VH_PREFAB_INFO)
 	[[maybe_discard]] ZDO::reference Instantiate(const Prefab& prefab, Vector3f pos);

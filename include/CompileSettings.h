@@ -1,16 +1,12 @@
 #pragma once
 
-//#include <chrono>
-
-//using namespace std::chrono_literals;
-
-//#define RUN_TESTS
-
+// Valhalla project version
 #define VH_VERSION "v1.0.5"
 
-// ELPP log file name
+// Valhalla log file location (relative to data path)
 #define VH_LOGFILE_PATH "logs/log.txt"
 
+// Lua paths
 #define VH_LUA_PATH "lua"
 #define VH_LUA_CPATH "bin"
 #define VH_MOD_PATH "mods"
@@ -56,71 +52,59 @@
     #define VH_PLATFORM_WINDOWS_I_ VH_DEFAULT_OFF
 #endif
 
-// im done naming these properly
-// TODO rename 
-//  'VH_WORLD_RECOVERY_MODE'
-//  'VH_RECOVERABLE_WORLDS'
-//  'VH_RECOVER_WORLDS'
-#if defined(VH_RESILIENT_LOADING)
-    #if VH_RESILIENT_LOADING != 0
-        #define VH_RESILIENT_LOADING_I_ VH_ON
+// Whether to attempt to recover corrupt worlds
+//  Save files in 0.216.* had changes to how ZDOs are saved that break while loading (8-bit integer overflow occurs while saving dungeons)
+//  This attempts to read those 8-bit numbers with an additional set bit (assuming a larger number) for restoration
+#if defined(VH_WORLD_RECOVERY)
+    #if VH_WORLD_RECOVERY != 0
+        #define VH_WORLD_RECOVERY_I_ VH_ON
     #else
-        #define VH_RESILIENT_LOADING_I_ VH_OFF
+        #define VH_WORLD_RECOVERY_I_ VH_OFF
     #endif
 #else
-    #define VH_RESILIENT_LOADING_I_ VH_DEFAULT_ON
+    #define VH_WORLD_RECOVERY_I_ VH_DEFAULT_ON
 #endif
 
-#define VH_ZDO_INFO 1
+#define VH_PORTABLE_ZDOS 1
 
-// Whether to store exact data without rounding/approximations/assumptions
-//  prefab hash
-//  type
-//  persistent
-//  distant
-// might affect memory and performance
-// TODO rename 'VH_FULLY_FLEDGED_ZDOS'
-#if defined(VH_ZDO_INFO)
-    #if VH_ZDO_INFO != 0
-        #define VH_ZDO_INFO_I_ VH_ON
+// Whether to store prefab/type/distant/persistent directly inside zdo
+//  Recommended for modded worlds and/or maintaining general compatibility when +4bits is not a concern
+#if defined(VH_PORTABLE_ZDOS)
+    #if VH_PORTABLE_ZDOS != 0
+        #define VH_PORTABLE_ZDOS_I_ VH_ON
     #else
-        #define VH_ZDO_INFO_I_ VH_OFF
+        #define VH_PORTABLE_ZDOS_I_ VH_OFF
     #endif
 #else
-    #define VH_ZDO_INFO_I_ VH_DEFAULT_OFF
+    #define VH_PORTABLE_ZDOS_I_ VH_DEFAULT_OFF
 #endif
 
-// How many bits to reserve for user in ZDO::m_pack
-//  Default is 4: 2^4: 16 users (actually 14 users because 2 are reserved for both server/nil)
-//      4 bits is ideal for small server expecting no more than 14 unique players (since the server session launched)
-//  Setting to a larger number requires a larger datatype to hold
-//  int32 is the next size, but 
-//#if defined(VH_ZDOID_USER_BITS)
-//    // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
-//    
-//    // ensure esp32 is always 32 bit
-//    // 
-//    #if VH_ZDOID_USER_BITS >= 2 && VH_ZDOID_USER_BITS <= 7
-//        #define VH_ZDOID_USER_BITS_I_ (VH_ZDOID_USER_BITS)
-//    #else
-//        #error "VH_ZDOID_USER_BITS must be between 2 and 7 (inclusive)"
-//    #endif
-//#else
-    #define VH_ZDOID_USER_BITS_I_ (16)
-//#endif
-
-#if defined(VH_ZDOID_UID_BITS)
-    #if VH_ZDOID_UID_BITS != 0
-        #define VH_ZDOID_UID_BITS_I_ 
+// Whether to perform zdo dict conversions for version 29 and earlier
+//  Enabled by default
+#if defined(VH_CONVERT_LEGACY)
+    #if VH_CONVERT_LEGACY != 0
+        #define VH_CONVERT_LEGACY_I_ VH_ON
     #else
-        #define VH_ZDOID_UID_BITS_I_ 
+        #define VH_CONVERT_LEGACY_I_ VH_OFF
     #endif
 #else
-    #define VH_ZDOID_UID_BITS_I_ VH_ZDOID_UID_BITS
+    #define VH_CONVERT_LEGACY_I_ VH_DEFAULT_ON
 #endif
 
+// Whether to use a dict for querying zdos by prefab instead of iterating all zdos in world
+//  Enabled by default
+#if defined(VH_ZDO_FAST_QUERY_BY_PREFAB)
+    #if VH_ZDO_FAST_QUERY_BY_PREFAB != 0
+        #define VH_ZDO_FAST_QUERY_BY_PREFAB_I_ VH_ON
+    #else
+        #define VH_ZDO_FAST_QUERY_BY_PREFAB_I_ VH_OFF
+    #endif
+#else
+    #define VH_ZDO_FAST_QUERY_BY_PREFAB_I_ VH_DEFAULT_ON
+#endif
 
-
+// How many bits to reserve for owner index in ZDO
+//  At least 2 bits must be allocated for minimum compatibility
 #if defined(VH_ZDO_OWNER_BITS)
     #if VH_ZDO_OWNER_BITS < 2
         #error "VH_ZDO_OWNER_BITS must be at least 2"
@@ -131,6 +115,7 @@
     #define VH_ZDO_OWNER_BITS_I_ 4
 #endif
 
+// How many bits to reserve for prefab index in ZDO
 #if defined(VH_ZDO_PREFAB_BITS)
     #if VH_ZDO_PREFAB_BITS >= 12
         #define VH_ZDO_PREFAB_BITS_I_ VH_PREFAB_BITS

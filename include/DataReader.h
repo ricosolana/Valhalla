@@ -14,13 +14,18 @@
 
 class DataReader : public DataStream {
 private:
-    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+    //template<bool advance = true>
+    void PeekSomeBytes(BYTE_t* buffer, size_t count) const {
         this->AssertOffset(count);
 
         // read into 'buffer'
         std::copy(this->data() + this->m_pos,
             this->data() + this->m_pos + count,
             buffer);
+    }
+
+    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+        PeekSomeBytes(buffer, count);
 
         this->m_pos += count;
     }
@@ -47,6 +52,27 @@ public:
     explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
 public:
+    //  Reads a primitive type in-place
+    template<typename T>
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    decltype(auto) Peek() const {
+        BYTE_t out[sizeof(T)]{};
+        PeekSomeBytes(out, sizeof(T));
+
+        if constexpr (std::is_floating_point_v<T>) {
+            auto classify = std::fpclassify(*reinterpret_cast<T*>(out));
+            if (!(classify == FP_NORMAL || classify == FP_ZERO))
+                throw std::runtime_error("bad floating point number");
+        }
+        else if constexpr (std::is_same_v<T, bool>) {
+            if (out[0] > 0b1) {
+                throw std::runtime_error("bad bool");
+            }
+        }
+
+        return *reinterpret_cast<T*>(out);
+    }
+
     template<typename T>
         requires 
             (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
@@ -82,9 +108,21 @@ public:
     template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
-        T out{};
-        ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
-        return out;
+        BYTE_t out[sizeof(T)]{};
+        ReadSomeBytes(out, sizeof(T));
+
+        if constexpr (std::is_floating_point_v<T>) {
+            auto classify = std::fpclassify(*reinterpret_cast<T*>(out));
+            if (!(classify == FP_NORMAL || classify == FP_ZERO))
+                throw std::runtime_error("bad floating point number");
+        }
+        else if constexpr (std::is_same_v<T, bool>) {
+            if (out[0] > 0b1) {
+                throw std::runtime_error("bad bool");
+            }
+        }
+
+        return *reinterpret_cast<T*>(out);
     }
 
     // Reads a container of supported types
@@ -101,8 +139,10 @@ public:
         Iterable out{};
 
         // TODO why is this here? should always reserve regardless
-        if constexpr (std::is_same_v<Type, std::string>)
-            out.reserve(count);
+        //if constexpr (std::is_same_v<Type, std::string>)
+            //out.reserve(count);
+
+        out.reserve(count);
 
         for (int32_t i=0; i < count; i++) {
             auto type = Read<Type>();
@@ -135,6 +175,9 @@ public:
         return ZDOID(a, b);
     }
 
+    static inline float x1v{ 99999999.f }, y1v{ 99999999.f }, z1v{ 99999999.f };
+    static inline float x2v{ -99999999.f }, y2v{ -99999999.f }, z2v{ -99999999.f };
+
     // Reads a Vector3f
     //  12 bytes total are read:
     //  float: x (4 bytes)
@@ -145,6 +188,10 @@ public:
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
+
+        x1v = std::min(a, x1v); y1v = std::min(b, y1v); z1v = std::min(c, z1v);
+        x2v = std::max(a, x2v); y2v = std::max(b, y2v); z2v = std::max(c, z2v);
+
         return Vector3f(a, b, c);
     }
 
@@ -172,6 +219,8 @@ public:
     }
 
 
+    static inline float x1q{ 99999999.f }, y1q{ 99999999.f }, z1q{ 99999999.f }, w1q{ 99999999.f };
+    static inline float x2q{ -99999999.f }, y2q{ -99999999.f }, z2q{ -99999999.f }, w2q{ 99999999.f };
 
     // Reads a Quaternion
     //  16 bytes total are read:
@@ -185,6 +234,20 @@ public:
         auto b(Read<float>());
         auto c(Read<float>());
         auto d(Read<float>());
+
+        // 1.00000024
+        if (std::abs(a) > 1.000001 || std::abs(b) > 1.000001 || std::abs(c) > 1.000001 || std::abs(d) > 1.000001)
+            throw std::runtime_error("bad quaternion range");
+
+        auto sqlength = a * a + b * b + c * c + d * d;
+        if (std::abs(sqlength - 1.f) > 0.001f)
+            throw std::runtime_error("bad quaternion length");
+
+        //x1q = std::min(a, x1q); y1q = std::min(b, y1q); z1q = std::min(c, z1q); w1q = std::min(d, w1q);
+        //x2q = std::max(a, x2q); y2q = std::max(b, y2q); z2q = std::max(c, z2q); w2q = std::min(d, w2q);
+
+
+
         return Quaternion{ a, b, c, d };
     }
 
@@ -201,19 +264,25 @@ public:
     decltype(auto) Read() {
         auto b1 = Read<uint8_t>();
 
+        //auto&& CHECK_TRAILING = [](uint8_t b) -> void { if ((b >> 6) != 0b10) throw std::runtime_error("bad utf8"); };
+
+        // 4 byte
+        if (b1 >= 0xF0) {
+            throw std::runtime_error("4-byte utf8 unsupported");
+        }
         // 3 byte
-        if (b1 >= 0xE0) {
-            auto b2 = Read<uint8_t>() & 0x3F;
-            auto b3 = Read<uint8_t>() & 0x3F;
+        else if (b1 >= 0xE0) {
+            auto b2 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b2);
+            auto b3 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b3);
             return ((b1 & 0xF) << 12) | (b2 << 6) | b3;
         }
         // 2 byte
         else if (b1 >= 0xC0) {
-            auto b2 = Read<uint8_t>() & 0x3F;
+            auto b2 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b2);
             return ((b1 & 0x1F) << 6) | b2;
         }
         // 1 byte
-        else {
+        else { // if
             return b1 & 0x7F;
         }
     }

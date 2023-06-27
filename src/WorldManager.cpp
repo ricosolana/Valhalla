@@ -32,7 +32,11 @@ World::World(DataReader reader) {
 	auto worldVersion = reader.Read<int32_t>();
 
 	if (worldVersion != VConstants::WORLD) {
-		LOG_WARNING(LOGGER, "Loading unsupported world meta version: {}", worldVersion);
+		LOG_WARNING(LOGGER, "Loading legacy world meta version: {}", worldVersion);
+	}
+
+	if (worldVersion == 31) {
+		LOG_WARNING(LOGGER, "Valheim worlds saved in version v0.216.* (world version 31) are corrupted, so don't be surprised if loading/recovery fails");
 	}
 
 	m_name = reader.Read<std::string>();
@@ -112,76 +116,72 @@ void World::WriteFileDB(const fs::path& root) {
 	}
 }
 
+void World::LoadDB(DataReader reader, bool recovery) {
+	auto now(steady_clock::now());
+
+	try {
+		auto worldVersion = reader.Read<int32_t>();
+		if (worldVersion != VConstants::WORLD) {
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+			LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
+#else // !VH_LEGACY_WORLD_COMPATABILITY
+			throw std::runtime_error("Legacy worlds are unsupported");
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+		}
+		else {
+			LOG_INFO(LOGGER, "Loading world version {}", worldVersion);
+		}
+
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+		if (worldVersion >= 4)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+		{
+			Valhalla()->m_worldTime = reader.Read<double>();
+		}
+
+		ZDOManager()->Load(reader, worldVersion, recovery);
+
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+		if (worldVersion >= 12)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+		{
+			ZoneManager()->Load(reader, worldVersion, false);
+		}
+
+#if VH_IS_ON(VH_RANDOM_EVENTS)
+#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+		if (worldVersion >= 15)
+#endif // VH_LEGACY_WORLD_COMPATABILITY
+		{
+			RandomEventManager()->Load(reader, worldVersion);
+		}
+#endif // VH_RANDOM_EVENTS
+		LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR(LOGGER, "{}", e.what());
+	#if VH_IS_ON(VH_WORLD_RECOVERY)
+		if (!recovery) {
+			LOG_WARNING(LOGGER, "Attempting to recover corrupted world");
+
+			reader.SetPos(0);
+			LoadDB(reader, true);
+		}
+		else {
+			LOG_ERROR(LOGGER, "Failed to recover world, too bad...");
+		}
+	#else
+		LOG_ERROR(LOGGER, "Failed to load world");
+	#endif
+	}
+}
+
 void World::LoadFileDB(const fs::path& root) {
 	auto now(steady_clock::now());
 
 	auto path(root / (m_name + ".db"));
 	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-		try {
-			DataReader reader(opt.value());
-
-			auto worldVersion = reader.Read<int32_t>();
-			if (worldVersion != VConstants::WORLD) {
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-				LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
-#else // !VH_LEGACY_WORLD_COMPATABILITY
-				//LOG_ERROR(LOGGER, "Requires VH_LEGACY_WORLD_COMPATIBILITY to loaded legacy worlds");
-				throw std::runtime_error("legacy world loading unsupported with current compile settings");
-#endif // VH_LEGACY_WORLD_COMPATABILITY
-			}
-			else {
-				LOG_INFO(LOGGER, "Loading world version {}", worldVersion);
-			}
-
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-			if (worldVersion >= 4)
-#endif // VH_LEGACY_WORLD_COMPATABILITY
-			{
-				Valhalla()->m_worldTime = reader.Read<double>();
-			}
-
-#if VH_IS_ON(VH_RESILIENT_LOADING)
-			try 
-#endif
-			{
-				ZDOManager()->Load(reader, worldVersion); // TODO put try-catch in ZDOManager
-			}
-#if VH_IS_ON(VH_RESILIENT_LOADING)
-			catch (const std::exception& e) {
-				LOG_ERROR(LOGGER, "{}", e.what());
-				LOG_WARNING(LOGGER, "ZDOManager failed to load (resilient NYI)");
-			}
-#endif
-
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-			if (worldVersion >= 12)
-#endif // VH_LEGACY_WORLD_COMPATABILITY
-			{
-				ZoneManager()->Load(reader, worldVersion, false);
-			}
-
-#if VH_IS_ON(VH_RANDOM_EVENTS)
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
-			if (worldVersion >= 15)
-#endif // VH_LEGACY_WORLD_COMPATABILITY
-			{
-				RandomEventManager()->Load(reader, worldVersion);
-			}
-#endif // VH_RANDOM_EVENTS
-			LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
-		}
-		catch (const std::runtime_error& e) {
-
-//#if VH_IS_ON(VH_PLEASE_I_JUST_WANT_MY_WORLD_TO_LOAD)
-			//LOG_WARNING(LOGGER, "Loading world in desperation mode");
-
-			// will now attempt to load world incrementally, byte by byte, only using values if they make 'sense' (they fit within expect Valheim specific boundaries)
-
-
-//#endif
-
-			LOG_ERROR(LOGGER, "Failed to load world: {}", e.what());
-		}
+		LoadDB(DataReader(*opt), false);
 	}	
 }
 

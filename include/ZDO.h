@@ -298,20 +298,83 @@ private:
     // Read a zdo_type from the DataStream
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
-    void _TryReadType(DataReader& reader, member_map& members) {
-        decltype(auto) count = reader.Read<CountType>();
+    void _TryReadType(DataReader& reader, member_map& members, bool recovery) {
+        auto count = reader.Read<CountType>();
 
-        for (int i=0; i < count; i++) {
+        // this would be fine had worlds not be corrupt with 0% chance of corruption
+        //if constexpr (std::is_same_v<T, uint8_t>) {
+        //    if (count == 0) {
+        //        throw std::runtime_error("bad count");
+        //    }
+        //}
+
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+        if (recovery) {
+            try {
+                // If zdo is a dungeon and count appears to have been truncated, then assume that more zdo member are present
+
+                // The only members in the hundreds are Vec3 and int32
+                //if constexpr (std::is_same_v<T, Vector3f> || std::is_same_v<T, int32_t>) {
+                    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::DUNGEON)) {
+                        if (count < 128) {
+                            count |= 1 << (sizeof(CountType) * 8); //std::numeric_limits<CountType>::max()
+                        }
+                        else {
+                            if (true);
+                        }
+                    }
+                //}
+            }
+            catch (const std::exception&) {}
+        }
+#endif
+        // read batches up to 2 bits more?
+        // try to brute read in portions
+        // based on the previous bit range
+        
+        int32_t range = std::numeric_limits<uint16_t>::max();
+
+        // general algo
+
+        int32_t prevCount = count;
+        auto&& read = [](DataReader& reader) -> void { 
+            auto hash = reader.Read<HASH_t>();
+            auto type = reader.Read<T>();
+
+            
+        };
+
+
+        for (decltype(count) i = 0; i < count; i++) {
+            // if load fails, then
+        }
+
+        for (decltype(count) i=0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
             auto hash(reader.Read<HASH_t>());
-            auto type(reader.Read<T>());
-            _Set(hash, type, members);
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+            if (recovery) {
+                try {
+                    auto type(reader.Read<T>());
+                    _Set(hash, type, members);
+                }
+                catch (const std::exception& e) { 
+                    reader.SetPos(reader.Position() - sizeof(T) - 4); 
+                    break;
+                }
+            }
+            else 
+#endif // VH_WORLD_RECOVERY
+            {
+                auto type(reader.Read<T>());
+                _Set(hash, type, members);
+            }
         }
     }
 
     void _SetPrefabHash(HASH_t hash) {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         this->m_prefabHash = hash;
 #else
         m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
@@ -389,7 +452,7 @@ private:
 
     static constexpr auto OWNER_PACK_INDEX = 0;
 
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
     static constexpr auto PERSISTENT_PACK_INDEX = OWNER_PACK_INDEX + 1;
     static constexpr auto DISTANT_PACK_INDEX = PERSISTENT_PACK_INDEX + 1;
     static constexpr auto TYPE_PACK_INDEX = DISTANT_PACK_INDEX + 1;
@@ -397,7 +460,7 @@ private:
     static constexpr auto PREFAB_PACK_INDEX = OWNER_PACK_INDEX + 1;
 #endif
 
-#if VH_IS_ON(VH_ZDO_INFO) \
+#if VH_IS_ON(VH_PORTABLE_ZDOS) \
     || (VH_ZDO_OWNER_BITS_I_ + VH_ZDO_PREFAB_BITS_I_ <= 16)
     using U = uint16_t;
 #else
@@ -419,7 +482,7 @@ private:
     // The smallest a ZDO can be (with all lossy optimizations)
     //  Is 12 + 4 + 4 + 6 + 4 = 
 
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
     // 40 bytes (with ZDOID packed)
 
     Vector3f m_pos;                                 // 12 bytes
@@ -459,12 +522,12 @@ public:
     // Reads from a buffer using the new efficient format (version >= 31)
     //  version=0: Read according to the network deserialize format
     //  version>0: Read according to the file load format
-    void Unpack(DataReader& reader, int32_t version, int32_t index);
+    void Unpack(DataReader& reader, int32_t version, bool recovery);
 
     // Writes to a buffer using the new efficient format (version >= 31)
     //  If 'network' is true, write according to the network serialize format
     //  Otherwise write according to the file save format
-    void Pack(DataWriter& writer, bool network, int32_t index) const;
+    void Pack(DataWriter& writer, bool network) const;
 
     // Erases and returns the value 
     template<typename T>
@@ -624,7 +687,7 @@ public:
     void Set(std::string_view key, ZDOID value) { Set(VUtils::String::ToHashPair(key), value); }
 
 
-
+    // TODO use optional
     [[maybe_unused]] bool Extract(std::pair<HASH_t, HASH_t> key, ZDOID& out) {
         int64_t userID{};
         if (Extract(key.first, userID)) {
@@ -715,7 +778,7 @@ public:
         
 #if VH_IS_ON(VH_PREFAB_INFO)
     [[nodiscard]] const Prefab& GetPrefab() const {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
 #else
         return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
@@ -724,7 +787,7 @@ public:
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         return this->m_prefabHash;
 #else
         //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
@@ -823,7 +886,7 @@ public:
     //}
 
     [[nodiscard]] bool IsPersistent() const {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         return m_pack.Get<PERSISTENT_PACK_INDEX>();
 #else
         return !GetPrefab().AllFlagsPresent(Prefab::Flag::SESSIONED);
@@ -840,7 +903,7 @@ public:
     //}
 
     [[nodiscard]] bool IsDistant() const {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         return m_pack.Get<DISTANT_PACK_INDEX>();
 #else
         return GetPrefab().AllFlagsPresent(Prefab::Flag::DISTANT);
@@ -853,7 +916,7 @@ public:
     //}
 
     [[nodiscard]] ObjectType GetType() const {
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         return (ObjectType) m_pack.Get<TYPE_PACK_INDEX>();
 #else
         return GetPrefab().m_type

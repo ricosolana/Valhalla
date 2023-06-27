@@ -1,4 +1,32 @@
 todo:
+    - stop using std::optional for optional types
+        use tinyoptional library instead
+
+    - VH_PREFAB_INFO and VH_PORTABLE_ZDOS badly collide in implementation
+        VH_PORTABLE_ZDOS refers to extra data present in a zdo to support modded zdos
+            if this is solely for modded zdos, then consider 
+            VH_PORTABLE_ZDOS or VH_MODDED_ZDOS
+        
+        VH_PREFAB_INFO refers to having the file-loaded prefabs with flag data
+            required for world regeneration
+            
+    - restoring 'corrupt' worlds (assuming dungeon kind)
+        if continuing types read is a possible vector matching:
+            x y z {abs(x)<=10000 y>=5000 abs(z)<=10000}
+        
+        wait i might be fucking stupid
+        
+        the 8-bit count that is written to the world file is derived from 
+        the actual int count
+        
+        we can use shifts to approximate the number of members 
+        from a given count
+
+    - add datareader peek function that samples at:
+        - specified location
+        - current location
+        - offset relative to current location
+
     - todo create world backups prior to overwriting the source file
         or do writing to memory first, then write to file
 

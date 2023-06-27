@@ -203,7 +203,7 @@ void IZDOManager::Save(DataWriter& writer) {
 		for (auto&& pair : m_objectsByID) {
 			auto&& zdo = *pair.second;
 			if (zdo.IsPersistent()) {
-				zdo.Pack(writer, false, count);
+				zdo.Pack(writer, false);
 				count++;
 			}
 		}
@@ -217,7 +217,22 @@ void IZDOManager::Save(DataWriter& writer) {
 
 
 
-void IZDOManager::Load(DataReader& reader, int version) {
+void IZDOManager::Load(DataReader& reader, int version, bool recovery) {
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+	if (recovery) {
+		for (auto&& sector : m_objectsBySector) sector.clear();
+		m_objectsByPrefab.clear();
+		m_objectsByID.clear();
+
+		ZDO::ZDO_CONNECTORS.clear();
+		ZDO::ZDO_MEMBERS.clear();
+
+		for (auto&& userID : ZDO::INDEXED_USERS) userID = 0;
+		ZDO::LAST_SET_INDEX = 0;
+		ZDO::NEXT_EMPTY_INDEX = 0;
+	}
+#endif
+
 	reader.Read<int64_t>(); // server id
 	reader.Read<uint32_t>(); // next uid
 	
@@ -235,8 +250,8 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		else 
 #endif // VH_LEGACY_WORLD_COMPATABILITY
 		{
-			zdo->m_id.SetUID(++ZDOManager()->m_nextUid);
-			zdo->Unpack(reader, version, i);
+			zdo->m_id.SetUID(m_nextUid++);
+			zdo->Unpack(reader, version, recovery);
 		}
 
 		_AddZDOToZone(*zdo.get());
@@ -269,11 +284,14 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
+#if VH_IS_ON(VH_CONVERT_LEGACY)
 		for (auto&& ref : GetZDOs(Hashes::Object::portal_wood)) {
 			auto&& zdo = ref.get();
 			
 			auto&& string = zdo.GetString(Hashes::ZDO::TeleportWorld::TAG);
-			ZDOID zdoid; zdo.Extract("target", zdoid);
+			ZDOID zdoid;
+			zdo.Extract("target", zdoid);
+
 			if (zdoid && !string.empty()) {
 				auto&& zdo2 = GetZDO(zdoid);
 				if (zdo2) {
@@ -296,8 +314,11 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		// convert spawners
 		for (auto&& ref : GetZDOs(Prefab::Flag::CREATURE_SPAWNER, Prefab::Flag::NONE)) {
 			auto&& zdo = ref.get();
+			ZDOID zdoid; 
+			if (!zdo.Extract("spawn_id", zdoid))
+				continue;
+
 			zdo.SetLocal();
-			ZDOID zdoid; zdo.Extract("spawn_id", zdoid);
 			auto&& zdo2 = GetZDO(zdoid);
 			zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->ID() : ZDOID::NONE);
 		}
@@ -305,8 +326,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		// convert sync transforms
 		for (auto&& ref : GetZDOs(Prefab::Flag::SYNCED_TRANSFORM, Prefab::Flag::NONE)) {
 			auto&& zdo = ref.get();
+			
+			ZDOID zdoid; 
+			if (!zdo.Extract("parentID", zdoid))
+				continue;
+
 			zdo.SetLocal();
-			ZDOID zdoid; zdo.Extract("parentID", zdoid);
 			auto&& zdo2 = GetZDO(zdoid);
 			if (zdo2) {
 				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->ID());
@@ -318,6 +343,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				//);
 			}
 		}
+
+#endif // VH_CONVERT_LEGACY
+
 #endif // VH_PREFAB_INFO
 	}
 #endif // VH_LEGACY_WORLD_COMPATABILITY
@@ -829,7 +857,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.Write(zdo.GetPosition());
 
 			writer.SubWrite([&zdo](DataWriter& writer) {
-				zdo.Pack(writer, true, 0);
+				zdo.Pack(writer, true);
 			});
 
 			peer.m_zdos[zdo.ID()] = { zdo.m_rev, time };

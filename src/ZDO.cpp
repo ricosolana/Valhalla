@@ -33,11 +33,16 @@ ZDO::ZDO()
     : ZDO(ZDOID::NONE, Vector3f::Zero()) {}
 
 ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
-#if VH_IS_OFF(VH_ZDO_INFO)
+#if VH_IS_OFF(VH_PORTABLE_ZDOS)
     m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
 #endif
 }
 
+
+
+//#define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
+#define VH_ASSERT(cond, msg, ...) if (!(cond)) { LOG_WARNING(LOGGER, msg, __VA_ARGS__); }
+//#define VH_ASSERT(cond, ...) {}
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
@@ -45,11 +50,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // data rev
     {
         auto persistent = pkg.Read<uint8_t>();        // persistent
-        if (persistent > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected persistent value '{}'", persistent);
-#if VH_IS_ON(VH_ZDO_INFO) 
+        VH_ASSERT(persistent <= 0b1, "illegal persistent bool {:#b}", persistent);
+#if VH_IS_ON(VH_PORTABLE_ZDOS) 
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(persistent));
 #endif 
     }
+
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
     pkg.Read<int32_t>();        // pgw
@@ -60,8 +66,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion >= 23) {
         auto type = pkg.Read<uint8_t>();    // m_type
-        if (type > 0b11) LOG_BACKTRACE(LOGGER, "Unexpected type value '{}'", type);
-#if VH_IS_ON(VH_ZDO_INFO) 
+        VH_ASSERT(type <= 0b11, "illegal type mask {:#b}", type);
+        //if (type > 0b11) LOG_BACKTRACE(LOGGER, "Unexpected type value '{}'", type);
+#if VH_IS_ON(VH_PORTABLE_ZDOS) 
         this->m_pack.Set<TYPE_PACK_INDEX>((type >> GlobalDenotion::Marker_Type1) 
             & (GlobalDenotion::Marker_Type1 | GlobalDenotion::Marker_Type2));
 #endif
@@ -69,8 +76,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion >= 22) {
         auto distant = pkg.Read<uint8_t>();       // m_distant
-        if (distant > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected distant value '{}'", distant);
-#if VH_IS_ON(VH_ZDO_INFO) 
+        VH_ASSERT(distant <= 0b1, "illegal distant bool {:#b}", distant);
+        //if (distant > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected distant value '{}'", distant);
+#if VH_IS_ON(VH_PORTABLE_ZDOS) 
         this->m_pack.Set<DISTANT_PACK_INDEX>(static_cast<bool>(distant));
 #endif            
     }
@@ -80,13 +88,13 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_OFF(VH_ZDO_INFO) && VH_IS_ON(VH_PREFAB_INFO)
+#if VH_IS_OFF(VH_PORTABLE_ZDOS) && VH_IS_ON(VH_PREFAB_INFO)
     const Prefab* prefab = nullptr;
 #endif
 
     if (worldVersion >= 17) {
         HASH_t prefabHash = pkg.Read<HASH_t>();
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         this->m_prefabHash = prefabHash;
 #else
     #if VH_IS_ON(VH_PREFAB_INFO)
@@ -105,22 +113,22 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     auto&& members = ZDO_MEMBERS[ID()];
 
-    _TryReadType<float,         char16_t>(pkg, members);
-    _TryReadType<Vector3f,      char16_t>(pkg, members);
-    _TryReadType<Quaternion,    char16_t>(pkg, members);
-    _TryReadType<int32_t,       char16_t>(pkg, members);
-    _TryReadType<int64_t,       char16_t>(pkg, members);
-    _TryReadType<std::string,   char16_t>(pkg, members);
+    _TryReadType<float,         char16_t>(pkg, members, false);
+    _TryReadType<Vector3f,      char16_t>(pkg, members, false);
+    _TryReadType<Quaternion,    char16_t>(pkg, members, false);
+    _TryReadType<int32_t,       char16_t>(pkg, members, false);
+    _TryReadType<int64_t,       char16_t>(pkg, members, false);
+    _TryReadType<std::string,   char16_t>(pkg, members, false);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t,   char16_t>(pkg, members);
+        _TryReadType<BYTES_t,   char16_t>(pkg, members, false);
 
     if (worldVersion < 17) {
         HASH_t prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
 
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
         this->m_prefabHash = prefabHash;
-#else // !VH_ZDO_INFO
+#else // !VH_PORTABLE_ZDOS
     #if VH_IS_ON(VH_PREFAB_INFO)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
@@ -128,7 +136,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     #else // !VH_PREFAB_INFO
         _SetPrefabHash(prefabHash);
     #endif // VH_PREFAB_INFO
-#endif // VH_ZDO_INFO
+#endif // VH_PORTABLE_ZDOS
     }
 
     // TODO VH_REDUNDANT_ZDOS or not?
@@ -152,32 +160,31 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
 
-        // alternative:
-        //  track exact zdos by prefab hash (slightly more costly but portable)
-#if VH_IS_OFF(VH_ZDO_INFO)
-        assert(prefab);
-        // Convert terrains
-        if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
-            || (GetPrefabHash() == Hashes::Object::ship_construction))
-            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
-#else // !VH_ZDO_INFO
-        switch (this->m_prefabHash) {
-        case Hashes::Object::cultivate:
-        case Hashes::Object::raise:
-        case Hashes::Object::path:
-        case Hashes::Object::paved_road:
-        case Hashes::Object::HeathRockPillar:
-        case Hashes::Object::HeathRockPillar_frac:
-        case Hashes::Object::ship_construction:
-        case Hashes::Object::replant:
-        case Hashes::Object::digg:
-        case Hashes::Object::mud_road:
-        case Hashes::Object::LevelTerrain:
-        case Hashes::Object::digg_v2:
-            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
-            break;
+        // Convert terrain
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
+        switch (this->GetPrefabHash()) {
+            case Hashes::Object::cultivate:
+            case Hashes::Object::raise:
+            case Hashes::Object::path:
+            case Hashes::Object::paved_road:
+            case Hashes::Object::HeathRockPillar:
+            case Hashes::Object::HeathRockPillar_frac:
+            case Hashes::Object::ship_construction:
+            case Hashes::Object::replant:
+            case Hashes::Object::digg:
+            case Hashes::Object::mud_road:
+            case Hashes::Object::LevelTerrain:
+            case Hashes::Object::digg_v2:
+                Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+                break;
         }
-#endif // VH_ZDO_INFO
+#else // !VH_PORTABLE_ZDOS
+        assert(prefab);
+        if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
+            || (prefab->m_hash == Hashes::Object::ship_construction))
+            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+#endif // VH_PORTABLE_ZDOS
+
         // Convert seeds
         {
             auto&& item = Get<int32_t>(Hashes::ZDO::VisEquipment::ITEM_LEFT);
@@ -186,51 +193,42 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
     }
-#endif // VH_PREFAB_INFO)
+#endif // VH_PREFAB_INFO
 }
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
-#define VH_ASSERT(cond) if (!(cond)) { DebugBreak(); }
-//#define VH_ASSERT(cond) if (!(cond)) { }
 
-bool TEST_INDEX_EMIT = false;
 
-void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
+void ZDO::Unpack(DataReader& reader, int32_t version, bool recovery) {
     auto flags = reader.Read<uint16_t>();
-
-    // well fuck
-    //  TODO remove this later
-
-    static_assert(_DEBUG, "please remove this");
-    if (TEST_INDEX_EMIT) {
-        auto vChecksum = reader.Read<int32_t>();
-        if (vChecksum != index) {
-            DebugBreak();
-        }
-    }
+    
+    //LOG_WARNING(LOGGER, "illegal flag mask {:#b}", flags);
 
     // Failsafe
     // Whether flags might be invalid
-    VH_ASSERT(flags <= 0b1111111111111);
+    VH_ASSERT(flags <= 0b1111111111111, "illegal flag mask {:#b}", flags);
     
+
+
     if (version) {
-        reader.Read<Vector2s>(); // redundant
+        auto sector = reader.Read<Vector2s>(); // redundant
         this->m_pos = reader.Read<Vector3f>();
 
         // Failsafe
-        //assert(this->m_pos.SqMagnitude() < 21000.f*21000.f);
-        //VH_ASSERT(
-        //    (std::abs(this->m_pos.x) < 25000.f
-        //    && std::abs(this->m_pos.y) < 10000.f // not sure about dungeons or whatever else
-        //    && std::abs(this->m_pos.z) < 25000.f)
-        //);
+        VH_ASSERT(
+            (std::abs(this->m_pos.x) <= 100000.f
+                && std::abs(this->m_pos.y) < 10000.f // not sure about dungeons or whatever else
+                && std::abs(this->m_pos.z) <= 100000.f),
+            "position is too large {}",
+            this->m_pos
+        );
 
-        //VH_ASSERT(GetZone() == sector);
+        VH_ASSERT(GetZone() == sector, "position is outside sector {} != {}", GetZone(), sector);
     }
 
     // Once initialized info
     const auto prefabHash = reader.Read<HASH_t>();
-#if VH_IS_ON(VH_ZDO_INFO)
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
     if (this->m_prefabHash == 0) {
         this->m_prefabHash = prefabHash;
         this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(flags & GlobalFlag::Marker_Persistent));
@@ -244,14 +242,11 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)
-        VH_ASSERT(version == 0);
+        assert(version == 0);
     }
     
     if (flags & GlobalFlag::Marker_Rotation) {
         this->m_rotation = reader.Read<Vector3f>();
-
-        // Failsafe
-        //VH_ASSERT(this->m_rotation.SqMagnitude() < 400.f * 400.f * 400.f);
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
@@ -259,7 +254,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
         auto type = reader.Read<ZDOConnector::Type>();
 
         // Failsafe
-        VH_ASSERT(std::to_underlying(type) <= 0b11111);
+        VH_ASSERT(std::to_underlying(type) <= 0b11111, "illegal type mask {:#b}", (int)type);
 
         if (version) {
             auto hash = reader.Read<HASH_t>();
@@ -279,13 +274,13 @@ void ZDO::Unpack(DataReader& reader, int32_t version, int32_t index) {
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
         // Will insert a default if missing (should be missing already)
         auto&& members = ZDO_MEMBERS[ID()];
-        if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members);
+        if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members, recovery);
+        if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members, recovery);
     }
 }
 
@@ -315,7 +310,7 @@ ZoneID ZDO::GetZone() const {
 
 
 
-void ZDO::Pack(DataWriter& writer, bool network, int32_t index) const {
+void ZDO::Pack(DataWriter& writer, bool network) const {
     bool hasRot = std::abs(m_rotation.x) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.y) > std::numeric_limits<float>::epsilon() * 8.f
         || std::abs(m_rotation.z) > std::numeric_limits<float>::epsilon() * 8.f;
@@ -338,11 +333,7 @@ void ZDO::Pack(DataWriter& writer, bool network, int32_t index) const {
     const auto flagPos = writer.Position();
     //writer.Skip(sizeof(flags));
     writer.Write(flags);
-    
-    // TODO remove
-    static_assert(_DEBUG, "please remove this");
-    if (TEST_INDEX_EMIT) writer.Write(index);
-    
+        
     if (!network) {
         writer.Write(GetZone());
         writer.Write(GetPosition());
