@@ -1,4 +1,14 @@
 todo:
+    idea for returning to original position on datastream exceptions
+        
+        prior to read/write, mark the position
+        
+        enclose read/write in try catch?
+        
+        on catch, return to previous marked pos
+        
+        else return result?
+
     - stop using std::optional for optional types
         use tinyoptional library instead
 

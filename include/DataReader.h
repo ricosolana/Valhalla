@@ -15,29 +15,37 @@
 
 class DataReader : public DataStream {
 private:
-    void PeekSomeBytes(BYTE_VIEW_t view, std::error_condition &ec) const noexcept {
-        if (CheckOffset(view.size()))
-            ec = std::make_error_condition(std::errc::argument_out_of_domain);
-        else {
-            std::memmove(view.data(), this->data(), view.size());
-        }
+    void PeekSomeBytes(BYTE_VIEW_t view, size_t pos) const {
+        AssertOffset(view.size(), pos);
+        std::memmove(view.data(), this->data() + pos, view.size());
     }
 
     void PeekSomeBytes(BYTE_VIEW_t view) const {
-        std::error_condition ec;
-        PeekSomeBytes(view, ec);
-        if (ec) std::length_error("failed to peek some bytes");
-    }
-
-    void ReadSomeBytes(BYTE_VIEW_t view, std::error_condition& ec) noexcept {
-        PeekSomeBytes(view, ec);
-        if (!ec) this->Skip(view.size(), ec);
+        PeekSomeBytes(view, this->Position());
     }
 
     void ReadSomeBytes(BYTE_VIEW_t view) {
-        std::error_condition ec;
-        ReadSomeBytes(view, ec);
-        if (ec) throw std::length_error("failed to read some bytes");
+        PeekSomeBytes(view);
+        this->Skip(view.size());
+    }
+    
+
+
+    uint32_t Peek7BitEncodedInt() {
+        int i = 0;
+
+        uint32_t out = 0;
+        uint32_t num2 = 0;
+        while (num2 != 35) {
+            auto b = PeekRel<uint8_t>(i++);
+            out |= static_cast<decltype(out)>(b & 127) << num2;
+            num2 += 7;
+            if ((b & 128) == 0)
+            {
+                return out;
+            }
+        }
+        throw std::runtime_error("bad encoded int");
     }
 
     uint32_t Read7BitEncodedInt() {
@@ -62,27 +70,23 @@ public:
     explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
 public:
-    //  Reads a primitive type in-place
+    // Reads a primitive type
+    //  The stream is not modified
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    decltype(auto) Peek(std::error_condition& ec) const noexcept {
+    decltype(auto) PeekRel(int offset) const {
         BYTE_t out[sizeof(T)]{};
-        PeekSomeBytes(BYTE_VIEW_t(out, sizeof(T)), ec);
-        if (ec) return T{};
+        PeekSomeBytes(BYTE_VIEW_t(out, sizeof(T)), Position() + offset);
         
         if constexpr (std::is_floating_point_v<T>) {
             auto classify = std::fpclassify(*reinterpret_cast<T*>(out));
             if (!(classify == FP_NORMAL || classify == FP_ZERO)) {
-                ec = std::make_error_condition(std::errc::argument_out_of_domain);
-                return T{};
+                throw std::domain_error("bad floating point number");
             }
-                //throw std::domain_error("bad floating point number");
         }
         else if constexpr (std::is_same_v<T, bool>) {
             if (out[0] > 0b1) {
-                ec = std::make_error_condition(std::errc::argument_out_of_domain);
-                return T{};
-                //throw std::domain_error("bad bool");
+                throw std::domain_error("bad bool");
             }
         }
 
@@ -92,19 +96,49 @@ public:
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Peek() const {
-        std::error_condition ec;
-        auto out = Peek(ec);
-        if (ec) throw std::length_error("failed to peek");
+        return PeekRel<T>(0);
+    }
+
+    // Reads a primitive type
+    //  The stream is modified if an exception does not occur
+    template<typename T>
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    decltype(auto) Read() {
+        auto out = Peek<T>();
+        Skip(sizeof(T));
         return out;
     }
 
+    
+    // Read x types from stream
+    //  This is different from reading a container
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    decltype(auto) Read() noexcept {
-        std::error_condition ec;
-        auto out = Peek(ec);
-        if (ec) throw std::length_error("failed to peek");
-        return out;
+    void PeekSome(std::span<T> view) const {
+        for (int i = 0; i < view.size(); i++) {
+            view[i] = PeekRel<T>(i * sizeof(T));
+        }
+    }
+
+
+
+    template<typename T>
+        requires 
+            (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
+                || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
+    decltype(auto) Peek() const {
+        auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>) 
+            ? Peek<uint32_t>()
+            : Read7BitEncodedInt();
+
+        this->AssertOffset(count);
+
+        auto result = T(this->data() + this->m_pos,
+            this->data() + this->m_pos + count);
+
+        this->SetPos(this->m_pos + count);
+
+        return result;
     }
 
 
