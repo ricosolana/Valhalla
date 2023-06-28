@@ -299,42 +299,27 @@ private:
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
     void _TryReadType(DataReader& reader, member_map& members, bool recovery) {
-        auto count = reader.Read<CountType>();
+        uint16_t count = reader.Read<CountType>();
 
-        // this would be fine had worlds not be corrupt with 0% chance of corruption
-        //if constexpr (std::is_same_v<T, uint8_t>) {
-        //    if (count == 0) {
-        //        throw std::runtime_error("bad count");
-        //    }
-        //}
-
-#if VH_IS_ON(VH_WORLD_RECOVERY)
-        if (recovery) {
-            try {
-                // If zdo is a dungeon and count appears to have been truncated, then assume that more zdo member are present
-
-                // The only members in the hundreds are Vec3 and int32
-                //if constexpr (std::is_same_v<T, Vector3f> || std::is_same_v<T, int32_t>) {
-                    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::DUNGEON)) {
-                        if (count < 128) {
-                            count |= 1 << (sizeof(CountType) * 8); //std::numeric_limits<CountType>::max()
-                        }
-                        else {
-                            if (true);
-                        }
-                    }
-                //}
-            }
-            catch (const std::exception&) {}
+        if constexpr (std::is_same_v<CountType, uint8_t>) {
+            count |= 1 << (sizeof(CountType) * 8);
         }
-#endif
-        // read batches up to 2 bits more?
-        // try to brute read in portions
-        // based on the previous bit range
-        
-        int32_t range = std::numeric_limits<uint16_t>::max();
 
-        // general algo
+        const auto start_pos = reader.Position();
+        const auto
+
+        for (decltype(count) i = 0; i < count; i++) {
+            // if load fails, then
+            auto hash = reader.Read<HASH_t>();
+            try {
+                auto type = reader.Read<T>();
+            }
+            catch (const std::exception& e) {
+                if (i > 0xFF) {
+                    reader.SetPos(start_pos);
+                }
+            }
+        }
 
         int32_t prevCount = count;
         auto&& read = [](DataReader& reader) -> void { 
@@ -345,9 +330,7 @@ private:
         };
 
 
-        for (decltype(count) i = 0; i < count; i++) {
-            // if load fails, then
-        }
+        
 
         for (decltype(count) i=0; i < count; i++) {
             // ...fuck

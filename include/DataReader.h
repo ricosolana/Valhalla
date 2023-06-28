@@ -8,9 +8,6 @@
 #include "VUtilsTraits.h"
 #include "ModManager.h"
 #include "DataStream.h"
-//#include "DataWriter.h"
-
-//class DataWriter;
 
 class DataReader : public DataStream {
 private:
@@ -18,10 +15,7 @@ private:
     void PeekSomeBytes(BYTE_t* buffer, size_t count) const {
         this->AssertOffset(count);
 
-        // read into 'buffer'
-        std::copy(this->data() + this->m_pos,
-            this->data() + this->m_pos + count,
-            buffer);
+        std::memmove(buffer, this->data(), count);
     }
 
     void ReadSomeBytes(BYTE_t* buffer, size_t count) {
@@ -71,6 +65,29 @@ public:
         }
 
         return *reinterpret_cast<T*>(out);
+    }
+
+    //template<typename T>
+    //    requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    //decltype(auto) Peek(size_t count) const {
+    //    
+    //    Peek()
+    //}
+
+    // Peek relative to this position
+    //template<typename T>
+    //    requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    //decltype(auto) Peek(size_t offset) const {
+    //    for (decltype(offset) i=0; i < offset)
+    //    Peek()
+    //}
+
+    template<typename T>
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    decltype(auto) Read() {
+        auto out = Peek<T>();
+        Skip(sizeof(T));
+        return out;
     }
 
     template<typename T>

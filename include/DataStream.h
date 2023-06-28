@@ -93,8 +93,15 @@ public:
         }, this->m_data);
     }
 
+    // Skips over or creates x bytes
+    void Advance(size_t count) {
+        extend(count);
+        this->SetPos(this->Position() + count);
+    }
+
+    // Skips over x bytes
+    //  Throws if length exceeded
     void Skip(size_t count) {
-        //extend(count);
         this->SetPos(this->Position() + count);
     }
 };

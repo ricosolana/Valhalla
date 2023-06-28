@@ -1,4 +1,51 @@
 todo:
+    these constraints are really making me rethink this whole design
+    
+        variants are still fine (and the best idea so far)
+        
+        peeking, read-throw guarantees, and position resets are not self conforming 
+            some methods, like Read<string> and other complex readers do not 
+            return set position to original position
+            will have to adapt the design, perhaps with error codes (once again)...
+            not sure 
+
+    im thinking about renaming this entire server project to something not
+    already referred to
+        require a short enough name for namespacing
+
+    continue with forward-backwards reconciliative shift when zdo-member type parsing fails
+    
+        the members with definite ill-defined behaviours are:
+            float, Quat
+            
+        ignore vec: (not definitive, therefore not reliable to mean what it means)
+        the members with assumed ill-defined behaviour are:
+            Vector3f
+    
+        ALGORITHM:
+            read 8-bit count
+            
+            xor the next significant bit in 9th pos with 1 of count
+                example: 
+                count was 0b 01001100
+                now: 0b 1 01001100
+            
+            for i in count:
+                read hash
+                try {
+                    read type (with ill-defined checking)
+                } catch { // parsing failed 
+                    //if i is less than max(8-bit)
+                    //reverse stream by
+                    diff = count - remove greatest sig bit(count)
+                    
+                    //reverse stream by (diff * (sizeof(hash) + sizeof(type)) )
+                    
+                    or just mark previous position
+                    
+                    reverse stream by elements [diff] between diff
+                }
+
     - stop using std::optional for optional types
         use tinyoptional library instead
 
