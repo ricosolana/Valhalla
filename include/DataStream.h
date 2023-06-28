@@ -6,6 +6,14 @@
 // 32 Bytes w/ <vec&, view>
 class DataStream {
 public:
+    //enum class Error {
+    //    READ_ERROR = 1,
+    //    WRITE_ERROR,
+    //    POSITION_ERROR,
+    //    FORMAT_ERROR,
+    //};
+
+public:
     std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t> m_data;
 
 protected:
@@ -13,7 +21,7 @@ protected:
 
 protected:
     // Returns whether the specified position exceeds container length
-    bool CheckPosition(size_t pos) const {
+    bool CheckPosition(size_t pos) const noexcept {
         return pos > size();
     }
 
@@ -24,7 +32,7 @@ protected:
     }
 
     // Returns whether the specified offset from m_pos exceeds container length
-    bool CheckOffset(size_t offset) const {
+    bool CheckOffset(size_t offset) const noexcept {
         return CheckPosition(Position() + offset);
     }
 
@@ -49,43 +57,79 @@ public:
 public:
     //bool owned() const { return std::get_if< !this->m_data.data(); }
 
-    size_t Position() const noexcept {
+    size_t GetPosition(std::error_condition& ec) const noexcept {
         return this->m_pos;
     }
 
-    // Sets the position of this stream
-    void SetPos(size_t pos) {
-        AssertPosition(pos);
-
-        this->m_pos = pos;
+    size_t Position() const {
+        std::error_condition ec;
+        auto out = GetPosition(ec);
+        if (ec) throw std::length_error("failed to get stream position");
+        return out;
     }
 
-    // TODO rename size() for standard conformance
-    size_t size() const {
+    void SetPosition(size_t pos, std::error_condition& ec) noexcept {
+        if (CheckPosition(pos)) {
+            ec = std::make_error_condition(std::errc::invalid_seek);
+        }
+        else {
+            this->m_pos = pos;
+        }
+    }
+
+    // TODO rename SetPosition
+    // Sets the position of this stream
+    void SetPos(size_t pos) {
+        std::error_condition ec;
+        SetPosition(pos, ec);
+        if (ec) throw std::length_error("set position lies outside of stream");
+    }
+
+    size_t size(std::error_condition& ec) const noexcept {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
             [](BYTE_VIEW_t buf) { return buf.size(); }
         }, this->m_data);
     }
 
-    BYTE_t* data() {
+    size_t size() const {
+        std::error_condition ec;
+        auto out = size(ec);
+        if (ec) throw std::length_error("failed to retrieve stream size");
+        return out;
+    }
+
+    BYTE_t* data(std::error_condition& ec) noexcept {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
             [](BYTE_VIEW_t buf) { return buf.data(); }
         }, this->m_data);
+    }
+
+    BYTE_t* data() {
+        std::error_condition ec;
+        auto out = data(ec);
+        if (ec) throw std::length_error("failed to get stream data()");
+        return out;
+    }
+
+    const BYTE_t* data(std::error_condition& ec) const noexcept {
+        return std::visit(VUtils::Traits::overload{
+            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
+            [](BYTE_VIEW_t buf) { return buf.data(); }
+            }, this->m_data);
     }
 
     const BYTE_t* data() const {
-        return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); }
-        }, this->m_data);
+        std::error_condition ec;
+        auto out = data(ec);
+        if (ec) throw std::length_error("failed to get stream data()");
+        return out;
     }
 
-    // resize with extra bytes
     void extend(size_t count) {
         std::visit(VUtils::Traits::overload{
-            [this, count](std::reference_wrapper<BYTES_t> buf) { 
+            [this, count](std::reference_wrapper<BYTES_t> buf) {
                 if (this->CheckOffset(count))
                     buf.get().resize(this->m_pos + count);
             },
@@ -93,8 +137,28 @@ public:
         }, this->m_data);
     }
 
+
+
+    void Skip(size_t count, std::error_condition& ec) noexcept {
+        auto position = this->GetPosition(ec);
+        if (!ec) this->SetPosition(position + count, ec);
+    }
+
+    // Skip forward x bytes
+    //  Assumes the bytes already exist
     void Skip(size_t count) {
-        //extend(count);
-        this->SetPos(this->Position() + count);
+        std::error_condition ec;
+        Skip(count, ec);
+        if (ec) throw std::length_error("failed to skip");
+    }
+
+    // Move forward x bytes (assumes bytes do/dont exist).
+    //  Should be able to 'create' bytes if they do not exist
+    void Advance(size_t count) {
+        extend(count);
+        Skip(count);
     }
 };
+
+// https://akrzemi1.wordpress.com/2017/08/12/your-own-error-condition/
+//template <> struct std::is_error_condition_enum<DataStream::Error> : true_type {};

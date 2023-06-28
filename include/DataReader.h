@@ -9,25 +9,35 @@
 #include "ModManager.h"
 #include "DataStream.h"
 //#include "DataWriter.h"
+#include <expected>
 
 //class DataWriter;
 
 class DataReader : public DataStream {
 private:
-    //template<bool advance = true>
-    void PeekSomeBytes(BYTE_t* buffer, size_t count) const {
-        this->AssertOffset(count);
-
-        // read into 'buffer'
-        std::copy(this->data() + this->m_pos,
-            this->data() + this->m_pos + count,
-            buffer);
+    void PeekSomeBytes(BYTE_VIEW_t view, std::error_condition &ec) const noexcept {
+        if (CheckOffset(view.size()))
+            ec = std::make_error_condition(std::errc::argument_out_of_domain);
+        else {
+            std::memmove(view.data(), this->data(), view.size());
+        }
     }
 
-    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
-        PeekSomeBytes(buffer, count);
+    void PeekSomeBytes(BYTE_VIEW_t view) const {
+        std::error_condition ec;
+        PeekSomeBytes(view, ec);
+        if (ec) std::length_error("failed to peek some bytes");
+    }
 
-        this->m_pos += count;
+    void ReadSomeBytes(BYTE_VIEW_t view, std::error_condition& ec) noexcept {
+        PeekSomeBytes(view, ec);
+        if (!ec) this->Skip(view.size(), ec);
+    }
+
+    void ReadSomeBytes(BYTE_VIEW_t view) {
+        std::error_condition ec;
+        ReadSomeBytes(view, ec);
+        if (ec) throw std::length_error("failed to read some bytes");
     }
 
     uint32_t Read7BitEncodedInt() {
@@ -55,23 +65,49 @@ public:
     //  Reads a primitive type in-place
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    decltype(auto) Peek() const {
+    decltype(auto) Peek(std::error_condition& ec) const noexcept {
         BYTE_t out[sizeof(T)]{};
-        PeekSomeBytes(out, sizeof(T));
-
+        PeekSomeBytes(BYTE_VIEW_t(out, sizeof(T)), ec);
+        if (ec) return T{};
+        
         if constexpr (std::is_floating_point_v<T>) {
             auto classify = std::fpclassify(*reinterpret_cast<T*>(out));
-            if (!(classify == FP_NORMAL || classify == FP_ZERO))
-                throw std::runtime_error("bad floating point number");
+            if (!(classify == FP_NORMAL || classify == FP_ZERO)) {
+                ec = std::make_error_condition(std::errc::argument_out_of_domain);
+                return T{};
+            }
+                //throw std::domain_error("bad floating point number");
         }
         else if constexpr (std::is_same_v<T, bool>) {
             if (out[0] > 0b1) {
-                throw std::runtime_error("bad bool");
+                ec = std::make_error_condition(std::errc::argument_out_of_domain);
+                return T{};
+                //throw std::domain_error("bad bool");
             }
         }
 
         return *reinterpret_cast<T*>(out);
     }
+
+    template<typename T>
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    decltype(auto) Peek() const {
+        std::error_condition ec;
+        auto out = Peek(ec);
+        if (ec) throw std::length_error("failed to peek");
+        return out;
+    }
+
+    template<typename T>
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
+    decltype(auto) Read() noexcept {
+        std::error_condition ec;
+        auto out = Peek(ec);
+        if (ec) throw std::length_error("failed to peek");
+        return out;
+    }
+
+
 
     template<typename T>
         requires 

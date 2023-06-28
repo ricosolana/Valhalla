@@ -270,7 +270,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version, bool recovery) {
             connector.m_target = target;
         }
     }
-
+    
     if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
         // Will insert a default if missing (should be missing already)
         auto&& members = ZDO_MEMBERS[ID()];
