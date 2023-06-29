@@ -2,11 +2,49 @@
 
 #include "VUtils.h"
 
+class OwnedFile {
+private:
+    std::FILE* m_file;
+
+public:
+    OwnedFile(std::FILE* file) : m_file(file) {}
+
+    ~OwnedFile() {
+        Close();
+    }
+
+    OwnedFile(const OwnedFile&) = delete;
+    OwnedFile(OwnedFile&& other) {
+        *this = std::move(other);
+    }
+
+    void operator=(const OwnedFile&) = delete;
+
+    void operator=(OwnedFile&& other) {
+        this->m_file = other.m_file;
+        other.m_file = nullptr;
+    }
+
+    bool Close() {
+        if (this->m_file) {
+            return std::fclose(this->m_file) == 0;
+        }
+        return false;
+    }
+
+    operator std::FILE* () {
+        return this->m_file;
+    }
+};
+
 // 56 Bytes w/ <vec, view>
 // 32 Bytes w/ <vec&, view>
 class DataStream {
 public:
-    std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t> m_data;
+    // Proposal for reading from file (with owned and unowned file variant subtypes)
+    //std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t, OwnedFile, std::FILE*> m_data;
+
+    std::variant<std::reference_wrapper<BYTES_t>, BYTE_SPAN_t> m_data;
 
 protected:
     size_t m_pos{};
@@ -43,10 +81,10 @@ protected:
     }
 
 public:
-    explicit DataStream(BYTE_VIEW_t buf) : m_data(buf) {}
+    explicit DataStream(BYTE_SPAN_t buf) : m_data(buf) {}
     explicit DataStream(BYTES_t& buf) : m_data(std::ref(buf)) {}
 
-    explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_data(buf) {
+    explicit DataStream(BYTE_SPAN_t buf, size_t pos) : m_data(buf) {
         SetPos(pos);
     }
 
@@ -71,21 +109,21 @@ public:
     size_t size() const {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
-            [](BYTE_VIEW_t buf) { return buf.size(); }
+            [](BYTE_SPAN_t buf) { return buf.size(); }
             }, this->m_data);
     }
 
     BYTE_t* data() {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); }
+            [](BYTE_SPAN_t buf) { return buf.data(); }
         }, this->m_data);
     }
 
     const BYTE_t* data() const {
         return std::visit(VUtils::Traits::overload{
             [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_VIEW_t buf) { return buf.data(); }
+            [](BYTE_SPAN_t buf) { return buf.data(); }
             }, this->m_data);
     }
 
@@ -96,7 +134,7 @@ public:
                 if (this->CheckOffset(count))
                     buf.get().resize(this->m_pos + count);
             },
-            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
+            [this, count](BYTE_SPAN_t buf) { this->AssertOffset(count); }
         }, this->m_data);
     }
 

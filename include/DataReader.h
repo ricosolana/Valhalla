@@ -8,25 +8,16 @@
 #include "VUtilsTraits.h"
 #include "ModManager.h"
 #include "DataStream.h"
-//#include "DataWriter.h"
-#include <expected>
-
-//class DataWriter;
 
 class DataReader : public DataStream {
 private:
-
-    void PeekSomeBytesAt(BYTE_VIEW_t view, size_t pos, size_t& counter) const {
+    void PeekSomeBytes(BYTE_SPAN_t view, size_t &pos) const {
         AssertOffset(view.size(), pos);
         std::memmove(view.data(), this->data() + pos, view.size());
-        counter += pos;
+        pos += view.size();
     }
 
-    void PeekSomeBytes(BYTE_VIEW_t view, size_t& counter) const {
-        this->PeekSomeBytesAt(view, this->Position(), counter);
-    }
-
-    void ReadSomeBytes(BYTE_VIEW_t view) {
+    void ReadSomeBytes(BYTE_SPAN_t view) {
         auto pos = Position();
         this->PeekSomeBytes(view, pos);
         this->SetPos(pos);
@@ -46,119 +37,120 @@ private:
             num2 += 7;
             if ((b & 128) == 0)
             {
-                pos += dummy;
+                pos = dummy;
                 return out;
             }
         }
         throw std::runtime_error("bad encoded int");
     }
 
-    uint32_t Read7BitEncodedInt() {
-        auto pos = this->Position();
-
-        auto peek = Peek7BitEncodedInt(pos);
-        this->SetPos(pos);
-
-        return peek;
-    }
-
 public:
-    explicit DataReader(BYTE_VIEW_t buf) : DataStream(buf) {}
+    explicit DataReader(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataReader(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataReader(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
     explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
 public:
-    // Reads a primitive type
-    //  The stream is not modified
+    // Peek a primitive type from the stream
+    //  T:        value type
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Peek(size_t& pos) const {
-        size_t dummy{};
+        size_t dummy = pos;
 
-        BYTE_t out[sizeof(T)]{};
-        PeekSomeBytesAt(BYTE_VIEW_t(out, sizeof(T)), pos, dummy);
+        BYTE_t buf[sizeof(T)]{};
+        PeekSomeBytes(BYTE_SPAN_t(buf, sizeof(T)), dummy);
         
         if constexpr (std::is_floating_point_v<T>) {
-            auto classify = std::fpclassify(*reinterpret_cast<T*>(out));
+            auto classify = std::fpclassify(*reinterpret_cast<T*>(buf));
             if (!(classify == FP_NORMAL || classify == FP_ZERO)) {
-                throw std::domain_error("bad floating point number");
+                throw std::runtime_error("bad floating point number");
             }
         }
         else if constexpr (std::is_same_v<T, bool>) {
-            if (out[0] > 0b1) {
-                throw std::domain_error("bad bool");
+            if (buf[0] > 0b1) {
+                throw std::runtime_error("bad bool");
             }
         }
 
-        pos += dummy;
-        return *reinterpret_cast<T*>(out);
-    }
+        // To stop msvc warnings
+        T out = *reinterpret_cast<T*>(buf);
 
-    // Generic read of a type
-    template<typename T>
-    decltype(auto) Read() {
-        auto pos = Position();
-        auto out = Peek<T>(pos);
-        SetPos(pos);
+        pos = dummy;
         return out;
     }
-
     
-    // Read x types from stream
-    //  This is different from reading a container
+    // Peek several consecutive types from the stream
+    //  T...:       value types
     template<typename T>
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    void PeekSome(std::span<T> view, size_t& counter) const {
-        size_t dummy{};
+    void PeekSome(std::span<T> view, size_t& pos) const {
+        size_t dummy = pos;
         for (int i = 0; i < view.size(); i++) {
-            view[i] = PeekRel<T>(i * sizeof(T), dummy);
+            view[i] = Peek<T>(dummy);
         }
-        counter += dummy;
+        pos = dummy;
     }
 
-
-
+    // Peek a byte array from the stream
+    //  int32_t:        size
+    //  bytes...:       data
     template<typename T>
         requires 
             (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
                 || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
-    decltype(auto) Peek(size_t& counter) const {
-        size_t dummy{};
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
 
         auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>) 
             ? Peek<uint32_t>(dummy)
             : Peek7BitEncodedInt(dummy);
-
+        
         this->AssertOffset(count);
+        
+        auto result = T(reinterpret_cast<const T::value_type*>(this->data()) + dummy,
+            reinterpret_cast<const T::value_type*>(this->data()) + dummy + count);
 
-        auto result = T(this->data() + this->m_pos,
-            this->data() + this->m_pos + count);
+        pos = dummy + count;
 
-        counter += dummy;
+        return result;
+    }
+
+    template<typename T>
+        requires std::is_same_v<T, BYTE_SPAN_t>
+    decltype(auto) Peek(size_t& pos) {
+        size_t dummy = pos;
+
+        auto count = Peek<uint32_t>(dummy);
+        
+        this->AssertOffset(count);
+        
+        auto result = T(this->data() + dummy, this->data() + dummy + count);
+
+        pos = dummy + count;
 
         return result;
     }
     
     // Reads a byte array as a Reader (more efficient than ReadBytes())
-    //  int32_t:   size
-    //  BYTES_t:    data
+    //  int32_t:        size
+    //  bytes...:       data
     template<typename T>
         requires std::is_same_v<T, DataReader>
-    decltype(auto) Peek(size_t &counter) const {
-        return T(Peek<BYTE_VIEW_t>(counter));
+    decltype(auto) Peek(size_t &pos) {
+        return T(Peek<BYTE_SPAN_t>(pos));
     }
 
     // Reads a container of supported types
-    //  int32_t:   size
-    //  T...:       value_type
+    //  int32_t:        count
+    //  T1, T2, T3...:  value types
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
             && !std::is_arithmetic_v<typename Iterable::value_type>)
-    decltype(auto) Peek(size_t& counter) const {
+    decltype(auto) Peek(size_t& pos) const {
         using Type = Iterable::value_type;
 
-        size_t dummy{};
+        size_t dummy = pos;
         const auto count = Peek<int32_t>(dummy);
 
         Iterable out{};
@@ -169,26 +161,28 @@ public:
             out.insert(out.end(), type);
         }
 
-        counter += dummy;
+        pos = dummy;
 
         return out;
     }
 
+    // Peek a container and pass each element to a consumer function
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
-    void PeekEach(F func, size_t& counter) const {
-        using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
+    void PeekEach(F func, size_t& pos) const {
+        using T = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
-        size_t dummy{};
+        size_t dummy = pos;
         const auto count = Peek<int32_t>(dummy);
 
         for (int32_t i = 0; i < count; i++) {
-            func(Peek<Type>(dummy));
+            func(Peek<T>(dummy));
         }
 
-        counter += dummy;
+        pos = dummy;
     }
 
+    // Read a container and pass each element to a consumer function
     template<typename F>
     void ReadEach(F func) {
         auto pos = Position();
@@ -201,12 +195,14 @@ public:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
     template<typename T> requires std::same_as<T, ZDOID>
-    decltype(auto) Peek(size_t& counter) const {
-        size_t dummy{};
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
+
         auto a(Peek<int64_t>(dummy));
         auto b(Peek<uint32_t>(dummy));
         auto out = ZDOID(a, b);
-        counter += dummy;
+        
+        pos = dummy;
         return out;
     }
 
@@ -219,8 +215,8 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     template<typename T> requires std::same_as<T, Vector3f>
-    decltype(auto) Peek(size_t& counter) const {
-        size_t dummy{};
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
 
         auto a(Peek<float>(dummy));
         auto b(Peek<float>(dummy));
@@ -229,7 +225,7 @@ public:
         x1v = std::min(a, x1v); y1v = std::min(b, y1v); z1v = std::min(c, z1v);
         x2v = std::max(a, x2v); y2v = std::max(b, y2v); z2v = std::max(c, z2v);
 
-        counter += dummy;
+        pos = dummy;
 
         return Vector3f(a, b, c);
     }
@@ -239,32 +235,32 @@ public:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
     template<typename T> requires std::same_as<T, Vector2i>
-    decltype(auto) Peek() const {
-        size_t dummy{};
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
 
-        auto a(Peek<int32_t>());
-        auto b(Peek<int32_t>());
+        auto a(Peek<int32_t>(dummy));
+        auto b(Peek<int32_t>(dummy));
 
-
+        pos = dummy;
 
         return Vector2i(a, b);
     }
-
 
     // Reads a Vector2s
     //  4 bytes total are read:
     //  int16_t: x (2 bytes)
     //  int16_t: y (2 bytes)
     template<typename T> requires std::same_as<T, Vector2s>
-    decltype(auto) Read() {
-        auto a(Read<int16_t>());
-        auto b(Read<int16_t>());
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
+
+        auto a(Peek<int16_t>(dummy));
+        auto b(Peek<int16_t>(dummy));
+
+        pos = dummy;
+
         return Vector2s(a, b);
     }
-
-
-    static inline float x1q{ 99999999.f }, y1q{ 99999999.f }, z1q{ 99999999.f }, w1q{ 99999999.f };
-    static inline float x2q{ -99999999.f }, y2q{ -99999999.f }, z2q{ -99999999.f }, w2q{ 99999999.f };
 
     // Reads a Quaternion
     //  16 bytes total are read:
@@ -273,11 +269,14 @@ public:
     //  float: z (4 bytes)
     //  float: w (4 bytes)
     template<typename T> requires std::same_as<T, Quaternion>
-    decltype(auto) Read() {
-        auto a(Read<float>());
-        auto b(Read<float>());
-        auto c(Read<float>());
-        auto d(Read<float>());
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
+
+        // TODO use PeekSome
+        auto a(Peek<float>(dummy));
+        auto b(Peek<float>(dummy));
+        auto c(Peek<float>(dummy));
+        auto d(Peek<float>(dummy));
 
         // 1.00000024
         if (std::abs(a) > 1.000001 || std::abs(b) > 1.000001 || std::abs(c) > 1.000001 || std::abs(d) > 1.000001)
@@ -290,7 +289,7 @@ public:
         //x1q = std::min(a, x1q); y1q = std::min(b, y1q); z1q = std::min(c, z1q); w1q = std::min(d, w1q);
         //x2q = std::max(a, x2q); y2q = std::max(b, y2q); z2q = std::max(c, z2q); w2q = std::min(d, w2q);
 
-
+        pos = dummy;
 
         return Quaternion{ a, b, c, d };
     }
@@ -298,17 +297,17 @@ public:
     // Reads an enum type
     //  - Bytes read depend on the underlying value
     template<typename Enum> requires std::is_enum_v<Enum>
-    decltype(auto) Read() {
-        return static_cast<Enum>(Read<std::underlying_type_t<Enum>>());
+    decltype(auto) Peek(size_t& pos) const {
+        return static_cast<Enum>(Peek<std::underlying_type_t<Enum>>(pos));
     }
 
     // Read a UTF-8 encoded C# char
     //  Will advance 1 -> 3 bytes, depending on size of first char
     template<typename T> requires std::is_same_v<T, char16_t>
-    decltype(auto) Read() {
-        auto b1 = Read<uint8_t>();
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
 
-        //auto&& CHECK_TRAILING = [](uint8_t b) -> void { if ((b >> 6) != 0b10) throw std::runtime_error("bad utf8"); };
+        auto b1 = Peek<uint8_t>(pos);
 
         // 4 byte
         if (b1 >= 0xF0) {
@@ -316,35 +315,56 @@ public:
         }
         // 3 byte
         else if (b1 >= 0xE0) {
-            auto b2 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b2);
-            auto b3 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b3);
+            auto b2 = Peek<uint8_t>(dummy) & 0x3F; //CHECK_TRAILING(b2);
+            auto b3 = Peek<uint8_t>(dummy) & 0x3F; //CHECK_TRAILING(b3);
+            pos = dummy;
             return ((b1 & 0xF) << 12) | (b2 << 6) | b3;
         }
         // 2 byte
         else if (b1 >= 0xC0) {
-            auto b2 = Read<uint8_t>() & 0x3F; //CHECK_TRAILING(b2);
+            auto b2 = Peek<uint8_t>(dummy) & 0x3F; //CHECK_TRAILING(b2);
+            pos = dummy;
             return ((b1 & 0x1F) << 6) | b2;
         }
         // 1 byte
         else { // if
+            pos = dummy;
             return b1 & 0x7F;
         }
     }
 
     template<typename T> requires std::is_same_v<T, UserProfile>
-    decltype(auto) Read() {
-        auto name = Read<std::string>();
-        auto gamerTag = Read<std::string>();
-        auto networkUserId = Read<std::string>();
+    decltype(auto) Peek(size_t& pos) const {
+        size_t dummy = pos;
+
+        auto name = Peek<std::string>(dummy);
+        auto gamerTag = Peek<std::string>(dummy);
+        auto networkUserId = Peek<std::string>(dummy);
+
+        pos = dummy;
 
         return UserProfile(std::move(name), std::move(gamerTag), std::move(networkUserId));
     }
 
 
 
-    // verbose extension methods
-    //  I want these to actually all be in lua
-    //  templates in c, wrappers for lua in modman
+    // Generic type peek
+    template<typename T>
+    decltype(auto) Peek() const {
+        size_t dummy = Position();
+        return Peek<T>(dummy);
+    }
+
+    // Generic type read
+    template<typename T>
+    decltype(auto) Read() {
+        auto pos = Position();
+        auto out = Peek<T>(pos);
+        SetPos(pos);
+        return out;
+    }
+
+
 
     decltype(auto) ReadBool() { return Read<bool>(); }
 

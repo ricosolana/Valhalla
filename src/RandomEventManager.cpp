@@ -29,7 +29,7 @@ void IRandomEventManager::Init() {
 
 		DataReader pkg(*opt);
 
-		pkg.Read<std::string_view>(); // comment
+		auto comment = pkg.Read<std::string_view>(); // comment
 		auto ver = pkg.Read<std::string_view>();
 		if (ver != VConstants::GAME)
 			LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);

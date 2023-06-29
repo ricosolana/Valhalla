@@ -22,7 +22,7 @@ void IZDOManager::Init() {
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
 			// TODO constraint check
-			reader.AsEach([this](ZDOID zdoid) {
+			reader.ReadEach([this](ZDOID zdoid) {
 				EraseZDO(zdoid);
 			});
 		}
@@ -888,7 +888,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			return;
 
 		{
-			reader.AsEach([this](ZDOID zdoid) {
+			reader.ReadEach([this](ZDOID zdoid) {
 				if (auto zdo = GetZDO(zdoid))
 					_InvalidateZDOZone(*zdo);
 				}

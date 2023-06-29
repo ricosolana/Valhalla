@@ -1,7 +1,7 @@
 // main.cpp
 #define SOL_ALL_SAFETIES_ON 1
 
-#define TRACY_ENABLE
+//#define TRACY_ENABLE
 #define TRACY_ON_DEMAND
 
 #include "VUtils.h"

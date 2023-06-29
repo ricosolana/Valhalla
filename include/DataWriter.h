@@ -45,9 +45,9 @@ private:
     }
 
 public:
-    explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
+    explicit DataWriter(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataWriter(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataWriter(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
     explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
     /*

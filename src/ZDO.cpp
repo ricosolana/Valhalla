@@ -282,6 +282,10 @@ void ZDO::Unpack(DataReader& reader, int32_t version, bool recovery) {
         if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members, recovery);
         if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members, recovery);
     }
+
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+    ZDO_TEMP_VEC_COUNT = 0;
+#endif
 }
 
 

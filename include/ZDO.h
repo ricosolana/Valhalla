@@ -295,82 +295,117 @@ private:
         return count;
     }
 
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+    // Used for world recovery
+    static inline uint16_t ZDO_TEMP_VEC_COUNT = 0;
+#endif
+
     // Read a zdo_type from the DataStream
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
-    void _TryReadType(DataReader& reader, member_map& members, bool recovery) {
-        auto count = reader.Read<CountType>();
-
-        // this would be fine had worlds not be corrupt with 0% chance of corruption
-        //if constexpr (std::is_same_v<T, uint8_t>) {
-        //    if (count == 0) {
-        //        throw std::runtime_error("bad count");
-        //    }
-        //}
+    uint16_t _TryReadType(DataReader& reader, member_map& members, bool recovery) {
+        const auto minCount = reader.Read<CountType>();
 
 #if VH_IS_ON(VH_WORLD_RECOVERY)
-        if (recovery) {
-            try {
-                // If zdo is a dungeon and count appears to have been truncated, then assume that more zdo member are present
+        bool isDungeon = false;
+#endif
 
-                // The only members in the hundreds are Vec3 and int32
-                //if constexpr (std::is_same_v<T, Vector3f> || std::is_same_v<T, int32_t>) {
-                    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::DUNGEON)) {
-                        if (count < 128) {
-                            count |= 1 << (sizeof(CountType) * 8); //std::numeric_limits<CountType>::max()
-                        }
-                        else {
-                            if (true);
+        uint16_t count = minCount;
+
+        if constexpr (std::is_same_v<CountType, uint8_t>) {
+            // If minCount is 0, then either:
+            //  the number overflowed to a larger number with no lower bits set
+            //  definite corruption
+            if (!recovery) {
+                if (minCount == 0) {
+                    throw std::runtime_error("minCount must be greater than 0");
+                }
+            }
+            else {
+#if VH_IS_ON(VH_WORLD_RECOVERY)
+                //if (recovery) {
+                //    //count |= 0xFF << 8;
+                //    count |= 0x01 << 8; // More likely case (can be adjusted accordingly)
+                //
+                //    const auto pos = reader.Position(); // increment as higher stable ranges are reached
+                //    for (uint16_t i = 0; i < maxCount; i++) {
+                //        auto hash = reader.Read<HASH_t>();
+                //        try {
+                //            reader.Read<T>();
+                //        }
+                //        catch (const std::exception&) {
+                //            // if at anytime i never reaches the min count, were screwed
+                //            //  this likely means that corruption beyond dungeons
+                //            if (i < minCount) {
+                //                throw std::runtime_error("min zdo-member count never reached");
+                //            }
+                //
+                //            assert(i > 0xFF);
+                //
+                //            //count = i + 1;
+                //
+                //            // decrement by 1 upper bit
+                //            count = (((i >> 8) - 1) << 8) | minCount;
+                //        }
+                //    }
+                //
+                //    reader.SetPos(pos);
+                //}
+
+                // Or alternatively try the easier and more reliable JereKuusela approach
+
+                if constexpr (std::is_same_v<T, Vector3f>) {
+                    ZDO_TEMP_VEC_COUNT = count;
+                }
+                else if constexpr (std::is_same_v<T, int32_t>) {
+#if VH_IS_ON(VH_PORTABLE_ZDOS)
+                    HASH_t prefabHash = this->GetPrefabHash();
+                    switch (prefabHash) {
+                        case Hashes::Object::DG_Cave:
+                        case Hashes::Object::DG_DvergrBoss:
+                        case Hashes::Object::DG_DvergrTown:
+                        case Hashes::Object::DG_ForestCrypt:
+                        case Hashes::Object::DG_GoblinCamp:
+                        case Hashes::Object::DG_MeadowsFarm:
+                        case Hashes::Object::DG_MeadowsVillage:
+                        case Hashes::Object::DG_SunkenCrypt:
+#elif VH_IS_ON(VH_PREFAB_INFO)
+                    if (GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON) {
+#else
+#error "bad vh compiler modes"
+#endif
+                        isDungeon = true;
+
+                        // dungeon store an INT32 of { seed, room-hash } for each room
+                        //  and a single INT32 roomCount
+                        count = ZDO_TEMP_VEC_COUNT * 2 + 1;
+
+                        // now ensure that minCount matches count
+                        if ((count & 0xFF) != minCount) {
+                            throw std::runtime_error("estimated int count does not match read count");
                         }
                     }
-                //}
+                }
             }
-            catch (const std::exception&) {}
+#endif // VH_WORLD_RECOVERY
         }
-#endif
-        // read batches up to 2 bits more?
-        // try to brute read in portions
-        // based on the previous bit range
-        
-        int32_t range = std::numeric_limits<uint16_t>::max();
 
-        // general algo
-
-        int32_t prevCount = count;
-        auto&& read = [](DataReader& reader) -> void { 
+        for (uint16_t i = 0; i < count; i++) {
             auto hash = reader.Read<HASH_t>();
             auto type = reader.Read<T>();
-
-            
-        };
-
-
-        for (decltype(count) i = 0; i < count; i++) {
-            // if load fails, then
+            _Set(hash, std::move(type), members);
         }
 
-        for (decltype(count) i=0; i < count; i++) {
-            // ...fuck
-            // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-            auto hash(reader.Read<HASH_t>());
 #if VH_IS_ON(VH_WORLD_RECOVERY)
-            if (recovery) {
-                try {
-                    auto type(reader.Read<T>());
-                    _Set(hash, type, members);
-                }
-                catch (const std::exception& e) { 
-                    reader.SetPos(reader.Position() - sizeof(T) - 4); 
-                    break;
-                }
-            }
-            else 
-#endif // VH_WORLD_RECOVERY
-            {
-                auto type(reader.Read<T>());
-                _Set(hash, type, members);
-            }
+        if (isDungeon) {
+            // then check that count matches
+            auto rooms = GetInt(Hashes::ZDO::DungeonGenerator::ROOMS);
+            if (rooms != ZDO_TEMP_VEC_COUNT)
+                throw std::runtime_error("ZDO dungeon room count does not match vec count");
         }
+#endif
+
+        return count;
     }
 
     void _SetPrefabHash(HASH_t hash) {
