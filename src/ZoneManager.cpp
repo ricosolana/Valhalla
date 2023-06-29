@@ -473,7 +473,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
             }
         }
     }
-    catch (const std::exception& e) {
+    catch (const std::exception&) {
         if (!resilient) {
             LOG_WARNING(LOGGER, "Restorative loading ZoneManager...");
             Load(reader, version, true);

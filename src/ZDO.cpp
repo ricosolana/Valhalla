@@ -49,10 +49,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     {
-        auto persistent = pkg.Read<uint8_t>();        // persistent
-        VH_ASSERT(persistent <= 0b1, "illegal persistent bool {:#b}", persistent);
+        auto persistent = pkg.Read<bool>();        // persistent
 #if VH_IS_ON(VH_PORTABLE_ZDOS) 
-        this->m_pack.Set<PERSISTENT_PACK_INDEX>(static_cast<bool>(persistent));
+        this->m_pack.Set<PERSISTENT_PACK_INDEX>(persistent);
 #endif 
     }
 
@@ -75,11 +74,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     }
 
     if (worldVersion >= 22) {
-        auto distant = pkg.Read<uint8_t>();       // m_distant
-        VH_ASSERT(distant <= 0b1, "illegal distant bool {:#b}", distant);
+        auto distant = pkg.Read<bool>();       // m_distant
         //if (distant > 0b1) LOG_BACKTRACE(LOGGER, "Unexpected distant value '{}'", distant);
 #if VH_IS_ON(VH_PORTABLE_ZDOS) 
-        this->m_pack.Set<DISTANT_PACK_INDEX>(static_cast<bool>(distant));
+        this->m_pack.Set<DISTANT_PACK_INDEX>(distant);
 #endif            
     }
 

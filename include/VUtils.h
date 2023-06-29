@@ -66,8 +66,8 @@ using HASH_t = int32_t; // Used for RPC method hashing
 using OWNER_t = int64_t; // Should rename to UID
 using PLAYER_ID_t = int64_t; // Should rename to UID
 using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
-using BYTE_VIEW_t = std::span<const BYTE_t>;
-using BYTE_SPAN_t = std::span<BYTE_t>;
+using BYTE_VIEW_t = std::span<const BYTE_t>; // Immutable view of bytes
+using BYTE_SPAN_t = std::span<BYTE_t>; // Mutable span of bytes
 
 using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
 
