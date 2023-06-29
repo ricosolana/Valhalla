@@ -60,6 +60,8 @@ public:
 
         BYTE_t buf[sizeof(T)]{};
         PeekSomeBytes(BYTE_SPAN_t(buf, sizeof(T)), dummy);
+
+        T out = *reinterpret_cast<T*>(buf);
         
         if constexpr (std::is_floating_point_v<T>) {
             auto classify = std::fpclassify(*reinterpret_cast<T*>(buf));
@@ -72,9 +74,6 @@ public:
                 throw std::runtime_error("bad bool");
             }
         }
-
-        // To stop msvc warnings
-        T out = *reinterpret_cast<T*>(buf);
 
         pos = dummy;
         return out;
@@ -307,7 +306,7 @@ public:
     decltype(auto) Peek(size_t& pos) const {
         size_t dummy = pos;
 
-        auto b1 = Peek<uint8_t>(pos);
+        auto b1 = Peek<uint8_t>(dummy);
 
         // 4 byte
         if (b1 >= 0xF0) {
