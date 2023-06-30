@@ -164,7 +164,7 @@ void World::LoadDB(DataReader reader, bool recovery) {
 		if (!recovery) {
 			LOG_WARNING(LOGGER, "Attempting to recover corrupted world");
 
-			reader.SetPos(0);
+			reader.SetPosition(0);
 			LoadDB(reader, true);
 		}
 		else {

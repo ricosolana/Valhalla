@@ -14,12 +14,43 @@ class DataWriter : public virtual DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-        extend(count);
+    void WriteSomeBytes(BYTE_VIEW_t view) {
+        
+        std::visit(VUtils::Traits::overload{
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
+
+                // standard vector limitations
+                //  prevents us from directly inserting
+                //  without moving elements around
+                if (this->CheckOffset(view.size()))
+                    buf.resize(pos + view.size());
+
+                std::copy(view.data(),
+                    view.data() + view.size(),
+                    buf.data() + pair.second);
+            },
+            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
+                // copy
+                this->AssertOffset(view.size());
+
+                std::copy(buffer,
+                    buffer + count,
+                    pair.first.data() + pair.second);
+            },
+            [&](SharedFile& file) {
+                std::fwrite(buffer)
+            }
+        }, this->m_data);
+        
+        Extend(count);
 
         std::copy(buffer,
                   buffer + count, 
                   this->data() + this->m_pos);
+
+
 
         this->m_pos += count;
     }
@@ -47,8 +78,11 @@ private:
 public:
     explicit DataWriter(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataWriter(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
+    //explicit DataWriter(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
+    //explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
+
+    explicit DataWriter(fs::path path)
+        : DataStream(std::fopen(path.string().c_str(), "wb")) {}
 
     /*
     // Clears the underlying container and resets position
@@ -88,11 +122,11 @@ public:
         func(std::ref(*this));
 
         const auto end = this->Position();
-        this->SetPos(start);
+        this->SetPosition(start);
         count = end - start - sizeof(count);
         assert(count >= 0);
         Write(count);
-        this->SetPos(end);
+        this->SetPosition(end);
     }
 
     void Write(const BYTE_t* in, size_t length) {

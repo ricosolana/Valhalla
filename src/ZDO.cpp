@@ -385,7 +385,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
 
     const auto endPos = writer.Position();
-    writer.SetPos(flagPos);
+    writer.SetPosition(flagPos);
     writer.Write(flags);
-    writer.SetPos(endPos);
+    writer.SetPosition(endPos);
 }

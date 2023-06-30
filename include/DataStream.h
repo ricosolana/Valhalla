@@ -1,33 +1,56 @@
 #pragma once
 
+#include <stdio.h>
+
 #include "VUtils.h"
 
-class OwnedFile {
+class SharedFile {
 private:
     std::FILE* m_file;
+    bool m_isRead;
+    bool m_isOwned;
 
 public:
-    OwnedFile(std::FILE* file) : m_file(file) {}
+    SharedFile(const char* path, bool read) {
+        this->m_file = std::fopen(path, read ? "rb" : "wb");
+        //if (!this->m_file)
+            //throw std::runtime_error("unable to open file");
 
-    ~OwnedFile() {
+        this->m_isRead = read;
+        this->m_isOwned = true;
+    }
+    
+    // how to handle shared cases
+    SharedFile(FILE* file, bool read) {
+        this->m_file = file;
+        //if (!this->m_file)
+            //throw std::runtime_error("unable to open file");
+
+        this->m_isRead = read;
+        this->m_isOwned = false;
+    }
+
+    ~SharedFile() {
         Close();
     }
 
-    OwnedFile(const OwnedFile&) = delete;
-    OwnedFile(OwnedFile&& other) {
+    SharedFile(const SharedFile&) = delete;
+    SharedFile(SharedFile&& other) {
         *this = std::move(other);
     }
 
-    void operator=(const OwnedFile&) = delete;
+    void operator=(const SharedFile&) = delete;
 
-    void operator=(OwnedFile&& other) {
+    void operator=(SharedFile&& other) {
         this->m_file = other.m_file;
         other.m_file = nullptr;
     }
 
     bool Close() {
-        if (this->m_file) {
-            return std::fclose(this->m_file) == 0;
+        if (this->m_file && this->m_isOwned) {
+            bool status = std::fclose(this->m_file) == 0;
+            this->m_file = nullptr;
+            return status;
         }
         return false;
     }
@@ -42,12 +65,11 @@ public:
 class DataStream {
 public:
     // Proposal for reading from file (with owned and unowned file variant subtypes)
-    //std::variant<std::reference_wrapper<BYTES_t>, BYTE_VIEW_t, OwnedFile, std::FILE*> m_data;
-
-    std::variant<std::reference_wrapper<BYTES_t>, BYTE_SPAN_t> m_data;
-
-protected:
-    size_t m_pos{};
+    std::variant<
+        std::pair<std::reference_wrapper<BYTES_t>, size_t>, 
+        std::pair<BYTE_VIEW_t, size_t>, 
+        SharedFile
+    > m_data;
 
 protected:
     // Returns whether the specified position exceeds container length
@@ -80,17 +102,10 @@ protected:
         AssertOffset(offset, Position());
     }
 
-public:
-    explicit DataStream(BYTE_SPAN_t buf) : m_data(buf) {}
-    explicit DataStream(BYTES_t& buf) : m_data(std::ref(buf)) {}
-
-    explicit DataStream(BYTE_SPAN_t buf, size_t pos) : m_data(buf) {
-        SetPos(pos);
-    }
-
-    explicit DataStream(BYTES_t& buf, size_t pos) : m_data(std::ref(buf)) {
-        SetPos(pos);
-    }
+protected:
+    explicit DataStream(BYTE_SPAN_t buf) : m_data(std::pair(buf, 0)) {}
+    explicit DataStream(BYTES_t& buf) : m_data(std::pair(std::ref(buf), 0)) {}
+    explicit DataStream(SharedFile file) : m_data(std::move(file)) {}
 
 public:
     //bool owned() const { return std::get_if< !this->m_data.data(); }
@@ -101,40 +116,61 @@ public:
 
     // TODO rename SetPosition
     // Sets the position of this stream
-    void SetPos(size_t pos) {
+    void SetPosition(size_t pos) {
         AssertPosition(pos);
         this->m_pos = pos;
     }
 
     size_t size() const {
         return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().size(); },
-            [](BYTE_SPAN_t buf) { return buf.size(); }
-            }, this->m_data);
+            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &buf) { return buf.first.get().size(); },
+            [](const std::pair<BYTE_SPAN_t, size_t> &buf) { return buf.first.size(); },
+            [](SharedFile file) {
+                auto prev = std::ftell(file);
+                if (prev == -1)
+                    throw std::runtime_error("failed to set file pos (0)");
+                if (std::fseek(file, 0, SEEK_END) != 0)
+                    throw std::runtime_error("failed to set file pos (1)");
+
+                auto s = (size_t)std::ftell(file);
+                if (s == -1)
+                    throw std::runtime_error("failed to set file pos (2)");
+                if (fseek(file, prev, SEEK_SET) != 0);
+                    throw std::runtime_error("failed to set file pos (3)");
+
+                return s;
+            },
+        }, this->m_data);
     }
 
     BYTE_t* data() {
         return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_SPAN_t buf) { return buf.data(); }
+            [](std::pair<std::reference_wrapper<BYTES_t>, size_t>& buf) { return buf.first.get().data(); },
+            [](std::pair<BYTE_SPAN_t, size_t>& buf) { return buf.first.data(); },
+            [](SharedFile& file) { throw std::runtime_error("cannot call data() on file"); }
         }, this->m_data);
     }
 
     const BYTE_t* data() const {
         return std::visit(VUtils::Traits::overload{
-            [](std::reference_wrapper<BYTES_t> buf) { return buf.get().data(); },
-            [](BYTE_SPAN_t buf) { return buf.data(); }
-            }, this->m_data);
+            [](const std::pair<std::reference_wrapper<BYTES_t>, size_t>& buf) { return buf.first.get().data(); },
+            [](const std::pair<BYTE_SPAN_t, size_t>& buf) { return buf.first.data(); },
+            [](const SharedFile& file) { throw std::runtime_error("cannot call data() on file"); }
+        }, this->m_data);
     }
 
     // Increases the size of this stream by x bytes
-    void extend(size_t count) {
+    //  This is only really useful for vector, nothing else though
+    void Extend(size_t count) {
+        std::get<
+
         std::visit(VUtils::Traits::overload{
-            [this, count](std::reference_wrapper<BYTES_t> buf) {
+            [this, count](std::pair<std::reference_wrapper<BYTES_t>, size_t>& buf) {
                 if (this->CheckOffset(count))
-                    buf.get().resize(this->m_pos + count);
+                    buf.first.get().resize(this->m_pos + count);
             },
-            [this, count](BYTE_SPAN_t buf) { this->AssertOffset(count); }
+            [this, count](std::pair<BYTE_SPAN_t, size_t>& buf) { this->AssertOffset(count); },
+            [this, count](SharedFile& file) {  }
         }, this->m_data);
     }
 
@@ -142,13 +178,13 @@ public:
     // Move forward by x bytes
     //  Does not add bytes
     void Skip(size_t count) {
-        this->SetPos(this->Position() + count);
+        this->SetPosition(this->Position() + count);
     }
 
     // Move forward by x bytes
     //  Bytes can be allocated
     void Advance(size_t count) {
-        extend(count);
+        Extend(count);
         Skip(count);
     }
 };

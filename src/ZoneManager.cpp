@@ -376,7 +376,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
 
     if (resilient) {
         // starting at resilient global key
-        reader.SetPos(VH_SETTINGS.worldResilientHintGlobalKeyCount_Position
+        reader.SetPosition(VH_SETTINGS.worldResilientHintGlobalKeyCount_Position
             - (4) // location version
             - (4) // pgw
             - (4) // possible Zone count read
@@ -387,11 +387,11 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
         // now this is where zone deductions take place
         size_t inc = 0;
         while (reader.Read<int32_t>() != inc) {
-            reader.SetPos(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
-            reader.SetPos(reader.Position() - sizeof(Vector2i)); // backward seek 
+            reader.SetPosition(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
+            reader.SetPosition(reader.Position() - sizeof(Vector2i)); // backward seek 
             inc++;
         }
-        reader.SetPos(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
+        reader.SetPosition(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
     }
 
     try {

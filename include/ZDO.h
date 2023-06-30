@@ -287,9 +287,9 @@ private:
 
         if (count) {
             auto end_mark = writer.Position();
-            writer.SetPos(begin_mark);
+            writer.SetPosition(begin_mark);
             writer.Write(count);
-            writer.SetPos(end_mark);
+            writer.SetPosition(end_mark);
         }
 
         return count;

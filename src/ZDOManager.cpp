@@ -209,9 +209,9 @@ void IZDOManager::Save(DataWriter& writer) {
 		}
 
 		const auto end = writer.Position();
-		writer.SetPos(start);
+		writer.SetPosition(start);
 		writer.Write(count);
-		writer.SetPos(end);
+		writer.SetPosition(end);
 	}
 }
 

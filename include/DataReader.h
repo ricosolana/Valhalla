@@ -60,8 +60,11 @@ private:
 public:
     explicit DataReader(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t& buf) : DataStream(buf) {}
-    explicit DataReader(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
-    explicit DataReader(BYTES_t& buf, size_t pos) : DataStream(buf, pos) {}
+    //explicit DataReader(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
+    //explicit DataReader(BYTES_t& buf, size_t pos) : DataStream(buf, pos) {}
+
+    explicit DataReader(fs::path path)
+        : DataStream(std::fopen(path.string().c_str(), "rb")) {}
 
 public:
     template<typename T>
