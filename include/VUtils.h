@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <WinSock2.h>
 #include <chrono>
 #include <iostream>
 #include <type_traits>
@@ -11,14 +10,17 @@
 #include <filesystem>
 #include <span>
 
+#include "CompileSettings.h"
+
 #include <zstd.h>
+#if VH_IS_ON(VH_USE_ZLIB)
 #include <zlib.h>
+#endif
 #include <ankerl/unordered_dense.h>
 #include <dpp/dpp.h>
 #include <tracy/Tracy.hpp>
 #include <quill/Quill.h>
 
-#include "CompileSettings.h"
 #include "VUtilsEnum.h"
 
 // global logger
@@ -589,7 +591,7 @@ public:
 };
 
 
-
+#if VH_IS_ON(VH_USE_ZLIB)
 class Deflater {
     int m_level;
     int m_windowBits;
@@ -750,7 +752,7 @@ public:
         return Decompress(in.data(), in.size());
     }
 };
-
+#endif
 
 
 

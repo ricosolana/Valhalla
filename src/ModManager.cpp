@@ -921,7 +921,7 @@ void IModManager::LoadAPI() {
         );
     
 
-
+#if VH_IS_ON(VH_USE_ZLIB)
     m_state.new_usertype<Deflater>("Deflater",
         "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
         "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)),
@@ -937,6 +937,7 @@ void IModManager::LoadAPI() {
         "raw", sol::property(Inflater::Raw),
         "Decompress", sol::resolve<std::optional<BYTES_t>(const BYTES_t&)>(&Inflater::Decompress)
     );
+#endif
 
 
 

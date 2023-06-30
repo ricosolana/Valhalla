@@ -79,6 +79,16 @@
     #define VH_PORTABLE_ZDOS_I_ VH_DEFAULT_OFF
 #endif
 
+#if defined(VH_USE_ZLIB)
+    #if VH_USE_ZLIB != 0
+        #define VH_USE_ZLIB_I_ VH_ON
+    #else
+        #define VH_USE_ZLIB_I_ VH_OFF
+    #endif
+#else
+    #define VH_USE_ZLIB_I_ VH_DEFAULT_ON
+#endif
+
 // Whether to perform zdo dict conversions for version 29 and earlier
 //  Enabled by default
 #if defined(VH_CONVERT_LEGACY)

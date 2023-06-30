@@ -84,8 +84,8 @@ private:
 public:
     explicit DataReader(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t& buf) : DataStream(buf) {}
-    explicit DataReader(fs::path path)
-        : DataStream(SharedFile(path.string().c_str(), true)) {}
+    //explicit DataReader(fs::path path)
+        //: DataStream(SharedFile(path.string().c_str(), true)) {}
 
 public:
     template<typename T>

@@ -172,7 +172,7 @@ public:
     
     // Return whether this has a value besides NONE
     operator bool() const noexcept {
-        return m_uid;
+        return m_userIDIndex;
     }
 
     // TODO rename to User

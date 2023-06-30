@@ -489,7 +489,7 @@ void INetManager::Update() {
         try {
             peer->Update();
         }
-        catch (const std::runtime_error& e) {
+        catch (const std::exception& e) {
             LOG_WARNING(LOGGER, "Peer error");
             LOG_WARNING(LOGGER, "{}", e.what());
             peer->m_socket->Close(false);

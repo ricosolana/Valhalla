@@ -42,7 +42,9 @@ option(TRACY_ENABLE "" OFF)
 # Libraries
 ############
 find_package(Threads REQUIRED)
-find_package(ZLIB REQUIRED)
+if (NOT DEFINED VH_USE_ZLIB OR VH_USE_ZLIB)
+    find_package(ZLIB REQUIRED)
+endif()
 find_package(range-v3 CONFIG REQUIRED)
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
     message("Mods: enabled")
@@ -144,10 +146,15 @@ if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     )
 endif()
 
+if (NOT DEFINED VH_USE_ZLIB OR VH_USE_ZLIB)
+    target_link_libraries(${PROJECT_NAME}
+        ZLIB::ZLIB
+    )
+endif()
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${STEAMWORKS_SDK_BINARY_DIR}
-    ZLIB::ZLIB
     yaml-cpp
     PRIVATE Tracy::TracyClient
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
@@ -204,6 +211,10 @@ endif()
 
 if (DEFINED VH_DISCORD_INTEGRATION)
     add_compile_definitions(VH_DISCORD_INTEGRATION=$<BOOL:${VH_DISCORD_INTEGRATION}>) 
+endif()
+
+if (DEFINED VH_USE_ZLIB)
+    add_compile_definitions(VH_USE_ZLIB=$<BOOL:${VH_USE_ZLIB}>) 
 endif()
 
 if (DEFINED VH_USE_PREFABS)

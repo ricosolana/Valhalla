@@ -9,6 +9,7 @@ private:
     std::FILE* m_file;
     bool m_isRead;
     bool m_isOwned;
+    //uint32_t m_size;
 
 public:
     SharedFile(const char* path, bool read) {

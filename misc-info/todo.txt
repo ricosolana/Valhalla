@@ -1,14 +1,4 @@
 todo:
-    idea for returning to original position on datastream exceptions
-        
-        prior to read/write, mark the position
-        
-        enclose read/write in try catch?
-        
-        on catch, return to previous marked pos
-        
-        else return result?
-
     - stop using std::optional for optional types
         use tinyoptional library instead
 
@@ -244,7 +234,76 @@ todo:
     - idea for unloading/destroying/reconciliating inactive zdos in world:
         - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
         
+        
+------------------------------
 finished:
+------------------------------
+    guaranteed easier dungeon fix:
+        count the number of loaded vecs
+
+        dungeons load with a definite number of vecs/quats
+        
+        only ints are broken
+
+    what are all knowns with zdo-member reading?
+        what members are available
+        whether an expected member (float/vec3/quat) is corrupt
+            float has 1 restrictions (DEN or max>x>inf)
+            vec3 has 3 restrictions (3 floats)
+            Quaternion has 13 restrictions (4 floats + 8 strict bounds checks + 1 mag. check)
+        
+        int/long are not as easy
+            they can have value within their byte range
+            
+        string 
+        
+        if zdo data was still saved as a package, this would be easy-af
+        
+
+
+    algo for corrupt world recovery
+        
+        8-bit hint = read byte
+        
+        // this is the theoretical max of zdos
+        //  the 16-bit count could have also overflowed when writing initially (prior versions)
+        //  but it is unlikely
+        16-bit count = 0xFF00 | hint; // 0x0100 | hint;
+        
+        const auto pos = reader.Position() // increment as higher stable ranges are reached
+        for i in range(count):
+            int hash = read hash
+            try:
+                T type = read type
+                
+                // if new stable range reached
+                //if (!(i & 0xFF))
+                    //pos = reader.Position()
+            catch:
+                // if at anytime i never reaches the min count, were screwed
+                if i < hint:
+                    throw std::runtime_error("min zdo-member count never reached");
+                
+                reader.setPos(pos);
+                count = i + 1;
+            
+        // now read 'count' times for all elements
+        for i in range(count):
+            read hash
+            read T type
+            _Set(...);
+
+
+    idea for returning to original position on datastream exceptions
+        
+        prior to read/write, mark the position
+        
+        enclose read/write in try catch?
+        
+        on catch, return to previous marked pos
+        
+        else return result?
+
     - owners not being assigned or sent correctly
         was occuring due to in-zdo persistent flags never being assigned for instantiations during zone generation (sonsequently was only occur during this case)
 

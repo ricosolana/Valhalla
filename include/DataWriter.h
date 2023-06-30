@@ -75,8 +75,8 @@ private:
 public:
     explicit DataWriter(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    explicit DataWriter(fs::path path)
-        : DataStream(SharedFile(path.string().c_str(), false)) {}
+    //explicit DataWriter(fs::path path)
+        //: DataStream(SharedFile(path.string().c_str(), false)) {}
 
     /*
     // Clears the underlying container and resets position
