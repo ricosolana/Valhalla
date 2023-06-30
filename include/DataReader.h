@@ -15,14 +15,38 @@
 class DataReader : public DataStream {
 private:
     void ReadSomeBytes(BYTE_SPAN_t view) {
-        auto pos = Position();
-        AssertOffset(view.size(), pos);
-        std::copy(this->data() + pos,
-            this->data() + pos + view.size(),
-            view.begin());
-        // Expect that buffers do not overlap with reader
-        //std::memmove(view.data(), this->data() + pos, view.size());
-        this->Skip(view.size());
+        std::visit(VUtils::Traits::overload{
+            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
+                auto&& buf = pair.first.get();
+                auto&& pos = pair.second;
+
+                if (pos + view.size() > buf.size())
+                    throw std::runtime_error("position exceeds vector bounds");
+
+                std::copy(buf.data() + pos,
+                    buf.data() + pos + view.size(),
+                    view.begin());
+
+                pos += view.size();
+            },
+            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                if (pos + view.size() > buf.size())
+                    throw std::runtime_error("position exceeds span bounds");
+
+                std::copy(buf.data() + pos,
+                    buf.data() + pos + view.size(),
+                    view.begin());
+
+                pos += view.size();
+            },
+            [&](SharedFile& file) {
+                if (std::fread(view.data(), view.size(), 1, file) != 1)
+                    throw std::runtime_error("error while reading from file");
+            }
+        }, this->m_data);
     }
 
     // Read some bytes into the target container
@@ -60,36 +84,34 @@ private:
 public:
     explicit DataReader(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataReader(BYTES_t& buf) : DataStream(buf) {}
-    //explicit DataReader(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
-    //explicit DataReader(BYTES_t& buf, size_t pos) : DataStream(buf, pos) {}
-
     explicit DataReader(fs::path path)
-        : DataStream(std::fopen(path.string().c_str(), "rb")) {}
+        : DataStream(SharedFile(path.string().c_str(), true)) {}
 
 public:
     template<typename T>
         requires
     (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t> || std::is_same_v<T, BYTE_VIEW_t>
         || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
-        decltype(auto) Read() {
+    decltype(auto) Read() {
         auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t>)
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
 
-        this->AssertOffset(count);
+        T result{};
+        if constexpr (std::is_same_v<T, BYTES_t> || std::is_same_v<T, std::string>) {
+            result.resize(count);
 
-        auto pos = this->Position();
+            // This updates internal pos
+            ReadSomeBytes(BYTE_SPAN_t(
+                reinterpret_cast<BYTE_t*>(result.data()), count));
+        }
+        else {
+            // TODO There are 4 visit calls here, quite inefficient
+            result = T(this->data() + Position(),
+                this->data() + Position() + count);
 
-        //T result{};
-        //result.resize()
-
-        // will require alternate method when reading from file
-        //  directly read into string
-
-        auto result = T(this->data() + pos,
-            this->data() + pos + count);
-
-        this->Skip(count);
+            Skip(count);
+        }        
 
         return result;
     }

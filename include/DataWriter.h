@@ -10,12 +10,12 @@
 #include "DataStream.h"
 #include "DataReader.h"
 
-class DataWriter : public virtual DataStream {
+class DataWriter : public DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteSomeBytes(BYTE_VIEW_t view) {
-        
+    void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
+    //void WriteSomeBytes()
         std::visit(VUtils::Traits::overload{
             [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
                 auto&& buf = pair.first.get();
@@ -24,35 +24,32 @@ private:
                 // standard vector limitations
                 //  prevents us from directly inserting
                 //  without moving elements around
-                if (this->CheckOffset(view.size()))
-                    buf.resize(pos + view.size());
-
-                std::copy(view.data(),
-                    view.data() + view.size(),
-                    buf.data() + pair.second);
-            },
-            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
-                // copy
-                this->AssertOffset(view.size());
+                if (pos + count > buf.size())
+                    buf.resize(pos + count);
 
                 std::copy(buffer,
                     buffer + count,
-                    pair.first.data() + pair.second);
+                    buf.data() + pair.second);
+
+                pos += count;
+            },
+            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
+                // copy
+                auto&& buf = pair.first;
+                auto&& pos = pair.second;
+
+                if (pos + count > buf.size())
+                    throw std::runtime_error("cannot write beyond end of span");
+
+                std::copy(buffer,
+                    buffer + count,
+                    buf.data() + pos);
             },
             [&](SharedFile& file) {
-                std::fwrite(buffer)
+                if (std::fwrite(buffer, count, 1, file) != 1)
+                    throw std::runtime_error("failed to write to file stream");
             }
         }, this->m_data);
-        
-        Extend(count);
-
-        std::copy(buffer,
-                  buffer + count, 
-                  this->data() + this->m_pos);
-
-
-
-        this->m_pos += count;
     }
 
     // Write count bytes from the specified vector
@@ -60,7 +57,7 @@ private:
     auto WriteSomeBytes(const BYTES_t& vec, size_t count) {
         return WriteSomeBytes(vec.data(), count);
     }
-
+    
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
     auto WriteSomeBytes(const BYTES_t& vec) {
@@ -78,11 +75,8 @@ private:
 public:
     explicit DataWriter(BYTE_SPAN_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    //explicit DataWriter(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
-    //explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
-
     explicit DataWriter(fs::path path)
-        : DataStream(std::fopen(path.string().c_str(), "wb")) {}
+        : DataStream(SharedFile(path.string().c_str(), false)) {}
 
     /*
     // Clears the underlying container and resets position

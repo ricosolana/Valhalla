@@ -374,6 +374,8 @@ void IZoneManager::Save(DataWriter& pkg) {
 void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
     m_generatedZones.clear();
 
+    assert(false);
+    /*
     if (resilient) {
         // starting at resilient global key
         reader.SetPosition(VH_SETTINGS.worldResilientHintGlobalKeyCount_Position
@@ -393,7 +395,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
         }
         reader.SetPosition(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
     }
-
+    */
     try {
         {
             auto count = reader.Read<uint32_t>();
