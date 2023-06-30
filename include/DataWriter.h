@@ -128,13 +128,18 @@ public:
         WriteSomeBytes(in, length);
     }
 
+    // Write the target type
     template<typename T>
         requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
     void Write(const T& in) {
         Write(in.data(), in.size());
-        //Write<int32_t>(in.size());
-        //WriteSomeBytes(in.data(), in.size());
     }
+
+    //template<typename T>
+    //    requires (std::is_same_v<T, DataReader>)
+    //void Write(T& in) {
+    //    Write(in.data(), in.size());
+    //}
 
     // Writes a string
     void Write(std::string_view in) {

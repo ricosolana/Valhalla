@@ -129,14 +129,18 @@ public:
     }
 
     // TODO must const qualify this
-    size_t size() {
+    size_t size() const {
         return std::visit(VUtils::Traits::overload{
             [](const std::pair<std::reference_wrapper<BYTES_t>, size_t> &buf) -> size_t { return buf.first.get().size(); },
             [](const std::pair<BYTE_SPAN_t, size_t> &buf) -> size_t { return buf.first.size(); },
-            [](SharedFile &file) -> size_t {
+            [](const SharedFile &f) -> size_t {
                 //fstat()
                 // use ifstream or something
                 // i hate how fstream is 128+ bytes....
+                
+                // This should technically be valid
+                //  and safe because fp is mutable
+                auto&& file = const_cast<SharedFile&>(f);
 
                 auto prev = std::ftell(file);
                 if (prev == -1)

@@ -373,9 +373,7 @@ void IZoneManager::Save(DataWriter& pkg) {
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
     m_generatedZones.clear();
-
-    assert(false);
-    /*
+    
     if (resilient) {
         // starting at resilient global key
         reader.SetPosition(VH_SETTINGS.worldResilientHintGlobalKeyCount_Position
@@ -384,7 +382,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
             - (4) // possible Zone count read
         );
 
-        std::reference_wrapper<BYTES_t> bytes = std::get<std::reference_wrapper<BYTES_t>>(reader.m_data);
+        //auto&& bytes = std::get<std::pair<std::reference_wrapper<BYTES_t>, size_t>>(reader.m_data);
 
         // now this is where zone deductions take place
         size_t inc = 0;
@@ -395,7 +393,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version, bool resilient) {
         }
         reader.SetPosition(reader.Position() - sizeof(int32_t)); // undo the last 'count' read
     }
-    */
+    
     try {
         {
             auto count = reader.Read<uint32_t>();
