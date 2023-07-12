@@ -93,7 +93,7 @@ public:
     (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t> || std::is_same_v<T, BYTE_VIEW_t>
         || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
     decltype(auto) Read() {
-        auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t>)
+        auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t> || std::is_same_v<T, BYTE_VIEW_t>)
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
 
