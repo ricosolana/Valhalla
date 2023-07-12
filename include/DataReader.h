@@ -23,8 +23,8 @@ private:
                 if (pos + view.size() > buf.size())
                     throw std::runtime_error("position exceeds vector bounds");
 
-                std::copy(buf.data() + pos,
-                    buf.data() + pos + view.size(),
+                std::copy(buf.begin() + pos,
+                    buf.begin() + pos + view.size(),
                     view.begin());
 
                 pos += view.size();
@@ -36,8 +36,8 @@ private:
                 if (pos + view.size() > buf.size())
                     throw std::runtime_error("position exceeds span bounds");
 
-                std::copy(buf.data() + pos,
-                    buf.data() + pos + view.size(),
+                std::copy(buf.begin() + pos,
+                    buf.begin() + pos + view.size(),
                     view.begin());
 
                 pos += view.size();

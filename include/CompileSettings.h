@@ -361,6 +361,7 @@
     #define VH_DISCORD_INTEGRATION_I_ VH_DEFAULT_ON
 #endif
 
+// This is the replay functionality
 #if defined(VH_PLAYER_CAPTURE)
     #if VH_DISCORD_INTEGRATION != 0
         #define VH_PLAYER_CAPTURE_I_ VH_ON
@@ -369,6 +370,21 @@
     #endif
 #else
     #define VH_PLAYER_CAPTURE_I_ VH_DEFAULT_OFF
+#endif
+
+#define VH_PACKET_CAPTURE 1
+
+// Whether to capture packets only (no replay functionality)
+//  This is experimental and should not be used outside of testing
+//  Only input packets will be captured and subsequently saved to disk
+#if defined(VH_PACKET_CAPTURE)
+    #if VH_PACKET_CAPTURE != 0
+        #define VH_PACKET_CAPTURE_I_ VH_ON
+    #else
+        #define VH_PACKET_CAPTURE_I_ VH_OFF
+    #endif
+#else
+    #define VH_PACKET_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
 #define VH_CORE_FEATURES 1

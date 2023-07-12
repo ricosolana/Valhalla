@@ -120,6 +120,16 @@ void Peer::Update() {
     // Read packets
     while (auto opt = this->Recv()) {
         auto&& bytes = opt.value();
+
+        // save packet to file
+#if VH_IS_ON(VH_PACKET_CAPTURE)
+        //std::error_code ec;
+        fs::path path(fs::path("./packets/") / fs::path(m_socket->GetHostName()));
+        fs::create_directories(path);
+        //VUtils::Resource::WriteFile(path / (std::to_string(m_packetIndex) + ".pkg"), bytes);
+        VUtils::Resource::WriteFile(path / (std::to_string(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count()) + ".pkg"), bytes);
+#endif
+
         DataReader reader(bytes);
 
         auto hash = reader.Read<HASH_t>();

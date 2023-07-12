@@ -79,6 +79,10 @@ public:
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
 
+#if VH_IS_ON(VH_PACKET_CAPTURE)
+    //unsigned int m_packetIndex;
+#endif
+
 private:
     void Update();
 
