@@ -14,58 +14,17 @@
 
 class DataReader : public DataStream {
 private:
-    void ReadSomeBytes(BYTE_SPAN_t view) {
-        std::visit(VUtils::Traits::overload{
-            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
-                auto&& buf = pair.first.get();
-                auto&& pos = pair.second;
+    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+        this->AssertOffset(count);
 
-                if (pos + view.size() > buf.size())
-                    throw std::runtime_error("position exceeds vector bounds");
+        // read into 'buffer'
+        std::copy(this->data() + this->m_pos,
+            this->data() + this->m_pos + count,
+            buffer);
 
-                std::copy(buf.begin() + pos,
-                    buf.begin() + pos + view.size(),
-                    view.begin());
-
-                pos += view.size();
-            },
-            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
-                auto&& buf = pair.first;
-                auto&& pos = pair.second;
-
-                if (pos + view.size() > buf.size())
-                    throw std::runtime_error("position exceeds span bounds");
-
-                std::copy(buf.begin() + pos,
-                    buf.begin() + pos + view.size(),
-                    view.begin());
-
-                pos += view.size();
-            },
-            [&](SharedFile& file) {
-                if (std::fread(view.data(), view.size(), 1, file) != 1)
-                    throw std::runtime_error("error while reading from file");
-            }
-        }, this->m_data);
+        this->m_pos += count;
     }
 
-    // Read some bytes into the target container
-    //template<typename Iterable> 
-    //    requires VUtils::Traits::is_iterable_v<Iterable>
-    //void ReadSomeBytes(Iterable& buf, size_t count) {
-    //    
-    //    buf.insert(buf.end(), )
-    //
-    //    auto pos = Position();
-    //    AssertOffset(view.size(), pos);
-    //    std::copy(this->data() + pos,
-    //        this->data() + pos + view.size(),
-    //        view.begin());
-    //    // Expect that buffers do not overlap with reader
-    //    //std::memmove(view.data(), this->data() + pos, view.size());
-    //    this->Skip(view.size());
-    //}
-    
     uint32_t Read7BitEncodedInt() {
         uint32_t out = 0;
         uint32_t num2 = 0;
@@ -83,94 +42,69 @@ private:
 
 public:
     explicit DataReader(BYTE_SPAN_t buf) : DataStream(buf) {}
-    explicit DataReader(BYTES_t& buf) : DataStream(buf) {}
-    //explicit DataReader(fs::path path)
-        //: DataStream(SharedFile(path.string().c_str(), true)) {}
+    explicit DataReader(BYTES_t &buf) : DataStream(buf) {}
+    explicit DataReader(BYTE_SPAN_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataReader(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
 public:
     template<typename T>
-        requires
-    (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t> || std::is_same_v<T, BYTE_VIEW_t>
-        || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
+        requires 
+            (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, BYTE_SPAN_t>
+                || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
     decltype(auto) Read() {
-        auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_SPAN_t>)
+        auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> ||) 
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
 
-        T result{};
-        if constexpr (std::is_same_v<T, BYTES_t> || std::is_same_v<T, std::string>) {
-            result.resize(count);
+        this->AssertOffset(count);
 
-            // This updates internal pos
-            ReadSomeBytes(BYTE_SPAN_t(
-                reinterpret_cast<BYTE_t*>(result.data()), count));
-        }
-        else {
-            // TODO There are 4 visit calls here, quite inefficient
-            result = T(this->data() + Position(),
-                this->data() + Position() + count);
+        auto result = T(this->data() + this->m_pos,
+            this->data() + this->m_pos + count);
 
-            Skip(count);
-        }        
+        this->SetPosition(this->m_pos + count);
 
         return result;
     }
 
-
+    
     // Reads a byte array as a Reader (more efficient than ReadBytes())
     //  int32_t:   size
     //  BYTES_t:    data
     template<typename T>
         requires std::is_same_v<T, DataReader>
     decltype(auto) Read() {
-        return T(Read<BYTE_SPAN_t>());
+        return T(Read<BYTE_VIEW_t>());
     }
 
 
 
     //  Reads a primitive type
-    template<typename T>
+    template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
-        BYTE_t buf[sizeof(T)]{};
-        ReadSomeBytes(BYTE_SPAN_t(buf, sizeof(T)));
-
-        T out = *reinterpret_cast<T*>(buf);
-
-        //if constexpr (std::is_floating_point_v<T>) {
-        //    auto classify = std::fpclassify(*reinterpret_cast<T*>(buf));
-        //    if (!(classify == FP_NORMAL || classify == FP_ZERO)) {
-        //        throw std::runtime_error("bad floating point number");
-        //    }
-        //}
-        //else 
-        if constexpr (std::is_same_v<T, bool>) {
-            if (buf[0] > 0b1) {
-                throw std::runtime_error("bad bool");
-            }
-        }
-
+        T out{};
+        ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
 
     // Reads a container of supported types
     //  int32_t:   size
     //  T...:       value_type
-    template<typename Iterable>
-        requires (VUtils::Traits::is_iterable_v<Iterable>
-    && !std::is_arithmetic_v<typename Iterable::value_type>)
+    template<typename Iterable> 
+        requires (VUtils::Traits::is_iterable_v<Iterable> 
+            && !std::is_arithmetic_v<typename Iterable::value_type>)
     decltype(auto) Read() {
-        using T = Iterable::value_type;
+        using Type = Iterable::value_type;
 
         const auto count = Read<int32_t>();
 
-        Iterable out{};
-        
-        if constexpr (std::is_same_v<Iterable, std::vector<T>>)
+        Iterable out;
+
+        if constexpr (std::is_same_v<Type, std::string>)
             out.reserve(count);
 
-        for (int32_t i = 0; i < count; i++) {
-            auto type = Read<T>();
+        for (int32_t i=0; i < count; i++) {
+            auto type = Read<Type>();
             out.insert(out.end(), type);
         }
 
@@ -179,7 +113,7 @@ public:
 
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
-    void ReadEach(F func) {
+    void AsEach(F func) {
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
         const auto count = Read<int32_t>();
@@ -210,10 +144,10 @@ public:
         auto a(Read<float>());
         auto b(Read<float>());
         auto c(Read<float>());
-        return Vector3f(a, b, c);
+        return Vector3f{ a, b, c };
     }
 
-    // Reads a Vector2s
+    // Reads a Vector2i
     //  8 bytes total are read:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
@@ -223,20 +157,6 @@ public:
         auto b(Read<int32_t>());
         return Vector2i(a, b);
     }
-
-
-    // Reads a Vector2s
-    //  4 bytes total are read:
-    //  int16_t: x (2 bytes)
-    //  int16_t: y (2 bytes)
-    template<typename T> requires std::same_as<T, Vector2s>
-    decltype(auto) Read() {
-        auto a(Read<int16_t>());
-        auto b(Read<int16_t>());
-        return Vector2s(a, b);
-    }
-
-
 
     // Reads a Quaternion
     //  16 bytes total are read:
@@ -250,17 +170,6 @@ public:
         auto b(Read<float>());
         auto c(Read<float>());
         auto d(Read<float>());
-
-        // require (x <= abs(1) + eps(x))
-        // 1.00000024
-        if (std::abs(a) > 1.000001 || std::abs(b) > 1.000001 || std::abs(c) > 1.000001 || std::abs(d) > 1.000001)
-            throw std::runtime_error("bad quaternion range");
-
-        // require length of 1
-        auto sqlength = a * a + b * b + c * c + d * d;
-        if (std::abs(sqlength - 1.f) > 0.001f)
-            throw std::runtime_error("bad quaternion length");
-
         return Quaternion{ a, b, c, d };
     }
 
@@ -326,17 +235,17 @@ public:
     decltype(auto) ReadInt16() { return Read<int16_t>(); }
     decltype(auto) ReadInt32() { return Read<int32_t>(); }
     decltype(auto) ReadInt64() { return Read<int64_t>(); }
-    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper)Read<int64_t>(); }
+    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
 
     decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
     decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
     decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
     decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
-    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper)Read<uint64_t>(); }
+    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) Read<uint64_t>(); }
 
     decltype(auto) ReadFloat() { return Read<float>(); }
     decltype(auto) ReadDouble() { return Read<double>(); }
-
+    
     decltype(auto) ReadChar() { return Read<char16_t>(); }
 
 
@@ -348,7 +257,7 @@ public:
     }
 
 
-#if VH_IS_ON(VH_USE_MODS)
+
     sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type) {
         switch (type) {
         case IModManager::Type::BYTES:
@@ -420,5 +329,4 @@ public:
 
         return results;
     }
-#endif
 };

@@ -10,46 +10,24 @@
 #include "DataStream.h"
 #include "DataReader.h"
 
-class DataWriter : public DataStream {
+class DataWriter : public virtual DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
     void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
-    //void WriteSomeBytes()
         std::visit(VUtils::Traits::overload{
-            [&](std::pair<std::reference_wrapper<BYTES_t>, size_t>& pair) {
-                auto&& buf = pair.first.get();
-                auto&& pos = pair.second;
-
-                // standard vector limitations
-                //  prevents us from directly inserting
-                //  without moving elements around
-                if (pos + count > buf.size())
-                    buf.resize(pos + count);
-
-                std::copy(buffer,
-                    buffer + count,
-                    buf.data() + pair.second);
-
-                pos += count;
+            [this, count](std::reference_wrapper<BYTES_t> buf) { 
+                if (this->CheckOffset(count))
+                    buf.get().resize(this->m_pos + count);
             },
-            [&](std::pair<BYTE_SPAN_t, size_t>& pair) {
-                // copy
-                auto&& buf = pair.first;
-                auto&& pos = pair.second;
-
-                if (pos + count > buf.size())
-                    throw std::runtime_error("cannot write beyond end of span");
-
-                std::copy(buffer,
-                    buffer + count,
-                    buf.data() + pos);
-            },
-            [&](SharedFile& file) {
-                if (std::fwrite(buffer, count, 1, file) != 1)
-                    throw std::runtime_error("failed to write to file stream");
-            }
+            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
         }, this->m_data);
+
+        std::copy(buffer,
+                  buffer + count, 
+                  this->data() + this->m_pos);
+
+        this->m_pos += count;
     }
 
     // Write count bytes from the specified vector
@@ -57,7 +35,7 @@ private:
     auto WriteSomeBytes(const BYTES_t& vec, size_t count) {
         return WriteSomeBytes(vec.data(), count);
     }
-    
+
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
     auto WriteSomeBytes(const BYTES_t& vec) {
@@ -73,10 +51,10 @@ private:
     }
 
 public:
-    explicit DataWriter(BYTE_SPAN_t buf) : DataStream(buf) {}
+    explicit DataWriter(BYTE_VIEW_t buf) : DataStream(buf) {}
     explicit DataWriter(BYTES_t &buf) : DataStream(buf) {}
-    //explicit DataWriter(fs::path path)
-        //: DataStream(SharedFile(path.string().c_str(), false)) {}
+    explicit DataWriter(BYTE_VIEW_t buf, size_t pos) : DataStream(buf, pos) {}
+    explicit DataWriter(BYTES_t &buf, size_t pos) : DataStream(buf, pos) {}
 
     /*
     // Clears the underlying container and resets position
@@ -128,18 +106,13 @@ public:
         WriteSomeBytes(in, length);
     }
 
-    // Write the target type
     template<typename T>
         requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
     void Write(const T& in) {
         Write(in.data(), in.size());
+        //Write<int32_t>(in.size());
+        //WriteSomeBytes(in.data(), in.size());
     }
-
-    //template<typename T>
-    //    requires (std::is_same_v<T, DataReader>)
-    //void Write(T& in) {
-    //    Write(in.data(), in.size());
-    //}
 
     // Writes a string
     void Write(std::string_view in) {
@@ -159,7 +132,7 @@ public:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
     void Write(ZDOID in) {
-        Write((int64_t)in.GetOwner());
+        Write(in.GetOwner());
         Write(in.GetUID());
     }
 
@@ -183,15 +156,6 @@ public:
         Write(in.y);
     }
 
-    // Writes a Vector2s
-    //  4 bytes total are written:
-    //  int16_t: x (2 bytes)
-    //  int16_t: y (2 bytes)
-    void Write(Vector2s in) {
-        Write(in.x);
-        Write(in.y);
-    }
-
     // Writes a Quaternion
     //  16 bytes total are written:
     //  float: x (4 bytes)
@@ -210,7 +174,7 @@ public:
     //  T...:       value_type
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
-                && !std::is_fundamental_v<typename Iterable::value_type>)
+                && !std::is_arithmetic_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();
         Write(static_cast<int32_t>(size));
@@ -221,7 +185,7 @@ public:
 
     // Writes a primitive type
     template<typename T> 
-        requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
+        requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
@@ -291,7 +255,7 @@ public:
     }
 
 
-#if VH_IS_ON(VH_USE_MODS)
+
     void SerializeOneLua(IModManager::Type type, sol::object arg) {
         switch (type) {
             // TODO add recent unsigned types
@@ -365,5 +329,4 @@ public:
 
         return bytes;
     }
-#endif
 };
