@@ -387,6 +387,73 @@
     #define VH_PACKET_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
+// Structure ideas for proxy server:
+//  Steam sockets will be isolated from game loop side
+//  Several special considerations for proxy:
+//      - Combined Steam sockets and TCP in same build
+//      - Only Steam sockets in build
+//      - Only TCP sockets in build
+//  Or just split Steam and TCP into 2 separate executables
+//      Gonna have to experiment with cmake build structure to
+//      automate everything without manually changing compile settings
+//  Or just do it all manually with compile settings (simple)
+
+//#define VH_PROXY_SERVER 1
+
+#define VH_PACKET_REDIRECTION_BOTH 1
+
+// Whether to enable TCP proxy support
+// Whether to start Steam server
+// Whether to start TCP server
+//#if defined(VH_PACKET_REDIRECTION)
+//    #if VH_PACKET_REDIRECTION != 0
+//        #define VH_PACKET_REDIRECTION_I_ VH_ON
+//    #else
+//        #define VH_PACKET_REDIRECTION_I_ VH_OFF
+//    #endif
+//#else
+//    #define VH_PACKET_REDIRECTION_I_ VH_DEFAULT_OFF
+//#endif
+
+// Whether to support packet forwarding:
+//  to and from the backend game logic server
+//  to and from the frontend steam server
+#if defined(VH_PACKET_REDIRECTION_BOTH)
+    #if VH_PACKET_REDIRECTION_BOTH != 0
+        #define VH_PACKET_REDIRECTION_BOTH_I_ VH_ON
+    #else
+        #define VH_PACKET_REDIRECTION_BOTH_I_ VH_OFF
+    #endif
+#else
+    #define VH_PACKET_REDIRECTION_BOTH_I_ VH_DEFAULT_OFF
+#endif
+
+// Whether to support packet forwarding:
+//  im the (middleman) steam server, relaying packets
+//  between clients and the logic server
+#if defined(VH_PACKET_REDIRECTION_STEAM)
+    #if VH_PACKET_REDIRECTION_STEAM != 0
+        #define VH_PACKET_REDIRECTION_STEAM_I_ VH_ON
+    #else
+        #define VH_PACKET_REDIRECTION_STEAM_I_ VH_OFF
+    #endif
+#else
+    #define VH_PACKET_REDIRECTION_STEAM_I_ VH_PACKET_REDIRECTION_BOTH_I_
+#endif
+
+// im the (backend) logic server, receiving and sending packets 
+//  to/from the steam server for game state processing
+#if defined(VH_PACKET_REDIRECTION_LOGIC)
+    #if VH_PACKET_REDIRECTION_LOGIC != 0
+        #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_ON
+    #else
+        #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_OFF
+    #endif
+#else
+    //#define VH_PACKET_REDIRECTION_LOGIC_I_ VH_DEFAULT_OFF
+    #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_PACKET_REDIRECTION_BOTH_I_
+#endif
+
 #define VH_CORE_FEATURES 1
 
 // Whether to enable:

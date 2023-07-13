@@ -59,6 +59,7 @@ if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     find_package(dpp CONFIG REQUIRED)
 endif()
 find_package(quill CONFIG REQUIRED)
+find_package(asio CONFIG REQUIRED)
 
 CPMAddPackage(
     NAME unordered_dense
@@ -120,7 +121,7 @@ add_executable(${PROJECT_NAME}
     "src/ZDOID.cpp"
     "src/ZoneManager.cpp"
     "src/Tests.cpp"
- "include/RandomSpawn.h")
+ "include/RandomSpawn.h" "src/NetSocketTCP.cpp"  "src/NetSocketProxy.cpp")
 
 find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 

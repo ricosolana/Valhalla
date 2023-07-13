@@ -5,6 +5,7 @@
 #include <optional>
 #include <queue>
 
+#include <asio.hpp>
 #include <steamnetworkingtypes.h>
 #include <isteamfriends.h>
 
@@ -135,3 +136,128 @@ public:
 
 };
 #endif
+
+class TCPSocket : public ISocket {
+public:
+    using Ptr = std::shared_ptr<TCPSocket>;
+
+private:
+    // https://github.com/PeriodicSeizures/Valhalla/blob/server/include/NetSocket.h
+    asio::ip::tcp::socket m_socket;
+
+    std::mutex m_mux{};
+    std::list<BYTES_t> m_recv{};
+    std::list<BYTES_t> m_send{};
+
+    BYTES_t m_tempReadBytes{};
+    uint32_t m_tempReadOffset{};
+    BYTES_t m_tempWriteBytes{};
+    uint32_t m_tempWriteOffset{};
+
+    std::atomic_uint32_t m_sendQueueSize{};
+    std::atomic_bool m_connected{};
+
+public:
+    TCPSocket(asio::ip::tcp::socket socket);
+    ~TCPSocket();
+
+
+
+    // Terminates the connection
+    // If flush is set, socket wont close until a few seconds
+    void Close(bool flush) override;
+
+
+
+    // Call every tick to reengage writers
+    void Update() override;
+
+    // Send a packet to the remote host
+    // Packet will be copied unless moved
+    void Send(BYTES_t bytes) override;
+
+    // Receive a packet from the remote host
+    // Packet will undergo basic structure validation
+    // This function shall not block
+    std::optional<BYTES_t> Recv() override;
+
+
+
+    // Get the name of this connection
+    // This represents the identity of the remote
+    std::string GetHostName() const override;
+
+    // Get the address of this socket
+    std::string GetAddress() const override;
+
+    // Returns whether the socket is connected
+    //  The return value is updated every frame, 
+    //  so calls might not reflect the actual 
+    //  state if called from mid-frame
+    bool Connected() const override;
+
+
+
+    // Returns the size in bytes of packets queued for sending
+    unsigned int GetSendQueueSize() const override;
+
+    unsigned int GetPing() const override;
+
+private:
+    void ReadPkgSize();
+    void ReadPkg();
+    void WritePkgSize(BYTES_t bytes);
+    void WritePkg();
+};
+
+class ProxySocket : public ISocket {
+public:
+    using Ptr = std::shared_ptr<ProxySocket>;
+
+private:
+    ISocket::Ptr m_frontendSocket;
+    ISocket::Ptr m_backendSocket;
+
+public:
+    ProxySocket(ISocket::Ptr frontendSocket, ISocket::Ptr backendSocket);
+
+    // Terminates the connection
+    // If flush is set, socket wont close until a few seconds
+    void Close(bool flush) override;
+
+
+
+    // Call every tick to reengage writers
+    void Update() override;
+
+    // Send a packet to the remote host
+    // Packet will be copied unless moved
+    void Send(BYTES_t bytes) override;
+
+    // Receive a packet from the remote host
+    // Packet will undergo basic structure validation
+    // This function shall not block
+    std::optional<BYTES_t> Recv() override;
+
+
+
+    // Get the name of this connection
+    // This represents the identity of the remote
+    std::string GetHostName() const override;
+
+    // Get the address of this socket
+    std::string GetAddress() const override;
+
+    // Returns whether the socket is connected
+    //  The return value is updated every frame, 
+    //  so calls might not reflect the actual 
+    //  state if called from mid-frame
+    bool Connected() const override;
+
+
+
+    // Returns the size in bytes of packets queued for sending
+    unsigned int GetSendQueueSize() const override;
+
+    unsigned int GetPing() const override;
+};

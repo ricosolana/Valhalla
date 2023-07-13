@@ -23,6 +23,15 @@ private:
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
     UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
 
+#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
+    //std::vector<TCPSocket::Ptr> m_proxies;
+    // Plan:
+    //  Receive packets from clients (As steam)
+    //  Send those packets to the backend server
+    //  The backend server will process them
+    //  The backend server will send any packets it generates to the Steam server
+#endif
+
 public:
     //std::string m_password;
     //std::string m_salt;

@@ -83,6 +83,10 @@ public:
     //unsigned int m_packetIndex;
 #endif
 
+#if VH_IS_ON(VH_PACKET_REDIRECTION_LOGIC)
+    ISocket::Ptr m_proxySocket;
+#endif
+
 private:
     void Update();
 
@@ -312,22 +316,11 @@ public:
 
 
 
-    void Send(BYTES_t bytes) {
-        assert(!bytes.empty());
+    void Send(BYTES_t bytes);
 
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
-            this->m_socket->Send(std::move(bytes));
-    }
+    std::optional<BYTES_t> Recv();
 
-    std::optional<BYTES_t> Recv() {
-        if (auto&& opt = this->m_socket->Recv()) {
-            auto&& bytes = *opt;
-            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
-                return opt;
-            }
-        }
-        return std::nullopt;
-    }
+
 
     void Disconnect() {
         m_socket->Close(true);

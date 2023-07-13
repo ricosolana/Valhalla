@@ -130,43 +130,100 @@ void Peer::Update() {
         VUtils::Resource::WriteFile(path / (std::to_string(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count()) + ".pkg"), bytes);
 #endif
 
-        DataReader reader(bytes);
+//#if VH_IS_ON(VH_PACKET_REDIRECTION_LOGIC)
+//        // Check to see if I am the frontend server
+//        //  (whether remote backend exists)
+//        if (m_proxySocket) {
+//            // Send to backend
+//            m_proxySocket->Send(std::move(bytes));
+//            while (auto opt1 = m_proxySocket->Recv()) {
+//                Send(std::move(*opt1));
+//            }
+//        }
+//        else
+//#endif
+        {
+            // Else, then I am the backend
 
-        auto hash = reader.Read<HASH_t>();
-        if (hash == 0) [[unlikely]] { 
-            if (reader.Read<bool>()) {
-                // Reply to the server with a pong
-                BYTES_t pong;
-                DataWriter writer(pong);
-                writer.Write<HASH_t>(0);
-                writer.Write<bool>(false);
-                this->Send(std::move(pong));
+            DataReader reader(bytes);
+
+            auto hash = reader.Read<HASH_t>();
+            if (hash == 0) {
+                if (reader.Read<bool>()) {
+                    // Reply to the server with a pong
+                    BYTES_t pong;
+                    DataWriter writer(pong);
+                    writer.Write<HASH_t>(0);
+                    writer.Write<bool>(false);
+                    this->Send(std::move(pong));
+                }
+                else {
+                    m_lastPing = now;
+                }
             }
             else {
-                m_lastPing = now;
+                InternalInvoke(hash, reader);
             }
-        }
-        else [[likely]] { 
-            InternalInvoke(hash, reader);
-        }
 
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
-        if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
-            && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
-        {
-            auto ns(Valhalla()->Nanos());
+                if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
+                    && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
+                {
+                    auto ns(Valhalla()->Nanos());
 
-            std::scoped_lock<std::mutex> scoped(m_recordmux);
-            this->m_captureQueueSize += bytes.size();
-            this->m_recordBuffer.push_back({ ns, std::move(bytes) });
-        }
+                    std::scoped_lock<std::mutex> scoped(m_recordmux);
+                    this->m_captureQueueSize += bytes.size();
+                    this->m_recordBuffer.push_back({ ns, std::move(bytes) });
+                }
 #endif
-    }
+        }
 
-    if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
-        LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
-        Disconnect();
+        if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
+            LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
+            Disconnect();
+        }
     }
+}
+
+void Peer::Send(BYTES_t bytes) {
+    assert(!bytes.empty());
+
+    if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes))) 
+        this->m_socket->Send(std::move(bytes));
+    
+    /*
+    {
+#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
+        // If I am the frontend
+        //  (assumes a backend exists)
+        if (m_proxySocket) {
+            this->m_socket->Send(std::move(bytes));
+        }
+        else
+#endif
+        {
+
+        }
+    }*/
+}
+
+std::optional<BYTES_t> Peer::Recv() {
+
+    // Switch from receiving from frontend, to receiving from backend, to receiving from client
+
+    // Those are 3 layers of redirection...
+#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
+    // receive from client
+    
+#endif
+
+    if (auto&& opt = this->m_socket->Recv()) {
+        auto&& bytes = *opt;
+        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
+            return opt;
+        }
+    }
+    return std::nullopt;
 }
 
 bool Peer::Close(ConnectionStatus status) {

@@ -92,6 +92,8 @@ struct ServerSettings {
     std::string     serverPassword;
     bool            serverPublic;
     bool            serverDedicated;
+    std::string     serverGameProxy; // where to send incoming packets to
+    std::string     serverNetworkProxy; // where to send outgoing packets to
 
     bool            playerWhitelist;
     unsigned int    playerMax;
