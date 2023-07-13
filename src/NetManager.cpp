@@ -307,8 +307,12 @@ void INetManager::PostInit() {
     }
 #endif
 
+#if VH_IS_ON(VH_PACKET_REDIRECTION_BACKEND)
+    m_acceptor = std::make_unique<AcceptorTCP>();
+#else
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
+#endif
 }
 
 void INetManager::Update() {
@@ -317,9 +321,21 @@ void INetManager::Update() {
     // Accept new connections
     while (auto sock = m_acceptor->Accept()) {
         auto&& ptr = std::make_unique<Peer>(std::move(sock));
+
+
+
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
-            
+
+
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+            // set tcp backend socket
+            auto&& backend = std::make_shared<TCPSocket>(asio::ip::tcp::socket(m_ctx));
+            backend->Connect(VH_SETTINGS.serverBackendAddress);
+
+            peer->m_backendSocket = std::move(backend);
+#endif
+
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
             if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
                 // record peer joindata
@@ -499,10 +515,12 @@ void INetManager::Update() {
 
 
     // Pump steam callbacks
+#if VH_IS_OFF(VH_PACKET_REDIRECTION_BACKEND)
     if (VH_SETTINGS.serverDedicated)
         SteamGameServer_RunCallbacks();
     else
         SteamAPI_RunCallbacks();
+#endif
 
     // doesnt seem to work
     //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();

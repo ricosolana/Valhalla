@@ -117,6 +117,13 @@ void Peer::Update() {
     // Send packet data
     m_socket->Update();
 
+    // Send backend packets along steam socket
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+    while (auto opt1 = m_backendSocket->Recv()) {
+        Send(std::move(*opt1));
+    }
+#endif
+
     // Read packets
     while (auto opt = this->Recv()) {
         auto&& bytes = opt.value();
@@ -130,18 +137,12 @@ void Peer::Update() {
         VUtils::Resource::WriteFile(path / (std::to_string(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count()) + ".pkg"), bytes);
 #endif
 
-//#if VH_IS_ON(VH_PACKET_REDIRECTION_LOGIC)
-//        // Check to see if I am the frontend server
-//        //  (whether remote backend exists)
-//        if (m_proxySocket) {
-//            // Send to backend
-//            m_proxySocket->Send(std::move(bytes));
-//            while (auto opt1 = m_proxySocket->Recv()) {
-//                Send(std::move(*opt1));
-//            }
-//        }
-//        else
-//#endif
+        // If redirection is enabled, and im the frontend
+        //  Then send packets to backend
+        //  Also receive backend packets, and send to clients
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+        m_backendSocket->Send(std::move(bytes));
+#else
         {
             // Else, then I am the backend
 
@@ -182,6 +183,7 @@ void Peer::Update() {
             LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
             Disconnect();
         }
+#endif
     }
 }
 
@@ -212,9 +214,10 @@ std::optional<BYTES_t> Peer::Recv() {
     // Switch from receiving from frontend, to receiving from backend, to receiving from client
 
     // Those are 3 layers of redirection...
-#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
     // receive from client
     
+
 #endif
 
     if (auto&& opt = this->m_socket->Recv()) {

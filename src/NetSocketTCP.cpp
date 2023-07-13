@@ -1,4 +1,5 @@
 #include "NetSocket.h"
+#include "NetManager.h"
 
 TCPSocket::TCPSocket(asio::ip::tcp::socket socket)
     : m_socket(std::move(socket)) {
@@ -165,4 +166,18 @@ void TCPSocket::WritePkg() {
             }
         }
     );
+}
+
+void TCPSocket::Connect(asio::ip::tcp::endpoint ep) {
+    //m_socket = asio::ip::tcp::socket(NetManager()->m_ctx);
+
+    auto self(shared_from_this());
+    m_socket.async_connect(ep, [this, self](const asio::error_code& ec) {
+        if (!ec) {
+            Close(false);
+        }
+        else {
+            LOG_ERROR(LOGGER, "Socket TCP Connect failed");
+        }
+    });
 }

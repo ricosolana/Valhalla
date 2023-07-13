@@ -79,12 +79,8 @@ public:
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
 
-#if VH_IS_ON(VH_PACKET_CAPTURE)
-    //unsigned int m_packetIndex;
-#endif
-
-#if VH_IS_ON(VH_PACKET_REDIRECTION_LOGIC)
-    ISocket::Ptr m_proxySocket;
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+    ISocket::Ptr m_backendSocket;
 #endif
 
 private:

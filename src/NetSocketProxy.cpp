@@ -1,5 +1,6 @@
 #include "NetSocket.h"
 
+/*
 ProxySocket::ProxySocket(ISocket::Ptr frontendSocket, ISocket::Ptr backendSocket) 
 	: m_frontendSocket(std::move(frontendSocket)), m_backendSocket(std::move(backendSocket)) {
 	
@@ -37,3 +38,4 @@ std::optional<BYTES_t> ProxySocket::Recv() {
 	assert(false);
 	return {};
 }
+*/

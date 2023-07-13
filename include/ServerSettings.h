@@ -1,5 +1,7 @@
 #pragma once
 
+#include <asio.hpp>
+
 #include "VUtils.h"
 
 enum class AssignAlgorithm {
@@ -92,8 +94,11 @@ struct ServerSettings {
     std::string     serverPassword;
     bool            serverPublic;
     bool            serverDedicated;
-    std::string     serverGameProxy; // where to send incoming packets to
-    std::string     serverNetworkProxy; // where to send outgoing packets to
+    //std::string     serverGameProxy; // where to send incoming packets to
+    //std::string     serverNetworkProxy; // where to send outgoing packets to
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+    asio::ip::tcp::endpoint serverBackendAddress;
+#endif
 
     bool            playerWhitelist;
     unsigned int    playerMax;

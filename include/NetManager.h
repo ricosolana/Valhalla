@@ -10,9 +10,14 @@
 
 class INetManager {
     friend class IModManager;
+    friend class TCPSocket;
 
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
+
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+    asio::io_context m_ctx;
+#endif
 
     //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
     //std::list<std::unique_ptr<Peer>> m_onlinePeers;
@@ -20,17 +25,19 @@ private:
     std::vector<std::unique_ptr<Peer>> m_connectedPeers;
     std::vector<Peer*> m_onlinePeers;
 
+#if VH_IS_ON(VH_PLAYER_CAPTURE)
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
     UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
+#endif
 
-#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
+//#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
     //std::vector<TCPSocket::Ptr> m_proxies;
     // Plan:
     //  Receive packets from clients (As steam)
     //  Send those packets to the backend server
     //  The backend server will process them
     //  The backend server will send any packets it generates to the Steam server
-#endif
+//#endif
 
 public:
     //std::string m_password;

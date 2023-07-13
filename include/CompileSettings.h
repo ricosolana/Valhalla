@@ -400,7 +400,7 @@
 
 //#define VH_PROXY_SERVER 1
 
-#define VH_PACKET_REDIRECTION_BOTH 1
+//#define VH_PACKET_REDIRECTION 1
 
 // Whether to enable TCP proxy support
 // Whether to start Steam server
@@ -418,40 +418,45 @@
 // Whether to support packet forwarding:
 //  to and from the backend game logic server
 //  to and from the frontend steam server
-#if defined(VH_PACKET_REDIRECTION_BOTH)
-    #if VH_PACKET_REDIRECTION_BOTH != 0
-        #define VH_PACKET_REDIRECTION_BOTH_I_ VH_ON
-    #else
-        #define VH_PACKET_REDIRECTION_BOTH_I_ VH_OFF
-    #endif
-#else
-    #define VH_PACKET_REDIRECTION_BOTH_I_ VH_DEFAULT_OFF
-#endif
+//#if defined(VH_PACKET_REDIRECTION)
+//    #if VH_PACKET_REDIRECTION != 0
+//        #define VH_PACKET_REDIRECTION_I_ VH_ON
+//    #else
+//        #define VH_PACKET_REDIRECTION_I_ VH_OFF
+//    #endif
+//#else
+//    #define VH_PACKET_REDIRECTION_I_ VH_DEFAULT_OFF
+//#endif
+
+#define VH_PACKET_REDIRECTION_FRONTEND 0
 
 // Whether to support packet forwarding:
 //  im the (middleman) steam server, relaying packets
 //  between clients and the logic server
-#if defined(VH_PACKET_REDIRECTION_STEAM)
-    #if VH_PACKET_REDIRECTION_STEAM != 0
-        #define VH_PACKET_REDIRECTION_STEAM_I_ VH_ON
+#if defined(VH_PACKET_REDIRECTION_FRONTEND)
+    #if VH_PACKET_REDIRECTION_FRONTEND != 0
+        #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_ON
     #else
-        #define VH_PACKET_REDIRECTION_STEAM_I_ VH_OFF
+        #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_OFF
     #endif
 #else
-    #define VH_PACKET_REDIRECTION_STEAM_I_ VH_PACKET_REDIRECTION_BOTH_I_
+    #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_DEFAULT_OFF
 #endif
 
-// im the (backend) logic server, receiving and sending packets 
-//  to/from the steam server for game state processing
-#if defined(VH_PACKET_REDIRECTION_LOGIC)
-    #if VH_PACKET_REDIRECTION_LOGIC != 0
-        #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_ON
+#if defined(VH_PACKET_REDIRECTION_BACKEND)
+    #if VH_PACKET_REDIRECTION_BACKEND != 0
+        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_ON
     #else
-        #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_OFF
+        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_OFF
     #endif
 #else
-    //#define VH_PACKET_REDIRECTION_LOGIC_I_ VH_DEFAULT_OFF
-    #define VH_PACKET_REDIRECTION_LOGIC_I_ VH_PACKET_REDIRECTION_BOTH_I_
+    #if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_OFF
+    #elif VH_IS_DEFAULT_OFF(VH_PACKET_REDIRECTION_FRONTEND)
+        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_DEFAULT_OFF
+    #else
+        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_ON
+    #endif
 #endif
 
 #define VH_CORE_FEATURES 1

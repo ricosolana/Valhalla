@@ -76,7 +76,31 @@ namespace YAML {
     // some ideas for more specific generics within a known type
     //  basically use to remove a bunch of std::chrono::duration template overloads below
 
+    template<>
+    struct convert<asio::ip::tcp::endpoint> {
+        static Node encode(const asio::ip::tcp::endpoint& rhs) {
+            return Node(rhs.address().to_string());
+        }
 
+        static bool decode(const Node& node, asio::ip::tcp::endpoint& rhs) {
+            if (!node.IsScalar())
+                return false;
+
+            auto&& str = node.as<std::string>();
+
+            auto&& delim = str.find(':');
+            if (delim == std::string::npos)
+                return false;
+
+            asio::error_code ec;
+            rhs = asio::ip::tcp::endpoint(asio::ip::address::from_string(str.substr(0, delim), ec), std::stoi(str.substr(delim + 1)));
+
+            if (ec)
+                return false;
+
+            return true;
+        }
+    };
 
     template<typename T>
     static bool parseDuration(const std::string& s, T& out) {
@@ -336,6 +360,10 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
+                        
+#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+            a(m_settings.serverBackendAddress, server, "server-backend-address", asio::ip::tcp::endpoint(), nullptr, reloading);
+#endif
 
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });

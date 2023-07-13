@@ -23,6 +23,10 @@ public:
     virtual ~ISocket() = default;
 
 
+    // Optional method to connect to an endpoint
+    //virtual void Connect() {}
+
+
 
     // Terminates the connection
     // If flush is set, socket wont close until a few seconds
@@ -203,6 +207,10 @@ public:
 
     unsigned int GetPing() const override;
 
+
+
+    void Connect(asio::ip::tcp::endpoint ep);
+
 private:
     void ReadPkgSize();
     void ReadPkg();
@@ -210,6 +218,7 @@ private:
     void WritePkg();
 };
 
+/*
 class ProxySocket : public ISocket {
 public:
     using Ptr = std::shared_ptr<ProxySocket>;
@@ -259,5 +268,6 @@ public:
     // Returns the size in bytes of packets queued for sending
     unsigned int GetSendQueueSize() const override;
 
-    unsigned int GetPing() const override;
+    unsigned int GetPing() const override;  
 };
+*/
