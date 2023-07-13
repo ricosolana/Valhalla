@@ -1,0 +1,22 @@
+valheim (or any other game) Packet analysis using Wireshark (not live)
+
+Valheim utilizes Steam for underlying game data transport (proprietary and closed source). Their custom UDP protocol is encrypted and inaccessible outside of the intended application.
+
+For these reasons, I have captured several game packets (from within the application). These packets are decrypted, and able to be read as-is without any network reassembly.
+
+To view these packets in Wireshark, you will have to do a few things.
+
+First, you will need ncat.
+
+Start an ncat server to listen on port 2456 (TCP is default)
+    ncat -l 2456
+    
+This will listen until a packet is received (this works fine for now while trying to get the Lua dissector to work).
+
+Open Wireshark and start listening on your Loopback traffic capture adapter.
+
+Now send the packet to the server
+    ncat --send-only 127.0.0.1 2456 < mypacket.pkg
+    
+On Windows Powershell this might not work. Instead I decided to use Git Bash (was installed along with Git Desktop). This works good enough as it is a linux environment that supports piping/redirection.
+

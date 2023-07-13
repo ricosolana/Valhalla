@@ -1,4 +1,9 @@
 todo:
+    - idea for redirection and address hiding for interesting stuff
+        proxy?
+        
+        using a tcp proxy (intended for local use) would allow for Wireshark packet capture, without any of the encrypted garbage from steamapi (steamapi isnt garbage, the messages look like garbage, just to be clear)
+
     - stop using std::optional for optional types
         use tinyoptional library instead
 
