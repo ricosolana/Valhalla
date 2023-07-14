@@ -79,7 +79,7 @@ public:
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
 
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
     ISocket::Ptr m_backendSocket;
 #endif
 

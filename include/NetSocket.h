@@ -142,6 +142,8 @@ public:
 #endif
 
 class TCPSocket : public ISocket {
+    friend class AcceptorTCP;
+
 public:
     using Ptr = std::shared_ptr<TCPSocket>;
 

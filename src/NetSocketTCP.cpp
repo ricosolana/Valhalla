@@ -174,10 +174,11 @@ void TCPSocket::Connect(asio::ip::tcp::endpoint ep) {
     auto self(shared_from_this());
     m_socket.async_connect(ep, [this, self](const asio::error_code& ec) {
         if (!ec) {
-            Close(false);
+            ReadPkgSize();
         }
         else {
             LOG_ERROR(LOGGER, "Socket TCP Connect failed");
+            Close(false);
         }
     });
 }

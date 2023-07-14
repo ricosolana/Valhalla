@@ -79,7 +79,8 @@ namespace YAML {
     template<>
     struct convert<asio::ip::tcp::endpoint> {
         static Node encode(const asio::ip::tcp::endpoint& rhs) {
-            return Node(rhs.address().to_string());
+            std::string addr = rhs.address().to_string() + ":" + std::to_string(rhs.port());
+            return Node(addr);
         }
 
         static bool decode(const Node& node, asio::ip::tcp::endpoint& rhs) {
@@ -361,7 +362,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
                         
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
             a(m_settings.serverBackendAddress, server, "server-backend-address", asio::ip::tcp::endpoint(), nullptr, reloading);
 #endif
 
@@ -522,7 +523,9 @@ void IValhalla::LoadFiles(bool reloading) {
 #ifdef _WIN32
     {
         //std::string title = m_settings.serverName + " - " + VConstants::GAME;
-        std::string title = "Valhalla " + std::string(VH_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+        std::string title = "Valhalla " + std::string(VH_VERSION) 
+            + " - Valheim " + std::string(VConstants::GAME) 
+            + " - " + std::string(VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0 ? "Backend" : "Frontend");
         SetConsoleTitle(title.c_str());
     }
 #endif
@@ -744,14 +747,17 @@ void IValhalla::Update() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
 
     NetManager()->Update();
-    ZDOManager()->Update();
-    ZoneManager()->Update();
+
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        ZDOManager()->Update();
+        ZoneManager()->Update();
 #if VH_IS_ON(VH_RANDOM_EVENTS)
-    RandomEventManager()->Update();
+        RandomEventManager()->Update();
 #endif
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    HeightmapBuilder()->Update();
+        HeightmapBuilder()->Update();
 #endif
+    }
 }
 
 void IValhalla::PeriodUpdate() {
@@ -759,23 +765,24 @@ void IValhalla::PeriodUpdate() {
         LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     }
 
-    //PERIODIC_NOW(180s, {
-    //    LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
-    //});
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        //PERIODIC_NOW(180s, {
+        //    LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
+        //});
 
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
+        VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
-    DiscordManager()->PeriodUpdate();
+        DiscordManager()->PeriodUpdate();
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
-    if (m_settings.dungeonsRegenerationInterval > 0s)
-        DungeonManager()->TryRegenerateDungeons();
+        if (m_settings.dungeonsRegenerationInterval > 0s)
+            DungeonManager()->TryRegenerateDungeons();
 #endif
 
 
 
 #if VH_IS_ON(VH_PLAYER_SLEEP)
-    //if (m_settings.playerSleep) {
+        //if (m_settings.playerSleep) {
         if (m_playerSleep) {
             if (m_worldTime > m_playerSleepUntil) {
                 // Wake up players
@@ -851,47 +858,48 @@ void IValhalla::PeriodUpdate() {
                 }
             }
         }
-    //}
+        //}
 #endif
 
 
 
-    std::error_code err;
-    auto lastWriteTime = fs::last_write_time("server.yml", err);
-    if (lastWriteTime != this->m_settingsLastTime) {
-        // reload the file
-        LoadFiles(true);
-    }
+        std::error_code err;
+        auto lastWriteTime = fs::last_write_time("server.yml", err);
+        if (lastWriteTime != this->m_settingsLastTime) {
+            // reload the file
+            LoadFiles(true);
+        }
 
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (m_settings.packetMode == PacketMode::PLAYBACK) {
-        PERIODIC_NOW(333ms, {
-            char message[32];
-            std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));
-            Broadcast(UIMsgType::TopLeft, message);
-        });
+        if (m_settings.packetMode == PacketMode::PLAYBACK) {
+            PERIODIC_NOW(333ms, {
+                char message[32];
+                std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));
+                Broadcast(UIMsgType::TopLeft, message);
+                });
     }
 #endif
 
-    if (m_settings.worldSaveInterval > 0s) {
-        // save warming message
-        if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval, m_settings.worldSaveInterval)) {
-            LOG_INFO(LOGGER, "World saving in 30s");
-            Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-        }
+        if (m_settings.worldSaveInterval > 0s) {
+            // save warming message
+            if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval, m_settings.worldSaveInterval)) {
+                LOG_INFO(LOGGER, "World saving in 30s");
+                Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
+            }
 
-        if (VUtils::run_periodic_later<struct periodic_save>(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s)) {
-            WorldManager()->GetWorld()->WriteFiles();
-        }
+            if (VUtils::run_periodic_later<struct periodic_save>(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s)) {
+                WorldManager()->GetWorld()->WriteFiles();
+            }
 
-        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
-        //    LOG_INFO(LOGGER, "World saving in 30s");
-        //    Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-        //});
-        //
-        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
-        //    WorldManager()->GetWorld()->WriteFiles();
-        //});
+            //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
+            //    LOG_INFO(LOGGER, "World saving in 30s");
+            //    Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
+            //});
+            //
+            //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
+            //    WorldManager()->GetWorld()->WriteFiles();
+            //});
+        }
     }
 }
 

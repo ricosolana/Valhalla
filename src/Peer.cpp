@@ -24,87 +24,89 @@ static constexpr std::array<std::string_view, 10> STATUS_STRINGS = {
 Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now())
 {
-    this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
-        //LOG(INFO) << "RPC_Disconnect";
-        self->Disconnect();
-    });
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
+            //LOG(INFO) << "RPC_Disconnect";
+            self->Disconnect();
+            });
 
-    this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
-        rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
-            rpc->m_characterID.SetOwner(reader.Read<int64_t>());
+        this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
+            rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
+                rpc->m_characterID.SetOwner(reader.Read<int64_t>());
 #if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
-            if (!rpc->m_characterID)
-                throw std::runtime_error("peer provided 0 owner");
+                if (!rpc->m_characterID)
+                    throw std::runtime_error("peer provided 0 owner");
 #endif
-            auto version = reader.Read<std::string_view>();
-            LOG_INFO(LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
-            if (version != VConstants::GAME)
-                return rpc->Close(ConnectionStatus::ErrorVersion);
+                auto version = reader.Read<std::string_view>();
+                LOG_INFO(LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
+                if (version != VConstants::GAME)
+                    return rpc->Close(ConnectionStatus::ErrorVersion);
 
-            reader.Read<uint32_t>(); // network version
+                reader.Read<uint32_t>(); // network version
 
-            rpc->m_pos = reader.Read<Vector3f>();
+                rpc->m_pos = reader.Read<Vector3f>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
-            if (rpc->m_pos.HSqMagnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
-                throw std::runtime_error("peer position is outside of map");
+                if (rpc->m_pos.HSqMagnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
+                    throw std::runtime_error("peer position is outside of map");
 #endif
-            rpc->m_name = reader.Read<std::string>();
+                rpc->m_name = reader.Read<std::string>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
-            if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
-                throw std::runtime_error("peer provided invalid length name");
+                if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
+                    throw std::runtime_error("peer provided invalid length name");
 #endif            
-            auto password = reader.Read<std::string_view>();
+                auto password = reader.Read<std::string_view>();
 
-            if (VH_SETTINGS.playerOnline) {
-                auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-                auto ticket = reader.Read<BYTE_VIEW_t>();
-                if (steamSocket 
-                    && (VH_SETTINGS.serverDedicated
-                        ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
-                        : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
-                    return rpc->Close(ConnectionStatus::ErrorDisconnected);
-            }
+                if (VH_SETTINGS.playerOnline) {
+                    auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
+                    auto ticket = reader.Read<BYTE_VIEW_t>();
+                    if (steamSocket
+                        && (VH_SETTINGS.serverDedicated
+                            ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
+                            : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
+                        return rpc->Close(ConnectionStatus::ErrorDisconnected);
+                }
 
-            if (
+                if (
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
-                VH_SETTINGS.packetMode != PacketMode::PLAYBACK && 
+                    VH_SETTINGS.packetMode != PacketMode::PLAYBACK &&
 #endif
-                password != std::string_view(NetManager()->m_passwordHash))
-                return rpc->Close(ConnectionStatus::ErrorPassword);
+                    password != std::string_view(NetManager()->m_passwordHash))
+                    return rpc->Close(ConnectionStatus::ErrorPassword);
 
-            // if peer already connected
-            //  peers with a new character can connect while replaying,
-            //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByUUID(rpc->m_characterID.GetOwner()) || NetManager()->GetPeerByName(rpc->m_name))
+                // if peer already connected
+                //  peers with a new character can connect while replaying,
+                //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
+                if (NetManager()->GetPeerByUUID(rpc->m_characterID.GetOwner()) || NetManager()->GetPeerByName(rpc->m_name))
+                    return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+
+                NetManager()->OnPeerConnect(*rpc);
+
+                return false;
+                });
+
+            if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
+                return rpc->Close(ConnectionStatus::ErrorBanned);
+
+            if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
-            NetManager()->OnPeerConnect(*rpc);
+            // if whitelist enabled
+            if (VH_SETTINGS.playerWhitelist
+                && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
+                return rpc->Close(ConnectionStatus::ErrorFull);
+            }
+
+            // if too many players online
+            if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
+                return rpc->Close(ConnectionStatus::ErrorFull);
+
+            bool hasPassword = !VH_SETTINGS.serverPassword.empty();
+
+            rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
 
             return false;
-        });
-
-        if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
-            return rpc->Close(ConnectionStatus::ErrorBanned);
-
-        if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()))
-            return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
-
-        // if whitelist enabled
-        if (VH_SETTINGS.playerWhitelist
-            && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
-            return rpc->Close(ConnectionStatus::ErrorFull);
-        }
-
-        // if too many players online
-        if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
-            return rpc->Close(ConnectionStatus::ErrorFull);
-
-        bool hasPassword = !VH_SETTINGS.serverPassword.empty();
-
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
-
-        return false;
-    });
+            });
+    }
 
     LOG_INFO(LOGGER, "{} has connected", m_socket->GetHostName());
 }
@@ -118,9 +120,12 @@ void Peer::Update() {
     m_socket->Update();
 
     // Send backend packets along steam socket
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-    while (auto opt1 = m_backendSocket->Recv()) {
-        Send(std::move(*opt1));
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+    if (m_backendSocket) {
+        // Forward backend packets to client
+        while (auto opt1 = m_backendSocket->Recv()) {
+            Send(std::move(*opt1));
+        }
     }
 #endif
 
@@ -140,9 +145,12 @@ void Peer::Update() {
         // If redirection is enabled, and im the frontend
         //  Then send packets to backend
         //  Also receive backend packets, and send to clients
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-        m_backendSocket->Send(std::move(bytes));
-#else
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+        if (m_backendSocket) {
+            m_backendSocket->Send(std::move(bytes));
+        }
+        else
+#endif
         {
             // Else, then I am the backend
 
@@ -183,43 +191,18 @@ void Peer::Update() {
             LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
             Disconnect();
         }
-#endif
     }
 }
 
 void Peer::Send(BYTES_t bytes) {
     assert(!bytes.empty());
 
-    if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes))) 
+    if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes))) {
         this->m_socket->Send(std::move(bytes));
-    
-    /*
-    {
-#if VH_IS_ON(VH_PACKET_REDIRECTION_STEAM)
-        // If I am the frontend
-        //  (assumes a backend exists)
-        if (m_proxySocket) {
-            this->m_socket->Send(std::move(bytes));
-        }
-        else
-#endif
-        {
-
-        }
-    }*/
+    }    
 }
 
 std::optional<BYTES_t> Peer::Recv() {
-
-    // Switch from receiving from frontend, to receiving from backend, to receiving from client
-
-    // Those are 3 layers of redirection...
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-    // receive from client
-    
-
-#endif
-
     if (auto&& opt = this->m_socket->Recv()) {
         auto&& bytes = *opt;
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {

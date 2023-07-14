@@ -96,7 +96,8 @@ struct ServerSettings {
     bool            serverDedicated;
     //std::string     serverGameProxy; // where to send incoming packets to
     //std::string     serverNetworkProxy; // where to send outgoing packets to
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+    // a default ctor endpoint is 0.0.0.0:0
     asio::ip::tcp::endpoint serverBackendAddress;
 #endif
 

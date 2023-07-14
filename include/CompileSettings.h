@@ -428,35 +428,19 @@
 //    #define VH_PACKET_REDIRECTION_I_ VH_DEFAULT_OFF
 //#endif
 
-#define VH_PACKET_REDIRECTION_FRONTEND 0
+#define VH_PACKET_REDIRECTION 1
 
 // Whether to support packet forwarding:
 //  im the (middleman) steam server, relaying packets
 //  between clients and the logic server
-#if defined(VH_PACKET_REDIRECTION_FRONTEND)
-    #if VH_PACKET_REDIRECTION_FRONTEND != 0
-        #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_ON
+#if defined(VH_PACKET_REDIRECTION)
+    #if VH_PACKET_REDIRECTION != 0
+        #define VH_PACKET_REDIRECTION_I_ VH_ON
     #else
-        #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_OFF
+        #define VH_PACKET_REDIRECTION_I_ VH_OFF
     #endif
 #else
-    #define VH_PACKET_REDIRECTION_FRONTEND_I_ VH_DEFAULT_OFF
-#endif
-
-#if defined(VH_PACKET_REDIRECTION_BACKEND)
-    #if VH_PACKET_REDIRECTION_BACKEND != 0
-        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_ON
-    #else
-        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_OFF
-    #endif
-#else
-    #if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_OFF
-    #elif VH_IS_DEFAULT_OFF(VH_PACKET_REDIRECTION_FRONTEND)
-        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_DEFAULT_OFF
-    #else
-        #define VH_PACKET_REDIRECTION_BACKEND_I_ VH_ON
-    #endif
+    #define VH_PACKET_REDIRECTION_I_ VH_DEFAULT_OFF
 #endif
 
 #define VH_CORE_FEATURES 1

@@ -11,12 +11,17 @@
 class INetManager {
     friend class IModManager;
     friend class TCPSocket;
+    friend class AcceptorTCP;
 
 private:
     std::unique_ptr<IAcceptor> m_acceptor;
 
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-    asio::io_context m_ctx;
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+    //  TODO dont use an acceptor as an asio context...
+    //      it confuses the meaning of the code
+    // We'll just use a tcp acceptor for now, although only
+    // asio specific setups are being used from it
+    std::unique_ptr<AcceptorTCP> m_ctxAcceptor;
 #endif
 
     //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)

@@ -87,26 +87,31 @@ private:
 };
 
 class AcceptorTCP : public IAcceptor {
+public:
     asio::io_context m_ctx;
-    std::thread m_thread;
+
+    std::jthread m_thread;
     asio::ip::tcp::acceptor m_acceptor;
 
-    std::list<ISocket::Ptr> m_acceptedQueue;
+    std::list<TCPSocket::Ptr> m_acceptedQueue;
     std::mutex m_mux;
 
 public:
     AcceptorTCP();
-
-    ~AcceptorTCP();
+    ~AcceptorTCP() override;
 
     // Start listening for connections
     //  Call this once
-    void Listen();
+    void Listen() override;
 
     // Poll for a ready and newly accepted connection
     //  Call this per frame
     //  Returns nullptr if no connection is waiting
-    ISocket::Ptr Accept();
+    ISocket::Ptr Accept() override;
+
+
+
+    void StartThread();
 
 private:
     void DoAccept();

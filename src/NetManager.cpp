@@ -307,12 +307,21 @@ void INetManager::PostInit() {
     }
 #endif
 
-#if VH_IS_ON(VH_PACKET_REDIRECTION_BACKEND)
-    m_acceptor = std::make_unique<AcceptorTCP>();
-#else
-    m_acceptor = std::make_unique<AcceptorSteam>();
-    m_acceptor->Listen();
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        m_acceptor = std::make_unique<AcceptorTCP>();
+    } 
+    else
 #endif
+    {
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+        m_ctxAcceptor = std::make_unique<AcceptorTCP>();
+        m_ctxAcceptor->StartThread(); // Again, use a structure to contain the asio context
+#endif
+        m_acceptor = std::make_unique<AcceptorSteam>();
+    }
+
+    m_acceptor->Listen();
 }
 
 void INetManager::Update() {
@@ -322,18 +331,18 @@ void INetManager::Update() {
     while (auto sock = m_acceptor->Accept()) {
         auto&& ptr = std::make_unique<Peer>(std::move(sock));
 
-
-
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
 
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+            // If there is a backend
+            if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() != 0) {
+                // Connect to the backend
+                auto&& backend = std::make_shared<TCPSocket>(asio::ip::tcp::socket(m_ctxAcceptor->m_ctx));
+                backend->Connect(VH_SETTINGS.serverBackendAddress);
 
-#if VH_IS_ON(VH_PACKET_REDIRECTION_FRONTEND)
-            // set tcp backend socket
-            auto&& backend = std::make_shared<TCPSocket>(asio::ip::tcp::socket(m_ctx));
-            backend->Connect(VH_SETTINGS.serverBackendAddress);
-
-            peer->m_backendSocket = std::move(backend);
+                peer->m_backendSocket = std::move(backend);
+            }
 #endif
 
 #if VH_IS_ON(VH_PLAYER_CAPTURE)
@@ -343,10 +352,10 @@ void INetManager::Update() {
                     { Valhalla()->Nanos(), 0ns } });
                 peer->m_disconnectCapture = &m_sortedSessions.back().second.second;
 
-                const fs::path root = fs::path(VH_CAPTURE_PATH) 
-                    / WorldManager()->GetWorld()->m_name 
+                const fs::path root = fs::path(VH_CAPTURE_PATH)
+                    / WorldManager()->GetWorld()->m_name
                     / std::to_string(VH_SETTINGS.packetCaptureSessionIndex)
-                    / peer->m_socket->GetHostName() 
+                    / peer->m_socket->GetHostName()
                     / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
 
                 std::string host = peer->m_socket->GetHostName();
@@ -426,7 +435,7 @@ void INetManager::Update() {
                     if (size)
                         saveBuffered(size);
 
-                });
+                    });
 
                 LOG_INFO(LOGGER, "Starting capture for {}", peer->m_socket->GetHostName());
             }
@@ -450,41 +459,43 @@ void INetManager::Update() {
             else {
                 PERIODIC_NOW(30s, {
                     LOG_INFO(LOGGER, "Replay peer joining in {}", duration_cast<seconds>(front.second.first - Valhalla()->Nanos()));
-                });
+                    });
             }
         }
     }
 #endif
 
-
-    // Send periodic data (2s)
-    if (VUtils::run_periodic<struct send_peer_time>(2s)) {
-        SendNetTime();
-    }
-
-    //PERIODIC_NOW(2s, {
-    //    SendNetTime();
-    //});
-
-    if (VH_SETTINGS.playerListSendInterval > 0s) {
-        if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
-            SendPlayerList();
+    // Only backend is allowed to send stuff
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        // Send periodic data (2s)
+        if (VUtils::run_periodic<struct send_peer_time>(2s)) {
+            SendNetTime();
         }
 
-        //PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
-        //    SendPlayerList();
+        //PERIODIC_NOW(2s, {
+        //    SendNetTime();
         //});
-    }
 
-    // Send periodic pings (1s)
-    if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
-        BYTES_t bytes;
-        DataWriter writer(bytes);
-        writer.Write<HASH_t>(0);
-        writer.Write(true);
+        if (VH_SETTINGS.playerListSendInterval > 0s) {
+            if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
+                SendPlayerList();
+            }
 
-        for (auto&& peer : m_connectedPeers) {
-            peer->Send(bytes);
+            //PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
+            //    SendPlayerList();
+            //});
+        }
+
+        // Send periodic pings (1s)
+        if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
+            BYTES_t bytes;
+            DataWriter writer(bytes);
+            writer.Write<HASH_t>(0);
+            writer.Write(true);
+
+            for (auto&& peer : m_connectedPeers) {
+                peer->Send(bytes);
+            }
         }
     }
 
@@ -515,12 +526,16 @@ void INetManager::Update() {
 
 
     // Pump steam callbacks
-#if VH_IS_OFF(VH_PACKET_REDIRECTION_BACKEND)
-    if (VH_SETTINGS.serverDedicated)
-        SteamGameServer_RunCallbacks();
-    else
-        SteamAPI_RunCallbacks();
+#if VH_IS_ON(VH_PACKET_REDIRECTION)
+    // If theres a backend (assumes im the Steam)
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() != 0)
 #endif
+    {
+        if (VH_SETTINGS.serverDedicated)
+            SteamGameServer_RunCallbacks();
+        else
+            SteamAPI_RunCallbacks();
+    }
 
     // doesnt seem to work
     //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();
