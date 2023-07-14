@@ -152,9 +152,11 @@ private:
     asio::ip::tcp::socket m_socket;
 
     std::mutex m_mux{};
+    //std::shared_mutex m_mux;
+    
     std::list<BYTES_t> m_recv{};
     std::list<BYTES_t> m_send{};
-
+    
     BYTES_t m_tempReadBytes{};
     uint32_t m_tempReadOffset{};
     BYTES_t m_tempWriteBytes{};

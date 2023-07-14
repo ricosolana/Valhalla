@@ -133,6 +133,9 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE ${GTL_INCLUDE_DIRS}
 )
 
+add_compile_options($<$<CONFIG:Debug>:-fsanitize-address>)
+add_link_options($<$<CONFIG:Debug>:-fsanitize-address>)
+
 set(CMAKE_CXX_STANDARD 23)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 

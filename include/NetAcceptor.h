@@ -45,7 +45,11 @@ private:
     //ISteamNetworkingSockets* m_steamNetworkingSockets;
 
 public:
-    static ISteamNetworkingSockets* STEAM_NETWORKING_SOCKETS;
+    // only static in order for easier access
+    //  AcceptorSteam::STEAM_NETWORKING_SOCKETS
+    //  vs 
+    //  NetManager()->m_acceptor... casts...
+    static inline ISteamNetworkingSockets* STEAM_NETWORKING_SOCKETS{};
 
 public:
     AcceptorSteam();

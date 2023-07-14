@@ -3,8 +3,6 @@
 #include "NetAcceptor.h"
 #include "ValhallaServer.h"
 
-ISteamNetworkingSockets* AcceptorSteam::STEAM_NETWORKING_SOCKETS {};
-
 AcceptorSteam::AcceptorSteam() {
 
     // This forces the Valheim Client to startup for some reason
@@ -77,7 +75,7 @@ AcceptorSteam::~AcceptorSteam() {
         for (auto &&socket : m_sockets)
             socket.second->Close(true);
 
-        // hmm
+        // TODO try avoiding sleep
         std::this_thread::sleep_for(1s);
 
         STEAM_NETWORKING_SOCKETS->CloseListenSocket(m_listenSocket);
@@ -113,13 +111,14 @@ ISocket::Ptr AcceptorSteam::Accept() {
 
 
 static const char* stateToString(ESteamNetworkingConnectionState state) {
-    static const char* messages[] = { "None", "Connecting", "FindingRoute", "Connected", "ClosedByPeer", "ProblemDetectedLocally",
+    static constexpr std::array<const char*, 9> MESSAGES = { "None", "Connecting", "FindingRoute", "Connected", "ClosedByPeer", "ProblemDetectedLocally",
         "FinWait", "Linger", "Dead"
     };
-    if (state >= 0 && state < sizeof(messages)/sizeof(messages[0])) {
-        return messages[state];
+
+    if (state >= 0 && state < MESSAGES.size()) {
+        return MESSAGES[state];
     } 
-    return messages[5 + (-state)];
+    return MESSAGES[5 + (-state)];
 }
 
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {

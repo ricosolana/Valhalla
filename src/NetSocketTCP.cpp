@@ -21,10 +21,10 @@ void TCPSocket::Update() {}
 
 void TCPSocket::Send(BYTES_t bytes) {
     assert(!bytes.empty() && "Should try to avoid sending empty packets");
-
+    
     {
-        std::scoped_lock scoped(m_mux);
         m_sendQueueSize += bytes.size();
+        std::scoped_lock scoped(m_mux);
         // If not empty the writers are presumably active (and busy)
         if (!this->m_send.empty()) {
             this->m_send.push_back(std::move(bytes));
@@ -66,6 +66,7 @@ bool TCPSocket::Connected() const {
 }
 
 unsigned int TCPSocket::GetSendQueueSize() const {
+
     return m_sendQueueSize;
 }
 
@@ -79,8 +80,8 @@ void TCPSocket::ReadPkgSize() {
     auto self(shared_from_this());
     asio::async_read(m_socket,
         asio::buffer(&m_tempReadOffset, sizeof(m_tempReadOffset)),
-        [this, self](const std::error_code& e, size_t) {
-            if (!e) {
+        [this, self](const std::error_code& ec, size_t) {
+            if (!ec) {
                 ReadPkg();
             }
             else {
@@ -96,12 +97,19 @@ void TCPSocket::ReadPkg() {
         Close(false);
     }
     else {
+        m_tempReadBytes.resize(m_tempReadOffset);
+
         auto self(shared_from_this());
         asio::async_read(m_socket,
-            asio::buffer(m_tempReadBytes, m_tempReadOffset),
-            [this, self](const std::error_code& e, size_t) {
-                if (!e) {
+            asio::buffer(m_tempReadBytes.data(), m_tempReadOffset),
+            [this, self](const std::error_code& ec, size_t read) {
+                if (!ec) {
                     {
+                        assert(read == m_tempReadOffset);
+
+                        // tempReadBytes seems to be empty sometimes
+                        //  when skipping resize (dont know why, asio::buffer auto resize the vector)
+
                         std::scoped_lock scoped(m_mux);
                         m_recv.push_back(std::move(m_tempReadBytes));
                     }
@@ -121,12 +129,13 @@ void TCPSocket::WritePkgSize(BYTES_t bytes) {
     // https://stackoverflow.com/questions/8640393/move-capture-in-lambda
     m_tempWriteOffset = bytes.size();
     m_tempWriteBytes = std::move(bytes);
+    //std::swap(bytes, m_tempWriteBytes); // faster than move
 
     auto self(shared_from_this());
     asio::async_write(m_socket,
         asio::buffer(&m_tempWriteOffset, sizeof(m_tempWriteOffset)),
-        [this, self](const std::error_code& e, size_t) mutable {
-            if (!e) {
+        [this, self](const std::error_code& ec, size_t) {
+            if (!ec) {
                 // Call writepkg
                 WritePkg();
             }
@@ -140,17 +149,17 @@ void TCPSocket::WritePkgSize(BYTES_t bytes) {
 void TCPSocket::WritePkg() {
     auto self(shared_from_this());
     asio::async_write(m_socket,
-        asio::buffer(m_tempWriteBytes),
-        [this, self](const std::error_code& e, size_t) {
-            if (!e) {
+        asio::buffer(m_tempWriteBytes.data(), m_tempWriteOffset),
+        [this, self](const std::error_code& ec, size_t) {
+            if (!ec) {
                 BYTES_t bytes;
 
                 {
-                    std::scoped_lock scoped(m_mux);
                     m_sendQueueSize -= m_tempWriteOffset;
+                    std::scoped_lock scoped(m_mux);
                     if (!m_send.empty()) {
                         assert(m_sendQueueSize);
-                        bytes = std::move(m_send.front());
+                        bytes = std::move(m_send.front()); // faster than swap (bytes is empty)
                         m_send.pop_front();
                     }
                     else {
