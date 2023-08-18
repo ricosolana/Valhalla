@@ -73,6 +73,17 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 8/18/2023 + TODO
+I ran out of motivation and reasons to work on this project over the summer due to burnout and few Valheim updates. There were some recent patches addressing Hilder, improvements to building, and other misc QOL changes.
+
+Specific findings:
+- RPC_RefPos is now tied with RPC_ServerSyncedPlayerData (refpos, public position, player specific data -> near base value, possible playable events)
+- Rpc ClientSave renamed to SavePlayerProfile
+- Precision changes to WorldGenerator/ZoneSystem/Heightmap (double instead of float)
+- Built-in fix for corrupted world files caused by large dungeons
+
+I might continue development sometime in the upcoming weeks.
+
 ### 5/19/2023 + TODO
 Valheim had an update 3 days ago that went completely over my head. This is likely the largest refactoring I've seen the game have so far (its also been a long time coming). The most notable changes are:
  - Removing tacky console logs (they were likely used for debugging early on)
