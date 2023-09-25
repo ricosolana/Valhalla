@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     tracy::SetThreadName("main");
 
-    {        
+    {
         quill::Config cfg;
         cfg.enable_console_colours = true;
         cfg.backend_thread_yield = false;

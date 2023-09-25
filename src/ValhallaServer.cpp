@@ -597,7 +597,7 @@ void IValhalla::Stop() {
         m_terminate.wait(true);
 }
 
-void IValhalla::Start() {    
+void IValhalla::Start() {
     MAIN_THREAD = std::this_thread::get_id();
     
     LOG_INFO(LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
@@ -612,30 +612,33 @@ void IValhalla::Start() {
 
     m_serverTimeMultiplier = 1;
 
-    ZDOManager()->Init();
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
+        ZDOManager()->Init();
 #if VH_IS_ON(VH_RANDOM_EVENTS)
-    RandomEventManager()->Init();
+        RandomEventManager()->Init();
 #endif
-    PrefabManager()->Init();
+        PrefabManager()->Init();
 
-    ZoneManager()->PostPrefabInit();
+        ZoneManager()->PostPrefabInit();
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
-    DungeonManager()->PostPrefabInit();
+        DungeonManager()->PostPrefabInit();
 #endif
-    WorldManager()->PostZoneInit();
+        WorldManager()->PostZoneInit();
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    GeoManager()->PostWorldInit();
-    HeightmapBuilder()->PostGeoInit();
-    ZoneManager()->PostGeoInit();
+        GeoManager()->PostWorldInit();
+        HeightmapBuilder()->PostGeoInit();
+        ZoneManager()->PostGeoInit();
 #endif
 
-    WorldManager()->PostInit();
-    NetManager()->PostInit();
+        WorldManager()->PostInit();
 #if VH_IS_ON(VH_USE_MODS)
-    ModManager()->PostInit();
+        ModManager()->PostInit();
 #endif
 
-    DiscordManager()->Init();
+        DiscordManager()->Init();
+    }
+
+    NetManager()->PostInit();
 
     /*
     if (VH_SETTINGS.worldRecording) {
@@ -718,15 +721,18 @@ void IValhalla::Start() {
 
     // Cleanup 
     NetManager()->Uninit();
+
+    if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() == 0) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    HeightmapBuilder()->Uninit();
+        HeightmapBuilder()->Uninit();
 #endif
 
 #if VH_IS_ON(VH_USE_MODS)
-    ModManager()->Uninit();
+        ModManager()->Uninit();
 #endif
 
-    SaveFiles();
+        SaveFiles();
+    }
 
     LOG_INFO(LOGGER, "Server was gracefully terminated");
 

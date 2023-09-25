@@ -22,20 +22,26 @@ void TCPSocket::Update() {}
 void TCPSocket::Send(BYTES_t bytes) {
     assert(!bytes.empty() && "Should try to avoid sending empty packets");
     
+    m_sendQueueSize += bytes.size();
+
+    const BYTES_t* ref;
+
+    bool was_empty;
     {
-        m_sendQueueSize += bytes.size();
         std::scoped_lock scoped(m_mux);
-        // If not empty the writers are presumably active (and busy)
-        if (!this->m_send.empty()) {
-            this->m_send.push_back(std::move(bytes));
-            return;
-        }
+
+        was_empty = m_send.empty();
+        m_send.push_back(std::move(bytes));
+        ref = &m_send.front();
     }
 
-    WritePkgSize(std::move(bytes));
+    // (Re)initiate writers
+    if (was_empty) {
+        WritePkgSize(ref);
+    }
 }
 
-std::optional<BYTES_t> TCPSocket::Recv() {
+std::optional<BYTES_t> TCPSocket::Recv() {    
     std::scoped_lock scoped(m_mux);
 
     if (!m_recv.empty()) {
@@ -44,12 +50,6 @@ std::optional<BYTES_t> TCPSocket::Recv() {
         return bytes;
     }
 
-    //auto&& begin = m_recv.begin();
-    //if (begin != m_recv.end()) {
-    //    BYTES_t bytes = std::move(*begin);
-    //    m_recv.erase(begin);
-    //    return bytes;
-    //}
     return std::nullopt;
 }
 
@@ -66,7 +66,6 @@ bool TCPSocket::Connected() const {
 }
 
 unsigned int TCPSocket::GetSendQueueSize() const {
-
     return m_sendQueueSize;
 }
 
@@ -125,19 +124,18 @@ void TCPSocket::ReadPkg() {
 
 
 
-void TCPSocket::WritePkgSize(BYTES_t bytes) {
+void TCPSocket::WritePkgSize(const BYTES_t* bytes) {
     // https://stackoverflow.com/questions/8640393/move-capture-in-lambda
-    m_tempWriteOffset = bytes.size();
-    m_tempWriteBytes = std::move(bytes);
-    //std::swap(bytes, m_tempWriteBytes); // faster than move
+    
+    m_tempWriteOffset = bytes->size();
 
     auto self(shared_from_this());
     asio::async_write(m_socket,
         asio::buffer(&m_tempWriteOffset, sizeof(m_tempWriteOffset)),
-        [this, self](const std::error_code& ec, size_t) {
+        [this, self, bytes](const std::error_code& ec, size_t) {
             if (!ec) {
                 // Call writepkg
-                WritePkg();
+                WritePkg(bytes);
             }
             else {
                 Close(false);
@@ -146,29 +144,35 @@ void TCPSocket::WritePkgSize(BYTES_t bytes) {
     );
 }
 
-void TCPSocket::WritePkg() {
+void TCPSocket::WritePkg(const BYTES_t* bytes) {
     auto self(shared_from_this());
     asio::async_write(m_socket,
-        asio::buffer(m_tempWriteBytes.data(), m_tempWriteOffset),
+        asio::buffer(bytes->data(), m_tempWriteOffset),
         [this, self](const std::error_code& ec, size_t) {
             if (!ec) {
-                BYTES_t bytes;
+                m_sendQueueSize -= m_tempWriteOffset;
+
+                const BYTES_t* ref;
 
                 {
-                    m_sendQueueSize -= m_tempWriteOffset;
                     std::scoped_lock scoped(m_mux);
-                    if (!m_send.empty()) {
-                        assert(m_sendQueueSize);
-                        bytes = std::move(m_send.front()); // faster than swap (bytes is empty)
-                        m_send.pop_front();
+                    m_send.pop_front();
+                    
+                    if (m_send.empty()) {
+                        // The assert might fail in cases where 
+                        //  the scoped_lock cannot protect (because sendQueue is updated on its own)
+                        //  in Send()
+                        // m_sendQueueSize is its own atomic in order to block the queue mutex less often
+                        //assert(!m_sendQueueSize);
+                        return;
                     }
                     else {
-                        assert(!m_sendQueueSize);
-                        return;
+                        ref = &m_send.front();
+                        //assert(m_sendQueueSize);
                     }
                 }
 
-                WritePkgSize(std::move(bytes));
+                WritePkgSize(ref);
             }
             else {
                 Close(false);

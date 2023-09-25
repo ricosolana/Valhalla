@@ -8,6 +8,7 @@
 
 #include "VUtilsString.h"
 #include "HashUtils.h"
+#include "ValhallaServer.h"
 
 //int GetCurrentLuaLine(lua_State* L);
 
@@ -148,6 +149,9 @@ public:
     //  Returns false if the event requested cancellation
     template <class... Args>
     bool CallEvent(HASH_t name, Args&&... params) {
+        if (VH_SETTINGS.serverBackendAddress.address().to_v4().to_uint() != 0)
+            return true;
+
         ZoneScoped;
 
         this->m_unsubscribeCurrentEvent = false;

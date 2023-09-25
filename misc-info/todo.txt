@@ -1,4 +1,25 @@
 todo:
+    - frontend/backend observations:
+        the frontend does not seem to connect each client to the backend
+        
+        the backend does kinda work (when connecting with putty)
+            but the connection closes quickly (some mod data is transferred)
+            
+        frontend still runs the world 
+            should disable this:
+                zone generatoin
+                zdo propogation/sending
+                
+                disable most components, including mods, 
+                discord (depends, but what does a proxy have to do with discord?)
+                    this is like connecting a minecraft hub/lobby proxy server to
+                    a discord interface... it just doesnt really make any sense,
+                    theres nothing happening
+                    
+                
+                
+                the only things 
+
     - idea for redirection and address hiding for interesting stuff
         proxy?
         

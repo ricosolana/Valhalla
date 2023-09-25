@@ -7,6 +7,7 @@ AcceptorTCP::AcceptorTCP()
 		asio::ip::tcp::endpoint(asio::ip::tcp::v4(), VH_SETTINGS.serverPort)) {}
 
 AcceptorTCP::~AcceptorTCP() {
+	m_thread.request_stop();
 	this->m_ctx.stop();
 }
 
@@ -19,9 +20,11 @@ void AcceptorTCP::Listen() {
 void AcceptorTCP::StartThread() {
 	m_thread = std::jthread(
 		[this](std::stop_token token) {
-		//if (token.stop_requested())
-			this->m_ctx.run();
-			//NetManager()->m_ctx.run();
+			while (!token.stop_requested()) {
+				//if (token.stop_requested())
+				this->m_ctx.run();
+				//NetManager()->m_ctx.run();
+			}
 		}
 	);
 }

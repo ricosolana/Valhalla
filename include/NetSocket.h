@@ -159,7 +159,7 @@ private:
     
     BYTES_t m_tempReadBytes{};
     uint32_t m_tempReadOffset{};
-    BYTES_t m_tempWriteBytes{};
+    //BYTES_t m_tempWriteBytes{};
     uint32_t m_tempWriteOffset{};
 
     std::atomic_uint32_t m_sendQueueSize{};
@@ -218,8 +218,8 @@ public:
 private:
     void ReadPkgSize();
     void ReadPkg();
-    void WritePkgSize(BYTES_t bytes);
-    void WritePkg();
+    void WritePkgSize(const BYTES_t* bytes);
+    void WritePkg(const BYTES_t* bytes);
 };
 
 /*
