@@ -4,7 +4,7 @@
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 
-static constexpr std::array<std::string_view, 10> STATUS_STRINGS = { 
+static constexpr std::array<std::string_view, 13> STATUS_STRINGS = { 
     "None", 
     "Connecting", 
     "Connected",
@@ -14,7 +14,10 @@ static constexpr std::array<std::string_view, 10> STATUS_STRINGS = {
     "ErrorPassword",
     "ErrorAlreadyConnected", 
     "ErrorBanned", 
-    "ErrorFull" 
+    "ErrorFull",
+    "ErrorPlatformExcluded",
+    "ErrorCrossplayPrivilege",
+    "ErrorKicked"
 };
 
 // Static globals initialized once
@@ -41,7 +44,10 @@ Peer::Peer(ISocket::Ptr socket)
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
-            reader.Read<uint32_t>(); // network version
+            // network version
+            if (reader.Read<uint32_t>() != VConstants::NETWORK) {
+                return rpc->Close(ConnectionStatus::ErrorVersion);
+            }
 
             rpc->m_pos = reader.Read<Vector3f>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)

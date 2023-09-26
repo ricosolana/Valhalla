@@ -49,9 +49,13 @@ public:
 private:
     std::chrono::steady_clock::time_point m_lastPing;
 
+    // Elements rarely added/removed
+    //  Queried frequently
     UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
 
 public:
+    // Elements are never removed
+    //  Queried frequently, and frequent adds
     ankerl::unordered_dense::segmented_map<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
     UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
@@ -78,6 +82,8 @@ private:
 public:
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
+
+    UNORDERED_MAP_t<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
 
 private:
     void Update();
@@ -381,7 +387,7 @@ public:
 
     // Show a console message
     void ConsoleMessage(std::string_view msg) {
-        return Invoke(Hashes::Rpc::S2C_ConsoleMessage, msg);
+        return Invoke(Hashes::Rpc::ConsoleMessage, msg);
     }
 
 private:

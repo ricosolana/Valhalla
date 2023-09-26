@@ -6,7 +6,7 @@
     Ported by crzi for use on the C++ Valhalla server
 --]]
 
-require('mobdebug').start()
+--require('mobdebug').start()
 
 local COMPRESSION_VERSION = 6
 

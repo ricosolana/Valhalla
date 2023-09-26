@@ -77,7 +77,7 @@ AcceptorSteam::~AcceptorSteam() {
         for (auto &&socket : m_sockets)
             socket.second->Close(true);
 
-        // hmm
+        // TODO is sleep really the best here?
         std::this_thread::sleep_for(1s);
 
         STEAM_NETWORKING_SOCKETS->CloseListenSocket(m_listenSocket);
@@ -197,6 +197,9 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
             LOG_WARNING(LOGGER, "Failed to set lobby host");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
+            LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
+        }
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "modifiers", "0")) {
             LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
         }
         

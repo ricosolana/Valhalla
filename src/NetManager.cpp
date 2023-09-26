@@ -139,10 +139,34 @@ void INetManager::OnPeerConnect(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has joined");
 
     // Important
-    peer.Register(Hashes::Rpc::C2S_UpdatePos, [this](Peer* peer, Vector3f pos, bool publicRefPos) {
-        peer->m_pos = pos;
-        peer->SetMapVisible(publicRefPos); // stupid name
-        });
+    peer.Register(Hashes::Rpc::C2S_PlayerData, [this](Peer* peer, BYTE_VIEW_t pkg) {
+        DataReader reader(pkg);
+
+        peer->m_pos = reader.Read<Vector3f>();
+        peer->SetMapVisible(reader.Read<bool>());
+        
+        auto count = reader.Read<int32_t>();
+        for (int i = 0; i < count; i++) {
+            // Read player event data (only 2):
+            //  'possibleEvents'
+            //  'baseValue' // used to be a zdo member
+            auto key = reader.Read<std::string_view>(); // key
+            peer->m_syncData[key] = reader.Read<std::string>(); // value
+        }
+    });
+
+    // isnt 'ban' a command?
+    //  it should be part of RemoteCommand
+    peer.Register(Hashes::Rpc::C2S_RemoteCommand, [](Peer* peer, std::string_view command) {
+        if (!peer->IsAdmin())
+            return peer->ConsoleMessage("You are not admin");
+
+        // TODO run commands or something?
+        //  this is still in beta and subject to change
+        //  although unlikely because this commands gets funneled to 
+        //  valheim commands, which have existed for a while.
+        //  The only difference is that some commands are now classified as remote vs local.
+    });
 
     // Important
     peer.Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {

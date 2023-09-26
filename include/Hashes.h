@@ -14,24 +14,26 @@ namespace Hashes {
 
     namespace Rpc {
         //
-        // Client
-        //
-        static constexpr HASH_t S2C_Handshake = __H("ClientHandshake");
-        static constexpr HASH_t S2C_Error = __H("Error");
-        static constexpr HASH_t S2C_UpdateTime = __H("NetTime");
-        static constexpr HASH_t S2C_UpdatePlayerList = __H("PlayerList");
-        static constexpr HASH_t S2C_ResponseKicked = __H("Kicked");
-
-
-
-        //
-        // Server
+        // Clientbound
         //
 
         // Once
-        static constexpr HASH_t Disconnect = __H("Disconnect");
-        static constexpr HASH_t C2S_Handshake = __H("ServerHandshake"); 
-        static constexpr HASH_t PeerInfo = __H("PeerInfo");
+        static constexpr HASH_t S2C_Handshake = __H("ClientHandshake");
+        static constexpr HASH_t S2C_Error = __H("Error");
+        static constexpr HASH_t S2C_ResponseKicked = __H("Kicked");
+
+        static constexpr HASH_t S2C_UpdateTime = __H("NetTime");
+        static constexpr HASH_t S2C_UpdatePlayerList = __H("PlayerList");
+        static constexpr HASH_t S2C_RequestSave = __H("SavePlayerProfile"); // dedicated server registers this method, why?
+
+
+
+        //
+        // Serverbound
+        //
+
+        // Once
+        static constexpr HASH_t C2S_Handshake = __H("ServerHandshake");
 
         // Permissions
         static constexpr HASH_t C2S_RequestSave = __H("Save");
@@ -41,19 +43,21 @@ namespace Hashes {
         static constexpr HASH_t C2S_RequestUnban = __H("Unban");
 
         // Regularly called
-        static constexpr HASH_t ZDOData = __H("ZDOData");
         static constexpr HASH_t C2S_UpdateID = __H("CharacterID");
-        static constexpr HASH_t C2S_UpdatePos = __H("RefPos");
-        
+        static constexpr HASH_t C2S_PlayerData = __H("ServerSyncedPlayerData"); // dedicated server registers this method, why?
+        static constexpr HASH_t C2S_RemoteCommand = __H("RPC_RemoteCommand");
+
 
 
         //
         // Client + Server
         //
 
-        static constexpr HASH_t S2C_ConsoleMessage = __H("RemotePrint");
+        static constexpr HASH_t PeerInfo = __H("PeerInfo");
+        static constexpr HASH_t Disconnect = __H("Disconnect");
+        static constexpr HASH_t ZDOData = __H("ZDOData");
+        static constexpr HASH_t ConsoleMessage = __H("RemotePrint");
         static constexpr HASH_t RoutedRPC = __H("RoutedRPC");
-        
     }
 
     // Chat calls Talker methods

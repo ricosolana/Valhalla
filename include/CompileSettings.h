@@ -164,6 +164,7 @@
 //  such as errors, undefined behaviour, and general
 //  strict assumptions about the game that require these standards
 //  to be met
+// TODO rename UNEXPECTED_PACKET_METADATA...
 #if defined(VH_DISALLOW_MALICIOUS_PLAYERS)
     #if VH_DISALLOW_MALICIOUS_PLAYERS != 0
         #define VH_DISALLOW_MALICIOUS_PLAYERS_I_ VH_ON
@@ -419,9 +420,9 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.217.5";
+    static const char* GAME = "0.217.20";
 
-    static constexpr uint32_t NETWORK = 6;
+    static constexpr uint32_t NETWORK = 15;
 
     // Used while loading world from file (ZNet/ZoneSystem/ZDOMan/RandEventSystem)
     // 32: Hildir beta
