@@ -73,6 +73,19 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 9/26/2023 + TODO
+New patch a week ago (0.219.20):
+ - Remote command RPC introduced. Similar to Minecraft server commands but not really. The commands are limited to clientside commands. What is the point of serverside commands then...
+ - Dedicated server has world presets now.
+Interesting find within 0.217.13:
+ - WorldGenerator has some precision changes that I overlooked. There is now a utility class dedicated to the sole purpose of wrapping Unity Mathf functions with double counterparts.
+
+Many months ago when I was implementing the WorldGenerator, precision seemed to be a minor but significant enough issue, resulting in inconsistent results across Valheim C# and C++. The Valheim seed viewer *sort of* mentions this https://valheim-map.world/, mentioning how old Valheim versions are not guaranteed to work when inputting seed. This was probably a significant enough issue for the devs to consider changing generation precision several betas prior to Hildirs.
+
+If precision can lead to consistency across platforms (like Valhalla producing exact results to Valheim), this will be awesome. I really think precision differences might have been caused by some difference in floating point operations used in c# vs c++. Doubles should nearly eliminate this inconsistency.
+
+I will be also be working on making ZDOs stable again and fixing wrong rotations during world generation.
+
 ### 8/18/2023 + TODO
 I ran out of motivation and reasons to work on this project over the summer due to burnout and few Valheim updates. There were some recent patches addressing Hilder, improvements to building, and other misc QOL changes.
 
