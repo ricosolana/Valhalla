@@ -381,43 +381,47 @@ float IGeoManager::GetBaseHeight(float wx, float wy) const {
 	double wy1 = wy;
 
 	float num2 = VUtils::Math::Magnitude(wx1, wy1);
-	wx += 100000.0 + (double)m_offset0;
-	wy += 100000.0 + (double)m_offset1;
+	wx += 100000.0 + m_offset0;
+	wy += 100000.0 + m_offset1;
+
 	float num3 = 0;
-	num3 = (double)num3 + (double)VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.5, wy1 * 0.002 * 0.5)
+	num3 += (double)VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.5, wy1 * 0.002 * 0.5)
 		* (double)VUtils::Math::PerlinNoise(wx1 * 0.003 * 0.5, wy1 * 0.003 * 0.5) * 1.0;
 	num3 += VUtils::Math::PerlinNoise(wx1 * 0.002 * 1.0, wy1 * 0.002 * 1.0)
 		* VUtils::Math::PerlinNoise(wx1 * 0.003 * 1.0, wy1 * 0.003 * 1.0) * (double)num3 * 0.9;
 	num3 += VUtils::Math::PerlinNoise(wx1 * 0.005 * 1.0, wy1 * 0.005 * 1.0)
 		* VUtils::Math::PerlinNoise(wx1 * 0.010f * 1.0, wy1 * 0.010 * 1.0) * 0.5 * (double)num3;
-	num3 = (double)num3 - 0.07;
+	num3 -= 0.07f;
+
 	double num4 = VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.25 + 0.123, wy1 * 0.002 * 0.25 + 0.15123);
 	float num5 = VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.25 + 0.321, wy1 * 0.002 * 0.25 + 0.231);
 	float v = std::abs(float(num4 - (double)num5));
 	// TODO stopped here, continue re-precision changes downward \/
-	float num6 = 1.f - VUtils::Math::LerpStep(0.02f, 0.12f, v);
-	num6 *= VUtils::Math::SmoothStep(744, 1000, num2);
-	num3 *= 1.f - num6;
+	float num6 = 1.0 - VUtils::Math::LerpStep(0.02, 0.12, (double)v);
+	num6 *= VUtils::Math::SmoothStep(744.0, 1000.0, (double)num2);
+	num3 *= 1.0 - num6;
 	if (num2 > 10000)
 	{
-		float t = VUtils::Math::LerpStep(10000, waterEdge, num2);
-		num3 = VUtils::Mathf::Lerp(num3, -0.2f, t);
+		float t = VUtils::Math::LerpStep(10000.0, (double)waterEdge, (double)num2);
+		num3 = VUtils::Math::Lerp((double)num3, -0.2, (double)t);
 		float num7 = 10490;
 		if (num2 > num7)
 		{
-			float t2 = VUtils::Math::LerpStep(num7, waterEdge, num2);
-			num3 = VUtils::Mathf::Lerp(num3, -2, t2);
+			float t2 = VUtils::Math::LerpStep((double)num7, (double)waterEdge, (double)num2);
+			num3 = VUtils::Math::Lerp((double)num3, -2.0, (double)t2);
 		}
 	}
 
 	if (num2 < m_minMountainDistance && num3 > 0.28f)
 	{
-		float t3 = VUtils::Mathf::Clamp01((num3 - 0.28f) / 0.099999994f);
-
-		num3 = VUtils::Mathf::Lerp(
-			VUtils::Mathf::Lerp(0.28f, 0.38f, t3),
-			num3,
-			VUtils::Math::LerpStep(m_minMountainDistance - 400.f, m_minMountainDistance, num2)
+		float t3 = VUtils::Math::Clamp01(((double)num3 - 0.28) / 0.09999999403953552);
+		
+		// Dont know why the devs have allowed varying levels of precision
+		//	They're enabling higher precision then nuking it by keeping floats
+		num3 = VUtils::Math::Lerp(
+			double(float(VUtils::Math::Lerp(0.28, 0.38, (double)t3))),
+			(double)num3,
+			double(float(VUtils::Math::LerpStep((double)m_minMountainDistance - 400.0, (double)m_minMountainDistance, (double)num2)))
 		);
 	}
 	return num3;
@@ -432,17 +436,17 @@ float IGeoManager::AddRivers(float wx, float wy, float h) {
 	if (num <= 0)
 		return h;
 
-	float t = VUtils::Math::LerpStep(20, 60, v);
-	float num2 = VUtils::Mathf::Lerp(0.14f, 0.12f, t);
-	float num3 = VUtils::Mathf::Lerp(0.139f, 0.128f, t);
+	float t = VUtils::Math::LerpStep(20.0, 60.0, (double)v);
+	float num2 = VUtils::Math::Lerp(0.14, 0.12, (double)t);
+	float num3 = VUtils::Math::Lerp(0.139, 0.128, (double)t);
 	if (h > num2)
 	{
-		h = VUtils::Mathf::Lerp(h, num2, num);
+		h = VUtils::Math::Lerp((double)h, (double)num2, (double)num);
 	}
 	if (h > num3)
 	{
-		float t2 = VUtils::Math::LerpStep(0.85f, 1, num);
-		h = VUtils::Mathf::Lerp(h, num3, t2);
+		float t2 = VUtils::Math::LerpStep(0.85, 1.0, (double)num);
+		h = VUtils::Math::Lerp((double)h, (double)num3, (double)t2);
 	}
 	return h;
 }
@@ -452,16 +456,42 @@ float IGeoManager::GetMarshHeight(float wx, float wy) {
 	float wx2 = wx;
 	float wy2 = wy;
 	float num = 0.137f;
-	wx += 100000.f;
-	wy += 100000.f;
-	float num2 = VUtils::Math::PerlinNoise(wx * 0.04f, wy * 0.04f) * VUtils::Math::PerlinNoise(wx * 0.08f, wy * 0.08f);
-	num += num2 * 0.03f;
+	wx += 100000;
+	wy += 100000;
+	double num2 = wx;
+	double num3 = wy;
+	float num4 = (double)VUtils::Math::PerlinNoise(num2 * 0.04, num3 * 0.04) * (double)VUtils::Math::PerlinNoise(num2 * 0.08, num3 * 0.08);
+	num += (double)num4 * 0.03;
 	num = AddRivers(wx2, wy2, num);
-	num += VUtils::Math::PerlinNoise(wx * 0.1f, wy * 0.1f) * 0.01f;
-	return num + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
+	num += (double)VUtils::Math::PerlinNoise(num2 * 0.1, num3 * 0.1) * 0.01;
+	return (double)num + (double)VUtils::Math::PerlinNoise(num2 * 0.4, num3 * 0.4) * 0.03;
 }
 
 float IGeoManager::GetMeadowsHeight(float wx, float wy) {
+	float wx2 = wx;
+	float wy2 = wy;
+	float baseHeight = GetBaseHeight(wx, wy);
+	wx += 100000.0 + (double)m_offset3;
+	wy += 100000.0 + (double)m_offset3;
+	double num = wx;
+	double num2 = wy;
+	float num3 = VUtils::Math::PerlinNoise(num * 0.01, num2 * 0.01) * (double)VUtils::Math::PerlinNoise(num * 0.02, num2 * 0.02);
+	num3 = (float)((double)num3 + (double)VUtils::Math::PerlinNoise(num * 0.05, num2 * 0.05) * (double)VUtils::Math::PerlinNoise(num * 0.1, num2 * 0.1) * (double)num3 * 0.5);
+	float num4 = baseHeight;
+	num4 = (float)((double)num4 + (double)num3 * 0.1);
+	float num5 = 0.15f;
+	float num6 = (float)((double)num4 - (double)num5);
+	float num7 = (float)VUtils::Math::Clamp01((double)float((double)baseHeight / 0.4));
+	if (num6 > 0f)
+	{
+		num4 = (float)((double)num4 - (double)num6 * ((1.0 - (double)num7) * 0.75));
+	}
+	num4 = this.AddRivers(wx2, wy2, num4);
+	num4 = (float)((double)num4 + (double)DUtils.PerlinNoise(num * 0.1, num2 * 0.1) * 0.01);
+	return (float)((double)num4 + (double)DUtils.PerlinNoise(num * 0.4, num2 * 0.4) * 0.003);
+
+	
+	
 	float wx2 = wx;
 	float wy2 = wy;
 	float baseHeight = GetBaseHeight(wx, wy);
@@ -760,25 +790,27 @@ float IGeoManager::GetBiomeHeight(Biome biome, float wx, float wy, float& mask) 
 	switch (biome)
 	{
 	case Biome::Meadows:
-		return GetMeadowsHeight(wx, wy) * 200.f;
+		return (double)GetMeadowsHeight(wx, wy) * 200.0;
 	case Biome::Swamp:
-		return GetMarshHeight(wx, wy) * 200.f;
+		return (double)GetMarshHeight(wx, wy) * 200.0;
 	case Biome::Mountain:
-		return GetSnowMountainHeight(wx, wy) * 200.f;
+		return (double)GetSnowMountainHeight(wx, wy) * 200.0;
 	case Biome::BlackForest:
-		return GetForestHeight(wx, wy) * 200.f;
+		return (double)GetForestHeight(wx, wy) * 200.0;
 	case Biome::Plains:
-		return GetPlainsHeight(wx, wy) * 200.f;
+		return (double)GetPlainsHeight(wx, wy) * 200.0;
 	case Biome::AshLands:
-		return GetAshlandsHeight(wx, wy) * 200.f;
+		return (double)GetAshlandsHeight(wx, wy) * 200.0;
 	case Biome::DeepNorth:
-		return GetDeepNorthHeight(wx, wy) * 200.f;
+		return (double)GetDeepNorthHeight(wx, wy) * 200.0;
 	case Biome::Ocean:
-		return GetOceanHeight(wx, wy) * 200.f;
+		return (double)GetOceanHeight(wx, wy) * 200.0;
 	case Biome::Mistlands:
-		return GetMistlandsHeight(wx, wy, mask) * 200.f;
+		return (double)GetMistlandsHeight(wx, wy, mask) * 200.0;
 	}
-	return 0;
+	// TODO or throw
+	//return 0;
+	std::unreachable();
 }
 
 // public

@@ -49,14 +49,40 @@ namespace VUtils::Math {
 
 
 
-    float Clamp(float value, float min, float max);
+    template<typename T>
+    T Clamp(T value, T min, T max) {
+        return std::min(std::max(value, min), max);
+    }
 
-    // Linear interpolation
-    float LerpStep(float l, float h, float v);
+    template<typename T>
+    T Clamp01(T value) {
+        return Clamp(value, (T)0, (T)1);
+    }
 
-    float SmoothStep(float p_Min, float p_Max, float p_X);
 
-    double LerpStep(double l, double h, double v);
+
+    template<typename T>
+    T LerpStep(T l, T h, T v) {
+        return Clamp01((v - l) / (h - l));
+    }
+
+    template<typename T>
+    T SmoothStep(T p_Min, T p_Max, T p_X) {
+        auto num = Clamp01((p_X - p_Min) / (p_Max - p_Min));
+        return num * num * ((T)3 - (T)2 * num);
+    }
+
+    template<typename T>
+    T LerpStep(T l, T h, T v) {
+        return Clamp01((v - l) / (h - l));
+    }
+
+    template<typename T>
+    T Lerp(T a, T b, T t) {
+        return a + (b - a) * Clamp01(t);
+    }
+
+
 
     // Fast inverse square root
     float FISQRT(float n);

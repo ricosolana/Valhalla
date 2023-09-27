@@ -8,30 +8,6 @@
 #include "VUtilsMath2.h"
 
 namespace VUtils::Math {
-    float Clamp(float value, float min, float max) {
-        return std::min(std::max(value, min), max);
-    }
-
-
-
-    float LerpStep(float l, float h, float v) {
-        return Mathf::Clamp01((v - l) / (h - l));
-    }
-
-    float SmoothStep(float p_Min, float p_Max, float p_X) {
-        float num = Mathf::Clamp01((p_X - p_Min) / (p_Max - p_Min));
-        return num * num * (3.f - 2.f * num);
-    }
-
-    double LerpStep(double l, double h, double v) {
-        return Mathf::Clamp01((v - l) / (h - l));
-    }
-
-
-
-
-
-
     float Fbm(Vector3f p, int octaves, float lacunarity, float gain) {
         return Fbm(Vector2f(p.x, p.z), octaves, lacunarity, gain);
     }
