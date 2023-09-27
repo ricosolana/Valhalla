@@ -5,22 +5,47 @@ namespace VUtils::Math {
     /*
      * Linear algebra methods
      */
+    template<typename T>
+    float SqMagnitude(T x, T y) {
+        return x * x + y * y;
+    }
 
-    float SqMagnitude(float x, float y);
+    template<typename T>
+    float Magnitude(T x, T y) {
+        return std::sqrt(SqMagnitude(x, y));
+    }
 
-    float Magnitude(float x, float y);
+    template<typename T>
+    float SqDistance(T x1, T y1, T x2, T y2) {
+        return SqMagnitude(x1 - x2, y1 - y2);
+    }
 
-    float SqDistance(float x1, float y1, float x2, float y2);
+    template<typename T>
+    float Distance(T x1, T y1, T x2, T y2) {
+        return std::sqrt(SqDistance(x1, y1, x2, y2));
+    }
 
-    float Distance(float x1, float y1, float x2, float y2);
 
-    float SqMagnitude(float x, float y, float z);
 
-    float Magnitude(float x, float y, float z);
+    template<typename T>
+    float SqMagnitude(T x, T y, T z) {
+        return x * x + y * y + z * z;
+    }
 
-    float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2);
+    template<typename T>
+    float Magnitude(T x, T y, T z) {
+        return std::sqrt(SqMagnitude(x, y, z));
+    }
 
-    float Distance(float x1, float y1, float z1, float x2, float y2, float z2);
+    template<typename T>
+    float SqDistance(T x1, T y1, T z1, T x2, T y2, T z2) {
+        return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
+    }
+
+    template<typename T>
+    float Distance(T x1, T y1, T z1, T x2, T y2, T z2) {
+        return std::sqrt(SqDistance(x1, y1, z1, x2, y2, z2));
+    }
 
 
 

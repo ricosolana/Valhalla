@@ -51,9 +51,9 @@ void IGeoManager::Generate() {
 
 void IGeoManager::GenerateLakes() {
 	std::vector<Vector2f> list;
-	for (float num = -worldSize; num <= worldSize; num += 128)
+	for (float num = -worldSize; num <= worldSize; num = (double)num + 128.0)
 	{
-		for (float num2 = -worldSize; num2 <= worldSize; num2 += 128)
+		for (float num2 = -worldSize; num2 <= worldSize; num2 = (double)num2 + 128.0)
 		{
 			if (VUtils::Math::Magnitude(num2, num) <= worldSize
 				&& GetBaseHeight(num2, num) < 0.05f)
@@ -125,10 +125,11 @@ void IGeoManager::GenerateStreams() {
 				river.center = vector3;
 				river.widthMax = 20;
 				river.widthMin = 20;
-				float num3 = river.p0.Distance(river.p1); // use sqdist?
-				river.curveWidth = num3 / 15;
-				river.curveWavelength = num3 / 20;
-				m_streams.push_back(river); // use move / emplacer
+				
+				float num3 = river.p0.Distance(river.p1); // TODO use sqdist?
+				river.curveWidth = (double)num3 / 15.0;
+				river.curveWavelength = (double)num3 / 20.0;
+				m_streams.push_back(river); // TODO use move / emplacer
 				num++;
 			}
 		}
@@ -137,12 +138,12 @@ void IGeoManager::GenerateStreams() {
 }
 
 bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f start, float minLength, float maxLength, Vector2f& end) {
-	float num = (maxLength - minLength) / (float)iterations;
+	float num = ((double)maxLength - (double)minLength) / (double)iterations;
 	float num2 = maxLength;
 	for (int i = 0; i < iterations; i++) {
-		num2 -= num;
+		num2 = (double)num2 - (double)num;
 		float f = state.Range(0.f, PI * 2.0f);
-		Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
+		Vector2f vector = start + Vector2f(std::sin(f), std::cos(f)) * num2;
 		float height = GetGenerationHeight(vector.x, vector.y);
 		if (height > minHeight && height < maxHeight)
 		{
@@ -193,8 +194,8 @@ void IGeoManager::GenerateRivers() {
 			river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
 			river.widthMin = state.Range(minRiverWidth, river.widthMax);
 			float num2 = river.p0.Distance(river.p1);
-			river.curveWidth = num2 / 15.f;
-			river.curveWavelength = num2 / 20.f;
+			river.curveWidth = (double)num2 / 15.0;
+			river.curveWavelength = (double)num2 / 20.0;
 			m_rivers.push_back(river);
 		}
 		else
@@ -250,7 +251,7 @@ bool IGeoManager::IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float hei
 	float num = p0.Distance(p1);
 	Vector2f normalized = (p1 - p0).Normal();
 	bool flag = true;
-	for (float num2 = step; num2 <= num - step; num2 += step) {
+	for (float num2 = step; num2 <= (double)num - (double)step; num2 = (double)num2 + (double)step) {
 		Vector2f vector = p0 + normalized * num2;
 		float baseHeight = GetBaseHeight(vector.x, vector.y);
 		if (baseHeight > heightLimit)
@@ -267,14 +268,14 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> dictionary;
 	for (auto&& river : rivers) {
 
-		float num = river.widthMin / 8.f;
+		float num = (double)river.widthMin / 8.0;
 		const Vector2f normalized = (river.p1 - river.p0).Normal();
 		const Vector2f a(-normalized.y, normalized.x);
 		float num2 = river.p0.Distance(river.p1);
 
-		for (float num3 = 0; num3 <= num2; num3 += num) {
-			float num4 = num3 / river.curveWavelength;
-			float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
+		for (float num3 = 0; num3 <= num2; num3 = (double)num3 + (double)num) {
+			float num4 = (double)num3 / (double)river.curveWavelength;
+			float d = std::sin((double)num4) * std::sin((double)num4 * 0.634119987487793) * std::sin((double)num4 * 0.3341200053691864) * (double)river.curveWidth;
 			float r = state.Range(river.widthMin, river.widthMax);
 			Vector2f p = river.p0 + normalized * num3 + a * d;
 			AddRiverPoint(dictionary, p, r);
@@ -293,7 +294,7 @@ void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint
 	float r)
 {
 	Vector2i riverGrid = GetRiverGrid(p.x, p.y);
-	int num = ceil(r / riverGridSize); // Mathf.CeilToInt(r / 64);
+	int num = std::ceil((double)r / (double)riverGridSize); // Mathf.CeilToInt(r / 64);
 	for (int i = riverGrid.y - num; i <= riverGrid.y + num; i++)
 	{
 		for (int j = riverGrid.x - num; j <= riverGrid.x + num; j++)
@@ -349,41 +350,51 @@ void IGeoManager::GetWeight(const std::vector<RiverPoint>& points, float wx, flo
 		float num3 = (riverPoint.p - b).SqMagnitude();
 		if (num3 < riverPoint.w2)
 		{
-			float num4 = sqrt(num3);
-			float num5 = 1.f - num4 / riverPoint.w;
+			float num4 = std::sqrt((double)num3);
+			float num5 = 1.0 - (double)num4 / (double)riverPoint.w;
 			outWeight = std::max(num5, outWeight);
 
-			num += riverPoint.w * num5;
-			num2 += num5;
+			num = (double)num + (double)riverPoint.w * (double)num5;
+			num2 = (double)num2 + (double)num5;
 		}
 	}
 
 	if (num2 > 0.f)
-		outWidth = num / num2;
+		outWidth = (double)num / (double)num2;
 }
 
 
 
 float IGeoManager::WorldAngle(float wx, float wy) {
-	return sin(atan2(wx, wy) * 20.f);
+	return std::sin(std::atan2((double)wx, (double)wy) * 20.0);
 }
 
 float IGeoManager::GetBaseHeight(float wx, float wy) const {
-	//float num2 = VUtils.Length(wx, wy);
-	float num2 = VUtils::Math::Magnitude(wx, wy);
-	wx += 100000 + m_offset0;
-	wy += 100000 + m_offset1;
+	
+	// Now its weird here because doubles are defined
+	//	unlike where floats were being casted prior...
+	//	(maybe the devs overlooked something...)
+
+	//float num4 = 
+
+	double wx1 = wx;
+	double wy1 = wy;
+
+	float num2 = VUtils::Math::Magnitude(wx1, wy1);
+	wx += 100000.0 + (double)m_offset0;
+	wy += 100000.0 + (double)m_offset1;
 	float num3 = 0;
-	num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f)
-		* VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f) * 1.0f;
-	num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f)
-		* VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
-	num3 += VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f)
-		* VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
-	num3 -= 0.07f;
-	float num4 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.123f, wy * 0.002f * 0.25f + 0.15123f);
-	float num5 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.321f, wy * 0.002f * 0.25f + 0.231f);
-	float v = std::abs(num4 - num5);
+	num3 = (double)num3 + (double)VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.5, wy1 * 0.002 * 0.5)
+		* (double)VUtils::Math::PerlinNoise(wx1 * 0.003 * 0.5, wy1 * 0.003 * 0.5) * 1.0;
+	num3 += VUtils::Math::PerlinNoise(wx1 * 0.002 * 1.0, wy1 * 0.002 * 1.0)
+		* VUtils::Math::PerlinNoise(wx1 * 0.003 * 1.0, wy1 * 0.003 * 1.0) * (double)num3 * 0.9;
+	num3 += VUtils::Math::PerlinNoise(wx1 * 0.005 * 1.0, wy1 * 0.005 * 1.0)
+		* VUtils::Math::PerlinNoise(wx1 * 0.010f * 1.0, wy1 * 0.010 * 1.0) * 0.5 * (double)num3;
+	num3 = (double)num3 - 0.07;
+	double num4 = VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.25 + 0.123, wy1 * 0.002 * 0.25 + 0.15123);
+	float num5 = VUtils::Math::PerlinNoise(wx1 * 0.002 * 0.25 + 0.321, wy1 * 0.002 * 0.25 + 0.231);
+	float v = std::abs(float(num4 - (double)num5));
+	// TODO stopped here, continue re-precision changes downward \/
 	float num6 = 1.f - VUtils::Math::LerpStep(0.02f, 0.12f, v);
 	num6 *= VUtils::Math::SmoothStep(744, 1000, num2);
 	num3 *= 1.f - num6;
@@ -622,15 +633,15 @@ float IGeoManager::GetDeepNorthHeight(float wx, float wy) {
 
 
 bool IGeoManager::InsideRiverGrid(Vector2i grid, Vector2f p, float r) {
-	Vector2f b((float)grid.x * riverGridSize, (float)grid.y * riverGridSize);
+	Vector2f b((double)grid.x * (double)riverGridSize, (double)grid.y * (double)riverGridSize);
 	Vector2f vector = p - b;
-	return std::abs(vector.x) < r + (riverGridSize * .5f)
-		&& std::abs(vector.y) < r + (riverGridSize * .5f);
+	return std::abs(vector.x) < float((double)r + ((double)riverGridSize * 0.5))
+		&& std::abs(vector.y) < float((double)r + ((double)riverGridSize * 0.5));
 }
 
 Vector2i IGeoManager::GetRiverGrid(float wx, float wy) {
-	auto x = (int32_t)std::floorf((wx + riverGridSize * .5f) / riverGridSize);
-	auto y = (int32_t)std::floorf((wy + riverGridSize * .5f) / riverGridSize);
+	auto x = (int32_t)std::floor(((double)wx + (double)riverGridSize * .5) / (double)riverGridSize);
+	auto y = (int32_t)std::floor(((double)wy + (double)riverGridSize * .5) / (double)riverGridSize);
 	return Vector2i(x, y);
 }
 
@@ -668,17 +679,17 @@ Biome IGeoManager::GetBiome(Vector3f point) {
 Biome IGeoManager::GetBiome(float wx, float wy) {
 	auto magnitude = VUtils::Math::Magnitude(wx, wy);
 	auto baseHeight = GetBaseHeight(wx, wy);
-	float num = WorldAngle(wx, wy) * 100.f;
+	float num = (double)WorldAngle(wx, wy) * 100.0;
 
 	// bottom curve of world are ashlands
-	if (VUtils::Math::Magnitude(wx, wy + ashlandsYOffset) > ashlandsMinDistance + num)
+	if (VUtils::Math::Magnitude(wx, (double)wy + (double)ashlandsYOffset) > (double)ashlandsMinDistance + (double)num)
 		return Biome::AshLands;
 
 	if (baseHeight <= 0.02f)
 		return Biome::Ocean;
 
 	// top curve of world is deep north
-	if (VUtils::Math::Magnitude(wx, wy + deepNorthYOffset) > deepNorthMinDistance + num) {
+	if (VUtils::Math::Magnitude(wx, (double)wy + (double)deepNorthYOffset) > (double)deepNorthMinDistance + (double)num) {
 		if (baseHeight > mountainBaseHeightMin)
 			return Biome::Mountain;
 		return Biome::DeepNorth;
@@ -687,23 +698,29 @@ Biome IGeoManager::GetBiome(float wx, float wy) {
 	if (baseHeight > mountainBaseHeightMin)
 		return Biome::Mountain;
 
-	if (VUtils::Math::PerlinNoise((m_offset0 + wx) * marshBiomeScale, (m_offset0 + wy) * marshBiomeScale) > minMarshNoise
+	/*
+	* Notice the doubles here:
+	*	They DEFINITLY make a difference
+	*/
+	if (VUtils::Math::PerlinNoise(((double)m_offset0 + (double)wx) * (double)marshBiomeScale, ((double)m_offset0 + (double)wy) * (double)marshBiomeScale) > minMarshNoise
 		&& magnitude > minMarshDistance && magnitude < maxMarshDistance && baseHeight > minMarshHeight && baseHeight < maxMarshHeight)
 		return Biome::Swamp;
 
-	if (VUtils::Math::PerlinNoise((m_offset4 + wx) * darklandBiomeScale, (m_offset4 + wy) * darklandBiomeScale) > minDarklandNoise
-		&& magnitude > minDarklandDistance + num && magnitude < maxDarklandDistance)
+	if (VUtils::Math::PerlinNoise(((double)m_offset4 + (double)wx) * (double)darklandBiomeScale, ((double)m_offset4 + (double)wy) * (double)darklandBiomeScale) > minDarklandNoise
+		&& magnitude > (double)minDarklandDistance + (double)num && magnitude < maxDarklandDistance)
 		return Biome::Mistlands;
 
-	if (VUtils::Math::PerlinNoise((m_offset1 + wx) * heathBiomeScale, (m_offset1 + wy) * heathBiomeScale) > minHeathNoise
-		&& magnitude > minHeathDistance + num && magnitude < maxHeathDistance)
+	if (VUtils::Math::PerlinNoise(((double)m_offset1 + (double)wx) * (double)heathBiomeScale, ((double)m_offset1 + (double)wy) * (double)heathBiomeScale) > minHeathNoise
+		&& magnitude > (double)minHeathDistance + (double)num && magnitude < maxHeathDistance)
 		return Biome::Plains;
 
-	if (VUtils::Math::PerlinNoise((m_offset2 + wx) * 0.001f, (m_offset2 + wy) * 0.001f) > minDeepForestNoise
-		&& magnitude > minDeepForestDistance + num && magnitude < maxDeepForestDistance)
+	// TODO flesh out .001 constant here (and some above)
+	//	or wait until devs use doubles everywhere (instead of elevating precision in-between calculations...)
+	if (VUtils::Math::PerlinNoise(((double)m_offset2 + (double)wx) * (double)0.001f, ((double)m_offset2 + (double)wy) * (double)0.001f) > minDeepForestNoise
+		&& (double)magnitude > (double)minDeepForestDistance + (double)num && magnitude < maxDeepForestDistance)
 		return Biome::BlackForest;
 
-	if (magnitude > meadowsMaxDistance + num)
+	if (magnitude > (double)meadowsMaxDistance + (double)num)
 		return Biome::BlackForest;
 
 	return Biome::Meadows;
