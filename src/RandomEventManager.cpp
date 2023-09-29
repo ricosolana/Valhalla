@@ -137,7 +137,7 @@ std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>
 
 				if (
 					// Check biome first
-					(e->m_biome == Biome::None || (GeoManager()->GetBiome(zdo->Position()) & e->m_biome) != Biome::None)
+					(e->m_biome == Biome::None || (std::to_underlying(GeoManager()->GetBiome(zdo->Position())) & std::to_underlying(e->m_biome)) != std::to_underlying(Biome::None))
 					// check base next
 					&& (!e->m_nearBaseOnly || zdo->GetInt(Hashes::ZDO::Player::BASE_VALUE) >= 3)
 					// check that player is not in dungeon

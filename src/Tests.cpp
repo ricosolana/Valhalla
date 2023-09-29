@@ -61,15 +61,15 @@ void VHTest::Test_ZDO_SetsGets() {
 }
 
 void VHTest::Test_ZDO_LoadSave() {
-    ZDO zdo;
-
-    ZDO_Sets(zdo);
-
     BYTES_t bytes;
-    DataWriter writer(bytes);
 
-    zdo.Pack(writer, false);
+    {
+        ZDO zdo;
+        ZDO_Sets(zdo);
+        DataWriter writer(bytes);
 
+        zdo.Pack(writer, false);
+    }
 
 
     ZDO zdo2;

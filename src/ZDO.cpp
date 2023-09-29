@@ -32,7 +32,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     if (pkg.Read<bool>())
-        m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));           // persistent
+        m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
     pkg.Read<int32_t>();        // pgw
@@ -41,11 +41,11 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << LocalDenotion::Marker_Type1);    // m_type
+        m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
 
     if (worldVersion >= 22) {
         if (pkg.Read<bool>())
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));       // m_distant
+            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
     }
 
     if (worldVersion < 13) {
@@ -71,6 +71,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     this->m_pos = pkg.Read<Vector3f>();
     this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
 
+    // will get or create an empty default
     auto&& members = ZDO_MEMBERS[ID()];
 
     _TryReadType<float,         char16_t>(pkg, members);
@@ -180,20 +181,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
         _SetPrefabHash(prefabHash);
 
-        if (flags & GlobalFlag::Marker_Persistent) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Persistent));
+        if (flags & (1 << NETWORK_Persistent)) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
         }
 
-        if (flags & GlobalFlag::Marker_Distant) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Distant));
+        if (flags & (1 << NETWORK_Distant)) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
         }
 
-        if (flags & GlobalFlag::Marker_Type1) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type1));
+        if (flags & (1 << NETWORK_Type1)) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
         }
 
-        if (flags & GlobalFlag::Marker_Type2) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Marker_Type2));
+        if (flags & (1 << NETWORK_Type2)) {
+            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
         }
     }
     else {
@@ -201,12 +202,12 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         assert(version == 0);
     }
     
-    if (flags & GlobalFlag::Marker_Rotation) {
+    if (flags & (1 << NETWORK_Rotation)) {
         this->m_rotation = reader.Read<Vector3f>();
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
-    if (flags & GlobalFlag::Member_Connection) {
+    if (flags & (1 << NETWORK_Connection)) {
         auto type = reader.Read<ZDOConnector::Type>();
         if (version) {
             auto hash = reader.Read<HASH_t>();
@@ -230,17 +231,25 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         //m_pack.Set<FLAGS_PACK_INDEX>(
             //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
-
-    if (flags & (GlobalFlag::Member_Float | GlobalFlag::Member_Vec3 | GlobalFlag::Member_Quat | GlobalFlag::Member_Int | GlobalFlag::Member_Long | GlobalFlag::Member_String | GlobalFlag::Member_ByteArray)) {
+    
+    if (flags & (
+        (1 << NETWORK_Float) 
+        | (1 << NETWORK_Vec3) 
+        | (1 << NETWORK_Quat) 
+        | (1 << NETWORK_Int) 
+        | (1 << NETWORK_Long) 
+        | (1 << NETWORK_String
+        | (1 << NETWORK_ByteArray)))) 
+    {
         // Will insert a default if missing (should be missing already)
         auto&& members = ZDO_MEMBERS[ID()];
-        if (flags & GlobalFlag::Member_Float) _TryReadType<float, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Vec3) _TryReadType<Vector3f, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Quat) _TryReadType<Quaternion, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Int) _TryReadType<int32_t, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_Long) _TryReadType<int64_t, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_String) _TryReadType<std::string, uint8_t>(reader, members);
-        if (flags & GlobalFlag::Member_ByteArray) _TryReadType<BYTES_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Float)) _TryReadType<float, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Vec3)) _TryReadType<Vector3f, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Quat)) _TryReadType<Quaternion, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Int)) _TryReadType<int32_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Long)) _TryReadType<int64_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_String)) _TryReadType<std::string, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_ByteArray)) _TryReadType<BYTES_t, uint8_t>(reader, members);
     }
 }
 
@@ -277,18 +286,10 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
 
     uint16_t flags{};
 
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Float ? GlobalFlag::Member_Float : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Vec3 ? GlobalFlag::Member_Vec3 : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Quat ? GlobalFlag::Member_Quat : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Int ? GlobalFlag::Member_Int : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Long ? GlobalFlag::Member_Long : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_String ? GlobalFlag::Member_String : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_ByteArray ? GlobalFlag::Member_ByteArray : (GlobalFlag)0;
-    //flags |= m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Member_Connection ? GlobalFlag::Member_Connection : (GlobalFlag)0;
-    if (IsPersistent()) flags |= GlobalFlag::Marker_Persistent;
-    if (IsDistant()) flags |= GlobalFlag::Marker_Distant;
-    flags |= GetType() << std::to_underlying(GlobalDenotion::Marker_Type1);
-    if (hasRot) flags |= GlobalFlag::Marker_Rotation;
+    if (IsPersistent()) flags |= 1 << NETWORK_Persistent;
+    if (IsDistant()) flags |= 1 << NETWORK_Distant;
+    flags |= std::to_underlying(GetType()) << 1 << NETWORK_Type1;
+    if (hasRot) flags |= 1 << NETWORK_Rotation;
 
     const auto flagPos = writer.Position();
     writer.Write(flags);
@@ -306,7 +307,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             writer.Write(connector.m_type);
             writer.Write(connector.m_target);
 
-            flags |= GlobalFlag::Member_Connection;
+            flags |= 1 << NETWORK_Connection;
         }
     }
     else {
@@ -316,7 +317,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             writer.Write(connector.m_type);
             writer.Write(connector.m_hash);
 
-            flags |= GlobalFlag::Member_Connection;
+            flags |= 1 << NETWORK_Connection;
         }
     }
 
@@ -325,19 +326,19 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         auto&& types = find->second;
 
         if (_TryWriteType<float>(writer, types))
-            flags |= GlobalFlag::Member_Float;
+            flags |= 1 << NETWORK_Float;
         if (_TryWriteType<Vector3f>(writer, types))
-            flags |= GlobalFlag::Member_Vec3;
+            flags |= 1 << NETWORK_Vec3;
         if (_TryWriteType<Quaternion>(writer, types))
-            flags |= GlobalFlag::Member_Quat;
+            flags |= 1 << NETWORK_Quat;
         if (_TryWriteType<int32_t>(writer, types))
-            flags |= GlobalFlag::Member_Int;
+            flags |= 1 << NETWORK_Int;
         if (_TryWriteType<int64_t>(writer, types))
-            flags |= GlobalFlag::Member_Long;
+            flags |= 1 << NETWORK_Long;
         if (_TryWriteType<std::string>(writer, types))
-            flags |= GlobalFlag::Member_String;
+            flags |= 1 << NETWORK_String;
         if (_TryWriteType<BYTES_t>(writer, types))
-            flags |= GlobalFlag::Member_ByteArray;
+            flags |= 1 << NETWORK_ByteArray;
     }
 
     const auto endPos = writer.Position();

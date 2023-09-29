@@ -137,22 +137,22 @@ public:
 
     bool AllFlagsPresent(Flag prefabFlags) const {
         return prefabFlags == Flag::NONE 
-            || (m_flags & prefabFlags) == prefabFlags;
+            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(prefabFlags);
     }
 
     bool AnyFlagsPresent(Flag prefabFlags) const {
         return prefabFlags == Flag::NONE 
-            || (m_flags & prefabFlags) != Flag::NONE;
+            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(Flag::NONE);
     }
 
     bool AllFlagsAbsent(Flag prefabFlags) const {
         return prefabFlags == Flag::NONE
-            || (m_flags & prefabFlags) == Flag::NONE;
+            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(Flag::NONE);
     }
 
     bool AnyFlagsAbsent(Flag prefabFlags) const {
         return prefabFlags == Flag::NONE
-            || (m_flags & prefabFlags) != prefabFlags;
+            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(prefabFlags);
     }
 
 

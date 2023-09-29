@@ -2,6 +2,8 @@
 
 #include <concepts>
 
+// unsafe to introduce global enum operators
+/*
 // A bunch of enum helper methods to make masks and bitshifts way fricking easier
 template<typename Enum>
     requires std::is_scoped_enum_v<Enum>
@@ -204,4 +206,4 @@ template<typename V, typename Enum>
     requires std::is_fundamental_v<V>&& std::is_scoped_enum_v<Enum>
 decltype(auto) operator<<=(V& lhs, Enum rhs) {
     lhs <<= std::to_underlying(rhs);
-}
+}*/

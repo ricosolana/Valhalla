@@ -114,71 +114,24 @@ public:
     };
 
 private:
-    enum class LocalDenotion {
-        //Member_Float,
-        //Member_Vec3,
-        //Member_Quat,
-        //Member_Int,
-        //Member_Long,
-        //Member_String,
-        //Member_ByteArray,
-        //Member_Connection,
-        Marker_Persistent,
-        Marker_Distant,
-        Marker_Type1,
-        Marker_Type2,
-    };
+    static constexpr uint32_t MACHINE_Persistent = 0;
+    static constexpr uint32_t MACHINE_Distant = 1;
+    static constexpr uint32_t MACHINE_Type1 = 2;
+    static constexpr uint32_t MACHINE_Type2 = 3;
 
-    // Valheim specific enum for both file/network in newer efficient version
-    enum class GlobalDenotion {
-        Member_Connection,
-        Member_Float,
-        Member_Vec3,
-        Member_Quat,
-        Member_Int,
-        Member_Long,
-        Member_String,
-        Member_ByteArray,
-        Marker_Persistent,
-        Marker_Distant,
-        Marker_Type1,
-        Marker_Type2,
-        Marker_Rotation,
-    };
-
-    enum class LocalFlag {
-        None = 0,
-        //Member_Float = 1 << std::to_underlying(LocalDenotion::Member_Float),
-        //Member_Vec3 = 1 << std::to_underlying(LocalDenotion::Member_Vec3),
-        //Member_Quat = 1 << std::to_underlying(LocalDenotion::Member_Quat),
-        //Member_Int = 1 << std::to_underlying(LocalDenotion::Member_Int),
-        //Member_Long = 1 << std::to_underlying(LocalDenotion::Member_Long),
-        //Member_String = 1 << std::to_underlying(LocalDenotion::Member_String),
-        //Member_ByteArray = 1 << std::to_underlying(LocalDenotion::Member_ByteArray),
-        //Member_Connection = 1 << std::to_underlying(LocalDenotion::Member_Connection),
-        Marker_Persistent = 1 << std::to_underlying(LocalDenotion::Marker_Persistent),
-        Marker_Distant = 1 << std::to_underlying(LocalDenotion::Marker_Distant),
-        Marker_Type1 = 1 << std::to_underlying(LocalDenotion::Marker_Type1),
-        Marker_Type2 = 1 << std::to_underlying(LocalDenotion::Marker_Type2),
-    };
-
-    // Valheim specific flags for both file/network in newer efficient version
-    enum class GlobalFlag {
-        None = 0,
-        Member_Connection = 1 << std::to_underlying(GlobalDenotion::Member_Connection),
-        Member_Float = 1 << std::to_underlying(GlobalDenotion::Member_Float),
-        Member_Vec3 = 1 << std::to_underlying(GlobalDenotion::Member_Vec3),
-        Member_Quat = 1 << std::to_underlying(GlobalDenotion::Member_Quat),
-        Member_Int = 1 << std::to_underlying(GlobalDenotion::Member_Int),
-        Member_Long = 1 << std::to_underlying(GlobalDenotion::Member_Long),
-        Member_String = 1 << std::to_underlying(GlobalDenotion::Member_String),
-        Member_ByteArray = 1 << std::to_underlying(GlobalDenotion::Member_ByteArray),
-        Marker_Persistent = 1 << std::to_underlying(GlobalDenotion::Marker_Persistent),
-        Marker_Distant = 1 << std::to_underlying(GlobalDenotion::Marker_Distant),
-        Marker_Type1 = 1 << std::to_underlying(GlobalDenotion::Marker_Type1),
-        Marker_Type2 = 1 << std::to_underlying(GlobalDenotion::Marker_Type2),
-        Marker_Rotation = 1 << std::to_underlying(GlobalDenotion::Marker_Rotation),
-    };
+    static constexpr uint32_t NETWORK_Connection = 0;
+    static constexpr uint32_t NETWORK_Float = 1;
+    static constexpr uint32_t NETWORK_Vec3 = 2;
+    static constexpr uint32_t NETWORK_Quat = 3;
+    static constexpr uint32_t NETWORK_Int = 4;
+    static constexpr uint32_t NETWORK_Long = 5;
+    static constexpr uint32_t NETWORK_String = 6;
+    static constexpr uint32_t NETWORK_ByteArray = 7;
+    static constexpr uint32_t NETWORK_Persistent = 8;
+    static constexpr uint32_t NETWORK_Distant = 9;
+    static constexpr uint32_t NETWORK_Type1 = 10;
+    static constexpr uint32_t NETWORK_Type2 = 11;
+    static constexpr uint32_t NETWORK_Rotation = 12;
 
 private:
 
@@ -684,15 +637,15 @@ public:
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Persistent;
+        return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Persistent);
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & LocalFlag::Marker_Distant;
+        return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Distant);
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> std::to_underlying(LocalDenotion::Marker_Type1)) & 0b11);
+        return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> MACHINE_Type1) & 0b11);
     }
 
 
