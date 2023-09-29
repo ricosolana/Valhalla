@@ -20,14 +20,12 @@
 *   .\Valhalla.exe -v
 */
 int main(int argc, char **argv) {
-#ifdef RUN_TESTS
-    Tests().RunTests();
-#else // !RUN_TESTS
+
     fs::current_path("./data/");
 
     tracy::SetThreadName("main");
 
-    {        
+    {
         quill::Config cfg;
         cfg.enable_console_colours = true;
         cfg.backend_thread_yield = false;
@@ -42,10 +40,10 @@ int main(int argc, char **argv) {
         auto&& colours = quill::ConsoleColours();
         colours.set_default_colours();
         cfg.default_handlers.push_back(quill::stdout_handler("colourout", std::move(colours)));
-        
+
         cfg.default_handlers.push_back(
             quill::time_rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
-            
+
         //cfg.default_handlers.push_back(quill::file_handler("server.log", "w"));
 
         quill::configure(cfg);
@@ -55,10 +53,13 @@ int main(int argc, char **argv) {
         LOGGER->set_log_level(quill::LogLevel::TraceL3);
     }
 
-    //VHTest().Test_ZDOConnectors();
+#ifdef RUN_TESTS
+    PrefabManager()->Init();
 
-    //if (true)
-        //return 0;
+    fs::current_path("./tests");
+
+    VHTest().Test_ZDO_LoadSave();
+#else // !RUN_TESTS
 
     {
         std::string path = (fs::current_path() / VH_LUA_PATH).string();

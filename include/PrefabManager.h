@@ -68,7 +68,11 @@ public:
 		if (find != m_prefabs.end()) {
 			return find._Ptr - m_prefabs.values().data();
 		}
+#ifdef RUN_TESTS
+		return m_prefabs.values().size();
+#else
 		throw std::runtime_error("prefab by hash not found");
+#endif // RUN_TESTS
 #else
 		// perform binary search
 		auto&& find = std::lower_bound(m_prefabs.begin(), m_prefabs.end(), hash);
@@ -87,7 +91,11 @@ public:
 		if (index < m_prefabs.size())
 			return m_prefabs[index];
 #endif		
+#ifdef RUN_TESTS
+		return 0;
+#else
 		throw std::runtime_error("index exceeds prefabs");
+#endif
 	}
 
 #if VH_IS_ON(VH_STANDARD_PREFABS)

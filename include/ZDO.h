@@ -313,6 +313,8 @@ private:
     Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Prefab: 1, Flags: 2
     //  last 2 bits are unused/reserved for future uses
+    // TODO the whole issue with prefab being an index vs a hash is problematic,
+    //  Test saving / loading extensively
     BitPack<uint32_t, VH_USER_BITS_I_, 12, 12,
         32 - VH_USER_BITS_I_ - 12 - 12> m_pack;
 
