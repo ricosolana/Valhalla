@@ -59,7 +59,7 @@ find_package(quill CONFIG REQUIRED)
 CPMAddPackage(
     NAME unordered_dense
     GITHUB_REPOSITORY martinus/unordered_dense
-    VERSION 4.0.0
+    VERSION 4.1.2
 )
 
 # remove annoying min/max getting in the way of other min/max functions

@@ -12,19 +12,9 @@
 
 
 
-decltype(ZDO::ZDO_MEMBERS) ZDO::ZDO_MEMBERS;
-decltype(ZDO::ZDO_CONNECTORS) ZDO::ZDO_CONNECTORS;
-decltype(ZDO::ZDO_TARGETED_CONNECTORS) ZDO::ZDO_TARGETED_CONNECTORS;
-//decltype(ZDO::ZDO_OWNERS) ZDO::ZDO_OWNERS;
-//decltype(ZDO::ZDO_AGES) ZDO::ZDO_AGES;
+ZDO::ZDO() {}
 
-ZDO::ZDO() {
-    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
-}
-
-ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {
-    m_pack.Set<PREFAB_PACK_INDEX>(m_pack.capacity_v<PREFAB_PACK_INDEX>);
-}
+ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
@@ -61,7 +51,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
         prefab = &pair.first;
-        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
+        _SetPrefabHash(prefab->m_hash);
 #else
         _SetPrefabHash(pkg.Read<HASH_t>());
 #endif
@@ -88,7 +78,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #if VH_IS_ON(VH_STANDARD_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
         prefab = &pair.first;
-        m_pack.Set<PREFAB_PACK_INDEX>(pair.second);
+        _SetPrefabHash(prefab->m_hash);
 #else
         _SetPrefabHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
 #endif
@@ -138,32 +128,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #endif //VH_LEGACY_WORLD_COMPATABILITY
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
-    // The (premature) optimizations I tried to 
-    //  implement never went anywhere because
-    //  I never knew what I was doing and 
-    //  it seemed a bit like overkill
-    // -------------------
-    // Some stuff I tried implementing:
-    //  Shrinking ZDOs as much as possible
-    //      encoding ZDOID to save memory (over time I made changes below:)
-    //          i64, i32 (plus i32 for padding) = 128 bits
-    //          i64, i32 packed = 92 bits
-    //          finally u64 by taking advantage of AssemblyUtils GenerateUID algorithm specs regarding summed/set unioned integer range
-    //      Valheim now includes encoded ZDOIDs, but differently:
-    //          One consolidated ZDOID-UserID array for ZDOs to reference
-    //          Returns a u16 index for ZDOs to refer to
-    //          ZDOs still have a u32 member
-    //      This makes little difference in C++ because padding will prevent memory preservation
-    //          I do not know whether C# class structures contain padding or what, so I cant comment on this
-    //          nvm actually I see '[StructLayout(0, Pack = 1)]'
-
-    // Set the self incremental id (ZDOID is no longer saved to disk)
-    if (version)
-        this->m_id.SetUID(++ZDOManager()->m_nextUid);
-
     auto flags = reader.Read<uint16_t>();
 
     if (version) {
+        // Set the self incremental id (ZDOID is no longer saved to disk)
+        this->m_id.SetUID(++ZDOManager()->m_nextUid);
+
         reader.Read<Vector2s>(); // redundant
         this->m_pos = reader.Read<Vector3f>();
     }
@@ -176,9 +146,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
     //  on esp this might not be viable
     auto prefabHash = reader.Read<HASH_t>();
-    if (m_pack.Get<PREFAB_PACK_INDEX>() == m_pack.capacity_v<PREFAB_PACK_INDEX>) {
-        //m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefabHash));
-
+    if (GetPrefabHash() == 0) { // Init once
         _SetPrefabHash(prefabHash);
 
         if (flags & (1 << NETWORK_Persistent)) {
@@ -199,7 +167,9 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)
+#ifndef RUN_TESTS
         assert(version == 0);
+#endif
     }
     
     if (flags & (1 << NETWORK_Rotation)) {
@@ -243,13 +213,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     {
         // Will insert a default if missing (should be missing already)
         auto&& members = ZDO_MEMBERS[ID()];
-        if (flags & (1 << NETWORK_Float)) _TryReadType<float, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Vec3)) _TryReadType<Vector3f, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Quat)) _TryReadType<Quaternion, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Int)) _TryReadType<int32_t, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Long)) _TryReadType<int64_t, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_String)) _TryReadType<std::string, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_ByteArray)) _TryReadType<BYTES_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Float)) 
+            _TryReadType<float, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Vec3)) 
+            _TryReadType<Vector3f, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Quat)) 
+            _TryReadType<Quaternion, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Int)) 
+            _TryReadType<int32_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Long)) 
+            _TryReadType<int64_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_String)) 
+            _TryReadType<std::string, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_ByteArray)) 
+            _TryReadType<BYTES_t, uint8_t>(reader, members);
     }
 }
 

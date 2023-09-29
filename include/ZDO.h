@@ -244,16 +244,16 @@ private:
     }
 
     void _SetPrefabHash(HASH_t hash) {
-        m_pack.Set<PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(hash));
+        m_prefabHash = hash;
     }
 
-private:
-    static ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
-    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
-    static ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
+public:
+    static inline UNORDERED_MAP_t<ZDOID, member_map> ZDO_MEMBERS;
+    static inline UNORDERED_MAP_t<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
+    static inline UNORDERED_MAP_t<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
     static constexpr auto OWNER_PACK_INDEX = 0;
-    static constexpr auto PREFAB_PACK_INDEX = 1;
+    //static constexpr auto PREFAB_PACK_INDEX = 1;
     static constexpr auto FLAGS_PACK_INDEX = 2;
 
     /*
@@ -270,6 +270,7 @@ private:
     //  Test saving / loading extensively
     BitPack<uint32_t, VH_USER_BITS_I_, 12, 12,
         32 - VH_USER_BITS_I_ - 12 - 12> m_pack;
+    HASH_t m_prefabHash{};
 
 public:
     ZDO();
@@ -547,13 +548,12 @@ public:
         
 #if VH_IS_ON(VH_STANDARD_PREFABS)
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+        return PrefabManager()->RequirePrefabByHash(m_prefabHash);
     }
 #endif
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-        //return PrefabManager()->RequirePrefabByIndex(m_pack.Get<PREFAB_PACK_INDEX>()).m_hash;
-        return PrefabManager()->RequirePrefabHashByIndex(m_pack.Get<PREFAB_PACK_INDEX>());
+        return m_prefabHash;
     }
 
     /*
