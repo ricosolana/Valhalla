@@ -417,7 +417,7 @@ void IValhalla::LoadFiles(bool reloading) {
                 LOG_WARNING(LOGGER, "Server does not have a password");
             }
             else {
-                LOG_INFO(LOGGER, "Server password is '{}'", m_settings.serverPassword);
+                LOG_INFO(LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
             }
 
 #ifdef VH_OPTION_ENABLE_CAPTURE

@@ -785,30 +785,35 @@ void IZoneManager::PostGeoInit() {
         auto now(steady_clock::now());
         int prevCount = 0;
 
-        LOG_WARNING(LOGGER, "Pregenerating world...");
+        //LOG_WARNING(LOGGER, "Pregenerating world...");
+        LOG_WARNING(LOGGER, "Pregeneration takes up a lot of memory and resources during and after generation!");
+        LOG_WARNING(LOGGER, "This setting is experimental and unoptimized! (I dont know why :(");
+        LOG_WARNING(LOGGER, "This will take a while!");
         while (m_generatedZones.size() < WORLD_RADIUS_IN_ZONES*2* WORLD_RADIUS_IN_ZONES*2) {
             for (int16_t y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
                 for (int16_t x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
                     TryGenerateZone(ZoneID(x, y));
                     
                     if (VUtils::run_periodic<struct periodic_pregen_stats>(3s)) {
+                        std::string lines;
                         // print a cool grid
                         for (int16_t iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy += 6) {
                             for (int16_t ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix += 6) {
                                 if (std::abs(ix - x) < 3 && std::abs(iy - y) < 3) {
-                                    std::cout << COLOR_GOLD;
+                                    lines += COLOR_GOLD;
                                 }
                                 else if (m_generatedZones.contains({ ix, iy })) {
-                                    std::cout << COLOR_GREEN;
+                                    lines += COLOR_GREEN;
                                 }
                                 else {
-                                    std::cout << COLOR_GRAY;
+                                    lines += COLOR_GRAY;
                                 }
-                                std::cout << "O ";
+                                lines += "O ";
                             }
-                            std::cout << COLOR_RESET << "\n";
+                            lines += COLOR_RESET + std::string("\n");
                         }
 
+                        LOG_INFO(LOGGER, "Zone progress: \n{}", lines);
                         LOG_WARNING(LOGGER, "{}/{} zones generated \t({} z/s)",
                             m_generatedZones.size(), (WORLD_RADIUS_IN_ZONES * 2 * WORLD_RADIUS_IN_ZONES * 2),
                             ((m_generatedZones.size() - prevCount) / 3));
