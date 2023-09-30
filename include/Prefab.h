@@ -2,7 +2,6 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 #include "VUtilsString.h"
 
 #include "Vector.h"
@@ -161,4 +160,3 @@ public:
         return this->m_hash == other.m_hash;
     }
 };
-#endif

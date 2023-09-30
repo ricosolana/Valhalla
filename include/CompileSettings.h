@@ -236,21 +236,6 @@
     #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
 #endif
 
-//#define VH_STANDARD_PREFABS 0
-
-// Whether to use the smallest form prefabs possible
-//  Each prefab generally takes up min 72 bytes
-//  Each prefab minimally needs only flags to work well (not extra redundant hashes)
-#if defined(VH_STANDARD_PREFABS)
-    #if VH_STANDARD_PREFABS != 0
-        #define VH_STANDARD_PREFABS_I_ VH_ON
-    #else
-        #define VH_STANDARD_PREFABS_I_ VH_OFF
-    #endif
-#else
-    #define VH_STANDARD_PREFABS_I_ VH_DEFAULT_ON
-#endif
-
 // Whether unknown prefabs are allowed
 //  useful with mods
 #if defined(VH_REQUIRE_RECOGNIZED_PREFABS)
@@ -266,6 +251,7 @@
 // Whether prefabs should be utilized for world operations
 //  or use from-scratch operations
 //  (using prefab members VS checking zdo prefab hashes)
+//  TODO rename MODULAR_PREFABS
 #if defined(VH_WORLD_UTILIZE_PREFABS)
     #if VH_WORLD_UTILIZE_PREFABS != 0
         #define VH_WORLD_UTILIZE_PREFABS_I_ VH_ON
@@ -280,44 +266,32 @@
 
 #if defined(VH_ZONE_GENERATION)
     #if VH_ZONE_GENERATION != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error "Zone generation VH_ZONE_GENERATION requires VH_STANDARD_PREFABS to be on"
-        #endif
-
         #define VH_ZONE_GENERATION_I_ VH_ON
     #else
         #define VH_ZONE_GENERATION_I_ VH_OFF
     #endif
 #else
-    #define VH_ZONE_GENERATION_I_ VH_STANDARD_PREFABS_I_
+    #define VH_ZONE_GENERATION_I_ VH_DEFAULT_ON
 #endif
 
 #if defined(VH_RANDOM_EVENTS)
     #if VH_RANDOM_EVENTS != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error "VH_RANDOM_EVENTS requires VH_STANDARD_PREFABS"
-        #endif
-
         #define VH_RANDOM_EVENTS_I_ VH_ON
     #else
         #define VH_RANDOM_EVENTS_I_ VH_OFF
     #endif
 #else
-    #define VH_RANDOM_EVENTS_I_ VH_STANDARD_PREFABS_I_
+    #define VH_RANDOM_EVENTS_I_ VH_DEFAULT_ON
 #endif
 
 #if defined(VH_DUNGEON_GENERATION)
     #if VH_DUNGEON_GENERATION != 0
-        #if VH_IS_OFF(VH_STANDARD_PREFABS)
-            #error("VH_DUNGEON_GENERATION requires VH_STANDARD_PREFABS")
-        #endif
-
         #define VH_DUNGEON_GENERATION_I_ VH_ON
     #else
         #define VH_DUNGEON_GENERATION_I_ VH_OFF
     #endif
 #else
-    #define VH_DUNGEON_GENERATION_I_ VH_STANDARD_PREFABS_I_
+    #define VH_DUNGEON_GENERATION_I_ VH_DEFAULT_ON
 #endif
 
 #if defined(VH_DISCORD_INTEGRATION)

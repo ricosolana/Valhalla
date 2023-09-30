@@ -43,7 +43,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS) || VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
     const Prefab* prefab = nullptr;
 #endif
 
@@ -88,7 +88,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #endif
     }
 
-#if VH_IS_ON(VH_STANDARD_PREFABS) || VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
     assert(prefab);
 
     if (worldVersion < 31) {

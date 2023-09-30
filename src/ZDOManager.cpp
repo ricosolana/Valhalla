@@ -238,7 +238,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		_AddZDOToZone(*zdo.get());
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 		auto&& prefab = zdo->GetPrefab();
 
 		m_objectsByPrefab[prefab.m_hash].insert(zdo.get());
@@ -250,7 +249,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
 		}
 #endif // VH_DUNGEON_REGENERATION
-#endif // VH_STANDARD_PREFABS
 		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
 
@@ -263,7 +261,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			reader.Read<int64_t>();
 		}
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
@@ -316,7 +313,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				//);
 			}
 		}
-#endif // VH_STANDARD_PREFABS
 	}
 #endif // VH_LEGACY_WORLD_LOADING
 
@@ -384,7 +380,6 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 
 
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 ZDO::reference IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->_Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
@@ -404,7 +399,6 @@ ZDO::reference IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab*
 	
 	return Instantiate(prefab, pos);
 }
-#endif
 
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
 	auto&& copy = _Instantiate(zdo.Position());
@@ -501,10 +495,8 @@ IZDOManager::ZDO_iterator IZDOManager::_EraseZDO(IZDOManager::ZDO_iterator itr) 
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
 	_RemoveFromSector(*zdo);
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 	auto&& pfind = m_objectsByPrefab.find(zdo->GetPrefabHash());
 	if (pfind != m_objectsByPrefab.end()) pfind->second.erase(zdo.get());
-#endif
 
 	// cleans up some zdos
 	for (auto&& peer : NetManager()->GetPeers()) {
@@ -662,7 +654,6 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::reference>& object
 
 
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 std::list<ZDO::reference> IZDOManager::GetZDOs(HASH_t prefab) {
 	std::list<ZDO::reference> out;
 	auto&& find = m_objectsByPrefab.find(prefab);
@@ -683,7 +674,6 @@ std::list<ZDO::reference> IZDOManager::GetZDOs(const std::function<bool(const ZD
 	}
 	return out;
 }
-#endif
 
 
 
@@ -929,9 +919,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//}
 
 					_AddZDOToZone(zdo);
-#if VH_IS_ON(VH_STANDARD_PREFABS)
 					m_objectsByPrefab[zdo.GetPrefabHash()].insert(&zdo);
-#endif
 				}
 				else {
 					//if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {

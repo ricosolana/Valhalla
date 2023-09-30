@@ -19,15 +19,6 @@
 #include "ZDOConnector.h"
 #include "Types.h"
 
-// The 'butter' of Valheim
-// This class has been refactored numerous times 
-//  Performance is important but memory usage has been highly prioritized here
-// This class used to be 500+ bytes
-//  It is now 120 bytes 
-// This class is finally the smallest it could possibly be (I hope so).
-//  I Lied this class is now 36 bytes 5/24/2023
-//      On embedded systems with max 8MB of RAM (ESP32), ZDOID can be smaller
-//          
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
@@ -542,11 +533,9 @@ public:
         }
     }
         
-#if VH_IS_ON(VH_STANDARD_PREFABS)
     const Prefab& GetPrefab() const {
         return PrefabManager()->RequirePrefabByHash(m_prefabHash);
     }
-#endif
     
     HASH_t GetPrefabHash() const {
         return m_prefabHash;
