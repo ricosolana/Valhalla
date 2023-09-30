@@ -43,17 +43,20 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS) || VH_IS_ON(VH_STANDARD_PREFABS)
     const Prefab* prefab = nullptr;
 #endif
 
+    HASH_t prefabHash{};
+
     if (worldVersion >= 17) {
-#if VH_IS_ON(VH_STANDARD_PREFABS)
-        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(pkg.Read<HASH_t>());
+        prefabHash = pkg.Read<HASH_t>();
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
-        _SetPrefabHash(prefab->m_hash);
+        _SetPrefabHash(prefabHash);
 #else
-        _SetPrefabHash(pkg.Read<HASH_t>());
+        _SetPrefabHash(prefabHash);
 #endif
     }
 
@@ -75,16 +78,17 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         _TryReadType<BYTES_t,   char16_t>(pkg, members);
 
     if (worldVersion < 17) {
-#if VH_IS_ON(VH_STANDARD_PREFABS)
-        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
+        prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
         _SetPrefabHash(prefab->m_hash);
 #else
-        _SetPrefabHash(GetInt(Hashes::ZDO::ZDO::PREFAB));
+        _SetPrefabHash(prefabHash);
 #endif
     }
 
-#if VH_IS_ON(VH_STANDARD_PREFABS)
+#if VH_IS_ON(VH_STANDARD_PREFABS) || VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
     assert(prefab);
 
     if (worldVersion < 31) {
@@ -105,10 +109,28 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
 
+#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
         // Convert terrains
         if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
-            || (GetPrefabHash() == Hashes::Object::ship_construction))
+            || (GetPrefabHash() == Hashes::Object::ship_construction)) 
+        {
+#else
+        if (prefabHash == Hashes::Object::cultivate
+            || prefabHash == Hashes::Object::raise
+            || prefabHash == Hashes::Object::path
+            || prefabHash == Hashes::Object::paved_road
+            || prefabHash == Hashes::Object::HeathRockPillar
+            || prefabHash == Hashes::Object::HeathRockPillar_frac
+            || prefabHash == Hashes::Object::ship_construction
+            || prefabHash == Hashes::Object::replant
+            || prefabHash == Hashes::Object::digg
+            || prefabHash == Hashes::Object::mud_road
+            || prefabHash == Hashes::Object::LevelTerrain
+            || prefabHash == Hashes::Object::digg_v2) 
+        {
+#endif
             Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+        }
 
         // Convert seeds
         for (auto&& pair : members) {
@@ -129,7 +151,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
     auto flags = reader.Read<uint16_t>();
-
+    static constexpr auto sz = sizeof(ZDO);
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
         this->m_id.SetUID(++ZDOManager()->m_nextUid);

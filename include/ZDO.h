@@ -31,7 +31,7 @@
 class ZDO {
     friend class IZDOManager;
     friend class IPrefabManager;
-    friend class Tests;
+    friend class VHTest;
     friend class IValhalla;
 
 
@@ -247,14 +247,13 @@ private:
         m_prefabHash = hash;
     }
 
-public:
-    static inline UNORDERED_MAP_t<ZDOID, member_map> ZDO_MEMBERS;
-    static inline UNORDERED_MAP_t<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
-    static inline UNORDERED_MAP_t<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
+private:
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
 
     static constexpr auto OWNER_PACK_INDEX = 0;
-    //static constexpr auto PREFAB_PACK_INDEX = 1;
-    static constexpr auto FLAGS_PACK_INDEX = 2;
+    static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
     * 36 bytes total:
@@ -264,13 +263,11 @@ public:
     ZDOID m_id;                                     // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes
     Rev m_rev;                                      // 4 bytes (PADDING)
-    // Owner: 0, Prefab: 1, Flags: 2
-    //  last 2 bits are unused/reserved for future uses
-    // TODO the whole issue with prefab being an index vs a hash is problematic,
-    //  Test saving / loading extensively
-    BitPack<uint32_t, VH_USER_BITS_I_, 12, 12,
-        32 - VH_USER_BITS_I_ - 12 - 12> m_pack;
+    // Owner: 0, Flags: 1
+    //  last 6 bits are unused/reserved for future uses
     HASH_t m_prefabHash{};
+    BitPack<uint16_t, VH_USER_BITS_I_, 4,
+        sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
 
 public:
     ZDO();

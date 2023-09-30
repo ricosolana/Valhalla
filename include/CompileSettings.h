@@ -251,6 +251,31 @@
     #define VH_STANDARD_PREFABS_I_ VH_DEFAULT_ON
 #endif
 
+// Whether unknown prefabs are allowed
+//  useful with mods
+#if defined(VH_REQUIRE_RECOGNIZED_PREFABS)
+    #if VH_REQUIRE_RECOGNIZED_PREFABS != 0
+        #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_ON
+    #else
+        #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_OFF
+    #endif
+#else
+    #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_DEFAULT_OFF
+#endif
+
+// Whether prefabs should be utilized for world operations
+//  or use from-scratch operations
+//  (using prefab members VS checking zdo prefab hashes)
+#if defined(VH_WORLD_UTILIZE_PREFABS)
+    #if VH_WORLD_UTILIZE_PREFABS != 0
+        #define VH_WORLD_UTILIZE_PREFABS_I_ VH_ON
+    #else
+        #define VH_WORLD_UTILIZE_PREFABS_I_ VH_OFF
+    #endif
+#else
+    #define VH_WORLD_UTILIZE_PREFABS_I_ VH_DEFAULT_OFF
+#endif
+
 //#define VH_ZONE_GENERATION 0
 
 #if defined(VH_ZONE_GENERATION)

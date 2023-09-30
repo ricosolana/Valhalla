@@ -64,6 +64,8 @@ void VHTest::Test_ZDO_SetsGets() {
 }
 
 void VHTest::Test_ZDO_LoadSave() {
+    PrefabManager()->Init();
+
     BYTES_t bytes;
 
     // ZDO's now require correct pooling

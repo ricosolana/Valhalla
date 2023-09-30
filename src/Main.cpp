@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
     }
 
 #ifdef RUN_TESTS
-    PrefabManager()->Init();
-
     fs::current_path("./tests");
 
     VHTest().Test_ZDO_LoadSave();
+
+    LOG_INFO(LOGGER, "All tests passed!");
 #else // !RUN_TESTS
 
     {
