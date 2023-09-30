@@ -78,17 +78,24 @@ namespace YAML {
             }
             else if (index > 0) {
                 dur *= sign;
+                const int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
                 switch (ch) {
                 case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
                 case 't': out = duration_cast<T>(TICKS_t(dur)); return true;
                 case 'u': out = duration_cast<T>(microseconds(dur)); return true;
-                case 'm': out = duration_cast<T>(milliseconds(dur)); return true;
+                case 'm': {
+                    switch (ch2) {
+                    case 's': out = duration_cast<T>(milliseconds(dur)); return true;
+                    case 'i': out = duration_cast<T>(minutes(dur)); return true;
+                    case 'o': out = duration_cast<T>(months(dur)); return true;
+                    default: break;
+                    }
+                    break;
+                }
                 case 's': out = duration_cast<T>(seconds(dur)); return true;
-                case 'M': out = duration_cast<T>(minutes(dur)); return true;
                 case 'h': out = duration_cast<T>(hours(dur)); return true;
                 case 'd': out = duration_cast<T>(days(dur)); return true;
                 case 'w': out = duration_cast<T>(weeks(dur)); return true;
-                case 'o': out = duration_cast<T>(months(dur)); return true;
                 case 'y': out = duration_cast<T>(years(dur)); return true;
                 }
                 break;
@@ -113,9 +120,9 @@ namespace YAML {
             else if constexpr (std::is_same_v<D, milliseconds>)
                 return Node(std::to_string(rhs.count()) + "ms");
             else if constexpr (std::is_same_v<D, seconds>)
-                return Node(std::to_string(rhs.count()) + "s");
+                return Node(std::to_string(rhs.count()) + "seconds");
             else if constexpr (std::is_same_v<D, minutes>)
-                return Node(std::to_string(rhs.count()) + "Minutes");
+                return Node(std::to_string(rhs.count()) + "minutes");
             else if constexpr (std::is_same_v<D, hours>)
                 return Node(std::to_string(rhs.count()) + "hours");
             else if constexpr (std::is_same_v<D, days>)
@@ -123,7 +130,7 @@ namespace YAML {
             else if constexpr (std::is_same_v<D, weeks>)
                 return Node(std::to_string(rhs.count()) + "weeks");
             else if constexpr (std::is_same_v<D, months>)
-                return Node(std::to_string(rhs.count()) + "onths");
+                return Node(std::to_string(rhs.count()) + "months");
             else if constexpr (std::is_same_v<D, years>)
                 return Node(std::to_string(rhs.count()) + "years");
 
