@@ -280,11 +280,10 @@ public:
         
 
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
     // Load ZDO from disk
-    //  Returns whether this ZDO is modern
     void Load31Pre(DataReader& reader, int32_t version);
-#endif //VH_LEGACY_WORLD_COMPATABILITY
+#endif //VH_LEGACY_WORLD_LOADING
 
     // Reads from a buffer using the new efficient format (version >= 31)
     //  version=0: Read according to the network deserialize format
@@ -330,7 +329,7 @@ public:
     //  Throws on type mismatch
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] const T* Get(HASH_t key) const {
+    const T* Get(HASH_t key) const {
         //static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
 
         //if (m_encoded.HasMember<T>()) {
@@ -366,14 +365,14 @@ public:
     //  Throws on type mismatch
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] const T* Get(std::string_view key) const {
+    const T* Get(std::string_view key) const {
         return Get<T>(VUtils::String::GetStableHashCode(key));
     }
 
     // Trivial hash getters
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] const T& Get(HASH_t key, const T& value) const {
+    const T& Get(HASH_t key, const T& value) const {
         auto&& get = Get<T>(key);
         return get ? *get : value;
     }
@@ -381,52 +380,52 @@ public:
     // Hash-key getters
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] const T& Get(std::string_view key, const T &value) const { return Get<T>(VUtils::String::GetStableHashCode(key), value); }
-        
-    [[nodiscard]] float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
-    [[nodiscard]] int32_t             GetInt(         HASH_t key, int32_t value) const {                          return Get<int32_t>(key, value); }
-    [[nodiscard]] int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
-    [[nodiscard]] Int64Wrapper        GetLongWrapper( HASH_t key, Int64Wrapper value) const {                     return Get<int64_t>(key, value); }
-    [[nodiscard]] Quaternion          GetQuaternion(  HASH_t key, Quaternion value) const {                       return Get<Quaternion>(key, value); }
-    [[nodiscard]] Vector3f            GetVector3(     HASH_t key, Vector3f value) const {                         return Get<Vector3f>(key, value); }
-    [[nodiscard]] std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
-    [[nodiscard]] const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
-    [[nodiscard]] bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
+    const T& Get(std::string_view key, const T &value) const { return Get<T>(VUtils::String::GetStableHashCode(key), value); }
+    
+    float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
+    int32_t             GetInt(         HASH_t key, int32_t value) const {                          return Get<int32_t>(key, value); }
+    int64_t             GetLong(        HASH_t key, int64_t value) const {                          return Get<int64_t>(key, value); }
+    Int64Wrapper        GetLongWrapper( HASH_t key, Int64Wrapper value) const {                     return Get<int64_t>(key, value); }
+    Quaternion          GetQuaternion(  HASH_t key, Quaternion value) const {                       return Get<Quaternion>(key, value); }
+    Vector3f            GetVector3(     HASH_t key, Vector3f value) const {                         return Get<Vector3f>(key, value); }
+    std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
+    const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
+    bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
+    ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
 
     // Hash-key default getters
-    [[nodiscard]] float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
-    [[nodiscard]] int32_t             GetInt(         HASH_t key) const {                                         return Get<int32_t>(key, {}); }
-    [[nodiscard]] int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
-    [[nodiscard]] Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
-    [[nodiscard]] Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
-    [[nodiscard]] Vector3f            GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
-    [[nodiscard]] std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
-    [[nodiscard]] bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key) const {                      return GetZDOID(key, {}); }
+    float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
+    int32_t             GetInt(         HASH_t key) const {                                         return Get<int32_t>(key, {}); }
+    int64_t             GetLong(        HASH_t key) const {                                         return Get<int64_t>(key, {}); }
+    Int64Wrapper        GetLongWrapper( HASH_t key) const {                                         return Get<int64_t>(key, {}); }
+    Quaternion          GetQuaternion(  HASH_t key) const {                                         return Get<Quaternion>(key, {}); }
+    Vector3f            GetVector3(     HASH_t key) const {                                         return Get<Vector3f>(key, {}); }
+    std::string_view    GetString(      HASH_t key) const {                                         return Get<std::string>(key, {}); }
+    bool                GetBool(        HASH_t key) const {                                         return Get<int32_t>(key); }
+    ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key) const {                      return GetZDOID(key, {}); }
 
     // String-key getters
-    [[nodiscard]] float               GetFloat(       std::string_view key, float value) const {                  return Get<float>(key, value); }
-    [[nodiscard]] int32_t             GetInt(         std::string_view key, int32_t value) const {                return Get<int32_t>(key, value); }
-    [[nodiscard]] int64_t             GetLong(        std::string_view key, int64_t value) const {                return Get<int64_t>(key, value); }
-    [[nodiscard]] Int64Wrapper        GetLongWrapper( std::string_view key, Int64Wrapper value) const {           return Get<int64_t>(key, value); }
-    [[nodiscard]] Quaternion          GetQuaternion(  std::string_view key, Quaternion value) const {             return Get<Quaternion>(key, value); }
-    [[nodiscard]] Vector3f            GetVector3(     std::string_view key, Vector3f value) const {               return Get<Vector3f>(key, value); }
-    [[nodiscard]] std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
-    [[nodiscard]] const BYTES_t*      GetBytes(       std::string_view key) const {                               return Get<BYTES_t>(key); }
-    [[nodiscard]] bool                GetBool(        std::string_view key, bool value) const {                   return Get<int32_t>(key, value); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(VUtils::String::ToHashPair(key), value); }
+    float               GetFloat(       std::string_view key, float value) const {                  return Get<float>(key, value); }
+    int32_t             GetInt(         std::string_view key, int32_t value) const {                return Get<int32_t>(key, value); }
+    int64_t             GetLong(        std::string_view key, int64_t value) const {                return Get<int64_t>(key, value); }
+    Int64Wrapper        GetLongWrapper( std::string_view key, Int64Wrapper value) const {           return Get<int64_t>(key, value); }
+    Quaternion          GetQuaternion(  std::string_view key, Quaternion value) const {             return Get<Quaternion>(key, value); }
+    Vector3f            GetVector3(     std::string_view key, Vector3f value) const {               return Get<Vector3f>(key, value); }
+    std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
+    const BYTES_t*      GetBytes(       std::string_view key) const {                               return Get<BYTES_t>(key); }
+    bool                GetBool(        std::string_view key, bool value) const {                   return Get<int32_t>(key, value); }
+    ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(VUtils::String::ToHashPair(key), value); }
 
     // String-key default getters
-    [[nodiscard]] float               GetFloat(       std::string_view key) const {                               return Get<float>(key, {}); }
-    [[nodiscard]] int32_t             GetInt(         std::string_view key) const {                               return Get<int32_t>(key, {}); }
-    [[nodiscard]] int64_t             GetLong(        std::string_view key) const {                               return Get<int64_t>(key, {}); }
-    [[nodiscard]] Int64Wrapper        GetLongWrapper( std::string_view key) const {                               return Get<int64_t>(key, {}); }
-    [[nodiscard]] Quaternion          GetQuaternion(  std::string_view key) const {                               return Get<Quaternion>(key, {}); }
-    [[nodiscard]] Vector3f            GetVector3(     std::string_view key) const {                               return Get<Vector3f>(key, {}); }
-    [[nodiscard]] std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, {}); }
-    [[nodiscard]] bool                GetBool(        std::string_view key) const {                               return Get<int32_t>(key, {}); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::string_view key) const {                               return GetZDOID(key, {}); }
+    float               GetFloat(       std::string_view key) const {                               return Get<float>(key, {}); }
+    int32_t             GetInt(         std::string_view key) const {                               return Get<int32_t>(key, {}); }
+    int64_t             GetLong(        std::string_view key) const {                               return Get<int64_t>(key, {}); }
+    Int64Wrapper        GetLongWrapper( std::string_view key) const {                               return Get<int64_t>(key, {}); }
+    Quaternion          GetQuaternion(  std::string_view key) const {                               return Get<Quaternion>(key, {}); }
+    Vector3f            GetVector3(     std::string_view key) const {                               return Get<Vector3f>(key, {}); }
+    std::string_view    GetString(      std::string_view key) const {                               return Get<std::string>(key, {}); }
+    bool                GetBool(        std::string_view key) const {                               return Get<int32_t>(key, {}); }
+    ZDOID               GetZDOID(       std::string_view key) const {                               return GetZDOID(key, {}); }
 
     // Trivial hash setters
     template<typename T>
@@ -516,11 +515,11 @@ public:
     }
 
 
-    [[nodiscard]] ZDOID ID() const {
+    ZDOID ID() const {
         return this->m_id;
     }
 
-    [[nodiscard]] Vector3f Position() const {
+    Vector3f Position() const {
         return m_pos;
     }
 
@@ -529,9 +528,9 @@ public:
     //  - This will change and invalidate sectors if the new position is in a different zone than this ZDOs position
     void SetPosition(Vector3f pos);
 
-    [[nodiscard]] ZoneID GetZone() const;
+    ZoneID GetZone() const;
 
-    [[nodiscard]] Quaternion Rotation() const {
+    Quaternion Rotation() const {
         return Quaternion::Euler(m_rotation.x, m_rotation.y, m_rotation.z);
     }
 
@@ -544,12 +543,12 @@ public:
     }
         
 #if VH_IS_ON(VH_STANDARD_PREFABS)
-    [[nodiscard]] const Prefab& GetPrefab() const {
+    const Prefab& GetPrefab() const {
         return PrefabManager()->RequirePrefabByHash(m_prefabHash);
     }
 #endif
     
-    [[nodiscard]] HASH_t GetPrefabHash() const {
+    HASH_t GetPrefabHash() const {
         return m_prefabHash;
     }
 
