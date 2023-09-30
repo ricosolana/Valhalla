@@ -263,7 +263,7 @@ void ZDO::SetPosition(Vector3f pos) {
 }
 
 ZoneID ZDO::GetZone() const {
-    return IZoneManager::WorldToZonePos(this->m_pos);
+    return IZoneManager::WorldToZonePos(Position());
 }
 
 
