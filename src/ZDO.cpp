@@ -128,7 +128,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         }
 
         // Convert seeds
-        for (auto&& pair : members) {
+        //  TODO this wont work, inserting while iterating breaks iterators
+        //  fix: 
+        member_map copy = members;
+        for (auto&& pair : copy) {
             if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
                 // set the character random items seed
                 Set("seed", 
