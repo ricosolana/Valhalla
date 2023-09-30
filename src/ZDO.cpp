@@ -43,7 +43,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+#if VH_IS_OFF(VH_MODULAR_PREFABS)
     const Prefab* prefab = nullptr;
 #endif
 
@@ -51,7 +51,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion >= 17) {
         prefabHash = pkg.Read<HASH_t>();
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+#if VH_IS_OFF(VH_MODULAR_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
         _SetPrefabHash(prefabHash);
@@ -79,7 +79,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion < 17) {
         prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+#if VH_IS_OFF(VH_MODULAR_PREFABS)
         auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
         prefab = &pair.first;
         _SetPrefabHash(prefab->m_hash);
@@ -88,8 +88,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #endif
     }
 
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
+#if VH_IS_OFF(VH_MODULAR_PREFABS)
     assert(prefab);
+#endif
 
     if (worldVersion < 31) {
         // Convert owners
@@ -109,12 +110,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
 
-#if VH_IS_ON(VH_WORLD_UTILIZE_PREFABS)
         // Convert terrains
-        if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
-            || (GetPrefabHash() == Hashes::Object::ship_construction)) 
-        {
-#else
+#if VH_IS_ON(VH_MODULAR_PREFABS)
         if (prefabHash == Hashes::Object::cultivate
             || prefabHash == Hashes::Object::raise
             || prefabHash == Hashes::Object::path
@@ -126,7 +123,11 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             || prefabHash == Hashes::Object::digg
             || prefabHash == Hashes::Object::mud_road
             || prefabHash == Hashes::Object::LevelTerrain
-            || prefabHash == Hashes::Object::digg_v2) 
+            || prefabHash == Hashes::Object::digg_v2)
+        {
+#else
+        if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
+            || (GetPrefabHash() == Hashes::Object::ship_construction))
         {
 #endif
             Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
@@ -134,10 +135,6 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
         // Convert seeds
         for (auto&& pair : members) {
-            // TODO include mode for whether to use prefab supported mode
-            //  or headless little prefabs mode
-            //prefab->AnyFlagsPresent(Prefab::Flag::HUMANOID)
-
             if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
                 // set the character random items seed
                 Set("seed", 
@@ -145,13 +142,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
     }
-#endif
 }
-#endif //VH_LEGACY_WORLD_COMPATABILITY
+#endif //VH_LEGACY_WORLD_LOADING
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
     auto flags = reader.Read<uint16_t>();
-    static constexpr auto sz = sizeof(ZDO);
+
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
         this->m_id.SetUID(++ZDOManager()->m_nextUid);
@@ -160,13 +156,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         this->m_pos = reader.Read<Vector3f>();
     }
 
-    // prefab is loaded once
-    //  If prefabs are disabled, then loading by index wont exactly work
-    //  the way to do it would be by hash
-    //      maybe should remove the prefab dynamic disable/enable as it introduces excessive problems
-    //      prefab system would reduce usage on esp by at most 10% per zdo (-4 bytes)
-    //  prefab system does introduce initial usage ~2270 prefabs, each at 72 bytes (total 0.16MB), this is a low end best-case scenario (considering how string takes up extra heap memory and the hashmap structure is semi-costly)
-    //  on esp this might not be viable
+    // This runs once per created ZDO
     auto prefabHash = reader.Read<HASH_t>();
     if (GetPrefabHash() == 0) { // Init once
         _SetPrefabHash(prefabHash);

@@ -248,18 +248,15 @@
     #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_DEFAULT_OFF
 #endif
 
-// Whether prefabs should be utilized for world operations
-//  or use from-scratch operations
-//  (using prefab members VS checking zdo prefab hashes)
-//  TODO rename MODULAR_PREFABS
-#if defined(VH_WORLD_UTILIZE_PREFABS)
-    #if VH_WORLD_UTILIZE_PREFABS != 0
-        #define VH_WORLD_UTILIZE_PREFABS_I_ VH_ON
+// Whether to rely on Prefab objects or hashes only
+#if defined(VH_MODULAR_PREFABS)
+    #if VH_MODULAR_PREFABS != 0
+        #define VH_MODULAR_PREFABS_I_ VH_ON
     #else
-        #define VH_WORLD_UTILIZE_PREFABS_I_ VH_OFF
+        #define VH_MODULAR_PREFABS_I_ VH_OFF
     #endif
 #else
-    #define VH_WORLD_UTILIZE_PREFABS_I_ VH_DEFAULT_OFF
+    #define VH_MODULAR_PREFABS_I_ VH_DEFAULT_ON
 #endif
 
 //#define VH_ZONE_GENERATION 0
