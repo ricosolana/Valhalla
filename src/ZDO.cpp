@@ -17,7 +17,7 @@ ZDO::ZDO() {}
 ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
 
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev

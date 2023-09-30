@@ -424,14 +424,14 @@
 
 // Whether to support loading worlds older than the latest version
 //  Can be disabled to very slightly reduce executable size
-#if defined(VH_LEGACY_WORLD_COMPATABILITY)
-    #if VH_LEGACY_WORLD_COMPATABILITY != 0
-        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_ON
+#if defined(VH_LEGACY_WORLD_LOADING)
+    #if VH_LEGACY_WORLD_LOADING != 0
+        #define VH_LEGACY_WORLD_LOADING_I_ VH_ON
     #else
-        #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_OFF
+        #define VH_LEGACY_WORLD_LOADING_I_ VH_OFF
     #endif
 #else
-    #define VH_LEGACY_WORLD_COMPATABILITY_I_ VH_DEFAULT_ON
+    #define VH_LEGACY_WORLD_LOADING_I_ VH_DEFAULT_ON
 #endif
 
 // Packet capture path

@@ -353,26 +353,26 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
         }
     }
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
     if (version >= 13) 
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
     {
         reader.Read<int32_t>(); // PGW
         const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
         if (version >= 14)
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
         {
             m_globalKeys = reader.Read<decltype(m_globalKeys)>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
             if (version >= 18) 
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
             {
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
                 if (version >= 20) 
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
                 {
                     reader.Read<bool>(); // locationsGenerated
                 }
@@ -382,11 +382,11 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                     auto text = reader.Read<std::string_view>();
                     auto pos = reader.Read<Vector3f>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
                     bool generated = (version >= 19) ? reader.Read<bool>() : false;
-#else // !VH_LEGACY_WORLD_COMPATABILITY
+#else // !VH_LEGACY_WORLD_LOADING
                     bool generated = reader.Read<bool>();
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
                     auto&& location = GetFeature(text);

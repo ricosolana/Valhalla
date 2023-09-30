@@ -299,7 +299,7 @@ public:
     // Erases and returns the value 
     template<typename T>
         requires is_member_v<T>
-    [[maybe_unused]] bool Extract(HASH_t key, T& out) {
+    bool Extract(HASH_t key, T& out) {
         //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(ID());
             if (members_find != ZDO_MEMBERS.end()) {
@@ -357,7 +357,7 @@ public:
 
     template<typename T>
         requires is_member_v<T>
-    [[maybe_unused]] bool Extract(std::string_view key, T& out) {
+    bool Extract(std::string_view key, T& out) {
         return Extract(VUtils::String::GetStableHashCode(key), out);
     }
 
@@ -455,7 +455,7 @@ public:
 
 
 
-    [[maybe_unused]] bool Extract(std::pair<HASH_t, HASH_t> key, ZDOID& out) {
+    bool Extract(std::pair<HASH_t, HASH_t> key, ZDOID& out) {
         int64_t userID{};
         if (Extract(key.first, userID)) {
             int64_t id{};
@@ -467,13 +467,13 @@ public:
         return false;
     }
 
-    [[maybe_unused]] bool Extract(std::string_view key, ZDOID& out) {
+    bool Extract(std::string_view key, ZDOID& out) {
         return Extract(VUtils::String::ToHashPair(key), out);
     }
 
     // Internal use
     //  Raw sets the connector with no revision
-    [[maybe_unused]] bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid) {
+    bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid) {
         auto&& insert = ZDO_TARGETED_CONNECTORS.insert({ ID(),
             ZDOConnectorTargeted(type, zdoid) });
 
@@ -595,7 +595,7 @@ public:
     }
 
     // Claim personal ownership over the ZDO
-    [[maybe_unused]] bool SetLocal() {
+    bool SetLocal() {
         return SetOwner(VH_ID);
     }
 
@@ -605,7 +605,7 @@ public:
     }
 
     // Set the owner of the ZDO
-    [[maybe_unused]] bool SetOwner(OWNER_t owner) {
+    bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
         if (this->Owner() != owner) {
             _SetOwner(owner);

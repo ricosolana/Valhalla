@@ -223,7 +223,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	for (decltype(count) i = 0; i < count; i++) {
 		auto zdo = std::make_unique<ZDO>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 		if (version < 31) {
 			zdo->m_id = reader.Read<ZDOID>();
 			auto zdoReader = reader.Read<DataReader>();
@@ -231,7 +231,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			zdo->Load31Pre(zdoReader, version);
 		}
 		else 
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
 		{
 			zdo->Unpack(reader, version);
 		}
@@ -254,7 +254,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		m_objectsByID[zdo->ID()] = std::move(zdo);
 	}
 
-#if VH_IS_ON(VH_LEGACY_WORLD_COMPATABILITY)
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 	if (version < 31) {
 		auto deadCount = reader.Read<int32_t>();
 		for (decltype(deadCount) j = 0; j < deadCount; j++) {
@@ -318,7 +318,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		}
 #endif // VH_STANDARD_PREFABS
 	}
-#endif // VH_LEGACY_WORLD_COMPATABILITY
+#endif // VH_LEGACY_WORLD_LOADING
 
 	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
