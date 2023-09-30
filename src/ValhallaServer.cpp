@@ -31,22 +31,6 @@ IValhalla* Valhalla() {
 
 namespace YAML {
     template<>
-    struct convert<PacketMode> {
-        static Node encode(const PacketMode& rhs) {
-            return Node(std::to_underlying(rhs));
-        }
-
-        static bool decode(const Node& node, PacketMode& rhs) {
-            if (!node.IsScalar())
-                return false;
-
-            rhs = PacketMode(node.as<std::underlying_type_t<PacketMode>>());
-
-            return true;
-        }
-    };
-
-    template<>
     struct convert<AssignAlgorithm> {
         static Node encode(const AssignAlgorithm& rhs) {
             return Node(std::to_underlying(rhs));
@@ -503,9 +487,6 @@ void IValhalla::LoadFiles(bool reloading) {
 }
 
 void IValhalla::SaveFiles() {
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (VH_SETTINGS.packetMode != PacketMode::PLAYBACK)
-#endif
     {
         WorldManager()->GetWorld()->WriteFiles();
     }
@@ -833,16 +814,6 @@ void IValhalla::PeriodUpdate() {
         // reload the file
         LoadFiles(true);
     }
-
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (m_settings.packetMode == PacketMode::PLAYBACK) {
-        PERIODIC_NOW(333ms, {
-            char message[32];
-            std::sprintf(message, "World playback %.2fs", (duration_cast<milliseconds>(Valhalla()->Nanos()).count() / 1000.f));
-            Broadcast(UIMsgType::TopLeft, message);
-        });
-    }
-#endif
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message

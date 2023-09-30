@@ -308,29 +308,6 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
 void INetManager::PostInit() {
     LOG_INFO(LOGGER, "Initializing NetManager");
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    // load session file if replaying
-    if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
-        auto path = fs::path(VH_CAPTURE_PATH)
-            / WorldManager()->GetWorld()->m_name
-            / std::to_string(VH_SETTINGS.packetCaptureSessionIndex)
-            / "sessions.pkg";
-
-        if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
-            DataReader reader(*opt);
-
-            auto count = reader.Read<int32_t>();
-            for (int i = 0; i < count; i++) {
-                auto host = reader.Read<std::string>();
-                auto nsStart = nanoseconds(reader.Read<int64_t>());
-                auto nsEnd = nanoseconds(reader.Read<int64_t>());
-
-                m_sortedSessions.push_back( { std::move(host), { nsStart, nsEnd } } );
-            }
-        }        
-    }
-#endif
-
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
 }
@@ -342,146 +319,19 @@ void INetManager::Update() {
     while (auto sock = m_acceptor->Accept()) {
         auto&& ptr = std::make_unique<Peer>(std::move(sock));
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
-            Peer* peer = (*m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr))).get();
-            
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-            if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
-                // record peer joindata
-                m_sortedSessions.push_back({ peer->m_socket->GetHostName(),
-                    { Valhalla()->Nanos(), 0ns } });
-                peer->m_disconnectCapture = &m_sortedSessions.back().second.second;
-
-                const fs::path root = fs::path(VH_CAPTURE_PATH) 
-                    / WorldManager()->GetWorld()->m_name 
-                    / std::to_string(VH_SETTINGS.packetCaptureSessionIndex)
-                    / peer->m_socket->GetHostName() 
-                    / std::to_string(m_sessionIndexes[peer->m_socket->GetHostName()]++);
-
-                std::string host = peer->m_socket->GetHostName();
-
-                peer->m_recordThread = std::jthread([root, peer, host](std::stop_token token) {
-                    tracy::SetThreadName(("Recorder" + host).c_str());
-
-                    size_t chunkIndex = 0;
-
-                    fs::create_directories(root);
-
-                    auto&& saveBuffered = [&](int count) {
-                        //ZoneScoped;
-
-                        BYTES_t chunk;
-                        DataWriter writer(chunk);
-
-                        writer.Write((int32_t)count);
-                        for (int i = 0; i < count; i++) {
-                            nanoseconds ns;
-                            BYTES_t packet;
-                            {
-                                std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
-
-                                auto&& front = peer->m_recordBuffer.front();
-                                ns = front.first;
-                                packet = std::move(front.second);
-                                peer->m_captureQueueSize -= packet.size();
-
-                                peer->m_recordBuffer.pop_front();
-                            }
-                            writer.Write(ns.count());
-                            writer.Write(packet);
-                        }
-
-                        fs::path path = root / (std::to_string(chunkIndex++) + ".cap");
-
-                        if (auto compressed = ZStdCompressor().Compress(chunk)) {
-                            if (VUtils::Resource::WriteFile(path, *compressed))
-                                LOG_WARNING(LOGGER, "Saving {}", path.c_str());
-                            else
-                                LOG_ERROR(LOGGER, "Failed to save {}", path.c_str());
-                        }
-                        else
-                            LOG_ERROR(LOGGER, "Failed to compress packet capture chunk {}", chunkIndex);
-                    };
-
-                    // Primary occasional saving of captured packets
-                    while (!token.stop_requested()) {
-                        size_t size = 0;
-                        size_t captureQueueSize = 0;
-                        {
-                            std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
-                            size = peer->m_recordBuffer.size();
-                            captureQueueSize = peer->m_captureQueueSize;
-                        }
-
-                        // save at ~256Kb increments
-                        if (captureQueueSize > VH_SETTINGS.packetFileUpperSize) {
-                            saveBuffered(size);
-                        }
-
-                        std::this_thread::sleep_for(1ms);
-
-                        FrameMark;
-                    }
-
-                    LOG_INFO(LOGGER, "Terminating async capture writer for {}", host);
-
-                    // Save any buffered captures before exit
-                    int size = 0;
-                    {
-                        std::scoped_lock<std::mutex> scoped(peer->m_recordmux);
-                        size = peer->m_recordBuffer.size();
-                    }
-
-                    if (size)
-                        saveBuffered(size);
-
-                });
-
-                LOG_INFO(LOGGER, "Starting capture for {}", peer->m_socket->GetHostName());
-            }
-#endif
+            m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
         }
     }
-
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    // accept replay peers
-    if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
-        if (!m_sortedSessions.empty()) {
-            auto&& front = m_sortedSessions.front();
-            if (Valhalla()->Nanos() >= front.second.first) {
-                auto&& peer = std::make_unique<Peer>(
-                    std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
-
-                m_connectedPeers.push_back(std::move(peer));
-
-                m_sortedSessions.pop_front();
-            }
-            else {
-                PERIODIC_NOW(30s, {
-                    LOG_INFO(LOGGER, "Replay peer joining in {}", duration_cast<seconds>(front.second.first - Valhalla()->Nanos()));
-                });
-            }
-        }
-    }
-#endif
-
 
     // Send periodic data (2s)
     if (VUtils::run_periodic<struct send_peer_time>(2s)) {
         SendNetTime();
     }
 
-    //PERIODIC_NOW(2s, {
-    //    SendNetTime();
-    //});
-
     if (VH_SETTINGS.playerListSendInterval > 0s) {
         if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
             SendPlayerList();
         }
-
-        //PERIODIC_NOW(VH_SETTINGS.playerListSendInterval, {
-        //    SendPlayerList();
-        //});
     }
 
     // Send periodic pings (1s)
@@ -495,18 +345,6 @@ void INetManager::Update() {
             peer->Send(bytes);
         }
     }
-
-    // Send periodic pings (1s)
-    //PERIODIC_NOW(1s, {
-    //    BYTES_t bytes;
-    //    DataWriter writer(bytes);
-    //    writer.Write<HASH_t>(0);
-    //    writer.Write(true);
-    //
-    //    for (auto&& peer : m_connectedPeers) {
-    //        peer->Send(bytes);
-    //    }
-    //});
 
     // Update peers
     for (auto&& peer : m_connectedPeers) {
@@ -583,12 +421,6 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
     ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
 #endif
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
-        *(peer.m_disconnectCapture) = Valhalla()->Nanos();
-    }
-#endif
-
     peer.SendDisconnect();
 
     LOG_INFO(LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
@@ -605,27 +437,6 @@ void INetManager::Uninit() {
         OnPeerDisconnect(*peer);
     }
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
-        // save sessions
-        BYTES_t bytes;
-        DataWriter writer(bytes);
-        writer.Write((int)m_sortedSessions.size());
-        for (auto&& session : m_sortedSessions) {
-            writer.Write(std::string_view(session.first));
-            writer.Write(session.second.first.count());
-            writer.Write(session.second.second.count());
-        }
-
-        auto path = fs::path(VH_CAPTURE_PATH)
-            / WorldManager()->GetWorld()->m_name
-            / std::to_string(VH_SETTINGS.packetCaptureSessionIndex)
-            / "sessions.pkg";
-
-        VUtils::Resource::WriteFile(path, bytes);
-    }
-#endif
-
     m_acceptor.reset();
 }
 
@@ -638,10 +449,7 @@ void INetManager::OnConfigLoad(bool reloading) {
         const auto merge = VH_SETTINGS.serverPassword + std::string(m_passwordSalt.data(), m_passwordSalt.size());
 
         // Hash a salted password
-        //m_password.resize(16);
         VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<uint8_t*>(m_passwordHash.data()));
-        //MD5(reinterpret_cast<const uint8_t*>(merge.c_str()),
-            //merge.size(), reinterpret_cast<uint8_t*>(m_password.data()));
 
         VUtils::String::FormatAscii(m_passwordHash.data(), m_passwordHash.size());
     }

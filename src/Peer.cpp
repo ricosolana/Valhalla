@@ -71,11 +71,7 @@ Peer::Peer(ISocket::Ptr socket)
                     return rpc->Close(ConnectionStatus::ErrorDisconnected);
             }
 
-            if (
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-                VH_SETTINGS.packetMode != PacketMode::PLAYBACK && 
-#endif
-                password != std::string_view(NetManager()->m_passwordHash))
+            if (password != std::string_view(NetManager()->m_passwordHash))
                 return rpc->Close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
@@ -145,18 +141,6 @@ void Peer::Update() {
         else [[likely]] { 
             InternalInvoke(hash, reader);
         }
-
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-        if (VH_SETTINGS.packetMode == PacketMode::CAPTURE
-            && !std::dynamic_pointer_cast<ReplaySocket>(m_socket))
-        {
-            auto ns(Valhalla()->Nanos());
-
-            std::scoped_lock<std::mutex> scoped(m_recordmux);
-            this->m_captureQueueSize += bytes.size();
-            this->m_recordBuffer.push_back({ ns, std::move(bytes) });
-        }
-#endif
     }
 
     if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {

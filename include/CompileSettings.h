@@ -256,7 +256,7 @@
         #define VH_MODULAR_PREFABS_I_ VH_OFF
     #endif
 #else
-    #define VH_MODULAR_PREFABS_I_ VH_DEFAULT_ON
+    #define VH_MODULAR_PREFABS_I_ VH_DEFAULT_OFF
 #endif
 
 //#define VH_ZONE_GENERATION 0
@@ -299,16 +299,6 @@
     #endif
 #else
     #define VH_DISCORD_INTEGRATION_I_ VH_DEFAULT_ON
-#endif
-
-#if defined(VH_PLAYER_CAPTURE)
-    #if VH_DISCORD_INTEGRATION != 0
-        #define VH_PLAYER_CAPTURE_I_ VH_ON
-    #else
-        #define VH_PLAYER_CAPTURE_I_ VH_OFF
-    #endif
-#else
-    #define VH_PLAYER_CAPTURE_I_ VH_DEFAULT_OFF
 #endif
 
 #define VH_CORE_FEATURES 1
@@ -404,9 +394,6 @@
 #else
     #define VH_LEGACY_WORLD_LOADING_I_ VH_DEFAULT_ON
 #endif
-
-// Packet capture path
-#define VH_CAPTURE_PATH "captures"
 
 // Valheim latest versionings
 //    Includes game, worldgen, zdo, zonelocation, ...

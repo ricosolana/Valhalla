@@ -7,12 +7,6 @@ enum class AssignAlgorithm {
     DYNAMIC_RADIUS
 };
 
-enum class PacketMode {
-    NORMAL,
-    CAPTURE,
-    PLAYBACK,
-};
-
 /*
 enum class DiscordPlayerMode {
     IN_DISCORD_SERVER,
@@ -135,13 +129,6 @@ struct ServerSettings {
     float           eventsRadius;
     bool            eventsRequireKeys;
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-    PacketMode      packetMode;
-    size_t          packetFileUpperSize;
-    int             packetCaptureSessionIndex;
-    int             packetPlaybackSessionIndex;
-#endif
-
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
     std::string     discordWebhook;
     std::string     discordToken;
@@ -149,11 +136,9 @@ struct ServerSettings {
     bool            discordAccountLinking;
     // Kick players who leave the Discord server?
     bool            discordSyncLeaves;
-    // Synchronize kicks between Valhiem and Discord?
-    //  being kicked on one kicks you on the other visa-versa
+    // Sync kicks between Valheim and Discord?
     //bool            discordSyncKicks;
-    // Synchronize bans between Valhiem and Discord?
-    //  being banned on one bans you on the other visa-versa
+    // Sync bans between Valhiem and Discord?
     //bool            discordSyncBans;
 #endif
     //bool            discordEnableDevCommands;

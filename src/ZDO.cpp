@@ -52,12 +52,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion >= 17) {
         prefabHash = pkg.Read<HASH_t>();
 #if VH_IS_OFF(VH_MODULAR_PREFABS)
-        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
-        prefab = &pair.first;
-        _SetPrefabHash(prefabHash);
-#else
-        _SetPrefabHash(prefabHash);
+        prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
 #endif
+        _SetPrefabHash(prefabHash);
     }
 
     pkg.Read<Vector2i>(); // m_sector
@@ -80,12 +77,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     if (worldVersion < 17) {
         prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
 #if VH_IS_OFF(VH_MODULAR_PREFABS)
-        auto&& pair = PrefabManager()->RequirePrefabAndIndexByHash(prefabHash);
-        prefab = &pair.first;
-        _SetPrefabHash(prefab->m_hash);
-#else
-        _SetPrefabHash(prefabHash);
+        prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
 #endif
+        _SetPrefabHash(prefabHash);
     }
 
 #if VH_IS_OFF(VH_MODULAR_PREFABS)

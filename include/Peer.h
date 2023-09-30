@@ -70,15 +70,6 @@ public:
     Vector3f m_pos;
     ZDOID m_characterID;
 
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-public:
-    nanoseconds* m_disconnectCapture = nullptr;
-    size_t m_captureQueueSize = 0;
-private:
-    std::list<std::pair<nanoseconds, BYTES_t>> m_recordBuffer;
-    std::mutex m_recordmux;
-    std::jthread m_recordThread;
-#endif
 public:
     // Visible: 0, Admin: 1, Gated: 2
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;

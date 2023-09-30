@@ -124,10 +124,6 @@ void IZDOManager::Update() {
 	if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {
 		for (auto&& peer : peers) {
 			if (
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-				(VH_SETTINGS.packetMode != PacketMode::PLAYBACK 
-				|| std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket))) &&
-#endif // VH_PLAYER_CAPTURE
 				!peer->IsGated()) 
 			{
 				AssignOrReleaseZDOs(*peer);
@@ -835,12 +831,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		ZoneScoped;
 
 		// Only allow if normal mode
-		if (
-#if VH_IS_ON(VH_PLAYER_CAPTURE)
-			(VH_SETTINGS.packetMode == PacketMode::PLAYBACK
-			&& !std::dynamic_pointer_cast<ReplaySocket>(peer->m_socket)) ||
-#endif
-			peer->IsGated())
+		if (peer->IsGated())
 			return;
 
 		{
