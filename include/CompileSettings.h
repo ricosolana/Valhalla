@@ -101,11 +101,7 @@
         #error "User bits must be between 2 and 7 (inclusive)"
     #endif
 #else
-    #if VH_IS_ON(VH_PLATFORM_ESP32)
-        #define VH_USER_BITS_I_ 2
-    #else
-        #define VH_USER_BITS_I_ 6
-    #endif
+    #define VH_USER_BITS_I_ 12
 #endif
 
 /*

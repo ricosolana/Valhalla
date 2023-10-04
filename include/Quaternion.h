@@ -2,6 +2,8 @@
 
 #include "Vector.h"
 
+// A custom completely managed implementation of UnityEngine.Quaternion
+// https://gist.github.com/HelloKitty/91b7af87aac6796c3da9
 struct Quaternion {
     static const Quaternion IDENTITY;
 
@@ -21,6 +23,7 @@ struct Quaternion {
     float LengthSquared() const;
     Vector3f xyz() const;
     Vector3f EulerAngles() const;
+    float Dot(Quaternion b) const;
 
     Vector3f operator*(Vector3f other) const;
     Quaternion operator*(Quaternion rhs) const;

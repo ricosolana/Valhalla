@@ -269,6 +269,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
         }
     }
 
+    peer.SetGated(VH_SETTINGS.playerGated);
+
     m_onlinePeers.push_back(&peer);
 }
 

@@ -337,6 +337,7 @@ void IValhalla::LoadFiles(bool reloading) {
 #if VH_IS_ON(VH_PLAYER_SLEEP)
             a(m_settings.playerSleepSolo, player, "player-sleep-solo", false);
 #endif
+            a(m_settings.playerGated, player, "player-gated", false, nullptr, false);
 
             a(m_settings.worldName, world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
             a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
@@ -485,6 +486,10 @@ void IValhalla::LoadFiles(bool reloading) {
         // then iterate players, settings active and inactive
         for (auto&& peer : NetManager()->GetPeers()) {
             peer->SetAdmin(m_admin.contains(peer->m_name));
+
+            // TODO add a 'previously gated' bit
+            //  so discord integration doesnt get messed up
+            peer->SetGated(m_settings.playerGated);
         }
     }
 

@@ -86,7 +86,7 @@ void IRandomEventManager::Update() {
 					auto&& e = opt.value().first;
 					auto&& pos = opt.value().second;
 
-					SetCurrentRandomEvent(e.get(), pos, this->m_activeEvent->m_duration);
+					SetCurrentRandomEvent(e.get(), pos, e.get().m_duration);
 
 					/*
 					this->m_activeEvent = &e.get();

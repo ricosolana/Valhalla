@@ -96,6 +96,7 @@ struct ServerSettings {
 #if VH_IS_ON(VH_PLAYER_SLEEP)
     bool            playerSleepSolo;
 #endif
+    bool            playerGated;
 
     std::string     worldName;
     std::string     worldSeed;

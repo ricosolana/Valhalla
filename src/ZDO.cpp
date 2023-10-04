@@ -149,8 +149,10 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
         this->m_id.SetUID(++ZDOManager()->m_nextUid);
 
-        reader.Read<Vector2s>(); // redundant
+        auto sector = reader.Read<Vector2s>(); // redundant
         this->m_pos = reader.Read<Vector3f>();
+        if (sector != IZoneManager::WorldToZonePos(this->m_pos))
+            throw std::runtime_error("sector mismatch");
     }
 
     // This runs once per created ZDO
@@ -183,6 +185,15 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     
     if (flags & (1 << NETWORK_Rotation)) {
         this->m_rotation = reader.Read<Vector3f>();
+    }
+
+    // almost all building pieces cannot x/z axis rotations
+
+    //assert(m_rotation.x < 1.f && m_rotation.z < 1.f)
+    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::PIECE) 
+        && (m_rotation.x > 1.f || m_rotation.z > 1.f)) 
+    {
+        if (true);
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;

@@ -34,7 +34,7 @@ public:
     template<size_t index>
         requires (index > 0)
     struct offset<index>
-        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1, COUNTS...>
+        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
     { };
 
     // now accumulate in reverse, first parameter pack ints are most significant (have highest offsets)
@@ -46,7 +46,7 @@ public:
 
 
     template<size_t index>
-    using capacity = std::integral_constant<size_t, (1 << count<index>::value) - 1>;
+    using capacity = std::integral_constant<size_t, (1ULL << count<index>::value) - 1ULL>;
 
     template<size_t index>
     static constexpr auto capacity_v = capacity<index>::value;

@@ -242,6 +242,7 @@ private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
+    //static inline UNORDERED_MAP_t<ZDOID, uint16_t> ZDO_OWNERS;
 
     static constexpr auto OWNER_PACK_INDEX = 0;
     static constexpr auto FLAGS_PACK_INDEX = 1;
@@ -256,7 +257,9 @@ private:
     Rev m_rev;                                      // 4 bytes (PADDING)
     // Owner: 0, Flags: 1
     //  last 6 bits are unused/reserved for future uses
-    HASH_t m_prefabHash{};
+    HASH_t m_prefabHash{};                          // 4 bytes
+                                                    //  prefab does not need to be this large, there arent 2^32 prefabs ingame, a 16-bit hash would work fine...
+                                                    //  thats the reason for proposing a index-based prefab, about ~1173 prefabs ingame
     BitPack<uint16_t, VH_USER_BITS_I_, 4,
         sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
 

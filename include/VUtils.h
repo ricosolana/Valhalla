@@ -204,7 +204,7 @@ namespace Colors {
 
 
 
-static constexpr float PI = 3.141592653589f;
+static constexpr double PI = 3.1415926535897932384626433832795;
 
 
 

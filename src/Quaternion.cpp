@@ -32,7 +32,7 @@ Vector3f Quaternion::xyz() const {
 }
 
 Vector3f Quaternion::EulerAngles() const {
-    return Internal_ToEulerRad(*this) * (180.f / PI);
+    return NormalizeAngles(Internal_ToEulerRad(*this) * 180.f / PI);
 }
 
 Vector3f Quaternion::Internal_ToEulerRad(Quaternion rotation) {
@@ -42,27 +42,27 @@ Vector3f Quaternion::Internal_ToEulerRad(Quaternion rotation) {
     float sqz = rotation.z * rotation.z;
     float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
     float test = rotation.x * rotation.w - rotation.y * rotation.z;
+    
     Vector3f v;
-
     if (test > 0.4995f * unit)
     { // singularity at north pole
         v.y = 2.f * std::atan2(rotation.y, rotation.x);
-        v.x = PI / 2;
+        v.x = PI * .5f;
         v.z = 0;
-        return NormalizeAngles(v * (180.f / PI));
     }
-    if (test < -0.4995f * unit)
+    else if (test < -0.4995f * unit)
     { // singularity at south pole
         v.y = -2.f * std::atan2(rotation.y, rotation.x);
-        v.x = -PI / 2;
+        v.x = -PI * .5f;
         v.z = 0;
-        return NormalizeAngles(v * (180.f / PI));
     }
-    auto q = Quaternion(rotation.w, rotation.z, rotation.x, rotation.y);
-    v.y = (float)std::atan2(2.f * q.x * q.w + 2.f * q.y * q.z, 1 - 2.f * (q.z * q.z + q.w * q.w));     // Yaw
-    v.x = (float)std::asin(2.f * (q.x * q.z - q.w * q.y));                             // Pitch
-    v.z = (float)std::atan2(2.f * q.x * q.y + 2.f * q.z * q.w, 1 - 2.f * (q.y * q.y + q.z * q.z));      // Roll
-    return NormalizeAngles(v * (180.f / PI));
+    else {
+        auto q = Quaternion(rotation.w, rotation.z, rotation.x, rotation.y);
+        v.y = (float)std::atan2(2.f * q.x * q.w + 2.f * q.y * q.z, 1 - 2.f * (q.z * q.z + q.w * q.w));     // Yaw
+        v.x = (float)std::asin(2.f * (q.x * q.z - q.w * q.y));                             // Pitch
+        v.z = (float)std::atan2(2.f * q.x * q.y + 2.f * q.z * q.w, 1 - 2.f * (q.y * q.y + q.z * q.z));      // Roll
+    }
+    return v;
 }
 
 Vector3f Quaternion::NormalizeAngles(Vector3f angles) {
@@ -118,282 +118,108 @@ void Quaternion::operator*=(Quaternion rhs) {
 
 
 
+float Quaternion::Dot(Quaternion b) const {
+    return x * b.x + y * b.y + z * b.z + w * b.w;
+}
+
 bool Quaternion::operator==(Quaternion other) const {
-    return x == other.x
-        && y == other.y
-        && z == other.z
-        && w == other.w;
+    return Quaternion::Dot(other) > 0.999999f;
 }
 bool Quaternion::operator!=(Quaternion other) const {
     return !(*this == other);
 }
 
-// determine whether the 
-
-// it might be premature optimizaiton to
-// pay too much attention to NetSyncis impl's
 
 
-
-Quaternion FromEulerRad_Impl(
-    Vector3f refVec,
-    int dims) {
-
-    float sx;
-    float cx;
-    float sy;
-    float cy;
-    float sz;
-    float fVar1;
-    float fVar2;
-    float fVar3;
-    float fVar4;
-    float fVar5;
-
-    cx = refVec.x * 0.5;
-    sx = sinf(cx);
-    cx = cosf(cx);
-
-    cy = refVec.y * 0.5;
-    sy = sinf(cy);
-    cy = cosf(cy);
-
-    fVar2 = refVec.z * 0.5;
-    sz = sinf(fVar2);
-    fVar2 = cosf(fVar2);
-
-    switch (dims) {
-    case 0:
-        fVar5 = ((cy * fVar2 - 0.0) - sy * 0.0) - sz * 0.0;
-        fVar3 = (sy * fVar2 + cy * 0.0 + sz * 0.0) - 0.0;
-        fVar1 = (cy * sz + fVar2 * 0.0 + sy * 0.0) - 0.0;
-        fVar4 = (fVar2 * 0.0 + cy * 0.0 + 0.0) - sy * sz;
-
-        fVar2 = (cx * fVar4 + sx * fVar5 + fVar3 * 0.0) - fVar1 * 0.0;
-        sz = (cx * fVar1 + fVar5 * 0.0 + fVar4 * 0.0) - sx * fVar3;
-        cx = ((cx * fVar5 - sx * fVar4) - fVar3 * 0.0) - fVar1 * 0.0;
-
-        return Quaternion(
-            cx, sz, fVar2, 0
-        );
-
-        //break;
-    case 1:
-        fVar4 = (fVar2 * 0.0 + cy * 0.0 + sy * sz) - 0.0;
-        fVar1 = (cy * sz + fVar2 * 0.0 + 0.0) - sy * 0.0;
-        fVar5 = ((cy * fVar2 - 0.0) - sy * 0.0) - sz * 0.0;
-        fVar3 = (sy * fVar2 + cy * 0.0 + 0.0) - sz * 0.0;
-
-        fVar2 = (cx * fVar4 + sx * fVar5 + fVar3 * 0.0) - fVar1 * 0.0;
-        sz = (cx * fVar1 + fVar5 * 0.0 + fVar4 * 0.0) - sx * fVar3;
-        cx = ((cx * fVar5 - sx * fVar4) - fVar3 * 0.0) - fVar1 * 0.0;
-
-        return Quaternion(
-            cx, sz, fVar2, 0
-        );
-
-        //break;
-    case 2:
-        fVar4 = (sx * fVar2 + cx * 0.0 + sz * 0.0) - 0.0;
-        fVar3 = (fVar2 * 0.0 + cx * 0.0 + 0.0) - sx * sz;
-        fVar1 = (cx * sz + fVar2 * 0.0 + sx * 0.0) - 0.0;
-        cx = ((cx * fVar2 - sx * 0.0) - 0.0) - sz * 0.0;
-        sz = fVar3 * 0.0;
-        sx = cx * 0.0;
-
-        fVar2 = (cy * fVar4 + sx + sz) - sy * fVar1;
-        cx = ((cy * cx - fVar4 * 0.0) - sy * fVar3) - fVar1 * 0.0;
-        sz = (cy * fVar1 + sx + sy * fVar4) - sz;
-
-        return Quaternion(
-            cx, sz, fVar2, 0
-        );
-
-        //break;
-    case 3:
-        fVar1 = (cx * sz + fVar2 * 0.0 + 0.0) - sx * 0.0;
-        fVar3 = (fVar2 * 0.0 + cx * 0.0 + sx * sz) - 0.0;
-        fVar4 = (sx * fVar2 + cx * 0.0 + 0.0) - sz * 0.0;
-        cx = ((cx * fVar2 - sx * 0.0) - 0.0) - sz * 0.0;
-        sz = fVar3 * 0.0;
-        sx = cx * 0.0;
-
-        fVar2 = (cy * fVar4 + sx + sz) - sy * fVar1;
-        cx = ((cy * cx - fVar4 * 0.0) - sy * fVar3) - fVar1 * 0.0;
-        sz = (cy * fVar1 + sx + sy * fVar4) - sz;
-
-        return Quaternion(
-            cx, sz, fVar2, 0
-        );
-
-        //(Quaternion)CONCAT412(cx, CONCAT48(sz, (ulonglong)(uint)fVar2))
-
-        //break;
-    case 4:
-        fVar3 = (sx * cy + cx * 0.0 + sy * 0.0) - 0.0;
-        fVar1 = (cx * sy + cy * 0.0 + sx * 0.0) - 0.0;
-        fVar4 = ((cx * cy - sx * 0.0) - sy * 0.0) - 0.0;
-        cx = (cy * 0.0 + cx * 0.0 + 0.0) - sx * sy;
-        sx = fVar1 * 0.0;
-        sy = fVar3 * 0.0;
-
-        return Quaternion(
-            ((fVar2 * fVar4 - sy) - sx) - sz * cx,
-            (fVar2 * cx + sz * fVar4 + sy) - sx,
-            (fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0,
-            0
-        );
-
-        //*quatMemBuf = (Quaternion)
-        //    CONCAT412(((fVar2 * fVar4 - sy) - sx) - sz * cx,
-        //        CONCAT48((fVar2 * cx + sz * fVar4 + sy) - sx,
-        //            (ulonglong)
-        //            (uint)((fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0)));
-        //return quatMemBuf;
-    case 5:
-        fVar3 = (sx * cy + cx * 0.0 + 0.0) - sy * 0.0;
-        fVar4 = ((cx * cy - sx * 0.0) - sy * 0.0) - 0.0;
-        fVar1 = (cx * sy + cy * 0.0 + 0.0) - sx * 0.0;
-        cx = (cy * 0.0 + cx * 0.0 + sx * sy) - 0.0;
-        sx = fVar1 * 0.0;
-        sy = fVar3 * 0.0;
-
-        return Quaternion(
-            ((fVar2 * fVar4 - sy) - sx) - sz * cx,
-            (fVar2 * cx + sz * fVar4 + sy) - sx,
-            (fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0,
-            0
-        );
-
-        //*quatMemBuf = (Quaternion)
-        //    CONCAT412(((fVar2 * fVar4 - sy) - sx) - sz * cx,
-        //        CONCAT48((fVar2 * cx + sz * fVar4 + sy) - sx,
-        //            (ulonglong)
-        //            (uint)((fVar2 * fVar3 + fVar4 * 0.0 + sz * fVar1) - cx * 0.0)))
-        //    ;
-    default:
-        return Quaternion(0, 0, 0, 0);
-        //goto switchD_180752161_caseD_6;
-    }
-    //*quatMemBuf = (Quaternion)CONCAT412(cx, CONCAT48(sz, (ulonglong)(uint)fVar2));
-//switchD_180752161_caseD_6:
-    //return quatMemBuf;
-}
-
-// https://stackoverflow.com/questions/12088610/conversion-between-euler-quaternion-like-in-unity3d-engine
-Quaternion Quaternion::Euler(float x, float y, float z) {
-    // float yaw, float pitch, float roll
-
-    //Vector3f vec(x * 0.017453292f, y * 0.017453292f, z * 0.017453292f);
-    //return FromEulerRad_Impl(Vector3f(x, y, z) * (PI / 180.f), 4);
-    //return FromEulerRad_Impl(vec, 4);
-        
+// https://gist.github.com/HelloKitty/91b7af87aac6796c3da9#file-quaternion-cs-L644
+Quaternion Quaternion::Euler(float x, float y, float z) {        
     // degrees to radians
-    y *= 0.017453292f;
-    x *= 0.017453292f;
-    z *= 0.017453292f;
+    double yaw = (double)x * PI / 180.0;
+    double pitch = (double)y * PI / 180.0;
+    double roll = (double)z * PI / 180.0;
 
-    float rollOver2 = z * 0.5f;
-    float sinRollOver2 = sin(rollOver2);
-    float cosRollOver2 = cos(rollOver2);
-    float pitchOver2 = x * 0.5f;
-    float sinPitchOver2 = sin(pitchOver2);
-    float cosPitchOver2 = cos(pitchOver2);
-    float yawOver2 = y * 0.5f;
-    float sinYawOver2 = sin(yawOver2);
-    float cosYawOver2 = cos(yawOver2);
+    auto rollOver2 = roll * 0.5;
+    auto sinRollOver2 = std::sin(rollOver2);
+    auto cosRollOver2 = std::cos(rollOver2);
 
-    Quaternion result = Quaternion::IDENTITY;
+    auto pitchOver2 = pitch * 0.5;
+    auto sinPitchOver2 = std::sin(pitchOver2);
+    auto cosPitchOver2 = std::cos(pitchOver2);
 
-    result.w = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2;
-    result.x = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
-    result.y = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
-    result.z = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
+    auto yawOver2 = yaw * 0.5;
+    auto sinYawOver2 = std::sin(yawOver2);
+    auto cosYawOver2 = std::cos(yawOver2);
 
+    Quaternion result;
+    result.x = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2;
+    result.y = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
+    result.z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
+    result.w = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
+    
     return result;
 }
 
 // https://web.archive.org/web/20221126145919/https://gist.github.com/aeroson/043001ca12fe29ee911e
 
 Quaternion Quaternion::LookRotation(Vector3f forward, Vector3f up) {
-    // from http://answers.unity3d.com/questions/467614/what-is-the-source-code-of-quaternionlookrotation.html
-    //private static MyQuaternion LookRotation(ref Vector3f forward, ref Vector3f up)
+    forward = forward.Normal();
+    Vector3f right = up.Cross(forward).Normal();
+    up = forward.Cross(right);
+
+    auto m00 = right.x;
+    auto m01 = right.y;
+    auto m02 = right.z;
+    auto m10 = up.x;
+    auto m11 = up.y;
+    auto m12 = up.z;
+    auto m20 = forward.x;
+    auto m21 = forward.y;
+    auto m22 = forward.z;
+
+    auto num8 = (m00 + m11) + m22;
+    Quaternion quaternion;
+    if (num8 > 0)
     {
-
-        //forward = forward.Normalize(); // Vector3f.Normalize(forward);
-        //forward.Normalize();
-
-        //auto right = up.Cross(forward).Normalized(); // Vector3f.Normalize(Vector3f.Cross(up, forward));
-        //up = forward.Cross(right);
-
-        Vector3f vector = forward.Normal();
-        Vector3f vector2 = up.Cross(vector).Normal();
-        Vector3f vector3 = vector.Cross(vector2);
-
-        auto m00 = vector2.x;
-        auto m01 = vector2.y;
-        auto m02 = vector2.z;
-        auto m10 = vector3.x;
-        auto m11 = vector3.y;
-        auto m12 = vector3.z;
-        auto m20 = vector.x;
-        auto m21 = vector.y;
-        auto m22 = vector.z;
-
-        //float m00 = right.x;
-        //float m01 = right.y;
-        //float m02 = right.z;
-        //float m10 = up.x;
-        //float m11 = up.y;
-        //float m12 = up.z;
-        //float m20 = forward.x;
-        //float m21 = forward.y;
-        //float m22 = forward.z;
-
-        auto num8 = (m00 + m11) + m22;
-        Quaternion quaternion = Quaternion::IDENTITY;
-        if (num8 > 0)
-        {
-            auto num = std::sqrt(num8 + 1);
-            quaternion.w = num * 0.5f;
-            num = 0.5f / num;
-            quaternion.x = (m12 - m21) * num;
-            quaternion.y = (m20 - m02) * num;
-            quaternion.z = (m01 - m10) * num;
-            return quaternion;
-        }
-
-        if ((m00 >= m11) && (m00 >= m22))
-        {
-            auto num7 = std::sqrt(((1 + m00) - m11) - m22);
-            auto num4 = 0.5f / num7;
-            quaternion.x = 0.5f * num7;
-            quaternion.y = (m01 + m10) * num4;
-            quaternion.z = (m02 + m20) * num4;
-            quaternion.w = (m12 - m21) * num4;
-            return quaternion;
-        }
-
-        if (m11 > m22)
-        {
-            auto num6 = std::sqrt(((1 + m11) - m00) - m22);
-            auto num3 = 0.5f / num6;
-            quaternion.x = (m10 + m01) * num3;
-            quaternion.y = 0.5f * num6;
-            quaternion.z = (m21 + m12) * num3;
-            quaternion.w = (m20 - m02) * num3;
-            return quaternion;
-        }
-
-        auto num5 = std::sqrt(((1 + m22) - m00) - m11);
-        auto num2 = 0.5f / num5;
-        quaternion.x = (m20 + m02) * num2;
-        quaternion.y = (m21 + m12) * num2;
-        quaternion.z = 0.5f * num5;
-        quaternion.w = (m01 - m10) * num2;
-
+        auto num = std::sqrt(num8 + 1.f);
+        quaternion.w = num * 0.5f;
+        num = 0.5f / num;
+        quaternion.x = (m12 - m21) * num;
+        quaternion.y = (m20 - m02) * num;
+        quaternion.z = (m01 - m10) * num;
         return quaternion;
     }
+
+    if ((m00 >= m11) && (m00 >= m22))
+    {
+        auto num7 = std::sqrt(((1.f + m00) - m11) - m22);
+        auto num4 = 0.5f / num7;
+        quaternion.x = 0.5f * num7;
+        quaternion.y = (m01 + m10) * num4;
+        quaternion.z = (m02 + m20) * num4;
+        quaternion.w = (m12 - m21) * num4;
+        return quaternion;
+    }
+
+    if (m11 > m22)
+    {
+        auto num6 = std::sqrt(((1.f + m11) - m00) - m22);
+        auto num3 = 0.5f / num6;
+        quaternion.x = (m10 + m01) * num3;
+        quaternion.y = 0.5f * num6;
+        quaternion.z = (m21 + m12) * num3;
+        quaternion.w = (m20 - m02) * num3;
+        return quaternion;
+    }
+
+    auto num5 = std::sqrt(((1.f + m22) - m00) - m11);
+    auto num2 = 0.5f / num5;
+
+    quaternion.x = (m20 + m02) * num2;
+    quaternion.y = (m21 + m12) * num2;
+    quaternion.z = 0.5f * num5;
+    quaternion.w = (m01 - m10) * num2;
+
+    return quaternion;
 }
 
 Quaternion Quaternion::Inverse(Quaternion rotation) {
