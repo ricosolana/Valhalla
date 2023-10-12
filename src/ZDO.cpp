@@ -63,7 +63,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3f>();
     this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
-    this->m_rotation = Vector3f::Zero();
+    //this->m_rotation = Vector3f::Zero();
 
     // will get or create an empty default
     auto&& members = ZDO_MEMBERS[ID()];
@@ -197,7 +197,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         this->m_rotation = reader.Read<Vector3f>();
     }
 
-    this->m_rotation = Vector3f::Zero();
+    //this->m_rotation = Vector3f::Zero();
 
     // almost all building pieces cannot x/z axis rotations
 
@@ -306,8 +306,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
     writer.Write(GetPrefabHash());
     if (hasRot) {
-        //writer.Write(m_rotation);
-        writer.Write(Vector3f::Zero());
+        writer.Write(m_rotation);
+        //writer.Write(Vector3f::Zero());
     }
 
     if (network) {

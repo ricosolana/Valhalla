@@ -1,4 +1,19 @@
 todo:
+    - try scanning client logs during zdo sends
+        warnings will be logged for 0-prefab zdos
+
+    - appears that new objects have some kind of parenting
+    
+        rotations are significant here
+        
+        transforms in general seem messy
+            occasionally
+            
+        server is doing something (or failing to do something)
+            results in ZNetView being invisible
+            
+            or zdo not existing clientside
+
     - it is servers fault
         client is fine (assume)
         
