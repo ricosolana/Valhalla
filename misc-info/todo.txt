@@ -1,4 +1,24 @@
 todo:
+    - major problem with zdos
+    
+        they seem to not be sent to client
+        
+        why?
+        
+        ignoring rotations (when explicitly set to 0), non-zero rotations still seem to be applied
+            wtf
+    
+        regarding missing zdos, zdo_manager might not be sending out zdos
+    
+        is id-system working?
+            to test, try removing all id memory optimizations implemented in 0.21?.13
+            
+            if things appear, id system is broken,
+            
+            otherwise zdo_map hashing or equal is fucked
+    
+        
+
     - consider removing denotions and all hints until stable
         member hints are not stable (easy to forget to remove or add) 
         

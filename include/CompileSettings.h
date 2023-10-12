@@ -4,7 +4,7 @@
 
 //using namespace std::chrono_literals;
 
-#define RUN_TESTS
+//#define RUN_TESTS
 
 #define VH_VERSION "v1.0.5"
 
@@ -399,7 +399,7 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.217.22";
+    static const char* GAME = "0.217.25";
 
     static constexpr uint32_t NETWORK = 15;
 
