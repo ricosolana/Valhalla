@@ -41,7 +41,7 @@ private:
 public:
 	void Test_ZDOConnectors();
 
-	
+	void Test_Quaternion();
 
 	void Test_ZDO_SetsGets();
 

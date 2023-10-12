@@ -30,6 +30,10 @@ void VHTest::Test_ZDOConnectors() {
     ZDOManager()->SendAllZDOs(peer);
 }
 
+void VHTest::Test_Quaternion() {
+    assert(Quaternion::IDENTITY.EulerAngles() == Vector3f::Zero());
+}
+
 void VHTest::ZDO_Sets(ZDO& zdo) {
     zdo.Set("my key", std::string("my value"));
     zdo.Set("my int", 10);
