@@ -238,14 +238,26 @@ private:
         m_prefabHash = hash;
     }
 
+    void _SetPersistent(bool flag) {
+        this->m_persistent = flag;
+    }
+
+    void _SetDistant(bool flag) {
+        this->m_distant = flag;
+    }
+
+    void _SetType(ObjectType type) {
+        this->m_type = type;
+    }
+
 private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
     //static inline UNORDERED_MAP_t<ZDOID, uint16_t> ZDO_OWNERS;
 
-    static constexpr auto OWNER_PACK_INDEX = 0;
-    static constexpr auto FLAGS_PACK_INDEX = 1;
+    //static constexpr auto OWNER_PACK_INDEX = 0;
+    //static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
     * 36 bytes total:
@@ -260,8 +272,14 @@ private:
     HASH_t m_prefabHash{};                          // 4 bytes
                                                     //  prefab does not need to be this large, there arent 2^32 prefabs ingame, a 16-bit hash would work fine...
                                                     //  thats the reason for proposing a index-based prefab, about ~1173 prefabs ingame
-    BitPack<uint16_t, VH_USER_BITS_I_, 4,
-        sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
+    //BitPack<uint16_t, VH_USER_BITS_I_, 4,
+        //sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
+
+    OWNER_t m_owner{};
+
+    bool m_persistent{};
+    bool m_distant{};
+    ObjectType m_type{};
 
 public:
     ZDO();
@@ -566,7 +584,8 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
+        return m_owner;
+        //return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
     }
 
 
@@ -582,7 +601,8 @@ public:
 
     // Whether the ZDO has an owner
     [[nodiscard]] bool HasOwner() const {
-        return m_pack.Get<OWNER_PACK_INDEX>();
+        return m_owner != 0;
+        //return m_pack.Get<OWNER_PACK_INDEX>();
     }
 
     // Claim personal ownership over the ZDO
@@ -609,7 +629,8 @@ public:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
+        m_owner = owner;
+        //m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
 
 
@@ -625,15 +646,18 @@ public:
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Persistent);
+        return m_persistent;
+        //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Persistent);
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Distant);
+        return m_distant;
+        //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Distant);
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> MACHINE_Type1) & 0b11);
+        return m_type;
+        //return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> MACHINE_Type1) & 0b11);
     }
 
 

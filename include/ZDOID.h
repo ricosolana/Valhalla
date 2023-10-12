@@ -12,16 +12,21 @@ class ZDOID {
     using UType = uint64_t;
 
     // User: 0, ID: 1
-    BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
+    //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
+
+    OWNER_t m_userID{};
+    uint32_t m_id{};
+
+    uint32_t m_unusedPadding = 0;
         
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
     //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;
 
-    static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
+    //static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
 
-    static constexpr auto USER_PACK_INDEX = 0;
-    static constexpr auto ID_PACK_INDEX = 1;
+    //static constexpr auto USER_PACK_INDEX = 0;
+    //static constexpr auto ID_PACK_INDEX = 1;
 
 public:
     static const ZDOID NONE;
@@ -30,6 +35,7 @@ private:
     // Get the index of a UserID
     //  The UserID is inserted if it does not exist
     //  Returns the insertion index or the existing index of the UserID
+    /*
     static size_t EnsureUserIDIndex(int64_t owner) {
         if (!owner)
             return 0;
@@ -63,7 +69,7 @@ private:
             return INDEXED_USERS[index];
 
         throw std::runtime_error("user id by index not found");
-    }
+    }*/
 
 public:
     ZDOID() = default;
@@ -76,7 +82,9 @@ public:
     ZDOID(const ZDOID&) = default;
 
     bool operator==(ZDOID other) const {
-        return this->m_pack == other.m_pack;
+        //return this->m_pack == other.m_pack;
+        return this->m_userID == other.m_userID 
+            && this->m_id == other.m_id;
     }
 
     bool operator!=(ZDOID other) const {
@@ -85,21 +93,24 @@ public:
     
     // Return whether this has a value besides NONE
     operator bool() const noexcept {
-        return m_pack;
+        //return m_pack;
+        return *this != ZDOID::NONE;
     }
 
     // TODO rename to User
     OWNER_t GetOwner() const {
-        return INDEXED_USERS[_GetUserIDIndex()];
+        //return INDEXED_USERS[_GetUserIDIndex()];
+        return m_userID;
     }
 
     // Rename to SetUserID
     void SetOwner(OWNER_t owner) {
-        _SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
+        //_SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
+        this->m_userID = owner;
     }
 
 
-
+    /*
     // Retrieve the index of the UserID
     uint32_t _GetUserIDIndex() const {
         return m_pack.Get<USER_PACK_INDEX>();
@@ -108,16 +119,18 @@ public:
     // Set the associated UserID index 
     void _SetUserIDIndex(decltype(m_pack)::type index) {
         m_pack.Set<USER_PACK_INDEX>(index);
-    }
+    }*/
 
     // TODO rename to GetID
     uint32_t GetUID() const {
-        return m_pack.Get<ID_PACK_INDEX>();
+        //return m_pack.Get<ID_PACK_INDEX>();
+        return this->m_id;
     }
 
     // TODO rename to SetID
     void SetUID(uint32_t uid) {
-        m_pack.Set<ID_PACK_INDEX>(uid);
+        //m_pack.Set<ID_PACK_INDEX>(uid);
+        this->m_id = uid;
     }
 
 

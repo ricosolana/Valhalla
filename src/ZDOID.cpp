@@ -2,4 +2,5 @@
 
 const ZDOID ZDOID::NONE = ZDOID();
 
-decltype(ZDOID::INDEXED_USERS) ZDOID::INDEXED_USERS;
+// TODO use inline static within class
+//decltype(ZDOID::INDEXED_USERS) ZDOID::INDEXED_USERS;

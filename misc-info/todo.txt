@@ -1,4 +1,16 @@
 todo:
+    - findings with zdo synclist:
+        initial zdo-update step includes all but 3 zdos (likely player, animation?, footstep?)
+        
+        synclist finishes with 8227 zdos (many more than peer listed; 1200)
+        
+        seems only 85 zdos were updated
+            (based off peer.m_zdos)
+            
+        iterator would have iterated all zdos, the only other terminal condition is availableSpace for writer (artificial network limiter not really needed here)
+        
+        
+
     - major problem with zdos
     
         they seem to not be sent to client

@@ -21,8 +21,9 @@ ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
-    if (pkg.Read<bool>())
-        m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
+    _SetPersistent(pkg.Read<bool>());        // persistent
+        //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
+
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
     pkg.Read<int32_t>();        // pgw
@@ -31,11 +32,13 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
+        _SetType((ObjectType)pkg.Read<uint8_t>());
+        //m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
 
     if (worldVersion >= 22) {
-        if (pkg.Read<bool>())
-            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
+        _SetDistant(pkg.Read<bool>());
+        //if (pkg.Read<bool>())
+            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
     }
 
     if (worldVersion < 13) {
@@ -162,20 +165,26 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         _SetPrefabHash(prefabHash);
 
         if (flags & (1 << NETWORK_Persistent)) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
+            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
+            _SetPersistent(true);
         }
 
         if (flags & (1 << NETWORK_Distant)) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
+            _SetDistant(true);
+            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
         }
 
-        if (flags & (1 << NETWORK_Type1)) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
-        }
+        ObjectType type = ObjectType(((flags & (1 << NETWORK_Type1)) | (flags & (1 << NETWORK_Type2))) >> NETWORK_Type1);
 
-        if (flags & (1 << NETWORK_Type2)) {
-            m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
-        }
+        _SetType(type);
+
+        //if (flags & (1 << NETWORK_Type1)) {
+        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
+        //}
+        //
+        //if (flags & (1 << NETWORK_Type2)) {
+        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
+        //}
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)

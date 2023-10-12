@@ -397,10 +397,12 @@ ZDO::reference IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab*
 }
 
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
+	assert(false);
+
 	auto&& copy = _Instantiate(zdo.Position());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
-	copy.get().m_pack = zdo.m_pack;
+	//copy.get().m_pack = zdo.m_pack;
 	copy.get().m_rotation = zdo.m_rotation;
 
 	return copy;
