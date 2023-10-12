@@ -56,7 +56,7 @@ private:
 public:
     // Elements are never removed
     //  Queried frequently, and frequent adds
-    ankerl::unordered_dense::segmented_map<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
+    UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
     UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
 

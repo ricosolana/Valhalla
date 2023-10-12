@@ -1,4 +1,71 @@
 todo:
+    - it is servers fault
+        client is fine (assume)
+        
+        euler operations arent even used for modern load
+        
+        rotation getting corrupted
+        
+        weird, because isolate c# dup test run shows SAME result
+            file side, not network (could be problematic)
+            
+        server is missing a conversion
+        
+        
+        peer is either discarding zdos (why)
+        or server isnt sending them properly
+        
+        can confirm server correctly queries zdos within peer zones
+        (~8k or so)
+        
+        packet size limiter reduces the amount sent per packet/50ms
+        
+        after a while, query peer zdos
+        
+        check that Valhalla.Time is working as intended
+        
+            incorrect step values can result in lack of zdos getting updated?
+            
+        
+        any 'intended' rewinds could be incorrectly used
+            where dependent offsets are used instead of relative subsets of offsets
+        
+        
+        
+
+    - possible causes for faulty rotations:
+        server
+            Quaternion euler...(...) is scuffed/broken
+            
+            packet written rotation is getting overridden
+                UDB
+                
+            server is missing a rotation conversion
+        
+        client
+            client is performing an extra operation
+            
+            
+            
+            
+            
+            
+
+    - is server actually sending all zdos to client?
+
+    - this still slightly points to being a server problem,
+    
+        cannot ultimately rule out yet that server is cleared in behaviour
+       
+    - is client applying a random rotation to pieces?
+    
+        zdo Component map is outdated by half a year, cant tell if wood_floor_1x1 has a random rotation component
+
+    - floor tiles which are supposed to have ZERO rotation
+        have different non-zero rotations
+        
+    
+
     - findings with zdo synclist:
         initial zdo-update step includes all but 3 zdos (likely player, animation?, footstep?)
         
@@ -9,7 +76,13 @@ todo:
             
         iterator would have iterated all zdos, the only other terminal condition is availableSpace for writer (artificial network limiter not really needed here)
         
+        zdos only slightly increased
         
+    - modern world loader seems several times faster than legacy loader
+        cool
+        
+    - kinda interesting world file can be bootstrapped 
+        without conflicting with loading (only at end of file, similar to png file text messages)
 
     - major problem with zdos
     
