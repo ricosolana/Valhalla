@@ -35,6 +35,8 @@ struct Quaternion {
 
     // Returns a Quaternion rotation accepting degrees in z -> x -> y (applied in order)
     static Quaternion Euler(float x, float y, float z);
+    // Returns a Quaternion rotation accepting degrees in vector z -> x -> y (applied in order)
+    static Quaternion Euler(Vector3f angles);
     static Quaternion LookRotation(Vector3f forward, Vector3f upwards);
     static Quaternion LookRotation(Vector3f forward) {
         return LookRotation(forward, Vector3f::Up());

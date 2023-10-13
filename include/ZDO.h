@@ -19,8 +19,11 @@
 #include "ZDOConnector.h"
 #include "Types.h"
 
+
+
 class ZDO {
-    friend class IZDOManager;
+    // TODO are these friend classes safe?
+    friend class IZDOManager; 
     friend class IPrefabManager;
     friend class VHTest;
     friend class IValhalla;
@@ -57,7 +60,9 @@ class ZDO {
     static constexpr size_t member_flag_v = member_flag<T>::value;
 
 public:
-    using reference = std::reference_wrapper<ZDO>;
+    
+
+    //using reference = std::reference_wrapper<ZDO>;
 
     class Rev {
     private:
@@ -124,14 +129,55 @@ private:
     static constexpr uint32_t NETWORK_Type2 = 11;
     static constexpr uint32_t NETWORK_Rotation = 12;
 
+    // no optimizations (basecase)
+    //  48 bytes
+    // bitpacked flags (1)
+    //  32 + 8 + 1 = 40 with alignment
+    //
+    class data_t {
+        friend class ::ZDO; // namespacing is weird
+
+    private:
+        Vector3f m_pos;                                 // 12 bytes
+        ::ZDO::Rev m_rev;                               // 4 bytes (PADDING)
+        Vector3f m_rotation;                            // 12 bytes
+        // Owner: 0, Flags: 1
+        //  last 6 bits are unused/reserved for future uses
+        HASH_t m_prefabHash{};                          // 4 bytes
+
+        //BitPack<uint16_t, VH_USER_BITS_I_, 4, sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
+
+        OWNER_t m_owner{}; // TODO store in map
+
+        ObjectType m_type{};
+        bool m_persistent{}; // TODO store in BitPack
+        bool m_distant{};
+
+    public:
+        data_t() {}
+    };
+
 private:
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] static member_hash hash_to_xhash(HASH_t in) {
+        return static_cast<member_hash>(in)
+            ^ static_cast<member_hash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
+    }
+
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] static HASH_t xhash_to_hash(member_hash in) {
+        return static_cast<HASH_t>(in)
+            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
+    }
 
     // Set the object by hash (Internal use only; does not revise ZDO on changes)
     //  Returns whether the previous value was modified
     //  Throws on type mismatch
     template<typename T>
         requires is_member<T>::value
-    [[maybe_unused]] bool _Set(HASH_t key, T value, member_map& members) {
+    [[maybe_unused]] static bool _Set(HASH_t key, T value, member_map& members) {
         auto mut = hash_to_xhash<T>(key);
 
         auto&& insert = members.insert({ mut, 0.f });
@@ -170,27 +216,9 @@ private:
         return _Set(key, std::move(value), ZDO_MEMBERS[ID()]);
     }
 
-    void Revise() {
-        m_rev.SetDataRevision(m_rev.GetDataRevision() + 1);
-    }
-
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] member_hash hash_to_xhash(HASH_t in) const {
-        return static_cast<member_hash>(in) 
-            ^ static_cast<member_hash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
-    }
-
-    template<typename T>
-        requires is_member_v<T>
-    [[nodiscard]] HASH_t xhash_to_hash(member_hash in) const {
-        return static_cast<HASH_t>(in) 
-            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
-    }
-
-    template<typename T>
-        requires is_member_v<T>
-    decltype(auto) _TryWriteType(DataWriter& writer, member_map& members) const {
+    decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
         const auto begin_mark = writer.Position();
         uint8_t count = 0;
         //writer.Write(count); // placeholder 0 byte
@@ -203,7 +231,7 @@ private:
                     writer.Write(count);
                 }
 
-                writer.Write(this->xhash_to_hash<T>(pair.first));
+                writer.Write(xhash_to_hash<T>(pair.first));
                 writer.Write(*data);
                 count++;
             }
@@ -222,10 +250,10 @@ private:
     // Read a zdo_type from the DataStream
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
-    void _TryReadType(DataReader& reader, member_map& members) {
+    static void _TryReadType(DataReader& reader, member_map& members) {
         decltype(auto) count = reader.Read<CountType>();
 
-        for (int i=0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
             auto hash(reader.Read<HASH_t>());
@@ -234,21 +262,56 @@ private:
         }
     }
 
+
+
+    // TODO rename _Revise() ?
+    void Revise() {
+        this->m_data.get().m_rev.ReviseData();
+    }
+
+    
+
     void _SetPrefabHash(HASH_t hash) {
-        m_prefabHash = hash;
+        this->m_data.get().m_prefabHash = hash;
     }
 
     void _SetPersistent(bool flag) {
-        this->m_persistent = flag;
+        this->m_data.get().m_persistent = flag;
     }
 
     void _SetDistant(bool flag) {
-        this->m_distant = flag;
+        this->m_data.get().m_distant = flag;
     }
 
     void _SetType(ObjectType type) {
-        this->m_type = type;
+        this->m_data.get().m_type = type;
     }
+
+    // Set the owner of the ZDO without revising
+    void _SetOwner(OWNER_t owner) {
+        this->m_data.get().m_owner = owner;
+        //m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
+    }
+
+    void _SetPosition(Vector3f pos) {
+        this->m_data.get().m_pos = pos;
+    }
+
+    void _SetRotation(Vector3f rot) {
+        this->m_data.get().m_rotation = rot;
+    }
+
+    void _SetRotation(Quaternion rot) {
+        this->_SetRotation(rot.EulerAngles());
+    }
+
+
+
+public:
+    using ZDOContainer = ankerl::unordered_dense::segmented_set<data_t*>; // TODO use reference_wrapper<>?
+    using ZDO_map = ankerl::unordered_dense::segmented_map<ZDOID, std::unique_ptr<data_t>>;
+    using ZDO_iterator = ZDO_map::iterator;
+    
 
 private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
@@ -263,29 +326,21 @@ private:
     * 36 bytes total:
     */
 
-    Vector3f m_pos;                                 // 12 bytes
     ZDOID m_id;                                     // 4 bytes (PADDING)
-    Vector3f m_rotation;                            // 12 bytes
-    Rev m_rev;                                      // 4 bytes (PADDING)
-    // Owner: 0, Flags: 1
-    //  last 6 bits are unused/reserved for future uses
-    HASH_t m_prefabHash{};                          // 4 bytes
-                                                    //  prefab does not need to be this large, there arent 2^32 prefabs ingame, a 16-bit hash would work fine...
-                                                    //  thats the reason for proposing a index-based prefab, about ~1173 prefabs ingame
-    //BitPack<uint16_t, VH_USER_BITS_I_, 4,
-        //sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
-
-    OWNER_t m_owner{};
-
-    bool m_persistent{};
-    bool m_distant{};
-    ObjectType m_type{};
+    std::reference_wrapper<data_t> m_data;          // 8 bytes TODO use ptr?
 
 public:
-    ZDO();
+    ZDO(ZDO_map::value_type& pair) 
+        : m_id(pair.first), m_data(*pair.second)
+    {}
 
+    //ZDO(data_t& data) : m_data(data) {}
+
+    // TODO this is redundant; ZDOManager <-> ZDO; crucially tied with no disbanding
     // ZDOManager constructor
-    ZDO(ZDOID id, Vector3f pos);
+    //ZDO(ZDOID id, Vector3f pos, data_t& data) : m_id(id), m_data(data) {
+    //    this->_SetPosition(pos);
+    //}
 
     ZDO(const ZDO& other) = default;
     ZDO(ZDO&& other) = default;
@@ -307,6 +362,8 @@ public:
     //  Otherwise write according to the file save format
     void Pack(DataWriter& writer, bool network) const;
 
+    // TODO rename this to Remove (this has nearly the same functionality)
+    // TODO add an extract that returns an optional (eliminate the T& out)
     // Erases and returns the value 
     template<typename T>
         requires is_member_v<T>
@@ -532,7 +589,21 @@ public:
     }
 
     [[nodiscard]] Vector3f Position() const {
-        return m_pos;
+        return this->m_data.get().m_pos;
+    }
+
+    //void SetDataRevision(uint32_t dataRev) {
+    //    m_data.get().m_rev.SetDataRevision(dataRev);
+    //}
+    //
+    //void SetOwnerRevision(uint16_t ownerRev) {
+    //    m_data.get().m_rev.SetOwnerRevision(ownerRev);
+    //}
+
+
+
+    Rev& GetRevision() {
+        return this->m_data.get().m_rev;
     }
 
     // Set the position of the ZDO
@@ -543,29 +614,24 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion Rotation() const {
-        return Quaternion::Euler(m_rotation.x, m_rotation.y, m_rotation.z);
+        return Quaternion::Euler(this->m_data.get().m_rotation);
     }
 
     void SetRotation(Quaternion rot) {
         auto&& euler = rot.EulerAngles();
-        if (euler != m_rotation) {
-            m_rotation = euler;
-            Revise();
+        if (euler != this->m_data.get().m_rotation) {
+            this->m_data.get().m_rotation = euler;
+            this->Revise();
         }
     }
-        
+            
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByHash(m_prefabHash);
+        return PrefabManager()->RequirePrefabByHash(this->m_data.get().m_prefabHash);
     }
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-        return m_prefabHash;
+        return this->m_data.get().m_prefabHash;
     }
-
-    /*
-    void _SetRotation(Quaternion rot) {
-        this->m_rotation = rot;
-    }*/
 
     void SetLocalScale(Vector3f scale, bool allowIdentity) {
         // if scale axis' are the same, use scaleScalar
@@ -584,7 +650,7 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return m_owner;
+        return this->m_data.get().m_owner;
         //return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
     }
 
@@ -596,32 +662,32 @@ public:
 
     // Returns whether this server is the owner of the ZDO
     [[nodiscard]] bool IsLocal() const {
-        return IsOwner(VH_ID);
+        return this->IsOwner(VH_ID);
     }
 
     // Whether the ZDO has an owner
     [[nodiscard]] bool HasOwner() const {
-        return m_owner != 0;
+        return this->Owner() != 0;
         //return m_pack.Get<OWNER_PACK_INDEX>();
     }
 
     // Claim personal ownership over the ZDO
     bool SetLocal() {
-        return SetOwner(VH_ID);
+        return this->SetOwner(VH_ID);
     }
 
     // Clears the owner of this ZDO
     void Disown() {
-        SetOwner(0);
+        this->SetOwner(0);
     }
 
     // Set the owner of the ZDO
     bool SetOwner(OWNER_t owner) {
         // only if the owner has changed, then revise it
         if (this->Owner() != owner) {
-            _SetOwner(owner);
+            this->_SetOwner(owner);
 
-            m_rev.ReviseOwner();
+            this->m_data.get().m_rev.ReviseOwner();
             return true;
         }
         return false;
@@ -629,34 +695,34 @@ public:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        m_owner = owner;
+        this->m_data.get().m_owner = owner;
         //m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
 
 
 
     [[nodiscard]] uint16_t GetOwnerRevision() const {
-        return m_rev.GetOwnerRevision();
+        return this->m_data.get().m_rev.GetOwnerRevision();
     }
 
     [[nodiscard]] uint32_t GetDataRevision() const {
-        return m_rev.GetDataRevision();
+        return this->m_data.get().m_rev.GetDataRevision();
     }
 
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return m_persistent;
+        return this->m_data.get().m_persistent;
         //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Persistent);
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return m_distant;
+        return this->m_data.get().m_distant;
         //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Distant);
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return m_type;
+        return this->m_data.get().m_type;
         //return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> MACHINE_Type1) & 0b11);
     }
 
@@ -668,3 +734,8 @@ public:
         return size;
     }
 };
+
+
+
+
+

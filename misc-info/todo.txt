@@ -1,4 +1,36 @@
 todo:
+    - add peer ID method (use character id)
+    
+    - planned optimizations to zdo:
+        - ZDOID removals / full consilidation within ZDOManager
+            zdos will no longer contain their own zdoid, somewhat better because
+            the id in ZDOManager will no longer have a possibility of mismatching
+            with its zdo
+            
+            as seen in 2 different branches which attempted to do exactly this, 
+            the complications of removing ID() from zdo are insane
+            
+            the proposal for implementing this are as follows:
+            
+            a ZDO Data structure (ZDO_raw)
+                holds data of zdo, little to no utility methods
+            
+            a ZDO wrapper (ZDO)
+                holds the ZDO_raw& + id
+                contains all methods originally within zdo
+            
+        - zdo.Owner VS zdo.zdoid.UserID
+            these are essentially the same type, however their domain differs
+            - zdo.Owner is limited to current peers
+            - zdo.zdoid.UserID is limited to all peer sessions ever generated
+                
+    
+    
+    
+    
+    
+    
+
     - try scanning client logs during zdo sends
         warnings will be logged for 0-prefab zdos
         

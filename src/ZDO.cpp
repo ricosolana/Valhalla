@@ -12,9 +12,11 @@
 
 
 
-ZDO::ZDO() {}
-
-ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_pos(pos) {}
+//ZDO::ZDO() {}
+//
+//ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_data() {
+//    _SetPosition(pos);
+//}
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
@@ -61,8 +63,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     }
 
     pkg.Read<Vector2i>(); // m_sector
-    this->m_pos = pkg.Read<Vector3f>();
-    this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
+    this->_SetPosition(pkg.Read<Vector3f>());
+    this->_SetRotation(pkg.Read<Quaternion>());
 
     // will get or create an empty default
     auto&& members = ZDO_MEMBERS[ID()];
@@ -148,11 +150,11 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
-        this->m_id.SetUID(++ZDOManager()->m_nextUid);
+        this->m_id.SetUID(ZDOManager()->m_nextUid++);
 
         auto sector = reader.Read<Vector2s>(); // redundant
-        this->m_pos = reader.Read<Vector3f>();
-        if (sector != IZoneManager::WorldToZonePos(this->m_pos))
+        this->_SetPosition(reader.Read<Vector3f>());
+        if (sector != GetZone())
             throw std::runtime_error("sector mismatch");
     }
 
@@ -191,7 +193,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     }
     
     if (flags & (1 << NETWORK_Rotation)) {
-        this->m_rotation = reader.Read<Vector3f>();
+        this->_SetRotation(reader.Read<Vector3f>());
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
@@ -253,29 +255,29 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 // ZDO specific-methods
 
 void ZDO::SetPosition(Vector3f pos) {
-    if (this->m_pos != pos) {
+    if (this->Position() != pos) {
         if (IZoneManager::WorldToZonePos(pos) == GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
-            this->m_pos = pos;
+            this->_SetPosition(pos);
             ZDOManager()->_AddZDOToZone(*this);
         }
         else {
-            this->m_pos = pos;
+            this->_SetPosition(pos);
         }
 
-        if (IsLocal())
-            Revise();
+        if (this->IsLocal())
+            this->Revise();
     }
 }
 
 ZoneID ZDO::GetZone() const {
-    return IZoneManager::WorldToZonePos(Position());
+    return IZoneManager::WorldToZonePos(this->Position());
 }
 
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
-    bool hasRot = m_rotation != Vector3f::Zero();
+    bool hasRot = this->m_data.get().m_rotation != Vector3f::Zero();
 
     uint16_t flags{};
 
@@ -292,7 +294,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
     writer.Write(GetPrefabHash());
     if (hasRot) {
-        writer.Write(m_rotation);
+        writer.Write(this->m_data.get().m_rotation);
     }
 
     if (network) {
