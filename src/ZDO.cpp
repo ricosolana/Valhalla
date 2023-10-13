@@ -63,7 +63,6 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<Vector2i>(); // m_sector
     this->m_pos = pkg.Read<Vector3f>();
     this->m_rotation = pkg.Read<Quaternion>().EulerAngles();
-    //this->m_rotation = Vector3f::Zero();
 
     // will get or create an empty default
     auto&& members = ZDO_MEMBERS[ID()];
@@ -132,12 +131,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         }
 
         // Convert seeds
-        //  TODO this wont work, inserting while iterating breaks iterators
-        //  fix: 
         member_map copy = members;
         for (auto&& pair : copy) {
             if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
-                // set the character random items seed
+                // assign an arbitrary random seed based off its ID()
                 Set("seed", 
                     static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(ID())));
             }
@@ -195,17 +192,6 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     
     if (flags & (1 << NETWORK_Rotation)) {
         this->m_rotation = reader.Read<Vector3f>();
-    }
-
-    //this->m_rotation = Vector3f::Zero();
-
-    // almost all building pieces cannot x/z axis rotations
-
-    //assert(m_rotation.x < 1.f && m_rotation.z < 1.f)
-    if (GetPrefab().AnyFlagsPresent(Prefab::Flag::PIECE) 
-        && (m_rotation.x > 1.f || m_rotation.z > 1.f)) 
-    {
-        if (true);
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
@@ -307,7 +293,6 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     writer.Write(GetPrefabHash());
     if (hasRot) {
         writer.Write(m_rotation);
-        //writer.Write(Vector3f::Zero());
     }
 
     if (network) {
