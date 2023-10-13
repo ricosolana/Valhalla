@@ -1,6 +1,8 @@
 todo:
     - try scanning client logs during zdo sends
         warnings will be logged for 0-prefab zdos
+        
+        must try release not beta because bepinex likely not compatible yet
 
     - appears that new objects have some kind of parenting
     

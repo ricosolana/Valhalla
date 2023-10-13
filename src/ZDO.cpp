@@ -295,7 +295,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
 
     if (IsPersistent()) flags |= 1 << NETWORK_Persistent;
     if (IsDistant()) flags |= 1 << NETWORK_Distant;
-    flags |= std::to_underlying(GetType()) << 1 << NETWORK_Type1;
+    flags |= std::to_underlying(GetType()) << NETWORK_Type1;
     if (hasRot) flags |= 1 << NETWORK_Rotation;
 
     const auto flagPos = writer.Position();

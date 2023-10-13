@@ -73,6 +73,11 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 10/13/2023 + TODO
+I've finally fixed the missing zdos and rotations problem. It turns out it wasnt an issue of zdos being omitted, nor Quaternion being broken (Quaternion could still be broken...). 
+This 1 line broke client deserialization:
+![Screwed up the flag](/misc-info/pics/broken-zdos-fixed.PNG)
+
 ### 6/18/2023 + TODO
 The Hildir beta was released 2 days ago, and it features a lot of new stuff.
 
