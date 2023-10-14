@@ -103,39 +103,37 @@ private:
 	[[maybe_unused]] bool SendZDOs(Peer& peer, bool flush);
 	[[nodiscard]] std::list<std::pair<ZDO, float>> CreateSyncList(Peer& peer);
 
+
+
+	// Instantiate a ZDO by id if it does not exist
+	// Returns the ZDO or the previously mapped ZDO
+	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid) noexcept;
+
+	// Instantiate a ZDO by id if it does not exist
+	// Returns the ZDO or the previously mapped ZDO
+	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept;
+
 	// Instantiate a ZDO with the next available ID
 	[[nodiscard]] ZDO _Instantiate(Vector3f position) noexcept;
+	
 	// Instantiate a ZDO with the specified id
 	// Throws if the ZDO exists
 	[[nodiscard]] ZDO _TryInstantiate(ZDOID uid, Vector3f position);
 		
-	// Instantiates a ZDO if it does not exist
-	// Returns the ZDO mapped to ID
-	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+	[[nodiscard]] ZDO _TryInstantiate(ZDOID zdoid) {
 		auto&& insert = _Instantiate(zdoid);
 
 		// if inserted, then set pos
-		if (insert.second) {
-			auto&& zdo = ZDO(*insert.first);
-
-			zdo._SetPosition(position);
-
-			_AddZDOToZone(zdo);
+		if (!insert.second) {
+			throw std::runtime_error("zdo already exists");
 		}
 
-		return insert;
+		return ZDO(*insert.first);
 	}
 
-	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid) noexcept {
-		auto&& insert = m_objectsByID.insert({ zdoid, nullptr });
-		if (insert.second) {
-			auto&& pair = insert.first;
-			pair->second = std::make_unique<ZDO::data_t>();
+	
 
-			//auto&& zdo = ZDO(*pair);
-		}
-		return insert;
-	}
+
 
 	// Get a ZDO by id
 	// UBF/crash if the ZDO is not found

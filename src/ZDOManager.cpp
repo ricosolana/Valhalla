@@ -223,7 +223,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		auto&& insert = _Instantiate(
 			version < 31 ? reader.Read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
 		);
-
+		
 		auto&& zdo = ZDO(*insert.first);
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
@@ -322,6 +322,32 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
+
+
+[[nodiscard]] std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
+	auto&& insert = m_objectsByID.insert({ zdoid, nullptr });
+	if (insert.second) {
+		auto&& pair = insert.first;
+		pair->second = std::make_unique<ZDO::data_t>();
+	}
+	return insert;
+}
+
+std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+	auto&& insert = _Instantiate(zdoid);
+
+	// if inserted, then set pos
+	if (insert.second) {
+		auto&& zdo = ZDO(*insert.first);
+
+		// Set zone and position of ZDO
+		zdo._SetPosition(position);
+		_AddZDOToZone(zdo);
+	}
+
+	return insert;
+}
+
 ZDO IZDOManager::_Instantiate(Vector3f position) noexcept {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
@@ -344,7 +370,7 @@ ZDO IZDOManager::_TryInstantiate(ZDOID uid, Vector3f position) {
 	if (insert.second)
 		return ZDO(*insert.first);
 
-	throw std::runtime_error("zdo with id already exists");
+	throw std::runtime_error("zdo already exists");
 }
 
 
@@ -863,14 +889,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		if (peer->IsGated())
 			return;
 
-		{
-			reader.AsEach([this](ZDOID zdoid) {
-				if (auto zdo = GetZDO(zdoid))
-					_InvalidateZDOZone(*zdo);
-				}
-			);
-		}
-
+		reader.AsEach([this](ZDOID zdoid) {
+			if (auto zdo = GetZDO(zdoid))
+				_InvalidateZDOZone(*zdo);
+			}
+		);
+		
 		auto time = Valhalla()->Time();
 
 		while (auto zdoid = reader.Read<ZDOID>()) {
@@ -942,8 +966,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	continue;
 					//}
 
-					_AddZDOToZone(zdo);
 					zdo._SetPosition(pos);
+					_AddZDOToZone(zdo);
 					m_objectsByPrefab[zdo.GetPrefabHash()].insert(zdoid);
 				}
 				else {
@@ -954,6 +978,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 					zdo.SetPosition(pos);
 				}
+
+				assert(_GetZDOContainer(zdo.GetZone())->contains(zdoid));
 
 				peer->m_zdos[zdoid] = {
 					zdo.GetRevision(),
