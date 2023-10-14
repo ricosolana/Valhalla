@@ -162,22 +162,22 @@ void IZDOManager::Update() {
 
 void IZDOManager::_AddZDOToZone(ZDO zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
-		container->insert(zdo.ID());
+		auto&& insert = container->insert(zdo.ID());
+
+		assert(insert.second);
 	}
 }
 
 void IZDOManager::_RemoveFromSector(ZDO zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
-		auto&& rm = container->erase(zdo.ID());
+		auto&& erase = container->erase(zdo.ID());
 
 		// TODO is this necessary?
-		//assert(rm);
+		assert(erase);
 	}
 }
 
 void IZDOManager::_InvalidateZDOZone(ZDO zdo) {
-	_RemoveFromSector(zdo);
-
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
@@ -220,24 +220,14 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	
 	auto count = reader.Read<uint32_t>();
 	for (decltype(count) i = 0; i < count; i++) {
-		//auto zdo = std::make_unique<ZDO>();
-		//auto data = std::make_unique<ZDO::data_t>();
-		
-		//const ZDOID zdoid = version < 31 ? reader.Read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++);
-
 		auto&& insert = _Instantiate(
 			version < 31 ? reader.Read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
 		);
 
 		auto&& zdo = ZDO(*insert.first);
 
-		// assume insert was successful,
-		//	now deserialize
-
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 		if (version < 31) {
-			//zdoid = reader.Read<ZDOID>();
-			//zdo->m_id = reader.Read<ZDOID>();
 			auto zdoReader = reader.Read<DataReader>();
 
 			zdo.Load31Pre(zdoReader, version);
@@ -245,8 +235,6 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		else 
 #endif // VH_LEGACY_WORLD_LOADING
 		{
-			// Set the self incremental id (ZDOID is no longer saved to disk)
-			//this->m_id.SetUID(ZDOManager()->m_nextUid++);
 			zdo.Unpack(reader, version);
 		}
 
@@ -666,11 +654,13 @@ void IZDOManager::GetZDOs_Zone(ZoneID zone, std::list<ZDO>& objects) {
 		//	not a huge issue, 
 
 		// TODO use bind_front
-		std::transform(container->begin(), container->end(), std::back_inserter(objects), 
-			[this](ZDOID id) { 
-				return _GetZDO(id);
-			}
-		);
+		//std::transform(container->begin(), container->end(), std::back_inserter(objects), 
+		//	[this](ZDOID id) { 
+		//		return _GetZDO(id);
+		//	}
+		//);
+
+		std::transform(container->begin(), container->end(), std::back_inserter(objects), std::bind_front(&IZDOManager::_GetZDO, this));
 	}
 }
 
@@ -693,7 +683,8 @@ std::list<ZDO> IZDOManager::GetZDOs(HASH_t prefab) {
 	if (find != m_objectsByPrefab.end()) {
 		auto&& zdos = find->second;
 		// todo use bind_front
-		std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), [this](ZDOID id) { return _GetZDO(id); });
+		//std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), [this](ZDOID id) { return _GetZDO(id); });
+		std::transform(zdos.begin(), zdos.end(), std::back_inserter(out), std::bind_front(&IZDOManager::_GetZDO, this));
 	}
 	return out;
 }

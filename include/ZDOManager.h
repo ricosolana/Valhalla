@@ -75,7 +75,7 @@ private:
 	void _AddZDOToZone(ZDO zdo);
 	// Remove a zdo from a zone (internal)
 	void _RemoveFromSector(ZDO zdo);
-	// Relay a ZDO sector change to clients (internal)
+	// Relay a ZDO zone change to clients (internal)
 	void _InvalidateZDOZone(ZDO zdo);
 
 	void AssignOrReleaseZDOs(Peer& peer);

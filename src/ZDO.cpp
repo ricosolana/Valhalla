@@ -258,6 +258,8 @@ void ZDO::SetPosition(Vector3f pos) {
     if (this->Position() != pos) {
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
+
+            ZDOManager()->_RemoveFromSector(*this);
             this->_SetPosition(pos);
             ZDOManager()->_AddZDOToZone(*this);
         }
