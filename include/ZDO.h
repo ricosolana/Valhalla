@@ -308,7 +308,7 @@ private:
 
 
 public:
-    using ZDOContainer = ankerl::unordered_dense::segmented_set<data_t*>; // TODO use reference_wrapper<>?
+    using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDOID>; // TODO use reference_wrapper<>?
     using ZDO_map = ankerl::unordered_dense::segmented_map<ZDOID, std::unique_ptr<data_t>>;
     using ZDO_iterator = ZDO_map::iterator;
     
@@ -342,8 +342,9 @@ public:
     //    this->_SetPosition(pos);
     //}
 
-    ZDO(const ZDO& other) = default;
-    ZDO(ZDO&& other) = default;
+    // doesnt compile when assigning optional
+    //ZDO(const ZDO& other) = default;
+    //ZDO(ZDO&& other) = default;
         
 
 
@@ -691,12 +692,6 @@ public:
             return true;
         }
         return false;
-    }
-
-    // Set the owner of the ZDO without revising
-    void _SetOwner(OWNER_t owner) {
-        this->m_data.get().m_owner = owner;
-        //m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
     }
 
 

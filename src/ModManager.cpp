@@ -721,61 +721,61 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<IZDOManager>("IZDOManager",
         "GetZDO", &IZDOManager::GetZDO,
         "SomeZDOs", sol::overload(
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float, size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float, size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float, size_t, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const Vector3f& pos, float radius, size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, const std::function<bool(const ZDO&)>&)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t)>(&IZDOManager::SomeZDOs)
-            ,sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, size_t, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const ZoneID& zone, size_t max, std::string_view name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, size_t, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, size_t, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, ZoneID zone, size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(HASH_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(HASH_t)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, const std::function<bool(const ZDO&)>&)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID)>(&IZDOManager::GetZDOs),
 
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<std::reference_wrapper<ZDO>>(ZoneID, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "AnyZDO", sol::overload(
-            sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            sol::resolve<std::optional<ZDO> (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<ZDO* (ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            sol::resolve<std::optional<ZDO> (ZoneID, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "NearestZDO", sol::overload(
-            sol::resolve<ZDO* (Vector3f, float, const std::function<bool(const ZDO&)>&)>(&IZDOManager::NearestZDO)
-            ,sol::resolve<ZDO* (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
+            sol::resolve<std::optional<ZDO> (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
+            sol::resolve<std::optional<ZDO> (Vector3f, float, HASH_t, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
         "DestroyZDO", sol::overload(
             sol::resolve<void (ZDOID)>(&IZDOManager::DestroyZDO),
-            sol::resolve<void(const ZDO&)>(&IZDOManager::DestroyZDO)
+            sol::resolve<void(const ZDO)>(&IZDOManager::DestroyZDO)
         ),
         "Instantiate", sol::overload(
-            sol::resolve<std::reference_wrapper<ZDO> (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
             [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
-            sol::resolve<std::reference_wrapper<ZDO> (HASH_t, Vector3f)>(&IZDOManager::Instantiate),
-            sol::resolve<std::reference_wrapper<ZDO> (const ZDO&)>(&IZDOManager::Instantiate)
+            sol::resolve<ZDO (HASH_t, Vector3f)>(&IZDOManager::Instantiate)
+            //sol::resolve<ZDO (const ZDO)>(&IZDOManager::Instantiate)
         )
 
     );

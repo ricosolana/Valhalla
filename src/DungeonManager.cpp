@@ -222,7 +222,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo.get().SetRotation(rot);
+    zdo.SetRotation(rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
 
@@ -231,7 +231,7 @@ std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Ve
 
 std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo.get().SetRotation(rot);
+    zdo.SetRotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
 

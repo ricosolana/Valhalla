@@ -158,7 +158,7 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 
-ZDO* Peer::GetZDO() {
+std::optional<ZDO> Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
@@ -178,7 +178,7 @@ void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO& zdo) {
+void Peer::ZDOSectorInvalidated(ZDO zdo) {
     if (zdo.IsOwner(this->m_characterID.GetOwner()))
         return;
 
@@ -189,7 +189,7 @@ void Peer::ZDOSectorInvalidated(ZDO& zdo) {
     }
 }
 
-bool Peer::IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr) {
+bool Peer::IsOutdatedZDO(ZDO zdo, decltype(m_zdos)::iterator& outItr) {
     auto&& find = m_zdos.find(zdo.ID());
 
     outItr = find;

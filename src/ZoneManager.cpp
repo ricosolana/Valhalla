@@ -688,7 +688,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             //  however new generated zone zdos are not correctly rotated
 
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
-                            zdo.get().SetRotation(rotation);
+                            zdo.SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -696,7 +696,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 placedAreas.push_back({ pos, zoneVegetation->m_radius });
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                zdo.get().SetLocalScale(Vector3f(scale, scale, scale), true);
+                                zdo.SetLocalScale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -1068,11 +1068,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
-            zdo.get().SetRotation(rot * piece.m_rot);
+            zdo.SetRotation(rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
 
-            ZDO* zdo = nullptr;
+            std::optional<ZDO> zdo;
 
             if (dungeon.m_interiorPosition != Vector3f::Zero()) {
 
@@ -1085,11 +1085,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, piecePos).get();
+                zdo = ZDOManager()->Instantiate(*piece.m_prefab, piecePos);
                 zdo->SetRotation(piece.m_rot);
             }
             else {
-                zdo = &ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos).get();
+                zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
                 zdo->SetRotation(rot * piece.m_rot);
             }
 
@@ -1114,10 +1114,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
-    zdo.get().SetRotation(rot);
+    zdo.SetRotation(rot);
     
-    zdo.get().Set(Hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
-    zdo.get().Set(Hashes::ZDO::ZoneManager::SEED, seed);
+    zdo.Set(Hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
+    zdo.Set(Hashes::ZDO::ZoneManager::SEED, seed);
 }
 
 // public

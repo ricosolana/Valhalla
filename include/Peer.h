@@ -79,14 +79,14 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO& zdo);
+    void ZDOSectorInvalidated(ZDO zdo);
 
     void ForceSendZDO(ZDOID id) {
         m_forceSend.insert(id);
     }
 
-    bool IsOutdatedZDO(ZDO& zdo, decltype(m_zdos)::iterator& outItr);
-    bool IsOutdatedZDO(ZDO& zdo) {
+    bool IsOutdatedZDO(ZDO zdo, decltype(m_zdos)::iterator& outItr);
+    bool IsOutdatedZDO(ZDO zdo) {
         decltype(m_zdos)::iterator outItr;
         return IsOutdatedZDO(zdo, outItr);
     }
@@ -347,7 +347,7 @@ public:
 
 
 
-    ZDO* GetZDO();
+    std::optional<ZDO> GetZDO();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 

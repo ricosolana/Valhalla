@@ -62,9 +62,10 @@ void VHTest::Test_ZDO_Gets(ZDO& zdo) {
 }
 
 void VHTest::Test_ZDO_SetsGets() {
-    ZDO zdo;
-    ZDO_Sets(zdo);
-    Test_ZDO_Gets(zdo);
+    assert(false);
+    //ZDO zdo;
+    //ZDO_Sets(zdo);
+    //Test_ZDO_Gets(zdo);
 }
 
 void VHTest::Test_ZDO_LoadSave() {
@@ -79,7 +80,7 @@ void VHTest::Test_ZDO_LoadSave() {
     //  because of the ZDO's being directly tied with ZDOManager
 
     //{
-        auto&& zdo = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero()).get();
+        auto&& zdo = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero());
 
         ZDO_Sets(zdo);
         DataWriter writer(bytes);
@@ -87,7 +88,7 @@ void VHTest::Test_ZDO_LoadSave() {
         zdo.Pack(writer, false);
     //}
 
-    auto&& zdo2 = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero()).get();
+    auto&& zdo2 = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero());
 
     DataReader reader(bytes);
     zdo2.Unpack(reader, VConstants::WORLD);

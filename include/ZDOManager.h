@@ -63,8 +63,6 @@ private:
 
 	
 	// Retrieve a zone container for storing zdos
-	//	if createIfNotExists, container will be created if it does not exist
-	template<bool createIfNotExists = false>
 	[[nodiscard]] ZDOContainer* _GetZDOContainer(ZoneID zone) {
 		int num = SectorToIndex(zone);
 		if (num != -1) {
@@ -74,11 +72,11 @@ private:
 	}
 
 	// Insert a ZDO into zone (internal)
-	void _AddZDOToZone(ZDO& zdo);
+	void _AddZDOToZone(ZDO zdo);
 	// Remove a zdo from a zone (internal)
-	void _RemoveFromSector(ZDO& zdo);
+	void _RemoveFromSector(ZDO zdo);
 	// Relay a ZDO sector change to clients (internal)
-	void _InvalidateZDOZone(ZDO& zdo);
+	void _InvalidateZDOZone(ZDO zdo);
 
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
@@ -92,8 +90,8 @@ private:
 	}
 
 	// Destroys a ZDO globally
-	//	The ZDO is freed from memory
-	//	Returns an iterator to the next ZDO
+	// The ZDO is freed from memory
+	// Returns an iterator to the next ZDO
 	[[maybe_unused]] ZDO_iterator _DestroyZDO(ZDO_iterator itr) {
 		m_destroySendList.push_back(itr->first);
 		return _EraseZDO(itr);
@@ -108,27 +106,49 @@ private:
 	// Instantiate a ZDO with the next available ID
 	[[nodiscard]] ZDO _Instantiate(Vector3f position) noexcept;
 	// Instantiate a ZDO with the specified id
-	//	Throws if the ZDO exists
+	// Throws if the ZDO exists
 	[[nodiscard]] ZDO _TryInstantiate(ZDOID uid, Vector3f position);
 		
 	// Instantiates a ZDO if it does not exist
+	// Returns the ZDO mapped to ID
 	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+		auto&& insert = _Instantiate(zdoid);
+
+		// if inserted, then set pos
+		if (insert.second) {
+			auto&& zdo = ZDO(*insert.first);
+
+			zdo._SetPosition(position);
+
+			_AddZDOToZone(zdo);
+		}
+
+		return insert;
+	}
+
+	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid) noexcept {
 		auto&& insert = m_objectsByID.insert({ zdoid, nullptr });
 		if (insert.second) {
 			auto&& pair = insert.first;
 			pair->second = std::make_unique<ZDO::data_t>();
 
-			auto&& zdo = ZDO(*pair);
-			zdo._SetPosition(position);
-
-			_AddZDOToZone(zdo);
+			//auto&& zdo = ZDO(*pair);
 		}
 		return insert;
 	}
 
 	// Get a ZDO by id
-	//	The ZDO will be created if its ID does not exist
-	//	Returns the ZDO and a bool if newly created
+	// UBF/crash if the ZDO is not found
+	[[nodiscard]] ZDO _GetZDO(ZDOID id) noexcept {
+		auto&& find = m_objectsByID.find(id);
+		if (find != m_objectsByID.end())
+			return ZDO(*find);
+		std::unreachable();
+	}
+
+	// Get a ZDO by id
+	// The ZDO will be created if its ID does not exist
+	// Returns the ZDO and a bool if newly created
 	//[[nodiscard]] std::pair<ZDO_iterator, bool> _GetOrInstantiate(ZDOID id, Vector3f def);
 
 #if !VH_IS_ON(VH_PLATFORM_ESP32)
@@ -151,6 +171,8 @@ private:
 #endif
 
 public:
+	using pred_t = const std::function<bool(const ZDO)>&;
+
 	void Init();
 	void Update();
 
@@ -187,7 +209,7 @@ public:
 	
 
 	// Get a capped number of ZDOs within a radius matching an optional predicate
-	[[nodiscard]] std::list<ZDO> SomeZDOs(Vector3f pos, float radius, size_t max, const std::function<bool(const ZDO&)>& pred);
+	[[nodiscard]] std::list<ZDO> SomeZDOs(Vector3f pos, float radius, size_t max, pred_t pred);
 	// Get a capped number of ZDOs within a radius
 	[[nodiscard]] std::list<ZDO> SomeZDOs(Vector3f pos, float radius, size_t max) {
 		return SomeZDOs(pos, radius, max, nullptr);
@@ -196,14 +218,14 @@ public:
 	//	*Note: Prefab or Flag must be non-zero for anything to be returned
 	[[nodiscard]] std::list<ZDO> SomeZDOs(Vector3f pos, float radius, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(pos, radius, max, 
-			[&](const ZDO& zdo) {
+			[&](const ZDO zdo) {
 				return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 			}
 		);
 	}
 
 	// Get a capped number of ZDOs within a zone matching an optional predicate
-	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max, const std::function<bool(const ZDO&)>& pred);
+	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max, pred_t pred);
 	// Get a capped number of ZDOs within a zone
 	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max) {
 		return SomeZDOs(zone, max, nullptr);
@@ -211,7 +233,7 @@ public:
 	// Get a capped number of ZDOs within a radius in zone with prefab and/or flag
 	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
-		return SomeZDOs(zone, max, [&](const ZDO& zdo) {
+		return SomeZDOs(zone, max, [&](const ZDO zdo) {
 			return zdo.Position().SqDistance(pos) <= sqRadius
 				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
@@ -232,18 +254,18 @@ public:
 	
 	// Get all ZDOs fulfilling a given predicate
 	//	Try to avoid using this method too frequently (it iterates all ZDOs in the world, which is *very* slow)
-	[[nodiscard]] std::list<ZDO> GetZDOs(const std::function<bool(const ZDO&)>& pred);
+	[[nodiscard]] std::list<ZDO> GetZDOs(pred_t pred);
 
 	// Get all ZDOs matching the given prefab flags
 	//	Try to avoid using this method too frequently (it iterates all ZDOs in the world, which is *very* slow)
 	[[nodiscard]] std::list<ZDO> GetZDOs(Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		return GetZDOs([&](const ZDO& zdo) {
+		return GetZDOs([&](const ZDO zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, 0, flagsPresent, flagsAbsent);
 		});
 	}
 
 	// Get all ZDOs within a radius matching an optional predicate
-	[[nodiscard]] std::list<ZDO> GetZDOs(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred) {
+	[[nodiscard]] std::list<ZDO> GetZDOs(Vector3f pos, float radius, pred_t pred) {
 		return SomeZDOs(pos, radius, -1, pred);
 	}
 	// Get all ZDOs within a radius
@@ -259,7 +281,7 @@ public:
 
 
 	// Get all ZDOs within a zone matching an optional predicate
-	[[nodiscard]] std::list<ZDO> GetZDOs(ZoneID zone, const std::function<bool(const ZDO&)>& pred) {
+	[[nodiscard]] std::list<ZDO> GetZDOs(ZoneID zone, pred_t pred) {
 		return SomeZDOs(zone, -1, pred);
 	}
 	// Get all ZDOs within a zone
@@ -268,14 +290,14 @@ public:
 	}
 	// Get all ZDOs within a zone of prefab and/or flag
 	[[nodiscard]] std::list<ZDO> GetZDOs(ZoneID zone, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		return SomeZDOs(zone, -1, [&](const ZDO& zdo) {
+		return SomeZDOs(zone, -1, [&](const ZDO zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
 	}
 	// Get all ZDOs within a radius in zone
 	[[nodiscard]] std::list<ZDO> GetZDOs(ZoneID zone, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
-		return SomeZDOs(zone, -1, [&](const ZDO& zdo) {
+		return SomeZDOs(zone, -1, [&](const ZDO zdo) {
 			return zdo.Position().SqDistance(pos) <= sqRadius
 				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
@@ -304,11 +326,13 @@ public:
 
 
 	// Get the nearest ZDO within a radius matching an optional predicate
-	[[nodiscard]] ZDO* NearestZDO(Vector3f pos, float radius, const std::function<bool(const ZDO&)>& pred);
+	// TODO this is not best-optimized
+	[[nodiscard]] std::optional<ZDO> NearestZDO(Vector3f pos, float radius, pred_t pred);
 
 	// Get the nearest ZDO within a radius with prefab and/or flag
-	[[nodiscard]] ZDO* NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		return NearestZDO(pos, radius, [&](const ZDO& zdo) {
+	// TODO this is not best-optimized
+	[[nodiscard]] std::optional<ZDO> NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+		return NearestZDO(pos, radius, [&](const ZDO zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefabHash, flagsPresent, flagsAbsent);
 		});
 	}
@@ -323,7 +347,7 @@ public:
 		m_destroySendList.push_back(zdoid);
 		EraseZDO(zdoid);
 	}
-	void DestroyZDO(const ZDO& zdo) {
+	void DestroyZDO(const ZDO zdo) {
 		DestroyZDO(zdo.ID());
 	}
 

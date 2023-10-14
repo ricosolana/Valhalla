@@ -1,4 +1,36 @@
 todo:
+    - BEFORE I FORGET
+        recently erased zdos might not be removed from sectors
+        
+        if this is the case, try changing _Instantiate to ignore pos 
+            continue with old approach, set the position after the fact
+            
+    - Devcommands appears to ignore ward restrictions?
+    
+        devcommands does ignore restrictions
+        
+        either that or valhalla/server is conflicting
+
+    - global naming refactor
+        simplify names
+        
+        remove redundant names
+            remove prefixes that are the same as their namespace
+            
+            ZDO::ZDO_member_map
+                  ^
+                  
+        move to a more standard naming convention
+            either all underscores, or all pascalcase...
+            
+        make sure bitpack has full asserts and compiletime restricts
+            it likes to complain
+
+    - zdo refactor
+        store all usings from IZDOManager in ZDO, 
+
+    - observe bug/fix any cases of the old ZDOManager::GetOrInstantiate
+
     - add peer ID method (use character id)
     
     - planned optimizations to zdo:
@@ -24,7 +56,8 @@ todo:
             - zdo.Owner is limited to current peers
             - zdo.zdoid.UserID is limited to all peer sessions ever generated
                 
-    
+        - store ZDO owner externally
+            because not all zdos are owned (only a very select few)
     
     
     

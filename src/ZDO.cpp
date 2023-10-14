@@ -150,7 +150,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
-        this->m_id.SetUID(ZDOManager()->m_nextUid++);
+        //this->m_id.SetUID(ZDOManager()->m_nextUid++);
 
         auto sector = reader.Read<Vector2s>(); // redundant
         this->_SetPosition(reader.Read<Vector3f>());
@@ -256,7 +256,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
 void ZDO::SetPosition(Vector3f pos) {
     if (this->Position() != pos) {
-        if (IZoneManager::WorldToZonePos(pos) == GetZone()) {
+        if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
             this->_SetPosition(pos);
             ZDOManager()->_AddZDOToZone(*this);
