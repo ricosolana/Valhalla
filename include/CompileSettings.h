@@ -56,39 +56,6 @@
     #define VH_PLATFORM_WINDOWS_I_ VH_DEFAULT_OFF
 #endif
 
-#if defined(VH_PLATFORM_ESP32)
-    #if VH_PLATFORM_ESP32 != 0
-        #define VH_PLATFORM_ESP32_I_ VH_ON
-    #else
-        #define VH_PLATFORM_ESP32_I_ VH_OFF
-    #endif
-#elif defined(ESP_PLATFORM)
-    #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_ON
-#else
-    #define VH_PLATFORM_ESP32_I_ VH_DEFAULT_OFF
-#endif
-
-#if VH_IS_ON(VH_PLATFORM_WINDOWS) && VH_IS_ON(VH_PLATFORM_ESP32)
-    #error "Platform must be exclusively Windows or ESP32, not both"
-#endif
-
-// Whether to use 4 byte zdoid or 2 byte zdoid
-//  4 byte: capacity for a recommended 64 owners 
-//  2 byte: capacity for a recommended 4 owners
-#if defined(VH_USE_SMALL_ZDOID)
-    #if VH_USE_SMALL_ZDOID != 0
-        #define VH_USE_SMALL_ZDOID_I_ VH_ON
-    #else
-        #define VH_USE_SMALL_ZDOID_I_ VH_OFF
-    #endif
-#else
-    #if VH_IS_ON(VH_PLATFORM_ESP32)
-        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_ON
-    #else
-        #define VH_SMALL_ZDOID_I_ VH_DEFAULT_OFF
-    #endif
-#endif
-
 // Ensure that the bits
 #if defined(VH_USER_BITS)
     // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)

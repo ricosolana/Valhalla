@@ -110,48 +110,56 @@ public:
     };
 
 private:
-    static constexpr uint32_t MACHINE_Persistent = 0;
-    static constexpr uint32_t MACHINE_Distant = 1;
-    static constexpr uint32_t MACHINE_Type1 = 2;
-    static constexpr uint32_t MACHINE_Type2 = 3;
+    static constexpr unsigned int MACHINE_Persistent = 0;
+    static constexpr unsigned int MACHINE_Distant = 1;
+    static constexpr unsigned int MACHINE_Type1 = 2;
+    static constexpr unsigned int MACHINE_Type2 = 3;
 
-    static constexpr uint32_t NETWORK_Connection = 0;
-    static constexpr uint32_t NETWORK_Float = 1;
-    static constexpr uint32_t NETWORK_Vec3 = 2;
-    static constexpr uint32_t NETWORK_Quat = 3;
-    static constexpr uint32_t NETWORK_Int = 4;
-    static constexpr uint32_t NETWORK_Long = 5;
-    static constexpr uint32_t NETWORK_String = 6;
-    static constexpr uint32_t NETWORK_ByteArray = 7;
-    static constexpr uint32_t NETWORK_Persistent = 8;
-    static constexpr uint32_t NETWORK_Distant = 9;
-    static constexpr uint32_t NETWORK_Type1 = 10;
-    static constexpr uint32_t NETWORK_Type2 = 11;
-    static constexpr uint32_t NETWORK_Rotation = 12;
+    static constexpr unsigned int NETWORK_Connection = 0;
+    static constexpr unsigned int NETWORK_Float = 1;
+    static constexpr unsigned int NETWORK_Vec3 = 2;
+    static constexpr unsigned int NETWORK_Quat = 3;
+    static constexpr unsigned int NETWORK_Int = 4;
+    static constexpr unsigned int NETWORK_Long = 5;
+    static constexpr unsigned int NETWORK_String = 6;
+    static constexpr unsigned int NETWORK_ByteArray = 7;
+    static constexpr unsigned int NETWORK_Persistent = 8;
+    static constexpr unsigned int NETWORK_Distant = 9;
+    static constexpr unsigned int NETWORK_Type1 = 10;
+    static constexpr unsigned int NETWORK_Type2 = 11;
+    static constexpr unsigned int NETWORK_Rotation = 12;
 
-    // no optimizations (basecase)
-    //  48 bytes
-    // bitpacked flags (1)
-    //  32 + 8 + 1 = 40 with alignment
-    //
     class data_t {
         friend class ::ZDO; // namespacing is weird
 
+        static constexpr unsigned int BIT_OWNER = NETWORK_ByteArray + 1;
+
     private:
         Vector3f m_pos;                                 // 12 bytes
-        ::ZDO::Rev m_rev;                               // 4 bytes (PADDING)
+        ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
         Vector3f m_rotation;                            // 12 bytes
-        // Owner: 0, Flags: 1
-        //  last 6 bits are unused/reserved for future uses
-        HASH_t m_prefabHash{};                          // 4 bytes
 
-        //BitPack<uint16_t, VH_USER_BITS_I_, 4, sizeof(uint16_t)*8 - VH_USER_BITS_I_ - 4> m_pack;
+#if VH_IS_ON(VH_REQUIRE_RECOGNIZED_PREFABS)
+        static constexpr unsigned int BIT_PREFAB = BIT_OWNER + 1;
 
-        OWNER_t m_owner{}; // TODO store in map
+        BitPack<uint32_t, 
+            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
+            12, 16                                      // owner, prefab
+        > m_pack;
+#else        
+        static constexpr unsigned int BIT_TYPE = BIT_OWNER + 1;
+        static constexpr unsigned int BIT_DISTANT = BIT_TYPE + 1;
+        static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;        
 
-        ObjectType m_type{};
-        bool m_persistent{}; // TODO store in BitPack
-        bool m_distant{};
+        HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
+        BitPack<uint32_t, 
+            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
+            12, 2, 1, 1,                                // owner, type, distant, persistent
+            8                                           // unused
+        > m_pack;                                       // 4 bytes
+
+        // TODO implement the member hint bits for more optimized gets
+#endif
 
     public:
         data_t() {}
@@ -185,6 +193,8 @@ private:
             // Then officially assign
             insert.first->second = std::move(value);
 
+            //this->m_data.get().m_pack.Set<data_t::
+
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
             //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
             return true;
@@ -194,6 +204,8 @@ private:
             //assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
 
             // else try modifying it ONLY if the member is same type
+
+            // Modify type
             auto&& get = std::get_if<T>(&insert.first->second);
             if (get) {
                 if (!std::is_fundamental_v<T>
@@ -205,7 +217,7 @@ private:
                 return false;
             }
             else {
-                throw std::runtime_error("zdo member type collision; this is very rare; consult a doctor");
+                throw std::runtime_error("zdo member hash collision");
             }
         }
     }
@@ -276,21 +288,34 @@ private:
     }
 
     void _SetPersistent(bool flag) {
-        this->m_data.get().m_persistent = flag;
+        return this->m_data.get().m_pack.Set<data_t::BIT_PERSISTENT>(flag);
     }
 
     void _SetDistant(bool flag) {
-        this->m_data.get().m_distant = flag;
+        return this->m_data.get().m_pack.Set<data_t::BIT_DISTANT>(flag);
     }
 
     void _SetType(ObjectType type) {
-        this->m_data.get().m_type = type;
+        return this->m_data.get().m_pack.Set<data_t::BIT_TYPE>(std::to_underlying(type));
     }
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        this->m_data.get().m_owner = owner;
-        //m_pack.Set<OWNER_PACK_INDEX>(ZDOID::EnsureUserIDIndex(owner));
+        if (owner == 0) {
+            this->m_data.get().m_pack.Set<data_t::BIT_OWNER>(0);
+        }
+        else {
+            for (int i = 1; i < ZDO_OWNERS.size(); i++) {
+                OWNER_t current = ZDO_OWNERS[i];
+                if (current == owner || current == 0) {
+                    this->m_data.get().m_pack.Set<data_t::BIT_OWNER>(i);
+                    if (current == 0) {
+                        ZDO_OWNERS[i] = owner;
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     void _SetPosition(Vector3f pos) {
@@ -317,7 +342,12 @@ private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
-    //static inline UNORDERED_MAP_t<ZDOID, uint16_t> ZDO_OWNERS;
+    //static inline ankerl::unordered_dense::segmented_map<ZDOID, uint16_t> ZDO_OWNERS;
+
+    static inline std::array<OWNER_t, 
+        //decltype(data_t::m_pack)::capacity_v<data_t::BIT_OWNER>
+        64
+    > ZDO_OWNERS;
 
     //static constexpr auto OWNER_PACK_INDEX = 0;
     //static constexpr auto FLAGS_PACK_INDEX = 1;
@@ -651,8 +681,7 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return this->m_data.get().m_owner;
-        //return ZDOID::GetUserIDByIndex(m_pack.Get<OWNER_PACK_INDEX>());
+        return ZDO_OWNERS[this->m_data.get().m_pack.Get<data_t::BIT_OWNER>()];
     }
 
 
@@ -707,18 +736,15 @@ public:
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return this->m_data.get().m_persistent;
-        //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Persistent);
+        return this->m_data.get().m_pack.Get<data_t::BIT_PERSISTENT>();
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return this->m_data.get().m_distant;
-        //return m_pack.Get<FLAGS_PACK_INDEX>() & (1 << MACHINE_Distant);
+        return this->m_data.get().m_pack.Get<data_t::BIT_DISTANT>();
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return this->m_data.get().m_type;
-        //return ObjectType((m_pack.Get<FLAGS_PACK_INDEX>() >> MACHINE_Type1) & 0b11);
+        return (ObjectType) this->m_data.get().m_pack.Get<data_t::BIT_TYPE>();
     }
 
 

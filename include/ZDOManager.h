@@ -149,7 +149,6 @@ private:
 	// Returns the ZDO and a bool if newly created
 	//[[nodiscard]] std::pair<ZDO_iterator, bool> _GetOrInstantiate(ZDOID id, Vector3f def);
 
-#if !VH_IS_ON(VH_PLATFORM_ESP32)
 	// Performs a coordinate to pitch conversion
 	[[nodiscard]] int SectorToIndex(ZoneID zone) const {
 		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
@@ -165,8 +164,7 @@ private:
 		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES && y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
 
 		return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
-}
-#endif
+	}
 
 public:
 	using pred_t = const std::function<bool(const ZDO)>&;
