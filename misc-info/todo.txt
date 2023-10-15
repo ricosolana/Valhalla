@@ -1,19 +1,9 @@
 # todo:
 
+- why does dungeon room GetHash() (DungeonRoom.cpp) return __H() instead of m_hash?
+
 - how to disable tracy profiler
     it takes up memory constantly until out of memory
-
-- Redump Hildir data packages
-    - vegetation
-    - features (erase old zoneLocations.pkg)
-    - prefabs
-    - dungeons
-    - events
-    - dump starting keys
-    
-    maybe optimize formats too
-        remove uneeded members
-        use bitpack / masks for bool-like
 
 - implement new dungeon zdo format
     uses single zdo byte array instead of many members    
@@ -25,10 +15,6 @@
     
     player event data
     
-    
-    
-    
-
 - rotations during world generation is screwed up
     trees are upside down
 
@@ -41,7 +27,15 @@
     
     the password mechanic is dumb, at least offline MC servers understand this; having password + 2fa auth like email at the least
 
-- SteamAcceptor handling of server shutdown without sleeping...
+- implement dungeon randomSpawns functionality
+
+- dump dungeon randomSpawns
+
+- optimize dumped .pkg
+
+- dump starting keys
+    remove uneeded members
+    use bitpack / masks for bool-like
 
 - fix server shutdown routines (might be unsafe if exits are premature)
     - save world, 

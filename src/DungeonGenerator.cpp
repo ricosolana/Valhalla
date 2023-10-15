@@ -210,13 +210,15 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 
 
 void DungeonGenerator::Save() {
-	m_zdo.Set("rooms", (int32_t)m_placedRooms.size());
+	BYTES_t bytes;
+	//bytes.reserve(sizeof(int32_t) + 
+		//m_placedRooms.size() * (sizeof(HASH_t) + sizeof(Vector3f) + sizeof(Quaternion)));
+	DataWriter writer(bytes);
+
+	writer.Write<int32_t>(m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
 		auto&& instance = m_placedRooms[i];
 		auto&& room = instance->m_room.get();
-
-		std::string text = "room" + std::to_string(i);
-		m_zdo.Set(text, room.GetHash());
 
 		Vector3f pos = instance->m_pos;
 		Quaternion rot = instance->m_rot;
@@ -224,10 +226,12 @@ void DungeonGenerator::Save() {
 		if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
 			std::tie(pos, rot) = VUtils::Physics::LocalToGlobal(instance->m_pos, instance->m_rot, this->m_pos, this->m_rot);
 
-		m_zdo.Set(text + "_pos", pos);
-		m_zdo.Set(text + "_rot", rot);
-		m_zdo.Set(text + "_seed", instance->m_seed); // TODO seed useless?
+		writer.Write(room.GetHash());
+		writer.Write(pos);
+		writer.Write(rot);
 	}
+
+	m_zdo.Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(bytes));
 }
 
 
