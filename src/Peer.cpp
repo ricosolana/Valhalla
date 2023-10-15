@@ -77,7 +77,7 @@ Peer::Peer(ISocket::Ptr socket)
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByUUID(rpc->m_characterID.GetOwner()) || NetManager()->GetPeerByName(rpc->m_name))
+            if (NetManager()->GetPeerByUUID(rpc->GetUserID()) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
             NetManager()->OnPeerConnect(*rpc);
@@ -173,13 +173,13 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
 
 
 void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
-    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->m_characterID.GetOwner(), targetZDO, hash, std::move(params)));
+    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 
 
 void Peer::ZDOSectorInvalidated(ZDO zdo) {
-    if (zdo.IsOwner(this->m_characterID.GetOwner()))
+    if (zdo.IsOwner(this->GetUserID()))
         return;
 
     if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {

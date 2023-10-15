@@ -196,7 +196,7 @@ void IZoneManager::PostPrefabInit() {
 #if VH_IS_ON(VH_ZONE_GENERATION)        
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG_INFO(LOGGER, "Found location: '{}'", locationName);
-            RouteManager()->Invoke(peer->m_characterID.GetOwner(),
+            RouteManager()->Invoke(peer->GetUserID(),
                 Hashes::Routed::S2C_ResponseIcon, 
                 pinName, 
                 pinType, 

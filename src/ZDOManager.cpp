@@ -452,7 +452,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 	for (auto&& zdo : m_tempNearObjects) {
 		if (zdo.IsPersistent()) {
-			if (zdo.IsOwner(peer.m_characterID.GetOwner())) {
+			if (zdo.IsOwner(peer.GetUserID())) {
 				// If peer no longer in area of zdo, unclaim zdo
 				if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					zdo.Disown();
@@ -464,7 +464,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.Owner()))
 					&& ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
 					
-					zdo.SetOwner(peer.m_characterID.GetOwner());
+					zdo.SetOwner(peer.GetUserID());
 				}
 			}
 		}
@@ -480,7 +480,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			if (otherPeer == &peer)
 				continue;
 
-			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.m_characterID.GetOwner()))
+			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.GetUserID()))
 				continue;
 
 			float sqDist = otherPeer->m_pos.SqDistance(peer.m_pos);
@@ -505,7 +505,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				if (zdo.IsPersistent()
 					&& zdo.Position().SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
-					zdo.SetOwner(peer.m_characterID.GetOwner());
+					zdo.SetOwner(peer.GetUserID());
 				}
 			}
 		}
@@ -616,8 +616,8 @@ std::list<std::pair<ZDO, float>> IZDOManager::CreateSyncList(Peer& peer) {
 		auto&& a = first.first;
 		auto&& b = second.first;
 
-		bool flag = a.GetType() == ObjectType::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.m_characterID.GetOwner());
-		bool flag2 = b.GetType() == ObjectType::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.m_characterID.GetOwner());
+		bool flag = a.GetType() == ObjectType::PRIORITIZED && a.HasOwner() && !a.IsOwner(peer.GetUserID());
+		bool flag2 = b.GetType() == ObjectType::PRIORITIZED && b.HasOwner() && !b.IsOwner(peer.GetUserID());
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a.GetType() == b.GetType()) {
@@ -1015,7 +1015,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 			//&& (zdo.IsOwner(peer.m_uuid)))
 		//if (prefab.AllFlagsPresent(Prefab::Flag::SESSIONED) 
 		if (!zdo.IsPersistent()
-			&& (!zdo.HasOwner() || zdo.IsOwner(peer.m_characterID.GetOwner()) || !NetManager()->GetPeerByUUID(zdo.Owner())))
+			&& (!zdo.HasOwner() || zdo.IsOwner(peer.GetUserID()) || !NetManager()->GetPeerByUUID(zdo.Owner())))
 		{
 			itr = _DestroyZDO(itr);
 		}

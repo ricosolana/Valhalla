@@ -293,7 +293,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 // Return the peer or nullptr
 Peer* INetManager::GetPeerByUUID(OWNER_t uuid) {
     for (auto&& peer : m_onlinePeers) {
-        if (peer->m_characterID.GetOwner() == uuid)
+        if (peer->GetUserID() == uuid)
             return peer;
     }
     return nullptr;

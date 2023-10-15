@@ -1,12 +1,7 @@
 # todo:
 
-- why does dungeon room GetHash() (DungeonRoom.cpp) return __H() instead of m_hash?
-
 - how to disable tracy profiler
     it takes up memory constantly until out of memory
-
-- implement new dungeon zdo format
-    uses single zdo byte array instead of many members    
 
 - implement new random event system
     RPC_ConsoleStartRandomEvent
@@ -29,19 +24,20 @@
 
 - implement dungeon randomSpawns functionality
 
-- dump dungeon randomSpawns
-
-- optimize dumped .pkg
-
 - dump starting keys
     remove uneeded members
     use bitpack / masks for bool-like
 
+- dump dungeon randomSpawns
+
+- optimize dumped .pkg
+
+- free unused heightmaps
+    or could generate everything
+
 - fix server shutdown routines (might be unsafe if exits are premature)
     - save world, 
     - proper cleanup / disposal of managers
-
-- add peer ID method (use character id)
 
 - global naming refactor
     simplify names
@@ -96,6 +92,3 @@
 - might be able to shrink zdo connector value_type pair    
     type is a few bits (2 values are significant), 
     prefab target can be an index instead of 32-bit
-
-- free unused heightmaps
-    or could generate everything

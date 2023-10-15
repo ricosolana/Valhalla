@@ -66,8 +66,8 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			auto&& peers = NetManager()->GetPeers();
 			for (auto&& other : peers) {
 				// Ignore the src peer
-				if (peer->m_characterID.GetOwner() != other->m_characterID.GetOwner()) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_characterID.GetOwner(), target, targetZDO, hash, params);
+				if (peer->GetUserID() != other->GetUserID()) {
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 		}
@@ -78,7 +78,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 						return;
 
 					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->m_characterID.GetOwner(), target, targetZDO, hash, params);
+					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 			else {

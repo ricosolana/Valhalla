@@ -251,7 +251,7 @@ void IDiscordManager::Init() {
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
 					if (auto peer = NetManager()->GetPeer(identifier)) {
 						event.reply("Name: " + peer->m_name + "\n"
-							+ "Uuid: " + std::to_string(peer->m_characterID.GetOwner()) + "\n"
+							+ "Uuid: " + std::to_string(peer->GetUserID()) + "\n"
 							+ "Host: " + peer->m_socket->GetHostName() + "\n"
 							+ "Address: " + peer->m_socket->GetAddress());
 					}

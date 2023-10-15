@@ -100,6 +100,10 @@ public:
         //VLOG(1) << "~Peer()";
     }
 
+    OWNER_t GetUserID() {
+        return m_characterID.GetOwner();
+    }
+
     bool IsMapVisible() const {
         return m_pack.Get<VISIBLE_PACK_INDEX>();
     }
