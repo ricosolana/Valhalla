@@ -86,6 +86,7 @@ void IDungeonManager::PostPrefabInit() {
             auto room(std::make_unique<Room>());
 
             room->m_name = pkg.Read<std::string>();
+            room->m_hash = VUtils::String::GetStableHashCode(room->m_name);
             room->m_divider = pkg.Read<bool>();
             room->m_endCap = pkg.Read<bool>();
             room->m_endCapPrio = pkg.Read<int32_t>();

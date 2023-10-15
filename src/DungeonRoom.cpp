@@ -3,8 +3,9 @@
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "VUtilsString.h"
 
+//TODO why not return hash?
 HASH_t Room::GetHash() const {
-	return VUtils::String::GetStableHashCode(m_name);
+	return m_hash;
 }
 
 const RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConnection &other) const {
