@@ -92,3 +92,7 @@ fabric.properties
 enc_temp_folder/
 data/worlds/world.db
 docs/old/~$zoneLocations.xlsx
+ME_TEMP_WORLDS/legacy/ClanWarsS01.db
+ME_TEMP_WORLDS/legacy/ClanWarsS01.fwl
+ME_TEMP_WORLDS/modern/ClanWarsS01.db
+ME_TEMP_WORLDS/modern/ClanWarsS01.fwl

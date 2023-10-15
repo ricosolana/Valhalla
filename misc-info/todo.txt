@@ -1,5 +1,10 @@
 # todo:
 
+- severe latency
+    debug mode?
+    
+    zdos also do not appear to get destroyed on other clients
+
 - how to disable tracy profiler
     it takes up memory constantly until out of memory
 
@@ -12,9 +17,6 @@
     
 - rotations during world generation is screwed up
     trees are upside down
-
-- severe latency
-    debug mode?
 
 - change login defaults
     - disable password
