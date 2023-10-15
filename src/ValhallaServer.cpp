@@ -323,7 +323,7 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& discord = node["discord"];
 
             a(m_settings.serverName, server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            a(m_settings.serverPassword, server, "password", "secret", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
+            a(m_settings.serverPassword, server, "password", "", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);

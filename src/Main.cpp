@@ -1,6 +1,9 @@
 // main.cpp
 #define SOL_ALL_SAFETIES_ON 1
 
+// this doesnt seem to do a thing
+//#undef TRACY_ENABLE
+
 #include "VUtils.h"
 
 #include "VUtilsResource.h"

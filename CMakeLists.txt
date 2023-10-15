@@ -35,6 +35,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 
+#option(TRACY_ENABLE "" OFF)
+
 
 ############
 # Libraries
@@ -174,9 +176,9 @@ endif()
 
 
 
-set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
-    TRACY_ENABLE OFF
-)
+#set_target_properties(${PROJECT_NAME} Tracy::TracyClient PROPERTIES 
+    #TRACY_ENABLE OFF
+#)
 
 
 
