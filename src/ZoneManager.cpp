@@ -44,7 +44,7 @@ void IZoneManager::PostPrefabInit() {
             loc->m_name = pkg.Read<std::string>();
             loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
 
-            loc->m_biome = (Biome)pkg.Read<int32_t>();            
+            loc->m_biome = (Biome)pkg.Read<int32_t>();
             loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
             loc->m_applyRandomDamage = pkg.Read<bool>();
             loc->m_centerFirst = pkg.Read<bool>();
@@ -70,6 +70,20 @@ void IZoneManager::PostPrefabInit() {
             loc->m_spawnAttempts = pkg.Read<int32_t>();
             loc->m_quantity = pkg.Read<int32_t>();
             loc->m_randomRotation = pkg.Read<bool>();
+
+            // randomspawns
+            auto spawns = pkg.Read<int32_t>();
+            for (int s = 0; s < spawns; s++) {
+                pkg.Read<float>(); // chance
+                
+                auto views = pkg.Read<int32_t>();
+                for (int v = 0; v < views; v++) {
+                    pkg.Read<HASH_t>(); // prefab hash
+                    pkg.Read<Vector3f>(); // position
+                    pkg.Read<Quaternion>(); // rotation
+                }
+            }
+
             loc->m_slopeRotation = pkg.Read<bool>();
             loc->m_snapToWater = pkg.Read<bool>();
             loc->m_unique = pkg.Read<bool>();
