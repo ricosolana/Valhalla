@@ -79,11 +79,11 @@ namespace VUtils::Random {
 
         // get random 
         float rad = Range(0.f, PI * 2.f);
-        float x = cosf(rad);
-        float y = sinf(rad);
+        float x = std::cos(rad);
+        float y = std::sin(rad);
 
         float ze = Range(0.f, 1.f);
-        float d = sqrtf(ze);
+        float d = std::sqrt(ze);
 
         return Vector2f(x * d, y * d);
     }
@@ -92,17 +92,16 @@ namespace VUtils::Random {
         float dist = Range(-1.f, 1.f);
         float rad = Range(0.f, PI * 2.f);
 
-        float vecX = sqrtf(1.0 - dist * dist);
+        float vecX = std::sqrt(1.0 - dist * dist);
 
-        return Vector3f(cosf(rad) * vecX, sinf(rad) * vecX, dist);
+        return Vector3f(std::cos(rad) * vecX, std::sin(rad) * vecX, dist);
     }
 
     Vector3f State::InsideUnitSphere() {
         // unity does this by sampling a point on the surface of sphere
         auto vec = OnUnitSphere();
-
         // then bringing that point in by a random distance
-        float dist = powf(NextFloat(), 1.f / 3.f);
+        float dist = std::pow(NextFloat(), 1.f / 3.f);
         return vec * dist;
     }
 

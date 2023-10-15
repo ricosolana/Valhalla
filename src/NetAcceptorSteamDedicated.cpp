@@ -71,19 +71,23 @@ AcceptorSteam::AcceptorSteam() {
         k_ESteamNetworkingConfig_Int32, &sendrate);
 }
 
-AcceptorSteam::~AcceptorSteam() {
+void AcceptorSteam::Close() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
         //LOG(DEBUG) << "Destroying";
-        for (auto &&socket : m_sockets)
+        for (auto&& socket : m_sockets)
             socket.second->Close(true);
 
         // TODO is sleep really the best here?
-        std::this_thread::sleep_for(1s);
+        //std::this_thread::sleep_for(1s);
 
         STEAM_NETWORKING_SOCKETS->CloseListenSocket(m_listenSocket);
 
         m_listenSocket = k_HSteamListenSocket_Invalid;
     }
+}
+
+AcceptorSteam::~AcceptorSteam() {
+    Close();
 
     if (VH_SETTINGS.serverDedicated)
         SteamGameServer_Shutdown();

@@ -1,425 +1,107 @@
-todo:
-    - BEFORE I FORGET
-        recently erased zdos might not be removed from sectors
-        
-        if this is the case, try changing _Instantiate to ignore pos 
-            continue with old approach, set the position after the fact
-            
-    - Devcommands appears to ignore ward restrictions?
+# todo:
+
+- how to disable tracy profiler
+    it takes up memory constantly until out of memory
+
+- Redump Hildir data packages
+    - vegetation
+    - features (erase old zoneLocations.pkg)
+    - prefabs
+    - dungeons
+    - events
+    - dump starting keys
     
-        devcommands does ignore restrictions
-        
-        either that or valhalla/server is conflicting
+    maybe optimize formats too
+        remove uneeded members
+        use bitpack / masks for bool-like
 
-    - global naming refactor
-        simplify names
-        
-        remove redundant names
-            remove prefixes that are the same as their namespace
-            
-            ZDO::ZDO_member_map
-                  ^
-                  
-        move to a more standard naming convention
-            either all underscores, or all pascalcase...
-            
-        make sure bitpack has full asserts and compiletime restricts
-            it likes to complain
+- implement new dungeon zdo format
+    uses single zdo byte array instead of many members    
 
-    - zdo refactor
-        store all usings from IZDOManager in ZDO, 
-
-    - observe bug/fix any cases of the old ZDOManager::GetOrInstantiate
-
-    - add peer ID method (use character id)
+- implement new random event system
+    RPC_ConsoleStartRandomEvent
     
-    - planned optimizations to zdo:
-        - ZDOID removals / full consilidation within ZDOManager
-            zdos will no longer contain their own zdoid, somewhat better because
-            the id in ZDOManager will no longer have a possibility of mismatching
-            with its zdo
-            
-            as seen in 2 different branches which attempted to do exactly this, 
-            the complications of removing ID() from zdo are insane
-            
-            the proposal for implementing this are as follows:
-            
-            a ZDO Data structure (ZDO_raw)
-                holds data of zdo, little to no utility methods
-            
-            a ZDO wrapper (ZDO)
-                holds the ZDO_raw& + id
-                contains all methods originally within zdo
-            
-        - zdo.Owner VS zdo.zdoid.UserID
-            these are essentially the same type, however their domain differs
-            - zdo.Owner is limited to current peers
-            - zdo.zdoid.UserID is limited to all peer sessions ever generated
-                
-        - store ZDO owner externally
-            because not all zdos are owned (only a very select few)
+    ResetRandomEvent too
     
+    player event data
     
     
     
     
 
-    - try scanning client logs during zdo sends
-        warnings will be logged for 0-prefab zdos
-        
-        must try release not beta because bepinex likely not compatible yet
+- rotations during world generation is screwed up
+    trees are upside down
 
-    - appears that new objects have some kind of parenting
+- severe latency
+    debug mode?
+
+- change login defaults
+    - disable password
+    - enable whitelist
     
-        rotations are significant here
-        
-        transforms in general seem messy
-            occasionally
-            
-        server is doing something (or failing to do something)
-            results in ZNetView being invisible
-            
-            or zdo not existing clientside
+    the password mechanic is dumb, at least offline MC servers understand this; having password + 2fa auth like email at the least
 
-    - it is servers fault
-        client is fine (assume)
-        
-        euler operations arent even used for modern load
-        
-        rotation getting corrupted
-        
-        weird, because isolate c# dup test run shows SAME result
-            file side, not network (could be problematic)
-            
-        server is missing a conversion
-        
-        
-        peer is either discarding zdos (why)
-        or server isnt sending them properly
-        
-        can confirm server correctly queries zdos within peer zones
-        (~8k or so)
-        
-        packet size limiter reduces the amount sent per packet/50ms
-        
-        after a while, query peer zdos
-        
-        check that Valhalla.Time is working as intended
-        
-            incorrect step values can result in lack of zdos getting updated?
-            
-        
-        any 'intended' rewinds could be incorrectly used
-            where dependent offsets are used instead of relative subsets of offsets
-        
-        
-        
+- SteamAcceptor handling of server shutdown without sleeping...
 
-    - possible causes for faulty rotations:
-        server
-            Quaternion euler...(...) is scuffed/broken
-            
-            packet written rotation is getting overridden
-                UDB
-                
-            server is missing a rotation conversion
-        
-        client
-            client is performing an extra operation
-            
-            
-            
-            
-            
-            
+- fix server shutdown routines (might be unsafe if exits are premature)
+    - save world, 
+    - proper cleanup / disposal of managers
 
-    - is server actually sending all zdos to client?
+- add peer ID method (use character id)
 
-    - this still slightly points to being a server problem,
+- global naming refactor
+    simplify names
     
-        cannot ultimately rule out yet that server is cleared in behaviour
-       
-    - is client applying a random rotation to pieces?
-    
-        zdo Component map is outdated by half a year, cant tell if wood_floor_1x1 has a random rotation component
+    remove redundant names
+        remove prefixes that are the same as their namespace
+        
+        ZDO::ZDO_member_map
+              ^              
+    move to a more standard naming convention
+        either all underscores, or all pascalcase...
+        
+    make sure bitpack has full asserts and compiletime restricts
+        it likes to complain
 
-    - floor tiles which are supposed to have ZERO rotation
-        have different non-zero rotations
-        
-    
+    store all usings from IZDOManager in ZDO
 
-    - findings with zdo synclist:
-        initial zdo-update step includes all but 3 zdos (likely player, animation?, footstep?)
+- planned optimizations to zdo:
+    - ZDOID removals / full consilidation within ZDOManager
+        zdos will no longer contain their own zdoid, somewhat better because
+        the id in ZDOManager will no longer have a possibility of mismatching
+        with its zdo
         
-        synclist finishes with 8227 zdos (many more than peer listed; 1200)
+        as seen in 2 different branches which attempted to do exactly this, 
+        the complications of removing ID() from zdo are insane
         
-        seems only 85 zdos were updated
-            (based off peer.m_zdos)
+        the proposal for implementing this are as follows:
+        
+        a ZDO Data structure (ZDO_raw)
+            holds data of zdo, little to no utility methods
+        
+        a ZDO wrapper (ZDO)
+            holds the ZDO_raw& + id
+            contains all methods originally within zdo
+        
+    - zdo.Owner VS zdo.zdoid.UserID
+        these are essentially the same type, however their domain differs
+        - zdo.Owner is limited to current peers
+        - zdo.zdoid.UserID is limited to all peer sessions ever generated
             
-        iterator would have iterated all zdos, the only other terminal condition is availableSpace for writer (artificial network limiter not really needed here)
-        
-        zdos only slightly increased
-        
-    - modern world loader seems several times faster than legacy loader
-        cool
-        
-    - kinda interesting world file can be bootstrapped 
-        without conflicting with loading (only at end of file, similar to png file text messages)
+    - store ZDO owner externally
+        because not all zdos are owned (only a very select few)
 
-    - major problem with zdos
+- consider removing denotions and all hints until stable
+    member hints are not stable (easy to forget to remove or add) 
     
-        they seem to not be sent to client
-        
-        why?
-        
-        ignoring rotations (when explicitly set to 0), non-zero rotations still seem to be applied
-            wtf
+    markers could be isolate numerical (separate pack indices instead of entire localdenotions)...
+
+- reset member flag(s) when member extracted from ZDO
+    also reset connectors
     
-        regarding missing zdos, zdo_manager might not be sending out zdos
-    
-        is id-system working?
-            to test, try removing all id memory optimizations implemented in 0.21?.13
-            
-            if things appear, id system is broken,
-            
-            otherwise zdo_map hashing or equal is fucked
-    
-        
+- might be able to shrink zdo connector value_type pair    
+    type is a few bits (2 values are significant), 
+    prefab target can be an index instead of 32-bit
 
-    - consider removing denotions and all hints until stable
-        member hints are not stable (easy to forget to remove or add) 
-        
-        markers could be isolate numerical (separate pack indices instead of entire localdenotions)...
-
-    - reset member flag(s) when member extracted from ZDO
-        also reset connectors
-        
-    - might be able to shrink zdo connector value_type pair    
-        type is a few bits (2 values are significant), 
-        prefab target can be an index instead of 32-bit
-
-	- rotations are screwed up
-		not sure whether this is vegetation-spawning only, must test
-		test with other players and placed items
-
-	- owners not being assigned or sent correctly
-		picking up items doesnt work
-
-    - server-side player inventories and metering
-        player defaultingly spawns in with nothing (except for rag cloth)
-        
-        if player is new, treat inventory as empty
-        
-        only definite way to add/remove items from inventory:
-            - ItemDrop::Pickup (causes zdo erase)
-            - ItemDrop::Drop (causes zdo instantiate)
-            - Inventory::MoveItemToThisContainer -> Container::OnContainerChanged triggers a ZDO save
-            - Crafting (a bit is unknown about this on client side, no way to validate?)
-
-    - leviathans sinking when leaving area
-        probably something to do with server needing to do something with them
-        
-        possible ideas:
-            if leviathan not at y=0 prior to peer leaving, consider setting height to 40 or something to prevent peer from fucking up everything
-            
-            hopefully this causes peer to only lower the leviathan down towards the surface instead of down to bedrock
-
-    - fix dungeon netview orientations
-        some netviews in DG_Cave (crystal in this small corrider) and the roots when entering crypt are either floating or in the way. 
-        
-        seemingly another root in a different crypt is fine... (i think it has to do with not applying correct rotations) I bet this is the issue because crypt mud piles are misaligned in a room (too much to the side in start room)
-        
-    - legal zdo spawning / tracking (illegal item / object spawning mitigation)
-        basically prevent players from spawning the un-grabbable draugr axe etc...
-        these weird items exist so that npc / characters are able to display them and use stats due to the way the game was made. The player however is not allowed to use them for obvious reasons. Will gid deeper to find what makes the player able to pick up or unable to pickup certain items, and will use that to base the legal item filter against
-        
-        can easily implement zdo searcher to see who spawns in certain zdos, who modified which zdos at whichever time, maybe even a replay tool? would be interesting, kinda reminds me of using wireshark to log packets. Basically replay the client conversation to the server visa-versa.      
-
-    - boat-lagg fix (important or not?)
-        when a player (owner) temporarily stops sending packets, the boat will be much ahead, causing other players to be in the previous position.
-        a possible idea would be to identify any instantaneous change in position, not impulse or integral velocity (since position in this sense is a simple sudden change due to lagg spike)
-        
-        could try resetting player-owner, setting position, then setting owner back (hmm, must experiment because this abuses the particular code of ZSyncTransform--- I am not sure how the client might respond to this). This must be carried out over several frames, not all at once...
-        
-        Player.Teleport does work, but it is a whole slow sequence. It does not actually teleport the player instantaneously because it is meant for slow loading areas from long distance portal travels. The above ZSyncTransform idea is the best bet at something to tp the player instantaneousy, but possibly finicky and buggy. must test...
-
-    - fix server shutdown routines
-        - has hardly been worked on in months, very outdated and maybe unsafe or unimplemented, ie. 
-            - save world, 
-            - proper cleanup / disposal of managers
-   
-    - the below priority will require NetView method capture, abstraction and high performance code will be c++, with the extensions and behaviour in lua.
-    
-    - ZDO restore / reconciliation to prevent illegal modification by malicious clients
-        
-    - ZDO based item assign 
-        Container::RPC_TakeAllRespons
-            appears to insert all items in inventory to local player
-        - Player death causes entire inventory to be moved to tombstone
-            this is clientside, as usual
-        - detect events via incoming updated zdos
-    
-    - fix mistlands mist distribution
-        literally a blanket
-        possibly vegetation mask broken?
-        is vegetation being correctly skipped or placed as needed?
-
-    - cleanup used heightmaps after time
-        or could generate everything
-          
-    - calc server memory consumption
-        zdos primarily...
-        estimated based on sizeof(ZDO) and number of zdos
-            not entirely accurate because zdos themselves allocate memory,
-       
-    - vegetation pkg values might need tweaking
-        swamp trees are kinda not distributed?
-        
-    - block WNT packets?
-        cause particles to spawn on screen likely causing lagg if many 
-    
-    - send zdos more/less often/more depending on network load and per-client latency
-    
-    - use bitshift for Biome type (instead of mask)
-
-    - modify RouteManager to not have so much peer indirection
-        (stop with ints...)
-    
-    - option for setting zone area distance in config
-        
-    - optimize zdo padding more?
-        experiment with member offsets...
-        masks for bool types
-        
-    - idea for unloading/destroying/reconciliating inactive zdos in world:
-        - if zdo is a once-visited type (rock, trees, basically exploratory), and hardly ever visited, could unload to disk if necessary for memory...
-        
-finished:
-    - GoblinCamp2 - very crammed
-        fixed
-
-    - fix dungeon generation
-        either go back to using mild accuracy rotated rect detection
-        OR
-        use normalized grid room overlap detection, where each room takes up nodes,
-        and has max size:
-            since im assuming each room has a normalized/unit size, find this out, then create a grid of nodes equal to 64/UNIT (where unit is the smallest square room). Collision detection will just be detecting whether a grid is occupied
-            
-            what about end caps? they might be emall and weirdly sized, so im not sure about this method
-            
-            another method could be to just stop using complex rotated rectangle collision, since im having insane troubles with that. INSTEAD, use regular rectangle collision with a normalized rotation grid, then apply all rotation to rooms after its done.
-            
-            Either way, I cant continue making so many features that already exist in unity. I thought this would be simple, but the method the devs use is not so simple. I will find a way around this.
-
-    - change room netviews instantiate transforms to correctly reflect new pkg transform write (most local)
-    
-        also observe any usages of templated room.position (not instanced) or localPos or rotation for significance in keeping?
-        
-    - dungeons currently being worked on
-
-    - fix general-Valheim latency issues (regarding client-side processing)
-        theres no real good fix to this without changing the core networking and mechanics of the game
-        
-        Possible solutions:
-            - reassign zdos to the nearest player 
-            - reassign zdos radially to players, except in overlaps
-            
-        Biggest caveats/important aspects/most frequent annoyances:
-            - COMBAT (Parrying especially) / Pickable/PickableItem under another zone-client is annoying, and most always laggy,
-                so, likely reassign owners during these situations:
-                    combat might be partially fixed by reassigning to the nearest player, only when players are fa apart from each other, and depends on distance of zdo-enemy in question
-
-    - trying to get a way to represent zdo-components (members) without convoluting everything
-        - each gameobject has only 1 zdo, therefore each zdo can refer to 1 gameobject, along with its properties (or more statically, its prefab capabilities):
-        - whether the object is a:
-            - Piece (Buildable/Placeable by player)
-            - ItemDrop (Dropped Ground Item)
-            - CraftingStation
-            - WearNTear (Structural support / durability)
-            - Pickable (Seasoning vegetation / goblin totem poles / Respawnable stuff)
-            - DropOnDestroyed (destroyed objects drop)
-            - CharacterDrop (killed entities drop)
-            - Humanoid
-            - MonsterAI
-
-    - Use 64bit hash for ZDO map (mutated-only) so that collisions become nearly impossible
-
-    - Container::inUse wrongly named zdo hash
-        typo
-
-    - fix zdos on save:
-        chests Resetting
-        Terrain Resetting
-        Rocks Resetting
-        Wards disabling
-        Signs Resetting
-        Fermenter Resetting
-        Beds Resetting
-        
-        - ZDO save -> write issue fixed
-
-    - consolidate all player notification messages into one method
-        single useful Message(msg, type)
-
-    - mod event error handler
-        mod callback disabled if any error
-
-    - fix log file backups
-        compressed to /logs
-
-    - test whether players work right near edge of world, or zdos...
-        vegetation is not placed near edge of world, this might be why
-        
-        instead of square zone checks, check radially (within bounds of circular world)
-        
-    - test reducing world size to 313
-        also add constraints when near edge of world
-        so index bounds issues wont happen
-
-    - implement quaternion euler fully
-    
-    - implement quaternion lookdirection fully
-        so that prefabs are rotated correctly on worldgen
-        broken in cases where an axis is zero or near zero
-
-    - implement portals
-        portals now link together with the help of a lua mod 
-        
-    - mods?
-        comfy compress mod implemented
-
-    - have method to get normal vector of heightmap at position
-        consider using 4-pt normal for more acc normals if simple and fast enough
-        
-        but simple 2-pt normals work fine
-
-    - world saving apparently broken (loading however is fully supported)
-        was skipping utf-8 that had 3 total encoded byte sizes instead of the expected 2 -> 3 bytes
-
-    - high priority: add full utf-8 char encoding and decoding for full Valheim c# compat
-        current asystem is lazy and will only work with single bytes up to count 127, beyond that is special encoding...
-
-    - restructure netpackage 
-        - rename + make underlying stream use a ptr vec...
-        - stream in many cases should be read only, like reading data incrementally, without copying when sub packages need making
-
-    - prevent players spaces or non-ascii from joining
-        or just invalid names
-        or normalize the name (condense code points, dont just remove)
-
-    - tweak vegetation rocks overlap radius
-        perhaps too large, because black forest looks somewhat sparse compared to normal
-    
-    - work on vegetation overlap prevention
-
-    - add option to immediately allow once-passworded users whove joined before
-    - print a message to player on login whether auto logged in
-        yes
-    
-    - locations appear to be offset by 1/2 of their width (along 1 axis), probably due to the way unity derives the final object position from instantiations in accordance with scale
-    
-    - check if ban command sends spaces
-        it only sends the first split text...
-        
-    - try using Heightmap:: Biome and BiomeArea methods again, instead of geo (might be causing post-smoothing biome problems)
-        it seems to have worked!
+- free unused heightmaps
+    or could generate everything

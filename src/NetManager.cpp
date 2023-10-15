@@ -439,7 +439,8 @@ void INetManager::Uninit() {
         OnPeerDisconnect(*peer);
     }
 
-    m_acceptor.reset();
+    //m_acceptor.reset();
+    m_acceptor->Close();
 }
 
 void INetManager::OnConfigLoad(bool reloading) {

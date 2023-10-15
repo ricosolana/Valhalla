@@ -15,6 +15,8 @@ public:
     //  Should be non-blocking
     virtual void Listen() = 0;
 
+    virtual void Close() = 0;
+
     // Poll for a ready and newly accepted connection
     //  Should be non-blocking
     //  Nullable
@@ -51,6 +53,7 @@ public:
     ~AcceptorSteam() override;
 
     void Listen() override;
+    void Close() override;
 
     ISocket::Ptr Accept() override;
 

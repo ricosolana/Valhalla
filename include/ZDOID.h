@@ -9,7 +9,7 @@ class ZDOID {
     friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
 
-    using UType = uint64_t;
+    //using UType = uint64_t;
 
     // User: 0, ID: 1
     //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
@@ -74,10 +74,7 @@ private:
 public:
     ZDOID() = default;
 
-    ZDOID(OWNER_t owner, uint32_t uid) {
-        this->SetOwner(owner);
-        this->SetUID(uid);
-    }
+    ZDOID(OWNER_t owner, uint32_t uid);
 
     ZDOID(const ZDOID&) = default;
 

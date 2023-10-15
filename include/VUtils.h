@@ -380,7 +380,7 @@ public:
     }
 
     IntegralWrapper<T> operator-() const {
-        return IntegralWrapper<T>(-this->m_value);
+        return IntegralWrapper<T>((T)0 - this->m_value);
     }
 
     IntegralWrapper<T> operator*(const IntegralWrapper<T>& rhs) const {
@@ -461,7 +461,7 @@ public:
         : ZStdCompressor(dict, ZSTD_CLEVEL_DEFAULT) {}
 
     ZStdCompressor(const ZStdCompressor&) = delete;
-    ZStdCompressor(ZStdCompressor&& other) {
+    ZStdCompressor(ZStdCompressor&& other) noexcept {
         this->m_ctx = other.m_ctx;
         this->m_dict = other.m_dict;
         other.m_ctx = nullptr;
@@ -521,7 +521,7 @@ public:
         : ZStdDecompressor(dict.data(), dict.size()) {}
 
     ZStdDecompressor(const ZStdDecompressor&) = delete;
-    ZStdDecompressor(ZStdDecompressor&& other) {
+    ZStdDecompressor(ZStdDecompressor&& other) noexcept {
         this->m_ctx = other.m_ctx;
         this->m_dict = other.m_dict;
         other.m_ctx = nullptr;
@@ -684,7 +684,7 @@ public:
             return std::nullopt;
 
         BYTES_t out;
-        out.resize(inSize * 2);
+        out.resize((size_t)inSize * 2ULL);
 
         z_stream stream;
         stream.next_in = (Bytef*)in;

@@ -149,7 +149,7 @@ private:
 #else        
         static constexpr unsigned int BIT_TYPE = BIT_OWNER + 1;
         static constexpr unsigned int BIT_DISTANT = BIT_TYPE + 1;
-        static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;        
+        static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
 
         HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
         BitPack<uint32_t, 

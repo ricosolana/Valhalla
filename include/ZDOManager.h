@@ -228,7 +228,7 @@ public:
 	}
 	// Get a capped number of ZDOs within a radius in zone with prefab and/or flag
 	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		const auto sqRadius = radius * radius;
+		float sqRadius = radius * radius;
 		return SomeZDOs(zone, max, [&](const ZDO zdo) {
 			return zdo.Position().SqDistance(pos) <= sqRadius
 				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);

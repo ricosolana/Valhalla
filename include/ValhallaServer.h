@@ -211,7 +211,7 @@ public:
     void SetDay(int day) {
         auto timeOfDay = GetTimeOfDay();
 
-        m_worldTime = day * WORLD_TIME_LENGTH + timeOfDay;
+        m_worldTime = (double)day * (double)WORLD_TIME_LENGTH + timeOfDay;
     }
 
 
@@ -223,7 +223,7 @@ public:
     //  The day is unchanged
     void SetTimeOfDay(TimeOfDay timeOfDay) {
         timeOfDay = GetTimeOfDay(timeOfDay); // normalize
-        this->m_worldTime = GetDay() * WORLD_TIME_LENGTH + timeOfDay;
+        this->m_worldTime = (double)GetDay() * (double)WORLD_TIME_LENGTH + timeOfDay;
     }
 
 
