@@ -262,13 +262,16 @@ void INetManager::OnPeerConnect(Peer& peer) {
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     if (VH_SETTINGS.discordAccountLinking) {
         peer.SetGated(!DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
             DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = { VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos() };
         }
     }
+#endif
 
+    // TODO remove this for debug only
     peer.SetGated(VH_SETTINGS.playerGated);
 
     m_onlinePeers.push_back(&peer);

@@ -14,12 +14,15 @@
 #include <zstd.h>
 #include <zlib.h>
 #include <ankerl/unordered_dense.h>
-#include <dpp/dpp.h>
 #include <tracy/Tracy.hpp>
 #include <quill/Quill.h>
 
 #include "CompileSettings.h"
 #include "VUtilsEnum.h"
+
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#include <dpp/dpp.h>
+#endif
 
 // global logger
 //  I don't know where else to put it; this seems fine

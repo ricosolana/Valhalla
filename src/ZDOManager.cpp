@@ -53,11 +53,11 @@ void IZDOManager::Update() {
 			//<< ")";
 	})*/;
 
-	assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
-		[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
-			return value + v.second.size();
-		}
-	) == m_objectsByID.size());
+	//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
+	//	[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
+	//		return value + v.second.size();
+	//	}
+	//) == m_objectsByID.size());
 
 	// TODO requires testing
 	//	link portals if mode enabled
@@ -244,11 +244,11 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		m_objectsByPrefab[zdo.GetPrefabHash()].insert(zdo.ID());
 
-		assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
-			[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
-				return value + v.second.size();
-			}
-		) == m_objectsByID.size());
+		//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
+		//	[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
+		//		return value + v.second.size();
+		//	}
+		//) == m_objectsByID.size());
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {

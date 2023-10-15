@@ -150,6 +150,7 @@ namespace YAML {
         }
     };
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     template<>
     struct convert<dpp::snowflake> {
         static Node encode(const dpp::snowflake& rhs) {
@@ -164,6 +165,7 @@ namespace YAML {
             return true;
         }
     };
+#endif
 
     template<typename K, typename V, typename Hash, typename Eq, typename Alloc, typename Bucket> // = ankerl::unordered_dense::hash<K>>
     struct convert<ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket>> {
@@ -393,16 +395,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
             a(m_settings.eventsRequireKeys, events, "require-keys", true);
             
-#ifdef VH_OPTION_ENABLE_CAPTURE
-            a(m_settings.packetMode, packet, "mode", PacketMode::NORMAL, nullptr, reloading);
-            a(m_settings.packetFileUpperSize, packet, "file-size", 256000ULL, [](size_t val) { return val < 0 || val > 256000000ULL; }, reloading);
-            a(m_settings.packetCaptureSessionIndex, packet, "capture-session", -1, nullptr, reloading);
-            a(m_settings.packetPlaybackSessionIndex, packet, "playback-session", -1, nullptr, reloading);
-
-            if (m_settings.packetMode == PacketMode::CAPTURE)
-                m_settings.packetCaptureSessionIndex++;
-#endif
-
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
             a(m_settings.discordWebhook, discord, "webhook", "");
             a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
             a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
@@ -414,21 +407,14 @@ void IValhalla::LoadFiles(bool reloading) {
 
             //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
 
+#endif
+
             if (m_settings.serverPassword.empty()) {
                 LOG_WARNING(LOGGER, "Server does not have a password");
             }
             else {
                 LOG_INFO(LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
             }
-
-#ifdef VH_OPTION_ENABLE_CAPTURE
-            if (m_settings.packetMode == PacketMode::CAPTURE) {
-                LOG_WARNING(LOGGER, "Experimental packet capture enabled");
-            }
-            else if (m_settings.packetMode == PacketMode::PLAYBACK) {
-                LOG_WARNING(LOGGER, "Experimental packet playback enabled");
-            }
-#endif
         }
 
         if (!reloading) {
@@ -470,6 +456,7 @@ void IValhalla::LoadFiles(bool reloading) {
         }
     }
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     if (m_settings.discordAccountLinking) {
         if (auto&& opt = VUtils::Resource::ReadFile<std::string>("linked.yml")) {
             try {
@@ -481,6 +468,7 @@ void IValhalla::LoadFiles(bool reloading) {
             }
         }
     }
+#endif
 
     if (reloading) {
         // then iterate players, settings active and inactive
@@ -542,6 +530,7 @@ void IValhalla::SaveFiles() {
         VUtils::Resource::WriteFile("admin.yml", emit.c_str());
     }
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     {
         YAML::Node node(DiscordManager()->m_linkedAccounts);
 
@@ -555,6 +544,7 @@ void IValhalla::SaveFiles() {
 
         VUtils::Resource::WriteFile("linked.yml", emit.c_str());
     }
+#endif
 }
 
 std::thread::id MAIN_THREAD;
@@ -605,7 +595,9 @@ void IValhalla::Start() {
     ModManager()->PostInit();
 #endif
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     DiscordManager()->Init();
+#endif
 
     /*
     if (VH_SETTINGS.worldRecording) {
@@ -738,7 +730,9 @@ void IValhalla::PeriodUpdate() {
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
     DiscordManager()->PeriodUpdate();
+#endif
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
     if (m_settings.dungeonsRegenerationInterval > 0s)
