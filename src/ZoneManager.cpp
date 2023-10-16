@@ -585,8 +585,8 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 
         // flag should always be true, all vegetation seem to always have a NetView
         //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
-        float maxTilt = std::cosf(zoneVegetation->m_maxTilt * PI / 180.f);
-        float minTilt = std::cosf(zoneVegetation->m_minTilt * PI / 180.f);
+        float maxTilt = std::cos(zoneVegetation->m_maxTilt * PI / 180.f);
+        float minTilt = std::cos(zoneVegetation->m_minTilt * PI / 180.f);
         float num6 = ZONE_SIZE * .5f - zoneVegetation->m_groupRadius;
         const int spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
         int32_t numSpawned = 0;
@@ -604,9 +604,13 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                     : GetRandomPointInRadius(state, basePos, zoneVegetation->m_groupRadius);
 
                 // random rotations
+
+                // y rotation in degrees
                 float rot_y = state.Range(0, 360);
                 float scale = state.Range(zoneVegetation->m_scaleMin, zoneVegetation->m_scaleMax);
+                // x rotation in degrees
                 float rot_x = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
+                // z rotation in degrees
                 float rot_z = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
 
                 // Use a method similar to clear area with rectangular regions

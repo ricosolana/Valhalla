@@ -1,5 +1,43 @@
 # todo:
 
+- use zdo as key/hash in set<>
+    - use less memory
+        not only avoidance of dual id,
+        but zdo can now directly contain ID
+        
+        and not be separately contained in a wrapper class
+
+- by using the zdo itself as the key/hash
+
+- alternative for storing zdos in map
+    use set not map
+    
+    zdo will contain id again
+    
+    id will be the key
+
+- if vector axis' are different from each other, then scale, else scale_scalar
+    determining equality without comparing
+    
+- consider removing owner bits from pack
+    most zdos will remain unowned
+    
+- batched owning
+    most zdos within a zone will be owned by a specific peer, 
+    
+    exceptions are made for individual RequestOwn() znetview rpc methods, like 
+        container open, 
+        any case where ownership is transferred
+        
+        determining batched ownership is simple, assume all zdoss in region are owned by specific predefined peer, queried by ZoneID
+        
+    every time a peer disconnects, all zdos are iterated
+        why
+        
+        would be better to iterate all owned zdos from ZDO_OWNERS
+        
+        
+
 - severe latency
     debug mode?
     

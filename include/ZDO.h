@@ -152,11 +152,11 @@ private:
         static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
 
         HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
-        BitPack<uint32_t, 
+        BitPack<uint16_t, 
             1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
-            12, 2, 1, 1,                                // owner, type, distant, persistent
-            8                                           // unused
-        > m_pack;                                       // 4 bytes
+            2, 1, 1,                                    // type, distant, persistent
+            4                                           // unused
+        > m_pack;                                       // 2 bytes
 
         // TODO implement the member hint bits for more optimized gets
 #endif
@@ -301,21 +301,7 @@ private:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(OWNER_t owner) {
-        if (owner == 0) {
-            this->m_data.get().m_pack.Set<data_t::BIT_OWNER>(0);
-        }
-        else {
-            for (int i = 1; i < ZDO_OWNERS.size(); i++) {
-                OWNER_t current = ZDO_OWNERS[i];
-                if (current == owner || current == 0) {
-                    this->m_data.get().m_pack.Set<data_t::BIT_OWNER>(i);
-                    if (current == 0) {
-                        ZDO_OWNERS[i] = owner;
-                    }
-                    break;
-                }
-            }
-        }
+        ZDO_OWNERS[ID()] = owner;
     }
 
     void _SetPosition(Vector3f pos) {
@@ -342,12 +328,16 @@ private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
-    //static inline ankerl::unordered_dense::segmented_map<ZDOID, uint16_t> ZDO_OWNERS;
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, OWNER_t> ZDO_OWNERS;
 
-    static inline std::array<OWNER_t, 
-        //decltype(data_t::m_pack)::capacity_v<data_t::BIT_OWNER>
-        64
-    > ZDO_OWNERS;
+    // zdoid can be shrunk however, instead of using 8 + 4 bytes  (total 16 bytes; 4 bytes are extra padding), can be just 8 bytes (4 bytes for ID, 4 bytes for owner index)
+    // because pair<K, V> includes padding, pair<zdoid, owner> uses the same memory as pair<zdoid, uint8_t>
+    //static constexpr auto szz01311 = sizeof(decltype(ZDO_OWNERS)::value_type); // 24 bytes is a lot, unless zdoid can be aligned, and pair uses
+
+    //static inline std::array<OWNER_t, 
+    //    //decltype(data_t::m_pack)::capacity_v<data_t::BIT_OWNER>
+    //    64
+    //> ZDO_OWNERS_INDEXES;
 
     //static constexpr auto OWNER_PACK_INDEX = 0;
     //static constexpr auto FLAGS_PACK_INDEX = 1;
@@ -356,8 +346,8 @@ private:
     * 36 bytes total:
     */
 
-    ZDOID m_id;                                     // 4 bytes (PADDING)
-    std::reference_wrapper<data_t> m_data;          // 8 bytes TODO use ptr?
+    ZDOID m_id;
+    std::reference_wrapper<data_t> m_data;  // TODO use ptr?
 
 public:
     ZDO(ZDO_map::value_type& pair) 
@@ -665,7 +655,8 @@ public:
     }
 
     void SetLocalScale(Vector3f scale, bool allowIdentity) {
-        // if scale axis' are the same, use scaleScalar
+        // if scaling along all axis VS scaling axis differently
+        // this is just to save some memory
         if (std::abs(scale.x - scale.y) < std::numeric_limits<float>::epsilon() * 8
             && std::abs(scale.y - scale.z) < std::numeric_limits<float>::epsilon() * 8) {
 
@@ -681,7 +672,12 @@ public:
 
     // The owner of the ZDO
     [[nodiscard]] OWNER_t Owner() const {
-        return ZDO_OWNERS[this->m_data.get().m_pack.Get<data_t::BIT_OWNER>()];
+        // TODO optimize by checking owner bit
+        auto&& find = ZDO_OWNERS.find(ID());
+        if (find != ZDO_OWNERS.end()) {
+            return find->second;
+        }
+        return 0;
     }
 
 

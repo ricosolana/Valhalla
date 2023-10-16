@@ -132,7 +132,7 @@ bool Quaternion::operator!=(Quaternion other) const {
 
 
 // https://gist.github.com/HelloKitty/91b7af87aac6796c3da9#file-quaternion-cs-L644
-Quaternion Quaternion::Euler(float x, float y, float z) {        
+Quaternion Quaternion::Euler(float x, float y, float z) {
     // degrees to radians
     double yaw = (double)x * PI / 180.0;
     double pitch = (double)y * PI / 180.0;
