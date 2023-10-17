@@ -158,6 +158,11 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 
+void Peer::SetAdmin(bool enable) {
+    if (enable) Valhalla()->m_admin.erase(m_socket->GetHostName());
+    else Valhalla()->m_admin.insert(m_socket->GetHostName());
+}
+
 std::optional<ZDO> Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }

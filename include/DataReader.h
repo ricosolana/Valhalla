@@ -8,9 +8,6 @@
 #include "VUtilsTraits.h"
 #include "ModManager.h"
 #include "DataStream.h"
-//#include "DataWriter.h"
-
-//class DataWriter;
 
 class DataReader : public DataStream {
 private:
@@ -101,8 +98,8 @@ public:
         Iterable out{};
 
         // TODO why is this here? should always reserve regardless
-        if constexpr (std::is_same_v<Type, std::string>)
-            out.reserve(count);
+        //if constexpr (std::is_same_v<Type, std::string>)
+        out.reserve(count);
 
         for (int32_t i=0; i < count; i++) {
             auto type = Read<Type>();

@@ -75,14 +75,6 @@ public:
     //}
 
 public:
-    /*
-    DataReader ToReader() {
-        if constexpr (std::is_same_v<T, BYTE_VIEW_t>)
-            return DataReader(this->m_buf, this->m_pos);
-        else
-            return DataReader(this->m_buf.get(), this->m_pos);
-    }*/
-
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
     void SubWrite(F func) {

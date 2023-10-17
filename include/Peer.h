@@ -40,8 +40,7 @@ class Peer {
     friend class IModManager;
 
     constexpr static int VISIBLE_PACK_INDEX = 0;
-    constexpr static int ADMIN_PACK_INDEX = 1;
-    constexpr static int GATED_PACK_INDEX = 2;
+    constexpr static int GATED_PACK_INDEX = 1;
 
 public:
     using Method = IMethod<Peer*>;
@@ -71,7 +70,7 @@ public:
     ZDOID m_characterID;
 
 public:
-    // Visible: 0, Admin: 1, Gated: 2
+    // Visible: 0, Gated: 1
     BitPack<uint8_t, 1, 1, 1, 5> m_pack;
 
     UNORDERED_MAP_t<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
@@ -109,7 +108,7 @@ public:
     }
 
     bool IsAdmin() const {
-        return m_pack.Get<ADMIN_PACK_INDEX>();
+        return Valhalla()->m_admin.contains(m_socket->GetHostName());
     }
 
     bool IsGated() const {
@@ -120,9 +119,7 @@ public:
         m_pack.Set<VISIBLE_PACK_INDEX>(enable);
     }
 
-    void SetAdmin(bool enable) {
-        m_pack.Set<ADMIN_PACK_INDEX>(enable);
-    }
+    void SetAdmin(bool enable);
 
     void SetGated(bool enable) {
         m_pack.Set<GATED_PACK_INDEX>(enable);

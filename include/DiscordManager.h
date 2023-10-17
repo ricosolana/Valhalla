@@ -28,14 +28,14 @@ public:
     void PeriodUpdate();
 
     // Dont use, method shouldnt return a blank string
-    [[deprecated]] std::string GetHostBySnowflake(dpp::snowflake id) {
-        for (auto&& pair : m_linkedAccounts) {
-            if (pair.second == id) {
-                return pair.first;
-            }
-        }
-        return "";
-    }
+    //[[deprecated]] std::string GetHostBySnowflake(dpp::snowflake id) {
+    //    for (auto&& pair : m_linkedAccounts) {
+    //        if (pair.second == id) {
+    //            return pair.first;
+    //        }
+    //    }
+    //    return "";
+    //}
 
     Peer* GetPeerBySnowflake(dpp::snowflake id);
 
