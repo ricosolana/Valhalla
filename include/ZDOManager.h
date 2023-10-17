@@ -346,7 +346,7 @@ public:
 		EraseZDO(zdoid);
 	}
 	void DestroyZDO(const ZDO zdo) {
-		DestroyZDO(zdo.ID());
+		DestroyZDO(zdo.GetID());
 	}
 
 

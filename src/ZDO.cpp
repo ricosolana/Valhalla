@@ -67,7 +67,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     this->_SetRotation(pkg.Read<Quaternion>());
 
     // will get or create an empty default
-    auto&& members = ZDO_MEMBERS[ID()];
+    auto&& members = ZDO_MEMBERS[GetID()];
 
     _TryReadType<float,         char16_t>(pkg, members);
     _TryReadType<Vector3f,      char16_t>(pkg, members);
@@ -136,9 +136,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         member_map copy = members;
         for (auto&& pair : copy) {
             if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
-                // assign an arbitrary random seed based off its ID()
+                // assign an arbitrary random seed based off its GetID()
                 Set("seed", 
-                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(ID())));
+                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
             }
         }
     }
@@ -201,13 +201,13 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         auto type = reader.Read<ZDOConnector::Type>();
         if (version) {
             auto hash = reader.Read<HASH_t>();
-            auto&& connector = ZDO_CONNECTORS[ID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
+            auto&& connector = ZDO_CONNECTORS[GetID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
             connector.m_type = type;
             connector.m_hash = hash;
         }
         else {
             auto target = reader.Read<ZDOID>();
-            auto&& connector = ZDO_TARGETED_CONNECTORS[ID()];
+            auto&& connector = ZDO_TARGETED_CONNECTORS[GetID()];
             // set connection
             connector.m_type = type;
             connector.m_target = target;
@@ -232,7 +232,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         | (1 << NETWORK_ByteArray)))) 
     {
         // Will insert a default if missing (should be missing already)
-        auto&& members = ZDO_MEMBERS[ID()];
+        auto&& members = ZDO_MEMBERS[GetID()];
         if (flags & (1 << NETWORK_Float)) 
             _TryReadType<float, uint8_t>(reader, members);
         if (flags & (1 << NETWORK_Vec3)) 
@@ -300,7 +300,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
 
     if (network) {
-        auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
+        auto&& find = ZDO_TARGETED_CONNECTORS.find(GetID());
         if (find != ZDO_TARGETED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto&& connector = find->second;
             writer.Write(connector.m_type);
@@ -310,7 +310,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
     else {
-        auto&& find = ZDO_CONNECTORS.find(ID());
+        auto&& find = ZDO_CONNECTORS.find(GetID());
         if (find != ZDO_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto&& connector = find->second;
             writer.Write(connector.m_type);
@@ -320,7 +320,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
-    auto&& find = ZDO_MEMBERS.find(ID());
+    auto&& find = ZDO_MEMBERS.find(GetID());
     if (find != ZDO_MEMBERS.end()) {
         auto&& types = find->second;
 

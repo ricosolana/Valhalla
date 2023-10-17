@@ -209,7 +209,7 @@ void IDungeonManager::TryRegenerateDungeons() {
         }
         else {
             if (auto&& newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
-                *itr = newDungeon->ID();
+                *itr = newDungeon->GetID();
             }
             ++idx;
         }

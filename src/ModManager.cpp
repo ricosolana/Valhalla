@@ -505,7 +505,7 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZDO>("ZDO",
         sol::no_constructor,
-        "id", sol::property(&ZDO::ID),
+        "id", sol::property(&ZDO::GetID),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),

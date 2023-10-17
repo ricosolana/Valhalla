@@ -188,14 +188,14 @@ void Peer::ZDOSectorInvalidated(ZDO zdo) {
         return;
 
     if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {
-        if (m_zdos.erase(zdo.ID())) {
-            m_invalidSector.insert(zdo.ID());
+        if (m_zdos.erase(zdo.GetID())) {
+            m_invalidSector.insert(zdo.GetID());
         }
     }
 }
 
 bool Peer::IsOutdatedZDO(ZDO zdo, decltype(m_zdos)::iterator& outItr) {
-    auto&& find = m_zdos.find(zdo.ID());
+    auto&& find = m_zdos.find(zdo.GetID());
 
     outItr = find;
 

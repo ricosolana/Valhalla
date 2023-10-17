@@ -228,7 +228,7 @@ private:
     template<typename T> 
         requires is_member_v<T>
     [[maybe_unused]] bool _Set(HASH_t key, T value) {
-        return _Set(key, std::move(value), ZDO_MEMBERS[ID()]);
+        return _Set(key, std::move(value), ZDO_MEMBERS[GetID()]);
     }
 
     template<typename T>
@@ -304,7 +304,7 @@ private:
 
     // Set the owner of the ZDO without revising
     void _SetOwner(USER_ID_t owner) {
-        ZDO_OWNERS[ID()] = owner;
+        ZDO_OWNERS[GetID()] = owner;
     }
 
     void _SetPosition(Vector3f pos) {
@@ -393,7 +393,7 @@ public:
         requires is_member_v<T>
     bool Extract(HASH_t key, T& out) {
         //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
-            auto&& members_find = ZDO_MEMBERS.find(ID());
+            auto&& members_find = ZDO_MEMBERS.find(GetID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
 
@@ -430,7 +430,7 @@ public:
         //if (m_encoded.HasMember<T>()) {
         //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
         //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
-            auto&& members_find = ZDO_MEMBERS.find(ID());
+            auto&& members_find = ZDO_MEMBERS.find(GetID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
 
@@ -570,7 +570,7 @@ public:
     // Internal use
     //  Raw sets the connector with no revision
     bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid) {
-        auto&& insert = ZDO_TARGETED_CONNECTORS.insert({ ID(),
+        auto&& insert = ZDO_TARGETED_CONNECTORS.insert({ GetID(),
             ZDOConnectorTargeted(type, zdoid) });
 
         auto&& connector = insert.first->second;
@@ -603,7 +603,7 @@ public:
 
 
     [[nodiscard]] ZDOID GetConnectionZDOID(ZDOConnector::Type type) const {
-        auto&& find = ZDO_TARGETED_CONNECTORS.find(ID());
+        auto&& find = ZDO_TARGETED_CONNECTORS.find(GetID());
         if (find != ZDO_TARGETED_CONNECTORS.end()) {
             if (find->second.m_type == type)
                 return find->second.m_target;
@@ -612,7 +612,7 @@ public:
     }
 
 
-    [[nodiscard]] ZDOID ID() const {
+    [[nodiscard]] ZDOID GetID() const {
         return this->m_id;
     }
 
@@ -680,7 +680,7 @@ public:
     // The owner of the ZDO
     [[nodiscard]] USER_ID_t Owner() const {
         // TODO optimize by checking owner bit
-        auto&& find = ZDO_OWNERS.find(ID());
+        auto&& find = ZDO_OWNERS.find(GetID());
         if (find != ZDO_OWNERS.end()) {
             return find->second;
         }
@@ -754,7 +754,7 @@ public:
     [[nodiscard]] size_t GetTotalAlloc() const {
         size_t size = 0;
 
-        auto&& find = ZDO_MEMBERS.find(ID());
+        auto&& find = ZDO_MEMBERS.find(GetID());
         if (find != ZDO_MEMBERS.end()) {
             for (auto&& member : find->second) {
                 size += std::visit([](const auto& value) {

@@ -72,7 +72,7 @@ void IZDOManager::Update() {
 		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> std::optional<ZDO> {
 			std::vector<ZDO> list;
 			for (auto&& zdo : portals) {
-				if (zdo.ID() != skip
+				if (zdo.GetID() != skip
 					&& zdo.GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
 					&& !zdo.GetConnectionZDOID(ZDOConnector::Type::Portal))
 				{
@@ -96,7 +96,7 @@ void IZDOManager::Update() {
 				{
 					zdo.SetLocal();
 					zdo.SetConnection(ZDOConnector::Type::Portal, ZDOID::NONE);
-					ForceSendZDO(zdo.ID());
+					ForceSendZDO(zdo.GetID());
 				}
 			}
 		}
@@ -104,14 +104,14 @@ void IZDOManager::Update() {
 		for (auto&& zdo3 : portals) {
 			if (!zdo3.GetConnectionZDOID(ZDOConnector::Type::Portal)) {
 				auto&& string2 = zdo3.GetString(Hashes::ZDO::TeleportWorld::TAG);
-				auto&& zdo4 = FindRandomUnconnectedPortal(zdo3.ID(), string2);
+				auto&& zdo4 = FindRandomUnconnectedPortal(zdo3.GetID(), string2);
 				if (zdo4) {
 					zdo3.SetLocal();
 					zdo4->SetLocal();
-					zdo3.SetConnection(ZDOConnector::Type::Portal, zdo4->ID());
-					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3.ID());
-					ForceSendZDO(zdo3.ID());
-					ForceSendZDO(zdo4->ID());
+					zdo3.SetConnection(ZDOConnector::Type::Portal, zdo4->GetID());
+					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3.GetID());
+					ForceSendZDO(zdo3.GetID());
+					ForceSendZDO(zdo4->GetID());
 				}
 			}
 		}
@@ -163,7 +163,7 @@ void IZDOManager::Update() {
 
 void IZDOManager::_AddZDOToZone(ZDO zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
-		auto&& insert = container->insert(zdo.ID());
+		auto&& insert = container->insert(zdo.GetID());
 
 		assert(insert.second);
 	}
@@ -171,7 +171,7 @@ void IZDOManager::_AddZDOToZone(ZDO zdo) {
 
 void IZDOManager::_RemoveFromSector(ZDO zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
-		auto&& erase = container->erase(zdo.ID());
+		auto&& erase = container->erase(zdo.GetID());
 
 		// TODO is this necessary?
 		assert(erase);
@@ -243,7 +243,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		//auto&& prefab = zdo.GetPrefab();
 
-		m_objectsByPrefab[zdo.GetPrefabHash()].insert(zdo.ID());
+		m_objectsByPrefab[zdo.GetPrefabHash()].insert(zdo.GetID());
 
 		//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
 		//	[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
@@ -255,10 +255,10 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
 			if (zdo->Position().y > 4000)
-				DungeonManager()->m_dungeonInstances.push_back(zdo->ID());
+				DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 		}
 #endif // VH_DUNGEON_REGENERATION
-		//m_objectsByID[zdo->ID()] = std::move(zdo);
+		//m_objectsByID[zdo->GetID()] = std::move(zdo);
 	}
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
@@ -282,13 +282,13 @@ void IZDOManager::Load(DataReader& reader, int version) {
 					auto&& string2 = zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG);
 					ZDOID zdoid2; zdo2->Extract("target", zdoid2);
 					if (string == string2
-						&& zdoid == zdo2->ID()
-						&& zdoid2 == zdo.ID()) 
+						&& zdoid == zdo2->GetID()
+						&& zdoid2 == zdo.GetID()) 
 					{
 						zdo.SetLocal();
 						zdo2->SetLocal();
-						zdo.SetConnection(ZDOConnector::Type::Portal, zdo2->ID());
-						zdo2->SetConnection(ZDOConnector::Type::Portal, zdo.ID());
+						zdo.SetConnection(ZDOConnector::Type::Portal, zdo2->GetID());
+						zdo2->SetConnection(ZDOConnector::Type::Portal, zdo.GetID());
 					}
 				}
 			}
@@ -299,7 +299,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			zdo.SetLocal();
 			ZDOID zdoid; zdo.Extract("spawn_id", zdoid);
 			auto&& zdo2 = GetZDO(zdoid);
-			zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->ID() : ZDOID::NONE);
+			zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->GetID() : ZDOID::NONE);
 		}
 
 
@@ -309,7 +309,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			ZDOID zdoid; zdo.Extract("parentID", zdoid);
 			auto&& zdo2 = GetZDO(zdoid);
 			if (zdo2) {
-				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->ID());
+				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->GetID());
 			}
 			else {
 				//zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
@@ -567,7 +567,7 @@ IZDOManager::ZDO_iterator IZDOManager::_EraseZDO(IZDOManager::ZDO_iterator itr) 
 	
 	// erase members and connectors
 	ZDO::ZDO_MEMBERS.erase(zdoid);
-	//ZDO::ZDO_CONNECTORS.erase(zdo->ID());
+	//ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
 	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
 	return m_objectsByID.erase(itr);
@@ -881,13 +881,13 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 			auto&& zdo = itr->first;
 
-			peer.m_forceSend.erase(zdo.ID());
+			peer.m_forceSend.erase(zdo.GetID());
 
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
 				continue;
 			}
 
-			writer.Write(zdo.ID());
+			writer.Write(zdo.GetID());
 			writer.Write(zdo.GetOwnerRevision());
 			writer.Write(zdo.GetDataRevision());
 			writer.Write(zdo.Owner());
@@ -897,7 +897,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 				zdo.Pack(writer, true);
 			});
 
-			peer.m_zdos[zdo.ID()] = { zdo.GetRevision(), time};
+			peer.m_zdos[zdo.GetID()] = { zdo.GetRevision(), time};
 		}
 		writer.Write(ZDOID::NONE); // null terminator
 	});
@@ -947,7 +947,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			auto&& zdo = ZDO(*pair.first);
 			auto&& created = pair.second;
 
-			assert(zdoid == zdo.ID());
+			assert(zdoid == zdo.GetID());
 
 			if (!created) [[likely]] {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
