@@ -67,7 +67,6 @@ public:
     class Rev {
     private:
         // DataRevision: 0, OwnerRevision: 1
-        BitPack<uint32_t, 21, 32 - 21> m_pack;
         //BitPack<uint32_t, 21, 32 - 21> m_pack;
         BitPack<uint32_t, 23, 32 - 23> m_pack;
 
