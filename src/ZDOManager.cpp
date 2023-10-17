@@ -959,10 +959,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				// Unpack the ZDOs primary data
 				zdo.Unpack(des, 0);
 
+				VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOUnpacked, peer, zdo);
+
 				// Only disperse through world if ZDO is new
 				if (created) {
 					//if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOCreated, peer, zdo)) {
-					//	EraseZDO(pair.first);
+					//	_EraseZDO(pair.first);
 					//	continue;
 					//}
 
