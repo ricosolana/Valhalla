@@ -508,7 +508,7 @@ void IModManager::LoadAPI() {
         "id", sol::property(&ZDO::GetID),
         "pos", sol::property(&ZDO::Position, &ZDO::SetPosition),
         "zone", sol::property(&ZDO::GetZone),
-        "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
+        "rot", sol::property(&ZDO::GetRotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
         "prefabHash", sol::property(&ZDO::GetPrefabHash),
         "owner", sol::property([](ZDO self) { return Int64Wrapper(self.Owner()); }, [](ZDO self, Int64Wrapper owner) { self.SetOwner((int64_t)owner); }),

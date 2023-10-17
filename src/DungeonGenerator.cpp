@@ -10,7 +10,7 @@
 #include "VUtilsMath2.h"
 
 DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
-	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.Rotation()) {
+	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.Position()), m_rot(zdo.GetRotation()) {
 
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	auto seed = GeoManager()->GetSeed();

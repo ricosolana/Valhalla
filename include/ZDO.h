@@ -641,7 +641,7 @@ public:
 
     [[nodiscard]] ZoneID GetZone() const;
 
-    [[nodiscard]] Quaternion Rotation() const {
+    [[nodiscard]] Quaternion GetRotation() const {
         return Quaternion::Euler(this->m_data.get().m_rotation);
     }
 

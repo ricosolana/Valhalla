@@ -55,7 +55,7 @@ void VHTest::Test_ZDO_Gets(ZDO& zdo) {
     assert(*zdo.Get<Quaternion>("my quat") == Quaternion(0, 0, 0, 1));
 
     assert(zdo.Position() == Vector3f(0, 5, 100));
-    //assert(zdo.Rotation().LengthSquared() == Quaternion(1, 0, 0, 0).LengthSquared());
+    //assert(zdo.GetRotation().LengthSquared() == Quaternion(1, 0, 0, 0).LengthSquared());
 
     // TODO Quaternions are screwed up still, luckily everything else now works
     //  The test was wrong, (and thus the usage, for some reason char* was being interpreted as a int?)

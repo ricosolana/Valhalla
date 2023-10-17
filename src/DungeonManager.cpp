@@ -164,7 +164,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
         // Destroy all zdos high in the sky near dungeon IN ZONE
         auto pos = dungeonZdo.Position();
-        auto rot = dungeonZdo.Rotation();
+        auto rot = dungeonZdo.GetRotation();
 
         if (!playerNear) {
             auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
