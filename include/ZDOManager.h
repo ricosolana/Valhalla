@@ -187,6 +187,8 @@ public:
 	//	intended to instantiate an object based on another
 	//[[maybe_unused]] ZDO Instantiate(const ZDO& zdo);
 
+	std::list<ZDO> GetZDOs();
+
 	// Get a ZDO by id
 	//	TODO use optional<reference>
 	[[nodiscard]] ZDO::optional GetZDO(ZDOID id);

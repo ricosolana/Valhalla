@@ -500,15 +500,16 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::Rotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        "owner", sol::property([](const ZDO& self) { return Int64Wrapper(self.Owner()); }, [](ZDO& self, Int64Wrapper owner) { self.SetOwner((int64_t)owner); }),
+        "prefabHash", sol::property(&ZDO::GetPrefabHash),
+        "owner", sol::property([](ZDO self) { return Int64Wrapper(self.Owner()); }, [](ZDO self, Int64Wrapper owner) { self.SetOwner((int64_t)owner); }),
         "IsOwner", &ZDO::IsOwner,
         "IsLocal", &ZDO::IsLocal,
         "SetLocal", &ZDO::SetLocal,
         //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
         "HasOwner", &ZDO::HasOwner,
         "Disown", &ZDO::Disown,
-        //"dataRev", sol::readonly(&ZDO::m_dataRev),
-        //"ownerRev", sol::property(&ZDO::GetOwnerRevision),
+        "dataRev", sol::property(&ZDO::GetDataRevision), // sol::property([](ZDO self) { return self.Revision().GetDataRevision(); }),
+        "ownerRev", sol::property(&ZDO::GetOwnerRevision),
         //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
@@ -736,6 +737,7 @@ void IModManager::LoadAPI() {
             [](IZDOManager& self, ZoneID zone, size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
+            sol::resolve<std::list<ZDO>()>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(HASH_t)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 
