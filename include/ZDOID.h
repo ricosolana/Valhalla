@@ -12,12 +12,14 @@ class ZDOID {
     //using UType = uint64_t;
 
     // User: 0, ID: 1
-    //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
+    BitPack<uint32_t, 12, 20> m_pack;
 
-    OWNER_t m_userID{};
-    uint32_t m_id{};
 
-    uint32_t m_unusedPadding = 0;
+
+    //OWNER_t m_userID{};
+    //uint32_t m_id{};
+
+    //uint32_t m_unusedPadding = 0;
         
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
@@ -25,8 +27,8 @@ class ZDOID {
 
     //static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
 
-    //static constexpr auto USER_PACK_INDEX = 0;
-    //static constexpr auto ID_PACK_INDEX = 1;
+    static constexpr auto USERID_INDEX_BIT = 0;
+    static constexpr auto ID_BIT = 1;
 
 public:
     static const ZDOID NONE;

@@ -1,5 +1,15 @@
 # todo:
 
+- dispose zdo members on zdo erase
+    owner map
+    member map
+    ...
+    
+    maybe store this in zdo destructor
+    to keep vars private
+    
+    remove access for ZDOManager (eliminate friend specifier)
+
 - use zdo as key/hash in set<>
     - use less memory
         not only avoidance of dual id,

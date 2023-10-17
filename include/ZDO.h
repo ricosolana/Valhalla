@@ -21,6 +21,27 @@
 
 
 
+class tiny_rotation {
+private:
+    BitPack<uint32_t, 10, 12, 10> m_pack;
+
+public:
+    tiny_rotation() {}
+
+    tiny_rotation(Vector3f rot) {
+        m_pack.Set<0>((rot.x * (float)decltype(m_pack)::capacity_v<0>) / 360.f);
+        m_pack.Set<1>((rot.x * (float)decltype(m_pack)::capacity_v<1>) / 360.f);
+        m_pack.Set<2>((rot.x * (float)decltype(m_pack)::capacity_v<2>) / 360.f);
+    }
+
+    operator Vector3f() {
+        return Vector3f((m_pack.Get<0>() * 360.f) / (float)decltype(m_pack)::capacity_v<0>,
+            (m_pack.Get<1>() * 360.f) / (float)decltype(m_pack)::capacity_v<1>,
+            (m_pack.Get<2>() * 360.f) / (float)decltype(m_pack)::capacity_v<2>);
+    }
+};
+
+
 class ZDO {
     // TODO are these friend classes safe?
     friend class IZDOManager; 
@@ -128,42 +149,6 @@ private:
     static constexpr unsigned int NETWORK_Type1 = 10;
     static constexpr unsigned int NETWORK_Type2 = 11;
     static constexpr unsigned int NETWORK_Rotation = 12;
-
-    class data_t {
-        friend class ::ZDO; // namespacing is weird
-
-        static constexpr unsigned int BIT_OWNER = NETWORK_ByteArray + 1;
-
-    private:
-        Vector3f m_pos;                                 // 12 bytes
-        ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
-        Vector3f m_rotation;                            // 12 bytes
-
-#if VH_IS_ON(VH_REQUIRE_RECOGNIZED_PREFABS)
-        static constexpr unsigned int BIT_PREFAB = BIT_OWNER + 1;
-
-        BitPack<uint32_t, 
-            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
-            12, 16                                      // owner, prefab
-        > m_pack;
-#else        
-        static constexpr unsigned int BIT_TYPE = BIT_OWNER + 1;
-        static constexpr unsigned int BIT_DISTANT = BIT_TYPE + 1;
-        static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
-
-        HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
-        BitPack<uint16_t, 
-            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
-            2, 1, 1,                                    // type, distant, persistent
-            4                                           // unused
-        > m_pack;                                       // 2 bytes
-
-        // TODO implement the member hint bits for more optimized gets
-#endif
-
-    public:
-        data_t() {}
-    };
 
 private:
     template<typename T>
@@ -278,25 +263,25 @@ private:
 
     // TODO rename _Revise() ?
     void Revise() {
-        this->m_data.get().m_rev.ReviseData();
+        this->m_rev.ReviseData();
     }
 
     
 
     void _SetPrefabHash(HASH_t hash) {
-        this->m_data.get().m_prefabHash = hash;
+        this->m_prefabHash = hash;
     }
 
     void _SetPersistent(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_PERSISTENT>(flag);
+        return this->m_pack.Set<BIT_PERSISTENT>(flag);
     }
 
     void _SetDistant(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_DISTANT>(flag);
+        return this->m_pack.Set<BIT_DISTANT>(flag);
     }
 
     void _SetType(ObjectType type) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_TYPE>(std::to_underlying(type));
+        return this->m_pack.Set<BIT_TYPE>(std::to_underlying(type));
     }
 
     // Set the owner of the ZDO without revising
@@ -305,24 +290,18 @@ private:
     }
 
     void _SetPosition(Vector3f pos) {
-        this->m_data.get().m_pos = pos;
+        this->m_pos = pos;
     }
 
     void _SetRotation(Vector3f rot) {
-        this->m_data.get().m_rotation = rot;
+        this->m_rotation = rot;
     }
 
     void _SetRotation(Quaternion rot) {
         this->_SetRotation(rot.EulerAngles());
     }
 
-
-
-public:
-    using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDOID>; // TODO use reference_wrapper<>?
-    using ZDO_map = ankerl::unordered_dense::segmented_map<ZDOID, std::unique_ptr<data_t>>;
-    using ZDO_iterator = ZDO_map::iterator;
-    
+        
 
 private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
@@ -343,18 +322,37 @@ private:
     //static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
-    * 36 bytes total:
+    * x bytes total
     */
-
-    ZDOID m_id;
-    std::reference_wrapper<data_t> m_data;  // TODO use ptr?
+        
+    //ZDOID m_id;                                     // TODO fix padding
+    int32_t id;
+    Vector3f m_pos;                                 // 12 bytes
+    ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
+    //Vector3f m_rotation;                          // 12 bytes
+    tiny_rotation m_rotation;                       // 4 bytes
+    uint16_t m_prefabIndex;
 
 public:
-    ZDO(ZDO_map::value_type& pair) 
-        : m_id(pair.first), m_data(*pair.second)
+    ZDO(ZDOID id) 
+        : m_id(id)
     {}
 
-    //ZDO(data_t& data) : m_data(data) {}
+    using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDOID>; // TODO use reference_wrapper<>?
+    using ZDO_set = ankerl::unordered_dense::segmented_set<std::unique_ptr<ZDO>, ankerl::unordered_dense::hash<ZDO>, std::equal_to<>>;
+    using ZDO_iterator = ZDO_set::iterator;
+
+    using reference = std::reference_wrapper<ZDO>;
+    using const_reference = std::reference_wrapper<const ZDO>;
+    using optional = std::add_pointer_t<ZDO>;
+
+    static constexpr optional nullopt = nullptr;
+
+    static ZDO::optional make_optional(ZDO::reference zdo) {
+        return &zdo.get();
+    }
+
+    
 
     // TODO this is redundant; ZDOManager <-> ZDO; crucially tied with no disbanding
     // ZDOManager constructor
@@ -363,8 +361,24 @@ public:
     //}
 
     // doesnt compile when assigning optional
-    //ZDO(const ZDO& other) = default;
-    //ZDO(ZDO&& other) = default;
+    ZDO(const ZDO& other) = delete;
+    ZDO(ZDO&& other) = delete;
+
+    bool operator==(const ZDO& other) const noexcept {
+        // ZDOs cannot have the same ID and be different objects
+        // this owuld break ZDOManager and intended functionality would not make sense
+        //return this->ID() == other.ID();
+
+        // check address at start
+        assert((this != &other) == (this->ID() != other.ID()));
+
+        // so we compare addresses instead of identities
+        return this == &other;
+    }
+
+    bool operator==(const ZDOID& other) const noexcept {
+        return this->ID() == other;
+    }
         
 
 
@@ -610,7 +624,7 @@ public:
     }
 
     [[nodiscard]] Vector3f Position() const {
-        return this->m_data.get().m_pos;
+        return this->m_pos;
     }
 
     //void SetDataRevision(uint32_t dataRev) {
@@ -624,7 +638,7 @@ public:
 
 
     Rev& GetRevision() {
-        return this->m_data.get().m_rev;
+        return this->m_rev;
     }
 
     // Set the position of the ZDO
@@ -635,23 +649,23 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion Rotation() const {
-        return Quaternion::Euler(this->m_data.get().m_rotation);
+        return Quaternion::Euler(this->m_rotation);
     }
 
     void SetRotation(Quaternion rot) {
         auto&& euler = rot.EulerAngles();
-        if (euler != this->m_data.get().m_rotation) {
-            this->m_data.get().m_rotation = euler;
+        if (euler != this->m_rotation) {
+            this->m_rotation = euler;
             this->Revise();
         }
     }
             
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByHash(this->m_data.get().m_prefabHash);
+        return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
     }
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-        return this->m_data.get().m_prefabHash;
+        return this->m_prefabHash;
     }
 
     void SetLocalScale(Vector3f scale, bool allowIdentity) {
@@ -713,7 +727,7 @@ public:
         if (this->Owner() != owner) {
             this->_SetOwner(owner);
 
-            this->m_data.get().m_rev.ReviseOwner();
+            this->m_rev.ReviseOwner();
             return true;
         }
         return false;
@@ -722,25 +736,25 @@ public:
 
 
     [[nodiscard]] uint16_t GetOwnerRevision() const {
-        return this->m_data.get().m_rev.GetOwnerRevision();
+        return this->m_rev.GetOwnerRevision();
     }
 
     [[nodiscard]] uint32_t GetDataRevision() const {
-        return this->m_data.get().m_rev.GetDataRevision();
+        return this->m_rev.GetDataRevision();
     }
 
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_PERSISTENT>();
+        return this->m_pack.Get<BIT_PERSISTENT>();
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_DISTANT>();
+        return this->m_pack.Get<BIT_DISTANT>();
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return (ObjectType) this->m_data.get().m_pack.Get<data_t::BIT_TYPE>();
+        return (ObjectType) this->m_pack.Get<BIT_TYPE>();
     }
 
 
@@ -754,5 +768,21 @@ public:
 
 
 
+// ankerl::unordered_dense::hash<my_zdo_t>, std::equal_to<>
 
+namespace ankerl::unordered_dense {
+    template <>
+    struct hash<ZDO> {
+        using is_transparent = void; // enable heterogeneous overloads
+        using is_avalanching = void; // mark class as high quality avalanching hash
+
+        [[nodiscard]] auto operator()(const ZDO& zdo) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(zdo.ID());
+        }
+
+        [[nodiscard]] auto operator()(const ZDOID &zdoid) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::detail::wyhash::hash(&zdoid, sizeof(zdoid));
+        }
+    };
+}
 

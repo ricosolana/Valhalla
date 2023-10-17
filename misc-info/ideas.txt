@@ -2,6 +2,46 @@
 #   alternative low-priority todo list
 #   includes mod ideas, extra features "feature-creep"
 
+- using lua plugins incorrectly results in lingering zdos
+    lua should never include this behavior
+    
+    prevent dangling ptrs unless unsafe mode allowed,
+    
+    unsafe mode is obviously *unsafe
+        but would allow for otherwise more complex and possibly faster operations 
+        
+        ie luajit would be considered unsafe
+        
+    resources on games using lua 'unsafe' modes
+        https://docs.dfhack.org/en/stable/docs/dev/Lua%20API.html
+    
+        https://noita.wiki.gg/wiki/Modding:_Lua_API#Unrestricted_API
+        
+        https://wofsauge.github.io/IsaacDocs/rep/tutorials/Using-Additional-Lua-Files.html?h=unsafe#workaround-for-require-problems       
+       
+        https://bindingofisaacrebirth.fandom.com/wiki/Launch_Options#--luadebug
+        
+        https://medium.com/expected-behavior/instrumentorio-custom-monitoring-for-factorio-or-anything-4c5d63fecdd0#8a95
+
+        im not including roblox because mods are stored serverside anyways, 
+            webrequests are a given...
+            
+    unsafe can be broken up into 2 categories:
+        security vulnerabilities
+            mostly to do with private data being transferred over network
+        exploit vulnerabilities
+            mostly to do with accessing dangling pointers
+            crashes are most common with this
+            
+        hmmmmmm
+    
+- for each mod, create individual lua sandbox
+    new state for each mod allows for discrete behaviour and cleanup
+    
+    broken mods can be easily cleaned up
+    
+
+
 - why are ~2 boss stones seperate from StartTemple LocationProxy?
 
 - Devcommands appears to ignore ward restrictions?

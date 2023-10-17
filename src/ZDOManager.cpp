@@ -68,9 +68,10 @@ void IZDOManager::Update() {
 		// TODO use the optimized Lua ported code for linking portals
 		//	not the exact code but the way the algo works
 
-		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> std::optional<ZDO> {
-			std::vector<ZDO> list;
-			for (auto&& zdo : portals) {
+		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO::optional {
+			std::vector<ZDO::reference> list;
+			for (auto&& ref : portals) {
+				auto&& zdo = ref.get();
 				if (zdo.ID() != skip
 					&& zdo.GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
 					&& !zdo.GetConnectionZDOID(ZDOConnector::Type::Portal))
@@ -80,13 +81,14 @@ void IZDOManager::Update() {
 			}
 
 			if (list.empty()) {
-				return std::nullopt;
+				return ZDO::nullopt;
 			}
 
-			return list[VUtils::Random::State().Range(0, list.size())];
+			return ZDO::make_optional(list[VUtils::Random::State().Range(0, list.size())]);
 		};
 
-		for (auto&& zdo : portals) {
+		for (auto&& ref : portals) {
+			auto&& zdo = ref.get();
 			auto&& connectionZDOID = zdo.GetConnectionZDOID(ZDOConnector::Type::Portal);
 			auto&& string = zdo.GetString(Hashes::ZDO::TeleportWorld::TAG);
 			if (connectionZDOID) {
@@ -100,7 +102,8 @@ void IZDOManager::Update() {
 			}
 		}
 
-		for (auto&& zdo3 : portals) {
+		for (auto&& ref : portals) {
+			auto&& zdo3 = ref.get();
 			if (!zdo3.GetConnectionZDOID(ZDOConnector::Type::Portal)) {
 				auto&& string2 = zdo3.GetString(Hashes::ZDO::TeleportWorld::TAG);
 				auto&& zdo4 = FindRandomUnconnectedPortal(zdo3.ID(), string2);
@@ -160,7 +163,8 @@ void IZDOManager::Update() {
 
 
 
-void IZDOManager::_AddZDOToZone(ZDO zdo) {
+void IZDOManager::_AddZDOToZone(ZDO::reference ref) {
+	auto&& zdo = ref.get();
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
 		auto&& insert = container->insert(zdo.ID());
 
@@ -168,7 +172,8 @@ void IZDOManager::_AddZDOToZone(ZDO zdo) {
 	}
 }
 
-void IZDOManager::_RemoveFromSector(ZDO zdo) {
+void IZDOManager::_RemoveFromSector(ZDO::reference ref) {
+	auto&& zdo = ref.get();
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
 		auto&& erase = container->erase(zdo.ID());
 
@@ -177,7 +182,8 @@ void IZDOManager::_RemoveFromSector(ZDO zdo) {
 	}
 }
 
-void IZDOManager::_InvalidateZDOZone(ZDO zdo) {
+void IZDOManager::_InvalidateZDOZone(ZDO::reference ref) {
+	auto&& zdo = ref.get();
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
