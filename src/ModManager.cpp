@@ -737,6 +737,7 @@ void IModManager::LoadAPI() {
             [](IZDOManager& self, ZoneID zone, size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
+            sol::resolve<std::list<ZDO>()>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(HASH_t)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
 

@@ -68,6 +68,8 @@ public:
     private:
         // DataRevision: 0, OwnerRevision: 1
         BitPack<uint32_t, 21, 32 - 21> m_pack;
+        //BitPack<uint32_t, 21, 32 - 21> m_pack;
+        BitPack<uint32_t, 23, 32 - 23> m_pack;
 
         static constexpr auto DATA_REVISION_PACK_INDEX = 0;
         static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
@@ -319,8 +321,8 @@ private:
 
 
 public:
-    using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDOID>; // TODO use reference_wrapper<>?
-    using ZDO_map = ankerl::unordered_dense::segmented_map<ZDOID, std::unique_ptr<data_t>>;
+    using ZDOContainer = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
+    using ZDO_map = UNORDERED_MAP_t<ZDOID, std::unique_ptr<data_t>>;
     using ZDO_iterator = ZDO_map::iterator;
     
 

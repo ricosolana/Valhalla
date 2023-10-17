@@ -1,4 +1,5 @@
 #include <array>
+#include <range/v3/all.hpp>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -374,6 +375,34 @@ ZDO IZDOManager::_TryInstantiate(ZDOID uid, Vector3f position) {
 }
 
 
+
+std::list<ZDO> IZDOManager::GetZDOs() {
+	//{
+	//	std::unordered_map<int, int> myMap = { {1, 2}, {3, 4}, {5, 6} };
+	//
+	//	auto transformed = myMap | ranges::view::transform([](const auto& pair) {
+	//		return pair.first + pair.second;
+	//		});
+	//
+	//	auto resultList = transformed | ranges::to<std::list<int>>();
+	//}
+
+	//std::unordered_map<int, int> map;
+	//auto transformed1 = map | ranges::view::transform([](const auto& pair) {
+	//	return pair.first + pair.second;
+	//});
+	//
+	//auto list1 = transformed1 | ranges::to<std::list<int>>();
+
+	// for some reason segmented map does not work
+	auto transformed = m_objectsByID | ranges::view::transform([](decltype(m_objectsByID)::value_type &pair) {
+		return ZDO(pair);
+	});
+
+	auto list = transformed | ranges::to<std::list<ZDO>>();
+
+	return list;
+}
 
 std::optional<ZDO> IZDOManager::GetZDO(ZDOID id) {
 	if (id) {
