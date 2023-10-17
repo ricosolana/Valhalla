@@ -232,7 +232,7 @@ public:
 	[[nodiscard]] std::list<ZDO> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		float sqRadius = radius * radius;
 		return SomeZDOs(zone, max, [&](const ZDO zdo) {
-			return zdo.Position().SqDistance(pos) <= sqRadius
+			return zdo.GetPosition().SqDistance(pos) <= sqRadius
 				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
 	}
@@ -296,7 +296,7 @@ public:
 	[[nodiscard]] std::list<ZDO> GetZDOs(ZoneID zone, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
 		return SomeZDOs(zone, -1, [&](const ZDO zdo) {
-			return zdo.Position().SqDistance(pos) <= sqRadius
+			return zdo.GetPosition().SqDistance(pos) <= sqRadius
 				&& PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
 	}

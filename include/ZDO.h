@@ -616,7 +616,7 @@ public:
         return this->m_id;
     }
 
-    [[nodiscard]] Vector3f Position() const {
+    [[nodiscard]] Vector3f GetPosition() const {
         return this->m_data.get().m_pos;
     }
 

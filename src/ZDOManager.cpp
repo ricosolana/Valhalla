@@ -254,7 +254,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 		if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
 			// Only add real sky dungeon
-			if (zdo->Position().y > 4000)
+			if (zdo->GetPosition().y > 4000)
 				DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 		}
 #endif // VH_DUNGEON_REGENERATION
@@ -460,7 +460,7 @@ ZDO IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
 	assert(false);
 
-	auto&& copy = _Instantiate(zdo.Position());
+	auto&& copy = _Instantiate(zdo.GetPosition());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
 	//copy.get().m_pack = zdo.m_pack;
@@ -533,7 +533,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
 				if (zdo.IsPersistent()
-					&& zdo.Position().SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
+					&& zdo.GetPosition().SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo.SetOwner(peer.GetUserID());
 				}
@@ -631,7 +631,7 @@ std::list<std::pair<ZDO, float>> IZDOManager::CreateSyncList(Peer& peer) {
 			if (outItr != peer.m_zdos.end())
 				weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
-			result.push_back({ zdo, zdo.Position().SqDistance(peer.m_pos) - weight * weight });
+			result.push_back({ zdo, zdo.GetPosition().SqDistance(peer.m_pos) - weight * weight });
 		}
 	}
 
@@ -771,7 +771,7 @@ std::list<ZDO> IZDOManager::SomeZDOs(Vector3f pos, float radius, size_t max, pre
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& id : *container) {
 					auto&& zdo = _GetZDO(id);
-					if (zdo.Position().SqDistance(pos) <= sqRadius
+					if (zdo.GetPosition().SqDistance(pos) <= sqRadius
 						&& (!pred || pred(zdo)))
 					{
 						if (max--)
@@ -821,7 +821,7 @@ std::optional<ZDO> IZDOManager::NearestZDO(Vector3f pos, float radius, pred_t pr
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& id : *container) {
 					ZDO zdo = _GetZDO(id);
-					float sqDist = zdo.Position().SqDistance(pos);
+					float sqDist = zdo.GetPosition().SqDistance(pos);
 					if (sqDist < minSqDist // Filter to closest ZDO
 						&& (!pred || pred(zdo)))
 					{
@@ -891,7 +891,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.Write(zdo.GetOwnerRevision());
 			writer.Write(zdo.GetDataRevision());
 			writer.Write(zdo.Owner());
-			writer.Write(zdo.Position());
+			writer.Write(zdo.GetPosition());
 
 			writer.SubWrite([&zdo](DataWriter& writer) {
 				zdo.Pack(writer, true);

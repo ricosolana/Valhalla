@@ -255,7 +255,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 // ZDO specific-methods
 
 void ZDO::SetPosition(Vector3f pos) {
-    if (this->Position() != pos) {
+    if (this->GetPosition() != pos) {
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
 
@@ -273,7 +273,7 @@ void ZDO::SetPosition(Vector3f pos) {
 }
 
 ZoneID ZDO::GetZone() const {
-    return IZoneManager::WorldToZonePos(this->Position());
+    return IZoneManager::WorldToZonePos(this->GetPosition());
 }
 
 
@@ -292,7 +292,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
-        writer.Write(Position());
+        writer.Write(GetPosition());
     }
     writer.Write(GetPrefabHash());
     if (hasRot) {

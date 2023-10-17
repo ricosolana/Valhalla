@@ -1114,7 +1114,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
             assert(zdo);
 
             // Only add real sky dungeon
-            if (zdo->Position().y > 4000)
+            if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 
             DungeonManager()->Generate(dungeon, *zdo);

@@ -163,12 +163,12 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
         auto&& dungeon = RequireDungeon(dungeonZdo.GetPrefab().m_hash);
 
         // Destroy all zdos high in the sky near dungeon IN ZONE
-        auto pos = dungeonZdo.Position();
+        auto pos = dungeonZdo.GetPosition();
         auto rot = dungeonZdo.GetRotation();
 
         if (!playerNear) {
             auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
-                return zdo.Position().y > 4000 && zdo.GetPrefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
+                return zdo.GetPosition().y > 4000 && zdo.GetPrefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
             });
 
             for (auto&& ref : zdos) {

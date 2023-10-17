@@ -54,7 +54,7 @@ void VHTest::Test_ZDO_Gets(ZDO& zdo) {
     assert(*zdo.Get<Vector3f>("my vec") == Vector3f(0, 1, 0));
     assert(*zdo.Get<Quaternion>("my quat") == Quaternion(0, 0, 0, 1));
 
-    assert(zdo.Position() == Vector3f(0, 5, 100));
+    assert(zdo.GetPosition() == Vector3f(0, 5, 100));
     //assert(zdo.GetRotation().LengthSquared() == Quaternion(1, 0, 0, 0).LengthSquared());
 
     // TODO Quaternions are screwed up still, luckily everything else now works
