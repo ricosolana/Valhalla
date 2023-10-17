@@ -48,6 +48,24 @@ namespace ankerl::unordered_dense {
     };*/
 
     template <>
+    struct hash<Prefab> {
+        using is_transparent = void;
+        using is_avalanching = void; // mark class as high quality avalanching hash
+
+        [[nodiscard]] auto operator()(const Prefab& prefab) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<HASH_t>{}(prefab.m_hash);
+        }
+
+        [[nodiscard]] auto operator()(HASH_t hash) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<HASH_t>{}(hash);
+        }
+
+        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<HASH_t>{}(VUtils::String::GetStableHashCode(str));
+        }
+    };
+
+    template <>
     struct hash<ZDOID> {
         using is_avalanching = void;
 

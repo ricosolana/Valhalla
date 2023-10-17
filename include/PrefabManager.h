@@ -17,7 +17,7 @@ class IPrefabManager {
 
 private:
 	// TODO use set and use hash within from prefab
-	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Prefab>> m_prefabs;
+	UNORDERED_SET_t<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
 
 public:
 	void Init();
@@ -25,7 +25,7 @@ public:
 	const Prefab* GetPrefab(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end())
-			return find->second.get();
+			return &(*find);
 		return nullptr;
 	}
 
@@ -50,31 +50,21 @@ public:
 		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
 	}
 
-	void Register(std::string_view name, ObjectType type, Vector3f scale, Prefab::Flag flags) {
+	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
-		m_prefabs[hash] = std::make_unique<Prefab>(name, type, scale, flags);
+		m_prefabs.emplace(Prefab(name, scale, flags));
 
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 
 	void Register(DataReader& reader) {
 		auto name = reader.Read<std::string_view>();
-		auto type = (ObjectType)reader.Read<int32_t>();
 		auto localScale = reader.Read<Vector3f>();
 		auto flags = reader.Read<Prefab::Flag>();
 
 		auto hash = VUtils::String::GetStableHashCode(name);
-		m_prefabs[hash] = std::make_unique<Prefab>(std::string(name), type, localScale, flags);
-		
-		/*
-		auto&& prefab = *insert.first->second;
-
-		prefab.m_name = std::move(name);
-		prefab.m_hash = hash;
-		prefab.m_type = (Prefab::Type) reader.Read<int32_t>();
-		prefab.m_localScale = reader.Read<Vector3f>();
-		prefab.m_flags = reader.Read<Prefab::Flag>();*/
-		
+		Register(name, localScale, flags);
+				
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 };

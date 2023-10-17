@@ -436,9 +436,13 @@ void IModManager::LoadAPI() {
 
     m_state.new_enum("Flag",
         "NONE", Prefab::Flag::NONE,
+
         "SCALE", Prefab::Flag::SYNC_INITIAL_SCALE,
-        "FAR", Prefab::Flag::DISTANT,
-        "SESSIONED", Prefab::Flag::SESSIONED,
+        "DISTANT", Prefab::Flag::DISTANT,
+        "PERSISTENT", Prefab::Flag::PERSISTENT,
+        "TYPE1", Prefab::Flag::TYPE1,
+        "TYPE2", Prefab::Flag::TYPE2,
+
         "PIECE", Prefab::Flag::PIECE,
         "BED", Prefab::Flag::BED,
         "DOOR", Prefab::Flag::DOOR,
@@ -446,31 +450,35 @@ void IModManager::LoadAPI() {
         "SHIP", Prefab::Flag::SHIP,
         "FISH", Prefab::Flag::FISH,
         "PLANT", Prefab::Flag::PLANT,
-        "ARMATURE", Prefab::Flag::ARMOR_STAND,
-        "ITEM", Prefab::Flag::ITEM_DROP,
+        "ARMOR_STAND", Prefab::Flag::ARMOR_STAND,
+
+        "PROJECTILE", Prefab::Flag::PROJECTILE,
+        "ITEM_DROP", Prefab::Flag::ITEM_DROP,
         "PICKABLE", Prefab::Flag::PICKABLE,
         "PICKABLE_ITEM", Prefab::Flag::PICKABLE_ITEM,
-        "COOKING", Prefab::Flag::COOKING_STATION,
-        "CRAFTING", Prefab::Flag::CRAFTING_STATION,
-        "SMELTING", Prefab::Flag::SMELTER,
-        "BURNING", Prefab::Flag::FIREPLACE,
-        "SUPPORT", Prefab::Flag::WEAR_N_TEAR,
-        "BREAKABLE", Prefab::Flag::DESTRUCTIBLE,
-        "ATTACH", Prefab::Flag::ITEM_STAND,
-        "ANIMAL", Prefab::Flag::ANIMAL_AI,
-        "MONSTER", Prefab::Flag::MONSTER_AI,
-        "TAME", Prefab::Flag::TAMEABLE,
-        "BREED", Prefab::Flag::PROCREATION,
-        "MINEABLE_OLD", Prefab::Flag::MINE_ROCK,
-        "MINEABLE", Prefab::Flag::MINE_ROCK_5,
-        "TREE", Prefab::Flag::TREE_BASE,
-        "LOG", Prefab::Flag::TREE_LOG,
-        "SFX", Prefab::Flag::SFX,
-        "VFX", Prefab::Flag::VFX,
-        "AOE", Prefab::Flag::AOE,
+
+        "CONTAINER", Prefab::Flag::CONTAINER,
+        "COOKING_STATION", Prefab::Flag::COOKING_STATION,
+        "CRAFTING_STATION", Prefab::Flag::CRAFTING_STATION,
+        "SMELTER", Prefab::Flag::SMELTER,
+        "FIREPLACE", Prefab::Flag::FIREPLACE,
+
+        "WEAR_N_TEAR", Prefab::Flag::WEAR_N_TEAR,
+        "DESTRUCTIBLE", Prefab::Flag::DESTRUCTIBLE,
+        "ITEM_STAND", Prefab::Flag::ITEM_STAND,
+        
+        "ANIMAL_AI", Prefab::Flag::ANIMAL_AI,
+        "MONSTER_AI", Prefab::Flag::MONSTER_AI,
+        "TAMEABLE", Prefab::Flag::TAMEABLE,
+        "PROCREATION", Prefab::Flag::PROCREATION,
+        
+        "MINE_ROCK_5", Prefab::Flag::MINE_ROCK_5,
+        "TREE_BASE", Prefab::Flag::TREE_BASE,
+        "TREE_LOG", Prefab::Flag::TREE_LOG,
+        
         "DUNGEON", Prefab::Flag::DUNGEON,
-        "PLAYER", Prefab::Flag::PLAYER,
-        "TOMBSTONE", Prefab::Flag::TOMBSTONE
+        "TERRAIN_MODIFIER", Prefab::Flag::TERRAIN_MODIFIER,
+        "CREATURE_SPAWNER", Prefab::Flag::CREATURE_SPAWNER
     );
 
 
@@ -479,11 +487,13 @@ void IModManager::LoadAPI() {
         "GetPrefab", sol::overload(
             sol::resolve<const Prefab*(HASH_t) const>(&IPrefabManager::GetPrefab),
             sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::GetPrefab)
-        ),
+        )
+        // TODO restrict prefab registration to startup only
+        /*
         "Register", sol::overload(
             sol::resolve<void(std::string_view, ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
             sol::resolve<void(DataReader&)>(&IPrefabManager::Register)
-        )
+        )*/
     );
 
     //auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();

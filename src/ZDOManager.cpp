@@ -302,6 +302,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->ID() : ZDOID::NONE);
 		}
 
+
 		// convert sync transforms
 		for (auto&& zdo : GetZDOs(Prefab::Flag::SYNCED_TRANSFORM, Prefab::Flag::NONE)) {
 			zdo.SetLocal();

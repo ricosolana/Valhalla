@@ -364,8 +364,8 @@ void IDiscordManager::Init() {
 					}
 					else if (opt.name == "prefab") {
 						//add_choices(ranges::views ranges::views::values(PrefabManager()->m_prefabs));
-						for (auto&& prefab : ranges::views::values(PrefabManager()->m_prefabs)) {
-							if (!add_choice(prefab->m_name, false))
+						for (auto&& prefab : PrefabManager()->m_prefabs) {
+							if (!add_choice(prefab.m_name, false))
 								break;
 							//choices.emplace_back(dpp::command_option_choice(prefab->m_name, prefab->m_name));
 						}
