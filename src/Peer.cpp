@@ -77,7 +77,7 @@ Peer::Peer(ISocket::Ptr socket)
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByUUID(rpc->GetUserID()) || NetManager()->GetPeerByName(rpc->m_name))
+            if (NetManager()->GetPeerByUserID(rpc->GetUserID()) || NetManager()->GetPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
             NetManager()->OnPeerConnect(*rpc);

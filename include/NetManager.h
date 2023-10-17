@@ -48,7 +48,7 @@ public:
 
     // Finds a peer by either name, uuid or host
     Peer* GetPeer(std::string_view any);
-    Peer* GetPeerByUUID(USER_ID_t uuid);
+    Peer* GetPeerByUserID(USER_ID_t uuid);
     Peer* GetPeerByName(std::string_view name);
     Peer* GetPeerByHost(std::string_view host);
 

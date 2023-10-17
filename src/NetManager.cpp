@@ -280,7 +280,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 Peer* INetManager::GetPeer(std::string_view any) {
     Peer* peer = GetPeerByHost(any);
     if (!peer) peer = GetPeerByName(any);
-    if (!peer) peer = GetPeerByUUID(std::atoll(any.data()));
+    if (!peer) peer = GetPeerByUserID(std::atoll(any.data()));
     return peer;
 }
 
@@ -294,7 +294,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByUUID(USER_ID_t uuid) {
+Peer* INetManager::GetPeerByUserID(USER_ID_t uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;
