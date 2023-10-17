@@ -2,12 +2,16 @@
 
 #include <vector>
 #include <functional>
+#include <range/v3/all.hpp>
 
 #include "Vector.h"
 #include "ZDO.h"
 #include "Peer.h"
 #include "PrefabManager.h"
 #include "ZoneManager.h"
+
+// ZDO size bench
+// https://quick-bench.com/q/741nQeBPsMqOX_4ZwmEwVPKZxrI
 
 class IZDOManager {
 	friend class INetManager;
@@ -92,7 +96,7 @@ private:
 	// The ZDO is freed from memory
 	// Returns an iterator to the next ZDO
 	[[maybe_unused]] ZDO_iterator _DestroyZDO(ZDO_iterator itr) {
-		m_destroySendList.push_back((*itr)->ID());
+		m_destroySendList.push_back(itr->ID());
 		return _EraseZDO(itr);
 	}
 
@@ -117,18 +121,18 @@ private:
 	
 	// Instantiate a ZDO with the specified id
 	// Throws if the ZDO exists
-	[[nodiscard]] ZDO::reference _TryInstantiate(ZDOID uid, Vector3f position);
-		
-	[[nodiscard]] ZDO::reference _TryInstantiate(ZDOID zdoid) {
-		auto&& insert = _Instantiate(zdoid);
-
-		// if inserted, then set pos
-		if (!insert.second) {
-			throw std::runtime_error("zdo already exists");
-		}
-
-		return std::ref(*insert.first->get());
-	}
+	//[[nodiscard]] ZDO::reference _TryInstantiate(ZDOID uid, Vector3f position);
+	//	
+	//[[nodiscard]] ZDO::reference _TryInstantiate(ZDOID zdoid) {
+	//	auto&& insert = _Instantiate(zdoid);
+	//
+	//	// if inserted, then set pos
+	//	if (!insert.second) {
+	//		throw std::runtime_error("zdo already exists");
+	//	}
+	//
+	//	return std::ref(*insert.first->);
+	//}
 
 	
 
@@ -138,8 +142,10 @@ private:
 	// UBF/crash if the ZDO is not found
 	[[nodiscard]] ZDO::reference _GetZDO(ZDOID id) noexcept {
 		auto&& find = m_objectsByID.find(id);
-		if (find != m_objectsByID.end())
-			return *find->get();
+		if (find != m_objectsByID.end()) {
+			ZDO& zdo = *find;
+			return std::ref(*find);
+		}
 		std::unreachable();
 	}
 
@@ -187,7 +193,11 @@ public:
 	//	intended to instantiate an object based on another
 	//[[maybe_unused]] ZDO Instantiate(const ZDO& zdo);
 
-	std::list<ZDO> GetZDOs();
+	auto GetZDOs() {
+		return ranges::views::all(m_objectsByID);
+	}
+
+	//std::list<ZDO> GetZDOs();
 
 	// Get a ZDO by id
 	//	TODO use optional<reference>
@@ -203,10 +213,37 @@ public:
 	void GetZDOs_ActiveZones(ZoneID zone, std::list<ZDO::reference>& out, std::list<ZDO::reference>& outDistant);
 	// Get all ZDOs strictly within a zone that are distant flagged
 	void GetZDOs_Distant(ZoneID sector, std::list<ZDO::reference>& objects);
-	
 
 	// Get a capped number of ZDOs within a radius matching an optional predicate
-	[[nodiscard]] std::list<ZDO::reference> SomeZDOs(Vector3f pos, float radius, size_t max, pred_t pred);
+	template<typename Iterable>
+		requires (VUtils::Traits::is_iterable_v<Iterable> 
+			&& std::is_same_v<ZDO, typename Iterable::value_type>)
+	[[nodiscard]] auto SomeZDOs(Vector3f pos, float radius, size_t max, pred_t pred, Iterable& out) {
+		float sqRadius = radius * radius;
+
+		auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
+		auto maxZone = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius));
+
+		for (auto z = minZone.y; z <= maxZone.y; z++) {
+			for (auto x = minZone.x; x <= maxZone.x; x++) {
+				if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
+					for (auto&& id : *container) {
+						auto&& zdo = _GetZDO(id);
+						if (zdo.Position().SqDistance(pos) <= sqRadius
+							&& (!pred || pred(zdo)))
+						{
+							if (max--)
+								out.insert(out.end(), zdo);
+							else
+								return out;
+						}
+					}
+				}
+			}
+		}
+
+		return out;
+	}
 	// Get a capped number of ZDOs within a radius
 	[[nodiscard]] std::list<ZDO::reference> SomeZDOs(Vector3f pos, float radius, size_t max) {
 		return SomeZDOs(pos, radius, max, nullptr);
@@ -220,7 +257,6 @@ public:
 			}
 		);
 	}
-
 	// Get a capped number of ZDOs within a zone matching an optional predicate
 	[[nodiscard]] std::list<ZDO::reference> SomeZDOs(ZoneID zone, size_t max, pred_t pred);
 	// Get a capped number of ZDOs within a zone

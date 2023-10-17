@@ -279,7 +279,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
-		for (auto&& zdo : GetZDOs(Hashes::Object::portal_wood)) {			
+		for (auto&& zdo : GetZDOs(Hashes::Object::portal_wood)) {
 			auto&& string = zdo.GetString(Hashes::ZDO::TeleportWorld::TAG);
 			ZDOID zdoid; zdo.Extract("target", zdoid);
 			if (zdoid && !string.empty()) {
@@ -366,6 +366,7 @@ ZDO IZDOManager::_Instantiate(Vector3f position) noexcept {
 	std::unreachable();
 }
 
+/*
 ZDO IZDOManager::_TryInstantiate(ZDOID uid, Vector3f position) {
 	// See version #2
 	// ...returns a pair object whose first element is an iterator 
@@ -378,7 +379,7 @@ ZDO IZDOManager::_TryInstantiate(ZDOID uid, Vector3f position) {
 		return ZDO(*insert.first);
 
 	throw std::runtime_error("zdo already exists");
-}
+}*/
 
 
 

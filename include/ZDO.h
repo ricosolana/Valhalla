@@ -276,11 +276,11 @@ private:
     void _SetPersistent(bool flag) {
         return this->m_pack.Set<BIT_PERSISTENT>(flag);
     }
-
+    
     void _SetDistant(bool flag) {
         return this->m_pack.Set<BIT_DISTANT>(flag);
     }
-
+    
     void _SetType(ObjectType type) {
         return this->m_pack.Set<BIT_TYPE>(std::to_underlying(type));
     }
@@ -322,25 +322,37 @@ private:
     //static constexpr auto OWNER_PACK_INDEX = 0;
     //static constexpr auto FLAGS_PACK_INDEX = 1;
 
+    static constexpr unsigned int BIT_TYPE = 0;
+    static constexpr unsigned int BIT_DISTANT = BIT_TYPE + 1;
+    static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
+
     /*
     * x bytes total
     */
+
+    // TODO implement minifies
         
-    //ZDOID m_id;                                     // TODO fix padding
-    int32_t id;
+    ZDOID m_id;                                     // TODO fix padding
+    //int32_t id;
     Vector3f m_pos;                                 // 12 bytes
     ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
-    //Vector3f m_rotation;                          // 12 bytes
-    tiny_rotation m_rotation;                       // 4 bytes
-    uint16_t m_prefabIndex;
+    Vector3f m_rotation;                            // 12 bytes
+    //tiny_rotation m_rotation;                     // 4 bytes
+    //uint16_t m_prefabIndex;
+    HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
+    BitPack<uint8_t,
+        2, 1, 1,                                    // type, distant, persistent
+        4                                           // unused
+    > m_pack;                                       // 2 bytes
+
 
 public:
     ZDO(ZDOID id) 
         : m_id(id)
     {}
 
-    using ZDOContainer = ankerl::unordered_dense::segmented_set<ZDOID>; // TODO use reference_wrapper<>?
-    using ZDO_set = ankerl::unordered_dense::segmented_set<std::unique_ptr<ZDO>, ankerl::unordered_dense::hash<ZDO>, std::equal_to<>>;
+    using ZDOContainer = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
+    using ZDO_set = UNORDERED_SET_t<ZDO, ankerl::unordered_dense::hash<ZDO>, std::equal_to<>>;
     using ZDO_iterator = ZDO_set::iterator;
 
     using reference = std::reference_wrapper<ZDO>;
@@ -362,8 +374,8 @@ public:
     //}
 
     // doesnt compile when assigning optional
-    ZDO(const ZDO& other) = delete;
-    ZDO(ZDO&& other) = delete;
+    //ZDO(const ZDO& other) = delete;
+    //ZDO(ZDO&& other) = delete;
 
     bool operator==(const ZDO& other) const noexcept {
         // ZDOs cannot have the same ID and be different objects
@@ -755,7 +767,7 @@ public:
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return (ObjectType) this->m_pack.Get<BIT_TYPE>();
+        return (ObjectType)this->m_pack.Get<BIT_TYPE>();
     }
 
 

@@ -1,5 +1,32 @@
 # todo:
 
+- use set for prefabmanager prefabs
+    similar to new zdo set heterogenous hash from prefab
+    
+- maybe for lua api
+    add a zdo as a plain table 
+        read/write allowed
+        
+        any zdo a mod has accessed will not make any changes to the zdo,
+        unless updating the zdo
+        
+        this will allow for mods to safely change zdos, regardless of whether
+        they exist any more
+        
+        possible usage:
+            local zdo = ZDOManager:GetZDO(id)
+            if zdo then
+                -- ... code stuff on zdo
+                -- this will update the zdo members with that id
+                zdo.SetBool('stuff', false)
+                
+                -- example: lift the zdo 1 unit
+                zdo.pos = zdo.pos + Vector3f.new(0, 1, 0)
+                
+                -- when done with zdo, apply changes to server map
+                zdo:Apply()
+            end
+
 - dispose zdo members on zdo erase
     owner map
     member map
