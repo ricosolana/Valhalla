@@ -33,7 +33,9 @@ class ZDO {
     using member_hash = uint64_t;
 
     using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
+    using member_tuple_mono = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t, std::monostate>;
     using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
+    using member_variant_mono = VUtils::Traits::tuple_to_variant<member_tuple_mono>::type;
 
     using member_map = UNORDERED_MAP_t<member_hash, member_variant>;
 
@@ -415,6 +417,8 @@ public:
         return false;
     }
 
+    
+
     // Get a member by hash
     //  Returns null if absent 
     //  Throws on type mismatch
@@ -444,6 +448,8 @@ public:
 
         return nullptr;
     }
+
+    //member_variant_mono Extract(std::string key,)
 
     template<typename T>
         requires is_member_v<T>
@@ -681,7 +687,6 @@ public:
         return 0;
     }
 
-
     // Whether the ZDO is owned by a specific owner
     [[nodiscard]] bool IsOwner(OWNER_t owner) const {
         return owner == this->Owner();
@@ -746,9 +751,18 @@ public:
 
 
 
-    [[nodiscard]] size_t GetTotalAlloc() {
+    [[nodiscard]] size_t GetTotalAlloc() const {
         size_t size = 0;
-        //for (auto&& pair : m_members) size += sizeof(Ord) + pair.second.GetTotalAlloc();
+
+        auto&& find = ZDO_MEMBERS.find(ID());
+        if (find != ZDO_MEMBERS.end()) {
+            for (auto&& member : find->second) {
+                size += std::visit([](const auto& value) {
+                    return sizeof(value);
+                }, member.second);
+            }
+        }
+
         return size;
     }
 };

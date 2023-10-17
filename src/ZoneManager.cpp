@@ -92,12 +92,12 @@ void IZoneManager::PostPrefabInit() {
             for (int j=0; j < views; j++) {
                 Prefab::Instance piece;
 
-                auto hash = pkg.Read<HASH_t>();
-
-                piece.m_prefab = &PrefabManager()->RequirePrefabByHash(hash);
-
+                piece.m_prefabHash = pkg.Read<HASH_t>();
                 piece.m_pos = pkg.Read<Vector3f>();
                 piece.m_rot = pkg.Read<Quaternion>();
+
+                piece.GetPrefab();
+
                 loc->m_pieces.push_back(piece);
             }
 
@@ -1084,11 +1084,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(VH_SETTINGS.dungeonsEnabled && piece.m_prefab->AllFlagsPresent(Prefab::Flag::DUNGEON))) {
-            auto&& zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
+        if (!(VH_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+            auto&& zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo.SetRotation(rot * piece.m_rot);
         } else {
-            auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefab->m_hash);
+            auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefabHash);
 
             std::optional<ZDO> zdo;
 
@@ -1103,11 +1103,11 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = ZDOManager()->Instantiate(*piece.m_prefab, piecePos);
+                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, piecePos);
                 zdo->SetRotation(piece.m_rot);
             }
             else {
-                zdo = ZDOManager()->Instantiate(*piece.m_prefab, pos + rot * piece.m_pos);
+                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
                 zdo->SetRotation(rot * piece.m_rot);
             }
 

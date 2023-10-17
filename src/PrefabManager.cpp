@@ -10,6 +10,12 @@ IPrefabManager* PrefabManager() {
 
 
 
+const Prefab& Prefab::Instance::GetPrefab() const {
+    return PrefabManager()->RequirePrefabByHash(m_prefabHash);
+}
+
+
+
 void IPrefabManager::Init() {
     LOG_INFO(LOGGER, "Initializing PrefabManager");
 

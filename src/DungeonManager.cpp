@@ -113,9 +113,12 @@ void IDungeonManager::PostPrefabInit() {
             for (int i3 = 0; i3 < viewCount; i3++) {
                 Prefab::Instance instance;
                 
-                instance.m_prefab = &PrefabManager()->RequirePrefabByHash(pkg.Read<HASH_t>());
+                instance.m_prefabHash = pkg.Read<HASH_t>();
                 instance.m_pos = pkg.Read<Vector3f>();
                 instance.m_rot = pkg.Read<Quaternion>();
+                
+                // ensure prefab existence
+                instance.GetPrefab();
 
                 room->m_netViews.push_back(instance);
             }

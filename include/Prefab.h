@@ -11,9 +11,11 @@
 class Prefab {
 public:
     struct Instance {
-        const Prefab* m_prefab = nullptr;
-        Vector3f m_pos;
-        Quaternion m_rot;
+        Quaternion m_rot;       // 16 bytes
+        Vector3f m_pos;         // 12 bytes
+        HASH_t m_prefabHash;    // 4 bytes
+
+        const Prefab& GetPrefab() const;
     };
 
     // MineRock/5 is interesting
@@ -71,19 +73,12 @@ public:
         CREATURE_SPAWNER = 1ULL << 34,
         SYNCED_TRANSFORM = 1ULL << 35
     };
-
-
-    // TODO remove VH_USE_PREFABS
-    //  replace with VH_COMPACT_PREFAB
-    //  prefabs will always be needed, just a matter of how much is needed
-    //  since prefabs go up to 2271, can simply use indexes instead of large 32 bit hash per zdo (much better this way)
-    //  until the day Valheim has more prefabs than are available in ~12 bits, everything should work
-    
+        
 public:
-    std::string m_name;     // 40 bytes
-    HASH_t m_hash;          // 4 bytes
-    Vector3f m_localScale;
-    Flag m_flags = Flag::NONE;
+    std::string m_name;         // 40 bytes
+    Vector3f m_localScale;      // 12 bytes
+    Flag m_flags = Flag::NONE;  // 8 bytes
+    HASH_t m_hash;              // 4 bytes
 
 public:
     Prefab(std::string_view name, Vector3f localScale, Flag flags)
@@ -93,22 +88,22 @@ public:
 
 
 
-    bool AllFlagsPresent(Flag prefabFlags) const {
+    bool AllFlagsPresent(Flag prefabFlags) const noexcept {
         return prefabFlags == Flag::NONE 
             || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(prefabFlags);
     }
 
-    bool AnyFlagsPresent(Flag prefabFlags) const {
+    bool AnyFlagsPresent(Flag prefabFlags) const noexcept {
         return prefabFlags == Flag::NONE 
             || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(Flag::NONE);
     }
 
-    bool AllFlagsAbsent(Flag prefabFlags) const {
+    bool AllFlagsAbsent(Flag prefabFlags) const noexcept {
         return prefabFlags == Flag::NONE
             || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(Flag::NONE);
     }
 
-    bool AnyFlagsAbsent(Flag prefabFlags) const {
+    bool AnyFlagsAbsent(Flag prefabFlags) const noexcept {
         return prefabFlags == Flag::NONE
             || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(prefabFlags);
     }
