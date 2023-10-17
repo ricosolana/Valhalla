@@ -1,5 +1,12 @@
 # todo:
 
+- datarev use
+    adjust pack sizes for rev
+
+- sync togethor admin set + peer flags
+    for some reason Valhalla()->admin showed peer steamid, 
+    but not when accessed from NetManager
+
 - use zdo as key/hash in set<>
     - use less memory
         not only avoidance of dual id,
