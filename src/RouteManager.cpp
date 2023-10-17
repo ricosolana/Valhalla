@@ -52,7 +52,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			for (auto&& other : peers) {
 				// Ignore the src peer
 				if (peer->GetUserID() != other->GetUserID()) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->GetUserID(), target, targetZDO, hash, params);
+					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 		}
@@ -63,7 +63,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 						return;
 
 					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(Hashes::Rpc::RoutedRPC, 0LL, peer->GetUserID(), target, targetZDO, hash, params);
+					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 			else {
