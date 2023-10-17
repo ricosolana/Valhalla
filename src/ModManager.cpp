@@ -165,7 +165,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
-        //sol::constructors<ZDOID(OWNER_t userID, uint32_t id)>(),
+        //sol::constructors<ZDOID(USER_ID_t userID, uint32_t id)>(),
         sol::factories([](Int64Wrapper uuid, uint32_t id) { return ZDOID((int64_t)uuid, id); }),
         "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
         "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, Int64Wrapper value) { self.SetOwner((int64_t)value); }),
@@ -798,7 +798,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<INetManager>("INetManager",
         "GetPeer", sol::overload(
             [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUUID((int64_t)owner); },
-            //sol::resolve<Peer*(OWNER_t)>(&INetManager::GetPeer),
+            //sol::resolve<Peer*(USER_ID_t)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
         ),
         "peers", sol::readonly(&INetManager::m_onlinePeers)

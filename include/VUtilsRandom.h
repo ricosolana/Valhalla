@@ -33,7 +33,7 @@ namespace VUtils::Random {
         Vector3f InsideUnitSphere();
     };
 
-    OWNER_t GenerateUID();
+    USER_ID_t GenerateUID();
 
     void GenerateAlphaNum(char* out, size_t outSize);
 

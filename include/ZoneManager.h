@@ -316,7 +316,7 @@ public:
 	bool ZonesOverlap(ZoneID zone, Vector3f areaPoint);
 	bool ZonesOverlap(ZoneID zone, ZoneID areaZone);
 
-	bool IsPeerNearby(ZoneID zone, OWNER_t uid);
+	bool IsPeerNearby(ZoneID zone, USER_ID_t uid);
 };
 
 // Manager class for everything related to world generation

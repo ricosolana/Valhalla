@@ -53,12 +53,12 @@ public:
 #endif
 
 	// Forwards raw data to peer(s) with no Lua handlers
-	//void InvokeParams(OWNER_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
+	//void InvokeParams(USER_ID_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
 
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, ZDOID targetZDO, HASH_t hash, Args&&... params) {
+	void InvokeView(USER_ID_t target, ZDOID targetZDO, HASH_t hash, Args&&... params) {
 		// Prefix
 		if ((int64_t)target == EVERYBODY) {
 			// targetZDO can have a value apparently
@@ -80,7 +80,7 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(OWNER_t target, ZDOID targetZDO, std::string_view name, Args&&... params) {
+	void InvokeView(USER_ID_t target, ZDOID targetZDO, std::string_view name, Args&&... params) {
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
@@ -119,13 +119,13 @@ public:
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, HASH_t hash, Args&&... params) {
+	void Invoke(USER_ID_t target, HASH_t hash, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, hash, std::forward<Args>(params)...);
 	}
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(OWNER_t target, std::string_view name, Args&&... params) {
+	void Invoke(USER_ID_t target, std::string_view name, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
@@ -155,7 +155,7 @@ public:
 	}
 #endif
 
-	BYTES_t Serialize(OWNER_t sender, OWNER_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
+	BYTES_t Serialize(USER_ID_t sender, USER_ID_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 		BYTES_t bytes;
 		DataWriter writer(bytes);
 

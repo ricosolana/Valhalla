@@ -49,7 +49,7 @@ private:
     std::recursive_mutex m_taskMutex;
 
     ServerSettings m_settings {};
-    OWNER_t m_serverID {}; // const
+    USER_ID_t m_serverID {}; // const
 
     steady_clock::time_point m_startTime; // const
     steady_clock::time_point m_prevUpdate;
@@ -75,7 +75,7 @@ public:
     void Stop();
 
 public:
-    OWNER_t ID() const {
+    USER_ID_t ID() const {
         return m_serverID;
     }
 

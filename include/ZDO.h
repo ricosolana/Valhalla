@@ -303,7 +303,7 @@ private:
     }
 
     // Set the owner of the ZDO without revising
-    void _SetOwner(OWNER_t owner) {
+    void _SetOwner(USER_ID_t owner) {
         ZDO_OWNERS[ID()] = owner;
     }
 
@@ -331,13 +331,13 @@ private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
-    static inline ankerl::unordered_dense::segmented_map<ZDOID, OWNER_t> ZDO_OWNERS;
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, USER_ID_t> ZDO_OWNERS;
 
     // zdoid can be shrunk however, instead of using 8 + 4 bytes  (total 16 bytes; 4 bytes are extra padding), can be just 8 bytes (4 bytes for ID, 4 bytes for owner index)
     // because pair<K, V> includes padding, pair<zdoid, owner> uses the same memory as pair<zdoid, uint8_t>
     //static constexpr auto szz01311 = sizeof(decltype(ZDO_OWNERS)::value_type); // 24 bytes is a lot, unless zdoid can be aligned, and pair uses
 
-    //static inline std::array<OWNER_t, 
+    //static inline std::array<USER_ID_t, 
     //    //decltype(data_t::m_pack)::capacity_v<data_t::BIT_OWNER>
     //    64
     //> ZDO_OWNERS_INDEXES;
@@ -678,7 +678,7 @@ public:
     }
 
     // The owner of the ZDO
-    [[nodiscard]] OWNER_t Owner() const {
+    [[nodiscard]] USER_ID_t Owner() const {
         // TODO optimize by checking owner bit
         auto&& find = ZDO_OWNERS.find(ID());
         if (find != ZDO_OWNERS.end()) {
@@ -688,7 +688,7 @@ public:
     }
 
     // Whether the ZDO is owned by a specific owner
-    [[nodiscard]] bool IsOwner(OWNER_t owner) const {
+    [[nodiscard]] bool IsOwner(USER_ID_t owner) const {
         return owner == this->Owner();
     }
 
@@ -714,7 +714,7 @@ public:
     }
 
     // Set the owner of the ZDO
-    bool SetOwner(OWNER_t owner) {
+    bool SetOwner(USER_ID_t owner) {
         // only if the owner has changed, then revise it
         if (this->Owner() != owner) {
             this->_SetOwner(owner);

@@ -99,7 +99,7 @@ public:
         //VLOG(1) << "~Peer()";
     }
 
-    OWNER_t GetUserID() {
+    USER_ID_t GetUserID() {
         return m_characterID.GetOwner();
     }
 

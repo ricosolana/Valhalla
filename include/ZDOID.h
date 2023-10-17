@@ -14,7 +14,7 @@ class ZDOID {
     // User: 0, ID: 1
     //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
 
-    OWNER_t m_userID{};
+    USER_ID_t m_userID{};
     uint32_t m_id{};
 
     uint32_t m_unusedPadding = 0;
@@ -74,7 +74,7 @@ private:
 public:
     ZDOID() = default;
 
-    ZDOID(OWNER_t owner, uint32_t uid);
+    ZDOID(USER_ID_t owner, uint32_t uid);
 
     ZDOID(const ZDOID&) = default;
 
@@ -95,13 +95,13 @@ public:
     }
 
     // TODO rename to User
-    OWNER_t GetOwner() const {
+    USER_ID_t GetOwner() const {
         //return INDEXED_USERS[_GetUserIDIndex()];
         return m_userID;
     }
 
     // Rename to SetUserID
-    void SetOwner(OWNER_t owner) {
+    void SetOwner(USER_ID_t owner) {
         //_SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
         this->m_userID = owner;
     }

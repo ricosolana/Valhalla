@@ -128,7 +128,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 
-//void INetManager::OnNewClient(ISocket::Ptr socket, OWNER_t uuid, const std::string &name, const Vector3f &pos) {
+//void INetManager::OnNewClient(ISocket::Ptr socket, USER_ID_t uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnPeerConnect(Peer& peer) {
     peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->GetHostName()));
 
@@ -294,7 +294,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByUUID(OWNER_t uuid) {
+Peer* INetManager::GetPeerByUUID(USER_ID_t uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;

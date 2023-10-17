@@ -145,8 +145,8 @@ namespace VUtils::Random {
 
     // Generates a Random UID
     //  This function is non-conforming to the Valheim spec
-    //  It returns a positive number for conformance with the strict 32-bit OWNER_t
-    OWNER_t GenerateUID() {
+    //  It returns a positive number for conformance with the strict 32-bit USER_ID_t
+    USER_ID_t GenerateUID() {
         State state;
         return (int64_t) state.Range(
             std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()) +
