@@ -14,6 +14,15 @@ const Prefab& Prefab::Instance::GetPrefab() const {
     return PrefabManager()->RequirePrefabByHash(m_prefabHash);
 }
 
+ObjectType Prefab::GetObjectType() const noexcept {
+    unsigned int v = (1 & AllFlagsPresent(Flag::TYPE1)) |
+        ((1 & AllFlagsPresent(Flag::TYPE2)) << 1);
+
+    assert(v <= 0b11);
+
+    return (ObjectType)v;
+}
+
 
 
 void IPrefabManager::Init() {

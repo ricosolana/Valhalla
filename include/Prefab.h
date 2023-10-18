@@ -110,6 +110,10 @@ public:
 
 
 
+    ObjectType GetObjectType() const noexcept;
+
+
+
     bool operator==(const Prefab& other) const noexcept {
         return this->m_hash == other.m_hash;
     }

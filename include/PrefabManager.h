@@ -52,7 +52,12 @@ public:
 
 	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
-		m_prefabs.emplace(Prefab(name, scale, flags));
+		Prefab prefab(name, scale, flags);
+		m_prefabs.emplace(prefab);
+
+		if (name == "_TerrainCompiler") {
+			assert(prefab.GetObjectType() == ObjectType::TERRAIN);
+		}
 
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
