@@ -28,44 +28,7 @@ class ZDO {
     friend class VHTest;
     friend class IValhalla;
 
-
-
-    using member_hash = uint64_t;
-
-    using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
-    using member_tuple_mono = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t, std::monostate>;
-    using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
-    using member_variant_mono = VUtils::Traits::tuple_to_variant<member_tuple_mono>::type;
-
-    using member_map = UNORDERED_MAP_t<member_hash, member_variant>;
-
-
-
-    template<typename T>
-    using is_member = VUtils::Traits::tuple_has_type<T, member_tuple>;
-
-    template<typename T> 
-    static constexpr bool is_member_v = is_member<T>::value;
-
-    template<typename T>
-        requires is_member<T>::value
-    using member_denotion = std::integral_constant<size_t, VUtils::Traits::tuple_index<T, member_tuple>::value>;
-
-    template<typename T>
-    static constexpr size_t member_denotion_v = member_denotion<T>::value;
-
-    template<typename T>
-        requires is_member<T>::value
-    using member_flag = std::integral_constant<size_t, 1 << member_denotion_v<T>>;
-
-    template<typename T>
-    static constexpr size_t member_flag_v = member_flag<T>::value;
-
 public:
-    
-
-    //using reference = std::reference_wrapper<ZDO>;
-
     class Rev {
     private:
         // DataRevision: 0, OwnerRevision: 1
@@ -113,6 +76,39 @@ public:
     };
 
 private:
+    using member_hash = uint64_t;
+
+    using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
+    using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
+    //using member_tuple_mono = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t, std::monostate>;
+    //using member_variant_mono = VUtils::Traits::tuple_to_variant<member_tuple_mono>::type;
+
+    using member_map = UNORDERED_MAP_t<member_hash, member_variant>;
+
+
+
+    template<typename T>
+    using is_member = VUtils::Traits::tuple_has_type<T, member_tuple>;
+
+    template<typename T> 
+    static constexpr bool is_member_v = is_member<T>::value;
+
+    template<typename T>
+        requires is_member<T>::value
+    using member_denotion = std::integral_constant<size_t, VUtils::Traits::tuple_index<T, member_tuple>::value>;
+
+    template<typename T>
+    static constexpr size_t member_denotion_v = member_denotion<T>::value;
+
+    template<typename T>
+        requires is_member<T>::value
+    using member_flag = std::integral_constant<size_t, 1 << member_denotion_v<T>>;
+
+    template<typename T>
+    static constexpr size_t member_flag_v = member_flag<T>::value;
+
+
+
     static constexpr unsigned int MACHINE_Persistent = 0;
     static constexpr unsigned int MACHINE_Distant = 1;
     static constexpr unsigned int MACHINE_Type1 = 2;
@@ -145,7 +141,7 @@ private:
 #if VH_IS_ON(VH_REQUIRE_RECOGNIZED_PREFABS)
         static constexpr unsigned int BIT_PREFAB = BIT_OWNER + 1;
 
-        BitPack<uint32_t, 
+        BitPack<uint32_t,
             1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
             12, 16                                      // owner, prefab
         > m_pack;
@@ -155,7 +151,7 @@ private:
         static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
 
         HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
-        BitPack<uint16_t, 
+        BitPack<uint16_t,
             1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
             2, 1, 1,                                    // type, distant, persistent
             4                                           // unused
@@ -168,6 +164,10 @@ private:
         data_t() {}
     };
 
+public:
+    using set = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
+    using map = UNORDERED_MAP_t<ZDOID, std::unique_ptr<data_t>>;
+    
 private:
     template<typename T>
         requires is_member_v<T>
@@ -319,12 +319,6 @@ private:
         this->_SetRotation(rot.EulerAngles());
     }
 
-
-
-public:
-    using ZDOContainer = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
-    using ZDO_map = UNORDERED_MAP_t<ZDOID, std::unique_ptr<data_t>>;
-    using ZDO_iterator = ZDO_map::iterator;
     
 
 private:
@@ -353,7 +347,7 @@ private:
     std::reference_wrapper<data_t> m_data;  // TODO use ptr?
 
 public:
-    ZDO(ZDO_map::value_type& pair) 
+    ZDO(map::value_type& pair) 
         : m_id(pair.first), m_data(*pair.second)
     {}
 

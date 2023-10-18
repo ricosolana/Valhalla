@@ -26,26 +26,26 @@ class IZDOManager {
 	}
 
 	// these are just here for easy access
-	using ZDOContainer = ZDO::ZDOContainer;
-	using ZDO_map = ZDO::ZDO_map;
-	using ZDO_iterator = ZDO::ZDO_iterator;
+	//using ZDOContainer = ZDO::set;
+	//using ZDO_map = ZDO::map;
+	//using ZDO_iterator = ZDO::ZDO_iterator;
 
 private:
 	// Contains ZDOs according to Zone
 	//	takes up around 5MB; could be around 72 bytes with map
-	std::array<ZDOContainer, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+	std::array<ZDO::set, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
 
 	// Contains ZDOs according to prefab
 	//	TODO is this necessary?
-	UNORDERED_MAP_t<HASH_t, ZDOContainer> m_objectsByPrefab;
+	UNORDERED_MAP_t<HASH_t, ZDO::set> m_objectsByPrefab;
 
 	// Responsible for managing ZDOs lifetimes
 	//	A segmented map is used instead of a vector map
-	ZDO_map m_objectsByID;
+	ZDO::map m_objectsByID;
 	
 	// Container of retired ZDOs
 	//	TODO benchmark storage here vs keeping ZDOIDs in m_objectsByID map (but setting values to null to diffreenciate between alive/dead)
-	ankerl::unordered_dense::segmented_set<ZDOID> m_erasedZDOs;
+	ZDO::set m_erasedZDOs;
 
 	// Contains recently destroyed ZDOs to be sent
 	std::vector<ZDOID> m_destroySendList;
@@ -63,7 +63,7 @@ private:
 
 	
 	// Retrieve a zone container for storing zdos
-	[[nodiscard]] ZDOContainer* _GetZDOContainer(ZoneID zone) {
+	[[nodiscard]] ZDO::set* _GetZDOContainer(ZoneID zone) {
 		int num = SectorToIndex(zone);
 		if (num != -1) {
 			return &m_objectsBySector[num];
@@ -82,7 +82,7 @@ private:
 	//void SmartAssignZDOs();
 
 	// Frees a ZDO from memory by a valid iterator
-	[[maybe_unused]] ZDO_iterator _EraseZDO(ZDO_iterator itr);
+	[[maybe_unused]] ZDO::map::iterator _EraseZDO(ZDO::map::iterator itr);
 	void EraseZDO(ZDOID zdoid) {
 		auto&& find = m_objectsByID.find(zdoid);
 		if (find != m_objectsByID.end())
@@ -92,7 +92,7 @@ private:
 	// Destroys a ZDO globally
 	// The ZDO is freed from memory
 	// Returns an iterator to the next ZDO
-	[[maybe_unused]] ZDO_iterator _DestroyZDO(ZDO_iterator itr) {
+	[[maybe_unused]] ZDO::map::iterator _DestroyZDO(ZDO::map::iterator itr) {
 		m_destroySendList.push_back(itr->first);
 		return _EraseZDO(itr);
 	}
@@ -107,11 +107,11 @@ private:
 
 	// Instantiate a ZDO by id if it does not exist
 	// Returns the ZDO or the previously mapped ZDO
-	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid) noexcept;
+	[[nodiscard]] std::pair<ZDO::map::iterator, bool> _Instantiate(ZDOID zdoid) noexcept;
 
 	// Instantiate a ZDO by id if it does not exist
 	// Returns the ZDO or the previously mapped ZDO
-	[[nodiscard]] std::pair<ZDO_iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept;
+	[[nodiscard]] std::pair<ZDO::map::iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept;
 
 	// Instantiate a ZDO with the next available ID
 	[[nodiscard]] ZDO _Instantiate(Vector3f position) noexcept;

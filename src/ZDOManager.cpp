@@ -326,7 +326,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 
 
-[[nodiscard]] std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
+[[nodiscard]] std::pair<ZDO::map::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
 	auto&& insert = m_objectsByID.insert({ zdoid, nullptr });
 	if (insert.second) {
 		auto&& pair = insert.first;
@@ -335,7 +335,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	return insert;
 }
 
-std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+std::pair<ZDO::map::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
 	auto&& insert = _Instantiate(zdoid);
 
 	// if inserted, then set pos
@@ -543,7 +543,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 }
 
-IZDOManager::ZDO_iterator IZDOManager::_EraseZDO(IZDOManager::ZDO_iterator itr) {
+ZDO::map::iterator IZDOManager::_EraseZDO(ZDO::map::iterator itr) {
 	assert(itr != m_objectsByID.end());
 
 	auto&& zdoid = itr->first;
