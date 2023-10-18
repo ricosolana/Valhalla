@@ -1,5 +1,21 @@
 # todo:
 
+- fix Prefab GetObjectType
+    terrainCompiler should return 3 for terrain; duh
+
+- preliminary tests showed routemanager might not be working correctly
+    lagg?
+    
+    is forwarding correctly implemented?
+    
+    
+- check on destroy zdo,
+
+    it might not work either
+    
+    
+
+
 - datarev use
     adjust pack sizes for rev
 
