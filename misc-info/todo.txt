@@ -1,7 +1,16 @@
 # todo:
 
-- fix Prefab GetObjectType
-    terrainCompiler should return 3 for terrain; duh
+- refactor everything to follow a format:
+    class members: m_snake_case
+    class names: PascalCase
+    methods: snake_case()
+    global constants: g_snake_case
+    enums: PascalCase { ValueInPascalCase }
+    
+    
+    lua api:
+        class names: PascalCase
+        class member/method names: snake_case
 
 - preliminary tests showed routemanager might not be working correctly
     lagg?

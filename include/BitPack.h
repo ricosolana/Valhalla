@@ -3,137 +3,140 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
-template<typename T, size_t ...COUNTS>
-    requires std::is_integral_v<T>&& std::is_unsigned_v<T>
-class BitPack {
-    static_assert((COUNTS + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
+//namespace valhalla::util {
 
-public:
-    using type = T;
+    template<typename T, size_t ...COUNTS>
+        requires std::is_integral_v<T>&& std::is_unsigned_v<T>
+    class BitPack {
+        static_assert((COUNTS + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
 
-
-
-    template<size_t index>
-        requires (index < sizeof...(COUNTS))
-    using count = VUtils::Traits::variadic_value_at_index<index, COUNTS...>;
-
-    template<size_t index>
-    static constexpr auto count_v = count<index>::value;
+    public:
+        using type = T;
 
 
 
-    template<size_t...>
-    struct offset;
+        template<size_t index>
+            requires (index < sizeof...(COUNTS))
+        using count = VUtils::Traits::variadic_value_at_index<index, COUNTS...>;
 
-    template<size_t index>
-    //requires (index == 0)
-    struct offset<index>
-        : std::integral_constant<size_t, 0>
-    { };
-
-    template<size_t index>
-        requires (index > 0)
-    struct offset<index>
-        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
-    { };
-
-    // now accumulate in reverse, first parameter pack ints are most significant (have highest offsets)
-    // l
-
-    template<size_t index>
-    static constexpr auto offset_v = offset<index>::value;
+        template<size_t index>
+        static constexpr auto count_v = count<index>::value;
 
 
 
-    template<size_t index>
-    using capacity = std::integral_constant<size_t, (1ULL << count<index>::value) - 1ULL>;
+        template<size_t...>
+        struct offset;
 
-    template<size_t index>
-    static constexpr auto capacity_v = capacity<index>::value;
+        template<size_t index>
+        //requires (index == 0)
+        struct offset<index>
+            : std::integral_constant<size_t, 0>
+        { };
 
-private:
-    T m_data{};
+        template<size_t index>
+            requires (index > 0)
+        struct offset<index>
+            : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
+        { };
 
-public:
-    constexpr BitPack() {}
-    constexpr BitPack(T data) : m_data(data) {}
+        // now accumulate in reverse, first parameter pack ints are most significant (have highest offsets)
+        // l
 
-    void operator=(const BitPack<T, COUNTS...>& other) {
-        this->m_data = other.m_data;
-    }
+        template<size_t index>
+        static constexpr auto offset_v = offset<index>::value;
 
-    bool operator==(const BitPack<T, COUNTS...>& other) const {
-        return m_data == other.m_data;
-    }
 
-    bool operator!=(const BitPack<T, COUNTS...>& other) const {
-        return !(*this == other);
-    }
 
-    operator bool() const {
-        return static_cast<bool>(m_data);
-    }
+        template<size_t index>
+        using capacity = std::integral_constant<size_t, (1ULL << count<index>::value) - 1ULL>;
 
-    operator T() const {
-        return m_data;
-    }
+        template<size_t index>
+        static constexpr auto capacity_v = capacity<index>::value;
 
-    // Get the value of a specified member at index
-    template<uint8_t index>
-    type Get() const {
-        //return (m_data >> offset<index>::value) & capacity<index>::value;
-        auto o = offset_v<index>;
-        auto c = capacity_v<index>;
-        return (m_data >> o) & c;
-        //return (m_data >> offset<index>::value) & capacity<index>::value;
-    }
+    private:
+        T m_data{};
 
-    // Set the value of a specified member at index to 0
-    template<uint8_t index>
-    void Clear() {
-        m_data &= ~(capacity_v<index> << offset_v<index>);
+    public:
+        constexpr BitPack() {}
+        constexpr BitPack(T data) : m_data(data) {}
 
-        assert(Get<index>() == 0);
-    }
+        void operator=(const BitPack<T, COUNTS...>& other) {
+            this->m_data = other.m_data;
+        }
 
-    // Set the value of a specified member at index
-    template<uint8_t index>
-    void Set(type value) {
-        Clear<index>();
-        Merge<index>(value);
+        bool operator==(const BitPack<T, COUNTS...>& other) const {
+            return m_data == other.m_data;
+        }
 
-        assert(Get<index>() == value);
-    }
+        bool operator!=(const BitPack<T, COUNTS...>& other) const {
+            return !(*this == other);
+        }
 
-    // Clear the bits within a specified mask
-    template<uint8_t index>
-    void Unset(type value) {
-        // flip to get negated mask
-        //value ^= std::numeric_limits<type>::max();
+        operator bool() const {
+            return static_cast<bool>(m_data);
+        }
 
-        Set<index>(Get<index>() & static_cast<type>(~value));
+        operator T() const {
+            return m_data;
+        }
 
-        //value = ~value;
+        // Get the value of a specified member at index
+        template<uint8_t index>
+        type Get() const {
+            //return (m_data >> offset<index>::value) & capacity<index>::value;
+            auto o = offset_v<index>;
+            auto c = capacity_v<index>;
+            return (m_data >> o) & c;
+            //return (m_data >> offset<index>::value) & capacity<index>::value;
+        }
 
-        // merge negated mask to rid bits
-        //m_data &= (value & capacity_v<index>) << offset_v<index>;
+        // Set the value of a specified member at index to 0
+        template<uint8_t index>
+        void Clear() {
+            m_data &= ~(capacity_v<index> << offset_v<index>);
 
-        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+            assert(Get<index>() == 0);
+        }
 
-        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+        // Set the value of a specified member at index
+        template<uint8_t index>
+        void Set(type value) {
+            Clear<index>();
+            Merge<index>(value);
 
-        //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+            assert(Get<index>() == value);
+        }
 
-        //assert((Get<index> & value) == 0);
+        // Clear the bits within a specified mask
+        template<uint8_t index>
+        void Unset(type value) {
+            // flip to get negated mask
+            //value ^= std::numeric_limits<type>::max();
 
-        assert((Get<index>() & value) == 0);
-    }
+            Set<index>(Get<index>() & static_cast<type>(~value));
 
-    // Merge the bits of a specified index with another value
-    template<uint8_t index>
-    void Merge(type value) {
-        m_data |= (value & capacity_v<index>) << offset_v<index>;
+            //value = ~value;
 
-        assert((Get<index>() & value) == value);
-    }
-};
+            // merge negated mask to rid bits
+            //m_data &= (value & capacity_v<index>) << offset_v<index>;
+
+            //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+            //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+            //m_data &= ((~value) & capacity_v<index>) << offset_v<index>;
+
+            //assert((Get<index> & value) == 0);
+
+            assert((Get<index>() & value) == 0);
+        }
+
+        // Merge the bits of a specified index with another value
+        template<uint8_t index>
+        void Merge(type value) {
+            m_data |= (value & capacity_v<index>) << offset_v<index>;
+
+            assert((Get<index>() & value) == value);
+        }
+    };
+//}
