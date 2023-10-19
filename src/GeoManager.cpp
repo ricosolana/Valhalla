@@ -142,7 +142,7 @@ bool IGeoManager::get_stream_end(VUtils::Random::State& state, int iterations, f
 	for (int i = 0; i < iterations; i++) {
 		num2 -= num;
 		float f = state.Range(0.f, PI * 2.0f);
-		Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
+		Vector2f vector = start + Vector2f(std::sin(f), std::cos(f)) * num2;
 		float height = get_generation_height(vector.x, vector.y);
 		if (height > minHeight && height < maxHeight)
 		{
@@ -199,6 +199,7 @@ void IGeoManager::generate_rivers() {
 		}
 		else
 		{
+			// TODO use list or deque for front pops
 			list2.erase(list2.begin());
 		}
 	}
@@ -274,7 +275,7 @@ void IGeoManager::generate_rivers(VUtils::Random::State& state, const std::vecto
 
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;
-			float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
+			float d = std::sin(num4) * std::sin(num4 * 0.63412f) * std::sin(num4 * 0.33412f) * river.curveWidth;
 			float r = state.Range(river.widthMin, river.widthMax);
 			Vector2f p = river.p0 + normalized * num3 + a * d;
 			add_river(dictionary, p, r);
@@ -293,7 +294,7 @@ void IGeoManager::add_river(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& 
 	float r)
 {
 	Vector2i riverGrid = get_river_grid(p.x, p.y);
-	int num = ceil(r / riverGridSize); // Mathf.CeilToInt(r / 64);
+	int num = std::ceil(r / riverGridSize); // Mathf.CeilToInt(r / 64);
 	for (int i = riverGrid.y - num; i <= riverGrid.y + num; i++)
 	{
 		for (int j = riverGrid.x - num; j <= riverGrid.x + num; j++)
@@ -349,7 +350,7 @@ void IGeoManager::get_river_weight_of(const std::vector<RiverPoint>& points, flo
 		float num3 = (riverPoint.p - b).SqMagnitude();
 		if (num3 < riverPoint.w2)
 		{
-			float num4 = sqrt(num3);
+			float num4 = std::sqrt(num3);
 			float num5 = 1.f - num4 / riverPoint.w;
 			outWeight = std::max(num5, outWeight);
 
@@ -365,7 +366,7 @@ void IGeoManager::get_river_weight_of(const std::vector<RiverPoint>& points, flo
 
 
 float IGeoManager::get_world_angle(float wx, float wy) {
-	return sin(atan2(wx, wy) * 20.f);
+	return std::sin(std::atan2(wx, wy) * 20.f);
 }
 
 float IGeoManager::get_base_height(float wx, float wy) const {
@@ -560,8 +561,8 @@ float IGeoManager::get_base_height_tilt(float wx, float wy) {
 	float baseHeight2 = get_base_height(wx + 1.f, wy);
 	float baseHeight3 = get_base_height(wx, wy - 1.f);
 	float baseHeight4 = get_base_height(wx, wy + 1.f);
-	return abs(baseHeight2 - baseHeight)
-		+ abs(baseHeight3 - baseHeight4);
+	return std::abs(baseHeight2 - baseHeight)
+		+ std::abs(baseHeight3 - baseHeight4);
 }
 
 float IGeoManager::get_mountains_height(float wx, float wy) {
@@ -615,8 +616,8 @@ bool IGeoManager::is_inside_river_grid(Vector2i grid, Vector2f p, float r) {
 }
 
 Vector2i IGeoManager::get_river_grid(float wx, float wy) {
-	auto x = (int32_t)std::floorf((wx + riverGridSize * .5f) / riverGridSize);
-	auto y = (int32_t)std::floorf((wy + riverGridSize * .5f) / riverGridSize);
+	auto x = (int32_t)std::floor((wx + riverGridSize * .5f) / riverGridSize);
+	auto y = (int32_t)std::floor((wy + riverGridSize * .5f) / riverGridSize);
 	return Vector2i(x, y);
 }
 
