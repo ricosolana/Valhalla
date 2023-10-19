@@ -104,7 +104,7 @@ public:
     }
 
     bool IsMapVisible() const {
-        return m_pack.Get<VISIBLE_PACK_INDEX>();
+        return m_pack.get<VISIBLE_PACK_INDEX>();
     }
 
     bool IsAdmin() const {
@@ -112,7 +112,7 @@ public:
     }
 
     bool IsGated() const {
-        return m_pack.Get<GATED_PACK_INDEX>();
+        return m_pack.get<GATED_PACK_INDEX>();
     }
 
     void SetMapVisible(bool enable) {

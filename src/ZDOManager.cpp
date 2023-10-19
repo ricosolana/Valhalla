@@ -314,7 +314,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			else {
 				//zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
 					// zero out connector bit
-					//zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
+					//zdo.m_pack.get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
 				//);
 			}
 		}

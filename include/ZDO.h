@@ -47,11 +47,11 @@ public:
         }
 
         [[nodiscard]] uint32_t GetDataRevision() const {
-            return m_pack.Get<DATA_REVISION_PACK_INDEX>();
+            return m_pack.get<DATA_REVISION_PACK_INDEX>();
         }
 
         [[nodiscard]] uint16_t GetOwnerRevision() const {
-            return m_pack.Get<OWNER_REVISION_PACK_INDEX>();
+            return m_pack.get<OWNER_REVISION_PACK_INDEX>();
         }
 
 
@@ -203,8 +203,8 @@ private:
             return true;
         }
         else {
-            //assert(m_pack.Get<2>() & (1 << member_denotion<T>::value));
-            //assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
+            //assert(m_pack.get<2>() & (1 << member_denotion<T>::value));
+            //assert(m_pack.get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
 
             // else try modifying it ONLY if the member is same type
 
@@ -386,7 +386,7 @@ public:
     template<typename T>
         requires is_member_v<T>
     bool Extract(HASH_t key, T& out) {
-        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
+        //if (m_pack.get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(GetID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -422,8 +422,8 @@ public:
         //static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
 
         //if (m_encoded.HasMember<T>()) {
-        //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
-        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
+        //if (m_pack.get<2>() & (1 << GetMemberDenotion<T>())) {
+        //if (m_pack.get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
             auto&& members_find = ZDO_MEMBERS.find(GetID());
             if (members_find != ZDO_MEMBERS.end()) {
                 auto&& members = members_find->second;
@@ -694,7 +694,7 @@ public:
     // Whether the ZDO has an owner
     [[nodiscard]] bool HasOwner() const {
         return this->Owner() != 0;
-        //return m_pack.Get<OWNER_PACK_INDEX>();
+        //return m_pack.get<OWNER_PACK_INDEX>();
     }
 
     // Claim personal ownership over the ZDO
@@ -732,15 +732,15 @@ public:
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_PERSISTENT>();
+        return this->m_data.get().m_pack.get<data_t::BIT_PERSISTENT>();
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_DISTANT>();
+        return this->m_data.get().m_pack.get<data_t::BIT_DISTANT>();
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return (ObjectType) this->m_data.get().m_pack.Get<data_t::BIT_TYPE>();
+        return (ObjectType) this->m_data.get().m_pack.get<data_t::BIT_TYPE>();
     }
 
 

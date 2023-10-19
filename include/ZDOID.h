@@ -110,7 +110,7 @@ public:
     /*
     // Retrieve the index of the UserID
     uint32_t _GetUserIDIndex() const {
-        return m_pack.Get<USER_PACK_INDEX>();
+        return m_pack.get<USER_PACK_INDEX>();
     }
 
     // Set the associated UserID index 
@@ -120,7 +120,7 @@ public:
 
     // TODO rename to GetID
     uint32_t GetUID() const {
-        //return m_pack.Get<ID_PACK_INDEX>();
+        //return m_pack.get<ID_PACK_INDEX>();
         return this->m_id;
     }
 
