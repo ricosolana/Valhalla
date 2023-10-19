@@ -24,7 +24,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     _SetPersistent(pkg.Read<bool>());        // persistent
-        //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
+        //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
 
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
@@ -35,12 +35,12 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion >= 23)
         _SetType((ObjectType)pkg.Read<uint8_t>());
-        //m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
+        //m_pack.merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
 
     if (worldVersion >= 22) {
         _SetDistant(pkg.Read<bool>());
         //if (pkg.Read<bool>())
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
+            //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
     }
 
     if (worldVersion < 13) {
@@ -164,13 +164,13 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         _SetPrefabHash(prefabHash);
 
         if (flags & (1 << NETWORK_Persistent)) {
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
+            //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
             _SetPersistent(true);
         }
 
         if (flags & (1 << NETWORK_Distant)) {
             _SetDistant(true);
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
+            //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
         }
 
         ObjectType type = ObjectType(((flags & (1 << NETWORK_Type1)) | (flags & (1 << NETWORK_Type2))) >> NETWORK_Type1);
@@ -178,11 +178,11 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         _SetType(type);
 
         //if (flags & (1 << NETWORK_Type1)) {
-        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
+        //    m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
         //}
         //
         //if (flags & (1 << NETWORK_Type2)) {
-        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
+        //    m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
         //}
     }
     else {
@@ -213,7 +213,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
             connector.m_target = target;
             //type &= ~ZDOConnector::Type::Target;
         }
-        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+        //m_pack.merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
     }
     else {
         // Remove connector flag

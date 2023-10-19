@@ -100,7 +100,7 @@ public:
     template<uint8_t index>
     void set(type value) {
         clear<index>();
-        Merge<index>(value);
+        merge<index>(value);
 
         assert(get<index>() == value);
     }
@@ -131,7 +131,7 @@ public:
 
     // Merge the bits of a specified index with another value
     template<uint8_t index>
-    void Merge(type value) {
+    void merge(type value) {
         m_data |= (value & capacity_v<index>) << offset_v<index>;
 
         assert((get<index>() & value) == value);

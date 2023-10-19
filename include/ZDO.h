@@ -198,8 +198,8 @@ private:
 
             //this->m_data.get().m_pack.set<data_t::
 
-            //m_pack.Merge<2>(1 << member_denotion<T>::value);
-            //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
+            //m_pack.merge<2>(1 << member_denotion<T>::value);
+            //m_pack.merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
             return true;
         }
         else {
@@ -583,7 +583,7 @@ public:
         connector.m_type = type;
         connector.m_target = zdoid;
 
-        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+        //m_pack.merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
 
         return true;
     }
