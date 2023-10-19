@@ -960,7 +960,7 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
 
         if ((location == loc 
             || (!loc.m_group.empty() && loc.m_group == location.m_group)) 
-            && locationInstance->m_pos.Distance(p) < loc.m_minDistanceFromSimilar) // TODO use sqdist
+            && locationInstance->m_pos.get_distance(p) < loc.m_minDistanceFromSimilar) // TODO use sqdist
         {
             return true;
         }

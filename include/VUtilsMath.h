@@ -12,7 +12,7 @@ namespace VUtils::Math {
 
     float SqDistance(float x1, float y1, float x2, float y2);
 
-    float Distance(float x1, float y1, float x2, float y2);
+    float get_distance(float x1, float y1, float x2, float y2);
 
     float SqMagnitude(float x, float y, float z);
 
@@ -20,7 +20,7 @@ namespace VUtils::Math {
 
     float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2);
 
-    float Distance(float x1, float y1, float z1, float x2, float y2, float z2);
+    float get_distance(float x1, float y1, float z1, float x2, float y2, float z2);
 
 
 

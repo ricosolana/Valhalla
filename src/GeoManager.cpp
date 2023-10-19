@@ -94,7 +94,7 @@ int IGeoManager::find_closest_index(const std::vector<Vector2f>& points, Vector2
 	{
 		if (!(points[i] == p))
 		{
-			//float num2 = p.Distance(points[i]); // not optimal
+			//float num2 = p.get_distance(points[i]); // not optimal
 			float num2 = p.SqDistance(points[i]);
 			if (num2 < maxDistance * maxDistance
 				&& num2 < num)
@@ -125,7 +125,7 @@ void IGeoManager::generate_streams() {
 				river.center = vector3;
 				river.widthMax = 20;
 				river.widthMin = 20;
-				float num3 = river.p0.Distance(river.p1); // use sqdist?
+				float num3 = river.p0.get_distance(river.p1); // use sqdist?
 				river.curveWidth = num3 / 15;
 				river.curveWavelength = num3 / 20;
 				m_streams.push_back(river); // use move / emplacer
@@ -192,7 +192,7 @@ void IGeoManager::generate_rivers() {
 			river.center = (river.p0 + river.p1) * 0.5f;
 			river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
 			river.widthMin = state.Range(minRiverWidth, river.widthMax);
-			float num2 = river.p0.Distance(river.p1);
+			float num2 = river.p0.get_distance(river.p1);
 			river.curveWidth = num2 / 15.f;
 			river.curveWavelength = num2 / 20.f;
 			m_rivers.push_back(river);
@@ -212,7 +212,7 @@ int IGeoManager::get_random_river_end_index(VUtils::Random::State& state, const 
 	std::vector<int> list;
 	for (int i = 0; i < points.size(); i++) {
 		if (!(points[i] == p)
-			&& p.Distance(points[i]) < maxDistance
+			&& p.get_distance(points[i]) < maxDistance
 			&& !is_river_present(rivers, p, points[i])
 			&& is_river_allowed(p, points[i], checkStep, heightLimit))
 		{
@@ -248,7 +248,7 @@ bool IGeoManager::is_river_present(const std::vector<River>& rivers, Vector2f p0
 }
 
 bool IGeoManager::is_river_allowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const {
-	float num = p0.Distance(p1);
+	float num = p0.get_distance(p1);
 	Vector2f normalized = (p1 - p0).Normal();
 	bool flag = true;
 	for (float num2 = step; num2 <= num - step; num2 += step) {
@@ -271,7 +271,7 @@ void IGeoManager::generate_rivers(VUtils::Random::State& state, const std::vecto
 		float num = river.widthMin / 8.f;
 		const Vector2f normalized = (river.p1 - river.p0).Normal();
 		const Vector2f a(-normalized.y, normalized.x);
-		float num2 = river.p0.Distance(river.p1);
+		float num2 = river.p0.get_distance(river.p1);
 
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;

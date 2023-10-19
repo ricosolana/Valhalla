@@ -72,24 +72,23 @@ private:
     const ZoneID m_zone;
 
 private:
-    float Distance(float x, float y, float rx, float ry);
-    void ApplyModifiers();
-    void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
-    Vector3f CalcVertex(int32_t x, int32_t y);
-    void RebuildCollisionMesh();
-    void SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
-    bool AtMaxWorldLevelDepth(Vector3f worldPos);
-    bool GetWorldBaseHeight(Vector3f worldPos, float& height);
+    float get_distance(float x, float y, float rx, float ry);
+    void apply_modifiers();
+    void apply_modifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
+    Vector3f calc_vertex(int32_t x, int32_t y);
+    void smooth_terrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
+    bool is_max_world_level_depth(Vector3f worldPos);
+    bool get_world_base_height(Vector3f worldPos, float& height);
     
-    bool GetAverageWorldHeight(Vector3f worldPos, float radius, float &height);
-    bool GetMinWorldHeight(Vector3f worldPos, float radius, float &height);
-    bool GetMaxWorldHeight(Vector3f worldPos, float radius, float &height);
-    void SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity);
-    float GetAvgHeight(int32_t cx, int32_t cy, int32_t w);
-    float GroundHeight(Vector3f point);
-    void FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
-    void PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
-    void WorldToNormalizedHM(Vector3f worldPos, float& x, float &y);
+    bool get_average_world_height(Vector3f worldPos, float radius, float &height);
+    bool get_min_world_height(Vector3f worldPos, float radius, float &height);
+    bool get_max_world_height(Vector3f worldPos, float radius, float &height);
+    void smooth_terrain(Vector3f worldPos, float radius, bool square, float intensity);
+    float get_average_height(int32_t cx, int32_t cy, int32_t w);
+    float get_ground_height(Vector3f point);
+    void find_objects_to_move(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
+    void clear_paint(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
+    void world_to_heightmap(Vector3f worldPos, float& x, float &y);
     void LevelTerrain(Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
 
 public:

@@ -104,7 +104,7 @@ struct Vector2 {
         return (this->x - rhs.x) * (this->x - rhs.x) + (this->y - rhs.y) * (this->y - rhs.y);
     }
 
-    constexpr float Distance(Vector2<T> rhs) const {
+    constexpr float get_distance(Vector2<T> rhs) const {
         return std::sqrt(this->SqDistance(rhs));
     }
 
@@ -265,7 +265,7 @@ struct Vector3 {
             + (this->z - rhs.z) * (this->z - rhs.z);
     }
 
-    constexpr float Distance(Vector3<T> rhs) const {
+    constexpr float get_distance(Vector3<T> rhs) const {
         return std::sqrt(this->SqDistance(rhs));
     }
 

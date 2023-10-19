@@ -20,7 +20,7 @@ namespace VUtils::Math {
         return SqMagnitude(x1 - x2, y1 - y2);
     }
 
-    float Distance(float x1, float y1, float x2, float y2) {
+    float get_distance(float x1, float y1, float x2, float y2) {
         return std::sqrtf(SqDistance(x1, y1, x2, y2));
     }
 
@@ -39,7 +39,7 @@ namespace VUtils::Math {
         return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
     }
 
-    float Distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+    float get_distance(float x1, float y1, float z1, float x2, float y2, float z2) {
         return std::sqrtf(SqDistance(x1, y1, z1, x2, y2, z2));
     }
 

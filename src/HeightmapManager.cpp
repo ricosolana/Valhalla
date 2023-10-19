@@ -41,7 +41,7 @@ float IHeightmapManager::GetOceanDepthAll(Vector3f worldPos) {
 // public static
 bool IHeightmapManager::AtMaxLevelDepth(Vector3f worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
-    return heightmap.AtMaxWorldLevelDepth(worldPos);
+    return heightmap.is_max_world_level_depth(worldPos);
 }
 
 /*
@@ -86,7 +86,7 @@ bool IHeightmapManager::GetAverageHeight(const Vector3f& worldPos, float radius,
 
     for (auto&& heightmap : heightmaps) {
         float num3;
-        if (heightmap.GetAverageWorldHeight(worldPos, radius, num3)) {
+        if (heightmap.get_average_world_height(worldPos, radius, num3)) {
             num += num3;
             num2++;
         }
