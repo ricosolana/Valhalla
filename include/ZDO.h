@@ -57,11 +57,11 @@ public:
 
 
         void SetDataRevision(uint32_t dataRev) {
-            m_pack.Set<DATA_REVISION_PACK_INDEX>(dataRev);
+            m_pack.set<DATA_REVISION_PACK_INDEX>(dataRev);
         }
 
         void SetOwnerRevision(uint16_t ownerRev) {
-            m_pack.Set<OWNER_REVISION_PACK_INDEX>(ownerRev);
+            m_pack.set<OWNER_REVISION_PACK_INDEX>(ownerRev);
         }
 
 
@@ -196,7 +196,7 @@ private:
             // Then officially assign
             insert.first->second = std::move(value);
 
-            //this->m_data.get().m_pack.Set<data_t::
+            //this->m_data.get().m_pack.set<data_t::
 
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
             //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
@@ -291,15 +291,15 @@ private:
     }
 
     void _SetPersistent(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_PERSISTENT>(flag);
+        return this->m_data.get().m_pack.set<data_t::BIT_PERSISTENT>(flag);
     }
 
     void _SetDistant(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_DISTANT>(flag);
+        return this->m_data.get().m_pack.set<data_t::BIT_DISTANT>(flag);
     }
 
     void _SetType(ObjectType type) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_TYPE>(std::to_underlying(type));
+        return this->m_data.get().m_pack.set<data_t::BIT_TYPE>(std::to_underlying(type));
     }
 
     // Set the owner of the ZDO without revising

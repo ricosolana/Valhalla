@@ -98,7 +98,7 @@ public:
 
     // Set the value of a specified member at index
     template<uint8_t index>
-    void Set(type value) {
+    void set(type value) {
         clear<index>();
         Merge<index>(value);
 
@@ -111,7 +111,7 @@ public:
         // flip to get negated mask
         //value ^= std::numeric_limits<type>::max();
 
-        Set<index>(get<index>() & static_cast<type>(~value));
+        set<index>(get<index>() & static_cast<type>(~value));
 
         //value = ~value;
 

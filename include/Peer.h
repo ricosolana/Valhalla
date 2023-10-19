@@ -116,13 +116,13 @@ public:
     }
 
     void SetMapVisible(bool enable) {
-        m_pack.Set<VISIBLE_PACK_INDEX>(enable);
+        m_pack.set<VISIBLE_PACK_INDEX>(enable);
     }
 
     void SetAdmin(bool enable);
 
     void SetGated(bool enable) {
-        m_pack.Set<GATED_PACK_INDEX>(enable);
+        m_pack.set<GATED_PACK_INDEX>(enable);
     }
 
     /**

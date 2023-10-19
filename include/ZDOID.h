@@ -115,7 +115,7 @@ public:
 
     // Set the associated UserID index 
     void _SetUserIDIndex(decltype(m_pack)::type index) {
-        m_pack.Set<USER_PACK_INDEX>(index);
+        m_pack.set<USER_PACK_INDEX>(index);
     }*/
 
     // TODO rename to GetID
@@ -126,7 +126,7 @@ public:
 
     // TODO rename to SetID
     void SetUID(uint32_t uid) {
-        //m_pack.Set<ID_PACK_INDEX>(uid);
+        //m_pack.set<ID_PACK_INDEX>(uid);
         this->m_id = uid;
     }
 

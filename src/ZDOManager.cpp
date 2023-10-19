@@ -312,7 +312,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 				zdo.SetConnection(ZDOConnector::Type::Spawned, zdo2->GetID());
 			}
 			else {
-				//zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
+				//zdo.m_pack.set<ZDO::FLAGS_PACK_INDEX>(
 					// zero out connector bit
 					//zdo.m_pack.get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
 				//);
@@ -439,7 +439,7 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 ZDO IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = ZDOManager()->_Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
-	//zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
+	//zdo.get().m_pack.set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	zdo._SetPrefabHash(prefab.m_hash);
 	if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
 		zdo.SetLocalScale(prefab.m_localScale, false);

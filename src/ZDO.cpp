@@ -218,7 +218,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     else {
         // Remove connector flag
         //m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
-        //m_pack.Set<FLAGS_PACK_INDEX>(
+        //m_pack.set<FLAGS_PACK_INDEX>(
             //m_pack.get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
     
