@@ -1,8 +1,8 @@
 # todo:
 
 - refactor everything to follow a format:
-    class members: m_snake_case
-    class names: PascalCase
+    members: m_snake_case
+    classes/usings: PascalCase
     methods: snake_case()
     global constants: g_snake_case
     enums: PascalCase { ValueInPascalCase }

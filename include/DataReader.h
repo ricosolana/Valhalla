@@ -11,7 +11,7 @@
 
 class DataReader : public DataStream {
 private:
-    void ReadSomeBytes(BYTE_t* buffer, size_t count) {
+    void read_some_bytes(BYTE_t* buffer, size_t count) {
         this->AssertOffset(count);
 
         // read into 'buffer'
@@ -22,7 +22,7 @@ private:
         this->m_pos += count;
     }
 
-    uint32_t Read7BitEncodedInt() {
+    uint32_t read_encoded_int() {
         uint32_t out = 0;
         uint32_t num2 = 0;
         while (num2 != 35) {
@@ -51,7 +51,7 @@ public:
     decltype(auto) Read() {
         auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>) 
             ? Read<uint32_t>()
-            : Read7BitEncodedInt();
+            : read_encoded_int();
 
         this->AssertOffset(count);
 
@@ -80,7 +80,7 @@ public:
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
     decltype(auto) Read() {
         T out{};
-        ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
+        read_some_bytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
     }
 
