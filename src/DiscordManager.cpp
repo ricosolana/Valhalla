@@ -492,7 +492,7 @@ void IDiscordManager::init() {
 	m_bot->start(dpp::st_return);
 }
 
-void IDiscordManager::PeriodUpdate() {
+void IDiscordManager::periodic_update() {
 	for (auto&& itr = m_tempLinkingKeys.begin(); itr != m_tempLinkingKeys.end();) {
 		auto&& peer = NetManager()->GetPeerByHost(itr->first);
 		auto&& since = Valhalla()->Nanos() - itr->second.second;

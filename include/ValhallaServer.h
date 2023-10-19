@@ -289,7 +289,7 @@ public:
 
 private:
     void Update();
-    void PeriodUpdate();
+    void periodic_update();
 };
 
 IValhalla* Valhalla();

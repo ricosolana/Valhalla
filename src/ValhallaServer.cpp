@@ -662,11 +662,11 @@ void IValhalla::Start() {
         Update();
 
         if (VUtils::run_periodic<struct server_period_update>(1s)) {
-            PeriodUpdate();
+            periodic_update();
         }
 
         //PERIODIC_NOW(1s, {
-        //    PeriodUpdate();
+        //    periodic_update();
         //});
 
         std::this_thread::sleep_for(1ms);
@@ -719,7 +719,7 @@ void IValhalla::Update() {
 #endif
 }
 
-void IValhalla::PeriodUpdate() {
+void IValhalla::periodic_update() {
     if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
         LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     }
@@ -731,7 +731,7 @@ void IValhalla::PeriodUpdate() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    DiscordManager()->PeriodUpdate();
+    DiscordManager()->periodic_update();
 #endif
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)

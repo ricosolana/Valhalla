@@ -25,7 +25,7 @@ public:
 
 public:
     void init();
-    void PeriodUpdate();
+    void periodic_update();
 
     // Dont use, method shouldnt return a blank string
     //[[deprecated]] std::string GetHostBySnowflake(dpp::snowflake id) {
