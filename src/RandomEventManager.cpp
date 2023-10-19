@@ -14,7 +14,7 @@ IRandomEventManager* RandomEventManager() {
 	return RANDOM_EVENT_MANAGER.get();
 }
 
-void IRandomEventManager::Init() {
+void IRandomEventManager::init() {
 	// interval: 46
 	// chance: 20
 	// range: 96

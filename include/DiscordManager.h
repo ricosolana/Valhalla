@@ -24,7 +24,7 @@ public:
     UNORDERED_MAP_t<std::string, std::pair<std::string, nanoseconds>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_tempLinkingKeys;
 
 public:
-    void Init();
+    void init();
     void PeriodUpdate();
 
     // Dont use, method shouldnt return a blank string

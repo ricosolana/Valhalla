@@ -17,7 +17,7 @@ public:
 
 void VHTest::Test_ZDOConnectors() {
 
-    PrefabManager()->Init();
+    PrefabManager()->init();
     
     WorldManager()->RetrieveWorld("betatest0p216p5", "fail")->LoadFileDB();
     
@@ -69,7 +69,7 @@ void VHTest::Test_ZDO_SetsGets() {
 }
 
 void VHTest::Test_ZDO_LoadSave() {
-    PrefabManager()->Init();
+    PrefabManager()->init();
 
     BYTES_t bytes;
 

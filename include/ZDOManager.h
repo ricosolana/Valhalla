@@ -169,7 +169,7 @@ private:
 public:
 	using pred_t = const std::function<bool(const ZDO)>&;
 
-	void Init();
+	void init();
 	void Update();
 
 	// Used when saving the world from disk

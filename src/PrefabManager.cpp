@@ -25,7 +25,7 @@ ObjectType Prefab::GetObjectType() const noexcept {
 
 
 
-void IPrefabManager::Init() {
+void IPrefabManager::init() {
     LOG_INFO(LOGGER, "Initializing PrefabManager");
 
     auto opt = VUtils::Resource::ReadFile<BYTES_t>("prefabs.pkg");

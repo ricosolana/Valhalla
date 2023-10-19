@@ -25,7 +25,7 @@ public:
 
 };*/
 
-void IDiscordManager::Init() {
+void IDiscordManager::init() {
 	if (VH_SETTINGS.discordToken.empty())
 		return;
 

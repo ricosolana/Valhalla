@@ -47,7 +47,7 @@ private:
 	bool CheckGlobalKeys(const Event& e);
 
 public:
-	void Init();
+	void init();
 	void Update();
 
 	void SetCurrentRandomEvent(const Event& e, Vector3f pos, nanoseconds ns);

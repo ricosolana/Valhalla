@@ -572,11 +572,11 @@ void IValhalla::Start() {
 
     m_serverTimeMultiplier = 1;
 
-    ZDOManager()->Init();
+    ZDOManager()->init();
 #if VH_IS_ON(VH_RANDOM_EVENTS)
-    RandomEventManager()->Init();
+    RandomEventManager()->init();
 #endif
-    PrefabManager()->Init();
+    PrefabManager()->init();
 
     ZoneManager()->PostPrefabInit();
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
@@ -596,7 +596,7 @@ void IValhalla::Start() {
 #endif
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    DiscordManager()->Init();
+    DiscordManager()->init();
 #endif
 
     /*

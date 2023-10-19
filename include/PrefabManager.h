@@ -20,7 +20,7 @@ private:
 	UNORDERED_SET_t<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
 
 public:
-	void Init();
+	void init();
 
 	const Prefab* GetPrefab(HASH_t hash) const {
 		auto&& find = m_prefabs.find(hash);

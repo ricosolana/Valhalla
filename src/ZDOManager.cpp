@@ -17,7 +17,7 @@ IZDOManager* ZDOManager() {
 
 
 
-void IZDOManager::Init() {
+void IZDOManager::init() {
 	LOG_INFO(LOGGER, "Initializing ZDOManager");
 
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
