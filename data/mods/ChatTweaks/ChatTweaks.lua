@@ -21,11 +21,11 @@ Valhalla:Subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     
     peers[peer.socket.host] = true
 
-    local pos = params:ReadVector3f()
-    local msgtype = params:ReadInt32()
-    local profile = params:ReadProfile()
-    local msg = params:ReadString()
-    local nid = params:ReadString()
+    local pos = params:read_vec3f()
+    local msgtype = params:read_int32()
+    local profile = params:read_profile()
+    local msg = params:read_string()
+    local nid = params:read_string()
     
     if msgtype == ChatMsgType.SHOUT then
         return false

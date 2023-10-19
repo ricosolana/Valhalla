@@ -289,36 +289,36 @@ void IModManager::LoadAPI() {
         "buf", &DataReader::m_data,
         "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
 
-        "ReadBool", &DataReader::ReadBool,
+        "read_bool", &DataReader::read_bool,
 
-        "ReadString", &DataReader::ReadString,
-        "ReadStrings", &DataReader::ReadStrings,
+        "read_string", &DataReader::read_string,
+        "read_strings", &DataReader::read_strings,
 
-        "ReadBytes", &DataReader::ReadBytes,
+        "read_bytes", &DataReader::read_bytes,
 
-        "ReadZDOID", &DataReader::ReadZDOID,
-        "ReadVector3f", &DataReader::ReadVector3f,
-        "ReadVector2i", &DataReader::ReadVector2i,
-        "ReadQuaternion", &DataReader::ReadQuaternion,
-        "ReadProfile", &DataReader::ReadProfile,
+        "read_zdoid", &DataReader::read_zdoid,
+        "read_vec3f", &DataReader::read_vec3f,
+        "read_vec2i", &DataReader::read_vec2i,
+        "read_quat", &DataReader::read_quat,
+        "read_profile", &DataReader::read_profile,
 
-        "ReadInt8", &DataReader::ReadInt8,
-        "ReadInt16", &DataReader::ReadInt16,
-        "ReadInt32", &DataReader::ReadInt32,
-        "ReadInt64", &DataReader::ReadInt64Wrapper,
+        "read_int8", &DataReader::read_int8,
+        "read_int16", &DataReader::read_int16,
+        "read_int32", &DataReader::read_int32,
+        "read_int64", &DataReader::read_int64_wrapper,
 
-        "ReadUInt8", &DataReader::ReadUInt8,
-        "ReadUInt16", &DataReader::ReadUInt16,
-        "ReadUInt32", &DataReader::ReadUInt32,
-        "ReadUInt64", &DataReader::ReadUInt64Wrapper,
+        "read_uint8", &DataReader::read_uint8,
+        "read_uint16", &DataReader::read_uint16,
+        "read_uint32", &DataReader::read_uint32,
+        "read_uint64", &DataReader::read_uint64_wrapper,
 
-        "ReadFloat", &DataReader::ReadFloat,
-        "ReadDouble", &DataReader::ReadDouble,
+        "read_float", &DataReader::read_float,
+        "read_double", &DataReader::read_double,
                 
-        "ReadChar", &DataReader::ReadChar,
+        "read_char", &DataReader::read_char,
 
-        "Deserialize", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
-            return self.DeserializeLua(state, IModManager::Types(args.begin(), args.end()));
+        "deserialize", [](DataReader& self, sol::state_view state, sol::variadic_args args) {
+            return self.deserialize_lua(state, IModManager::Types(args.begin(), args.end()));
         }
         
     );

@@ -36,7 +36,7 @@ class MethodImpl
 
     template<class Tuple, size_t... Is>
     auto impl_tail(DataReader& reader, std::index_sequence<Is...>) {
-        return DataReader::Deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(reader);
+        return DataReader::deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(reader);
     }
 
 private:
@@ -112,7 +112,7 @@ public:
     bool Invoke(T t, DataReader reader) override {
         auto&& state = m_func.lua_state();
 
-        auto results(reader.DeserializeLua(state, m_types));
+        auto results(reader.deserialize_lua(state, m_types));
 
         // Prefix
 #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)

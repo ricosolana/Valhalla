@@ -14,18 +14,18 @@ local SIG_VersionCheck = MethodSig.new('ServerSync VersionCheck', Type.BYTES)
 local Config = {}
 
 local DATA_CONVERTERS = {
-  String =   { qualifier = 'System.String',   serialize = 'Write',        deserialize = 'ReadString'  },
-  Boolean =  { qualifier = 'System.Boolean',  serialize = 'Write',        deserialize = 'ReadBool'    },
-  SByte =    { qualifier = 'System.SByte',    serialize = 'WriteInt8',    deserialize = 'ReadInt8'    },
-  Byte =     { qualifier = 'System.Byte',     serialize = 'WriteUInt8',   deserialize = 'ReadUInt8'   }, 
-  Int16 =    { qualifier = 'System.Int16',    serialize = 'WriteInt16',   deserialize = 'ReadInt16'   },
-  UInt16 =   { qualifier = 'System.UInt16',   serialize = 'WriteUInt16',  deserialize = 'ReadUInt16'  },
-  Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'WriteInt32',   deserialize = 'ReadInt32'   },
-  UInt32 =   { qualifier = 'System.UInt32',   serialize = 'WriteUInt32',  deserialize = 'ReadUInt32'  },
-  Int64 =    { qualifier = 'System.Int64',    serialize = 'Write',        deserialize = 'ReadInt64'   },
-  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'Write',        deserialize = 'ReadUInt64'  },
-  Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'WriteFloat',   deserialize = 'ReadFloat'   },
-  Double =   { qualifier = 'System.Double',   serialize = 'WriteDouble',  deserialize = 'ReadDouble'  },
+  String =   { qualifier = 'System.String',   serialize = 'Write',        deserialize = 'read_string'  },
+  Boolean =  { qualifier = 'System.Boolean',  serialize = 'Write',        deserialize = 'read_bool'    },
+  SByte =    { qualifier = 'System.SByte',    serialize = 'WriteInt8',    deserialize = 'read_int8'    },
+  Byte =     { qualifier = 'System.Byte',     serialize = 'WriteUInt8',   deserialize = 'read_uint8'   },
+  Int16 =    { qualifier = 'System.Int16',    serialize = 'WriteInt16',   deserialize = 'read_int16'   },
+  UInt16 =   { qualifier = 'System.UInt16',   serialize = 'WriteUInt16',  deserialize = 'read_uint16'  },
+  Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'WriteInt32',   deserialize = 'read_int32'   },
+  UInt32 =   { qualifier = 'System.UInt32',   serialize = 'WriteUInt32',  deserialize = 'read_uint32'  },
+  Int64 =    { qualifier = 'System.Int64',    serialize = 'Write',        deserialize = 'read_int64'   },
+  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'Write',        deserialize = 'read_uint64'  },
+  Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'WriteFloat',   deserialize = 'read_float'   },
+  Double =   { qualifier = 'System.Double',   serialize = 'WriteDouble',  deserialize = 'read_double'  },
   CraftingTable = { 
     qualifier = 'ItemManager.CraftingTable',
     underlying = 'System.Int32',
@@ -33,7 +33,7 @@ local DATA_CONVERTERS = {
       writer:WriteInt32(CraftingTableType[value])
     end,
     deserialize = function(reader)
-      return assert(TOML.ORDINAL_TO_ENUM(CraftingTableType, reader:ReadInt32()), 'unknown CraftingTable')
+      return assert(TOML.ORDINAL_TO_ENUM(CraftingTableType, reader:read_int32()), 'unknown CraftingTable')
     end
   },
   Color = {
@@ -46,10 +46,10 @@ local DATA_CONVERTERS = {
     end,
     deserialize = function(reader)
       return {
-        r = reader:ReadFloat(),
-        g = reader:ReadFloat(),
-        b = reader:ReadFloat(),
-        a = reader:ReadFloat()
+        r = reader:read_float(),
+        g = reader:read_float(),
+        b = reader:read_float(),
+        a = reader:read_float()
       }
     end
   },
@@ -60,7 +60,7 @@ local DATA_CONVERTERS = {
       writer:WriteInt32(BuildPieceCategory[value])
     end,
     deserialize = function(reader)
-      return assert(TOML.ORDINAL_TO_ENUM(BuildPieceCategory, reader:ReadInt32()), 'unknown BuildPieceCategory')
+      return assert(TOML.ORDINAL_TO_ENUM(BuildPieceCategory, reader:read_int32()), 'unknown BuildPieceCategory')
     end
   },
   DamageModifier = { 
@@ -71,7 +71,7 @@ local DATA_CONVERTERS = {
       writer:WriteInt32(DamageModifier[value])
     end,
     deserialize = function(reader)
-      return assert(TOML.ORDINAL_TO_ENUM(DamageModifier, reader:ReadInt32()), 'unknown DamageModifier')
+      return assert(TOML.ORDINAL_TO_ENUM(DamageModifier, reader:read_int32()), 'unknown DamageModifier')
     end
   },
   --Decimal = {}
@@ -101,7 +101,7 @@ Config.new = function(self)
       --then update config values sent by peer
       local reader = DataReader.new(bytes)
       
-      local flags = reader:ReadUInt8()
+      local flags = reader:read_uint8()
       if flags & CONFIG_COMPRESSED
     end
   end)
@@ -178,9 +178,9 @@ local BytesToConfig = function(config, bytes)
   
   local count = reader:ReadUInt() assert(count < 1024, 'config count seems too large')
   for i=1, #count do
-    local section = reader:ReadString()
-    local key = reader:ReadString()
-    local qualifiedTypeName = reader:ReadString()
+    local section = reader:read_string()
+    local key = reader:read_string()
+    local qualifiedTypeName = reader:read_string()
     
     local cvt = nil
     
@@ -195,7 +195,7 @@ local BytesToConfig = function(config, bytes)
         
     if cvt then
       -- read entry completely from package
-      value = reader:Deserialize(cvt.dataType)
+      value = reader:deserialize(cvt.dataType)
       
     else
       print('unknown type being read ' .. qualifiedTypeName)
@@ -229,15 +229,15 @@ Valhalla:Subscribe('Connect', function(peer)
   peer:Register(SIG_VersionCheck, function(peer, bytes)
     local reader = DataReader.new(bytes)
     
-    local name = reader:ReadString()
+    local name = reader:read_string()
     
     local config = Config.CONFIGS[name]
     
     print('received mod from peer ' .. name)
     --[[
     if config then
-      local minVersion = reader:ReadString() -- semver is more to implement...
-      local version = reader:ReadString()
+      local minVersion = reader:read_string() -- semver is more to implement...
+      local version = reader:read_string()
       
       print('Received', name, version, 'from peer')
       

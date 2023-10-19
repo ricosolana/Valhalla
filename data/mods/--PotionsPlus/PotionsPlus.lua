@@ -28,7 +28,7 @@ local toggleDataConverter = {
     end
   end,
   deserialize = function(reader) 
-    local value = reader:ReadInt32()
+    local value = reader:read_int32()
     
     if value == 0 then
       return 'Off'

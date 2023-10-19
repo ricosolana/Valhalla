@@ -64,7 +64,7 @@ public:
     }
 
     
-    // Reads a byte array as a Reader (more efficient than ReadBytes())
+    // Reads a byte array as a Reader (more efficient than read_bytes())
     //  int32_t:   size
     //  BYTES_t:    data
     template<typename T>
@@ -231,113 +231,113 @@ public:
     //  I want these to actually all be in lua
     //  templates in c, wrappers for lua in modman
 
-    decltype(auto) ReadBool() { return read<bool>(); }
+    decltype(auto) read_bool() { return read<bool>(); }
 
-    decltype(auto) ReadString() { return read<std::string>(); }
-    decltype(auto) ReadStrings() { return read<std::vector<std::string>>(); }
+    decltype(auto) read_string() { return read<std::string>(); }
+    decltype(auto) read_strings() { return read<std::vector<std::string>>(); }
 
-    decltype(auto) ReadBytes() { return read<BYTES_t>(); }
+    decltype(auto) read_bytes() { return read<BYTES_t>(); }
 
-    decltype(auto) ReadZDOID() { return read<ZDOID>(); }
-    decltype(auto) ReadVector3f() { return read<Vector3f>(); }
-    decltype(auto) ReadVector2i() { return read<Vector2i>(); }
-    decltype(auto) ReadQuaternion() { return read<Quaternion>(); }
-    decltype(auto) ReadProfile() { return read<UserProfile>(); }
+    decltype(auto) read_zdoid() { return read<ZDOID>(); }
+    decltype(auto) read_vec3f() { return read<Vector3f>(); }
+    decltype(auto) read_vec2i() { return read<Vector2i>(); }
+    decltype(auto) read_quat() { return read<Quaternion>(); }
+    decltype(auto) read_profile() { return read<UserProfile>(); }
 
-    decltype(auto) ReadInt8() { return read<int8_t>(); }
-    decltype(auto) ReadInt16() { return read<int16_t>(); }
-    decltype(auto) ReadInt32() { return read<int32_t>(); }
-    decltype(auto) ReadInt64() { return read<int64_t>(); }
-    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) read<int64_t>(); }
+    decltype(auto) read_int8() { return read<int8_t>(); }
+    decltype(auto) read_int16() { return read<int16_t>(); }
+    decltype(auto) read_int32() { return read<int32_t>(); }
+    decltype(auto) read_int64() { return read<int64_t>(); }
+    decltype(auto) read_int64_wrapper() { return (Int64Wrapper) read<int64_t>(); }
 
-    decltype(auto) ReadUInt8() { return read<uint8_t>(); }
-    decltype(auto) ReadUInt16() { return read<uint16_t>(); }
-    decltype(auto) ReadUInt32() { return read<uint32_t>(); }
-    decltype(auto) ReadUInt64() { return read<uint64_t>(); }
-    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) read<uint64_t>(); }
+    decltype(auto) read_uint8() { return read<uint8_t>(); }
+    decltype(auto) read_uint16() { return read<uint16_t>(); }
+    decltype(auto) read_uint32() { return read<uint32_t>(); }
+    decltype(auto) read_uint64() { return read<uint64_t>(); }
+    decltype(auto) read_uint64_wrapper() { return (UInt64Wrapper) read<uint64_t>(); }
 
-    decltype(auto) ReadFloat() { return read<float>(); }
-    decltype(auto) ReadDouble() { return read<double>(); }
+    decltype(auto) read_float() { return read<float>(); }
+    decltype(auto) read_double() { return read<double>(); }
     
-    decltype(auto) ReadChar() { return read<char16_t>(); }
+    decltype(auto) read_char() { return read<char16_t>(); }
 
 
 
     // Deserialize a reader to a tuple of types
     template<class...Ts, class RD>
-    static std::tuple<Ts...> Deserialize(RD& reader) {
+    static std::tuple<Ts...> deserialize(RD& reader) {
         return { reader.template read<Ts>()... };
     }
 
 
 #if VH_IS_ON(VH_USE_MODS)
-    sol::object DeserializeOneLua(sol::state_view state, IModManager::Type type) {
+    sol::object single_deserialize_lua(sol::state_view state, IModManager::Type type) {
         switch (type) {
         case IModManager::Type::BYTES:
             // Will be interpreted as sol container type
             // see https://sol2.readthedocs.io/en/latest/containers.html
-            return sol::make_object(state, ReadBytes());
+            return sol::make_object(state, read_bytes());
         case IModManager::Type::STRING:
             // Primitive: string
-            return sol::make_object(state, ReadString());
+            return sol::make_object(state, read_string());
         case IModManager::Type::ZDOID:
             // Userdata: ZDOID
-            return sol::make_object(state, ReadZDOID());
+            return sol::make_object(state, read_zdoid());
         case IModManager::Type::VECTOR3f:
             // Userdata: Vector3f
-            return sol::make_object(state, ReadVector3f());
+            return sol::make_object(state, read_vec3f());
         case IModManager::Type::VECTOR2i:
             // Userdata: Vector2i
-            return sol::make_object(state, ReadVector2i());
+            return sol::make_object(state, read_vec2i());
         case IModManager::Type::QUATERNION:
             // Userdata: Quaternion
-            return sol::make_object(state, ReadQuaternion());
+            return sol::make_object(state, read_quat());
         case IModManager::Type::STRINGS:
             // Container type of Primitive: string
-            return sol::make_object(state, ReadStrings());
+            return sol::make_object(state, read_strings());
         case IModManager::Type::BOOL:
             // Primitive: boolean
-            return sol::make_object(state, ReadBool());
+            return sol::make_object(state, read_bool());
         case IModManager::Type::INT8:
             // Primitive: number
-            return sol::make_object(state, ReadInt8());
+            return sol::make_object(state, read_int8());
         case IModManager::Type::INT16:
             // Primitive: number
-            return sol::make_object(state, ReadInt16());
+            return sol::make_object(state, read_int16());
         case IModManager::Type::INT32:
             // Primitive: number
-            return sol::make_object(state, ReadInt32());
+            return sol::make_object(state, read_int32());
         case IModManager::Type::INT64:
             // Userdata: Int64Wrapper
-            return sol::make_object(state, ReadInt64());
+            return sol::make_object(state, read_int64());
         case IModManager::Type::UINT8:
             // Primitive: number
-            return sol::make_object(state, ReadUInt8());
+            return sol::make_object(state, read_uint8());
         case IModManager::Type::UINT16:
             // Primitive: number
-            return sol::make_object(state, ReadUInt16());
+            return sol::make_object(state, read_uint16());
         case IModManager::Type::UINT32:
             // Primitive: number
-            return sol::make_object(state, ReadUInt32());
+            return sol::make_object(state, read_uint32());
         case IModManager::Type::UINT64:
             // Userdata: UInt64Wrapper
-            return sol::make_object(state, ReadUInt64Wrapper());
+            return sol::make_object(state, read_uint64_wrapper());
         case IModManager::Type::FLOAT:
             // Primitive: number
-            return sol::make_object(state, ReadFloat());
+            return sol::make_object(state, read_float());
         case IModManager::Type::DOUBLE:
             // Primitive: number
-            return sol::make_object(state, ReadDouble());
+            return sol::make_object(state, read_double());
         default:
             throw std::runtime_error("invalid mod DataReader type");
         }
     }
 
-    sol::variadic_results DeserializeLua(sol::state_view state, const IModManager::Types& types) {
+    sol::variadic_results deserialize_lua(sol::state_view state, const IModManager::Types& types) {
         sol::variadic_results results;
 
         for (auto&& type : types) {
-            results.push_back(DeserializeOneLua(state, type));
+            results.push_back(single_deserialize_lua(state, type));
         }
 
         return results;
