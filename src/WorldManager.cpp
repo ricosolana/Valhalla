@@ -383,7 +383,7 @@ void IWorldManager::PostZoneInit() {
 	}
 }
 
-void IWorldManager::PostInit() {
+void IWorldManager::post_init() {
 #ifdef VH_OPTION_ENABLE_CAPTURE
 	if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
 		// then save world as a copy to captures

@@ -4,7 +4,7 @@
 class TestSocket : public ISocket {
 public:
     TestSocket() {}
-    void Close(bool) {}
+    void close(bool) {}
     void on_update() {}
     void Send(BYTES_t) {}
     std::optional<BYTES_t> Recv() { return std::nullopt; }

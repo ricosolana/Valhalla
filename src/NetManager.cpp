@@ -25,7 +25,7 @@ INetManager* NetManager() {
 
 
 Peer* INetManager::Kick(std::string_view user) {
-    auto&& peer = GetPeer(user);
+    auto&& peer = get_peer(user);
     if (peer) {
         peer->Kick();
     }
@@ -34,11 +34,11 @@ Peer* INetManager::Kick(std::string_view user) {
 }
 
 Peer* INetManager::Ban(std::string_view user) {
-    auto&& peer = GetPeer(user);
+    auto&& peer = get_peer(user);
 
     if (peer) {
         Valhalla()->m_blacklist.insert(peer->m_socket->GetHostName());
-        peer->Close(ConnectionStatus::ErrorBanned);
+        peer->close(ConnectionStatus::ErrorBanned);
     } else    
         Valhalla()->m_blacklist.insert(user);
 
@@ -51,17 +51,17 @@ bool INetManager::Unban(std::string_view user) {
 
 
 
-void INetManager::SendDisconnect() {
+void INetManager::send_disconnect() {
     LOG_INFO(LOGGER, "Sending disconnect msg");
 
     for (auto&& peer : m_connectedPeers) {
-        peer->SendDisconnect();
+        peer->send_disconnect();
     }
 }
 
 
 
-void INetManager::SendPlayerList() {
+void INetManager::send_player_list() {
     if (!m_onlinePeers.empty()) {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
@@ -99,7 +99,7 @@ void INetManager::SendPlayerList() {
     }
 }
 
-void INetManager::SendNetTime() {
+void INetManager::send_net_time() {
     for (auto&& peer : m_onlinePeers) {
         peer->invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
@@ -107,7 +107,7 @@ void INetManager::SendNetTime() {
 
 
 
-void INetManager::SendPeerInfo(Peer& peer) {
+void INetManager::send_peer_info(Peer& peer) {
     peer.SubInvoke(Hashes::Rpc::PeerInfo, [](DataWriter& writer) {
         writer.write(Valhalla()->ID());
         writer.write(VConstants::GAME);
@@ -129,7 +129,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, USER_ID_t uuid, const std::string &name, const Vector3f &pos) {
-void INetManager::OnPeerConnect(Peer& peer) {
+void INetManager::on_peer_connect(Peer& peer) {
     peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->GetHostName()));
 
     if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
@@ -256,7 +256,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         }
         });
 
-    SendPeerInfo(peer);
+    send_peer_info(peer);
 
     ZDOManager()->OnNewPeer(peer);
     RouteManager()->OnNewPeer(peer);
@@ -277,15 +277,15 @@ void INetManager::OnPeerConnect(Peer& peer) {
     m_onlinePeers.push_back(&peer);
 }
 
-Peer* INetManager::GetPeer(std::string_view any) {
-    Peer* peer = GetPeerByHost(any);
-    if (!peer) peer = GetPeerByName(any);
-    if (!peer) peer = GetPeerByUserID(std::atoll(any.data()));
+Peer* INetManager::get_peer(std::string_view any) {
+    Peer* peer = get_peer_by_host(any);
+    if (!peer) peer = get_peer_by_name(any);
+    if (!peer) peer = get_peer_by_userid(std::atoll(any.data()));
     return peer;
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByName(std::string_view name) {
+Peer* INetManager::get_peer_by_name(std::string_view name) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_name == name)
             return peer;
@@ -294,7 +294,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByUserID(USER_ID_t uuid) {
+Peer* INetManager::get_peer_by_userid(USER_ID_t uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;
@@ -302,7 +302,7 @@ Peer* INetManager::GetPeerByUserID(USER_ID_t uuid) {
     return nullptr;
 }
 
-Peer* INetManager::GetPeerByHost(std::string_view host) {
+Peer* INetManager::get_peer_by_host(std::string_view host) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_socket->GetHostName() == host)
             return peer;
@@ -310,18 +310,18 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
     return nullptr;
 }
 
-void INetManager::PostInit() {
+void INetManager::post_init() {
     LOG_INFO(LOGGER, "Initializing NetManager");
 
     m_acceptor = std::make_unique<AcceptorSteam>();
-    m_acceptor->Listen();
+    m_acceptor->listen();
 }
 
 void INetManager::on_update() {
     ZoneScoped;
 
     // Accept new connections
-    while (auto sock = m_acceptor->Accept()) {
+    while (auto sock = m_acceptor->accept()) {
         auto&& ptr = std::make_unique<Peer>(std::move(sock));
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
@@ -330,12 +330,12 @@ void INetManager::on_update() {
 
     // Send periodic data (2s)
     if (VUtils::run_periodic<struct send_peer_time>(2s)) {
-        SendNetTime();
+        send_net_time();
     }
 
     if (VH_SETTINGS.playerListSendInterval > 0s) {
         if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
-            SendPlayerList();
+            send_player_list();
         }
     }
 
@@ -359,7 +359,7 @@ void INetManager::on_update() {
         catch (const std::runtime_error& e) {
             LOG_WARNING(LOGGER, "Peer error");
             LOG_WARNING(LOGGER, "{}", e.what());
-            peer->m_socket->Close(false);
+            peer->m_socket->close(false);
         }
     }
 
@@ -382,7 +382,7 @@ void INetManager::on_update() {
             Peer& peer = *(*itr);
 
             if (!peer.m_socket->Connected()) {
-                OnPeerQuit(peer);
+                on_peer_quit(peer);
 
                 itr = m_onlinePeers.erase(itr);
             }
@@ -397,7 +397,7 @@ void INetManager::on_update() {
             Peer& peer = *(*itr);
 
             if (!peer.m_socket->Connected()) {
-                OnPeerDisconnect(peer);
+                on_peer_disconnect(peer);
 
                 itr = m_connectedPeers.erase(itr);
             }
@@ -408,12 +408,12 @@ void INetManager::on_update() {
     }
 }
 
-void INetManager::OnPeerQuit(Peer& peer) {
+void INetManager::on_peer_quit(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
 
     LOG_INFO(LOGGER, "Cleaning up peer");
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
-    ZDOManager()->OnPeerQuit(peer);
+    ZDOManager()->on_peer_quit(peer);
 
     if (peer.IsAdmin())
         Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
@@ -421,32 +421,32 @@ void INetManager::OnPeerQuit(Peer& peer) {
         Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
 }
 
-void INetManager::OnPeerDisconnect(Peer& peer) {
+void INetManager::on_peer_disconnect(Peer& peer) {
 #if VH_IS_ON(VH_USE_MODS)
-    ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
+    ModManager()->call_event(IModManager::Events::Disconnect, peer);
 #endif
 
-    peer.SendDisconnect();
+    peer.send_disconnect();
 
     LOG_INFO(LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
 }
 
 void INetManager::uninit() {
-    SendDisconnect();
+    send_disconnect();
 
     for (auto&& peer : m_onlinePeers) {
-        OnPeerQuit(*peer);
+        on_peer_quit(*peer);
     }
 
     for (auto&& peer : m_connectedPeers) {
-        OnPeerDisconnect(*peer);
+        on_peer_disconnect(*peer);
     }
 
     //m_acceptor.reset();
-    m_acceptor->Close();
+    m_acceptor->close();
 }
 
-void INetManager::OnConfigLoad(bool reloading) {
+void INetManager::on_config_load(bool reloading) {
     bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {

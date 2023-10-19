@@ -31,28 +31,28 @@ public:
     std::array<char, 16> m_passwordSalt;
 
 private:
-    void SendDisconnect();
-    void SendPlayerList();
-    void SendNetTime();
-    void SendPeerInfo(Peer &peer);
+    void send_disconnect();
+    void send_player_list();
+    void send_net_time();
+    void send_peer_info(Peer &peer);
 
-    void OnPeerQuit(Peer& peer);
-    void OnPeerDisconnect(Peer& peer);
+    void on_peer_quit(Peer& peer);
+    void on_peer_disconnect(Peer& peer);
 
 public:
-    void PostInit();
+    void post_init();
     void on_update();
     void uninit();
     
-    void OnConfigLoad(bool reloading);
+    void on_config_load(bool reloading);
 
     // Finds a peer by either name, uuid or host
-    Peer* GetPeer(std::string_view any);
-    Peer* GetPeerByUserID(USER_ID_t uuid);
-    Peer* GetPeerByName(std::string_view name);
-    Peer* GetPeerByHost(std::string_view host);
+    Peer* get_peer(std::string_view any);
+    Peer* get_peer_by_userid(USER_ID_t uuid);
+    Peer* get_peer_by_name(std::string_view name);
+    Peer* get_peer_by_host(std::string_view host);
 
-    void OnPeerConnect(Peer& peer);
+    void on_peer_connect(Peer& peer);
 
     // Kick a player by identifier
     Peer* Kick(std::string_view user);

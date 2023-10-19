@@ -13,16 +13,16 @@ public:
 
     // Init listening and queueing any accepted connections
     //  Should be non-blocking
-    virtual void Listen() = 0;
+    virtual void listen() = 0;
 
-    virtual void Close() = 0;
+    virtual void close() = 0;
 
     // Poll for a ready and newly accepted connection
     //  Should be non-blocking
     //  Nullable
-    virtual ISocket::Ptr Accept() = 0;
+    virtual ISocket::Ptr accept() = 0;
 
-    virtual void OnConfigLoad(bool reloading) {}
+    virtual void on_config_load(bool reloading) {}
 
     // Do not use
     //virtual void Cleanup(ISocket* socket) = 0;
@@ -52,12 +52,12 @@ public:
     AcceptorSteam();
     ~AcceptorSteam() override;
 
-    void Listen() override;
-    void Close() override;
+    void listen() override;
+    void close() override;
 
-    ISocket::Ptr Accept() override;
+    ISocket::Ptr accept() override;
 
-    void OnConfigLoad(bool reloading) override;
+    void on_config_load(bool reloading) override;
 
     //void Cleanup(ISocket* socket) override;
 

@@ -34,12 +34,12 @@ SteamSocket::SteamSocket(HSteamNetConnection hConn)
 
 SteamSocket::~SteamSocket() {
     //VLOG(2) << "~SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
-    Close(true);
+    close(true);
 }
 
 
 
-void SteamSocket::Close(bool flush) {
+void SteamSocket::close(bool flush) {
     if (!Connected())
         return;
 

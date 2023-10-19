@@ -27,7 +27,7 @@ IModManager* ModManager() {
     return MOD_MANAGER.get();
 }
 
-IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
+IModManager::Mod& IModManager::load_mod_info(std::string_view folderName) {
     YAML::Node loadNode;
 
     auto modPath = fs::path("mods") / folderName;
@@ -74,7 +74,7 @@ int LoadFileRequire(lua_State* L) {
     return 1;
 }
 
-void IModManager::LoadAPI() {    
+void IModManager::load_api() {
     m_state.new_usertype<Vector3f>("Vector3f",
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(),
         "ZERO", sol::property(&Vector3f::Zero),
@@ -328,7 +328,7 @@ void IModManager::LoadAPI() {
     //);
 
     m_state.new_usertype<ISocket>("Socket",
-        "Close", &ISocket::Close,
+        "close", &ISocket::close,
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
         "host", sol::property(&ISocket::GetHostName),
@@ -796,10 +796,10 @@ void IModManager::LoadAPI() {
 
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
-        "GetPeer", sol::overload(
-            [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUserID((int64_t)owner); },
-            //sol::resolve<Peer*(USER_ID_t)>(&INetManager::GetPeer),
-            sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
+        "get_peer", sol::overload(
+            [](INetManager& self, Int64Wrapper owner) { return self.get_peer_by_userid((int64_t)owner); },
+            //sol::resolve<Peer*(USER_ID_t)>(&INetManager::get_peer),
+            sol::resolve<Peer* (std::string_view)>(&INetManager::get_peer_by_name)
         ),
         "peers", sol::readonly(&INetManager::m_onlinePeers)
     );
@@ -982,7 +982,7 @@ void IModManager::LoadAPI() {
     }
 }
 
-void IModManager::LoadMod(Mod& mod) {
+void IModManager::load_mod(Mod& mod) {
     auto path(mod.m_entry);
     if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
         m_state.safe_script(opt.value(), mod.m_name);
@@ -1024,14 +1024,14 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
     return sol::stack::push(L, description);
 }
 
-void IModManager::PostInit() {
+void IModManager::post_init() {
     LOG_INFO(LOGGER, "Initializing ModManager");
 
     m_state.set_exception_handler(&my_exception_handler);
 
     m_state.open_libraries();
 
-    LoadAPI();
+    load_api();
 
     std::error_code ec;
     fs::create_directories(VH_MOD_PATH, ec);
@@ -1049,8 +1049,8 @@ void IModManager::PostInit() {
                 if (dirname.starts_with("--"))
                     continue;
 
-                auto&& mod = LoadModInfo(dirname);
-                LoadMod(mod);
+                auto&& mod = load_mod_info(dirname);
+                load_mod(mod);
 
                 LOG_INFO(LOGGER, "Loaded mod '{}'", mod.m_name);
             }

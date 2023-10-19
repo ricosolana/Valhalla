@@ -481,7 +481,7 @@ void IValhalla::LoadFiles(bool reloading) {
         }
     }
 
-    NetManager()->OnConfigLoad(reloading);
+    NetManager()->on_config_load(reloading);
 
 #ifdef _WIN32
     {
@@ -589,10 +589,10 @@ void IValhalla::Start() {
     ZoneManager()->post_geo_init();
 #endif
 
-    WorldManager()->PostInit();
-    NetManager()->PostInit();
+    WorldManager()->post_init();
+    NetManager()->post_init();
 #if VH_IS_ON(VH_USE_MODS)
-    ModManager()->PostInit();
+    ModManager()->post_init();
 #endif
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)

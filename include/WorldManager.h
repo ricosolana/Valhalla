@@ -81,7 +81,7 @@ public:
 
     void PostZoneInit();
 
-    void PostInit();
+    void post_init();
 };
 
 // Manager class for everything related to world file loading and file saving

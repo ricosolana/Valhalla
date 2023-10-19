@@ -37,7 +37,7 @@ AcceptorSteam::AcceptorSteam() {
             + std::to_string(VConstants::NETWORK) + "\"").c_str()
         );
         
-        this->OnConfigLoad(false);
+        this->on_config_load(false);
 
         LOG_INFO(LOGGER, "Starting server on port {}", VH_SETTINGS.serverPort);
         LOG_INFO(LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
@@ -71,11 +71,11 @@ AcceptorSteam::AcceptorSteam() {
         k_ESteamNetworkingConfig_Int32, &sendrate);
 }
 
-void AcceptorSteam::Close() {
+void AcceptorSteam::close() {
     if (m_listenSocket != k_HSteamListenSocket_Invalid) {
         //LOG(DEBUG) << "Destroying";
         for (auto&& socket : m_sockets)
-            socket.second->Close(true);
+            socket.second->close(true);
 
         // TODO is sleep really the best here?
         //std::this_thread::sleep_for(1s);
@@ -87,7 +87,7 @@ void AcceptorSteam::Close() {
 }
 
 AcceptorSteam::~AcceptorSteam() {
-    Close();
+    close();
 
     if (VH_SETTINGS.serverDedicated)
         SteamGameServer_Shutdown();
@@ -95,7 +95,7 @@ AcceptorSteam::~AcceptorSteam() {
         SteamAPI_Shutdown();
 }
 
-void AcceptorSteam::Listen() {
+void AcceptorSteam::listen() {
     if (VH_SETTINGS.serverDedicated) {
         SteamNetworkingIPAddr steamNetworkingIPAddr{ .m_port = VH_SETTINGS.serverPort };
         this->m_listenSocket = STEAM_NETWORKING_SOCKETS->CreateListenSocketIP(steamNetworkingIPAddr, 0, nullptr);
@@ -105,7 +105,7 @@ void AcceptorSteam::Listen() {
     }
 }
 
-ISocket::Ptr AcceptorSteam::Accept() {
+ISocket::Ptr AcceptorSteam::accept() {
     auto pair = m_connected.begin();
     if (pair == m_connected.end())
         return nullptr;
@@ -150,7 +150,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         auto &&pair = m_sockets.find(data->m_hConn);
 
         if (pair != m_sockets.end()) {
-            pair->second->Close(false);
+            pair->second->close(false);
 
             m_connected.erase(data->m_hConn);
             m_sockets.erase(pair);
@@ -186,7 +186,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
         LOG_INFO(LOGGER, "Created lobby");
 
-        this->OnConfigLoad(false);
+        this->on_config_load(false);
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
             LOG_WARNING(LOGGER, "Unable to set lobby version");
@@ -213,7 +213,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
 
 
-void AcceptorSteam::OnConfigLoad(bool reloading) {
+void AcceptorSteam::on_config_load(bool reloading) {
     if (VH_SETTINGS.serverDedicated) {
         SteamGameServer()->SetServerName(VH_SETTINGS.serverName.c_str());
         SteamGameServer()->SetMapName(VH_SETTINGS.serverName.c_str());

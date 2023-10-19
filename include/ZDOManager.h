@@ -59,7 +59,7 @@ private:
 	// Called when an authenticated peer joins (internal)
 	void OnNewPeer(Peer& peer);
 	// Called when an authenticated peer leaves (internal)
-	void OnPeerQuit(Peer& peer);
+	void on_peer_quit(Peer& peer);
 
 	
 	// Retrieve a zone container for storing zdos

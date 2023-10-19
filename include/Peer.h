@@ -324,10 +324,10 @@ public:
     }
 
     void Disconnect() {
-        m_socket->Close(true);
+        m_socket->close(true);
     }
 
-    void SendDisconnect() {
+    void send_disconnect() {
         invoke(Hashes::Rpc::Disconnect);
     }
 
@@ -340,7 +340,7 @@ public:
         Disconnect();
     }
 
-    bool Close(ConnectionStatus status);
+    bool close(ConnectionStatus status);
 
 
 

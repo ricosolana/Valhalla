@@ -174,7 +174,7 @@ local commands = {
     },
     op = {
         func = function(peer, cmd, args)
-            local p = NetManager:GetPeer(args[1])
+            local p = NetManager:get_peer(args[1])
             if p then 
                 p.admin = not p.admin 
                 
@@ -192,12 +192,12 @@ local commands = {
     },
     tpa = {
         func = function(peer, cmd, args)
-            local p1 = NetManager:GetPeer(args[1])
+            local p1 = NetManager:get_peer(args[1])
         
             if #args == 1 then
                 peer:Teleport(p1.zdo.pos)
             else
-                local p2 = NetManager:GetPeer(args[2])
+                local p2 = NetManager:get_peer(args[2])
                 
                 p1:Teleport(p2.zdo.pos)
             end
@@ -219,12 +219,12 @@ local commands = {
     --[[
     moveto = {
         function(peer, cmd, args)
-            local p1 = NetManager:GetPeer(args[1])
+            local p1 = NetManager:get_peer(args[1])
         
             if #args == 1 then
                 peer:MoveTo(p1.zdo.pos)
             else
-                local p2 = NetManager:GetPeer(args[2])
+                local p2 = NetManager:get_peer(args[2])
                 
                 p1:MoveTo(p2.zdo.pos)
             end
@@ -234,7 +234,7 @@ local commands = {
     abandonz = {
         func = function(peer, cmd, args)
             -- abandon the player-arg
-            NetManager:GetPeer(args[1]).zdo:Disown()
+            NetManager:get_peer(args[1]).zdo:Disown()
         end,
         usage = '<peer>',
         desc = 'abandons a players zdo'
@@ -242,7 +242,7 @@ local commands = {
     reclaimz = {
         func = function(peer, cmd, args)
             -- abandon to the player-arg
-            local p = NetManager:GetPeer(args[1])
+            local p = NetManager:get_peer(args[1])
             p.zdo.owner = p.uuid
         end,
         usage = '[peer]',
@@ -251,7 +251,7 @@ local commands = {
     destroyz = {
         func = function(peer, cmd, args)
             -- abandon to the player-arg
-            local p = NetManager:GetPeer(args[1])
+            local p = NetManager:get_peer(args[1])
             ZDOManager:DestroyZDO(p.zdo)
         end,
         usage = '[peer]',

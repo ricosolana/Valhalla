@@ -136,19 +136,19 @@ public:
     sol::state m_state;
 
 private:
-    Mod& LoadModInfo(std::string_view folderName);
+    Mod& load_mod_info(std::string_view folderName);
 
-    void LoadAPI();
-    void LoadMod(Mod& mod);
+    void load_api();
+    void load_mod(Mod& mod);
 
 public:
-    void PostInit();
+    void post_init();
     void uninit();
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
     template <class... Args>
-    bool CallEvent(HASH_t name, Args&&... params) {
+    bool call_event(HASH_t name, Args&&... params) {
         ZoneScoped;
 
         this->m_unsubscribeCurrentEvent = false;
@@ -189,24 +189,24 @@ public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <typename... Args>
-    auto CallEvent(std::string_view name, Args&&... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+    auto call_event(std::string_view name, Args&&... params) {
+        return call_event(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
     }
 
 private:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
-        return CallEvent(name, std::get<Is>(t)...); // TODO use forward
+    auto call_event_tuple_impl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
+        return call_event(name, std::get<Is>(t)...); // TODO use forward
     }
 
 public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, const Tuple& t) {
-        return CallEventTupleImpl(name,
+    auto call_event_tuple(HASH_t name, const Tuple& t) {
+        return call_event_tuple_impl(name,
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
@@ -214,15 +214,15 @@ public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <class Tuple>
-    auto CallEventTuple(std::string_view name, const Tuple& t) {
-        return CallEventTupleImpl(VUtils::String::GetStableHashCode(name),
+    auto call_event_tuple(std::string_view name, const Tuple& t) {
+        return call_event_tuple_impl(VUtils::String::GetStableHashCode(name),
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }
 };
 
-#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent((name), __VA_ARGS__)
-#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple((name), __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->call_event((name), __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->call_event_tuple((name), __VA_ARGS__)
 
 // Manager class for everything related to mods which affect server functionality
 IModManager* ModManager();

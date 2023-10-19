@@ -25,7 +25,7 @@ public:
 
     // Terminates the connection
     // If flush is set, socket wont close until a few seconds
-    virtual void Close(bool flush) = 0;
+    virtual void close(bool flush) = 0;
 
 
 
@@ -80,7 +80,7 @@ public:
     explicit SteamSocket(HSteamNetConnection hConn);
     ~SteamSocket() override;
 
-    void Close(bool flush) override;
+    void close(bool flush) override;
     
     void on_update() override;
     void Send(BYTES_t bytes) override;

@@ -42,11 +42,11 @@ Peer::Peer(ISocket::Ptr socket)
             auto version = reader.read<std::string_view>();
             LOG_INFO(LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
             if (version != VConstants::GAME)
-                return rpc->Close(ConnectionStatus::ErrorVersion);
+                return rpc->close(ConnectionStatus::ErrorVersion);
 
             // network version
             if (reader.read<uint32_t>() != VConstants::NETWORK) {
-                return rpc->Close(ConnectionStatus::ErrorVersion);
+                return rpc->close(ConnectionStatus::ErrorVersion);
             }
 
             rpc->m_pos = reader.read<Vector3f>();
@@ -68,38 +68,38 @@ Peer::Peer(ISocket::Ptr socket)
                     && (VH_SETTINGS.serverDedicated
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
                         : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
-                    return rpc->Close(ConnectionStatus::ErrorDisconnected);
+                    return rpc->close(ConnectionStatus::ErrorDisconnected);
             }
 
             if (password != std::string_view(NetManager()->m_passwordHash))
-                return rpc->Close(ConnectionStatus::ErrorPassword);
+                return rpc->close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByUserID(rpc->GetUserID()) || NetManager()->GetPeerByName(rpc->m_name))
-                return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+            if (NetManager()->get_peer_by_userid(rpc->GetUserID()) || NetManager()->get_peer_by_name(rpc->m_name))
+                return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
-            NetManager()->OnPeerConnect(*rpc);
+            NetManager()->on_peer_connect(*rpc);
 
             return false;
         });
 
         if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
-            return rpc->Close(ConnectionStatus::ErrorBanned);
+            return rpc->close(ConnectionStatus::ErrorBanned);
 
-        if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()))
-            return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+        if (NetManager()->get_peer_by_host(rpc->m_socket->GetHostName()))
+            return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
         if (VH_SETTINGS.playerWhitelist
             && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
-            return rpc->Close(ConnectionStatus::ErrorFull);
+            return rpc->close(ConnectionStatus::ErrorFull);
         }
 
         // if too many players online
         if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
-            return rpc->Close(ConnectionStatus::ErrorFull);
+            return rpc->close(ConnectionStatus::ErrorFull);
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
@@ -149,7 +149,7 @@ void Peer::on_update() {
     }
 }
 
-bool Peer::Close(ConnectionStatus status) {
+bool Peer::close(ConnectionStatus status) {
     LOG_INFO(LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
     invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
