@@ -893,7 +893,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.Write(zdo.Owner());
 			writer.Write(zdo.GetPosition());
 
-			writer.SubWrite([&zdo](DataWriter& writer) {
+			writer.nested_write([&zdo](DataWriter& writer) {
 				zdo.Pack(writer, true);
 			});
 

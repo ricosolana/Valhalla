@@ -77,7 +77,7 @@ public:
 public:
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
-    void SubWrite(F func) {
+    void nested_write(F func) {
         const auto start = this->get_pos();
         int32_t count = 0;
         Write(count);

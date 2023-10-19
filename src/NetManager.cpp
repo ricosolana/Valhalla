@@ -71,7 +71,7 @@ void INetManager::SendPlayerList() {
 
         writer.Write(Hashes::Rpc::S2C_UpdatePlayerList);
 
-        writer.SubWrite([this](DataWriter& writer) {
+        writer.nested_write([this](DataWriter& writer) {
             writer.Write<int32_t>(m_onlinePeers.size());
 
             for (auto&& peer : m_onlinePeers) {

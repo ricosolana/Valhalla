@@ -165,7 +165,7 @@ public:
         DataWriter writer(bytes);
 
         writer.Write(hash);
-        writer.SubWrite(func);
+        writer.nested_write(func);
 
         // Prefix
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
@@ -187,7 +187,7 @@ public:
 
         writer.Write(Hashes::Rpc::RoutedRPC);
 
-        writer.SubWrite([&](DataWriter& writer) {
+        writer.nested_write([&](DataWriter& writer) {
             // routed rpc spec
             writer.Write<int64_t>(0); // msg id
             writer.Write(VH_ID); // sender
@@ -195,8 +195,8 @@ public:
             writer.Write(targetZDO); // target ZDO
             writer.Write(hash); // routed method hash
             // FIrst subwrite the routedrpc parameter package then nest the params within it
-            writer.SubWrite([func](DataWriter& writer) {
-                writer.SubWrite(func); // explicit parameter as a package (length + array)
+            writer.nested_write([func](DataWriter& writer) {
+                writer.nested_write(func); // explicit parameter as a package (length + array)
             });
         });
 

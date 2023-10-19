@@ -54,7 +54,7 @@ World::World(DataReader reader) {
 BYTES_t World::SaveMeta() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
-	writer.SubWrite([this](DataWriter& writer) {
+	writer.nested_write([this](DataWriter& writer) {
 		writer.Write(VConstants::WORLD);
 		writer.Write(m_name);
 		writer.Write(m_seedName);
