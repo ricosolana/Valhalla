@@ -110,6 +110,8 @@ public:
 
 
 
+    bool IsDistant() const noexcept;
+    bool IsPersistent() const noexcept;
     ObjectType GetObjectType() const noexcept;
 
 

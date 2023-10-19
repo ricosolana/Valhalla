@@ -1,5 +1,17 @@
 # todo:
 
+- prioritize full lua safety
+    make Peer use shared ptr
+        i hate this but its necessary
+    
+    make ZDO when accessed by lua, a value-type
+        no more ptrs
+        
+        copy zdo over to lua
+            a zdo alone is ~40 bytes, rather smaller 
+            than it used to be
+    
+
 - refactor everything to follow a format:
     class members: m_snake_case
     class names: PascalCase

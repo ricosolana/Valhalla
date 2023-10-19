@@ -14,6 +14,16 @@ const Prefab& Prefab::Instance::GetPrefab() const {
     return PrefabManager()->RequirePrefabByHash(m_prefabHash);
 }
 
+
+
+bool Prefab::IsDistant() const noexcept {
+    return AllFlagsPresent(Flag::DISTANT);
+}
+
+bool Prefab::IsPersistent() const noexcept {
+    return AllFlagsPresent(Flag::PERSISTENT);
+}
+
 ObjectType Prefab::GetObjectType() const noexcept {
     unsigned int v = (1 & AllFlagsPresent(Flag::TYPE1)) |
         ((1 & AllFlagsPresent(Flag::TYPE2)) << 1);

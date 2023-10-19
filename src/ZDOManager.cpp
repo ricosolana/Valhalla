@@ -28,6 +28,7 @@ void IZDOManager::Init() {
 			});
 		}
 	);
+
 	//auto&& insert = ZDOManager()->m_objectsByID.begin()->second->
 		//m_members.insert({0, ZDO::Ord()});
 	//insert.first->second.Get

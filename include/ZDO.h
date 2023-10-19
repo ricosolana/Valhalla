@@ -131,34 +131,11 @@ private:
     class data_t {
         friend class ::ZDO; // namespacing is weird
 
-        static constexpr unsigned int BIT_OWNER = NETWORK_ByteArray + 1;
-
     private:
         Vector3f m_pos;                                 // 12 bytes
         ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
         Vector3f m_rotation;                            // 12 bytes
-
-#if VH_IS_ON(VH_REQUIRE_RECOGNIZED_PREFABS)
-        static constexpr unsigned int BIT_PREFAB = BIT_OWNER + 1;
-
-        BitPack<uint32_t,
-            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
-            12, 16                                      // owner, prefab
-        > m_pack;
-#else        
-        static constexpr unsigned int BIT_TYPE = BIT_OWNER + 1;
-        static constexpr unsigned int BIT_DISTANT = BIT_TYPE + 1;
-        static constexpr unsigned int BIT_PERSISTENT = BIT_DISTANT + 1;
-
         HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
-        BitPack<uint16_t,
-            1, 1, 1, 1, 1, 1, 1, 1,                     // network member bits
-            2, 1, 1,                                    // type, distant, persistent
-            4                                           // unused
-        > m_pack;                                       // 2 bytes
-
-        // TODO implement the member hint bits for more optimized gets
-#endif
 
     public:
         data_t() {}
@@ -288,18 +265,6 @@ private:
 
     void _SetPrefabHash(HASH_t hash) {
         this->m_data.get().m_prefabHash = hash;
-    }
-
-    void _SetPersistent(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_PERSISTENT>(flag);
-    }
-
-    void _SetDistant(bool flag) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_DISTANT>(flag);
-    }
-
-    void _SetType(ObjectType type) {
-        return this->m_data.get().m_pack.Set<data_t::BIT_TYPE>(std::to_underlying(type));
     }
 
     // Set the owner of the ZDO without revising
@@ -732,15 +697,15 @@ public:
 
 
     [[nodiscard]] bool IsPersistent() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_PERSISTENT>();
+        return GetPrefab().IsPersistent();
     }
 
     [[nodiscard]] bool IsDistant() const {
-        return this->m_data.get().m_pack.Get<data_t::BIT_DISTANT>();
+        return GetPrefab().IsDistant();
     }
 
     [[nodiscard]] ObjectType GetType() const {
-        return (ObjectType) this->m_data.get().m_pack.Get<data_t::BIT_TYPE>();
+        return GetPrefab().GetObjectType();
     }
 
 
@@ -751,6 +716,8 @@ public:
         auto&& find = ZDO_MEMBERS.find(GetID());
         if (find != ZDO_MEMBERS.end()) {
             for (auto&& member : find->second) {
+                // TODO this only counts the compiled type size
+                //  it does not include dynamically sized types like strings or arrays
                 size += std::visit([](const auto& value) {
                     return sizeof(value);
                 }, member.second);

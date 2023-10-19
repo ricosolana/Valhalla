@@ -23,8 +23,7 @@
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
-    _SetPersistent(pkg.Read<bool>());        // persistent
-        //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
+    pkg.Read<bool>();           // persistent
 
     pkg.Read<int64_t>();        // owner
     auto timeCreated = pkg.Read<int64_t>();
@@ -34,13 +33,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<int32_t>();
 
     if (worldVersion >= 23)
-        _SetType((ObjectType)pkg.Read<uint8_t>());
-        //m_pack.Merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
+        pkg.Read<uint8_t>();    // type
 
     if (worldVersion >= 22) {
-        _SetDistant(pkg.Read<bool>());
-        //if (pkg.Read<bool>())
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
+        pkg.Read<bool>();       // distant
     }
 
     if (worldVersion < 13) {
@@ -48,17 +44,13 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         pkg.Read<char16_t>();
     }
 
-#if VH_IS_OFF(VH_MODULAR_PREFABS)
     const Prefab* prefab = nullptr;
-#endif
 
     HASH_t prefabHash{};
 
     if (worldVersion >= 17) {
         prefabHash = pkg.Read<HASH_t>();
-#if VH_IS_OFF(VH_MODULAR_PREFABS)
         prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
-#endif
         _SetPrefabHash(prefabHash);
     }
 
@@ -81,15 +73,11 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     if (worldVersion < 17) {
         prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
-#if VH_IS_OFF(VH_MODULAR_PREFABS)
         prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
-#endif
         _SetPrefabHash(prefabHash);
     }
 
-#if VH_IS_OFF(VH_MODULAR_PREFABS)
     assert(prefab);
-#endif
 
     if (worldVersion < 31) {
         // Convert owners
@@ -109,26 +97,9 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             }
         }
 
-        // Convert terrains
-#if VH_IS_ON(VH_MODULAR_PREFABS)
-        if (prefabHash == Hashes::Object::cultivate
-            || prefabHash == Hashes::Object::raise
-            || prefabHash == Hashes::Object::path
-            || prefabHash == Hashes::Object::paved_road
-            || prefabHash == Hashes::Object::HeathRockPillar
-            || prefabHash == Hashes::Object::HeathRockPillar_frac
-            || prefabHash == Hashes::Object::ship_construction
-            || prefabHash == Hashes::Object::replant
-            || prefabHash == Hashes::Object::digg
-            || prefabHash == Hashes::Object::mud_road
-            || prefabHash == Hashes::Object::LevelTerrain
-            || prefabHash == Hashes::Object::digg_v2)
-        {
-#else
         if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
             || (GetPrefabHash() == Hashes::Object::ship_construction))
         {
-#endif
             Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
         }
 
@@ -162,28 +133,6 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     auto prefabHash = reader.Read<HASH_t>();
     if (GetPrefabHash() == 0) { // Init once
         _SetPrefabHash(prefabHash);
-
-        if (flags & (1 << NETWORK_Persistent)) {
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);
-            _SetPersistent(true);
-        }
-
-        if (flags & (1 << NETWORK_Distant)) {
-            _SetDistant(true);
-            //m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);
-        }
-
-        ObjectType type = ObjectType(((flags & (1 << NETWORK_Type1)) | (flags & (1 << NETWORK_Type2))) >> NETWORK_Type1);
-
-        _SetType(type);
-
-        //if (flags & (1 << NETWORK_Type1)) {
-        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type1);
-        //}
-        //
-        //if (flags & (1 << NETWORK_Type2)) {
-        //    m_pack.Merge<FLAGS_PACK_INDEX>(1 << MACHINE_Type2);
-        //}
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)

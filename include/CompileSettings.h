@@ -199,29 +199,6 @@
     #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_DEFAULT_OFF
 #endif
 
-// Whether unknown prefabs are allowed
-//  useful with mods
-#if defined(VH_REQUIRE_RECOGNIZED_PREFABS)
-    #if VH_REQUIRE_RECOGNIZED_PREFABS != 0
-        #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_ON
-    #else
-        #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_OFF
-    #endif
-#else
-    #define VH_REQUIRE_RECOGNIZED_PREFABS_I_ VH_DEFAULT_OFF
-#endif
-
-// Whether to rely on Prefab objects or hashes only
-#if defined(VH_MODULAR_PREFABS)
-    #if VH_MODULAR_PREFABS != 0
-        #define VH_MODULAR_PREFABS_I_ VH_ON
-    #else
-        #define VH_MODULAR_PREFABS_I_ VH_OFF
-    #endif
-#else
-    #define VH_MODULAR_PREFABS_I_ VH_DEFAULT_OFF
-#endif
-
 //#define VH_ZONE_GENERATION 0
 
 #if defined(VH_ZONE_GENERATION)
