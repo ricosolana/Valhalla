@@ -228,7 +228,7 @@ public:
 
         //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
-        this->Send(DataWriter::Serialize(hash, params...));
+        this->Send(DataWriter::serialize(hash, params...));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
@@ -410,7 +410,7 @@ public:
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
-        RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
+        RouteParams(targetZDO, hash, DataWriter::serialize(params...));
     }
 
     template <typename... Types>

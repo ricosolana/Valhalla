@@ -230,28 +230,28 @@ public:
 
 
     // Empty template
-    static void SerializeImpl(DataWriter& pkg) {}
+    static void do_serialize(DataWriter& pkg) {}
 
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
-    static decltype(auto) SerializeImpl(DataWriter& pkg, const T &var1, const Types&... var2) {
+    static decltype(auto) do_serialize(DataWriter& pkg, const T &var1, const Types&... var2) {
         pkg.write(var1);
 
-        return SerializeImpl(pkg, var2...);
+        return do_serialize(pkg, var2...);
     }
 
     // Serialize variadic types to an array
     template <typename T, typename... Types>
-    static decltype(auto) Serialize(const T &var1, const Types&... var2) {
+    static decltype(auto) serialize(const T &var1, const Types&... var2) {
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        SerializeImpl(writer, var1, var2...);
+        do_serialize(writer, var1, var2...);
         return bytes;
     }
 
     // empty full template
-    static decltype(auto) Serialize() {
+    static decltype(auto) serialize() {
         return BYTES_t{};
     }
 

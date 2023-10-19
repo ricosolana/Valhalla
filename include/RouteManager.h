@@ -65,7 +65,7 @@ public:
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
 
-			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
+			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
