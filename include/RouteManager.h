@@ -97,7 +97,7 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::serialize_lua_bytes(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -109,9 +109,9 @@ public:
 		}
 		
 		//Serialize(VH_ID, target, targetZDO, repr.m_hash,
-			//DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+			//DataWriter::serialize_lua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 		
-		//Invoke(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+		//Invoke(target, targetZDO, repr.m_hash, DataWriter::serialize_lua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
 #endif
 

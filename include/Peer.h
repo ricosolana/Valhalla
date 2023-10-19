@@ -259,7 +259,7 @@ public:
         BYTES_t bytes;
         DataWriter params(bytes);
         params.write(repr.m_hash);
-        params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
+        params.serialize_lua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
         this->Send(std::move(bytes));
 
         // Postfix
@@ -441,7 +441,7 @@ public:
             return;
 #endif
 
-        RouteParams(targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+        RouteParams(targetZDO, repr.m_hash, DataWriter::serialize_lua_bytes(repr.m_types, results));
     }
 
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {

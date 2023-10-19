@@ -257,7 +257,7 @@ public:
 
 
 #if VH_IS_ON(VH_USE_MODS)
-    void SerializeOneLua(IModManager::Type type, sol::object arg) {
+    void single_serialize_lua(IModManager::Type type, sol::object arg) {
         switch (type) {
             // TODO add recent unsigned types
         case IModManager::Type::UINT8:
@@ -316,17 +316,17 @@ public:
         }
     }
 
-    void SerializeLua(const IModManager::Types& types, const sol::variadic_results& results) {
+    void serialize_lua(const IModManager::Types& types, const sol::variadic_results& results) {
         for (int i = 0; i < results.size(); i++) {
-            SerializeOneLua(types[i], results[i]);
+            single_serialize_lua(types[i], results[i]);
         }
     }
 
-    static decltype(auto) SerializeExtLua(const IModManager::Types& types, const sol::variadic_results& results) {
+    static decltype(auto) serialize_lua_bytes(const IModManager::Types& types, const sol::variadic_results& results) {
         BYTES_t bytes;
         DataWriter params(bytes);
 
-        params.SerializeLua(types, results);
+        params.serialize_lua(types, results);
 
         return bytes;
     }

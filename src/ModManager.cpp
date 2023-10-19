@@ -259,9 +259,9 @@ void IModManager::LoadAPI() {
         "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::write),
 
         "Serialize", sol::overload(
-            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::SerializeOneLua),
+            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::single_serialize_lua),
             [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
-                return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
+                return self.serialize_lua(types, sol::variadic_results(args.begin(), args.end()));
             }
             //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::SerializeLuaImpl)
         )
