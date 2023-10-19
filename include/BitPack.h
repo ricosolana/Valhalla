@@ -90,7 +90,7 @@ public:
 
     // Set the value of a specified member at index to 0
     template<uint8_t index>
-    void Clear() {
+    void clear() {
         m_data &= ~(capacity_v<index> << offset_v<index>);
 
         assert(get<index>() == 0);
@@ -99,7 +99,7 @@ public:
     // Set the value of a specified member at index
     template<uint8_t index>
     void Set(type value) {
-        Clear<index>();
+        clear<index>();
         Merge<index>(value);
 
         assert(get<index>() == value);
