@@ -107,7 +107,7 @@ public:
 
     // Clear the bits within a specified mask
     template<uint8_t index>
-    void Unset(type value) {
+    void unset(type value) {
         // flip to get negated mask
         //value ^= std::numeric_limits<type>::max();
 
