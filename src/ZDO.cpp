@@ -21,31 +21,31 @@
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
-    pkg.Read<uint32_t>();       // owner rev
-    pkg.Read<uint32_t>();       // data rev
-    _SetPersistent(pkg.Read<bool>());        // persistent
+    pkg.read<uint32_t>();       // owner rev
+    pkg.read<uint32_t>();       // data rev
+    _SetPersistent(pkg.read<bool>());        // persistent
         //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Persistent);           // persistent
 
-    pkg.Read<int64_t>();        // owner
-    auto timeCreated = pkg.Read<int64_t>();
-    pkg.Read<int32_t>();        // pgw
+    pkg.read<int64_t>();        // owner
+    auto timeCreated = pkg.read<int64_t>();
+    pkg.read<int32_t>();        // pgw
 
     if (worldVersion >= 16 && worldVersion < 24)
-        pkg.Read<int32_t>();
+        pkg.read<int32_t>();
 
     if (worldVersion >= 23)
-        _SetType((ObjectType)pkg.Read<uint8_t>());
-        //m_pack.merge<FLAGS_PACK_INDEX>(pkg.Read<uint8_t>() << MACHINE_Type1);    // m_type
+        _SetType((ObjectType)pkg.read<uint8_t>());
+        //m_pack.merge<FLAGS_PACK_INDEX>(pkg.read<uint8_t>() << MACHINE_Type1);    // m_type
 
     if (worldVersion >= 22) {
-        _SetDistant(pkg.Read<bool>());
-        //if (pkg.Read<bool>())
+        _SetDistant(pkg.read<bool>());
+        //if (pkg.read<bool>())
             //m_pack.merge<FLAGS_PACK_INDEX>(1 << MACHINE_Distant);       // m_distant
     }
 
     if (worldVersion < 13) {
-        pkg.Read<char16_t>();
-        pkg.Read<char16_t>();
+        pkg.read<char16_t>();
+        pkg.read<char16_t>();
     }
 
 #if VH_IS_OFF(VH_MODULAR_PREFABS)
@@ -55,16 +55,16 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     HASH_t prefabHash{};
 
     if (worldVersion >= 17) {
-        prefabHash = pkg.Read<HASH_t>();
+        prefabHash = pkg.read<HASH_t>();
 #if VH_IS_OFF(VH_MODULAR_PREFABS)
         prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
 #endif
         _SetPrefabHash(prefabHash);
     }
 
-    pkg.Read<Vector2i>(); // m_sector
-    this->_SetPosition(pkg.Read<Vector3f>());
-    this->_SetRotation(pkg.Read<Quaternion>());
+    pkg.read<Vector2i>(); // m_sector
+    this->_SetPosition(pkg.read<Vector3f>());
+    this->_SetRotation(pkg.read<Quaternion>());
 
     // will get or create an empty default
     auto&& members = ZDO_MEMBERS[GetID()];
@@ -146,20 +146,20 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 #endif //VH_LEGACY_WORLD_LOADING
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
-    auto flags = reader.Read<uint16_t>();
+    auto flags = reader.read<uint16_t>();
 
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
         //this->m_id.SetUID(ZDOManager()->m_nextUid++);
 
-        auto sector = reader.Read<Vector2s>(); // redundant
-        this->_SetPosition(reader.Read<Vector3f>());
+        auto sector = reader.read<Vector2s>(); // redundant
+        this->_SetPosition(reader.read<Vector3f>());
         if (sector != GetZone())
             throw std::runtime_error("sector mismatch");
     }
 
     // This runs once per created ZDO
-    auto prefabHash = reader.Read<HASH_t>();
+    auto prefabHash = reader.read<HASH_t>();
     if (GetPrefabHash() == 0) { // Init once
         _SetPrefabHash(prefabHash);
 
@@ -193,20 +193,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     }
     
     if (flags & (1 << NETWORK_Rotation)) {
-        this->_SetRotation(reader.Read<Vector3f>());
+        this->_SetRotation(reader.read<Vector3f>());
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
     if (flags & (1 << NETWORK_Connection)) {
-        auto type = reader.Read<ZDOConnector::Type>();
+        auto type = reader.read<ZDOConnector::Type>();
         if (version) {
-            auto hash = reader.Read<HASH_t>();
+            auto hash = reader.read<HASH_t>();
             auto&& connector = ZDO_CONNECTORS[GetID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
             connector.m_type = type;
             connector.m_hash = hash;
         }
         else {
-            auto target = reader.Read<ZDOID>();
+            auto target = reader.read<ZDOID>();
             auto&& connector = ZDO_TARGETED_CONNECTORS[GetID()];
             // set connection
             connector.m_type = type;

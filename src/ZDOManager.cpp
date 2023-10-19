@@ -216,20 +216,20 @@ void IZDOManager::Save(DataWriter& writer) {
 
 
 void IZDOManager::Load(DataReader& reader, int version) {
-	reader.Read<int64_t>(); // server id
-	reader.Read<uint32_t>(); // next uid
+	reader.read<int64_t>(); // server id
+	reader.read<uint32_t>(); // next uid
 	
-	auto count = reader.Read<uint32_t>();
+	auto count = reader.read<uint32_t>();
 	for (decltype(count) i = 0; i < count; i++) {
 		auto&& insert = _Instantiate(
-			version < 31 ? reader.Read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
+			version < 31 ? reader.read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
 		);
 		
 		auto&& zdo = ZDO(*insert.first);
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 		if (version < 31) {
-			auto zdoReader = reader.Read<DataReader>();
+			auto zdoReader = reader.read<DataReader>();
 
 			zdo.Load31Pre(zdoReader, version);
 		}
@@ -263,11 +263,11 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 	if (version < 31) {
-		auto deadCount = reader.Read<int32_t>();
+		auto deadCount = reader.read<int32_t>();
 		for (decltype(deadCount) j = 0; j < deadCount; j++) {
-			reader.Read<int64_t>();
-			reader.Read<uint32_t>();
-			reader.Read<int64_t>();
+			reader.read<int64_t>();
+			reader.read<uint32_t>();
+			reader.read<int64_t>();
 		}
 
 		// Owners, Terrains, and Seeds have already been converted
@@ -927,13 +927,13 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		
 		auto time = Valhalla()->Time();
 
-		while (auto zdoid = reader.Read<ZDOID>()) {
-			auto ownerRev = reader.Read<uint16_t>();	// owner revision
-			auto dataRev = reader.Read<uint32_t>();		// data revision
-			auto owner = reader.Read<int64_t>();		// owner
-			auto pos = reader.Read<Vector3f>();			// position
+		while (auto zdoid = reader.read<ZDOID>()) {
+			auto ownerRev = reader.read<uint16_t>();	// owner revision
+			auto dataRev = reader.read<uint32_t>();		// data revision
+			auto owner = reader.read<int64_t>();		// owner
+			auto pos = reader.read<Vector3f>();			// position
 
-			auto des = reader.Read<DataReader>();		// dont move this
+			auto des = reader.read<DataReader>();		// dont move this
 
 			/*
 			ZDO::Rev rev = { 

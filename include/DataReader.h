@@ -26,7 +26,7 @@ private:
         uint32_t out = 0;
         uint32_t num2 = 0;
         while (num2 != 35) {
-            auto b = Read<uint8_t>();
+            auto b = read<uint8_t>();
             out |= static_cast<decltype(out)>(b & 127) << num2;
             num2 += 7;
             if ((b & 128) == 0)
@@ -48,9 +48,9 @@ public:
         requires 
             (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
                 || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
-    decltype(auto) Read() {
+    decltype(auto) read() {
         auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>) 
-            ? Read<uint32_t>()
+            ? read<uint32_t>()
             : read_encoded_int();
 
         this->AssertOffset(count);
@@ -69,8 +69,8 @@ public:
     //  BYTES_t:    data
     template<typename T>
         requires std::is_same_v<T, DataReader>
-    decltype(auto) Read() {
-        return T(Read<BYTE_VIEW_t>());
+    decltype(auto) read() {
+        return T(read<BYTE_VIEW_t>());
     }
 
 
@@ -78,7 +78,7 @@ public:
     //  Reads a primitive type
     template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    decltype(auto) Read() {
+    decltype(auto) read() {
         T out{};
         read_some_bytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;
@@ -90,10 +90,10 @@ public:
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
             && !std::is_arithmetic_v<typename Iterable::value_type>)
-    decltype(auto) Read() {
+    decltype(auto) read() {
         using Type = Iterable::value_type;
 
-        const auto count = Read<int32_t>();
+        const auto count = read<int32_t>();
 
         Iterable out{};
 
@@ -102,7 +102,7 @@ public:
         out.reserve(count);
 
         for (int32_t i=0; i < count; i++) {
-            auto type = Read<Type>();
+            auto type = read<Type>();
             out.insert(out.end(), type);
         }
 
@@ -115,10 +115,10 @@ public:
     void AsEach(F func) {
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
-        const auto count = Read<int32_t>();
+        const auto count = read<int32_t>();
 
         for (int32_t i = 0; i < count; i++) {
-            func(Read<Type>());
+            func(read<Type>());
         }
     }
 
@@ -127,9 +127,9 @@ public:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
     template<typename T> requires std::same_as<T, ZDOID>
-    decltype(auto) Read() {
-        auto a(Read<int64_t>());
-        auto b(Read<uint32_t>());
+    decltype(auto) read() {
+        auto a(read<int64_t>());
+        auto b(read<uint32_t>());
         return ZDOID(a, b);
     }
 
@@ -139,10 +139,10 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     template<typename T> requires std::same_as<T, Vector3f>
-    decltype(auto) Read() {
-        auto a(Read<float>());
-        auto b(Read<float>());
-        auto c(Read<float>());
+    decltype(auto) read() {
+        auto a(read<float>());
+        auto b(read<float>());
+        auto c(read<float>());
         return Vector3f(a, b, c);
     }
 
@@ -151,9 +151,9 @@ public:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
     template<typename T> requires std::same_as<T, Vector2i>
-    decltype(auto) Read() {
-        auto a(Read<int32_t>());
-        auto b(Read<int32_t>());
+    decltype(auto) read() {
+        auto a(read<int32_t>());
+        auto b(read<int32_t>());
         return Vector2i(a, b);
     }
 
@@ -163,9 +163,9 @@ public:
     //  int16_t: x (2 bytes)
     //  int16_t: y (2 bytes)
     template<typename T> requires std::same_as<T, Vector2s>
-    decltype(auto) Read() {
-        auto a(Read<int16_t>());
-        auto b(Read<int16_t>());
+    decltype(auto) read() {
+        auto a(read<int16_t>());
+        auto b(read<int16_t>());
         return Vector2s(a, b);
     }
 
@@ -178,36 +178,36 @@ public:
     //  float: z (4 bytes)
     //  float: w (4 bytes)
     template<typename T> requires std::same_as<T, Quaternion>
-    decltype(auto) Read() {
-        auto a(Read<float>());
-        auto b(Read<float>());
-        auto c(Read<float>());
-        auto d(Read<float>());
+    decltype(auto) read() {
+        auto a(read<float>());
+        auto b(read<float>());
+        auto c(read<float>());
+        auto d(read<float>());
         return Quaternion{ a, b, c, d };
     }
 
     // Reads an enum type
     //  - Bytes read depend on the underlying value
     template<typename Enum> requires std::is_enum_v<Enum>
-    decltype(auto) Read() {
-        return static_cast<Enum>(Read<std::underlying_type_t<Enum>>());
+    decltype(auto) read() {
+        return static_cast<Enum>(read<std::underlying_type_t<Enum>>());
     }
 
     // Read a UTF-8 encoded C# char
     //  Will advance 1 -> 3 bytes, depending on size of first char
     template<typename T> requires std::is_same_v<T, char16_t>
-    decltype(auto) Read() {
-        auto b1 = Read<uint8_t>();
+    decltype(auto) read() {
+        auto b1 = read<uint8_t>();
 
         // 3 byte
         if (b1 >= 0xE0) {
-            auto b2 = Read<uint8_t>() & 0x3F;
-            auto b3 = Read<uint8_t>() & 0x3F;
+            auto b2 = read<uint8_t>() & 0x3F;
+            auto b3 = read<uint8_t>() & 0x3F;
             return ((b1 & 0xF) << 12) | (b2 << 6) | b3;
         }
         // 2 byte
         else if (b1 >= 0xC0) {
-            auto b2 = Read<uint8_t>() & 0x3F;
+            auto b2 = read<uint8_t>() & 0x3F;
             return ((b1 & 0x1F) << 6) | b2;
         }
         // 1 byte
@@ -217,10 +217,10 @@ public:
     }
 
     template<typename T> requires std::is_same_v<T, UserProfile>
-    decltype(auto) Read() {
-        auto name = Read<std::string>();
-        auto gamerTag = Read<std::string>();
-        auto networkUserId = Read<std::string>();
+    decltype(auto) read() {
+        auto name = read<std::string>();
+        auto gamerTag = read<std::string>();
+        auto networkUserId = read<std::string>();
 
         return UserProfile(std::move(name), std::move(gamerTag), std::move(networkUserId));
     }
@@ -231,42 +231,42 @@ public:
     //  I want these to actually all be in lua
     //  templates in c, wrappers for lua in modman
 
-    decltype(auto) ReadBool() { return Read<bool>(); }
+    decltype(auto) ReadBool() { return read<bool>(); }
 
-    decltype(auto) ReadString() { return Read<std::string>(); }
-    decltype(auto) ReadStrings() { return Read<std::vector<std::string>>(); }
+    decltype(auto) ReadString() { return read<std::string>(); }
+    decltype(auto) ReadStrings() { return read<std::vector<std::string>>(); }
 
-    decltype(auto) ReadBytes() { return Read<BYTES_t>(); }
+    decltype(auto) ReadBytes() { return read<BYTES_t>(); }
 
-    decltype(auto) ReadZDOID() { return Read<ZDOID>(); }
-    decltype(auto) ReadVector3f() { return Read<Vector3f>(); }
-    decltype(auto) ReadVector2i() { return Read<Vector2i>(); }
-    decltype(auto) ReadQuaternion() { return Read<Quaternion>(); }
-    decltype(auto) ReadProfile() { return Read<UserProfile>(); }
+    decltype(auto) ReadZDOID() { return read<ZDOID>(); }
+    decltype(auto) ReadVector3f() { return read<Vector3f>(); }
+    decltype(auto) ReadVector2i() { return read<Vector2i>(); }
+    decltype(auto) ReadQuaternion() { return read<Quaternion>(); }
+    decltype(auto) ReadProfile() { return read<UserProfile>(); }
 
-    decltype(auto) ReadInt8() { return Read<int8_t>(); }
-    decltype(auto) ReadInt16() { return Read<int16_t>(); }
-    decltype(auto) ReadInt32() { return Read<int32_t>(); }
-    decltype(auto) ReadInt64() { return Read<int64_t>(); }
-    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) Read<int64_t>(); }
+    decltype(auto) ReadInt8() { return read<int8_t>(); }
+    decltype(auto) ReadInt16() { return read<int16_t>(); }
+    decltype(auto) ReadInt32() { return read<int32_t>(); }
+    decltype(auto) ReadInt64() { return read<int64_t>(); }
+    decltype(auto) ReadInt64Wrapper() { return (Int64Wrapper) read<int64_t>(); }
 
-    decltype(auto) ReadUInt8() { return Read<uint8_t>(); }
-    decltype(auto) ReadUInt16() { return Read<uint16_t>(); }
-    decltype(auto) ReadUInt32() { return Read<uint32_t>(); }
-    decltype(auto) ReadUInt64() { return Read<uint64_t>(); }
-    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) Read<uint64_t>(); }
+    decltype(auto) ReadUInt8() { return read<uint8_t>(); }
+    decltype(auto) ReadUInt16() { return read<uint16_t>(); }
+    decltype(auto) ReadUInt32() { return read<uint32_t>(); }
+    decltype(auto) ReadUInt64() { return read<uint64_t>(); }
+    decltype(auto) ReadUInt64Wrapper() { return (UInt64Wrapper) read<uint64_t>(); }
 
-    decltype(auto) ReadFloat() { return Read<float>(); }
-    decltype(auto) ReadDouble() { return Read<double>(); }
+    decltype(auto) ReadFloat() { return read<float>(); }
+    decltype(auto) ReadDouble() { return read<double>(); }
     
-    decltype(auto) ReadChar() { return Read<char16_t>(); }
+    decltype(auto) ReadChar() { return read<char16_t>(); }
 
 
 
     // Deserialize a reader to a tuple of types
     template<class...Ts, class RD>
     static std::tuple<Ts...> Deserialize(RD& reader) {
-        return { reader.template Read<Ts>()... };
+        return { reader.template read<Ts>()... };
     }
 
 

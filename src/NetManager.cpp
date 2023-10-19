@@ -142,16 +142,16 @@ void INetManager::OnPeerConnect(Peer& peer) {
     peer.Register(Hashes::Rpc::C2S_PlayerData, [this](Peer* peer, BYTE_VIEW_t pkg) {
         DataReader reader(pkg);
 
-        peer->m_pos = reader.Read<Vector3f>();
-        peer->SetMapVisible(reader.Read<bool>());
+        peer->m_pos = reader.read<Vector3f>();
+        peer->SetMapVisible(reader.read<bool>());
         
-        auto count = reader.Read<int32_t>();
+        auto count = reader.read<int32_t>();
         for (int i = 0; i < count; i++) {
             // Read player event data (only 2):
             //  'possibleEvents'
             //  'baseValue' // used to be a zdo member
-            auto key = reader.Read<std::string_view>(); // key
-            peer->m_syncData[key] = reader.Read<std::string>(); // value
+            auto key = reader.read<std::string_view>(); // key
+            peer->m_syncData[key] = reader.read<std::string>(); // value
         }
     });
 

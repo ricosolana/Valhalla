@@ -266,13 +266,13 @@ private:
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
     static void _TryReadType(DataReader& reader, member_map& members) {
-        decltype(auto) count = reader.Read<CountType>();
+        decltype(auto) count = reader.read<CountType>();
 
         for (int i = 0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-            auto hash(reader.Read<HASH_t>());
-            auto type(reader.Read<T>());
+            auto hash(reader.read<HASH_t>());
+            auto type(reader.read<T>());
             _Set(hash, type, members);
         }
     }

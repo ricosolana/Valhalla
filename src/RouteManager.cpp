@@ -19,13 +19,13 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		if (peer->IsGated())
 			return;
 
-		reader.Read<int64_t>(); // skip msgid
+		reader.read<int64_t>(); // skip msgid
 		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid);*/ 
-		reader.Read<USER_ID_t>(); // skip sender
-		auto target = reader.Read<USER_ID_t>();
-		auto targetZDO = reader.Read<ZDOID>();
-		auto hash = reader.Read<HASH_t>();
-		auto params = reader.Read<DataReader>();
+		reader.read<USER_ID_t>(); // skip sender
+		auto target = reader.read<USER_ID_t>();
+		auto targetZDO = reader.read<ZDOID>();
+		auto hash = reader.read<HASH_t>();
+		auto params = reader.read<DataReader>();
 
 		/*
 		* Rpc and multi-execution dilemna

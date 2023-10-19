@@ -29,23 +29,23 @@ void IRandomEventManager::Init() {
 
 		DataReader pkg(*opt);
 
-		pkg.Read<std::string_view>(); // comment
-		auto ver = pkg.Read<std::string_view>();
+		pkg.read<std::string_view>(); // comment
+		auto ver = pkg.read<std::string_view>();
 		if (ver != VConstants::GAME)
 			LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
 
-		auto count = pkg.Read<int32_t>();
+		auto count = pkg.read<int32_t>();
 		for (int i = 0; i < count; i++) {
 			auto e = std::make_unique<Event>();
 
-			e->m_name = pkg.Read<std::string>();
-			e->m_duration = duration_cast<nanoseconds>(seconds((int64_t)pkg.Read<float>()));
-			e->m_nearBaseOnly = pkg.Read<bool>();
-			e->m_pauseIfNoPlayerInArea = pkg.Read<bool>();
-			e->m_biome = (Biome)pkg.Read<int32_t>();
+			e->m_name = pkg.read<std::string>();
+			e->m_duration = duration_cast<nanoseconds>(seconds((int64_t)pkg.read<float>()));
+			e->m_nearBaseOnly = pkg.read<bool>();
+			e->m_pauseIfNoPlayerInArea = pkg.read<bool>();
+			e->m_biome = (Biome)pkg.read<int32_t>();
 
-			e->m_presentGlobalKeys = pkg.Read<decltype(Event::m_presentGlobalKeys)>();
-			e->m_absentGlobalKeys = pkg.Read<decltype(Event::m_absentGlobalKeys)>();
+			e->m_presentGlobalKeys = pkg.read<decltype(Event::m_presentGlobalKeys)>();
+			e->m_absentGlobalKeys = pkg.read<decltype(Event::m_absentGlobalKeys)>();
 
 			auto&& sv = e->m_name; // Make a temp key because assign eval order is not guaranteed
 			m_events[sv] = std::move(e);
@@ -185,11 +185,11 @@ void IRandomEventManager::Save(DataWriter& writer) {
 }
 
 void IRandomEventManager::Load(DataReader& reader, int version) {
-	m_eventIntervalTimer = reader.Read<float>();
+	m_eventIntervalTimer = reader.read<float>();
 	if (version >= 25) {
-		this->m_activeEvent = GetEvent(reader.Read<std::string_view>());
-		this->m_activeEventRemaining = seconds((int64_t)reader.Read<float>());
-		this->m_activeEventPos = reader.Read<Vector3f>();
+		this->m_activeEvent = GetEvent(reader.read<std::string_view>());
+		this->m_activeEventRemaining = seconds((int64_t)reader.read<float>());
+		this->m_activeEventPos = reader.read<Vector3f>();
 	}
 
 	//VLOG(1) << "interval: " << this->m_eventIntervalTimer

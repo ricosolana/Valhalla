@@ -34,36 +34,36 @@ Peer::Peer(ISocket::Ptr socket)
 
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
-            rpc->m_characterID.SetOwner(reader.Read<int64_t>());
+            rpc->m_characterID.SetOwner(reader.read<int64_t>());
 #if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
                 throw std::runtime_error("peer provided 0 owner");
 #endif
-            auto version = reader.Read<std::string_view>();
+            auto version = reader.read<std::string_view>();
             LOG_INFO(LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
             // network version
-            if (reader.Read<uint32_t>() != VConstants::NETWORK) {
+            if (reader.read<uint32_t>() != VConstants::NETWORK) {
                 return rpc->Close(ConnectionStatus::ErrorVersion);
             }
 
-            rpc->m_pos = reader.Read<Vector3f>();
+            rpc->m_pos = reader.read<Vector3f>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
             if (rpc->m_pos.HSqMagnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
                 throw std::runtime_error("peer position is outside of map");
 #endif
-            rpc->m_name = reader.Read<std::string>();
+            rpc->m_name = reader.read<std::string>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
             if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
                 throw std::runtime_error("peer provided invalid length name");
 #endif            
-            auto password = reader.Read<std::string_view>();
+            auto password = reader.read<std::string_view>();
 
             if (VH_SETTINGS.playerOnline) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-                auto ticket = reader.Read<BYTE_VIEW_t>();
+                auto ticket = reader.read<BYTE_VIEW_t>();
                 if (steamSocket 
                     && (VH_SETTINGS.serverDedicated
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
@@ -124,9 +124,9 @@ void Peer::Update() {
         auto&& bytes = opt.value();
         DataReader reader(bytes);
 
-        auto hash = reader.Read<HASH_t>();
+        auto hash = reader.read<HASH_t>();
         if (hash == 0) [[unlikely]] { 
-            if (reader.Read<bool>()) {
+            if (reader.read<bool>()) {
                 // Reply to the server with a pong
                 BYTES_t pong;
                 DataWriter writer(pong);

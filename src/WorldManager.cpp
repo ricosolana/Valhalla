@@ -27,21 +27,21 @@ World::World(std::string name, std::string seedName) {
 }
 
 World::World(DataReader reader) {
-	reader = reader.Read<DataReader>();
+	reader = reader.read<DataReader>();
 
-	auto worldVersion = reader.Read<int32_t>();
+	auto worldVersion = reader.read<int32_t>();
 
 	if (worldVersion != VConstants::WORLD) {
 		LOG_WARNING(LOGGER, "Loading unsupported world meta version: {}", worldVersion);
 	}
 
-	m_name = reader.Read<std::string>();
-	m_seedName = reader.Read<std::string>();
-	reader.Read<HASH_t>(); // seed
+	m_name = reader.read<std::string>();
+	m_seedName = reader.read<std::string>();
+	reader.read<HASH_t>(); // seed
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
-	m_uid = reader.Read<int64_t>();
-	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
-	bool needsDB = worldVersion >= 30 ? reader.Read<bool>() : false;
+	m_uid = reader.read<int64_t>();
+	m_worldGenVersion = worldVersion >= 26 ? reader.read<int32_t>() : 0;
+	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
 		reader.AsEach([](std::string_view key) {
 			// TODO add starting keys
@@ -128,7 +128,7 @@ void World::LoadFileDB(const fs::path& root) {
 		try {
 			DataReader reader(opt.value());
 
-			auto worldVersion = reader.Read<int32_t>();
+			auto worldVersion = reader.read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 				LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
@@ -145,7 +145,7 @@ void World::LoadFileDB(const fs::path& root) {
 			if (worldVersion >= 4)
 #endif // VH_LEGACY_WORLD_LOADING
 			{
-				Valhalla()->m_worldTime = reader.Read<double>();
+				Valhalla()->m_worldTime = reader.read<double>();
 			}
 
 			ZDOManager()->Load(reader, worldVersion);

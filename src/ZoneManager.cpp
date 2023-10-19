@@ -32,69 +32,69 @@ void IZoneManager::PostPrefabInit() {
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string_view>(); // comment
-        auto ver = pkg.Read<std::string_view>();
+        pkg.read<std::string_view>(); // comment
+        auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME)
             LOG_WARNING(LOGGER, "features.pkg uses different game version than server ({})", ver);
 
-        auto count = pkg.Read<int32_t>();
+        auto count = pkg.read<int32_t>();
         for (int i=0; i < count; i++) {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<Feature>();
-            loc->m_name = pkg.Read<std::string>();
+            loc->m_name = pkg.read<std::string>();
             loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
 
-            loc->m_biome = (Biome)pkg.Read<int32_t>();
-            loc->m_biomeArea = (BiomeArea)pkg.Read<int32_t>();
-            loc->m_applyRandomDamage = pkg.Read<bool>();
-            loc->m_centerFirst = pkg.Read<bool>();
-            loc->m_clearArea = pkg.Read<bool>();
-            //loc->m_useCustomInteriorTransform = pkg.Read<bool>();
-            loc->m_exteriorRadius = pkg.Read<float>();
-            loc->m_interiorRadius = pkg.Read<float>();
-            loc->m_forestTresholdMin = pkg.Read<float>();
-            loc->m_forestTresholdMax = pkg.Read<float>();
-            //loc->m_interiorPosition = pkg.Read<Vector3f>();
-            //loc->m_generatorPosition = pkg.Read<Vector3f>();
-            loc->m_group = pkg.Read<std::string>();
-            loc->m_iconAlways = pkg.Read<bool>();
-            loc->m_iconPlaced = pkg.Read<bool>();
-            loc->m_inForest = pkg.Read<bool>();
-            loc->m_minAltitude = pkg.Read<float>();
-            loc->m_maxAltitude = pkg.Read<float>();
-            loc->m_minDistance = pkg.Read<float>();
-            loc->m_maxDistance = pkg.Read<float>();
-            loc->m_minTerrainDelta = pkg.Read<float>();
-            loc->m_maxTerrainDelta = pkg.Read<float>();
-            loc->m_minDistanceFromSimilar = pkg.Read<float>();
-            loc->m_spawnAttempts = pkg.Read<int32_t>();
-            loc->m_quantity = pkg.Read<int32_t>();
-            loc->m_randomRotation = pkg.Read<bool>();
+            loc->m_biome = (Biome)pkg.read<int32_t>();
+            loc->m_biomeArea = (BiomeArea)pkg.read<int32_t>();
+            loc->m_applyRandomDamage = pkg.read<bool>();
+            loc->m_centerFirst = pkg.read<bool>();
+            loc->m_clearArea = pkg.read<bool>();
+            //loc->m_useCustomInteriorTransform = pkg.read<bool>();
+            loc->m_exteriorRadius = pkg.read<float>();
+            loc->m_interiorRadius = pkg.read<float>();
+            loc->m_forestTresholdMin = pkg.read<float>();
+            loc->m_forestTresholdMax = pkg.read<float>();
+            //loc->m_interiorPosition = pkg.read<Vector3f>();
+            //loc->m_generatorPosition = pkg.read<Vector3f>();
+            loc->m_group = pkg.read<std::string>();
+            loc->m_iconAlways = pkg.read<bool>();
+            loc->m_iconPlaced = pkg.read<bool>();
+            loc->m_inForest = pkg.read<bool>();
+            loc->m_minAltitude = pkg.read<float>();
+            loc->m_maxAltitude = pkg.read<float>();
+            loc->m_minDistance = pkg.read<float>();
+            loc->m_maxDistance = pkg.read<float>();
+            loc->m_minTerrainDelta = pkg.read<float>();
+            loc->m_maxTerrainDelta = pkg.read<float>();
+            loc->m_minDistanceFromSimilar = pkg.read<float>();
+            loc->m_spawnAttempts = pkg.read<int32_t>();
+            loc->m_quantity = pkg.read<int32_t>();
+            loc->m_randomRotation = pkg.read<bool>();
 
             // randomspawns
-            auto spawns = pkg.Read<int32_t>();
+            auto spawns = pkg.read<int32_t>();
             for (int s = 0; s < spawns; s++) {
-                pkg.Read<float>(); // chance
+                pkg.read<float>(); // chance
                 
-                auto views = pkg.Read<int32_t>();
+                auto views = pkg.read<int32_t>();
                 for (int v = 0; v < views; v++) {
-                    pkg.Read<HASH_t>(); // prefab hash
-                    pkg.Read<Vector3f>(); // position
-                    pkg.Read<Quaternion>(); // rotation
+                    pkg.read<HASH_t>(); // prefab hash
+                    pkg.read<Vector3f>(); // position
+                    pkg.read<Quaternion>(); // rotation
                 }
             }
 
-            loc->m_slopeRotation = pkg.Read<bool>();
-            loc->m_snapToWater = pkg.Read<bool>();
-            loc->m_unique = pkg.Read<bool>();
+            loc->m_slopeRotation = pkg.read<bool>();
+            loc->m_snapToWater = pkg.read<bool>();
+            loc->m_unique = pkg.read<bool>();
 
-            auto views = pkg.Read<int32_t>();
+            auto views = pkg.read<int32_t>();
             for (int j=0; j < views; j++) {
                 Prefab::Instance piece;
 
-                piece.m_prefabHash = pkg.Read<HASH_t>();
-                piece.m_pos = pkg.Read<Vector3f>();
-                piece.m_rot = pkg.Read<Quaternion>();
+                piece.m_prefabHash = pkg.read<HASH_t>();
+                piece.m_pos = pkg.read<Vector3f>();
+                piece.m_rot = pkg.read<Quaternion>();
 
                 piece.GetPrefab();
 
@@ -118,51 +118,51 @@ void IZoneManager::PostPrefabInit() {
 
         DataReader pkg(*opt);
 
-        pkg.Read<std::string_view>(); // comment
-        auto ver = pkg.Read<std::string_view>();
+        pkg.read<std::string_view>(); // comment
+        auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
             LOG_WARNING(LOGGER, "vegetation.pkg uses different game version than server ({})", ver);
         }
 
-        auto count = pkg.Read<int32_t>();
+        auto count = pkg.read<int32_t>();
         for (int i=0; i < count; i++) {
             auto veg = std::make_unique<Foliage>();
 
-            auto prefabName = pkg.Read<std::string>();
+            auto prefabName = pkg.read<std::string>();
 
             veg->m_prefab = &PrefabManager()->RequirePrefabByName(prefabName);
 
-            veg->m_biome = (Biome) pkg.Read<int32_t>();
-            veg->m_biomeArea = (BiomeArea) pkg.Read<int32_t>();
-            veg->m_radius = pkg.Read<float>();
-            veg->m_min = pkg.Read<float>();
-            veg->m_max = pkg.Read<float>();
-            veg->m_minTilt = pkg.Read<float>();
-            veg->m_maxTilt = pkg.Read<float>();
-            veg->m_groupRadius = pkg.Read<float>();
-            veg->m_forcePlacement = pkg.Read<bool>();
-            veg->m_groupSizeMin = pkg.Read<int32_t>();
-            veg->m_groupSizeMax = pkg.Read<int32_t>();
-            veg->m_scaleMin = pkg.Read<float>();
-            veg->m_scaleMax = pkg.Read<float>();
-            veg->m_randTilt = pkg.Read<float>();
-            veg->m_blockCheck = pkg.Read<bool>();
-            veg->m_minAltitude = pkg.Read<float>();
-            veg->m_maxAltitude = pkg.Read<float>();
-            veg->m_minOceanDepth = pkg.Read<float>();
-            veg->m_maxOceanDepth = pkg.Read<float>();
-            veg->m_terrainDeltaRadius = pkg.Read<float>();
-            veg->m_minTerrainDelta = pkg.Read<float>();
-            veg->m_maxTerrainDelta = pkg.Read<float>();
-            veg->m_inForest = pkg.Read<bool>();
-            veg->m_forestTresholdMin = pkg.Read<float>();
-            veg->m_forestTresholdMax = pkg.Read<float>();
-            veg->m_snapToWater = pkg.Read<bool>();
-            veg->m_snapToStaticSolid = pkg.Read<bool>();
-            veg->m_groundOffset = pkg.Read<float>();
-            veg->m_chanceToUseGroundTilt = pkg.Read<float>();
-            veg->m_minVegetation = pkg.Read<float>();
-            veg->m_maxVegetation = pkg.Read<float>();
+            veg->m_biome = (Biome) pkg.read<int32_t>();
+            veg->m_biomeArea = (BiomeArea) pkg.read<int32_t>();
+            veg->m_radius = pkg.read<float>();
+            veg->m_min = pkg.read<float>();
+            veg->m_max = pkg.read<float>();
+            veg->m_minTilt = pkg.read<float>();
+            veg->m_maxTilt = pkg.read<float>();
+            veg->m_groupRadius = pkg.read<float>();
+            veg->m_forcePlacement = pkg.read<bool>();
+            veg->m_groupSizeMin = pkg.read<int32_t>();
+            veg->m_groupSizeMax = pkg.read<int32_t>();
+            veg->m_scaleMin = pkg.read<float>();
+            veg->m_scaleMax = pkg.read<float>();
+            veg->m_randTilt = pkg.read<float>();
+            veg->m_blockCheck = pkg.read<bool>();
+            veg->m_minAltitude = pkg.read<float>();
+            veg->m_maxAltitude = pkg.read<float>();
+            veg->m_minOceanDepth = pkg.read<float>();
+            veg->m_maxOceanDepth = pkg.read<float>();
+            veg->m_terrainDeltaRadius = pkg.read<float>();
+            veg->m_minTerrainDelta = pkg.read<float>();
+            veg->m_maxTerrainDelta = pkg.read<float>();
+            veg->m_inForest = pkg.read<bool>();
+            veg->m_forestTresholdMin = pkg.read<float>();
+            veg->m_forestTresholdMax = pkg.read<float>();
+            veg->m_snapToWater = pkg.read<bool>();
+            veg->m_snapToStaticSolid = pkg.read<bool>();
+            veg->m_groundOffset = pkg.read<float>();
+            veg->m_chanceToUseGroundTilt = pkg.read<float>();
+            veg->m_minVegetation = pkg.read<float>();
+            veg->m_maxVegetation = pkg.read<float>();
 
             m_foliage.push_back(std::move(veg));
         }
@@ -357,10 +357,10 @@ void IZoneManager::Save(DataWriter& pkg) {
 // public
 void IZoneManager::Load(DataReader& reader, int32_t version) {
     {
-        auto count = reader.Read<uint32_t>();
+        auto count = reader.read<uint32_t>();
         for (decltype(count) i = 0; i < count; i++) {
-            auto x = reader.Read<int32_t>();
-            auto y = reader.Read<int32_t>();
+            auto x = reader.read<int32_t>();
+            auto y = reader.read<int32_t>();
 #if VH_IS_ON(VH_ZONE_GENERATION)
             m_generatedZones.insert(ZoneID(static_cast<int16_t>(x), int16_t(y)));
 #endif // VH_ZONE_GENERATION
@@ -371,14 +371,14 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
     if (version >= 13) 
 #endif // VH_LEGACY_WORLD_LOADING
     {
-        reader.Read<int32_t>(); // PGW
-        const auto locationVersion = (version >= 21) ? reader.Read<int32_t>() : 0; // 26
+        reader.read<int32_t>(); // PGW
+        const auto locationVersion = (version >= 21) ? reader.read<int32_t>() : 0; // 26
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
         if (version >= 14)
 #endif // VH_LEGACY_WORLD_LOADING
         {
-            m_globalKeys = reader.Read<decltype(m_globalKeys)>();
+            m_globalKeys = reader.read<decltype(m_globalKeys)>();
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
             if (version >= 18) 
@@ -388,18 +388,18 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
                 if (version >= 20) 
 #endif // VH_LEGACY_WORLD_LOADING
                 {
-                    reader.Read<bool>(); // locationsGenerated
+                    reader.read<bool>(); // locationsGenerated
                 }
 
-                auto count = reader.Read<int32_t>();
+                auto count = reader.read<int32_t>();
                 for (decltype(count) i = 0; i < count; i++) {
-                    auto text = reader.Read<std::string_view>();
-                    auto pos = reader.Read<Vector3f>();
+                    auto text = reader.read<std::string_view>();
+                    auto pos = reader.read<Vector3f>();
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
-                    bool generated = (version >= 19) ? reader.Read<bool>() : false;
+                    bool generated = (version >= 19) ? reader.read<bool>() : false;
 #else // !VH_LEGACY_WORLD_LOADING
-                    bool generated = reader.Read<bool>();
+                    bool generated = reader.read<bool>();
 #endif // VH_LEGACY_WORLD_LOADING
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
