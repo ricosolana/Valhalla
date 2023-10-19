@@ -13,24 +13,24 @@ protected:
 
 protected:
     // Returns whether the specified position exceeds container length
-    bool CheckPosition(size_t pos) const {
+    bool check_pos(size_t pos) const {
         return pos > size();
     }
 
     // Throws if the specified position exceeds container length
-    void AssertPosition(size_t pos) const {
-        if (CheckPosition(pos))
+    void try_pos(size_t pos) const {
+        if (check_pos(pos))
             throw std::runtime_error("position exceeds length");
     }
 
     // Returns whether the specified offset from m_pos exceeds container length
-    bool CheckOffset(size_t offset) const {
-        return CheckPosition(Position() + offset);
+    bool check_offset(size_t offset) const {
+        return check_pos(get_pos() + offset);
     }
 
     // Throws if the specified offset from m_pos exceeds container length
-    void AssertOffset(size_t offset) const {
-        if (CheckOffset(offset))
+    void try_offset(size_t offset) const {
+        if (check_offset(offset))
             throw std::runtime_error("offset from position exceeds length");
     }
 
@@ -39,23 +39,23 @@ public:
     explicit DataStream(BYTES_t& buf) : m_data(std::ref(buf)) {}
 
     explicit DataStream(BYTE_VIEW_t buf, size_t pos) : m_data(buf) {
-        SetPos(pos);
+        set_pos(pos);
     }
 
     explicit DataStream(BYTES_t& buf, size_t pos) : m_data(std::ref(buf)) {
-        SetPos(pos);
+        set_pos(pos);
     }
 
 public:
     //bool owned() const { return std::get_if< !this->m_data.data(); }
 
-    size_t Position() const {
+    size_t get_pos() const {
         return this->m_pos;
     }
 
     // Sets the position of this stream
-    void SetPos(size_t pos) {
-        AssertPosition(pos);
+    void set_pos(size_t pos) {
+        try_pos(pos);
 
         this->m_pos = pos;
     }
@@ -82,7 +82,7 @@ public:
         }, this->m_data);
     }
 
-    size_t Skip(size_t offset) {
-        this->SetPos(this->Position() + offset);
+    size_t skip(size_t offset) {
+        this->set_pos(this->get_pos() + offset);
     }
 };

@@ -14,13 +14,13 @@ class DataWriter : public virtual DataStream {
 private:
     // Write count bytes from the specified buffer
     // Bytes are written in place, making space as necessary
-    void WriteSomeBytes(const BYTE_t* buffer, size_t count) {
+    void write_some_bytes(const BYTE_t* buffer, size_t count) {
         std::visit(VUtils::Traits::overload{
             [this, count](std::reference_wrapper<BYTES_t> buf) { 
-                if (this->CheckOffset(count))
+                if (this->check_offset(count))
                     buf.get().resize(this->m_pos + count);
             },
-            [this, count](BYTE_VIEW_t buf) { this->AssertOffset(count); }
+            [this, count](BYTE_VIEW_t buf) { this->try_offset(count); }
         }, this->m_data);
 
         std::copy(buffer,
@@ -32,17 +32,17 @@ private:
 
     // Write count bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteSomeBytes(const BYTES_t& vec, size_t count) {
-        return WriteSomeBytes(vec.data(), count);
+    auto write_some_bytes(const BYTES_t& vec, size_t count) {
+        return write_some_bytes(vec.data(), count);
     }
 
     // Write all bytes from the specified vector
     // Bytes are written in place, making space as necessary
-    auto WriteSomeBytes(const BYTES_t& vec) {
-        return WriteSomeBytes(vec, vec.size());
+    auto write_some_bytes(const BYTES_t& vec) {
+        return write_some_bytes(vec, vec.size());
     }
 
-    void Write7BitEncodedInt(int32_t value) {
+    void write_encoded_int(int32_t value) {
         auto num = static_cast<uint32_t>(value);
         for (; num >= 128U; num >>= 7)
             Write((BYTE_t)(num | 128U));
@@ -78,24 +78,24 @@ public:
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
     void SubWrite(F func) {
-        const auto start = this->Position();
+        const auto start = this->get_pos();
         int32_t count = 0;
         Write(count);
 
         // call func...
         func(std::ref(*this));
 
-        const auto end = this->Position();
-        this->SetPos(start);
+        const auto end = this->get_pos();
+        this->set_pos(start);
         count = end - start - sizeof(count);
         assert(count >= 0);
         Write(count);
-        this->SetPos(end);
+        this->set_pos(end);
     }
 
     void Write(const BYTE_t* in, size_t length) {
         Write<int32_t>(length);
-        WriteSomeBytes(in, length);
+        write_some_bytes(in, length);
     }
 
     template<typename T>
@@ -103,7 +103,7 @@ public:
     void Write(const T& in) {
         Write(in.data(), in.size());
         //Write<int32_t>(in.size());
-        //WriteSomeBytes(in.data(), in.size());
+        //write_some_bytes(in.data(), in.size());
     }
 
     // Writes a string
@@ -112,11 +112,11 @@ public:
 
         auto byteCount = static_cast<int32_t>(length);
 
-        Write7BitEncodedInt(byteCount);
+        write_encoded_int(byteCount);
         if (byteCount == 0)
             return;
 
-        WriteSomeBytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
+        write_some_bytes(reinterpret_cast<const BYTE_t*>(in.data()), byteCount);
     }
 
     // Writes a ZDOID
@@ -187,7 +187,7 @@ public:
     // Writes a primitive type
     template<typename T> 
         requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
-    void Write(T in) { WriteSomeBytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
+    void Write(T in) { write_some_bytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
     //  Bytes written depend on the underlying value

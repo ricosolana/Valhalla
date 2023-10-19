@@ -288,7 +288,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     flags |= std::to_underlying(GetType()) << NETWORK_Type1;
     if (hasRot) flags |= 1 << NETWORK_Rotation;
 
-    const auto flagPos = writer.Position();
+    const auto flagPos = writer.get_pos();
     writer.Write(flags);
     if (!network) {
         writer.Write(GetZone());
@@ -340,8 +340,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
             flags |= 1 << NETWORK_ByteArray;
     }
 
-    const auto endPos = writer.Position();
-    writer.SetPos(flagPos);
+    const auto endPos = writer.get_pos();
+    writer.set_pos(flagPos);
     writer.Write(flags);
-    writer.SetPos(endPos);
+    writer.set_pos(endPos);
 }

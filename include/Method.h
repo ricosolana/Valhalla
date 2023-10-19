@@ -62,8 +62,8 @@ public:
             impl_tail<args_type>(reader,
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
-        if (reader.Position() != reader.size()) {
-            LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.Position());
+        if (reader.get_pos() != reader.size()) {
+            LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
         }
 
 #if VH_IS_ON(VH_USE_MODS)

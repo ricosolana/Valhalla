@@ -193,7 +193,7 @@ void IZDOManager::Save(DataWriter& writer) {
 	
 	{
 		// Write zdos (persistent)
-		const auto start = writer.Position();
+		const auto start = writer.get_pos();
 
 		int32_t count = 0;
 		writer.Write(count);
@@ -206,10 +206,10 @@ void IZDOManager::Save(DataWriter& writer) {
 			}
 		}
 
-		const auto end = writer.Position();
-		writer.SetPos(start);
+		const auto end = writer.get_pos();
+		writer.set_pos(start);
 		writer.Write(count);
-		writer.SetPos(end);
+		writer.set_pos(end);
 	}
 }
 

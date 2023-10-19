@@ -234,7 +234,7 @@ private:
     template<typename T>
         requires is_member_v<T>
     decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
-        const auto begin_mark = writer.Position();
+        const auto begin_mark = writer.get_pos();
         uint8_t count = 0;
         //writer.Write(count); // placeholder 0 byte
 
@@ -253,10 +253,10 @@ private:
         }
 
         if (count) {
-            auto end_mark = writer.Position();
-            writer.SetPos(begin_mark);
+            auto end_mark = writer.get_pos();
+            writer.set_pos(begin_mark);
             writer.Write(count);
-            writer.SetPos(end_mark);
+            writer.set_pos(end_mark);
         }
 
         return count;

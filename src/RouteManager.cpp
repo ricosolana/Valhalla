@@ -20,7 +20,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			return;
 
 		reader.read<int64_t>(); // skip msgid
-		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid);*/ 
+		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/
 		reader.read<USER_ID_t>(); // skip sender
 		auto target = reader.read<USER_ID_t>();
 		auto targetZDO = reader.read<ZDOID>();

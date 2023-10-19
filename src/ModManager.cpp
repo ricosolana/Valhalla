@@ -220,7 +220,7 @@ void IModManager::LoadAPI() {
 
         //"ToReader", &DataWriter::ToReader,
         "buf", &DataWriter::m_data,
-        "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
+        "pos", sol::property(&DataWriter::get_pos, &DataWriter::set_pos), //& DataWriter::m_pos,
 
         //"Clear", &DataWriter::Clear,
 
@@ -287,7 +287,7 @@ void IModManager::LoadAPI() {
             }
         ),*/
         "buf", &DataReader::m_data,
-        "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
+        "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos), //& DataWriter::m_pos,
 
         "read_bool", &DataReader::read_bool,
 

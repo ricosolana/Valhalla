@@ -12,7 +12,7 @@
 class DataReader : public DataStream {
 private:
     void read_some_bytes(BYTE_t* buffer, size_t count) {
-        this->AssertOffset(count);
+        this->try_offset(count);
 
         // read into 'buffer'
         std::copy(this->data() + this->m_pos,
@@ -53,12 +53,12 @@ public:
             ? read<uint32_t>()
             : read_encoded_int();
 
-        this->AssertOffset(count);
+        this->try_offset(count);
 
         auto result = T(this->data() + this->m_pos,
             this->data() + this->m_pos + count);
 
-        this->SetPos(this->m_pos + count);
+        this->set_pos(this->m_pos + count);
 
         return result;
     }
