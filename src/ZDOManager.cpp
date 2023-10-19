@@ -38,7 +38,7 @@ void IZDOManager::init() {
 	);
 }
 
-void IZDOManager::Update() {
+void IZDOManager::on_update() {
 	ZoneScoped;
 
 	if (VUtils::run_periodic<struct periodic_zdo_stats>(3min)) {
@@ -162,7 +162,7 @@ void IZDOManager::Update() {
 
 
 void IZDOManager::_AddZDOToZone(ZDO zdo) {
-	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
+	if (auto&& container = _GetZDOContainer(zdo.get_zone())) {
 		auto&& insert = container->insert(zdo.GetID());
 
 		assert(insert.second);
@@ -170,7 +170,7 @@ void IZDOManager::_AddZDOToZone(ZDO zdo) {
 }
 
 void IZDOManager::_RemoveFromSector(ZDO zdo) {
-	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
+	if (auto&& container = _GetZDOContainer(zdo.get_zone())) {
 		auto&& erase = container->erase(zdo.GetID());
 
 		// TODO is this necessary?
@@ -484,15 +484,15 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		if (zdo.IsPersistent()) {
 			if (zdo.IsOwner(peer.GetUserID())) {
 				// If peer no longer in area of zdo, unclaim zdo
-				if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
+				if (!ZoneManager()->ZonesOverlap(zdo.get_zone(), zone)) {
 					zdo.Disown();
 				}
 			}
 			else {
 				// If ZDO no longer has owner, or the owner went far away,
 				//  Then assign this new peer as owner 
-				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.GetZone(), zdo.Owner()))
-					&& ZoneManager()->ZonesOverlap(zdo.GetZone(), zone)) {
+				if (!(zdo.HasOwner() && ZoneManager()->IsPeerNearby(zdo.get_zone(), zdo.Owner()))
+					&& ZoneManager()->ZonesOverlap(zdo.get_zone(), zone)) {
 					
 					zdo.SetOwner(peer.GetUserID());
 				}
@@ -968,7 +968,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 			}
 			else [[unlikely]] {
-				assert(!_GetZDOContainer(zdo.GetZone())->contains(zdoid));
+				assert(!_GetZDOContainer(zdo.get_zone())->contains(zdoid));
 
 				if (m_erasedZDOs.contains(zdoid)) [[unlikely]] {
 					m_destroySendList.push_back(zdoid);
@@ -1011,7 +1011,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					zdo.SetPosition(pos);
 				}
 
-				assert(_GetZDOContainer(zdo.GetZone())->contains(zdoid));
+				assert(_GetZDOContainer(zdo.get_zone())->contains(zdoid));
 
 				peer->m_zdos[zdoid] = {
 					zdo.GetRevision(),

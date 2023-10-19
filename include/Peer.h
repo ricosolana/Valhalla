@@ -76,7 +76,7 @@ public:
     UNORDERED_MAP_t<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
 
 private:
-    void Update();
+    void on_update();
 
     void ZDOSectorInvalidated(ZDO zdo);
 
@@ -218,7 +218,7 @@ public:
 
 
     template <typename... Types>
-    void Invoke(HASH_t hash, const Types&... params) {
+    void invoke(HASH_t hash, const Types&... params) {
         if (!m_socket->Connected())
             return;
 
@@ -235,8 +235,8 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) Invoke(std::string_view name, const Types&... params) {
-        return Invoke(VUtils::String::GetStableHashCode(name), params...);
+    decltype(auto) invoke(std::string_view name, const Types&... params) {
+        return invoke(VUtils::String::GetStableHashCode(name), params...);
     }
 
 
@@ -288,7 +288,7 @@ public:
             ZoneScoped;
             //VLOG(2) << "InternalInvoke, hash: " << hash;
 
-            auto result = find->second->Invoke(this, reader);
+            auto result = find->second->invoke(this, reader);
             if (!result) {
                 // this is UB in cases where a method is added by the Invoked func
                 //  insertions of deletions invalidate iterators, causing the crash
@@ -328,11 +328,11 @@ public:
     }
 
     void SendDisconnect() {
-        Invoke(Hashes::Rpc::Disconnect);
+        invoke(Hashes::Rpc::Disconnect);
     }
 
     void SendKicked() {
-        Invoke(Hashes::Rpc::S2C_ResponseKicked);
+        invoke(Hashes::Rpc::S2C_ResponseKicked);
     }
 
     void Kick() {
@@ -379,7 +379,7 @@ public:
 
     // Show a console message
     void ConsoleMessage(std::string_view msg) {
-        return Invoke(Hashes::Rpc::ConsoleMessage, msg);
+        return invoke(Hashes::Rpc::ConsoleMessage, msg);
     }
 
 private:

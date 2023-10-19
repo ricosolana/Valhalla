@@ -221,7 +221,7 @@ Config.sendZPackage = function(peer, config, bytes)
   --  why the fuck are you manually managing networking?
   --  this isnt pre-tcp, packets are reliable anyways, so... ???
   
-  peer:Invoke(config.configSyncSig, bytes)
+  peer:invoke(config.configSyncSig, bytes)
 end
 
 Valhalla:Subscribe('Connect', function(peer)  
@@ -262,7 +262,7 @@ Valhalla:Subscribe('Connect', function(peer)
       print('Sending ' .. name .. ' ' 
         .. config.version .. ' to ' .. peer.socket.host)
       
-      peer:Invoke(SIG_VersionCheck, bytes)
+      peer:invoke(SIG_VersionCheck, bytes)
     --end
   end
 end)

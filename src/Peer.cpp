@@ -103,7 +103,7 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
+        rpc->invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
 
         return false;
     });
@@ -111,13 +111,13 @@ Peer::Peer(ISocket::Ptr socket)
     LOG_INFO(LOGGER, "{} has connected", m_socket->GetHostName());
 }
 
-void Peer::Update() {
+void Peer::on_update() {
     ZoneScoped;
 
     auto now(steady_clock::now());
 
     // Send packet data
-    m_socket->Update();
+    m_socket->on_update();
 
     // Read packets
     while (auto opt = this->Recv()) {
@@ -151,7 +151,7 @@ void Peer::Update() {
 
 bool Peer::Close(ConnectionStatus status) {
     LOG_INFO(LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
-    Invoke(Hashes::Rpc::S2C_Error, status);
+    invoke(Hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;
 }
@@ -178,7 +178,7 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
 
 
 void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
-    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
+    invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 
@@ -187,7 +187,7 @@ void Peer::ZDOSectorInvalidated(ZDO zdo) {
     if (zdo.IsOwner(this->GetUserID()))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {
+    if (!ZoneManager()->ZonesOverlap(zdo.get_zone(), m_pos)) {
         if (m_zdos.erase(zdo.GetID())) {
             m_invalidSector.insert(zdo.GetID());
         }

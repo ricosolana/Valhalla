@@ -16,7 +16,7 @@ IHeightmapBuilder* HeightmapBuilder() {
 }
 
 // public
-void IHeightmapBuilder::PostGeoInit() {
+void IHeightmapBuilder::post_geo_init() {
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
     for (unsigned int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
@@ -51,7 +51,7 @@ void IHeightmapBuilder::PostGeoInit() {
                 for (int i = next.size() - 1; i >= 0; --i) {
                     auto&& zone = next[i];
                     auto base(std::make_unique<BaseHeightmap>());
-                    Build(base.get(), zone);
+                    build_heightmap(base.get(), zone);
                     baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
                     //if (baked.size() > next.size() / 10)
                     if (baked.size() > 10)
@@ -69,7 +69,7 @@ void IHeightmapBuilder::PostGeoInit() {
                 /*
                 for (auto&& zone : next) {
                     auto base(std::make_unique<BaseHeightmap>());
-                    Build(base.get(), zone);
+                    build_heightmap(base.get(), zone);
                     baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
                     if (baked.size() > next.size() / 10)
                         break;
@@ -79,7 +79,7 @@ void IHeightmapBuilder::PostGeoInit() {
                 {
                     std::scoped_lock<std::mutex> scoped(m_mux);
                     for (auto&& heightmap : baked)
-                        m_ready[heightmap->GetZone()] = std::move(heightmap);
+                        m_ready[heightmap->get_zone()] = std::move(heightmap);
                 }
 
                 FrameMarkEnd(name.c_str());
@@ -92,7 +92,7 @@ void IHeightmapBuilder::PostGeoInit() {
     m_nextBuilder = m_builders.begin();
 }
 
-void IHeightmapBuilder::Uninit() {
+void IHeightmapBuilder::uninit() {
     // First request all to stop
     for (auto&& shared : m_builders) {
         shared->m_thread.request_stop();
@@ -105,7 +105,7 @@ void IHeightmapBuilder::Uninit() {
     }
 }
 
-void IHeightmapBuilder::Update() {
+void IHeightmapBuilder::on_update() {
     if (VUtils::run_periodic<struct clear_heightmaps>(1min)) {
         std::scoped_lock<std::mutex> scoped(m_mux);
         m_ready.clear();
@@ -120,7 +120,7 @@ void IHeightmapBuilder::Update() {
 }
 
 // private
-void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
+void IHeightmapBuilder::build_heightmap(BaseHeightmap *base, ZoneID zone) {
     //OPTICK_EVENT();
 
     auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
@@ -209,7 +209,7 @@ void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
     }
 }*/
 
-std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone) {
+std::unique_ptr<Heightmap> IHeightmapBuilder::poll(ZoneID zone) {
     {
         std::unique_ptr<Heightmap> result;
         {

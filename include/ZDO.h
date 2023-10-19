@@ -633,7 +633,7 @@ public:
     //  - This will change and invalidate sectors if the new position is in a different zone than this ZDOs position
     void SetPosition(Vector3f pos);
 
-    [[nodiscard]] ZoneID GetZone() const;
+    [[nodiscard]] ZoneID get_zone() const;
 
     [[nodiscard]] Quaternion GetRotation() const {
         return Quaternion::Euler(this->m_data.get().m_rotation);

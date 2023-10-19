@@ -41,8 +41,8 @@ private:
 
 public:
     void PostInit();
-    void Update();
-    void Uninit();
+    void on_update();
+    void uninit();
     
     void OnConfigLoad(bool reloading);
 

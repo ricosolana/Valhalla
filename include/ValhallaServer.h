@@ -288,7 +288,7 @@ public:
     void Broadcast(UIMsgType type, std::string_view text);
 
 private:
-    void Update();
+    void on_update();
     void periodic_update();
 };
 

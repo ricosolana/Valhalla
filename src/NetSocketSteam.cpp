@@ -75,7 +75,7 @@ void SteamSocket::Close(bool flush) {
 
 
 
-void SteamSocket::Update() {
+void SteamSocket::on_update() {
     SendQueued();
 }
 

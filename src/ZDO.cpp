@@ -154,7 +154,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
         auto sector = reader.read<Vector2s>(); // redundant
         this->_SetPosition(reader.read<Vector3f>());
-        if (sector != GetZone())
+        if (sector != get_zone())
             throw std::runtime_error("sector mismatch");
     }
 
@@ -256,7 +256,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
 void ZDO::SetPosition(Vector3f pos) {
     if (this->GetPosition() != pos) {
-        if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
+        if (IZoneManager::WorldToZonePos(pos) != get_zone()) {
             ZDOManager()->_InvalidateZDOZone(*this);
 
             ZDOManager()->_RemoveFromSector(*this);
@@ -272,7 +272,7 @@ void ZDO::SetPosition(Vector3f pos) {
     }
 }
 
-ZoneID ZDO::GetZone() const {
+ZoneID ZDO::get_zone() const {
     return IZoneManager::WorldToZonePos(this->GetPosition());
 }
 
@@ -291,7 +291,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     const auto flagPos = writer.get_pos();
     writer.write(flags);
     if (!network) {
-        writer.write(GetZone());
+        writer.write(get_zone());
         writer.write(GetPosition());
     }
     writer.write(GetPrefabHash());

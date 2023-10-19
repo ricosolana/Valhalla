@@ -44,7 +44,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			if (!targetZDO) {
 				auto&& find = m_methods.find(hash);
 				if (find != m_methods.end()) {
-					find->second->Invoke(peer, params);
+					find->second->invoke(peer, params);
 				}
 			} //else ... // netview is not currently supported
 
@@ -52,7 +52,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			for (auto&& other : peers) {
 				// Ignore the src peer
 				if (peer->GetUserID() != other->GetUserID()) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
+					other->invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 		}
@@ -62,16 +62,16 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
 						return;
 
-					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
+					//other->invoke(Hashes::Rpc::RoutedRPC, reader);
+					other->invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 			else {
 				if (!targetZDO) {
 					auto&& find = m_methods.find(hash);
 					if (find != m_methods.end()) {
-						//find->second->Invoke(peer, reader.Read<DataReader>());
-						find->second->Invoke(peer, params);
+						//find->second->invoke(peer, reader.Read<DataReader>());
+						find->second->invoke(peer, params);
 					}
 				} //else ... // netview is not currently supported
 			}

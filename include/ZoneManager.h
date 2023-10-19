@@ -276,10 +276,10 @@ private:
 
 public:
 	void post_prefab_init();
-	void Update();
+	void on_update();
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-	void PostGeoInit();
+	void post_geo_init();
 #endif
 
 	void save(DataWriter& pkg);

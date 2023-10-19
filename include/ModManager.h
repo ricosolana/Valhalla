@@ -143,7 +143,7 @@ private:
 
 public:
     void PostInit();
-    void Uninit();
+    void uninit();
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation

@@ -48,7 +48,7 @@ private:
 
 public:
 	void init();
-	void Update();
+	void on_update();
 
 	void SetCurrentRandomEvent(const Event& e, Vector3f pos, nanoseconds ns);
 

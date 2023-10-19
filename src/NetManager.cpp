@@ -101,7 +101,7 @@ void INetManager::SendPlayerList() {
 
 void INetManager::SendNetTime() {
     for (auto&& peer : m_onlinePeers) {
-        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
+        peer->invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
 }
 
@@ -317,7 +317,7 @@ void INetManager::PostInit() {
     m_acceptor->Listen();
 }
 
-void INetManager::Update() {
+void INetManager::on_update() {
     ZoneScoped;
 
     // Accept new connections
@@ -354,7 +354,7 @@ void INetManager::Update() {
     // Update peers
     for (auto&& peer : m_connectedPeers) {
         try {
-            peer->Update();
+            peer->on_update();
         }
         catch (const std::runtime_error& e) {
             LOG_WARNING(LOGGER, "Peer error");
@@ -431,7 +431,7 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
     LOG_INFO(LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
 }
 
-void INetManager::Uninit() {
+void INetManager::uninit() {
     SendDisconnect();
 
     for (auto&& peer : m_onlinePeers) {

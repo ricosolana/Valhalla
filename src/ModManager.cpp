@@ -324,7 +324,7 @@ void IModManager::LoadAPI() {
     );
 
     //m_state.new_usertype<IMethod<Peer*>>("IMethodPeer",
-    //    "Invoke", &IMethod<Peer*>::Invoke
+    //    "invoke", &IMethod<Peer*>::invoke
     //);
 
     m_state.new_usertype<ISocket>("Socket",
@@ -401,7 +401,7 @@ void IModManager::LoadAPI() {
         //    Mod& mod = env["this"].get<sol::table>().as<Mod&>();
         //    self.RegisterLua(sig, func, &mod); 
         //},
-        "Invoke", &Peer::InvokeLua,
+        "invoke", &Peer::InvokeLua,
         "RouteView", &Peer::RouteViewLua,
         "Route", &Peer::RouteLua
         //sol::overload(
@@ -507,7 +507,7 @@ void IModManager::LoadAPI() {
         sol::no_constructor,
         "id", sol::property(&ZDO::GetID),
         "pos", sol::property(&ZDO::GetPosition, &ZDO::SetPosition),
-        "zone", sol::property(&ZDO::GetZone),
+        "zone", sol::property(&ZDO::get_zone),
         "rot", sol::property(&ZDO::GetRotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
         "prefabHash", sol::property(&ZDO::GetPrefabHash),
@@ -878,7 +878,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<IRouteManager>("IRouteManager",
         "Register", &IRouteManager::RegisterLua,
         "InvokeView", &IRouteManager::InvokeViewLua,
-        "Invoke", &IRouteManager::InvokeLua,
+        "invoke", &IRouteManager::InvokeLua,
         "InvokeAll", &IRouteManager::InvokeAllLua
     );
 
@@ -1065,7 +1065,7 @@ void IModManager::PostInit() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }
 
-void IModManager::Uninit() {
+void IModManager::uninit() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
     m_callbacks.clear();
     m_mods.clear();

@@ -132,9 +132,9 @@ public:
 	// i hate the split between zoneloc inst and dungeon
 	// it should have dungeon type immediately within it...
 	//	reduce indirection where possible to avoid continuous retrieval and annoyances
-	//static void Regenerate(const ZoneID& zone);
+	//static void regenerate(const ZoneID& zone);
 
-	//static void Regenerate(const ZDO& zdo);
+	//static void regenerate(const ZDO& zdo);
 
 	//static void RegenerateDungeons();
 

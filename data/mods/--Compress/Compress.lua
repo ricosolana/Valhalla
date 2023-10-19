@@ -35,7 +35,7 @@ local RPC_CompressHandshake = function(peer, enabled)
 
         peer:Register(SIG_CompressedZDOData, RPC_CompressedZDOData)
 
-        peer:Invoke(SIG_CompressHandshake, enabled);
+        peer:invoke(SIG_CompressHandshake, enabled);
     end
     
     return false
@@ -58,7 +58,7 @@ Valhalla:Subscribe("RpcOut", "ZDOData", function(peer, bytes)
     if peers[tostring(peer.socket.host)] then
         event.Cancel() -- To prevent normal packet from being sent
         local compressed = assert(compressor:Compress(bytes), 'compression error')
-        peer:Invoke(SIG_CompressedZDOData, compressed)
+        peer:invoke(SIG_CompressedZDOData, compressed)
     end
 end)
 

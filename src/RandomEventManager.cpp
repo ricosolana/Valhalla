@@ -55,7 +55,7 @@ void IRandomEventManager::init() {
 	}
 }
 
-void IRandomEventManager::Update() {
+void IRandomEventManager::on_update() {
 	ZoneScoped;
 
 	// update event timer if an event is active

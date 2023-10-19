@@ -73,67 +73,33 @@ private:
 
 private:
     float get_distance(float x, float y, float rx, float ry);
-    void apply_modifiers();
-    void apply_modifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
     Vector3f calc_vertex(int32_t x, int32_t y);
-    void smooth_terrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
-    bool is_max_world_level_depth(Vector3f worldPos);
-    bool get_world_base_height(Vector3f worldPos, float& height);
-    
-    bool get_average_world_height(Vector3f worldPos, float radius, float &height);
-    bool get_min_world_height(Vector3f worldPos, float radius, float &height);
-    bool get_max_world_height(Vector3f worldPos, float radius, float &height);
-    void smooth_terrain(Vector3f worldPos, float radius, bool square, float intensity);
-    float get_average_height(int32_t cx, int32_t cy, int32_t w);
-    float get_ground_height(Vector3f point);
-    void find_objects_to_move(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
-    void clear_paint(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
+
     void world_to_heightmap(Vector3f worldPos, float& x, float &y);
-    void LevelTerrain(Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
 
 public:
     Heightmap(ZoneID zone, std::unique_ptr<BaseHeightmap> base);
 
-    ZoneID GetZone() {
+    ZoneID get_zone() const {
         return m_zone;
     }
 
-    //Heightmap(const Heightmap& other) = delete; // delete copy
-
-    //void QueueRegenerate();
-    //bool IsRegenerateQueued();
-    void Regenerate();
-    std::array<float, 4> &GetOceanDepth();
-
-    
-
-    float GetOceanDepth(Vector3f worldPos);
+    void regenerate();
+    std::array<float, 4> &get_ocean_depth();
+    float get_ocean_depth(Vector3f worldPos);
     std::vector<Biome> get_biomes();
-    bool HaveBiome(Biome biome);
+    bool contains_biome(Biome biome);
     Biome get_biome(Vector3f point);
     BiomeArea get_biome_area();
-    bool IsBiomeEdge();
-
-    // client command only
-    //bool CheckTerrainModIsContained(TerrainModifier modifier);
-
-    bool TerrainVSModifier(TerrainModifier modifier);
-
+    bool is_biome_edge();
     
     // Should use an array independent from paintmask
     // only the alpha is used
-    float GetVegetationMask(Vector3f worldPos);
-    bool IsCleared(Vector3f worldPos);
-    bool IsCultivated(Vector3f worldPos);
+    float get_vegetation_mask(Vector3f worldPos);
 
     // Get the relative vertex of a world position to this heightmap
     //  Heightmap is treated as the center
-    void WorldToVertex(Vector3f worldPos, int32_t& x, int32_t &y);
-
-    // Get the underlying color mask in paint array
-    //  x, y must be within [0, 63]
-    //  otherwise 0 is returned
-    Color GetPaintMask(int32_t x, int32_t y);
+    void world_to_vertex(Vector3f worldPos, int32_t& x, int32_t &y);
 
     // Get the underlying height in heights array
     //  x, y must be within [0, 63]
@@ -142,19 +108,13 @@ public:
 
     // Get the underlying height in heights array at world position
     //  Returns false if the position outside of this heightmap
-    bool GetWorldHeight(const Vector3f& worldPos, float& height);
+    bool get_world_height(const Vector3f& worldPos, float& height);
 
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
     float get_base_height(int32_t x, int32_t y);
-    void SetHeight(int32_t x, int32_t y, float h);
-    bool IsPointInside(Vector3f point, float radius = 0);
 
-
-    bool GetWorldNormal(Vector3f worldPos, Vector3f& normal);
-
-    // TOOD either implement or remove
-    TerrainComp GetAndCreateTerrainCompiler();
+    bool get_world_normal(Vector3f worldPos, Vector3f& normal);
 };
 #endif

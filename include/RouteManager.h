@@ -68,7 +68,7 @@ public:
 			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
-				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+				peer->invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 		else {
@@ -100,7 +100,7 @@ public:
 			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::serialize_lua_bytes(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
-				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+				peer->invoke(Hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 		else {
@@ -119,13 +119,13 @@ public:
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(USER_ID_t target, HASH_t hash, Args&&... params) {
+	void invoke(USER_ID_t target, HASH_t hash, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, hash, std::forward<Args>(params)...);
 	}
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(USER_ID_t target, std::string_view name, Args&&... params) {
+	void invoke(USER_ID_t target, std::string_view name, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
@@ -140,13 +140,13 @@ public:
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
 	void InvokeAll(HASH_t hash, Args&&... params) {
-		Invoke(EVERYBODY, hash, std::forward<Args>(params)...);
+		invoke(EVERYBODY, hash, std::forward<Args>(params)...);
 	}
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
 	void InvokeAll(std::string_view name, Args&&... params) {
-		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+		invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)

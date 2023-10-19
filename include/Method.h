@@ -23,7 +23,7 @@ public:
     // Calls a locally stored function
     //  Expects a passthrough parameter and serialized package
     //  Returns false if the call requested unsubscription
-    virtual bool Invoke(T t, DataReader reader) = 0;
+    virtual bool invoke(T t, DataReader reader) = 0;
 };
 
 
@@ -56,7 +56,7 @@ public:
         : m_func(func) {}
 #endif
 
-    bool Invoke(T t, DataReader reader) override {
+    bool invoke(T t, DataReader reader) override {
         auto tuple = std::tuple_cat(std::forward_as_tuple(t),
             //NetPackage::Deserialize<Args...>(pkg));
             impl_tail<args_type>(reader,
@@ -109,7 +109,7 @@ public:
         : m_func(func), 
         m_types(types) {}
 
-    bool Invoke(T t, DataReader reader) override {
+    bool invoke(T t, DataReader reader) override {
         auto&& state = m_func.lua_state();
 
         auto results(reader.deserialize_lua(state, m_types));

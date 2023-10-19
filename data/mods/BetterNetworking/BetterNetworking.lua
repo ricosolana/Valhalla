@@ -21,7 +21,7 @@ local SIG_CompressionStarted = MethodSig.new("CW_Jesse.BetterNetworking.Compress
 
 local SendCompressionStarted = function(peer, started, status)
     if started ~= status.o then
-        peer:Invoke(SIG_CompressionStarted, started)
+        peer:invoke(SIG_CompressionStarted, started)
         status.o = started
 
         print('Compression to ' .. peer.name .. ': ' .. (started and 'true' or 'false'))
@@ -29,7 +29,7 @@ local SendCompressionStarted = function(peer, started, status)
 end
 
 local SendCompressionEnabled = function(peer, enabled, status)
-    peer:Invoke(SIG_CompressionEnabled, true)
+    peer:invoke(SIG_CompressionEnabled, true)
     SendCompressionStarted(peer, status.enabled, status)
 end
 
@@ -77,7 +77,7 @@ Valhalla:Subscribe('Connect', function(peer)
     
     print('Sending version...')
         
-    peer:Invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
+    peer:invoke(SIG_CompressionVersion, COMPRESSION_VERSION)
 end)
 
 Valhalla:Subscribe('Send', function(peer, bytes)

@@ -30,7 +30,7 @@ public:
 
 
     // Call every tick to reengage writers
-    virtual void Update() = 0;
+    virtual void on_update() = 0;
 
     // Send a packet to the remote host
     // Packet will be copied unless moved
@@ -82,7 +82,7 @@ public:
 
     void Close(bool flush) override;
     
-    void Update() override;
+    void on_update() override;
     void Send(BYTES_t bytes) override;
     std::optional<BYTES_t> Recv() override;
 

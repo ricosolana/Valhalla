@@ -585,8 +585,8 @@ void IValhalla::Start() {
     WorldManager()->PostZoneInit();
 #if VH_IS_ON(VH_ZONE_GENERATION)
     GeoManager()->post_world_init();
-    HeightmapBuilder()->PostGeoInit();
-    ZoneManager()->PostGeoInit();
+    HeightmapBuilder()->post_geo_init();
+    ZoneManager()->post_geo_init();
 #endif
 
     WorldManager()->PostInit();
@@ -659,7 +659,7 @@ void IValhalla::Start() {
             }
         }
 
-        Update();
+        on_update();
 
         if (VUtils::run_periodic<struct server_period_update>(1s)) {
             periodic_update();
@@ -679,13 +679,13 @@ void IValhalla::Start() {
     LOG_INFO(LOGGER, "Terminating server");
 
     // Cleanup 
-    NetManager()->Uninit();
+    NetManager()->uninit();
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    HeightmapBuilder()->Uninit();
+    HeightmapBuilder()->uninit();
 #endif
 
 #if VH_IS_ON(VH_USE_MODS)
-    ModManager()->Uninit();
+    ModManager()->uninit();
 #endif
 
     SaveFiles();
@@ -698,7 +698,7 @@ void IValhalla::Start() {
 
 
 
-void IValhalla::Update() {
+void IValhalla::on_update() {
     ZoneScoped;
 
     // This is important to processing RPC remote invocations
@@ -708,14 +708,14 @@ void IValhalla::Update() {
     
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
 
-    NetManager()->Update();
-    ZDOManager()->Update();
-    ZoneManager()->Update();
+    NetManager()->on_update();
+    ZDOManager()->on_update();
+    ZoneManager()->on_update();
 #if VH_IS_ON(VH_RANDOM_EVENTS)
-    RandomEventManager()->Update();
+    RandomEventManager()->on_update();
 #endif
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    HeightmapBuilder()->Update();
+    HeightmapBuilder()->on_update();
 #endif
 }
 
@@ -752,7 +752,7 @@ void IValhalla::periodic_update() {
                     for (auto&& peer : NetManager()->GetPeers()) {
                         auto&& zdo = peer->GetZDO();
                         if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestStopSleep);
+                            RouteManager()->invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestStopSleep);
                         }
                     }
                 }
@@ -803,7 +803,7 @@ void IValhalla::periodic_update() {
                         for (auto&& peer : NetManager()->GetPeers()) {
                             auto&& zdo = peer->GetZDO();
                             if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestSleep);
+                                RouteManager()->invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestSleep);
                             }
                             else {
                                 peer->CornerMessage("The world is sleeping");

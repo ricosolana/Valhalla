@@ -50,13 +50,13 @@ void DungeonGenerator::generate(HASH_t seed) {
 }
 
 //
-//void DungeonGenerator::Regenerate(const ZoneID& zone) {
+//void DungeonGenerator::regenerate(const ZoneID& zone) {
 //	// Find the dungeon in that zone
 //	//ZDOManager()->AnyZDO(zone).
 //	//zdo
 //}
 
-//void DungeonGenerator::Regenerate(const ZDO& zdo) {
+//void DungeonGenerator::regenerate(const ZDO& zdo) {
 //	// Find the dungeon in that zone
 //	//ZDOManager()->AnyZDO(zone).
 //	if (!zdo.GetPrefab()->FlagsPresent(Prefab::FLAG_t::Dungeon))

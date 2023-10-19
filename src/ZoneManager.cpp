@@ -196,7 +196,7 @@ void IZoneManager::post_prefab_init() {
 #if VH_IS_ON(VH_ZONE_GENERATION)        
         if (auto&& instance = GetNearestFeature(locationName, point)) {
             LOG_INFO(LOGGER, "Found location: '{}'", locationName);
-            RouteManager()->Invoke(peer->GetUserID(),
+            RouteManager()->invoke(peer->GetUserID(),
                 Hashes::Routed::S2C_ResponseIcon, 
                 pinName, 
                 pinType, 
@@ -211,7 +211,7 @@ void IZoneManager::post_prefab_init() {
         Vector3f out;
         if (GetNearestFeature(locationName, point, out)) {
             LOG_INFO(LOGGER, "Found location: '{}'", locationName);
-            RouteManager()->Invoke(peer->m_uuid,
+            RouteManager()->invoke(peer->m_uuid,
                 Hashes::Routed::S2C_ResponseIcon,
                 pinName,
                 pinType,
@@ -262,7 +262,7 @@ void IZoneManager::SendGlobalKeys() {
 }
 
 void IZoneManager::SendGlobalKeys(Peer& peer) {
-    //RouteManager()->Invoke(peer, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    //RouteManager()->invoke(peer, Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
     peer.Route(Hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
@@ -436,7 +436,7 @@ void IZoneManager::Load(DataReader& reader, int32_t version) {
 }
 
 // private
-void IZoneManager::Update() {
+void IZoneManager::on_update() {
     ZoneScoped;
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -463,7 +463,7 @@ void IZoneManager::RegenerateZone(const ZoneID& zone) {
         ZDOManager()->DestroyZDO(zdo);
 
     //m_generatedZones.erase(zone);
-    PopulateZone(HeightmapManager()->GetHeightmap(zone));
+    PopulateZone(HeightmapManager()->get_heightmap(zone));
     //m_generatedZones.insert(zone);
 }*/
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -495,7 +495,7 @@ bool IZoneManager::GenerateZone(ZoneID zone) {
     {
         auto&& pair = m_generatedZones.insert(zone);
         if (pair.second) {
-            PopulateZone(HeightmapManager()->GetHeightmap(zone));
+            PopulateZone(HeightmapManager()->get_heightmap(zone));
             return true;
         }
     }
@@ -506,7 +506,7 @@ bool IZoneManager::TryGenerateZone(ZoneID zone) {
     if ((zone.x >= -WORLD_RADIUS_IN_ZONES && zone.y >= -WORLD_RADIUS_IN_ZONES
         && zone.x <= WORLD_RADIUS_IN_ZONES && zone.y <= WORLD_RADIUS_IN_ZONES)
         && !IsZoneGenerated(zone)) {
-        if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
+        if (auto heightmap = HeightmapManager()->poll(zone)) {
             m_generatedZones.insert(zone);
 
             PopulateZone(*heightmap);
@@ -524,20 +524,20 @@ void IZoneManager::PopulateZone(Heightmap &heightmap) {
     std::vector<ClearArea> m_tempClearAreas;
 
     if (VH_SETTINGS.worldFeatures)
-        m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
+        m_tempClearAreas = TryGenerateFeature(heightmap.get_zone());
 
     if (VH_SETTINGS.worldVegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
     if (VH_SETTINGS.worldCreatures) {
         ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, 
-            ZoneToWorldPos(heightmap.GetZone()));
+            ZoneToWorldPos(heightmap.get_zone()));
     }
 //#endif // VH_OPTION_ENABLE_ZONE_GENERATION
 }
 
 void IZoneManager::PopulateZone(ZoneID zone) {
-    this->PopulateZone(HeightmapManager()->GetHeightmap(zone));
+    this->PopulateZone(HeightmapManager()->get_heightmap(zone));
 }
 
 
@@ -551,7 +551,7 @@ Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, Vect
 
 // private
 void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas) {
-    auto&& zoneID = heightmap.GetZone();
+    auto&& zoneID = heightmap.get_zone();
 
     const Vector3f center = ZoneToWorldPos(zoneID);
 
@@ -563,7 +563,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 
     for (const auto& zoneVegetation : m_foliage) {
         // This ultimately serves as a large precheck, assuming heightmap were being used (which it no longer seems good)
-        if (!heightmap.HaveBiome(zoneVegetation->m_biome))
+        if (!heightmap.contains_biome(zoneVegetation->m_biome))
             continue;
 
         // TODO make unique per vegetation instance
@@ -647,14 +647,14 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                     // Mistlands only
                     // TODO might be affecting mist (probably is? just a hunch)
                     if (zoneVegetation->m_minVegetation != zoneVegetation->m_maxVegetation) {
-                        float vegetationMask = otherHeightmap.GetVegetationMask(pos);
+                        float vegetationMask = otherHeightmap.get_vegetation_mask(pos);
                         if (vegetationMask > zoneVegetation->m_maxVegetation || vegetationMask < zoneVegetation->m_minVegetation) {
                             continue;
                         }
                     }
 
                     if (zoneVegetation->m_minOceanDepth != zoneVegetation->m_maxOceanDepth) {
-                        float oceanDepth = otherHeightmap.GetOceanDepth(pos);
+                        float oceanDepth = otherHeightmap.get_ocean_depth(pos);
                         if (oceanDepth < zoneVegetation->m_minOceanDepth || oceanDepth > zoneVegetation->m_maxOceanDepth) {
                             continue;
                         }
@@ -771,7 +771,7 @@ const IZoneManager::Feature* IZoneManager::GetFeature(std::string_view name) {
 
 // public
 // call from within ZNet.init or earlier...
-void IZoneManager::PostGeoInit() {
+void IZoneManager::post_geo_init() {
     // Will be empty if world failed to load
     if (!m_generatedFeatures.empty())
         return;
@@ -1191,14 +1191,14 @@ float IZoneManager::GetGroundHeight(Vector3f p) {
 // if terrain is just heightmap,
 // could easily create a wrapper and poll points where needed
 Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& biome, BiomeArea& biomeArea) {
-    auto &&heightmap = HeightmapManager()->GetHeightmap(WorldToZonePos(p));
+    auto &&heightmap = HeightmapManager()->get_heightmap(WorldToZonePos(p));
 
-    heightmap.GetWorldHeight(p, p.y);
+    heightmap.get_world_height(p, p.y);
 
     biome = heightmap.get_biome(p);
     biomeArea = heightmap.get_biome_area();
 
-    heightmap.GetWorldNormal(p, normal);
+    heightmap.get_world_normal(p, normal);
 
     return heightmap;
 }

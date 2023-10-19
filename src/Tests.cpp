@@ -5,7 +5,7 @@ class TestSocket : public ISocket {
 public:
     TestSocket() {}
     void Close(bool) {}
-    void Update() {}
+    void on_update() {}
     void Send(BYTES_t) {}
     std::optional<BYTES_t> Recv() { return std::nullopt; }
     std::string GetHostName() const { return "crzi"; }
