@@ -236,18 +236,18 @@ private:
     decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
         const auto begin_mark = writer.get_pos();
         uint8_t count = 0;
-        //writer.Write(count); // placeholder 0 byte
+        //writer.write(count); // placeholder 0 byte
 
         for (auto&& pair : members) {
             auto&& data = std::get_if<T>(&pair.second);
             if (data) {
                 // Skip 1 byte for count only if member present
                 if (!count) {
-                    writer.Write(count);
+                    writer.write(count);
                 }
 
-                writer.Write(xhash_to_hash<T>(pair.first));
-                writer.Write(*data);
+                writer.write(xhash_to_hash<T>(pair.first));
+                writer.write(*data);
                 count++;
             }
         }
@@ -255,7 +255,7 @@ private:
         if (count) {
             auto end_mark = writer.get_pos();
             writer.set_pos(begin_mark);
-            writer.Write(count);
+            writer.write(count);
             writer.set_pos(end_mark);
         }
 

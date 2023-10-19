@@ -177,11 +177,11 @@ bool IRandomEventManager::CheckGlobalKeys(const Event& e) {
 }
 
 void IRandomEventManager::Save(DataWriter& writer) {
-	writer.Write(m_eventIntervalTimer);
-	writer.Write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
-	//writer.Write(m_activeEventTimer);
-	writer.Write((float)duration_cast<seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count());
-	writer.Write(m_activeEventPos);
+	writer.write(m_eventIntervalTimer);
+	writer.write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
+	//writer.write(m_activeEventTimer);
+	writer.write((float)duration_cast<seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count());
+	writer.write(m_activeEventPos);
 }
 
 void IRandomEventManager::Load(DataReader& reader, int version) {

@@ -215,7 +215,7 @@ void DungeonGenerator::Save() {
 		//m_placedRooms.size() * (sizeof(HASH_t) + sizeof(Vector3f) + sizeof(Quaternion)));
 	DataWriter writer(bytes);
 
-	writer.Write<int32_t>(m_placedRooms.size());
+	writer.write<int32_t>(m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
 		auto&& instance = m_placedRooms[i];
 		auto&& room = instance->m_room.get();
@@ -226,9 +226,9 @@ void DungeonGenerator::Save() {
 		if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
 			std::tie(pos, rot) = VUtils::Physics::LocalToGlobal(instance->m_pos, instance->m_rot, this->m_pos, this->m_rot);
 
-		writer.Write(room.GetHash());
-		writer.Write(pos);
-		writer.Write(rot);
+		writer.write(room.GetHash());
+		writer.write(pos);
+		writer.write(rot);
 	}
 
 	m_zdo.Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(bytes));

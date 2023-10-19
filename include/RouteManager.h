@@ -159,12 +159,12 @@ public:
 		BYTES_t bytes;
 		DataWriter writer(bytes);
 
-		writer.Write<int64_t>(0); // msg id
-		writer.Write(sender);
-		writer.Write(target);
-		writer.Write(targetZDO);
-		writer.Write(hash);
-		writer.Write(params);
+		writer.write<int64_t>(0); // msg id
+		writer.write(sender);
+		writer.write(target);
+		writer.write(targetZDO);
+		writer.write(hash);
+		writer.write(params);
 
 		return bytes;
 	}

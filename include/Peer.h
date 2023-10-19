@@ -164,7 +164,7 @@ public:
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        writer.Write(hash);
+        writer.write(hash);
         writer.nested_write(func);
 
         // Prefix
@@ -185,15 +185,15 @@ public:
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        writer.Write(Hashes::Rpc::RoutedRPC);
+        writer.write(Hashes::Rpc::RoutedRPC);
 
         writer.nested_write([&](DataWriter& writer) {
             // routed rpc spec
-            writer.Write<int64_t>(0); // msg id
-            writer.Write(VH_ID); // sender
-            writer.Write(m_characterID.GetOwner()); // target
-            writer.Write(targetZDO); // target ZDO
-            writer.Write(hash); // routed method hash
+            writer.write<int64_t>(0); // msg id
+            writer.write(VH_ID); // sender
+            writer.write(m_characterID.GetOwner()); // target
+            writer.write(targetZDO); // target ZDO
+            writer.write(hash); // routed method hash
             // FIrst subwrite the routedrpc parameter package then nest the params within it
             writer.nested_write([func](DataWriter& writer) {
                 writer.nested_write(func); // explicit parameter as a package (length + array)
@@ -258,7 +258,7 @@ public:
 
         BYTES_t bytes;
         DataWriter params(bytes);
-        params.Write(repr.m_hash);
+        params.write(repr.m_hash);
         params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
         this->Send(std::move(bytes));
 

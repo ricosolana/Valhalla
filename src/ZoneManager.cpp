@@ -274,10 +274,10 @@ void IZoneManager::SendLocationIcons() {
 
     auto&& icons = GetFeatureIcons();
 
-    writer.Write<int32_t>(icons.size());
+    writer.write<int32_t>(icons.size());
     for (auto&& instance : icons) {
-        writer.Write(instance.get().m_pos);
-        writer.Write(std::string_view(instance.get().m_feature.get().m_name));
+        writer.write(instance.get().m_pos);
+        writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
     RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
@@ -294,22 +294,22 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
 
     auto&& icons = GetFeatureIcons();
 
-    writer.Write<int32_t>(icons.size());
+    writer.write<int32_t>(icons.size());
     for (auto&& instance : icons) {
-        writer.Write(instance.get().m_pos);
-        writer.Write(std::string_view(instance.get().m_feature.get().m_name));
+        writer.write(instance.get().m_pos);
+        writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
     peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
 #else
     peer.SubRoute(Hashes::Routed::S2C_UpdateIcons, [this](DataWriter& writer) {
-        writer.Write<int32_t>(1); // dummy count
+        writer.write<int32_t>(1); // dummy count
         for (auto&& pair : m_generatedFeatures) {
             // We only care about StartTemple
             //if (m_features[pair.second.first] == std::string_view(m_features[0])) {
             if (pair.second.first == 0) {
-                writer.Write(pair.second.second); // pos
-                writer.Write(m_features[pair.second.first]); // name
+                writer.write(pair.second.second); // pos
+                writer.write(m_features[pair.second.first]); // name
                 return;
             }
         }
@@ -321,35 +321,35 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
 // public
 void IZoneManager::Save(DataWriter& pkg) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    pkg.Write<int32_t>(m_generatedZones.size());
+    pkg.write<int32_t>(m_generatedZones.size());
     for (auto&& zone : m_generatedZones) {
-        pkg.Write<int32_t>(zone.x);
-        pkg.Write<int32_t>(zone.y);
+        pkg.write<int32_t>(zone.x);
+        pkg.write<int32_t>(zone.y);
     }
 #else
     LOG_WARNING(LOGGER, "Saving while VH_ZONE_GENERATION:0 is not fully portable");
 
-    pkg.Write<int32_t>(0); // 0 count
+    pkg.write<int32_t>(0); // 0 count
 #endif
-    pkg.Write<int32_t>(0); // PGW
-    pkg.Write(VConstants::LOCATION);
-    pkg.Write(m_globalKeys);
-    pkg.Write(true);
-    pkg.Write<int32_t>(m_generatedFeatures.size());
+    pkg.write<int32_t>(0); // PGW
+    pkg.write(VConstants::LOCATION);
+    pkg.write(m_globalKeys);
+    pkg.write(true);
+    pkg.write<int32_t>(m_generatedFeatures.size());
     for (auto&& pair : m_generatedFeatures) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
         auto&& inst = pair.second;
         auto&& location = inst->m_feature.get();
 
-        pkg.Write(std::string_view(location.m_name));
-        pkg.Write(inst->m_pos);
-        pkg.Write(m_generatedZones.contains(WorldToZonePos(inst->m_pos)));
+        pkg.write(std::string_view(location.m_name));
+        pkg.write(inst->m_pos);
+        pkg.write(m_generatedZones.contains(WorldToZonePos(inst->m_pos)));
 #else
         static_assert(std::is_same_v<Vector3f, decltype(decltype(std::remove_cvref_t<decltype(pair)>::second)::second)>);
 
-        pkg.Write(m_features[pair.second.first]);
-        pkg.Write(pair.second.second);
-        pkg.Write(true);
+        pkg.write(m_features[pair.second.first]);
+        pkg.write(pair.second.second);
+        pkg.write(true);
 #endif
     }
 }

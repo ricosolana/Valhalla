@@ -55,16 +55,16 @@ BYTES_t World::SaveMeta() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 	writer.nested_write([this](DataWriter& writer) {
-		writer.Write(VConstants::WORLD);
-		writer.Write(m_name);
-		writer.Write(m_seedName);
-		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
-		writer.Write(m_uid);
-		writer.Write(m_worldGenVersion);
-		writer.Write(true);
+		writer.write(VConstants::WORLD);
+		writer.write(m_name);
+		writer.write(m_seedName);
+		writer.write(VUtils::String::GetStableHashCode(m_seedName));
+		writer.write(m_uid);
+		writer.write(m_worldGenVersion);
+		writer.write(true);
 		
 		// TODO write starting keys
-		writer.Write(UNORDERED_SET_t<std::string>());
+		writer.write(UNORDERED_SET_t<std::string>());
 	});
 
 	return bytes;
@@ -75,8 +75,8 @@ BYTES_t World::SaveDB() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 
-	writer.Write(VConstants::WORLD);
-	writer.Write(Valhalla()->GetWorldTime());
+	writer.write(VConstants::WORLD);
+	writer.write(Valhalla()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
@@ -294,8 +294,8 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 	
-	writer.Write(VConstants::WORLD);
-	writer.Write(Valhalla()->GetWorldTime());
+	writer.write(VConstants::WORLD);
+	writer.write(Valhalla()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
@@ -303,10 +303,10 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 #if VH_IS_ON(VH_RANDOM_EVENTS)
 	RandomEventManager()->Save(writer);
 #else
-	writer.Write(0.f);
-	writer.Write("");
-	writer.Write(0.f);
-	writer.Write(Vector3f::Zero());
+	writer.write(0.f);
+	writer.write("");
+	writer.write(0.f);
+	writer.write(Vector3f::Zero());
 #endif
 
 	return bytes;

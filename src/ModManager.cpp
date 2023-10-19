@@ -224,39 +224,39 @@ void IModManager::LoadAPI() {
 
         //"Clear", &DataWriter::Clear,
 
-        "Write", sol::overload(
+        "write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(bool)>(&DataWriter::write),
 
-            static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::Write),
-            //static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::write),
+            //static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::write),
 
-            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::Write),
+            static_cast<void (DataWriter::*)(const BYTES_t&)>(&DataWriter::write),
             
-            static_cast<void (DataWriter::*)(ZDOID)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Vector3f)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Vector2i)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Quaternion)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write)
+            static_cast<void (DataWriter::*)(ZDOID)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(Vector3f)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(Vector2i)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(Quaternion)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),
+            static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write)
         ),
 
-        "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::Write),
-        "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::Write),
-        "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::Write),
-        "WriteInt64", static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
+        "WriteInt8", static_cast<void (DataWriter::*)(int8_t)>(&DataWriter::write),
+        "WriteInt16", static_cast<void (DataWriter::*)(int16_t)>(&DataWriter::write),
+        "WriteInt32", static_cast<void (DataWriter::*)(int32_t)>(&DataWriter::write),
+        "WriteInt64", static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),
 
-        "WriteUInt8", static_cast<void (DataWriter::*)(uint8_t)>(&DataWriter::Write),
-        "WriteUInt16", static_cast<void (DataWriter::*)(uint16_t)>(&DataWriter::Write),
-        "WriteUInt32", static_cast<void (DataWriter::*)(uint32_t)>(&DataWriter::Write),
-        "WriteUInt64", static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write),
+        "WriteUInt8", static_cast<void (DataWriter::*)(uint8_t)>(&DataWriter::write),
+        "WriteUInt16", static_cast<void (DataWriter::*)(uint16_t)>(&DataWriter::write),
+        "WriteUInt32", static_cast<void (DataWriter::*)(uint32_t)>(&DataWriter::write),
+        "WriteUInt64", static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write),
 
-        "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
-        "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
+        "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::write),
+        "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::write),
 
-        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write),
+        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::write),
 
         "Serialize", sol::overload(
             sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::SerializeOneLua),
@@ -394,7 +394,7 @@ void IModManager::LoadAPI() {
         //    self.Register(repr.m_hash, func, repr.m_types);
         //},
 
-        // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::Write),
+        // static_cast<void (DataWriter::*)(const BYTES_t&, size_t)>(&DataWriter::write),
         "Register", &Peer::RegisterLua,
         //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
         //    sol::environment& env = te;

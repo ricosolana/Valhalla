@@ -130,8 +130,8 @@ void Peer::Update() {
                 // Reply to the server with a pong
                 BYTES_t pong;
                 DataWriter writer(pong);
-                writer.Write<HASH_t>(0);
-                writer.Write<bool>(false);
+                writer.write<HASH_t>(0);
+                writer.write<bool>(false);
                 this->Send(std::move(pong));
             }
             else {

@@ -45,9 +45,9 @@ private:
     void write_encoded_int(int32_t value) {
         auto num = static_cast<uint32_t>(value);
         for (; num >= 128U; num >>= 7)
-            Write((BYTE_t)(num | 128U));
+            write((BYTE_t)(num | 128U));
 
-        Write((BYTE_t)num);
+        write((BYTE_t)num);
     }
 
 public:
@@ -80,7 +80,7 @@ public:
     void nested_write(F func) {
         const auto start = this->get_pos();
         int32_t count = 0;
-        Write(count);
+        write(count);
 
         // call func...
         func(std::ref(*this));
@@ -89,25 +89,25 @@ public:
         this->set_pos(start);
         count = end - start - sizeof(count);
         assert(count >= 0);
-        Write(count);
+        write(count);
         this->set_pos(end);
     }
 
-    void Write(const BYTE_t* in, size_t length) {
-        Write<int32_t>(length);
+    void write(const BYTE_t* in, size_t length) {
+        write<int32_t>(length);
         write_some_bytes(in, length);
     }
 
     template<typename T>
         requires (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t> || std::is_same_v<T, DataReader>)
-    void Write(const T& in) {
-        Write(in.data(), in.size());
+    void write(const T& in) {
+        write(in.data(), in.size());
         //Write<int32_t>(in.size());
         //write_some_bytes(in.data(), in.size());
     }
 
     // Writes a string
-    void Write(std::string_view in) {
+    void write(std::string_view in) {
         auto length = in.length();
 
         auto byteCount = static_cast<int32_t>(length);
@@ -123,9 +123,9 @@ public:
     //  12 bytes total are written:
     //  int64_t:    owner (8 bytes)
     //  uint32_t:   uid (4 bytes)
-    void Write(ZDOID in) {
-        Write((int64_t)in.GetOwner());
-        Write(in.GetUID());
+    void write(ZDOID in) {
+        write((int64_t)in.GetOwner());
+        write(in.GetUID());
     }
 
     // Writes a Vector3f
@@ -133,28 +133,28 @@ public:
     //  float: x (4 bytes)
     //  float: y (4 bytes)
     //  float: z (4 bytes)
-    void Write(Vector3f in) {
-        Write(in.x);
-        Write(in.y);
-        Write(in.z);
+    void write(Vector3f in) {
+        write(in.x);
+        write(in.y);
+        write(in.z);
     }
 
     // Writes a Vector2i
     //  8 bytes total are written:
     //  int32_t: x (4 bytes)
     //  int32_t: y (4 bytes)
-    void Write(Vector2i in) {
-        Write(in.x);
-        Write(in.y);
+    void write(Vector2i in) {
+        write(in.x);
+        write(in.y);
     }
 
     // Writes a Vector2s
     //  4 bytes total are written:
     //  int16_t: x (2 bytes)
     //  int16_t: y (2 bytes)
-    void Write(Vector2s in) {
-        Write(in.x);
-        Write(in.y);
+    void write(Vector2s in) {
+        write(in.x);
+        write(in.y);
     }
 
     // Writes a Quaternion
@@ -163,11 +163,11 @@ public:
     //  float: y (4 bytes)
     //  float: z (4 bytes)
     //  float: w (4 bytes)
-    void Write(Quaternion in) {
-        Write(in.x);
-        Write(in.y);
-        Write(in.z);
-        Write(in.w);
+    void write(Quaternion in) {
+        write(in.x);
+        write(in.y);
+        write(in.z);
+        write(in.w);
     }
 
     // Writes a container of supported types
@@ -176,55 +176,55 @@ public:
     template<typename Iterable> 
         requires (VUtils::Traits::is_iterable_v<Iterable> 
                 && !std::is_fundamental_v<typename Iterable::value_type>)
-    void Write(const Iterable& in) {
+    void write(const Iterable& in) {
         size_t size = in.size();
-        Write(static_cast<int32_t>(size));
+        write(static_cast<int32_t>(size));
         for (auto&& v : in) {
-            Write(v);
+            write(v);
         }
     }
 
     // Writes a primitive type
     template<typename T> 
         requires (std::is_fundamental_v<T> && !std::is_same_v<T, char16_t>)
-    void Write(T in) { write_some_bytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
+    void write(T in) { write_some_bytes(reinterpret_cast<const BYTE_t*>(&in), sizeof(T)); }
 
     // Writes an enum
     //  Bytes written depend on the underlying value
     template<typename Enum> requires std::is_enum_v<Enum>
-    void Write(Enum value) {
-        Write(std::to_underlying(value));
+    void write(Enum value) {
+        write(std::to_underlying(value));
     }
 
     //template<typename T> requires std::is_same_v<T, char16_t>
-    //void Write(T in) {
-    void Write(char16_t in) {
+    //void write(T in) {
+    void write(char16_t in) {
         if (in < 0x80) {
-            Write<BYTE_t>(in);
+            write<BYTE_t>(in);
         }
         else if (in < 0x0800) {
-            Write<BYTE_t>(((in >> 6) & 0x1F) | 0xC0);
-            Write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
+            write<BYTE_t>(((in >> 6) & 0x1F) | 0xC0);
+            write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
         }
         else { // if (i < 0x010000) {
-            Write<BYTE_t>(((in >> 12) & 0x0F) | 0xE0);
-            Write<BYTE_t>(((in >> 6) & 0x3F) | 0x80);
-            Write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
+            write<BYTE_t>(((in >> 12) & 0x0F) | 0xE0);
+            write<BYTE_t>(((in >> 6) & 0x3F) | 0x80);
+            write<BYTE_t>(((in >> 0) & 0x3F) | 0x80);
         }
     }
 
-    void Write(const UserProfile &in) {
-        Write(std::string_view(in.m_name));
-        Write(std::string_view(in.m_gamerTag));
-        Write(std::string_view(in.m_networkUserId));
+    void write(const UserProfile &in) {
+        write(std::string_view(in.m_name));
+        write(std::string_view(in.m_gamerTag));
+        write(std::string_view(in.m_networkUserId));
     }
 
-    void Write(UInt64Wrapper in) {
-        Write((uint64_t)in);
+    void write(UInt64Wrapper in) {
+        write((uint64_t)in);
     }
 
-    void Write(Int64Wrapper in) {
-        Write((int64_t)in);
+    void write(Int64Wrapper in) {
+        write((int64_t)in);
     }
 
 
@@ -235,7 +235,7 @@ public:
     // Writes variadic parameters into a package
     template <typename T, typename... Types>
     static decltype(auto) SerializeImpl(DataWriter& pkg, const T &var1, const Types&... var2) {
-        pkg.Write(var1);
+        pkg.write(var1);
 
         return SerializeImpl(pkg, var2...);
     }
@@ -261,55 +261,55 @@ public:
         switch (type) {
             // TODO add recent unsigned types
         case IModManager::Type::UINT8:
-            Write(arg.as<uint8_t>());
+            write(arg.as<uint8_t>());
             break;
         case IModManager::Type::UINT16:
-            Write(arg.as<uint16_t>());
+            write(arg.as<uint16_t>());
             break;
         case IModManager::Type::UINT32:
-            Write(arg.as<uint32_t>());
+            write(arg.as<uint32_t>());
             break;
         case IModManager::Type::UINT64:
-            Write(arg.as<uint64_t>());
+            write(arg.as<uint64_t>());
             break;
         case IModManager::Type::INT8:
-            Write(arg.as<int8_t>());
+            write(arg.as<int8_t>());
             break;
         case IModManager::Type::INT16:
-            Write(arg.as<int16_t>());
+            write(arg.as<int16_t>());
             break;
         case IModManager::Type::INT32:
-            Write(arg.as<int32_t>());
+            write(arg.as<int32_t>());
             break;
         case IModManager::Type::INT64:
-            Write(arg.as<int64_t>());
+            write(arg.as<int64_t>());
             break;
         case IModManager::Type::FLOAT:
-            Write(arg.as<float>());
+            write(arg.as<float>());
             break;
         case IModManager::Type::DOUBLE:
-            Write(arg.as<double>());
+            write(arg.as<double>());
             break;
         case IModManager::Type::STRING:
-            Write(arg.as<std::string>());
+            write(arg.as<std::string>());
             break;
         case IModManager::Type::BOOL:
-            Write(arg.as<bool>());
+            write(arg.as<bool>());
             break;
         case IModManager::Type::BYTES:
-            Write(arg.as<BYTES_t>());
+            write(arg.as<BYTES_t>());
             break;
         case IModManager::Type::ZDOID:
-            Write(arg.as<ZDOID>());
+            write(arg.as<ZDOID>());
             break;
         case IModManager::Type::VECTOR3f:
-            Write(arg.as<Vector3f>());
+            write(arg.as<Vector3f>());
             break;
         case IModManager::Type::VECTOR2i:
-            Write(arg.as<Vector2i>());
+            write(arg.as<Vector2i>());
             break;
         case IModManager::Type::QUATERNION:
-            Write(arg.as<Quaternion>());
+            write(arg.as<Quaternion>());
             break;
         default:
             throw std::runtime_error("Invalid data type");

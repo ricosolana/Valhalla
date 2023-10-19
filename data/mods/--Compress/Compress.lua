@@ -19,7 +19,7 @@ local RPC_CompressedZDOData = function(peer, compressed)
     -- This is necessary because method invoke treats the package as a sub package...
     compressed:clear() -- sol container clear
     local writer = DataWriter.new(compressed);
-    writer:Write(decompressed)
+    writer:write(decompressed)
 
     -- Finally invoke it
     peer:InvokeSelf("ZDOData", DataReader.new(compressed));

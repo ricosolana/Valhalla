@@ -14,16 +14,16 @@ local SIG_VersionCheck = MethodSig.new('ServerSync VersionCheck', Type.BYTES)
 local Config = {}
 
 local DATA_CONVERTERS = {
-  String =   { qualifier = 'System.String',   serialize = 'Write',        deserialize = 'read_string'  },
-  Boolean =  { qualifier = 'System.Boolean',  serialize = 'Write',        deserialize = 'read_bool'    },
+  String =   { qualifier = 'System.String',   serialize = 'write',        deserialize = 'read_string'  },
+  Boolean =  { qualifier = 'System.Boolean',  serialize = 'write',        deserialize = 'read_bool'    },
   SByte =    { qualifier = 'System.SByte',    serialize = 'WriteInt8',    deserialize = 'read_int8'    },
   Byte =     { qualifier = 'System.Byte',     serialize = 'WriteUInt8',   deserialize = 'read_uint8'   },
   Int16 =    { qualifier = 'System.Int16',    serialize = 'WriteInt16',   deserialize = 'read_int16'   },
   UInt16 =   { qualifier = 'System.UInt16',   serialize = 'WriteUInt16',  deserialize = 'read_uint16'  },
   Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'WriteInt32',   deserialize = 'read_int32'   },
   UInt32 =   { qualifier = 'System.UInt32',   serialize = 'WriteUInt32',  deserialize = 'read_uint32'  },
-  Int64 =    { qualifier = 'System.Int64',    serialize = 'Write',        deserialize = 'read_int64'   },
-  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'Write',        deserialize = 'read_uint64'  },
+  Int64 =    { qualifier = 'System.Int64',    serialize = 'write',        deserialize = 'read_int64'   },
+  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'write',        deserialize = 'read_uint64'  },
   Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'WriteFloat',   deserialize = 'read_float'   },
   Double =   { qualifier = 'System.Double',   serialize = 'WriteDouble',  deserialize = 'read_double'  },
   CraftingTable = { 
@@ -152,9 +152,9 @@ Config.SerializeEntry = function(writer, dataConverters, section, key, entry)
     'missing serializer for type ' .. entry.tomlTypeName
   )
 
-  writer:Write(section)
-  writer:Write(key)
-  writer:Write(cvt.underlying or cvt.qualifier)
+  writer:write(section)
+  writer:write(key)
+  writer:write(cvt.underlying or cvt.qualifier)
   
   print(entry.value)
   
@@ -212,7 +212,7 @@ Config.sendZPackage = function(peer, config, bytes)
     local writer = DataWriter.new(newBytes)
     
     writer:WriteUInt8(CONFIG_COMPRESSED)
-    writer:Write(Deflater.raw:Compress(bytes))
+    writer:write(Deflater.raw:Compress(bytes))
     
     bytes = newBytes
   end
@@ -255,9 +255,9 @@ Valhalla:Subscribe('Connect', function(peer)
       local bytes = Bytes.new()
       local writer = DataWriter.new(bytes)
       
-      writer:Write(name)
-      writer:Write(config.minVersion) -- min
-      writer:Write(config.version) -- current 
+      writer:write(name)
+      writer:write(config.minVersion) -- min
+      writer:write(config.version) -- current
       
       print('Sending ' .. name .. ' ' 
         .. config.version .. ' to ' .. peer.socket.host)

@@ -289,22 +289,22 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) flags |= 1 << NETWORK_Rotation;
 
     const auto flagPos = writer.get_pos();
-    writer.Write(flags);
+    writer.write(flags);
     if (!network) {
-        writer.Write(GetZone());
-        writer.Write(GetPosition());
+        writer.write(GetZone());
+        writer.write(GetPosition());
     }
-    writer.Write(GetPrefabHash());
+    writer.write(GetPrefabHash());
     if (hasRot) {
-        writer.Write(this->m_data.get().m_rotation);
+        writer.write(this->m_data.get().m_rotation);
     }
 
     if (network) {
         auto&& find = ZDO_TARGETED_CONNECTORS.find(GetID());
         if (find != ZDO_TARGETED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto&& connector = find->second;
-            writer.Write(connector.m_type);
-            writer.Write(connector.m_target);
+            writer.write(connector.m_type);
+            writer.write(connector.m_target);
 
             flags |= 1 << NETWORK_Connection;
         }
@@ -313,8 +313,8 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         auto&& find = ZDO_CONNECTORS.find(GetID());
         if (find != ZDO_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto&& connector = find->second;
-            writer.Write(connector.m_type);
-            writer.Write(connector.m_hash);
+            writer.write(connector.m_type);
+            writer.write(connector.m_hash);
 
             flags |= 1 << NETWORK_Connection;
         }
@@ -342,6 +342,6 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
 
     const auto endPos = writer.get_pos();
     writer.set_pos(flagPos);
-    writer.Write(flags);
+    writer.write(flags);
     writer.set_pos(endPos);
 }

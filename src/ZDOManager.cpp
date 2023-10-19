@@ -152,7 +152,7 @@ void IZDOManager::Update() {
 		//	think about emulated zdo containers (like replaying actions to specific peers)
 		//	this is a functionality I might be planning on into the future
 		m_temp.clear();
-		DataWriter(m_temp).Write(m_destroySendList);
+		DataWriter(m_temp).write(m_destroySendList);
 		m_destroySendList.clear();
 
 		RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
@@ -187,16 +187,16 @@ void IZDOManager::_InvalidateZDOZone(ZDO zdo) {
 
 
 void IZDOManager::Save(DataWriter& writer) {
-	//pkg.Write(Valhalla()->ID());
-	writer.Write<int64_t>(0);
-	writer.Write(m_nextUid);
+	//pkg.write(Valhalla()->ID());
+	writer.write<int64_t>(0);
+	writer.write(m_nextUid);
 	
 	{
 		// Write zdos (persistent)
 		const auto start = writer.get_pos();
 
 		int32_t count = 0;
-		writer.Write(count);
+		writer.write(count);
 
 		for (auto&& pair : m_objectsByID) {
 			auto&& zdo = ZDO(pair);
@@ -208,7 +208,7 @@ void IZDOManager::Save(DataWriter& writer) {
 
 		const auto end = writer.get_pos();
 		writer.set_pos(start);
-		writer.Write(count);
+		writer.write(count);
 		writer.set_pos(end);
 	}
 }
@@ -871,7 +871,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	//	this only matters if performance is upmost concern, which it is because c :>
 
 	peer.SubInvoke(Hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter& writer) {
-		writer.Write(peer.m_invalidSector);
+		writer.write(peer.m_invalidSector);
 
 		const auto time = Valhalla()->Time();
 
@@ -887,11 +887,11 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 				continue;
 			}
 
-			writer.Write(zdo.GetID());
-			writer.Write(zdo.GetOwnerRevision());
-			writer.Write(zdo.GetDataRevision());
-			writer.Write(zdo.Owner());
-			writer.Write(zdo.GetPosition());
+			writer.write(zdo.GetID());
+			writer.write(zdo.GetOwnerRevision());
+			writer.write(zdo.GetDataRevision());
+			writer.write(zdo.Owner());
+			writer.write(zdo.GetPosition());
 
 			writer.nested_write([&zdo](DataWriter& writer) {
 				zdo.Pack(writer, true);
@@ -899,7 +899,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 
 			peer.m_zdos[zdo.GetID()] = { zdo.GetRevision(), time};
 		}
-		writer.Write(ZDOID::NONE); // null terminator
+		writer.write(ZDOID::NONE); // null terminator
 	});
 
 	if (!peer.m_invalidSector.empty() || !syncList.empty()) {

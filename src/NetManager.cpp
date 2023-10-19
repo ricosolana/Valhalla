@@ -69,25 +69,25 @@ void INetManager::SendPlayerList() {
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        writer.Write(Hashes::Rpc::S2C_UpdatePlayerList);
+        writer.write(Hashes::Rpc::S2C_UpdatePlayerList);
 
         writer.nested_write([this](DataWriter& writer) {
-            writer.Write<int32_t>(m_onlinePeers.size());
+            writer.write<int32_t>(m_onlinePeers.size());
 
             for (auto&& peer : m_onlinePeers) {
-                writer.Write(peer->m_name);
-                writer.Write(peer->m_socket->GetHostName());
-                writer.Write(peer->m_characterID);
-                writer.Write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
+                writer.write(peer->m_name);
+                writer.write(peer->m_socket->GetHostName());
+                writer.write(peer->m_characterID);
+                writer.write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
                 if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
                     if (VH_SETTINGS.playerListSendInterval >= 2s)
-                        writer.Write(peer->m_pos);
+                        writer.write(peer->m_pos);
                     else {
                         auto&& zdo = peer->GetZDO();
                         if (zdo)
-                            writer.Write(zdo->GetPosition());
+                            writer.write(zdo->GetPosition());
                         else
-                            writer.Write(peer->m_pos);
+                            writer.write(peer->m_pos);
                     }
                 }
             }
@@ -109,20 +109,20 @@ void INetManager::SendNetTime() {
 
 void INetManager::SendPeerInfo(Peer& peer) {
     peer.SubInvoke(Hashes::Rpc::PeerInfo, [](DataWriter& writer) {
-        writer.Write(Valhalla()->ID());
-        writer.Write(VConstants::GAME);
-        writer.Write(VConstants::NETWORK);
-        writer.Write(Vector3f::Zero()); // dummy
-        writer.Write(""); // dummy
+        writer.write(Valhalla()->ID());
+        writer.write(VConstants::GAME);
+        writer.write(VConstants::NETWORK);
+        writer.write(Vector3f::Zero()); // dummy
+        writer.write(""); // dummy
 
         auto world = WorldManager()->GetWorld();
 
-        writer.Write(world->m_name);
-        writer.Write(world->m_seed);
-        writer.Write(world->m_seedName); // Peer does not seem to use
-        writer.Write(world->m_uid);
-        writer.Write(world->m_worldGenVersion);
-        writer.Write(Valhalla()->GetWorldTime());
+        writer.write(world->m_name);
+        writer.write(world->m_seed);
+        writer.write(world->m_seedName); // Peer does not seem to use
+        writer.write(world->m_uid);
+        writer.write(world->m_worldGenVersion);
+        writer.write(Valhalla()->GetWorldTime());
     });
 }
 
@@ -343,8 +343,8 @@ void INetManager::Update() {
     if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
         BYTES_t bytes;
         DataWriter writer(bytes);
-        writer.Write<HASH_t>(0);
-        writer.Write(true);
+        writer.write<HASH_t>(0);
+        writer.write(true);
 
         for (auto&& peer : m_connectedPeers) {
             peer->Send(bytes);
