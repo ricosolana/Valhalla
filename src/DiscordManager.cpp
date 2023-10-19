@@ -386,7 +386,7 @@ void IDiscordManager::init() {
 		if (VH_SETTINGS.discordSyncLeaves) {
 			// Try kicking player off Valheim server
 
-			if (auto&& peer = UnlinkPeerBySnowflake(event.removed->id)) {
+			if (auto&& peer = deauth_peer(event.removed->id)) {
 				peer->Kick();
 
 				LOG_INFO(LOGGER, "Kicked {} due to guild leave", peer->m_name);
@@ -536,7 +536,7 @@ void IDiscordManager::periodic_update() {
 	}*/
 }
 
-Peer* IDiscordManager::GetPeerBySnowflake(dpp::snowflake id) {
+Peer* IDiscordManager::get_peer(dpp::snowflake id) {
 	for (auto&& pair : m_linkedAccounts) {
 		if (pair.second == id) {
 			return NetManager()->GetPeerByHost(pair.first);
@@ -545,7 +545,7 @@ Peer* IDiscordManager::GetPeerBySnowflake(dpp::snowflake id) {
 	return nullptr;
 }
 
-Peer* IDiscordManager::UnlinkPeerBySnowflake(dpp::snowflake id) {
+Peer* IDiscordManager::deauth_peer(dpp::snowflake id) {
 	for (auto&& itr = m_linkedAccounts.begin(); itr != m_linkedAccounts.end();) {
 		if (itr->second == id) {
 			auto&& peer = NetManager()->GetPeerByHost(itr->first);
@@ -559,7 +559,7 @@ Peer* IDiscordManager::UnlinkPeerBySnowflake(dpp::snowflake id) {
 	return nullptr;
 }
 
-void IDiscordManager::SendSimpleMessage(std::string_view msg) {
+void IDiscordManager::send_webhook_msg(std::string_view msg) {
 	if (VH_SETTINGS.discordWebhook.empty())
 		return;
 

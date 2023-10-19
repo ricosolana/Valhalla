@@ -37,14 +37,14 @@ public:
     //    return "";
     //}
 
-    Peer* GetPeerBySnowflake(dpp::snowflake id);
+    Peer* get_peer(dpp::snowflake id);
 
-    Peer* UnlinkPeerBySnowflake(dpp::snowflake id);
+    Peer* deauth_peer(dpp::snowflake id);
 
-    void SendSimpleMessage(std::string_view msg);
+    void send_webhook_msg(std::string_view msg);
 };
 
-#define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->SendSimpleMessage((msg));
+#define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_msg((msg));
 
 IDiscordManager* DiscordManager();
 #else
