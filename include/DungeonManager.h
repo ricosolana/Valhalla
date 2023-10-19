@@ -20,17 +20,19 @@ private:
 	size_t m_nextIndex = 0;
 
 public:
-    void PostPrefabInit();
+    void post_prefab_init();
 
-	const Dungeon* GetDungeon(HASH_t hash) const {
+    // Nullable
+	const Dungeon* get_dungeon(HASH_t hash) const {
 		auto&& find = m_dungeons.find(hash);
 		if (find != m_dungeons.end())
 			return find->second.get();
 		return nullptr;
 	}
 
-	const Dungeon& RequireDungeon(HASH_t hash) const {
-		auto&& dungeon = GetDungeon(hash);
+    // TODO use reference_wrapper
+	const Dungeon& require_dungeon(HASH_t hash) const {
+		auto&& dungeon = get_dungeon(hash);
 		if (!dungeon)
 			throw std::runtime_error("unknown dungeon");
 		return *dungeon;
@@ -40,13 +42,13 @@ public:
 	//	Returns the new dungeon (dungeonZdo is invalidated)
 	//	Returns null if replacement failed (dungeonZdo remains valid)
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
-	ZDO* TryRegenerateDungeon(ZDO& dungeonZdo);
-	void TryRegenerateDungeons();
+	ZDO* regenerate_dungeon(ZDO& dungeonZdo);
+	void regenerate_dungeons();
 #endif
 
-	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
-	std::reference_wrapper<ZDO> Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
-	void Generate(const Dungeon& dungeon, ZDO& zdo);
+	std::reference_wrapper<ZDO> generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
+	std::reference_wrapper<ZDO> generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
+	void generate(const Dungeon& dungeon, ZDO& zdo);
 };
 
 // Manager for everything related to dungeon spawning 

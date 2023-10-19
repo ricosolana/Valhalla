@@ -173,7 +173,7 @@ public:
 	void Update();
 
 	// Used when saving the world from disk
-	void Save(DataWriter& writer);
+	void save(DataWriter& writer);
 
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);

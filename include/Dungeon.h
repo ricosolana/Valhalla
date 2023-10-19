@@ -75,9 +75,9 @@ public:
 	std::vector<std::unique_ptr<const Room>> m_availableRooms;
 
 public:
-	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot) const;
-	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, HASH_t seed) const;
+	//std::unique_ptr<DungeonGenerator> generate(const Vector3f& pos, const Quaternion& rot) const;
+	//std::unique_ptr<DungeonGenerator> generate(const Vector3f& pos, const Quaternion& rot, HASH_t seed) const;
 	//
-	//std::unique_ptr<DungeonGenerator> Generate(ZDO& zdo) const;
+	//std::unique_ptr<DungeonGenerator> generate(ZDO& zdo) const;
 };
 #endif

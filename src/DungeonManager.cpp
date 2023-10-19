@@ -16,7 +16,7 @@ IDungeonManager* DungeonManager() {
 
 
 
-void IDungeonManager::PostPrefabInit() {
+void IDungeonManager::post_prefab_init() {
     // load dungeons:
     auto opt = VUtils::Resource::ReadFile<BYTES_t>("dungeons.pkg");
     if (!opt)
@@ -138,7 +138,7 @@ void IDungeonManager::PostPrefabInit() {
 }
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
-ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
+ZDO* IDungeonManager::regenerate_dungeon(ZDO& dungeonZdo) {
     static constexpr HASH_t LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
 
     // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86
@@ -160,7 +160,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
             }
         }
 
-        auto&& dungeon = RequireDungeon(dungeonZdo.GetPrefab().m_hash);
+        auto&& dungeon = require_dungeon(dungeonZdo.GetPrefab().m_hash);
 
         // Destroy all zdos high in the sky near dungeon IN ZONE
         auto pos = dungeonZdo.GetPosition();
@@ -182,7 +182,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
 
             LOG_INFO(LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
-            auto&& zdo = Generate(dungeon, pos, rot).get();
+            auto&& zdo = generate(dungeon, pos, rot).get();
             zdo.Set(LAST_RESET_HASH, unixTime.count());
             
             return &zdo;
@@ -195,7 +195,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
     return nullptr;
 }
 
-void IDungeonManager::TryRegenerateDungeons() {
+void IDungeonManager::regenerate_dungeons() {
     size_t idx = m_nextIndex;
     while (idx < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonsRegenerationMaxSteps)) 
     {
@@ -208,7 +208,7 @@ void IDungeonManager::TryRegenerateDungeons() {
             break;
         }
         else {
-            if (auto&& newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
+            if (auto&& newDungeon = regenerate_dungeon(*dungeonZdo)) {
                 *itr = newDungeon->GetID();
             }
             ++idx;
@@ -224,25 +224,25 @@ void IDungeonManager::TryRegenerateDungeons() {
 #endif
 
 
-std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
+std::reference_wrapper<ZDO> IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo.SetRotation(rot);
     
-    DungeonGenerator(dungeon, zdo).Generate();
+    DungeonGenerator(dungeon, zdo).generate();
 
     return zdo;
 }
 
-std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
+std::reference_wrapper<ZDO> IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo.SetRotation(rot);
 
-    DungeonGenerator(dungeon, zdo).Generate(seed);
+    DungeonGenerator(dungeon, zdo).generate(seed);
 
     return zdo;
 }
 
-void IDungeonManager::Generate(const Dungeon& dungeon, ZDO& zdo) {
-    DungeonGenerator(dungeon, zdo).Generate();
+void IDungeonManager::generate(const Dungeon& dungeon, ZDO& zdo) {
+    DungeonGenerator(dungeon, zdo).generate();
 }
 #endif

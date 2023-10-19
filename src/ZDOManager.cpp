@@ -186,7 +186,7 @@ void IZDOManager::_InvalidateZDOZone(ZDO zdo) {
 
 
 
-void IZDOManager::Save(DataWriter& writer) {
+void IZDOManager::save(DataWriter& writer) {
 	//pkg.write(Valhalla()->ID());
 	writer.write<int64_t>(0);
 	writer.write(m_nextUid);

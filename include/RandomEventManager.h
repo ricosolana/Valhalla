@@ -61,7 +61,7 @@ public:
 		return nullptr;
 	}
 
-	void Save(DataWriter& writer);
+	void save(DataWriter& writer);
 	void Load(DataReader& reader, int version);
 };
 

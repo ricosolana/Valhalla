@@ -176,7 +176,7 @@ bool IRandomEventManager::CheckGlobalKeys(const Event& e) {
 	return true;
 }
 
-void IRandomEventManager::Save(DataWriter& writer) {
+void IRandomEventManager::save(DataWriter& writer) {
 	writer.write(m_eventIntervalTimer);
 	writer.write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
 	//writer.write(m_activeEventTimer);

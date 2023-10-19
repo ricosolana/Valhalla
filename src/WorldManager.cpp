@@ -78,9 +78,9 @@ BYTES_t World::SaveDB() {
 	writer.write(VConstants::WORLD);
 	writer.write(Valhalla()->GetWorldTime());
 
-	ZDOManager()->Save(writer);
-	ZoneManager()->Save(writer);
-	EventManager()->Save(writer);
+	ZDOManager()->save(writer);
+	ZoneManager()->save(writer);
+	EventManager()->save(writer);
 
 	return bytes;
 }*/
@@ -297,11 +297,11 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	writer.write(VConstants::WORLD);
 	writer.write(Valhalla()->GetWorldTime());
 
-	ZDOManager()->Save(writer);
-	ZoneManager()->Save(writer);
+	ZDOManager()->save(writer);
+	ZoneManager()->save(writer);
 	// This omission only works because random events happen to be saved/loaded last
 #if VH_IS_ON(VH_RANDOM_EVENTS)
-	RandomEventManager()->Save(writer);
+	RandomEventManager()->save(writer);
 #else
 	writer.write(0.f);
 	writer.write("");

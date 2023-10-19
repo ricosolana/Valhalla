@@ -275,14 +275,14 @@ private:
 #endif
 
 public:
-	void PostPrefabInit();
+	void post_prefab_init();
 	void Update();
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 	void PostGeoInit();
 #endif
 
-	void Save(DataWriter& pkg);
+	void save(DataWriter& pkg);
 	void Load(DataReader& reader, int32_t version);
 
 	auto& GlobalKeys() {

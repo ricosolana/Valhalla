@@ -53,79 +53,81 @@ public:
 	ZDO& m_zdo;
 
 private:
-	void GenerateRooms(VUtils::Random::State& state);
+	void generate_rooms(VUtils::Random::State& state);
 
-	void GenerateDungeon(VUtils::Random::State& state);
+	void generate_dungeon(VUtils::Random::State& state);
 
-	void GenerateCampGrid(VUtils::Random::State& state);
+	void generate_camp_grid(VUtils::Random::State& state);
 
-	void GenerateCampRadial(VUtils::Random::State& state);
+	void generate_camp_radial(VUtils::Random::State& state);
 
-	Quaternion GetCampRoomRotation(VUtils::Random::State& state, const Room &room, Vector3f pos);
+	Quaternion get_camp_room_rotation(VUtils::Random::State& state, const Room &room, Vector3f pos);
 
-	void PlaceWall(VUtils::Random::State& state, float radius, int sections);
+	void place_wall(VUtils::Random::State& state, float radius, int sections);
 
-	void Save();
+	void save();
 
 	// Nullable
-	const Dungeon::DoorDef* FindDoorType(VUtils::Random::State& state, std::string_view type);
+	const Dungeon::DoorDef* get_door_type(VUtils::Random::State& state, std::string_view type);
 
-	void PlaceDoors(VUtils::Random::State& state);
+	void place_doors(VUtils::Random::State& state);
 
-	void PlaceEndCaps(VUtils::Random::State& state);
+	void place_end_caps(VUtils::Random::State& state);
 
-	std::vector<std::reference_wrapper<const Room>> FindDividers(VUtils::Random::State& state);
+	std::vector<std::reference_wrapper<const Room>> get_dividers(VUtils::Random::State& state);
 
-	std::vector<std::reference_wrapper<const Room>> FindEndCaps(VUtils::Random::State& state, const RoomConnection &connection);
+	std::vector<std::reference_wrapper<const Room>> get_end_caps(VUtils::Random::State& state, const RoomConnection &connection);
 
-	void PlaceRooms(VUtils::Random::State& state);
+	void place_rooms(VUtils::Random::State& state);
 
-	void PlaceStartRoom(VUtils::Random::State& state);
+	void place_start_room(VUtils::Random::State& state);
 
-	bool PlaceOneRoom(VUtils::Random::State& state);
+	bool place_one_room(VUtils::Random::State& state);
 
-	void CalculateRoomPosRot(const RoomConnection &roomCon, Vector3f pos, Quaternion rot, Vector3f &outPos, Quaternion &outRot);
+	void calc_room_transform(const RoomConnection &roomCon, Vector3f pos, Quaternion rot, Vector3f &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
+	bool place_room(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
 
 	// Camps/grid meadows
-	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot);
+	void place_room(const Room& room, Vector3f pos, Quaternion rot);
 
 	// Dungeon placement
-	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
+	void place_room(const Room& room, Vector3f pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
 
-	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
+	void add_open_connections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
-	bool IsInsideZone(const Room &room, Vector3f pos, Quaternion rot);
+	bool is_room_inside_zone(const Room &room, Vector3f pos, Quaternion rot);
 
-	bool TestCollision(const Room& room, Vector3f pos, Quaternion rot);
-
-	// Nullable
-	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, bool perimeterRoom);
+	bool does_room_collide(const Room& room, Vector3f pos, Quaternion rot);
 
 	// Nullable
-	const Room* GetRandomWeightedRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
-
-	const Room& GetWeightedRoom(VUtils::Random::State& state, const std::vector<std::reference_wrapper<const Room>> &rooms);
-
-	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
+	const Room* get_random_weighted_room(VUtils::Random::State& state, bool perimeterRoom);
 
 	// Nullable
-	decltype(m_openConnections)::iterator GetOpenConnection(VUtils::Random::State& state);
+	const Room* get_random_weighted_room(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
-	const Room& FindStartRoom(VUtils::Random::State& state);
+    // TODO use reference_wrapper
+	const Room& get_weighted_room(VUtils::Random::State& state, const std::vector<std::reference_wrapper<const Room>> &rooms);
 
-	bool CheckRequiredRooms();
+    // Nullable
+	const Room* get_random_room(VUtils::Random::State& state, const RoomConnectionInstance *connection);
+
+	// Nullable
+	decltype(m_openConnections)::iterator get_open_connection(VUtils::Random::State& state);
+
+	const Room& get_start_room(VUtils::Random::State& state);
+
+	bool are_required_rooms_placed();
 
 public:
 	DungeonGenerator(const Dungeon& dungeon, ZDO& zdo);
 
 	DungeonGenerator(const DungeonGenerator& other) = delete;
 
-	void Generate();
-	void Generate(HASH_t seed);
+	void generate();
+	void generate(HASH_t seed);
 
-	HASH_t GetSeed();
+	HASH_t get_seed();
 
 	// i hate the split between zoneloc inst and dungeon
 	// it should have dungeon type immediately within it...

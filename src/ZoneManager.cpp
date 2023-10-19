@@ -20,7 +20,7 @@ IZoneManager* ZoneManager() {
 
 
 // private
-void IZoneManager::PostPrefabInit() {
+void IZoneManager::post_prefab_init() {
     LOG_INFO(LOGGER, "Initializing ZoneManager");
 
     {
@@ -319,7 +319,7 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
 }
 
 // public
-void IZoneManager::Save(DataWriter& pkg) {
+void IZoneManager::save(DataWriter& pkg) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
     pkg.write<int32_t>(m_generatedZones.size());
     for (auto&& zone : m_generatedZones) {
@@ -555,7 +555,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 
     const Vector3f center = ZoneToWorldPos(zoneID);
 
-    const auto seed = GeoManager()->GetSeed();
+    const auto seed = GeoManager()->get_seed();
 
     //Biome biomes = GeoManager()->GetBiomes(center.x, center.z);
 
@@ -864,7 +864,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
     unsigned int errSimilarLocation = 0;
     unsigned int errTerrainDelta = 0;
 
-    VUtils::Random::State state(GeoManager()->GetSeed() + feature.m_hash);
+    VUtils::Random::State state(GeoManager()->get_seed() + feature.m_hash);
     const float locationRadius = std::max(feature.m_exteriorRadius, feature.m_interiorRadius);
 
     float range = feature.m_centerFirst ? feature.m_minDistance : 10000;
@@ -1032,7 +1032,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
             rot = Quaternion::Euler(0, VUtils::Random::State().Range(0, 16) * 22.5f, 0);
         }
 
-        HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
+        HASH_t seed = GeoManager()->get_seed() + zoneID.x * 4271 + zoneID.y * 9187;
         GenerateFeature(location, seed, position, rot);
 
         LOG_INFO(LOGGER, "Placed '{}' in zone {} ({})", location.m_name, zoneID, position);
@@ -1088,7 +1088,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
             auto&& zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo.SetRotation(rot * piece.m_rot);
         } else {
-            auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefabHash);
+            auto&& dungeon = DungeonManager()->require_dungeon(piece.m_prefabHash);
 
             std::optional<ZDO> zdo;
 
@@ -1117,7 +1117,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 
-            DungeonManager()->Generate(dungeon, *zdo);
+            DungeonManager()->generate(dungeon, *zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;

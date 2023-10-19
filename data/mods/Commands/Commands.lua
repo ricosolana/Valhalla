@@ -104,11 +104,11 @@ local commands = {
     },
     gendungeon = {
         func = function(peer, cmd, args)
-            local dungeon = assert(DungeonManager:GetDungeon(args[1]))
+            local dungeon = assert(DungeonManager:get_dungeon(args[1]))
             
             local pos = #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
             
-            DungeonManager:Generate(dungeon, pos, Quaternion.IDENTITY)
+            DungeonManager:generate(dungeon, pos, Quaternion.IDENTITY)
             
             peer:ConsoleMessage('generated dungeon at ' .. tostring(pos))
         end,

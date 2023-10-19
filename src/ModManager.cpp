@@ -826,13 +826,13 @@ void IModManager::LoadAPI() {
 #if VH_IS_ON(VH_ZONE_GENERATION)
     m_state.new_usertype<Dungeon>("Dungeon",
         sol::no_constructor
-        //"Generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::Generate)
+        //"generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::generate)
     );
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
-        "GetDungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(VUtils::String::GetStableHashCode(name)); },
-        "Generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
+        "get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.get_dungeon(VUtils::String::GetStableHashCode(name)); },
+        "generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.generate(dungeon, pos, rot); }
     );
 
 

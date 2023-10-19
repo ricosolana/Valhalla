@@ -24,7 +24,10 @@ public:
 		MeadowsVillage = 32,
 		MeadowsFarm = 64,
 		DvergerTown = 128,
-		DvergerBoss = 256
+		DvergerBoss = 256,
+        ForestCryptHildir = 512,
+        CaveHildir = 1024,
+        PlainsFortHildir = 2048
 	};
 
 private:
@@ -71,21 +74,22 @@ public:
 
 public:
 	Room() = default;
-
 	Room(const Room& other) = delete;
 
-	HASH_t GetHash() const;
+public:
+	HASH_t get_hash() const;
 
-	const std::vector<std::unique_ptr<RoomConnection>>& GetConnections() const {
+	const std::vector<std::unique_ptr<RoomConnection>>& get_connections() const {
 		return m_roomConnections;
 	}
 
-	// Nullable
-	const RoomConnection &GetConnection(VUtils::Random::State& state, const RoomConnection &other) const;
+	// TODO ref
+	const RoomConnection &get_connection(VUtils::Random::State& state, const RoomConnection &other) const;
 
-	const RoomConnection &GetEntrance() const;
+    // TODO ref
+	const RoomConnection &get_entrance() const;
 
-	bool HaveConnection(const RoomConnection &other) const;
+	bool is_connection_present(const RoomConnection &other) const;
 };
 
 struct RoomInstance {
@@ -98,7 +102,7 @@ struct RoomInstance {
 
 	RoomInstance(const Room& room, Vector3f pos, Quaternion rot, int placeOrder, int seed) 
 		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
-		for (auto&& conn : room.GetConnections()) {
+		for (auto&& conn : room.get_connections()) {
 			// Find the world position of the connection, 
 			//	given parent (Room) position and localPosition (Connection)
 			//m_connections.emplace_back(conn, room.m_pos + conn.get()->m_localPos)

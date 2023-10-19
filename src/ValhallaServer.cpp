@@ -578,9 +578,9 @@ void IValhalla::Start() {
 #endif
     PrefabManager()->init();
 
-    ZoneManager()->PostPrefabInit();
+    ZoneManager()->post_prefab_init();
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
-    DungeonManager()->PostPrefabInit();
+    DungeonManager()->post_prefab_init();
 #endif
     WorldManager()->PostZoneInit();
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -736,7 +736,7 @@ void IValhalla::periodic_update() {
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
     if (m_settings.dungeonsRegenerationInterval > 0s)
-        DungeonManager()->TryRegenerateDungeons();
+        DungeonManager()->regenerate_dungeons();
 #endif
 
 

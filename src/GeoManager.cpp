@@ -40,10 +40,10 @@ void IGeoManager::PostWorldInit() {
 
 	// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
-	Generate();
+	generate();
 }
 
-void IGeoManager::Generate() {
+void IGeoManager::generate() {
 	GenerateLakes();
 	GenerateRivers();
 	GenerateStreams();
@@ -803,7 +803,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center,
 }
 
 // public
-int IGeoManager::GetSeed() {
+int IGeoManager::get_seed() {
 #ifdef RUN_TESTS
 	return 0;
 #else

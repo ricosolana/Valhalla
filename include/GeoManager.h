@@ -112,7 +112,7 @@ private:
 
 
 	// Forward declarations
-	void Generate();
+	void generate();
 
 	//void GenerateMountains();
 	void GenerateLakes();
@@ -191,7 +191,7 @@ public:
 
 	void GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection);
 
-	int GetSeed();
+	int get_seed();
 
 	static constexpr int32_t worldSize = 10000;
 
