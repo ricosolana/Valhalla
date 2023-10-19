@@ -43,7 +43,7 @@ World::World(DataReader reader) {
 	m_worldGenVersion = worldVersion >= 26 ? reader.read<int32_t>() : 0;
 	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
-		reader.AsEach([](std::string_view key) {
+		reader.for_each([](std::string_view key) {
 			// TODO add starting keys
 		});
 	}

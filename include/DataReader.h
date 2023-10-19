@@ -112,7 +112,7 @@ public:
     // Reads a container<T> and runs a runction on each element
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
-    void AsEach(F func) {
+    void for_each(F func) {
         using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>;
 
         const auto count = read<int32_t>();
