@@ -115,81 +115,80 @@ private:
 	void generate();
 
 	//void GenerateMountains();
-	void GenerateLakes();
-	std::vector<Vector2f> MergePoints(std::vector<Vector2f>& points, float range);
-	int FindClosest(const std::vector<Vector2f>& points, Vector2f p, float maxDistance);
-	void GenerateStreams();
-	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f start, float minLength, float maxLength, Vector2f& end);
-	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth);
-	void GenerateRivers();
-	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f>& points, 
+	void generate_lakes();
+	std::vector<Vector2f> merge_points(std::vector<Vector2f>& points, float range);
+	int find_closest_index(const std::vector<Vector2f>& points, Vector2f p, float maxDistance);
+	void generate_streams();
+	bool get_stream_end(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f start, float minLength, float maxLength, Vector2f& end);
+	bool get_stream_start(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth);
+	void generate_rivers();
+	int get_random_river_end_index(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f>& points,
 		Vector2f p, float maxDistance, float heightLimit, float checkStep) const;
-	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0) const;
-	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vector2f p1) const;
-	bool IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const;
-	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
+	bool is_river_present(const std::vector<River>& rivers, Vector2f p0) const;
+	bool is_river_present(const std::vector<River>& rivers, Vector2f p0, Vector2f p1) const;
+	bool is_river_allowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const;
+	void generate_rivers(VUtils::Random::State& state, const std::vector<River>& rivers);
+	void add_river(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
 		Vector2f p,
 		float r);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
-	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
+	void add_river(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
+	//bool is_inside_river_grid(const Vector2i& grid, const Vector2f& p, float r);
 
-	//Vector2i GetRiverGrid(float wx, float wy);
-	void GetRiverWeight(float wx, float wy, float& outWeight, float& outWidth);
-	void GetWeight(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
-	float WorldAngle(float wx, float wy);
-	float GetBaseHeight(float wx, float wy) const;
-	float AddRivers(float wx, float wy, float h);
+	//Vector2i get_river_grid(float wx, float wy);
+	void get_river_weight(float wx, float wy, float& outWeight, float& outWidth);
+	void get_river_weight_of(const std::vector<RiverPoint>& points, float wx, float wy, float& weight, float& width);
+	float get_world_angle(float wx, float wy);
+	float get_base_height(float wx, float wy) const;
+	float add_rivers(float wx, float wy, float h);
 
-	float GetGenerationHeight(float x, float y);
+	float get_generation_height(float x, float y);
 
-	//float GetHeight(float wx, float wy, );
-	//float GetBiomeHeight(Heightmap::Biome biome, float wx, float wy);
-	float GetMarshHeight(float wx, float wy);
-	float GetMeadowsHeight(float wx, float wy);
-	float GetForestHeight(float wx, float wy);
-	float GetMistlandsHeight(float wx, float wy, float& mask);
-	float GetPlainsHeight(float wx, float wy);
-	float GetAshlandsHeight(float wx, float wy);
-	float GetEdgeHeight(float wx, float wy);
-	float GetOceanHeight(float wx, float wy);
-	float BaseHeightTilt(float wx, float wy);
-	float GetSnowMountainHeight(float wx, float wy);
-	float GetDeepNorthHeight(float wx, float wy);
+	//float get_height(float wx, float wy, );
+	//float get_height_at_biome(Heightmap::Biome biome, float wx, float wy);
+	float get_swamp_height(float wx, float wy);
+	float get_meadows_height(float wx, float wy);
+	float get_black_forest_height(float wx, float wy);
+	float get_mistlands_height(float wx, float wy, float& mask);
+	float get_plains_height(float wx, float wy);
+	float get_ashlands_height(float wx, float wy);
+	float get_ocean_height(float wx, float wy);
+	float get_base_height_tilt(float wx, float wy);
+	float get_mountains_height(float wx, float wy);
+	float get_deep_north_height(float wx, float wy);
 
 public:
-	void PostWorldInit();
+	void post_world_init();
 
-	bool InsideRiverGrid(Vector2i grid, Vector2f p, float r);
+	bool is_inside_river_grid(Vector2i grid, Vector2f p, float r);
 
-	Vector2i GetRiverGrid(float wx, float wy);
+	Vector2i get_river_grid(float wx, float wy);
 
-	BiomeArea GetBiomeArea(Vector3f point);
-
-	// Get the biome at world coordinates
-	Biome GetBiome(Vector3f point);
+	BiomeArea get_biome_area(Vector3f point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(float x, float z);
+	Biome get_biome(Vector3f point);
+
+	// Get the biome at world coordinates
+	Biome get_biome(float x, float z);
 
 	// Get all the biomes within a radius
-	//Biome GetBiomes(float x, float y, float radius)
+	//Biome get_biomes(float x, float y, float radius)
 
 	// Get all the corner biomes within this zone
-	Biome GetBiomes(float x, float y);
+	Biome get_biomes(float x, float y);
 
 	// Get the terrain height at world coordinates
-	float GetHeight(float x, float z);
+	float get_height(float x, float z);
 
 	// Get the terrain height at world coordinates, with mistlands color mask
-	float GetHeight(float x, float z, float& mask);
-	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
+	float get_height(float x, float z, float& mask);
+	float get_height_at_biome(Biome biome, float wx, float wy, float& mask);
 
-	bool InForest(Vector3f pos);
+	//bool InForest(Vector3f pos);
 
-	float GetForestFactor(Vector3f pos);
+	float get_forest_factor(Vector3f pos);
 
-	void GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection);
+	void get_terrain_delta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection);
 
 	int get_seed();
 

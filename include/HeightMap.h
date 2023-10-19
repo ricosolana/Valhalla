@@ -109,10 +109,10 @@ public:
     
 
     float GetOceanDepth(Vector3f worldPos);
-    std::vector<Biome> GetBiomes();
+    std::vector<Biome> get_biomes();
     bool HaveBiome(Biome biome);
-    Biome GetBiome(Vector3f point);
-    BiomeArea GetBiomeArea();
+    Biome get_biome(Vector3f point);
+    BiomeArea get_biome_area();
     bool IsBiomeEdge();
 
     // client command only
@@ -139,7 +139,7 @@ public:
     // Get the underlying height in heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
-    float GetHeight(int32_t x, int32_t y);
+    float get_height(int32_t x, int32_t y);
 
     // Get the underlying height in heights array at world position
     //  Returns false if the position outside of this heightmap
@@ -148,7 +148,7 @@ public:
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
-    float GetBaseHeight(int32_t x, int32_t y);
+    float get_base_height(int32_t x, int32_t y);
     void SetHeight(int32_t x, int32_t y, float h);
     bool IsPointInside(Vector3f point, float radius = 0);
 

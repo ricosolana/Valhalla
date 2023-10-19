@@ -557,7 +557,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 
     const auto seed = GeoManager()->get_seed();
 
-    //Biome biomes = GeoManager()->GetBiomes(center.x, center.z);
+    //Biome biomes = GeoManager()->get_biomes(center.x, center.z);
 
     std::vector<ClearArea> placedAreas;
 
@@ -666,14 +666,14 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                         if (zoneVegetation->m_terrainDeltaRadius > 0) {
                             float num12;
                             Vector3f vector5;
-                            GetTerrainDelta(state, pos, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
+                            get_terrain_delta(state, pos, zoneVegetation->m_terrainDeltaRadius, num12, vector5);
                             if (num12 > zoneVegetation->m_maxTerrainDelta || num12 < zoneVegetation->m_minTerrainDelta) {
                                 continue;
                             }
                         }
 
                         if (zoneVegetation->m_inForest) {
-                            float forestFactor = GeoManager()->GetForestFactor(pos);
+                            float forestFactor = GeoManager()->get_forest_factor(pos);
                             if (forestFactor < zoneVegetation->m_forestTresholdMin || forestFactor > zoneVegetation->m_forestTresholdMax) {
                                 continue;
                             }
@@ -878,7 +878,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
             errLocations++;
         else {
             auto zonePos = ZoneToWorldPos(randomZone);
-            BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
+            BiomeArea biomeArea = GeoManager()->get_biome_area(zonePos);
 
             if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea)))
                 errBiomeArea++;
@@ -892,18 +892,18 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
                         errCenterDistances++;
                     } 
                     else {
-                        Biome biome = GeoManager()->GetBiome(randomPointInZone);
+                        Biome biome = GeoManager()->get_biome(randomPointInZone);
 
                         if (!(std::to_underlying(biome) & std::to_underlying(feature.m_biome)))
                             errNoneBiomes++;
                         else {
-                            randomPointInZone.y = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z);
+                            randomPointInZone.y = GeoManager()->get_height(randomPointInZone.x, randomPointInZone.z);
                             float waterDiff = randomPointInZone.y - WATER_LEVEL;
                             if (waterDiff < feature.m_minAltitude || waterDiff > feature.m_maxAltitude)
                                 errAltitude++;
                             else {
                                 if (feature.m_inForest) {
-                                    float forestFactor = GeoManager()->GetForestFactor(randomPointInZone);
+                                    float forestFactor = GeoManager()->get_forest_factor(randomPointInZone);
                                     if (forestFactor < feature.m_forestTresholdMin || forestFactor > feature.m_forestTresholdMax) {
                                         errForestFactor++;
                                         continue;
@@ -912,7 +912,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
 
                                 float delta = 0;
                                 Vector3f vector;
-                                GeoManager()->GetTerrainDelta(state, randomPointInZone, feature.m_exteriorRadius, delta, vector);
+                                GeoManager()->get_terrain_delta(state, randomPointInZone, feature.m_exteriorRadius, delta, vector);
                                 if (delta > feature.m_maxTerrainDelta
                                     || delta < feature.m_minTerrainDelta)
                                     errTerrainDelta++;
@@ -1018,7 +1018,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
         //if (locationInstance.m_feature->m_slopeRotation) {
         //    float num;
         //    Vector3f vector2;
-        //    GetTerrainDelta(position, locationInstance.m_feature->m_exteriorRadius, num, vector2);
+        //    get_terrain_delta(position, locationInstance.m_feature->m_exteriorRadius, num, vector2);
         //    Vector3f forward(vector2.x, 0.f, vector2.z);
         //    forward.Normalize();
         //    rot = Quaternion::LookRotation(forward);
@@ -1159,7 +1159,7 @@ std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager:
 }
 
 // private
-void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection) {
+void IZoneManager::get_terrain_delta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection) {
     float num2 = std::numeric_limits<float>::min();
     float num3 = std::numeric_limits<float>::max();
     Vector3f b = center;
@@ -1184,7 +1184,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center
 // used importantly for snapping and location/vegetation generation
 // public
 float IZoneManager::GetGroundHeight(Vector3f p) {
-    return GeoManager()->GetHeight(p.x, p.z);
+    return GeoManager()->get_height(p.x, p.z);
 }
 
 // public
@@ -1195,8 +1195,8 @@ Heightmap& IZoneManager::GetGroundData(Vector3f& p, Vector3f& normal, Biome& bio
 
     heightmap.GetWorldHeight(p, p.y);
 
-    biome = heightmap.GetBiome(p);
-    biomeArea = heightmap.GetBiomeArea();
+    biome = heightmap.get_biome(p);
+    biomeArea = heightmap.get_biome_area();
 
     heightmap.GetWorldNormal(p, normal);
 

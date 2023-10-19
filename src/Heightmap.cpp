@@ -76,19 +76,19 @@ void Heightmap::Regenerate() {
     for (int i=0; i < m_base->m_vegMask.size(); i++)
         this->m_paintMask[i].a = m_base->m_vegMask[i];
 
-    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, IZoneManager::ZONE_SIZE));
-    m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE));
-    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::ZONE_SIZE, 0));
-    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, 0));
+    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - get_height(0, IZoneManager::ZONE_SIZE));
+    m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - get_height(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE));
+    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - get_height(IZoneManager::ZONE_SIZE, 0));
+    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - get_height(0, 0));
 }
 
 /*
 // private
 void Heightmap::UpdateCornerDepths() {
-    m_oceanDepth[0] = GetHeight(0, IZoneManager::ZONE_SIZE);
-    m_oceanDepth[1] = GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE);
-    m_oceanDepth[2] = GetHeight(IZoneManager::ZONE_SIZE, 0);
-    m_oceanDepth[3] = GetHeight(0, 0);
+    m_oceanDepth[0] = get_height(0, IZoneManager::ZONE_SIZE);
+    m_oceanDepth[1] = get_height(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE);
+    m_oceanDepth[2] = get_height(IZoneManager::ZONE_SIZE, 0);
+    m_oceanDepth[3] = get_height(0, 0);
 
     m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[0]);
     m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[1]);
@@ -132,7 +132,7 @@ void Heightmap::Generate() {
 }*/
 
 // public
-std::vector<Biome> Heightmap::GetBiomes() {
+std::vector<Biome> Heightmap::get_biomes() {
     std::vector<Biome> list;
     //Biome mask = None;
     auto mask = std::to_underlying(Biome::None);
@@ -168,7 +168,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
 }
 
 // public
-Biome Heightmap::GetBiome(Vector3f point) {
+Biome Heightmap::get_biome(Vector3f point) {
     //if all biomes are the same, return same/any
     if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] 
         && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] 
@@ -207,7 +207,7 @@ Biome Heightmap::GetBiome(Vector3f point) {
 }
 
 // public
-BiomeArea Heightmap::GetBiomeArea() {
+BiomeArea Heightmap::get_biome_area() {
     if (this->IsBiomeEdge()) {
         return BiomeArea::Edge;
     }
@@ -391,7 +391,7 @@ void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius,
                     else {
                         num7 = pow(num7, power);
                     }
-                    float height = this->GetHeight(j, i);
+                    float height = this->get_height(j, i);
                     float t = 1 - num7;
                     float num8 = VUtils::Math::Lerp(height, b, t);
                     if (levelOnlyHeights) {
@@ -494,7 +494,7 @@ bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &he
                 if (!(j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH))
                     continue;
 
-                sumHeight += this->GetHeight(j, i);
+                sumHeight += this->get_height(j, i);
                 sumArea++;
             }
         }
@@ -524,7 +524,7 @@ bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height
         for (int32_t j = x - num4; j <= x + num4; j++) {
             if (a.Distance(Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < num5&& i < num5) {
-                float height2 = this->GetHeight(j, i);
+                float height2 = this->get_height(j, i);
                 if (height2 < height) {
                     height = height2;
                 }
@@ -550,7 +550,7 @@ bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height
         for (int32_t j = x - num4; j <= x + num4; j++) {
             if (a.Distance(Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH) {
-                float height2 = this->GetHeight(j, i);
+                float height2 = this->get_height(j, i);
                 if (height2 > height) {
                     height = height2;
                 }
@@ -581,7 +581,7 @@ void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, floa
 
     for (auto&& pair : list) {
         float h = VUtils::Mathf::Lerp(
-            this->GetHeight(pair.first.x, pair.first.y), pair.second, intensity);
+            this->get_height(pair.first.x, pair.first.y), pair.second, intensity);
         this->SetHeight(pair.first.x, pair.first.y, h);
     }
 }
@@ -594,7 +594,7 @@ float Heightmap::GetAvgHeight(int32_t cx, int32_t cy, int32_t w) {
     for (int32_t i = cy - w; i <= cy + w; i++) {
         for (int32_t j = cx - w; j <= cx + w; j++) {
             if (j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH) {
-                sumHeight += this->GetHeight(j, i);
+                sumHeight += this->get_height(j, i);
                 sumArea++;
             }
         }
@@ -658,7 +658,7 @@ void Heightmap::PaintCleared(Vector3f worldPos, float radius,
         for (int32_t j = num2 - num5; j <= num2 + num5; j++) {
             float num6 = a.Distance(Vector2f(j, i));
             if (j >= 0 && i >= 0 && j < this->m_paintMask.width && i < this->m_paintMask.height 
-                && (!heightCheck || this->GetHeight(j, i) <= num)) {
+                && (!heightCheck || this->get_height(j, i) <= num)) {
 
                 float num7 = 1 - VUtils::Math::Clamp01(num6 / num4);
                 num7 = pow(num7, 0.1f);
@@ -769,7 +769,7 @@ Color Heightmap::GetPaintMask(int32_t x, int32_t y) {
 }
 
 // public
-float Heightmap::GetHeight(int32_t x, int32_t y) {
+float Heightmap::get_height(int32_t x, int32_t y) {
     if (x < 0 || y < 0 || x >= E_WIDTH || y >= E_WIDTH) {
         return 0;
     }
@@ -777,7 +777,7 @@ float Heightmap::GetHeight(int32_t x, int32_t y) {
 }
 
 // public
-float Heightmap::GetBaseHeight(int32_t x, int32_t y) {
+float Heightmap::get_base_height(int32_t x, int32_t y) {
     if (x < 0 || y < 0 || x >= E_WIDTH || y >= E_WIDTH) {
         return 0;
     }

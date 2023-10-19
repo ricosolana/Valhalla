@@ -267,7 +267,7 @@ private:
 	void RemoveUngeneratedFeatures(const Feature& feature);
 	void GenerateFeature(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
 
-	void GetTerrainDelta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
+	void get_terrain_delta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
 
 	bool IsZoneGenerated(ZoneID zone);
 

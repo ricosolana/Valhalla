@@ -584,7 +584,7 @@ void IValhalla::Start() {
 #endif
     WorldManager()->PostZoneInit();
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    GeoManager()->PostWorldInit();
+    GeoManager()->post_world_init();
     HeightmapBuilder()->PostGeoInit();
     ZoneManager()->PostGeoInit();
 #endif

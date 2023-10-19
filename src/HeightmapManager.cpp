@@ -51,7 +51,7 @@ Vector3f IHeightmapManager::GetNormal(const Vector3f& pos) {
 
 /*
 // public static
-bool IHeightmapManager::GetHeight(const Vector3f& worldPos, float& height) {
+bool IHeightmapManager::get_height(const Vector3f& worldPos, float& height) {
     auto&& heightmap = GetHeightmap(worldPos);
     if (heightmap.GetWorldHeight(worldPos, height)) {
         return true;
@@ -60,7 +60,7 @@ bool IHeightmapManager::GetHeight(const Vector3f& worldPos, float& height) {
     return false;
 }
 
-float IHeightmapManager::GetHeight(const Vector3f& worldPos) {
+float IHeightmapManager::get_height(const Vector3f& worldPos) {
     auto&& heightmap = GetHeightmap(IZoneManager::WorldToZonePos(worldPos));
 
     float height = 0;
@@ -190,7 +190,7 @@ std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(Vector3f point, float r
 Biome IHeightmapManager::FindBiome(const Vector3f& point) {
     auto &&heightmap = GetHeightmap(point);
     if (heightmap) {
-        return heightmap->GetBiome(point);
+        return heightmap->get_biome(point);
     }
     return Biome::None;
 }*/

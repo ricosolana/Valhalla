@@ -129,10 +129,10 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
 
     //WorldGenerator worldGen = data.m_worldGen;
     //data.m_cornerBiomes = new Heightmap.Biome[4];
-    base->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z);
-    base->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z);
-    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::ZONE_SIZE);
-    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z + IZoneManager::ZONE_SIZE);
+    base->m_cornerBiomes[0] = GEO->get_biome(baseWorldPos.x, baseWorldPos.z);
+    base->m_cornerBiomes[1] = GEO->get_biome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z);
+    base->m_cornerBiomes[2] = GEO->get_biome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::ZONE_SIZE);
+    base->m_cornerBiomes[3] = GEO->get_biome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z + IZoneManager::ZONE_SIZE);
 
     const auto biome1 = base->m_cornerBiomes[0];
     const auto biome2 = base->m_cornerBiomes[1];
@@ -159,14 +159,14 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
 
             // slight optimization case
             if (biome1 == biome2 && biome1 == biome3 && biome1 == biome4) {
-                height = GEO->GetBiomeHeight(biome1, world_x, world_y, mistlandsMask);
+                height = GEO->get_height_at_biome(biome1, world_x, world_y, mistlandsMask);
             }
             else {
                 float mask1 = 0, mask2 = 0, mask3 = 0, mask4 = 0;
-                float height1 = GEO->GetBiomeHeight(biome1, world_x, world_y, mask1);
-                float height2 = GEO->GetBiomeHeight(biome2, world_x, world_y, mask2);
-                float height3 = GEO->GetBiomeHeight(biome3, world_x, world_y, mask3);
-                float height4 = GEO->GetBiomeHeight(biome4, world_x, world_y, mask4);
+                float height1 = GEO->get_height_at_biome(biome1, world_x, world_y, mask1);
+                float height2 = GEO->get_height_at_biome(biome2, world_x, world_y, mask2);
+                float height3 = GEO->get_height_at_biome(biome3, world_x, world_y, mask3);
+                float height4 = GEO->get_height_at_biome(biome4, world_x, world_y, mask4);
 
                 // this does nothing if no biomes are mistlands
                 float c1 = std::lerp(mask1, mask2, tx);
