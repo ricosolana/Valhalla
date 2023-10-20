@@ -33,10 +33,10 @@ private:
 	//}
 
 	// Set ZDO dummy values
-	void ZDO_Sets(ZDO& zdo);
+	void ZDO_Sets(ZDO zdo);
 
 	// Tests ZDO gets
-	void Test_ZDO_Gets(ZDO& zdo);
+	void Test_ZDO_Gets(ZDO zdo);
 
 public:
 	void Test_ZDOConnectors();

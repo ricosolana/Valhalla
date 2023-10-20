@@ -316,6 +316,8 @@ public:
         : m_id(pair.first), m_data(*pair.second)
     {}
 
+
+
     //ZDO(data_t& data) : m_data(data) {}
 
     // TODO this is redundant; ZDOManager <-> ZDO; crucially tied with no disbanding
@@ -326,9 +328,7 @@ public:
 
     // doesnt compile when assigning optional
     //ZDO(const ZDO& other) = default;
-    //ZDO(ZDO&& other) = default;
-        
-
+    //ZDO(ZDO&& other) = delete;
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
     // Load ZDO from disk

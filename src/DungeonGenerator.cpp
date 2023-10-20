@@ -9,7 +9,7 @@
 #include "ZDOManager.h"
 #include "VUtilsMath2.h"
 
-DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO& zdo) :
+DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO zdo) :
 	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.GetPosition()), m_rot(zdo.GetRotation()) {
 
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
@@ -56,7 +56,7 @@ void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
 //	//zdo
 //}
 
-//void DungeonGenerator::Regenerate(const ZDO& zdo) {
+//void DungeonGenerator::Regenerate(const ZDO zdo) {
 //	// Find the dungeon in that zone
 //	//ZDOManager()->AnyZDO(zone).
 //	if (!zdo.GetPrefab()->FlagsPresent(Prefab::FLAG_t::Dungeon))

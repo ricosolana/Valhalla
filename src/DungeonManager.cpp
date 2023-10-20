@@ -138,7 +138,7 @@ void IDungeonManager::PostPrefabInit() {
 }
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
-ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
+ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
     static constexpr HASH_t LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
 
     // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86
@@ -167,7 +167,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO& dungeonZdo) {
         auto rot = dungeonZdo.GetRotation();
 
         if (!playerNear) {
-            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO& zdo) {
+            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO zdo) {
                 return zdo.GetPosition().y > 4000 && zdo.GetPrefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
             });
 
@@ -242,7 +242,7 @@ std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Ve
     return zdo;
 }
 
-void IDungeonManager::Generate(const Dungeon& dungeon, ZDO& zdo) {
+void IDungeonManager::Generate(const Dungeon& dungeon, ZDO zdo) {
     DungeonGenerator(dungeon, zdo).Generate();
 }
 #endif

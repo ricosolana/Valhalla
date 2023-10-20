@@ -34,7 +34,7 @@ void VHTest::Test_Quaternion() {
     assert(Quaternion::IDENTITY.EulerAngles() == Vector3f::Zero());
 }
 
-void VHTest::ZDO_Sets(ZDO& zdo) {
+void VHTest::ZDO_Sets(ZDO zdo) {
     zdo.Set("my key", std::string("my value"));
     zdo.Set("my int", 10);
     zdo.Set("large prime", 2147483647);
@@ -46,7 +46,7 @@ void VHTest::ZDO_Sets(ZDO& zdo) {
     zdo.SetRotation(Quaternion(1, 0, 0, 0));
 }
 
-void VHTest::Test_ZDO_Gets(ZDO& zdo) {    
+void VHTest::Test_ZDO_Gets(ZDO zdo) {    
     assert(zdo.GetString("my key") == "my value");
     assert(*zdo.Get<int32_t>("my int") == 10);
     assert(*zdo.Get<int32_t>("large prime") == 2147483647);

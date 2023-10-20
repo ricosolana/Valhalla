@@ -1,13 +1,12 @@
 #pragma once 
 
 #include "VUtils.h"
+#include "VUtilsString.h"
+#include "HashUtils.h"
 
 #if VH_IS_ON(VH_USE_MODS)
 
 #include <sol/sol.hpp>
-
-#include "VUtilsString.h"
-#include "HashUtils.h"
 
 //int GetCurrentLuaLine(lua_State* L);
 
