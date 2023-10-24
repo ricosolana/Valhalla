@@ -52,7 +52,8 @@ AcceptorSteam::AcceptorSteam() {
         LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
     }
 
-    LOG_INFO(LOGGER, "Authentication status: {}", STEAM_NETWORKING_SOCKETS->InitAuthentication());
+    LOG_INFO(LOGGER, "Authentication status: {}", 
+        std::to_underlying(STEAM_NETWORKING_SOCKETS->InitAuthentication()));
     
     auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;

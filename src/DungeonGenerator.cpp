@@ -9,8 +9,8 @@
 #include "ZDOManager.h"
 #include "VUtilsMath2.h"
 
-DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO zdo) :
-	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo.GetPosition()), m_rot(zdo.GetRotation()) {
+DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO::pointer_notnull zdo) :
+	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo->GetPosition()), m_rot(zdo->GetRotation()) {
 
 	auto zone = IZoneManager::WorldToZonePos(m_pos);
 	auto seed = GeoManager()->GetSeed();
@@ -231,7 +231,7 @@ void DungeonGenerator::Save() {
 		writer.Write(rot);
 	}
 
-	m_zdo.Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(bytes));
+	m_zdo->Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(bytes));
 }
 
 
@@ -266,7 +266,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 				this->m_pos, this->m_rot);
 
 			auto&& zdo = ZDOManager()->Instantiate(*doorDef->m_prefab, global.first);
-			zdo.SetRotation(global.second);
+			zdo->SetRotation(global.second);
 			num++;
 		}
 	}
@@ -548,7 +548,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot)
 		Quaternion rot1 = rot * view.m_rot;
 
 		auto&& zdo = ZDOManager()->Instantiate(view.m_prefabHash, pos1);
-		zdo.SetRotation(rot1);
+		zdo->SetRotation(rot1);
 	}
 
 	// TODO this might be redundant for dummy 'dungeons' (plains villages shouldnt be considered dungeons)
@@ -580,7 +580,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot,
 			auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
 			auto&& zdo = ZDOManager()->Instantiate(view.m_prefabHash, global.first);
-			zdo.SetRotation(global.second);
+			zdo->SetRotation(global.second);
 		}
 	}
 

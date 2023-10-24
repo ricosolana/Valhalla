@@ -10,7 +10,7 @@
 #include "TerrainModifier.h"
 #include "VUtilsMathf.h"
 
-auto HEIGHTMAP_BUILDER(std::make_unique<IHeightmapBuilder>());
+auto HEIGHTMAP_BUILDER = std::make_unique<IHeightmapBuilder>();
 IHeightmapBuilder* HeightmapBuilder() {
     return HEIGHTMAP_BUILDER.get();
 }

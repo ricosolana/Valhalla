@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <algorithm>
 #include <boost/smart_ptr/local_shared_ptr.hpp>
+#include <boost/smart_ptr/enable_shared_from.hpp>
+#include <boost/smart_ptr/enable_shared_from_this.hpp>
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
@@ -19,8 +21,6 @@
 #include "PrefabManager.h"
 #include "ZDOConnector.h"
 #include "Types.h"
-
-
 
 class ZDO {
     // TODO are these friend classes safe?
@@ -106,10 +106,6 @@ private:
             return operator()(zdo->GetID());
         }
 
-        [[nodiscard]] auto operator()(const ZDO& zdo) const noexcept -> uint64_t {
-            return operator()(zdo.GetID());
-        }
-
         [[nodiscard]] auto operator()(const ZDOID &id) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(id);
         }
@@ -153,9 +149,13 @@ private:
 public:
     // Edit ankerl::unordered_dense table to use mutable iterator not const_iterator
     // this violates constant key of design, but allows for flexibility
-
-    using set = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
-    using map = UNORDERED_SET_t<boost::local_shared_ptr<ZDO>, hash, std::equal_to<>>;
+    
+    using pointer = boost::local_shared_ptr<ZDO>;
+    using pointer_nullable = pointer;
+    using pointer_notnull = pointer;
+    //using set = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
+    using container = UNORDERED_SET_t<pointer, hash, std::equal_to<>>;
+    using id_container = UNORDERED_SET_t<ZDOID>;
     
 private:
     template<typename T>
@@ -331,11 +331,19 @@ public:
         : m_id(m_id)
     {}
 
-    bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
-        return *this == *other;
+    friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const boost::local_shared_ptr<ZDO>& rhs) noexcept {
+        return lhs->GetID() == rhs->GetID();
     }
 
-    bool operator==(const ZDO& other) = delete;
+    friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const ZDO& rhs) noexcept {
+        return lhs->GetID() == rhs;
+    }
+
+    //bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
+    //    return this->GetID() == other->GetID();
+    //}
+
+    //bool operator==(const ZDO& other) = delete;
 
     bool operator==(const ZDOID& other) const noexcept {
         return this->GetID() == other;

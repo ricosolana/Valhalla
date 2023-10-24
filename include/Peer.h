@@ -55,6 +55,7 @@ private:
 public:
     // Elements are never removed
     //  Queried frequently, and frequent adds
+    // TODO use zdo as key itself
     UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
     UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
     UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
@@ -78,14 +79,14 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO zdo);
+    void ZDOSectorInvalidated(ZDO::pointer_notnull zdo);
 
     void ForceSendZDO(ZDOID id) {
         m_forceSend.insert(id);
     }
 
-    bool IsOutdatedZDO(ZDO zdo, decltype(m_zdos)::iterator& outItr);
-    bool IsOutdatedZDO(ZDO zdo) {
+    bool IsOutdatedZDO(ZDO::pointer_notnull zdo, decltype(m_zdos)::iterator& outItr);
+    bool IsOutdatedZDO(ZDO::pointer_notnull zdo) {
         decltype(m_zdos)::iterator outItr;
         return IsOutdatedZDO(zdo, outItr);
     }
@@ -348,7 +349,7 @@ public:
 
 
 
-    std::optional<ZDO> GetZDO();
+    ZDO::pointer_nullable GetZDO();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 

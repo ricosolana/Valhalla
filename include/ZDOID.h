@@ -6,7 +6,7 @@
 #include "BitPack.h"
 
 class ZDOID {
-    friend struct ankerl::unordered_dense::hash<ZDOID>;
+    //friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
 
     //using UType = uint64_t;
@@ -78,13 +78,13 @@ public:
 
     ZDOID(const ZDOID&) = default;
 
-    bool operator==(ZDOID other) const {
+    bool operator==(const ZDOID &other) const noexcept {
         //return this->m_pack == other.m_pack;
         return this->m_userID == other.m_userID 
             && this->m_id == other.m_id;
     }
 
-    bool operator!=(ZDOID other) const {
+    bool operator!=(const ZDOID &other) const noexcept {
         return !(*this == other);
     }
     
