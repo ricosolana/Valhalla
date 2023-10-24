@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <algorithm>
+#include <boost/smart_ptr/local_shared_ptr.hpp>
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
@@ -76,8 +77,46 @@ public:
     };
 
 private:
-    using member_hash = uint64_t;
+    static constexpr unsigned int MACHINE_Persistent = 0;
+    static constexpr unsigned int MACHINE_Distant = 1;
+    static constexpr unsigned int MACHINE_Type1 = 2;
+    static constexpr unsigned int MACHINE_Type2 = 3;
 
+    static constexpr unsigned int NETWORK_Connection = 0;
+    static constexpr unsigned int NETWORK_Float = 1;
+    static constexpr unsigned int NETWORK_Vec3 = 2;
+    static constexpr unsigned int NETWORK_Quat = 3;
+    static constexpr unsigned int NETWORK_Int = 4;
+    static constexpr unsigned int NETWORK_Long = 5;
+    static constexpr unsigned int NETWORK_String = 6;
+    static constexpr unsigned int NETWORK_ByteArray = 7;
+    static constexpr unsigned int NETWORK_Persistent = 8;
+    static constexpr unsigned int NETWORK_Distant = 9;
+    static constexpr unsigned int NETWORK_Type1 = 10;
+    static constexpr unsigned int NETWORK_Type2 = 11;
+    static constexpr unsigned int NETWORK_Rotation = 12;
+
+
+    struct hash {
+        using is_transparent = void; // enable heterogeneous overloads
+        using is_avalanching = void; // mark class as high quality avalanching hash
+
+        [[nodiscard]] auto operator()(const boost::local_shared_ptr<ZDO>& zdo) const noexcept -> uint64_t {
+            assert(zdo);
+            return operator()(zdo->GetID());
+        }
+
+        [[nodiscard]] auto operator()(const ZDO& zdo) const noexcept -> uint64_t {
+            return operator()(zdo.GetID());
+        }
+
+        [[nodiscard]] auto operator()(const ZDOID &id) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(id);
+        }
+    };
+
+
+    using member_hash = uint64_t;
     using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
     using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
     //using member_tuple_mono = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t, std::monostate>;
@@ -109,41 +148,14 @@ private:
 
 
 
-    static constexpr unsigned int MACHINE_Persistent = 0;
-    static constexpr unsigned int MACHINE_Distant = 1;
-    static constexpr unsigned int MACHINE_Type1 = 2;
-    static constexpr unsigned int MACHINE_Type2 = 3;
-
-    static constexpr unsigned int NETWORK_Connection = 0;
-    static constexpr unsigned int NETWORK_Float = 1;
-    static constexpr unsigned int NETWORK_Vec3 = 2;
-    static constexpr unsigned int NETWORK_Quat = 3;
-    static constexpr unsigned int NETWORK_Int = 4;
-    static constexpr unsigned int NETWORK_Long = 5;
-    static constexpr unsigned int NETWORK_String = 6;
-    static constexpr unsigned int NETWORK_ByteArray = 7;
-    static constexpr unsigned int NETWORK_Persistent = 8;
-    static constexpr unsigned int NETWORK_Distant = 9;
-    static constexpr unsigned int NETWORK_Type1 = 10;
-    static constexpr unsigned int NETWORK_Type2 = 11;
-    static constexpr unsigned int NETWORK_Rotation = 12;
-
-    class data_t {
-        friend class ::ZDO; // namespacing is weird
-
-    private:
-        Vector3f m_pos;                                 // 12 bytes
-        ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
-        Vector3f m_rotation;                            // 12 bytes
-        HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
-
-    public:
-        data_t() {}
-    };
+    
 
 public:
+    // Edit ankerl::unordered_dense table to use mutable iterator not const_iterator
+    // this violates constant key of design, but allows for flexibility
+
     using set = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
-    using map = UNORDERED_MAP_t<ZDOID, std::unique_ptr<data_t>>;
+    using map = UNORDERED_SET_t<boost::local_shared_ptr<ZDO>, hash, std::equal_to<>>;
     
 private:
     template<typename T>
@@ -173,7 +185,7 @@ private:
             // Then officially assign
             insert.first->second = std::move(value);
 
-            //this->m_data.get().m_pack.Set<data_t::
+            //this->m_pack.Set<data_t::
 
             //m_pack.Merge<2>(1 << member_denotion<T>::value);
             //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
@@ -258,13 +270,13 @@ private:
 
     // TODO rename _Revise() ?
     void Revise() {
-        this->m_data.get().m_rev.ReviseData();
+        this->m_rev.ReviseData();
     }
 
     
 
     void _SetPrefabHash(HASH_t hash) {
-        this->m_data.get().m_prefabHash = hash;
+        this->m_prefabHash = hash;
     }
 
     // Set the owner of the ZDO without revising
@@ -273,11 +285,11 @@ private:
     }
 
     void _SetPosition(Vector3f pos) {
-        this->m_data.get().m_pos = pos;
+        this->m_pos = pos;
     }
 
     void _SetRotation(Vector3f rot) {
-        this->m_data.get().m_rotation = rot;
+        this->m_rotation = rot;
     }
 
     void _SetRotation(Quaternion rot) {
@@ -305,18 +317,29 @@ private:
     //static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
-    * 36 bytes total:
+    * 40 bytes total:
     */
 
-    ZDOID m_id;
-    std::reference_wrapper<data_t> m_data;  // TODO use ptr?
+    ZDOID m_id;    
+    Vector3f m_pos;                                 // 12 bytes
+    ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
+    Vector3f m_rotation;                            // 12 bytes
+    HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
 
 public:
-    ZDO(map::value_type& pair) 
-        : m_id(pair.first), m_data(*pair.second)
+    ZDO(ZDOID id)
+        : m_id(m_id)
     {}
 
+    bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
+        return *this == *other;
+    }
 
+    bool operator==(const ZDO& other) = delete;
+
+    bool operator==(const ZDOID& other) const noexcept {
+        return this->GetID() == other;
+    }
 
     //ZDO(data_t& data) : m_data(data) {}
 
@@ -576,7 +599,7 @@ public:
     }
 
     [[nodiscard]] Vector3f GetPosition() const {
-        return this->m_data.get().m_pos;
+        return this->m_pos;
     }
 
     //void SetDataRevision(uint32_t dataRev) {
@@ -590,7 +613,7 @@ public:
 
 
     Rev& GetRevision() {
-        return this->m_data.get().m_rev;
+        return this->m_rev;
     }
 
     // Set the position of the ZDO
@@ -601,23 +624,23 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion GetRotation() const {
-        return Quaternion::Euler(this->m_data.get().m_rotation);
+        return Quaternion::Euler(this->m_rotation);
     }
 
     void SetRotation(Quaternion rot) {
         auto&& euler = rot.EulerAngles();
-        if (euler != this->m_data.get().m_rotation) {
-            this->m_data.get().m_rotation = euler;
+        if (euler != this->m_rotation) {
+            this->m_rotation = euler;
             this->Revise();
         }
     }
             
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByHash(this->m_data.get().m_prefabHash);
+        return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
     }
     
     [[nodiscard]] HASH_t GetPrefabHash() const {
-        return this->m_data.get().m_prefabHash;
+        return this->m_prefabHash;
     }
 
     void SetLocalScale(Vector3f scale, bool allowIdentity) {
@@ -678,7 +701,7 @@ public:
         if (this->Owner() != owner) {
             this->_SetOwner(owner);
 
-            this->m_data.get().m_rev.ReviseOwner();
+            this->m_rev.ReviseOwner();
             return true;
         }
         return false;
@@ -687,11 +710,11 @@ public:
 
 
     [[nodiscard]] uint16_t GetOwnerRevision() const {
-        return this->m_data.get().m_rev.GetOwnerRevision();
+        return this->m_rev.GetOwnerRevision();
     }
 
     [[nodiscard]] uint32_t GetDataRevision() const {
-        return this->m_data.get().m_rev.GetDataRevision();
+        return this->m_rev.GetDataRevision();
     }
 
 

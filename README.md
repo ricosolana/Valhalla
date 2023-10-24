@@ -56,14 +56,14 @@ git clone https://github.com/microsoft/vcpkg
 
 Install the required libraries:
 ```bash
-.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows
-.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows
-.\vcpkg\vcpkg.exe install range-v3 --triplet=x64-windows
-.\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows
-.\vcpkg\vcpkg.exe install tracy --triplet=x64-windows
-.\vcpkg\vcpkg.exe install zstd --triplet=x64-windows
-.\vcpkg\vcpkg.exe install dpp --triplet=x64-windows
-.\vcpkg\vcpkg.exe install quill --triplet=x64-windows
+.\vcpkg\vcpkg.exe install zlib --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install sol2 --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install range-v3 --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install yaml-cpp --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install tracy --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install zstd --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install dpp --triplet=x64-windows;
+.\vcpkg\vcpkg.exe install quill --triplet=x64-windows;
 ```
 
 Download [Steamworks SDK](https://partner.steamgames.com/doc/sdk) (you might be prompted to sign into Steamworks).

@@ -228,7 +228,7 @@ ZoneID ZDO::GetZone() const {
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
-    bool hasRot = this->m_data.get().m_rotation != Vector3f::Zero();
+    bool hasRot = this->m_rotation != Vector3f::Zero();
 
     uint16_t flags{};
 
@@ -245,7 +245,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
     writer.Write(GetPrefabHash());
     if (hasRot) {
-        writer.Write(this->m_data.get().m_rotation);
+        writer.Write(this->m_rotation);
     }
 
     if (network) {

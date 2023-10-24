@@ -17,7 +17,7 @@ class IZDOManager {
 
 	// Predicate for whether a zdo is a prefab with or without given flags
 	//	prefabHash: if 0, then prefabHash check is skipped
-	static bool PREFAB_CHECK_FUNCTION(const ZDO zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	static bool PREFAB_CHECK_FUNCTION(const ZDO& zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& prefab = zdo.GetPrefab();
 
 		return prefab.AllFlagsAbsent(flagsAbsent)
@@ -72,11 +72,11 @@ private:
 	}
 
 	// Insert a ZDO into zone (internal)
-	void _AddZDOToZone(ZDO zdo);
+	void _AddZDOToZone(const ZDO &zdo);
 	// Remove a zdo from a zone (internal)
-	void _RemoveFromSector(ZDO zdo);
+	void _RemoveFromSector(const ZDO &zdo);
 	// Relay a ZDO zone change to clients (internal)
-	void _InvalidateZDOZone(ZDO zdo);
+	void _InvalidateZDOZone(const ZDO &zdo);
 
 	void AssignOrReleaseZDOs(Peer& peer);
 	//void SmartAssignZDOs();
@@ -93,7 +93,7 @@ private:
 	// The ZDO is freed from memory
 	// Returns an iterator to the next ZDO
 	[[maybe_unused]] ZDO::map::iterator _DestroyZDO(ZDO::map::iterator itr) {
-		m_destroySendList.push_back(itr->first);
+		m_destroySendList.push_back((*itr)->GetID());
 		return _EraseZDO(itr);
 	}
 

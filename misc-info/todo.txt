@@ -1,5 +1,25 @@
 # todo:
 
+- const ref instantiations can remain, 
+    anything involving ownership sharing must use <local> shared ptr
+
+- dpp is somehow forcing c++17
+    temporary fix: just disable discord compat for now
+
+    https://github.com/brainboxdotcc/DPP/issues/658
+
+    dpp is still leaking compiler flags, overriding user flags
+
+- is openssl/zlib/tracy/zstd really needed?
+    extra libraries that arent upmost required
+
+    valheim does backup worlds, but not compressed
+
+    renaming the old world as a backup is faster than reading and compressing it
+    maybe not efficient for disk space, but no compression is required
+
+    maybe make this a compile option? yes
+
 - prioritize full lua safety
     make Peer use shared ptr
         i hate this but its necessary

@@ -23,7 +23,7 @@
 ##########
 # Project
 ##########
-cmake_minimum_required (VERSION 3.14)
+cmake_minimum_required (VERSION 3.20)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(VHSettings)
@@ -41,13 +41,17 @@ endif()
 ############
 # Libraries
 ############
+find_package(Boost REQUIRED) # COMPONENTS smart_ptr)
+#add_library(Boost::smart_ptr IMPORTED INTERFACE)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
-    message("Mods: enabled")
+    message("Lua: enabled")
     find_package(lua CONFIG REQUIRED)
     find_package(sol2 CONFIG REQUIRED)
+else()
+    message("Lua: disabled")
 endif()
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
@@ -55,6 +59,8 @@ find_package(zstd CONFIG REQUIRED)
 if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     message("Discord: enabled")
     find_package(dpp CONFIG REQUIRED)
+else()
+    message("Discord: disabled")
 endif()
 find_package(quill CONFIG REQUIRED)
 
@@ -120,16 +126,21 @@ add_executable(${PROJECT_NAME}
     "src/Tests.cpp"
 )
 
-find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
+#find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMWORKS_SDK_SOURCE_DIR}
     PUBLIC ankerl::unordered_dense
-    PRIVATE ${GTL_INCLUDE_DIRS}
+    #PRIVATE ${GTL_INCLUDE_DIRS}
 )
 
-set(CMAKE_CXX_STANDARD 23)
+#set(CMAKE_CXX_STANDARD 20)
+
+#set(CXX_STANDARD 23)
+#set(CMAKE_CXX_STANDARD 23)
+#set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+#set_property(TARGET ${PROJECT_NAME} PROPERTY CMAKE_CXX_STANDARD 23)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
@@ -145,6 +156,7 @@ if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
 endif()
 
 target_link_libraries(${PROJECT_NAME}
+    PRIVATE Boost::boost# Boost::smart_ptr
     PUBLIC Threads::Threads
     ${STEAMWORKS_SDK_BINARY_DIR}
     ZLIB::ZLIB

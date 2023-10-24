@@ -1,5 +1,6 @@
 #include <array>
 #include <range/v3/all.hpp>
+#include <boost/smart_ptr/make_local_shared.hpp>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -162,7 +163,7 @@ void IZDOManager::Update() {
 
 
 
-void IZDOManager::_AddZDOToZone(ZDO zdo) {
+void IZDOManager::_AddZDOToZone(const ZDO &zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
 		auto&& insert = container->insert(zdo.GetID());
 
@@ -170,7 +171,7 @@ void IZDOManager::_AddZDOToZone(ZDO zdo) {
 	}
 }
 
-void IZDOManager::_RemoveFromSector(ZDO zdo) {
+void IZDOManager::_RemoveFromSector(const ZDO &zdo) {
 	if (auto&& container = _GetZDOContainer(zdo.GetZone())) {
 		auto&& erase = container->erase(zdo.GetID());
 
@@ -179,7 +180,7 @@ void IZDOManager::_RemoveFromSector(ZDO zdo) {
 	}
 }
 
-void IZDOManager::_InvalidateZDOZone(ZDO zdo) {
+void IZDOManager::_InvalidateZDOZone(const ZDO &zdo) {
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
@@ -199,8 +200,9 @@ void IZDOManager::Save(DataWriter& writer) {
 		int32_t count = 0;
 		writer.Write(count);
 
-		for (auto&& pair : m_objectsByID) {
-			auto&& zdo = ZDO(pair);
+		for (auto&& ptr : m_objectsByID) {
+			//auto&& zdo = ZDO(pair);
+			auto&& zdo = *ptr;
 			if (zdo.IsPersistent()) {
 				zdo.Pack(writer, false);
 				count++;
@@ -226,7 +228,9 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			version < 31 ? reader.Read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
 		);
 		
-		auto&& zdo = ZDO(*insert.first);
+		//auto&& zdo = ZDO(*insert.first);
+		//auto&& zdo = insert
+		auto&& zdo = *(*insert.first);
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 		if (version < 31) {
@@ -328,7 +332,18 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 
 [[nodiscard]] std::pair<ZDO::map::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
-	auto&& insert = m_objectsByID.insert({ zdoid, nullptr });
+	//https://jguegant.github.io/blogs/tech/performing-try-emplace.html
+	
+	//m_objectsByID.equal_range.try_emplace(zdoid)
+	auto&& pair = m_objectsByID.equal_range(zdoid);
+	if (pair.first != m_objectsByID.end()) {
+		return { pair.first, false };
+	}
+	// see dense do_insert_or_assign
+	auto&& insert = m_objectsByID.insert(boost::make_local_shared<ZDO>(zdoid));
+	//m_objectsByID.tr.insert_or_assign()
+	
+	//auto&& insert = m_objectsByID.insert();
 	if (insert.second) {
 		auto&& pair = insert.first;
 		pair->second = std::make_unique<ZDO::data_t>();
@@ -547,9 +562,8 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 ZDO::map::iterator IZDOManager::_EraseZDO(ZDO::map::iterator itr) {
 	assert(itr != m_objectsByID.end());
 
-	auto&& zdoid = itr->first;
-	auto&& data = itr->second;
-	auto&& zdo = ZDO(*itr);
+	auto&& zdo = *itr->get();
+	auto&& zdoid = zdo.GetID();
 
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
