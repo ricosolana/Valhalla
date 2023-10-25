@@ -9,7 +9,7 @@
 #include "NetManager.h"
 #include "Hashes.h"
 
-auto DUNGEON_MANAGER(std::make_unique<IDungeonManager>()); // TODO stop constructing in global
+auto DUNGEON_MANAGER = std::make_unique<IDungeonManager>(); // TODO stop constructing in global
 IDungeonManager* DungeonManager() {
     return DUNGEON_MANAGER.get();
 }
@@ -224,25 +224,25 @@ void IDungeonManager::TryRegenerateDungeons() {
 #endif
 
 
-std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
+ZDO::pointer_notnull IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo.SetRotation(rot);
+    zdo->SetRotation(rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
 
     return zdo;
 }
 
-std::reference_wrapper<ZDO> IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
+ZDO::pointer_notnull IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo.SetRotation(rot);
+    zdo->SetRotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
 
     return zdo;
 }
 
-void IDungeonManager::Generate(const Dungeon& dungeon, ZDO zdo) {
+void IDungeonManager::Generate(const Dungeon& dungeon, ZDO::pointer_notnull zdo) {
     DungeonGenerator(dungeon, zdo).Generate();
 }
 #endif

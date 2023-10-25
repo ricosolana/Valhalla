@@ -17,7 +17,7 @@ using namespace std::chrono;
 
 // TODO use netmanager instance instead
 
-auto NET_MANAGER(std::make_unique<INetManager>());
+auto NET_MANAGER = std::make_unique<INetManager>();
 INetManager* NetManager() {
     return NET_MANAGER.get();
 }

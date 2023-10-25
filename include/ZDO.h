@@ -2,7 +2,6 @@
 
 #include <type_traits>
 #include <algorithm>
-#include <boost/smart_ptr/local_shared_ptr.hpp>
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
@@ -19,8 +18,6 @@
 #include "PrefabManager.h"
 #include "ZDOConnector.h"
 #include "Types.h"
-
-
 
 class ZDO {
     // TODO are these friend classes safe?
@@ -101,14 +98,10 @@ private:
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void; // mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(const boost::local_shared_ptr<ZDO>& zdo) const noexcept -> uint64_t {
-            assert(zdo);
-            return operator()(zdo->GetID());
-        }
-
-        [[nodiscard]] auto operator()(const ZDO& zdo) const noexcept -> uint64_t {
-            return operator()(zdo.GetID());
-        }
+        //[[nodiscard]] auto operator()(const boost::local_shared_ptr<ZDO>& zdo) const noexcept -> uint64_t {
+        //    assert(zdo);
+        //    return operator()(zdo->GetID());
+        //}
 
         [[nodiscard]] auto operator()(const ZDOID &id) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(id);
@@ -153,9 +146,45 @@ private:
 public:
     // Edit ankerl::unordered_dense table to use mutable iterator not const_iterator
     // this violates constant key of design, but allows for flexibility
+    
+    // rename rules:
+    //  based on functionality/intent
+    //  not implementation
+    
+    using safe_value = ZDO;
+    using safe_optional = std::optional<ZDO>; // pointer;
+    using unsafe_value = ZDO&;
+    using unsafe_optional = ZDO*;
 
-    using set = UNORDERED_SET_t<ZDOID>; // TODO use reference_wrapper<>?
-    using map = UNORDERED_SET_t<boost::local_shared_ptr<ZDO>, hash, std::equal_to<>>;
+    using container = UNORDERED_SET_t<safe_value, hash, std::equal_to<>>;
+    using id_container = UNORDERED_SET_t<ZDOID>;
+    
+    //static unsafe_value ref(safe_value p) {
+    //    return *p;
+    //}
+    
+    [[nodiscard]] static unsafe_value make_unsafe_value(safe_value& v) { // the & is intentional
+        return v;
+    }
+
+    [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
+        return *itr;
+    }
+
+    [[nodiscard]] static safe_optional make_safe_optional(safe_value v) {
+        return v;
+    }
+
+    [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
+        return &v;
+    }
+
+    [[nodiscard]] static unsafe_optional make_unsafe_optional(container::iterator itr) {
+        return &*itr;
+    }
+    
+    static inline const auto safe_nullopt = std::nullopt;
+    static inline const auto unsafe_nullopt = nullptr;
     
 private:
     template<typename T>
@@ -331,11 +360,19 @@ public:
         : m_id(m_id)
     {}
 
-    bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
-        return *this == *other;
-    }
+    //friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const boost::local_shared_ptr<ZDO>& rhs) noexcept {
+    //    return lhs->GetID() == rhs->GetID();
+    //}
+    //
+    //friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const ZDO& rhs) noexcept {
+    //    return lhs->GetID() == rhs;
+    //}
 
-    bool operator==(const ZDO& other) = delete;
+    //bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
+    //    return this->GetID() == other->GetID();
+    //}
+
+    //bool operator==(const ZDO& other) = delete;
 
     bool operator==(const ZDOID& other) const noexcept {
         return this->GetID() == other;
@@ -352,6 +389,9 @@ public:
     // doesnt compile when assigning optional
     //ZDO(const ZDO& other) = default;
     //ZDO(ZDO&& other) = delete;
+
+    // Apply changes to ZDOManager
+    bool Apply() const;
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
     // Load ZDO from disk

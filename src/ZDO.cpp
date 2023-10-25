@@ -18,6 +18,12 @@
 //    _SetPosition(pos);
 //}
 
+bool ZDO::Apply() const {
+    if (auto&& opt = ZDOManager()->_GetZDOMatch(this->GetID())) {
+        *opt = *this;
+    }
+}
+
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {

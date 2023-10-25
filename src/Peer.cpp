@@ -163,7 +163,7 @@ void Peer::SetAdmin(bool enable) {
     else Valhalla()->m_admin.insert(m_socket->GetHostName());
 }
 
-std::optional<ZDO> Peer::GetZDO() {
+ZDO::pointer_nullable Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
@@ -183,23 +183,23 @@ void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO zdo) {
-    if (zdo.IsOwner(this->GetUserID()))
+void Peer::ZDOSectorInvalidated(ZDO::pointer_notnull zdo) {
+    if (zdo->IsOwner(this->GetUserID()))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo.GetZone(), m_pos)) {
-        if (m_zdos.erase(zdo.GetID())) {
-            m_invalidSector.insert(zdo.GetID());
+    if (!ZoneManager()->ZonesOverlap(zdo->GetZone(), m_pos)) {
+        if (m_zdos.erase(zdo->GetID())) {
+            m_invalidSector.insert(zdo->GetID());
         }
     }
 }
 
-bool Peer::IsOutdatedZDO(ZDO zdo, decltype(m_zdos)::iterator& outItr) {
-    auto&& find = m_zdos.find(zdo.GetID());
+bool Peer::IsOutdatedZDO(ZDO::pointer_notnull zdo, decltype(m_zdos)::iterator& outItr) {
+    auto&& find = m_zdos.find(zdo->GetID());
 
     outItr = find;
 
     return find == m_zdos.end()
-        || zdo.GetOwnerRevision() > find->second.first.GetOwnerRevision()
-        || zdo.GetDataRevision() > find->second.first.GetDataRevision();
+        || zdo->GetOwnerRevision() > find->second.first.GetOwnerRevision()
+        || zdo->GetDataRevision() > find->second.first.GetDataRevision();
 }

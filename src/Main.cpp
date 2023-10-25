@@ -44,8 +44,8 @@ int main(int argc, char **argv) {
         colours.set_default_colours();
         cfg.default_handlers.push_back(quill::stdout_handler("colourout", std::move(colours)));
 
-        cfg.default_handlers.push_back(
-            quill::time_rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
+        //cfg.default_handlers.push_back(
+            //quill::rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
 
         //cfg.default_handlers.push_back(quill::file_handler("server.log", "w"));
 

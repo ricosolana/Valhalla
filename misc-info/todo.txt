@@ -1,5 +1,9 @@
 # todo:
 
+- alternative for lua zdos
+    have an overwrite setting for zdo-set
+    manually sets a zdo of id
+
 - const ref instantiations can remain, 
     anything involving ownership sharing must use <local> shared ptr
 
