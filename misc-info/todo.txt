@@ -1,6 +1,11 @@
 # todo:
 
-- alternative for lua zdos
+- to keep zdos stable
+    prevent insertion in-between lua ops
+
+- can use ranges/transformers for zone
+
+- alternative for lua zdos (semi-handles, nothing shared)
     have an overwrite setting for zdo-set
     manually sets a zdo of id
 

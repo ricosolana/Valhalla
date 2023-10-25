@@ -151,32 +151,32 @@ public:
     //  based on functionality/intent
     //  not implementation
     
-    using safe_value = ZDO;
-    using safe_optional = std::optional<ZDO>; // pointer;
-    using unsafe_value = ZDO&;
+    //using safe_value = ZDO;
+    //using safe_optional = std::optional<ZDO>; // pointer;
+    using unsafe_value = std::reference_wrapper<ZDO>;
     using unsafe_optional = ZDO*;
 
-    using container = UNORDERED_SET_t<safe_value, hash, std::equal_to<>>;
+    using container = UNORDERED_MAP_t<ZDOID, ZDO, hash, std::equal_to<>>;
     using id_container = UNORDERED_SET_t<ZDOID>;
     
     //static unsafe_value ref(safe_value p) {
     //    return *p;
     //}
     
-    [[nodiscard]] static unsafe_value make_unsafe_value(safe_value& v) { // the & is intentional
-        return v;
-    }
+    //[[nodiscard]] static unsafe_value make_unsafe_value(safe_value& v) { // the & is intentional
+    //    return v;
+    //}
 
     [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
         return *itr;
     }
 
-    [[nodiscard]] static safe_optional make_safe_optional(safe_value v) {
-        return v;
-    }
+    //[[nodiscard]] static safe_optional make_safe_optional(safe_value v) {
+    //    return v;
+    //}
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
-        return &v;
+        return &v.get();
     }
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(container::iterator itr) {
@@ -346,10 +346,11 @@ private:
     //static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
-    * 40 bytes total:
+    * 32 bytes total:
     */
 
-    ZDOID m_id;    
+    //ZDOID m_id;    // 8 bytes only
+
     Vector3f m_pos;                                 // 12 bytes
     ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes

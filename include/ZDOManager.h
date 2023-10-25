@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <functional>
+#include <range/v3/all.hpp>
 
 #include "Vector.h"
 #include "ZDO.h"
@@ -18,7 +19,7 @@ class IZDOManager {
 	// Predicate for whether a zdo is a prefab with or without given flags
 	//	prefabHash: if 0, then prefabHash check is skipped
 	static bool PREFAB_CHECK_FUNCTION(ZDO::unsafe_value zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-		auto&& prefab = zdo.GetPrefab();
+		auto&& prefab = zdo.get().GetPrefab();
 
 		return prefab.AllFlagsAbsent(flagsAbsent)
 			&& (prefabHash == 0 || prefab.m_hash == prefabHash)
@@ -33,11 +34,11 @@ class IZDOManager {
 private:
 	// Contains ZDOs according to Zone
 	//	takes up around 5MB; could be around 72 bytes with map
-	std::array<ZDO::container, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+	std::array<ZDO::id_container, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
 
 	// Contains ZDOs according to prefab
 	//	TODO is this necessary?
-	UNORDERED_MAP_t<HASH_t, ZDO::container> m_objectsByPrefab;
+	UNORDERED_MAP_t<HASH_t, ZDO::id_container> m_objectsByPrefab;
 
 	// Responsible for managing ZDOs lifetimes
 	//	A segmented map is used instead of a vector map
@@ -63,7 +64,7 @@ private:
 
 	
 	// Retrieve a zone container for storing zdos
-	[[nodiscard]] ZDO::container* _GetZDOContainer(ZoneID zone) {
+	[[nodiscard]] ZDO::id_container* _GetZDOContainer(ZoneID zone) {
 		int num = SectorToIndex(zone);
 		if (num != -1) {
 			return &m_objectsBySector[num];
@@ -101,7 +102,7 @@ private:
 		while (SendZDOs(peer, true));
 	}
 	[[maybe_unused]] bool SendZDOs(Peer& peer, bool flush);
-	[[nodiscard]] std::list<std::pair<ZDO::safe_value, float>> CreateSyncList(Peer& peer);
+	[[nodiscard]] std::list<std::pair<ZDO::unsafe_value, float>> CreateSyncList(Peer& peer);
 
 
 
@@ -202,7 +203,14 @@ public:
 	[[nodiscard]] ZDO::safe_optional GetZDO(ZDOID id);
 
 	// Get all ZDOs strictly within a zone
-	void GetZDOs_Zone(ZoneID zone, std::list<ZDO::unsafe_value>& out);
+	auto GetZDOs_Zone(ZoneID zone) {
+		// filter zones, 
+		// filter
+		if (auto&& container = _GetZDOContainer(zone)) {
+			return ranges::any_view<ZDO>(*container);
+		}
+		return ranges::empty_view<ZDO>{};
+	}
 	// Get all ZDOs strictly within neighboring zones
 	void GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value>& out);
 	// Get all ZDOs strictly within distant zones
