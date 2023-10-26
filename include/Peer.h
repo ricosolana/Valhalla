@@ -79,14 +79,14 @@ public:
 private:
     void Update();
 
-    void ZDOSectorInvalidated(ZDO::pointer_notnull zdo);
+    void ZDOSectorInvalidated(ZDO::unsafe_value zdo);
 
     void ForceSendZDO(ZDOID id) {
         m_forceSend.insert(id);
     }
 
-    bool IsOutdatedZDO(ZDO::pointer_notnull zdo, decltype(m_zdos)::iterator& outItr);
-    bool IsOutdatedZDO(ZDO::pointer_notnull zdo) {
+    bool IsOutdatedZDO(ZDO::unsafe_value zdo, decltype(m_zdos)::iterator& outItr);
+    bool IsOutdatedZDO(ZDO::unsafe_value zdo) {
         decltype(m_zdos)::iterator outItr;
         return IsOutdatedZDO(zdo, outItr);
     }
@@ -349,7 +349,7 @@ public:
 
 
 
-    ZDO::pointer_nullable GetZDO();
+    ZDO::unsafe_optional GetZDO();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 

@@ -50,7 +50,7 @@ public:
 
 	//steady_clock::time_point m_generatedTime;
 
-	ZDO::pointer_notnull m_zdo;
+	ZDO::unsafe_value m_zdo;
 
 private:
 	void GenerateRooms(VUtils::Random::State& state);
@@ -118,7 +118,7 @@ private:
 	bool CheckRequiredRooms();
 
 public:
-	DungeonGenerator(const Dungeon& dungeon, ZDO::pointer_notnull zdo);
+	DungeonGenerator(const Dungeon& dungeon, ZDO::unsafe_value zdo);
 
 	DungeonGenerator(const DungeonGenerator& other) = delete;
 

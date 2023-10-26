@@ -18,11 +18,11 @@
 //    _SetPosition(pos);
 //}
 
-bool ZDO::Apply() const {
-    if (auto&& opt = ZDOManager()->_GetZDOMatch(this->GetID())) {
-        *opt = *this;
-    }
-}
+//bool ZDO::Apply() const {
+//    if (auto&& opt = ZDOManager()->_GetZDOMatch(this->GetID())) {
+//        *opt = *this;
+//    }
+//}
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
@@ -212,11 +212,11 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 void ZDO::SetPosition(Vector3f pos) {
     if (this->GetPosition() != pos) {
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
-            ZDOManager()->_InvalidateZDOZone(*this);
+            ZDOManager()->_InvalidateZDOZone(this);
 
-            ZDOManager()->_RemoveFromSector(*this);
+            ZDOManager()->_RemoveFromSector(this);
             this->_SetPosition(pos);
-            ZDOManager()->_AddZDOToZone(*this);
+            ZDOManager()->_AddZDOToZone(this);
         }
         else {
             this->_SetPosition(pos);

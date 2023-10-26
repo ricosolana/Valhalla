@@ -103,8 +103,16 @@ private:
         //    return operator()(zdo->GetID());
         //}
 
-        [[nodiscard]] auto operator()(const ZDOID &id) const noexcept -> uint64_t {
+        [[nodiscard]] auto operator()(ZDOID const& id) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(id);
+        }
+
+        [[nodiscard]] auto operator()(ZDO const* v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(v->GetID());
+        }
+
+        [[nodiscard]] auto operator()(std::unique_ptr<ZDO> const& v) const noexcept -> uint64_t {
+            return ankerl::unordered_dense::hash<ZDOID>{}(v->GetID());
         }
     };
 
@@ -153,11 +161,12 @@ public:
     
     //using safe_value = ZDO;
     //using safe_optional = std::optional<ZDO>; // pointer;
-    using unsafe_value = std::reference_wrapper<ZDO>;
+    using unsafe_value = ZDO*; // std::reference_wrapper<ZDO>;
     using unsafe_optional = ZDO*;
 
-    using container = UNORDERED_MAP_t<ZDOID, ZDO, hash, std::equal_to<>>;
-    using id_container = UNORDERED_SET_t<ZDOID>;
+    using container = UNORDERED_SET_t<std::unique_ptr<ZDO>, hash, std::equal_to<>>;
+    using id_container = UNORDERED_SET_t<ZDOID, hash, std::equal_to<>>; // hetero hash?
+    using ref_container = UNORDERED_SET_t<unsafe_value, hash, std::equal_to<>>;
     
     //static unsafe_value ref(safe_value p) {
     //    return *p;
@@ -168,7 +177,11 @@ public:
     //}
 
     [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
-        return *itr;
+        return itr->get();
+    }
+
+    [[nodiscard]] static unsafe_optional make_unsafe_value(const container::value_type& itr) {
+        return itr.get();
     }
 
     //[[nodiscard]] static safe_optional make_safe_optional(safe_value v) {
@@ -176,14 +189,17 @@ public:
     //}
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
-        return &v.get();
+        return v;
     }
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(container::iterator itr) {
-        return &*itr;
+        return itr->get();
     }
     
-    static inline const auto safe_nullopt = std::nullopt;
+    [[nodiscard]] static unsafe_optional make_unsafe_optional(const container::value_type& itr) {
+        return itr.get();
+    }
+
     static inline const auto unsafe_nullopt = nullptr;
     
 private:
@@ -349,8 +365,7 @@ private:
     * 32 bytes total:
     */
 
-    //ZDOID m_id;    // 8 bytes only
-
+    ZDOID m_id;                                     // 8 bytes
     Vector3f m_pos;                                 // 12 bytes
     ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes
@@ -375,8 +390,26 @@ public:
 
     //bool operator==(const ZDO& other) = delete;
 
-    bool operator==(const ZDOID& other) const noexcept {
-        return this->GetID() == other;
+    //friend bool operator==(ZDO const* lhs, ZDO const* rhs) noexcept {
+    //    assert((lhs != rhs.get()) == (lhs->GetID() != rhs->GetID()));
+    //
+    //    return const_cast<ZDO*>(lhs) == rhs.get();
+    //}
+
+    friend bool operator==(ZDOID const& lhs, ZDO const* rhs) noexcept {
+        //assert((lhs != rhs.get()) == (lhs->GetID() != rhs->GetID()));
+    
+        return lhs == rhs->GetID();
+    }
+
+    //friend bool operator==(ZDO const* lhs, std::unique_ptr<ZDO> const& rhs) noexcept {
+    //    assert((const_cast<ZDO*>(lhs) != rhs.get()) == (lhs->GetID() != rhs->GetID()));
+    //
+    //    return const_cast<ZDO*>(lhs) == rhs.get();
+    //}
+
+    friend bool operator==(ZDOID const& lhs, std::unique_ptr<ZDO> const& rhs) noexcept {
+        return lhs == rhs->GetID();
     }
 
     //ZDO(data_t& data) : m_data(data) {}
@@ -392,7 +425,8 @@ public:
     //ZDO(ZDO&& other) = delete;
 
     // Apply changes to ZDOManager
-    bool Apply() const;
+    //  make this a lua-only method?
+    //bool Apply() const;
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
     // Load ZDO from disk

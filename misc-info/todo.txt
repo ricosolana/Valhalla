@@ -1,7 +1,40 @@
 # todo:
 
-- to keep zdos stable
-    prevent insertion in-between lua ops
+- the only place zdos become unstable are
+    insertion / deletion
+
+    this is a problem when zdo& are stored during a modification (insert/delete)
+
+    where is this?
+        _Instantiate / Instantiate
+        _EraseZDO / DestroyZDO
+
+    anywhere mods are given access to modify zdo container, mitigate this
+        instead make changes take effect after-the-fact
+
+- memory cost?
+    - set<zdo>: zdo (40) =                              40
+        - pros: memory efficient
+        - cons: requires modified set / not really portable, unstable pointer
+            WAIT just const_cast away the constness?
+    - set<zdo*>: ptr (8) + zdo (40) =                   48
+        - pros: memory efficient, stable pointer
+        - cons: requires modified set / not really portable
+    - map<id, data>: id (8) + data (32) =               40 
+        - pros: no id anomalies, memory efficient
+        - cons: requires wrapper
+    - map<id, zdo>: id (8) + data (40) =                48
+        - pros: id stored with zdo
+        - cons: id anomalies; more memory consumption
+    - map<id, data*>: id (8) + ptr (8) + data (32) =    48 (requires wrapper; no id anomalies, memory efficient)
+    - map<id, zdo*>: id (8) + ptr (8) + data (40) =     56 (id anomalies; more memory consumption)
+
+- move back to map<id, zdo>
+    - 
+
+- to keep zdos stable with mods
+    - prevent insertion in-between lua ops
+    - prevent mods from directly inserting/deleting
 
 - can use ranges/transformers for zone
 

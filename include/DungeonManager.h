@@ -44,9 +44,9 @@ public:
 	void TryRegenerateDungeons();
 #endif
 
-	ZDO::pointer_notnull Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
-	ZDO::pointer_notnull Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
-	void Generate(const Dungeon& dungeon, ZDO::pointer_notnull zdo);
+	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
+	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
+	void Generate(const Dungeon& dungeon, ZDO::unsafe_value zdo);
 };
 
 // Manager for everything related to dungeon spawning 

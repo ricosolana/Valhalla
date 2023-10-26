@@ -9,7 +9,7 @@
 #include "ZDOManager.h"
 #include "VUtilsMath2.h"
 
-DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO::pointer_notnull zdo) :
+DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO::unsafe_value zdo) :
 	m_dungeon(dungeon), m_zdo(zdo), m_pos(zdo->GetPosition()), m_rot(zdo->GetRotation()) {
 
 	auto zone = IZoneManager::WorldToZonePos(m_pos);

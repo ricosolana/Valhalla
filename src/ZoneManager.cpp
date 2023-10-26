@@ -12,7 +12,7 @@
 #include "DungeonGenerator.h"
 #include "ZDOManager.h"
 
-auto ZONE_MANAGER(std::make_unique<IZoneManager>()); // TODO stop constructing in global
+auto ZONE_MANAGER = std::make_unique<IZoneManager>(); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
     return ZONE_MANAGER.get();
 }
@@ -706,7 +706,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             //  however new generated zone zdos are not correctly rotated
 
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
-                            zdo.SetRotation(rotation);
+                            zdo->SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -714,7 +714,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 placedAreas.push_back({ pos, zoneVegetation->m_radius });
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                zdo.SetLocalScale(Vector3f(scale, scale, scale), true);
+                                zdo->SetLocalScale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -1086,11 +1086,12 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto&& zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
-            zdo.SetRotation(rot * piece.m_rot);
+            zdo->SetRotation(rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefabHash);
 
-            std::optional<ZDO> zdo;
+            // TODO not really optional, it is required through a branch
+            ZDO::unsafe_optional zdo;
 
             if (dungeon.m_interiorPosition != Vector3f::Zero()) {
 
@@ -1117,7 +1118,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 
-            DungeonManager()->Generate(dungeon, *zdo);
+            DungeonManager()->Generate(dungeon, zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;
@@ -1132,10 +1133,10 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, HASH_t seed, Vector3f pos, Quaternion rot) {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
-    zdo.SetRotation(rot);
+    zdo->SetRotation(rot);
     
-    zdo.Set(Hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
-    zdo.Set(Hashes::ZDO::ZoneManager::SEED, seed);
+    zdo->Set(Hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
+    zdo->Set(Hashes::ZDO::ZoneManager::SEED, seed);
 }
 
 // public
