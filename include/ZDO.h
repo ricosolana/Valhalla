@@ -98,11 +98,6 @@ private:
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void; // mark class as high quality avalanching hash
 
-        //[[nodiscard]] auto operator()(const boost::local_shared_ptr<ZDO>& zdo) const noexcept -> uint64_t {
-        //    assert(zdo);
-        //    return operator()(zdo->GetID());
-        //}
-
         [[nodiscard]] auto operator()(ZDOID const& id) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(id);
         }
@@ -116,16 +111,10 @@ private:
         }
     };
 
-
     using member_hash = uint64_t;
     using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
     using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
-    //using member_tuple_mono = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t, std::monostate>;
-    //using member_variant_mono = VUtils::Traits::tuple_to_variant<member_tuple_mono>::type;
-
     using member_map = UNORDERED_MAP_t<member_hash, member_variant>;
-
-
 
     template<typename T>
     using is_member = VUtils::Traits::tuple_has_type<T, member_tuple>;
@@ -147,35 +136,16 @@ private:
     template<typename T>
     static constexpr size_t member_flag_v = member_flag<T>::value;
 
-
-
     
 
 public:
-    // Edit ankerl::unordered_dense table to use mutable iterator not const_iterator
-    // this violates constant key of design, but allows for flexibility
-    
-    // rename rules:
-    //  based on functionality/intent
-    //  not implementation
-    
-    //using safe_value = ZDO;
-    //using safe_optional = std::optional<ZDO>; // pointer;
-    using unsafe_value = ZDO*; // std::reference_wrapper<ZDO>;
+    using unsafe_value = ZDO*;
     using unsafe_optional = ZDO*;
 
     using container = UNORDERED_SET_t<std::unique_ptr<ZDO>, hash, std::equal_to<>>;
     using id_container = UNORDERED_SET_t<ZDOID, hash, std::equal_to<>>; // hetero hash?
     using ref_container = UNORDERED_SET_t<unsafe_value, hash, std::equal_to<>>;
     
-    //static unsafe_value ref(safe_value p) {
-    //    return *p;
-    //}
-    
-    //[[nodiscard]] static unsafe_value make_unsafe_value(safe_value& v) { // the & is intentional
-    //    return v;
-    //}
-
     [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
         return itr->get();
     }
@@ -183,10 +153,6 @@ public:
     [[nodiscard]] static unsafe_optional make_unsafe_value(const container::value_type& itr) {
         return itr.get();
     }
-
-    //[[nodiscard]] static safe_optional make_safe_optional(safe_value v) {
-    //    return v;
-    //}
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
         return v;
@@ -376,53 +342,15 @@ public:
         : m_id(m_id)
     {}
 
-    //friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const boost::local_shared_ptr<ZDO>& rhs) noexcept {
-    //    return lhs->GetID() == rhs->GetID();
-    //}
-    //
-    //friend bool operator==(const boost::local_shared_ptr<ZDO>& lhs, const ZDO& rhs) noexcept {
-    //    return lhs->GetID() == rhs;
-    //}
-
-    //bool operator==(const boost::local_shared_ptr<ZDO>& other) const noexcept {
-    //    return this->GetID() == other->GetID();
-    //}
-
-    //bool operator==(const ZDO& other) = delete;
-
-    //friend bool operator==(ZDO const* lhs, ZDO const* rhs) noexcept {
-    //    assert((lhs != rhs.get()) == (lhs->GetID() != rhs->GetID()));
-    //
-    //    return const_cast<ZDO*>(lhs) == rhs.get();
-    //}
-
     friend bool operator==(ZDOID const& lhs, ZDO const* rhs) noexcept {
         //assert((lhs != rhs.get()) == (lhs->GetID() != rhs->GetID()));
     
         return lhs == rhs->GetID();
     }
 
-    //friend bool operator==(ZDO const* lhs, std::unique_ptr<ZDO> const& rhs) noexcept {
-    //    assert((const_cast<ZDO*>(lhs) != rhs.get()) == (lhs->GetID() != rhs->GetID()));
-    //
-    //    return const_cast<ZDO*>(lhs) == rhs.get();
-    //}
-
     friend bool operator==(ZDOID const& lhs, std::unique_ptr<ZDO> const& rhs) noexcept {
         return lhs == rhs->GetID();
     }
-
-    //ZDO(data_t& data) : m_data(data) {}
-
-    // TODO this is redundant; ZDOManager <-> ZDO; crucially tied with no disbanding
-    // ZDOManager constructor
-    //ZDO(ZDOID id, Vector3f pos, data_t& data) : m_id(id), m_data(data) {
-    //    this->_SetPosition(pos);
-    //}
-
-    // doesnt compile when assigning optional
-    //ZDO(const ZDO& other) = default;
-    //ZDO(ZDO&& other) = delete;
 
     // Apply changes to ZDOManager
     //  make this a lua-only method?

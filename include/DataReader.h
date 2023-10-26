@@ -109,7 +109,7 @@ public:
         return out;
     }
     
-    // Reads a container<T> and runs a runction on each element
+    // Reads a container<T> and runs a function on each element
     template<typename F>
         requires (std::tuple_size<typename VUtils::Traits::func_traits<F>::args_type>{} == 1)
     void AsEach(F func) {
