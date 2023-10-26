@@ -150,8 +150,12 @@ public:
         return itr->get();
     }
 
-    [[nodiscard]] static unsafe_optional make_unsafe_value(const container::value_type& itr) {
+    [[nodiscard]] static unsafe_value make_unsafe_value(const container::value_type& itr) {
         return itr.get();
+    }
+
+    [[nodiscard]] static unsafe_value make_unsafe_value(const ref_container::value_type& v) {
+        return const_cast<ZDO::unsafe_value&>(v);
     }
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {

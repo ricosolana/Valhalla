@@ -1,5 +1,16 @@
 # todo:
 
+- rather than giving lua access to ranges/views 
+	during GetZDOs / SomeZDOs ...
+	accept a filter along with foreach function
+	
+	during zdo modify functions, pass zdo by value,
+		when zdo is to be modified,
+		make lua return it?
+			this way pointers are never used
+			and access is still fast?
+			
+
 - the only place zdos become unstable are
     insertion / deletion
 
