@@ -324,7 +324,7 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& packet = node["packets"];
             auto&& discord = node["discord"];
 
-            a(m_settings.serverName, server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            a(m_settings.serverName, server, "name", std::string("Valhalla server ") + VUtils::Random::GenerateAlphaNum(4), [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
             a(m_settings.serverPassword, server, "password", "", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
@@ -332,7 +332,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, player, "offline", true);
+            a(m_settings.playerOnline, player, "online", true);
             a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, "list-force-visible", false);

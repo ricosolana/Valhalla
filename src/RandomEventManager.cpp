@@ -60,11 +60,14 @@ void IRandomEventManager::Update() {
 
 	// update event timer if an event is active
 	if (m_activeEvent) {
+		// TODO implement!
+
+		assert(false);
 		// Update the timer of the current event
-		if (!m_activeEvent->m_pauseIfNoPlayerInArea
-			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius, Hashes::Object::Player, Prefab::Flag::NONE, Prefab::Flag::NONE))
-			//m_activeEventTimer += Valhalla()->Delta();
-			m_activeEventRemaining -= Valhalla()->DeltaNanos();
+		//if (!m_activeEvent->m_pauseIfNoPlayerInArea
+		//	|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius, Hashes::Object::Player, Prefab::Flag::NONE, Prefab::Flag::NONE))
+		//	//m_activeEventTimer += Valhalla()->Delta();
+		//	m_activeEventRemaining -= Valhalla()->DeltaNanos();
 
 		//if (m_activeEventTimer > this->m_activeEvent->m_duration) {
 		if (m_activeEventRemaining <= 0ns) {

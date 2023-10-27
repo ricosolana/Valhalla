@@ -10,6 +10,7 @@
 #include "RouteManager.h"
 #include "HashUtils.h"
 #include "DungeonManager.h"
+#include "ZDOCollector.h"
 
 auto ZDO_MANAGER = std::make_unique<IZDOManager>();
 IZDOManager* ZDOManager() {
@@ -66,11 +67,52 @@ void IZDOManager::Update() {
 	//	link portals if mode enabled
 #if VH_IS_ON(VH_PORTAL_LINKING)
 	if (VUtils::run_periodic<struct link_portals>(1s)) {
-		auto&& portals = GetZDOs(Hashes::Object::portal_wood);
+		//auto&& portals = GetZDOs(Hashes::Object::portal_wood);
 
 		// TODO use the optimized Lua ported code for linking portals
 		//	not the exact code but the way the algo works
 
+		//std::vector<HASH_t> portal = { Hashes::Object::portal };
+
+		static constexpr HASH_t PORTAL = Hashes::Object::portal;
+
+		// Portal unlinker
+		ZDOCollector().Filter([](ZDO::unsafe_value zdo) -> bool {
+			auto&& connectionZDOID = zdo->GetConnectionZDOID(ZDOConnector::Type::Portal);
+			auto&& string = zdo->GetString(Hashes::ZDO::TeleportWorld::TAG);
+			if (connectionZDOID) {
+				auto&& zdo2 = ZDOManager()->GetZDO(connectionZDOID);
+				return !zdo2 || zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG) != string;
+			}
+			return false;
+		}).Consumer([](ZDO::unsafe_value zdo) {
+			zdo->SetLocal();
+			zdo->SetConnection(ZDOConnector::Type::Portal, ZDOID::NONE);
+			ZDOManager()->ForceSendZDO(zdo->GetID());
+		}).Iterator(PORTAL);
+
+
+		// Portal linker
+		ZDOCollector().Consumer([](ZDO::unsafe_value zdo) -> void {
+			if (!zdo->GetConnectionZDOID(ZDOConnector::Type::Portal)) {
+				auto&& zdo4 = ZDOCollector().Filter([skip=zdo->GetID(), tag=zdo->GetString(Hashes::ZDO::TeleportWorld::TAG)](ZDO::unsafe_value zdo) -> bool {
+					return zdo->GetID() != skip
+						&& zdo->GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
+						&& !zdo->GetConnectionZDOID(ZDOConnector::Type::Portal);
+				}).First<ZDO::unsafe_value>(PORTAL);
+
+				if (zdo4) {
+					zdo->SetLocal();
+					zdo4->SetLocal();
+					zdo->SetConnection(ZDOConnector::Type::Portal, zdo4->GetID());
+					zdo4->SetConnection(ZDOConnector::Type::Portal, zdo->GetID());
+					ZDOManager()->ForceSendZDO(zdo->GetID());
+					ZDOManager()->ForceSendZDO(zdo4->GetID());
+				}
+			}
+		}).Iterator(PORTAL);
+		
+		/*
 		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO::unsafe_optional {
 			std::vector<ZDO::unsafe_value> list;
 			for (auto&& zdo : portals) {
@@ -117,7 +159,7 @@ void IZDOManager::Update() {
 					//zdo3.Apply();
 				}
 			}
-		}
+		}*/
 	}
 #endif
 
@@ -277,6 +319,29 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
+		ZDOCollector().Consumer([](ZDO::unsafe_value zdo) -> void {
+			auto&& string = zdo->GetString(Hashes::ZDO::TeleportWorld::TAG);
+			ZDOID zdoid; zdo->Extract("target", zdoid);
+			if (zdoid && !string.empty()) {
+				auto&& zdo2 = ZDOManager()->GetZDO(zdoid);
+				if (zdo2) {
+					auto&& string2 = zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG);
+					ZDOID zdoid2; zdo2->Extract("target", zdoid2);
+					if (string == string2
+						&& zdoid == zdo2->GetID()
+						&& zdoid2 == zdo->GetID())
+					{
+						zdo->SetLocal();
+						zdo2->SetLocal();
+						zdo->SetConnection(ZDOConnector::Type::Portal, zdo2->GetID());
+						zdo2->SetConnection(ZDOConnector::Type::Portal, zdo->GetID());
+						//zdo.Apply();
+					}
+				}
+			}
+		}).Iterator(Hashes::Object::portal);
+
+		/*
 		for (auto&& zdo : GetZDOs(Hashes::Object::portal_wood)) {			
 			auto&& string = zdo->GetString(Hashes::ZDO::TeleportWorld::TAG);
 			ZDOID zdoid; zdo->Extract("target", zdoid);
@@ -297,8 +362,20 @@ void IZDOManager::Load(DataReader& reader, int version) {
 					}
 				}
 			}
-		}
+		}*/
 		
+		ZDOCollector().Consumer([](ZDO::unsafe_value zdo) -> void {
+			zdo->SetLocal();
+			ZDOID zdoid; zdo->Extract("spawn_id", zdoid);
+			//auto&& zdo2 = ZDOManager()->GetZDO(zdoid);
+			zdo->SetConnection(ZDOConnector::Type::Spawned, 
+				ZDOManager()->Exists(zdoid) ? zdoid : ZDOID::NONE);
+		}).Iterator(Hashes::Object::portal);
+
+		assert(false);
+
+		// TODO implement this below
+		/*
 		// convert spawners
 		for (auto&& zdo : GetZDOs(Prefab::Flag::CREATURE_SPAWNER, Prefab::Flag::NONE)) {
 			zdo->SetLocal();
@@ -323,7 +400,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 					//zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
 				//);
 			}
-		}
+		}*/
 	}
 #endif // VH_LEGACY_WORLD_LOADING
 
@@ -406,6 +483,10 @@ ZDO::unsafe_optional IZDOManager::GetZDO(ZDOID id) {
 			return ZDO::make_unsafe_optional(find);
 	}
 	return ZDO::unsafe_nullopt;
+}
+
+bool IZDOManager::Exists(ZDOID id) const {
+	return m_objectsByID.contains(id);
 }
 
 
@@ -494,6 +575,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		}
 	}
 
+	/*
 	if (VH_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
 		float minSqDist = std::numeric_limits<float>::max();
@@ -533,8 +615,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 				}
 			}
 		}
-	}
-
+	}*/
 }
 
 ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
@@ -704,7 +785,7 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::unsafe_value>& obj
 }
 
 
-
+/*
 std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(HASH_t prefab) {
 	std::list<ZDO::unsafe_value> out;
 	auto&& find = m_objectsByPrefab.find(prefab);
@@ -802,7 +883,7 @@ ZDO::unsafe_optional IZDOManager::NearestZDO(Vector3f pos, float radius, pred_t 
 
 	return out;
 }
-
+*/
 
 
 // Global send
@@ -1005,6 +1086,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end(); ) {
 		auto &&zdo = ZDO::make_unsafe_value(itr);
 
+		// TODO only if zdo is owned iterate it; ZDO_OWNERS
 		if (!zdo->IsPersistent()
 			&& (!zdo->HasOwner() || zdo->IsOwner(peer.GetUserID()) || !NetManager()->GetPeerByUserID(zdo->Owner())))
 		{

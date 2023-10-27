@@ -194,6 +194,9 @@ public:
 	//	TODO use optional<reference>
 	[[nodiscard]] ZDO::unsafe_optional GetZDO(ZDOID id);
 
+	// Whether a ZDO exists
+	[[nodiscard]] bool Exists(ZDOID id) const;
+
 	// Get all ZDOs strictly within a zone
 	void GetZDOs_Zone(ZoneID zone, std::list<ZDO::unsafe_value>& out);
 	// Get all ZDOs strictly within neighboring zones

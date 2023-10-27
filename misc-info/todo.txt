@@ -1,15 +1,36 @@
 # todo:
 
+- simplify filter
+    - simple set, not a composite filter
+
+- lua usage for zdo collector
+    -- either collect by:
+        all, zone, prefab, owned
+
+        how to collect
+    
+    iterator() -- will select a iterator of zdos 
+    
+    iterator()
+
+    local collect = ZDOCollector.new(CollectMode.zone)
+        
+        :range(player.zdo.position, 32, RangeMode.zone) -- whether to include zones, manhattan dist, normal
+        :filter(function(zdo) return zdo:GetString('example') ~= '' end)
+        :transform(function(zdo) return zdo:GetID() end) -- no operation should pass unmanaged ptr to lua
+        :foreach(function(id) return zdo:GetID() end)
+        --:tolist to_vector ()
+
 - rather than giving lua access to ranges/views 
-	during GetZDOs / SomeZDOs ...
-	accept a filter along with foreach function
-	
-	during zdo modify functions, pass zdo by value,
-		when zdo is to be modified,
-		make lua return it?
-			this way pointers are never used
-			and access is still fast?
-			
+    during GetZDOs / SomeZDOs ...
+    accept a filter along with foreach function
+    
+    during zdo modify functions, pass zdo by value,
+        when zdo is to be modified,
+        make lua return it?
+            this way pointers are never used
+            and access is still fast?
+            
 
 - the only place zdos become unstable are
     insertion / deletion

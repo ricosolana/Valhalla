@@ -1,9 +1,8 @@
 #include "ZDOManager.h"
 
+// Easy to use ZDO Stream class inspired by c++ Ranges/v3 and/or Java Streams
+// This is meant to be fast and have methods similar to streams, such as filter, limit, max, first...
 class ZDOCollector {
-	//ranges::any_view<ZDO::unsafe_value> m_view;
-	//std::shared_ptr<ranges::ref_view<ZDO::unsafe_value>> m_view;
-
 	// Predicate for whether a zdo is a prefab with or without given flags
 	//	prefabHash: if 0, then prefabHash check is skipped
 	static bool prefab_filter(ZDO::unsafe_value zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
@@ -14,80 +13,181 @@ class ZDOCollector {
 			&& prefab.AllFlagsPresent(flagsPresent);
 	}
 
+private:
+	// Runs a singular consumer
+	// If true, exit consumer/iteration
+	bool _RunConsumer(ZDO::unsafe_value zdo) {
+		if (m_filter(zdo)) {
+			m_consumer(zdo);
+			if (--m_max == 0) // underflow intentional and well defined
+				return true;
+		}
+		return false;
+	}
+
 public:
-	using filter_t = const std::function<bool(ZDO::unsafe_value)>&;
-	using consumer_t = const std::function<void(ZDO::unsafe_value)>&;
+	using filter_t = std::function<bool(ZDO::unsafe_value)>;
+	using consumer_t = std::function<void(ZDO::unsafe_value)>;
 
-	//auto GetZDOs() {
-	//	return ranges::views::all(m_objectsByID);
-	//}
+	// Terminator function that runs consumers
+	void Iterator(std::vector<HASH_t> &prefabHashes) {
+		auto&& map = ZDOManager()->m_objectsByPrefab;
+		for (auto&& prefabHash : prefabHashes) {
+			if (Iterator(prefabHash))
+				return;
+		}
+	}
 
-	[[nodiscard]] void SomeZDOs(Vector3f pos, float radius, size_t max, filter_t filter, consumer_t consumer) {
-		float sqRadius = radius * radius;
+	bool Iterator(HASH_t prefabHash) {
+		auto&& map = ZDOManager()->m_objectsByPrefab;
+		auto&& find = map.find(prefabHash);
+		if (find != map.end()) {
+			// then run 
+			for (auto&& v : find->second) {
+				auto&& zdo = ZDO::unsafe_value(v);
+				if (_RunConsumer(zdo))
+					return true;
+			}
+		}
+		return false;
+	}
 
-		auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
-		auto maxZone = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius));
+	// Terminator function that runs consumers
+	void Iterator() {
+		for (auto&& v : ZDOManager()->m_objectsByID) {
+			auto&& zdo = ZDO::make_unsafe_value(v);
+			if (_RunConsumer(zdo))
+				return;
+		}
+	}
 
-		for (auto z = minZone.y; z <= maxZone.y; z++) {
-			for (auto x = minZone.x; x <= maxZone.x; x++) {
+	// Terminator function that runs consumers
+	void Iterator(Vector3f pos, float radius) {
+		auto zoneA = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
+		auto zoneB = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius))
+			+ ZoneID(1, 1);
+		this->Distance(pos, radius)
+			.Iterator(zoneA, zoneB);
+	}
+
+	// Terminator function that runs consumers
+	void Iterator(ZoneID zoneA, ZoneID zoneB) {
+		for (int z = zoneA.y; z < zoneB.y; z++) {
+			for (int x = zoneA.x; x < zoneB.x; x++) {
 				if (auto&& container = ZDOManager()->_GetZDOContainer(ZoneID(x, z))) {
 					for (auto&& v : *container) {
 						auto&& zdo = ZDO::make_unsafe_value(v);
-						if (zdo->GetPosition().SqDistance(pos) > sqRadius)
-							continue;
 
-						if (!filter || filter(zdo)) {
-							consumer(zdo);
-							if (max-- == 0) // underflow intentional and well defined
-								return;
-						}
+						if (_RunConsumer(zdo))
+							return;
 					}
 				}
 			}
 		}
 	}
-
-	// Get a capped number of ZDOs within a radius matching an optional predicate
-	//[[nodiscard]] auto SomeZDOs(Vector3f pos, float radius) {
-	//	float sqRadius = radius * radius;
-	//
-	//	auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
-	//	auto maxZone = IZoneManager::WorldToZonePos(Vector3f(pos.x + radius, 0, pos.z + radius));
-	//
-	//	for (auto z = minZone.y; z <= maxZone.y; z++) {
-	//		for (auto x = minZone.x; x <= maxZone.x; x++) {
-	//			if (auto&& container = ZDOManager()->_GetZDOContainer(ZoneID(x, z))) {
-	//				m_view = ranges::concat_view(m_view, *container);
-	//			}
-	//		}
-	//	}
-	//
-	//	// pred_t pred
-	//	// && (!pred || pred(zdo));
-	//	//ranges::views::take_fi
-	//
-	//	auto rng = m_view | ranges::views::filter([pos, sqRadius](const ZDO::unsafe_value zdo) {
-	//		return zdo->GetPosition().SqDistance(pos) <= sqRadius;
-	//	});
-	//
-	//	return this;
-	//}
-	//[[nodiscard]] auto SomeZDOs()
-
-	// TODO finish this:
-	// Get a capped number of ZDOs with prefab and/or flag
-	//	*Note: Prefab or Flag must be non-zero for anything to be returned
-	[[nodiscard]] auto SomeZDOs(Vector3f pos, float radius, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
-
-		return SomeZDOs(pos, radius, max, std::bind_back(prefab_filter, prefab, flagsPresent, flagsAbsent));
-
-		//[&](ZDO::unsafe_value zdo) {
-		//	return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
-		//}
+	
+	// Terminator function that runs consumers
+	void Iterator(ZoneID zone) {
+		Iterator(zone, zone + ZoneID(1, 1));
 	}
 
+	// Return the first filter matched element / zdo
+	template<typename Type, class ...Args>
+	[[nodiscard]] decltype(auto) First(Args&&... args) {
+		Type opt{};
+
+		Limit(1).Consumer([&opt](ZDO::unsafe_value zdo) mutable {
+			if constexpr (std::is_same_v<Type, ZDO>) {
+				opt = *zdo;
+			}
+			else if constexpr (std::is_same_v<Type, ZDOID>) {
+				opt = zdo->GetID();
+			}
+			else if constexpr (std::is_same_v<Type, ZDO::unsafe_value>) {
+				opt = zdo;
+			}
+		}).Iterator(std::forward<Args...>(args)...);
+
+		return opt;
+	}
+
+	// Convert this collector to an iterable structure
+	// Arguments are passed to Iterator()
+	// This utilizes Consumer, so the current consumer will be overridden
+	// Similar to ranges::to
+	template<typename Iterable, class ...Args>
+		requires VUtils::Traits::is_iterable_v<Iterable>
+	[[nodiscard]] decltype(auto) To(Args&&... args) {
+		using Type = Iterable::value_type;
+
+		Iterable t{};
+		t.reserve(m_max); // Limit must be set, otherwise bad_alloc
+
+		Consumer([&t](ZDO::unsafe_value zdo) {
+			if constexpr (std::is_same_v<Type, ZDO>) {
+				t.insert(t.end(), *zdo);
+			}
+			else if constexpr (std::is_same_v<Type, ZDOID>) {
+				t.insert(t.end(), zdo->GetID());
+			}
+			else if constexpr (std::is_same_v<Type, ZDO::unsafe_value>) {
+				t.insert(t.end(), zdo);
+			}
+		}).Iterator(std::forward<Args...>(args)...);
+
+		return t;
+	}
+
+	// Consumer function that runs for every zdo matching all filters
+	// Only 1 consumer can exist
+	[[nodiscard]] ZDOCollector Consumer(consumer_t c) {
+		this->m_consumer = c;
+		return *this;
+	}
+
+	// Limiter to reduce the maximum amount of zdos which are successfully filtered
+	[[nodiscard]] ZDOCollector Limit(size_t max) {
+		this->m_max = max;
+		return *this;
+	}
+
+	// Filter idiom for zdos within an area
+	[[nodiscard]] ZDOCollector Distance(Vector3f pos, float radius) {
+		return Filter([pos, sqRadius = radius * radius](ZDO::unsafe_value zdo) {
+			return zdo->GetPosition().SqDistance(pos) <= sqRadius;
+		});
+	}
+
+	// Filter out elements not matching the given predicate
+	// Filters stack and are executed in the order they were applied.
+	[[nodiscard]] ZDOCollector Filter(filter_t f) {
+		this->m_filter = [first = m_filter, other = f](ZDO::unsafe_value zdo) -> bool { 
+			if (first(zdo))
+				return other(zdo);
+			return false;
+		};
+
+		return *this;
+	}
+
+	
+	/*
 	// Get a capped number of ZDOs within a zone matching an optional predicate
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max, pred_t pred);
+	[[nodiscard]] void SomeZDOs(ZoneID zone, size_t max, consumer_t consumer) {
+		if (auto&& container = ZDOManager()->_GetZDOContainer(zone)) {
+			for (auto&& v : *container) {
+				auto&& zdo = ZDO::make_unsafe_value(v);
+				if (!consumer || consumer(zdo)) {
+					if (max--)
+						out.push_back(zdo);
+					else
+						return out;
+				}
+			}
+		}
+
+		return out;
+	}
 	// Get a capped number of ZDOs within a zone
 	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max) {
 		return SomeZDOs(zone, max, nullptr);
@@ -196,7 +296,12 @@ public:
 	[[nodiscard]] ZDO::unsafe_optional NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return NearestZDO(pos, radius, [&](ZDO::unsafe_value zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefabHash, flagsPresent, flagsAbsent);
-			});
-	}
+		});
+	}*/
 
+private:
+	filter_t m_filter = [](ZDO::unsafe_value) -> bool { return true; };
+	consumer_t m_consumer;
+
+	size_t m_max{};
 };
