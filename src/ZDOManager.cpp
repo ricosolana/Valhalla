@@ -412,7 +412,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 [[nodiscard]] std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
 	//https://jguegant.github.io/blogs/tech/performing-try-emplace.html
 	
-	//return m_objectsByID.insert(ZDO(zdoid));
+	return m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
 
 	////m_objectsByID.equal_range.try_emplace(zdoid)
 	//auto&& pair = m_objectsByID.equal_range(zdoid);
@@ -425,12 +425,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	
 	// TODO use this
 	// https://jguegant.github.io/blogs/tech/performing-try-emplace.html
-	auto&& insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
-	if (insert.second) {
-		auto&& pair = insert.first;
-		const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
-	}
-	return insert;
+	//auto&& insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
+	//if (insert.second) {
+	//	auto&& pair = insert.first;
+	//	const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
+	//}
+	//return insert;
 }
 
 std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {

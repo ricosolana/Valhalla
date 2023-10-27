@@ -56,8 +56,8 @@ public:
 
         this->AssertOffset(count);
 
-        auto result = T(this->data() + this->m_pos,
-            this->data() + this->m_pos + count);
+        auto result = T(reinterpret_cast<T::value_type*>(this->data()) + this->m_pos,
+            reinterpret_cast<T::value_type*>(this->data()) + this->m_pos + count);
 
         this->SetPos(this->m_pos + count);
 
@@ -227,8 +227,9 @@ public:
     }
 
     decltype(auto) ReadNumItems() {
-        int32_t num = Read<BYTE_t>();
-        if ((num & 128) != 0) num = ((num & 127) << 8) | (int32_t)Read<BYTE_t>();
+        uint32_t num = Read<BYTE_t>();
+        if ((num & 128) != 0) 
+            num = ((num & 127) << 8) | (uint32_t)Read<BYTE_t>();
         return num;
     }
 

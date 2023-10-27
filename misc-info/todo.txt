@@ -1,5 +1,27 @@
 # todo:
 
+- singular member map might also be too large
+    map<id, map<ehash, variant>>
+
+    variant takes up a lot for all these types,
+    additional iteration is unnecessary,
+    might be better to have multiple member maps like in valheim
+
+- zdo map taking a long time
+    compare seems expensive,
+    also unique ptr construct every instantiate
+    
+    i believe the problem is using many indirections, which is odd because ptr->... 
+    is not that expensive, but i guess it does when done thousands per second
+
+    - contiguius map is not the issue
+        - only 16MB with a "huge" map
+
+    - TRY THIS: increase size is expensive (use segmented vector)
+    
+    - ptr get expensive?
+    - 
+
 - simplify filter
     - simple set, not a composite filter
 

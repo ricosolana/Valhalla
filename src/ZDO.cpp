@@ -139,6 +139,9 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     auto prefabHash = reader.Read<HASH_t>();
     if (GetPrefabHash() == 0) { // Init once
         _SetPrefabHash(prefabHash);
+        //GetPrefab();
+        if (!PrefabManager()->GetPrefab(prefabHash))
+            throw std::runtime_error("zdo prefab not found");
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)

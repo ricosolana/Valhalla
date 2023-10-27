@@ -14,10 +14,9 @@ class ZDOID {
     // User: 0, ID: 1
     //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
 
-    USER_ID_t m_userID{};
-    uint32_t m_id{};
-
-    uint32_t m_unusedPadding = 0;
+    USER_ID_t m_userID;
+    uint32_t m_id;
+    uint32_t m_unusedPadding;
         
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
@@ -72,11 +71,14 @@ private:
     }*/
 
 public:
-    ZDOID() = default;
-
     ZDOID(USER_ID_t owner, uint32_t uid);
+    ZDOID();
 
-    ZDOID(const ZDOID&) = default;
+    ZDOID(const ZDOID& other); // should default
+    ZDOID(ZDOID&& other) noexcept;
+
+    void operator=(const ZDOID& other);
+    void operator=(ZDOID&& other) noexcept;
 
     bool operator==(const ZDOID &other) const noexcept {
         //return this->m_pack == other.m_pack;

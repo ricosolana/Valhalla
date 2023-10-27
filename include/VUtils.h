@@ -42,7 +42,7 @@ using namespace std::chrono_literals;
 #define COLOR_WHITE "\033[37m"
 #define COLOR_GRAY "\033[90m"
 
-using BYTE_t = char; // Unsigned 8 bit
+using BYTE_t = uint8_t; // Unsigned 8 bit
 using HASH_t = int32_t; // Used for RPC method hashing
 using USER_ID_t = int64_t; // Should rename to UID
 using PLAYER_ID_t = int64_t; // Should rename to UID

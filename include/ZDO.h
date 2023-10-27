@@ -142,9 +142,9 @@ public:
     using unsafe_value = ZDO*;
     using unsafe_optional = ZDO*;
 
-    using container = UNORDERED_SET_t<std::unique_ptr<ZDO>, hash, std::equal_to<>>;
+    using container = ankerl::unordered_dense::segmented_set<std::unique_ptr<ZDO>, hash, std::equal_to<>>;
     using id_container = UNORDERED_SET_t<ZDOID, hash, std::equal_to<>>; // hetero hash?
-    using ref_container = UNORDERED_SET_t<unsafe_value, hash, std::equal_to<>>;
+    using ref_container = ankerl::unordered_dense::segmented_set<unsafe_value, hash, std::equal_to<>>;
     
     [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
         return itr->get();
@@ -313,6 +313,8 @@ private:
         else
             count = reader.ReadNumItems();
 
+        assert(count > 0 && count < 255); // unlikely to be larger; dungeons only
+
         for (int i = 0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
@@ -387,7 +389,7 @@ private:
 
 public:
     ZDO(ZDOID id)
-        : m_id(m_id)
+        : m_id(id)
     {}
 
     friend bool operator==(ZDOID const& lhs, ZDO const* rhs) noexcept {

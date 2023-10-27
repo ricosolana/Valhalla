@@ -109,9 +109,12 @@ void INetManager::SendNetTime() {
 
 void INetManager::SendPeerInfo(Peer& peer) {
     peer.SubInvoke(Hashes::Rpc::PeerInfo, [](DataWriter& writer) {
+        // Some thoughts;
+        //  kinda weird how id is sent before version
         writer.Write(Valhalla()->ID());
         writer.Write(VConstants::GAME);
         writer.Write(VConstants::NETWORK);
+        //  and kinda weird how position + name has existed for this long
         writer.Write(Vector3f::Zero()); // dummy
         writer.Write(""); // dummy
 
@@ -119,7 +122,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
         writer.Write(world->m_name);
         writer.Write(world->m_seed);
-        writer.Write(world->m_seedName); // Peer does not seem to use
+        writer.Write(world->m_seedName); // unused by client
         writer.Write(world->m_uid);
         writer.Write(world->m_worldGenVersion);
         writer.Write(Valhalla()->GetWorldTime());
