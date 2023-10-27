@@ -343,13 +343,14 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.217.25";
+    //static const char* GAME = "0.217.27";
+    static constexpr std::string_view GAME = "0.217.27";
 
-    static constexpr uint32_t NETWORK = 15;
+    static constexpr uint32_t NETWORK = 17;
 
     // Used while loading world from file (ZNet/ZoneSystem/ZDOMan/RandEventSystem)
     // 32: Hildir beta
-    static constexpr int32_t WORLD = 32;
+    static constexpr int32_t WORLD = 33;
 
     // Used in WorldGenerator terrain
     static constexpr int32_t WORLDGEN = 2;

@@ -237,40 +237,81 @@ private:
 
     template<typename T>
         requires is_member_v<T>
-    decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
-        const auto begin_mark = writer.Position();
-        uint8_t count = 0;
-        //writer.Write(count); // placeholder 0 byte
+    decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members, bool network) {
+        int count{};
 
-        for (auto&& pair : members) {
-            auto&& data = std::get_if<T>(&pair.second);
-            if (data) {
-                // Skip 1 byte for count only if member present
-                if (!count) {
-                    writer.Write(count);
+        // HEY YOU FROM THE FUTURE!
+        //  If this fails, just look at Valheim code in case they fixed it
+        //  The issue is that ZDO-member save-type differs btw network/disk
+        static_assert(VConstants::GAME == std::string_view("0.217.27"));
+        
+        // hopefully fixed by next patch
+        if (network) {            
+            const auto begin_mark = writer.Position();
+
+            for (auto&& pair : members) {
+                auto&& data = std::get_if<T>(&pair.second);
+                if (data) {
+                    // Count is only written
+                    //  if type exists
+                    if (!count) {
+                        writer.Write((BYTE_t)count);
+                    }
+
+                    writer.Write(xhash_to_hash<T>(pair.first));
+                    writer.Write(*data);
+                    count++;
                 }
+            }
 
-                writer.Write(xhash_to_hash<T>(pair.first));
-                writer.Write(*data);
-                count++;
+            if (count) {
+                auto end_mark = writer.Position();
+                writer.SetPos(begin_mark);
+                writer.Write(count);
+                writer.SetPos(end_mark);
             }
         }
+        else {
+            // Count everything beforehand
+            for (auto&& pair : members) {
+                auto&& data = std::get_if<T>(&pair.second);
+                if (data) {
+                    count++;
+                }
+            }
 
-        if (count) {
-            auto end_mark = writer.Position();
-            writer.SetPos(begin_mark);
-            writer.Write(count);
-            writer.SetPos(end_mark);
+            // new encoded type write requires int
+            static_assert(std::is_same_v<decltype(count), int>);
+
+            writer.WriteNumItems(count);
+
+            for (auto&& pair : members) {
+                auto&& data = std::get_if<T>(&pair.second);
+                if (data) {
+                    writer.Write(xhash_to_hash<T>(pair.first));
+                    writer.Write(*data);
+                }
+            }
         }
 
         return count;
     }
 
     // Read a zdo_type from the DataStream
-    template<typename T, typename CountType>
-        requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
-    static void _TryReadType(DataReader& reader, member_map& members) {
-        decltype(auto) count = reader.Read<CountType>();
+    template<typename T>
+        requires is_member_v<T> //&& (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
+    static void _TryReadType(DataReader& reader, member_map& members, int worldVersion) {
+        int count{};
+
+        // TODO look at this upon a patch change
+        static_assert(std::string_view(VConstants::GAME) == std::string_view("0.217.27"));
+
+        if (worldVersion > 0 && worldVersion < 31)
+            count = reader.Read<char16_t>();
+        else if (worldVersion == 0 || worldVersion < 33)
+            count = reader.Read<uint8_t>(); // current network and older load
+        else
+            count = reader.ReadNumItems();
 
         for (int i = 0; i < count; i++) {
             // ...fuck
@@ -332,10 +373,13 @@ private:
     //static constexpr auto FLAGS_PACK_INDEX = 1;
 
     /*
-    * 32 bytes total:
+    * 48 bytes currently;
+    *   40 bytes: assuming ZDOID optimizations
+    *   32 bytes: 8+12+4+4+4 = assuming encoded rotation
+    *   30 bytes: assuming prefab-index
     */
 
-    ZDOID m_id;                                     // 8 bytes
+    ZDOID m_id;                                     // 16 bytes
     Vector3f m_pos;                                 // 12 bytes
     ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
     Vector3f m_rotation;                            // 12 bytes

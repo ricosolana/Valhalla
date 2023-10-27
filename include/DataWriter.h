@@ -219,6 +219,18 @@ public:
         Write(std::string_view(in.m_networkUserId));
     }
 
+    // terrible name
+    // This writes an encoded int but whatever
+    // its not like the name "WriteEncodedInt" makes sense..
+    void WriteNumItems(int32_t value) {
+        if (value < 128)
+            Write((BYTE_t)value);
+        else {
+            Write((BYTE_t)((value >> 8) | 128));
+            Write((BYTE_t)value);
+        }
+    }
+
     void Write(UInt64Wrapper in) {
         Write((uint64_t)in);
     }

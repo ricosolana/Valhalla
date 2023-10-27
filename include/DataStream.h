@@ -85,4 +85,10 @@ public:
     size_t Skip(size_t offset) {
         this->SetPos(this->Position() + offset);
     }
+
+    static int GetNumItemsByteCount(int value) {
+        if (value < 128)
+            return 1;
+        return 2;
+    }
 };

@@ -22,6 +22,7 @@ private:
         this->m_pos += count;
     }
 
+    // Implementation of C#
     uint32_t Read7BitEncodedInt() {
         uint32_t out = 0;
         uint32_t num2 = 0;
@@ -223,6 +224,12 @@ public:
         auto networkUserId = Read<std::string>();
 
         return UserProfile(std::move(name), std::move(gamerTag), std::move(networkUserId));
+    }
+
+    decltype(auto) ReadNumItems() {
+        int32_t num = Read<BYTE_t>();
+        if ((num & 128) != 0) num = ((num & 127) << 8) | (int32_t)Read<BYTE_t>();
+        return num;
     }
 
 

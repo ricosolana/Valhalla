@@ -235,6 +235,10 @@ namespace Hashes {
             static constexpr HASH_t SetAreaHealth = __H("SetAreaHealth");
         };
 
+        namespace MonsterAI {
+            static constexpr HASH_t Wakeup = __H("RPC_Wakeup");
+        }
+
         namespace MusicLocation {
             static constexpr HASH_t SetPlayed = __H("SetPlayed");
         };
@@ -317,6 +321,11 @@ namespace Hashes {
 
         namespace TerrainComposer {
             static constexpr HASH_t Apply = __H("ApplyOperation");
+        };
+
+        namespace Trap {
+            static constexpr HASH_t RequestStateChange = __H("RPC_RequestStateChange");
+            static constexpr HASH_t OnStateChanged = __H("RPC_OnStateChanged");
         };
 
         namespace TreeBase {

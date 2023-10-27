@@ -67,15 +67,15 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     // will get or create an empty default
     auto&& members = ZDO_MEMBERS[GetID()];
 
-    _TryReadType<float,         char16_t>(pkg, members);
-    _TryReadType<Vector3f,      char16_t>(pkg, members);
-    _TryReadType<Quaternion,    char16_t>(pkg, members);
-    _TryReadType<int32_t,       char16_t>(pkg, members);
-    _TryReadType<int64_t,       char16_t>(pkg, members);
-    _TryReadType<std::string,   char16_t>(pkg, members);
+    _TryReadType<float>(pkg, members, worldVersion);
+    _TryReadType<Vector3f>(pkg, members, worldVersion);
+    _TryReadType<Quaternion>(pkg, members, worldVersion);
+    _TryReadType<int32_t>(pkg, members, worldVersion);
+    _TryReadType<int64_t>(pkg, members, worldVersion);
+    _TryReadType<std::string>(pkg, members, worldVersion);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t,   char16_t>(pkg, members);
+        _TryReadType<BYTES_t>(pkg, members, worldVersion);
 
     if (worldVersion < 17) {
         prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
@@ -124,7 +124,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
     auto flags = reader.Read<uint16_t>();
-
+    
     if (version) {
         // Set the self incremental id (ZDOID is no longer saved to disk)
         //this->m_id.SetUID(ZDOManager()->m_nextUid++);
@@ -186,22 +186,21 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         | (1 << NETWORK_String
         | (1 << NETWORK_ByteArray)))) 
     {
-        // Will insert a default if missing (should be missing already)
         auto&& members = ZDO_MEMBERS[GetID()];
         if (flags & (1 << NETWORK_Float)) 
-            _TryReadType<float, uint8_t>(reader, members);
+            _TryReadType<float>(reader, members, version);
         if (flags & (1 << NETWORK_Vec3)) 
-            _TryReadType<Vector3f, uint8_t>(reader, members);
+            _TryReadType<Vector3f>(reader, members, version);
         if (flags & (1 << NETWORK_Quat)) 
-            _TryReadType<Quaternion, uint8_t>(reader, members);
+            _TryReadType<Quaternion>(reader, members, version);
         if (flags & (1 << NETWORK_Int)) 
-            _TryReadType<int32_t, uint8_t>(reader, members);
+            _TryReadType<int32_t>(reader, members, version);
         if (flags & (1 << NETWORK_Long)) 
-            _TryReadType<int64_t, uint8_t>(reader, members);
+            _TryReadType<int64_t>(reader, members, version);
         if (flags & (1 << NETWORK_String)) 
-            _TryReadType<std::string, uint8_t>(reader, members);
+            _TryReadType<std::string>(reader, members, version);
         if (flags & (1 << NETWORK_ByteArray)) 
-            _TryReadType<BYTES_t, uint8_t>(reader, members);
+            _TryReadType<BYTES_t>(reader, members, version);
     }
 }
 
@@ -279,19 +278,19 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (find != ZDO_MEMBERS.end()) {
         auto&& types = find->second;
 
-        if (_TryWriteType<float>(writer, types))
+        if (_TryWriteType<float>(writer, types, network))
             flags |= 1 << NETWORK_Float;
-        if (_TryWriteType<Vector3f>(writer, types))
+        if (_TryWriteType<Vector3f>(writer, types, network))
             flags |= 1 << NETWORK_Vec3;
-        if (_TryWriteType<Quaternion>(writer, types))
+        if (_TryWriteType<Quaternion>(writer, types, network))
             flags |= 1 << NETWORK_Quat;
-        if (_TryWriteType<int32_t>(writer, types))
+        if (_TryWriteType<int32_t>(writer, types, network))
             flags |= 1 << NETWORK_Int;
-        if (_TryWriteType<int64_t>(writer, types))
+        if (_TryWriteType<int64_t>(writer, types, network))
             flags |= 1 << NETWORK_Long;
-        if (_TryWriteType<std::string>(writer, types))
+        if (_TryWriteType<std::string>(writer, types, network))
             flags |= 1 << NETWORK_String;
-        if (_TryWriteType<BYTES_t>(writer, types))
+        if (_TryWriteType<BYTES_t>(writer, types, network))
             flags |= 1 << NETWORK_ByteArray;
     }
 
