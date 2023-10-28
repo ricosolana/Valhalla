@@ -313,6 +313,10 @@ private:
         else
             count = reader.ReadNumItems();
 
+        // charcoal_kiln has 250 strings
+        //  half of them are empty...
+        //  "very efficient"; given all the optimizations..
+
         assert(count > 0 && count < 255); // unlikely to be larger; dungeons only
 
         for (int i = 0; i < count; i++) {
@@ -376,9 +380,13 @@ private:
 
     /*
     * 48 bytes currently;
-    *   40 bytes: assuming ZDOID optimizations
-    *   32 bytes: 8+12+4+4+4 = assuming encoded rotation
-    *   30 bytes: assuming prefab-index
+    *   40 bytes: assuming mild ZDOID optimizations
+    *       32 bytes: 8+12+4+4+4 = assuming encoded rotation
+    *       30 bytes: assuming prefab-index
+    *   38 bytes: assuming Valheim-equal optimizations
+    *       30 bytes: 6+12+4+4+4 = assuming encoded rotation
+    *       28 bytes: assuming prefab-index
+    *   
     */
 
     ZDOID m_id;                                     // 16 bytes

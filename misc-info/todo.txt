@@ -1,5 +1,66 @@
 # todo:
 
+- max opt zdo:
+    26B * 2M = 52'000'000 = 52MB
+    
+    split member maps
+
+- is shrinkage worth it
+    zdoid to 4 bytes, save 4 bytes:
+    
+    what is comparison here:
+        
+        assuming 2 million zdos in world
+        
+        padding (8+4+4):
+            16 bytes * 2M = 32'000'000 = 32MB
+        
+        packed (8+4):
+            12 bytes * 2M = 24'000'000 = 24MB
+            
+        encoded (4+4):
+            8 bytes * 2M = 16'000'000 = 16MB
+            pool: maybe 8 * 2^16 B = 8 * 65536 = 524'288 = 0.5MB (still a lot; conservative)
+            
+        highly-encoded (2+2):
+            4 bytes * 2M = 8'000'000 = 8MB ()
+            
+            alloc can be changed
+                16 bits is too much; even on highly active / changing env; 
+                userID can be larger
+            
+            
+        
+        
+        
+
+- sizes
+    id: 4 (8/24: user/id)
+    pos: 12 (8/8/8: x/y/z)
+    rev: 4
+    rot: 4 (10/12/10: rx, ry, rz)
+    prefab: 2
+    
+    prior to finalizing an approach, 
+        4-byte zdoid, up to 4 billion zdos
+        zdoid userid essentially ignores userIDs, just alloc zdoids with increasing 
+            userIDs if zdoid id bits for a given userID become exhausted
+        
+        2^20 better for id (high-end)
+            2^18 low end
+            
+        depends on owner bits exhaustion rate
+        
+        assuming 1 new owner per 1 seconds (extremely high rate)
+        
+        12 userID bits = 4096/(60s) = 1.13 min
+        
+        2^16 = 65536/(60s) = 18 hours much better
+        
+        // 16 bits each
+        
+        
+
 - singular member map might also be too large
     map<id, map<ehash, variant>>
 

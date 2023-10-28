@@ -73,6 +73,27 @@ In Visual Studio navigate to File->Open->CMake and open `Valhalla/CMakeLists.txt
 In cmake/get_steamapi specify the path to steamsdk at line 7.
 
 ## Progress
+### 10/27/2023 + TODO
+Work has been put into reducing temporary container creation. ZDOCollector 
+now exists to iterate zdos without creating possibly huge containers.
+
+The old methods (GetZDOs, SomeZDOs, NearbyZDOs, ...) were outdated, and
+will be eventually removed from the Lua API (its disabled at the moment).
+
+There was another beta released recently, and it includes some ZDO changes:
+ - New member read/write format (encoded maximal 2-byte int):
+   - Load / Save (Encoded)
+   - Serialize / Deserialize (Byte)
+     - Why is this limited to a byte? C# Dictionary has no guarantees on 
+       iteration order, so seemingly random member-values are
+       getting sent to clients. Likely another oversight.
+ - ZDO.ObjectType utilized as a single bit (although the full 
+   4-value enum still exists)
+   - Only Load limits ZDO.ObjectType to prioritized or default, which
+     the devs might have forgot to implement in the other Save/De/Serialize methods.
+ - This is a beta so all the above is subject to change. Seeing how 
+   some areas are inconsistent, change is highly likely.  
+
 ### 10/13/2023 + TODO
 I've finally fixed the missing zdos and rotations problem. It turns out it wasnt an issue of zdos being omitted, nor Quaternion being broken (Quaternion could still be broken...). 
 This 1 line broke client deserialization:

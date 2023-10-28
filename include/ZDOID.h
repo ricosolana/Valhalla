@@ -6,26 +6,16 @@
 #include "BitPack.h"
 
 class ZDOID {
-    //friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
 
-    //using UType = uint64_t;
-
-    // User: 0, ID: 1
-    //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
+    //uint16_t m_userIDIndex;
+    //uint16_t m_id;
 
     USER_ID_t m_userID;
     uint32_t m_id;
-    uint32_t m_unusedPadding;
-        
-    // Indexed UserIDs
-    //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
-    //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;
+    uint32_t m_unusedPadding; // garbage
 
-    //static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
-
-    //static constexpr auto USER_PACK_INDEX = 0;
-    //static constexpr auto ID_PACK_INDEX = 1;
+    //static std::array<USER_ID_t, std::numeric_limits<decltype(m_userIDIndex)>::max()> INDEXED_USERS;
 
 public:
     static const ZDOID NONE;
@@ -34,41 +24,40 @@ private:
     // Get the index of a UserID
     //  The UserID is inserted if it does not exist
     //  Returns the insertion index or the existing index of the UserID
-    /*
-    static size_t EnsureUserIDIndex(int64_t owner) {
-        if (!owner)
-            return 0;
-
-        for (size_t i = 1; i < INDEXED_USERS.size(); i++) {
-            // Assume that a blank index prior to an existing UserID being found
-            //  means that the UserID does not exist (so insert it)
-            if (!INDEXED_USERS[i]) {
-                INDEXED_USERS[i] = owner;
-                return i;
-            }
-            else if (INDEXED_USERS[i] == owner) {
-                return i;
-            }
-        }
-
-        // TODO this is definitely reachable, assuming the server runs long enough
-        //  for enough unique players to join, causing the INDEXED_USERS loop to completely finish
-        //  and reach this point
-        std::unreachable();
-    }
-
-    static int64_t GetUserIDByIndex(size_t index) {
-        //if (!index)
-            //return 0;
-
-        //assert((index || (INDEXED_USERS[index] == 0))
-            //&& "Array[0] should be 0 to represent no-owner");
-
-        if (index < INDEXED_USERS.size())
-            return INDEXED_USERS[index];
-
-        throw std::runtime_error("user id by index not found");
-    }*/
+    //static size_t EnsureUserIDIndex(int64_t owner) {
+    //    if (!owner)
+    //        return 0;
+    //
+    //    for (size_t i = 1; i < INDEXED_USERS.size(); i++) {
+    //        // Assume that a blank index prior to an existing UserID being found
+    //        //  means that the UserID does not exist (so insert it)
+    //        if (!INDEXED_USERS[i]) {
+    //            INDEXED_USERS[i] = owner;
+    //            return i;
+    //        }
+    //        else if (INDEXED_USERS[i] == owner) {
+    //            return i;
+    //        }
+    //    }
+    //
+    //    // TODO this is definitely reachable, assuming the server runs long enough
+    //    //  for enough unique players to join, causing the INDEXED_USERS loop to completely finish
+    //    //  and reach this point
+    //    std::unreachable();
+    //}
+    //
+    //static int64_t GetUserIDByIndex(size_t index) {
+    //    //if (!index)
+    //        //return 0;
+    //
+    //    //assert((index || (INDEXED_USERS[index] == 0))
+    //        //&& "Array[0] should be 0 to represent no-owner");
+    //
+    //    if (index < INDEXED_USERS.size())
+    //        return INDEXED_USERS[index];
+    //
+    //    throw std::runtime_error("user id by index not found");
+    //}
 
 public:
     ZDOID(USER_ID_t owner, uint32_t uid);
@@ -99,7 +88,7 @@ public:
     // TODO rename to User
     USER_ID_t GetOwner() const {
         //return INDEXED_USERS[_GetUserIDIndex()];
-        return m_userID;
+        return this->m_userID;
     }
 
     // Rename to SetUserID
