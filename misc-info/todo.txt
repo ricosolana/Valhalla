@@ -1,5 +1,10 @@
 # todo:
 
+- zdo zones broken again
+    zdo zone not matching expected
+
+- discord player spawn mistaken for death
+
 - benchmark / test:
     - map<zdoid, map<u64, variant>>
     
@@ -8,6 +13,8 @@
         cons:
             long hashes are huge
             all members
+            
+        HEAP: +1,300,000.00 KB
     
     - tuple<map<zdoid, map<hash, T>>...>
         pre Load() -- prior to first zdo

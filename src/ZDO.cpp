@@ -206,12 +206,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
 void ZDO::SetPosition(Vector3f pos) {
     if (this->GetPosition() != pos) {
+        assert(ZDOManager()->_GetZDOContainer(GetZone())->contains(this));
+
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
-            ZDOManager()->_InvalidateZDOZone(this);
+            auto oldZone = GetZone();
 
             ZDOManager()->_RemoveFromSector(this);
             this->_SetPosition(pos);
             ZDOManager()->_AddZDOToZone(this);
+
+            ZDOManager()->_InvalidateZDOZone(this);
+
+            assert(!ZDOManager()->_GetZDOContainer(oldZone)->contains(this));
+
+            assert(ZDOManager()->_GetZDOContainer(GetZone())->contains(this));
         }
         else {
             this->_SetPosition(pos);

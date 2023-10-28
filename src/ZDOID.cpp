@@ -38,4 +38,5 @@ void ZDOID::operator=(ZDOID&& other) noexcept {
 
     other.m_userID = 0;
     other.m_id = 0;
+    other.m_unusedPadding = 0;
 }

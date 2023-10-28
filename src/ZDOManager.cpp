@@ -1024,7 +1024,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 			}
 			else [[unlikely]] {
-				assert(!_GetZDOContainer(zdo->GetZone())->contains(zdoid));
+				auto&& container = _GetZDOContainer(zdo->GetZone());
+				assert(!container->contains(zdoid));
 
 				if (m_erasedZDOs.contains(zdoid)) [[unlikely]] {
 					m_destroySendList.push_back(zdoid);
@@ -1053,6 +1054,8 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	_EraseZDO(pair.first);
 					//	continue;
 					//}
+
+					assert(!_GetZDOContainer(zdo->GetZone())->contains(zdo));
 
 					zdo->_SetPosition(pos);
 					_AddZDOToZone(zdo);
