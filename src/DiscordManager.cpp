@@ -13,7 +13,7 @@
 #include "RandomEventManager.h"
 #include "ZDOManager.h"
 
-auto DISCORD_MANAGER(std::make_unique<IDiscordManager>());
+auto DISCORD_MANAGER = std::make_unique<IDiscordManager>();
 IDiscordManager* DiscordManager() {
 	return DISCORD_MANAGER.get();
 }
@@ -64,10 +64,22 @@ void IDiscordManager::Init() {
 				if (label == "vhadmin") {
 					auto&& admin = Valhalla()->m_admin;
 
-					auto&& identifier = std::get_if<std::string>(&event.get_parameter("identifier"));
-					auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+					//std::visit(VUtils::Traits::overload{
+					//	[event](const std::string& identifier) {
+					//		event.get_parameter("flag")
+					//	}, [](auto) {
+					//
+					//	}
+					//}, event.get_parameter("identifier"));
+
+					auto&& identifier_v = event.get_parameter("identifier");
+
+					auto&& identifier = std::get_if<std::string>(&identifier_v);
 					if (identifier) {
 						if (auto&& peer = NetManager()->GetPeer(*identifier)) {
+							auto&& flag_v = event.get_parameter("flag");
+							auto&& flag = std::get_if<bool>(&flag_v);
+
 							if (flag) {
 								peer->SetAdmin(*flag);
 								if (*flag)
@@ -121,7 +133,10 @@ void IDiscordManager::Init() {
 					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
 						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
 						//seconds duration = duration_cast<seconds>(e->m_duration);
-						auto&& dur = std::get_if<int64_t>(&event.get_parameter("duration"));
+						
+						auto&& duration_v = event.get_parameter("duration");
+						
+						auto&& dur = std::get_if<int64_t>(&duration_v);
 						RandomEventManager()->SetCurrentRandomEvent(*e, peer->m_pos,
 							dur ? seconds(*dur) : duration_cast<seconds>(e->m_duration));
 						event.reply("Started event in world");
@@ -140,7 +155,8 @@ void IDiscordManager::Init() {
 						event.reply("Player not found");
 				}
 				else if (label == "vhlink") {
-					auto&& key = std::get_if<std::string>(&event.get_parameter("key"));
+					auto&& key_v = event.get_parameter("key");
+					auto&& key = std::get_if<std::string>(&key_v);
 					if (key) {
 						// Verify the key
 						for (auto&& itr = m_tempLinkingKeys.begin(); itr != m_tempLinkingKeys.end(); ) {
@@ -226,7 +242,8 @@ void IDiscordManager::Init() {
 						+ std::to_string(duration_cast<seconds>(Valhalla()->Elapsed()).count()) + "s");
 				}
 				else if (label == "vhtod") {
-					auto&& time = std::get_if<std::string>(&event.get_parameter("time"));
+					auto&& time_v = event.get_parameter("time");
+					auto&& time = std::get_if<std::string>(&time_v);
 					if (time) {
 						char ch = (*time)[0];
 						Valhalla()->SetTimeOfDay(ch == 'M' ? TIME_MORNING : ch == 'D' ? TIME_DAY : ch == 'A' ? TIME_AFTERNOON : TIME_NIGHT);
@@ -238,7 +255,9 @@ void IDiscordManager::Init() {
 					}
 				}
 				else if (label == "vhwhitelist") {
-					auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+					auto&& flag_v = event.get_parameter("flag");
+
+					auto&& flag = std::get_if<bool>(&flag_v);
 					if (flag) {
 						VH_SETTINGS.playerWhitelist = *flag;
 						event.reply(std::string("Whitelist is now ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
@@ -259,7 +278,9 @@ void IDiscordManager::Init() {
 						event.reply("Player not found");
 				}
 				else if (label == "vhworldtime") {
-					auto&& time = std::get_if<double>(&event.get_parameter("time"));
+					auto&& time_v = event.get_parameter("time");
+
+					auto&& time = std::get_if<double>(&time_v);
 					if (time) {
 						Valhalla()->SetWorldTime(*time);
 						event.reply("Set world time to " + std::to_string(*time));
@@ -386,7 +407,7 @@ void IDiscordManager::Init() {
 		if (VH_SETTINGS.discordSyncLeaves) {
 			// Try kicking player off Valheim server
 
-			if (auto&& peer = UnlinkPeerBySnowflake(event.removed->id)) {
+			if (auto&& peer = UnlinkPeerBySnowflake(event.removed.id)) {
 				peer->Kick();
 
 				LOG_INFO(LOGGER, "Kicked {} due to guild leave", peer->m_name);
