@@ -1,9 +1,62 @@
 # todo:
 
+- benchmark / test:
+    - map<zdoid, map<u64, variant>>
+    
+        pros: 
+            access all zdo members with single retrieval
+        cons:
+            long hashes are huge
+            all members
+    
+    - tuple<map<zdoid, map<hash, T>>...>
+        pre Load() -- prior to first zdo
+        HEAP: +1,098,559.70 KB
+        post ZDOManager load()
+
+- add Find to ZDO : to get data_map from globals
+    Find<T>(GetID())
+    
+    much needed
+
+- perfect encoded zdoid seems to be 4/4
+    little compromises
+        - half capacity of current
+        - no padding
+        - most contiguous members are aligned / no packing
+        - alignment with member map
+        - perfect hash
+            - does ankerl care about hash uniqueness...
+
 - max opt zdo:
     26B * 2M = 52'000'000 = 52MB
     
     split member maps
+    
+    zdoid(16) with type:
+        16+4 = 20
+        16+12 = 28
+        16+16 = 32
+        16+4 = 20
+        16+8 = 24
+        
+        no padding issues
+        
+    zdoid(8) with type:
+        8+4 = 12
+        8+12 = 20
+        8+16 = 32
+        8+4 = 20
+        8+8 = 24
+        
+        no padding issues
+        
+        negligible since
+        
+    no padding issues regarding 8-bit zdoid
+    
+    4-byte padding applied to 4-byte zdoid
+        waste and limited capacity
 
 - is shrinkage worth it
     zdoid to 4 bytes, save 4 bytes:

@@ -27,6 +27,10 @@
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+    
+    
+    assert(false);
+
     pkg.Read<uint32_t>();       // owner rev
     pkg.Read<uint32_t>();       // data rev
     pkg.Read<bool>();           // persistent
@@ -65,17 +69,17 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     this->_SetRotation(pkg.Read<Quaternion>());
 
     // will get or create an empty default
-    auto&& members = ZDO_MEMBERS[GetID()];
+    //auto&& members = ZDO_MEMBERS[GetID()];
 
-    _TryReadType<float>(pkg, members, worldVersion);
-    _TryReadType<Vector3f>(pkg, members, worldVersion);
-    _TryReadType<Quaternion>(pkg, members, worldVersion);
-    _TryReadType<int32_t>(pkg, members, worldVersion);
-    _TryReadType<int64_t>(pkg, members, worldVersion);
-    _TryReadType<std::string>(pkg, members, worldVersion);
+    _TryReadType<float>(pkg, worldVersion);
+    _TryReadType<Vector3f>(pkg, worldVersion);
+    _TryReadType<Quaternion>(pkg, worldVersion);
+    _TryReadType<int32_t>(pkg, worldVersion);
+    _TryReadType<int64_t>(pkg, worldVersion);
+    _TryReadType<std::string>(pkg, worldVersion);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t>(pkg, members, worldVersion);
+        _TryReadType<BYTES_t>(pkg, worldVersion);
 
     if (worldVersion < 17) {
         prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
@@ -110,13 +114,13 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
         }
 
         // Convert seeds
-        member_map copy = members;
-        for (auto&& pair : copy) {
-            if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
-                // assign an arbitrary random seed based off its GetID()
-                Set("seed", 
-                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
-            }
+        //member_map copy = members;
+
+        //auto&& seedsData = _GetDataMap<int32_t>();
+        auto&& itemLeft = Get<int32_t>(Hashes::ZDO::VisEquipment::ITEM_LEFT);
+        if (itemLeft) {
+            Set("seed",
+                static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
         }
     }
 }
@@ -180,31 +184,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
             //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
     
-    if (flags & (
-        (1 << NETWORK_Float) 
-        | (1 << NETWORK_Vec3) 
-        | (1 << NETWORK_Quat) 
-        | (1 << NETWORK_Int) 
-        | (1 << NETWORK_Long) 
-        | (1 << NETWORK_String
-        | (1 << NETWORK_ByteArray)))) 
-    {
-        auto&& members = ZDO_MEMBERS[GetID()];
-        if (flags & (1 << NETWORK_Float)) 
-            _TryReadType<float>(reader, members, version);
-        if (flags & (1 << NETWORK_Vec3)) 
-            _TryReadType<Vector3f>(reader, members, version);
-        if (flags & (1 << NETWORK_Quat)) 
-            _TryReadType<Quaternion>(reader, members, version);
-        if (flags & (1 << NETWORK_Int)) 
-            _TryReadType<int32_t>(reader, members, version);
-        if (flags & (1 << NETWORK_Long)) 
-            _TryReadType<int64_t>(reader, members, version);
-        if (flags & (1 << NETWORK_String)) 
-            _TryReadType<std::string>(reader, members, version);
-        if (flags & (1 << NETWORK_ByteArray)) 
-            _TryReadType<BYTES_t>(reader, members, version);
-    }
+    if (flags & (1 << NETWORK_Float)) 
+        _TryReadType<float>(reader, version);
+    if (flags & (1 << NETWORK_Vec3)) 
+        _TryReadType<Vector3f>(reader, version);
+    if (flags & (1 << NETWORK_Quat)) 
+        _TryReadType<Quaternion>(reader, version);
+    if (flags & (1 << NETWORK_Int)) 
+        _TryReadType<int32_t>(reader, version);
+    if (flags & (1 << NETWORK_Long)) 
+        _TryReadType<int64_t>(reader, version);
+    if (flags & (1 << NETWORK_String)) 
+        _TryReadType<std::string>(reader, version);
+    if (flags & (1 << NETWORK_ByteArray)) 
+        _TryReadType<BYTES_t>(reader, version);
 }
 
 
@@ -277,26 +270,21 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
-    auto&& find = ZDO_MEMBERS.find(GetID());
-    if (find != ZDO_MEMBERS.end()) {
-        auto&& types = find->second;
-
-        if (_TryWriteType<float>(writer, types, network))
-            flags |= 1 << NETWORK_Float;
-        if (_TryWriteType<Vector3f>(writer, types, network))
-            flags |= 1 << NETWORK_Vec3;
-        if (_TryWriteType<Quaternion>(writer, types, network))
-            flags |= 1 << NETWORK_Quat;
-        if (_TryWriteType<int32_t>(writer, types, network))
-            flags |= 1 << NETWORK_Int;
-        if (_TryWriteType<int64_t>(writer, types, network))
-            flags |= 1 << NETWORK_Long;
-        if (_TryWriteType<std::string>(writer, types, network))
-            flags |= 1 << NETWORK_String;
-        if (_TryWriteType<BYTES_t>(writer, types, network))
-            flags |= 1 << NETWORK_ByteArray;
-    }
-
+    if (_TryWriteType<float>(writer, network))
+        flags |= 1 << NETWORK_Float;
+    if (_TryWriteType<Vector3f>(writer, network))
+        flags |= 1 << NETWORK_Vec3;
+    if (_TryWriteType<Quaternion>(writer, network))
+        flags |= 1 << NETWORK_Quat;
+    if (_TryWriteType<int32_t>(writer, network))
+        flags |= 1 << NETWORK_Int;
+    if (_TryWriteType<int64_t>(writer, network))
+        flags |= 1 << NETWORK_Long;
+    if (_TryWriteType<std::string>(writer, network))
+        flags |= 1 << NETWORK_String;
+    if (_TryWriteType<BYTES_t>(writer, network))
+        flags |= 1 << NETWORK_ByteArray;
+    
     const auto endPos = writer.Position();
     writer.SetPos(flagPos);
     writer.Write(flags);

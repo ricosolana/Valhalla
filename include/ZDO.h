@@ -111,32 +111,39 @@ private:
         }
     };
 
-    using member_hash = uint64_t;
-    using member_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
-    using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
-    using member_map = UNORDERED_MAP_t<member_hash, member_variant>;
+    
+
+    using data_tuple = std::tuple<float, Vector3f, Quaternion, int32_t, int64_t, std::string, BYTES_t>;
 
     template<typename T>
-    using is_member = VUtils::Traits::tuple_has_type<T, member_tuple>;
+    using is_data = VUtils::Traits::tuple_has_type<T, data_tuple>;
 
     template<typename T> 
-    static constexpr bool is_member_v = is_member<T>::value;
+    static constexpr bool is_data_v = is_data<T>::value;
 
-    template<typename T>
-        requires is_member<T>::value
-    using member_denotion = std::integral_constant<size_t, VUtils::Traits::tuple_index<T, member_tuple>::value>;
 
-    template<typename T>
-    static constexpr size_t member_denotion_v = member_denotion<T>::value;
 
-    template<typename T>
-        requires is_member<T>::value
-    using member_flag = std::integral_constant<size_t, 1 << member_denotion_v<T>>;
+    template<typename T> requires is_data_v<T>
+    using data_map = ankerl::unordered_dense::map<HASH_t, T>;
 
-    template<typename T>
-    static constexpr size_t member_flag_v = member_flag<T>::value;
+    template<typename T> requires is_data_v<T>
+    using global_map = ankerl::unordered_dense::segmented_map<ZDOID, data_map<T>>;
 
-    
+
+
+    template <typename Tuple> struct tuple_global_map_from_tuple;
+
+    template <typename... Ts>
+    struct tuple_global_map_from_tuple<std::tuple<Ts...>>
+    {
+        using type = std::tuple<global_map<Ts>...>;
+    };
+
+    template<typename... T> using tuple_global_map_from_tuple_t = tuple_global_map_from_tuple<T...>::type;
+
+
+
+    using tuple_global_map = tuple_global_map_from_tuple_t<data_tuple>;
 
 public:
     using unsafe_value = ZDO*;
@@ -174,133 +181,105 @@ public:
     
 private:
     template<typename T>
-        requires is_member_v<T>
-    [[nodiscard]] static member_hash hash_to_xhash(HASH_t in) {
-        return static_cast<member_hash>(in)
-            ^ static_cast<member_hash>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
+    static global_map<T>& _GetGlobalMap() {
+        return std::get<global_map<T>>(ZDO_GLOBAL_MAP);
+    }
+
+    //template<typename T>
+    //static global_map<T>& _GetGlobalMap() {
+    //    return const_cast<global_map<T>&>(
+    //        const_cast<const ZDO*>(this)->_GetGlobalMap<T>()
+    //    );
+    //}
+
+    // find the data_map<T> for this zdo
+    //  Null if not found
+    template<typename T>
+    const data_map<T>* _GetDataMap() const {
+        auto&& globals = _GetGlobalMap<T>();
+        auto&& find = globals.find(GetID());
+        if (find != globals.end()) {
+            return &find->second;
+        }
+        return nullptr;
     }
 
     template<typename T>
-        requires is_member_v<T>
-    [[nodiscard]] static HASH_t xhash_to_hash(member_hash in) {
-        return static_cast<HASH_t>(in)
-            ^ static_cast<HASH_t>(ankerl::unordered_dense::hash<size_t>{}(VUtils::Traits::tuple_index_v<T, member_tuple>));
+    data_map<T>* _GetDataMap() {
+        return const_cast<data_map<T>*>(
+            const_cast<const ZDO*>(this)->_GetDataMap<T>()
+        );
+    }
+
+    template<typename T>
+    const data_map<T>& _GetDataMapOrDefault() const {
+        return const_cast<ZDO*>(this)->_GetGlobalMap<T>()[GetID()];
+
+        //return _GetGlobalMap<T>()[GetID()];
+    }
+
+    template<typename T>
+    data_map<T>& _GetDataMapOrDefault() {
+        return const_cast<data_map<T>&>(
+            const_cast<const ZDO*>(this)->_GetDataMapOrDefault<T>()
+        );
     }
 
     // Set the object by hash (Internal use only; does not revise ZDO on changes)
     //  Returns whether the previous value was modified
-    //  Throws on type mismatch
     template<typename T>
-        requires is_member<T>::value
-    [[maybe_unused]] static bool _Set(HASH_t key, T value, member_map& members) {
-        auto mut = hash_to_xhash<T>(key);
-
-        auto&& insert = members.insert({ mut, 0.f });
+        requires is_data<T>::value
+    [[maybe_unused]] static bool _Set(HASH_t key, T &&value, data_map<T>& data) {
+        auto&& insert = data.try_emplace(key, value);
         if (insert.second) {
-            // Then officially assign
-            insert.first->second = std::move(value);
-
-            //this->m_pack.Set<data_t::
-
-            //m_pack.Merge<2>(1 << member_denotion<T>::value);
-            //m_pack.Merge<FLAGS_PACK_INDEX>(member_flag_v<T>);
             return true;
         }
         else {
-            //assert(m_pack.Get<2>() & (1 << member_denotion<T>::value));
-            //assert(m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>);
-
-            // else try modifying it ONLY if the member is same type
-
-            // Modify type
-            auto&& get = std::get_if<T>(&insert.first->second);
-            if (get) {
-                if (!std::is_fundamental_v<T>
-                    || *get != value)
-                {
-                    *get = std::move(value);
-                    return true;
-                }
-                return false;
+            if (insert.first->second != value) {
+                insert.first->second = std::move(value);
+                return true;
             }
-            else {
-                throw std::runtime_error("zdo member hash collision");
-            }
+            return false;
         }
     }
 
     template<typename T> 
-        requires is_member_v<T>
-    [[maybe_unused]] bool _Set(HASH_t key, T value) {
-        return _Set(key, std::move(value), ZDO_MEMBERS[GetID()]);
+        requires is_data_v<T>
+    [[maybe_unused]] bool _Set(HASH_t key, T&& value) {
+        //return _Set(key, std::forward<T>(value), std::get<global_map<T>>(ZDO_GLOBAL_MAP)[GetID()]);
+        return _Set(key, std::forward<T>(value), _GetDataMapOrDefault<T>());
     }
-
+    
     template<typename T>
-        requires is_member_v<T>
-    decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members, bool network) {
-        int count{};
-
+        requires is_data_v<T>
+    int32_t _TryWriteType(DataWriter& writer, bool network) const {
         // HEY YOU FROM THE FUTURE!
         //  If this fails, just look at Valheim code in case they fixed it
         //  The issue is that ZDO-member save-type differs btw network/disk
         static_assert(VConstants::GAME == std::string_view("0.217.27"));
         
-        // hopefully fixed by next patch
-        if (network) {            
-            const auto begin_mark = writer.Position();
+        auto&& data = _GetDataMap<T>();
+        if (!network)
+            writer.WriteNumItems(data ? data->size() : 0);
+        else if (data && !data->empty()) 
+            writer.Write((BYTE_t)data->size());
 
-            for (auto&& pair : members) {
-                auto&& data = std::get_if<T>(&pair.second);
-                if (data) {
-                    // Count is only written
-                    //  if type exists
-                    if (!count) {
-                        writer.Write((BYTE_t)count);
-                    }
-
-                    writer.Write(xhash_to_hash<T>(pair.first));
-                    writer.Write(*data);
-                    count++;
-                }
+        if (data) {
+            for (auto&& pair : *data) {
+                writer.Write(pair.first);
+                writer.Write(pair.second);
             }
 
-            if (count) {
-                auto end_mark = writer.Position();
-                writer.SetPos(begin_mark);
-                writer.Write(count);
-                writer.SetPos(end_mark);
-            }
-        }
-        else {
-            // Count everything beforehand
-            for (auto&& pair : members) {
-                auto&& data = std::get_if<T>(&pair.second);
-                if (data) {
-                    count++;
-                }
-            }
-
-            // new encoded type write requires int
-            static_assert(std::is_same_v<decltype(count), int>);
-
-            writer.WriteNumItems(count);
-
-            for (auto&& pair : members) {
-                auto&& data = std::get_if<T>(&pair.second);
-                if (data) {
-                    writer.Write(xhash_to_hash<T>(pair.first));
-                    writer.Write(*data);
-                }
-            }
+            return (int32_t)data->size();
         }
 
-        return count;
+        return 0;
     }
 
     // Read a zdo_type from the DataStream
     template<typename T>
-        requires is_member_v<T> //&& (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
-    static void _TryReadType(DataReader& reader, member_map& members, int worldVersion) {
+        requires is_data_v<T> //&& (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
+    void _TryReadType(DataReader& reader, int worldVersion) {
         int count{};
 
         // TODO look at this upon a patch change
@@ -317,14 +296,17 @@ private:
         //  half of them are empty...
         //  "very efficient"; given all the optimizations..
 
-        assert(count > 0 && count < 255); // unlikely to be larger; dungeons only
+        //assert(count > 0 && count < 255); // unlikely to be larger; dungeons only
 
-        for (int i = 0; i < count; i++) {
-            // ...fuck
-            // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-            auto hash(reader.Read<HASH_t>());
-            auto type(reader.Read<T>());
-            _Set(hash, type, members);
+        if (count) {
+            auto&& data = _GetDataMapOrDefault<T>();
+
+            for (int i = 0; i < count; i++) {
+                // ...fuck
+                // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
+                auto h(reader.Read<HASH_t>()); // do not inline this
+                _Set(h, reader.Read<T>(), data);
+            }
         }
     }
 
@@ -361,7 +343,10 @@ private:
     
 
 private:
-    static inline ankerl::unordered_dense::segmented_map<ZDOID, member_map> ZDO_MEMBERS;
+    static inline tuple_global_map ZDO_GLOBAL_MAP;
+
+
+
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, USER_ID_t> ZDO_OWNERS;
@@ -429,32 +414,36 @@ public:
     //  Otherwise write according to the file save format
     void Pack(DataWriter& writer, bool network) const;
 
+
+
     // TODO rename this to Remove (this has nearly the same functionality)
     // TODO add an extract that returns an optional (eliminate the T& out)
     // Erases and returns the value 
     template<typename T>
-        requires is_member_v<T>
-    bool Extract(HASH_t key, T& out) {
-        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
-            auto&& members_find = ZDO_MEMBERS.find(GetID());
-            if (members_find != ZDO_MEMBERS.end()) {
-                auto&& members = members_find->second;
-
-                auto mut = hash_to_xhash<T>(key);
-
-                auto&& find = members.find(mut);
-                if (find != members.end()) {
-                    auto&& get = std::get_if<T>(&find->second);
-                    if (get) {
-                        out = std::move(*get);
-                        members.erase(find);
-                        return true;
-                    }
-                }
+        requires is_data_v<T>
+    bool Extract(HASH_t key, T& out) {        
+        auto&& data = _GetDataMap<T>();
+        if (data) {
+            auto&& find = data->find(key);
+            if (find != data->end()) {
+                out = std::move(find->second);
+                data->erase(find);
+                return true;
             }
-            else {
-                //assert(false);
-            }
+        }
+
+        //auto&& globals = std::get<global_map<T>>(ZDO_GLOBAL_MAP);
+        //
+        //auto&& globals_find = globals.find(GetID());
+        //if (globals_find != globals.end()) {
+        //    auto&& data = globals_find->second;
+        //
+        //    auto&& find = data.find(key);
+        //    if (find != data.end()) {
+        //        out = std::move(find->second);
+        //        data.erase(find);
+        //        return true;
+        //    }
         //}
 
         return false;
@@ -466,36 +455,21 @@ public:
     //  Returns null if absent 
     //  Throws on type mismatch
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     [[nodiscard]] const T* Get(HASH_t key) const {
-        //static_assert(member_denotion_v<float> == std::to_underlying(LocalDenotion::Member_Float));
-
-        //if (m_encoded.HasMember<T>()) {
-        //if (m_pack.Get<2>() & (1 << GetMemberDenotion<T>())) {
-        //if (m_pack.Get<FLAGS_PACK_INDEX>() & member_flag_v<T>) {
-            auto&& members_find = ZDO_MEMBERS.find(GetID());
-            if (members_find != ZDO_MEMBERS.end()) {
-                auto&& members = members_find->second;
-
-                auto mut = hash_to_xhash<T>(key);
-
-                auto&& find = members.find(mut);
-                if (find != members.end()) {
-                    return std::get_if<T>(&find->second);
-                }
-            }
-            else {
-                //assert(false);
-            }
-        //}
-
+        auto&& data = _GetDataMap<T>();
+        if (data) {
+            auto&& find = data->find(key);
+            if (find != data->end())
+                return &find->second;
+        }
         return nullptr;
     }
 
     //member_variant_mono Extract(std::string key,)
 
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     bool Extract(std::string_view key, T& out) {
         return Extract(VUtils::String::GetStableHashCode(key), out);
     }
@@ -504,14 +478,14 @@ public:
     //  Returns null if absent 
     //  Throws on type mismatch
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     [[nodiscard]] const T* Get(std::string_view key) const {
         return Get<T>(VUtils::String::GetStableHashCode(key));
     }
 
     // Trivial hash getters
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     [[nodiscard]] const T& Get(HASH_t key, const T& value) const {
         auto&& get = Get<T>(key);
         return get ? *get : value;
@@ -519,7 +493,7 @@ public:
 
     // Hash-key getters
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     [[nodiscard]] const T& Get(std::string_view key, const T &value) const { return Get<T>(VUtils::String::GetStableHashCode(key), value); }
     
     [[nodiscard]] float               GetFloat(       HASH_t key, float value) const {                            return Get<float>(key, value); }
@@ -569,28 +543,31 @@ public:
 
     // Trivial hash setters
     template<typename T>
-        requires is_member_v<T>
+        requires is_data_v<T>
     void Set(HASH_t key, T value) {
         if (_Set(key, std::move(value)))
             Revise();
     }
     
     // Special hash setters
-    void Set(HASH_t key, bool value) { Set(key, value ? (int32_t)1 : 0); }
+    void Set(HASH_t key, bool value) { Set<int32_t>(key, value); }
     void Set(const std::pair<HASH_t, HASH_t>& key, ZDOID value) {
         Set(key.first, value.GetOwner());
         Set(key.second, (int64_t)value.GetUID());
     }
 
-
-
     template<typename T>
-        requires is_member_v<T>
-    void Set(std::string_view key, T value) { Set(VUtils::String::GetStableHashCode(key), std::move(value)); }
+    void Set(std::string_view key, T&& value) {
+        Set(VUtils::String::GetStableHashCode(key), std::move(value));
+    }
 
-    void Set(std::string_view key, bool value) { Set(VUtils::String::GetStableHashCode(key), value ? (int32_t)1 : 0); }
-
-    void Set(std::string_view key, ZDOID value) { Set(VUtils::String::ToHashPair(key), value); }
+    //template<typename T>
+    //    requires is_member_v<T>
+    //void Set(std::string_view key, T value) { Set(VUtils::String::GetStableHashCode(key), std::move(value)); }
+    //
+    //void Set(std::string_view key, bool value) { Set(VUtils::String::GetStableHashCode(key), value); }
+    //
+    //void Set(std::string_view key, ZDOID value) { Set(VUtils::String::ToHashPair(key), value); }
 
 
 
@@ -794,22 +771,22 @@ public:
 
 
 
-    [[nodiscard]] size_t GetTotalAlloc() const {
-        size_t size = 0;
-
-        auto&& find = ZDO_MEMBERS.find(GetID());
-        if (find != ZDO_MEMBERS.end()) {
-            for (auto&& member : find->second) {
-                // TODO this only counts the compiled type size
-                //  it does not include dynamically sized types like strings or arrays
-                size += std::visit([](const auto& value) {
-                    return sizeof(value);
-                }, member.second);
-            }
-        }
-
-        return size;
-    }
+    //[[nodiscard]] size_t GetTotalAlloc() const {
+    //    size_t size = 0;
+    //
+    //    auto&& find = ZDO_GLOBAL_MAP.find(GetID());
+    //    if (find != ZDO_GLOBAL_MAP.end()) {
+    //        for (auto&& member : find->second) {
+    //            // TODO this only counts the compiled type size
+    //            //  it does not include dynamically sized types like strings or arrays
+    //            size += std::visit([](const auto& value) {
+    //                return sizeof(value);
+    //            }, member.second);
+    //        }
+    //    }
+    //
+    //    return size;
+    //}
 };
 
 

@@ -128,6 +128,9 @@ add_executable(${PROJECT_NAME}
 
 #find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 
+find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
+target_include_directories(${PROJECT_NAME}  PRIVATE ${GTL_INCLUDE_DIRS})
+
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PUBLIC ${STEAMWORKS_SDK_SOURCE_DIR}

@@ -639,9 +639,15 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 
 	m_erasedZDOs.insert(zdoid);
 	
-	// erase members and connectors
-	ZDO::ZDO_MEMBERS.erase(zdoid);
-	//ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
+	ZDO::_GetGlobalMap<float>().erase(zdoid);
+	ZDO::_GetGlobalMap<Vector3f>().erase(zdoid);
+	ZDO::_GetGlobalMap<Quaternion>().erase(zdoid);
+	ZDO::_GetGlobalMap<int32_t>().erase(zdoid);
+	ZDO::_GetGlobalMap<int64_t>().erase(zdoid);
+	ZDO::_GetGlobalMap<std::string>().erase(zdoid);
+	ZDO::_GetGlobalMap<BYTES_t>().erase(zdoid);
+
+	ZDO::ZDO_CONNECTORS.erase(zdoid);
 	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
 	return m_objectsByID.erase(itr);
@@ -1125,17 +1131,17 @@ float IZDOManager::GetStDevZDOMembers() {
 
 size_t IZDOManager::GetTotalZDOAlloc() {
 	size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-	for (auto&& zdo : m_objectsByID) bytes += zdo->GetTotalAlloc();
+	//for (auto&& zdo : m_objectsByID) bytes += zdo->GetTotalAlloc();
 	return bytes;
 }
 
 size_t IZDOManager::GetCountEmptyZDOs() {
 	// so gather each ZDO member, and write how many of them are empty
 	size_t count = 0;
-	for (auto&& zdo : m_objectsByID) {
-		auto alloc = zdo->GetTotalAlloc();
-		if (alloc == 0)
-			count++;
-	}
+	//for (auto&& zdo : m_objectsByID) {
+	//	auto alloc = zdo->GetTotalAlloc();
+	//	if (alloc == 0)
+	//		count++;
+	//}
 	return count;
 }
