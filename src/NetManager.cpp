@@ -175,7 +175,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     peer.Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
         // Peer sends 0,0 on death
         
-        if (peer->m_characterID)
+        if (peer->m_characterID.GetUID())
             VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
         peer->m_characterID.SetUID(characterID.GetUID());

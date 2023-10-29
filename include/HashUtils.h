@@ -5,8 +5,6 @@
 #include "Vector.h"
 #include "Prefab.h"
 
-class ZDO;
-
 namespace ankerl::unordered_dense {
 
     /*
@@ -70,6 +68,7 @@ namespace ankerl::unordered_dense {
         using is_avalanching = void;
 
         auto operator()(ZDOID v) const noexcept -> uint64_t {
+            static_assert(std::has_unique_object_representations_v<ZDOID>);
             return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
             //return ankerl::unordered_dense::hash<decltype(ZDOID::m_pack)::type>{}(v.m_pack);
             //return ankerl::unordered_dense::hash<decltype(ZDOID::m_encoded)>{}(v.m_encoded);

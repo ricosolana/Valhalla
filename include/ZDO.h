@@ -98,15 +98,17 @@ private:
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void; // mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(ZDOID const& id) const noexcept -> uint64_t {
+        [[nodiscard]] auto operator()(ZDOID id) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(id);
         }
 
         [[nodiscard]] auto operator()(ZDO const* v) const noexcept -> uint64_t {
+            assert(v);
             return ankerl::unordered_dense::hash<ZDOID>{}(v->GetID());
         }
 
         [[nodiscard]] auto operator()(std::unique_ptr<ZDO> const& v) const noexcept -> uint64_t {
+            assert(v);
             return ankerl::unordered_dense::hash<ZDOID>{}(v->GetID());
         }
     };
@@ -161,8 +163,9 @@ public:
         return itr.get();
     }
 
-    [[nodiscard]] static unsafe_value make_unsafe_value(const ref_container::value_type& v) {
-        return const_cast<ZDO::unsafe_value&>(v);
+    [[nodiscard]] static unsafe_value make_unsafe_value(ref_container::value_type v) {
+        return v;
+        //return const_cast<ZDO::unsafe_value&>(v);
     }
 
     [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
@@ -320,6 +323,7 @@ private:
     
 
     void _SetPrefabHash(HASH_t hash) {
+        assert(hash);
         this->m_prefabHash = hash;
     }
 
@@ -375,9 +379,9 @@ private:
     */
 
     ZDOID m_id;                                     // 16 bytes
-    Vector3f m_pos;                                 // 12 bytes
-    ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
-    Vector3f m_rotation;                            // 12 bytes
+    mutable Vector3f m_pos;                                 // 12 bytes
+    mutable ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
+    mutable Vector3f m_rotation;                            // 12 bytes
     HASH_t m_prefabHash{};                          // 4 bytes (PADDING)
 
 public:

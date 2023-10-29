@@ -5,15 +5,27 @@
 #include "VUtils.h"
 #include "BitPack.h"
 
+//class BDOID {
+//    friend class ZDO;
+//    //uint16_t m_userIDIndex;
+//    //uint16_t m_id;
+//
+//    USER_ID_t m_userID;
+//    uint32_t m_id;
+//    uint32_t m_unusedPadding; // garbage
+//
+//    static const ZDOID NONE;
+//};
+
 class ZDOID {
     friend class ZDO;
 
     //uint16_t m_userIDIndex;
     //uint16_t m_id;
 
-    USER_ID_t m_userID;
-    uint32_t m_id;
-    uint32_t m_unusedPadding; // garbage
+    USER_ID_t m_userID{};
+    uint32_t m_id{};
+    uint32_t m_unusedPadding{}; // garbage
 
     //static std::array<USER_ID_t, std::numeric_limits<decltype(m_userIDIndex)>::max()> INDEXED_USERS;
 
@@ -60,14 +72,15 @@ private:
     //}
 
 public:
+    ZDOID() {}
     ZDOID(USER_ID_t owner, uint32_t uid);
-    ZDOID();
-
-    ZDOID(const ZDOID& other); // should default
-    ZDOID(ZDOID&& other) noexcept;
-
-    void operator=(const ZDOID& other);
-    void operator=(ZDOID&& other) noexcept;
+    //ZDOID();
+    //
+    //ZDOID(const ZDOID& other); // should default
+    //ZDOID(ZDOID&& other) noexcept;
+    //
+    //void operator=(const ZDOID& other);
+    //void operator=(ZDOID&& other) noexcept;
 
     bool operator==(const ZDOID &other) const noexcept {
         //return this->m_pack == other.m_pack;

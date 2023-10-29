@@ -1248,8 +1248,8 @@ bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3
 // this is world position to zone position
 // formerly GetZone
 ZoneID IZoneManager::WorldToZonePos(Vector3f point) {
-    auto x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
-    auto y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
+    auto x = std::floor(((double)point.x + (double)ZONE_SIZE / 2.0) / (double)ZONE_SIZE);
+    auto y = std::floor(((double)point.z + (double)ZONE_SIZE / 2.0) / (double)ZONE_SIZE);
     return ZoneID(x, y);
 }
 

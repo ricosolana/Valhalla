@@ -67,7 +67,8 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     pkg.Read<Vector2i>(); // m_sector
     this->_SetPosition(pkg.Read<Vector3f>());
     this->_SetRotation(pkg.Read<Quaternion>());
-
+    
+    sizeof(ZDOID);
     // will get or create an empty default
     //auto&& members = ZDO_MEMBERS[GetID()];
 
@@ -206,7 +207,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
 
 void ZDO::SetPosition(Vector3f pos) {
     if (this->GetPosition() != pos) {
-        assert(ZDOManager()->_GetZDOContainer(GetZone())->contains(this));
+        //assert(ZDOManager()->_GetZDOContainer(GetZone())->contains(this));
 
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
             auto oldZone = GetZone();

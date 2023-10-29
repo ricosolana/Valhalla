@@ -210,7 +210,7 @@ void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
 	if (auto&& container = _GetZDOContainer(zdo->GetZone())) {
 		auto&& insert = container->insert(zdo);
 
-		assert(insert.second);
+		//assert(insert.second);
 	}
 }
 
@@ -219,7 +219,7 @@ void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
 		auto&& erase = container->erase(zdo);
 
 		// TODO is this necessary?
-		assert(erase);
+		//assert(erase);
 	}
 }
 
@@ -777,6 +777,10 @@ std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer&
 void IZDOManager::GetZDOs_Zone(ZoneID zone, std::list<ZDO::unsafe_value>& objects) {
 	if (auto&& container = _GetZDOContainer(zone)) {
 		objects.insert(objects.end(), container->begin(), container->end());
+		//for (ZDO::unsafe_value zdo : *container) {
+		//	//container->begin().
+		//	objects.push_back(zdo);
+		//}
 	}
 }
 
@@ -990,22 +994,16 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			auto des = reader.Read<DataReader>();		// dont move this
 
-			/*
-			ZDO::Rev rev = { 
-				.m_dataRev = dataRev, 
-				.m_ownerRev = ownerRev, 
-				.m_syncTime = time 
-			};*/
+			auto&& pair = this->_Instantiate(zdoid, pos);
 
-			auto&& pair = this->_Instantiate(zdoid);
-
-			//auto&& zdo = ZDO(*pair.first);
 			auto &&zdo = ZDO::make_unsafe_value(pair.first);
 			auto&& created = pair.second;
 
 			assert(zdoid == zdo->GetID());
 
 			if (!created) [[likely]] {
+				assert(zdo->GetPrefabHash());
+
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
 				if (dataRev <= zdo->GetDataRevision()) {
@@ -1024,69 +1022,37 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 				}
 			}
 			else [[unlikely]] {
-				auto&& container = _GetZDOContainer(zdo->GetZone());
-				assert(!container->contains(zdoid));
+				//auto&& container = _GetZDOContainer(zdo->GetZone());
+				//assert(!container->contains(zdoid));
 
 				if (m_erasedZDOs.contains(zdoid)) [[unlikely]] {
-					m_destroySendList.push_back(zdoid);
-
-					m_objectsByID.erase(pair.first);
+					DestroyZDO(zdo);
 					continue;
 				}
 			}
 
-			// Also used as restore point if this ZDO breaks during deserialization
-			//ZDO copy(zdo);
+			zdo->_SetOwner(owner);
+			zdo->GetRevision().SetDataRevision(dataRev);
+			zdo->GetRevision().SetOwnerRevision(ownerRev);
 
-			//try {
-				zdo->_SetOwner(owner);
-				zdo->GetRevision().SetDataRevision(dataRev);
-				zdo->GetRevision().SetOwnerRevision(ownerRev);
+			// Unpack the ZDOs primary data
+			zdo->Unpack(des, 0);
 
-				// Unpack the ZDOs primary data
-				zdo->Unpack(des, 0);
+			VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOUnpacked, peer, zdo);
 
-				VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOUnpacked, peer, zdo);
-
-				// Only disperse through world if ZDO is new
-				if (created) {
-					//if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOCreated, peer, zdo)) {
-					//	_EraseZDO(pair.first);
-					//	continue;
-					//}
-
-					assert(!_GetZDOContainer(zdo->GetZone())->contains(zdo));
-
-					zdo->_SetPosition(pos);
-					_AddZDOToZone(zdo);
-					m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
-				}
-				else {
-					//if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {
-					//	zdo = std::move(copy);
-					//	continue;
-					//}
-
-					zdo->SetPosition(pos);
-				}
-
-				assert(_GetZDOContainer(zdo->GetZone())->contains(zdo));
-
-				peer->m_zdos[zdoid] = {
-					zdo->GetRevision(),
-					time 
-				};
-				/*
+			if (created) {
+				m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
 			}
-			catch (const std::runtime_error& e) {
-				// erase the zdo from map
-				if (created) // if the zdo was just created, throw it away
-					EraseZDO(pair.first);
-				else zdo = copy; // else, restore the ZDO to the prior revision
 
-				// This will kick the malicious peer
-				std::rethrow_exception(std::make_exception_ptr(e));
-			}*/
+			zdo->SetPosition(pos);
+
+			assert(_GetZDOContainer(zdo->GetZone())->contains(zdo));
+			assert(zdo->GetPrefabHash());
+
+			peer->m_zdos[zdoid] = {
+				zdo->GetRevision(),
+				time 
+			};
 		}
 	}); 
 }

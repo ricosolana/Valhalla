@@ -1,5 +1,53 @@
 # todo:
 
+- im tired of this prob gonna make a new project
+    too many bugs
+    
+    too many ideas that cannot be implemented because of this confined design
+
+- socket has a failed assignment or something in peer
+    
+
+- bring back 'inline' zdo encoding
+    idk what else to call it
+    
+    takes advantage of how Valheim generates UIDs
+        uid is signed, and utilizes int range * 2 (unity random int unioned with ip C# hash)
+        
+        ~31 bits are unused, pleeenty of capacity for id (or until devs change gen algo)
+
+- zdos created by player are being duplicated
+    same ids, zero revs, (zero prefab?)
+    
+    so far only within zoneZDOs
+    
+    zdo must be getting corrupt somewhere
+
+- owners not working too
+    only sometimes
+
+- const qualifying zdoid seemingly fixed this
+    nvm
+    
+    seemingly zdos near spawn have this issue
+    
+    in CreateSyncList sort, 2 different zdos, with same id, but different prefab (one is 0..)
+        why are ids same across different objects
+        why is prefab = 0?
+        
+        almost seems like this zdo failed initialization
+        
+        why does this exist
+        
+        likely zdo hash / compare not working?
+            set not containing unique zdos,
+            
+            or ...
+            
+            ubf?
+            
+            prevent hash to be 0
+
 - zdo zones broken again
     zdo zone not matching expected
 
