@@ -1,5 +1,13 @@
 # Valhalla 
 
+This project is retired. 
+
+I had a lot of fun and time to think about the design choices during development. Many things were implemented poorly with little thought to how it affects future development. There are more and more unfixable bugs that have been driving me crazy, making we want to drop the project completely.
+
+I have been working on another Valheim client/server project that I will be releasing soon. When? Likely when the structure seems perfect. 
+
+I've been forcing myself to stick to strict design choices and documenting what needs to be done to avoid veering off track. Unlike the name 'Valhalla', which is taken up by several projects already, the new project has a new name that I think fits. I never liked the name 'Valhalla' as it seems to generic when discussing Norse names ('Valheim', 'Valhalla', these practically are the same name).
+
 ## Server
 This is an implementation of the Valheim Dedicated Server in C++.
 
