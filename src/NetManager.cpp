@@ -52,7 +52,7 @@ bool INetManager::Unban(std::string_view user) {
 
 
 void INetManager::SendDisconnect() {
-    LOG_INFO(LOGGER, "Sending disconnect msg");
+    LOG_INFO(m_logger, "Sending disconnect msg");
 
     for (auto&& peer : m_connectedPeers) {
         peer->SendDisconnect();
@@ -177,7 +177,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
         peer->m_characterID.SetUID(characterID.GetUID());
 
-        LOG_INFO(LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
+        LOG_INFO(m_logger, "Got CharacterID from {} ({})", peer->m_name, characterID);
         });
 
     peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
@@ -311,7 +311,9 @@ Peer* INetManager::GetPeerByHost(std::string_view host) {
 }
 
 void INetManager::PostInit() {
-    LOG_INFO(LOGGER, "Initializing NetManager");
+    m_logger = quill::Frontend::create_or_get_logger("netmanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+
+    LOG_INFO(m_logger, "Initializing NetManager");
 
     m_acceptor = std::make_unique<AcceptorSteam>();
     m_acceptor->Listen();
@@ -357,8 +359,8 @@ void INetManager::Update() {
             peer->Update();
         }
         catch (const std::runtime_error& e) {
-            LOG_WARNING(LOGGER, "Peer error");
-            LOG_WARNING(LOGGER, "{}", e.what());
+            LOG_WARNING(m_logger, "Peer error");
+            LOG_WARNING(m_logger, "{}", e.what());
             peer->m_socket->Close(false);
         }
     }
@@ -411,7 +413,7 @@ void INetManager::Update() {
 void INetManager::OnPeerQuit(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
 
-    LOG_INFO(LOGGER, "Cleaning up peer");
+    LOG_INFO(m_logger, "Cleaning up peer");
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
     ZDOManager()->OnPeerQuit(peer);
 
@@ -428,7 +430,7 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
 
     peer.SendDisconnect();
 
-    LOG_INFO(LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
+    LOG_INFO(m_logger, "{} has disconnected", peer.m_socket->GetHostName());
 }
 
 void INetManager::Uninit() {

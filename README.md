@@ -1,4 +1,13 @@
-# Valhalla 
+# [???]
+
+I refuse to give up on this project. I had already been working on a rebirth of this project (with its own name picked out), but am conflicted as whether to rename this project to that. I feel like the new project is just reinventing the wheel, but with more roundness. I figured I should return to this abandoned project, and feed back life into the outdated and ugly design decisions I made, instead with new ones that I've learned.
+
+I really like the new name I had picked out over the last two years, so I will do some thinking...
+
+**This project is considered outdated and subject to change over the next few [days | weeks | months? | years...?] as changes are migrated from [???]**
+
+
+
 
 ## Server
 This is an implementation of the Valheim Dedicated Server in C++.

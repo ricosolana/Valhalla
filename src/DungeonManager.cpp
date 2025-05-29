@@ -26,12 +26,13 @@ void IDungeonManager::PostPrefabInit() {
 
     pkg.Read<std::string_view>(); // date/comment
     auto ver = pkg.Read<std::string_view>();
-    LOG_INFO(LOGGER, "dungeons.pkg has game version {}", ver);
-    if (ver != VConstants::GAME)
-        LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
+    //LOG_INFO(LOGGER, "dungeons.pkg has game version {}", ver);
+    if (ver != VConstants::GAME) {
+        //LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
+    }
 
     int32_t count = pkg.Read<int32_t>();
-    LOG_INFO(LOGGER, "Loading {} dungeons", count);
+    //LOG_INFO(LOGGER, "Loading {} dungeons", count);
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 

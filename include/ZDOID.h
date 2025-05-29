@@ -2,8 +2,12 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <quill/Backend.h>
+#include <quill/bundled/fmt/ostream.h>
+#include "QuillHelperMacros.h"
 #include "VUtils.h"
 #include "BitPack.h"
+
 
 class ZDOID {
     //friend struct ankerl::unordered_dense::hash<ZDOID>;
@@ -132,10 +136,10 @@ public:
 
 
 
-    friend std::ostream& operator<<(std::ostream& st, ZDOID zdoid) {
-        return st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
+    friend std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid) {
+        st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
+        return st;
     }
 };
 
-template <> struct quill::copy_loggable<ZDOID> : std::true_type {};
-template <> struct fmt::formatter<ZDOID> : ostream_formatter {};
+QUILL_LOGGABLE_DIRECT_FORMAT(ZDOID)

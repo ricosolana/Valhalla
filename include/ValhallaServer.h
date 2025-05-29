@@ -1,6 +1,7 @@
 #pragma once
 
 #include <thread>
+#include <list>
 
 #include "Task.h"
 #include "ServerSettings.h"
@@ -43,6 +44,7 @@ class IValhalla {
     friend class World;
 
 private:
+    quill::Logger* m_logger {};
     std::atomic_bool m_terminate {};
 
     std::list<std::unique_ptr<Task>> m_tasks;

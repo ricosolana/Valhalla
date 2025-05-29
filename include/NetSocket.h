@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <queue>
+#include <list>
 
 #include <steamnetworkingtypes.h>
 #include <isteamfriends.h>

@@ -1,6 +1,5 @@
 #include <array>
 #include <range/v3/all.hpp>
-#include <boost/smart_ptr/make_local_shared.hpp>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -19,7 +18,7 @@ IZDOManager* ZDOManager() {
 
 
 void IZDOManager::Init() {
-	LOG_INFO(LOGGER, "Initializing ZDOManager");
+	//LOG_INFO(LOGGER, "Initializing ZDOManager");
 
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
@@ -44,7 +43,7 @@ void IZDOManager::Update() {
 	ZoneScoped;
 
 	if (VUtils::run_periodic<struct periodic_zdo_stats>(3min)) {
-		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
+		//LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
 	}
 	/*
 	PERIODIC_NOW(3min, {
@@ -327,7 +326,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	}
 #endif // VH_LEGACY_WORLD_LOADING
 
-	LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
+	//LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
 

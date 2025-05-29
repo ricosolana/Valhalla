@@ -415,18 +415,18 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) RouteView(ZDOID targetZDO, std::string_view name, Types&&... params) {
-        return RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
+    void RouteView(ZDOID targetZDO, std::string_view name, Types&&... params) {
+        RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
     template <typename... Types>
-    decltype(auto) Route(HASH_t hash, Types&&... params) {
-        return RouteView(ZDOID::NONE, hash, std::forward<Types>(params)...);
+    void Route(HASH_t hash, Types&&... params) {
+        RouteView(ZDOID::NONE, hash, std::forward<Types>(params)...);
     }
 
     template <typename... Types>
-    decltype(auto) Route(std::string_view name, Types&&... params) {
-        return RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
+    void Route(std::string_view name, Types&&... params) {
+        RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
     }
 
 

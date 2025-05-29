@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list>
+
 #include "VUtils.h"
 #include "VUtilsRandom.h"
 #include "Types.h"

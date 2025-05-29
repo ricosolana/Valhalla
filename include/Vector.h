@@ -1,8 +1,10 @@
 #pragma once
 
+#include <quill/bundled/fmt/base.h>
 #include <stdint.h>
 #include <cmath>
 #include <ostream>
+#include "QuillHelperMacros.h"
 
 #include "VUtils.h"
 #include "VUtilsMath.h"
@@ -135,20 +137,11 @@ std::ostream& operator<<(std::ostream& st, Vector2f vec);
 std::ostream& operator<<(std::ostream& st, Vector2i vec);
 std::ostream& operator<<(std::ostream& st, Vector2s vec);
 
-template <> struct fmt::formatter<Vector2f> : ostream_formatter {};
-template <> struct fmt::formatter<Vector2i> : ostream_formatter {};
-template <> struct fmt::formatter<Vector2s> : ostream_formatter {};
 
-namespace quill {
-    template <>
-    struct copy_loggable<Vector2f> : std::true_type {};
 
-    template <>
-    struct copy_loggable<Vector2i> : std::true_type {};
-
-    template <>
-    struct copy_loggable<Vector2s> : std::true_type {};
-}
+QUILL_LOGGABLE_DIRECT_FORMAT(Vector2f)
+QUILL_LOGGABLE_DIRECT_FORMAT(Vector2i)
+QUILL_LOGGABLE_DIRECT_FORMAT(Vector2s)
 
 
 
@@ -324,5 +317,4 @@ using Vector3f = Vector3<float>;
 
 std::ostream& operator<<(std::ostream& st, Vector3f vec);
 
-template <> struct quill::copy_loggable<Vector3f> : std::true_type {};
-template <> struct fmt::formatter<Vector3f> : ostream_formatter {};
+QUILL_LOGGABLE_DIRECT_FORMAT(Vector3f)

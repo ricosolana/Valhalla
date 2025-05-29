@@ -12,9 +12,15 @@
 
 #include <zstd.h>
 #include <zlib.h>
+#include <quill/bundled/fmt/format.h>
+#include <quill/bundled/fmt/ostream.h>
 #include <ankerl/unordered_dense.h>
 #include <tracy/Tracy.hpp>
-#include <quill/Quill.h>
+#include <quill/Backend.h>
+#include <quill/Frontend.h>
+#include <quill/LogMacros.h>
+#include <quill/Logger.h>
+#include <quill/sinks/FileSink.h>
 
 #include "CompileSettings.h"
 
@@ -22,9 +28,7 @@
 #include <dpp/dpp.h>
 #endif
 
-// global logger
-//  I don't know where else to put it; this seems fine
-extern quill::Logger* LOGGER;
+
 
 namespace fs = std::filesystem;
 using namespace std::chrono;

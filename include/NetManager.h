@@ -1,5 +1,6 @@
 #pragma once
 
+#include <quill/Logger.h>
 #include <ranges>
 
 #include "Peer.h"
@@ -12,6 +13,8 @@ class INetManager {
     friend class IModManager;
 
 private:
+    quill::Logger* m_logger {};
+
     std::unique_ptr<IAcceptor> m_acceptor;
 
     //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)

@@ -27,12 +27,35 @@ cmake_minimum_required (VERSION 3.20)
 project(Valhalla)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(VHSettings)
-include(get_steamworks_sdk)
+#include(get_steamworks_sdk)
 include(get_cpm)
 
 if (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 endif()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+
+
+if (WIN32)
+    #set(STEAMWORKS_SDK_BINARY_DIR "$ENV{STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+    set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
+    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
+    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+    #set(STEAMWORKS_SDK_STATIC_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+else ()
+    set(STEAMWORKS_SDK_LOCATION "$ENV{HOME}/.local/bin/steamsdk")
+    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
+    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/linux64/libsteam_api.so")
+endif ()
+
+if (NOT EXISTS "${STEAMWORKS_SDK_SHARED_DIR}")
+    message (FATAL_ERROR "Steamworks not found")
+endif ()
+
+message ("Steamworks: ${STEAMWORKS_SDK_LOCATION}")
+
 
 
 #option(TRACY_ENABLE "" OFF)
@@ -41,7 +64,7 @@ endif()
 ############
 # Libraries
 ############
-find_package(Boost REQUIRED) # COMPONENTS smart_ptr)
+#find_package(Boost REQUIRED) # COMPONENTS smart_ptr)
 #add_library(Boost::smart_ptr IMPORTED INTERFACE)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -156,11 +179,11 @@ if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
 endif()
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE Boost::boost# Boost::smart_ptr
+    #PRIVATE Boost::boost# Boost::smart_ptr
     PUBLIC Threads::Threads
-    ${STEAMWORKS_SDK_BINARY_DIR}
+    ${STEAMWORKS_SDK_SHARED_DIR}
     ZLIB::ZLIB
-    yaml-cpp
+    yaml-cpp::yaml-cpp
     PRIVATE Tracy::TracyClient
     PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     PRIVATE quill::quill
@@ -196,17 +219,17 @@ endif()
 
 # steam stuff
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 file(COPY ${STEAMWORKS_SDK_SHARED_DIR}
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
 
 
 
 # working directory and resources
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 if (DEFINED VH_USE_MODS)
     add_compile_definitions(VH_USE_MODS=$<BOOL:${VH_USE_MODS}>) 

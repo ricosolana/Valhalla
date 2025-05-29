@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
+#include <quill/Logger.h>
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 #include "VUtilsRandom.h"
@@ -33,6 +34,8 @@ private:
 	};
 
 	static constexpr float m_waterTreshold = 0.05f;
+
+	quill::Logger* m_logger{};
 
 	World* m_world;
 

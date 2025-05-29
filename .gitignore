@@ -96,3 +96,9 @@ ME_TEMP_WORLDS/legacy/ClanWarsS01.db
 ME_TEMP_WORLDS/legacy/ClanWarsS01.fwl
 ME_TEMP_WORLDS/modern/ClanWarsS01.db
 ME_TEMP_WORLDS/modern/ClanWarsS01.fwl
+
+# clangd intellisense extension
+.cache/clangd/
+
+# binary build output
+build/

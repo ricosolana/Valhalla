@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <quill/Logger.h>
+#include <quill/sinks/ConsoleSink.h>
 #include <thread>
 #include <steam_gameserver.h>
 
@@ -9,6 +11,11 @@
 
 class IAcceptor {
 public:
+    IAcceptor() 
+        : m_logger(quill::Frontend::create_or_get_logger("acceptor", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"))) {
+
+    }
+
     virtual ~IAcceptor() = default;
 
     // Init listening and queueing any accepted connections
@@ -26,6 +33,9 @@ public:
 
     // Do not use
     //virtual void Cleanup(ISocket* socket) = 0;
+
+    protected:
+        quill::Logger *m_logger;
 };
 
 

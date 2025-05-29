@@ -4,4 +4,5 @@ option (VH_USE_MODS "Enable Lua modding subsystem" OFF)
 option (VH_DISCORD_INTEGRATION "Enable Discord command bot" OFF)
 
 # Download it here https://partner.steamgames.com/downloads/steamworks_sdk.zip
-set	(STEAMWORKS_SDK_LOCATION "C:/Users/rico/Documents/Visual Studio 2022/Libraries/steam-sdk")
+#set	(STEAMWORKS_SDK_LOCATION "C:/Users/rico/Documents/Visual Studio 2022/Libraries/steam-sdk")
+#set (STEAMWORKS_SDK_LOCATION "$ENV{HOME}/.local/bin/steamsdk")

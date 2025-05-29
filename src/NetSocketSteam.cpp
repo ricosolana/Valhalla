@@ -172,8 +172,8 @@ void SteamSocket::SendQueued() {
         m_sendQueue.pop_front();
     }
 
-    int64_t state[sizeof(messages) / sizeof(messages[0])]{};
-    AcceptorSteam::STEAM_NETWORKING_SOCKETS->SendMessages(count, messages, state);
+    //int64_t state[sizeof(messages) / sizeof(messages[0])]{};
+    AcceptorSteam::STEAM_NETWORKING_SOCKETS->SendMessages(count, messages, nullptr);
 }
 
 //#ifndef ELPP_DISABLE_VERBOSE_LOGS

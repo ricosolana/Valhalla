@@ -8,6 +8,7 @@
 #include "VUtilsTraits.h"
 #include "ModManager.h"
 #include "DataStream.h"
+#include <cstdint>
 
 class DataReader : public DataStream {
 private:
@@ -27,7 +28,7 @@ private:
         uint32_t num2 = 0;
         while (num2 != 35) {
             auto b = Read<uint8_t>();
-            out |= static_cast<decltype(out)>(b & 127) << num2;
+            out |= (uint32_t)(b & 127) << num2;
             num2 += 7;
             if ((b & 128) == 0)
             {
@@ -48,7 +49,7 @@ public:
         requires 
             (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>
                 || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
-    decltype(auto) Read() {
+    T Read() {
         auto count = (std::is_same_v<T, BYTES_t> || std::is_same_v<T, BYTE_VIEW_t>) 
             ? Read<uint32_t>()
             : Read7BitEncodedInt();
@@ -78,7 +79,7 @@ public:
     //  Reads a primitive type
     template<typename T> 
         requires (std::is_arithmetic_v<T> && !std::is_same_v<T, char16_t>)
-    decltype(auto) Read() {
+    T Read() {
         T out{};
         ReadSomeBytes(reinterpret_cast<BYTE_t*>(&out), sizeof(T));
         return out;

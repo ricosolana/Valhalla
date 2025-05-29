@@ -1,8 +1,13 @@
 // main.cpp
+#include <filesystem>
+#include <quill/Backend.h>
 #define SOL_ALL_SAFETIES_ON 1
 
 // this doesnt seem to do a thing
 //#undef TRACY_ENABLE
+
+#include <quill/sinks/ConsoleSink.h>
+#include <quill/std/FilesystemPath.h>
 
 #include "VUtils.h"
 
@@ -24,11 +29,18 @@
 */
 int main(int argc, char **argv) {
 
-    fs::current_path("./data/");
-
     tracy::SetThreadName("main");
 
+    quill::Backend::start();
+    auto logger = quill::Frontend::create_or_get_logger("main", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+
+    LOG_INFO(logger, "Current path: {}", fs::current_path());
+    logger->flush_log();
+    fs::current_path("./data/");
+
     {
+
+        /*
         quill::Config cfg;
         cfg.enable_console_colours = true;
         cfg.backend_thread_yield = false;
@@ -53,7 +65,7 @@ int main(int argc, char **argv) {
         quill::start();
 
         LOGGER = quill::get_logger();
-        LOGGER->set_log_level(quill::LogLevel::TraceL3);
+        LOGGER->set_log_level(quill::LogLevel::TraceL3);*/
     }
 
 #ifdef RUN_TESTS
@@ -64,6 +76,8 @@ int main(int argc, char **argv) {
     LOG_INFO(LOGGER, "All tests passed!");
 #else // !RUN_TESTS
 
+/*
+    // I think ONLY windows requires this...
     {
         std::string path = (fs::current_path() / VH_LUA_PATH).string();
         std::string path2 = (fs::current_path() / VH_MOD_PATH).string();
@@ -82,6 +96,8 @@ int main(int argc, char **argv) {
             + path + "/?/?.dll"))
             LOG_ERROR(LOGGER, "Failed to set Lua cpath");
     }
+*/
+
     
 #ifndef _DEBUG
     try {
@@ -90,7 +106,7 @@ int main(int argc, char **argv) {
 #ifndef _DEBUG
     }
     catch (const std::exception& e) {
-        LOG_ERROR(LOGGER, "{}", e.what());
+        LOG_ERROR(logger, "{}", e.what());
         return 1;
     }
 #endif // _DEBUG

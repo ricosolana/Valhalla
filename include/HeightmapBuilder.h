@@ -1,5 +1,6 @@
 #pragma once
 
+#include <quill/Logger.h>
 #include <thread>
 
 #include "VUtils.h"
@@ -19,6 +20,8 @@ class IHeightmapBuilder {
     };
 
 private:
+    quill::Logger* m_logger;
+
     //UNORDERED_SET_t<ZoneID> m_toBuild;
     UNORDERED_SET_t<ZoneID> m_building;
     UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_ready;

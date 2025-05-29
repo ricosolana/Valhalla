@@ -1,4 +1,5 @@
 #include <yaml-cpp/yaml.h>
+#include <quill/sinks/ConsoleSink.h>
 
 #include <stdlib.h>
 #include <utility>
@@ -22,7 +23,7 @@
 #include "RandomEventManager.h"
 #include "DiscordManager.h"
 
-quill::Logger *LOGGER = nullptr;
+
 
 auto VALHALLA_INSTANCE = std::make_unique<IValhalla>();
 IValhalla* Valhalla() {
@@ -301,13 +302,13 @@ void IValhalla::LoadFiles(bool reloading) {
                     node = YAML::Load(opt.value());
                 }
                 catch (const YAML::ParserException& e) {
-                    LOG_INFO(LOGGER, "{}", e.what());
+                    LOG_INFO(m_logger, "{}", e.what());
                     fileError = true;
                 }
             }
             else {
                 if (!reloading) {
-                    LOG_INFO(LOGGER, "Server config not found, creating...");
+                    LOG_INFO(m_logger, "Server config not found, creating...");
                 }
                 fileError = true;
             }
@@ -410,10 +411,10 @@ void IValhalla::LoadFiles(bool reloading) {
 #endif
 
             if (m_settings.serverPassword.empty()) {
-                LOG_WARNING(LOGGER, "Server does not have a password");
+                LOG_WARNING(m_logger, "Server does not have a password");
             }
             else {
-                LOG_INFO(LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
+                LOG_INFO(m_logger, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
             }
         }
 
@@ -432,7 +433,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_blacklist = node.as<decltype(m_blacklist)>();
         }
         catch (const YAML::Exception& e) {
-            LOG_ERROR(LOGGER, "{}", e.what());
+            LOG_ERROR(m_logger, "{}", e.what());
         }
     }
 
@@ -442,7 +443,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_whitelist = node.as<decltype(m_whitelist)>();
         }
         catch (const YAML::Exception& e) {
-            LOG_ERROR(LOGGER, "{}", e.what());
+            LOG_ERROR(m_logger, "{}", e.what());
         }
     }
 
@@ -452,7 +453,7 @@ void IValhalla::LoadFiles(bool reloading) {
             m_admin = node.as<decltype(m_admin)>();
         }
         catch (const YAML::Exception& e) {
-            LOG_ERROR(LOGGER, "{}", e.what());
+            LOG_ERROR(m_logger, "{}", e.what());
         }
     }
 
@@ -558,9 +559,11 @@ void IValhalla::Stop() {
 }
 
 void IValhalla::Start() {    
+    m_logger = quill::Frontend::create_or_get_logger("server", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+
     MAIN_THREAD = std::this_thread::get_id();
     
-    LOG_INFO(LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
+    LOG_INFO(m_logger, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
 
     m_serverID = VUtils::Random::GenerateUID();
     m_startTime = steady_clock::now();
@@ -676,7 +679,7 @@ void IValhalla::Start() {
 
     VH_DISPATCH_WEBHOOK("Server stopping");
             
-    LOG_INFO(LOGGER, "Terminating server");
+    LOG_INFO(m_logger, "Terminating server");
 
     // Cleanup 
     NetManager()->Uninit();
@@ -690,7 +693,7 @@ void IValhalla::Start() {
 
     SaveFiles();
 
-    LOG_INFO(LOGGER, "Server was gracefully terminated");
+    LOG_INFO(m_logger, "Server was gracefully terminated");
 
     // signal any other dummy thread to continue
     m_terminate = false;
@@ -721,7 +724,7 @@ void IValhalla::Update() {
 
 void IValhalla::PeriodUpdate() {
     if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
-        LOG_INFO(LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
+        LOG_INFO(m_logger, "There are a total of {} peers online", NetManager()->GetPeers().size());
     }
 
     //PERIODIC_NOW(180s, {
@@ -833,7 +836,7 @@ void IValhalla::PeriodUpdate() {
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
         if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval, m_settings.worldSaveInterval)) {
-            LOG_INFO(LOGGER, "World saving in 30s");
+            LOG_INFO(m_logger, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         }
 

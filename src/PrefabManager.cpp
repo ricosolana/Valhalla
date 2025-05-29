@@ -36,7 +36,7 @@ ObjectType Prefab::GetObjectType() const noexcept {
 
 
 void IPrefabManager::Init() {
-    LOG_INFO(LOGGER, "Initializing PrefabManager");
+    //LOG_INFO(LOGGER, "Initializing PrefabManager");
 
     auto opt = VUtils::Resource::ReadFile<BYTES_t>("prefabs.pkg");
 
@@ -48,8 +48,9 @@ void IPrefabManager::Init() {
 
     pkg.Read<std::string_view>(); // comment
     auto ver = pkg.Read<std::string_view>();
-    if (ver != VConstants::GAME)
-        LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver);
+    if (ver != VConstants::GAME) {
+        //LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver)
+    }
 
     auto count = pkg.Read<int32_t>();
 
@@ -57,5 +58,5 @@ void IPrefabManager::Init() {
         Register(pkg);
     }
 
-    LOG_INFO(LOGGER, "Loaded {} prefabs", count);
+    //LOG_INFO(LOGGER, "Loaded {} prefabs", count);
 }

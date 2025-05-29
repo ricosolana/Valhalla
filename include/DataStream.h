@@ -82,7 +82,7 @@ public:
         }, this->m_data);
     }
 
-    size_t Skip(size_t offset) {
+    void Skip(size_t offset) {
         this->SetPos(this->Position() + offset);
     }
 };

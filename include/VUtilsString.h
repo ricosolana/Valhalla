@@ -138,7 +138,7 @@ namespace VUtils::String {
     std::string Join(std::string_view delimiter, T container) {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
-            result += std::string(*(container.begin() + i)) + delimiter;
+            result += std::string(*(container.begin() + i)) + std::string(delimiter);
         }
         result += *(container.end() - 1);
         return result;

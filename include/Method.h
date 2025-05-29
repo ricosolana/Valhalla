@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <tuple>
 #include <functional>
 #include <type_traits>
@@ -63,7 +64,8 @@ public:
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
         if (reader.Position() != reader.size()) {
-            LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.Position());
+            //LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.Position());
+            throw std::runtime_error("peer sent more data than expected");
         }
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -74,7 +76,7 @@ public:
 
         bool result = true;
         
-        if constexpr (std::is_same_v<bool, VUtils::Traits::func_traits<F>::result_type>) {
+        if constexpr (std::is_same_v<bool, typename VUtils::Traits::func_traits<F>::result_type>) {
             result = std::apply(m_func, tuple);
         } else
             std::apply(m_func, tuple);

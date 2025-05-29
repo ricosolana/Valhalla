@@ -1,5 +1,7 @@
 #include <random>
 #include <limits>
+#include <stdexcept>
+#include <unistd.h>
 #include <zlib.h>
 
 #include "VUtils.h"
@@ -238,10 +240,13 @@ namespace VUtils {
 
 
     bool SetEnv(std::string_view key, std::string_view value) {
-        return putenv((key.data() + std::string("=") + value.data()).c_str()) == 0;
+        //return setenv((key.data(), value.data()) == 0;
+        throw std::runtime_error("SetEnv nyi");
+        //return putenv((key.data() + std::string("=") + value.data()).c_str()) == 0;
     }
 
     std::string GetEnv(std::string_view key) {
+        //environ
         auto&& env = getenv(key.data());
         if (env) return env;
         return "";

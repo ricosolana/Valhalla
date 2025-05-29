@@ -19,7 +19,7 @@ void IRandomEventManager::Init() {
 	// chance: 20
 	// range: 96
 
-	LOG_INFO(LOGGER, "Initializing EventManager");
+	//LOG_INFO(LOGGER, "Initializing EventManager");
 
 	{
 		// load Foliage:
@@ -31,8 +31,9 @@ void IRandomEventManager::Init() {
 
 		pkg.Read<std::string_view>(); // comment
 		auto ver = pkg.Read<std::string_view>();
-		if (ver != VConstants::GAME)
-			LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
+		if (ver != VConstants::GAME) {
+			//LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
+		}
 
 		auto count = pkg.Read<int32_t>();
 		for (int i = 0; i < count; i++) {
@@ -51,7 +52,7 @@ void IRandomEventManager::Init() {
 			m_events[sv] = std::move(e);
 		}
 
-		LOG_INFO(LOGGER, "Loaded {} random events", count);
+		//LOG_INFO(LOGGER, "Loaded {} random events", count);
 	}
 }
 
@@ -116,7 +117,7 @@ void IRandomEventManager::SetCurrentRandomEvent(const Event& e, Vector3f pos, na
 	this->m_activeEventRemaining = nanos;
 	this->m_activeEventInitialDuration = nanos;
 
-	LOG_INFO(LOGGER, "Set current random event: {}", e.m_name);
+	//LOG_INFO(LOGGER, "Set current random event: {}", e.m_name);
 	VH_DISPATCH_WEBHOOK("Random event started in world `" + e.m_name + "`");
 }
 

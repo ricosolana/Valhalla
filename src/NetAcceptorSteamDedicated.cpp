@@ -1,4 +1,5 @@
 #include <isteamutils.h>
+#include <stdexcept>
 
 #include "NetAcceptor.h"
 #include "ValhallaServer.h"
@@ -17,8 +18,9 @@ AcceptorSteam::AcceptorSteam() {
     if (!(VH_SETTINGS.serverDedicated 
         ? SteamGameServer_Init(0, VH_SETTINGS.serverPort, VH_SETTINGS.serverPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0")
         : SteamAPI_Init())) {
-        LOG_CRITICAL(LOGGER, "Failed to init steam");
-        std::exit(0);
+        //LOG_CRITICAL(LOGGER, "Failed to init steam");
+        //std::exit(0);
+        throw std::runtime_error("failed to init steam");
     }
 
     if (VH_SETTINGS.serverDedicated) {
@@ -39,8 +41,8 @@ AcceptorSteam::AcceptorSteam() {
         
         this->OnConfigLoad(false);
 
-        LOG_INFO(LOGGER, "Starting server on port {}", VH_SETTINGS.serverPort);
-        LOG_INFO(LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
+        LOG_INFO(m_logger, "Starting server on port {}", VH_SETTINGS.serverPort);
+        LOG_INFO(m_logger, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
     }
     else {
         //this->m_steamNetworkingSockets = SteamNetworkingSockets();
@@ -49,10 +51,10 @@ AcceptorSteam::AcceptorSteam() {
         auto handle = SteamMatchmaking()->CreateLobby(k_ELobbyTypePrivate, 64);
         m_lobbyCreatedCallResult.Set(handle, this, &AcceptorSteam::OnLobbyCreated);
 
-        LOG_INFO(LOGGER, "Logged into steam as {}", SteamFriends()->GetPersonaName());
+        LOG_INFO(m_logger, "Logged into steam as {}", SteamFriends()->GetPersonaName());
     }
 
-    LOG_INFO(LOGGER, "Authentication status: {}", 
+    LOG_INFO(m_logger, "Authentication status: {}", 
         std::to_underlying(STEAM_NETWORKING_SOCKETS->InitAuthentication()));
     
     auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
@@ -128,7 +130,7 @@ static const char* stateToString(ESteamNetworkingConnectionState state) {
 }
 
 void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data) {
-    LOG_INFO(LOGGER, "NetConnectionStatusChanged: {}, old: {}", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
+    LOG_INFO(m_logger, "NetConnectionStatusChanged: {}, old: {}", stateToString(data->m_info.m_eState), stateToString(data->m_eOldState));
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
         && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute ||
@@ -146,7 +148,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer)
     {
         if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
-            LOG_INFO(LOGGER, "{}", data->m_info.m_szEndDebug);
+            LOG_INFO(m_logger, "{}", data->m_info.m_szEndDebug);
 
         auto &&pair = m_sockets.find(data->m_hConn);
 
@@ -177,35 +179,35 @@ void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* dat
 // call results
 void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
     if (failure) {
-        LOG_ERROR(LOGGER, "Failed to create lobby");
+        LOG_ERROR(m_logger, "Failed to create lobby");
     }
     else if (data->m_eResult == k_EResultNoConnection) {
-        LOG_ERROR(LOGGER, "Failed to connect to Steam to register lobby");
+        LOG_ERROR(m_logger, "Failed to connect to Steam to register lobby");
     }
     else {
         this->m_lobbyID = CSteamID(data->m_ulSteamIDLobby);
 
-        LOG_INFO(LOGGER, "Created lobby");
+        LOG_INFO(m_logger, "Created lobby");
 
         this->OnConfigLoad(false);
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
-            LOG_WARNING(LOGGER, "Unable to set lobby version");
+            LOG_WARNING(m_logger, "Unable to set lobby version");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
-            LOG_WARNING(LOGGER, "Failed to set lobby networkversion");
+            LOG_WARNING(m_logger, "Failed to set lobby networkversion");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user")) {
-            LOG_WARNING(LOGGER, "Failed to set lobby serverType");
+            LOG_WARNING(m_logger, "Failed to set lobby serverType");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "hostID", "")) {
-            LOG_WARNING(LOGGER, "Failed to set lobby host");
+            LOG_WARNING(m_logger, "Failed to set lobby host");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "isCrossplay", "0")) {
-            LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
+            LOG_WARNING(m_logger, "Failed to set lobby isCrossplay");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "modifiers", "0")) {
-            LOG_WARNING(LOGGER, "Failed to set lobby isCrossplay");
+            LOG_WARNING(m_logger, "Failed to set lobby isCrossplay");
         }
         
         SteamMatchmaking()->SetLobbyGameServer(m_lobbyID, 0, 0, SteamUser()->GetSteamID());
@@ -223,15 +225,15 @@ void AcceptorSteam::OnConfigLoad(bool reloading) {
         SteamGameServer()->SetAdvertiseServerActive(VH_SETTINGS.serverPublic);
     } else {
         if (!SteamMatchmaking()->SetLobbyType(m_lobbyID, VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
-            LOG_ERROR(LOGGER, "Failed to set lobby visibility");
+            LOG_ERROR(m_logger, "Failed to set lobby visibility");
         }
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "name", VH_SETTINGS.serverName.c_str())) {
-            LOG_ERROR(LOGGER, "Failed to set lobby name");
+            LOG_ERROR(m_logger, "Failed to set lobby name");
         }
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", VH_SETTINGS.serverPassword.empty() ? "0" : "1")) {
-            LOG_ERROR(LOGGER, "Unable to set lobby password flag");
+            LOG_ERROR(m_logger, "Unable to set lobby password flag");
         }
     }
 }
