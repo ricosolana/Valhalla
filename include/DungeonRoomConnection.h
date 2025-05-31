@@ -17,18 +17,18 @@ public:
 	bool m_allowDoor = true;
 	bool m_doorOnlyIfOtherAlsoAllowsDoor = false;
 
-	Vector3f m_localPos;
-	Quaternion m_localRot;
+	avledet::util::CSU::Vector3f m_localPos;
+	avledet::util::CSU::Quaternion m_localRot;
 };
 
 class RoomConnectionInstance {
 public:
 	std::reference_wrapper<const RoomConnection> m_connection;
-	Vector3f m_pos;
-	Quaternion m_rot;
+	avledet::util::CSU::Vector3f m_pos;
+	avledet::util::CSU::Quaternion m_rot;
 	int m_placeOrder;
 
-	RoomConnectionInstance(const RoomConnection& connection, Vector3f pos, Quaternion rot, int placeOrder) 
+	RoomConnectionInstance(const RoomConnection& connection, avledet::util::CSU::Vector3f pos, avledet::util::CSU::Quaternion rot, int placeOrder) 
 		: m_connection(connection), 
 			m_pos(pos), 
 			m_rot(rot), 
@@ -38,7 +38,7 @@ public:
 
 	// Returns whether 2 RoomConnections are touching
 	bool TestContact(const RoomConnectionInstance& other) const {
-		return m_pos.SqDistance(other.m_pos) < .1f * .1f;
+		return m_pos.sq_distance_to(other.m_pos) < .1f * .1f;
 	}
 };
 #endif

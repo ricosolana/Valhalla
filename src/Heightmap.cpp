@@ -104,7 +104,7 @@ std::array<float, 4>& Heightmap::GetOceanDepth() {
 
 
 // public
-float Heightmap::GetOceanDepth(Vector3f worldPos) {
+float Heightmap::GetOceanDepth(avledet::util::CSU::Vector3f worldPos) {
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
@@ -168,7 +168,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
 }
 
 // public
-Biome Heightmap::GetBiome(Vector3f point) {
+Biome Heightmap::GetBiome(avledet::util::CSU::Vector3f point) {
     //if all biomes are the same, return same/any
     if (this->m_cornerBiomes[0] == this->m_cornerBiomes[1] 
         && this->m_cornerBiomes[0] == this->m_cornerBiomes[2] 
@@ -302,12 +302,12 @@ bool Heightmap::TerrainVSModifier(TerrainModifier modifier) {
 }
 
 // private
-Vector3f Heightmap::CalcVertex(int32_t x, int32_t y) {
-    Vector3f a = Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0.f, (float)IZoneManager::ZONE_SIZE * -0.5f);
+avledet::util::CSU::Vector3f Heightmap::CalcVertex(int32_t x, int32_t y) {
+    auto a = avledet::util::CSU::Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0.f, (float)IZoneManager::ZONE_SIZE * -0.5f);
 
     // Poll heightmap height at x,z
     float y2 = this->m_heights[y * E_WIDTH + x];
-    return a + Vector3f((float)x, y2, (float)y);
+    return a + avledet::util::CSU::Vector3f((float)x, y2, (float)y);
 }
 
 // private
@@ -363,7 +363,7 @@ void Heightmap::RebuildCollisionMesh() {
 }
 
 // private
-void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius, 
+void Heightmap::SmoothTerrain2(avledet::util::CSU::Vector3f worldPos, float radius, 
     BaseHeightmap::Heights_t* levelOnlyHeights, float power) {
     
     assert(false);
@@ -407,7 +407,7 @@ void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius,
 }
 
 // private
-bool Heightmap::AtMaxWorldLevelDepth(Vector3f worldPos) {
+bool Heightmap::AtMaxWorldLevelDepth(avledet::util::CSU::Vector3f worldPos) {
     float num;
     this->GetWorldHeight(worldPos, num);
     float num2;
@@ -416,7 +416,7 @@ bool Heightmap::AtMaxWorldLevelDepth(Vector3f worldPos) {
 }
 
 // private
-bool Heightmap::GetWorldBaseHeight(Vector3f worldPos, float& height) {
+bool Heightmap::GetWorldBaseHeight(avledet::util::CSU::Vector3f worldPos, float& height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -431,22 +431,22 @@ bool Heightmap::GetWorldBaseHeight(Vector3f worldPos, float& height) {
 }
 
 
-bool Heightmap::GetWorldNormal(Vector3f worldPos, Vector3f& normal) {
+bool Heightmap::GetWorldNormal(avledet::util::CSU::Vector3f worldPos, avledet::util::CSU::Vector3f& normal) {
     //float y;
-    Vector3f a = worldPos;
+    avledet::util::CSU::Vector3f a = worldPos;
     if (!GetWorldHeight(worldPos, a.y))
         return false;
 
     //float y1;
-    Vector3f b = worldPos + Vector3f(1, 0, 0);
+    auto b = worldPos + avledet::util::CSU::Vector3f(1, 0, 0);
     if (!GetWorldHeight(b, b.y)) {
-        b = worldPos + Vector3f(-1, 0, 0);
+        b = worldPos + avledet::util::CSU::Vector3f(-1, 0, 0);
         GetWorldHeight(b, b.y);
     }
 
-    Vector3f c = worldPos + Vector3f(0, 0, 1);
+    auto c = worldPos + avledet::util::CSU::Vector3f(0, 0, 1);
     if (!GetWorldHeight(c, c.y)) {
-        c = worldPos + Vector3f(0, 0, -1);
+        c = worldPos + avledet::util::CSU::Vector3f(0, 0, -1);
         GetWorldHeight(c, c.y);
     }
 
@@ -456,7 +456,7 @@ bool Heightmap::GetWorldNormal(Vector3f worldPos, Vector3f& normal) {
     b -= a;
     c -= a;
 
-    normal = b.Cross(c).Normal();
+    normal = b.cross(c).normal();
 
     // if it points below the horizon
     if (normal.y < 0)
@@ -466,7 +466,7 @@ bool Heightmap::GetWorldNormal(Vector3f worldPos, Vector3f& normal) {
 }
 
 // private
-bool Heightmap::GetWorldHeight(const Vector3f& worldPos, float& height) {
+bool Heightmap::GetWorldHeight(const avledet::util::CSU::Vector3f& worldPos, float& height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -481,7 +481,7 @@ bool Heightmap::GetWorldHeight(const Vector3f& worldPos, float& height) {
 }
 
 // private
-bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &height) {
+bool Heightmap::GetAverageWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -510,19 +510,19 @@ bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &he
 }
 
 // private
-bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height) {
+bool Heightmap::GetMinWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
 
     float num3 = radius;
     int32_t num4 = ceil(num3);
-    Vector2f a = Vector2f(x, y);
+    auto a = avledet::util::CSU::Vector2f(x, y);
     int32_t num5 = IZoneManager::ZONE_SIZE + 1;
     height = 99999;
     for (int32_t i = y - num4; i <= y + num4; i++) {
         for (int32_t j = x - num4; j <= x + num4; j++) {
-            if (a.Distance(Vector2f(j, i)) <= num3 
+            if (a.distance_to(avledet::util::CSU::Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < num5&& i < num5) {
                 float height2 = this->GetHeight(j, i);
                 if (height2 < height) {
@@ -536,19 +536,19 @@ bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height
 }
 
 // private
-bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height) {
+bool Heightmap::GetMaxWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
 
     float num3 = radius;
     int32_t num4 = ceil(num3);
-    Vector2f a = Vector2f(x, y);
+    auto a = avledet::util::CSU::Vector2f(x, y);
 
     height = -99999;
     for (int32_t i = y - num4; i <= y + num4; i++) {
         for (int32_t j = x - num4; j <= x + num4; j++) {
-            if (a.Distance(Vector2f(j, i)) <= num3 
+            if (a.distance_to(avledet::util::CSU::Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH) {
                 float height2 = this->GetHeight(j, i);
                 if (height2 > height) {
@@ -563,18 +563,18 @@ bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height
 
 
 // private
-void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity) {
+void Heightmap::SmoothTerrain(avledet::util::CSU::Vector3f worldPos, float radius, bool square, float intensity) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
 
-    std::vector<std::pair<Vector2i, float>> list;
+    std::vector<std::pair<avledet::util::CSU::Vector2i, float>> list;
 
     for (int32_t i = y - radius; i <= y + radius; i++) {
         for (int32_t j = x - radius; j <= x + radius; j++) {
             if ((square || VUtils::Math::SqDistance(x, y, j, i) <= radius * radius)
                 && (j != 0 && i != 0 && j != IZoneManager::ZONE_SIZE && i != IZoneManager::ZONE_SIZE)) {
-                list.push_back(std::make_pair(Vector2i(j, i), this->GetAvgHeight(j, i, 1)));
+                list.push_back(std::make_pair(avledet::util::CSU::Vector2i(j, i), this->GetAvgHeight(j, i, 1)));
             }
         }
     }
@@ -608,7 +608,7 @@ float Heightmap::GetAvgHeight(int32_t cx, int32_t cy, int32_t w) {
 }
 
 // private
-float Heightmap::GroundHeight(Vector3f point) {
+float Heightmap::GroundHeight(avledet::util::CSU::Vector3f point) {
     assert(false);
 
     //Ray ray = new Ray(point + Vector3f::UP * 100.f, Vector3f::DOWN);
@@ -620,7 +620,7 @@ float Heightmap::GroundHeight(Vector3f point) {
 }
 
 // private
-void Heightmap::FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects) {
+void Heightmap::FindObjectsToMove(avledet::util::CSU::Vector3f worldPos, float area, std::vector<Rigidbody> &objects) {
     assert(false);
 
     //if (this->m_collider == nullptr) {
@@ -638,7 +638,7 @@ void Heightmap::FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rig
 }
 
 // private
-void Heightmap::PaintCleared(Vector3f worldPos, float radius, 
+void Heightmap::PaintCleared(avledet::util::CSU::Vector3f worldPos, float radius, 
     TerrainModifier::PaintType paintType, bool heightCheck) {
 
     assert(false);
@@ -687,20 +687,20 @@ void Heightmap::PaintCleared(Vector3f worldPos, float radius,
 }
 
 // public
-float Heightmap::GetVegetationMask(Vector3f worldPos) {
+float Heightmap::GetVegetationMask(avledet::util::CSU::Vector3f worldPos) {
     int32_t x;
     int32_t y;
-    this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
+    this->WorldToVertex(worldPos - avledet::util::CSU::Vector3f(.5f, 0.f, .5f), x, y);
 
     // USE A DIFFERENT MASK OF ONLY ALPHA-TEX FLOATS
     return this->m_paintMask[y* IZoneManager::ZONE_SIZE + x].a;
 }
 
 // public
-bool Heightmap::IsCleared(Vector3f worldPos) {
+bool Heightmap::IsCleared(avledet::util::CSU::Vector3f worldPos) {
     int32_t x;
     int32_t y;
-    this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
+    this->WorldToVertex(worldPos - avledet::util::CSU::Vector3f(.5f, 0.f, .5f), x, y);
     
     // mode is clamp
     x = std::clamp(x, 0, IZoneManager::ZONE_SIZE - 1);
@@ -711,7 +711,7 @@ bool Heightmap::IsCleared(Vector3f worldPos) {
 }
 
 // public
-bool Heightmap::IsCultivated(Vector3f worldPos) {
+bool Heightmap::IsCultivated(avledet::util::CSU::Vector3f worldPos) {
     int32_t x;
     int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -720,34 +720,34 @@ bool Heightmap::IsCultivated(Vector3f worldPos) {
 }
 
 // public
-void Heightmap::WorldToVertex(Vector3f worldPos, int32_t& x, int32_t &y) {
-    Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
+void Heightmap::WorldToVertex(avledet::util::CSU::Vector3f worldPos, int32_t& x, int32_t &y) {
+    auto vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = floor(vector.x + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
     y = floor(vector.z + 0.5f) + (IZoneManager::ZONE_SIZE / 2);
 }
 
 // private
-void Heightmap::WorldToNormalizedHM(Vector3f worldPos, float& x, float &y) {
-    Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
+void Heightmap::WorldToNormalizedHM(avledet::util::CSU::Vector3f worldPos, float& x, float &y) {
+    avledet::util::CSU::Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     x = vector.x / IZoneManager::ZONE_SIZE + 0.5f;
     y = vector.z / IZoneManager::ZONE_SIZE + 0.5f;
 }
 
 // private
-void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square, 
+void Heightmap::LevelTerrain(avledet::util::CSU::Vector3f worldPos, float radius, bool square, 
     BaseHeightmap::Heights_t* levelOnly) {
 
     int32_t num;
     int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
-    Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
+    avledet::util::CSU::Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     float num3 = radius;
     int32_t num4 = ceil(num3);
     int32_t num5 = E_WIDTH;
-    Vector2f a = Vector2f(num, num2);
+    avledet::util::CSU::Vector2f a = avledet::util::CSU::Vector2f(num, num2);
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
-            if ((square || a.Distance(Vector2f(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
+            if ((square || a.distance_to(avledet::util::CSU::Vector2f(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
                 float num6 = vector.y;
                 if (levelOnly) {
                     float num7 = m_heights[i * num5 + j];
@@ -793,11 +793,11 @@ void Heightmap::SetHeight(int32_t x, int32_t y, float h) {
 }
 
 // public
-bool Heightmap::IsPointInside(Vector3f point, float radius) {
+bool Heightmap::IsPointInside(avledet::util::CSU::Vector3f point, float radius) {
     //throw std::runtime_error("not implemented");
 
     float num = (float)IZoneManager::ZONE_SIZE * 0.5f;
-    Vector3f position = IZoneManager::ZoneToWorldPos(this->m_zone);
+    auto position = IZoneManager::ZoneToWorldPos(this->m_zone);
     return point.x + radius >= position.x - num 
         && point.x - radius <= position.x + num 
         && point.z + radius >= position.z - num 

@@ -14,25 +14,25 @@ namespace VUtils::Physics {
 
 
 
-    bool PointInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f pos2);
+    bool PointInsideRect(avledet::util::CSU::Vector3f size1, avledet::util::CSU::Vector3f pos1, avledet::util::CSU::Quaternion rot1, avledet::util::CSU::Vector3f pos2);
 
     // Checks whether a rectangular region lies completely inside inside another rectangular region
-    bool RectInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2);
+    bool RectInsideRect(avledet::util::CSU::Vector3f size1, avledet::util::CSU::Vector3f pos1, avledet::util::CSU::Quaternion rot1,
+        avledet::util::CSU::Vector3f size2, avledet::util::CSU::Vector3f pos2, avledet::util::CSU::Quaternion rot2);
 
     // Check whether 2 rectangles intersect
     // Quaternion x,z should not be assigned due to non-implementation
-    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2, std::string& desmos);
+    bool RectOverlapRect(avledet::util::CSU::Vector3f size1, avledet::util::CSU::Vector3f pos1, avledet::util::CSU::Quaternion rot1,
+        avledet::util::CSU::Vector3f size2, avledet::util::CSU::Vector3f pos2, avledet::util::CSU::Quaternion rot2, std::string& desmos);
 
-    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2);
+    bool RectOverlapRect(avledet::util::CSU::Vector3f size1, avledet::util::CSU::Vector3f pos1, avledet::util::CSU::Quaternion rot1,
+        avledet::util::CSU::Vector3f size2, avledet::util::CSU::Vector3f pos2, avledet::util::CSU::Quaternion rot2);
 
-    std::pair<Vector3f, Quaternion> LocalToGlobal(const Vector3f& childLocalPos, const Quaternion& childLocalRot,
-        const Vector3f& parentPos, const Quaternion& parentRot);
+    std::pair<avledet::util::CSU::Vector3f, avledet::util::CSU::Quaternion> LocalToGlobal(const avledet::util::CSU::Vector3f& childLocalPos, const avledet::util::CSU::Quaternion& childLocalRot,
+        const avledet::util::CSU::Vector3f& parentPos, const avledet::util::CSU::Quaternion& parentRot);
 
     // TODO requires testing
-    std::pair<Vector3f, Quaternion> GlobalToLocal(const Vector3f& globalPos, const Quaternion& globalRot,
-        const Vector3f& parentPos, const Quaternion& parentRot);
+    std::pair<avledet::util::CSU::Vector3f, avledet::util::CSU::Quaternion> GlobalToLocal(const avledet::util::CSU::Vector3f& globalPos, const avledet::util::CSU::Quaternion& globalRot,
+        const avledet::util::CSU::Vector3f& parentPos, const avledet::util::CSU::Quaternion& parentRot);
 
 }

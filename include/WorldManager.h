@@ -4,8 +4,7 @@
 #include <thread>
 
 #include "VUtils.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "Stream.h"
 
 class IWorldManager;
 
@@ -21,7 +20,7 @@ public:
 
 public:
     World(std::string name, std::string seedName);
-    World(DataReader reader);
+    World(avledet::util::Reader& reader);
 
 public:
     BYTES_t SaveMeta();

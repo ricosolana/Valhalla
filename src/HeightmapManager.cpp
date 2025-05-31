@@ -33,13 +33,13 @@ void IHeightmapManager::ForceQueuedRegeneration() {
 }
 
 // public static 
-float IHeightmapManager::GetOceanDepthAll(Vector3f worldPos) {
+float IHeightmapManager::GetOceanDepthAll(avledet::util::CSU::Vector3f worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.GetOceanDepth(worldPos);
 }
 
 // public static
-bool IHeightmapManager::AtMaxLevelDepth(Vector3f worldPos) {
+bool IHeightmapManager::AtMaxLevelDepth(avledet::util::CSU::Vector3f worldPos) {
     auto&& heightmap = GetHeightmap(worldPos);
     return heightmap.AtMaxWorldLevelDepth(worldPos);
 }
@@ -156,7 +156,7 @@ Heightmap* IHeightmapManager::PollHeightmap(ZoneID zone) {
 }
 
 // public static
-Heightmap& IHeightmapManager::GetHeightmap(Vector3f point) {
+Heightmap& IHeightmapManager::GetHeightmap(avledet::util::CSU::Vector3f point) {
     return GetHeightmap(IZoneManager::WorldToZonePos(point));
 }
 
@@ -173,7 +173,7 @@ Heightmap& IHeightmapManager::GetHeightmap(ZoneID zone) {
 }
 
 // public static
-std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(Vector3f point, float radius) {
+std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(avledet::util::CSU::Vector3f point, float radius) {
     throw std::runtime_error("not implemented");
     std::vector<Heightmap*> heightmaps;
     for (auto&& pair : m_heightmaps) {
@@ -196,7 +196,7 @@ Biome IHeightmapManager::FindBiome(const Vector3f& point) {
 }*/
 
 // public static
-bool IHeightmapManager::IsRegenerateQueued(Vector3f point, float radius) {
+bool IHeightmapManager::IsRegenerateQueued(avledet::util::CSU::Vector3f point, float radius) {
     assert(false);
     return false;
     //auto heightmaps = GetHeightmaps(point, radius);

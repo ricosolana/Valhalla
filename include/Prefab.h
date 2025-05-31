@@ -11,8 +11,8 @@
 class Prefab {
 public:
     struct Instance {
-        Quaternion m_rot;       // 16 bytes
-        Vector3f m_pos;         // 12 bytes
+        avledet::util::CSU::Quaternion m_rot;       // 16 bytes
+        avledet::util::CSU::Vector3f m_pos;         // 12 bytes
         HASH_t m_prefabHash;    // 4 bytes
 
         const Prefab& GetPrefab() const;
@@ -76,12 +76,12 @@ public:
         
 public:
     std::string m_name;         // 40 bytes
-    Vector3f m_localScale;      // 12 bytes
+    avledet::util::CSU::Vector3f m_localScale;      // 12 bytes
     Flag m_flags = Flag::NONE;  // 8 bytes
     HASH_t m_hash;              // 4 bytes
 
 public:
-    Prefab(std::string_view name, Vector3f localScale, Flag flags)
+    Prefab(std::string_view name, avledet::util::CSU::Vector3f localScale, Flag flags)
         : m_hash(VUtils::String::GetStableHashCode(name)), m_name(std::string(name)), m_localScale(localScale), m_flags(flags) {}
 
     Prefab(const Prefab& other) = default;

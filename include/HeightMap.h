@@ -75,22 +75,22 @@ private:
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
     void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
-    Vector3f CalcVertex(int32_t x, int32_t y);
+    avledet::util::CSU::Vector3f CalcVertex(int32_t x, int32_t y);
     void RebuildCollisionMesh();
-    void SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
-    bool AtMaxWorldLevelDepth(Vector3f worldPos);
-    bool GetWorldBaseHeight(Vector3f worldPos, float& height);
+    void SmoothTerrain2(avledet::util::CSU::Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
+    bool AtMaxWorldLevelDepth(avledet::util::CSU::Vector3f worldPos);
+    bool GetWorldBaseHeight(avledet::util::CSU::Vector3f worldPos, float& height);
     
-    bool GetAverageWorldHeight(Vector3f worldPos, float radius, float &height);
-    bool GetMinWorldHeight(Vector3f worldPos, float radius, float &height);
-    bool GetMaxWorldHeight(Vector3f worldPos, float radius, float &height);
-    void SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity);
+    bool GetAverageWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height);
+    bool GetMinWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height);
+    bool GetMaxWorldHeight(avledet::util::CSU::Vector3f worldPos, float radius, float &height);
+    void SmoothTerrain(avledet::util::CSU::Vector3f worldPos, float radius, bool square, float intensity);
     float GetAvgHeight(int32_t cx, int32_t cy, int32_t w);
-    float GroundHeight(Vector3f point);
-    void FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
-    void PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
-    void WorldToNormalizedHM(Vector3f worldPos, float& x, float &y);
-    void LevelTerrain(Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
+    float GroundHeight(avledet::util::CSU::Vector3f point);
+    void FindObjectsToMove(avledet::util::CSU::Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
+    void PaintCleared(avledet::util::CSU::Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
+    void WorldToNormalizedHM(avledet::util::CSU::Vector3f worldPos, float& x, float &y);
+    void LevelTerrain(avledet::util::CSU::Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
 
 public:
     Heightmap(ZoneID zone, std::unique_ptr<BaseHeightmap> base);
@@ -108,10 +108,10 @@ public:
 
     
 
-    float GetOceanDepth(Vector3f worldPos);
+    float GetOceanDepth(avledet::util::CSU::Vector3f worldPos);
     std::vector<Biome> GetBiomes();
     bool HaveBiome(Biome biome);
-    Biome GetBiome(Vector3f point);
+    Biome GetBiome(avledet::util::CSU::Vector3f point);
     BiomeArea GetBiomeArea();
     bool IsBiomeEdge();
 
@@ -123,13 +123,13 @@ public:
     
     // Should use an array independent from paintmask
     // only the alpha is used
-    float GetVegetationMask(Vector3f worldPos);
-    bool IsCleared(Vector3f worldPos);
-    bool IsCultivated(Vector3f worldPos);
+    float GetVegetationMask(avledet::util::CSU::Vector3f worldPos);
+    bool IsCleared(avledet::util::CSU::Vector3f worldPos);
+    bool IsCultivated(avledet::util::CSU::Vector3f worldPos);
 
     // Get the relative vertex of a world position to this heightmap
     //  Heightmap is treated as the center
-    void WorldToVertex(Vector3f worldPos, int32_t& x, int32_t &y);
+    void WorldToVertex(avledet::util::CSU::Vector3f worldPos, std::int32_t& x, std::int32_t &y);
 
     // Get the underlying color mask in paint array
     //  x, y must be within [0, 63]
@@ -143,17 +143,17 @@ public:
 
     // Get the underlying height in heights array at world position
     //  Returns false if the position outside of this heightmap
-    bool GetWorldHeight(const Vector3f& worldPos, float& height);
+    bool GetWorldHeight(const avledet::util::CSU::Vector3f& worldPos, float& height);
 
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
     float GetBaseHeight(int32_t x, int32_t y);
     void SetHeight(int32_t x, int32_t y, float h);
-    bool IsPointInside(Vector3f point, float radius = 0);
+    bool IsPointInside(avledet::util::CSU::Vector3f point, float radius = 0);
 
 
-    bool GetWorldNormal(Vector3f worldPos, Vector3f& normal);
+    bool GetWorldNormal(avledet::util::CSU::Vector3f worldPos, avledet::util::CSU::Vector3f& normal);
 
     // TOOD either implement or remove
     TerrainComp GetAndCreateTerrainCompiler();

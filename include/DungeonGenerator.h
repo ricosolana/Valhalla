@@ -8,7 +8,7 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "PrefabManager.h"
-#include "VUtilsRandom.h"
+#include "Random.h"
 #include "ZoneManager.h"
 #include "ZDO.h"
 #include "Dungeon.h"

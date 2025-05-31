@@ -9,137 +9,66 @@
 #include "BitPack.h"
 
 
-class ZDOID {
-    //friend struct ankerl::unordered_dense::hash<ZDOID>;
-    friend class ZDO;
 
-    //using UType = uint64_t;
+#pragma once
 
-    // User: 0, ID: 1
-    //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
+#include <UserID.h>
+#include <Stream.h>
+#include <ankerl/unordered_dense.h>
+#include <assert.h>
 
-    USER_ID_t m_userID{};
-    uint32_t m_id{};
+namespace avledet::util {
 
-    uint32_t m_unusedPadding = 0;
-        
-    // Indexed UserIDs
-    //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
-    //static std::array<int64_t, (1 << 6) - 1> INDEXED_USERS;
+    class ZDOID {
+    public:
+        ZDOID();
+        ZDOID(avledet::util::UserID userid, std::uint32_t id);
 
-    //static std::array<int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERS;
+        //avledet::util::UserID get_userid() const;
+        //std::uint32_t get_id() const;
 
-    //static constexpr auto USER_PACK_INDEX = 0;
-    //static constexpr auto ID_PACK_INDEX = 1;
+        bool operator==(ZDOID const&) const;
+        operator bool() const;
 
-public:
-    static const ZDOID NONE;
+    public:
+        avledet::util::UserID m_userid;
+        std::uint16_t ___{}; // 0 padding
+        std::uint32_t m_id{};
+    };
 
-private:
-    // Get the index of a UserID
-    //  The UserID is inserted if it does not exist
-    //  Returns the insertion index or the existing index of the UserID
-    /*
-    static size_t EnsureUserIDIndex(int64_t owner) {
-        if (!owner)
-            return 0;
+}// namespace avledet::sync
 
-        for (size_t i = 1; i < INDEXED_USERS.size(); i++) {
-            // Assume that a blank index prior to an existing UserID being found
-            //  means that the UserID does not exist (so insert it)
-            if (!INDEXED_USERS[i]) {
-                INDEXED_USERS[i] = owner;
-                return i;
-            }
-            else if (INDEXED_USERS[i] == owner) {
-                return i;
-            }
-        }
+template <>
+struct ankerl::unordered_dense::hash<avledet::util::ZDOID> {
+    using is_avalanching = void; // high quality hash
 
-        // TODO this is definitely reachable, assuming the server runs long enough
-        //  for enough unique players to join, causing the INDEXED_USERS loop to completely finish
-        //  and reach this point
-        std::unreachable();
-    }
+    static_assert(std::has_unique_object_representations_v<avledet::util::ZDOID>);
 
-    static int64_t GetUserIDByIndex(size_t index) {
-        //if (!index)
-            //return 0;
-
-        //assert((index || (INDEXED_USERS[index] == 0))
-            //&& "Array[0] should be 0 to represent no-owner");
-
-        if (index < INDEXED_USERS.size())
-            return INDEXED_USERS[index];
-
-        throw std::runtime_error("user id by index not found");
-    }*/
-
-public:
-    ZDOID() = default;
-
-    ZDOID(USER_ID_t owner, uint32_t uid);
-
-    ZDOID(const ZDOID&) = default;
-
-    bool operator==(const ZDOID &other) const noexcept {
-        //return this->m_pack == other.m_pack;
-        return this->m_userID == other.m_userID 
-            && this->m_id == other.m_id;
-    }
-
-    bool operator!=(const ZDOID &other) const noexcept {
-        return !(*this == other);
-    }
-    
-    // Return whether this has a value besides NONE
-    operator bool() const noexcept {
-        //return m_pack;
-        return *this != ZDOID::NONE;
-    }
-
-    // TODO rename to User
-    USER_ID_t GetOwner() const {
-        //return INDEXED_USERS[_GetUserIDIndex()];
-        return m_userID;
-    }
-
-    // Rename to SetUserID
-    void SetOwner(USER_ID_t owner) {
-        //_SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
-        this->m_userID = owner;
-    }
-
-
-    /*
-    // Retrieve the index of the UserID
-    uint32_t _GetUserIDIndex() const {
-        return m_pack.Get<USER_PACK_INDEX>();
-    }
-
-    // Set the associated UserID index 
-    void _SetUserIDIndex(decltype(m_pack)::type index) {
-        m_pack.Set<USER_PACK_INDEX>(index);
-    }*/
-
-    // TODO rename to GetID
-    uint32_t GetUID() const {
-        //return m_pack.Get<ID_PACK_INDEX>();
-        return this->m_id;
-    }
-
-    // TODO rename to SetID
-    void SetUID(uint32_t uid) {
-        //m_pack.Set<ID_PACK_INDEX>(uid);
-        this->m_id = uid;
-    }
-
-
-
-    friend std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid) {
-        st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
-        return st;
+    auto operator()(avledet::util::ZDOID const& value) const noexcept -> std::uint64_t {
+        return ankerl::unordered_dense::detail::wyhash::hash(&value, sizeof(value));
     }
 };
 
-QUILL_LOGGABLE_DIRECT_FORMAT(ZDOID)
+template <>
+struct avledet::util::Streamer<avledet::util::ZDOID> {
+    void operator()(avledet::util::Writer& writer, avledet::util::ZDOID const& zdoid) {
+        writer.write(zdoid.m_userid);
+        writer.write(zdoid.m_id);
+    }
+
+    avledet::util::ZDOID operator()(avledet::util::Reader& reader) {
+        return avledet::util::ZDOID(
+            reader.read<avledet::util::UserID>(),
+            reader.read<std::uint32_t>()
+        );
+    }
+};
+
+std::ostream& operator<<(std::ostream& st, avledet::util::ZDOID const& zdoid) {
+    //st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
+    return st;
+}
+
+QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::ZDOID)
+
+using ZDOID = avledet::util::ZDOID;

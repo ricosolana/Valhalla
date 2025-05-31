@@ -6,7 +6,7 @@
 
 #include "DungeonRoomConnection.h"
 
-#include "VUtilsRandom.h"
+#include "Random.h"
 #include "Quaternion.h"
 #include "Prefab.h"
 #include "VUtilsPhysics.h"
@@ -34,7 +34,7 @@ private:
 
 public:
 	//Vector3Int m_size = new Vector3Int(8, 4, 8);
-	Vector3f m_size = Vector3f(8, 4, 8);
+	avledet::util::CSU::Vector3f m_size = avledet::util::CSU::Vector3f(8, 4, 8);
 
 	Theme m_theme = Theme::Crypt;
 
@@ -58,8 +58,8 @@ public:
 
 	HASH_t m_hash; // based off name
 
-	Vector3f m_pos;
-	Quaternion m_rot;
+	avledet::util::CSU::Vector3f m_pos;
+	avledet::util::CSU::Quaternion m_rot;
 
 	std::vector<Prefab::Instance> m_netViews;
 
@@ -81,7 +81,7 @@ public:
 	}
 
 	// Nullable
-	const RoomConnection &GetConnection(VUtils::Random::State& state, const RoomConnection &other) const;
+	const RoomConnection &GetConnection(avledet::util::CSU::Random& state, const RoomConnection &other) const;
 
 	const RoomConnection &GetEntrance() const;
 
@@ -90,13 +90,13 @@ public:
 
 struct RoomInstance {
 	std::reference_wrapper<const Room> m_room;
-	Vector3f m_pos;
-	Quaternion m_rot;
+	avledet::util::CSU::Vector3f m_pos;
+	avledet::util::CSU::Quaternion m_rot;
 	int m_placeOrder = 0;
 	int m_seed = 0;
 	std::vector<std::unique_ptr<RoomConnectionInstance>> m_connections;
 
-	RoomInstance(const Room& room, Vector3f pos, Quaternion rot, int placeOrder, int seed) 
+	RoomInstance(const Room& room, avledet::util::CSU::Vector3f pos, avledet::util::CSU::Quaternion rot, int placeOrder, int seed) 
 		: m_room(room), m_pos(pos), m_rot(rot), m_placeOrder(placeOrder),  m_seed(seed) {
 		for (auto&& conn : room.GetConnections()) {
 			// Find the world position of the connection, 

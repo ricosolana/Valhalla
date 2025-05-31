@@ -109,29 +109,26 @@ endif()
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
-    "src/Main.cpp"
-
-    
     "src/DiscordManager.cpp"
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"
-    "src/RandomEventManager.cpp"
+    "src/DungeonRoom.cpp"
     "src/GeoManager.cpp"
     "src/Heightmap.cpp"
     "src/HeightmapBuilder.cpp"
     "src/HeightmapManager.cpp"
-    
+    "src/Main.cpp"
     "src/ModManager.cpp"
-    "src/NetAcceptorSteamDedicated.cpp"
     "src/NetManager.cpp"    
     "src/NetSocketSteam.cpp"
     "src/Peer.cpp"
     "src/PrefabManager.cpp"
     "src/Quaternion.cpp"
-    
-    "src/DungeonRoom.cpp"
-    "src/RouteManager.cpp"
-    
+    "src/RandomEventManager.cpp"
+    "src/Reader.cpp"
+    "src/SteamContext.cpp"
+    "src/Stream.cpp"
+    #"src/Tests.cpp"
     "src/ValhallaServer.cpp"
     "src/Vector.cpp"
     "src/VUtils.cpp"
@@ -142,11 +139,11 @@ add_executable(${PROJECT_NAME}
     "src/VUtilsResource.cpp"
     "src/VUtilsString.cpp"
     "src/WorldManager.cpp"
+    "src/Writer.cpp"
     "src/ZDO.cpp"
-    "src/ZDOManager.cpp"
     "src/ZDOID.cpp"
+    "src/ZDOManager.cpp"    
     "src/ZoneManager.cpp"
-    "src/Tests.cpp"
 )
 
 #find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")

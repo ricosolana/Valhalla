@@ -7,7 +7,7 @@
 #include "HashUtils.h"
 
 #include "Prefab.h"
-#include "DataReader.h"
+#include "Stream.h"
 
 // TODO consider moving Instantiate(...) to ZDOManager
 //	this class doesnt do much besides try to simulate Unity in appearance
@@ -50,7 +50,7 @@ public:
 		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
 	}
 
-	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {
+	void Register(std::string_view name, avledet::util::CSU::Vector3f scale, Prefab::Flag flags) {
 		HASH_t hash = VUtils::String::GetStableHashCode(name);
 		Prefab prefab(name, scale, flags);
 		m_prefabs.emplace(prefab);
@@ -62,10 +62,10 @@ public:
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 	}
 
-	void Register(DataReader& reader) {
-		auto name = reader.Read<std::string_view>();
-		auto localScale = reader.Read<Vector3f>();
-		auto flags = reader.Read<Prefab::Flag>();
+	void Register(avledet::util::Reader& reader) {
+		auto name = reader.read<std::string_view>();
+		auto localScale = reader.read<avledet::util::CSU::Vector3f>();
+		auto flags = reader.read<Prefab::Flag>();
 
 		auto hash = VUtils::String::GetStableHashCode(name);
 		Register(name, localScale, flags);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
-#include "VUtilsTraits.h"
+#include "Traits.h"
 
 template<typename T, size_t ...COUNTS>
     requires std::is_integral_v<T>&& std::is_unsigned_v<T>
@@ -15,7 +15,7 @@ public:
 
     template<size_t index>
         requires (index < sizeof...(COUNTS))
-    using count = VUtils::Traits::variadic_value_at_index<index, COUNTS...>;
+    using count = avledet::util::traits::variadic_value_at_index<index, COUNTS...>;
 
     template<size_t index>
     static constexpr auto count_v = count<index>::value;
@@ -34,7 +34,7 @@ public:
     template<size_t index>
         requires (index > 0)
     struct offset<index>
-        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
+        : avledet::util::traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
     { };
 
     // now accumulate in reverse, first parameter pack ints are most significant (have highest offsets)

@@ -33,9 +33,9 @@ public:
 
 class ZDOConnectorTargeted : public ZDOConnector {
 public:
-	ZDOID m_target{};
+	avledet::util::ZDOID m_target{};
 
 public:
 	ZDOConnectorTargeted() {}
-	ZDOConnectorTargeted(Type type, ZDOID target) : ZDOConnector(type), m_target(target) {}
+	ZDOConnectorTargeted(Type type, avledet::util::ZDOID target) : ZDOConnector(type), m_target(target) {}
 };

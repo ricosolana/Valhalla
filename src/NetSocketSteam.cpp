@@ -1,187 +1,222 @@
+#include "SteamSocket.h"
+#include <iostream>
+#include <assert.h>
 #include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
 #include <isteamuser.h>
 #include <steam_gameserver.h>
 
-#include "NetSocket.h"
-#include "ValhallaServer.h"
-#include "ModManager.h"
-#include "NetAcceptor.h"
+namespace avledet::network {
 
-//ISteamNetworkingSockets* SteamSocket::STEAM_NETWORKING_SOCKETS = nullptr;
-
-SteamSocket::SteamSocket(HSteamNetConnection hConn)
-    : m_hConn(hConn) {
-
-    // Set basic socket info
-    SteamNetConnectionInfo_t info;
-    AcceptorSteam::STEAM_NETWORKING_SOCKETS->GetConnectionInfo(m_hConn, &info);
-
-    m_steamNetId = info.m_identityRemote;
-
-    char buf[20];
-    info.m_addrRemote.ToString(buf, sizeof(buf), false);
-    this->m_address = std::string(buf);
-
-    m_connected = true;
-
-    //VLOG(2) << "SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
-
-//#ifndef ELPP_DISABLE_VERBOSE_LOGS
-//    SteamFriends()->RequestUserInformation(this->m_steamNetId.GetSteamID(), true);
-//#endif
-}
-
-SteamSocket::~SteamSocket() {
-    //VLOG(2) << "~SteamSocket(), host: " << this->GetHostName() << ", address: " << this->GetAddress();
-    Close(true);
-}
-
-
-
-void SteamSocket::Close(bool flush) {
-    if (!Connected())
-        return;
-
-    auto steamID = m_steamNetId.GetSteamID();
-
-
-
-    auto self(shared_from_this());
-    auto&& close = [this, self, steamID]() {
-        AcceptorSteam::STEAM_NETWORKING_SOCKETS->CloseConnection(m_hConn, 0, "", false);
-        if (VH_SETTINGS.serverDedicated) {
-            SteamGameServer()->EndAuthSession(steamID);
-        }
-        else {
-            SteamUser()->EndAuthSession(steamID);
-        }
-
-        //m_hConn = 0;
-    };
-
-    if (flush) {
-        SendQueued();
-
-        AcceptorSteam::STEAM_NETWORKING_SOCKETS->FlushMessagesOnConnection(m_hConn);
-                
-        Valhalla()->RunTaskLater([this, self, close](Task&) { close(); }, 3s);
-    } else {
-        close();
+    SteamSocket::SteamSocket(HSteamNetConnection hConn, bool is_outbound)
+        : m_conn(hConn), m_status(Status::Connecting), m_is_outbound(is_outbound) {
+        this->init_identifiers();
     }
 
-    m_connected = false;
-}
-
-
-
-void SteamSocket::Update() {
-    SendQueued();
-}
-
-void SteamSocket::Send(BYTES_t bytes) {
-    assert(!bytes.empty());
-
-    m_sendQueue.push_back(std::move(bytes));
-}
-
-std::optional<BYTES_t> SteamSocket::Recv() {
-    if (Connected()) {
-#define MSG_COUNT 1
-        SteamNetworkingMessage_t* msg; // will point to allocated messages
-        if (AcceptorSteam::STEAM_NETWORKING_SOCKETS->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
-            BYTES_t bytes; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
-            bytes.insert(bytes.begin(),
-                reinterpret_cast<BYTE_t*>(msg->m_pData), 
-                reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
-            msg->Release();
-            return bytes;
-        }
-        else {
-            //LOG(DEBUG) << "Failed to receive message";
-        }
+    SteamSocket::~SteamSocket() {
+        this->close(true);
     }
-    return std::nullopt;
-}
 
+    void SteamSocket::init_identifiers() {
+        SteamNetConnectionInfo_t info{};
+        get_steam_sockets()->GetConnectionInfo(m_conn, &info);
+        m_steam_id = info.m_identityRemote;
 
+        char buf[SteamNetworkingIPAddr::k_cchMaxString];
+        info.m_addrRemote.ToString(buf, sizeof(buf), false);
+        m_address = buf;
+    }
 
-std::string SteamSocket::GetHostName() const {
-    return std::to_string(m_steamNetId.GetSteamID64());
-}
+    void SteamSocket::close(bool linger) {
+        switch (m_status) {
+            case Status::Closed:
+            case Status::Connect_Failed:
+            case Status::Lingering:
+                return;
+            default:
+                break;
+        }
 
-std::string SteamSocket::GetAddress() const {
-    return m_address;
-}
+        if (m_status == Status::Connecting) {
+            m_status = Status::Connect_Failed;
+        } else {
+            if (linger) {
+                m_status = Status::Lingering;
 
-bool SteamSocket::Connected() const {
-    //return m_hConn;
-    return this->m_connected;
-}
+                this->flush();
+            } else {
+                m_status = Status::Closed;
+            }
+        }
 
+        // try invalidating ticket regardless of linger/close
+        auto steam_id = m_steam_id.GetSteamID();
+        if (this->is_game_server()) {
+            SteamGameServer()->EndAuthSession(steam_id);
+        } else {
+            SteamUser()->EndAuthSession(steam_id);
+        }
 
+        get_steam_sockets()->CloseConnection(m_conn, 0, "", linger);
+    }
 
-unsigned int SteamSocket::GetSendQueueSize() const {
-    //if (Connected()) {
-        unsigned int num = 0;
-        for (auto&& bytes : m_sendQueue) { // this is inefficient
+    void SteamSocket::flush() {
+        this->send_queued();
+        get_steam_sockets()->FlushMessagesOnConnection(m_conn);
+    }
+
+    void SteamSocket::send(std::vector<char> bytes) {
+        assert(!bytes.empty());
+
+        //if (!bytes.empty()) {
+        m_send_queue.push_back(std::move(bytes));
+
+        this->send_queued();
+        //}
+    }
+
+    std::vector<char> SteamSocket::recv() {
+        std::vector<char> bytes;
+
+        if (m_status == Status::Connected
+            || m_status == Status::Lingering) {
+            static constexpr auto MSG_COUNT = 1;
+
+            SteamNetworkingMessage_t* msg{};
+            auto res = get_steam_sockets()->ReceiveMessagesOnConnection(m_conn, &msg, MSG_COUNT);
+            if (res == MSG_COUNT) {
+                bytes.insert(bytes.begin(),
+                    reinterpret_cast<char*>(msg->m_pData),
+                    reinterpret_cast<char*>(msg->m_pData) + msg->m_cbSize);
+                msg->Release();
+            } else if (res == -1) {
+                // TODO suspicious, callback is already used,
+                // why require a manual close
+                this->close(false);
+            }
+        }
+        return bytes;
+    }
+
+    std::string SteamSocket::get_hostname() {
+        return std::to_string(m_steam_id.GetSteamID64());
+    }
+
+    std::string SteamSocket::get_address() {
+        return m_address;
+    }
+
+    bool SteamSocket::is_outbound() {
+        return m_is_outbound;
+    }
+
+    int SteamSocket::get_send_queue_size() {
+        int num = 0;
+        for (auto&& bytes : m_send_queue) { // this is inefficient
             num += (int)bytes.size();
         }
+
         SteamNetConnectionRealTimeStatus_t rt{};
-        if (AcceptorSteam::STEAM_NETWORKING_SOCKETS->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
+        if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
         }
-        
+
         return num;
-    //}
-    //return -1;
-}
-
-unsigned int SteamSocket::GetPing() const {
-    SteamNetConnectionRealTimeStatus_t rt{};
-    if (AcceptorSteam::STEAM_NETWORKING_SOCKETS->GetConnectionRealTimeStatus(m_hConn, &rt, 0, nullptr) == k_EResultOK) {
-        return rt.m_nPing;
-    }
-    return 0;
-}
-
-
-
-void SteamSocket::SendQueued() {
-    if (!Connected())
-        return;
-
-    SteamNetworkingMessage_t* messages[10] {};
-    auto count = std::min(m_sendQueue.size(), sizeof(messages) / sizeof(messages[0]));
-
-    for (auto i = 0; i < count; i++) {
-        auto&& front = m_sendQueue.front();
-
-        SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
-        msg->m_conn = m_hConn;          // set the intended recipient
-        msg->m_pData = front.data();    // set the buffer
-        msg->m_cbSize = front.size();   // set the buffer size
-        msg->m_nUserData = reinterpret_cast<std::intptr_t>(new BYTES_t(std::move(front)));
-        msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
-        msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
-            delete reinterpret_cast<BYTES_t*>(msg->m_nUserData);
-        };
-
-        messages[i] = msg;
-
-        m_sendQueue.pop_front();
     }
 
-    //int64_t state[sizeof(messages) / sizeof(messages[0])]{};
-    AcceptorSteam::STEAM_NETWORKING_SOCKETS->SendMessages(count, messages, nullptr);
-}
+    std::tuple<float, float> SteamSocket::get_connection_quality() {
+        SteamNetConnectionRealTimeStatus_t rt{};
+        if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
+            return { rt.m_flConnectionQualityLocal, rt.m_flConnectionQualityRemote };
+        }
+        return {};
+    }
 
-//#ifndef ELPP_DISABLE_VERBOSE_LOGS
-//void SteamSocket::OnPersonaStateChange(PersonaStateChange_t* params) {
-//    auto persona = SteamFriends()->GetFriendPersonaName(params->m_ulSteamID);
-//
-//    //VLOG(1) << "host: " << this->GetHostName()
-//        << ", address: " << this->GetAddress()
-//        << ", persona: " << persona;
-//}
-//#endif
+    Status SteamSocket::get_status() {
+        return m_status;
+    }
+
+    int SteamSocket::get_ping() {
+        SteamNetConnectionRealTimeStatus_t rt{};
+        if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
+            return rt.m_nPing;
+        }
+        return 0;
+    }
+
+    void SteamSocket::send_queued() {
+        if (m_status == Status::Connected) {
+            for (auto&& itr = m_send_queue.begin(); itr != m_send_queue.end();) {
+                auto&& array = *itr;
+                auto res = get_steam_sockets()->SendMessageToConnection(m_conn, array.data(), (uint32_t)array.size(),
+                    k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
+                if (res != k_EResultOK) {
+                    std::cout << "data send failed\n";
+                    //if (res == k_EResultNoConnection) {
+                    //    // close
+                    //    this->close(true);
+                    //}
+                    break;
+                }
+                itr = m_send_queue.erase(itr);
+            }
+        }
+
+        //assert(false);
+
+        /*
+        // TODO
+        // the error handling here (determining whether packets are queued / sent)
+        // is practically non-existent,
+        // consider reverting back to the more inefficient but safer SendMessage
+        assert(false);
+        std::array<SteamNetworkingMessage_t*, 10> messages{};
+        auto count = std::min(m_send_queue.size(), messages.size());
+
+        for (size_t i = 0; i < count; i++) {
+            auto uniq = std::make_unique<std::vector<char>>(std::move(m_send_queue.front())); // avoids very slim chance of memory leak
+
+            SteamNetworkingMessage_t* msg = SteamNetworkingUtils()->AllocateMessage(0);
+            msg->m_conn = m_conn;              // set the intended recipient
+            msg->m_pData = uniq->data();        // set the buffer
+            msg->m_cbSize = (int)uniq->size();  // set the buffer size
+            msg->m_nUserData = reinterpret_cast<std::intptr_t>(uniq.release());
+            msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
+            msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
+                delete reinterpret_cast<std::vector<char>*>(msg->m_nUserData);
+            };
+            messages[i] = msg;
+
+            // What if send fails?
+            // did we just lose data?
+            m_send_queue.pop_front();
+        }
+
+        std::array<int64_t, messages.size()> state{};
+        // TODO what is the behaviour when this call fails?
+        // the documentation states that message ownership is transferred,
+        // but does this mean that the message free() function is called?
+
+        // A way to test this would be to flood the internal message
+        // buffer, and utilize clumsy to severely limit throughput.
+        // if message free() is never called, then there are leaks
+        // this is unlikely (assuming ownership means everything is
+        // eventually cleaned up)
+        this->get_steam_sockets()->SendMessages((int)count, messages.data(), state.data());
+
+        // regardless of the result, failed messages will result in data loss,
+        // at the application level (valheim), and thus stop comms
+        // how to fix
+
+        //
+
+        for (size_t i=0; i < count; i++) {
+            auto&& status = state[i];
+            if (status != EResult::k_EResultOK) {
+                this->close(false);
+                break;
+            }
+        }*/
+    }
+
+}// namespace avledet::network

@@ -1,99 +1,45 @@
 #pragma once
 
+#include <NetSocket.h>
+#include <memory>
+#include <functional>
+#include <span>
 #include <memory>
 #include <quill/Logger.h>
 #include <quill/sinks/ConsoleSink.h>
 #include <thread>
 #include <steam_gameserver.h>
 
-#include "NetSocket.h"
 #include "ValhallaServer.h"
 
-class IAcceptor {
-public:
-    IAcceptor() 
-        : m_logger(quill::Frontend::create_or_get_logger("acceptor", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"))) {
-
-    }
-
-    virtual ~IAcceptor() = default;
-
-    // Init listening and queueing any accepted connections
-    //  Should be non-blocking
-    virtual void Listen() = 0;
-
-    virtual void Close() = 0;
-
-    // Poll for a ready and newly accepted connection
-    //  Should be non-blocking
-    //  Nullable
-    virtual ISocket::Ptr Accept() = 0;
-
-    virtual void OnConfigLoad(bool reloading) {}
-
-    // Do not use
-    //virtual void Cleanup(ISocket* socket) = 0;
-
-    protected:
-        quill::Logger *m_logger;
-};
 
 
+namespace avledet::network {
 
-class AcceptorSteam : public IAcceptor {
-private:
-    //const uint16_t m_port;
-    HSteamListenSocket m_listenSocket;
+    class Context {
+    public:
+        // Create a steam user context
+        static std::unique_ptr<Context> steam_user(bool is_lobby_server);
+        static std::unique_ptr<Context> steam_dedicated(std::string bind_addr);
 
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
+        static std::unique_ptr<Context> tcp_user();
+        static std::unique_ptr<Context> tcp_dedicated(std::string bind_addr);
 
-    CSteamID m_lobbyID;
+    public:
+        virtual ~Context() = default;
 
-    void OnLobbyCreated(LobbyCreated_t* pCallback, bool failure);
-    CCallResult<AcceptorSteam, LobbyCreated_t> m_lobbyCreatedCallResult;
+        //virtual std::vector<char> get_auth_session_ticket() = 0;
+        //virtual bool verify_auth_session_ticket(std::span<const char> ticket, Socket::Ptr socket) = 0;
 
-    //ISteamNetworkingSockets* m_steamNetworkingSockets;
+        virtual std::string get_public_ip() = 0;
 
-public:
-    static ISteamNetworkingSockets* STEAM_NETWORKING_SOCKETS;
+        virtual void start() = 0;
+        virtual void update() = 0;
+        virtual void stop() = 0;
 
-public:
-    AcceptorSteam();
-    ~AcceptorSteam() override;
+        virtual void on_connect(std::function<void(Socket::Ptr)> callback) = 0;
 
-    void Listen() override;
-    void Close() override;
+        virtual Socket::Ptr connect(std::string address) = 0;
+    };
 
-    ISocket::Ptr Accept() override;
-
-    void OnConfigLoad(bool reloading) override;
-
-    //void Cleanup(ISocket* socket) override;
-
-private:
-    // Expanded from the STEAM_CALLBACK macro
-    // https://partner.steamgames.com/doc/sdk/api#callbacks
-    //STEAM_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
-    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamStatusChanged, SteamNetConnectionStatusChangedCallback_t);
-    struct CCallbackInternal_OnSteamStatusChanged : private CCallbackImpl< sizeof(SteamNetConnectionStatusChangedCallback_t) > {
-        CCallbackInternal_OnSteamStatusChanged() {
-            if (VH_SETTINGS.serverDedicated)
-                this->SetGameserverFlag();
-            SteamAPI_RegisterCallback(this, SteamNetConnectionStatusChangedCallback_t::k_iCallback);
-        } CCallbackInternal_OnSteamStatusChanged(const CCallbackInternal_OnSteamStatusChanged&) {
-            if (VH_SETTINGS.serverDedicated)
-                this->SetGameserverFlag();
-            SteamAPI_RegisterCallback(this, SteamNetConnectionStatusChangedCallback_t::k_iCallback);
-        } CCallbackInternal_OnSteamStatusChanged& operator=(const CCallbackInternal_OnSteamStatusChanged&) {
-            return *this;
-        } private: virtual void Run(void* pvParam) {
-            AcceptorSteam* pOuter = reinterpret_cast<AcceptorSteam*>(reinterpret_cast<char*>(this) - ((::size_t) & reinterpret_cast<char const volatile&>((((AcceptorSteam*)0)->m_steamcallback_OnSteamStatusChanged)))); pOuter->OnSteamStatusChanged(reinterpret_cast<SteamNetConnectionStatusChangedCallback_t*>(pvParam));
-        }
-    } m_steamcallback_OnSteamStatusChanged; void OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* pParam);
-    
-    // status logs
-    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersConnected, SteamServersConnected_t);
-    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServersDisconnected, SteamServersDisconnected_t);
-    //STEAM_GAMESERVER_CALLBACK(AcceptorSteam, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
-};
+}// namespace avledet::network

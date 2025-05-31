@@ -4,15 +4,14 @@
 #include <algorithm>
 
 #include "VUtils.h"
-#include "VUtilsTraits.h"
+#include "Traits.h"
 #include "VUtilsString.h"
 #include "BitPack.h"
 #include "Hashes.h"
 #include "HashUtils.h"
 #include "Quaternion.h"
 #include "Vector.h"
-#include "DataWriter.h"
-#include "DataReader.h"
+#include "Stream.h"
 #include "ValhallaServer.h"
 #include "ZoneManager.h"
 #include "PrefabManager.h"
@@ -234,7 +233,7 @@ private:
     template<typename T>
         requires is_member_v<T>
     decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
-        const auto begin_mark = writer.Position();
+        const auto begin_mark = writer.get_pos();
         uint8_t count = 0;
         //writer.Write(count); // placeholder 0 byte
 
@@ -243,20 +242,20 @@ private:
             if (data) {
                 // Skip 1 byte for count only if member present
                 if (!count) {
-                    writer.Write(count);
+                    writer.write(count);
                 }
 
-                writer.Write(xhash_to_hash<T>(pair.first));
-                writer.Write(*data);
+                writer.write(xhash_to_hash<T>(pair.first));
+                writer.write(*data);
                 count++;
             }
         }
 
         if (count) {
-            auto end_mark = writer.Position();
-            writer.SetPos(begin_mark);
-            writer.Write(count);
-            writer.SetPos(end_mark);
+            auto end_mark = writer.get_pos();
+            writer.set_pos(begin_mark);
+            writer.write(count);
+            writer.set_pos(end_mark);
         }
 
         return count;
@@ -266,13 +265,13 @@ private:
     template<typename T, typename CountType>
         requires is_member_v<T> && (std::same_as<CountType, char16_t> || std::same_as<CountType, uint8_t>)
     static void _TryReadType(DataReader& reader, member_map& members) {
-        decltype(auto) count = reader.Read<CountType>();
+        decltype(auto) count = reader.read<CountType>();
 
         for (int i = 0; i < count; i++) {
             // ...fuck
             // https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-            auto hash(reader.Read<HASH_t>());
-            auto type(reader.Read<T>());
+            auto hash(reader.read<HASH_t>());
+            auto type(reader.read<T>());
             _Set(hash, type, members);
         }
     }
@@ -304,7 +303,7 @@ private:
     }
 
     void _SetRotation(Quaternion rot) {
-        this->_SetRotation(rot.EulerAngles());
+        this->_SetRotation(rot.euler_angles());
     }
 
     
@@ -627,11 +626,11 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion GetRotation() const {
-        return Quaternion::Euler(this->m_rotation);
+        return Quaternion::euler(this->m_rotation);
     }
 
     void SetRotation(Quaternion rot) {
-        auto&& euler = rot.EulerAngles();
+        auto&& euler = rot.euler_angles();
         if (euler != this->m_rotation) {
             this->m_rotation = euler;
             this->Revise();

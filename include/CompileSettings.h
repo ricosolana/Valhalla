@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 //#include <chrono>
 
 //using namespace std::chrono_literals;

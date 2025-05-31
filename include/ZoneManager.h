@@ -3,11 +3,10 @@
 #include <list>
 
 #include "VUtils.h"
-#include "VUtilsRandom.h"
+#include "Random.h"
 #include "Types.h"
 #include "HashUtils.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "Stream.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "Prefab.h"
@@ -56,7 +55,7 @@ enum class GlobalKey {
 	MAX
 };
 
-using ZoneID = Vector2s;
+using ZoneID = avledet::util::CSU::Vector2s;
 
 class Heightmap;
 class Peer;
@@ -116,10 +115,10 @@ class IZoneManager {
 
 		public:
 			std::reference_wrapper<const Feature> m_feature;
-			const Vector3f m_pos;
+			const avledet::util::CSU::Vector3f m_pos;
 			//bool m_placed = false; // if m_generatedZones contains position
 
-			Instance(const Feature& location, const Vector3f& pos)
+			Instance(const Feature& location, const avledet::util::CSU::Vector3f& pos)
 				: m_feature(location), m_pos(pos) {}
 		};
 	};
@@ -163,7 +162,7 @@ class IZoneManager {
 	};
 
 	struct ClearArea {
-		Vector3f m_center;
+		avledet::util::CSU::Vector3f m_center;
 		float m_semiWidth;
 	};
 
@@ -242,7 +241,7 @@ private:
 	void OnNewPeer(Peer& peer);
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-	void TryGenerateNearbyZones(Vector3f pos);
+	void TryGenerateNearbyZones(avledet::util::CSU::Vector3f pos);
 
 
 	// Generate a zone if it is not already generated
@@ -255,25 +254,25 @@ private:
 	std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
 	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
-	bool HaveLocationInRange(const Feature& feature, Vector3f pos);
-	Vector3f GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float range);
-	Vector3f GetRandomPointInRadius(VUtils::Random::State& state, Vector3f pos, float range);
-	bool InsideClearArea(const std::vector<ClearArea>& areas, Vector3f pos);
-	bool OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f pos, float range);
+	bool HaveLocationInRange(const Feature& feature, avledet::util::CSU::Vector3f pos);
+	avledet::util::CSU::Vector3f GetRandomPointInZone(avledet::util::CSU::Random& state, ZoneID zone, float range);
+	avledet::util::CSU::Vector3f GetRandomPointInRadius(avledet::util::CSU::Random& state, avledet::util::CSU::Vector3f pos, float range);
+	bool InsideClearArea(const std::vector<ClearArea>& areas, avledet::util::CSU::Vector3f pos);
+	bool OverlapsClearArea(const std::vector<ClearArea>& areas, avledet::util::CSU::Vector3f pos, float range);
 
 	const Feature* GetFeature(std::string_view name);
 
 	void PrepareFeatures(const Feature& feature);
-	ZoneID GetRandomZone(VUtils::Random::State& state, float range);
+	ZoneID GetRandomZone(avledet::util::CSU::Random& state, float range);
 
 	void RemoveUngeneratedFeatures(const Feature& feature);
-	void GenerateFeature(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
+	void GenerateFeature(const Feature& feature, HASH_t seed, avledet::util::CSU::Vector3f pos, avledet::util::CSU::Quaternion rot);
 
-	void GetTerrainDelta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
+	void GetTerrainDelta(avledet::util::CSU::Random& state, avledet::util::CSU::Vector3f pos, float range, float& delta, avledet::util::CSU::Vector3f& slopeDirection);
 
 	bool IsZoneGenerated(ZoneID zone);
 
-	void GenerateLocationProxy(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
+	void GenerateLocationProxy(const Feature& feature, HASH_t seed, avledet::util::CSU::Vector3f pos, avledet::util::CSU::Quaternion rot);
 #endif
 
 public:
@@ -284,8 +283,8 @@ public:
 	void PostGeoInit();
 #endif
 
-	void Save(DataWriter& pkg);
-	void Load(DataReader& reader, int32_t version);
+	void Save(avledet::util::Writer& pkg);
+	void Load(avledet::util::Reader& reader, int version);
 
 	auto& GlobalKeys() {
 		return m_globalKeys;
@@ -300,22 +299,22 @@ public:
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
 
 	// Get world height at location
-	float GetGroundHeight(Vector3f pos);
+	float GetGroundHeight(avledet::util::CSU::Vector3f pos);
 
 	// Get specific height information at position
-	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
+	Heightmap& GetGroundData(avledet::util::CSU::Vector3f& pos, avledet::util::CSU::Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
 
 	// Find the nearest location
 	//	Nullable
-	Feature::Instance* GetNearestFeature(std::string_view name, Vector3f pos);
+	Feature::Instance* GetNearestFeature(std::string_view name, avledet::util::CSU::Vector3f pos);
 #else
 	bool GetNearestFeature(std::string_view name, Vector3f in, Vector3f &out);
 #endif
 
-	static ZoneID WorldToZonePos(Vector3f pos);
-	static Vector3f ZoneToWorldPos(ZoneID zone);
+	static ZoneID WorldToZonePos(avledet::util::CSU::Vector3f pos);
+	static avledet::util::CSU::Vector3f ZoneToWorldPos(ZoneID zone);
 
-	bool ZonesOverlap(ZoneID zone, Vector3f areaPoint);
+	bool ZonesOverlap(ZoneID zone, avledet::util::CSU::Vector3f areaPoint);
 	bool ZonesOverlap(ZoneID zone, ZoneID areaZone);
 
 	bool IsPeerNearby(ZoneID zone, USER_ID_t uid);

@@ -16,9 +16,9 @@ public:
 	//void ForceGenerateAll();
 	void ForceQueuedRegeneration();
 
-	float GetOceanDepthAll(Vector3f worldPos);
+	float GetOceanDepthAll(avledet::util::CSU::Vector3f worldPos);
 
-	bool AtMaxLevelDepth(Vector3f worldPos);
+	bool AtMaxLevelDepth(avledet::util::CSU::Vector3f worldPos);
 
 	//Vector3f GetNormal(const Vector3f& pos);
 
@@ -41,12 +41,12 @@ public:
 
 	Heightmap* PollHeightmap(ZoneID zone);
 
-	Heightmap &GetHeightmap(Vector3f point);
+	Heightmap &GetHeightmap(avledet::util::CSU::Vector3f point);
 	Heightmap &GetHeightmap(ZoneID zone);
-	std::vector<Heightmap*> GetHeightmaps(Vector3f point, float radius);
+	std::vector<Heightmap*> GetHeightmaps(avledet::util::CSU::Vector3f point, float radius);
 	//Biome FindBiome(const Vector3f& point);
 
-	bool IsRegenerateQueued(Vector3f point, float radius);
+	bool IsRegenerateQueued(avledet::util::CSU::Vector3f point, float radius);
 
 	//Heightmap* CreateHeightmap(const Vector2i& zone);
 };

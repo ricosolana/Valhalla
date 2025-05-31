@@ -3,7 +3,7 @@
 #include "GeoManager.h"
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-#include "VUtilsRandom.h"
+#include "Random.h"
 #include "HashUtils.h"
 #include "ZoneManager.h"
 #include "VUtilsMathf.h"
@@ -34,13 +34,13 @@ void IGeoManager::PostWorldInit() {
 	}
 
 	VUtils::Random::State state(m_world->m_seed);
-	m_offset0 = state.Range(-worldSize, worldSize);
-	m_offset1 = state.Range(-worldSize, worldSize);
-	m_offset2 = state.Range(-worldSize, worldSize);
-	m_offset3 = state.Range(-worldSize, worldSize);
-	m_riverSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
-	m_streamSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
-	m_offset4 = state.Range(-worldSize, worldSize);
+	m_offset0 = state.range(-worldSize, worldSize);
+	m_offset1 = state.range(-worldSize, worldSize);
+	m_offset2 = state.range(-worldSize, worldSize);
+	m_offset3 = state.range(-worldSize, worldSize);
+	m_riverSeed = state.range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
+	m_streamSeed = state.range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
+	m_offset4 = state.range(-worldSize, worldSize);
 
 	// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
@@ -99,7 +99,7 @@ int IGeoManager::FindClosest(const std::vector<Vector2f>& points, Vector2f p, fl
 		if (!(points[i] == p))
 		{
 			//float num2 = p.Distance(points[i]); // not optimal
-			float num2 = p.SqDistance(points[i]);
+			float num2 = p.sq_distance_to(points[i]);
 			if (num2 < maxDistance * maxDistance
 				&& num2 < num)
 			{
@@ -129,7 +129,7 @@ void IGeoManager::GenerateStreams() {
 				river.center = vector3;
 				river.widthMax = 20;
 				river.widthMin = 20;
-				float num3 = river.p0.Distance(river.p1); // use sqdist?
+				float num3 = river.p0.distance_to(river.p1); // use sqdist?
 				river.curveWidth = num3 / 15;
 				river.curveWavelength = num3 / 20;
 				m_streams.push_back(river); // use move / emplacer
@@ -145,7 +145,7 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 	float num2 = maxLength;
 	for (int i = 0; i < iterations; i++) {
 		num2 -= num;
-		float f = state.Range(0.f, PI * 2.0f);
+		float f = state.range(0.f, PI * 2.0f);
 		Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
 		float height = GetGenerationHeight(vector.x, vector.y);
 		if (height > minHeight && height < maxHeight)
@@ -154,14 +154,14 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 			return true;
 		}
 	}
-	end = Vector2f::Zero();
+	end = Vector2f::zero();
 	return false;
 }
 
 bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth) {
 	for (int i = 0; i < iterations; i++) {
-		auto num = state.Range((float)-worldSize, (float)worldSize);
-		auto num2 = state.Range((float)-worldSize, (float)worldSize);
+		auto num = state.range((float)-worldSize, (float)worldSize);
+		auto num2 = state.range((float)-worldSize, (float)worldSize);
 		auto height = GetGenerationHeight(num, num2);
 		if (height > minHeight && height < maxHeight)
 		{
@@ -170,7 +170,7 @@ bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterati
 			return true;
 		}
 	}
-	p = Vector2f::Zero();
+	p = Vector2f::zero();
 	starth = 0;
 	return false;
 }
@@ -194,9 +194,9 @@ void IGeoManager::GenerateRivers() {
 			river.p0 = vector;
 			river.p1 = m_lakes[num];
 			river.center = (river.p0 + river.p1) * 0.5f;
-			river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
-			river.widthMin = state.Range(minRiverWidth, river.widthMax);
-			float num2 = river.p0.Distance(river.p1);
+			river.widthMax = state.range(minRiverWidth, maxRiverWidth);
+			river.widthMin = state.range(minRiverWidth, river.widthMax);
+			float num2 = river.p0.distance_to(river.p1);
 			river.curveWidth = num2 / 15.f;
 			river.curveWavelength = num2 / 20.f;
 			m_rivers.push_back(river);
@@ -215,7 +215,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vec
 	std::vector<int> list;
 	for (int i = 0; i < points.size(); i++) {
 		if (!(points[i] == p)
-			&& p.Distance(points[i]) < maxDistance
+			&& p.distance_to(points[i]) < maxDistance
 			&& !HaveRiver(rivers, p, points[i])
 			&& IsRiverAllowed(p, points[i], checkStep, heightLimit))
 		{
@@ -226,7 +226,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vec
 	if (list.empty())
 		return -1;
 
-	return list[state.Range(0, list.size())];
+	return list[state.range(0, list.size())];
 }
 
 bool IGeoManager::HaveRiver(const std::vector<River>& rivers, Vector2f p0) const {
@@ -251,8 +251,8 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vecto
 }
 
 bool IGeoManager::IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const {
-	float num = p0.Distance(p1);
-	Vector2f normalized = (p1 - p0).Normal();
+	float num = p0.distance_to(p1);
+	Vector2f normalized = (p1 - p0).normal();
 	bool flag = true;
 	for (float num2 = step; num2 <= num - step; num2 += step) {
 		Vector2f vector = p0 + normalized * num2;
@@ -272,14 +272,14 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	for (auto&& river : rivers) {
 
 		float num = river.widthMin / 8.f;
-		const Vector2f normalized = (river.p1 - river.p0).Normal();
+		const Vector2f normalized = (river.p1 - river.p0).normal();
 		const Vector2f a(-normalized.y, normalized.x);
-		float num2 = river.p0.Distance(river.p1);
+		float num2 = river.p0.distance_to(river.p1);
 
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;
 			float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
-			float r = state.Range(river.widthMin, river.widthMax);
+			float r = state.range(river.widthMin, river.widthMax);
 			Vector2f p = river.p0 + normalized * num3 + a * d;
 			AddRiverPoint(dictionary, p, r);
 		}
@@ -350,7 +350,7 @@ void IGeoManager::GetWeight(const std::vector<RiverPoint>& points, float wx, flo
 
 	for (auto&& riverPoint : points)
 	{
-		float num3 = (riverPoint.p - b).SqMagnitude();
+		float num3 = (riverPoint.p - b).sq_magnitude();
 		if (num3 < riverPoint.w2)
 		{
 			float num4 = sqrt(num3);
@@ -788,7 +788,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center,
 	Vector3f a = center;
 	for (int i = 0; i < num; i++)
 	{
-		Vector2f vector = state.InsideUnitCircle() * radius;
+		Vector2f vector = state.inside_unit_circle() * radius;
 		Vector3f vector2 = center + Vector3f(vector.x, 0.f, vector.y);
 		float height = GetHeight(vector2.x, vector2.z);
 		if (height < num3)
@@ -803,7 +803,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center,
 		}
 	}
 	delta = num2 - num3;
-	slopeDirection = (a - b).Normal();
+	slopeDirection = (a - b).normal();
 }
 
 // public

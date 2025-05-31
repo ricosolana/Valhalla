@@ -8,7 +8,7 @@
 
 #include "ZDO.h"
 #include "WorldManager.h"
-#include "DataWriter.h"
+#include "Stream.h"
 #include "NetManager.h"
 #include "VUtilsPhysics.h"
 #include "DungeonManager.h"

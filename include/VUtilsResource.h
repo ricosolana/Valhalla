@@ -6,7 +6,7 @@
 #include <filesystem>
 
 #include "VUtils.h"
-#include "VUtilsTraits.h"
+#include "Traits.h"
 #include "VUtilsString.h"
 
 namespace VUtils::Resource {

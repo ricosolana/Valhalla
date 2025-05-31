@@ -4,7 +4,7 @@
 #include <quill/Logger.h>
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-#include "VUtilsRandom.h"
+#include "Random.h"
 #include "WorldManager.h"
 #include "Vector.h"
 #include "HeightMap.h"
@@ -12,9 +12,9 @@
 class IGeoManager {
 private:
 	struct River {
-		Vector2f p0;
-		Vector2f p1;
-		Vector2f center;
+		avledet::util::CSU::Vector2f p0;
+		avledet::util::CSU::Vector2f p1;
+		avledet::util::CSU::Vector2f center;
 		float widthMin;
 		float widthMax;
 		float curveWidth;
@@ -22,11 +22,11 @@ private:
 	};
 
 	struct RiverPoint {
-		Vector2f p;
+		avledet::util::CSU::Vector2f p;
 		float w;
 		float w2;
 
-		RiverPoint(Vector2f p_p, float p_w) {
+		RiverPoint(avledet::util::CSU::Vector2f p_p, float p_w) {
 			p = p_p;
 			w = p_w;
 			w2 = p_w * p_w;
@@ -47,15 +47,15 @@ private:
 	float m_offset4;
 	int32_t m_riverSeed;
 	int32_t m_streamSeed;
-	std::vector<Vector2f> m_lakes;
+	std::vector<avledet::util::CSU::Vector2f> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
 
 	std::mutex m_mutRiverCache;
-	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> m_riverPoints;
+	UNORDERED_MAP_t<avledet::util::CSU::Vector2i, std::vector<RiverPoint>> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
-	Vector2i m_cachedRiverGrid = { -999999, -999999 };
+	avledet::util::CSU::Vector2i m_cachedRiverGrid = { -999999, -999999 };
 	//ReaderWriterLockSlim m_riverCacheLock; // for terrian builder?
 	//std::vector<Heightmap::Biome> m_biomes; // seems unused
 
@@ -119,22 +119,22 @@ private:
 
 	//void GenerateMountains();
 	void GenerateLakes();
-	std::vector<Vector2f> MergePoints(std::vector<Vector2f>& points, float range);
-	int FindClosest(const std::vector<Vector2f>& points, Vector2f p, float maxDistance);
+	std::vector<avledet::util::CSU::Vector2f> MergePoints(std::vector<avledet::util::CSU::Vector2f>& points, float range);
+	int FindClosest(const std::vector<avledet::util::CSU::Vector2f>& points, avledet::util::CSU::Vector2f p, float maxDistance);
 	void GenerateStreams();
-	bool FindStreamEndPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f start, float minLength, float maxLength, Vector2f& end);
-	bool FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth);
+	bool FindStreamEndPoint(avledet::util::CSU::Random& state, int iterations, float minHeight, float maxHeight, avledet::util::CSU::Vector2f start, float minLength, float maxLength, Vector2f& end);
+	bool FindStreamStartPoint(avledet::util::CSU::Random& state, int iterations, float minHeight, float maxHeight, avledet::util::CSU::Vector2f& p, float& starth);
 	void GenerateRivers();
-	int FindRandomRiverEnd(VUtils::Random::State& state, const std::vector<River>& rivers, const std::vector<Vector2f>& points, 
-		Vector2f p, float maxDistance, float heightLimit, float checkStep) const;
-	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0) const;
-	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vector2f p1) const;
-	bool IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const;
-	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
-		Vector2f p,
+	int FindRandomRiverEnd(avledet::util::CSU::Random& state, const std::vector<River>& rivers, const std::vector<avledet::util::CSU::Vector2f>& points, 
+		avledet::util::CSU::Vector2f p, float maxDistance, float heightLimit, float checkStep) const;
+	bool HaveRiver(const std::vector<River>& rivers, avledet::util::CSU::Vector2f p0) const;
+	bool HaveRiver(const std::vector<River>& rivers, avledet::util::CSU::Vector2f p0, avledet::util::CSU::Vector2f p1) const;
+	bool IsRiverAllowed(avledet::util::CSU::Vector2f p0, avledet::util::CSU::Vector2f p1, float step, float heightLimit) const;
+	void RenderRivers(avledet::util::CSU::Random& state, const std::vector<River>& rivers);
+	void AddRiverPoint(UNORDERED_MAP_t<avledet::util::CSU::Vector2i, std::vector<RiverPoint>>& riverPoints,
+		avledet::util::CSU::Vector2f p,
 		float r);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
+	void AddRiverPoint(UNORDERED_MAP_t<avledet::util::CSU::Vector2i, std::vector<RiverPoint>>& riverPoints, avledet::util::CSU::Vector2i grid, avledet::util::CSU::Vector2f p, float r);
 	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	//Vector2i GetRiverGrid(float wx, float wy);
@@ -163,14 +163,14 @@ private:
 public:
 	void PostWorldInit();
 
-	bool InsideRiverGrid(Vector2i grid, Vector2f p, float r);
+	bool InsideRiverGrid(avledet::util::CSU::Vector2i grid, avledet::util::CSU::Vector2f p, float r);
 
-	Vector2i GetRiverGrid(float wx, float wy);
+	avledet::util::CSU::Vector2i GetRiverGrid(float wx, float wy);
 
-	BiomeArea GetBiomeArea(Vector3f point);
+	BiomeArea GetBiomeArea(avledet::util::CSU::Vector3f point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(Vector3f point);
+	Biome GetBiome(avledet::util::CSU::Vector3f point);
 
 	// Get the biome at world coordinates
 	Biome GetBiome(float x, float z);
@@ -188,11 +188,11 @@ public:
 	float GetHeight(float x, float z, float& mask);
 	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
 
-	bool InForest(Vector3f pos);
+	bool InForest(avledet::util::CSU::Vector3f pos);
 
-	float GetForestFactor(Vector3f pos);
+	float GetForestFactor(avledet::util::CSU::Vector3f pos);
 
-	void GetTerrainDelta(VUtils::Random::State& state, Vector3f center, float radius, float& delta, Vector3f& slopeDirection);
+	void GetTerrainDelta(avledet::util::CSU::Random& state, avledet::util::CSU::Vector3f center, float radius, float& delta, avledet::util::CSU::Vector3f& slopeDirection);
 
 	int GetSeed();
 

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vector.h"
 #include "VUtils.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "Stream.h"
 #include "Types.h"
 #include "RandomEventManager.h"
 

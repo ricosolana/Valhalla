@@ -2,7 +2,7 @@
 
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "VUtilsResource.h"
-#include "DataReader.h"
+#include "Stream.h"
 #include "PrefabManager.h"
 #include "DungeonGenerator.h"
 #include "ZDOManager.h"
@@ -22,30 +22,30 @@ void IDungeonManager::PostPrefabInit() {
     if (!opt)
         throw std::runtime_error("dungeons.pkg missing");
 
-    DataReader pkg(opt.value());
+    avledet::util::Reader pkg(opt.value());
 
-    pkg.Read<std::string_view>(); // date/comment
-    auto ver = pkg.Read<std::string_view>();
+    pkg.read<std::string>(); // date/comment
+    auto ver = pkg.read<std::string>();
     //LOG_INFO(LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
         //LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
     }
 
-    int32_t count = pkg.Read<int32_t>();
+    auto count = pkg.read<std::int32_t>();
     //LOG_INFO(LOGGER, "Loading {} dungeons", count);
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
         //HASH_t hash = pkg.Read<HASH_t>();
 
-        auto name = pkg.Read<std::string_view>();
+        auto name = pkg.read<std::string>();
 
         dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
-        dungeon->m_interiorPosition = pkg.Read<Vector3f>();
-        dungeon->m_originalPosition = pkg.Read<Vector3f>();
+        dungeon->m_interiorPosition = pkg.read<avledet::util::CSU::Vector3f>();
+        dungeon->m_originalPosition = pkg.read<avledet::util::CSU::Vector3f>();
 
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.Read<int32_t>();
         dungeon->m_alternativeFunctionality = pkg.Read<bool>();

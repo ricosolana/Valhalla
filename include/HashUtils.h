@@ -4,6 +4,7 @@
 #include "ZDOID.h"
 #include "Vector.h"
 #include "Prefab.h"
+#include <type_traits>
 
 class ZDO;
 
@@ -62,45 +63,6 @@ namespace ankerl::unordered_dense {
 
         [[nodiscard]] auto operator()(std::string_view str) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<HASH_t>{}(VUtils::String::GetStableHashCode(str));
-        }
-    };
-
-    template <>
-    struct hash<ZDOID> {
-        using is_avalanching = void;
-
-        auto operator()(ZDOID v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-            //return ankerl::unordered_dense::hash<decltype(ZDOID::m_pack)::type>{}(v.m_pack);
-            //return ankerl::unordered_dense::hash<decltype(ZDOID::m_encoded)>{}(v.m_encoded);
-            //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
-        }
-    };
-
-    template <>
-    struct hash<Vector2i> {
-        using is_avalanching = void;
-
-        auto operator()(Vector2i v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-        }
-    };
-
-    template <>
-    struct hash<Vector2s> {
-        using is_avalanching = void;
-
-        auto operator()(Vector2s v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-        }
-    };
-
-    template <>
-    struct hash<Vector3f> {
-        using is_avalanching = void;
-
-        auto operator()(Vector3f v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
         }
     };
 

@@ -1,4 +1,5 @@
 #include "DungeonRoom.h"
+#include "Random.h"
 
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
 #include "VUtilsString.h"
@@ -8,7 +9,7 @@ HASH_t Room::GetHash() const {
 	return m_hash;
 }
 
-const RoomConnection& Room::GetConnection(VUtils::Random::State& state, const RoomConnection &other) const {
+const RoomConnection& Room::GetConnection(avledet::util::CSU::Random& state, const RoomConnection &other) const {
 	std::vector<std::reference_wrapper<const RoomConnection>> tempConnections;
 	for (auto&& roomConnection : m_roomConnections) {
 		if (roomConnection->m_type == other.m_type)
@@ -20,7 +21,7 @@ const RoomConnection& Room::GetConnection(VUtils::Random::State& state, const Ro
 	if (tempConnections.empty())
 		throw std::runtime_error("missing guaranteed room");
 
-	return tempConnections[state.Range(0, tempConnections.size())];
+	return tempConnections[state.range(0, tempConnections.size())];
 }
 
 const RoomConnection &Room::GetEntrance() const {
