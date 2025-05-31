@@ -174,7 +174,7 @@ public:
     //  uint32_t:   size
     //  T...:       value_type
     template<typename Iterable> 
-        requires (VUtils::Traits::is_iterable_v<Iterable> 
+        requires (VUtils::Traits::is_iterable<Iterable> 
                 && !std::is_fundamental_v<typename Iterable::value_type>)
     void Write(const Iterable& in) {
         size_t size = in.size();

@@ -134,7 +134,7 @@ namespace VUtils::String {
     std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key);
 
     // Join a container consisting of strings separated by delimiter
-    template<typename T> requires VUtils::Traits::is_iterable_v<T>
+    template<typename T> requires VUtils::Traits::is_iterable<T>
     std::string Join(std::string_view delimiter, T container) {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
@@ -149,7 +149,7 @@ namespace VUtils::String {
     std::vector<std::string_view> Split(std::string_view s, std::string_view delim);
 
     template<typename Iterable = std::vector<std::string_view>>
-        requires (VUtils::Traits::is_iterable_v<Iterable>)
+        requires (VUtils::Traits::is_iterable<Iterable>)
     Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
     {
         int64_t size = s.size();

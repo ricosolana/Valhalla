@@ -84,9 +84,9 @@ namespace VUtils::Resource {
     // Read a file into separate lines
     //  Iterable can be any container type consisting of any buffer object
     template<typename Iterable = std::vector<std::string>> requires
-        (VUtils::Traits::is_iterable_v<Iterable>
+        (VUtils::Traits::is_iterable<Iterable>
             && !std::is_same_v<typename Iterable::value_type, std::string_view>
-            && VUtils::Traits::is_iterable_v<typename Iterable::value_type>)
+            && VUtils::Traits::is_iterable<typename Iterable::value_type>)
         std::optional<Iterable> ReadFile(const fs::path& path, bool includeBlanks = false) 
     {
         auto opt = ReadFile<std::string>(path);
@@ -126,7 +126,7 @@ namespace VUtils::Resource {
     //  Iterable can be any container type consisting of any buffer object
     //  This method is the most preferred over the Iterable<string> method
     template<typename Iterable = std::vector<std::string_view>> requires
-        (VUtils::Traits::is_iterable_v<Iterable>)
+        (VUtils::Traits::is_iterable<Iterable>)
     std::optional<Iterable> ReadFile(const fs::path& path, std::string& out, bool includeBlanks = false) {
         {
             auto opt = ReadFile<std::string>(path);
@@ -142,7 +142,7 @@ namespace VUtils::Resource {
     /*
     // Map overload to read in pairs
     template<typename Iterable> requires
-        (VUtils::Traits::is_iterable_v<Iterable>
+        (VUtils::Traits::is_iterable<Iterable>
             && VUtils::Traits::has_key_type_v<Iterable>)
         std::optional<Iterable> ReadFile(const fs::path& path) 
     {
@@ -169,7 +169,7 @@ namespace VUtils::Resource {
 
     // Write a Container<std::string> as lines to a file
     template<typename Iterable> requires 
-        (VUtils::Traits::is_iterable_v<Iterable> 
+        (VUtils::Traits::is_iterable<Iterable> 
             && std::is_same_v<typename Iterable::value_type, std::string>)
     bool WriteFile(const fs::path& path, const Iterable& in) {
         std::ofstream file(path, std::ios::binary);
