@@ -1,4 +1,5 @@
 #include "RouteManager.h"
+#include "DataStream.h"
 #include "NetManager.h"
 #include "Method.h"
 #include "ValhallaServer.h"
@@ -19,13 +20,13 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		if (peer->IsGated())
 			return;
 
-		reader.Read<int64_t>(); // skip msgid
-		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.Position()).Write(peer->m_uuid);*/ 
-		reader.Read<USER_ID_t>(); // skip sender
-		auto target = reader.Read<USER_ID_t>();
-		auto targetZDO = reader.Read<ZDOID>();
-		auto hash = reader.Read<HASH_t>();
-		auto params = reader.Read<DataReader>();
+		reader.read<int64_t>(); // skip msgid
+		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/ 
+		reader.read<USER_ID_t>(); // skip sender
+		auto target = reader.read<USER_ID_t>();
+		auto targetZDO = reader.read<ZDOID>();
+		auto hash = reader.read<HASH_t>();
+		auto params = DataReader(reader.read<std::vector<char>>());
 
 		/*
 		* Rpc and multi-execution dilemna
@@ -70,7 +71,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 				if (!targetZDO) {
 					auto&& find = m_methods.find(hash);
 					if (find != m_methods.end()) {
-						//find->second->Invoke(peer, reader.Read<DataReader>());
+						//find->second->Invoke(peer, reader.read<DataReader>());
 						find->second->Invoke(peer, params);
 					}
 				} //else ... // netview is not currently supported

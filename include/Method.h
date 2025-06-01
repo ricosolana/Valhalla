@@ -8,7 +8,7 @@
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
-#include "DataReader.h"
+#include "DataStream.h"
 #include "ModManager.h"
 
 /* https://godbolt.org/z/MMGsa8rhr
@@ -37,7 +37,7 @@ class MethodImpl
 
     template<class Tuple, size_t... Is>
     auto impl_tail(DataReader& reader, std::index_sequence<Is...>) {
-        return DataReader::Deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(reader);
+        return DataReader::deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(reader);
     }
 
 private:
@@ -63,8 +63,8 @@ public:
             impl_tail<args_type>(reader,
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
-        if (reader.Position() != reader.size()) {
-            //LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.Position());
+        if (reader.get_pos() != reader.size()) {
+            //LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
             throw std::runtime_error("peer sent more data than expected");
         }
 

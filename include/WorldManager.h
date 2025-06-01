@@ -4,8 +4,8 @@
 #include <thread>
 
 #include "VUtils.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "DataStream.h"
+#include "DataStream.h"
 
 class IWorldManager;
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "VUtils.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "DataStream.h"
 #include "Types.h"
 #include "RandomEventManager.h"
+#include "HashUtils.h"
 
 class IRandomEventManager {
 public:

@@ -7,7 +7,7 @@
 #include "HashUtils.h"
 
 #include "Prefab.h"
-#include "DataReader.h"
+#include "DataStream.h"
 
 // TODO consider moving Instantiate(...) to ZDOManager
 //	this class doesnt do much besides try to simulate Unity in appearance
@@ -63,9 +63,9 @@ public:
 	}
 
 	void Register(DataReader& reader) {
-		auto name = reader.Read<std::string_view>();
-		auto localScale = reader.Read<Vector3f>();
-		auto flags = reader.Read<Prefab::Flag>();
+		auto name = reader.read<std::string_view>();
+		auto localScale = reader.read<Vector3f>();
+		auto flags = reader.read<Prefab::Flag>();
 
 		auto hash = VUtils::String::GetStableHashCode(name);
 		Register(name, localScale, flags);

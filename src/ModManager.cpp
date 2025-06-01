@@ -8,8 +8,8 @@
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "Peer.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "DataStream.h"
+#include "DataStream.h"
 #include "Vector.h"
 #include "Quaternion.h"
 #include "ZDOID.h"
@@ -259,11 +259,11 @@ void IModManager::LoadAPI() {
         "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write),
 
         "Serialize", sol::overload(
-            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::SerializeOneLua),
+            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::serializeOneLua),
             [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
                 return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
             }
-            //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::SerializeLuaImpl)
+            //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::serializeLuaImpl)
         )
     );
 

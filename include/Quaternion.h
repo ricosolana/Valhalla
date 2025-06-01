@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DataStream.h"
 #include "Vector.h"
 
 // A custom completely managed implementation of UnityEngine.Quaternion
@@ -52,3 +53,26 @@ struct Quaternion {
 };
 
 std::ostream& operator<<(std::ostream& st, Quaternion quat);
+
+namespace avledet::util::CSU {
+    using Quaternion = ::Quaternion;
+}
+
+template <>
+struct avledet::util::Streamer<avledet::util::CSU::Quaternion> {
+    void operator()(Writer& writer, avledet::util::CSU::Quaternion const& value) {
+        writer.write(value.x);
+        writer.write(value.y);
+        writer.write(value.z);
+        writer.write(value.w);
+    }
+
+    decltype(auto) operator()(Reader& reader) {
+        return avledet::util::CSU::Quaternion(
+            reader.read<float>(),
+            reader.read<float>(),
+            reader.read<float>(),
+            reader.read<float>()
+        );
+    }
+};

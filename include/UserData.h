@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdexcept>
+#include "DataStream.h"
+
 class UserProfile {
 public:
 	// all relatively confusing verbose names
@@ -15,4 +18,15 @@ public:
 
 	}
 
+};
+
+template<>
+struct avledet::util::Streamer<UserProfile> {
+	void operator()(Writer& writer, UserProfile const& value) const {
+		throw std::runtime_error("nyi");
+	}
+
+	decltype(auto) operator()(Reader& reader) const {
+		throw std::runtime_error("nyi");
+	}
 };

@@ -1,6 +1,8 @@
 // main.cpp
 #include <filesystem>
 #include <quill/Backend.h>
+#include <string_view>
+#include <type_traits>
 #define SOL_ALL_SAFETIES_ON 1
 
 // this doesnt seem to do a thing
@@ -28,7 +30,6 @@
 *   .\Valhalla.exe -v
 */
 int main(int argc, char **argv) {
-
     tracy::SetThreadName("main");
 
     quill::Backend::start();
@@ -97,6 +98,7 @@ int main(int argc, char **argv) {
             LOG_ERROR(LOGGER, "Failed to set Lua cpath");
     }
 */
+
 
     
 #ifndef _DEBUG

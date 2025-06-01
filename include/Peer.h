@@ -5,10 +5,12 @@
 #include "Method.h"
 #include "NetSocket.h"
 #include "Task.h"
-#include "DataWriter.h"
+#include "DataStream.h"
 #include "ValhallaServer.h"
 #include "Hashes.h"
 #include "ZDO.h"
+#include "UserData.h"
+#include <string_view>
 
 enum class ChatMsgType : int32_t {
     Whisper,
@@ -165,8 +167,9 @@ public:
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        writer.Write(hash);
-        writer.SubWrite(func);
+        writer.write(hash);
+        assert(false); // ADDRESS THE BELOW
+        //writer.SubWrite(func);
 
         // Prefix
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
@@ -186,20 +189,24 @@ public:
         BYTES_t bytes;
         DataWriter writer(bytes);
 
-        writer.Write(Hashes::Rpc::RoutedRPC);
+        writer.write(Hashes::Rpc::RoutedRPC);
 
+        assert(false); //ADDRESS THE BELOW
+        /*
         writer.SubWrite([&](DataWriter& writer) {
             // routed rpc spec
-            writer.Write<int64_t>(0); // msg id
-            writer.Write(VH_ID); // sender
-            writer.Write(m_characterID.GetOwner()); // target
-            writer.Write(targetZDO); // target ZDO
-            writer.Write(hash); // routed method hash
+            writer.write<int64_t>(0); // msg id
+            writer.write(VH_ID); // sender
+            writer.write(m_characterID.GetOwner()); // target
+            writer.write(targetZDO); // target ZDO
+            writer.write(hash); // routed method hash
             // FIrst subwrite the routedrpc parameter package then nest the params within it
-            writer.SubWrite([func](DataWriter& writer) {
-                writer.SubWrite(func); // explicit parameter as a package (length + array)
-            });
+            assert(false); //ADDRESS THE BELOW
+            //writer.SubWrite([func](DataWriter& writer) {
+            //    writer.SubWrite(func); // explicit parameter as a package (length + array)
+            //});
         });
+        */
 
         // Prefix
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
@@ -229,7 +236,7 @@ public:
 
         //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
 
-        this->Send(DataWriter::Serialize(hash, params...));
+        this->Send(DataWriter::serialize(hash, params...));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
@@ -374,7 +381,7 @@ public:
             ChatMsgType::Normal,
             std::string_view(""), std::string_view("<color=yellow><b>SERVER</b></color>"), std::string_view(""),
             msg,
-            ""
+            std::string_view("")
         );
     }
 
@@ -411,7 +418,7 @@ public:
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
-        RouteParams(targetZDO, hash, DataWriter::Serialize(params...));
+        RouteParams(targetZDO, hash, DataWriter::serialize(params...));
     }
 
     template <typename... Types>
@@ -442,7 +449,7 @@ public:
             return;
 #endif
 
-        RouteParams(targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+        RouteParams(targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
     }
 
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {

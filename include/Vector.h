@@ -8,6 +8,7 @@
 
 #include "VUtils.h"
 #include "VUtilsMath.h"
+#include "DataStream.h"
 
 template<typename T> requires std::is_arithmetic_v<T>
 struct Vector2 {
@@ -312,6 +313,40 @@ struct Vector3 {
         return Vector3<T>(0, 0, 1);
     }
 };
+
+namespace avledet::util {
+    template <class Num>
+    struct Streamer</*CSU::*/Vector2<Num>> {
+        void operator()(Writer& writer, /*CSU::*/Vector2<Num> const& value) {
+            writer.write(value.x);
+            writer.write(value.y);
+        }
+
+        decltype(auto) operator()(Reader& reader) {
+            return /*CSU::*/Vector2<Num>(
+                reader.read<Num>(),
+                reader.read<Num>()
+            );
+        }
+    };
+
+    template <class Num>
+    struct Streamer</*CSU::*/Vector3<Num>> {
+        void operator()(Writer& writer, /*CSU::*/Vector3<Num> const& value) {
+            writer.write(value.x);
+            writer.write(value.y);
+            writer.write(value.z);
+        }
+        
+        decltype(auto) operator()(Reader& reader) {
+            return /*CSU::*/Vector3<Num>(
+                reader.read<Num>(),
+                reader.read<Num>(),
+                reader.read<Num>()
+            );
+        }
+    };
+}
 
 using Vector3f = Vector3<float>;
 

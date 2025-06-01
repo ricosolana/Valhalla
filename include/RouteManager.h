@@ -2,8 +2,8 @@
 
 #include "Method.h"
 #include "ValhallaServer.h"
-#include "DataReader.h"
-#include "DataWriter.h"
+#include "DataStream.h"
+#include "DataStream.h"
 #include "ModManager.h"
 #include "Hashes.h"
 #include "NetManager.h"
@@ -65,7 +65,7 @@ public:
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
 
-			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::Serialize(params...));
+			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -97,7 +97,7 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::SerializeExtLua(repr.m_types, results));
+			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
@@ -109,9 +109,9 @@ public:
 		}
 		
 		//Serialize(VH_ID, target, targetZDO, repr.m_hash,
-			//DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+			//DataWriter::serializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 		
-		//Invoke(target, targetZDO, repr.m_hash, DataWriter::SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
+		//Invoke(target, targetZDO, repr.m_hash, DataWriter::serializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 	}
 #endif
 
@@ -159,12 +159,12 @@ public:
 		BYTES_t bytes;
 		DataWriter writer(bytes);
 
-		writer.Write<int64_t>(0); // msg id
-		writer.Write(sender);
-		writer.Write(target);
-		writer.Write(targetZDO);
-		writer.Write(hash);
-		writer.Write(params);
+		writer.write((std::int64_t)0); // msg id
+		writer.write(sender);
+		writer.write(target);
+		writer.write(targetZDO);
+		writer.write(hash);
+		writer.write(params);
 
 		return bytes;
 	}

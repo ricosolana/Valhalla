@@ -7,6 +7,7 @@
 #include "QuillHelperMacros.h"
 #include "VUtils.h"
 #include "BitPack.h"
+#include "DataStream.h"
 
 
 class ZDOID {
@@ -139,6 +140,27 @@ public:
     friend std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid) {
         st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
         return st;
+    }
+};
+
+namespace avledet::sync {
+    using ZDOID = ::ZDOID;
+}
+
+template <>
+struct avledet::util::Streamer<avledet::sync::ZDOID> {
+    void operator()(avledet::util::Writer& writer, avledet::sync::ZDOID const& zdoid) {
+        assert(false); // TODO
+        //writer.write(zdoid.m_userid);
+        //writer.write(zdoid.m_id);
+    }
+
+    avledet::sync::ZDOID operator()(avledet::util::Reader& reader) {
+        throw std::runtime_error("TODO");
+        //return avledet::sync::ZDOID(
+        //    reader.read<avledet::util::UserID>(),
+        //    reader.read<std::uint32_t>()
+        //);
     }
 };
 

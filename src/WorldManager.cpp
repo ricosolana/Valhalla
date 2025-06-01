@@ -28,25 +28,26 @@ World::World(std::string name, std::string seedName) {
 }
 
 World::World(DataReader reader) {
-	reader = reader.Read<DataReader>();
+	reader = DataReader(reader.read<std::vector<char>>());
 
-	auto worldVersion = reader.Read<int32_t>();
+	auto worldVersion = reader.read<int32_t>();
 
 	if (worldVersion != VConstants::WORLD) {
 		//LOG_WARNING(LOGGER, "Loading unsupported world meta version: {}", worldVersion);
 	}
 
-	m_name = reader.Read<std::string>();
-	m_seedName = reader.Read<std::string>();
-	reader.Read<HASH_t>(); // seed
+	m_name = reader.read<std::string>();
+	m_seedName = reader.read<std::string>();
+	reader.read<HASH_t>(); // seed
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
-	m_uid = reader.Read<int64_t>();
-	m_worldGenVersion = worldVersion >= 26 ? reader.Read<int32_t>() : 0;
-	bool needsDB = worldVersion >= 30 ? reader.Read<bool>() : false;
+	m_uid = reader.read<int64_t>();
+	m_worldGenVersion = worldVersion >= 26 ? reader.read<int32_t>() : 0;
+	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
-		reader.AsEach([](std::string_view key) {
-			// TODO add starting keys
-		});
+		assert(false); //TODO
+		//reader.AsEach([](std::string_view key) {
+		//	// TODO add starting keys
+		//});
 	}
 }
 
@@ -55,18 +56,19 @@ World::World(DataReader reader) {
 BYTES_t World::SaveMeta() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
-	writer.SubWrite([this](DataWriter& writer) {
-		writer.Write(VConstants::WORLD);
-		writer.Write(m_name);
-		writer.Write(m_seedName);
-		writer.Write(VUtils::String::GetStableHashCode(m_seedName));
-		writer.Write(m_uid);
-		writer.Write(m_worldGenVersion);
-		writer.Write(true);
-		
-		// TODO write starting keys
-		writer.Write(UNORDERED_SET_t<std::string>());
-	});
+	assert(false); //TODO
+	//writer.SubWrite([this](DataWriter& writer) {
+	//	writer.write(VConstants::WORLD);
+	//	writer.write(m_name);
+	//	writer.write(m_seedName);
+	//	writer.write(VUtils::String::GetStableHashCode(m_seedName));
+	//	writer.write(m_uid);
+	//	writer.write(m_worldGenVersion);
+	//	writer.write(true);
+	//	
+	//	// TODO write starting keys
+	//	writer.write(UNORDERED_SET_t<std::string>());
+	//});
 
 	return bytes;
 }
@@ -76,8 +78,8 @@ BYTES_t World::SaveDB() {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 
-	writer.Write(VConstants::WORLD);
-	writer.Write(Valhalla()->GetWorldTime());
+	writer.write(VConstants::WORLD);
+	writer.write(Valhalla()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
@@ -129,7 +131,7 @@ void World::LoadFileDB(const fs::path& root) {
 		try {
 			DataReader reader(opt.value());
 
-			auto worldVersion = reader.Read<int32_t>();
+			auto worldVersion = reader.read<int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 				//LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
@@ -146,7 +148,7 @@ void World::LoadFileDB(const fs::path& root) {
 			if (worldVersion >= 4)
 #endif // VH_LEGACY_WORLD_LOADING
 			{
-				Valhalla()->m_worldTime = reader.Read<double>();
+				Valhalla()->m_worldTime = reader.read<double>();
 			}
 
 			ZDOManager()->Load(reader, worldVersion);
@@ -295,8 +297,8 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	BYTES_t bytes;
 	DataWriter writer(bytes);
 	
-	writer.Write(VConstants::WORLD);
-	writer.Write(Valhalla()->GetWorldTime());
+	writer.write(VConstants::WORLD);
+	writer.write(Valhalla()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
@@ -304,10 +306,10 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 #if VH_IS_ON(VH_RANDOM_EVENTS)
 	RandomEventManager()->Save(writer);
 #else
-	writer.Write(0.f);
-	writer.Write("");
-	writer.Write(0.f);
-	writer.Write(Vector3f::Zero());
+	writer.write(0.f);
+	writer.write("");
+	writer.write(0.f);
+	writer.write(Vector3f::Zero());
 #endif
 
 	return bytes;
