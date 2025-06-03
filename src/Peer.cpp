@@ -128,11 +128,10 @@ void Peer::Update() {
         if (hash == 0) [[unlikely]] { 
             if (reader.read<bool>()) {
                 // Reply to the server with a pong
-                BYTES_t pong;
-                DataWriter writer(pong);
+                DataWriter writer;
                 writer.write((HASH_t)0);
-                writer.write((bool)false);
-                this->Send(std::move(pong));
+                writer.write(false);
+                this->Send(std::move(writer.get_buf()));
             }
             else {
                 m_lastPing = now;

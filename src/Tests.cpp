@@ -71,8 +71,6 @@ void VHTest::Test_ZDO_SetsGets() {
 void VHTest::Test_ZDO_LoadSave() {
     PrefabManager()->Init();
 
-    BYTES_t bytes;
-
     // ZDO's now require correct pooling
     //  they cannot be tested independent of ZDOManager
     //  (due to member optimizations)
@@ -83,14 +81,14 @@ void VHTest::Test_ZDO_LoadSave() {
         auto&& zdo = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero());
 
         //ZDO_Sets(zdo);
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         //zdo.Pack(writer, false);
     //}
 
     auto&& zdo2 = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::Zero());
 
-    DataReader reader(bytes);
+    DataReader reader(writer.get_buf());
     //zdo2.Unpack(reader, VConstants::WORLD);
 
     assert(false); //TODO

@@ -54,8 +54,7 @@ World::World(DataReader reader) {
 
 
 BYTES_t World::SaveMeta() {
-	BYTES_t bytes;
-	DataWriter writer(bytes);
+	DataWriter writer;
 	assert(false); //TODO
 	//writer.SubWrite([this](DataWriter& writer) {
 	//	writer.write(VConstants::WORLD);
@@ -70,7 +69,7 @@ BYTES_t World::SaveMeta() {
 	//	writer.write(UNORDERED_SET_t<std::string>());
 	//});
 
-	return bytes;
+	return writer.get_buf();
 }
 
 /*
@@ -294,8 +293,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name, std::
 }
 
 BYTES_t IWorldManager::SaveWorldDB() const {
-	BYTES_t bytes;
-	DataWriter writer(bytes);
+	DataWriter writer;
 	
 	writer.write(VConstants::WORLD);
 	writer.write(Valhalla()->GetWorldTime());
@@ -312,7 +310,7 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	writer.write(Vector3f::Zero());
 #endif
 
-	return bytes;
+	return writer.get_buf();
 }
 
 /*

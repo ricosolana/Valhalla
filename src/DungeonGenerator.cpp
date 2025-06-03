@@ -210,10 +210,9 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 
 
 void DungeonGenerator::Save() {
-	BYTES_t bytes;
 	//bytes.reserve(sizeof(int32_t) + 
 		//m_placedRooms.size() * (sizeof(HASH_t) + sizeof(Vector3f) + sizeof(Quaternion)));
-	DataWriter writer(bytes);
+	DataWriter writer;
 
 	writer.write((std::int32_t)m_placedRooms.size());
 	for (int i = 0; i < m_placedRooms.size(); i++) {
@@ -231,7 +230,7 @@ void DungeonGenerator::Save() {
 		writer.write(rot);
 	}
 
-	m_zdo->Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(bytes));
+	m_zdo->Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
 }
 
 

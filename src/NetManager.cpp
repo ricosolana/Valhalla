@@ -68,8 +68,7 @@ void INetManager::SendPlayerList() {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         writer.write(Hashes::Rpc::S2C_UpdatePlayerList);
 
@@ -98,7 +97,7 @@ void INetManager::SendPlayerList() {
         });*/
 
         for (auto&& peer : m_onlinePeers) {
-            peer->Send(bytes);
+            peer->Send(writer.get_buf());
         }
     }
 }

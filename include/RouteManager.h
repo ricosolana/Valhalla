@@ -156,8 +156,7 @@ public:
 #endif
 
 	BYTES_t Serialize(USER_ID_t sender, USER_ID_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
-		BYTES_t bytes;
-		DataWriter writer(bytes);
+		DataWriter writer;
 
 		writer.write((std::int64_t)0); // msg id
 		writer.write(sender);
@@ -166,7 +165,7 @@ public:
 		writer.write(hash);
 		writer.write(params);
 
-		return bytes;
+		return writer.get_buf();
 	}
 
 };

@@ -270,8 +270,7 @@ void IZoneManager::SendGlobalKeys(Peer& peer) {
 #if VH_IS_ON(VH_ZONE_GENERATION)
 // private
 void IZoneManager::SendLocationIcons() {
-    BYTES_t bytes;
-    DataWriter writer(bytes);
+    DataWriter writer;
 
     auto&& icons = GetFeatureIcons();
 
@@ -281,7 +280,7 @@ void IZoneManager::SendLocationIcons() {
         writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
-    RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, bytes);
+    RouteManager()->InvokeAll(Hashes::Routed::S2C_UpdateIcons, writer.get_buf());
 }
 #endif
 
@@ -290,8 +289,7 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
     //LOG_INFO(LOGGER, "Sending location icons to {}", peer.m_name);
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    BYTES_t bytes;
-    DataWriter writer(bytes);
+    DataWriter writer;
 
     auto&& icons = GetFeatureIcons();
 
@@ -301,7 +299,7 @@ void IZoneManager::SendLocationIcons(Peer& peer) {
         writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
-    peer.Route(Hashes::Routed::S2C_UpdateIcons, bytes);
+    peer.Route(Hashes::Routed::S2C_UpdateIcons, writer.get_buf());
 #else
     peer.SubRoute(Hashes::Routed::S2C_UpdateIcons, [this](DataWriter& writer) {
         writer.write<int32_t>(1); // dummy count

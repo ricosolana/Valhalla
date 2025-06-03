@@ -164,8 +164,7 @@ public:
         if (!m_socket->Connected())
             return;
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         writer.write(hash);
         assert(false); // ADDRESS THE BELOW
@@ -175,7 +174,7 @@ public:
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
             //return;
         
-        this->Send(std::move(bytes));
+        this->Send(std::move(writer.get_buf()));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
@@ -186,8 +185,7 @@ public:
         if (!m_socket->Connected())
             return;
 
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
 
         writer.write(Hashes::Rpc::RoutedRPC);
 
@@ -212,7 +210,7 @@ public:
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
             //return;
 
-        this->Send(std::move(bytes));
+        this->Send(std::move(writer.get_buf()));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
