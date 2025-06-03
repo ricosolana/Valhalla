@@ -9,7 +9,6 @@
 #include "BitPack.h"
 #include "DataStream.h"
 
-
 class ZDOID {
     //friend struct ankerl::unordered_dense::hash<ZDOID>;
     friend class ZDO;
@@ -146,6 +145,18 @@ public:
 namespace avledet::sync {
     using ZDOID = ::ZDOID;
 }
+
+// Basic ankerl hash
+template <>
+struct ankerl::unordered_dense::hash<avledet::sync::ZDOID> {
+    using is_avalanching = void; // high quality hash
+
+    static_assert(std::has_unique_object_representations_v<avledet::sync::ZDOID>);
+
+    auto operator()(avledet::sync::ZDOID const& value) const noexcept -> std::uint64_t {
+        return ankerl::unordered_dense::detail::wyhash::hash(&value, sizeof(value));
+    }
+};
 
 template <>
 struct avledet::util::Streamer<avledet::sync::ZDOID> {

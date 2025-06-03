@@ -12,3 +12,14 @@ namespace VUtils::Mathf {
     float Round(float f);
 
 }
+
+namespace avledet::util {
+
+    namespace CSU {
+
+        // return Mathf.Abs(b - a) < Mathf.Max(1E-06f * Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)), Mathf.Epsilon * 8f);
+        bool equal(float, float);
+
+    }// namespace avledet::util::CSU
+
+}// namespace avledet::util

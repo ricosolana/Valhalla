@@ -93,6 +93,8 @@ void VHTest::Test_ZDO_LoadSave() {
     DataReader reader(bytes);
     //zdo2.Unpack(reader, VConstants::WORLD);
 
+    assert(false); //TODO
+    /*
     assert(ZDO::ZDO_MEMBERS.size() == 2);
 
     int i = 0;
@@ -100,7 +102,7 @@ void VHTest::Test_ZDO_LoadSave() {
         for (auto&& z : e.second) {
             i++;
         }
-    }
+    }*/
 
     //Test_ZDO_Gets(zdo2);
 }

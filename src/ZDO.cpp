@@ -1,4 +1,5 @@
 #include <functional>
+#include <utility>
 
 #include "ZDO.h"
 #include "ZDOManager.h"
@@ -24,9 +25,68 @@
 //    }
 //}
 
+bool ZDO::set(avledet::util::Hash key, float data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, avledet::util::CSU::Vector3f const& data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, avledet::util::CSU::Quaternion const& data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, std::int32_t data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, std::int64_t data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, std::string data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+bool ZDO::set(avledet::util::Hash key, std::vector<char> data) {
+    if (_set(this->GetID(), key, data)) {
+        Revise();
+        return true;
+    }
+    return false;
+}
+
+
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+    assert(false); //TODO
+    /*
     pkg.read<uint32_t>();       // owner rev
     pkg.read<uint32_t>();       // data rev
     pkg.read<bool>();           // persistent
@@ -118,27 +178,39 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
                     static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
             }
         }
-    }
+    }*/
 }
 #endif //VH_LEGACY_WORLD_LOADING
 
 void ZDO::Unpack(DataReader& reader, int32_t version) {
-    auto flags = reader.read<uint16_t>();
+    //.m_uid.SetID();
+    ushort flags = reader.read<std::uint16_t>();
+
+    //this.Persistent = (num & 256) > 0;
+    //m_data_flags = m_data_flags | ((num & 256) ? DataFlags::Persistent : DataFlags::None);
+    
+    //this.Distant = (num & 512) > 0;
+    //m_data_flags = m_data_flags | ((num & 512) ? DataFlags::Distant : DataFlags::None);
+    
+    //this.Type = (ZDO.ObjectType)((num >> 10) & 3);		
+    //m_data_flags = m_data_flags | (static_cast<DataFlags>(num >> 10) & DataFlags::Type);
 
     if (version) {
-        // Set the self incremental id (ZDOID is no longer saved to disk)
-        //this->m_id.SetUID(ZDOManager()->m_nextUid++);
+        //this.m_sector = pkg.ReadVector2s();
+        auto zone = reader.read<avledet::util::CSU::Vector2s>(); // sector
 
-        auto sector = reader.read<Vector2s>(); // redundant
-        this->_SetPosition(reader.read<Vector3f>());
-        if (sector != GetZone())
+        //this.m_position = pkg.ReadVector3();
+        //m_position = reader.read<util::CSU::Vector3f>();
+        _SetPosition(reader.read<avledet::util::CSU::Vector3f>());
+        if (zone != GetZone()) // a mismatch indicates a 99% of corruption
             throw std::runtime_error("sector mismatch");
     }
-
-    // This runs once per created ZDO
-    auto prefabHash = reader.read<HASH_t>();
+    
+    //this.m_prefab = pkg.ReadInt();
+    auto prefab_hash = reader.read<std::int32_t>();
+    //_SetPrefabHash(reader.read<std::int32_t>());
     if (GetPrefabHash() == 0) { // Init once
-        _SetPrefabHash(prefabHash);
+        _SetPrefabHash(prefab_hash);
     }
     else {
         // should always run if a version is provided (this assumes that the world is being loaded)
@@ -146,21 +218,37 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         assert(version == 0);
 #endif
     }
-    
-    if (flags & (1 << NETWORK_Rotation)) {
-        this->_SetRotation(reader.read<Vector3f>());
+
+    //this.OwnerRevision = 0;
+    //this.DataRevision = 0U;
+    //this.Owned = false;
+    //this.Owner = false;
+
+    //this.Valid = true;
+    //m_data_flags = m_data_flags | DataFlags::Valid;
+
+    //this.SaveClone = false;
+
+    //if ((num & 4096) > 0)
+    if (flags & (1 << NETWORK_Rotation))
+    {
+        //this.m_rotation = pkg.ReadVector3();
+        //m_rotation = reader.read<avledet::util::CSU::Vector3f>();
+        _SetRotation(reader.read<avledet::util::CSU::Vector3f>());
     }
 
     //ZDOConnector::Type type = ZDOConnector::Type::None;
     if (flags & (1 << NETWORK_Connection)) {
         auto type = reader.read<ZDOConnector::Type>();
-        if (version) {
+        if (version) { // disk
             auto hash = reader.read<HASH_t>();
+            //manager->s_connectionsHashData[m_uid] = std::make_pair(reader.read<ConnectionType>(), reader.read<avledet::util::Hash>());
+
             auto&& connector = ZDO_CONNECTORS[GetID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
             connector.m_type = type;
             connector.m_hash = hash;
         }
-        else {
+        else { // network
             auto target = reader.read<ZDOID>();
             auto&& connector = ZDO_TARGETED_CONNECTORS[GetID()];
             // set connection
@@ -176,7 +264,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         //m_pack.Set<FLAGS_PACK_INDEX>(
             //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
-    
+
     if (flags & (
         (1 << NETWORK_Float) 
         | (1 << NETWORK_Vec3) 
@@ -186,22 +274,20 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
         | (1 << NETWORK_String
         | (1 << NETWORK_ByteArray)))) 
     {
-        // Will insert a default if missing (should be missing already)
-        auto&& members = ZDO_MEMBERS[GetID()];
-        if (flags & (1 << NETWORK_Float)) 
-            _TryReadType<float, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Vec3)) 
-            _TryReadType<Vector3f, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Quat)) 
-            _TryReadType<Quaternion, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Int)) 
-            _TryReadType<int32_t, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_Long)) 
-            _TryReadType<int64_t, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_String)) 
-            _TryReadType<std::string, uint8_t>(reader, members);
-        if (flags & (1 << NETWORK_ByteArray)) 
-            _TryReadType<BYTES_t, uint8_t>(reader, members);
+        if (flags & (1 << NETWORK_Float))
+            load_vars(reader, version, m_floats);
+        if (flags & (1 << NETWORK_Vec3))
+            load_vars(reader, version, m_vec3);
+        if (flags & (1 << NETWORK_Quat))
+            load_vars(reader, version, m_quats);
+        if (flags & (1 << NETWORK_Int))
+            load_vars(reader, version, m_ints);
+        if (flags & (1 << NETWORK_Long))
+            load_vars(reader, version, m_longs);
+        if (flags & (1 << NETWORK_String))
+            load_vars(reader, version, m_strings);
+        if (flags & (1 << NETWORK_ByteArray))
+            load_vars(reader, version, m_byteArrays);
     }
 }
 
@@ -234,6 +320,8 @@ ZoneID ZDO::GetZone() const {
 
 
 void ZDO::Pack(DataWriter& writer, bool network) const {
+    assert(false); // TODO
+    /*
     bool hasRot = this->m_rotation != Vector3f::Zero();
 
     uint16_t flags{};
@@ -298,5 +386,5 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     const auto endPos = writer.get_pos();
     writer.set_pos(flagPos);
     writer.write(flags);
-    writer.set_pos(endPos);
+    writer.set_pos(endPos);*/
 }

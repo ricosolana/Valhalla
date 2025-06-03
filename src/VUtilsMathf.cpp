@@ -1,4 +1,5 @@
 #include <cmath>
+#include <limits>
 #include "VUtilsMathf.h"
 #include "VUtils.h"
 
@@ -44,3 +45,16 @@ namespace VUtils::Mathf {
     }
 
 }
+
+namespace avledet::util {
+
+    namespace CSU {
+
+        // return Mathf.Abs(b - a) < Mathf.Max(1E-06f * Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)), Mathf.Epsilon * 8f);
+        bool equal(float a, float b) {
+            return std::fabs(b - a) < std::max(1E-06f * std::max(std::fabs(a), std::abs(b)), std::numeric_limits<float>::epsilon() * 8.f);
+        }
+
+    }// namespace avledet::util::CSU
+
+}// namespace avledet::util

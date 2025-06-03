@@ -4,6 +4,7 @@
 #include <functional>
 #include <range/v3/all.hpp>
 
+#include "VUtils.h"
 #include "Vector.h"
 #include "ZDO.h"
 #include "Peer.h"

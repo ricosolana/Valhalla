@@ -201,3 +201,12 @@ namespace VUtils::String {
     //  Returns 1, 2 or 3
     unsigned int GetUTF8ByteCount(uint16_t i);
 }
+
+namespace avledet::util {
+    template<typename T>
+    auto get_stable_hash(T&& s) {
+        return VUtils::String::GetStableHashCode(s);
+    }
+
+    using Hash = ::HASH_t;
+}

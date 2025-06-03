@@ -559,8 +559,10 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 	m_erasedZDOs.insert(zdoid);
 	
 	// erase members and connectors
-	ZDO::ZDO_MEMBERS.erase(zdoid);
-	//ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
+	assert(false); //TODO erase from all maps the entry for zdoid
+	//ZDO::ZDO_MEMBERS.erase(zdoid);
+	////ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
+	
 	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
 	return m_objectsByID.erase(itr);

@@ -155,7 +155,7 @@ struct Vector3 {
         : x(x), y(y), z(z) {}
 
     // vector arithmetic
-    void operator=(Vector3<T> other) {
+    void operator=(Vector3<T> const& other) {
         this->x = other.x;
         this->y = other.y;
         this->z = other.z;
@@ -314,6 +314,8 @@ struct Vector3 {
     }
 };
 
+using Vector3f = Vector3<float>;
+
 namespace avledet::util {
     template <class Num>
     struct Streamer</*CSU::*/Vector2<Num>> {
@@ -346,9 +348,14 @@ namespace avledet::util {
             );
         }
     };
-}
 
-using Vector3f = Vector3<float>;
+    namespace CSU {
+        using Vector2f = ::Vector2f;
+        using Vector2i = ::Vector2i;
+        using Vector2s = ::Vector2s;
+        using Vector3f = ::Vector3f;
+    }
+}
 
 std::ostream& operator<<(std::ostream& st, Vector3f vec);
 
