@@ -348,13 +348,12 @@ void INetManager::Update() {
 
     // Send periodic pings (1s)
     if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
-        BYTES_t bytes;
-        DataWriter writer(bytes);
+        DataWriter writer;
         writer.write((HASH_t)0);
         writer.write(true);
 
         for (auto&& peer : m_connectedPeers) {
-            peer->Send(bytes);
+            peer->Send(writer.get_buf());
         }
     }
 

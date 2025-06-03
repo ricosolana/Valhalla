@@ -1,5 +1,6 @@
 #include <functional>
 #include <utility>
+#include <vector>
 
 #include "ZDO.h"
 #include "ZDOManager.h"
@@ -10,76 +11,6 @@
 #include "ZoneManager.h"
 #include "NetManager.h"
 #include "VUtilsResource.h"
-
-
-
-//ZDO::ZDO() {}
-//
-//ZDO::ZDO(ZDOID id, Vector3f pos) : m_id(id), m_data() {
-//    _SetPosition(pos);
-//}
-
-//bool ZDO::Apply() const {
-//    if (auto&& opt = ZDOManager()->_GetZDOMatch(this->GetID())) {
-//        *opt = *this;
-//    }
-//}
-
-bool ZDO::set(avledet::util::Hash key, float data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, avledet::util::CSU::Vector3f const& data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, avledet::util::CSU::Quaternion const& data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, std::int32_t data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, std::int64_t data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, std::string data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
-
-bool ZDO::set(avledet::util::Hash key, std::vector<char> data) {
-    if (_set(this->GetID(), key, data)) {
-        Revise();
-        return true;
-    }
-    return false;
-}
 
 
 
@@ -319,9 +250,7 @@ ZoneID ZDO::GetZone() const {
 
 
 
-void ZDO::Pack(DataWriter& writer, bool network) const {
-    assert(false); // TODO
-    /*
+void ZDO::Pack(DataWriter& writer, bool network) const {    
     bool hasRot = this->m_rotation != Vector3f::Zero();
 
     uint16_t flags{};
@@ -332,7 +261,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (hasRot) flags |= 1 << NETWORK_Rotation;
 
     const auto flagPos = writer.get_pos();
-    writer.write(flags);
+    writer.write(flags); // dummy spacer
     if (!network) {
         writer.write(GetZone());
         writer.write(GetPosition());
@@ -363,28 +292,23 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         }
     }
 
-    auto&& find = ZDO_MEMBERS.find(GetID());
-    if (find != ZDO_MEMBERS.end()) {
-        auto&& types = find->second;
-
-        if (_TryWriteType<float>(writer, types))
-            flags |= 1 << NETWORK_Float;
-        if (_TryWriteType<Vector3f>(writer, types))
-            flags |= 1 << NETWORK_Vec3;
-        if (_TryWriteType<Quaternion>(writer, types))
-            flags |= 1 << NETWORK_Quat;
-        if (_TryWriteType<int32_t>(writer, types))
-            flags |= 1 << NETWORK_Int;
-        if (_TryWriteType<int64_t>(writer, types))
-            flags |= 1 << NETWORK_Long;
-        if (_TryWriteType<std::string>(writer, types))
-            flags |= 1 << NETWORK_String;
-        if (_TryWriteType<BYTES_t>(writer, types))
-            flags |= 1 << NETWORK_ByteArray;
-    }
+    if (_TryWriteType<float>(writer))
+        flags |= 1 << NETWORK_Float;
+    if (_TryWriteType<Vector3f>(writer))
+        flags |= 1 << NETWORK_Vec3;
+    if (_TryWriteType<Quaternion>(writer))
+        flags |= 1 << NETWORK_Quat;
+    if (_TryWriteType<std::int32_t>(writer))
+        flags |= 1 << NETWORK_Int;
+    if (_TryWriteType<std::int64_t>(writer))
+        flags |= 1 << NETWORK_Long;
+    if (_TryWriteType<std::string>(writer))
+        flags |= 1 << NETWORK_String;
+    if (_TryWriteType<std::vector<char>>(writer))
+        flags |= 1 << NETWORK_ByteArray;
 
     const auto endPos = writer.get_pos();
     writer.set_pos(flagPos);
     writer.write(flags);
-    writer.set_pos(endPos);*/
+    writer.set_pos(endPos);
 }

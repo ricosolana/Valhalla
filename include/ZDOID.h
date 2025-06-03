@@ -161,17 +161,17 @@ struct ankerl::unordered_dense::hash<avledet::sync::ZDOID> {
 template <>
 struct avledet::util::Streamer<avledet::sync::ZDOID> {
     void operator()(avledet::util::Writer& writer, avledet::sync::ZDOID const& zdoid) {
-        assert(false); // TODO
-        //writer.write(zdoid.m_userid);
-        //writer.write(zdoid.m_id);
+        //assert(false); // TODO
+        writer.write(zdoid.GetOwner()); //8 is first
+        writer.write(zdoid.GetUID());//4 is second
     }
 
     avledet::sync::ZDOID operator()(avledet::util::Reader& reader) {
         throw std::runtime_error("TODO");
-        //return avledet::sync::ZDOID(
-        //    reader.read<avledet::util::UserID>(),
-        //    reader.read<std::uint32_t>()
-        //);
+        return avledet::sync::ZDOID(
+            reader.read<std::int64_t>(),
+            reader.read<std::uint32_t>()
+        );
     }
 };
 

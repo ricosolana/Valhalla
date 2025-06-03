@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <algorithm>
@@ -163,18 +165,6 @@ private:
     static inline ankerl::unordered_dense::segmented_map<ZDOID, USER_ID_t> ZDO_OWNERS;
 
     template <class T>
-	static bool _set(Tree<T>& tree, avledet::util::Hash key, T data) {
-        auto&& entry = tree.try_emplace(key);
-        if (entry.second || entry.first->second != data) { // if a modification took place
-            entry.first->second = std::move(data);
-            return true;
-        }
-
-        // else, nothing changed...
-        return false;
-	}
-
-    template <class T>
         requires is_member_v<T>
     static VarMap<T>& _GetVars() {
         if constexpr (std::is_same_v<T, float>) {
@@ -196,51 +186,62 @@ private:
     }
 
     template <class T>
-    static std::pair<bool, Tree<T>&> _GetVarTree(avledet::sync::ZDOID const& uid) {
+	static bool _set(Tree<T>& tree, avledet::util::Hash key, T data) {
+        auto&& entry = tree.try_emplace(key);
+        if (entry.second || entry.first->second != data) { // if a modification took place
+            entry.first->second = std::move(data);
+            return true;
+        }
+
+        // else, nothing changed...
+        return false;
+	}
+
+    //template <class T>
+    //static std::pair<bool, Tree<T>*> _GetVarTree(avledet::sync::ZDOID const& uid) {
+    //    auto&& map = _GetVars<T>();
+    //    auto&& emp = map.try_emplace(uid);
+    //    return { emp.second, emp.first->second };
+    //}
+
+    template <class T, bool create=true>
+    static std::pair<bool, Tree<T>*> _GetVarTree(avledet::sync::ZDOID const& uid) {
         auto&& map = _GetVars<T>();
+        if constexpr (create) {
+            auto&& emp = map.try_emplace(uid);
 
-        auto&& emp = map.try_emplace(uid);
-
-        //auto&& emp = map.try_emplace(
-        //    std::piecewise_construct,
-        //    std::forward_as_tuple(uid),
-        //    std::forward_as_tuple() //default construct spec
-        //);
-        
-        return { emp.second, emp.first->second };
+            return { emp.second, &emp.first->second };
+        } else {
+            auto&& itr = map.find(uid);
+            if (itr == map.end()) {
+                return { false, nullptr };
+            } else {
+                return { true, &itr->second };
+            }
+        }
     }
 
     template <class T>
         //requires is_member_v<T> //std::remove_cvref_t<T>>
     static bool _set(avledet::sync::ZDOID const& uid, avledet::util::Hash key, T data) {
         auto&& [ inserted, tree] = _GetVarTree<T>(uid);
-        return _set(tree, key, std::move(data)) || inserted;
+        assert(tree);
+        return _set(*tree, key, std::move(data)) || inserted;
     }
 
-    bool set(avledet::util::Hash key, float data);
-    bool set(avledet::util::Hash key, avledet::util::CSU::Vector3f const& data);
-    bool set(avledet::util::Hash key, avledet::util::CSU::Quaternion const& data);
-    bool set(avledet::util::Hash key, std::int32_t data);
-    bool set(avledet::util::Hash key, std::int64_t data);
-    bool set(avledet::util::Hash key, std::string data);
-    bool set(avledet::util::Hash key, std::vector<char> data);
+    template <class T>
+    bool set(avledet::util::Hash key, T data) {
+        if (_set(m_id, key, std::move(data))) {
+            Revise();
+            return true;
+        }
+        return false;
+    }
 
-    //bool set(std::string_view name, float data);
-    //bool set(std::string_view name, avledet::util::CSU::Vector3f const& data);
-    //bool set(std::string_view name, avledet::util::CSU::Quaternion const& data);
-    //bool set(std::string_view name, std::int32_t data);
-    //bool set(std::string_view name, std::int64_t data);
-    //bool set(std::string_view name, std::string const& data);
-    //bool set(std::string_view name, std::vector<std::uint8_t> const& data);
-
-    //template <class T>
-    //bool set(avledet::util::Hash key, T&& data) {
-    //    if (_set(this->GetID(), key, std::forward(data))) {
-    //        _Revise();
-    //        return true;
-    //    }
-    //    return false;
-    //}
+    template <class T>
+    bool set(std::string_view key, T data) {
+        return set(avledet::util::get_stable_hash(key), std::move(data));
+    }
 
 
 
@@ -431,41 +432,37 @@ private:
     [[maybe_unused]] bool _Set(HASH_t key, T value) {
         //return _Set(key, std::move(value), ZDO_MEMBERS[GetID()]);
         //return ZDOManager()->GetMember()
-        throw std::runtime_error("nyi");
-        
+        return _set(m_id, key, std::move(value));
     }
 
-    /*
+    static void WriteNumItems(DataWriter& writer, int numItems)
+	{
+		if (numItems < 128)
+		{
+			writer.write((std::uint8_t)numItems);
+			return;
+		}
+		writer.write((std::uint8_t)((numItems >> 8) | 128));
+		writer.write((std::uint8_t)numItems);
+	}
+    
     template<typename T>
         requires is_member_v<T>
-    decltype(auto) static _TryWriteType(DataWriter& writer, member_map& members) {
-        const auto begin_mark = writer.get_pos();
-        uint8_t count = 0;
-        //writer.write(count); // placeholder 0 byte
-
-        for (auto&& pair : members) {
-            auto&& data = std::get_if<T>(&pair.second);
-            if (data) {
-                // Skip 1 byte for count only if member present
-                if (!count) {
-                    writer.write(count);
-                }
-
-                writer.write(xhash_to_hash<T>(pair.first));
-                writer.write(*data);
-                count++;
+    decltype(auto) _TryWriteType(DataWriter& writer) const { //}, Tree<float>& tree) {
+        auto&& [_, tree_ptr] = _GetVarTree<T, false>(m_id);
+        if (tree_ptr) {
+            auto&& tree = *tree_ptr;
+            const auto count = tree.size();
+            assert(count); // tree exists; assume there are *some* items
+            WriteNumItems(writer, count);
+            for (auto&& pair : tree) {
+                writer.write(pair.first, pair.second);
             }
+            return true;
         }
 
-        if (count) {
-            auto end_mark = writer.get_pos();
-            writer.set_pos(begin_mark);
-            writer.write(count);
-            writer.set_pos(end_mark);
-        }
-
-        return count;
-    }*/
+        return false;
+    }
 
     /*
     // Read a zdo_type from the DataStream
@@ -955,7 +952,7 @@ public:
     [[nodiscard]] size_t GetTotalAlloc() const {
         size_t size = 0;
 
-        assert(false); //TODO
+        //assert(false); //TODO
 
         //auto&& find = ZDO_MEMBERS.find(GetID());
         //if (find != ZDO_MEMBERS.end()) {
