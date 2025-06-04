@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <string_view>
+
 //#include <chrono>
 
 //using namespace std::chrono_literals;
@@ -339,21 +342,21 @@
 //    Includes game, worldgen, zdo, zonelocation, ...
 namespace VConstants {
     // Valheim Steam app id
-    static constexpr int32_t APP_ID = 892970;
+    static constexpr std::int32_t APP_ID = 892970;
 
     // Valheim game version
     //  Located in Version.cs
-    static const char* GAME = "0.217.25";
+    static constexpr std::string_view GAME = "0.220.5";
 
-    static constexpr uint32_t NETWORK = 15;
+    static constexpr std::uint32_t NETWORK = 34;
 
     // Used while loading world from file (ZNet/ZoneSystem/ZDOMan/RandEventSystem)
     // 32: Hildir beta
-    static constexpr int32_t WORLD = 32;
+    static constexpr std::int32_t WORLD = 32;
 
     // Used in WorldGenerator terrain
-    static constexpr int32_t WORLDGEN = 2;
+    static constexpr std::int32_t WORLDGEN = 2;
 
     // Used in ZoneSystem Feature-Prefabs
-    static constexpr int32_t LOCATION = 26;
+    static constexpr std::int32_t LOCATION = 26;
 }

@@ -34,6 +34,12 @@ namespace avledet::util::traits {
         template <> struct result_trait<void> { typedef void_result type; };
     }
 
+    //untested idea
+    //template <class T>
+    //concept is_callable = requires(T a) {
+    //    a();
+    //};
+
     //! \brief Provides a small function traits implementation that
     //! works with a reasonably large set of functors.
     template <typename T>
@@ -48,7 +54,10 @@ namespace avledet::util::traits {
     template <typename R, typename... Args> struct func_traits<R(*)(Args...)> {
         using result_type = R;
         using arg_count = std::integral_constant<std::size_t, sizeof...(Args)>;
+        //the arguments of the function, without qualifiers, ie, no & or const
         using args_type = std::tuple<typename std::decay<Args>::type...>;
+        //the arguments of the function, with qualifiers, ie, & or const
+        using raw_args_type = std::tuple<Args...>;
     };
 
 

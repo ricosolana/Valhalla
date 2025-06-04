@@ -1,13 +1,16 @@
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <filesystem>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 #include <bit>
 #include <cstdint>
+#include <functional>
 
 #include "VUtilsTraits.h"
 
@@ -339,6 +342,38 @@ namespace avledet::util {
         decltype(auto) operator()(Reader& reader) const {
             return Reader(reader.read<std::vector<char>>());
         }
+    };
+
+    //"sub"write
+    //  writes all sub counts
+    //  then returns to the original position, writes the following bytes written
+    template <class T>
+        //requires avledet::util::traits::func_traits<T>::
+        requires (std::is_invocable_v<T, Writer&> 
+            && std::is_same_v<
+                std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::raw_args_type>,
+                Writer&>
+        )
+    struct Streamer<T> { //<std::function<void(Writer&)>> {
+        void operator()(Writer& writer, T const& value) const {
+            const auto start = writer.get_pos();
+            std::uint32_t count = 0;
+            writer.write(count); //dummy
+    
+            // call func...
+            value(writer);
+    
+            const auto end = writer.get_pos();
+            writer.set_pos(start);
+            count = end - start - sizeof(count);
+            assert(count >= 0);
+            writer.write(count);
+            writer.set_pos(end);
+        }
+
+        //makes no sense to deserialize a foreach function
+        //decltype(auto) operator()(Reader& reader) const {
+        //}
     };
 
 }// namespace avledet::util

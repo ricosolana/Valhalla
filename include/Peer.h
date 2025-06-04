@@ -167,8 +167,8 @@ public:
         DataWriter writer;
 
         writer.write(hash);
-        assert(false); // ADDRESS THE BELOW
-        //writer.SubWrite(func);
+        //assert(false); // ADDRESS THE BELOW
+        writer.write(func);
 
         // Prefix
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))

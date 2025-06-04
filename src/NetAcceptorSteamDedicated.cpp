@@ -191,7 +191,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
         this->OnConfigLoad(false);
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME)) {
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "version", VConstants::GAME.data())) {
             LOG_WARNING(m_logger, "Unable to set lobby version");
         }
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
