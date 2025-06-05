@@ -8,39 +8,39 @@
 #include "VUtilsMath2.h"
 
 namespace VUtils::Math {
-    float SqMagnitude(float x, float y) {
+    float sq_magnitude(float x, float y) {
         return x * x + y * y;
     }
 
-    float Magnitude(float x, float y) {
-        return sqrt(SqMagnitude(x, y));
+    float magnitude(float x, float y) {
+        return sqrt(sq_magnitude(x, y));
     }
 
-    float SqDistance(float x1, float y1, float x2, float y2) {
-        return SqMagnitude(x1 - x2, y1 - y2);
+    float sq_distance_to(float x1, float y1, float x2, float y2) {
+        return sq_magnitude(x1 - x2, y1 - y2);
     }
 
-    float Distance(float x1, float y1, float x2, float y2) {
-        return std::sqrtf(SqDistance(x1, y1, x2, y2));
+    float distance_to(float x1, float y1, float x2, float y2) {
+        return std::sqrtf(sq_distance_to(x1, y1, x2, y2));
     }
 
 
 
 
-    float SqMagnitude(float x, float y, float z) {
+    float sq_magnitude(float x, float y, float z) {
         return x * x + y * y + z * z;
     }
 
-    float Magnitude(float x, float y, float z) {
-        return sqrt(SqMagnitude(x, y, z));
+    float magnitude(float x, float y, float z) {
+        return sqrt(sq_magnitude(x, y, z));
     }
 
-    float SqDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
-        return SqMagnitude(x1 - x2, y1 - y2, z1 - z2);
+    float sq_distance_to(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return sq_magnitude(x1 - x2, y1 - y2, z1 - z2);
     }
 
-    float Distance(float x1, float y1, float z1, float x2, float y2, float z2) {
-        return std::sqrtf(SqDistance(x1, y1, z1, x2, y2, z2));
+    float distance_to(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return std::sqrtf(sq_distance_to(x1, y1, z1, x2, y2, z2));
     }
 
 

@@ -106,7 +106,7 @@ struct RoomInstance {
 			// https://stackoverflow.com/questions/73652767/get-new-child-object-postion-based-on-parent-transform
 
 			//Quaternion childWorldRot = rot * conn->m_localRot;
-			//Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * conn->m_localPos.Magnitude();
+			//Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * conn->m_localPos.magnitude();
 			//
 			//Vector3f childWorldPos = pointOnRot + room.m_pos;
 			

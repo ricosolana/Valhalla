@@ -114,7 +114,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
         writer.write(Valhalla()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
-        writer.write(Vector3f::Zero()); // dummy
+        writer.write(Vector3f::zero()); // dummy
         writer.write(std::string_view("")); // dummy
 
         auto world = WorldManager()->GetWorld();

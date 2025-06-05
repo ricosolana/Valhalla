@@ -38,7 +38,7 @@ public:
 
 	// Returns whether 2 RoomConnections are touching
 	bool TestContact(const RoomConnectionInstance& other) const {
-		return m_pos.SqDistance(other.m_pos) < .1f * .1f;
+		return m_pos.sq_distance_to(other.m_pos) < .1f * .1f;
 	}
 };
 #endif

@@ -169,9 +169,9 @@ namespace avledet::util::CSU {
     // https://web.archive.org/web/20221126145919/https://gist.github.com/aeroson/043001ca12fe29ee911e
     Quaternion Quaternion::look_rotation(Vector3f forward, Vector3f up) {
         // TODO lowercase migrate
-        forward = forward.Normal();
-        Vector3f right = up.Cross(forward).Normal();
-        up = forward.Cross(right);
+        forward = forward.normal();
+        Vector3f right = up.cross(forward).normal();
+        up = forward.cross(right);
 
         auto m00 = right.x;
         auto m01 = right.y;

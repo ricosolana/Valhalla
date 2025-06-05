@@ -133,7 +133,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 	for (int i = 0; i < num4; i++) {
 		Vector3f vector = this->m_pos
 			+ Quaternion::euler(0.f, state.Range(0, 360), 0.f)
-			* Vector3f::Forward() * state.Range(0.f, num - this->m_dungeon.m_perimeterBuffer);
+			* Vector3f::forward() * state.Range(0.f, num - this->m_dungeon.m_perimeterBuffer);
 
 		auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 		if (randomWeightedRoom) {
@@ -163,10 +163,10 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, c
 	if (room.m_faceCenter) {
 		Vector3f vector = m_pos - pos;
 		vector.y = 0;
-		if (vector == Vector3f::Zero())
-			vector = Vector3f::Forward();
+		if (vector == Vector3f::zero())
+			vector = Vector3f::forward();
 
-		vector.Normal();
+		vector.normal();
 		float y = VUtils::Mathf::Round(VUtils::Math::YawFromDirection(vector) / 22.5f) * 22.5f;
 		return Quaternion::euler(0, y, 0);
 	}
@@ -184,7 +184,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 		if (randomWeightedRoom)
 		{
 			Vector3f vector = this->m_pos
-				+ Quaternion::euler(0, state.Range(0, 360), 0) * Vector3f::Forward() * radius;
+				+ Quaternion::euler(0, state.Range(0, 360), 0) * Vector3f::forward() * radius;
 
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 
@@ -306,7 +306,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 
 					bool flag = false;
 					for (auto&& room : m_placedRooms) {
-						if (room->m_room.get().m_divider && room->m_pos.SqDistance(vector) < 0.5f * 0.5f) {
+						if (room->m_room.get().m_divider && room->m_pos.sq_distance_to(vector) < 0.5f * 0.5f) {
 							flag = true;
 							break;
 						}
@@ -431,7 +431,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State& state) {
 	Vector3f pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(entrance,
-		Vector3f::Zero(), Quaternion::IDENTITY,
+		Vector3f::zero(), Quaternion::IDENTITY,
 		pos, rot
 	);
 
@@ -595,7 +595,7 @@ void DungeonGenerator::AddOpenConnections(RoomInstance& newRoom, const RoomConne
 	auto&& connections = newRoom.m_connections;
 	for (auto&& roomConnection : connections) {
 		if (!roomConnection->m_connection.get().m_entrance
-			&& roomConnection->m_pos.SqDistance(skipConnection.m_pos) >= .1f * .1f)
+			&& roomConnection->m_pos.sq_distance_to(skipConnection.m_pos) >= .1f * .1f)
 		{
 			roomConnection->m_placeOrder = newRoom.m_placeOrder;
 			m_openConnections.push_back(*roomConnection.get());
@@ -694,7 +694,7 @@ bool DungeonGenerator::TestCollision(const Room& room, Vector3f pos, Quaternion 
 	}
 	else {
 		// Resize the room to its smallest fitting circular region
-		size = room.m_size.Normal() * Vector2f(room.m_size.x, room.m_size.z).Magnitude();
+		size = room.m_size.normal() * Vector2f(room.m_size.x, room.m_size.z).magnitude();
 	}
 
 	if (room.m_endCap)
@@ -722,7 +722,7 @@ bool DungeonGenerator::TestCollision(const Room& room, Vector3f pos, Quaternion 
 			otherSize.z = std::abs(otherSize.z);
 		}
 		else {
-			otherSize = otherRoom.m_size.Normal() * Vector2f(otherRoom.m_size.x, otherRoom.m_size.z).Magnitude();
+			otherSize = otherRoom.m_size.normal() * Vector2f(otherRoom.m_size.x, otherRoom.m_size.z).magnitude();
 		}
 
 		//otherSize -= Vector3f(.1f, .1f, .1f);

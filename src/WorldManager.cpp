@@ -313,7 +313,7 @@ BYTES_t IWorldManager::SaveWorldDB() const {
 	writer.write(0.f);
 	writer.write("");
 	writer.write(0.f);
-	writer.write(Vector3f::Zero());
+	writer.write(Vector3f::zero());
 #endif
 
 	return writer.get_buf();

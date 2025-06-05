@@ -163,7 +163,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry) {
     // (sqrt(2) - sqrt(x ^ 2 + y ^ 2)) ^ 3
     // https://www.math3d.org/sL5gEdMjk
 
-    float num4 = std::sqrtf(2) - VUtils::Math::Magnitude(num, num2);
+    float num4 = std::sqrtf(2) - VUtils::Math::magnitude(num, num2);
     return num4 * num4 * num4;
 }
 
@@ -381,7 +381,7 @@ void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius,
 
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
-            float num6 = a.Distance(Vector2f(j, i));
+            float num6 = a.distance_to(Vector2f(j, i));
             if (num6 <= num3) {
                 float num7 = num6 / num3;
                 if (j >= 0 && i >= 0 && j < num5 && i < num5) {
@@ -456,7 +456,7 @@ bool Heightmap::GetWorldNormal(Vector3f worldPos, Vector3f& normal) {
     b -= a;
     c -= a;
 
-    normal = b.Cross(c).Normal();
+    normal = b.cross(c).normal();
 
     // if it points below the horizon
     if (normal.y < 0)
@@ -490,7 +490,7 @@ bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &he
     int32_t sumArea = 0;
     for (int32_t i = y - radius; i <= y + radius; i++) {
         for (int32_t j = x - radius; j <= x + radius; j++) {
-            if (VUtils::Math::SqDistance(x, y, j, i) <= radius * radius) {
+            if (VUtils::Math::sq_distance_to(x, y, j, i) <= radius * radius) {
                 if (!(j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH))
                     continue;
 
@@ -522,7 +522,7 @@ bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height
     height = 99999;
     for (int32_t i = y - num4; i <= y + num4; i++) {
         for (int32_t j = x - num4; j <= x + num4; j++) {
-            if (a.Distance(Vector2f(j, i)) <= num3 
+            if (a.distance_to(Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < num5&& i < num5) {
                 float height2 = this->GetHeight(j, i);
                 if (height2 < height) {
@@ -548,7 +548,7 @@ bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height
     height = -99999;
     for (int32_t i = y - num4; i <= y + num4; i++) {
         for (int32_t j = x - num4; j <= x + num4; j++) {
-            if (a.Distance(Vector2f(j, i)) <= num3 
+            if (a.distance_to(Vector2f(j, i)) <= num3 
                 && j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH) {
                 float height2 = this->GetHeight(j, i);
                 if (height2 > height) {
@@ -572,7 +572,7 @@ void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, floa
 
     for (int32_t i = y - radius; i <= y + radius; i++) {
         for (int32_t j = x - radius; j <= x + radius; j++) {
-            if ((square || VUtils::Math::SqDistance(x, y, j, i) <= radius * radius)
+            if ((square || VUtils::Math::sq_distance_to(x, y, j, i) <= radius * radius)
                 && (j != 0 && i != 0 && j != IZoneManager::ZONE_SIZE && i != IZoneManager::ZONE_SIZE)) {
                 list.push_back(std::make_pair(Vector2i(j, i), this->GetAvgHeight(j, i, 1)));
             }
@@ -656,7 +656,7 @@ void Heightmap::PaintCleared(Vector3f worldPos, float radius,
 
     for (int32_t i = num3 - num5; i <= num3 + num5; i++) {
         for (int32_t j = num2 - num5; j <= num2 + num5; j++) {
-            float num6 = a.Distance(Vector2f(j, i));
+            float num6 = a.distance_to(Vector2f(j, i));
             if (j >= 0 && i >= 0 && j < this->m_paintMask.width && i < this->m_paintMask.height 
                 && (!heightCheck || this->GetHeight(j, i) <= num)) {
 
@@ -747,7 +747,7 @@ void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square,
     Vector2f a = Vector2f(num, num2);
     for (int32_t i = num2 - num4; i <= num2 + num4; i++) {
         for (int32_t j = num - num4; j <= num + num4; j++) {
-            if ((square || a.Distance(Vector2f(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
+            if ((square || a.distance_to(Vector2f(j, i)) <= num3) && j >= 0 && i >= 0 && j < num5&& i < num5) {
                 float num6 = vector.y;
                 if (levelOnly) {
                     float num7 = m_heights[i * num5 + j];

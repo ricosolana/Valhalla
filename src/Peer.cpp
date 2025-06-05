@@ -51,7 +51,7 @@ Peer::Peer(ISocket::Ptr socket)
 
             rpc->m_pos = reader.read<Vector3f>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
-            if (rpc->m_pos.HSqMagnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
+            if (rpc->m_pos.Hsq_magnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
                 throw std::runtime_error("peer position is outside of map");
 #endif
             rpc->m_name = reader.read<std::string>();

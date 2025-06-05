@@ -59,7 +59,7 @@ void IGeoManager::GenerateLakes() {
 	{
 		for (float num2 = -worldSize; num2 <= worldSize; num2 += 128)
 		{
-			if (VUtils::Math::Magnitude(num2, num) <= worldSize
+			if (VUtils::Math::magnitude(num2, num) <= worldSize
 				&& GetBaseHeight(num2, num) < 0.05f)
 			{
 				list.push_back(Vector2f(num2, num));
@@ -98,8 +98,8 @@ int IGeoManager::FindClosest(const std::vector<Vector2f>& points, Vector2f p, fl
 	{
 		if (!(points[i] == p))
 		{
-			//float num2 = p.Distance(points[i]); // not optimal
-			float num2 = p.SqDistance(points[i]);
+			//float num2 = p.distance_to(points[i]); // not optimal
+			float num2 = p.sq_distance_to(points[i]);
 			if (num2 < maxDistance * maxDistance
 				&& num2 < num)
 			{
@@ -129,7 +129,7 @@ void IGeoManager::GenerateStreams() {
 				river.center = vector3;
 				river.widthMax = 20;
 				river.widthMin = 20;
-				float num3 = river.p0.Distance(river.p1); // use sqdist?
+				float num3 = river.p0.distance_to(river.p1); // use sqdist?
 				river.curveWidth = num3 / 15;
 				river.curveWavelength = num3 / 20;
 				m_streams.push_back(river); // use move / emplacer
@@ -154,7 +154,7 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 			return true;
 		}
 	}
-	end = Vector2f::Zero();
+	end = Vector2f::zero();
 	return false;
 }
 
@@ -170,7 +170,7 @@ bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterati
 			return true;
 		}
 	}
-	p = Vector2f::Zero();
+	p = Vector2f::zero();
 	starth = 0;
 	return false;
 }
@@ -196,7 +196,7 @@ void IGeoManager::GenerateRivers() {
 			river.center = (river.p0 + river.p1) * 0.5f;
 			river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
 			river.widthMin = state.Range(minRiverWidth, river.widthMax);
-			float num2 = river.p0.Distance(river.p1);
+			float num2 = river.p0.distance_to(river.p1);
 			river.curveWidth = num2 / 15.f;
 			river.curveWavelength = num2 / 20.f;
 			m_rivers.push_back(river);
@@ -215,7 +215,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vec
 	std::vector<int> list;
 	for (int i = 0; i < points.size(); i++) {
 		if (!(points[i] == p)
-			&& p.Distance(points[i]) < maxDistance
+			&& p.distance_to(points[i]) < maxDistance
 			&& !HaveRiver(rivers, p, points[i])
 			&& IsRiverAllowed(p, points[i], checkStep, heightLimit))
 		{
@@ -251,8 +251,8 @@ bool IGeoManager::HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vecto
 }
 
 bool IGeoManager::IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const {
-	float num = p0.Distance(p1);
-	Vector2f normalized = (p1 - p0).Normal();
+	float num = p0.distance_to(p1);
+	Vector2f normalized = (p1 - p0).normal();
 	bool flag = true;
 	for (float num2 = step; num2 <= num - step; num2 += step) {
 		Vector2f vector = p0 + normalized * num2;
@@ -272,9 +272,9 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	for (auto&& river : rivers) {
 
 		float num = river.widthMin / 8.f;
-		const Vector2f normalized = (river.p1 - river.p0).Normal();
+		const Vector2f normalized = (river.p1 - river.p0).normal();
 		const Vector2f a(-normalized.y, normalized.x);
-		float num2 = river.p0.Distance(river.p1);
+		float num2 = river.p0.distance_to(river.p1);
 
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;
@@ -350,7 +350,7 @@ void IGeoManager::GetWeight(const std::vector<RiverPoint>& points, float wx, flo
 
 	for (auto&& riverPoint : points)
 	{
-		float num3 = (riverPoint.p - b).SqMagnitude();
+		float num3 = (riverPoint.p - b).sq_magnitude();
 		if (num3 < riverPoint.w2)
 		{
 			float num4 = sqrt(num3);
@@ -374,7 +374,7 @@ float IGeoManager::WorldAngle(float wx, float wy) {
 
 float IGeoManager::GetBaseHeight(float wx, float wy) const {
 	//float num2 = VUtils.Length(wx, wy);
-	float num2 = VUtils::Math::Magnitude(wx, wy);
+	float num2 = VUtils::Math::magnitude(wx, wy);
 	wx += 100000 + m_offset0;
 	wy += 100000 + m_offset1;
 	float num3 = 0;
@@ -556,7 +556,7 @@ float IGeoManager::GetAshlandsHeight(float wx, float wy) {
 }
 
 float IGeoManager::GetEdgeHeight(float wx, float wy) {
-	float magnitude = VUtils::Math::Magnitude(wx, wy);
+	float magnitude = VUtils::Math::magnitude(wx, wy);
 	float num = 10490;
 	if (magnitude > num)
 	{
@@ -670,19 +670,19 @@ Biome IGeoManager::GetBiome(Vector3f point) {
 
 // public
 Biome IGeoManager::GetBiome(float wx, float wy) {
-	auto magnitude = VUtils::Math::Magnitude(wx, wy);
+	auto magnitude = VUtils::Math::magnitude(wx, wy);
 	auto baseHeight = GetBaseHeight(wx, wy);
 	float num = WorldAngle(wx, wy) * 100.f;
 
 	// bottom curve of world are ashlands
-	if (VUtils::Math::Magnitude(wx, wy + ashlandsYOffset) > ashlandsMinDistance + num)
+	if (VUtils::Math::magnitude(wx, wy + ashlandsYOffset) > ashlandsMinDistance + num)
 		return Biome::AshLands;
 
 	if (baseHeight <= 0.02f)
 		return Biome::Ocean;
 
 	// top curve of world is deep north
-	if (VUtils::Math::Magnitude(wx, wy + deepNorthYOffset) > deepNorthMinDistance + num) {
+	if (VUtils::Math::magnitude(wx, wy + deepNorthYOffset) > deepNorthMinDistance + num) {
 		if (baseHeight > mountainBaseHeightMin)
 			return Biome::Mountain;
 		return Biome::DeepNorth;
@@ -803,7 +803,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center,
 		}
 	}
 	delta = num2 - num3;
-	slopeDirection = (a - b).Normal();
+	slopeDirection = (a - b).normal();
 }
 
 // public

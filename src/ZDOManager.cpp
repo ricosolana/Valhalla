@@ -527,7 +527,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos), peer.GetUserID()))
 				continue;
 
-			float sqDist = otherPeer->m_pos.SqDistance(peer.m_pos);
+			float sqDist = otherPeer->m_pos.sq_distance_to(peer.m_pos);
 			if (sqDist < minSqDist) {
 				minSqDist = sqDist;
 				closestPos = otherPeer->m_pos;
@@ -547,7 +547,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 			// Basically reassign zdos from another owner to me instead
 			for (auto&& zdo : zdos) {
 				if (zdo->IsPersistent()
-					&& zdo->GetPosition().SqDistance(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
+					&& zdo->GetPosition().sq_distance_to(closestPos) > 12 * 12 // Ensure the ZDO is far from the other player
 					) {
 					zdo->SetOwner(peer.GetUserID());
 				}
@@ -664,7 +664,7 @@ std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer&
 			if (outItr != peer.m_zdos.end())
 				weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
-			result.push_back({ zdo, zdo->GetPosition().SqDistance(peer.m_pos) - weight * weight });
+			result.push_back({ zdo, zdo->GetPosition().sq_distance_to(peer.m_pos) - weight * weight });
 		}
 	}
 
@@ -780,7 +780,7 @@ std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, s
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& zdo : *container) {
-					if (zdo->GetPosition().SqDistance(pos) <= sqRadius
+					if (zdo->GetPosition().sq_distance_to(pos) <= sqRadius
 						&& (!pred || pred(zdo)))
 					{
 						if (max--)
@@ -828,7 +828,7 @@ ZDO::unsafe_optional IZDOManager::NearestZDO(Vector3f pos, float radius, pred_t 
 		for (auto x = minZone.x; x <= maxZone.x; x++) {
 			if (auto&& container = _GetZDOContainer(ZoneID(x, z))) {
 				for (auto&& zdo : *container) {
-					float sqDist = zdo->GetPosition().SqDistance(pos);
+					float sqDist = zdo->GetPosition().sq_distance_to(pos);
 					if (sqDist < minSqDist // Filter to closest ZDO
 						&& (!pred || pred(zdo)))
 					{

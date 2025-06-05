@@ -65,33 +65,6 @@ namespace ankerl::unordered_dense {
         }
     };
 
-    template <>
-    struct hash<Vector2i> {
-        using is_avalanching = void;
-
-        auto operator()(Vector2i v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-        }
-    };
-
-    template <>
-    struct hash<Vector2s> {
-        using is_avalanching = void;
-
-        auto operator()(Vector2s v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-        }
-    };
-
-    template <>
-    struct hash<Vector3f> {
-        using is_avalanching = void;
-
-        auto operator()(Vector3f v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::detail::wyhash::hash(&v, sizeof(v));
-        }
-    };
-
     struct string_hash {
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void; // mark class as high quality avalanching hash

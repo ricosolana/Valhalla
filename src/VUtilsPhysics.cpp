@@ -317,7 +317,7 @@ namespace VUtils::Physics {
 
 
         //Quaternion childWorldRot = parentRot * childLocalRot;
-        //Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * childLocalPos.Magnitude();
+        //Vector3f pointOnRot = (childWorldRot * Vector3f::FORWARD).Normalized() * childLocalPos.magnitude();
         //
         //Vector3f childWorldPos = pointOnRot + parentPos;
         //

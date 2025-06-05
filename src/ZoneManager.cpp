@@ -692,7 +692,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                                 && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
                                 auto rotation2 = Quaternion::euler(0, rot_y, 0);
                                 rotation = Quaternion::look_rotation(
-                                    normal.Cross(rotation2 * Vector3f::Forward()),
+                                    normal.cross(rotation2 * Vector3f::forward()),
                                     normal
                                 );
                             }
@@ -750,7 +750,7 @@ bool IZoneManager::InsideClearArea(const std::vector<ClearArea>& areas, Vector3f
 bool IZoneManager::OverlapsClearArea(const std::vector<ClearArea>& areas, Vector3f point, float radius) {
     for (auto&& area : areas) {
 
-        float d = VUtils::Math::SqDistance(point.x, point.z, area.m_center.x, area.m_center.z);
+        float d = VUtils::Math::sq_distance_to(point.x, point.z, area.m_center.x, area.m_center.z);
         float rd = area.m_semiWidth + radius;
 
         if (d < rd * rd)
@@ -885,7 +885,7 @@ void IZoneManager::PrepareFeatures(const Feature& feature) {
                 for (int i = 0; i < 20; i++) {
                     auto randomPointInZone = GetRandomPointInZone(state, randomZone, locationRadius);
 
-                    float magnitude = randomPointInZone.Magnitude();
+                    float magnitude = randomPointInZone.magnitude();
                     if ((feature.m_minDistance != 0 && magnitude < feature.m_minDistance)
                         || (feature.m_maxDistance != 0 && magnitude > feature.m_maxDistance)) {
                         errCenterDistances++;
@@ -959,7 +959,7 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
 
         if ((location == loc 
             || (!loc.m_group.empty() && loc.m_group == location.m_group)) 
-            && locationInstance->m_pos.Distance(p) < loc.m_minDistanceFromSimilar) // TODO use sqdist
+            && locationInstance->m_pos.distance_to(p) < loc.m_minDistanceFromSimilar) // TODO use sqdist
         {
             return true;
         }
@@ -982,7 +982,7 @@ ZoneID IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
         float x = state.Range(-num, num);
         float y = state.Range(-num, num);
         zone = ZoneID(x, y);
-    } while (ZoneToWorldPos(zone).Magnitude() >= 10000);
+    } while (ZoneToWorldPos(zone).magnitude() >= 10000);
     return zone;
 }
 
@@ -1092,7 +1092,7 @@ void IZoneManager::GenerateFeature(const Feature& location, HASH_t seed, Vector3
             // TODO not really optional, it is required through a branch
             ZDO::unsafe_optional zdo;
 
-            if (dungeon.m_interiorPosition != Vector3f::Zero()) {
+            if (dungeon.m_interiorPosition != Vector3f::zero()) {
 
                 ZoneID zone = WorldToZonePos(pos);
                 Vector3f zonePos = ZoneToWorldPos(zone);
@@ -1178,7 +1178,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center
         }
     }
     delta = num2 - num3;
-    slopeDirection = (a - b).Normal();
+    slopeDirection = (a - b).normal();
 }
 
 // used importantly for snapping and location/vegetation generation
@@ -1213,7 +1213,7 @@ IZoneManager::Feature::Instance* IZoneManager::GetNearestFeature(std::string_vie
         auto&& instance = pair.second;
         auto&& location = instance->m_feature.get();
 
-        float dist = instance->m_pos.SqDistance(point);
+        float dist = instance->m_pos.sq_distance_to(point);
         if (location.m_name == name && dist < closestDist) {
             closestDist = dist;
             closest = instance.get();
@@ -1231,7 +1231,7 @@ bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3
         
     for (auto&& pair : m_generatedFeatures) {
         if (m_features[pair.second.first] == name) {
-            float sq = in.SqDistance(pair.second.second);
+            float sq = in.sq_distance_to(pair.second.second);
             if (sq < sqMin) {
                 out = pair.second.second;
                 sqMin = sq;

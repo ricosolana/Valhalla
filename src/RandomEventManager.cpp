@@ -73,7 +73,7 @@ void IRandomEventManager::Update() {
 			VH_DISPATCH_WEBHOOK("Random event stopped: `" + this->m_activeEvent->m_name + "`");
 
 			m_activeEvent = nullptr;
-			m_activeEventPos = Vector3f::Zero();
+			m_activeEventPos = Vector3f::zero();
 		}
 	}
 	else if (VH_SETTINGS.eventsInterval > 0s) {
@@ -211,7 +211,7 @@ void IRandomEventManager::SendCurrentRandomEvent() {
 		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent,
 			std::string_view(""),
 			0.f,
-			Vector3f::Zero()
+			Vector3f::zero()
 		);
 	}
 }
