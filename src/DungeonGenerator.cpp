@@ -116,7 +116,7 @@ void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 					if (vector.y < num)
 						continue;
 
-					Quaternion rot = Quaternion::Euler(0, 22.5f * state.Range(0, 16), 0.f);
+					Quaternion rot = Quaternion::euler(0, 22.5f * state.Range(0, 16), 0.f);
 					this->PlaceRoom(*randomWeightedRoom, pos, rot);
 				}
 			}
@@ -132,7 +132,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 	int num5 = 0;
 	for (int i = 0; i < num4; i++) {
 		Vector3f vector = this->m_pos
-			+ Quaternion::Euler(0.f, state.Range(0, 360), 0.f)
+			+ Quaternion::euler(0.f, state.Range(0, 360), 0.f)
 			* Vector3f::Forward() * state.Range(0.f, num - this->m_dungeon.m_perimeterBuffer);
 
 		auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
@@ -168,10 +168,10 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State& state, c
 
 		vector.Normal();
 		float y = VUtils::Mathf::Round(VUtils::Math::YawFromDirection(vector) / 22.5f) * 22.5f;
-		return Quaternion::Euler(0, y, 0);
+		return Quaternion::euler(0, y, 0);
 	}
 
-	return Quaternion::Euler(0, 22.5f * state.Range(0, 16), 0);
+	return Quaternion::euler(0, 22.5f * state.Range(0, 16), 0);
 }
 
 void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int sections) {
@@ -184,7 +184,7 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 		if (randomWeightedRoom)
 		{
 			Vector3f vector = this->m_pos
-				+ Quaternion::Euler(0, state.Range(0, 360), 0) * Vector3f::Forward() * radius;
+				+ Quaternion::euler(0, state.Range(0, 360), 0) * Vector3f::Forward() * radius;
 
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 
@@ -485,7 +485,7 @@ bool DungeonGenerator::PlaceOneRoom(VUtils::Random::State& state) {
 }
 
 void DungeonGenerator::CalculateRoomPosRot(const RoomConnection& roomCon, Vector3f pos, Quaternion rot, Vector3f& outPos, Quaternion& outRot) {
-	outRot = rot * Quaternion::Inverse(roomCon.m_localRot);
+	outRot = rot * Quaternion::inverse(roomCon.m_localRot);
 	outPos = pos - outRot * roomCon.m_localPos;
 }
 
@@ -501,7 +501,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State& state, decltype(m_openCo
 	Vector3f pos;
 	Quaternion rot;
 	this->CalculateRoomPosRot(connection2,
-		connection.m_pos, connection.m_rot * (VH_SETTINGS.dungeonsRoomsFlipped ? Quaternion::Euler(0, 180, 0) : Quaternion::IDENTITY),
+		connection.m_pos, connection.m_rot * (VH_SETTINGS.dungeonsRoomsFlipped ? Quaternion::euler(0, 180, 0) : Quaternion::IDENTITY),
 		pos, rot);
 
 	// this is making me want to rip my hair out

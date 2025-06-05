@@ -111,7 +111,7 @@ namespace VUtils::Physics {
     bool PointInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f pos2) {
         // Normalize the point relative to the rectangle
         //  Get the difference in positions, then apply inverse rotation
-        Vector3f pos = Quaternion::Inverse(rot1) * (pos2 - pos1);
+        Vector3f pos = Quaternion::inverse(rot1) * (pos2 - pos1);
 
         return PointInsideRect(size1, pos);
     }
@@ -121,7 +121,7 @@ namespace VUtils::Physics {
     {
         // Get the difference between the 2 angles
         // https://wirewhiz.com/quaternion-tips/
-        Quaternion rot = Quaternion::Inverse(rot1) * rot2;
+        Quaternion rot = Quaternion::inverse(rot1) * rot2;
 
         size2 *= .5f;
 
@@ -307,10 +307,10 @@ namespace VUtils::Physics {
         // solve for localPos
         // globalPos = parentPos + parentRot * (localPos);
         // globalPos - parentPos = parentRot * localPos
-        // localPos = Quaternion::Inverse(globalRot) * (globalPos - parentPos)
+        // localPos = Quaternion::inverse(globalRot) * (globalPos - parentPos)
 
-        auto localPos = Quaternion::Inverse(globalRot) * (globalPos - parentPos);
-        auto localRot = Quaternion::Inverse(globalRot) * parentRot;
+        auto localPos = Quaternion::inverse(globalRot) * (globalPos - parentPos);
+        auto localRot = Quaternion::inverse(globalRot) * parentRot;
 
         return { localPos, localRot };
 

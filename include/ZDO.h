@@ -543,7 +543,7 @@ private:
     }
 
     void _SetRotation(Quaternion rot) {
-        this->_SetRotation(rot.EulerAngles());
+        this->_SetRotation(rot.euler_angles());
     }
 
     
@@ -876,11 +876,11 @@ public:
     [[nodiscard]] ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion GetRotation() const {
-        return Quaternion::Euler(this->m_rotation);
+        return Quaternion::euler(this->m_rotation);
     }
 
     void SetRotation(Quaternion rot) {
-        auto&& euler = rot.EulerAngles();
+        auto&& euler = rot.euler_angles();
         if (euler != this->m_rotation) {
             this->m_rotation = euler;
             this->Revise();

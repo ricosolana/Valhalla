@@ -31,7 +31,7 @@ void VHTest::Test_ZDOConnectors() {
 }
 
 void VHTest::Test_Quaternion() {
-    assert(Quaternion::IDENTITY.EulerAngles() == Vector3f::Zero());
+    assert(Quaternion::IDENTITY.euler_angles() == Vector3f::Zero());
 }
 
 void VHTest::ZDO_Sets(ZDO zdo) {
@@ -55,7 +55,7 @@ void VHTest::Test_ZDO_Gets(ZDO zdo) {
     assert(*zdo.Get<Quaternion>("my quat") == Quaternion(0, 0, 0, 1));
 
     assert(zdo.GetPosition() == Vector3f(0, 5, 100));
-    //assert(zdo.GetRotation().LengthSquared() == Quaternion(1, 0, 0, 0).LengthSquared());
+    //assert(zdo.GetRotation().length_squared() == Quaternion(1, 0, 0, 0).length_squared());
 
     // TODO Quaternions are screwed up still, luckily everything else now works
     //  The test was wrong, (and thus the usage, for some reason char* was being interpreted as a int?)

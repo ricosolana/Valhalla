@@ -690,14 +690,14 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
 
                             if (zoneVegetation->m_chanceToUseGroundTilt > 0
                                 && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
-                                auto rotation2 = Quaternion::Euler(0, rot_y, 0);
-                                rotation = Quaternion::LookRotation(
+                                auto rotation2 = Quaternion::euler(0, rot_y, 0);
+                                rotation = Quaternion::look_rotation(
                                     normal.Cross(rotation2 * Vector3f::Forward()),
                                     normal
                                 );
                             }
                             else {
-                                rotation = Quaternion::Euler(rot_x, rot_y, rot_z);
+                                rotation = Quaternion::euler(rot_x, rot_y, rot_z);
                             }
 
                             // TODO rotation during generation are not correct
@@ -1020,15 +1020,15 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
         //    GetTerrainDelta(position, locationInstance.m_feature->m_exteriorRadius, num, vector2);
         //    Vector3f forward(vector2.x, 0.f, vector2.z);
         //    forward.Normalize();
-        //    rot = Quaternion::LookRotation(forward);
+        //    rot = Quaternion::look_rotation(forward);
         //    assert(false);
-        //    //Vector3f eulerAngles = rot.eulerAngles;
-        //    //eulerAngles.y = round(eulerAngles.y / 22.5f) * 22.5f;
-        //    //rot.eulerAngles = eulerAngles;
+        //    //Vector3f euler_angles = rot.euler_angles;
+        //    //euler_angles.y = round(euler_angles.y / 22.5f) * 22.5f;
+        //    //rot.euler_angles = euler_angles;
         //}
 
         if (location.m_randomRotation) {
-            rot = Quaternion::Euler(0, VUtils::Random::State().Range(0, 16) * 22.5f, 0);
+            rot = Quaternion::euler(0, VUtils::Random::State().Range(0, 16) * 22.5f, 0);
         }
 
         HASH_t seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
