@@ -232,12 +232,14 @@ void ZDO::SetPosition(Vector3f pos) {
             ZDOManager()->_InvalidateZDOZone(this);
 
             ZDOManager()->_RemoveFromSector(this);
-            this->_SetPosition(pos);
+            this->_SetPosition(pos); //unrevised
             ZDOManager()->_AddZDOToZone(this);
         }
         else {
             this->_SetPosition(pos);
         }
+
+        assert(IZoneManager::WorldToZonePos(pos) == GetZone());
 
         if (this->IsLocal())
             this->Revise();

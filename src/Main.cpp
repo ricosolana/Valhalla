@@ -1,6 +1,9 @@
 // main.cpp
+#include "DataStream.h"
+#include "VUtilsTraits.h"
 #include <filesystem>
 #include <quill/Backend.h>
+#include <quill/Logger.h>
 #include <string_view>
 #include <type_traits>
 #define SOL_ALL_SAFETIES_ON 1
@@ -36,8 +39,47 @@ int main(int argc, char **argv) {
     auto logger = quill::Frontend::create_or_get_logger("main", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
 
     LOG_INFO(logger, "Current path: {}", fs::current_path());
-    logger->flush_log();
+    
     fs::current_path("./data/");
+
+
+
+
+
+/*
+    avledet::util::Reader reader;
+
+    
+
+    auto func1 = [](std::string) {};
+    using firstarg1 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func1)>::args_type>;
+
+    avledet::util::Streamer<firstarg1>{};
+
+    avledet::util::Streamer<firstarg1>{}
+        .operator()(reader); //std::declval<avledet::util::Reader>())
+
+
+
+
+    auto func = [](DataWriter&) {};
+
+    
+
+    static constexpr auto val = avledet::util::invokable_read<decltype(func1)>;
+
+    //avledet::util::traits::is_callable<class T>
+
+    using firstarg = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func)>::raw_args_type>;
+    
+    //static constexpr auto valss = std::is_function_v<decltype(func)>;
+    static constexpr auto vsjs = std::is_same_v<
+        std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func)>::args_type>,
+        avledet::util::Writer&>;
+        
+
+*/
+
 
     {
 

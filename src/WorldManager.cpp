@@ -1,5 +1,6 @@
 #include <future>
 #include <quill/std/FilesystemPath.h>
+#include <string>
 
 #include "WorldManager.h"
 #include "VUtils.h"
@@ -45,6 +46,11 @@ World::World(DataReader reader) {
 	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
 		assert(false); //TODO
+		reader.read([](std::string key) {
+			//TODO starting keys
+		});
+
+		// old
 		//reader.AsEach([](std::string_view key) {
 		//	// TODO add starting keys
 		//});

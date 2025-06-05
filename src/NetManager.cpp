@@ -72,10 +72,9 @@ void INetManager::SendPlayerList() {
 
         writer.write(Hashes::Rpc::S2C_UpdatePlayerList);
 
-        assert(false); //TODO
-        /*
-        writer.SubWrite([this](DataWriter& writer) {
-            writer.write<int32_t>(m_onlinePeers.size());
+        //assert(false); //TODO
+        writer.write([this](DataWriter& writer) {
+            writer.write((std::uint32_t)m_onlinePeers.size());
 
             for (auto&& peer : m_onlinePeers) {
                 writer.write(peer->m_name);
@@ -94,7 +93,7 @@ void INetManager::SendPlayerList() {
                     }
                 }
             }
-        });*/
+        });
 
         for (auto&& peer : m_onlinePeers) {
             peer->Send(writer.get_buf());
@@ -179,7 +178,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
         if (peer->m_characterID)
             VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
-        peer->m_characterID.SetUID(characterID.GetUID());
+        //peer->m_characterID.set_id(characterID.get_id());
+        peer->m_characterID = characterID;
 
         LOG_INFO(m_logger, "Got CharacterID from {} ({})", peer->m_name, characterID);
         });
@@ -335,18 +335,18 @@ void INetManager::Update() {
     }
 
     // Send periodic data (2s)
-    if (VUtils::run_periodic<struct send_peer_time>(2s)) {
+    if (VUtils::run_periodic<struct periodic_peer_nettime>(2s)) {
         SendNetTime();
     }
 
     if (VH_SETTINGS.playerListSendInterval > 0s) {
-        if (VUtils::run_periodic<struct periodic_player_list>(VH_SETTINGS.playerListSendInterval)) {
+        if (VUtils::run_periodic<struct periodic_peer_tablist>(VH_SETTINGS.playerListSendInterval)) {
             SendPlayerList();
         }
     }
 
     // Send periodic pings (1s)
-    if (VUtils::run_periodic<struct periodic_peer_pings>(1s)) {
+    if (VUtils::run_periodic<struct periodic_peer_keepalive>(1s)) {
         DataWriter writer;
         writer.write((HASH_t)0);
         writer.write(true);

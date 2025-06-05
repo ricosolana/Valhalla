@@ -1,5 +1,7 @@
 #include <array>
+#include <quill/LogMacros.h>
 #include <range/v3/all.hpp>
+#include <stdexcept>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -20,13 +22,14 @@ IZDOManager* ZDOManager() {
 void IZDOManager::Init() {
 	//LOG_INFO(LOGGER, "Initializing ZDOManager");
 
+	m_logger = quill::Frontend::create_or_get_logger("zdomanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+
 	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
 			// TODO constraint check
-			assert(false); //TODO
-			//reader.AsEach([this](ZDOID zdoid) {
-			//	EraseZDO(zdoid);
-			//});
+			reader.read([this](ZDOID zdoid) {
+				EraseZDO(zdoid);
+			});
 		}
 	);
 
@@ -168,7 +171,12 @@ void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
 	if (auto&& container = _GetZDOContainer(zdo->GetZone())) {
 		auto&& insert = container->insert(zdo);
 
-		assert(insert.second);
+		assert(insert.second); //ensure newly inserted
+
+		//LOG_INFO(m_logger, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
+	} else {
+		// throw
+		throw std::runtime_error("invalid add zone");
 	}
 }
 
@@ -176,8 +184,12 @@ void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
 	if (auto&& container = _GetZDOContainer(zdo->GetZone())) {
 		auto&& erase = container->erase(zdo);
 
-		// TODO is this necessary?
+		// ensure zdo was actually erased
 		assert(erase);
+
+		//LOG_INFO(m_logger, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
+	} else {
+		throw std::runtime_error("invalid remove zone");
 	}
 }
 
@@ -348,11 +360,19 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	
 	// TODO use this
 	// https://jguegant.github.io/blogs/tech/performing-try-emplace.html
+	
+	//auto&& insert = m_objectsByID.try_emplace(zdoid);
+	// TODO unnecessary construction if element ALREADY exists
+	// TODO test only
+
 	auto&& insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
-	if (insert.second) {
-		auto&& pair = insert.first;
-		const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
-	}
+	//if (insert.second) { // if created
+	//	auto&& pair = insert.first;
+	//	const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
+	//}
+
+	//LOG_INFO(m_logger, "zdo instantiated: {} {}", insert.second, zdoid);
+
 	return insert;
 }
 
@@ -375,7 +395,7 @@ std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid,
 ZDO::unsafe_value IZDOManager::_Instantiate(Vector3f position) noexcept {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
-		zdoid.SetUID(m_nextUid++);
+		zdoid.set_id(m_nextUid++);
 		auto&& insert = _Instantiate(zdoid, position);
 		if (insert.second)
 			return ZDO::make_unsafe_value(insert.first);
@@ -543,6 +563,11 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 	auto&& zdo = ZDO::make_unsafe_value(itr);
 	auto&& zdoid = zdo->GetID();
 
+	// update local next only if im the user who created the zdo
+	if (zdoid.get_user_id() == VH_ID) {
+		this->m_nextUid = std::max(this->m_nextUid, zdoid.get_id() + 1);
+	}
+
 	//VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
 
 	_RemoveFromSector(zdo);
@@ -557,13 +582,26 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 	}
 
 	m_erasedZDOs.insert(zdoid);
+
+	//erase members
+	ZDO::m_floats.erase(zdoid);
+	ZDO::m_vec3.erase(zdoid);
+	ZDO::m_quats.erase(zdoid);
+	ZDO::m_ints.erase(zdoid);
+	ZDO::m_longs.erase(zdoid);
+	ZDO::m_strings.erase(zdoid);
+	ZDO::m_byteArrays.erase(zdoid);
+	ZDO::ZDO_OWNERS.erase(zdoid);
+	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 	
 	// erase members and connectors
-	assert(false); //TODO erase from all maps the entry for zdoid
+	//assert(false); //TODO erase from all maps the entry for zdoid
 	//ZDO::ZDO_MEMBERS.erase(zdoid);
 	////ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
 	
 	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
+
+	//LOG_INFO(m_logger, "zdo erased: {}", zdoid);
 
 	return m_objectsByID.erase(itr);
 }
@@ -863,10 +901,11 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 			writer.write(zdo->Owner());
 			writer.write(zdo->GetPosition());
 
-			assert(false); //TODO
-			//writer.SubWrite([zdo](DataWriter& writer) {
-			//	zdo->Pack(writer, true);
-			//});
+			//assert(false); //TODO
+
+			writer.write([zdo](DataWriter& writer) {
+				zdo->Pack(writer, true);
+			});
 
 			peer.m_zdos[zdo->GetID()] = { zdo->GetRevision(), time};
 		}
@@ -890,12 +929,12 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		if (peer->IsGated())
 			return;
 
-		assert(false); //TODO
-		//reader.AsEach([this](ZDOID zdoid) {
-		//	if (auto zdo = GetZDO(zdoid))
-		//		_InvalidateZDOZone(zdo);
-		//	}
-		//);
+		//assert(false); //TODO
+		reader.read([this](ZDOID zdoid) {
+			if (auto zdo = GetZDO(zdoid))
+				_InvalidateZDOZone(zdo);
+			}
+		);
 		
 		auto time = Valhalla()->Time();
 
@@ -971,7 +1010,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					//	continue;
 					//}
 
-					zdo->_SetPosition(pos);
+					zdo->_SetPosition(pos); //unrevised because is fresh zdo
 					_AddZDOToZone(zdo);
 					m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
 				}

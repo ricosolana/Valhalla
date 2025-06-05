@@ -103,7 +103,7 @@ public:
     }
 
     USER_ID_t GetUserID() {
-        return m_characterID.GetOwner();
+        return m_characterID.get_user_id();
     }
 
     bool IsMapVisible() const {
@@ -186,25 +186,22 @@ public:
             return;
 
         DataWriter writer;
-
         writer.write(Hashes::Rpc::RoutedRPC);
 
-        assert(false); //ADDRESS THE BELOW
-        /*
-        writer.SubWrite([&](DataWriter& writer) {
+        //assert(false); //ADDRESS THE BELOW
+        writer.write([&](DataWriter& writer) {
             // routed rpc spec
             writer.write<int64_t>(0); // msg id
             writer.write(VH_ID); // sender
-            writer.write(m_characterID.GetOwner()); // target
+            writer.write(m_characterID.get_user_id()); // target
             writer.write(targetZDO); // target ZDO
             writer.write(hash); // routed method hash
             // FIrst subwrite the routedrpc parameter package then nest the params within it
-            assert(false); //ADDRESS THE BELOW
-            //writer.SubWrite([func](DataWriter& writer) {
-            //    writer.SubWrite(func); // explicit parameter as a package (length + array)
-            //});
+            //assert(false); //ADDRESS THE BELOW
+            writer.write([func](DataWriter& writer) {
+                writer.write(func); // explicit parameter as a package (length + array)
+            });
         });
-        */
 
         // Prefix
         //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, bytes))

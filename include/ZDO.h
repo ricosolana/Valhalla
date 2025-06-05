@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -138,6 +139,41 @@ private:
         }
     };
 
+    struct equal_to //<std::unique_ptr<ZDO>>
+    {
+        using is_transparent = void;
+
+        bool operator()(std::unique_ptr<ZDO> const& lhs, std::unique_ptr<ZDO> const& rhs) const 
+        {
+            assert(lhs && rhs);
+            return lhs->GetID() == rhs->GetID();
+        }
+
+        bool operator()(ZDO* const& lhs, ZDO* const& rhs) const 
+        {
+            assert(lhs && rhs);
+            return lhs->GetID() == rhs->GetID();
+        }
+
+        bool operator()(ZDOID const& lhs, std::unique_ptr<ZDO> const& rhs) const 
+        {
+            assert(lhs && rhs);
+            return lhs == rhs->GetID();
+        }
+
+        bool operator()(ZDOID const& lhs, ZDO* const& rhs) const 
+        {
+            assert(lhs && rhs);
+            return lhs == rhs->GetID();
+        }
+
+        //bool operator()(std::unique_ptr<ZDO> const& rhs, ZDOID const& lhs) const 
+        //{
+        //    assert(lhs && rhs);
+        //    return lhs == rhs->GetID();
+        //}
+    };
+
 
 
     template <class T>
@@ -162,7 +198,7 @@ private:
 
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
-    static inline ankerl::unordered_dense::segmented_map<ZDOID, USER_ID_t> ZDO_OWNERS;
+    static inline ankerl::unordered_dense::segmented_map<ZDOID, std::int64_t> ZDO_OWNERS;
 
     template <class T>
         requires is_member_v<T>
@@ -400,9 +436,9 @@ public:
     using unsafe_value = ZDO*;
     using unsafe_optional = ZDO*;
 
-    using container = UNORDERED_SET_t<std::unique_ptr<ZDO>, hash, std::equal_to<>>;
+    using container = UNORDERED_SET_t<std::unique_ptr<ZDO>, hash, equal_to>;
     using id_container = UNORDERED_SET_t<ZDOID, hash, std::equal_to<>>; // hetero hash?
-    using ref_container = UNORDERED_SET_t<unsafe_value, hash, std::equal_to<>>;
+    using ref_container = UNORDERED_SET_t<unsafe_value, hash, equal_to>;
     
     [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
         return itr->get();
@@ -686,7 +722,7 @@ public:
     [[nodiscard]] std::string_view    GetString(      HASH_t key, std::string_view value) const {                 auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     [[nodiscard]] const BYTES_t*      GetBytes(       HASH_t key) const {                                         return Get<BYTES_t>(key); }
     [[nodiscard]] bool                GetBool(        HASH_t key, bool value) const {                             return GetInt(key, value ? 1 : 0); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.GetOwner()), GetLong(key.second, value.GetUID())); }
+    [[nodiscard]] ZDOID               GetZDOID(       std::pair<HASH_t, HASH_t> key, ZDOID value) const {         return ZDOID(GetLong(key.first, value.get_user_id()), GetLong(key.second, value.get_id())); }
 
     // Hash-key default getters
     [[nodiscard]] float               GetFloat(       HASH_t key) const {                                         return Get<float>(key, {}); }
@@ -733,8 +769,8 @@ public:
     // Special hash setters
     void Set(HASH_t key, bool value) { Set(key, value ? (int32_t)1 : 0); }
     void Set(const std::pair<HASH_t, HASH_t>& key, ZDOID value) {
-        Set(key.first, value.GetOwner());
-        Set(key.second, (int64_t)value.GetUID());
+        Set(key.first, value.get_user_id());
+        Set(key.second, (int64_t)value.get_id());
     }
 
 

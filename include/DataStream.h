@@ -7,6 +7,7 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include <bit>
 #include <cstdint>
@@ -126,24 +127,24 @@ namespace avledet::util {
         static Reader from_file(std::filesystem::path path);
 
     public:
-        template <StreamableShape Sh, class T>
+        template <class ...T, StreamableShape Sh=NetworkShape>
+            requires (sizeof...(T) >= 1)
+        decltype(auto) read(T&&... args) {
+            return Streamer<std::remove_cvref_t<T>..., Sh>{}.operator()(*this, std::forward<T>(args)...);
+        }
+
+        template <class T, StreamableShape Sh=NetworkShape>
         decltype(auto) read() {
             return Streamer<std::remove_cvref_t<T>, Sh>{}.operator()(*this);
         }
 
-        template <class T>
-            requires (!(StreamableShape<T>))
-        decltype(auto) read() {
-            return read<NetworkShape, T>();
-        }
-
-
-        // keep to test
-        template <class ...T>
-            requires (sizeof...(T) >= 2 && ((!StreamableShape<T>) && ...))
+        template <class ...T, StreamableShape Sh=NetworkShape>
+            requires (sizeof...(T) >= 2)
         std::tuple<T...> read() {
-            return { this->template read<T>()... };
+            return { this->template read<T, Sh>()... };
         }
+
+
 
         // TODO wrap into read instead
         template<class...T, class RD>
@@ -344,18 +345,29 @@ namespace avledet::util {
         }
     };
 
-    //"sub"write
-    //  writes all sub counts
+    template <typename T> 
+    concept invokable_read1 = requires(T t) {
+        { &T::operator() }; // -> std::convertible_to<typename From, typename To>;
+        //{ !std::is_same_v<Writer&, std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>> };
+        
+        //{ t == u } -> std::convertible_to<bool>;
+        //{ u == t } -> std::convertible_to<bool>;
+    };
+
+    // nested byte write
     //  then returns to the original position, writes the following bytes written
-    template <class T>
-        //requires avledet::util::traits::func_traits<T>::
-        requires (std::is_invocable_v<T, Writer&> 
-            && std::is_same_v<
-                std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::raw_args_type>,
-                Writer&>
-        )
+    //template <class T>
+    template <invokable_read1 T>
+        //requires (std::is_invocable_v<T, Writer&> 
+        //    && std::is_same_v<
+        //        std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::raw_args_type>,
+        //        Writer&>
+        //)
+
     struct Streamer<T> { //<std::function<void(Writer&)>> {
         void operator()(Writer& writer, T const& value) const {
+            static_assert(std::is_invocable_v<T, Writer&>, "Writer::write(func) must have a Writer& as argument");
+
             const auto start = writer.get_pos();
             std::uint32_t count = 0;
             writer.write(count); //dummy
@@ -371,11 +383,59 @@ namespace avledet::util {
             writer.set_pos(end);
         }
 
-        //makes no sense to deserialize a foreach function
-        //decltype(auto) operator()(Reader& reader) const {
-        //}
+        // usage: (as for_each)
+        //  reader.read([](Object next) {
+        //      ...
+        //  })
+        bool operator()(Reader& reader, T const& func) const {
+            static_assert(!std::is_invocable_v<T, Writer&>, "Reader::read(func) must accept simple readable types (not a 'Writer' as arg)");
+            using Type = std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::raw_args_type>;
+
+            auto count = reader.read<std::uint32_t>();
+            for (decltype(count) i=0; i < count; i++) {
+                func(reader.read<Type>());
+            }
+
+            return count > 0;
+        }
     };
 
+
+
+    //template <class T>
+    //concept invokable_read = (T) {
+    //    Streamer<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>>{}
+//
+    //    //Streamer<std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>>{}
+    //    //    .operator()(std::declval<Reader&>())
+    //};
+
+    // container foreach(...) read
+    //  writes all sub counts
+    //  then returns to the original position, writes the following bytes written
+    //template <invokable_read T>
+    
+    //template <class T>
+    //    requires std::is_invocable_v<
+    //        decltype(Streamer<    
+    //            typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>
+    //        >{}.operator()),
+    //        Reader
+    //    >
+    /*
+    template <invokable_read1 T>
+    struct Streamer<T> {
+        //makes no sense to deserialize a foreach function
+        int operator()(Reader& reader, T const& func) const {
+            assert(false); //TODO
+            //auto count = reader.read<std::uint32_t>();
+            //for (decltype(count) i=0; i < count; i++) {
+            //    
+            //}
+            return 1;
+        }
+    };
+    */
 }// namespace avledet::util
 
 using DataReader = avledet::util::Reader;

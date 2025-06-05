@@ -34,7 +34,7 @@ Peer::Peer(ISocket::Ptr socket)
 
     this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
         rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
-            rpc->m_characterID.SetOwner(reader.read<int64_t>());
+            rpc->m_characterID.set_user_id(reader.read<int64_t>());
 #if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
                 throw std::runtime_error("peer provided 0 owner");

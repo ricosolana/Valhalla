@@ -1,5 +1,6 @@
 #pragma once
 
+#include <quill/Logger.h>
 #include <vector>
 #include <functional>
 #include <range/v3/all.hpp>
@@ -59,6 +60,8 @@ private:
 
 	// Increments over the course of the game as ZDOs are created
 	uint32_t m_nextUid = 1;
+
+	quill::Logger* m_logger;
 
 private:
 	// Called when an authenticated peer joins (internal)

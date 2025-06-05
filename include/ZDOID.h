@@ -18,10 +18,10 @@ class ZDOID {
     // User: 0, ID: 1
     //BitPack<UType, VH_USER_BITS_I_, sizeof(UType) * 8 - VH_USER_BITS_I_> m_pack;
 
-    USER_ID_t m_userID{};
-    uint32_t m_id{};
+    std::int64_t m_user_id{};
+    std::uint32_t m_id{};
 
-    uint32_t m_unusedPadding = 0;
+    
         
     // Indexed UserIDs
     //  Capacity is equal to USER mask due to a ZDOID USER index of 0 referring to no active owner
@@ -34,6 +34,8 @@ class ZDOID {
 
 public:
     static const ZDOID NONE;
+
+    std::uint32_t m_unusedPadding = 0;
 
 private:
     // Get the index of a UserID
@@ -77,14 +79,12 @@ private:
 
 public:
     ZDOID() = default;
-
-    ZDOID(USER_ID_t owner, uint32_t uid);
-
+    ZDOID(std::int64_t user_id, std::uint32_t id);
     ZDOID(const ZDOID&) = default;
 
     bool operator==(const ZDOID &other) const noexcept {
         //return this->m_pack == other.m_pack;
-        return this->m_userID == other.m_userID 
+        return this->m_user_id == other.m_user_id 
             && this->m_id == other.m_id;
     }
 
@@ -99,15 +99,15 @@ public:
     }
 
     // TODO rename to User
-    USER_ID_t GetOwner() const {
+    std::int64_t get_user_id() const {
         //return INDEXED_USERS[_GetUserIDIndex()];
-        return m_userID;
+        return this->m_user_id;
     }
 
     // Rename to SetUserID
-    void SetOwner(USER_ID_t owner) {
+    void set_user_id(std::int64_t user_id) {
         //_SetUserIDIndex(this->EnsureUserIDIndex((int64_t)owner));
-        this->m_userID = owner;
+        this->m_user_id = user_id;
     }
 
 
@@ -123,21 +123,21 @@ public:
     }*/
 
     // TODO rename to GetID
-    uint32_t GetUID() const {
+    std::uint32_t get_id() const {
         //return m_pack.Get<ID_PACK_INDEX>();
         return this->m_id;
     }
 
     // TODO rename to SetID
-    void SetUID(uint32_t uid) {
+    void set_id(std::uint32_t id) {
         //m_pack.Set<ID_PACK_INDEX>(uid);
-        this->m_id = uid;
+        this->m_id = id;
     }
 
 
 
     friend std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid) {
-        st << (int64_t)zdoid.GetOwner() << ":" << zdoid.GetUID();
+        st << (std::int64_t)zdoid.get_user_id() << ":" << zdoid.get_id();
         return st;
     }
 };
@@ -154,6 +154,7 @@ struct ankerl::unordered_dense::hash<avledet::sync::ZDOID> {
     static_assert(std::has_unique_object_representations_v<avledet::sync::ZDOID>);
 
     auto operator()(avledet::sync::ZDOID const& value) const noexcept -> std::uint64_t {
+        assert(value.m_unusedPadding == 0);
         return ankerl::unordered_dense::detail::wyhash::hash(&value, sizeof(value));
     }
 };
@@ -162,12 +163,12 @@ template <>
 struct avledet::util::Streamer<avledet::sync::ZDOID> {
     void operator()(avledet::util::Writer& writer, avledet::sync::ZDOID const& zdoid) {
         //assert(false); // TODO
-        writer.write(zdoid.GetOwner()); //8 is first
-        writer.write(zdoid.GetUID());//4 is second
+        writer.write(zdoid.get_user_id()); //8 is first
+        writer.write(zdoid.get_id());//4 is second
     }
 
     avledet::sync::ZDOID operator()(avledet::util::Reader& reader) {
-        throw std::runtime_error("TODO");
+        //throw std::runtime_error("TODO");
         return avledet::sync::ZDOID(
             reader.read<std::int64_t>(),
             reader.read<std::uint32_t>()
