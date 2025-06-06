@@ -127,15 +127,15 @@ private:
     
         [[nodiscard]] auto operator()(std::unique_ptr<ZDO> const& value) const noexcept -> std::uint64_t {
             assert(value);
-            return ankerl::unordered_dense::hash<avledet::sync::ZDOID>{}(value->m_id);
+            return ankerl::unordered_dense::hash<avledet::util::ZDOID>{}(value->m_id);
         }
 
         [[nodiscard]] auto operator()(ZDO const* v) const noexcept -> uint64_t {
             return ankerl::unordered_dense::hash<ZDOID>{}(v->m_id);
         }
     
-        [[nodiscard]] auto operator()(avledet::sync::ZDOID const& value) const noexcept -> std::uint64_t {
-            return ankerl::unordered_dense::hash<avledet::sync::ZDOID>{}(value);
+        [[nodiscard]] auto operator()(avledet::util::ZDOID const& value) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::ZDOID>{}(value);
         }
     };
 
@@ -180,13 +180,13 @@ private:
     using Tree = gtl::btree_map<avledet::util::Hash, T>;
 
     template <class T>
-	using VarMap = ankerl::unordered_dense::segmented_map<avledet::sync::ZDOID,
+	using VarMap = ankerl::unordered_dense::segmented_map<avledet::util::ZDOID,
         Tree<T>,
         ZDO::hash, std::equal_to<>
     >;
 
 	// zdo hash members
-	//ankerl::unordered_dense::map<avledet::sync::ZDOID, std::pair<ZDO::ConnectionType, HASH_t>, avledet::sync::ZDO::hash, std::equal_to<>> s_connectionsHashData;
+	//ankerl::unordered_dense::map<avledet::util::ZDOID, std::pair<ZDO::ConnectionType, HASH_t>, avledet::sync::ZDO::hash, std::equal_to<>> s_connectionsHashData;
 	
 	static inline VarMap<float> m_floats;
 	static inline VarMap<avledet::util::CSU::Vector3f> m_vec3;
@@ -234,14 +234,14 @@ private:
 	}
 
     //template <class T>
-    //static std::pair<bool, Tree<T>*> _GetVarTree(avledet::sync::ZDOID const& uid) {
+    //static std::pair<bool, Tree<T>*> _GetVarTree(avledet::util::ZDOID const& uid) {
     //    auto&& map = _GetVars<T>();
     //    auto&& emp = map.try_emplace(uid);
     //    return { emp.second, emp.first->second };
     //}
 
     template <class T, bool create=true>
-    static std::pair<bool, Tree<T>*> _GetVarTree(avledet::sync::ZDOID const& uid) {
+    static std::pair<bool, Tree<T>*> _GetVarTree(avledet::util::ZDOID const& uid) {
         auto&& map = _GetVars<T>();
         if constexpr (create) {
             auto&& emp = map.try_emplace(uid);
@@ -259,7 +259,7 @@ private:
 
     template <class T>
         //requires is_member_v<T> //std::remove_cvref_t<T>>
-    static bool _set(avledet::sync::ZDOID const& uid, avledet::util::Hash key, T data) {
+    static bool _set(avledet::util::ZDOID const& uid, avledet::util::Hash key, T data) {
         auto&& [ inserted, tree] = _GetVarTree<T>(uid);
         assert(tree);
         return _set(*tree, key, std::move(data)) || inserted;
@@ -565,7 +565,7 @@ private:
     * 32 bytes total:
     */
 
-    ZDOID m_id;                                             // 8 bytes
+    ZDOID m_id;                                             // 4 bytes
     mutable Vector3f m_pos;                                 // 12 bytes
     mutable ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
     mutable Vector3f m_rotation;                            // 12 bytes
@@ -576,6 +576,8 @@ private:
     //  and to remove several (2 currently) types of broken
     //  prefabs
     //  32-bits to
+
+    
 
 public:
     ZDO(ZDOID id)
@@ -1008,3 +1010,6 @@ public:
 namespace avledet::sync {
     using ZDO = ::ZDO;
 }
+
+//36 bytes
+static constexpr auto dsfgadr = sizeof(::ZDO);

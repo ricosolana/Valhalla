@@ -60,44 +60,49 @@
 #endif
 
 // Ensure that the bits
-#if defined(VH_USER_BITS)
-    // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
-    
-    // ensure esp32 is always 32 bit
-    // 
-    #if VH_USER_BITS >= 2 && VH_USER_BITS <= 7
-        #define VH_USER_BITS_I_ VH_USER_BITS
+#if defined(VH_USERID_BITS)
+    #if VH_USERID_BITS >= 6 && VH_USERID_BITS <= 12
+        #define VH_USERID_BITS_I_ VH_USERID_BITS
     #else
-        #error "User bits must be between 2 and 7 (inclusive)"
+        #error "User bits must be between 6 and 12 for optimal performance"
     #endif
 #else
-    #define VH_USER_BITS_I_ 12
+    #define VH_USERID_BITS_I_ 12
 #endif
 
-/*
+// Bit allocation for ZDOIDs
+//  ZDOIDs are 32bit, so good use of the bits must occur
+//  During world load, as of version <?>, all ZDOIDs are trimmed away, and ZDOs are initialized with UserID=0, and an incrementing ID
+//  If the world is especially large (1M+ ZDOs...), ID pool exhaustion could occur during world load
+//  ---
+//  Requirements:
+//      UserID must remain stable (number must be intact for certain ZDOs which use it as a direct User/owner ref)
+//  Impl:
+//      On world load, simply load ZDOIDs as normal
+//      When ID exhaustion occurs for a given UserID,
+//      Create a new UserID entry in [UserID pool], at back, but equal to UserID
+//  To perform [UserID / ID] lookup:
+//      If significant-most bit in pack is 1: then assume pool exhaustion has occured for this node, and thus the different approach must be used
+//      Otherwise, search for UserID[zdoid.UserIDIndex]
+//  
+//  A good relationship of
 // The default are the remaining bits from VH_USER_BITS
 #if defined(VH_ID_BITS)
-    #error "Setting custom id bits not yet supported"
+    #error "Setting custom ZDOID ID bits not yet supported"
 
     // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
-    #if VH_ID_BITS > 1 && VH_ID_BITS < 8
-        #define VH_ID_BITS_I_ VH_ID_BITS
-    #else
-        #error "ID bits must be between 1 and 8 (inclusive)"
-    #endif
-#else
-    //#if defined(VH_USER_BITS)
-    //    #if VH_IS_ON(VH_PLATFORM_ESP32)
-    //        #define VH_ID_BITS_I_ 1
-    //    #else
-    //        #define VH_ID_BITS_I_ 
-    //    #endif
+    //#if VH_ID_BITS > 1 && VH_ID_BITS < 8
+    //    #define VH_ID_BITS_I_ VH_ID_BITS
     //#else
-
-        #define VH_ID_BITS_I_ (32 - VH_USER_BITS_I_)
+    //    #error "ID bits must be between 1 and 8 (inclusive)"
     //#endif
+#else
+    #if defined(VH_USERID_BITS)
+        #define VH_ID_BITS_I_ 
+    #else
+        #define VH_ID_BITS_I_ (32 - VH_USERID_BITS_I_)
+    #endif
 #endif
-*/
 
 /*
 // Whether to include only core Valheim functionality

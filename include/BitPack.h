@@ -52,10 +52,10 @@ public:
     static constexpr auto capacity_v = capacity<index>::value;
 
 private:
-    T m_data{};
+    T m_data;
 
 public:
-    constexpr BitPack() {}
+    constexpr BitPack() : m_data{} {}
     constexpr BitPack(T data) : m_data(data) {}
 
     void operator=(const BitPack<T, COUNTS...>& other) {
@@ -135,5 +135,9 @@ public:
         m_data |= (value & capacity_v<index>) << offset_v<index>;
 
         assert((Get<index>() & value) == value);
+    }
+
+    T get_value() const {
+        return m_data;
     }
 };
