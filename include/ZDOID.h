@@ -169,10 +169,9 @@ struct avledet::util::Streamer<avledet::sync::ZDOID> {
 
     avledet::sync::ZDOID operator()(avledet::util::Reader& reader) {
         //throw std::runtime_error("TODO");
-        return avledet::sync::ZDOID(
-            reader.read<std::int64_t>(),
-            reader.read<std::uint32_t>()
-        );
+        auto user_id = reader.read<std::int64_t>();
+        auto id = reader.read<std::uint32_t>();
+        return avledet::sync::ZDOID(user_id, id);
     }
 };
 

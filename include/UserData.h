@@ -28,5 +28,7 @@ struct avledet::util::Streamer<UserProfile> {
 
 	decltype(auto) operator()(Reader& reader) const {
 		throw std::runtime_error("nyi");
+		// TODO read seperately, not like UserData(read(), read(), read())
+		// because these could be out of order, causing UBF
 	}
 };

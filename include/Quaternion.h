@@ -61,12 +61,11 @@ struct avledet::util::Streamer<avledet::util::CSU::Quaternion> {
     }
 
     decltype(auto) operator()(Reader& reader) {
-        return avledet::util::CSU::Quaternion(
-            reader.read<float>(),
-            reader.read<float>(),
-            reader.read<float>(),
-            reader.read<float>()
-        );
+        auto x = reader.read<float>();
+        auto y = reader.read<float>();
+        auto z = reader.read<float>();
+        auto w = reader.read<float>();
+        return avledet::util::CSU::Quaternion(x, y, z, w);
     }
 };
 

@@ -324,10 +324,9 @@ namespace avledet::util {
         }
 
         decltype(auto) operator()(Reader& reader) {
-            return avledet::util::CSU::Vector2<Num>(
-                reader.read<Num>(),
-                reader.read<Num>()
-            );
+            auto x = reader.read<Num>();
+            auto y = reader.read<Num>();
+            return avledet::util::CSU::Vector2<Num>(x, y);
         }
     };
 
@@ -340,11 +339,10 @@ namespace avledet::util {
         }
         
         decltype(auto) operator()(Reader& reader) {
-            return avledet::util::CSU::Vector3<Num>(
-                reader.read<Num>(),
-                reader.read<Num>(),
-                reader.read<Num>()
-            );
+            auto x = reader.read<Num>();
+            auto y = reader.read<Num>();
+            auto z = reader.read<Num>();
+            return avledet::util::CSU::Vector3<Num>(x, y, z);
         }
     };
 }
@@ -421,6 +419,7 @@ QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::CSU::Vector3f)
 
 
 // Compatibility usings
+//  TODO remove once migrations are completed
 using Vector2f = avledet::util::CSU::Vector2f;
 using Vector2i = avledet::util::CSU::Vector2i;
 using Vector2s = avledet::util::CSU::Vector2s;

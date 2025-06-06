@@ -278,7 +278,7 @@ namespace avledet::util {
         static_assert(!std::is_arithmetic_v<T>, "do not use slow overload for arithmetic types");
 
         void operator()(Writer& writer, T const& value) const {
-            writer.write(static_cast<std::int32_t>(value.size()));
+            writer.write((std::uint32_t)value.size());
             for (auto&& e : value) {
                 writer.write(e);
             }
@@ -286,8 +286,8 @@ namespace avledet::util {
 
         decltype(auto) operator()(Reader& reader) const {
             T value{};
-            const auto size = reader.read<std::int32_t>();
-            for (int i = 0; i < size; i++) {
+            auto size = reader.read<std::uint32_t>();
+            for (decltype(size) i = 0; i < size; i++) {
                 value.insert(value.end(),
                     reader.read<typename T::value_type>());
             }
