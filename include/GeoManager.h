@@ -45,14 +45,14 @@ private:
 	float m_offset2;
 	float m_offset3;
 	float m_offset4;
-	int32_t m_riverSeed;
-	int32_t m_streamSeed;
+	std::int32_t m_riverSeed;
+	std::int32_t m_streamSeed;
 	std::vector<Vector2f> m_lakes;
 	std::vector<River> m_rivers;
 	std::vector<River> m_streams;
 
 	std::mutex m_mutRiverCache;
-	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> m_riverPoints;
+	avledet::util::Map<Vector2i, std::vector<RiverPoint>> m_riverPoints;
 	//std::vector<RiverPoint> m_cachedRiverPoints; //RiverPoint[] m_cachedRiverPoints;
 	std::vector<RiverPoint>* m_cachedRiverPoints;
 	Vector2i m_cachedRiverGrid = { -999999, -999999 };
@@ -131,10 +131,10 @@ private:
 	bool HaveRiver(const std::vector<River>& rivers, Vector2f p0, Vector2f p1) const;
 	bool IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float heightLimit) const;
 	void RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
+	void AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>>& riverPoints,
 		Vector2f p,
 		float r);
-	void AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
+	void AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r);
 	//bool InsideRiverGrid(const Vector2i& grid, const Vector2f& p, float r);
 
 	//Vector2i GetRiverGrid(float wx, float wy);
@@ -167,26 +167,26 @@ public:
 
 	Vector2i GetRiverGrid(float wx, float wy);
 
-	BiomeArea GetBiomeArea(Vector3f point);
+	avledet::util::BiomeArea GetBiomeArea(Vector3f point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(Vector3f point);
+	avledet::util::Biome GetBiome(Vector3f point);
 
 	// Get the biome at world coordinates
-	Biome GetBiome(float x, float z);
+	avledet::util::Biome GetBiome(float x, float z);
 
 	// Get all the biomes within a radius
-	//Biome GetBiomes(float x, float y, float radius)
+	//avledet::util::Biome GetBiomes(float x, float y, float radius)
 
 	// Get all the corner biomes within this zone
-	Biome GetBiomes(float x, float y);
+	avledet::util::Biome GetBiomes(float x, float y);
 
 	// Get the terrain height at world coordinates
 	float GetHeight(float x, float z);
 
 	// Get the terrain height at world coordinates, with mistlands color mask
 	float GetHeight(float x, float z, float& mask);
-	float GetBiomeHeight(Biome biome, float wx, float wy, float& mask);
+	float GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, float& mask);
 
 	bool InForest(Vector3f pos);
 
@@ -196,7 +196,7 @@ public:
 
 	int GetSeed();
 
-	static constexpr int32_t worldSize = 10000;
+	static constexpr std::int32_t worldSize = 10000;
 
 	static constexpr float waterEdge = 10500;
 };

@@ -16,16 +16,16 @@ IRouteManager* RouteManager() {
 
 
 void IRouteManager::OnNewPeer(Peer &peer) {
-	peer.Register(Hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
+	peer.Register(avledet::util::hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
 		if (peer->IsGated())
 			return;
 
-		reader.read<int64_t>(); // skip msgid
-		/*DataWriter(BYTE_VIEW_t(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/ 
-		reader.read<USER_ID_t>(); // skip sender
-		auto target = reader.read<USER_ID_t>();
+		reader.read<std::int64_t>(); // skip msgid
+		/*DataWriter(avledet::util::ByteView(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/ 
+		reader.read<avledet::util::UserID>(); // skip sender
+		auto target = reader.read<avledet::util::UserID>();
 		auto targetZDO = reader.read<ZDOID>();
-		auto hash = reader.read<HASH_t>();
+		auto hash = reader.read<avledet::util::Hash>();
 		auto params = DataReader(reader.read<std::vector<char>>());
 
 		/*
@@ -53,7 +53,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			for (auto&& other : peers) {
 				// Ignore the src peer
 				if (peer->GetUserID() != other->GetUserID()) {
-					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
+					other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 		}
@@ -63,8 +63,8 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
 						return;
 
-					//other->Invoke(Hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(Hashes::Rpc::RoutedRPC, (int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
+					//other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);
+					other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
 				}
 			}
 			else {

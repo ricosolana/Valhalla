@@ -20,7 +20,7 @@ class IZDOManager {
 
 	// Predicate for whether a zdo is a prefab with or without given flags
 	//	prefabHash: if 0, then prefabHash check is skipped
-	static bool PREFAB_CHECK_FUNCTION(ZDO::unsafe_value zdo, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	static bool PREFAB_CHECK_FUNCTION(ZDO::unsafe_value zdo, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& prefab = zdo->GetPrefab();
 
 		return prefab.AllFlagsAbsent(flagsAbsent)
@@ -40,7 +40,7 @@ private:
 
 	// Contains ZDOs according to prefab
 	//	TODO is this necessary?
-	UNORDERED_MAP_t<HASH_t, ZDO::ref_container> m_objectsByPrefab;
+	avledet::util::Map<avledet::util::Hash, ZDO::ref_container> m_objectsByPrefab;
 
 	// Responsible for managing ZDOs lifetimes
 	//	A segmented map is used instead of a vector map
@@ -56,10 +56,8 @@ private:
 	//std::vector<ZDO> m_zdoInsertQueue; // TODO create all zdos before sendZdos in Update to sync
 	//std::vector<ZDO> m_zdoEraseQueue; // TODO use zdoid
 
-	BYTES_t m_temp;
-
 	// Increments over the course of the game as ZDOs are created
-	uint32_t m_nextUid = 1;
+	std::uint32_t m_nextUid = 1;
 
 	quill::Logger* m_logger;
 
@@ -196,9 +194,9 @@ public:
 	void Load(DataReader& reader, int version);
 
 	[[maybe_unused]] ZDO::unsafe_value Instantiate(const Prefab& prefab, Vector3f pos);
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab);
+	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
 
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(HASH_t hash, Vector3f pos) {
+	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos) {
 		return Instantiate(hash, pos, nullptr);
 	}
 	// TODO either correctly implement or?
@@ -226,14 +224,14 @@ public:
 	
 
 	// Get a capped number of ZDOs within a radius matching an optional predicate
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, size_t max, pred_t pred);
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, std::size_t max, pred_t pred);
 	// Get a capped number of ZDOs within a radius
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, size_t max) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, std::size_t max) {
 		return SomeZDOs(pos, radius, max, nullptr);
 	}
 	// Get a capped number of ZDOs with prefab and/or flag
 	//	*Note: Prefab or Flag must be non-zero for anything to be returned
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(Vector3f pos, float radius, std::size_t max, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(pos, radius, max, 
 			[&](ZDO::unsafe_value zdo) {
 				return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
@@ -242,13 +240,13 @@ public:
 	}
 
 	// Get a capped number of ZDOs within a zone matching an optional predicate
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max, pred_t pred);
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, std::size_t max, pred_t pred);
 	// Get a capped number of ZDOs within a zone
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, std::size_t max) {
 		return SomeZDOs(zone, max, nullptr);
 	}
 	// Get a capped number of ZDOs within a radius in zone with prefab and/or flag
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, std::size_t max, Vector3f pos, float radius, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		float sqRadius = radius * radius;
 		return SomeZDOs(zone, max, [&](ZDO::unsafe_value zdo) {
 			return zdo->GetPosition().sq_distance_to(pos) <= sqRadius
@@ -256,18 +254,18 @@ public:
 		});
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, std::size_t max, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(zone, max, Vector3f::zero(), std::numeric_limits<float>::max(), prefab, flagsPresent, flagsAbsent);
 	}
 	// Get a capped number of ZDOs within a zone with prefab and/or flag
-	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, size_t max, Vector3f pos, float radius) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> SomeZDOs(ZoneID zone, std::size_t max, Vector3f pos, float radius) {
 		return SomeZDOs(zone, max, pos, radius, 0, Prefab::Flag::NONE, Prefab::Flag::NONE);
 	}
 
 
 	// Get all ZDOs with prefab
 	//	This method is optimized assuming VH_STANDARD_PREFABS is on
-	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(HASH_t prefab);
+	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(avledet::util::Hash prefab);
 	
 	// Get all ZDOs fulfilling a given predicate
 	//	Try to avoid using this method too frequently (it iterates all ZDOs in the world, which is *very* slow)
@@ -291,7 +289,7 @@ public:
 	}
 
 	// Get all ZDOs within a radius with prefab and/or flag
-	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(Vector3f pos, float radius, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(pos, radius, -1, prefab, flagsPresent, flagsAbsent);
 	}
 
@@ -306,13 +304,13 @@ public:
 		return SomeZDOs(zone, -1, nullptr);
 	}
 	// Get all ZDOs within a zone of prefab and/or flag
-	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(ZoneID zone, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(ZoneID zone, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return SomeZDOs(zone, -1, [&](ZDO::unsafe_value zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
 		});
 	}
 	// Get all ZDOs within a radius in zone
-	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(ZoneID zone, Vector3f pos, float radius, HASH_t prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] std::list<ZDO::unsafe_value> GetZDOs(ZoneID zone, Vector3f pos, float radius, avledet::util::Hash prefab, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		const auto sqRadius = radius * radius;
 		return SomeZDOs(zone, -1, [&](ZDO::unsafe_value zdo) {
 			return zdo->GetPosition().sq_distance_to(pos) <= sqRadius
@@ -326,14 +324,14 @@ public:
 
 
 	// Get any ZDO within a radius with prefab and/or flag
-	[[nodiscard]] ZDO::unsafe_optional AnyZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] ZDO::unsafe_optional AnyZDO(Vector3f pos, float radius, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& zdos = SomeZDOs(pos, radius, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
 			return ZDO::unsafe_nullopt;
 		return zdos.front();
 	}
 	// Get any ZDO within a zone with prefab and/or flag
-	[[nodiscard]] ZDO::unsafe_optional AnyZDO(ZoneID zone, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] ZDO::unsafe_optional AnyZDO(ZoneID zone, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		auto&& zdos = SomeZDOs(zone, 1, prefabHash, flagsPresent, flagsAbsent);
 		if (zdos.empty())
 			return ZDO::unsafe_nullopt;
@@ -348,7 +346,7 @@ public:
 
 	// Get the nearest ZDO within a radius with prefab and/or flag
 	// TODO this is not best-optimized
-	[[nodiscard]] ZDO::unsafe_optional NearestZDO(Vector3f pos, float radius, HASH_t prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
+	[[nodiscard]] ZDO::unsafe_optional NearestZDO(Vector3f pos, float radius, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent) {
 		return NearestZDO(pos, radius, [&](ZDO::unsafe_value zdo) {
 			return PREFAB_CHECK_FUNCTION(zdo, prefabHash, flagsPresent, flagsAbsent);
 		});
@@ -370,12 +368,12 @@ public:
 
 
 
-	[[nodiscard]] size_t GetSumZDOMembers();
+	[[nodiscard]] std::size_t GetSumZDOMembers();
 	[[nodiscard]] float GetMeanZDOMembers();
 	[[nodiscard]] float GetStDevZDOMembers();
-	[[nodiscard]] size_t GetTotalZDOAlloc();
+	[[nodiscard]] std::size_t GetTotalZDOAlloc();
 
-	[[nodiscard]] size_t GetCountEmptyZDOs();
+	[[nodiscard]] std::size_t GetCountEmptyZDOs();
 };
 
 // Manager class for everything related to networked object synchronization

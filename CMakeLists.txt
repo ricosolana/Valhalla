@@ -130,6 +130,7 @@ add_executable(${PROJECT_NAME}
     "src/RouteManager.cpp"
     "src/Stream.cpp"
     "src/Tests.cpp" # this must move
+    "src/Types.cpp"
     "src/ValhallaServer.cpp"
     "src/Vector.cpp"
     "src/VUtils.cpp"

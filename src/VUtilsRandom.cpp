@@ -29,7 +29,7 @@ namespace VUtils::Random {
     State::State() 
         : State(steady_clock::now().time_since_epoch().count()) {}
 
-    State::State(int32_t seed) {
+    State::State(std::int32_t seed) {
         m_seed[0] = seed;
         m_seed[1] = m_seed[0] * 0x6c078965 + 1;
         m_seed[2] = m_seed[1] * 0x6c078965 + 1;
@@ -43,8 +43,8 @@ namespace VUtils::Random {
         m_seed[3] = other.m_seed[3];
     }
 
-    uint32_t State::NextInt() {
-        uint32_t mut1 = (m_seed[0] << 11) ^ m_seed[0];
+    std::uint32_t State::NextInt() {
+        std::uint32_t mut1 = (m_seed[0] << 11) ^ m_seed[0];
 
         m_seed[0] = m_seed[1];
         m_seed[1] = m_seed[2];
@@ -64,11 +64,11 @@ namespace VUtils::Random {
         return (1.0f - r) * maxExclude + r * minInclude;
     }
 
-    int32_t State::Range(int32_t minInclude, int32_t maxExclude) {
+    std::int32_t State::Range(std::int32_t minInclude, std::int32_t maxExclude) {
         if (minInclude > maxExclude)
             std::swap(minInclude, maxExclude);
 
-        uint32_t diff = maxExclude - minInclude;
+        std::uint32_t diff = maxExclude - minInclude;
         if (diff) {
             return minInclude + (NextInt() % diff);
         }
@@ -107,12 +107,12 @@ namespace VUtils::Random {
 
 
     /*
-    void GenerateBytes(BYTE_t* out, unsigned int count) {
+    void GenerateBytes(avledet::util::Byte* out, unsigned int count) {
         RAND_bytes(reinterpret_cast<unsigned char*>(out), count);
     }
 
-    BYTES_t GenerateBytes(unsigned int count) {
-        BYTES_t result(count);
+    avledet::util::Bytes GenerateBytes(unsigned int count) {
+        avledet::util::Bytes result(count);
 
         GenerateBytes(result.data(), count);
 
@@ -146,22 +146,22 @@ namespace VUtils::Random {
     // Generates a Random UID
     //  This function is non-conforming to the Valheim spec
     //  It returns a positive number for conformance with the strict 32-bit USER_ID_t
-    USER_ID_t GenerateUID() {
+    avledet::util::UserID GenerateUID() {
         State state;
-        return (int64_t) state.Range(
-            std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()) +
-            (int64_t) state.Range(1, std::numeric_limits<int32_t>::max());
-        //return state.Range(1, std::numeric_limits<int32_t>::max());
+        return (std::int64_t) state.Range(
+            std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()) +
+            (std::int64_t) state.Range(1, std::numeric_limits<std::int32_t>::max());
+        //return state.Range(1, std::numeric_limits<std::int32_t>::max());
     }
 
-    void GenerateAlphaNum(char* out, size_t outSize) {
+    void GenerateAlphaNum(char* out, std::size_t outSize) {
         VUtils::Random::State state;
-        for (size_t i = 0; i < outSize; i++) {
-            out[i] = CHARS_ALPHA_NUM[state.Range((int32_t)0, (int32_t)CHARS_ALPHA_NUM.length())];
+        for (std::size_t i = 0; i < outSize; i++) {
+            out[i] = CHARS_ALPHA_NUM[state.Range((std::int32_t)0, (std::int32_t)CHARS_ALPHA_NUM.length())];
         }
     }
 
-    std::string GenerateAlphaNum(size_t count) {
+    std::string GenerateAlphaNum(std::size_t count) {
         std::string res;
         res.resize(count);
 

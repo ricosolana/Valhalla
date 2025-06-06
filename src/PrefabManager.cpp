@@ -24,13 +24,13 @@ bool Prefab::IsPersistent() const noexcept {
     return AllFlagsPresent(Flag::PERSISTENT);
 }
 
-ObjectType Prefab::GetObjectType() const noexcept {
+avledet::util::ObjectType Prefab::GetObjectType() const noexcept {
     unsigned int v = (1 & AllFlagsPresent(Flag::TYPE1)) |
         ((1 & AllFlagsPresent(Flag::TYPE2)) << 1);
 
     assert(v <= 0b11);
 
-    return (ObjectType)v;
+    return (avledet::util::ObjectType)v;
 }
 
 
@@ -38,7 +38,7 @@ ObjectType Prefab::GetObjectType() const noexcept {
 void IPrefabManager::Init() {
     //LOG_INFO(LOGGER, "Initializing PrefabManager");
 
-    auto opt = VUtils::Resource::ReadFile<BYTES_t>("prefabs.pkg");
+    auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("prefabs.pkg");
 
     if (!opt) {
         throw std::runtime_error("prefabs.pkg missing");
@@ -52,7 +52,7 @@ void IPrefabManager::Init() {
         //LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver)
     }
 
-    auto count = pkg.read<int32_t>();
+    auto count = pkg.read<std::int32_t>();
 
     for (int i=0; i < count; i++) {
         Register(pkg);

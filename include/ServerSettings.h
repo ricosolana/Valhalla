@@ -82,7 +82,7 @@ static constexpr const char* VH_SETTING_KEY_EVENTS_REQUIREKEYS = "require-keys";
 
 struct ServerSettings {
     std::string     serverName;
-    uint16_t        serverPort;
+    std::uint16_t        serverPort;
     std::string     serverPassword;
     bool            serverPublic;
     bool            serverDedicated;
@@ -105,7 +105,7 @@ struct ServerSettings {
     bool            worldFeatures;
     bool            worldVegetation;
     bool            worldCreatures;
-    uint32_t        worldHeightmapThreads;
+    std::uint32_t        worldHeightmapThreads;
     
     unsigned int    zdoMaxCongestion;    // congestion rate
     unsigned int    zdoMinCongestion;    // congestion rate
@@ -143,6 +143,6 @@ struct ServerSettings {
     //bool            discordSyncBans;
 #endif
     //bool            discordEnableDevCommands;
-    //UNORDERED_SET_t<dpp::snowflake> discordDevAccount;
+    //avledet::util::Set<dpp::snowflake> discordDevAccount;
     //bool            discordDeleteCommands;
 };

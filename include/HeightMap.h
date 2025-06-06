@@ -23,10 +23,10 @@ class Mesh {};
 class BaseHeightmap {
 public:
     using Heights_t = std::vector<float>;
-    using Mask_t = std::vector<Color>;
+    using Mask_t = std::vector<avledet::util::Color>;
 
 public:
-    std::array<Biome, 4> m_cornerBiomes;
+    std::array<avledet::util::Biome, 4> m_cornerBiomes;
     Heights_t m_baseHeights;
     //Mask_t m_baseMask;
     std::vector<float> m_vegMask;
@@ -36,10 +36,10 @@ class Heightmap {
     friend class IHeightmapManager;
 
 public:
-    static constexpr Color m_paintMaskDirt = Colors::RED;
-    static constexpr Color m_paintMaskCultivated = Colors::GREEN;
-    static constexpr Color m_paintMaskPaved = Colors::BLUE;
-    static constexpr Color m_paintMaskNothing = Colors::BLACK;
+    static constexpr avledet::util::Color m_paintMaskDirt = avledet::util::Colors::RED;
+    static constexpr avledet::util::Color m_paintMaskCultivated = avledet::util::Colors::GREEN;
+    static constexpr avledet::util::Color m_paintMaskPaved = avledet::util::Colors::BLUE;
+    static constexpr avledet::util::Color m_paintMaskNothing = avledet::util::Colors::BLACK;
 
     //static constexpr int WIDTH = 64;
 
@@ -62,11 +62,11 @@ private:
 
     std::array<float, 4> m_oceanDepth{};
 
-    std::array<Biome, 4> m_cornerBiomes = {
-        Biome::Meadows,
-        Biome::Meadows,
-        Biome::Meadows,
-        Biome::Meadows
+    std::array<avledet::util::Biome, 4> m_cornerBiomes = {
+        avledet::util::Biome::Meadows,
+        avledet::util::Biome::Meadows,
+        avledet::util::Biome::Meadows,
+        avledet::util::Biome::Meadows
     };
 
     const ZoneID m_zone;
@@ -75,7 +75,7 @@ private:
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
     void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
-    Vector3f CalcVertex(int32_t x, int32_t y);
+    Vector3f CalcVertex(std::int32_t x, std::int32_t y);
     void RebuildCollisionMesh();
     void SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
     bool AtMaxWorldLevelDepth(Vector3f worldPos);
@@ -85,7 +85,7 @@ private:
     bool GetMinWorldHeight(Vector3f worldPos, float radius, float &height);
     bool GetMaxWorldHeight(Vector3f worldPos, float radius, float &height);
     void SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity);
-    float GetAvgHeight(int32_t cx, int32_t cy, int32_t w);
+    float GetAvgHeight(std::int32_t cx, std::int32_t cy, std::int32_t w);
     float GroundHeight(Vector3f point);
     void FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
     void PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
@@ -109,10 +109,10 @@ public:
     
 
     float GetOceanDepth(Vector3f worldPos);
-    std::vector<Biome> GetBiomes();
-    bool HaveBiome(Biome biome);
-    Biome GetBiome(Vector3f point);
-    BiomeArea GetBiomeArea();
+    std::vector<avledet::util::Biome> GetBiomes();
+    bool HaveBiome(avledet::util::Biome biome);
+    avledet::util::Biome GetBiome(Vector3f point);
+    avledet::util::BiomeArea GetBiomeArea();
     bool IsBiomeEdge();
 
     // client command only
@@ -129,17 +129,17 @@ public:
 
     // Get the relative vertex of a world position to this heightmap
     //  Heightmap is treated as the center
-    void WorldToVertex(Vector3f worldPos, int32_t& x, int32_t &y);
+    void WorldToVertex(Vector3f worldPos, std::int32_t& x, std::int32_t &y);
 
     // Get the underlying color mask in paint array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
-    Color GetPaintMask(int32_t x, int32_t y);
+    avledet::util::Color GetPaintMask(std::int32_t x, std::int32_t y);
 
     // Get the underlying height in heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
-    float GetHeight(int32_t x, int32_t y);
+    float GetHeight(std::int32_t x, std::int32_t y);
 
     // Get the underlying height in heights array at world position
     //  Returns false if the position outside of this heightmap
@@ -148,8 +148,8 @@ public:
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]
     //  otherwise 0 is returned
-    float GetBaseHeight(int32_t x, int32_t y);
-    void SetHeight(int32_t x, int32_t y, float h);
+    float GetBaseHeight(std::int32_t x, std::int32_t y);
+    void SetHeight(std::int32_t x, std::int32_t y, float h);
     bool IsPointInside(Vector3f point, float radius = 0);
 
 

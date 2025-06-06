@@ -12,14 +12,14 @@
 #include "UserData.h"
 #include <string_view>
 
-enum class ChatMsgType : int32_t {
+enum class ChatMsgType : std::int32_t {
     Whisper,
     Normal,
     Shout,
     Ping
 };
 
-enum class ConnectionStatus : int32_t {
+enum class ConnectionStatus : std::int32_t {
     None,
     Connecting,
     Connected,
@@ -52,15 +52,15 @@ private:
 
     // Elements rarely added/removed
     //  Queried frequently
-    UNORDERED_MAP_t<HASH_t, std::unique_ptr<Method>> m_methods;
+    avledet::util::Map<avledet::util::Hash, std::unique_ptr<Method>> m_methods;
 
 public:
     // Elements are never removed
     //  Queried frequently, and frequent adds
     // TODO use zdo as key itself
-    UNORDERED_MAP_t<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
-    UNORDERED_SET_t<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
-    UNORDERED_SET_t<ZDOID> m_invalidSector; // TODO this is also odd
+    avledet::util::Map<ZDOID, std::pair<ZDO::Rev, float>> m_zdos;
+    avledet::util::Set<ZDOID> m_forceSend; // TODO this is rarely ever used (only for portal)
+    avledet::util::Set<ZDOID> m_invalidSector; // TODO this is also odd
 
     // Immutable
 
@@ -74,9 +74,9 @@ public:
 
 public:
     // Visible: 0, Gated: 1
-    BitPack<uint8_t, 1, 1, 1, 5> m_pack;
+    BitPack<std::uint8_t, 1, 1, 1, 5> m_pack;
 
-    UNORDERED_MAP_t<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
+    avledet::util::Map<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
 
 private:
     void Update();
@@ -102,7 +102,7 @@ public:
         //VLOG(1) << "~Peer()";
     }
 
-    USER_ID_t GetUserID() {
+    avledet::util::UserID GetUserID() {
         return m_characterID.get_user_id();
     }
 
@@ -134,7 +134,7 @@ public:
         * @param lambda
     */
     template<typename F>
-    void Register(HASH_t hash, F func) {
+    void Register(avledet::util::Hash hash, F func) {
         //VLOG(1) << hash;
 #if VH_IS_ON(VH_USE_MODS)
         m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RpcIn, hash);
@@ -160,7 +160,7 @@ public:
     // TODO disable this method if full mod capture is enabled
     //  allowing this method is better for performance but limits mod catcheability
     template <typename Func>
-    void SubInvoke(HASH_t hash, Func func) {
+    void SubInvoke(avledet::util::Hash hash, Func func) {
         if (!m_socket->Connected())
             return;
 
@@ -181,17 +181,17 @@ public:
     }
 
     template <typename Func>
-    void SubRoute(HASH_t hash, ZDOID targetZDO, Func func) {
+    void SubRoute(avledet::util::Hash hash, ZDOID targetZDO, Func func) {
         if (!m_socket->Connected())
             return;
 
         DataWriter writer;
-        writer.write(Hashes::Rpc::RoutedRPC);
+        writer.write(avledet::util::hashes::Rpc::RoutedRPC);
 
         //assert(false); //ADDRESS THE BELOW
         writer.write([&](DataWriter& writer) {
             // routed rpc spec
-            writer.write<int64_t>(0); // msg id
+            writer.write<std::int64_t>(0); // msg id
             writer.write(VH_ID); // sender
             writer.write(m_characterID.get_user_id()); // target
             writer.write(targetZDO); // target ZDO
@@ -214,14 +214,14 @@ public:
     }
 
     template <typename Func>
-    void SubRoute(HASH_t hash, Func func) {
+    void SubRoute(avledet::util::Hash hash, Func func) {
         SubRoute(hash, ZDOID::NONE, func);
     }
 
 
 
     template <typename... Types>
-    void Invoke(HASH_t hash, const Types&... params) {
+    void Invoke(avledet::util::Hash hash, const Types&... params) {
         if (!m_socket->Connected())
             return;
 
@@ -259,7 +259,7 @@ public:
 
         //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
 
-        BYTES_t bytes;
+        avledet::util::Bytes bytes;
         DataWriter params(bytes);
         params.Write(repr.m_hash);
         params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
@@ -271,7 +271,7 @@ public:
 #endif
 
     /*
-    Method* GetMethod(HASH_t hash) {
+    Method* GetMethod(avledet::util::Hash hash) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             return find->second.get();
@@ -285,7 +285,7 @@ public:
 
 
 
-    bool InternalInvoke(HASH_t hash, DataReader &reader) {
+    bool InternalInvoke(avledet::util::Hash hash, DataReader &reader) {
         auto&& find = m_methods.find(hash);
         if (find != m_methods.end()) {
             ZoneScoped;
@@ -309,14 +309,14 @@ public:
 
 
 
-    void Send(BYTES_t bytes) {
+    void Send(avledet::util::Bytes bytes) {
         assert(!bytes.empty());
 
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
             this->m_socket->Send(std::move(bytes));
     }
 
-    std::optional<BYTES_t> Recv() {
+    std::optional<avledet::util::Bytes> Recv() {
         if (auto&& opt = this->m_socket->Recv()) {
             auto&& bytes = *opt;
             if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
@@ -331,11 +331,11 @@ public:
     }
 
     void SendDisconnect() {
-        Invoke(Hashes::Rpc::Disconnect);
+        Invoke(avledet::util::hashes::Rpc::Disconnect);
     }
 
     void SendKicked() {
-        Invoke(Hashes::Rpc::S2C_ResponseKicked);
+        Invoke(avledet::util::hashes::Rpc::S2C_ResponseKicked);
     }
 
     void Kick() {
@@ -361,7 +361,7 @@ public:
 
     // Show a specific chat message
     void ChatMessage(std::string_view msg, ChatMsgType type, Vector3f pos, const UserProfile& profile, std::string_view senderID) {
-        this->Route(Hashes::Routed::ChatMessage,
+        this->Route(avledet::util::hashes::Routed::ChatMessage,
             pos,
             type,
             profile,
@@ -371,7 +371,7 @@ public:
     }
     // Show a chat message (string, string_view, tuple<Strings...>
     void ChatMessage(std::string_view msg) {
-        this->Route(Hashes::Routed::ChatMessage,
+        this->Route(avledet::util::hashes::Routed::ChatMessage,
             Vector3f(10000, 10000, 10000),
             ChatMsgType::Normal,
             std::string_view(""), std::string_view("<color=yellow><b>SERVER</b></color>"), std::string_view(""),
@@ -382,13 +382,13 @@ public:
 
     // Show a console message
     void ConsoleMessage(std::string_view msg) {
-        return Invoke(Hashes::Rpc::ConsoleMessage, msg);
+        return Invoke(avledet::util::hashes::Rpc::ConsoleMessage, msg);
     }
 
 private:
     // Show a screen message
     void UIMessage(std::string_view msg, UIMsgType type) {
-        this->Route(Hashes::Routed::S2C_UIMessage, type, msg);
+        this->Route(avledet::util::hashes::Routed::S2C_UIMessage, type, msg);
     }
 
 public:
@@ -404,12 +404,12 @@ public:
 
 
 
-    void RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params);
+    void RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params);
 
 
 
     template <typename... Types>
-    void RouteView(ZDOID targetZDO, HASH_t hash, Types&&... params) {
+    void RouteView(ZDOID targetZDO, avledet::util::Hash hash, Types&&... params) {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
@@ -422,7 +422,7 @@ public:
     }
 
     template <typename... Types>
-    void Route(HASH_t hash, Types&&... params) {
+    void Route(avledet::util::Hash hash, Types&&... params) {
         RouteView(ZDOID::NONE, hash, std::forward<Types>(params)...);
     }
 

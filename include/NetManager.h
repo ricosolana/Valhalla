@@ -24,7 +24,7 @@ private:
     std::vector<Peer*> m_onlinePeers;
 
     std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
-    UNORDERED_MAP_t<std::string, int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
+    avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
 
 public:
     //std::string m_password;
@@ -51,7 +51,7 @@ public:
 
     // Finds a peer by either name, uuid or host
     Peer* GetPeer(std::string_view any);
-    Peer* GetPeerByUserID(USER_ID_t uuid);
+    Peer* GetPeerByUserID(avledet::util::UserID uuid);
     Peer* GetPeerByName(std::string_view name);
     Peer* GetPeerByHost(std::string_view host);
 

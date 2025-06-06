@@ -42,11 +42,11 @@ public:
 
 class AcceptorSteam : public IAcceptor {
 private:
-    //const uint16_t m_port;
+    //const std::uint16_t m_port;
     HSteamListenSocket m_listenSocket;
 
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
-    UNORDERED_MAP_t<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
+    avledet::util::Map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_sockets;    // holds all sockets and manages lifetime
+    avledet::util::Map<HSteamNetConnection, std::shared_ptr<SteamSocket>> m_connected;
 
     CSteamID m_lobbyID;
 
@@ -88,7 +88,7 @@ private:
         } CCallbackInternal_OnSteamStatusChanged& operator=(const CCallbackInternal_OnSteamStatusChanged&) {
             return *this;
         } private: virtual void Run(void* pvParam) {
-            AcceptorSteam* pOuter = reinterpret_cast<AcceptorSteam*>(reinterpret_cast<char*>(this) - ((::size_t) & reinterpret_cast<char const volatile&>((((AcceptorSteam*)0)->m_steamcallback_OnSteamStatusChanged)))); pOuter->OnSteamStatusChanged(reinterpret_cast<SteamNetConnectionStatusChangedCallback_t*>(pvParam));
+            AcceptorSteam* pOuter = reinterpret_cast<AcceptorSteam*>(reinterpret_cast<char*>(this) - ((::std::size_t) & reinterpret_cast<char const volatile&>((((AcceptorSteam*)0)->m_steamcallback_OnSteamStatusChanged)))); pOuter->OnSteamStatusChanged(reinterpret_cast<SteamNetConnectionStatusChangedCallback_t*>(pvParam));
         }
     } m_steamcallback_OnSteamStatusChanged; void OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* pParam);
     

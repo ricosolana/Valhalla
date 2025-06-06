@@ -14,7 +14,7 @@ namespace ankerl::unordered_dense {
     struct hash<std::reference_wrapper<ZDO>> {
         using is_avalanching = void;
 
-        auto operator()(std::reference_wrapper<ZDO> v) const noexcept -> uint64_t {
+        auto operator()(std::reference_wrapper<ZDO> v) const noexcept -> std::uint64_t {
             return ankerl::unordered_dense::hash<std::uintptr_t>{}(v.get());
             //return ankerl::unordered_dense::detail::wyhash::hash(v.m_encoded);
         }
@@ -25,8 +25,8 @@ namespace ankerl::unordered_dense {
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void;
 
-        auto operator()(HASH_t v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<HASH_t>{}(v);
+        auto operator()(avledet::util::Hash v) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(v);
         }
     };
 
@@ -34,16 +34,16 @@ namespace ankerl::unordered_dense {
     struct hash<Prefab> {
         using is_avalanching = void;
 
-        auto operator()(const std::unique_ptr<Prefab>& v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<HASH_t>{}(v->m_hash);
+        auto operator()(const std::unique_ptr<Prefab>& v) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(v->m_hash);
         }
 
-        auto operator()(const Prefab& v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<int32_t>{}(v.m_hash);
+        auto operator()(const Prefab& v) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<std::int32_t>{}(v.m_hash);
         }
 
-        auto operator()(HASH_t v) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<int32_t>{}(v);
+        auto operator()(avledet::util::Hash v) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<std::int32_t>{}(v);
         }
     };*/
 
@@ -52,16 +52,16 @@ namespace ankerl::unordered_dense {
         using is_transparent = void;
         using is_avalanching = void; // mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(const Prefab& prefab) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<HASH_t>{}(prefab.m_hash);
+        [[nodiscard]] auto operator()(const Prefab& prefab) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(prefab.m_hash);
         }
 
-        [[nodiscard]] auto operator()(HASH_t hash) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<HASH_t>{}(hash);
+        [[nodiscard]] auto operator()(avledet::util::Hash hash) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(hash);
         }
 
-        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> uint64_t {
-            return ankerl::unordered_dense::hash<HASH_t>{}(VUtils::String::GetStableHashCode(str));
+        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(VUtils::String::GetStableHashCode(str));
         }
     };
 
@@ -69,7 +69,7 @@ namespace ankerl::unordered_dense {
         using is_transparent = void; // enable heterogeneous overloads
         using is_avalanching = void; // mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> uint64_t {
+        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
             return ankerl::unordered_dense::hash<std::string_view>{}(str);
         }
     };
@@ -79,17 +79,17 @@ namespace ankerl::unordered_dense {
 /*
 template<typename K, typename V> 
     requires std::is_same_v<K, std::string>
-using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, ankerl::unordered_dense::string_hash>;
+using avledet::util::Map = ankerl::unordered_dense::map<K, V, ankerl::unordered_dense::string_hash>;
 
 template<typename K, typename V>
     requires !std::is_same_v<K, std::string>
-using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V>;
+using avledet::util::Map = ankerl::unordered_dense::map<K, V>;
 
 template<typename K>
     requires std::is_same_v<K, std::string>
-using UNORDERED_SET_t = ankerl::unordered_dense::set<Args...>;
+using avledet::util::Set = ankerl::unordered_dense::set<Args...>;
 
 template<typename K>
     requires !std::is_same_v<K, std::string>
-using UNORDERED_SET_t = ankerl::unordered_dense::set<Args...>;
+using avledet::util::Set = ankerl::unordered_dense::set<Args...>;
 */

@@ -12,7 +12,7 @@
 #define VH_ID Valhalla()->ID()
 #define VH_SETTINGS Valhalla()->Settings()
 
-enum class UIMsgType : int32_t {
+enum class UIMsgType : std::int32_t {
     TopLeft = 1,
     Center
 };
@@ -51,7 +51,7 @@ private:
     std::recursive_mutex m_taskMutex;
 
     ServerSettings m_settings {};
-    USER_ID_t m_serverID {}; // const
+    avledet::util::UserID m_serverID {}; // const
 
     steady_clock::time_point m_startTime; // const
     steady_clock::time_point m_prevUpdate;
@@ -77,7 +77,7 @@ public:
     void Stop();
 
 public:
-    USER_ID_t ID() const {
+    avledet::util::UserID ID() const {
         return m_serverID;
     }
 
@@ -87,16 +87,16 @@ public:
 
     double m_serverTimeMultiplier = 1;
 
-    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
-    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
-    UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
     //ankerl::unordered_dense::map<std::string, PlayerInfo_t, ankerl::unordered_dense::string_hash, std::equal_to<>> m_users;
 
     // Get the time since the server started
     // Updated once per frame
     auto Elapsed() {
         //return m_nowUpdate - m_startTime;
-        return nanoseconds((int64_t)(duration_cast<nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
+        return nanoseconds((std::int64_t)(duration_cast<nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
     }
 
     auto Nanos() {
@@ -105,7 +105,7 @@ public:
 
     // Get the time in Ticks (C# DateTime.Ticks)
     //auto Ticks() {
-    //    return duration_cast<TICKS_t>(Nanos());
+    //    return duration_cast<avledet::util::Ticks>(Nanos());
     //}
 
     // Get the time in seconds (Unity Time.time)
@@ -199,8 +199,8 @@ public:
         this->m_worldTime = worldTime;
     }
 
-    TICKS_t GetWorldTicks() const {
-        return TICKS_t((int64_t)(this->m_worldTime * (WorldTime)TICKS_t::period::den));
+    avledet::util::Ticks GetWorldTicks() const {
+        return avledet::util::Ticks((std::int64_t)(this->m_worldTime * (WorldTime)avledet::util::Ticks::period::den));
     }
 
 

@@ -6,11 +6,11 @@
 #define __H(str) VUtils::String::GetStableHashCodeCT(str)
 
 /*
-template<typename T, size_t N, typename C = typename T::value_type>
+template<typename T, std::size_t N, typename C = typename T::value_type>
     requires (N >= 1)
 class ConcatPack {
     std::array<std::basic_string_view<C>, N> m_strings{};
-    size_t m_length{};
+    std::size_t m_length{};
 
 public:
     using value_type = C;
@@ -84,11 +84,11 @@ public:
         return m_length == 0;
     }
 
-    size_t size() const {
+    std::size_t size() const {
         return m_length;
     }
 
-    size_t length() const {
+    std::size_t length() const {
         return m_length;
     }
 
@@ -104,34 +104,34 @@ concept StringLike =
 
 namespace VUtils::String {
     // INTERNAL: Do not use unless you know what you are doing
-    constexpr HASH_t GetStableHashCodeCT(const char *str, uint32_t num, uint32_t num2, uint32_t idx) { // NOLINT(misc-no-recursion)
+    constexpr avledet::util::Hash GetStableHashCodeCT(const char *str, std::uint32_t num, std::uint32_t num2, std::uint32_t idx) { // NOLINT(misc-no-recursion)
         if (str[idx] != '\0') {
-            num = ((num << 5) + num) ^ (uint32_t) str[idx];
+            num = ((num << 5) + num) ^ (std::uint32_t) str[idx];
             if (str[idx + 1] != '\0') {
-                num2 = ((num2 << 5) + num2) ^ (uint32_t) str[idx + 1];
+                num2 = ((num2 << 5) + num2) ^ (std::uint32_t) str[idx + 1];
                 idx += 2;
                 return GetStableHashCodeCT(str, num, num2, idx);
             }
         }
-        return static_cast<HASH_t>(num + num2 * 1566083941);
+        return static_cast<avledet::util::Hash>(num + num2 * 1566083941);
     }
 
     // Calculate the Valheim-hash of a string
     //  This is the compile time overload
-    constexpr HASH_t GetStableHashCodeCT(const char *str) {
-        uint32_t num = 5381;
-        uint32_t num2 = num;
-        uint32_t idx = 0;
+    constexpr avledet::util::Hash GetStableHashCodeCT(const char *str) {
+        std::uint32_t num = 5381;
+        std::uint32_t num2 = num;
+        std::uint32_t idx = 0;
 
         return GetStableHashCodeCT(str, num, num2, idx);
     }
 
     // Calculate the Valheim-hash of a string
-    HASH_t GetStableHashCode(std::string_view s);
+    avledet::util::Hash GetStableHashCode(std::string_view s);
 
 
 
-    std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key);
+    std::pair<avledet::util::Hash, avledet::util::Hash> ToHashPair(std::string_view key);
 
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable<T>
@@ -152,7 +152,7 @@ namespace VUtils::String {
         requires (VUtils::Traits::is_iterable<Iterable>)
     Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
     {
-        int64_t size = s.size();
+        std::int64_t size = s.size();
         auto data = s.data();
 
         Iterable split{};
@@ -186,7 +186,7 @@ namespace VUtils::String {
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns whether any modification was done
-    bool FormatAscii(char* in, size_t inSize);
+    bool FormatAscii(char* in, std::size_t inSize);
 
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
@@ -195,11 +195,11 @@ namespace VUtils::String {
 
     // Gets the unicode code points in a UTF-8 encoded string
     // Return -1 on bad encoding
-    int GetUTF8CodeCount(const BYTE_t *p);
+    int GetUTF8CodeCount(const avledet::util::Byte *p);
 
-    // Gets the unicode byte count needed to encode uint16_t or C# char 
+    // Gets the unicode byte count needed to encode std::uint16_t or C# char 
     //  Returns 1, 2 or 3
-    unsigned int GetUTF8ByteCount(uint16_t i);
+    unsigned int GetUTF8ByteCount(std::uint16_t i);
 }
 
 namespace avledet::util {
@@ -208,5 +208,5 @@ namespace avledet::util {
         return VUtils::String::GetStableHashCode(s);
     }
 
-    using Hash = ::HASH_t;
+    using Hash = ::avledet::util::Hash;
 }

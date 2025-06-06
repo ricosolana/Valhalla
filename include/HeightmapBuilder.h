@@ -22,9 +22,9 @@ class IHeightmapBuilder {
 private:
     quill::Logger* m_logger;
 
-    //UNORDERED_SET_t<ZoneID> m_toBuild;
-    UNORDERED_SET_t<ZoneID> m_building;
-    UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_ready;
+    //avledet::util::Set<ZoneID> m_toBuild;
+    avledet::util::Set<ZoneID> m_building;
+    avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>> m_ready;
     
     std::mutex m_mux;
     std::vector<std::unique_ptr<Shared>> m_builders;

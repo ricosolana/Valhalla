@@ -22,6 +22,7 @@
 #include <quill/Logger.h>
 #include <quill/sinks/FileSink.h>
 
+#include "Types.h"
 #include "CompileSettings.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
@@ -46,51 +47,10 @@ using namespace std::chrono_literals;
 #define COLOR_WHITE "\033[37m"
 #define COLOR_GRAY "\033[90m"
 
-using BYTE_t = char; // Unsigned 8 bit
-using HASH_t = int32_t; // Used for RPC method hashing
-using USER_ID_t = int64_t; // Should rename to UID
-using PLAYER_ID_t = int64_t; // Should rename to UID
-using BYTES_t = std::vector<BYTE_t>; // Vector of bytes
-using BYTE_VIEW_t = std::span<BYTE_t>;
-
-using TICKS_t = duration<int64_t, std::ratio<1, 10000000>>;
-
-template<typename K, typename V, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
-using UNORDERED_MAP_t = ankerl::unordered_dense::map<K, V, Hash, Equal>;
-
-template<typename K, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
-using UNORDERED_SET_t = ankerl::unordered_dense::set<K, Hash, Equal>;
 
 
 
-struct Color {
-    float r, g, b, a;
 
-    constexpr Color() : r(0), g(0), b(0), a(1) {}
-    constexpr Color(float r, float g, float b) : r(r), g(g), b(b), a(1) {}
-    constexpr Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-
-    Color Lerp(const Color& other, float t);
-};
-
-struct Color32 {
-    BYTE_t r, g, b, a;
-
-    constexpr Color32() : r(0), g(0), b(0), a(1) {}
-    constexpr Color32(BYTE_t r, BYTE_t g, BYTE_t b) : r(r), g(g), b(b), a(1) {}
-    constexpr Color32(BYTE_t r, BYTE_t g, BYTE_t b, BYTE_t a) : r(r), g(g), b(b), a(a) {}
-
-    //Color Lerp(const Color& other, float t);
-
-    Color32 Lerp(const Color32& other, float t);
-};
-
-namespace Colors {
-    static constexpr Color BLACK = Color(0, 0, 0);
-    static constexpr Color RED = Color(1, 0, 0);
-    static constexpr Color GREEN = Color(0, 1, 0);
-    static constexpr Color BLUE = Color(0, 0, 1);
-}
 
 
 
@@ -112,7 +72,7 @@ public:
     constexpr IntegralWrapper(T value)
         : m_value(value) {}
     
-    constexpr IntegralWrapper(uint32_t high, uint32_t low)
+    constexpr IntegralWrapper(std::uint32_t high, std::uint32_t low)
         : m_value((static_cast<T>(high) << 32) | static_cast<T>(low)) {}
 
     constexpr IntegralWrapper(std::string_view raw) {
@@ -129,12 +89,12 @@ public:
 
 
 
-    operator int64_t() const {
-        return static_cast<int64_t>(this->m_value);
+    operator std::int64_t() const {
+        return static_cast<std::int64_t>(this->m_value);
     }
     
-    operator uint64_t() const {
-        return static_cast<uint64_t>(this->m_value);
+    operator std::uint64_t() const {
+        return static_cast<std::uint64_t>(this->m_value);
     }
 
 
@@ -182,8 +142,8 @@ public:
     }
 };
 
-using UInt64Wrapper = IntegralWrapper<uint64_t>;
-using Int64Wrapper = IntegralWrapper<int64_t>;
+using UInt64Wrapper = IntegralWrapper<std::uint64_t>;
+using Int64Wrapper = IntegralWrapper<std::int64_t>;
 
 std::ostream& operator<<(std::ostream& st, const UInt64Wrapper& val);
 std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
@@ -210,7 +170,7 @@ public:
 
     ZStdCompressor() : ZStdCompressor(ZSTD_CLEVEL_DEFAULT) {}
 
-    ZStdCompressor(const BYTE_t* dict, size_t dictSize, int level) {
+    ZStdCompressor(const avledet::util::Byte* dict, std::size_t dictSize, int level) {
         this->m_ctx = ZSTD_createCCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd cctx");
@@ -222,10 +182,10 @@ public:
         }
     }
 
-    ZStdCompressor(const BYTES_t& dict, int level) 
+    ZStdCompressor(const avledet::util::Bytes& dict, int level) 
         : ZStdCompressor(dict.data(), dict.size(), level) {}
 
-    ZStdCompressor(const BYTES_t& dict) 
+    ZStdCompressor(const avledet::util::Bytes& dict) 
         : ZStdCompressor(dict, ZSTD_CLEVEL_DEFAULT) {}
 
     ZStdCompressor(const ZStdCompressor&) = delete;
@@ -241,8 +201,8 @@ public:
     }
 
 public:
-    std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
-        BYTES_t out;
+    std::optional<avledet::util::Bytes> Compress(const avledet::util::Byte* in, std::size_t inSize) {
+        avledet::util::Bytes out;
         out.resize(ZSTD_compressBound(inSize));
         
         auto status = m_dict ?
@@ -256,7 +216,7 @@ public:
         return out;
     }
 
-    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+    std::optional<avledet::util::Bytes> Compress(const avledet::util::Bytes& in) {
         return Compress(in.data(), in.size());
     }
 };
@@ -273,7 +233,7 @@ public:
         this->m_dict = nullptr;
     }
 
-    ZStdDecompressor(const BYTE_t* dict, size_t dictSize) {
+    ZStdDecompressor(const avledet::util::Byte* dict, std::size_t dictSize) {
         this->m_ctx = ZSTD_createDCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd dctx");
@@ -285,7 +245,7 @@ public:
         }
     }
 
-    ZStdDecompressor(const BYTES_t& dict) 
+    ZStdDecompressor(const avledet::util::Bytes& dict) 
         : ZStdDecompressor(dict.data(), dict.size()) {}
 
     ZStdDecompressor(const ZStdDecompressor&) = delete;
@@ -301,12 +261,12 @@ public:
     }
 
 public:
-    std::optional<BYTES_t> Decompress(const BYTE_t* in, size_t inSize) {
+    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Byte* in, std::size_t inSize) {
         auto size = ZSTD_getFrameContentSize(in, inSize);
         if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN)
             return std::nullopt;
 
-        BYTES_t out;
+        avledet::util::Bytes out;
         out.resize(size);
 
         if (this->m_dict) {
@@ -330,7 +290,7 @@ public:
         return out;
     }
 
-    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Bytes& in) {
         return Decompress(in.data(), in.size());
     }
 };
@@ -371,11 +331,11 @@ public:
     }
 
 public:
-    std::optional<BYTES_t> Compress(const BYTE_t* in, size_t inSize) {
+    std::optional<avledet::util::Bytes> Compress(const avledet::util::Byte* in, std::size_t inSize) {
         if (inSize == 0)
             return std::nullopt;
 
-        BYTES_t out;
+        avledet::util::Bytes out;
 
         z_stream zs{};
 
@@ -409,7 +369,7 @@ public:
         return out;
     }
 
-    std::optional<BYTES_t> Compress(const BYTES_t& in) {
+    std::optional<avledet::util::Bytes> Compress(const avledet::util::Bytes& in) {
         return Compress(in.data(), in.size());
     }
 };
@@ -447,12 +407,12 @@ public:
     }
 
 public:
-    std::optional<BYTES_t> Decompress(const BYTE_t* in, unsigned int inSize) {
+    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Byte* in, unsigned int inSize) {
         if (inSize == 0)
             return std::nullopt;
 
-        BYTES_t out;
-        out.resize((size_t)inSize * 2ULL);
+        avledet::util::Bytes out;
+        out.resize((std::size_t)inSize * 2ULL);
 
         z_stream stream;
         stream.next_in = (Bytef*)in;
@@ -493,7 +453,7 @@ public:
         return out;
     }
 
-    std::optional<BYTES_t> Decompress(const BYTES_t& in) {
+    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Bytes& in) {
         return Decompress(in.data(), in.size());
     }
 };
@@ -560,10 +520,16 @@ namespace VUtils {
         return false;
     };
 
+    // if (avledet::util::run_periodic_now<struct my_struct>(60s)) { ... }
+    template <typename T, typename Rep, typename Pd>
+    auto run_periodic_now(std::chrono::duration<Rep, Pd> period) {
+        return run_periodic_later<T>(period, std::chrono::seconds(0));
+    };
+
     // Returns the smallest 1-value bitshift
     template<typename Enum> requires std::is_enum_v<Enum>
-    constexpr uint8_t GetShift(Enum value) {
-        uint8_t shift = -1;
+    constexpr std::uint8_t GetShift(Enum value) {
+        std::uint8_t shift = -1;
 
         auto bits = std::to_underlying(value);
         for (; bits; shift++) {
@@ -579,22 +545,22 @@ namespace VUtils {
     //   borrowed from
     // MD5
     typedef struct {
-        uint64_t size;        // Size of input in bytes
-        uint32_t buffer[4];   // Current accumulation of hash
-        uint8_t input[64];    // Input to be used in the next step
-        uint8_t digest[16];   // Result of algorithm
+        std::uint64_t size;        // Size of input in bytes
+        std::uint32_t buffer[4];   // Current accumulation of hash
+        std::uint8_t input[64];    // Input to be used in the next step
+        std::uint8_t digest[16];   // Result of algorithm
     } MD5Context;
 
     void md5Init(MD5Context* ctx);
 
-    void md5Update(MD5Context* ctx, uint8_t* input_buffer, size_t input_len);
+    void md5Update(MD5Context* ctx, std::uint8_t* input_buffer, std::size_t input_len);
 
     void md5Finalize(MD5Context* ctx);
 
-    void md5Step(uint32_t* buffer, uint32_t* input);
+    void md5Step(std::uint32_t* buffer, std::uint32_t* input);
 
     // Calculate the md5 hash of a char buffer
-    void md5(const char* in, size_t inSize, uint8_t* out16);
+    void md5(const char* in, std::size_t inSize, std::uint8_t* out16);
 
 
     

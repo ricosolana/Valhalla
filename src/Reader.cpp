@@ -50,7 +50,7 @@ namespace avledet::util {
         std::uint32_t out = 0;
         std::uint32_t num2 = 0;
         while (num2 != 35) {
-            auto b = this->read<uint8_t>();
+            auto b = this->read<std::uint8_t>();
             out |= static_cast<decltype(out)>(b & 127) << num2;
             num2 += 7;
             if ((b & 128) == 0) {

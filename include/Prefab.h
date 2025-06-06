@@ -13,7 +13,7 @@ public:
     struct Instance {
         Quaternion m_rot;       // 16 bytes
         Vector3f m_pos;         // 12 bytes
-        HASH_t m_prefabHash;    // 4 bytes
+        avledet::util::Hash m_prefabHash;    // 4 bytes
 
         const Prefab& GetPrefab() const;
     };
@@ -26,7 +26,7 @@ public:
     //      - the 5th revision of the MineRockX
     //      - im not really sure of the naming besides this
 
-    enum class Flag : uint64_t {
+    enum class Flag : std::uint64_t {
         NONE = 0,
 
         SYNC_INITIAL_SCALE = 1ULL << 0,
@@ -78,7 +78,7 @@ public:
     std::string m_name;         // 40 bytes
     Vector3f m_localScale;      // 12 bytes
     Flag m_flags = Flag::NONE;  // 8 bytes
-    HASH_t m_hash;              // 4 bytes
+    avledet::util::Hash m_hash;              // 4 bytes
 
 public:
     Prefab(std::string_view name, Vector3f localScale, Flag flags)
@@ -112,7 +112,7 @@ public:
 
     bool IsDistant() const noexcept;
     bool IsPersistent() const noexcept;
-    ObjectType GetObjectType() const noexcept;
+    avledet::util::ObjectType GetObjectType() const noexcept;
 
 
 
@@ -120,7 +120,7 @@ public:
         return this->m_hash == other.m_hash;
     }
 
-    bool operator==(HASH_t other) const noexcept {
+    bool operator==(avledet::util::Hash other) const noexcept {
         return this->m_hash == other;
     }
 

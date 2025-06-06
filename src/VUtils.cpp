@@ -8,22 +8,7 @@
 #include "VUtilsMath.h"
 #include "VUtilsMathf.h"
 
-Color Color::Lerp(const Color& other, float t) {
-    //t = VUtils::Math::Clamp01(t);
-    return Color(
-        VUtils::Mathf::Lerp(r, other.r, t),
-        VUtils::Mathf::Lerp(g, other.g, t),
-        VUtils::Mathf::Lerp(b, other.b, t),
-        VUtils::Mathf::Lerp(a, other.a, t));
-}
 
-Color32 Color32::Lerp(const Color32 &other, float t) {
-    return Color32(
-        VUtils::Mathf::Lerp(r, other.r, t),
-        VUtils::Mathf::Lerp(g, other.g, t),
-        VUtils::Mathf::Lerp(b, other.b, t),
-        VUtils::Mathf::Lerp(a, other.a, t));
-}
 
 //const Color Color::BLACK = Color();
 //const Color Color::RED = Color(1, 0, 0);
@@ -31,11 +16,11 @@ Color32 Color32::Lerp(const Color32 &other, float t) {
 //const Color Color::BLUE = Color(0, 0, 1);
 
 std::ostream& operator<<(std::ostream& st, const UInt64Wrapper& val) {
-    return st << (uint64_t)val;
+    return st << (std::uint64_t)val;
 }
 
 std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val) {
-    return st << (int64_t)val;
+    return st << (std::int64_t)val;
 }
 
 namespace VUtils {
@@ -48,12 +33,12 @@ namespace VUtils {
 #define C 0x98badcfe
 #define D 0x10325476
 
-    static uint32_t S[] = { 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+    static std::uint32_t S[] = { 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
                            5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
                            4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
                            6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21 };
 
-    static uint32_t K[] = { 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+    static std::uint32_t K[] = { 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
                            0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
                            0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
                            0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
@@ -73,7 +58,7 @@ namespace VUtils {
     /*
      * Padding used to make the size (in bits) of the input congruent to 448 mod 512
      */
-    static uint8_t PADDING[] = { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    static std::uint8_t PADDING[] = { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -93,7 +78,7 @@ namespace VUtils {
      /*
       * Rotates a 32-bit word left by n bits
       */
-    uint32_t rotateLeft(uint32_t x, uint32_t n) {
+    std::uint32_t rotateLeft(std::uint32_t x, std::uint32_t n) {
         return (x << n) | (x >> (32 - n));
     }
 
@@ -102,12 +87,12 @@ namespace VUtils {
      * Initialize a context
      */
     void md5Init(MD5Context* ctx) {
-        ctx->size = (uint64_t)0;
+        ctx->size = (std::uint64_t)0;
 
-        ctx->buffer[0] = (uint32_t)A;
-        ctx->buffer[1] = (uint32_t)B;
-        ctx->buffer[2] = (uint32_t)C;
-        ctx->buffer[3] = (uint32_t)D;
+        ctx->buffer[0] = (std::uint32_t)A;
+        ctx->buffer[1] = (std::uint32_t)B;
+        ctx->buffer[2] = (std::uint32_t)C;
+        ctx->buffer[3] = (std::uint32_t)D;
     }
 
     /*
@@ -116,14 +101,14 @@ namespace VUtils {
      * If the input fills out a block of 512 bits, apply the algorithm (md5Step)
      * and save the result in the buffer. Also updates the overall size.
      */
-    void md5Update(MD5Context* ctx, uint8_t* input_buffer, size_t input_len) {
-        uint32_t input[16];
+    void md5Update(MD5Context* ctx, std::uint8_t* input_buffer, std::size_t input_len) {
+        std::uint32_t input[16];
         unsigned int offset = ctx->size % 64;
-        ctx->size += (uint64_t)input_len;
+        ctx->size += (std::uint64_t)input_len;
 
         // Copy each byte in input_buffer into the next space in our context input
         for (unsigned int i = 0; i < input_len; ++i) {
-            ctx->input[offset++] = (uint8_t) * (input_buffer + i);
+            ctx->input[offset++] = (std::uint8_t) * (input_buffer + i);
 
             // If we've filled our context input, copy it into our local array input
             // then reset the offset to 0 and fill in a new buffer.
@@ -134,10 +119,10 @@ namespace VUtils {
                     // Convert to little-endian
                     // The local variable `input` our 512-bit chunk separated into 32-bit words
                     // we can use in calculations
-                    input[j] = (uint32_t)(ctx->input[(j * 4) + 3]) << 24 |
-                        (uint32_t)(ctx->input[(j * 4) + 2]) << 16 |
-                        (uint32_t)(ctx->input[(j * 4) + 1]) << 8 |
-                        (uint32_t)(ctx->input[(j * 4)]);
+                    input[j] = (std::uint32_t)(ctx->input[(j * 4) + 3]) << 24 |
+                        (std::uint32_t)(ctx->input[(j * 4) + 2]) << 16 |
+                        (std::uint32_t)(ctx->input[(j * 4) + 1]) << 8 |
+                        (std::uint32_t)(ctx->input[(j * 4)]);
                 }
                 md5Step(ctx->buffer, input);
                 offset = 0;
@@ -150,46 +135,46 @@ namespace VUtils {
      * and save the result of the final iteration into digest.
      */
     void md5Finalize(MD5Context* ctx) {
-        uint32_t input[16];
+        std::uint32_t input[16];
         unsigned int offset = ctx->size % 64;
         unsigned int padding_length = offset < 56 ? 56 - offset : (56 + 64) - offset;
 
         // Fill in the padding and undo the changes to size that resulted from the update
         md5Update(ctx, PADDING, padding_length);
-        ctx->size -= (uint64_t)padding_length;
+        ctx->size -= (std::uint64_t)padding_length;
 
         // Do a final update (internal to this function)
         // Last two 32-bit words are the two halves of the size (converted from bytes to bits)
         for (unsigned int j = 0; j < 14; ++j) {
-            input[j] = (uint32_t)(ctx->input[(j * 4) + 3]) << 24 |
-                (uint32_t)(ctx->input[(j * 4) + 2]) << 16 |
-                (uint32_t)(ctx->input[(j * 4) + 1]) << 8 |
-                (uint32_t)(ctx->input[(j * 4)]);
+            input[j] = (std::uint32_t)(ctx->input[(j * 4) + 3]) << 24 |
+                (std::uint32_t)(ctx->input[(j * 4) + 2]) << 16 |
+                (std::uint32_t)(ctx->input[(j * 4) + 1]) << 8 |
+                (std::uint32_t)(ctx->input[(j * 4)]);
         }
-        input[14] = (uint32_t)(ctx->size * 8);
-        input[15] = (uint32_t)((ctx->size * 8) >> 32);
+        input[14] = (std::uint32_t)(ctx->size * 8);
+        input[15] = (std::uint32_t)((ctx->size * 8) >> 32);
 
         md5Step(ctx->buffer, input);
 
         // Move the result into digest (convert from little-endian)
         for (unsigned int i = 0; i < 4; ++i) {
-            ctx->digest[(i * 4) + 0] = (uint8_t)((ctx->buffer[i] & 0x000000FF));
-            ctx->digest[(i * 4) + 1] = (uint8_t)((ctx->buffer[i] & 0x0000FF00) >> 8);
-            ctx->digest[(i * 4) + 2] = (uint8_t)((ctx->buffer[i] & 0x00FF0000) >> 16);
-            ctx->digest[(i * 4) + 3] = (uint8_t)((ctx->buffer[i] & 0xFF000000) >> 24);
+            ctx->digest[(i * 4) + 0] = (std::uint8_t)((ctx->buffer[i] & 0x000000FF));
+            ctx->digest[(i * 4) + 1] = (std::uint8_t)((ctx->buffer[i] & 0x0000FF00) >> 8);
+            ctx->digest[(i * 4) + 2] = (std::uint8_t)((ctx->buffer[i] & 0x00FF0000) >> 16);
+            ctx->digest[(i * 4) + 3] = (std::uint8_t)((ctx->buffer[i] & 0xFF000000) >> 24);
         }
     }
 
     /*
      * Step on 512 bits of input with the main MD5 algorithm.
      */
-    void md5Step(uint32_t* buffer, uint32_t* input) {
-        uint32_t AA = buffer[0];
-        uint32_t BB = buffer[1];
-        uint32_t CC = buffer[2];
-        uint32_t DD = buffer[3];
+    void md5Step(std::uint32_t* buffer, std::uint32_t* input) {
+        std::uint32_t AA = buffer[0];
+        std::uint32_t BB = buffer[1];
+        std::uint32_t CC = buffer[2];
+        std::uint32_t DD = buffer[3];
 
-        uint32_t E;
+        std::uint32_t E;
 
         unsigned int j;
 
@@ -213,7 +198,7 @@ namespace VUtils {
                 break;
             }
 
-            uint32_t temp = DD;
+            std::uint32_t temp = DD;
             DD = CC;
             CC = BB;
             BB = BB + rotateLeft(AA + E + K[i] + input[j], S[i]);
@@ -226,10 +211,10 @@ namespace VUtils {
         buffer[3] += DD;
     }
 
-    void md5(const char* in, size_t inSize, uint8_t* out16) {
+    void md5(const char* in, std::size_t inSize, std::uint8_t* out16) {
         MD5Context ctx;
         md5Init(&ctx);
-        md5Update(&ctx, (uint8_t*)in, inSize);
+        md5Update(&ctx, (std::uint8_t*)in, inSize);
         md5Finalize(&ctx);
 
         std::memcpy(out16, ctx.digest, 16);

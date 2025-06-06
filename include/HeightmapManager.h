@@ -9,8 +9,8 @@
 #if VH_IS_ON(VH_ZONE_GENERATION)
 
 class IHeightmapManager {
-	//UNORDERED_SET_t<ZoneID> m_population;
-	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
+	//avledet::util::Set<ZoneID> m_population;
+	avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
 
 public:
 	//void ForceGenerateAll();
@@ -35,7 +35,7 @@ public:
 	//float GetHeight(const Vector3f& worldPos);
 
 	//static std::vector<Heightmap> GetAllHeightmaps();
-	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
+	avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>>& GetAllHeightmaps();
 
 	//Heightmap* GetOrCreateHeightmap(const Vector2i& zoneID);
 
@@ -44,7 +44,7 @@ public:
 	Heightmap &GetHeightmap(Vector3f point);
 	Heightmap &GetHeightmap(ZoneID zone);
 	std::vector<Heightmap*> GetHeightmaps(Vector3f point, float radius);
-	//Biome FindBiome(const Vector3f& point);
+	//avledet::util::Biome FindBiome(const Vector3f& point);
 
 	bool IsRegenerateQueued(Vector3f point, float radius);
 

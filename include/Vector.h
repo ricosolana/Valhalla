@@ -307,8 +307,8 @@ namespace avledet::util::CSU {
     };
 
     using Vector2f = Vector2<float>;
-    using Vector2i = Vector2<int32_t>;
-    using Vector2s = Vector2<int16_t>;
+    using Vector2i = Vector2<std::int32_t>;
+    using Vector2s = Vector2<std::int16_t>;
 
     using Vector3f = Vector3<float>;
 }

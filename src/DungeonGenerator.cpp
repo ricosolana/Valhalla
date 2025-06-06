@@ -22,7 +22,7 @@ DungeonGenerator::DungeonGenerator(const Dungeon& dungeon, ZDO::unsafe_value zdo
 }
 
 // TODO generate seed during start
-HASH_t DungeonGenerator::GetSeed() {
+avledet::util::Hash DungeonGenerator::GetSeed() {
 	if (VH_SETTINGS.dungeonsSeeded) {
 		auto seed = GeoManager()->GetSeed();
 		auto zone = IZoneManager::WorldToZonePos(m_pos);
@@ -37,7 +37,7 @@ void DungeonGenerator::Generate() {
 	this->Generate(GetSeed());
 }
 
-void DungeonGenerator::DungeonGenerator::Generate(HASH_t seed) {
+void DungeonGenerator::DungeonGenerator::Generate(avledet::util::Hash seed) {
 	VUtils::Random::State state(seed);
 
 	this->GenerateRooms(state);
@@ -110,8 +110,8 @@ void DungeonGenerator::GenerateCampGrid(VUtils::Random::State& state) {
 				if (randomWeightedRoom)
 				{
 					Vector3f vector;
-					Biome biome;
-					BiomeArea biomeArea;
+					avledet::util::Biome biome;
+					avledet::util::BiomeArea biomeArea;
 					ZoneManager()->GetGroundData(pos, vector, biome, biomeArea);
 					if (vector.y < num)
 						continue;
@@ -138,8 +138,8 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State& state) {
 		auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
 		if (randomWeightedRoom) {
 			Vector3f vector2;
-			Biome biome;
-			BiomeArea biomeArea;
+			avledet::util::Biome biome;
+			avledet::util::BiomeArea biomeArea;
 			ZoneManager()->GetGroundData(vector, vector2, biome, biomeArea);
 			if (vector2.y < num2 || vector.y - IZoneManager::WATER_LEVEL < this->m_dungeon.m_minAltitude)
 				continue;
@@ -189,8 +189,8 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 			Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 
 			Vector3f vector2;
-			Biome biome;
-			BiomeArea biomeArea;
+			avledet::util::Biome biome;
+			avledet::util::BiomeArea biomeArea;
 			ZoneManager()->GetGroundData(vector, vector2, biome, biomeArea);
 			if (vector2.y < num || vector.y - IZoneManager::WATER_LEVEL < this->m_dungeon.m_minAltitude)
 				continue;
@@ -210,8 +210,8 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State& state, float radius, int
 
 
 void DungeonGenerator::Save() {
-	//bytes.reserve(sizeof(int32_t) + 
-		//m_placedRooms.size() * (sizeof(HASH_t) + sizeof(Vector3f) + sizeof(Quaternion)));
+	//bytes.reserve(sizeof(std::int32_t) + 
+		//m_placedRooms.size() * (sizeof(avledet::util::Hash) + sizeof(Vector3f) + sizeof(Quaternion)));
 	DataWriter writer;
 
 	writer.write((std::int32_t)m_placedRooms.size());
@@ -230,7 +230,7 @@ void DungeonGenerator::Save() {
 		writer.write(rot);
 	}
 
-	m_zdo->Set(Hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
+	m_zdo->Set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
 }
 
 

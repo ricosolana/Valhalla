@@ -324,7 +324,7 @@ namespace avledet::util {
             }
             // 2 byte
             else if (b1 >= 0xC0) {
-                auto b2 = reader.read<uint8_t>() & 0x3F;
+                auto b2 = reader.read<std::uint8_t>() & 0x3F;
                 return ((b1 & 0x1F) << 6) | b2;
             }
             // 1 byte

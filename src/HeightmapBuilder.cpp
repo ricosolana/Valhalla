@@ -154,7 +154,7 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
             const float world_x = baseWorldPos.x + rx;
             const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::ZONE_SIZE);
 
-            //Color color = Colors::BLACK;
+            //avledet::util::Color color = avledet::util::Colors::BLACK;
             float mistlandsMask = 0;
             float height;
             

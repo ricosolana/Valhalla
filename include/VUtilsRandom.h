@@ -12,32 +12,32 @@ namespace VUtils::Random {
 
     class State {
     private:
-        uint32_t m_seed[4];
+        std::uint32_t m_seed[4];
 
 
     public:
         State();
-        State(int32_t seed);
+        State(std::int32_t seed);
         State(const State& other); // copy construct
 
         // Returns a random float from 0 to 1
         float NextFloat();
-        uint32_t NextInt();
+        std::uint32_t NextInt();
         float Value() { return NextFloat(); }
 
         float Range(float minInclude, float maxExclude);
-        int32_t Range(int32_t minInclude, int32_t maxExclude);
+        std::int32_t Range(std::int32_t minInclude, std::int32_t maxExclude);
 
         Vector2f InsideUnitCircle();
         Vector3f OnUnitSphere();
         Vector3f InsideUnitSphere();
     };
 
-    USER_ID_t GenerateUID();
+    avledet::util::UserID GenerateUID();
 
-    void GenerateAlphaNum(char* out, size_t outSize);
+    void GenerateAlphaNum(char* out, std::size_t outSize);
 
-    std::string GenerateAlphaNum(size_t count);
+    std::string GenerateAlphaNum(std::size_t count);
 
 }
 

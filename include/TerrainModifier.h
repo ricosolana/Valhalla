@@ -3,7 +3,7 @@
 class TerrainModifier {
 
 public:
-    enum class PaintType : uint8_t {
+    enum class PaintType : std::uint8_t {
 		Dirt,
 		Cultivate,
 		Paved,

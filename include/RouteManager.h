@@ -14,10 +14,10 @@ class IRouteManager {
 	friend class INetManager;
 
 public:
-	static constexpr int64_t EVERYBODY = 0;
+	static constexpr std::int64_t EVERYBODY = 0;
 
 private:	
-	UNORDERED_MAP_t<HASH_t, std::unique_ptr<IMethod<Peer*>>> m_methods;
+	avledet::util::Map<avledet::util::Hash, std::unique_ptr<IMethod<Peer*>>> m_methods;
 
 private:
 	// Called from NetManager
@@ -31,7 +31,7 @@ public:
 		* @param method ptr to a static function
 	*/
 	template<typename F>
-	void Register(HASH_t hash, F func) {
+	void Register(avledet::util::Hash hash, F func) {
 #if VH_IS_ON(VH_USE_MODS)
 		m_methods[hash] = std::make_unique<MethodImpl<Peer*, F>>(func, IModManager::Events::RouteIn, hash);
 #else
@@ -53,14 +53,14 @@ public:
 #endif
 
 	// Forwards raw data to peer(s) with no Lua handlers
-	//void InvokeParams(USER_ID_t target, const ZDOID& targetZDO, HASH_t hash, BYTES_t params);
+	//void InvokeParams(avledet::util::UserID target, const ZDOID& targetZDO, avledet::util::Hash hash, avledet::util::Bytes params);
 
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(USER_ID_t target, ZDOID targetZDO, HASH_t hash, Args&&... params) {
+	void InvokeView(avledet::util::UserID target, ZDOID targetZDO, avledet::util::Hash hash, Args&&... params) {
 		// Prefix
-		if ((int64_t)target == EVERYBODY) {
+		if ((std::int64_t)target == EVERYBODY) {
 			// targetZDO can have a value apparently
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
 				return;
@@ -68,7 +68,7 @@ public:
 			auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
-				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+				peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 		else {
@@ -80,13 +80,13 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(USER_ID_t target, ZDOID targetZDO, std::string_view name, Args&&... params) {
+	void InvokeView(avledet::util::UserID target, ZDOID targetZDO, std::string_view name, Args&&... params) {
 		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
 	void InvokeViewLua(Int64Wrapper target, ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
-		if ((int64_t)target == EVERYBODY) {
+		if ((std::int64_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
 				throw std::runtime_error("mismatched number of args");
 
@@ -97,14 +97,14 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(VH_ID, (int64_t) target, targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
+			auto bytes = Serialize(VH_ID, (std::int64_t) target, targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
-				peer->Invoke(Hashes::Rpc::RoutedRPC, bytes);
+				peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeerByUserID((int64_t)target))
+			if (auto peer = NetManager()->GetPeerByUserID((std::int64_t)target))
 				peer->RouteViewLua(targetZDO, repr, args);
 		}
 		
@@ -119,13 +119,13 @@ public:
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(USER_ID_t target, HASH_t hash, Args&&... params) {
+	void Invoke(avledet::util::UserID target, avledet::util::Hash hash, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, hash, std::forward<Args>(params)...);
 	}
 
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
-	void Invoke(USER_ID_t target, std::string_view name, Args&&... params) {
+	void Invoke(avledet::util::UserID target, std::string_view name, Args&&... params) {
 		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
 	}
 
@@ -139,7 +139,7 @@ public:
 
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
-	void InvokeAll(HASH_t hash, Args&&... params) {
+	void InvokeAll(avledet::util::Hash hash, Args&&... params) {
 		Invoke(EVERYBODY, hash, std::forward<Args>(params)...);
 	}
 
@@ -155,7 +155,7 @@ public:
 	}
 #endif
 
-	BYTES_t Serialize(USER_ID_t sender, USER_ID_t target, ZDOID targetZDO, HASH_t hash, BYTES_t params) {
+	avledet::util::Bytes Serialize(avledet::util::UserID sender, avledet::util::UserID target, ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params) {
 		DataWriter writer;
 
 		writer.write((std::int64_t)0); // msg id

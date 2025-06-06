@@ -37,7 +37,7 @@ public:
 
 	int m_minRequiredRooms;
 
-	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash> m_requiredRooms;
+	avledet::util::Set<std::string, ankerl::unordered_dense::string_hash> m_requiredRooms;
 
 	bool m_alternativeFunctionality;
 
@@ -76,7 +76,7 @@ public:
 
 public:
 	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot) const;
-	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, HASH_t seed) const;
+	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, avledet::util::Hash seed) const;
 	//
 	//std::unique_ptr<DungeonGenerator> Generate(ZDO& zdo) const;
 };

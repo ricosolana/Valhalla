@@ -4,23 +4,23 @@
 
 namespace VUtils::String {
 
-    HASH_t GetStableHashCode(std::string_view s) {
-        uint32_t num = 5381;
-        uint32_t num2 = num;
+    avledet::util::Hash GetStableHashCode(std::string_view s) {
+        std::uint32_t num = 5381;
+        std::uint32_t num2 = num;
 
         for (auto&& itr = s.begin(); itr != s.end(); ) {
-            num = ((num << 5) + num) ^ (uint32_t) * (itr++);
+            num = ((num << 5) + num) ^ (std::uint32_t) * (itr++);
             if (itr == s.end()) {
                 break;
             }
             else {
-                num2 = ((num2 << 5) + num2) ^ ((uint32_t) * (itr++));
+                num2 = ((num2 << 5) + num2) ^ ((std::uint32_t) * (itr++));
             }
         }
-        return static_cast<HASH_t>(num + num2 * 1566083941);
+        return static_cast<avledet::util::Hash>(num + num2 * 1566083941);
     }
 
-    std::pair<HASH_t, HASH_t> ToHashPair(std::string_view key) {
+    std::pair<avledet::util::Hash, avledet::util::Hash> ToHashPair(std::string_view key) {
         return {
             VUtils::String::GetStableHashCode(std::string(key) + "_u"),
             VUtils::String::GetStableHashCode(std::string(key) + "_i")
@@ -104,9 +104,9 @@ namespace VUtils::String {
 
     bool FormatAscii(std::string& in) {
         bool modif = false;
-        auto data = reinterpret_cast<BYTE_t*>(in.data());
+        auto data = reinterpret_cast<avledet::util::Byte*>(in.data());
         for (int i = 0; i < in.size(); i++) {
-            if (static_cast<uint8_t>(data[i]) > 127U) {
+            if (static_cast<std::uint8_t>(data[i]) > 127U) {
                 modif = true;
                 data[i] = 63;
             }
@@ -114,9 +114,9 @@ namespace VUtils::String {
         return modif;
     }
 
-    bool FormatAscii(char* in, size_t inSize) {
+    bool FormatAscii(char* in, std::size_t inSize) {
         bool modif = false;
-        for (size_t i = 0; i < inSize; i++) {
+        for (std::size_t i = 0; i < inSize; i++) {
             auto&& ch = in + i;
             if (*ch < 0) {
                 *ch = 63;
@@ -135,13 +135,13 @@ namespace VUtils::String {
 
 
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int GetUTF8CodeCount(const BYTE_t* p) {
+    int GetUTF8CodeCount(const avledet::util::Byte* p) {
         // leading bits:
         //   0: total 1 byte
         //   110: total 2 bytes (trailing 10xxxxxx)
         //   1110: total 3 bytes (trailing 10xxxxxx)
         //   11110: total 4 bytes (trailing 10xxxxxx)
-        int32_t count = 0;
+        std::int32_t count = 0;
         for (; *p != '\0'; ++p, count++) {
 #define CHECK_TRAILING_BYTES(n) \
         { \
@@ -183,7 +183,7 @@ namespace VUtils::String {
         return count;
     }
 
-    unsigned int GetUTF8ByteCount(uint16_t i) {
+    unsigned int GetUTF8ByteCount(std::uint16_t i) {
         if (i < 0x80) {
             return 1;
         }

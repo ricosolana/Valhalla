@@ -82,7 +82,7 @@ bool IHeightmapManager::GetAverageHeight(const Vector3f& worldPos, float radius,
     auto heightmaps = GetHeightmaps(worldPos, radius);
 
     float num = 0;
-    int32_t num2 = 0;
+    std::int32_t num2 = 0;
 
     for (auto&& heightmap : heightmaps) {
         float num3;
@@ -102,7 +102,7 @@ bool IHeightmapManager::GetAverageHeight(const Vector3f& worldPos, float radius,
 */
 
 // public static
-UNORDERED_MAP_t<ZoneID, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
+avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>>& IHeightmapManager::GetAllHeightmaps() {
     return m_heightmaps;
 }
 
@@ -187,12 +187,12 @@ std::vector<Heightmap*> IHeightmapManager::GetHeightmaps(Vector3f point, float r
 
 /*
 // public static
-Biome IHeightmapManager::FindBiome(const Vector3f& point) {
+avledet::util::Biome IHeightmapManager::FindBiome(const Vector3f& point) {
     auto &&heightmap = GetHeightmap(point);
     if (heightmap) {
         return heightmap->GetBiome(point);
     }
-    return Biome::None;
+    return avledet::util::Biome::None;
 }*/
 
 // public static

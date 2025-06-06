@@ -4,7 +4,7 @@
 #include "VUtils.h"
 
 class IEventManager {
-    UNORDERED_MAP_t<HASH_t, std::vector<void*>> m_functions;
+    avledet::util::Map<avledet::util::Hash, std::vector<void*>> m_functions;
 
 public:
     template<typename Func>
@@ -13,7 +13,7 @@ public:
     }
 
     template<typename ...Args>
-    void Dispatch(HASH_t hash, Args... args) {
+    void Dispatch(avledet::util::Hash hash, Args... args) {
         auto&& find = m_functions.find(hash);
         if (find != m_functions.end()) {
             auto&& vec = find->second;

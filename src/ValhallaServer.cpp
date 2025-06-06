@@ -65,11 +65,11 @@ namespace YAML {
 
     template<typename T>
     static bool parseDuration(const std::string& s, T& out) {
-        int64_t dur = 0;
-        size_t index = 0;
-        int64_t sign = 1;
+        std::int64_t dur = 0;
+        std::size_t index = 0;
+        std::int64_t sign = 1;
         for (; index < s.length(); index++) {
-            const int64_t ch = (int64_t)s[index];
+            const std::int64_t ch = (std::int64_t)s[index];
             if (ch == '-') {
                 sign = -1;
             }
@@ -79,10 +79,10 @@ namespace YAML {
             }
             else if (index > 0) {
                 dur *= sign;
-                const int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
+                const std::int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
                 switch (ch) {
                 case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
-                case 't': out = duration_cast<T>(TICKS_t(dur)); return true;
+                case 't': out = duration_cast<T>(avledet::util::Ticks(dur)); return true;
                 case 'u': out = duration_cast<T>(microseconds(dur)); return true;
                 case 'm': {
                     switch (ch2) {
@@ -114,7 +114,7 @@ namespace YAML {
 
             if constexpr (std::is_same_v<D, nanoseconds>)
                 return Node(std::to_string(rhs.count()) + "ns");
-            else if constexpr (std::is_same_v<D, TICKS_t>)
+            else if constexpr (std::is_same_v<D, avledet::util::Ticks>)
                 return Node(std::to_string(rhs.count()) + "ticks");
             else if constexpr (std::is_same_v<D, microseconds>)
                 return Node(std::to_string(rhs.count()) + "us");
@@ -155,14 +155,14 @@ namespace YAML {
     template<>
     struct convert<dpp::snowflake> {
         static Node encode(const dpp::snowflake& rhs) {
-            return Node(std::to_string((uint64_t)rhs));
+            return Node(std::to_string((std::uint64_t)rhs));
         }
 
         static bool decode(const Node& node, dpp::snowflake& rhs) {
             if (!node.IsScalar())
                 return false;
 
-            rhs = node.as<int64_t>();
+            rhs = node.as<std::int64_t>();
             return true;
         }
     };
@@ -404,7 +404,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.discordSyncLeaves, discord, "sync-leaves", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
-            //a(m_settings.discordDevAccount, discord, "dev-account", UNORDERED_SET_t<std::string>());
+            //a(m_settings.discordDevAccount, discord, "dev-account", avledet::util::Set<std::string>());
 
             //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
 
@@ -754,14 +754,14 @@ void IValhalla::PeriodUpdate() {
                     // only awake sleeping players
                     for (auto&& peer : NetManager()->GetPeers()) {
                         auto&& zdo = peer->GetZDO();
-                        if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                            RouteManager()->Invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestStopSleep);
+                        if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                            RouteManager()->Invoke(peer->GetUserID(), avledet::util::hashes::Routed::S2C_RequestStopSleep);
                         }
                     }
                 }
                 else {
                     // wake every player
-                    RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestStopSleep);
+                    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_RequestStopSleep);
                 }
 
                 m_playerSleep = false;
@@ -775,7 +775,7 @@ void IValhalla::PeriodUpdate() {
 
                 for (auto&& peer : NetManager()->GetPeers()) {
                     auto&& zdo = peer->GetZDO();
-                    bool inBed = zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false);
+                    bool inBed = zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false);
                     if (!inBed) {
                         allInBed = false;
                         if (!m_settings.playerSleepSolo) // early break if special sleep mode is not enabled
@@ -805,8 +805,8 @@ void IValhalla::PeriodUpdate() {
                         // Players who are ALREADY in bed, go ahead and signal them to sleep
                         for (auto&& peer : NetManager()->GetPeers()) {
                             auto&& zdo = peer->GetZDO();
-                            if (zdo && zdo->GetBool(Hashes::ZDO::Player::IN_BED, false)) {
-                                RouteManager()->Invoke(peer->GetUserID(), Hashes::Routed::S2C_RequestSleep);
+                            if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                                RouteManager()->Invoke(peer->GetUserID(), avledet::util::hashes::Routed::S2C_RequestSleep);
                             }
                             else {
                                 peer->CornerMessage("The world is sleeping");
@@ -816,7 +816,7 @@ void IValhalla::PeriodUpdate() {
                     else {
                         // Just signal to all players to sleep
                         //  This assumes they are all already in bed
-                        RouteManager()->InvokeAll(Hashes::Routed::S2C_RequestSleep);
+                        RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_RequestSleep);
                     }
                 }
             }
@@ -884,5 +884,5 @@ Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, millise
 }
 
 void IValhalla::Broadcast(UIMsgType type, std::string_view text) {
-    RouteManager()->InvokeAll(Hashes::Routed::S2C_UIMessage, type, text);
+    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UIMessage, type, text);
 }

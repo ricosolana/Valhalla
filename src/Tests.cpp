@@ -6,8 +6,8 @@ public:
     TestSocket() {}
     void Close(bool) {}
     void Update() {}
-    void Send(BYTES_t) {}
-    std::optional<BYTES_t> Recv() { return std::nullopt; }
+    void Send(avledet::util::Bytes) {}
+    std::optional<avledet::util::Bytes> Recv() { return std::nullopt; }
     std::string GetHostName() const { return "crzi"; }
     std::string GetAddress() const { return "127.0.0.1"; }
     bool Connected() const { return true; }
@@ -48,8 +48,8 @@ void VHTest::ZDO_Sets(ZDO zdo) {
 
 void VHTest::Test_ZDO_Gets(ZDO zdo) {    
     assert(zdo.GetString("my key") == "my value");
-    assert(*zdo.Get<int32_t>("my int") == 10);
-    assert(*zdo.Get<int32_t>("large prime") == 2147483647);
+    assert(*zdo.Get<std::int32_t>("my int") == 10);
+    assert(*zdo.Get<std::int32_t>("large prime") == 2147483647);
     assert(*zdo.Get<float>("pi") == 3.141592654f);
     assert(*zdo.Get<Vector3f>("my vec") == Vector3f(0, 1, 0));
     assert(*zdo.Get<Quaternion>("my quat") == Quaternion(0, 0, 0, 1));
@@ -78,7 +78,7 @@ void VHTest::Test_ZDO_LoadSave() {
     //  because of the ZDO's being directly tied with ZDOManager
     assert(false);
     //{
-        auto&& zdo = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::zero());
+        auto&& zdo = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
         //ZDO_Sets(zdo);
         DataWriter writer;
@@ -86,7 +86,7 @@ void VHTest::Test_ZDO_LoadSave() {
         //zdo.Pack(writer, false);
     //}
 
-    auto&& zdo2 = ZDOManager()->Instantiate(Hashes::Object::Abomination, Vector3f::zero());
+    auto&& zdo2 = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
     DataReader reader(writer.get_buf());
     //zdo2.Unpack(reader, VConstants::WORLD);

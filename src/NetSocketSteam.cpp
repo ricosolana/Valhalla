@@ -79,21 +79,21 @@ void SteamSocket::Update() {
     SendQueued();
 }
 
-void SteamSocket::Send(BYTES_t bytes) {
+void SteamSocket::Send(avledet::util::Bytes bytes) {
     assert(!bytes.empty());
 
     m_sendQueue.push_back(std::move(bytes));
 }
 
-std::optional<BYTES_t> SteamSocket::Recv() {
+std::optional<avledet::util::Bytes> SteamSocket::Recv() {
     if (Connected()) {
 #define MSG_COUNT 1
         SteamNetworkingMessage_t* msg; // will point to allocated messages
         if (AcceptorSteam::STEAM_NETWORKING_SOCKETS->ReceiveMessagesOnConnection(m_hConn, &msg, MSG_COUNT) == MSG_COUNT) {
-            BYTES_t bytes; // ((BYTE_t*)msg->m_pData, msg->m_cbSize);
+            avledet::util::Bytes bytes; // ((avledet::util::Byte*)msg->m_pData, msg->m_cbSize);
             bytes.insert(bytes.begin(),
-                reinterpret_cast<BYTE_t*>(msg->m_pData), 
-                reinterpret_cast<BYTE_t*>(msg->m_pData) + msg->m_cbSize);
+                reinterpret_cast<avledet::util::Byte*>(msg->m_pData), 
+                reinterpret_cast<avledet::util::Byte*>(msg->m_pData) + msg->m_cbSize);
             msg->Release();
             return bytes;
         }
@@ -161,10 +161,10 @@ void SteamSocket::SendQueued() {
         msg->m_conn = m_hConn;          // set the intended recipient
         msg->m_pData = front.data();    // set the buffer
         msg->m_cbSize = front.size();   // set the buffer size
-        msg->m_nUserData = reinterpret_cast<std::intptr_t>(new BYTES_t(std::move(front)));
+        msg->m_nUserData = reinterpret_cast<std::intptr_t>(new avledet::util::Bytes(std::move(front)));
         msg->m_nFlags = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle;   // set the message flags
         msg->m_pfnFreeData = [](SteamNetworkingMessage_t* msg) {
-            delete reinterpret_cast<BYTES_t*>(msg->m_nUserData);
+            delete reinterpret_cast<avledet::util::Bytes*>(msg->m_nUserData);
         };
 
         messages[i] = msg;
@@ -172,7 +172,7 @@ void SteamSocket::SendQueued() {
         m_sendQueue.pop_front();
     }
 
-    //int64_t state[sizeof(messages) / sizeof(messages[0])]{};
+    //std::int64_t state[sizeof(messages) / sizeof(messages[0])]{};
     AcceptorSteam::STEAM_NETWORKING_SOCKETS->SendMessages(count, messages, nullptr);
 }
 

@@ -6,7 +6,7 @@
 
 namespace VUtils::Resource {
 
-    bool WriteFile(const fs::path& path, const BYTE_t* buf, size_t size) {
+    bool WriteFile(const fs::path& path, const avledet::util::Byte* buf, std::size_t size) {
         //ScopedFile file = fopen(path.string().c_str(), "wb");
         //
         //if (!file) return false;
@@ -30,12 +30,12 @@ namespace VUtils::Resource {
         return true;
     }
 
-    bool WriteFile(const fs::path& path, const BYTES_t& vec) {
+    bool WriteFile(const fs::path& path, const avledet::util::Bytes& vec) {
         return WriteFile(path, vec.data(), vec.size());
     }
 
     bool WriteFile(const fs::path& path, std::string_view str) {
-        return WriteFile(path, reinterpret_cast<const BYTE_t*>(str.data()), str.size());
+        return WriteFile(path, reinterpret_cast<const avledet::util::Byte*>(str.data()), str.size());
     }
 
 

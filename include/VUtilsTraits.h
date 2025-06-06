@@ -165,13 +165,13 @@ namespace avledet::util::traits {
     // found it
     template <typename T, typename... R>
     struct variadic_index_of_type<T, T, R...>
-        : std::integral_constant<size_t, 0>
+        : std::integral_constant<std::size_t, 0>
     { };
 
     // still looking
     template <typename T, typename F, typename... R>
     struct variadic_index_of_type<T, F, R...>
-        : std::integral_constant<size_t, 1 + variadic_index_of_type<T, R...>::value>
+        : std::integral_constant<std::size_t, 1 + variadic_index_of_type<T, R...>::value>
     { };*/
 
 

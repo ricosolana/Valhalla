@@ -35,7 +35,7 @@ class MethodImpl
 {
     using args_type = typename VUtils::Traits::func_traits<F>::args_type;
 
-    template<class Tuple, size_t... Is>
+    template<class Tuple, std::size_t... Is>
     auto impl_tail(DataReader& reader, std::index_sequence<Is...>) {
         return DataReader::deserialize<std::tuple_element_t<Is + 1u, Tuple>...>(reader);
     }
@@ -44,13 +44,13 @@ private:
     const F m_func;
 
 #if VH_IS_ON(VH_USE_MODS)
-    const HASH_t m_categoryHash;
-    const HASH_t m_methodHash;
+    const avledet::util::Hash m_categoryHash;
+    const avledet::util::Hash m_methodHash;
 #endif
 
 public:
 #if VH_IS_ON(VH_USE_MODS)
-    MethodImpl(F func, HASH_t categoryHash, HASH_t methodHash)
+    MethodImpl(F func, avledet::util::Hash categoryHash, avledet::util::Hash methodHash)
         : m_func(func), m_categoryHash(categoryHash), m_methodHash(methodHash) {}
 #else
     MethodImpl(F func)
@@ -91,7 +91,7 @@ public:
 };
 
 template<typename F>
-MethodImpl(F, HASH_t, HASH_t) -> MethodImpl<
+MethodImpl(F, avledet::util::Hash, avledet::util::Hash) -> MethodImpl<
     std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>,
     F
 >;

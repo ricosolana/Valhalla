@@ -15,22 +15,22 @@
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
-void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
+void ZDO::Load31Pre(DataReader& pkg, std::int32_t worldVersion) {
     assert(false); //TODO
     /*
-    pkg.read<uint32_t>();       // owner rev
-    pkg.read<uint32_t>();       // data rev
+    pkg.read<std::uint32_t>();       // owner rev
+    pkg.read<std::uint32_t>();       // data rev
     pkg.read<bool>();           // persistent
 
-    pkg.read<int64_t>();        // owner
-    auto timeCreated = pkg.read<int64_t>();
-    pkg.read<int32_t>();        // pgw
+    pkg.read<std::int64_t>();        // owner
+    auto timeCreated = pkg.read<std::int64_t>();
+    pkg.read<std::int32_t>();        // pgw
 
     if (worldVersion >= 16 && worldVersion < 24)
-        pkg.read<int32_t>();
+        pkg.read<std::int32_t>();
 
     if (worldVersion >= 23)
-        pkg.read<uint8_t>();    // type
+        pkg.read<std::uint8_t>();    // type
 
     if (worldVersion >= 22) {
         pkg.read<bool>();       // distant
@@ -43,10 +43,10 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
 
     const Prefab* prefab = nullptr;
 
-    HASH_t prefabHash{};
+    avledet::util::Hash prefabHash{};
 
     if (worldVersion >= 17) {
-        prefabHash = pkg.read<HASH_t>();
+        prefabHash = pkg.read<avledet::util::Hash>();
         prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
         _SetPrefabHash(prefabHash);
     }
@@ -61,15 +61,15 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
     _TryReadType<float,         char16_t>(pkg, members);
     _TryReadType<Vector3f,      char16_t>(pkg, members);
     _TryReadType<Quaternion,    char16_t>(pkg, members);
-    _TryReadType<int32_t,       char16_t>(pkg, members);
-    _TryReadType<int64_t,       char16_t>(pkg, members);
+    _TryReadType<std::int32_t,       char16_t>(pkg, members);
+    _TryReadType<std::int64_t,       char16_t>(pkg, members);
     _TryReadType<std::string,   char16_t>(pkg, members);
     
     if (worldVersion >= 27)
-        _TryReadType<BYTES_t,   char16_t>(pkg, members);
+        _TryReadType<avledet::util::Bytes,   char16_t>(pkg, members);
 
     if (worldVersion < 17) {
-        prefabHash = GetInt(Hashes::ZDO::ZDO::PREFAB);
+        prefabHash = GetInt(avledet::util::hashes::ZDO::ZDO::PREFAB);
         prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
         _SetPrefabHash(prefabHash);
     }
@@ -82,7 +82,7 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             auto&& zdoid = GetZDOID("user");
             if (zdoid) {
                 SetLocal();
-                Set(Hashes::ZDO::USER, zdoid.GetOwner());
+                Set(avledet::util::hashes::ZDO::USER, zdoid.GetOwner());
             }
         }
 
@@ -90,30 +90,30 @@ void ZDO::Load31Pre(DataReader& pkg, int32_t worldVersion) {
             auto&& zdoid = GetZDOID("RodOwner");
             if (zdoid) {
                 SetLocal();
-                Set(Hashes::ZDO::FishingFloat::ROD_OWNER, zdoid.GetOwner());
+                Set(avledet::util::hashes::ZDO::FishingFloat::ROD_OWNER, zdoid.GetOwner());
             }
         }
 
         if (prefab->AnyFlagsPresent(Prefab::Flag::TERRAIN_MODIFIER)
-            || (GetPrefabHash() == Hashes::Object::ship_construction))
+            || (GetPrefabHash() == avledet::util::hashes::Object::ship_construction))
         {
-            Set(Hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
+            Set(avledet::util::hashes::ZDO::TerrainModifier::TIME_CREATED, timeCreated);
         }
 
         // Convert seeds
         member_map copy = members;
         for (auto&& pair : copy) {
-            if (xhash_to_hash<int32_t>(pair.first) == Hashes::ZDO::VisEquipment::ITEM_LEFT) {
+            if (xhash_to_hash<std::int32_t>(pair.first) == avledet::util::hashes::ZDO::VisEquipment::ITEM_LEFT) {
                 // assign an arbitrary random seed based off its GetID()
                 Set("seed", 
-                    static_cast<int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
+                    static_cast<std::int32_t>(ankerl::unordered_dense::hash<ZDOID>{}(GetID())));
             }
         }
     }*/
 }
 #endif //VH_LEGACY_WORLD_LOADING
 
-void ZDO::Unpack(DataReader& reader, int32_t version) {
+void ZDO::Unpack(DataReader& reader, std::int32_t version) {
     //.m_uid.SetID();
     ushort flags = reader.read<std::uint16_t>();
 
@@ -172,7 +172,7 @@ void ZDO::Unpack(DataReader& reader, int32_t version) {
     if (flags & (1 << NETWORK_Connection)) {
         auto type = reader.read<ZDOConnector::Type>();
         if (version) { // disk
-            auto hash = reader.read<HASH_t>();
+            auto hash = reader.read<avledet::util::Hash>();
             //manager->s_connectionsHashData[m_uid] = std::make_pair(reader.read<ConnectionType>(), reader.read<avledet::util::Hash>());
 
             auto&& connector = ZDO_CONNECTORS[GetID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
@@ -255,7 +255,7 @@ ZoneID ZDO::GetZone() const {
 void ZDO::Pack(DataWriter& writer, bool network) const {    
     bool hasRot = this->m_rotation != Vector3f::zero();
 
-    uint16_t flags{};
+    std::uint16_t flags{};
 
     if (IsPersistent()) flags |= 1 << NETWORK_Persistent;
     if (IsDistant()) flags |= 1 << NETWORK_Distant;

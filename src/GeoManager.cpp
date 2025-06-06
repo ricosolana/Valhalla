@@ -38,8 +38,8 @@ void IGeoManager::PostWorldInit() {
 	m_offset1 = state.Range(-worldSize, worldSize);
 	m_offset2 = state.Range(-worldSize, worldSize);
 	m_offset3 = state.Range(-worldSize, worldSize);
-	m_riverSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
-	m_streamSeed = state.Range(std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max());
+	m_riverSeed = state.Range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
+	m_streamSeed = state.Range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
 	m_offset4 = state.Range(-worldSize, worldSize);
 
 	// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
@@ -268,7 +268,7 @@ bool IGeoManager::IsRiverAllowed(Vector2f p0, Vector2f p1, float step, float hei
 
 void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<River>& rivers) {
 	//Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
-	UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>> dictionary;
+	avledet::util::Map<Vector2i, std::vector<RiverPoint>> dictionary;
 	for (auto&& river : rivers) {
 
 		float num = river.widthMin / 8.f;
@@ -292,7 +292,7 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 	}
 }
 
-void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints,
+void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>>& riverPoints,
 	Vector2f p,
 	float r)
 {
@@ -309,7 +309,7 @@ void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint
 	}
 }
 
-void IGeoManager::AddRiverPoint(UNORDERED_MAP_t<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r) {
+void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>>& riverPoints, Vector2i grid, Vector2f p, float r) {
 	riverPoints[grid].push_back({ p, r });
 }
 
@@ -514,7 +514,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, float& mask) {
 	num5 /= 400.f;
 	//num = VUtils::Mathf::Lerp(a, num5, num3);
 	num = std::lerp(a, num5, num3);
-	//mask = Color{ 0, 0, 0, num4 };
+	//mask = avledet::util::Color{ 0, 0, 0, num4 };
 	mask = num4;
 	return num;
 }
@@ -633,12 +633,12 @@ bool IGeoManager::InsideRiverGrid(Vector2i grid, Vector2f p, float r) {
 }
 
 Vector2i IGeoManager::GetRiverGrid(float wx, float wy) {
-	auto x = (int32_t)std::floorf((wx + riverGridSize * .5f) / riverGridSize);
-	auto y = (int32_t)std::floorf((wy + riverGridSize * .5f) / riverGridSize);
+	auto x = (std::int32_t)std::floorf((wx + riverGridSize * .5f) / riverGridSize);
+	auto y = (std::int32_t)std::floorf((wy + riverGridSize * .5f) / riverGridSize);
 	return Vector2i(x, y);
 }
 
-BiomeArea IGeoManager::GetBiomeArea(Vector3f point) {
+avledet::util::BiomeArea IGeoManager::GetBiomeArea(Vector3f point) {
 	auto&& biome = GetBiome(point);
 
 	auto&& biome2 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
@@ -658,65 +658,65 @@ BiomeArea IGeoManager::GetBiomeArea(Vector3f point) {
 		&& biome == biome8
 		&& biome == biome9)
 	{
-		return BiomeArea::Median;
+		return avledet::util::BiomeArea::Median;
 	}
-	return BiomeArea::Edge;
+	return avledet::util::BiomeArea::Edge;
 }
 
 // public
-Biome IGeoManager::GetBiome(Vector3f point) {
+avledet::util::Biome IGeoManager::GetBiome(Vector3f point) {
 	return GetBiome(point.x, point.z);
 }
 
 // public
-Biome IGeoManager::GetBiome(float wx, float wy) {
+avledet::util::Biome IGeoManager::GetBiome(float wx, float wy) {
 	auto magnitude = VUtils::Math::magnitude(wx, wy);
 	auto baseHeight = GetBaseHeight(wx, wy);
 	float num = WorldAngle(wx, wy) * 100.f;
 
 	// bottom curve of world are ashlands
 	if (VUtils::Math::magnitude(wx, wy + ashlandsYOffset) > ashlandsMinDistance + num)
-		return Biome::AshLands;
+		return avledet::util::Biome::AshLands;
 
 	if (baseHeight <= 0.02f)
-		return Biome::Ocean;
+		return avledet::util::Biome::Ocean;
 
 	// top curve of world is deep north
 	if (VUtils::Math::magnitude(wx, wy + deepNorthYOffset) > deepNorthMinDistance + num) {
 		if (baseHeight > mountainBaseHeightMin)
-			return Biome::Mountain;
-		return Biome::DeepNorth;
+			return avledet::util::Biome::Mountain;
+		return avledet::util::Biome::DeepNorth;
 	}
 
 	if (baseHeight > mountainBaseHeightMin)
-		return Biome::Mountain;
+		return avledet::util::Biome::Mountain;
 
 	if (VUtils::Math::PerlinNoise((m_offset0 + wx) * marshBiomeScale, (m_offset0 + wy) * marshBiomeScale) > minMarshNoise
 		&& magnitude > minMarshDistance && magnitude < maxMarshDistance && baseHeight > minMarshHeight && baseHeight < maxMarshHeight)
-		return Biome::Swamp;
+		return avledet::util::Biome::Swamp;
 
 	if (VUtils::Math::PerlinNoise((m_offset4 + wx) * darklandBiomeScale, (m_offset4 + wy) * darklandBiomeScale) > minDarklandNoise
 		&& magnitude > minDarklandDistance + num && magnitude < maxDarklandDistance)
-		return Biome::Mistlands;
+		return avledet::util::Biome::Mistlands;
 
 	if (VUtils::Math::PerlinNoise((m_offset1 + wx) * heathBiomeScale, (m_offset1 + wy) * heathBiomeScale) > minHeathNoise
 		&& magnitude > minHeathDistance + num && magnitude < maxHeathDistance)
-		return Biome::Plains;
+		return avledet::util::Biome::Plains;
 
 	if (VUtils::Math::PerlinNoise((m_offset2 + wx) * 0.001f, (m_offset2 + wy) * 0.001f) > minDeepForestNoise
 		&& magnitude > minDeepForestDistance + num && magnitude < maxDeepForestDistance)
-		return Biome::BlackForest;
+		return avledet::util::Biome::BlackForest;
 
 	if (magnitude > meadowsMaxDistance + num)
-		return Biome::BlackForest;
+		return avledet::util::Biome::BlackForest;
 
-	return Biome::Meadows;
+	return avledet::util::Biome::Meadows;
 }
 
-Biome IGeoManager::GetBiomes(float x, float z) {
+avledet::util::Biome IGeoManager::GetBiomes(float x, float z) {
 	//ZoneID zone = IZoneManager::WorldToZonePos(Vector3f(x, 0., z));
 	//Vector3f center = IZoneManager::ZoneToWorldPos(zone) + ;
-	return Biome(std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
+	return avledet::util::Biome(std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
 		|| std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
 		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
 		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
@@ -736,33 +736,33 @@ float IGeoManager::GetHeight(float wx, float wy, float& mask) {
 // Used only early during generation
 float IGeoManager::GetGenerationHeight(float wx, float wy) {
 	auto biome = GetBiome(wx, wy);
-	if (biome == Biome::Mistlands)
+	if (biome == avledet::util::Biome::Mistlands)
 		return GetForestHeight(wx, wy) * 200.f;
 	float dummy;
 	return GetBiomeHeight(biome, wx, wy, dummy);
 }
 
 // public
-float IGeoManager::GetBiomeHeight(Biome biome, float wx, float wy, float& mask) {
+float IGeoManager::GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, float& mask) {
 	switch (biome)
 	{
-	case Biome::Meadows:
+	case avledet::util::Biome::Meadows:
 		return GetMeadowsHeight(wx, wy) * 200.f;
-	case Biome::Swamp:
+	case avledet::util::Biome::Swamp:
 		return GetMarshHeight(wx, wy) * 200.f;
-	case Biome::Mountain:
+	case avledet::util::Biome::Mountain:
 		return GetSnowMountainHeight(wx, wy) * 200.f;
-	case Biome::BlackForest:
+	case avledet::util::Biome::BlackForest:
 		return GetForestHeight(wx, wy) * 200.f;
-	case Biome::Plains:
+	case avledet::util::Biome::Plains:
 		return GetPlainsHeight(wx, wy) * 200.f;
-	case Biome::AshLands:
+	case avledet::util::Biome::AshLands:
 		return GetAshlandsHeight(wx, wy) * 200.f;
-	case Biome::DeepNorth:
+	case avledet::util::Biome::DeepNorth:
 		return GetDeepNorthHeight(wx, wy) * 200.f;
-	case Biome::Ocean:
+	case avledet::util::Biome::Ocean:
 		return GetOceanHeight(wx, wy) * 200.f;
-	case Biome::Mistlands:
+	case avledet::util::Biome::Mistlands:
 		return GetMistlandsHeight(wx, wy, mask) * 200.f;
 	}
 	return 0;

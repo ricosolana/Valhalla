@@ -70,7 +70,7 @@ void INetManager::SendPlayerList() {
 
         DataWriter writer;
 
-        writer.write(Hashes::Rpc::S2C_UpdatePlayerList);
+        writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList);
 
         //assert(false); //TODO
         writer.write([this](DataWriter& writer) {
@@ -103,14 +103,14 @@ void INetManager::SendPlayerList() {
 
 void INetManager::SendNetTime() {
     for (auto&& peer : m_onlinePeers) {
-        peer->Invoke(Hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
+        peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
 }
 
 
 
 void INetManager::SendPeerInfo(Peer& peer) {
-    peer.SubInvoke(Hashes::Rpc::PeerInfo, [](DataWriter& writer) {
+    peer.SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter& writer) {
         writer.write(Valhalla()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
@@ -130,7 +130,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 
 
-//void INetManager::OnNewClient(ISocket::Ptr socket, USER_ID_t uuid, const std::string &name, const Vector3f &pos) {
+//void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnPeerConnect(Peer& peer) {
     peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->GetHostName()));
 
@@ -141,14 +141,14 @@ void INetManager::OnPeerConnect(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has joined");
 
     // Important
-    peer.Register(Hashes::Rpc::C2S_PlayerData, [this](Peer* peer, BYTE_VIEW_t pkg) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_PlayerData, [this](Peer* peer, avledet::util::ByteView pkg) {
         //DataReader reader(pkg);
         auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
 
         peer->m_pos = reader.read<Vector3f>();
         peer->SetMapVisible(reader.read<bool>());
         
-        auto count = reader.read<int32_t>();
+        auto count = reader.read<std::int32_t>();
         for (int i = 0; i < count; i++) {
             // Read player event data (only 2):
             //  'possibleEvents'
@@ -160,7 +160,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
     // isnt 'ban' a command?
     //  it should be part of RemoteCommand
-    peer.Register(Hashes::Rpc::C2S_RemoteCommand, [](Peer* peer, std::string_view command) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RemoteCommand, [](Peer* peer, std::string_view command) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -172,7 +172,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
     });
 
     // Important
-    peer.Register(Hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
         // Peer sends 0,0 on death
         
         if (peer->m_characterID)
@@ -184,7 +184,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         LOG_INFO(m_logger, "Got CharacterID from {} ({})", peer->m_name, characterID);
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
         // TODO maybe permissions tree in future?
         //  lua? ...
         if (!peer->IsAdmin())
@@ -199,7 +199,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         }
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -212,7 +212,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         }
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -222,7 +222,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         peer->ConsoleMessage("Unbanning user " +  std::string(user));
     });
 
-    peer.Register(Hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -233,7 +233,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         peer->ConsoleMessage("Saved the world");
         });
 
-    peer.Register(Hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -298,7 +298,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByUserID(USER_ID_t uuid) {
+Peer* INetManager::GetPeerByUserID(avledet::util::UserID uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;
@@ -348,7 +348,7 @@ void INetManager::Update() {
     // Send periodic pings (1s)
     if (VUtils::run_periodic<struct periodic_peer_keepalive>(1s)) {
         DataWriter writer;
-        writer.write((HASH_t)0);
+        writer.write((avledet::util::Hash)0);
         writer.write(true);
 
         for (auto&& peer : m_connectedPeers) {
@@ -460,7 +460,7 @@ void INetManager::OnConfigLoad(bool reloading) {
         const auto merge = VH_SETTINGS.serverPassword + std::string(m_passwordSalt.data(), m_passwordSalt.size());
 
         // Hash a salted password
-        VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<uint8_t*>(m_passwordHash.data()));
+        VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
         VUtils::String::FormatAscii(m_passwordHash.data(), m_passwordHash.size());
     }

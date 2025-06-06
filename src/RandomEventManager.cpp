@@ -24,7 +24,7 @@ void IRandomEventManager::Init() {
 
 	{
 		// load Foliage:
-		auto opt = VUtils::Resource::ReadFile<BYTES_t>("randomEvents.pkg");
+		auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("randomEvents.pkg");
 		if (!opt)
 			throw std::runtime_error("randomEvents.pkg missing");
 
@@ -36,15 +36,15 @@ void IRandomEventManager::Init() {
 			//LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
 		}
 
-		auto count = pkg.read<int32_t>();
+		auto count = pkg.read<std::int32_t>();
 		for (int i = 0; i < count; i++) {
 			auto e = std::make_unique<Event>();
 
 			e->m_name = pkg.read<std::string>();
-			e->m_duration = duration_cast<nanoseconds>(seconds((int64_t)pkg.read<float>()));
+			e->m_duration = duration_cast<nanoseconds>(seconds((std::int64_t)pkg.read<float>()));
 			e->m_nearBaseOnly = pkg.read<bool>();
 			e->m_pauseIfNoPlayerInArea = pkg.read<bool>();
-			e->m_biome = (Biome)pkg.read<int32_t>();
+			e->m_biome = (avledet::util::Biome)pkg.read<std::int32_t>();
 
 			e->m_presentGlobalKeys = pkg.read<decltype(Event::m_presentGlobalKeys)>();
 			e->m_absentGlobalKeys = pkg.read<decltype(Event::m_absentGlobalKeys)>();
@@ -64,7 +64,7 @@ void IRandomEventManager::Update() {
 	if (m_activeEvent) {
 		// Update the timer of the current event
 		if (!m_activeEvent->m_pauseIfNoPlayerInArea
-			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius, Hashes::Object::Player, Prefab::Flag::NONE, Prefab::Flag::NONE))
+			|| ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius, avledet::util::hashes::Object::Player, Prefab::Flag::NONE, Prefab::Flag::NONE))
 			//m_activeEventTimer += Valhalla()->Delta();
 			m_activeEventRemaining -= Valhalla()->DeltaNanos();
 
@@ -139,9 +139,9 @@ std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>
 
 				if (
 					// Check biome first
-					(e->m_biome == Biome::None || (std::to_underlying(GeoManager()->GetBiome(zdo->GetPosition())) & std::to_underlying(e->m_biome)) != std::to_underlying(Biome::None))
+					(e->m_biome == avledet::util::Biome::None || (std::to_underlying(GeoManager()->GetBiome(zdo->GetPosition())) & std::to_underlying(e->m_biome)) != std::to_underlying(avledet::util::Biome::None))
 					// check base next
-					&& (!e->m_nearBaseOnly || zdo->GetInt(Hashes::ZDO::Player::BASE_VALUE) >= 3)
+					&& (!e->m_nearBaseOnly || zdo->GetInt(avledet::util::hashes::ZDO::Player::BASE_VALUE) >= 3)
 					// check that player is not in dungeon
 					&& (zdo->GetPosition().y < 3000.f))
 				{
@@ -190,7 +190,7 @@ void IRandomEventManager::Load(DataReader& reader, int version) {
 	m_eventIntervalTimer = reader.read<float>();
 	if (version >= 25) {
 		this->m_activeEvent = GetEvent(reader.read<std::string_view>());
-		this->m_activeEventRemaining = seconds((int64_t)reader.read<float>());
+		this->m_activeEventRemaining = seconds((std::int64_t)reader.read<float>());
 		this->m_activeEventPos = reader.read<Vector3f>();
 	}
 
@@ -201,14 +201,14 @@ void IRandomEventManager::Load(DataReader& reader, int version) {
 
 void IRandomEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
-		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent,
+		RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent,
 			std::string_view(m_activeEvent->m_name),
 			(float)duration_cast<seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
 			m_activeEventPos
 		);
 	}
 	else {
-		RouteManager()->InvokeAll(Hashes::Routed::S2C_SetEvent,
+		RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent,
 			std::string_view(""),
 			0.f,
 			Vector3f::zero()

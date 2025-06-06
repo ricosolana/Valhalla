@@ -35,12 +35,12 @@ public:
 
     // Send a packet to the remote host
     // Packet will be copied unless moved
-    virtual void Send(BYTES_t bytes) = 0;
+    virtual void Send(avledet::util::Bytes bytes) = 0;
 
     // Receive a packet from the remote host
     // Packet will undergo basic structure validation
     // This function shall not block
-    virtual std::optional<BYTES_t> Recv() = 0;
+    virtual std::optional<avledet::util::Bytes> Recv() = 0;
 
 
 
@@ -69,7 +69,7 @@ public:
 
 class SteamSocket : public ISocket {
 private:
-    std::list<BYTES_t> m_sendQueue;
+    std::list<avledet::util::Bytes> m_sendQueue;
     std::string m_address;
     bool m_connected{};
 
@@ -84,8 +84,8 @@ public:
     void Close(bool flush) override;
     
     void Update() override;
-    void Send(BYTES_t bytes) override;
-    std::optional<BYTES_t> Recv() override;
+    void Send(avledet::util::Bytes bytes) override;
+    std::optional<avledet::util::Bytes> Recv() override;
 
     std::string GetHostName() const override;
     std::string GetAddress() const override;

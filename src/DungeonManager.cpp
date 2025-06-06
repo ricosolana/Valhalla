@@ -18,7 +18,7 @@ IDungeonManager* DungeonManager() {
 
 void IDungeonManager::PostPrefabInit() {
     // load dungeons:
-    auto opt = VUtils::Resource::ReadFile<BYTES_t>("dungeons.pkg");
+    auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("dungeons.pkg");
     if (!opt)
         throw std::runtime_error("dungeons.pkg missing");
 
@@ -31,12 +31,12 @@ void IDungeonManager::PostPrefabInit() {
         //LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
     }
 
-    int32_t count = pkg.read<int32_t>();
+    std::int32_t count = pkg.read<std::int32_t>();
     //LOG_INFO(LOGGER, "Loading {} dungeons", count);
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
-        //HASH_t hash = pkg.read<HASH_t>();
+        //avledet::util::Hash hash = pkg.read<avledet::util::Hash>();
 
         auto name = pkg.read<std::string_view>();
 
@@ -47,16 +47,16 @@ void IDungeonManager::PostPrefabInit() {
         dungeon->m_interiorPosition = pkg.read<Vector3f>();
         dungeon->m_originalPosition = pkg.read<Vector3f>();
 
-        dungeon->m_algorithm = (Dungeon::Algorithm) pkg.read<int32_t>();
+        dungeon->m_algorithm = (Dungeon::Algorithm) pkg.read<std::int32_t>();
         dungeon->m_alternativeFunctionality = pkg.read<bool>();
         dungeon->m_campRadiusMax = pkg.read<float>();
         dungeon->m_campRadiusMin = pkg.read<float>();
         dungeon->m_doorChance = pkg.read<float>();
         
-        auto doorCount = pkg.read<int32_t>();
+        auto doorCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < doorCount; i2++) {
             Dungeon::DoorDef door;
-            door.m_prefab = PrefabManager()->GetPrefab(pkg.read<HASH_t>());
+            door.m_prefab = PrefabManager()->GetPrefab(pkg.read<avledet::util::Hash>());
             if (!door.m_prefab) {
                 throw std::runtime_error("dungeon door missing prefab");
             }
@@ -67,22 +67,22 @@ void IDungeonManager::PostPrefabInit() {
             dungeon->m_doorTypes.push_back(door);
         }
 
-        dungeon->m_gridSize = pkg.read<int32_t>();
-        dungeon->m_maxRooms = pkg.read<int32_t>();
+        dungeon->m_gridSize = pkg.read<std::int32_t>();
+        dungeon->m_maxRooms = pkg.read<std::int32_t>();
         dungeon->m_maxTilt = pkg.read<float>();
         dungeon->m_minAltitude = pkg.read<float>();
-        dungeon->m_minRequiredRooms = pkg.read<int32_t>();
-        dungeon->m_minRooms = pkg.read<int32_t>();
+        dungeon->m_minRequiredRooms = pkg.read<std::int32_t>();
+        dungeon->m_minRooms = pkg.read<std::int32_t>();
         dungeon->m_perimeterBuffer = pkg.read<float>();
-        dungeon->m_perimeterSections = pkg.read<int32_t>();
+        dungeon->m_perimeterSections = pkg.read<std::int32_t>();
         //decltype(Dungeon::m_requiredRooms)::be
         dungeon->m_requiredRooms = pkg.read<decltype(Dungeon::m_requiredRooms)>();
 
         dungeon->m_spawnChance = pkg.read<float>();
-        dungeon->m_themes = (Room::Theme) pkg.read<int32_t>();
+        dungeon->m_themes = (Room::Theme) pkg.read<std::int32_t>();
         dungeon->m_tileWidth = pkg.read<float>();
         
-        auto roomCount = pkg.read<int32_t>();
+        auto roomCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < roomCount; i2++) {
             auto room(std::make_unique<Room>());
 
@@ -90,13 +90,13 @@ void IDungeonManager::PostPrefabInit() {
             room->m_hash = VUtils::String::GetStableHashCode(room->m_name);
             room->m_divider = pkg.read<bool>();
             room->m_endCap = pkg.read<bool>();
-            room->m_endCapPrio = pkg.read<int32_t>();
+            room->m_endCapPrio = pkg.read<std::int32_t>();
             room->m_entrance = pkg.read<bool>();
             room->m_faceCenter = pkg.read<bool>();
-            room->m_minPlaceOrder = pkg.read<int32_t>();
+            room->m_minPlaceOrder = pkg.read<std::int32_t>();
             room->m_perimeter = pkg.read<bool>();
 
-            auto connCount = pkg.read<int32_t>();
+            auto connCount = pkg.read<std::int32_t>();
             for (int i3 = 0; i3 < connCount; i3++) {
                 auto conn(std::make_unique<RoomConnection>());
 
@@ -110,11 +110,11 @@ void IDungeonManager::PostPrefabInit() {
                 room->m_roomConnections.push_back(std::move(conn));
             }
 
-            auto viewCount = pkg.read<int32_t>();
+            auto viewCount = pkg.read<std::int32_t>();
             for (int i3 = 0; i3 < viewCount; i3++) {
                 Prefab::Instance instance;
                 
-                instance.m_prefabHash = pkg.read<HASH_t>();
+                instance.m_prefabHash = pkg.read<avledet::util::Hash>();
                 instance.m_pos = pkg.read<Vector3f>();
                 instance.m_rot = pkg.read<Quaternion>();
                 
@@ -125,7 +125,7 @@ void IDungeonManager::PostPrefabInit() {
             }
 
             room->m_size = pkg.read<Vector3f>();
-            room->m_theme = (Room::Theme) pkg.read<int32_t>();
+            room->m_theme = (Room::Theme) pkg.read<std::int32_t>();
             room->m_weight = pkg.read<float>();
             room->m_pos = pkg.read<Vector3f>();
             room->m_rot = pkg.read<Quaternion>();
@@ -133,14 +133,14 @@ void IDungeonManager::PostPrefabInit() {
             dungeon->m_availableRooms.push_back(std::move(room));
         }
 
-        HASH_t hash = dungeon->m_prefab->m_hash;
+        avledet::util::Hash hash = dungeon->m_prefab->m_hash;
         m_dungeons.insert({ hash, std::move(dungeon)});
     }
 }
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
-    static constexpr HASH_t LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
+    static constexpr avledet::util::Hash LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
 
     // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86
     auto&& lastReset = seconds(dungeonZdo.GetLong(LAST_RESET_HASH));
@@ -176,7 +176,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
                 auto&& zdo = ref.get();
                 auto&& prefab = zdo.GetPrefab();
 
-                assert(!(prefab.m_hash == Hashes::Object::Player || prefab.m_hash == Hashes::Object::Player_tombstone));
+                assert(!(prefab.m_hash == avledet::util::hashes::Object::Player || prefab.m_hash == avledet::util::hashes::Object::Player_tombstone));
 
                 ZDOManager()->DestroyZDO(zdo);
             }
@@ -197,7 +197,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
 }
 
 void IDungeonManager::TryRegenerateDungeons() {
-    size_t idx = m_nextIndex;
+    std::size_t idx = m_nextIndex;
     while (idx < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonsRegenerationMaxSteps)) 
     {
         auto&& itr = m_dungeonInstances.begin() + idx;
@@ -234,7 +234,7 @@ ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos
     return zdo;
 }
 
-ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed) {
+ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
 

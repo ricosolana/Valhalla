@@ -52,52 +52,52 @@ public:
 
     class MethodSig {
     public:
-        HASH_t m_hash;
+        avledet::util::Hash m_hash;
         Types m_types;
     };
 
     class Events {
     public:
         // Game state events
-        static constexpr HASH_t Enable = __H("Enable");
-        static constexpr HASH_t Disable = __H("Disable");
-        static constexpr HASH_t Update = __H("Update");
-        static constexpr HASH_t PeriodicUpdate = __H("Periodic");
+        static constexpr avledet::util::Hash Enable = __H("Enable");
+        static constexpr avledet::util::Hash Disable = __H("Disable");
+        static constexpr avledet::util::Hash Update = __H("Update");
+        static constexpr avledet::util::Hash PeriodicUpdate = __H("Periodic");
 
         // Connecting peer events
-        static constexpr HASH_t Connect = __H("Connect");
-        static constexpr HASH_t Disconnect = __H("Disconnect");
+        static constexpr avledet::util::Hash Connect = __H("Connect");
+        static constexpr avledet::util::Hash Disconnect = __H("Disconnect");
 
         // Connected peer events
-        static constexpr HASH_t Join = __H("Join");
-        static constexpr HASH_t Quit = __H("Quit");
+        static constexpr avledet::util::Hash Join = __H("Join");
+        static constexpr avledet::util::Hash Quit = __H("Quit");
 
         // Rpc events (some unimplemented)
-        static constexpr HASH_t RpcIn = __H("RpcIn");       // Peer -> Server
-        static constexpr HASH_t RpcOut = __H("RpcOut");     // Peer -> Server
+        static constexpr avledet::util::Hash RpcIn = __H("RpcIn");       // Peer -> Server
+        static constexpr avledet::util::Hash RpcOut = __H("RpcOut");     // Peer -> Server
         
         // Routed events (this is complicated)
-        static constexpr HASH_t RouteIn = __H("RouteIn");           // Peer -> Server
-        static constexpr HASH_t RouteInAll = __H("RouteInAll");     // Peer -> Server
-        static constexpr HASH_t RouteOut = __H("RouteOut");         // Server -> Peer
-        static constexpr HASH_t RouteOutAll = __H("RouteOutAll");   // Server -> Peer
-        static constexpr HASH_t Routed = __H("Routed");             // Peer -> Server -> Peer
+        static constexpr avledet::util::Hash RouteIn = __H("RouteIn");           // Peer -> Server
+        static constexpr avledet::util::Hash RouteInAll = __H("RouteInAll");     // Peer -> Server
+        static constexpr avledet::util::Hash RouteOut = __H("RouteOut");         // Server -> Peer
+        static constexpr avledet::util::Hash RouteOutAll = __H("RouteOutAll");   // Server -> Peer
+        static constexpr avledet::util::Hash Routed = __H("Routed");             // Peer -> Server -> Peer
 
         // General game events
-        static constexpr HASH_t PlayerList = __H("PlayerList");
+        static constexpr avledet::util::Hash PlayerList = __H("PlayerList");
 
-        static constexpr HASH_t ZDOUnpacked = __H("ZDOUnpacked");
-        static constexpr HASH_t ZDOCreated = __H("ZDOCreated");
-        static constexpr HASH_t ZDOModified = __H("ZDOModified");
-        static constexpr HASH_t SendingZDO = __H("SendingZDO");
-        //static constexpr HASH_t ZDODestroyed = __H("ZDODestroyed");
+        static constexpr avledet::util::Hash ZDOUnpacked = __H("ZDOUnpacked");
+        static constexpr avledet::util::Hash ZDOCreated = __H("ZDOCreated");
+        static constexpr avledet::util::Hash ZDOModified = __H("ZDOModified");
+        static constexpr avledet::util::Hash SendingZDO = __H("SendingZDO");
+        //static constexpr avledet::util::Hash ZDODestroyed = __H("ZDODestroyed");
 
         // Socket methods events
-        static constexpr HASH_t Send = __H("Send");
-        static constexpr HASH_t Recv = __H("Recv");
+        static constexpr avledet::util::Hash Send = __H("Send");
+        static constexpr avledet::util::Hash Recv = __H("Recv");
 
         // Event postfix handler
-        //static constexpr HASH_t POSTFIX = __H("POST");
+        //static constexpr avledet::util::Hash POSTFIX = __H("POST");
     };
 
     struct Mod {
@@ -126,8 +126,8 @@ public:
     };
 
 private:
-    UNORDERED_MAP_t<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
-    UNORDERED_MAP_t<HASH_t, std::list<EventHandle>> m_callbacks;
+    avledet::util::Map<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
+    avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
 
     bool m_unsubscribeCurrentEvent;
 
@@ -147,7 +147,7 @@ public:
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
     template <class... Args>
-    bool CallEvent(HASH_t name, Args&&... params) {
+    bool CallEvent(avledet::util::Hash name, Args&&... params) {
         ZoneScoped;
 
         this->m_unsubscribeCurrentEvent = false;
@@ -195,8 +195,8 @@ public:
 private:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
-    template<class Tuple, size_t... Is>
-    auto CallEventTupleImpl(HASH_t name, const Tuple& t, std::index_sequence<Is...>) {
+    template<class Tuple, std::size_t... Is>
+    auto CallEventTupleImpl(avledet::util::Hash name, const Tuple& t, std::index_sequence<Is...>) {
         return CallEvent(name, std::get<Is>(t)...); // TODO use forward
     }
 
@@ -204,7 +204,7 @@ public:
     // Dispatch a Lua event
     //  Returns whether the event was requested for cancellation
     template <class Tuple>
-    auto CallEventTuple(HASH_t name, const Tuple& t) {
+    auto CallEventTuple(avledet::util::Hash name, const Tuple& t) {
         return CallEventTupleImpl(name,
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});

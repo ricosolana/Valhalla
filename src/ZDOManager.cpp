@@ -5,6 +5,7 @@
 
 #include "ZDOManager.h"
 #include "NetManager.h"
+#include "VUtils.h"
 #include "ValhallaServer.h"
 #include "Hashes.h"
 #include "ZoneManager.h"
@@ -24,7 +25,7 @@ void IZDOManager::Init() {
 
 	m_logger = quill::Frontend::create_or_get_logger("zdomanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
 
-	RouteManager()->Register(Hashes::Routed::DestroyZDO, 
+	RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
 			// TODO constraint check
 			reader.read([this](ZDOID zdoid) {
@@ -36,7 +37,7 @@ void IZDOManager::Init() {
 	//auto&& insert = ZDOManager()->m_objectsByID.begin()->second->
 		//m_members.insert({0, ZDO::Ord()});
 	//insert.first->second.Get
-	RouteManager()->Register(Hashes::Routed::C2S_RequestZDO, 
+	RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestZDO, 
 		[this](Peer* peer, ZDOID id) {
 			peer->ForceSendZDO(id);
 		}
@@ -46,21 +47,12 @@ void IZDOManager::Init() {
 void IZDOManager::Update() {
 	ZoneScoped;
 
-	if (VUtils::run_periodic<struct periodic_zdo_stats>(3min)) {
-		//LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
+	if (VUtils::run_periodic_now<struct periodic_zdo_stats>(3min)) {
+		LOG_INFO(m_logger, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
 	}
-	/*
-	PERIODIC_NOW(3min, {
-		LOG_INFO(LOGGER, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
-		//VLOG(1) << "ZDO members (sum: " << GetSumZDOMembers()
-			//<< ", mean: " << GetMeanZDOMembers()
-			//<< ", stdev: " << GetStDevZDOMembers()
-			//<< ", empty: " << GetCountEmptyZDOs()
-			//<< ")";
-	})*/;
 
-	//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
-	//	[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
+	//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (std::size_t)0,
+	//	[](std::size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> std::size_t {
 	//		return value + v.second.size();
 	//	}
 	//) == m_objectsByID.size());
@@ -69,7 +61,7 @@ void IZDOManager::Update() {
 	//	link portals if mode enabled
 #if VH_IS_ON(VH_PORTAL_LINKING)
 	if (VUtils::run_periodic<struct link_portals>(1s)) {
-		auto&& portals = GetZDOs(Hashes::Object::portal_wood);
+		auto&& portals = GetZDOs(avledet::util::hashes::Object::portal_wood);
 
 		// TODO use the optimized Lua ported code for linking portals
 		//	not the exact code but the way the algo works
@@ -78,7 +70,7 @@ void IZDOManager::Update() {
 			std::vector<ZDO::unsafe_value> list;
 			for (auto&& zdo : portals) {
 				if (zdo->GetID() != skip
-					&& zdo->GetString(Hashes::ZDO::TeleportWorld::TAG) == tag
+					&& zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG) == tag
 					&& !zdo->GetConnectionZDOID(ZDOConnector::Type::Portal))
 				{
 					list.push_back(zdo);
@@ -94,10 +86,10 @@ void IZDOManager::Update() {
 
 		for (auto&& zdo : portals) {
 			auto&& connectionZDOID = zdo->GetConnectionZDOID(ZDOConnector::Type::Portal);
-			auto&& string = zdo->GetString(Hashes::ZDO::TeleportWorld::TAG);
+			auto&& string = zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
 			if (connectionZDOID) {
 				auto&& zdo2 = GetZDO(connectionZDOID);
-				if (!zdo2 || zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG) != string)
+				if (!zdo2 || zdo2->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG) != string)
 				{
 					zdo->SetLocal();
 					zdo->SetConnection(ZDOConnector::Type::Portal, ZDOID::NONE);
@@ -108,7 +100,7 @@ void IZDOManager::Update() {
 		
 		for (auto&& zdo3 : portals) {
 			if (!zdo3->GetConnectionZDOID(ZDOConnector::Type::Portal)) {
-				auto&& string2 = zdo3->GetString(Hashes::ZDO::TeleportWorld::TAG);
+				auto&& string2 = zdo3->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
 				auto&& zdo4 = FindRandomUnconnectedPortal(zdo3->GetID(), string2);
 				if (zdo4) {
 					zdo3->SetLocal();
@@ -130,8 +122,7 @@ void IZDOManager::Update() {
 	
 	if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {
 		for (auto&& peer : peers) {
-			if (
-				!peer->IsGated()) 
+			if (!peer->IsGated()) 
 			{
 				AssignOrReleaseZDOs(*peer);
 			}
@@ -142,26 +133,19 @@ void IZDOManager::Update() {
 		for (auto&& peer : peers) {
 			SendZDOs(*peer, false);
 		}
-	}
-
-	// Send ZDOS:
-	//PERIODIC_NOW(VH_SETTINGS.zdoSendInterval, {
-	//	for (auto&& peer : peers) {
-	//		SendZDOs(*peer, false);
-	//	}
-	//});
-	
+	}	
 
 	if (!m_destroySendList.empty()) {
 
 		// TODO make a member variable?
 		//	think about emulated zdo containers (like replaying actions to specific peers)
 		//	this is a functionality I might be planning on into the future
-		m_temp.clear();
-		DataWriter(m_temp).write(m_destroySendList);
+		DataWriter writer; //.write(m_destroySendList);
+		writer.write(m_destroySendList);
+
 		m_destroySendList.clear();
 
-		RouteManager()->InvokeAll(Hashes::Routed::DestroyZDO, m_temp);
+		RouteManager()->InvokeAll(avledet::util::hashes::Routed::DestroyZDO, std::move(writer.get_buf()));
 	}
 }
 
@@ -210,7 +194,7 @@ void IZDOManager::Save(DataWriter& writer) {
 		// Write zdos (persistent)
 		const auto start = writer.get_pos();
 
-		int32_t count = 0;
+		std::int32_t count = 0;
 		writer.write(count);
 
 		for (auto&& zdo : m_objectsByID) {
@@ -230,10 +214,10 @@ void IZDOManager::Save(DataWriter& writer) {
 
 
 void IZDOManager::Load(DataReader& reader, int version) {
-	reader.read<int64_t>(); // server id
-	reader.read<uint32_t>(); // next uid
+	reader.read<std::int64_t>(); // server id
+	reader.read<std::uint32_t>(); // next uid
 	
-	auto count = reader.read<uint32_t>();
+	auto count = reader.read<std::uint32_t>();
 	for (decltype(count) i = 0; i < count; i++) {
 		auto&& insert = _Instantiate(
 			version < 31 ? reader.read<ZDOID>() : ZDOID(0, ZDOManager()->m_nextUid++)
@@ -261,8 +245,8 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 		m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
 
-		//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (size_t)0,
-		//	[](size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> size_t {
+		//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (std::size_t)0,
+		//	[](std::size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> std::size_t {
 		//		return value + v.second.size();
 		//	}
 		//) == m_objectsByID.size());
@@ -279,23 +263,23 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 	if (version < 31) {
-		auto deadCount = reader.read<int32_t>();
+		auto deadCount = reader.read<std::int32_t>();
 		for (decltype(deadCount) j = 0; j < deadCount; j++) {
-			reader.read<int64_t>();
-			reader.read<uint32_t>();
-			reader.read<int64_t>();
+			reader.read<std::int64_t>();
+			reader.read<std::uint32_t>();
+			reader.read<std::int64_t>();
 		}
 
 		// Owners, Terrains, and Seeds have already been converted
 
 		// convert portals
-		for (auto&& zdo : GetZDOs(Hashes::Object::portal_wood)) {			
-			auto&& string = zdo->GetString(Hashes::ZDO::TeleportWorld::TAG);
+		for (auto&& zdo : GetZDOs(avledet::util::hashes::Object::portal_wood)) {			
+			auto&& string = zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
 			ZDOID zdoid; zdo->Extract("target", zdoid);
 			if (zdoid && !string.empty()) {
 				auto&& zdo2 = GetZDO(zdoid);
 				if (zdo2) {
-					auto&& string2 = zdo2->GetString(Hashes::ZDO::TeleportWorld::TAG);
+					auto&& string2 = zdo2->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
 					ZDOID zdoid2; zdo2->Extract("target", zdoid2);
 					if (string == string2
 						&& zdoid == zdo2->GetID()
@@ -332,7 +316,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 			else {
 				//zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
 					// zero out connector bit
-					//zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<uint32_t>(~ZDO::LocalFlag::Member_Connection)
+					//zdo.m_pack.Get<ZDO::FLAGS_PACK_INDEX>() & static_cast<std::uint32_t>(~ZDO::LocalFlag::Member_Connection)
 				//);
 			}
 		}
@@ -462,7 +446,7 @@ ZDO::unsafe_value IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	return zdo;
 }
 
-ZDO::unsafe_value IZDOManager::Instantiate(HASH_t hash, Vector3f pos, const Prefab** outPrefab) {
+ZDO::unsafe_value IZDOManager::Instantiate(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab) {
 	//auto&& zdo = Instantiate()
 	auto&& prefab = PrefabManager()->RequirePrefabByHash(hash);
 	if (outPrefab) *outPrefab = &prefab;
@@ -631,14 +615,14 @@ void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value
 }
 
 void IZDOManager::GetZDOs_DistantZones(ZoneID zone, std::list<ZDO::unsafe_value>& out) {
-	for (int16_t r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
+	for (std::int16_t r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
 		r <= IZoneManager::NEAR_ACTIVE_AREA + IZoneManager::DISTANT_ACTIVE_AREA; 
 		r++) {
-		for (int16_t x = zone.x - r; x <= zone.x + r; x++) {
+		for (std::int16_t x = zone.x - r; x <= zone.x + r; x++) {
 			GetZDOs_Distant(ZoneID(x, zone.y - r), out);
 			GetZDOs_Distant(ZoneID(x, zone.y + r), out);
 		}
-		for (int16_t y = zone.y - r + 1; y <= zone.y + r - 1; y++) {
+		for (std::int16_t y = zone.y - r + 1; y <= zone.y + r - 1; y++) {
 			GetZDOs_Distant(ZoneID(zone.x - r, y), out);
 			GetZDOs_Distant(ZoneID(zone.x + r, y), out);
 		}
@@ -679,8 +663,8 @@ std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer&
 		auto&& a = first.first;
 		auto&& b = second.first;
 
-		bool flag = a->GetType() == ObjectType::PRIORITIZED && a->HasOwner() && !a->IsOwner(peer.GetUserID());
-		bool flag2 = b->GetType() == ObjectType::PRIORITIZED && b->HasOwner() && !b->IsOwner(peer.GetUserID());
+		bool flag = a->GetType() == avledet::util::ObjectType::PRIORITIZED && a->HasOwner() && !a->IsOwner(peer.GetUserID());
+		bool flag2 = b->GetType() == avledet::util::ObjectType::PRIORITIZED && b->HasOwner() && !b->IsOwner(peer.GetUserID());
 
 		if (flag == flag2) {
 			if ((flag && flag2) || a->GetType() == b->GetType()) {
@@ -745,7 +729,7 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::unsafe_value>& obj
 
 
 
-std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(HASH_t prefab) {
+std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(avledet::util::Hash prefab) {
 	std::list<ZDO::unsafe_value> out;
 	auto&& find = m_objectsByPrefab.find(prefab);
 	if (find != m_objectsByPrefab.end()) {
@@ -768,7 +752,7 @@ std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(pred_t pred) {
 
 
 
-std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, size_t max, pred_t pred) {
+std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, std::size_t max, pred_t pred) {
 	std::list<ZDO::unsafe_value> out;
 
 	const float sqRadius = radius * radius;
@@ -796,7 +780,7 @@ std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, s
 	return out;
 }
 
-std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(ZoneID zone, size_t max, pred_t pred) {
+std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(ZoneID zone, std::size_t max, pred_t pred) {
 	std::list<ZDO::unsafe_value> out;
 
 	if (auto&& container = _GetZDOContainer(zone)) {
@@ -877,7 +861,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	//	to avoid a few buffer allocs
 	//	this only matters if performance is upmost concern, which it is because c :>
 
-	peer.SubInvoke(Hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter& writer) {
+	peer.SubInvoke(avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter& writer) {
 		writer.write(peer.m_invalidSector);
 
 		const auto time = Valhalla()->Time();
@@ -922,7 +906,7 @@ bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 }
 
 void IZDOManager::OnNewPeer(Peer& peer) {
-	peer.Register(Hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
+	peer.Register(avledet::util::hashes::Rpc::ZDOData, [this](Peer* peer, DataReader reader) {
 		ZoneScoped;
 
 		// Only allow if normal mode
@@ -939,9 +923,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 		auto time = Valhalla()->Time();
 
 		while (auto zdoid = reader.read<ZDOID>()) {
-			auto ownerRev = reader.read<uint16_t>();	// owner revision
-			auto dataRev = reader.read<uint32_t>();		// data revision
-			auto owner = reader.read<int64_t>();		// owner
+			auto ownerRev = reader.read<std::uint16_t>();	// owner revision
+			auto dataRev = reader.read<std::uint32_t>();		// data revision
+			auto owner = reader.read<std::int64_t>();		// owner
 			auto pos = reader.read<Vector3f>();			// position
 
 			auto des = DataReader(reader.read<std::vector<char>>());		// dont move this
@@ -1060,8 +1044,8 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 
 
 
-size_t IZDOManager::GetSumZDOMembers() {
-	size_t res = 0;
+std::size_t IZDOManager::GetSumZDOMembers() {
+	std::size_t res = 0;
 	for (auto&& zdo : m_objectsByID) {
 		//res += zdo.second->m_members.size();
 	}
@@ -1084,17 +1068,18 @@ float IZDOManager::GetStDevZDOMembers() {
 	return std::sqrt(res / n);
 }
 
-size_t IZDOManager::GetTotalZDOAlloc() {
-	size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-	for (auto&& zdo : m_objectsByID) bytes += zdo->GetTotalAlloc();
-	return bytes;
+std::size_t IZDOManager::GetTotalZDOAlloc() {
+	//std::size_t bytes = m_objectsByID.size() * sizeof(ZDO);
+	//for (auto&& zdo : m_objectsByID) bytes += zdo->GetTotalAlloc();
+	//return bytes;
+	return ZDO::GetTotalAlloc(false);
 }
 
-size_t IZDOManager::GetCountEmptyZDOs() {
+std::size_t IZDOManager::GetCountEmptyZDOs() {
 	// so gather each ZDO member, and write how many of them are empty
-	size_t count = 0;
+	std::size_t count = 0;
 	for (auto&& zdo : m_objectsByID) {
-		auto alloc = zdo->GetTotalAlloc();
+		auto alloc = zdo->GetTotalAlloc(false);
 		if (alloc == 0)
 			count++;
 	}

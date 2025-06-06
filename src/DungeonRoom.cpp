@@ -4,7 +4,7 @@
 #include "VUtilsString.h"
 
 //TODO why not return hash?
-HASH_t Room::GetHash() const {
+avledet::util::Hash Room::GetHash() const {
 	return m_hash;
 }
 

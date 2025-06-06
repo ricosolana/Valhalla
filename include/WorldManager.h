@@ -15,17 +15,17 @@ class World {
 public:
     std::string m_name;
     std::string m_seedName;
-    HASH_t m_seed;
-    int64_t m_uid;
-    int32_t m_worldGenVersion;
+    avledet::util::Hash m_seed;
+    std::int64_t m_uid;
+    std::int32_t m_worldGenVersion;
 
 public:
     World(std::string name, std::string seedName);
     World(DataReader reader);
 
 public:
-    BYTES_t SaveMeta();
-    //BYTES_t SaveDB();
+    avledet::util::Bytes SaveMeta();
+    //avledet::util::Bytes SaveDB();
 
     void WriteFileMeta(const fs::path& root);
     void WriteFileDB(const fs::path& root);
@@ -61,7 +61,7 @@ public:
 
     std::unique_ptr<World> RetrieveWorld(std::string_view name, std::string_view fallbackSeedName) const;
 
-    BYTES_t SaveWorldDB() const;
+    avledet::util::Bytes SaveWorldDB() const;
     //void LoadFileWorldDB(const fs::path& path) const;
 
     // Create a copy of a world by name

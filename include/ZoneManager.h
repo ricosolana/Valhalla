@@ -71,10 +71,10 @@ class IZoneManager {
 
 	public:
 		std::string m_name;
-		HASH_t m_hash;
+		avledet::util::Hash m_hash;
 
-		Biome m_biome;
-		BiomeArea m_biomeArea = BiomeArea::Everything;
+		avledet::util::Biome m_biome;
+		avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
 		bool m_applyRandomDamage;
 		bool m_centerFirst;
 		bool m_clearArea;
@@ -98,8 +98,8 @@ class IZoneManager {
 		float m_maxTerrainDelta = 2;
 		float m_minDistanceFromSimilar;
 		//bool m_prioritized;
-		int32_t m_spawnAttempts; // 200000 or 100000 depending on priority
-		int32_t m_quantity;
+		std::int32_t m_spawnAttempts; // 200000 or 100000 depending on priority
+		std::int32_t m_quantity;
 		bool m_randomRotation = true;
 		//std::vector<RandomSpawn> m_randomSpawns;
 		bool m_slopeRotation;
@@ -129,8 +129,8 @@ class IZoneManager {
 	public:
 		const Prefab* m_prefab = nullptr;
 
-		Biome m_biome = Biome::None;
-		BiomeArea m_biomeArea = BiomeArea::Everything;
+		avledet::util::Biome m_biome = avledet::util::Biome::None;
+		avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
 		float m_radius = 0; // My custom impl
 		float m_min = 0;
 		float m_max = 10;
@@ -138,8 +138,8 @@ class IZoneManager {
 		float m_maxTilt = 90;
 		float m_groupRadius = 0;
 		bool m_forcePlacement = false;
-		int32_t m_groupSizeMin = 1;
-		int32_t m_groupSizeMax = 1;
+		std::int32_t m_groupSizeMin = 1;
+		std::int32_t m_groupSizeMax = 1;
 		float m_scaleMin = 1;
 		float m_scaleMax = 1;
 		float m_randTilt = 0;
@@ -188,19 +188,19 @@ private:
 	std::vector<std::unique_ptr<const Feature>> m_features;
 
 	// All Features within a world hashed by name
-	//UNORDERED_MAP_t<HASH_t, std::reference_wrapper<const Feature>> m_featuresByHash;
+	//avledet::util::Map<avledet::util::Hash, std::reference_wrapper<const Feature>> m_featuresByHash;
 
 	// All Foliage within a world capable of generation
 	std::vector<std::unique_ptr<const Foliage>> m_foliage;
 
 	// All the generated Features in a world
-	UNORDERED_MAP_t<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
+	avledet::util::Map<ZoneID, std::unique_ptr<Feature::Instance>> m_generatedFeatures;
 
 	// Which Zones have already been generated
-	UNORDERED_SET_t<ZoneID> m_generatedZones;
+	avledet::util::Set<ZoneID> m_generatedZones;
 #else
 	/*
-	enum class SigFeature : uint8_t {
+	enum class SigFeature : std::uint8_t {
 		SPAWN,
 		HALDOR,
 		EIKTHYR,
@@ -224,11 +224,11 @@ private:
 		"DvergrBoss"
 	};
 
-	UNORDERED_MAP_t<ZoneID, std::pair<uint8_t, Vector3f>> m_generatedFeatures;
+	avledet::util::Map<ZoneID, std::pair<std::uint8_t, Vector3f>> m_generatedFeatures;
 #endif
 
 	// Game-state global keys
-	UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
+	avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_globalKeys;
 
 private:
 	void SendGlobalKeys();
@@ -267,13 +267,13 @@ private:
 	ZoneID GetRandomZone(VUtils::Random::State& state, float range);
 
 	void RemoveUngeneratedFeatures(const Feature& feature);
-	void GenerateFeature(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
+	void GenerateFeature(const Feature& feature, avledet::util::Hash seed, Vector3f pos, Quaternion rot);
 
 	void GetTerrainDelta(VUtils::Random::State& state, Vector3f pos, float range, float& delta, Vector3f& slopeDirection);
 
 	bool IsZoneGenerated(ZoneID zone);
 
-	void GenerateLocationProxy(const Feature& feature, HASH_t seed, Vector3f pos, Quaternion rot);
+	void GenerateLocationProxy(const Feature& feature, avledet::util::Hash seed, Vector3f pos, Quaternion rot);
 #endif
 
 public:
@@ -285,7 +285,7 @@ public:
 #endif
 
 	void Save(DataWriter& pkg);
-	void Load(DataReader& reader, int32_t version);
+	void Load(DataReader& reader, std::int32_t version);
 
 	auto& GlobalKeys() {
 		return m_globalKeys;
@@ -303,7 +303,7 @@ public:
 	float GetGroundHeight(Vector3f pos);
 
 	// Get specific height information at position
-	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, Biome& biome, BiomeArea& biomeArea);
+	Heightmap& GetGroundData(Vector3f& pos, Vector3f& normal, avledet::util::Biome& biome, avledet::util::BiomeArea& biomeArea);
 
 	// Find the nearest location
 	//	Nullable
@@ -318,7 +318,7 @@ public:
 	bool ZonesOverlap(ZoneID zone, Vector3f areaPoint);
 	bool ZonesOverlap(ZoneID zone, ZoneID areaZone);
 
-	bool IsPeerNearby(ZoneID zone, USER_ID_t uid);
+	bool IsPeerNearby(ZoneID zone, avledet::util::UserID uid);
 };
 
 // Manager class for everything related to world generation

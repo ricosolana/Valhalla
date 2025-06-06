@@ -44,7 +44,7 @@ public:
 
 	//bool m_useCustomInteriorTransform; // templated
 
-	//HASH_t m_generatedSeed;
+	//avledet::util::Hash m_generatedSeed;
 
 	//Vector3f m_originalPosition; // templated
 
@@ -123,9 +123,9 @@ public:
 	DungeonGenerator(const DungeonGenerator& other) = delete;
 
 	void Generate();
-	void Generate(HASH_t seed);
+	void Generate(avledet::util::Hash seed);
 
-	HASH_t GetSeed();
+	avledet::util::Hash GetSeed();
 
 	// i hate the split between zoneloc inst and dungeon
 	// it should have dungeon type immediately within it...

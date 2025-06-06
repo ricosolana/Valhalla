@@ -15,16 +15,16 @@ public:
 		nanoseconds m_duration{};
 		bool m_nearBaseOnly{};
 		bool m_pauseIfNoPlayerInArea{};
-		Biome m_biome{};
+		avledet::util::Biome m_biome{};
 
-		UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_presentGlobalKeys;
-		UNORDERED_SET_t<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_absentGlobalKeys;
+		avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_presentGlobalKeys;
+		avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_absentGlobalKeys;
 
 		Event() {}
 	};
 
 public:
-	UNORDERED_MAP_t<std::string_view, std::unique_ptr<Event>> m_events;
+	avledet::util::Map<std::string_view, std::unique_ptr<Event>> m_events;
 
 	// Event timer for next event attempt
 	float m_eventIntervalTimer = 0;

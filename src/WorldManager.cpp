@@ -31,7 +31,7 @@ World::World(std::string name, std::string seedName) {
 World::World(DataReader reader) {
 	reader = DataReader(reader.read<std::vector<char>>());
 
-	auto worldVersion = reader.read<int32_t>();
+	auto worldVersion = reader.read<std::int32_t>();
 
 	if (worldVersion != VConstants::WORLD) {
 		//LOG_WARNING(LOGGER, "Loading unsupported world meta version: {}", worldVersion);
@@ -39,10 +39,10 @@ World::World(DataReader reader) {
 
 	m_name = reader.read<std::string>();
 	m_seedName = reader.read<std::string>();
-	reader.read<HASH_t>(); // seed
+	reader.read<avledet::util::Hash>(); // seed
 	m_seed = VUtils::String::GetStableHashCode(m_seedName);
-	m_uid = reader.read<int64_t>();
-	m_worldGenVersion = worldVersion >= 26 ? reader.read<int32_t>() : 0;
+	m_uid = reader.read<std::int64_t>();
+	m_worldGenVersion = worldVersion >= 26 ? reader.read<std::int32_t>() : 0;
 	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
 		assert(false); //TODO
@@ -59,7 +59,7 @@ World::World(DataReader reader) {
 
 
 
-BYTES_t World::SaveMeta() {
+avledet::util::Bytes World::SaveMeta() {
 	DataWriter writer;
 	assert(false); //TODO
 	//writer.SubWrite([this](DataWriter& writer) {
@@ -72,15 +72,15 @@ BYTES_t World::SaveMeta() {
 	//	writer.write(true);
 	//	
 	//	// TODO write starting keys
-	//	writer.write(UNORDERED_SET_t<std::string>());
+	//	writer.write(avledet::util::Set<std::string>());
 	//});
 
 	return writer.get_buf();
 }
 
 /*
-BYTES_t World::SaveDB() {
-	BYTES_t bytes;
+avledet::util::Bytes World::SaveDB() {
+	avledet::util::Bytes bytes;
 	DataWriter writer(bytes);
 
 	writer.write(VConstants::WORLD);
@@ -98,7 +98,7 @@ BYTES_t World::SaveDB() {
 void World::WriteFileMeta(const fs::path& root) {
 	fs::create_directories(root);
 
-	BYTES_t bytes = SaveMeta();
+	avledet::util::Bytes bytes = SaveMeta();
 
 	auto path(root / (m_name + ".fwl"));
 
@@ -115,7 +115,7 @@ void World::WriteFileDB(const fs::path& root) {
 	fs::create_directories(root);
 
 	auto startTime(steady_clock::now());
-	BYTES_t bytes = WorldManager()->SaveWorldDB();
+	avledet::util::Bytes bytes = WorldManager()->SaveWorldDB();
 	auto finishTime = (steady_clock::now());
 
 	auto path(root / (m_name + ".db"));
@@ -132,11 +132,11 @@ void World::LoadFileDB(const fs::path& root) {
 	auto now(steady_clock::now());
 
 	auto path(root / (m_name + ".db"));
-	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(path)) {
+	if (auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>(path)) {
 		try {
 			DataReader reader(opt.value());
 
-			auto worldVersion = reader.read<int32_t>();
+			auto worldVersion = reader.read<std::int32_t>();
 			if (worldVersion != VConstants::WORLD) {
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 				//LOG_WARNING(LOGGER, "Loading legacy world with version {}", worldVersion);
@@ -185,7 +185,7 @@ void World::CopyCompressDB(const fs::path& root) {
 	auto path = root / (m_name + ".db");
 
 	if (fs::exists(path)) {
-		if (auto oldSave = VUtils::Resource::ReadFile<BYTES_t>(path)) {
+		if (auto oldSave = VUtils::Resource::ReadFile<avledet::util::Bytes>(path)) {
 			auto compressed = ZStdCompressor().Compress(*oldSave);
 			if (!compressed) {
 				//LOG_ERROR(LOGGER, "Failed to compress world backup {}", path.string());
@@ -255,7 +255,7 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 
 
 bool IWorldManager::LoadWorldMeta(const fs::path& root) {
-	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(root / (VH_SETTINGS.worldName + ".fwl"))) {
+	if (auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (VH_SETTINGS.worldName + ".fwl"))) {
 		try {
 			this->m_world = std::make_unique<World>(DataReader(*opt));
 		}
@@ -272,7 +272,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name, std::
 
 	std::unique_ptr<World> world;
 
-	if (auto opt = VUtils::Resource::ReadFile<BYTES_t>(GetWorldsPath() / (std::string(name) + ".fwl"))) {
+	if (auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>(GetWorldsPath() / (std::string(name) + ".fwl"))) {
 		try {
 			world = std::make_unique<World>(DataReader(*opt));
 		}
@@ -298,7 +298,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name, std::
 	return world;
 }
 
-BYTES_t IWorldManager::SaveWorldDB() const {
+avledet::util::Bytes IWorldManager::SaveWorldDB() const {
 	DataWriter writer;
 	
 	writer.write(VConstants::WORLD);
@@ -329,12 +329,12 @@ void IWorldManager::WriteFileWorldDB(const fs::path& path, bool sync) const {
 	//LOG(INFO) << "World saving";
 
 	auto start(steady_clock::now());
-	BYTES_t bytes = SaveWorldDB();
+	avledet::util::Bytes bytes = SaveWorldDB();
 	auto now(steady_clock::now());
 
 	//LOG(INFO) << "World serialize took " << duration_cast<milliseconds>(now - start);
 
-	m_saveThread = std::jthread([path](BYTES_t bytes) {
+	m_saveThread = std::jthread([path](avledet::util::Bytes bytes) {
 		try {
 			el::Helpers::setThreadName("save");
 

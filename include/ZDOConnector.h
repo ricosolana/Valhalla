@@ -6,7 +6,7 @@
 
 class ZDOConnector {
 public:
-	enum class Type : uint8_t {
+	enum class Type : std::uint8_t {
 		None = 0,
 		Portal = 1,
 		SyncTransform = 2,
@@ -24,11 +24,11 @@ public:
 
 class ZDOConnectorData : public ZDOConnector {
 public:
-	HASH_t m_hash{};
+	avledet::util::Hash m_hash{};
 
 public:
 	ZDOConnectorData() {}
-	ZDOConnectorData(Type type, HASH_t hash) : ZDOConnector(type), m_hash(hash) {}
+	ZDOConnectorData(Type type, avledet::util::Hash hash) : ZDOConnector(type), m_hash(hash) {}
 };
 
 class ZDOConnectorTargeted : public ZDOConnector {

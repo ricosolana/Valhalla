@@ -36,7 +36,7 @@ namespace VUtils::Resource {
     // Read a file into a buffer object
     //  Buffer can be a byte vector, string, or 
     //  other (preferably) contiguous data structure
-    template<typename Buffer = BYTES_t>
+    template<typename Buffer = avledet::util::Bytes>
     std::optional<Buffer> ReadFile(const fs::path& path) {
        //ScopedFile file(fopen(path.string().c_str(), "rb"));
        //
@@ -163,8 +163,8 @@ namespace VUtils::Resource {
 
 
         
-    bool WriteFile(const fs::path& path, const BYTE_t* buf, size_t size);
-    bool WriteFile(const fs::path& path, const BYTES_t& buffer);
+    bool WriteFile(const fs::path& path, const avledet::util::Byte* buf, std::size_t size);
+    bool WriteFile(const fs::path& path, const avledet::util::Bytes& buffer);
     bool WriteFile(const fs::path& path, std::string_view str);
 
     // Write a Container<std::string> as lines to a file

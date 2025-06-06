@@ -56,7 +56,7 @@ public:
 
 	std::string m_name; // custom (unity gameobject name of this Room)
 
-	HASH_t m_hash; // based off name
+	avledet::util::Hash m_hash; // based off name
 
 	Vector3f m_pos;
 	Quaternion m_rot;
@@ -74,7 +74,7 @@ public:
 
 	Room(const Room& other) = delete;
 
-	HASH_t GetHash() const;
+	avledet::util::Hash GetHash() const;
 
 	const std::vector<std::unique_ptr<RoomConnection>>& GetConnections() const {
 		return m_roomConnections;

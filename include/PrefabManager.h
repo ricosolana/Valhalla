@@ -17,12 +17,12 @@ class IPrefabManager {
 
 private:
 	// TODO use set and use hash within from prefab
-	UNORDERED_SET_t<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
+	avledet::util::Set<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
 
 public:
 	void Init();
 
-	const Prefab* GetPrefab(HASH_t hash) const {
+	const Prefab* GetPrefab(avledet::util::Hash hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end())
 			return &(*find);
@@ -37,7 +37,7 @@ public:
 
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefabByHash(HASH_t hash) const {
+	const Prefab& RequirePrefabByHash(avledet::util::Hash hash) const {
 		auto prefab = GetPrefab(hash);
 		if (!prefab)
 			throw std::runtime_error("prefab not found");
@@ -51,12 +51,12 @@ public:
 	}
 
 	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {
-		HASH_t hash = VUtils::String::GetStableHashCode(name);
+		avledet::util::Hash hash = VUtils::String::GetStableHashCode(name);
 		Prefab prefab(name, scale, flags);
 		m_prefabs.emplace(prefab);
 
 		if (name == "_TerrainCompiler") {
-			assert(prefab.GetObjectType() == ObjectType::TERRAIN);
+			assert(prefab.GetObjectType() == avledet::util::ObjectType::TERRAIN);
 		}
 
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";

@@ -13,23 +13,23 @@ class IDungeonManager {
 	friend class IZoneManager;
 
 private:
-	UNORDERED_MAP_t<HASH_t, std::unique_ptr<Dungeon>> m_dungeons;
+	avledet::util::Map<avledet::util::Hash, std::unique_ptr<Dungeon>> m_dungeons;
 
 	//robin_hood::unordered_set<ZDOID> m_dungeonInstances;
 	std::vector<ZDOID> m_dungeonInstances;
-	size_t m_nextIndex = 0;
+	std::size_t m_nextIndex = 0;
 
 public:
     void PostPrefabInit();
 
-	const Dungeon* GetDungeon(HASH_t hash) const {
+	const Dungeon* GetDungeon(avledet::util::Hash hash) const {
 		auto&& find = m_dungeons.find(hash);
 		if (find != m_dungeons.end())
 			return find->second.get();
 		return nullptr;
 	}
 
-	const Dungeon& RequireDungeon(HASH_t hash) const {
+	const Dungeon& RequireDungeon(avledet::util::Hash hash) const {
 		auto&& dungeon = GetDungeon(hash);
 		if (!dungeon)
 			throw std::runtime_error("unknown dungeon");
@@ -45,7 +45,7 @@ public:
 #endif
 
 	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
-	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, HASH_t seed);
+	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
 	void Generate(const Dungeon& dungeon, ZDO::unsafe_value zdo);
 };
 

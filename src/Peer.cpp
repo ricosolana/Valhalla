@@ -27,14 +27,14 @@ static constexpr std::array<std::string_view, 13> STATUS_STRINGS = {
 Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(steady_clock::now())
 {
-    this->Register(Hashes::Rpc::Disconnect, [](Peer* self) {
+    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer* self) {
         //LOG(INFO) << "RPC_Disconnect";
         self->Disconnect();
     });
 
-    this->Register(Hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
-        rpc->Register(Hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
-            rpc->m_characterID.set_user_id(reader.read<int64_t>());
+    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
+        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
+            rpc->m_characterID.set_user_id(reader.read<std::int64_t>());
 #if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
                 throw std::runtime_error("peer provided 0 owner");
@@ -45,7 +45,7 @@ Peer::Peer(ISocket::Ptr socket)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
             // network version
-            if (reader.read<uint32_t>() != VConstants::NETWORK) {
+            if (reader.read<std::uint32_t>() != VConstants::NETWORK) {
                 return rpc->Close(ConnectionStatus::ErrorVersion);
             }
 
@@ -63,7 +63,7 @@ Peer::Peer(ISocket::Ptr socket)
 
             if (VH_SETTINGS.playerOnline) {
                 auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
-                auto ticket = reader.read<BYTE_VIEW_t>();
+                auto ticket = reader.read<avledet::util::ByteView>();
                 if (steamSocket 
                     && (VH_SETTINGS.serverDedicated
                         ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
@@ -103,7 +103,7 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        rpc->Invoke(Hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
+        rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
 
         return false;
     });
@@ -124,12 +124,12 @@ void Peer::Update() {
         auto&& bytes = opt.value();
         DataReader reader(bytes);
 
-        auto hash = reader.read<HASH_t>();
+        auto hash = reader.read<avledet::util::Hash>();
         if (hash == 0) [[unlikely]] { 
             if (reader.read<bool>()) {
                 // Reply to the server with a pong
                 DataWriter writer;
-                writer.write((HASH_t)0);
+                writer.write((avledet::util::Hash)0);
                 writer.write(false);
                 this->Send(std::move(writer.get_buf()));
             }
@@ -150,7 +150,7 @@ void Peer::Update() {
 
 bool Peer::Close(ConnectionStatus status) {
     //LOG_INFO(LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
-    Invoke(Hashes::Rpc::S2C_Error, status);
+    Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;
 }
@@ -167,7 +167,7 @@ ZDO::unsafe_optional Peer::GetZDO() {
 }
 
 void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
-    this->Route(Hashes::Routed::S2C_RequestTeleport,
+    this->Route(avledet::util::hashes::Routed::S2C_RequestTeleport,
         pos,
         rot,
         animation
@@ -176,8 +176,8 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
 
 
 
-void Peer::RouteParams(ZDOID targetZDO, HASH_t hash, BYTES_t params) {
-    Invoke(Hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
+void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params) {
+    Invoke(avledet::util::hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 
