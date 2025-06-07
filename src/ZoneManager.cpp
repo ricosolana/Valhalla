@@ -43,7 +43,7 @@ void IZoneManager::PostPrefabInit() {
             // TODO read zoneLocations from file
             auto loc = std::make_unique<Feature>();
             loc->m_name = pkg.read<std::string>();
-            loc->m_hash = VUtils::String::GetStableHashCode(loc->m_name);
+            loc->m_hash = avledet::util::get_stable_hash(loc->m_name);
 
             loc->m_biome = (avledet::util::Biome)pkg.read<std::int32_t>();
             loc->m_biomeArea = (avledet::util::BiomeArea)pkg.read<std::int32_t>();
@@ -793,7 +793,7 @@ void IZoneManager::PostGeoInit() {
             PrepareFeatures(*loc.get());
         }
 
-        //LOG_INFO(LOGGER, "Location generation took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
+        //LOG_INFO(LOGGER, "Location generation took {}s", duration_cast<std::chrono::seconds>(steady_clock::now() - now).count());
     }
 
     if (VH_SETTINGS.worldPregenerate
@@ -840,7 +840,7 @@ void IZoneManager::PostGeoInit() {
             }
         }
 
-        //LOG_WARNING(LOGGER, "Pregeneration took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
+        //LOG_WARNING(LOGGER, "Pregeneration took {}s", duration_cast<std::chrono::seconds>(steady_clock::now() - now).count());
     }
 }
 

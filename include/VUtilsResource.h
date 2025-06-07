@@ -93,7 +93,7 @@ namespace VUtils::Resource {
         if (!opt)
             return std::nullopt;
         
-        return VUtils::String::template Split<Iterable>(opt.value(), '\n', includeBlanks);
+        return avledet::lexicon::template split<Iterable>(opt.value(), '\n', includeBlanks);
 
         /*
         auto size = opt.value().size();
@@ -136,7 +136,7 @@ namespace VUtils::Resource {
             out = std::move(opt.value());
         }
 
-        return VUtils::String::template Split<Iterable>(out, '\n', includeBlanks);
+        return avledet::lexicon::template split<Iterable>(out, '\n', includeBlanks);
     }
 
     /*
@@ -156,7 +156,7 @@ namespace VUtils::Resource {
 
 
 
-            return VUtils::String::template Split<Iterable>(out, '\n', includeBlanks);
+            return avledet::lexicon::template Split<Iterable>(out, '\n', includeBlanks);
         }
     }*/
 

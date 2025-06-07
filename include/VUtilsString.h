@@ -3,7 +3,7 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
-#define __H(str) VUtils::String::GetStableHashCodeCT(str)
+#define __H(str) (avledet::util::get_stable_hash(str))
 
 /*
 template<typename T, std::size_t N, typename C = typename T::value_type>
@@ -102,40 +102,17 @@ concept StringLike =
     && std::is_same_v<typename T::value_type, char>;
     */
 
-namespace VUtils::String {
-    // INTERNAL: Do not use unless you know what you are doing
-    constexpr avledet::util::Hash GetStableHashCodeCT(const char *str, std::uint32_t num, std::uint32_t num2, std::uint32_t idx) { // NOLINT(misc-no-recursion)
-        if (str[idx] != '\0') {
-            num = ((num << 5) + num) ^ (std::uint32_t) str[idx];
-            if (str[idx + 1] != '\0') {
-                num2 = ((num2 << 5) + num2) ^ (std::uint32_t) str[idx + 1];
-                idx += 2;
-                return GetStableHashCodeCT(str, num, num2, idx);
-            }
-        }
-        return static_cast<avledet::util::Hash>(num + num2 * 1566083941);
-    }
+namespace avledet::lexicon {
 
-    // Calculate the Valheim-hash of a string
-    //  This is the compile time overload
-    constexpr avledet::util::Hash GetStableHashCodeCT(const char *str) {
-        std::uint32_t num = 5381;
-        std::uint32_t num2 = num;
-        std::uint32_t idx = 0;
+    int levenshtein_distance(std::string_view s, std::string_view t);
 
-        return GetStableHashCodeCT(str, num, num2, idx);
-    }
+    std::vector<std::string_view> split(std::string_view s, std::string_view delim);
 
-    // Calculate the Valheim-hash of a string
-    avledet::util::Hash GetStableHashCode(std::string_view s);
-
-
-
-    std::pair<avledet::util::Hash, avledet::util::Hash> ToHashPair(std::string_view key);
+    std::string to_lower(std::string_view in);
 
     // Join a container consisting of strings separated by delimiter
     template<typename T> requires VUtils::Traits::is_iterable<T>
-    std::string Join(std::string_view delimiter, T container) {
+    std::string join(std::string_view delimiter, T container) {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
             result += std::string(*(container.begin() + i)) + std::string(delimiter);
@@ -143,14 +120,10 @@ namespace VUtils::String {
         result += *(container.end() - 1);
         return result;
     }
-    
-    int LevenshteinDistance(std::string_view s, std::string_view t);
-
-    std::vector<std::string_view> Split(std::string_view s, std::string_view delim);
 
     template<typename Iterable = std::vector<std::string_view>>
         requires (VUtils::Traits::is_iterable<Iterable>)
-    Iterable Split(std::string_view s, char delim, bool includeBlanks = false) 
+    Iterable split(std::string_view s, char delim, bool includeBlanks = false) 
     {
         std::int64_t size = s.size();
         auto data = s.data();
@@ -178,37 +151,29 @@ namespace VUtils::String {
         return split;
     }
 
-    std::string to_lower(std::string in);
+    namespace CSU {
+        // C# Encoding.ASCII.GetString equivalent:
+        // bytes greater than 127 get turned to literal '?' (63)
+        // Returns whether any modification was done
+        //std::string ascii(std::string in);
 
-    // C# Encoding.ASCII.GetString equivalent:
-    // bytes greater than 127 get turned to literal '?' (63)
-    // Returns whether any modification was done
-    bool FormatAscii(std::string& in);
+        // C# Encoding.ASCII.GetString equivalent:
+        // bytes greater than 127 get turned to literal '?' (63)
+        // Returns whether any modification was done
+        //bool FormatAscii(char* in, std::size_t inSize);
 
-    // C# Encoding.ASCII.GetString equivalent:
-    // bytes greater than 127 get turned to literal '?' (63)
-    // Returns whether any modification was done
-    bool FormatAscii(char* in, std::size_t inSize);
+        // C# Encoding.ASCII.GetString equivalent:
+        // bytes greater than 127 get turned to literal '?' (63)
+        // Returns a transformed string
+        std::string ascii(std::string_view in);
 
-    // C# Encoding.ASCII.GetString equivalent:
-    // bytes greater than 127 get turned to literal '?' (63)
-    // Returns a transformed string
-    std::string ToAscii(std::string_view in);
+        // Gets the unicode code points in a UTF-8 encoded string
+        // Return -1 on bad encoding
+        int get_utf8_code_count(const avledet::util::Byte *p);
 
-    // Gets the unicode code points in a UTF-8 encoded string
-    // Return -1 on bad encoding
-    int GetUTF8CodeCount(const avledet::util::Byte *p);
+        // Gets the unicode byte count needed to encode std::uint16_t or C# char 
+        //  Returns 1, 2 or 3
+        unsigned int get_utf8_byte_count(std::uint16_t i);
+    }// namespace avledet::lexicon::CSU
 
-    // Gets the unicode byte count needed to encode std::uint16_t or C# char 
-    //  Returns 1, 2 or 3
-    unsigned int GetUTF8ByteCount(std::uint16_t i);
-}
-
-namespace avledet::util {
-    template<typename T>
-    auto get_stable_hash(T&& s) {
-        return VUtils::String::GetStableHashCode(s);
-    }
-
-    using Hash = ::avledet::util::Hash;
-}
+}// namespace avledet::lexicon

@@ -13,25 +13,16 @@ class INetManager {
     friend class IModManager;
 
 private:
-    quill::Logger* m_logger {};
-
-    std::unique_ptr<IAcceptor> m_acceptor;
-
-    //std::list<std::unique_ptr<Peer>> m_rpcs; // used to temporarily connecting peers (until PeerInfo)
-    //std::list<std::unique_ptr<Peer>> m_onlinePeers;
-
+    avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;    
     std::vector<std::unique_ptr<Peer>> m_connectedPeers;
-    std::vector<Peer*> m_onlinePeers;
-
-    std::list<std::pair<std::string, std::pair<nanoseconds, nanoseconds>>> m_sortedSessions;
-    avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
+    std::vector<Peer*> m_onlinePeers;    
+    std::list<std::pair<std::string, std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>> m_sortedSessions;
+    quill::Logger* m_logger {};
+    std::unique_ptr<IAcceptor> m_acceptor;    
 
 public:
-    //std::string m_password;
-    //std::string m_salt;
-
-    std::array<char, 16> m_passwordHash;
-    std::array<char, 16> m_passwordSalt;
+    std::string m_passwordHash;
+    std::string m_passwordSalt;
 
 private:
     void SendDisconnect();

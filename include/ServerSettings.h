@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
+#include <cstdint>
 
 enum class AssignAlgorithm {
     NONE,
@@ -81,62 +82,62 @@ static constexpr const char* VH_SETTING_KEY_EVENTS_RADIUS = "radius";
 static constexpr const char* VH_SETTING_KEY_EVENTS_REQUIREKEYS = "require-keys";*/
 
 struct ServerSettings {
-    std::string     serverName;
-    std::uint16_t        serverPort;
-    std::string     serverPassword;
-    bool            serverPublic;
-    bool            serverDedicated;
+    std::string                 serverName;
+    std::uint16_t               serverPort;
+    std::string                 serverPassword;
+    bool                        serverPublic;
+    bool                        serverDedicated;
 
-    bool            playerWhitelist;
-    unsigned int    playerMax;
-    bool            playerOnline;
-    seconds         playerTimeout;
-    milliseconds    playerListSendInterval;
-    bool            playerListForceVisible;
+    bool                        playerWhitelist;
+    std::uint32_t               playerMax;
+    bool                        playerOnline;
+    std::chrono::seconds        playerTimeout;
+    std::chrono::milliseconds   playerListSendInterval;
+    bool                        playerListForceVisible;
 #if VH_IS_ON(VH_PLAYER_SLEEP)
-    bool            playerSleepSolo;
+    bool                        playerSleepSolo;
 #endif
-    bool            playerGated;
+    bool                        playerGated;
 
-    std::string     worldName;
-    std::string     worldSeed;
-    bool            worldPregenerate;
-    seconds         worldSaveInterval;  // set to 0 to disable
-    bool            worldFeatures;
-    bool            worldVegetation;
-    bool            worldCreatures;
-    std::uint32_t        worldHeightmapThreads;
+    std::string                 worldName;
+    std::string                 worldSeed;
+    bool                        worldPregenerate;
+    std::chrono::seconds        worldSaveInterval;  // set to 0 to disable
+    bool                        worldFeatures;
+    bool                        worldVegetation;
+    bool                        worldCreatures;
+    std::uint32_t               worldHeightmapThreads;
     
-    unsigned int    zdoMaxCongestion;    // congestion rate
-    unsigned int    zdoMinCongestion;    // congestion rate
-    milliseconds    zdoSendInterval;
-    seconds         zdoAssignInterval;
-    AssignAlgorithm zdoAssignAlgorithm;
+    std::uint32_t               zdoMaxCongestion;    // congestion rate
+    std::uint32_t               zdoMinCongestion;    // congestion rate
+    std::chrono::milliseconds   zdoSendInterval;
+    std::chrono::seconds        zdoAssignInterval;
+    AssignAlgorithm             zdoAssignAlgorithm;
         
-    bool            dungeonsEnabled;
-    bool            dungeonsEndcapsEnabled;
-    float           dungeonsEndcapsInsetFrac;
-    bool            dungeonsDoors;
-    bool            dungeonsRoomsFlipped;
-    bool            dungeonsRoomsZoneBounded;
-    float           dungeonsRoomsInsetSize;
-    bool            dungeonsRoomsFurnishing;
-    seconds         dungeonsRegenerationInterval;
-    int             dungeonsRegenerationMaxSteps;
-    bool            dungeonsSeeded;
+    bool                        dungeonsEnabled;
+    bool                        dungeonsEndcapsEnabled;
+    float                       dungeonsEndcapsInsetFrac;
+    bool                        dungeonsDoors;
+    bool                        dungeonsRoomsFlipped;
+    bool                        dungeonsRoomsZoneBounded;
+    float                       dungeonsRoomsInsetSize;
+    bool                        dungeonsRoomsFurnishing;
+    std::chrono::seconds        dungeonsRegenerationInterval;
+    std::uint32_t               dungeonsRegenerationMaxSteps;
+    bool                        dungeonsSeeded;
 
-    float           eventsChance;
-    seconds         eventsInterval;
-    float           eventsRadius;
-    bool            eventsRequireKeys;
+    float                       eventsChance;
+    std::chrono::seconds        eventsInterval;
+    float                       eventsRadius;
+    bool                        eventsRequireKeys;
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    std::string     discordWebhook;
-    std::string     discordToken;
-    dpp::snowflake  discordGuild;
-    bool            discordAccountLinking;
+    std::string                 discordWebhook;
+    std::string                 discordToken;
+    dpp::snowflake              discordGuild;
+    bool                        discordAccountLinking;
     // Kick players who leave the Discord server?
-    bool            discordSyncLeaves;
+    bool                        discordSyncLeaves;
     // Sync kicks between Valheim and Discord?
     //bool            discordSyncKicks;
     // Sync bans between Valhiem and Discord?

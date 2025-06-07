@@ -336,7 +336,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string_view name, sol::variadic_args types) { return MethodSig{ VUtils::String::GetStableHashCode(name), IModManager::Types(types.begin(), types.end()) }; })
+        sol::factories([](std::string_view name, sol::variadic_args types) { return MethodSig{ avledet::util::get_stable_hash(name), IModManager::Types(types.begin(), types.end()) }; })
     );
 
     m_state.new_enum("ChatMsgType",
@@ -694,7 +694,7 @@ void IModManager::LoadAPI() {
 
                 if (i + offset < args.size()) {
                     if (type == sol::type::string)
-                        hash ^= VUtils::String::GetStableHashCode(arg.as<std::string>());
+                        hash ^= avledet::util::get_stable_hash(arg.as<std::string>());
                     else if (type == sol::type::number)
                         hash ^= arg.as<avledet::util::Hash>();
                     else {
@@ -735,47 +735,47 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const Vector3f& pos, float radius, std::size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, const Vector3f& pos, float radius, std::size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             
             sol::resolve<std::list<ZDO>(ZoneID, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO>(ZoneID, std::size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO>(ZoneID, std::size_t, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, std::size_t max, std::string_view name) { return self.SomeZDOs(zone, max, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, const ZoneID& zone, std::size_t max, std::string_view name) { return self.SomeZDOs(zone, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<ZDO>(ZoneID, std::size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO>(ZoneID, std::size_t, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
             sol::resolve<std::list<ZDO>()>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(avledet::util::Hash)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, std::string_view name) { return self.GetZDOs(VUtils::String::GetStableHashCode(name)); },
+            [](IZDOManager& self, std::string_view name) { return self.GetZDOs(avledet::util::get_stable_hash(name)); },
 
             sol::resolve<std::list<ZDO>(Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(Vector3f, float)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<ZDO>(ZoneID, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(ZoneID)>(&IZDOManager::GetZDOs),
 
             sol::resolve<std::list<ZDO>(ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "AnyZDO", sol::overload(
             sol::resolve<std::optional<ZDO> (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::optional<ZDO> (ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "NearestZDO", sol::overload(
             sol::resolve<std::optional<ZDO> (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
             sol::resolve<std::optional<ZDO> (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, VUtils::String::GetStableHashCode(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
@@ -785,7 +785,7 @@ void IModManager::LoadAPI() {
         ),
         "Instantiate", sol::overload(
             sol::resolve<ZDO (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
-            [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(VUtils::String::GetStableHashCode(name), pos); },
+            [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(avledet::util::get_stable_hash(name), pos); },
             sol::resolve<ZDO (avledet::util::Hash, Vector3f)>(&IZDOManager::Instantiate)
             //sol::resolve<ZDO (const ZDO)>(&IZDOManager::Instantiate)
         )
@@ -831,7 +831,7 @@ void IModManager::LoadAPI() {
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
-        "GetDungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(VUtils::String::GetStableHashCode(name)); },
+        "GetDungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(avledet::util::get_stable_hash(name)); },
         "Generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
     );
 
@@ -958,7 +958,7 @@ void IModManager::LoadAPI() {
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
-            stringUtilsTable["GetStableHashCode"] = VUtils::String::GetStableHashCode;
+            stringUtilsTable["GetStableHashCode"] = avledet::util::get_stable_hash;
         }
 
         {

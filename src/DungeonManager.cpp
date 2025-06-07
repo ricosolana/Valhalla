@@ -87,7 +87,7 @@ void IDungeonManager::PostPrefabInit() {
             auto room(std::make_unique<Room>());
 
             room->m_name = pkg.read<std::string>();
-            room->m_hash = VUtils::String::GetStableHashCode(room->m_name);
+            room->m_hash = avledet::util::get_stable_hash(room->m_name);
             room->m_divider = pkg.read<bool>();
             room->m_endCap = pkg.read<bool>();
             room->m_endCapPrio = pkg.read<std::int32_t>();
@@ -140,13 +140,13 @@ void IDungeonManager::PostPrefabInit() {
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)
 ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
-    static constexpr avledet::util::Hash LAST_RESET_HASH = VUtils::String::GetStableHashCodeCT("Areas LastReset");
+    static constexpr avledet::util::Hash LAST_RESET_HASH = avledet::util::get_stable_hash("Areas LastReset");
 
     // https://github.com/T3kla/ValMods/blob/52da19785190c2d9b6de93d09195d942e4da8686/~DungeonReset/Scripts/Extensions.cs#LL12C86-L12C86
-    auto&& lastReset = seconds(dungeonZdo.GetLong(LAST_RESET_HASH));
+    auto&& lastReset = std::chrono::seconds(dungeonZdo.GetLong(LAST_RESET_HASH));
     auto&& unixTime = steady_clock::now().time_since_epoch();
 
-    auto since = duration_cast<seconds>(unixTime) - lastReset;
+    auto since = duration_cast<std::chrono::seconds>(unixTime) - lastReset;
 
     if (since > VH_SETTINGS.dungeonsRegenerationInterval) {
         bool playerNear = false;

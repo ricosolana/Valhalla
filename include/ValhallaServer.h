@@ -44,29 +44,24 @@ class IValhalla {
     friend class World;
 
 private:
-    quill::Logger* m_logger {};
-    std::atomic_bool m_terminate {};
-
+    ServerSettings m_settings {};
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
-
-    ServerSettings m_settings {};
     avledet::util::UserID m_serverID {}; // const
-
-    steady_clock::time_point m_startTime; // const
-    steady_clock::time_point m_prevUpdate;
-    steady_clock::time_point m_nowUpdate;
-
+    quill::Logger* m_logger {};
+    std::atomic_bool m_terminate {};
+    std::chrono::steady_clock::time_point m_startTime; // const
+    std::chrono::steady_clock::time_point m_prevUpdate;
+    std::chrono::steady_clock::time_point m_nowUpdate;
     WorldTime m_worldTime {};
+    double m_worldTimeMultiplier = 1;
+    double m_serverTimeMultiplier = 1;
+    fs::file_time_type m_settingsLastTime {};
 
 #if VH_IS_ON(VH_PLAYER_SLEEP)
     bool m_playerSleep {};
     double m_playerSleepUntil {};
 #endif
-
-    double m_worldTimeMultiplier = 1;
-
-    fs::file_time_type m_settingsLastTime {};
 
 private:
     void LoadFiles(bool reloading);
@@ -85,8 +80,6 @@ public:
         return m_settings;
     }
 
-    double m_serverTimeMultiplier = 1;
-
     avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_blacklist; // banned steam ids
     avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_admin;     // admin steam ids
     avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_whitelist; // whitelisted steam ids
@@ -96,11 +89,11 @@ public:
     // Updated once per frame
     auto Elapsed() {
         //return m_nowUpdate - m_startTime;
-        return nanoseconds((std::int64_t)(duration_cast<nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
+        return std::chrono::nanoseconds((std::int64_t)(std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count() * m_serverTimeMultiplier));
     }
 
     auto Nanos() {
-        return duration_cast<nanoseconds>(Elapsed());
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(Elapsed());
     }
 
     // Get the time in Ticks (C# DateTime.Ticks)
@@ -110,18 +103,18 @@ public:
 
     // Get the time in seconds (Unity Time.time)
     float Time() {
-        return float((double)Nanos().count() / (double)duration_cast<nanoseconds>(1s).count());
+        return float((double)Nanos().count() / (double)std::chrono::duration_cast<std::chrono::nanoseconds>(1s).count());
     }
 
     // The time in seconds since the last frame
     float Delta() {
         auto elapsed = m_nowUpdate - m_prevUpdate;
-        return ((double)elapsed.count() * m_serverTimeMultiplier) / (double)duration_cast<decltype(elapsed)>(1s).count();
+        return ((double)elapsed.count() * m_serverTimeMultiplier) / (double)std::chrono::duration_cast<decltype(elapsed)>(1s).count();
     }
 
     // The time in nanoseconds since the last frame
     auto DeltaNanos() {
-        return duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
     }
 
 

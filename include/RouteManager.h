@@ -41,7 +41,7 @@ public:
 
 	template<typename F>
 	decltype(auto) Register(std::string_view name, F func) {
-		return Register(VUtils::String::GetStableHashCode(name), func);
+		return Register(avledet::util::get_stable_hash(name), func);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -81,7 +81,7 @@ public:
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
 	void InvokeView(avledet::util::UserID target, ZDOID targetZDO, std::string_view name, Args&&... params) {
-		InvokeView(target, targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+		InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -126,7 +126,7 @@ public:
 	// Invoke a routed function bound to a peer
 	template <typename... Args>
 	void Invoke(avledet::util::UserID target, std::string_view name, Args&&... params) {
-		InvokeView(target, ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+		InvokeView(target, ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -146,7 +146,7 @@ public:
 	// Invoke a routed function targeted to all peers
 	template <typename... Args>
 	void InvokeAll(std::string_view name, Args&&... params) {
-		Invoke(EVERYBODY, VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+		Invoke(EVERYBODY, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)

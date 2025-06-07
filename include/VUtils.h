@@ -29,8 +29,6 @@
 #include <dpp/dpp.h>
 #endif
 
-
-
 namespace fs = std::filesystem;
 using namespace std::chrono_literals;
 

@@ -32,7 +32,7 @@ public:
 	// Get a prefab by name
 	//	Returns the prefab or null
 	const Prefab* GetPrefab(std::string_view name) const {
-		return GetPrefab(VUtils::String::GetStableHashCode(name));
+		return GetPrefab(avledet::util::get_stable_hash(name));
 	}
 
 	// Get a definite prefab
@@ -47,11 +47,11 @@ public:
 	// Get a definite prefab
 	//	Throws if prefab not found
 	const Prefab& RequirePrefabByName(std::string_view name) const {
-		return RequirePrefabByHash(VUtils::String::GetStableHashCode(name));
+		return RequirePrefabByHash(avledet::util::get_stable_hash(name));
 	}
 
 	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {
-		avledet::util::Hash hash = VUtils::String::GetStableHashCode(name);
+		avledet::util::Hash hash = avledet::util::get_stable_hash(name);
 		Prefab prefab(name, scale, flags);
 		m_prefabs.emplace(prefab);
 
@@ -67,7 +67,7 @@ public:
 		auto localScale = reader.read<Vector3f>();
 		auto flags = reader.read<Prefab::Flag>();
 
-		auto hash = VUtils::String::GetStableHashCode(name);
+		auto hash = avledet::util::get_stable_hash(name);
 		Register(name, localScale, flags);
 				
 		//VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";

@@ -1,10 +1,12 @@
-#include <openssl/md5.h>
-#include <openssl/rand.h>
+//wtf am i using openssl for
+//#include <openssl/md5.h>
+//#include <openssl/rand.h>
 #include <isteamgameserver.h>
 #include <string_view>
 #include <vector>
 
 #include "NetManager.h"
+#include "Crypto.h"
 #include "ValhallaServer.h"
 #include "WorldManager.h"
 #include "VUtilsRandom.h"
@@ -457,11 +459,12 @@ void INetManager::OnConfigLoad(bool reloading) {
     if (hasPassword) {
         VUtils::Random::GenerateAlphaNum(m_passwordSalt.data(), m_passwordSalt.size());
 
-        const auto merge = VH_SETTINGS.serverPassword + std::string(m_passwordSalt.data(), m_passwordSalt.size());
+        const auto merge = VH_SETTINGS.serverPassword + m_passwordSalt;
 
         // Hash a salted password
-        VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
+        //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        VUtils::String::FormatAscii(m_passwordHash.data(), m_passwordHash.size());
+        auto s = avledet::crypto::md5(merge);
+        m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     }
 }

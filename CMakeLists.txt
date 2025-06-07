@@ -110,6 +110,7 @@ endif()
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/Crypto.cpp"
     "src/DiscordManager.cpp"    
     "src/DungeonGenerator.cpp"
     "src/DungeonManager.cpp"

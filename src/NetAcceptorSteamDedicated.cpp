@@ -57,7 +57,7 @@ AcceptorSteam::AcceptorSteam() {
     LOG_INFO(m_logger, "Authentication status: {}", 
         std::to_underlying(STEAM_NETWORKING_SOCKETS->InitAuthentication()));
     
-    auto timeout = (float)duration_cast<milliseconds>(Valhalla()->Settings().playerTimeout).count();
+    auto timeout = (float)std::chrono::duration_cast<std::chrono::milliseconds>(Valhalla()->Settings().playerTimeout).count();
     int32 offline = 1;
     int32 sendrate = 153600;
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,

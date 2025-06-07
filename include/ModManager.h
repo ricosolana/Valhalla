@@ -189,7 +189,7 @@ public:
     //  Returns whether the event was requested for cancellation
     template <typename... Args>
     auto CallEvent(std::string_view name, Args&&... params) {
-        return CallEvent(VUtils::String::GetStableHashCode(name), std::forward<Args>(params)...);
+        return CallEvent(avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
 private:
@@ -214,7 +214,7 @@ public:
     //  Returns whether the event was requested for cancellation
     template <class Tuple>
     auto CallEventTuple(std::string_view name, const Tuple& t) {
-        return CallEventTupleImpl(VUtils::String::GetStableHashCode(name),
+        return CallEventTupleImpl(avledet::util::get_stable_hash(name),
             t,
             std::make_index_sequence < std::tuple_size<Tuple>{} > {});
     }

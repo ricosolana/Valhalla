@@ -6,7 +6,6 @@
 
 #include <tuple>
 #include <variant>
-#include <concepts>
 #include <type_traits>
 
 namespace avledet::util::traits {

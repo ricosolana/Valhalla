@@ -40,7 +40,7 @@ namespace YAML {
     struct convert<AssignAlgorithm> {
         static Node encode(const AssignAlgorithm& rhs) {
             auto val = magic_enum::enum_name(rhs);
-            return Node(VUtils::String::to_lower(std::string(val)));
+            return Node(avledet::lexicon::to_lower(std::string(val)));
         }
 
         static bool decode(const Node& node, AssignAlgorithm& rhs) {
@@ -90,23 +90,23 @@ namespace YAML {
                 dur *= sign;
                 const std::int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
                 switch (ch) {
-                case 'n': out = duration_cast<T>(nanoseconds(dur)); return true;
+                case 'n': out = duration_cast<T>(std::chrono::nanoseconds(dur)); return true;
                 case 't': out = duration_cast<T>(avledet::util::Ticks(dur)); return true;
-                case 'u': out = duration_cast<T>(microseconds(dur)); return true;
+                case 'u': out = duration_cast<T>(std::chrono::microseconds(dur)); return true;
                 case 'm': {
                     switch (ch2) {
-                    case 's': out = duration_cast<T>(milliseconds(dur)); return true;
-                    case 'i': out = duration_cast<T>(minutes(dur)); return true;
-                    case 'o': out = duration_cast<T>(months(dur)); return true;
+                    case 's': out = duration_cast<T>(std::chrono::milliseconds(dur)); return true;
+                    case 'i': out = duration_cast<T>(std::chrono::minutes(dur)); return true;
+                    case 'o': out = duration_cast<T>(std::chrono::months(dur)); return true;
                     default: break;
                     }
                     break;
                 }
-                case 's': out = duration_cast<T>(seconds(dur)); return true;
-                case 'h': out = duration_cast<T>(hours(dur)); return true;
-                case 'd': out = duration_cast<T>(days(dur)); return true;
-                case 'w': out = duration_cast<T>(weeks(dur)); return true;
-                case 'y': out = duration_cast<T>(years(dur)); return true;
+                case 's': out = duration_cast<T>(std::chrono::seconds(dur)); return true;
+                case 'h': out = duration_cast<T>(std::chrono::hours(dur)); return true;
+                case 'd': out = duration_cast<T>(std::chrono::days(dur)); return true;
+                case 'w': out = duration_cast<T>(std::chrono::weeks(dur)); return true;
+                case 'y': out = duration_cast<T>(std::chrono::years(dur)); return true;
                 }
                 break;
             }
@@ -116,32 +116,32 @@ namespace YAML {
     };
 
     template<typename Rep, typename Period>
-    struct convert<duration<Rep, Period>> {
-        static Node encode(const duration<Rep, Period>& rhs) {
+    struct convert<std::chrono::duration<Rep, Period>> {
+        static Node encode(const std::chrono::duration<Rep, Period>& rhs) {
             //using D = std::remove_reference_t<std::remove_const_t<decltype(rhs)>>;
             using D = std::remove_cvref_t<decltype(rhs)>;
 
-            if constexpr (std::is_same_v<D, nanoseconds>)
+            if constexpr (std::is_same_v<D, std::chrono::nanoseconds>)
                 return Node(std::to_string(rhs.count()) + "ns");
             else if constexpr (std::is_same_v<D, avledet::util::Ticks>)
                 return Node(std::to_string(rhs.count()) + "ticks");
-            else if constexpr (std::is_same_v<D, microseconds>)
+            else if constexpr (std::is_same_v<D, std::chrono::microseconds>)
                 return Node(std::to_string(rhs.count()) + "us");
-            else if constexpr (std::is_same_v<D, milliseconds>)
+            else if constexpr (std::is_same_v<D, std::chrono::milliseconds>)
                 return Node(std::to_string(rhs.count()) + "ms");
-            else if constexpr (std::is_same_v<D, seconds>)
+            else if constexpr (std::is_same_v<D, std::chrono::seconds>)
                 return Node(std::to_string(rhs.count()) + "seconds");
-            else if constexpr (std::is_same_v<D, minutes>)
+            else if constexpr (std::is_same_v<D, std::chrono::minutes>)
                 return Node(std::to_string(rhs.count()) + "minutes");
-            else if constexpr (std::is_same_v<D, hours>)
+            else if constexpr (std::is_same_v<D, std::chrono::hours>)
                 return Node(std::to_string(rhs.count()) + "hours");
-            else if constexpr (std::is_same_v<D, days>)
+            else if constexpr (std::is_same_v<D, std::chrono::days>)
                 return Node(std::to_string(rhs.count()) + "days");
-            else if constexpr (std::is_same_v<D, weeks>)
+            else if constexpr (std::is_same_v<D, std::chrono::weeks>)
                 return Node(std::to_string(rhs.count()) + "weeks");
-            else if constexpr (std::is_same_v<D, months>)
+            else if constexpr (std::is_same_v<D, std::chrono::months>)
                 return Node(std::to_string(rhs.count()) + "months");
-            else if constexpr (std::is_same_v<D, years>)
+            else if constexpr (std::is_same_v<D, std::chrono::years>)
                 return Node(std::to_string(rhs.count()) + "years");
 
             assert(false);
@@ -150,7 +150,7 @@ namespace YAML {
                 //static_assert(false, "Unsupported type provided to convert");
         }
 
-        static bool decode(const Node& node, duration<Rep, Period>& rhs) {
+        static bool decode(const Node& node, std::chrono::duration<Rep, Period>& rhs) {
             if (!node.IsScalar())
                 return false;
 
@@ -236,7 +236,7 @@ template<class T>
 struct is_duration : std::false_type {};
 
 template<class Rep, class Period>
-struct is_duration<duration<Rep, Period>> : std::true_type {};
+struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type {};
 
 // Retrieve a config value
 //  Returns the value or the default
@@ -343,8 +343,8 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.playerWhitelist, player, "whitelist", true);
             a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
             a(m_settings.playerOnline, player, "offline", true);
-            a(m_settings.playerTimeout, player, "timeout", 30s, [](seconds val) { return val < 0s; });
-            a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](seconds val) { return val < 0s; });
+            a(m_settings.playerTimeout, player, "timeout", 30s, [](std::chrono::seconds val) { return val < 0s; });
+            a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](std::chrono::seconds val) { return val < 0s; });
             a(m_settings.playerListForceVisible, player, "list-force-visible", false);
 #if VH_IS_ON(VH_PLAYER_SLEEP)
             a(m_settings.playerSleepSolo, player, "player-sleep-solo", false);
@@ -354,7 +354,7 @@ void IValhalla::LoadFiles(bool reloading) {
             a(m_settings.worldName, world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
             a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
             a(m_settings.worldPregenerate, world, "pregenerate", false, nullptr, reloading);
-            a(m_settings.worldSaveInterval, world, "save-interval", 30min, [](seconds val) { return val < 0s; });
+            a(m_settings.worldSaveInterval, world, "save-interval", 30min, [](std::chrono::seconds val) { return val < 0s; });
             a(m_settings.worldFeatures, world, "features", true);
             a(m_settings.worldVegetation, world, "vegetation", true);
             a(m_settings.worldCreatures, world, "creatures", true);
@@ -369,10 +369,10 @@ void IValhalla::LoadFiles(bool reloading) {
                 && m_settings.worldHeightmapThreads >= std::jthread::hardware_concurrency())
                 m_settings.worldHeightmapThreads = std::jthread::hardware_concurrency() - 1;
 
-            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](seconds val) { return val <= 0s; });
+            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](std::chrono::seconds val) { return val <= 0s; });
             a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
             a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
-            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](seconds val) { return val < 1s; });
+            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](std::chrono::seconds val) { return val < 1s; });
             a(m_settings.zdoAssignAlgorithm, zdo, "assign-algorithm", AssignAlgorithm::NONE);
             
             a(m_settings.dungeonsEnabled, dungeons, "enabled", true);
@@ -394,14 +394,14 @@ void IValhalla::LoadFiles(bool reloading) {
 
             {
                 auto&& regeneration = dungeons["regeneration"];
-                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", days(3), [](minutes val) { return val < 0s; });
+                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", std::chrono::days(3), [](minutes val) { return val < 0s; });
                 a(m_settings.dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
             }
 
             a(m_settings.dungeonsSeeded, dungeons, "seeded", true);
 
             a(m_settings.eventsChance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
-            a(m_settings.eventsInterval, events, "interval", 46min, [](seconds val) { return val < 0s; });
+            a(m_settings.eventsInterval, events, "interval", 46min, [](std::chrono::seconds val) { return val < 0s; });
             a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
             a(m_settings.eventsRequireKeys, events, "require-keys", true);
             
@@ -575,7 +575,7 @@ void IValhalla::Start() {
     LOG_INFO(m_logger, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
 
     m_serverID = VUtils::Random::GenerateUID();
-    m_startTime = steady_clock::now();
+    m_startTime = std::chrono::steady_clock::now();
 
     this->LoadFiles(false);
 
@@ -619,8 +619,8 @@ void IValhalla::Start() {
             WorldManager()->SaveWorldDB());
     }*/
 
-    m_prevUpdate = steady_clock::now();
-    m_nowUpdate = steady_clock::now();
+    m_prevUpdate = std::chrono::steady_clock::now();
+    m_nowUpdate = std::chrono::steady_clock::now();
 
 #ifdef _WIN32
     SetConsoleCtrlHandler([](DWORD dwCtrlType) {
@@ -641,8 +641,8 @@ void IValhalla::Start() {
 
     m_terminate = false;
     while (!m_terminate) {
-        auto now = steady_clock::now();
-        auto elapsed = duration_cast<nanoseconds>(m_nowUpdate - m_prevUpdate);
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
 
         m_prevUpdate = m_nowUpdate; // old state
         m_nowUpdate = now; // new state
@@ -653,7 +653,7 @@ void IValhalla::Start() {
             for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
                 auto ptr = itr->get();
                 if (ptr->m_at < now) {
-                    if (ptr->m_period == milliseconds::min()) { // if task cancelled
+                    if (ptr->m_period == std::chrono::milliseconds::min()) { // if task cancelled
                         itr = m_tasks.erase(itr);
                     }
                     else {
@@ -673,13 +673,10 @@ void IValhalla::Start() {
 
         Update();
 
+        //TODO run periodically starting from now?
         if (VUtils::run_periodic<struct server_period_update>(1s)) {
             PeriodUpdate();
         }
-
-        //PERIODIC_NOW(1s, {
-        //    PeriodUpdate();
-        //});
 
         std::this_thread::sleep_for(1ms);
 
@@ -870,23 +867,23 @@ Task& IValhalla::RunTask(Task::F f) {
     return RunTaskLater(std::move(f), 0ms);
 }
 
-Task& IValhalla::RunTaskLater(Task::F f, milliseconds after) {
+Task& IValhalla::RunTaskLater(Task::F f, std::chrono::milliseconds after) {
     return RunTaskLaterRepeat(std::move(f), after, -1ms);
 }
 
-Task& IValhalla::RunTaskAt(Task::F f, steady_clock::time_point at) {
+Task& IValhalla::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at) {
     return RunTaskAtRepeat(std::move(f), at, -1ms);
 }
 
-Task& IValhalla::RunTaskRepeat(Task::F f, milliseconds period) {
+Task& IValhalla::RunTaskRepeat(Task::F f, std::chrono::milliseconds period) {
     return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
-Task& IValhalla::RunTaskLaterRepeat(Task::F f, milliseconds after, milliseconds period) {
+Task& IValhalla::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period) {
     return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
 }
 
-Task& IValhalla::RunTaskAtRepeat(Task::F f, steady_clock::time_point at, milliseconds period) {
+Task& IValhalla::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) {
     std::scoped_lock lock(m_taskMutex);
     m_tasks.push_back(std::make_unique<Task>(f, at, period));
     return *m_tasks.back();

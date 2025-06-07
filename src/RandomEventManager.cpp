@@ -41,7 +41,7 @@ void IRandomEventManager::Init() {
 			auto e = std::make_unique<Event>();
 
 			e->m_name = pkg.read<std::string>();
-			e->m_duration = duration_cast<nanoseconds>(seconds((std::int64_t)pkg.read<float>()));
+			e->m_duration = duration_cast<std::chrono::nanoseconds>(std::chrono::seconds((std::int64_t)pkg.read<float>()));
 			e->m_nearBaseOnly = pkg.read<bool>();
 			e->m_pauseIfNoPlayerInArea = pkg.read<bool>();
 			e->m_biome = (avledet::util::Biome)pkg.read<std::int32_t>();
@@ -112,7 +112,7 @@ void IRandomEventManager::Update() {
 	}
 }
 
-void IRandomEventManager::SetCurrentRandomEvent(const Event& e, Vector3f pos, nanoseconds nanos) {
+void IRandomEventManager::SetCurrentRandomEvent(const Event& e, Vector3f pos, std::chrono::nanoseconds nanos) {
 	this->m_activeEvent = &e;
 	this->m_activeEventPos = pos;
 	this->m_activeEventRemaining = nanos;
@@ -182,7 +182,7 @@ void IRandomEventManager::Save(DataWriter& writer) {
 	writer.write(m_eventIntervalTimer);
 	writer.write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
 	//writer.write(m_activeEventTimer);
-	writer.write((float)duration_cast<seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count());
+	writer.write((float)duration_cast<std::chrono::seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count());
 	writer.write(m_activeEventPos);
 }
 
@@ -190,7 +190,7 @@ void IRandomEventManager::Load(DataReader& reader, int version) {
 	m_eventIntervalTimer = reader.read<float>();
 	if (version >= 25) {
 		this->m_activeEvent = GetEvent(reader.read<std::string_view>());
-		this->m_activeEventRemaining = seconds((std::int64_t)reader.read<float>());
+		this->m_activeEventRemaining = std::chrono::seconds((std::int64_t)reader.read<float>());
 		this->m_activeEventPos = reader.read<Vector3f>();
 	}
 
@@ -203,7 +203,7 @@ void IRandomEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
 		RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent,
 			std::string_view(m_activeEvent->m_name),
-			(float)duration_cast<seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
+			(float)duration_cast<std::chrono::seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
 			m_activeEventPos
 		);
 	}

@@ -712,7 +712,7 @@ public:
     // Hash-key getters
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] const T& Get(std::string_view key, T const& def) const { return Get<T>(VUtils::String::GetStableHashCode(key), def); }
+    [[nodiscard]] const T& Get(std::string_view key, T const& def) const { return Get<T>(avledet::util::get_stable_hash(key), def); }
     
 
 
@@ -748,7 +748,7 @@ public:
     [[nodiscard]] std::string_view    GetString(      std::string_view key, std::string_view value) const {       auto&& val = Get<std::string>(key); return val ? std::string_view(*val) : value; }
     [[nodiscard]] const avledet::util::Bytes*      GetBytes(       std::string_view key) const {                               return Get<avledet::util::Bytes>(key); }
     [[nodiscard]] bool                GetBool(        std::string_view key, bool value) const {                   return Get<std::int32_t>(key, value); }
-    [[nodiscard]] ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(VUtils::String::ToHashPair(key), value); }
+    [[nodiscard]] ZDOID               GetZDOID(       std::string_view key, ZDOID value) const {                  return GetZDOID(avledet::util::to_hash_pair(key), value); }
 
     // String-key default getters
     [[nodiscard]] float               GetFloat(       std::string_view key) const {                               return Get<float>(key, {}); }
@@ -780,11 +780,11 @@ public:
 
     template<typename T>
         requires is_member_v<T>
-    void Set(std::string_view key, T value) { Set(VUtils::String::GetStableHashCode(key), std::move(value)); }
+    void Set(std::string_view key, T value) { Set(avledet::util::get_stable_hash(key), std::move(value)); }
 
-    void Set(std::string_view key, bool value) { Set(VUtils::String::GetStableHashCode(key), value ? (std::int32_t)1 : 0); }
+    void Set(std::string_view key, bool value) { Set(avledet::util::get_stable_hash(key), value ? (std::int32_t)1 : 0); }
 
-    void Set(std::string_view key, ZDOID value) { Set(VUtils::String::ToHashPair(key), value); }
+    void Set(std::string_view key, ZDOID value) { Set(avledet::util::to_hash_pair(key), value); }
 
 
 
@@ -801,7 +801,7 @@ public:
     }
 
     bool Extract(std::string_view key, ZDOID& out) {
-        return Extract(VUtils::String::ToHashPair(key), out);
+        return Extract(avledet::util::to_hash_pair(key), out);
     }
 
     // Internal use

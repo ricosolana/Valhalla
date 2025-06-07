@@ -23,7 +23,7 @@ IWorldManager* WorldManager() {
 World::World(std::string name, std::string seedName) {
 	m_name = std::move(name);
 	m_seedName = std::move(seedName);
-	m_seed = VUtils::String::GetStableHashCode(seedName);
+	m_seed = avledet::util::get_stable_hash(seedName);
 	m_uid = VUtils::Random::GenerateUID();
 	m_worldGenVersion = VConstants::WORLDGEN;
 }
@@ -40,7 +40,7 @@ World::World(DataReader reader) {
 	m_name = reader.read<std::string>();
 	m_seedName = reader.read<std::string>();
 	reader.read<avledet::util::Hash>(); // seed
-	m_seed = VUtils::String::GetStableHashCode(m_seedName);
+	m_seed = avledet::util::get_stable_hash(m_seedName);
 	m_uid = reader.read<std::int64_t>();
 	m_worldGenVersion = worldVersion >= 26 ? reader.read<std::int32_t>() : 0;
 	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
@@ -66,7 +66,7 @@ avledet::util::Bytes World::SaveMeta() {
 	//	writer.write(VConstants::WORLD);
 	//	writer.write(m_name);
 	//	writer.write(m_seedName);
-	//	writer.write(VUtils::String::GetStableHashCode(m_seedName));
+	//	writer.write(avledet::util::get_stable_hash(m_seedName));
 	//	writer.write(m_uid);
 	//	writer.write(m_worldGenVersion);
 	//	writer.write(true);
@@ -173,7 +173,7 @@ void World::LoadFileDB(const fs::path& root) {
 				RandomEventManager()->Load(reader, worldVersion);
 			}
 #endif // VH_RANDOM_EVENTS
-			//LOG_INFO(LOGGER, "World loading took {}s", duration_cast<seconds>(steady_clock::now() - now).count());
+			//LOG_INFO(LOGGER, "World loading took {}s", duration_cast<std::chrono::seconds>(steady_clock::now() - now).count());
 		}
 		catch (const std::runtime_error& e) {
 			//LOG_ERROR(LOGGER, "Failed to load world: {}", e.what());

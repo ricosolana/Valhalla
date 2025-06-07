@@ -21,7 +21,7 @@ public:
 
     // Every time an joins they will be sent a key
     //                  host,        key
-    avledet::util::Map<std::string, std::pair<std::string, nanoseconds>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_tempLinkingKeys;
+    avledet::util::Map<std::string, std::pair<std::string, std::chrono::nanoseconds>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_tempLinkingKeys;
 
 public:
     void Init();

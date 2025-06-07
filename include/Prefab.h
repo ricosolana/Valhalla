@@ -1,9 +1,8 @@
 #pragma once
 
 #include "VUtils.h"
-
+#include "Hashes.h"
 #include "VUtilsString.h"
-
 #include "Vector.h"
 #include "Quaternion.h"
 #include "Types.h"
@@ -12,7 +11,7 @@ class Prefab {
 public:
     struct Instance {
         Quaternion m_rot;       // 16 bytes
-        Vector3f m_pos;         // 12 bytes
+        avledet::util::CSU::Vector3f m_pos;         // 12 bytes
         avledet::util::Hash m_prefabHash;    // 4 bytes
 
         const Prefab& GetPrefab() const;
@@ -76,13 +75,13 @@ public:
         
 public:
     std::string m_name;         // 40 bytes
-    Vector3f m_localScale;      // 12 bytes
+    avledet::util::CSU::Vector3f m_localScale;      // 12 bytes
     Flag m_flags = Flag::NONE;  // 8 bytes
     avledet::util::Hash m_hash;              // 4 bytes
 
 public:
-    Prefab(std::string_view name, Vector3f localScale, Flag flags)
-        : m_hash(VUtils::String::GetStableHashCode(name)), m_name(std::string(name)), m_localScale(localScale), m_flags(flags) {}
+    Prefab(std::string_view name, avledet::util::CSU::Vector3f localScale, Flag flags)
+        : m_hash(avledet::util::get_stable_hash(name)), m_name(std::string(name)), m_localScale(localScale), m_flags(flags) {}
 
     Prefab(const Prefab& other) = default;
 
@@ -125,6 +124,6 @@ public:
     }
 
     bool operator==(std::string_view other) const noexcept {
-        return this->m_hash == VUtils::String::GetStableHashCode(other);
+        return this->m_hash == avledet::util::get_stable_hash(other);
     }
 };

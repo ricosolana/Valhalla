@@ -10,16 +10,15 @@ class IRandomEventManager {
 public:
 	class Event {
 	public:
-		std::string m_name;
-		//float m_duration = 60;
-		nanoseconds m_duration{};
-		bool m_nearBaseOnly{};
-		bool m_pauseIfNoPlayerInArea{};
-		avledet::util::Biome m_biome{};
-
 		avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_presentGlobalKeys;
 		avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_absentGlobalKeys;
-
+		std::string m_name;
+		std::chrono::nanoseconds m_duration{};
+		avledet::util::Biome m_biome{};
+		bool m_nearBaseOnly{};
+		bool m_pauseIfNoPlayerInArea{};
+		
+	public:
 		Event() {}
 	};
 
@@ -32,10 +31,10 @@ public:
 private:
 	// The current random active event in the world
 	//	null means no event is active
-	const Event* m_activeEvent = nullptr;
+	const Event* m_activeEvent {};
 	Vector3f m_activeEventPos;
-	nanoseconds m_activeEventRemaining;
-	nanoseconds m_activeEventInitialDuration;
+	std::chrono::nanoseconds m_activeEventRemaining;
+	std::chrono::nanoseconds m_activeEventInitialDuration;
 
 private:
 	void SendCurrentRandomEvent();
@@ -50,7 +49,7 @@ public:
 	void Init();
 	void Update();
 
-	void SetCurrentRandomEvent(const Event& e, Vector3f pos, nanoseconds ns);
+	void SetCurrentRandomEvent(const Event& e, Vector3f pos, std::chrono::nanoseconds ns);
 
 	// Get an event by name
 	//	Returns null if not found

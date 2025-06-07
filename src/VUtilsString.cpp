@@ -2,52 +2,10 @@
 #include "VUtils.h"
 #include "VUtilsString.h"
 
-namespace VUtils::String {
+namespace avledet::lexicon {
 
-    avledet::util::Hash GetStableHashCode(std::string_view s) {
-        std::uint32_t num = 5381;
-        std::uint32_t num2 = num;
-
-        for (auto&& itr = s.begin(); itr != s.end(); ) {
-            num = ((num << 5) + num) ^ (std::uint32_t) * (itr++);
-            if (itr == s.end()) {
-                break;
-            }
-            else {
-                num2 = ((num2 << 5) + num2) ^ ((std::uint32_t) * (itr++));
-            }
-        }
-        return static_cast<avledet::util::Hash>(num + num2 * 1566083941);
-    }
-
-    std::pair<avledet::util::Hash, avledet::util::Hash> ToHashPair(std::string_view key) {
-        return {
-            VUtils::String::GetStableHashCode(std::string(key) + "_u"),
-            VUtils::String::GetStableHashCode(std::string(key) + "_i")
-        };
-    }
-
-
-
-    std::vector<std::string_view> Split(std::string_view s, std::string_view delim) {
-        std::string_view remaining(s);
-        std::vector<std::string_view> result;
-        int pos = 0;
-        //ABC DE FGHI JK
-        while ((pos = remaining.find(delim)) != std::string::npos) {
-            // If the delim was not at idx 0, then add everything from 0 to the pos
-            if (pos) result.push_back(remaining.substr(0, pos));
-            // Trim everything before pos
-            remaining = remaining.substr(pos + 1);
-        }
-        // add final match to list after delim
-        if (!remaining.empty())
-            result.push_back(remaining);
-        return result;
-    }
-    
     // Java code ported from Apache commons-lang-3.12.0
-    int LevenshteinDistance(std::string_view s, std::string_view t) {
+    int levenshtein_distance(std::string_view s, std::string_view t) {
         int n = s.length();
         int m = t.length();
 
@@ -100,105 +58,107 @@ namespace VUtils::String {
         return p[n];
     }
 
+    std::vector<std::string_view> split(std::string_view s, std::string_view delim) {
+        std::string_view remaining(s);
+        std::vector<std::string_view> result;
+        int pos = 0;
+        //ABC DE FGHI JK
+        while ((pos = remaining.find(delim)) != std::string::npos) {
+            // If the delim was not at idx 0, then add everything from 0 to the pos
+            if (pos) result.push_back(remaining.substr(0, pos));
+            // Trim everything before pos
+            remaining = remaining.substr(pos + 1);
+        }
+        // add final match to list after delim
+        if (!remaining.empty())
+            result.push_back(remaining);
+        return result;
+    }
     
+    std::string to_lower(std::string_view in) {
+        auto out = std::string(in);
 
-    std::string to_lower(std::string in) {
-        std::transform(in.begin(), in.end(), in.begin(),
+        std::transform(out.begin(), out.end(), out.begin(),
             ::tolower);
             
-        return in;
+        return out;
     }
 
-    bool FormatAscii(std::string& in) {
-        bool modif = false;
-        auto data = reinterpret_cast<avledet::util::Byte*>(in.data());
-        for (int i = 0; i < in.size(); i++) {
-            if (static_cast<std::uint8_t>(data[i]) > 127U) {
-                modif = true;
-                data[i] = 63;
+
+
+    namespace CSU {
+        
+        std::string ascii(std::string_view in) {
+            auto out = std::string(in);
+            auto data = reinterpret_cast<avledet::util::Byte*>(out.data());
+            for (auto&& ch : out) {
+                if (static_cast<std::uint8_t>(ch) > 127U) {
+                    ch = 63;
+                }
             }
+            return out;
         }
-        return modif;
-    }
 
-    bool FormatAscii(char* in, std::size_t inSize) {
-        bool modif = false;
-        for (std::size_t i = 0; i < inSize; i++) {
-            auto&& ch = in + i;
-            if (*ch < 0) {
-                *ch = 63;
-                modif = true;
-            }
-        }
-        return modif;
-    }
-
-    std::string ToAscii(std::string_view in) {
-        std::string ret = std::string(in);
-        FormatAscii(ret);
-        return ret;
-    }
-
-
-
-    // https://en.wikipedia.org/wiki/UTF-8#Encoding
-    int GetUTF8CodeCount(const avledet::util::Byte* p) {
-        // leading bits:
-        //   0: total 1 byte
-        //   110: total 2 bytes (trailing 10xxxxxx)
-        //   1110: total 3 bytes (trailing 10xxxxxx)
-        //   11110: total 4 bytes (trailing 10xxxxxx)
-        std::int32_t count = 0;
-        for (; *p != '\0'; ++p, count++) {
-#define CHECK_TRAILING_BYTES(n) \
-        { \
-            for (p++; /*next byte*/ \
-                *p != '\0', i < (n); /*min bounds check*/ \
-                ++p, ++i) /*increment*/ \
+        // https://en.wikipedia.org/wiki/UTF-8#Encoding
+        int get_utf8_code_count(const avledet::util::Byte* p) {
+            // leading bits:
+            //   0: total 1 byte
+            //   110: total 2 bytes (trailing 10xxxxxx)
+            //   1110: total 3 bytes (trailing 10xxxxxx)
+            //   11110: total 4 bytes (trailing 10xxxxxx)
+            std::int32_t count = 0;
+            for (; *p != '\0'; ++p, count++) {
+    #define CHECK_TRAILING_BYTES(n) \
             { \
-                if (((*p) >> 6) != 0b10) { \
-                    return -1; \
+                for (p++; /*next byte*/ \
+                    *p != '\0', i < (n); /*min bounds check*/ \
+                    ++p, ++i) /*increment*/ \
+                { \
+                    if (((*p) >> 6) != 0b10) { \
+                        return -1; \
+                    } \
                 } \
-            } \
-            /* if string ended prematurely, panic */ \
-            if (i != (n)) \
-                return -1; \
+                /* if string ended prematurely, panic */ \
+                if (i != (n)) \
+                    return -1; \
+            }
+
+                // 1-byte code point
+                if (((*p) >> 7) == 0b0) {
+                    continue;
+                }
+                else {
+                    int i = 0;
+                    // 2-byte code point
+                    if (((*p) >> 5) == 0b110) {
+                        CHECK_TRAILING_BYTES(1);
+                    }
+                        // 3-byte code point
+                    else if (((*p) >> 4) == 0b1110) {
+                        CHECK_TRAILING_BYTES(2);
+                    }
+                        // 4-byte code point
+                    else if (((*p) >> 3) == 0b11110) {
+                        CHECK_TRAILING_BYTES(3);
+                    }
+                    else
+                        return -1;
+                }
+            }
+            return count;
         }
 
-            // 1-byte code point
-            if (((*p) >> 7) == 0b0) {
-                continue;
+        unsigned int get_utf8_byte_count(char16_t i) {
+            if (i < 0x80) {
+                return 1;
             }
-            else {
-                int i = 0;
-                // 2-byte code point
-                if (((*p) >> 5) == 0b110) {
-                    CHECK_TRAILING_BYTES(1);
-                }
-                    // 3-byte code point
-                else if (((*p) >> 4) == 0b1110) {
-                    CHECK_TRAILING_BYTES(2);
-                }
-                    // 4-byte code point
-                else if (((*p) >> 3) == 0b11110) {
-                    CHECK_TRAILING_BYTES(3);
-                }
-                else
-                    return -1;
+            else if (i < 0x0800) {
+                return 2;
             }
+            //else if (i < 0x010000) {
+                return 3;
+            //}
         }
-        return count;
-    }
+    }// namespace avledet::lexicon::CSU
 
-    unsigned int GetUTF8ByteCount(std::uint16_t i) {
-        if (i < 0x80) {
-            return 1;
-        }
-        else if (i < 0x0800) {
-            return 2;
-        }
-        //else if (i < 0x010000) {
-            return 3;
-        //}
-    }
-}
+}// namespace avledet::lexicon

@@ -145,7 +145,7 @@ public:
 
     template<typename F>
     decltype(auto) Register(std::string_view name, F func) {
-        return Register(VUtils::String::GetStableHashCode(name), func);
+        return Register(avledet::util::get_stable_hash(name), func);
     }
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -239,7 +239,7 @@ public:
 
     template <typename... Types>
     decltype(auto) Invoke(std::string_view name, const Types&... params) {
-        return Invoke(VUtils::String::GetStableHashCode(name), params...);
+        return Invoke(avledet::util::get_stable_hash(name), params...);
     }
 
 
@@ -280,7 +280,7 @@ public:
     }
 
     decltype(auto) GetMethod(const std::string& name) {
-        return GetMethod(VUtils::String::GetStableHashCode(name));
+        return GetMethod(avledet::util::get_stable_hash(name));
     }*/
 
 
@@ -304,7 +304,7 @@ public:
     }
 
     decltype(auto) InternalInvoke(std::string_view name, DataReader& reader) {
-        return InternalInvoke(VUtils::String::GetStableHashCode(name), reader);
+        return InternalInvoke(avledet::util::get_stable_hash(name), reader);
     }
 
 
@@ -418,7 +418,7 @@ public:
 
     template <typename... Types>
     void RouteView(ZDOID targetZDO, std::string_view name, Types&&... params) {
-        RouteView(targetZDO, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
+        RouteView(targetZDO, avledet::util::get_stable_hash(name), std::forward<Types>(params)...);
     }
 
     template <typename... Types>
@@ -428,7 +428,7 @@ public:
 
     template <typename... Types>
     void Route(std::string_view name, Types&&... params) {
-        RouteView(ZDOID::NONE, VUtils::String::GetStableHashCode(name), std::forward<Types>(params)...);
+        RouteView(ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Types>(params)...);
     }
 
 

@@ -61,7 +61,7 @@ namespace ankerl::unordered_dense {
         }
 
         [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
-            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(VUtils::String::GetStableHashCode(str));
+            return ankerl::unordered_dense::hash<avledet::util::Hash>{}(avledet::util::get_stable_hash(str));
         }
     };
 

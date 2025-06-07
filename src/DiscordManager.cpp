@@ -120,10 +120,10 @@ void IDiscordManager::Init() {
 				else if (label == "vhevent") {
 					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
 						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
-						//seconds duration = duration_cast<seconds>(e->m_duration);
+						//seconds duration = duration_cast<std::chrono::seconds>(e->m_duration);
 						auto&& dur = std::get_if<std::int64_t>(&event.get_parameter("duration"));
 						RandomEventManager()->SetCurrentRandomEvent(*e, peer->m_pos,
-							dur ? seconds(*dur) : duration_cast<seconds>(e->m_duration));
+							dur ? std::chrono::seconds(*dur) : duration_cast<std::chrono::seconds>(e->m_duration));
 						event.reply("Started event in world");
 					}
 					else {
@@ -223,7 +223,7 @@ void IDiscordManager::Init() {
 				}
 				else if (label == "vhtime") {
 					event.reply("Server time is "
-						+ std::to_string(duration_cast<seconds>(Valhalla()->Elapsed()).count()) + "s");
+						+ std::to_string(duration_cast<std::chrono::seconds>(Valhalla()->Elapsed()).count()) + "s");
 				}
 				else if (label == "vhtod") {
 					auto&& time = std::get_if<std::string>(&event.get_parameter("time"));
@@ -510,7 +510,7 @@ void IDiscordManager::PeriodUpdate() {
 			if (peer) {
 				//peer->CenterMessage(std::string("Verification required: <color=#FF1111>") + pair.second + "</color>");
 				peer->CenterMessage("Verification required: <color=#FF1111>" + itr->second.first + "</color> (" 
-					+ std::to_string(duration_cast<seconds>(5min - since).count()) 
+					+ std::to_string(duration_cast<std::chrono::seconds>(5min - since).count()) 
 					+ "s)"
 				);
 			}
