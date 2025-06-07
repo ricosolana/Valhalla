@@ -86,6 +86,7 @@ else()
     message("Discord: disabled")
 endif()
 find_package(quill CONFIG REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
 
 CPMAddPackage(
     NAME unordered_dense
@@ -179,15 +180,18 @@ endif()
 
 target_link_libraries(${PROJECT_NAME}
     #PRIVATE Boost::boost# Boost::smart_ptr
-    PUBLIC Threads::Threads
-    ${STEAMWORKS_SDK_SHARED_DIR}
-    ZLIB::ZLIB
-    yaml-cpp::yaml-cpp
-    PRIVATE Tracy::TracyClient
-    PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    PRIVATE quill::quill
-    PRIVATE unordered_dense
-    PRIVATE range-v3::meta range-v3::concepts range-v3::range-v3
+    PUBLIC 
+        Threads::Threads
+        ${STEAMWORKS_SDK_SHARED_DIR}
+        ZLIB::ZLIB
+        yaml-cpp::yaml-cpp
+        magic_enum::magic_enum
+    PRIVATE 
+        Tracy::TracyClient
+        $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
+        quill::quill
+        unordered_dense
+        range-v3::meta range-v3::concepts range-v3::range-v3
 )
 
 

@@ -32,7 +32,6 @@
 
 
 namespace fs = std::filesystem;
-using namespace std::chrono;
 using namespace std::chrono_literals;
 
 // https://stackoverflow.com/a/17350413
@@ -46,11 +45,6 @@ using namespace std::chrono_literals;
 #define COLOR_CYAN "\033[36m"
 #define COLOR_WHITE "\033[37m"
 #define COLOR_GRAY "\033[90m"
-
-
-
-
-
 
 
 
@@ -290,7 +284,7 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Bytes& in) {
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const& in) {
         return Decompress(in.data(), in.size());
     }
 };
@@ -369,7 +363,7 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Compress(const avledet::util::Bytes& in) {
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const& in) {
         return Compress(in.data(), in.size());
     }
 };

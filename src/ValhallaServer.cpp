@@ -1,14 +1,19 @@
+#include <cctype>
+#include <magic_enum.hpp>
 #include <yaml-cpp/yaml.h>
 #include <quill/sinks/ConsoleSink.h>
+#include <magic_enum_iostream.hpp>
 
 #include <stdlib.h>
 #include <utility>
 #include <charconv>
+#include <algorithm>
 #ifdef _WIN32
 #include <winstring.h>
 #endif
 
 #include "ValhallaServer.h"
+#include "VUtilsString.h"
 #include "VUtilsResource.h"
 #include "ServerSettings.h"
 #include "NetManager.h"
@@ -34,16 +39,20 @@ namespace YAML {
     template<>
     struct convert<AssignAlgorithm> {
         static Node encode(const AssignAlgorithm& rhs) {
-            return Node(std::to_underlying(rhs));
+            auto val = magic_enum::enum_name(rhs);
+            return Node(VUtils::String::to_lower(std::string(val)));
         }
 
         static bool decode(const Node& node, AssignAlgorithm& rhs) {
             if (!node.IsScalar())
                 return false;
+                
+            if (auto opt = magic_enum::enum_cast<AssignAlgorithm>(node.as<std::string>(), magic_enum::case_insensitive)) {
+                rhs = opt.value();
+                return true;
+            }
 
-            rhs = AssignAlgorithm(node.as<std::underlying_type_t<AssignAlgorithm>>());
-
-            return true;
+            return false;
         }
     };
 

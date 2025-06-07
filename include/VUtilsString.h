@@ -178,6 +178,8 @@ namespace VUtils::String {
         return split;
     }
 
+    std::string to_lower(std::string in);
+
     // C# Encoding.ASCII.GetString equivalent:
     // bytes greater than 127 get turned to literal '?' (63)
     // Returns whether any modification was done

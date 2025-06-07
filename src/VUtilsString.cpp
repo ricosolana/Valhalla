@@ -99,8 +99,15 @@ namespace VUtils::String {
 
         return p[n];
     }
+
     
 
+    std::string to_lower(std::string in) {
+        std::transform(in.begin(), in.end(), in.begin(),
+            ::tolower);
+            
+        return in;
+    }
 
     bool FormatAscii(std::string& in) {
         bool modif = false;
