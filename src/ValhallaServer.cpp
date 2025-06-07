@@ -90,23 +90,23 @@ namespace YAML {
                 dur *= sign;
                 const std::int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
                 switch (ch) {
-                case 'n': out = duration_cast<T>(std::chrono::nanoseconds(dur)); return true;
-                case 't': out = duration_cast<T>(avledet::util::Ticks(dur)); return true;
-                case 'u': out = duration_cast<T>(std::chrono::microseconds(dur)); return true;
+                case 'n': out = std::chrono::duration_cast<T>(std::chrono::nanoseconds(dur)); return true;
+                case 't': out = std::chrono::duration_cast<T>(avledet::util::Ticks(dur)); return true;
+                case 'u': out = std::chrono::duration_cast<T>(std::chrono::microseconds(dur)); return true;
                 case 'm': {
                     switch (ch2) {
-                    case 's': out = duration_cast<T>(std::chrono::milliseconds(dur)); return true;
-                    case 'i': out = duration_cast<T>(std::chrono::minutes(dur)); return true;
-                    case 'o': out = duration_cast<T>(std::chrono::months(dur)); return true;
+                    case 's': out = std::chrono::duration_cast<T>(std::chrono::milliseconds(dur)); return true;
+                    case 'i': out = std::chrono::duration_cast<T>(std::chrono::minutes(dur)); return true;
+                    case 'o': out = std::chrono::duration_cast<T>(std::chrono::months(dur)); return true;
                     default: break;
                     }
                     break;
                 }
-                case 's': out = duration_cast<T>(std::chrono::seconds(dur)); return true;
-                case 'h': out = duration_cast<T>(std::chrono::hours(dur)); return true;
-                case 'd': out = duration_cast<T>(std::chrono::days(dur)); return true;
-                case 'w': out = duration_cast<T>(std::chrono::weeks(dur)); return true;
-                case 'y': out = duration_cast<T>(std::chrono::years(dur)); return true;
+                case 's': out = std::chrono::duration_cast<T>(std::chrono::seconds(dur)); return true;
+                case 'h': out = std::chrono::duration_cast<T>(std::chrono::hours(dur)); return true;
+                case 'd': out = std::chrono::duration_cast<T>(std::chrono::days(dur)); return true;
+                case 'w': out = std::chrono::duration_cast<T>(std::chrono::weeks(dur)); return true;
+                case 'y': out = std::chrono::duration_cast<T>(std::chrono::years(dur)); return true;
                 }
                 break;
             }
@@ -268,7 +268,7 @@ void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = 
             using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
 
             if constexpr (T_IS_DUR) {
-                if (!defPred || !defPred(duration_cast<Param0>(val))) {
+                if (!defPred || !defPred(std::chrono::duration_cast<Param0>(val))) {
                     set = val;
                     //if (!comment.empty()) emitter << YAML::Comment(std::string(comment));
                     //emitter << YAML::
@@ -331,7 +331,7 @@ void IValhalla::LoadFiles(bool reloading) {
             auto&& zdo = node["zdos"];
             auto&& dungeons = node["dungeons"];
             auto&& events = node["events"];
-            auto&& packet = node["packets"];
+            //auto&& packet = node["packets"]; //TODO unused for some reason
             auto&& discord = node["discord"];
 
             a(m_settings.serverName, server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });

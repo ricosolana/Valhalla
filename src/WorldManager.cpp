@@ -61,19 +61,19 @@ World::World(DataReader reader) {
 
 avledet::util::Bytes World::SaveMeta() {
 	DataWriter writer;
-	assert(false); //TODO
-	//writer.SubWrite([this](DataWriter& writer) {
-	//	writer.write(VConstants::WORLD);
-	//	writer.write(m_name);
-	//	writer.write(m_seedName);
-	//	writer.write(avledet::util::get_stable_hash(m_seedName));
-	//	writer.write(m_uid);
-	//	writer.write(m_worldGenVersion);
-	//	writer.write(true);
-	//	
-	//	// TODO write starting keys
-	//	writer.write(avledet::util::Set<std::string>());
-	//});
+	//assert(false); //TODO
+	writer.write([this](DataWriter writer) {
+		writer.write(VConstants::WORLD);
+		writer.write(m_name);
+		writer.write(m_seedName);
+		writer.write(avledet::util::get_stable_hash(m_seedName));
+		writer.write(m_uid);
+		writer.write(m_worldGenVersion);
+		writer.write(true);
+		
+		// TODO write starting keys
+		writer.write(avledet::util::Set<std::string>());
+	});
 
 	return writer.get_buf();
 }

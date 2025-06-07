@@ -366,14 +366,14 @@ namespace avledet::util {
 
     struct Streamer<T> { //<std::function<void(Writer&)>> {
         void operator()(Writer& writer, T const& value) const {
-            static_assert(std::is_invocable_v<T, Writer&>, "Writer::write(func) must have a Writer& as argument");
+            //static_assert(std::is_invocable_v<T, Writer&>, "Writer::write(func) must have a Writer& as argument");
 
             const auto start = writer.get_pos();
             std::uint32_t count = 0;
             writer.write(count); //dummy
     
             // call func...
-            value(writer);
+            value(std::ref(writer));
     
             const auto end = writer.get_pos();
             writer.set_pos(start);

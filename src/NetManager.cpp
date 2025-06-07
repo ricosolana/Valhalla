@@ -17,8 +17,6 @@
 #include "VUtilsResource.h"
 #include "DiscordManager.h"
 
-using namespace std::chrono;
-
 // TODO use netmanager instance instead
 
 auto NET_MANAGER = std::make_unique<INetManager>();

@@ -3,10 +3,6 @@
 #include <cstdint>
 #include <string_view>
 
-//#include <chrono>
-
-//using namespace std::chrono_literals;
-
 //#define RUN_TESTS
 
 #define VH_VERSION "v1.0.5"
