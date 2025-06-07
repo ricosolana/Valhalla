@@ -786,7 +786,7 @@ void IZoneManager::PostGeoInit() {
         PrepareFeatures(*spawnLoc);
     }
     else {
-        auto now(steady_clock::now());
+        auto now(std::chrono::steady_clock::now());
 
         // Already presorted by priority
         for (auto&& loc : m_features) {
@@ -799,7 +799,7 @@ void IZoneManager::PostGeoInit() {
     if (VH_SETTINGS.worldPregenerate
         && m_generatedZones.empty()) 
     {
-        auto now(steady_clock::now());
+        auto now(std::chrono::steady_clock::now());
         int prevCount = 0;
 
         //LOG_WARNING(LOGGER, "Pregenerating world...");
@@ -989,7 +989,7 @@ ZoneID IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
 // private
 std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zoneID)
 {
-    auto now(steady_clock::now());
+    auto now(std::chrono::steady_clock::now());
 
     std::vector<ClearArea> clearAreas;
 

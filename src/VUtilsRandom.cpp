@@ -27,7 +27,7 @@
 namespace VUtils::Random {
 
     State::State() 
-        : State(steady_clock::now().time_since_epoch().count()) {}
+        : State(std::chrono::steady_clock::now().time_since_epoch().count()) {}
 
     State::State(std::int32_t seed) {
         m_seed[0] = seed;

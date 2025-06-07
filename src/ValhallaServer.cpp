@@ -394,7 +394,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             {
                 auto&& regeneration = dungeons["regeneration"];
-                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", std::chrono::days(3), [](minutes val) { return val < 0s; });
+                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", std::chrono::days(3), [](std::chrono::minutes val) { return val < 0s; });
                 a(m_settings.dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
             }
 
@@ -880,7 +880,7 @@ Task& IValhalla::RunTaskRepeat(Task::F f, std::chrono::milliseconds period) {
 }
 
 Task& IValhalla::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after, std::chrono::milliseconds period) {
-    return RunTaskAtRepeat(std::move(f), steady_clock::now() + after, period);
+    return RunTaskAtRepeat(std::move(f), std::chrono::steady_clock::now() + after, period);
 }
 
 Task& IValhalla::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period) {
