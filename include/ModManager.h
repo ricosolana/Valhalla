@@ -55,7 +55,7 @@ public:
         FLOAT,
         DOUBLE,
 
-        CHAR, // utf8
+        CHAR16, // utf8
 
         max
     };
@@ -326,7 +326,7 @@ struct avledet::util::Streamer<F, T...>{ //lua_State> {
         case IModManager::Type::QUATERNION:
             writer.write(arg.as<avledet::util::CSU::Quaternion>());
             break;
-        case IModManager::Type::CHAR:
+        case IModManager::Type::CHAR16:
             writer.write(arg.as<char16_t>());
             break;
         default:
@@ -391,7 +391,7 @@ struct avledet::util::Streamer<F, T...>{ //lua_State> {
             case IModManager::Type::DOUBLE:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::double_t>());
-            case IModManager::Type::CHAR:
+            case IModManager::Type::CHAR16:
                 // Primitive: number
                 return sol::make_object(state, reader.read<char16_t>());
             default:
@@ -405,7 +405,7 @@ template <class F, class ...G>
     requires (std::is_same_v<F, IModManager::Types>)
 struct avledet::util::Streamer<F, G...>{ //lua_State> {
     void operator()(avledet::util::Writer& writer, IModManager::Types const& types, sol::variadic_results const& results) {
-        for (int i = 0; i < std::max(types.size(), results.size()); i++) {
+        for (int i = 0; i < results.size(); i++) {
             writer.write(types.at(i), results.at(i));
         }
     }

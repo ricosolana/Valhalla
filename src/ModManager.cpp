@@ -2,7 +2,11 @@
 #include "Types.h"
 #include "UserData.h"
 #include <atomic>
+#include <cmath>
 #include <cstdint>
+#include <sol/forward.hpp>
+#include <sol/overload.hpp>
+#include <sol/property.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -86,12 +90,12 @@ void IModManager::LoadAPI() {
         "y", &Vector3f::y,
         "z", &Vector3f::z,
         "magnitude", sol::property(&Vector3f::magnitude),
-        "sqmagnitude", sol::property(&Vector3f::sq_magnitude),
+        "sq_magnitude", sol::property(&Vector3f::sq_magnitude),
         "normal", sol::property(&Vector3f::normal),
-        "Distance", &Vector3f::distance_to,
+        "distance_to", &Vector3f::distance_to,
         "sq_distance_to", &Vector3f::sq_distance_to,
         "dot", &Vector3f::dot,
-        "Cross", &Vector3f::cross,
+        "cross", &Vector3f::cross,
         sol::meta_function::addition, &Vector3f::operator+,
         sol::meta_function::subtraction, sol::resolve<Vector3f(Vector3f const&) const>(&Vector3f::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector3f() const>(&Vector3f::operator-),
@@ -106,9 +110,9 @@ void IModManager::LoadAPI() {
         "x", &Vector2f::x,
         "y", &Vector2f::y,
         "magnitude", sol::property(&Vector2f::magnitude),
-        "sqmagnitude", sol::property(&Vector2f::sq_magnitude),
+        "sq_magnitude", sol::property(&Vector2f::sq_magnitude),
         "normal", sol::property(&Vector2f::normal),
-        "Distance", &Vector2f::distance_to,
+        "distance_to", &Vector2f::distance_to,
         "sq_distance_to", &Vector2f::sq_distance_to,
         "dot", &Vector2f::dot,
         sol::meta_function::addition, &Vector2f::operator+,
@@ -125,9 +129,9 @@ void IModManager::LoadAPI() {
         "x", &Vector2i::x,
         "y", &Vector2i::y,
         "magnitude", sol::property(&Vector2i::magnitude),
-        "sqmagnitude", sol::property(&Vector2i::sq_magnitude),
+        "sq_magnitude", sol::property(&Vector2i::sq_magnitude),
         "normal", sol::property(&Vector2i::normal),
-        "Distance", &Vector2i::distance_to,
+        "distance_to", &Vector2i::distance_to,
         "sq_distance_to", &Vector2i::sq_distance_to,
         "dot", &Vector2i::dot,
         sol::meta_function::addition, &Vector2i::operator+,
@@ -144,9 +148,9 @@ void IModManager::LoadAPI() {
         "x", &Vector2s::x,
         "y", &Vector2s::y,
         "magnitude", sol::property(&Vector2s::magnitude),
-        "sqmagnitude", sol::property(&Vector2s::sq_magnitude),
+        "sq_magnitude", sol::property(&Vector2s::sq_magnitude),
         "normal", sol::property(&Vector2s::normal),
-        "Distance", &Vector2s::distance_to,
+        "distance_to", &Vector2s::distance_to,
         "sq_distance_to", &Vector2s::sq_distance_to,
         "dot", &Vector2s::dot,
         sol::meta_function::addition, &Vector2s::operator+,
@@ -159,7 +163,6 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
-        //"IDENTITY", sol::property([]() { return Quaternion::IDENTITY; }),
         "IDENTITY", sol::var(Quaternion::IDENTITY),
         "x", &Quaternion::x,
         "y", &Quaternion::y,
@@ -185,57 +188,74 @@ void IModManager::LoadAPI() {
         "BYTES", Type::BYTES,
         
         "ZDOID", Type::ZDOID,
-        "VECTOR3f", Type::VECTOR3f,
-        "VECTOR2i", Type::VECTOR2i,
-        "QUATERNION", Type::QUATERNION,
+        "VECTOR3f", Type::VECTOR3f, "vec3f", Type::VECTOR3f,
+        "VECTOR2i", Type::VECTOR2i, "vec2i", Type::VECTOR2i, 
+        "QUATERNION", Type::QUATERNION, "quat", Type::QUATERNION,
         
-        "INT8", Type::INT8,
-        "INT16", Type::INT16, "SHORT", Type::INT16,
-        "INT32", Type::INT32, "INT", Type::INT32, "HASH", Type::INT32,
-        "INT64", Type::INT64, "LONG", Type::INT64,
+        "INT8", Type::INT8, "s8", Type::INT8,
+        "INT16", Type::INT16, "SHORT", Type::INT16, "s16", Type::INT16,
+        "INT32", Type::INT32, "INT", Type::INT32, "HASH", Type::INT32, "s32", Type::INT32,
+        "INT64", Type::INT64, "LONG", Type::INT64, "s64", Type::INT64,
 
-        "UINT8", Type::UINT8, "BYTE", Type::UINT8,
-        "UINT16", Type::UINT16, "USHORT", Type::UINT16,
-        "UINT32", Type::UINT32, "UINT", Type::UINT32,
-        "UINT64", Type::UINT64, "ULONG", Type::UINT64,
+        "UINT8", Type::UINT8, "BYTE", Type::UINT8, "u8", Type::UINT8,
+        "UINT16", Type::UINT16, "USHORT", Type::UINT16, "u16", Type::UINT16,
+        "UINT32", Type::UINT32, "UINT", Type::UINT32, "u32", Type::UINT32,
+        "UINT64", Type::UINT64, "ULONG", Type::UINT64, "u64", Type::UINT64,
 
         "FLOAT", Type::FLOAT,
         "DOUBLE", Type::DOUBLE,
 
-        "CHAR", Type::CHAR
+        "CHAR16", Type::CHAR16
     );
-
+    
+    // TODO
+    //  this seems like some very unsafe / sketchy usage
     m_state.new_usertype<avledet::util::Bytes>("Bytes",
         sol::constructors<avledet::util::Bytes(), avledet::util::Bytes(const avledet::util::Bytes&)>(),
-        "Assign", [](avledet::util::Bytes& self, const avledet::util::Bytes& other) { self = other; },
-        "Move", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self = std::move(other); },
-        "Swap", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self.swap(other); }
+        "assign", [](avledet::util::Bytes& self, const avledet::util::Bytes& other) { self = other; },
+        "move", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self = std::move(other); },
+        "swap", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self.swap(other); }
     );
 
-    m_state.new_usertype<UserProfile>("UserProfile",
-        sol::constructors<UserProfile(std::string, std::string, std::string)>(),
-        "name", &UserProfile::m_name,
-        "ign", &UserProfile::m_gamerTag, // TODO change name
-        "nid", &UserProfile::m_networkUserId // TODO change name
-    );
+    // TODO impl
+    //m_state.new_usertype<UserProfile>("UserProfile",
+    //    sol::constructors<UserProfile(std::string, std::string, std::string)>(),
+    //    "name", &UserProfile::m_name,
+    //    "tag", &UserProfile::m_gamerTag, // TODO change name
+    //    "nid", &UserProfile::m_networkUserId // TODO change name
+    //);
 
     m_state.new_usertype<DataWriter>("DataWriter",
         sol::constructors<DataWriter(avledet::util::Bytes)>(),
 
         //"ToReader", &DataWriter::ToReader,
-        "buf", &DataWriter::get_buf, //TODO
+        //"buf", &DataWriter::get_buf, //TODO currently unsafe
         "pos", sol::property(&DataWriter::get_pos, &DataWriter::set_pos), //& DataWriter::m_pos,
 
         //"Clear", &DataWriter::Clear,
 
+        "write_bool", &DataWriter::write<bool>,
+        "write_string", &DataWriter::write<std::string_view>,
+        "write_bytes", &DataWriter::write<avledet::util::Bytes>,
+        "write_zdoid", &DataWriter::write<avledet::util::ZDOID>,
+        "write_vec3f", &DataWriter::write<avledet::util::CSU::Vector3f>,
+        "write_vec2i", &DataWriter::write<avledet::util::CSU::Vector2i>,
+        "write_quat", &DataWriter::write<avledet::util::CSU::Quaternion>,
+        //"write_profile", &DataWriter::write<UserProfile>, //TODO impl
+
+        //TODO impl everything
+        "write_s8", &DataWriter::write<std::int8_t>, // static_cast<void (DataWriter::*)(std::int8_t)>(&DataWriter::write),
+        "write_s16", &DataWriter::write<std::int16_t>,
+        "write_s32", &DataWriter::write<std::int32_t>,
+        //"write_s64", &DataWriter::write<std::int64_t>,// TODO impl: intwrapper
+        "write_u8", &DataWriter::write<std::uint8_t>,
+        "write_u16", &DataWriter::write<std::uint16_t>,
+        "write_u32", &DataWriter::write<std::uint32_t>,
+        "write_u64", &DataWriter::write<std::uint64_t>,
+        "write_float", &DataWriter::write<std::float_t>,
+        "write_double", &DataWriter::write<std::double_t>,
+        "write_char16", &DataWriter::write<char16_t>,
         "write", sol::overload(
-            // templated functions are too complex for resolve
-            // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            //  TODO im feature creeping,
-            //  just target appropriately, decide whether to make ALL functions
-            //      similarly named for read/write,
-            //  or keep special specifiers for variable-sized types 
-            //      (for types which do NOT translate good between c-> and Lua)
             [](DataWriter& self, bool val) { return self.write(val); },
             [](DataWriter& self, std::string_view val) { return self.write(val); },
             [](DataWriter& self, avledet::util::Bytes const& val) { return self.write(val); },
@@ -243,49 +263,13 @@ void IModManager::LoadAPI() {
             [](DataWriter& self, avledet::util::CSU::Vector3f const& val) { return self.write(val); },
             [](DataWriter& self, avledet::util::CSU::Vector2i const& val) { return self.write(val); },
             [](DataWriter& self, avledet::util::CSU::Quaternion const& val) { return self.write(val); },
-            [](DataWriter& self, UserProfile const& val) { return self.write(val); }
-
-
-
-            //static_cast<void (DataWriter::*)(bool)>(&DataWriter::write<bool>),
-//
-            //static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::write<std::string_view>),
-            ////static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::write),
-//
-            //static_cast<void (DataWriter::*)(const avledet::util::Bytes&)>(&DataWriter::write),
-            //
-            //static_cast<void (DataWriter::*)(avledet::util::ZDOID)>(&DataWriter::write<avledet::util::ZDOID>),
-            //static_cast<void (DataWriter::*)(avledet::util::CSU::Vector3f)>(&DataWriter::write<avledet::util::CSU::Vector3f>),
-            //static_cast<void (DataWriter::*)(avledet::util::CSU::Vector2i)>(&DataWriter::write<avledet::util::CSU::Vector2i>),
-            //static_cast<void (DataWriter::*)(avledet::util::CSU::Quaternion)>(&DataWriter::write<avledet::util::CSU::Quaternion>),
-            //static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::write),
-            ////static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),//TODO create streamer
-            ////static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write) //TODO create streamer
-        ),
-
-        //TODO impl everything
-        "write_i8", &DataWriter::write<std::int8_t> // static_cast<void (DataWriter::*)(std::int8_t)>(&DataWriter::write),
-        //"WriteInt16", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::int16_t)>(&DataWriter::write),
-        //"WriteInt32", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::int32_t)>(&DataWriter::write),
-        //"WriteInt64", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),
-//
-        //"WriteUInt8", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint8_t)>(&DataWriter::write),
-        //"WriteUInt16", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint16_t)>(&DataWriter::write),
-        //"WriteUInt32", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint32_t)>(&DataWriter::write),
-        //"WriteUInt64", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write),
-//
-        //"WriteFloat", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::float_t)>(&DataWriter::write),
-        //"WriteDouble", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::double_t)>(&DataWriter::write),
-//
-        //"WriteChar", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::write),
-
-        //"Serialize", sol::overload(
-        //    sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::serializeOneLua),
-        //    [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
-        //        return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
-        //    }
-        //    //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::serializeLuaImpl)
-        //)
+            // Variadic serializers:::
+            [](DataWriter &self, IModManager::Type type, sol::object obj) { self.write(type, obj); },
+            //{ &DataWriter::write<IModManager::Type, sol::object> },
+            [](DataWriter &self, IModManager::Types const& types, sol::variadic_args args) {
+                self.write(types, sol::variadic_results(args.begin(), args.end()));
+            }
+        )
     );
 
     // Package read/write types
@@ -310,35 +294,38 @@ void IModManager::LoadAPI() {
         //"buf", &DataReader::m_data, // TODO ref change
         "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos), //& DataWriter::m_pos,
 
-        "ReadBool", [](DataReader& self) { return self.read<bool>(); },
+        "read_bool", [](DataReader& self) { return self.read<bool>(); },
 
-        "ReadString", [](DataReader& self) { return self.read<std::string>(); },
-        "ReadStrings", [](DataReader& self) { return self.read<avledet::util::Strings>(); }, // ReadStrings,
+        "read_string", [](DataReader& self) { return self.read<std::string>(); },
+        "read_strings", [](DataReader& self) { return self.read<avledet::util::Strings>(); }, // ReadStrings,
 
-        "ReadBytes", [](DataReader& self) { return self.read<avledet::util::Bytes>(); },
+        "read_bytes", [](DataReader& self) { return self.read<avledet::util::Bytes>(); },
 
-        "ReadZDOID", [](DataReader& self) { return self.read<avledet::util::ZDOID>(); }, //&DataReader::read<avledet::util::ZDOID>,
-        "ReadVector3f", [](DataReader& self) { return self.read<avledet::util::CSU::Vector3f>(); }, //&DataReader::read<avledet::util::CSU::Vector3f>,
-        "ReadVector2i", [](DataReader& self) { return self.read<avledet::util::CSU::Vector2i>(); }, //&DataReader::read<avledet::util::CSU::Vector2i>,
-        "ReadQuaternion", [](DataReader& self) { return self.read<avledet::util::CSU::Quaternion>(); }, //&DataReader::read<avledet::util::CSU::Quaternion>,
+        "read_zdoid", [](DataReader& self) { return self.read<avledet::util::ZDOID>(); }, //&DataReader::read<avledet::util::ZDOID>,
+        "read_vec3f", [](DataReader& self) { return self.read<avledet::util::CSU::Vector3f>(); }, //&DataReader::read<avledet::util::CSU::Vector3f>,
+        "read_vec2i", [](DataReader& self) { return self.read<avledet::util::CSU::Vector2i>(); }, //&DataReader::read<avledet::util::CSU::Vector2i>,
+        "read_quat", [](DataReader& self) { return self.read<avledet::util::CSU::Quaternion>(); }, //&DataReader::read<avledet::util::CSU::Quaternion>,
         //"ReadProfile", [](DataReader& self) { return self.read<UserProfile>(); }, //&DataReader::read<UserProfile>, //TODO impl
 
-        "ReadInt8", [](DataReader& self) { return self.read<std::int8_t>(); }, //&DataReader::read<std::int8_t>,
-        "ReadInt16", [](DataReader& self) { return self.read<std::int16_t>(); }, //&DataReader::read<std::int16_t>,
-        "ReadInt32", [](DataReader& self) { return self.read<std::int32_t>(); }, //&DataReader::read<std::int32_t>,
-        //"ReadInt64", &DataReader::ReadInt64Wrapper, //TODO Streamer impl
+        "read_s8", [](DataReader& self) { return self.read<std::int8_t>(); }, //&DataReader::read<std::int8_t>,
+        "read_s16", [](DataReader& self) { return self.read<std::int16_t>(); }, //&DataReader::read<std::int16_t>,
+        "read_s32", [](DataReader& self) { return self.read<std::int32_t>(); }, //&DataReader::read<std::int32_t>,
+        //"read_s64", &DataReader::ReadInt64Wrapper, //TODO Streamer impl
 
-        "ReadUInt8", [](DataReader& self) { return self.read<std::uint8_t>(); }, //&DataReader::read<std::uint8_t>,
-        "ReadUInt16", [](DataReader& self) { return self.read<std::uint16_t>(); }, //&DataReader::read<std::uint16_t>,
-        "ReadUInt32", [](DataReader& self) { return self.read<std::uint32_t>(); }, //&DataReader::read<std::uint32_t>,
-        //"ReadUInt64", &DataReader::ReadUInt64Wrapper, //TODO Streamer impl
+        "read_u8", [](DataReader& self) { return self.read<std::uint8_t>(); }, //&DataReader::read<std::uint8_t>,
+        "read_u16", [](DataReader& self) { return self.read<std::uint16_t>(); }, //&DataReader::read<std::uint16_t>,
+        "read_u32", [](DataReader& self) { return self.read<std::uint32_t>(); }, //&DataReader::read<std::uint32_t>,
+        //"read_u64", &DataReader::ReadUInt64Wrapper, //TODO Streamer impl
 
-        "ReadFloat", [](DataReader& self) { return self.read<std::float_t>(); }, //&DataReader::read<std::float_t>,
-        "ReadDouble", [](DataReader& self) { return self.read<std::double_t>(); }, //&DataReader::read<std::double_t>,
+        "read_float", [](DataReader& self) { return self.read<std::float_t>(); }, //&DataReader::read<std::float_t>,
+        "read_double", [](DataReader& self) { return self.read<std::double_t>(); }, //&DataReader::read<std::double_t>,
                 
-        "ReadChar", [](DataReader& self) { return self.read<char16_t>(); }, //&DataReader::read<char16_t>,
+        "read_char16", [](DataReader& self) { return self.read<char16_t>(); }, //&DataReader::read<char16_t>,
 
-        "Deserialize", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
+        // Generalized variadic read
+        //  local reader = Reader.new()
+        //  reader:read()
+        "read", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
             return self.read(IModManager::Types(args.begin(), args.end()), state);
         }
         
@@ -349,11 +336,11 @@ void IModManager::LoadAPI() {
     //);
 
     m_state.new_usertype<ISocket>("Socket",
-        "Close", &ISocket::Close,
+        "close", &ISocket::Close,
         "connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
         "host", sol::property(&ISocket::GetHostName),
-        "sendQueueSize", sol::property(&ISocket::GetSendQueueSize)
+        "send_queue_size", sol::property(&ISocket::GetSendQueueSize)
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
@@ -379,23 +366,23 @@ void IModManager::LoadAPI() {
         "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),
         //"admin", &Peer::m_admin,
         "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin),
-        "characterID", sol::property([](Peer& self) -> ZDOID { return self.m_characterID; }), // return copy
+        "character_id", sol::property([](Peer& self) -> ZDOID { return self.m_characterID; }), // return copy
         "name", sol::readonly(&Peer::m_name), // strings are immutable in Lua similarly to Java
         "pos", &Peer::m_pos,
         //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
         "socket", sol::readonly(&Peer::m_socket),
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
-        "Kick", sol::resolve<void ()>(&Peer::Kick),
+        "kick", sol::resolve<void ()>(&Peer::Kick),
         // message functions
-        "ChatMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::ChatMessage),
-        "ConsoleMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::ConsoleMessage),
+        "chat_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::ChatMessage),
+        "console_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::ConsoleMessage),
         //"ConsoleMessage", sol::resolve<void(std::string_view)>(&Peer::ConsoleMessage),
         //"ConsoleMessage", &Peer::ConsoleMessage,
-        "CornerMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::CornerMessage),
-        "CenterMessage", static_cast<void (Peer::*)(std::string_view)>(&Peer::CenterMessage),
+        "corner_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::CornerMessage),
+        "center_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::CenterMessage),
         // misc functions
-        "Teleport", sol::overload(
+        "teleport", sol::overload(
             sol::resolve<void (Vector3f pos, Quaternion rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void (Vector3f pos)>(&Peer::Teleport)
         ),
@@ -403,8 +390,8 @@ void IModManager::LoadAPI() {
         //    sol::resolve<void(const Vector3f& pos, const Quaternion& rot)>(&Peer::MoveTo),
         //    sol::resolve<void(const Vector3f& pos)>(&Peer::MoveTo)
         //),
-        "Disconnect", &Peer::Disconnect,
-        "InvokeSelf", sol::overload(
+        "disconnect", &Peer::Disconnect,
+        "invoke_self", sol::overload(
             sol::resolve<bool (avledet::util::Hash, DataReader&)>(&Peer::InternalInvoke),
             sol::resolve<bool (std::string_view, DataReader&)>(&Peer::InternalInvoke)
         ),
@@ -416,15 +403,15 @@ void IModManager::LoadAPI() {
         //},
 
         // static_cast<void (DataWriter::*)(const avledet::util::Bytes&, std::size_t)>(&DataWriter::write),
-        "Register", &Peer::RegisterLua,
+        "register", &Peer::RegisterLua,
         //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
         //    sol::environment& env = te;
         //    Mod& mod = env["this"].get<sol::table>().as<Mod&>();
         //    self.RegisterLua(sig, func, &mod); 
         //},
-        "Invoke", &Peer::InvokeLua,
-        "RouteView", &Peer::RouteViewLua,
-        "Route", &Peer::RouteLua
+        "invoke", &Peer::InvokeLua,
+        "route_view", &Peer::RouteViewLua,
+        "route", &Peer::RouteLua
         //sol::overload(
         //    sol::resolve<void(const ZDOID&, const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
         //    sol::resolve<void(const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
@@ -443,10 +430,10 @@ void IModManager::LoadAPI() {
         sol::no_constructor,
         "name", sol::readonly(&Prefab::m_name),
         "hash", sol::readonly(&Prefab::m_hash),
-        "AllFlagsPresent", &Prefab::AllFlagsPresent,
-        "AnyFlagsPresent", &Prefab::AnyFlagsPresent,
-        "AllFlagsAbsent", &Prefab::AllFlagsAbsent,
-        "AnyFlagsAbsent", &Prefab::AnyFlagsAbsent
+        "flags_all", &Prefab::AllFlagsPresent,
+        "flags_any", &Prefab::AnyFlagsPresent,
+        "flags_nall", &Prefab::AllFlagsAbsent,
+        "flags_nany", &Prefab::AnyFlagsAbsent
     );
 
     // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
@@ -505,7 +492,7 @@ void IModManager::LoadAPI() {
 
     m_state["PrefabManager"] = PrefabManager();
     m_state.new_usertype<IPrefabManager>("IPrefabManager",
-        "GetPrefab", sol::overload(
+        "get_prefab", sol::overload(
             sol::resolve<const Prefab*(avledet::util::Hash) const>(&IPrefabManager::GetPrefab),
             sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::GetPrefab)
         )
@@ -531,68 +518,67 @@ void IModManager::LoadAPI() {
         "zone", sol::property(&ZDO::GetZone),
         "rot", sol::property(&ZDO::GetRotation, &ZDO::SetRotation),
         "prefab", sol::property(&ZDO::GetPrefab),
-        "prefabHash", sol::property(&ZDO::GetPrefabHash),
+        "prefab_hash", sol::property(&ZDO::GetPrefabHash),
         "owner", sol::property([](ZDO self) { return Int64Wrapper(self.Owner()); }, [](ZDO self, Int64Wrapper owner) { self.SetOwner((std::int64_t)owner); }),
-        "IsOwner", &ZDO::IsOwner,
-        "IsLocal", &ZDO::IsLocal,
-        "SetLocal", &ZDO::SetLocal,
+        "is_owner", &ZDO::IsOwner, // zdo:is_owner(id)
+        "local", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
         //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
-        "HasOwner", &ZDO::HasOwner,
-        "Disown", &ZDO::Disown,
-        "dataRev", sol::property(&ZDO::GetDataRevision), // sol::property([](ZDO self) { return self.Revision().GetDataRevision(); }),
-        "ownerRev", sol::property(&ZDO::GetOwnerRevision),
+        "owned", sol::property(&ZDO::HasOwner),
+        "disown", &ZDO::Disown, //TODO rename?
+        "data_rev", sol::property(&ZDO::GetDataRevision), // sol::property([](ZDO self) { return self.Revision().GetDataRevision(); }),
+        "owner_rev", sol::property(&ZDO::GetOwnerRevision),
         //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
         
         // Getters
-        "GetFloat", sol::overload(
+        "get_float", sol::overload(
             sol::resolve<float(avledet::util::Hash, float) const>(&ZDO::GetFloat),
             sol::resolve<float(avledet::util::Hash) const>(&ZDO::GetFloat),
             sol::resolve<float(std::string_view, float) const>(&ZDO::GetFloat),
             sol::resolve<float(std::string_view) const>(&ZDO::GetFloat)
         ),
-        "GetInt", sol::overload(
+        "get_int", sol::overload(
             sol::resolve<std::int32_t(avledet::util::Hash, std::int32_t) const>(&ZDO::GetInt),
             sol::resolve<std::int32_t(avledet::util::Hash) const>(&ZDO::GetInt),
             sol::resolve<std::int32_t(std::string_view, std::int32_t) const>(&ZDO::GetInt),
             sol::resolve<std::int32_t(std::string_view) const>(&ZDO::GetInt)
         ),
-        "GetLong", sol::overload(
+        "get_long", sol::overload(
             sol::resolve<Int64Wrapper(avledet::util::Hash, Int64Wrapper) const>(&ZDO::GetLongWrapper),
             sol::resolve<Int64Wrapper(avledet::util::Hash) const>(&ZDO::GetLongWrapper),
             sol::resolve<Int64Wrapper(std::string_view, Int64Wrapper) const>(&ZDO::GetLongWrapper),
             sol::resolve<Int64Wrapper(std::string_view) const>(&ZDO::GetLongWrapper)
         ),
-        "GetQuaternion", sol::overload(
+        "get_quat", sol::overload(
             sol::resolve<Quaternion(avledet::util::Hash, Quaternion) const>(&ZDO::GetQuaternion),
             sol::resolve<Quaternion(avledet::util::Hash) const>(&ZDO::GetQuaternion),
             sol::resolve<Quaternion(std::string_view, Quaternion) const>(&ZDO::GetQuaternion),
             sol::resolve<Quaternion(std::string_view) const>(&ZDO::GetQuaternion)
         ),
-        "GetVector3", sol::overload(
+        "get_vec3", sol::overload(
             sol::resolve<Vector3f (avledet::util::Hash, Vector3f) const>(&ZDO::GetVector3),
             sol::resolve<Vector3f (avledet::util::Hash) const>(&ZDO::GetVector3),
             sol::resolve<Vector3f (std::string_view, Vector3f) const>(&ZDO::GetVector3),
             sol::resolve<Vector3f (std::string_view) const>(&ZDO::GetVector3)
         ),
-        "GetString", sol::overload(
+        "get_string", sol::overload(
             sol::resolve<std::string_view (avledet::util::Hash, std::string_view) const>(&ZDO::GetString),
             sol::resolve<std::string_view (avledet::util::Hash) const>(&ZDO::GetString),
             sol::resolve<std::string_view (std::string_view, std::string_view) const>(&ZDO::GetString),
             sol::resolve<std::string_view (std::string_view) const>(&ZDO::GetString)
         ),
-        "GetBytes", sol::overload(
+        "get_bytes", sol::overload(
             sol::resolve<const avledet::util::Bytes* (avledet::util::Hash) const>(&ZDO::GetBytes),
             sol::resolve<const avledet::util::Bytes* (std::string_view) const>(&ZDO::GetBytes)
             //[](ZDO& self, avledet::util::Hash key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(avledet::util::Bytes(*bytes)) : std::nullopt; },
             //[](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(avledet::util::Bytes(*bytes)) : std::nullopt; }
         ),
-        "GetBool", sol::overload(
+        "get_bool", sol::overload(
             sol::resolve<bool (avledet::util::Hash, bool) const>(&ZDO::GetBool),
             sol::resolve<bool (avledet::util::Hash) const>(&ZDO::GetBool),
             sol::resolve<bool (std::string_view, bool) const>(&ZDO::GetBool),
             sol::resolve<bool (std::string_view) const>(&ZDO::GetBool)
         ),
-        "GetZDOID", sol::overload(
+        "get_zdoid", sol::overload(
             //sol::resolve<ZDOID(avledet::util::Hash, const ZDOID&) const>(&ZDO::GetZDOID),
             //sol::resolve<ZDOID(avledet::util::Hash) const>(&ZDO::GetZDOID),
             sol::resolve<ZDOID(std::string_view, ZDOID) const>(&ZDO::GetZDOID),
@@ -601,15 +587,15 @@ void IModManager::LoadAPI() {
 
 
         // Setters
-        "SetFloat", sol::overload(
+        "set_float", sol::overload(
             static_cast<void (ZDO::*)(avledet::util::Hash, float)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, float)>(&ZDO::Set)
         ),        
-        "SetInt", sol::overload(
+        "set_int", sol::overload(
             static_cast<void (ZDO::*)(avledet::util::Hash, std::int32_t)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::Set)
         ),
-        "Set", sol::overload(
+        "set", sol::overload(
             // Quaternion
             static_cast<void (ZDO::*)(avledet::util::Hash, Quaternion)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, Quaternion)>(&ZDO::Set),
@@ -689,23 +675,23 @@ void IModManager::LoadAPI() {
         "id", sol::property([](IValhalla& self) { return Int64Wrapper(self.ID()); }),
         "nanos", sol::property([](IValhalla& self) { return Int64Wrapper(self.Nanos().count()); }),
         "time", sol::property(&IValhalla::Time),
-        "timeMultiplier", &IValhalla::m_serverTimeMultiplier,
+        "time_multiplier", &IValhalla::m_serverTimeMultiplier,
         // world time functions
-        "worldTime", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
-        "worldTimeMultiplier", sol::property([](IValhalla& self) { return self.m_worldTimeMultiplier; }, [](IValhalla& self, double mul) { if (mul <= 0.001) throw std::runtime_error("multiplier too small"); self.m_worldTimeMultiplier = mul; }),
-        "worldTicks", sol::property([](IValhalla& self) { return self.GetWorldTicks(); }),
+        "world_time", sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime), &IValhalla::SetWorldTime),
+        "world_time_multiplier", sol::property([](IValhalla& self) { return self.m_worldTimeMultiplier; }, [](IValhalla& self, double mul) { if (mul <= 0.001) throw std::runtime_error("multiplier too small"); self.m_worldTimeMultiplier = mul; }),
+        "world_ticks", sol::property([](IValhalla& self) { return self.GetWorldTicks(); }),
         "day", sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay),        
-        "timeOfDay", sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay), &IValhalla::SetTimeOfDay),
-        "isMorning", sol::property(sol::resolve<bool() const>(&IValhalla::IsMorning)),
-        "isDay", sol::property(sol::resolve<bool() const>(&IValhalla::IsDay)),
-        "isAfternoon", sol::property(sol::resolve<bool() const>(&IValhalla::IsAfternoon)),
-        "isNight", sol::property(sol::resolve<bool() const>(&IValhalla::IsNight)),
-        "tomorrowMorning", sol::property(&IValhalla::GetTomorrowMorning),
-        "tomorrow", sol::property(&IValhalla::GetTomorrowDay),
-        "tomorrowAfternoon", sol::property(&IValhalla::GetTomorrowAfternoon),
-        "tomorrowNight", sol::property(&IValhalla::GetTomorrowNight),
+        "time_of_day", sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay), &IValhalla::SetTimeOfDay),
+        "is_morning", sol::property(sol::resolve<bool() const>(&IValhalla::IsMorning)),
+        "is_day", sol::property(sol::resolve<bool() const>(&IValhalla::IsDay)),
+        "is_afternoon", sol::property(sol::resolve<bool() const>(&IValhalla::IsAfternoon)),
+        "is_night", sol::property(sol::resolve<bool() const>(&IValhalla::IsNight)),
+        "next_morning", sol::property(&IValhalla::GetTomorrowMorning),
+        "next_day", sol::property(&IValhalla::GetTomorrowDay),
+        "next_afternoon", sol::property(&IValhalla::GetTomorrowAfternoon),
+        "next_night", sol::property(&IValhalla::GetTomorrowNight),
 
-        "Subscribe", [this](IValhalla& self, sol::variadic_args args) {
+        "subscribe", [this](IValhalla& self, sol::variadic_args args) {
             avledet::util::Hash hash = 0;
             sol::function func;
             int priority = 0;
@@ -755,8 +741,8 @@ void IModManager::LoadAPI() {
 
     m_state["ZDOManager"] = ZDOManager();
     m_state.new_usertype<IZDOManager>("IZDOManager",
-        "GetZDO", &IZDOManager::GetZDO,
-        "SomeZDOs", sol::overload(
+        "get_zdo", &IZDOManager::GetZDO,
+        "some_zdos", sol::overload(
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
@@ -771,7 +757,7 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
-        "GetZDOs", sol::overload(
+        "get_zdos", sol::overload(
             sol::resolve<std::list<ZDO::unsafe_value>(IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(avledet::util::Hash)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(avledet::util::get_stable_hash(name)); },
@@ -790,25 +776,25 @@ void IModManager::LoadAPI() {
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
-        "AnyZDO", sol::overload(
+        "any_zdo", sol::overload(
             sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<ZDO::unsafe_optional (ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
-        "NearestZDO", sol::overload(
+        "nearest_zdo", sol::overload(
             sol::resolve<ZDO::unsafe_optional (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
             sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
-        "ForceSendZDO", &IZDOManager::ForceSendZDO,
+        "force_send_zdo", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
-        "DestroyZDO", sol::overload(
+        "destroy_zdo", sol::overload(
             sol::resolve<void (ZDOID)>(&IZDOManager::DestroyZDO),
             sol::resolve<void(ZDO::unsafe_value)>(&IZDOManager::DestroyZDO)
         ),
-        "Instantiate", sol::overload(
+        "instantiate", sol::overload(
             sol::resolve<ZDO::unsafe_value (Prefab const&, Vector3f)>(&IZDOManager::Instantiate),
             [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(avledet::util::get_stable_hash(name), pos); },
             sol::resolve<ZDO::unsafe_value (avledet::util::Hash, Vector3f)>(&IZDOManager::Instantiate)
@@ -821,7 +807,7 @@ void IModManager::LoadAPI() {
 
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
-        "GetPeer", sol::overload(
+        "get_peer", sol::overload(
             [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUserID((std::int64_t)owner); },
             //sol::resolve<Peer*(avledet::util::UserID)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
@@ -833,7 +819,7 @@ void IModManager::LoadAPI() {
 
     m_state["ModManager"] = ModManager();
     m_state.new_usertype<IModManager>("IModManager",
-        "GetMod", [](IModManager& self, std::string_view name) {
+        "get_mod", [](IModManager& self, std::string_view name) {
             auto&& find = self.m_mods.find(name);
             if (find != self.m_mods.end())
                 return find->second.get();
@@ -856,8 +842,8 @@ void IModManager::LoadAPI() {
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
-        "GetDungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(avledet::util::get_stable_hash(name)); },
-        "Generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
+        "get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(avledet::util::get_stable_hash(name)); },
+        "generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
     );
 
 
@@ -870,12 +856,12 @@ void IModManager::LoadAPI() {
     m_state["ZoneManager"] = ZoneManager();
     m_state.new_usertype<IZoneManager>("IZoneManager",
 #if VH_IS_ON(VH_ZONE_GENERATION)
-        "PopulateZone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
+        "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
 #endif
-        "GetNearestFeature", &IZoneManager::GetNearestFeature,
-        "WorldToZonePos", &IZoneManager::WorldToZonePos,
-        "ZoneToWorldPos", &IZoneManager::ZoneToWorldPos,
-        "globalKeys", sol::property(&IZoneManager::GlobalKeys)
+        "get_nearest_feature", &IZoneManager::GetNearestFeature,
+        "to_zone_pos", &IZoneManager::WorldToZonePos,
+        "to_world_pos", &IZoneManager::ZoneToWorldPos,
+        "global_keys", sol::property(&IZoneManager::GlobalKeys)
     );
 
 
@@ -884,7 +870,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<Mod>("Mod",
         "name", sol::readonly(&Mod::m_name),
         "version", sol::readonly(&Mod::m_version),
-        "apiVersion", sol::readonly(&Mod::m_apiVersion),
+        "api_version", sol::readonly(&Mod::m_apiVersion),
         "description", sol::readonly(&Mod::m_description),
         "authors", sol::readonly(&Mod::m_authors)
     );
@@ -901,10 +887,10 @@ void IModManager::LoadAPI() {
 
     m_state["RouteManager"] = RouteManager();
     m_state.new_usertype<IRouteManager>("IRouteManager",
-        "Register", &IRouteManager::RegisterLua,
-        "InvokeView", &IRouteManager::InvokeViewLua,
-        "Invoke", &IRouteManager::InvokeLua,
-        "InvokeAll", &IRouteManager::InvokeAllLua
+        "register", &IRouteManager::RegisterLua,
+        "invoke_view", &IRouteManager::InvokeViewLua,
+        "invoke", &IRouteManager::InvokeLua,
+        "invoke_all", &IRouteManager::InvokeAllLua
     );
 
 
@@ -912,7 +898,7 @@ void IModManager::LoadAPI() {
     {
         auto eventTable = m_state["event"].get_or_create<sol::table>();
 
-        eventTable["Unsubscribe"] = [this]() { this->m_unsubscribeCurrentEvent = false; };
+        eventTable["unsubscribe"] = [this]() { this->m_unsubscribeCurrentEvent = false; };
     }
 
     //TODO logger ref capture; fix
@@ -936,12 +922,12 @@ void IModManager::LoadAPI() {
 
     m_state.new_usertype<ZStdCompressor>("ZStdCompressor",
         sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(const avledet::util::Bytes&)>(),
-        "Compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdCompressor::Compress)
+        "compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdCompressor::Compress)
         );
 
     m_state.new_usertype<ZStdDecompressor>("ZStdDecompressor",
         sol::constructors<ZStdDecompressor(), ZStdDecompressor(const avledet::util::Bytes&)>(),
-        "Decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdDecompressor::Decompress)
+        "decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdDecompressor::Decompress)
         );
     
 
@@ -950,7 +936,7 @@ void IModManager::LoadAPI() {
         "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
         "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)),
         "raw", sol::property(sol::resolve<Deflater()>(Deflater::Raw)),
-        "Compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Deflater::Compress)
+        "compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Deflater::Compress)
     );
 
     m_state.new_usertype<Inflater>("Inflater",
@@ -959,7 +945,7 @@ void IModManager::LoadAPI() {
         "gz", sol::property(Inflater::Gz),
         "auto", sol::property(Inflater::Auto),
         "raw", sol::property(Inflater::Raw),
-        "Decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Inflater::Decompress)
+        "decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Inflater::Decompress)
     );
 
 
@@ -967,13 +953,13 @@ void IModManager::LoadAPI() {
     {
         auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
 
-        utilsTable["CreateBytes"] = []() { return avledet::util::Bytes(); };
+        utilsTable["create_bytes"] = []() { return avledet::util::Bytes(); };
 
-        utilsTable["Assign"] = sol::overload(
+        utilsTable["assign"] = sol::overload(
             [](avledet::util::Bytes& replace, avledet::util::Bytes& other) { replace = other; }
         );
 
-        utilsTable["Swap"] = sol::overload(
+        utilsTable["swap"] = sol::overload(
             [](avledet::util::Bytes& a, avledet::util::Bytes& b) { std::swap(a, b); }
         );
 
@@ -995,11 +981,11 @@ void IModManager::LoadAPI() {
             //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
             //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
             
-            resourceUtilsTable["ReadFileBytes"] = [](std::string_view path) { return VUtils::Resource::ReadFile<avledet::util::Bytes>(path); };
-            resourceUtilsTable["ReadFileString"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::string>(path); };
-            resourceUtilsTable["ReadFileLines"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
+            resourceUtilsTable["as_bytes"] = [](std::string_view path) { return VUtils::Resource::ReadFile<avledet::util::Bytes>(path); };
+            resourceUtilsTable["as_string"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::string>(path); };
+            resourceUtilsTable["as_lines"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
 
-            resourceUtilsTable["WriteFile"] = sol::overload(
+            resourceUtilsTable["write_file"] = sol::overload(
                 sol::resolve<bool(const fs::path&, const avledet::util::Bytes&)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, std::string_view)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFile),
