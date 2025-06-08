@@ -17,61 +17,10 @@
 
 namespace avledet::util {
 
-    /*
-    struct ReaderObject {
-        Reader& reader;
-
-        //template <class T>
-        //friend void operator=(T& rhs, ReaderObject& lhs) {
-        //void operator=(int& rhs) {
-        //
-        //}
-
-        //template<typename T>
-        //    requires (!std::same_as<T, std::string>)
-        //operator T() {
-        //    return reader.read<T>();
-        //}
-
-        operator std::string() {
-            return reader.read<std::string>();
-        }
-    };*/
-
-    class NetworkShape { };
-    class DiskShape { };
-
-    template <class Sh>
-    concept StreamableShape = std::same_as<Sh, NetworkShape> || std::same_as<Sh, DiskShape>;
-
-    //template <class F>
-    //concept is_form_type = std::is_void_v<F> || std::same_as<F, NetForm> || std::same_as<F, DiskForm>;
-
-    //template <class F>
-    //concept is_not_form_type = !is_form_type<F>;
-
-    // Define a serializer for type T, with an optional form F (NetForm / DiskForm)
-    //template <class T, class F = void>
-    //    requires is_form_type<F>
-    //struct Streamer { };
-    template <class T, StreamableShape Sh = NetworkShape>
+    template <class ...T>
     struct Streamer { };
 
-    //template <class ...Args>
-    //struct Streamer {};
 
-    //template <class T>
-    //    requires (!std::is_void_v<T> && std::is_same_v<T, NetForm> && !std::is_same_v<F, DiskForm>)
-    //    //requires (std::is_same_v<F, void> || std::is_same_v<F, NetForm> || std::is_same_v<F, DiskForm>)
-    //struct Streamer {};
-    //
-    //template <class F>
-    //    requires (std::is_void_v<F> || std::is_same_v<F, NetForm> || std::is_same_v<F, DiskForm>)
-    //struct Streamer {};
-
-    // Define a serializer for type T
-    //template <class T>
-    //struct Streamer {};
 
     class Stream {
         static_assert(std::endian::native == std::endian::little, "platform endianness not supported");
@@ -108,7 +57,7 @@ namespace avledet::util {
     };
 
     class Reader : public Stream {
-        template <class T, StreamableShape Sh>
+        template <class ...T>
         friend struct Streamer;
 
     public:
@@ -127,21 +76,24 @@ namespace avledet::util {
         static Reader from_file(std::filesystem::path path);
 
     public:
-        template <class ...T, StreamableShape Sh=NetworkShape>
+        // auto a = read(a, b, c, ..)
+        template <class ...T>
             requires (sizeof...(T) >= 1)
         decltype(auto) read(T&&... args) {
-            return Streamer<std::remove_cvref_t<T>..., Sh>{}.operator()(*this, std::forward<T>(args)...);
+            return Streamer<std::remove_cvref_t<T>...>{}.operator()(*this, std::forward<T>(args)...);
         }
 
-        template <class T, StreamableShape Sh=NetworkShape>
+        // auto a = read<int>()
+        template <class T>
         decltype(auto) read() {
-            return Streamer<std::remove_cvref_t<T>, Sh>{}.operator()(*this);
+            return Streamer<std::remove_cvref_t<T>>{}.operator()(*this);
         }
 
-        template <class ...T, StreamableShape Sh=NetworkShape>
+        // auto [a, b, c] = read<int, char, string>();
+        template <class ...T>
             requires (sizeof...(T) >= 2)
         std::tuple<T...> read() {
-            return { this->template read<T, Sh>()... };
+            return { this->template read<T>()... };
         }
 
 
@@ -156,7 +108,7 @@ namespace avledet::util {
     };
 
     class Writer : public Stream {
-        template <class T, StreamableShape Sh>
+        template <class ...T>
         friend struct Streamer;
 
     public:
@@ -169,17 +121,22 @@ namespace avledet::util {
         void write_varint(std::int32_t value);
 
     public:
-        template <class Sh = NetworkShape, class T>
-        void write(T const& obj) {
-            static_assert(StreamableShape<Sh>, "Do not specify your template type first! ||| [ie. write<int>(5) is BAD] ||| [ie. write((int)5) is GOOD]");
-            Streamer<std::remove_cvref_t<T>, Sh>{}.operator()(*this, obj);
+        // write(a);
+        // auto a = write(a, b, c);
+        template <class ...T>
+            requires (sizeof...(T) >= 1)
+        decltype(auto) write(T const&... args) {
+            return Streamer<std::remove_cvref_t<T>...>{}.operator()(*this, args...);
         }
 
-        template <StreamableShape Sh = NetworkShape, class T, class... Args>
-            requires (sizeof...(Args) > 0)
-        void write(const T& first, const Args&... args) {
-            write<Sh>(first);
-            write<Sh>(args...);
+        // variadic "serialize"
+        //  write(std::tuple<> {});
+        template <class T, class... Args>
+            requires (sizeof...(Args) >= 1)
+        void write(std::tuple<T, Args...> const& args) {
+            return [&]<std::size_t... I>(std::index_sequence<I...>) {
+                ((write(std::get<I>(args))), ...);
+            }(std::make_index_sequence<sizeof...(Args)>{});
         }
 
 

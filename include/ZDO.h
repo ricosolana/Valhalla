@@ -493,7 +493,9 @@ private:
             assert(count); // tree exists; assume there are *some* items
             WriteNumItems(writer, count);
             for (auto&& pair : tree) {
-                writer.write(pair.first, pair.second);
+                writer.write(pair.first);
+                writer.write(pair.second);
+                //(std::tuple<> { pair.first, pair.second });
             }
             return true;
         }
