@@ -1,4 +1,8 @@
 #include "ModManager.h"
+#include "Types.h"
+#include "UserData.h"
+#include <atomic>
+#include <cstdint>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -77,79 +81,79 @@ int LoadFileRequire(lua_State* L) {
 void IModManager::LoadAPI() {    
     m_state.new_usertype<Vector3f>("Vector3f",
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(),
-        "ZERO", sol::property(&Vector3f::Zero),
+        "ZERO", sol::property(&Vector3f::zero),
         "x", &Vector3f::x,
         "y", &Vector3f::y,
         "z", &Vector3f::z,
         "magnitude", sol::property(&Vector3f::magnitude),
         "sqmagnitude", sol::property(&Vector3f::sq_magnitude),
-        "normal", sol::property(&Vector3f::Normal),
-        "Distance", &Vector3f::Distance,
+        "normal", sol::property(&Vector3f::normal),
+        "Distance", &Vector3f::distance_to,
         "sq_distance_to", &Vector3f::sq_distance_to,
         "dot", &Vector3f::dot,
-        "Cross", &Vector3f::Cross,
+        "Cross", &Vector3f::cross,
         sol::meta_function::addition, &Vector3f::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector3f(Vector3f const&) const>(&Vector3f::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector3f() const>(&Vector3f::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator*),
-        sol::meta_function::division, sol::resolve<Vector3f(Vector3f) const>(&Vector3f::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector3f(Vector3f const&) const>(&Vector3f::operator*),
+        sol::meta_function::division, sol::resolve<Vector3f(Vector3f const&) const>(&Vector3f::operator/),
         sol::meta_function::equal_to, &Vector3f::operator==
     );
 
     m_state.new_usertype<Vector2f>("Vector2f",
         sol::constructors<Vector2f(), Vector2f(float, float)>(),
-        "ZERO", sol::property(&Vector2f::Zero),
+        "ZERO", sol::property(&Vector2f::zero),
         "x", &Vector2f::x,
         "y", &Vector2f::y,
         "magnitude", sol::property(&Vector2f::magnitude),
         "sqmagnitude", sol::property(&Vector2f::sq_magnitude),
-        "normal", sol::property(&Vector2f::Normal),
-        "Distance", &Vector2f::Distance,
+        "normal", sol::property(&Vector2f::normal),
+        "Distance", &Vector2f::distance_to,
         "sq_distance_to", &Vector2f::sq_distance_to,
         "dot", &Vector2f::dot,
         sol::meta_function::addition, &Vector2f::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector2f(Vector2f const&) const>(&Vector2f::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector2f() const>(&Vector2f::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator*),
-        sol::meta_function::division, sol::resolve<Vector2f(Vector2f) const>(&Vector2f::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector2f(Vector2f const&) const>(&Vector2f::operator*),
+        sol::meta_function::division, sol::resolve<Vector2f(Vector2f const&) const>(&Vector2f::operator/),
         sol::meta_function::equal_to, &Vector2f::operator==
     );
 
     m_state.new_usertype<Vector2i>("Vector2i",
         sol::constructors<Vector2i(), Vector2i(std::int32_t, std::int32_t)>(),
-        "ZERO", sol::property(&Vector2i::Zero),
+        "ZERO", sol::property(&Vector2i::zero),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
         "magnitude", sol::property(&Vector2i::magnitude),
         "sqmagnitude", sol::property(&Vector2i::sq_magnitude),
-        "normal", sol::property(&Vector2i::Normal),
-        "Distance", &Vector2i::Distance,
+        "normal", sol::property(&Vector2i::normal),
+        "Distance", &Vector2i::distance_to,
         "sq_distance_to", &Vector2i::sq_distance_to,
         "dot", &Vector2i::dot,
         sol::meta_function::addition, &Vector2i::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector2i(Vector2i const&) const>(&Vector2i::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector2i() const>(&Vector2i::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator*),
-        sol::meta_function::division, sol::resolve<Vector2i(Vector2i) const>(&Vector2i::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector2i(Vector2i const&) const>(&Vector2i::operator*),
+        sol::meta_function::division, sol::resolve<Vector2i(Vector2i const&) const>(&Vector2i::operator/),
         sol::meta_function::equal_to, &Vector2i::operator==
     );
 
     m_state.new_usertype<Vector2s>("Vector2s",
         sol::constructors<Vector2s(), Vector2s(std::int16_t, std::int16_t)>(),
-        "ZERO", sol::property(&Vector2s::Zero),
+        "ZERO", sol::property(&Vector2s::zero),
         "x", &Vector2s::x,
         "y", &Vector2s::y,
         "magnitude", sol::property(&Vector2s::magnitude),
         "sqmagnitude", sol::property(&Vector2s::sq_magnitude),
-        "normal", sol::property(&Vector2s::Normal),
-        "Distance", &Vector2s::Distance,
+        "normal", sol::property(&Vector2s::normal),
+        "Distance", &Vector2s::distance_to,
         "sq_distance_to", &Vector2s::sq_distance_to,
         "dot", &Vector2s::dot,
         sol::meta_function::addition, &Vector2s::operator+,
-        sol::meta_function::subtraction, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator-),
+        sol::meta_function::subtraction, sol::resolve<Vector2s(Vector2s const&) const>(&Vector2s::operator-),
         sol::meta_function::unary_minus, sol::resolve<Vector2s() const>(&Vector2s::operator-),
-        sol::meta_function::multiplication, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator*),
-        sol::meta_function::division, sol::resolve<Vector2s(Vector2s) const>(&Vector2s::operator/),
+        sol::meta_function::multiplication, sol::resolve<Vector2s(Vector2s const&) const>(&Vector2s::operator*),
+        sol::meta_function::division, sol::resolve<Vector2s(Vector2s const&) const>(&Vector2s::operator/),
         sol::meta_function::equal_to, &Vector2s::operator==
     );
 
@@ -168,8 +172,8 @@ void IModManager::LoadAPI() {
         //sol::constructors<ZDOID(avledet::util::UserID userID, std::uint32_t id)>(),
         sol::factories([](Int64Wrapper uuid, std::uint32_t id) { return ZDOID((std::int64_t)uuid, id); }),
         "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
-        "uuid", sol::property([](ZDOID& self) { return (Int64Wrapper)self.GetOwner(); }, [](ZDOID& self, Int64Wrapper value) { self.SetOwner((std::int64_t)value); }),
-        "id", sol::property(&ZDOID::GetUID, &ZDOID::SetUID)
+        "user_id", sol::property([](ZDOID& self) { return (Int64Wrapper)self.get_user_id(); }, [](ZDOID& self, Int64Wrapper value) { self.set_user_id((std::int64_t)value); }),
+        "id", sol::property(&ZDOID::get_id, &ZDOID::set_id)
     );
 
     m_state.new_enum("Type",
@@ -211,65 +215,82 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<UserProfile>("UserProfile",
         sol::constructors<UserProfile(std::string, std::string, std::string)>(),
         "name", &UserProfile::m_name,
-        "ign", &UserProfile::m_gamerTag,
-        "nid", &UserProfile::m_networkUserId
+        "ign", &UserProfile::m_gamerTag, // TODO change name
+        "nid", &UserProfile::m_networkUserId // TODO change name
     );
 
     m_state.new_usertype<DataWriter>("DataWriter",
-        sol::constructors<DataWriter(avledet::util::Bytes&)>(),
+        sol::constructors<DataWriter(avledet::util::Bytes)>(),
 
         //"ToReader", &DataWriter::ToReader,
-        "buf", &DataWriter::m_data,
-        "pos", sol::property(&DataWriter::Position, &DataWriter::SetPos), //& DataWriter::m_pos,
+        "buf", &DataWriter::get_buf, //TODO
+        "pos", sol::property(&DataWriter::get_pos, &DataWriter::set_pos), //& DataWriter::m_pos,
 
         //"Clear", &DataWriter::Clear,
 
-        "Write", sol::overload(
+        "write", sol::overload(
             // templated functions are too complex for resolve
             // https://github.com/ThePhD/sol2/issues/664#issuecomment-396867392
-            static_cast<void (DataWriter::*)(bool)>(&DataWriter::Write),
+            //  TODO im feature creeping,
+            //  just target appropriately, decide whether to make ALL functions
+            //      similarly named for read/write,
+            //  or keep special specifiers for variable-sized types 
+            //      (for types which do NOT translate good between c-> and Lua)
+            [](DataWriter& self, bool val) { return self.write(val); },
+            [](DataWriter& self, std::string_view val) { return self.write(val); },
+            [](DataWriter& self, avledet::util::Bytes const& val) { return self.write(val); },
+            [](DataWriter& self, avledet::util::ZDOID const& val) { return self.write(val); },
+            [](DataWriter& self, avledet::util::CSU::Vector3f const& val) { return self.write(val); },
+            [](DataWriter& self, avledet::util::CSU::Vector2i const& val) { return self.write(val); },
+            [](DataWriter& self, avledet::util::CSU::Quaternion const& val) { return self.write(val); },
+            [](DataWriter& self, UserProfile const& val) { return self.write(val); }
 
-            static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::Write),
-            //static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::Write),
 
-            static_cast<void (DataWriter::*)(const avledet::util::Bytes&)>(&DataWriter::Write),
-            
-            static_cast<void (DataWriter::*)(ZDOID)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Vector3f)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Vector2i)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Quaternion)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
-            static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write)
+
+            //static_cast<void (DataWriter::*)(bool)>(&DataWriter::write<bool>),
+//
+            //static_cast<void (DataWriter::*)(std::string_view)>(&DataWriter::write<std::string_view>),
+            ////static_cast<void (DataWriter::*)(const std::vector<std::string>&)>(&DataWriter::write),
+//
+            //static_cast<void (DataWriter::*)(const avledet::util::Bytes&)>(&DataWriter::write),
+            //
+            //static_cast<void (DataWriter::*)(avledet::util::ZDOID)>(&DataWriter::write<avledet::util::ZDOID>),
+            //static_cast<void (DataWriter::*)(avledet::util::CSU::Vector3f)>(&DataWriter::write<avledet::util::CSU::Vector3f>),
+            //static_cast<void (DataWriter::*)(avledet::util::CSU::Vector2i)>(&DataWriter::write<avledet::util::CSU::Vector2i>),
+            //static_cast<void (DataWriter::*)(avledet::util::CSU::Quaternion)>(&DataWriter::write<avledet::util::CSU::Quaternion>),
+            //static_cast<void (DataWriter::*)(const UserProfile&)>(&DataWriter::write),
+            ////static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),//TODO create streamer
+            ////static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write) //TODO create streamer
         ),
 
-        "WriteInt8", static_cast<void (DataWriter::*)(std::int8_t)>(&DataWriter::Write),
-        "WriteInt16", static_cast<void (DataWriter::*)(std::int16_t)>(&DataWriter::Write),
-        "WriteInt32", static_cast<void (DataWriter::*)(std::int32_t)>(&DataWriter::Write),
-        "WriteInt64", static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::Write),
+        //TODO impl everything
+        "write_i8", &DataWriter::write<std::int8_t> // static_cast<void (DataWriter::*)(std::int8_t)>(&DataWriter::write),
+        //"WriteInt16", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::int16_t)>(&DataWriter::write),
+        //"WriteInt32", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::int32_t)>(&DataWriter::write),
+        //"WriteInt64", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(Int64Wrapper)>(&DataWriter::write),
+//
+        //"WriteUInt8", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint8_t)>(&DataWriter::write),
+        //"WriteUInt16", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint16_t)>(&DataWriter::write),
+        //"WriteUInt32", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::uint32_t)>(&DataWriter::write),
+        //"WriteUInt64", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::write),
+//
+        //"WriteFloat", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::float_t)>(&DataWriter::write),
+        //"WriteDouble", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(std::double_t)>(&DataWriter::write),
+//
+        //"WriteChar", [](DataWriter& self) { self.write<>(); }, //static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::write),
 
-        "WriteUInt8", static_cast<void (DataWriter::*)(std::uint8_t)>(&DataWriter::Write),
-        "WriteUInt16", static_cast<void (DataWriter::*)(std::uint16_t)>(&DataWriter::Write),
-        "WriteUInt32", static_cast<void (DataWriter::*)(std::uint32_t)>(&DataWriter::Write),
-        "WriteUInt64", static_cast<void (DataWriter::*)(UInt64Wrapper)>(&DataWriter::Write),
-
-        "WriteFloat", static_cast<void (DataWriter::*)(float)>(&DataWriter::Write),
-        "WriteDouble", static_cast<void (DataWriter::*)(double)>(&DataWriter::Write),
-
-        "WriteChar", static_cast<void (DataWriter::*)(char16_t)>(&DataWriter::Write),
-
-        "Serialize", sol::overload(
-            sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::serializeOneLua),
-            [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
-                return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
-            }
-            //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::serializeLuaImpl)
-        )
+        //"Serialize", sol::overload(
+        //    sol::resolve<void(IModManager::Type, sol::object)>(&DataWriter::serializeOneLua),
+        //    [](DataWriter& self, const IModManager::Types& types, sol::variadic_args args) { 
+        //        return self.SerializeLua(types, sol::variadic_results(args.begin(), args.end()));
+        //    }
+        //    //sol::resolve<sol::variadic_results(const IModManager::Types&, const sol::variadic_results&)>(&DataWriter::serializeLuaImpl)
+        //)
     );
 
     // Package read/write types
     m_state.new_usertype<DataReader>("DataReader",
-        sol::constructors<DataReader(avledet::util::Bytes&)>(),
+        sol::constructors<DataReader(avledet::util::Bytes)>(),
 
         //"ToWriter", &DataReader::ToWriter,
         //"buf", &DataReader::m_buf,
@@ -286,39 +307,39 @@ void IModManager::LoadAPI() {
                 }, self.m_data);
             }
         ),*/
-        "buf", &DataReader::m_data,
-        "pos", sol::property(&DataReader::Position, &DataReader::SetPos), //& DataWriter::m_pos,
+        //"buf", &DataReader::m_data, // TODO ref change
+        "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos), //& DataWriter::m_pos,
 
-        "ReadBool", &DataReader::ReadBool,
+        "ReadBool", [](DataReader& self) { return self.read<bool>(); },
 
-        "ReadString", &DataReader::ReadString,
-        "ReadStrings", &DataReader::ReadStrings,
+        "ReadString", [](DataReader& self) { return self.read<std::string>(); },
+        "ReadStrings", [](DataReader& self) { return self.read<avledet::util::Strings>(); }, // ReadStrings,
 
-        "ReadBytes", &DataReader::ReadBytes,
+        "ReadBytes", [](DataReader& self) { return self.read<avledet::util::Bytes>(); },
 
-        "ReadZDOID", &DataReader::ReadZDOID,
-        "ReadVector3f", &DataReader::ReadVector3f,
-        "ReadVector2i", &DataReader::ReadVector2i,
-        "ReadQuaternion", &DataReader::ReadQuaternion,
-        "ReadProfile", &DataReader::ReadProfile,
+        "ReadZDOID", [](DataReader& self) { return self.read<avledet::util::ZDOID>(); }, //&DataReader::read<avledet::util::ZDOID>,
+        "ReadVector3f", [](DataReader& self) { return self.read<avledet::util::CSU::Vector3f>(); }, //&DataReader::read<avledet::util::CSU::Vector3f>,
+        "ReadVector2i", [](DataReader& self) { return self.read<avledet::util::CSU::Vector2i>(); }, //&DataReader::read<avledet::util::CSU::Vector2i>,
+        "ReadQuaternion", [](DataReader& self) { return self.read<avledet::util::CSU::Quaternion>(); }, //&DataReader::read<avledet::util::CSU::Quaternion>,
+        //"ReadProfile", [](DataReader& self) { return self.read<UserProfile>(); }, //&DataReader::read<UserProfile>, //TODO impl
 
-        "ReadInt8", &DataReader::ReadInt8,
-        "ReadInt16", &DataReader::ReadInt16,
-        "ReadInt32", &DataReader::ReadInt32,
-        "ReadInt64", &DataReader::ReadInt64Wrapper,
+        "ReadInt8", [](DataReader& self) { return self.read<std::int8_t>(); }, //&DataReader::read<std::int8_t>,
+        "ReadInt16", [](DataReader& self) { return self.read<std::int16_t>(); }, //&DataReader::read<std::int16_t>,
+        "ReadInt32", [](DataReader& self) { return self.read<std::int32_t>(); }, //&DataReader::read<std::int32_t>,
+        //"ReadInt64", &DataReader::ReadInt64Wrapper, //TODO Streamer impl
 
-        "ReadUInt8", &DataReader::ReadUInt8,
-        "ReadUInt16", &DataReader::ReadUInt16,
-        "ReadUInt32", &DataReader::ReadUInt32,
-        "ReadUInt64", &DataReader::ReadUInt64Wrapper,
+        "ReadUInt8", [](DataReader& self) { return self.read<std::uint8_t>(); }, //&DataReader::read<std::uint8_t>,
+        "ReadUInt16", [](DataReader& self) { return self.read<std::uint16_t>(); }, //&DataReader::read<std::uint16_t>,
+        "ReadUInt32", [](DataReader& self) { return self.read<std::uint32_t>(); }, //&DataReader::read<std::uint32_t>,
+        //"ReadUInt64", &DataReader::ReadUInt64Wrapper, //TODO Streamer impl
 
-        "ReadFloat", &DataReader::ReadFloat,
-        "ReadDouble", &DataReader::ReadDouble,
+        "ReadFloat", [](DataReader& self) { return self.read<std::float_t>(); }, //&DataReader::read<std::float_t>,
+        "ReadDouble", [](DataReader& self) { return self.read<std::double_t>(); }, //&DataReader::read<std::double_t>,
                 
-        "ReadChar", &DataReader::ReadChar,
+        "ReadChar", [](DataReader& self) { return self.read<char16_t>(); }, //&DataReader::read<char16_t>,
 
         "Deserialize", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
-            return self.DeserializeLua(state, IModManager::Types(args.begin(), args.end()));
+            return self.read(IModManager::Types(args.begin(), args.end()), state);
         }
         
     );
@@ -394,7 +415,7 @@ void IModManager::LoadAPI() {
         //    self.Register(repr.m_hash, func, repr.m_types);
         //},
 
-        // static_cast<void (DataWriter::*)(const avledet::util::Bytes&, std::size_t)>(&DataWriter::Write),
+        // static_cast<void (DataWriter::*)(const avledet::util::Bytes&, std::size_t)>(&DataWriter::write),
         "Register", &Peer::RegisterLua,
         //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
         //    sol::environment& env = te;
@@ -656,6 +677,10 @@ void IModManager::LoadAPI() {
 
 
 
+    // *NOTE: IMPORTANT
+    //  See 'version' key
+    //      If 'VConstants::GAME' type is changed to anything besides a 'const char*', this breaks compilation
+    //      due to oddities with sol::var(...) resolution...
     m_state["Valhalla"] = Valhalla();
     m_state.new_usertype<IValhalla>("IValhalla",
         // server members
@@ -732,61 +757,61 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<IZDOManager>("IZDOManager",
         "GetZDO", &IZDOManager::GetZDO,
         "SomeZDOs", sol::overload(
-            sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO>(Vector3f, float, std::size_t, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const Vector3f& pos, float radius, std::size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             
-            sol::resolve<std::list<ZDO>(ZoneID, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO>(ZoneID, std::size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO>(ZoneID, std::size_t, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, const ZoneID& zone, std::size_t max, std::string_view name) { return self.SomeZDOs(zone, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<ZDO>(ZoneID, std::size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO>(ZoneID, std::size_t, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
             [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "GetZDOs", sol::overload(
-            sol::resolve<std::list<ZDO>()>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO>(avledet::util::Hash)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(avledet::util::Hash)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, std::string_view name) { return self.GetZDOs(avledet::util::get_stable_hash(name)); },
 
-            sol::resolve<std::list<ZDO>(Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO>(Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO>(Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::list<ZDO>(ZoneID, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO>(ZoneID)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID)>(&IZDOManager::GetZDOs),
 
-            sol::resolve<std::list<ZDO>(ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
-            sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO>(ZoneID, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
             [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "AnyZDO", sol::overload(
-            sol::resolve<std::optional<ZDO> (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<std::optional<ZDO> (ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            sol::resolve<ZDO::unsafe_optional (ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
             [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "NearestZDO", sol::overload(
-            sol::resolve<std::optional<ZDO> (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
-            sol::resolve<std::optional<ZDO> (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
+            sol::resolve<ZDO::unsafe_optional (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
+            sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
             [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "ForceSendZDO", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
         "DestroyZDO", sol::overload(
             sol::resolve<void (ZDOID)>(&IZDOManager::DestroyZDO),
-            sol::resolve<void(const ZDO)>(&IZDOManager::DestroyZDO)
+            sol::resolve<void(ZDO::unsafe_value)>(&IZDOManager::DestroyZDO)
         ),
         "Instantiate", sol::overload(
-            sol::resolve<ZDO (const Prefab&, Vector3f)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO::unsafe_value (Prefab const&, Vector3f)>(&IZDOManager::Instantiate),
             [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(avledet::util::get_stable_hash(name), pos); },
-            sol::resolve<ZDO (avledet::util::Hash, Vector3f)>(&IZDOManager::Instantiate)
+            sol::resolve<ZDO::unsafe_value (avledet::util::Hash, Vector3f)>(&IZDOManager::Instantiate)
             //sol::resolve<ZDO (const ZDO)>(&IZDOManager::Instantiate)
         )
 
@@ -890,7 +915,8 @@ void IModManager::LoadAPI() {
         eventTable["Unsubscribe"] = [this]() { this->m_unsubscribeCurrentEvent = false; };
     }
 
-    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
+    //TODO logger ref capture; fix
+    m_state["print"] = [m_logger = this->m_logger](sol::this_state ts, sol::variadic_args args) {
         sol::state_view state = ts;
 
         auto&& tostring(state["tostring"]);
@@ -903,7 +929,7 @@ void IModManager::LoadAPI() {
             s += tostring(arg);
         }
 
-        LOG_INFO(LOGGER, "[Lua] {}", s);
+        LOG_INFO(m_logger, "[Lua] {}", s);
     };
 
 
@@ -958,7 +984,8 @@ void IModManager::LoadAPI() {
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
-            stringUtilsTable["GetStableHashCode"] = avledet::util::get_stable_hash;
+            //TODO
+            //stringUtilsTable["GetStableHashCode"] = avledet::util::get_stable_hash;
         }
 
         {
@@ -993,45 +1020,50 @@ void IModManager::LoadMod(Mod& mod) {
 
 
 
-inline void my_panic(sol::optional<std::string> maybe_msg) {
-    LOG_ERROR(LOGGER, "Lua is in a panic state and will now abort() the application");
-    if (maybe_msg) {
-        const std::string& msg = maybe_msg.value();
-        LOG_ERROR(LOGGER, "\terror message: {}", msg);
-    }
-    // When this function exits, Lua will exhibit default behavior and abort()
-}
+//TODO
+//inline void my_panic(sol::optional<std::string> maybe_msg) {
+//    LOG_ERROR(m_logger, "Lua is in a panic state and will now abort() the application");
+//    if (maybe_msg) {
+//        const std::string& msg = maybe_msg.value();
+//        LOG_ERROR(m_logger, "\terror message: {}", msg);
+//    }
+//    // When this function exits, Lua will exhibit default behavior and abort()
+//}
 
-int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
-    // L is the lua state, which you can wrap in a state_view if necessary
-    // maybe_exception will contain exception, if it exists
-    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
-    LOG_ERROR(LOGGER, "An exception occurred in a function, here's what it says ");
-    if (maybe_exception) {
-        LOG_ERROR(LOGGER, "(straight from the exception): ");
-        const std::exception& ex = *maybe_exception;
-        LOG_ERROR(LOGGER, "{}", ex.what());
-    }
-    else {
-        LOG_ERROR(LOGGER, "(from the description parameter): ");
-        LOG_ERROR(LOGGER, "{}", description);
-    }
-
-    // you must push 1 element onto the stack to be
-    // transported through as the error object in Lua
-    // note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
-    // so we push a single string (in our case, the description of the error)
-    return sol::stack::push(L, description);
-}
+//in my limited usage and experience, no error handler or panic was ever invoked, perhaps because all
+//  errors took place INSIDE one of my event handlers...
+//int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
+//    // L is the lua state, which you can wrap in a state_view if necessary
+//    // maybe_exception will contain exception, if it exists
+//    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
+//    LOG_ERROR(m_logger, "An exception occurred in a function, here's what it says ");
+//    if (maybe_exception) {
+//        LOG_ERROR(m_logger, "(straight from the exception): ");
+//        const std::exception& ex = *maybe_exception;
+//        LOG_ERROR(m_logger, "{}", ex.what());
+//    }
+//    else {
+//        LOG_ERROR(m_logger, "(from the description parameter): ");
+//        LOG_ERROR(m_logger, "{}", description);
+//    }
+//
+//    // you must push 1 element onto the stack to be
+//    // transported through as the error object in Lua
+//    // note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
+//    // so we push a single string (in our case, the description of the error)
+//    return sol::stack::push(L, description);
+//}
 
 void IModManager::PostInit() {
-    LOG_INFO(LOGGER, "Initializing ModManager");
+    m_logger = quill::Frontend::create_or_get_logger("modmanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
 
-    m_state.set_exception_handler(&my_exception_handler);
+    LOG_INFO(m_logger, "Initializing ModManager");
+
+    //m_state.set_exception_handler(&my_exception_handler);
 
     m_state.open_libraries();
 
-    LoadAPI();
+    this->LoadAPI();
 
     std::error_code ec;
     fs::create_directories(VH_MOD_PATH, ec);
@@ -1052,15 +1084,15 @@ void IModManager::PostInit() {
                 auto&& mod = LoadModInfo(dirname);
                 LoadMod(mod);
 
-                LOG_INFO(LOGGER, "Loaded mod '{}'", mod.m_name);
+                LOG_INFO(m_logger, "Loaded mod '{}'", mod.m_name);
             }
         }
         catch (const std::exception& e) {
-            LOG_ERROR(LOGGER, "Failed to load mod: {} ({})", e.what(), dir.path().string());
+            LOG_ERROR(m_logger, "Failed to load mod: {} ({})", e.what(), dir.path().string());
         }
     }
 
-    LOG_INFO(LOGGER, "Loaded {} mods", m_mods.size());
+    LOG_INFO(m_logger, "Loaded {} mods", m_mods.size());
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }

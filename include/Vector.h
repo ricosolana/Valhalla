@@ -24,14 +24,20 @@ namespace avledet::util::CSU {
 
         constexpr Vector2() : x(0), y(0) { }
         constexpr Vector2(const T x, const T y) : x(x), y(y) { }
+        //constexpr Vector2(Vector2<T> const& rhs) : x(rhs.x), y(rhs.y) {}
+
+        //void operator=(Vector2<T> const& rhs) {
+        //    x = rhs.x;
+        //    y = rhs.y;
+        //}
 
 
-
-        Vector2<T> operator+(Vector2<T> rhs) const {
+        // vector arithmetic
+        Vector2<T> operator+(Vector2<T> const& rhs) const {
             return Vector2<T>(x + rhs.x, y + rhs.y);
         }
 
-        Vector2<T> operator-(Vector2<T> rhs) const {
+        Vector2<T> operator-(Vector2<T> const& rhs) const {
             return Vector2<T>(x - rhs.x, y - rhs.y);
         }
 
@@ -39,11 +45,11 @@ namespace avledet::util::CSU {
             return Vector2<T>(-x, -y);
         }
 
-        Vector2<T> operator*(Vector2<T> rhs) const {
+        Vector2<T> operator*(Vector2<T> const& rhs) const {
             return Vector2<T>(x * rhs.x, y * rhs.y);
         }
 
-        Vector2<T> operator/(Vector2<T> rhs) const {
+        Vector2<T> operator/(Vector2<T> const& rhs) const {
             return Vector2<T>(x / rhs.x, y / rhs.y);
         }
 
@@ -57,19 +63,19 @@ namespace avledet::util::CSU {
 
 
 
-        void operator+=(Vector2<T> rhs) {
+        void operator+=(Vector2<T> const& rhs) {
             *this = *this + rhs;
         }
 
-        void operator-=(Vector2<T> rhs) {
+        void operator-=(Vector2<T> const& rhs) {
             *this = *this - rhs;
         }
 
-        void operator*=(Vector2<T> rhs) {
+        void operator*=(Vector2<T> const& rhs) {
             *this = *this * rhs;
         }
 
-        void operator/=(Vector2<T> rhs) {
+        void operator/=(Vector2<T> const& rhs) {
             *this = *this / rhs;
         }
 
@@ -83,17 +89,17 @@ namespace avledet::util::CSU {
 
 
 
-        constexpr bool operator==(Vector2<T> rhs) const {
+        constexpr bool operator==(Vector2<T> const& rhs) const {
             return x == rhs.x && y == rhs.y;
         }
 
-        constexpr bool operator!=(Vector2<T>& rhs) const {
+        constexpr bool operator!=(Vector2<T> const& rhs) const {
             return !(*this == rhs);
         }
 
 
 
-        constexpr float dot(Vector2<T> rhs) const {
+        constexpr float dot(Vector2<T> const& rhs) const {
             return x * rhs.x + y * rhs.y;
         }
 
@@ -105,11 +111,11 @@ namespace avledet::util::CSU {
             return std::sqrt(this->sq_magnitude());
         }
 
-        constexpr float sq_distance_to(Vector2<T> rhs) const {
+        constexpr float sq_distance_to(Vector2<T> const& rhs) const {
             return (x - rhs.x) * (x - rhs.x) + (y - rhs.y) * (y - rhs.y);
         }
 
-        constexpr float distance_to(Vector2<T> rhs) const {
+        constexpr float distance_to(Vector2<T> const& rhs) const {
             return std::sqrt(this->sq_distance_to(rhs));
         }
 
@@ -138,14 +144,9 @@ namespace avledet::util::CSU {
         T x, y, z;
 
         constexpr Vector3() : x(0), y(0), z(0) { }
-        constexpr Vector3(const T x, const T y, const T z)
-            : x(x), y(y), z(z) {
-        }
+        constexpr Vector3(const T x, const T y, const T z) : x(x), y(y), z(z) { }
+        //constexpr Vector3(Vector3<T> const& rhs) : x(rhs.x), y(rhs.y), z(rhs.z) { }
 
-        constexpr Vector3(Vector3<T> const& rhs) 
-        : x(rhs.x), y(rhs.y), z(rhs.z) {}
-
-        // vector arithmetic
         void operator=(Vector3<T> const& other) {
             x = other.x;
             y = other.y;
@@ -154,6 +155,7 @@ namespace avledet::util::CSU {
 
 
 
+        // vector arithmetic
         Vector3<T> operator+(Vector3<T> const& rhs) const {
             return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
@@ -257,7 +259,7 @@ namespace avledet::util::CSU {
         constexpr Vector3<T> normal() const {
             auto sq = this->sq_magnitude();
 
-            if (sq > 1E-05f * 1E-05f) {
+            if (sq > 1E-05f * 1E-05f * 1E-05f) {
                 return *this / std::sqrt(sq);
                 //return *this * VUtils::Math::FISQRT(sqmagnitude);
             } else {
@@ -281,6 +283,7 @@ namespace avledet::util::CSU {
                 + (z - rhs.z) * (z - rhs.z);
         }
 
+        //TODO name
         constexpr float HDistance(Vector3<T> const& rhs) const {
             return std::sqrt(sq_distance_to_h(rhs));
         }
@@ -375,27 +378,15 @@ template <>
 struct ankerl::unordered_dense::hash<avledet::util::CSU::Vector3f> {
     using is_avalanching = void;
 
-    //struct AlignVec {
-    //    float x, y, z, _;
-//
-    //    //AlignVec(avledet::util::CSU::Vector3f const& value)
-    //    //    : x(value.x), y(value.y), z(value.z), _(0) {}
-    //};
-//
-    //static constexpr auto vaava = sizeof(AlignVec);
-//
-    //static_assert(std::has_unique_object_representations_v<AlignVec>);
+    //static_assert(std::has_unique_object_representations_v<avledet::util::CSU::Vector3f>);
 
     auto operator()(avledet::util::CSU::Vector3f const& value) const /*noexcept*/ -> std::uint64_t {
-        //auto aligned = AlignVec(value);
-        //return ankerl::unordered_dense::detail::wyhash::hash(&aligned, sizeof(aligned));
+        //return ankerl::unordered_dense::detail::wyhash::hash(&value, sizeof(value));
 
         using namespace ankerl::unordered_dense::detail::wyhash;
-
         std::uint64_t x = *reinterpret_cast<const std::uint32_t*>(&value.x);
         std::uint64_t y = *reinterpret_cast<const std::uint32_t*>(&value.y);
         std::uint64_t z = *reinterpret_cast<const std::uint32_t*>(&value.z);
-
         return mix((x << 32) | y, z);
     }
 };

@@ -130,14 +130,14 @@ namespace avledet::lexicon {
 
         Iterable split{};
 
-        int lineIdx = -1;
-        int lineSize = 0;
-        for (int i = 0; i < size; i++) {
+        std::int64_t lineIdx = -1;
+        std::int64_t lineSize = 0;
+        for (decltype(size) i = 0; i < size; i++) {
             lineSize = i - lineIdx - 1;
 
             if (data[i] == delim) {
                 if (lineSize || includeBlanks) {
-                    split.insert(split.end(), Iterable::value_type(data + lineIdx + 1, lineSize));
+                    split.insert(split.end(), typename Iterable::value_type(data + lineIdx + 1, lineSize));
                 }
                 lineIdx = i;
             }
@@ -145,13 +145,14 @@ namespace avledet::lexicon {
 
         // this includes last line ONLY if it is not blank (has at least 1 character)
         if (lineIdx < size - 1) {
-            split.insert(split.end(), Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
+            split.insert(split.end(), typename Iterable::value_type(data + lineIdx + 1, size - lineIdx - 1));
         }
 
         return split;
     }
 
     namespace CSU {
+
         // C# Encoding.ASCII.GetString equivalent:
         // bytes greater than 127 get turned to literal '?' (63)
         // Returns whether any modification was done
@@ -174,6 +175,7 @@ namespace avledet::lexicon {
         // Gets the unicode byte count needed to encode std::uint16_t or C# char 
         //  Returns 1, 2 or 3
         unsigned int get_utf8_byte_count(std::uint16_t i);
+
     }// namespace avledet::lexicon::CSU
 
 }// namespace avledet::lexicon

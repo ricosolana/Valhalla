@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "ZDO.h"
+#include "Types.h"
 #include "ZDOManager.h"
 #include "ValhallaServer.h"
 #include "ZDOID.h"
@@ -306,7 +307,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
         flags |= 1 << NETWORK_Long;
     if (_TryWriteType<std::string>(writer))
         flags |= 1 << NETWORK_String;
-    if (_TryWriteType<std::vector<char>>(writer))
+    if (_TryWriteType<avledet::util::Bytes>(writer))
         flags |= 1 << NETWORK_ByteArray;
 
     const auto endPos = writer.get_pos();

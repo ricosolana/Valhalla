@@ -259,11 +259,10 @@ public:
 
         //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
 
-        avledet::util::Bytes bytes;
-        DataWriter params(bytes);
-        params.Write(repr.m_hash);
-        params.SerializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end()));
-        this->Send(std::move(bytes));
+        DataWriter params;
+        params.write(repr.m_hash);
+        params.write(repr.m_types, sol::variadic_results(args.begin(), args.end()));
+        this->Send(std::move(params.get_buf()));
 
         // Postfix
         //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
@@ -444,7 +443,9 @@ public:
             return;
 #endif
 
-        RouteParams(targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
+        DataWriter writer;
+        writer.write(repr.m_types, results);
+        RouteParams(targetZDO, repr.m_hash, std::move(writer.get_buf()));
     }
 
     decltype(auto) RouteLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {

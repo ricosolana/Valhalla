@@ -1,12 +1,29 @@
 #pragma once 
 
+#include "Quaternion.h"
+#include "Types.h"
 #include "VUtils.h"
 #include "VUtilsString.h"
 #include "HashUtils.h"
+#include "VUtilsTraits.h"
+#include "Vector.h"
+#include "ZDOID.h"
+#include <array>
+#include <cmath>
+#include <cstdint>
+#include <magic_enum.hpp>
+#include <sol/forward.hpp>
+#include <vector>
+
 
 #if VH_IS_ON(VH_USE_MODS)
 
+#include "DataStream.h"
 #include <sol/sol.hpp>
+#include <list>
+#include <lua.h>
+#include <quill/Logger.h>
+#include <sol/variadic_results.hpp>
 
 //int GetCurrentLuaLine(lua_State* L);
 
@@ -129,6 +146,7 @@ private:
     avledet::util::Map<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
     avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
 
+    quill::Logger* m_logger{};
     bool m_unsubscribeCurrentEvent;
 
 public:
@@ -159,10 +177,10 @@ public:
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
-                    LOG_WARNING(LOGGER, "Event error: ");
+                    LOG_WARNING(m_logger, "Event error: ");
 
                     sol::error error = result;
-                    LOG_ERROR(LOGGER, "{}", error.what());
+                    LOG_ERROR(m_logger, "{}", error.what());
                     this->m_unsubscribeCurrentEvent = true;
                 }
                 else {
@@ -220,11 +238,188 @@ public:
     }
 };
 
-#define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent((name), __VA_ARGS__)
-#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) ModManager()->CallEventTuple((name), __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT(name, ...) \
+    ModManager()->CallEvent((name) __VA_OPT__(,) __VA_ARGS__)
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) \
+    ModManager()->CallEventTuple((name) __VA_OPT__(,) __VA_ARGS__)
 
 // Manager class for everything related to mods which affect server functionality
 IModManager* ModManager();
+
+template <class F, class ...T>
+    requires (std::is_same_v<F, IModManager::Type>)
+struct avledet::util::Streamer<F, T...>{ //lua_State> {
+    //TODO create mapper to jun
+    // perhaps tuple of ordered types by Type ordinal valud
+    //using vals = std::tuple<
+    //    avledet::util::Bytes,
+    //    std::string,
+    //    std::vector<std::string>,
+    //    avledet::util::Bytes,
+    //    avledet::util::ZDOID,
+    //    avledet::util::CSU::Vector3f,
+    //    avledet::util::CSU::Vector2i,
+    //    avledet::util::CSU::Quaternion,
+    //    std::int8_t,
+    //    std::int16_t,
+    //    std::int32_t,
+    //    std::int64_t,
+    //    std::uint8_t,
+    //    std::uint16_t,
+    //    std::uint32_t,
+    //    std::uint64_t,
+    //    std::float_t,
+    //    std::double_t,
+    //    char16_t>;
+
+    void operator()(avledet::util::Writer& writer, IModManager::Type type, sol::object const& arg) {
+        switch (type) {
+            // TODO add recent unsigned types
+        case IModManager::Type::UINT8:
+            writer.write(arg.as<std::uint8_t>());
+            break;
+        case IModManager::Type::UINT16:
+            writer.write(arg.as<std::uint16_t>());
+            break;
+        case IModManager::Type::UINT32:
+            writer.write(arg.as<std::uint32_t>());
+            break;
+        case IModManager::Type::UINT64:
+            writer.write(arg.as<std::uint64_t>());
+            break;
+        case IModManager::Type::INT8:
+            writer.write(arg.as<std::int8_t>());
+            break;
+        case IModManager::Type::INT16:
+            writer.write(arg.as<std::int16_t>());
+            break;
+        case IModManager::Type::INT32:
+            writer.write(arg.as<std::int32_t>());
+            break;
+        case IModManager::Type::INT64:
+            writer.write(arg.as<std::int64_t>());
+            break;
+        case IModManager::Type::FLOAT:
+            writer.write(arg.as<std::float_t>());
+            break;
+        case IModManager::Type::DOUBLE:
+            writer.write(arg.as<std::double_t>());
+            break;
+        case IModManager::Type::STRING:
+            writer.write(arg.as<std::string>());
+            break;
+        case IModManager::Type::BOOL:
+            writer.write(arg.as<bool>());
+            break;
+        case IModManager::Type::BYTES:
+            writer.write(arg.as<avledet::util::Bytes>());
+            break;
+        case IModManager::Type::ZDOID:
+            writer.write(arg.as<avledet::util::ZDOID>());
+            break;
+        case IModManager::Type::VECTOR3f:
+            writer.write(arg.as<avledet::util::CSU::Vector3f>());
+            break;
+        case IModManager::Type::VECTOR2i:
+            writer.write(arg.as<avledet::util::CSU::Vector2i>());
+            break;
+        case IModManager::Type::QUATERNION:
+            writer.write(arg.as<avledet::util::CSU::Quaternion>());
+            break;
+        case IModManager::Type::CHAR:
+            writer.write(arg.as<char16_t>());
+            break;
+        default:
+            throw std::runtime_error("type <" + std::string(magic_enum::enum_name(type)) + "> has no write implementation");
+        }
+    }
+
+    sol::object operator()(avledet::util::Reader& reader, IModManager::Type type, lua_State* state) {
+        switch (type) {
+            case IModManager::Type::BYTES:
+                // Will be interpreted as sol container type
+                // see https://sol2.readthedocs.io/en/latest/containers.html
+                return sol::make_object(state, reader.read<avledet::util::Bytes>());
+            case IModManager::Type::STRING:
+                // Primitive: string
+                return sol::make_object(state, reader.read<std::string>());
+            case IModManager::Type::ZDOID:
+                // Userdata: ZDOID
+                return sol::make_object(state, reader.read<avledet::util::ZDOID>());
+            case IModManager::Type::VECTOR3f:
+                // Userdata: Vector3f
+                return sol::make_object(state, reader.read<avledet::util::CSU::Vector3f>());
+            case IModManager::Type::VECTOR2i:
+                // Userdata: Vector2i
+                return sol::make_object(state, reader.read<avledet::util::CSU::Vector2i>());
+            case IModManager::Type::QUATERNION:
+                // Userdata: Quaternion
+                return sol::make_object(state, reader.read<avledet::util::CSU::Quaternion>());
+            case IModManager::Type::STRINGS:
+                // Container type of Primitive: string
+                return sol::make_object(state, reader.read<std::vector<std::string>>());
+            case IModManager::Type::BOOL:
+                // Primitive: boolean
+                return sol::make_object(state, reader.read<bool>());
+            case IModManager::Type::INT8:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::int8_t>());
+            case IModManager::Type::INT16:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::int16_t>());
+            case IModManager::Type::INT32:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::int32_t>());
+            case IModManager::Type::INT64:
+                // Userdata: Int64Wrapper
+                return sol::make_object(state, Int64Wrapper(reader.read<std::int64_t>())); // ReadInt64());
+            case IModManager::Type::UINT8:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::uint8_t>());
+            case IModManager::Type::UINT16:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::uint16_t>());
+            case IModManager::Type::UINT32:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::uint32_t>());
+            case IModManager::Type::UINT64:
+                // Userdata: UInt64Wrapper
+                return sol::make_object(state, UInt64Wrapper(reader.read<std::uint64_t>()));
+            case IModManager::Type::FLOAT:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::float_t>());
+            case IModManager::Type::DOUBLE:
+                // Primitive: number
+                return sol::make_object(state, reader.read<std::double_t>());
+            case IModManager::Type::CHAR:
+                // Primitive: number
+                return sol::make_object(state, reader.read<char16_t>());
+            default:
+                throw std::runtime_error("invalid mod DataReader type");
+        }
+    }
+};
+
+// TODO
+template <class F, class ...G>
+    requires (std::is_same_v<F, IModManager::Types>)
+struct avledet::util::Streamer<F, G...>{ //lua_State> {
+    void operator()(avledet::util::Writer& writer, IModManager::Types const& types, sol::variadic_results const& results) {
+        for (int i = 0; i < std::max(types.size(), results.size()); i++) {
+            writer.write(types.at(i), results.at(i));
+        }
+    }
+
+    sol::variadic_results operator()(avledet::util::Reader& reader, IModManager::Types const& types, lua_State* state) {
+        sol::variadic_results results;
+
+        for (auto&& type : types) {
+            results.push_back(reader.read(type, state));
+        }
+
+        return results;
+    }
+};
 
 #else // !VH_USE_MODS
 #define VH_DISPATCH_MOD_EVENT(name, ...) true

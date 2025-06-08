@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <filesystem>
 
@@ -37,6 +38,7 @@ namespace VUtils::Resource {
     //  Buffer can be a byte vector, string, or 
     //  other (preferably) contiguous data structure
     template<typename Buffer = avledet::util::Bytes>
+        requires std::is_arithmetic_v<typename Buffer::value_type>
     std::optional<Buffer> ReadFile(const fs::path& path) {
        //ScopedFile file(fopen(path.string().c_str(), "rb"));
        //

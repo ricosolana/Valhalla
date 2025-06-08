@@ -114,7 +114,10 @@ public:
     bool Invoke(T t, DataReader reader) override {
         auto&& state = m_func.lua_state();
 
-        auto results(reader.DeserializeLua(state, m_types));
+        //TODO
+        //  this can be a simple Streamer now,
+        //  with args passed variadically using the newer read() in Stream
+        auto results = reader.read(m_types, state);
 
         // Prefix
 #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
@@ -143,5 +146,5 @@ public:
 };
 
 template<typename T>
-MethodImplLua(sol::function, std::vector<IModManager::Type>) -> MethodImplLua<T>;
+MethodImplLua(sol::function, IModManager::Types) -> MethodImplLua<T>;
 #endif

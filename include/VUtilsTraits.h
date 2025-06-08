@@ -155,6 +155,10 @@ namespace avledet::util::traits {
 
 
 
+    //runtime value at tuple index
+
+
+
     //untested
     /*
     // https://stackoverflow.com/questions/30736242/how-can-i-get-the-index-of-a-type-in-a-variadic-class-template

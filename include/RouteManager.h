@@ -97,7 +97,9 @@ public:
 				return;
 #endif
 
-			auto bytes = Serialize(VH_ID, (std::int64_t) target, targetZDO, repr.m_hash, DataWriter::serializeExtLua(repr.m_types, results));
+			avledet::util::Writer writer;
+			writer.write(repr.m_types, results);
+			auto bytes = Serialize(VH_ID, (std::int64_t) target, targetZDO, repr.m_hash, std::move(writer.get_buf()));
 
 			for (auto&& peer : NetManager()->GetPeers()) {
 				peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);

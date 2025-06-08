@@ -13,6 +13,7 @@ namespace avledet::util {
     using UserID = std::int64_t; // Should rename to UID
     using Bytes = std::vector<Byte>; // Vector of bytes
     using ByteView = std::span<Byte>;
+    using Strings = std::vector<std::string>;
 
     using Ticks = std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>;
 

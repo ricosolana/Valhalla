@@ -169,7 +169,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
     target_link_libraries(${PROJECT_NAME}
-        PUBLIC lua sol2
+        PUBLIC lua #sol2
     )
 endif()
 

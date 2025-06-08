@@ -25,6 +25,14 @@
 
 #include "Tests.h"
 
+
+
+#include <tuple>
+#include <utility>
+#include <functional>
+
+
+
 /*
 * Example command line args:
 *   .\Valhalla.exe -vmodule=VUtilsResource=1
@@ -44,7 +52,7 @@ int main(int argc, char **argv) {
 
 
 
-
+    
 
 /*
     avledet::util::Reader reader;
