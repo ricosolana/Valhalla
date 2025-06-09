@@ -1,4 +1,5 @@
 #include <isteamutils.h>
+#include <magic_enum.hpp>
 #include <stdexcept>
 
 #include "CompileSettings.h"
@@ -125,8 +126,7 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
 
     //std::string bind_addr
 
-    //auto [nIP, nPort] = ip_to_machine_order(bind_addr);
-    //m_addr.SetIPv4(nIP, nPort);
+    auto [nIP, nPort] = ip_to_machine_order(bind_addr);
 
     //if (!m_addr.ParseString(bind_addr.c_str())) {
     //    //auto idx = bind_addr.starts_with("localhost");
@@ -134,8 +134,10 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
     //    throw std::runtime_error("address parse failure");
     //}
 
-    if (!SteamGameServer_Init(0 /*m_addr.GetIPv4()*/, 2456, 2456 + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0"))
+    if (!SteamGameServer_Init(nIP /*m_addr.GetIPv4()*/, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0"))
         throw std::runtime_error("unable to init steam game server api");
+
+    m_addr.SetIPv4(nIP, nPort);
 
     SteamGameServer()->SetProduct("valheim");
     SteamGameServer()->SetModDir("valheim");
@@ -329,7 +331,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
     auto im_client = data->m_info.m_hListenSocket == k_HSteamListenSocket_Invalid;
 
     LOG_INFO(m_logger, "status: {} -> {} (im client: {})",
-        (int)data->m_eOldState, (int)data->m_info.m_eState, // TODO magic enum?
+        magic_enum::enum_name(data->m_eOldState), magic_enum::enum_name(data->m_info.m_eState), // TODO magic enum?
         (im_client ? "true" : "false")
     );
 

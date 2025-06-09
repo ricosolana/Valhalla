@@ -2,6 +2,7 @@
 //#include <openssl/md5.h>
 //#include <openssl/rand.h>
 #include <isteamgameserver.h>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -323,7 +324,7 @@ void INetManager::PostInit() {
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    m_acceptor = IAcceptor::steam_dedicated("127.0.0.1"); // m_acceptor
+    m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(VH_SETTINGS.serverPort)); // m_acceptor
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
