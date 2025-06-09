@@ -1,7 +1,7 @@
-#include <array>
-#include <quill/LogMacros.h>
-#include <range/v3/all.hpp>
+
 #include <stdexcept>
+
+#include <range/v3/all.hpp>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -10,8 +10,6 @@
 #include "Hashes.h"
 #include "ZoneManager.h"
 #include "RouteManager.h"
-#include "HashUtils.h"
-#include "DungeonManager.h"
 
 auto ZDO_MANAGER = std::make_unique<IZDOManager>();
 IZDOManager* ZDOManager() {
@@ -21,9 +19,7 @@ IZDOManager* ZDOManager() {
 
 
 void IZDOManager::Init() {
-	//LOG_INFO(LOGGER, "Initializing ZDOManager");
-
-	m_logger = quill::Frontend::create_or_get_logger("zdomanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+	LOG_INFO(VH_LOGGER, "Initializing ZDOManager");
 
 	RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, 
 		[this](Peer*, DataReader reader) {
@@ -48,7 +44,7 @@ void IZDOManager::Update() {
 	ZoneScoped;
 
 	if (VUtils::run_periodic_now<struct periodic_zdo_stats>(3min)) {
-		LOG_INFO(m_logger, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", 
+		LOG_INFO(VH_LOGGER, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", 
 			m_objectsByID.size(), 
 			//(this->GetTotalZDOAlloc() / 1000000.f),
 			ZDO::GetTotalAlloc(false) / 1000000.f,
@@ -162,7 +158,7 @@ void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
 
 		assert(insert.second); //ensure newly inserted
 
-		//LOG_INFO(m_logger, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
+		//LOG_INFO(VH_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
 	} else {
 		// throw
 		throw std::runtime_error("invalid add zone");
@@ -176,7 +172,7 @@ void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
 		// ensure zdo was actually erased
 		assert(erase);
 
-		//LOG_INFO(m_logger, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
+		//LOG_INFO(VH_LOGGER, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
 	} else {
 		throw std::runtime_error("invalid remove zone");
 	}
@@ -328,7 +324,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	}
 #endif // VH_LEGACY_WORLD_LOADING
 
-	//LOG_INFO(LOGGER, "Loaded {} zdos", m_objectsByID.size());
+	LOG_INFO(VH_LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
 
@@ -360,7 +356,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	//	const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
 	//}
 
-	//LOG_INFO(m_logger, "zdo instantiated: {} {}", insert.second, zdoid);
+	//LOG_INFO(VH_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
 
 	return insert;
 }
@@ -590,7 +586,7 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 	
 	ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
-	//LOG_INFO(m_logger, "zdo erased: {}", zdoid);
+	//LOG_INFO(VH_LOGGER, "zdo erased: {}", zdoid);
 
 	return m_objectsByID.erase(itr);
 }

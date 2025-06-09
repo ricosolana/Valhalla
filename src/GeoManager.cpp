@@ -4,7 +4,6 @@
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 #include "VUtilsRandom.h"
-#include "HashUtils.h"
 #include "ZoneManager.h"
 #include "VUtilsMathf.h"
 #include "VUtilsMath.h"
@@ -18,9 +17,7 @@ IGeoManager* GeoManager() {
 
 
 void IGeoManager::PostWorldInit() {
-	m_logger = quill::Frontend::create_or_get_logger("geomanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
-
-	LOG_INFO(m_logger, "Initializing GeoManager");
+	LOG_INFO(VH_LOGGER, "Initializing GeoManager");
 
 	m_world = WorldManager()->GetWorld();
 	assert(m_world);

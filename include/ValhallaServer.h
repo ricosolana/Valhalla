@@ -1,16 +1,17 @@
 #pragma once
 
-#include <thread>
+#include <cmath>
+#include <filesystem>
 #include <list>
+#include <mutex>
+#include <atomic>
 
+#include "VUtils.h"
 #include "Task.h"
 #include "ServerSettings.h"
-#include "VUtilsRandom.h"
-#include "VUtilsMathf.h"
-#include "HashUtils.h"
 
-#define VH_ID Valhalla()->ID()
-#define VH_SETTINGS Valhalla()->Settings()
+#define VH_ID (Valhalla()->ID())
+#define VH_SETTINGS (Valhalla()->Settings())
 
 enum class UIMsgType : std::int32_t {
     TopLeft = 1,
@@ -48,7 +49,6 @@ private:
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
     avledet::util::UserID m_serverID {}; // const
-    quill::Logger* m_logger {};
     std::atomic_bool m_terminate {};
     std::chrono::steady_clock::time_point m_startTime; // const
     std::chrono::steady_clock::time_point m_prevUpdate;
@@ -66,12 +66,13 @@ private:
 private:
     void LoadFiles(bool reloading);
     void SaveFiles();
+    void Update();
+    void PeriodUpdate();
 
 public:
     void Start();
     void Stop();
 
-public:
     avledet::util::UserID ID() const {
         return m_serverID;
     }
@@ -281,10 +282,8 @@ public:
     Task& RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at, std::chrono::milliseconds period);
 
     void Broadcast(UIMsgType type, std::string_view text);
-
-private:
-    void Update();
-    void PeriodUpdate();
 };
 
 IValhalla* Valhalla();
+
+extern quill::Logger* VH_LOGGER; //#define VH_LOGGER (Valhalla()->m_logger)

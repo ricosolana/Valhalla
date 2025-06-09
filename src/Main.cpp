@@ -1,37 +1,28 @@
 // main.cpp
-#include "DataStream.h"
-#include "VUtilsTraits.h"
 #include <filesystem>
+
 #include <quill/Backend.h>
+#include <quill/Frontend.h>
 #include <quill/Logger.h>
-#include <string_view>
-#include <type_traits>
+#include <quill/backend/BackendOptions.h>
+#include <quill/core/LogLevel.h>
+#include <quill/core/PatternFormatterOptions.h>
+#include <quill/sinks/FileSink.h>
+#include <quill/sinks/RotatingFileSink.h>
+#include <quill/sinks/ConsoleSink.h>
+#include <quill/std/FilesystemPath.h>
+
+#include <tracy/Tracy.hpp>
+
 #define SOL_ALL_SAFETIES_ON 1
 
 // this doesnt seem to do a thing
 //#undef TRACY_ENABLE
 
-#include <quill/sinks/ConsoleSink.h>
-#include <quill/std/FilesystemPath.h>
-
-#include "VUtils.h"
-
-#include "VUtilsResource.h"
 #include "ValhallaServer.h"
-#include "VUtilsRandom.h"
 #include "CompileSettings.h"
-#include "PrefabManager.h"
-#include "ZDOManager.h"
 
-#include "Tests.h"
-
-
-
-#include <tuple>
-#include <utility>
-#include <functional>
-
-
+//#include "Tests.h"
 
 /*
 * Example command line args:
@@ -40,83 +31,52 @@
 *   .\Valhalla.exe --no-log-backup --v=2
 *   .\Valhalla.exe -v
 */
+
+quill::Logger* VH_LOGGER {};
+
 int main(int argc, char **argv) {
     tracy::SetThreadName("main");
-
-    quill::Backend::start();
-    auto logger = quill::Frontend::create_or_get_logger("main", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
-
-    LOG_INFO(logger, "Current path: {}", fs::current_path());
     
-    fs::current_path("./data/");
-
-
-
-    
-
-/*
-    avledet::util::Reader reader;
-
-    
-
-    auto func1 = [](std::string) {};
-    using firstarg1 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func1)>::args_type>;
-
-    avledet::util::Streamer<firstarg1>{};
-
-    avledet::util::Streamer<firstarg1>{}
-        .operator()(reader); //std::declval<avledet::util::Reader>())
-
-
-
-
-    auto func = [](DataWriter&) {};
-
-    
-
-    static constexpr auto val = avledet::util::invokable_read<decltype(func1)>;
-
-    //avledet::util::traits::is_callable<class T>
-
-    using firstarg = std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func)>::raw_args_type>;
-    
-    //static constexpr auto valss = std::is_function_v<decltype(func)>;
-    static constexpr auto vsjs = std::is_same_v<
-        std::tuple_element_t<0, typename VUtils::Traits::func_traits<decltype(func)>::args_type>,
-        avledet::util::Writer&>;
-        
-
-*/
-
+    std::filesystem::current_path("./data/");
 
     {
+        quill::BackendOptions options;
+        options.enable_yield_when_idle = false;
+        options.sleep_duration = 1ms;
 
-        /*
-        quill::Config cfg;
-        cfg.enable_console_colours = true;
-        cfg.backend_thread_yield = false;
-        cfg.backend_thread_sleep_duration = 1ms;
+        quill::Backend::start(options);
+    }
 
-        //auto&& handler = quill::stdout_handler();
-        //handler->set_pattern("%(ascii_time) [%(process)] [%(thread)] %(logger_name) - %(message)", // format
-        //    "%D %H:%M:%S.%Qms %z",     // timestamp format
-        //    quill::Timezone::GmtTime); // timestamp's timezone
-        //
-        //cfg.default_handlers.emplace_back(std::move(handler));
-        auto&& colours = quill::ConsoleColours();
-        colours.set_default_colours();
-        cfg.default_handlers.push_back(quill::stdout_handler("colourout", std::move(colours)));
+    {
+        auto sink = quill::Frontend::create_or_get_sink<quill::FileSink>(
+            "server.log",
+            [](){
+                // See RotatingFileSinkConfig for more options
 
-        //cfg.default_handlers.push_back(
-            //quill::rotating_file_handler("server.log", "w", quill::FilenameAppend::Date, "daily"));
+                quill::FileSinkConfig cfg;
 
-        //cfg.default_handlers.push_back(quill::file_handler("server.log", "w"));
+                cfg.set_open_mode('w');
+                cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+                //cfg.set_rotation_time_daily("24:00");
+                //cfg.set_rotation_max_file_size(1024); // small value to demonstrate the example
 
-        quill::configure(cfg);
-        quill::start();
+                return cfg;
+            }());
 
-        LOGGER = quill::get_logger();
-        LOGGER->set_log_level(quill::LogLevel::TraceL3);*/
+        quill::PatternFormatterOptions options {
+            "%(time) [%(thread_name)] %(short_source_location) %(log_level) %(message)", // format
+            "%D %H:%M:%S.%Qms %z",                                              // timestamp format
+            quill::Timezone::GmtTime
+        };
+
+        auto logger = quill::Frontend::create_or_get_logger(
+            "main", std::move(sink),
+            options
+        );
+
+        logger->set_log_level(quill::LogLevel::TraceL3);
+
+        /* global assigned */ VH_LOGGER = logger;
     }
 
 #ifdef RUN_TESTS
@@ -124,7 +84,7 @@ int main(int argc, char **argv) {
 
     VHTest().Test_ZDO_LoadSave();
 
-    LOG_INFO(LOGGER, "All tests passed!");
+    LOG_INFO(VH_LOGGER, "All tests passed!");
 #else // !RUN_TESTS
 
 /*
@@ -137,7 +97,7 @@ int main(int argc, char **argv) {
             + path + "/?/?.lua;"
             + path2 + "/?.lua;"
             + path2 + "/?/?.lua"))
-            LOG_ERROR(LOGGER, "Failed to set Lua path");
+            LOG_ERROR(VH_LOGGER, "Failed to set Lua path");
     }
 
     {
@@ -145,7 +105,7 @@ int main(int argc, char **argv) {
         if (!VUtils::SetEnv("LUA_CPATH",
             path + "/?.dll;"
             + path + "/?/?.dll"))
-            LOG_ERROR(LOGGER, "Failed to set Lua cpath");
+            LOG_ERROR(VH_LOGGER, "Failed to set Lua cpath");
     }
 */
 
@@ -158,7 +118,7 @@ int main(int argc, char **argv) {
 #ifndef _DEBUG
     }
     catch (const std::exception& e) {
-        LOG_ERROR(logger, "{}", e.what());
+        LOG_ERROR(VH_LOGGER, "{}", e.what());
         return 1;
     }
 #endif // _DEBUG

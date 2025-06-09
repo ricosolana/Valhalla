@@ -20,8 +20,6 @@ class IHeightmapBuilder {
     };
 
 private:
-    quill::Logger* m_logger;
-
     //avledet::util::Set<ZoneID> m_toBuild;
     avledet::util::Set<ZoneID> m_building;
     avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>> m_ready;

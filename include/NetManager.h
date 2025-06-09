@@ -1,13 +1,13 @@
 #pragma once
 
-#include <quill/Logger.h>
-#include <ranges>
+#include <string>
+#include <cstdint>
+#include <chrono>
+#include <memory>
+#include <utility>
 
 #include "Peer.h"
 #include "NetAcceptor.h"
-#include "Vector.h"
-#include "WorldManager.h"
-#include "HashUtils.h"
 
 class INetManager {
     friend class IModManager;
@@ -17,7 +17,6 @@ private:
     std::vector<std::unique_ptr<Peer>> m_connectedPeers;
     std::vector<Peer*> m_onlinePeers;    
     std::list<std::pair<std::string, std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>> m_sortedSessions;
-    quill::Logger* m_logger {};
     std::unique_ptr<IAcceptor> m_acceptor;    
 
 public:

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "HashUtils.h"
 #include "VUtils.h"
+#include "Types.h"
 #include "HeightMap.h"
 #include "TerrainModifier.h"
-#include "Types.h"
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 

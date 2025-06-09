@@ -36,7 +36,7 @@ avledet::util::ObjectType Prefab::GetObjectType() const noexcept {
 
 
 void IPrefabManager::Init() {
-    //LOG_INFO(LOGGER, "Initializing PrefabManager");
+    LOG_INFO(VH_LOGGER, "Initializing PrefabManager");
 
     auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("prefabs.pkg");
 
@@ -49,7 +49,7 @@ void IPrefabManager::Init() {
     pkg.read<std::string_view>(); // comment
     auto ver = pkg.read<std::string_view>();
     if (ver != VConstants::GAME) {
-        //LOG_WARNING(LOGGER, "prefabs.pkg uses different game version than server ({})", ver)
+        LOG_WARNING(VH_LOGGER, "prefabs.pkg uses different game version than server ({})", ver);
     }
 
     auto count = pkg.read<std::int32_t>();
@@ -58,5 +58,5 @@ void IPrefabManager::Init() {
         Register(pkg);
     }
 
-    //LOG_INFO(LOGGER, "Loaded {} prefabs", count);
+    LOG_INFO(VH_LOGGER, "Loaded {} prefabs", count);
 }

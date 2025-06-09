@@ -1,7 +1,10 @@
 #pragma once
 
-#include "VUtils.h"
 #include <cstdint>
+#include <string>
+#include <chrono>
+
+#include "CompileSettings.h"
 
 enum class AssignAlgorithm {
     NONE,

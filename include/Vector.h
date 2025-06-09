@@ -1,16 +1,21 @@
 #pragma once
 
 #include <cstdint>
-#include <quill/bundled/fmt/base.h>
-#include <stdint.h>
 #include <cmath>
-#include <ostream>
-#include "QuillHelperMacros.h"
 
-#include "VUtils.h"
-#include "VUtilsMath.h"
+#include <quill/Backend.h>
+#include <quill/Frontend.h>
+#include <quill/HelperMacros.h>
+#include <quill/LogMacros.h>
+#include <quill/Logger.h>
+#include <quill/bundled/fmt/ostream.h>
+#include <quill/bundled/fmt/ranges.h>
+#include <quill/sinks/ConsoleSink.h>
+
+#include <ankerl/unordered_dense.h>
+
 #include "DataStream.h"
-#include "ankerl/unordered_dense.h"
+
 
 namespace avledet::util::CSU {
     template<typename T> requires std::is_arithmetic_v<T>
@@ -135,6 +140,9 @@ namespace avledet::util::CSU {
         }
 
         // todo quill / fmt formatters...
+        friend std::ostream& operator<<(std::ostream& st, Vector2<T> const& vec) {
+            return st << "(" << vec.x << ", " << vec.y << ")";
+        }
     };
 
     
@@ -307,6 +315,10 @@ namespace avledet::util::CSU {
         static constexpr Vector3<T> forward() {
             return Vector3<T>(0, 0, 1);
         }
+
+        friend std::ostream& operator<<(std::ostream& st, Vector3<T> const& vec) {
+            return st << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+        }
     };
 
     using Vector2f = Vector2<float>;
@@ -394,18 +406,18 @@ struct ankerl::unordered_dense::hash<avledet::util::CSU::Vector3f> {
 
 
 // Quill loggable
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2f vec);
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2i vec);
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2s vec);
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector3f vec);
+//std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2f const& vec);
+//std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2i const& vec);
+//std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2s const& vec);
+//std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector3f const& vec);
 
 
 
 // Quill spec
-QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::CSU::Vector2f)
-QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::CSU::Vector2i)
-QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::CSU::Vector2s)
-QUILL_LOGGABLE_DIRECT_FORMAT(avledet::util::CSU::Vector3f)
+QUILL_LOGGABLE_DEFERRED_FORMAT(avledet::util::CSU::Vector2f)
+QUILL_LOGGABLE_DEFERRED_FORMAT(avledet::util::CSU::Vector2i)
+QUILL_LOGGABLE_DEFERRED_FORMAT(avledet::util::CSU::Vector2s)
+QUILL_LOGGABLE_DEFERRED_FORMAT(avledet::util::CSU::Vector3f)
 
 
 

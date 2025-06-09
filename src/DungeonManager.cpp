@@ -26,13 +26,13 @@ void IDungeonManager::PostPrefabInit() {
 
     pkg.read<std::string_view>(); // date/comment
     auto ver = pkg.read<std::string_view>();
-    //LOG_INFO(LOGGER, "dungeons.pkg has game version {}", ver);
+    LOG_INFO(VH_LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
-        //LOG_WARNING(LOGGER, "dungeons.pkg uses different game version than server");
+        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server");
     }
 
     std::int32_t count = pkg.read<std::int32_t>();
-    //LOG_INFO(LOGGER, "Loading {} dungeons", count);
+    LOG_INFO(VH_LOGGER, "Loading {} dungeons", count);
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
@@ -181,7 +181,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
                 ZDOManager()->DestroyZDO(zdo);
             }
 
-            LOG_INFO(LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
+            LOG_INFO(VH_LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
             auto&& zdo = Generate(dungeon, pos, rot).get();
             zdo.Set(LAST_RESET_HASH, unixTime.count());
@@ -189,7 +189,7 @@ ZDO* IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo) {
             return &zdo;
         }
         else {
-            LOG_INFO(LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name, pos);
+            LOG_INFO(VH_LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name, pos);
         }
     }
 

@@ -21,9 +21,6 @@ public:
     //static std::unique_ptr<Context> tcp_dedicated(std::string bind_addr);
 
 public:
-    explicit IAcceptor() 
-        : m_logger(quill::Frontend::create_or_get_logger("acceptor", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"))) {}
-
     virtual ~IAcceptor() = default;
 
     //virtual std::vector<char> get_auth_session_ticket() = 0;
@@ -38,13 +35,7 @@ public:
     virtual void on_connect(std::function<void(ISocket::Ptr)> callback) = 0;
 
     virtual ISocket::Ptr connect(std::string address) = 0;
-
-private:
-    quill::Logger *m_logger;
 };
-
-
-
 
 
 
@@ -56,8 +47,10 @@ public:
     AcceptorSteam(std::string bind_addr);
     ~AcceptorSteam() override;
 
+    // generate a new self ticket
     std::vector<char> get_auth_session_ticket();
-    bool verify_auth_session_ticket(std::span<const char> ticket, ISocket::Ptr socket);
+
+    //bool verify_auth_session_ticket(std::span<const char> ticket, ISocket::Ptr socket);
 
     //std::string get_public_ip() override;
 
@@ -121,6 +114,7 @@ private:
     void OnLobbyCreated(LobbyCreated_t* pCallback, bool failure);
     CCallResult<AcceptorSteam, LobbyCreated_t> m_lobbyCreatedCallResult;
 
+    // cancel self issued ticket
     void cancel_auth_session_ticket();
 
     //bool is_game_server();
@@ -144,7 +138,6 @@ private:
     CCallbackInternal_OnSteamStatusChanged m_steamcallback_OnSteamStatusChanged;
     CSteamID m_lobbyID{};
     std::function<void(ISocket::Ptr)> m_connect_callback;
-    quill::Logger* m_logger{};
     HSteamListenSocket m_listen_socket{};
     //std::uint16_t m_port{};
     //std::string m_bind_addr;

@@ -107,24 +107,25 @@ namespace avledet::util::traits {
 
 
 
+    // disabled (and unused, how lucky) due to .clangd being dumb
     // Get the index of a type in a tuple
-    template <class T, class Tuple>
-    struct tuple_index;
+    //template <class T, class Tuple>
+    //struct tuple_index;
+    //
+    //// Get the index of a type in a tuple
+    //template <class T, class... Types>
+    //struct tuple_index<T, std::tuple<T, Types...>> {
+    //    static const std::size_t value = 0;
+    //};
+    //
+    //// Get the index of a type in a tuple
+    //template <class T, class U, class... Types>
+    //struct tuple_index<T, std::tuple<U, Types...>> {
+    //    static const std::size_t value = 1 + tuple_index<T, std::tuple<Types...>>::value;
+    //};
 
-    // Get the index of a type in a tuple
-    template <class T, class... Types>
-    struct tuple_index<T, std::tuple<T, Types...>> {
-        static const std::size_t value = 0;
-    };
-
-    // Get the index of a type in a tuple
-    template <class T, class U, class... Types>
-    struct tuple_index<T, std::tuple<U, Types...>> {
-        static const std::size_t value = 1 + tuple_index<T, std::tuple<Types...>>::value;
-    };
-
-    template<class T, class U, class... Types>
-    constexpr std::size_t tuple_index_v = tuple_index<T, U, Types...>::value;
+    //template<class T, class U, class... Types>
+    //constexpr std::size_t tuple_index_v = tuple_index<T, U, Types...>::value;
 
 
 

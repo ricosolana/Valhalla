@@ -35,12 +35,12 @@ void IDiscordManager::Init() {
 		
 	m_bot->on_log([](const dpp::log_t& log) {
 		switch (log.severity) {
-		case dpp::loglevel::ll_trace: LOG_TRACE_L1(LOGGER, "{}", log.message); break;
-		case dpp::loglevel::ll_debug: LOG_DEBUG(LOGGER, "{}", log.message); break;
-		case dpp::loglevel::ll_info: LOG_INFO(LOGGER, "{}", log.message); break;
-		case dpp::loglevel::ll_warning: LOG_WARNING(LOGGER, "{}", log.message); break;
-		case dpp::loglevel::ll_error: LOG_ERROR(LOGGER, "{}", log.message); break;
-		case dpp::loglevel::ll_critical: LOG_CRITICAL(LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_trace: LOG_TRACE_L1(VH_LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_debug: LOG_DEBUG(VH_LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_info: LOG_INFO(VH_LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_warning: LOG_WARNING(VH_LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_error: LOG_ERROR(VH_LOGGER, "{}", log.message); break;
+		case dpp::loglevel::ll_critical: LOG_CRITICAL(VH_LOGGER, "{}", log.message); break;
 		}
 	});
 
@@ -371,7 +371,7 @@ void IDiscordManager::Init() {
 						}
 					}
 					else {
-						LOG_WARNING(LOGGER, "autocomplete not registered");
+						LOG_WARNING(VH_LOGGER, "autocomplete not registered");
 						return;
 					}
 
@@ -389,7 +389,7 @@ void IDiscordManager::Init() {
 			if (auto&& peer = UnlinkPeerBySnowflake(event.removed->id)) {
 				peer->Kick();
 
-				LOG_INFO(LOGGER, "Kicked {} due to guild leave", peer->m_name);
+				LOG_INFO(VH_LOGGER, "Kicked {} due to guild leave", peer->m_name);
 			}
 		}
 	});
@@ -497,7 +497,7 @@ void IDiscordManager::PeriodUpdate() {
 		auto&& peer = NetManager()->GetPeerByHost(itr->first);
 		auto&& since = Valhalla()->Nanos() - itr->second.second;
 		if (since > 5min) {
-			LOG_INFO(LOGGER, "Discord linking key expired for {}", itr->first);
+			LOG_INFO(VH_LOGGER, "Discord linking key expired for {}", itr->first);
 
 			// Kick the user to generate a new key
 			if (peer) {

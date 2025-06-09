@@ -1,5 +1,14 @@
 #pragma once
 
+#include <quill/Backend.h>
+#include <quill/Frontend.h>
+#include <quill/HelperMacros.h>
+#include <quill/LogMacros.h>
+#include <quill/Logger.h>
+#include <quill/bundled/fmt/ostream.h>
+#include <quill/bundled/fmt/ranges.h>
+#include <quill/sinks/ConsoleSink.h>
+
 #include "Vector.h"
 #include "DataStream.h"
 
@@ -69,6 +78,8 @@ struct avledet::util::Streamer<avledet::util::CSU::Quaternion> {
     }
 };
 
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Quaternion quat);
+std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Quaternion const& quat);
+
+QUILL_LOGGABLE_DEFERRED_FORMAT(avledet::util::CSU::Quaternion)
 
 using Quaternion = avledet::util::CSU::Quaternion; //TODO remove

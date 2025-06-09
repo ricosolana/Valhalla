@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VUtils.h"
+#include <cstdint>
 #include "VUtilsTraits.h"
 
 template<typename T, std::size_t ...COUNTS>

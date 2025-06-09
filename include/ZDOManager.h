@@ -59,8 +59,6 @@ private:
 	// Increments over the course of the game as ZDOs are created
 	std::uint32_t m_nextUid = 1;
 
-	quill::Logger* m_logger;
-
 private:
 	// Called when an authenticated peer joins (internal)
 	void OnNewPeer(Peer& peer);

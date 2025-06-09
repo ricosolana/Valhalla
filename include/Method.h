@@ -2,9 +2,7 @@
 
 #include <stdexcept>
 #include <tuple>
-#include <functional>
 #include <type_traits>
-#include <concepts>
 
 #include "VUtils.h"
 #include "VUtilsTraits.h"
@@ -64,7 +62,7 @@ public:
                 (std::make_index_sequence < std::tuple_size<args_type>{} - 1 > {})));
 
         if (reader.get_pos() != reader.size()) {
-            //LOG_WARNING(LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
+            //LOG_WARNING(VH_LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
             throw std::runtime_error("peer sent more data than expected");
         }
 

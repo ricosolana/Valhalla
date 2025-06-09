@@ -7,6 +7,7 @@
 #include "ValhallaServer.h"
 #include "ModManager.h"
 #include "NetAcceptor.h"
+#include "steamclientpublic.h"
 
 SteamSocket::SteamSocket(HSteamNetConnection hConn, bool is_outbound)
     : m_conn(hConn), m_status(Status::Connecting), m_is_outbound(is_outbound) {
@@ -66,9 +67,14 @@ void SteamSocket::flush() {
 }
 
 bool SteamSocket::authenticate(avledet::util::ByteView ticket) {
-    return ((VH_SETTINGS.serverDedicated
-            ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID())
-            : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID())) != k_EBeginAuthSessionResultOK);
+    EBeginAuthSessionResult result {};
+    if (VH_SETTINGS.serverDedicated) {
+        result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID());
+    } else {
+        result = SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID());
+    }
+
+    return result == k_EBeginAuthSessionResultOK;
 }
 
 

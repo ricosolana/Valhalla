@@ -3,27 +3,15 @@
 #include <chrono>
 #include <iostream>
 #include <type_traits>
-#include <concepts>
 #include <cassert>
 #include <utility>
-#include <array>
-#include <filesystem>
-#include <span>
 
 #include <zstd.h>
 #include <zlib.h>
-#include <quill/bundled/fmt/format.h>
-#include <quill/bundled/fmt/ostream.h>
-#include <ankerl/unordered_dense.h>
-#include <tracy/Tracy.hpp>
-#include <quill/Backend.h>
-#include <quill/Frontend.h>
-#include <quill/LogMacros.h>
 #include <quill/Logger.h>
-#include <quill/sinks/FileSink.h>
 
-#include "Types.h"
 #include "CompileSettings.h"
+#include "Types.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
 #include <dpp/dpp.h>
@@ -564,3 +552,15 @@ namespace VUtils {
     //  Returns the variable or an empty string
     std::string GetEnv(std::string_view key);
 }
+
+namespace ankerl::unordered_dense {
+    struct string_hash {
+        using is_transparent = void; // enable heterogeneous overloads
+        using is_avalanching = void; // mark class as high quality avalanching hash
+
+        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
+            return ankerl::unordered_dense::hash<std::string_view>{}(str);
+        }
+    };
+
+} // namespace ankerl::unordered_dense

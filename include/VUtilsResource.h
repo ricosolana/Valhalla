@@ -1,12 +1,11 @@
 #pragma once
 
-#include <map>
+#include <fstream>
 #include <string>
 #include <type_traits>
 #include <vector>
 #include <filesystem>
 
-#include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "VUtilsString.h"
 
@@ -39,7 +38,7 @@ namespace VUtils::Resource {
     //  other (preferably) contiguous data structure
     template<typename Buffer = avledet::util::Bytes>
         requires std::is_arithmetic_v<typename Buffer::value_type>
-    std::optional<Buffer> ReadFile(const fs::path& path) {
+    std::optional<Buffer> ReadFile(const std::filesystem::path& path) {
        //ScopedFile file(fopen(path.string().c_str(), "rb"));
        //
        //if (!file) return std::nullopt;
@@ -173,7 +172,7 @@ namespace VUtils::Resource {
     template<typename Iterable> requires 
         (VUtils::Traits::is_iterable<Iterable> 
             && std::is_same_v<typename Iterable::value_type, std::string>)
-    bool WriteFile(const fs::path& path, const Iterable& in) {
+    bool WriteFile(const std::filesystem::path& path, const Iterable& in) {
         std::ofstream file(path, std::ios::binary);
 
         if (!file)

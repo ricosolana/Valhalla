@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VUtils.h"
+#include "CompileSettings.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
 #include <string>
@@ -8,7 +8,6 @@
 #include <isteamhttp.h>
 #include <dpp/dpp.h>
 
-#include "HashUtils.h"
 #include "Peer.h"
 
 class IDiscordManager {

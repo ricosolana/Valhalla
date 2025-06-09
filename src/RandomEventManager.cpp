@@ -1,3 +1,5 @@
+#include <string_view>
+
 #include "RandomEventManager.h"
 #include "RouteManager.h"
 #include "Hashes.h"
@@ -8,7 +10,6 @@
 #include "ZDOManager.h"
 #include "Prefab.h"
 #include "DiscordManager.h"
-#include <string_view>
 
 auto RANDOM_EVENT_MANAGER = std::make_unique<IRandomEventManager>();
 IRandomEventManager* RandomEventManager() {
@@ -20,7 +21,7 @@ void IRandomEventManager::Init() {
 	// chance: 20
 	// range: 96
 
-	//LOG_INFO(LOGGER, "Initializing EventManager");
+	LOG_INFO(VH_LOGGER, "Initializing EventManager");
 
 	{
 		// load Foliage:
@@ -33,7 +34,7 @@ void IRandomEventManager::Init() {
 		pkg.read<std::string_view>(); // comment
 		auto ver = pkg.read<std::string_view>();
 		if (ver != VConstants::GAME) {
-			//LOG_WARNING(LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
+			LOG_WARNING(VH_LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
 		}
 
 		auto count = pkg.read<std::int32_t>();
@@ -53,7 +54,7 @@ void IRandomEventManager::Init() {
 			m_events[sv] = std::move(e);
 		}
 
-		//LOG_INFO(LOGGER, "Loaded {} random events", count);
+		LOG_INFO(VH_LOGGER, "Loaded {} random events", count);
 	}
 }
 
@@ -95,7 +96,7 @@ void IRandomEventManager::Update() {
 					this->m_activeEventPos = pos;
 					this->m_activeEventRemaining = this->m_activeEvent->m_duration;
 
-					LOG_INFO(LOGGER, "Set current random event: {}", e.get().m_name);
+					LOG_INFO(VH_LOGGER, "Set current random event: {}", e.get().m_name);
 
 					VH_DISPATCH_WEBHOOK("Random event started in world `" + this->m_activeEvent->m_name + "`");
 
@@ -118,7 +119,7 @@ void IRandomEventManager::SetCurrentRandomEvent(const Event& e, Vector3f pos, st
 	this->m_activeEventRemaining = nanos;
 	this->m_activeEventInitialDuration = nanos;
 
-	//LOG_INFO(LOGGER, "Set current random event: {}", e.m_name);
+	LOG_INFO(VH_LOGGER, "Set current random event: {}", e.m_name);
 	VH_DISPATCH_WEBHOOK("Random event started in world `" + e.m_name + "`");
 }
 

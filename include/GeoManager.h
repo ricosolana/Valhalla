@@ -35,8 +35,6 @@ private:
 
 	static constexpr float m_waterTreshold = 0.05f;
 
-	quill::Logger* m_logger{};
-
 	World* m_world;
 
 	//int m_version;
@@ -203,4 +201,5 @@ public:
 
 // Manager class for everything related to coarse world heights and biomes during initial generation
 IGeoManager* GeoManager();
+
 #endif

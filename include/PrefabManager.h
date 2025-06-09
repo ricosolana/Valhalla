@@ -1,11 +1,5 @@
 #pragma once
 
-#include "VUtils.h"
-//#include <gtl/btree.hpp>
-
-#include "VUtilsString.h"
-#include "HashUtils.h"
-
 #include "Prefab.h"
 #include "DataStream.h"
 
@@ -17,6 +11,7 @@ class IPrefabManager {
 
 private:
 	// TODO use set and use hash within from prefab
+	//	TODO use gtl btree?
 	avledet::util::Set<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
 
 public:

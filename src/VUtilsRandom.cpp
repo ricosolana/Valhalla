@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <limits>
-#include <openssl/rand.h>
+
 #include "VUtilsRandom.h"
 
 // It seems someone already had a random implementation made

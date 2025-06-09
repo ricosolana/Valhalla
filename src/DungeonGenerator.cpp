@@ -45,8 +45,8 @@ void DungeonGenerator::DungeonGenerator::Generate(avledet::util::Hash seed) {
 
 	//this->m_generatedTime = steady_clock::now();
 
-	//LOG_INFO(LOGGER, "Finished generating dungeon: '{}', pos: {}, seed: {}, rooms: {}/{}", 
-	//	m_dungeon.m_prefab->m_name, m_pos, seed, m_placedRooms.size(), m_dungeon.m_maxRooms);
+	//TODO it appears that quill logger isnt compiling for Vector3f / cant resolve the stream<< Operator
+	//LOG_INFO(VH_LOGGER, "Finished generating dungeon: '{}', pos: {}, seed: {}, rooms: {}/{}", m_dungeon.m_prefab->m_name, m_pos, seed, m_placedRooms.size(), m_dungeon.m_maxRooms);
 }
 
 //
@@ -256,7 +256,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		auto&& doorDef = this->FindDoorType(state, roomConnection.get().m_connection.get().m_type);
 		if (!doorDef)
 		{
-			//LOG_INFO(LOGGER, "No door type for connection: {}", roomConnection.get().m_connection.get().m_type);
+			LOG_INFO(VH_LOGGER, "No door type for connection: {}", roomConnection.get().m_connection.get().m_type);
 		}
 		else if ((doorDef->m_chance <= 0 || state.Value() <= doorDef->m_chance)
 			&& (doorDef->m_chance > 0 || state.Value() <= this->m_dungeon.m_doorChance))
@@ -270,7 +270,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 		}
 	}
 
-	//LOG_INFO(LOGGER, "Placed {} doors", num);
+	LOG_INFO(VH_LOGGER, "Placed {} doors", num);
 }
 
 void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
@@ -313,15 +313,15 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 					}
 
 					if (!flag) {
-						//LOG_WARNING(LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+						LOG_WARNING(VH_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
 					}
 				}
 				else {
-					//LOG_WARNING(LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+					LOG_WARNING(VH_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
 				}
 			}
 			else {
-				//LOG_INFO(LOGGER, "Cyclic detected: Door types successfully match");
+				LOG_INFO(VH_LOGGER, "Cyclic detected: Door types successfully match");
 			}
 
 			++itr1;
@@ -360,7 +360,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State& state) {
 			}
 
 			if (!flag2) {
-				//LOG_WARNING(LOGGER, "Failed to place end cap");
+				LOG_WARNING(VH_LOGGER, "Failed to place end cap");
 			}
 
 			if (!erased) {
@@ -418,7 +418,7 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State& state) {
 		if (this->CheckRequiredRooms()
 			&& m_placedRooms.size() > this->m_dungeon.m_minRooms)
 		{
-			//LOG_INFO(LOGGER, "All required rooms have been placed, stopping generation");
+			LOG_INFO(VH_LOGGER, "All required rooms have been placed, stopping generation");
 			return;
 		}
 	}

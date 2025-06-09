@@ -3,8 +3,7 @@
 #include "VUtils.h"
 #include "DataStream.h"
 #include "Types.h"
-#include "RandomEventManager.h"
-#include "HashUtils.h"
+#include "Vector.h"
 
 class IRandomEventManager {
 public:

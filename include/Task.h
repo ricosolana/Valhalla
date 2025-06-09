@@ -3,7 +3,7 @@
 #include <functional>
 #include <chrono>
 
-#include "VUtils.h"
+using namespace std::chrono_literals;
 
 class Task {
 public:

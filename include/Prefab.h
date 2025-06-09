@@ -1,11 +1,8 @@
 #pragma once
 
-#include "VUtils.h"
-#include "Hashes.h"
-#include "VUtilsString.h"
-#include "Vector.h"
 #include "Quaternion.h"
-#include "Types.h"
+#include "Vector.h"
+#include "Hashes.h"
 
 class Prefab {
 public:
@@ -125,5 +122,23 @@ public:
 
     bool operator==(std::string_view other) const noexcept {
         return this->m_hash == avledet::util::get_stable_hash(other);
+    }
+};
+
+template <>
+struct ankerl::unordered_dense::hash<Prefab> {
+    using is_transparent = void;
+    using is_avalanching = void; // mark class as high quality avalanching hash
+
+    [[nodiscard]] auto operator()(const Prefab& prefab) const noexcept -> std::uint64_t {
+        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(prefab.m_hash);
+    }
+
+    [[nodiscard]] auto operator()(avledet::util::Hash hash) const noexcept -> std::uint64_t {
+        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(hash);
+    }
+
+    [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
+        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(avledet::util::get_stable_hash(str));
     }
 };

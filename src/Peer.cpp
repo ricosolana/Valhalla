@@ -3,6 +3,7 @@
 #include "ZDOManager.h"
 #include "RouteManager.h"
 #include "VUtilsResource.h"
+#include <quill/LogMacros.h>
 
 static constexpr std::array<std::string_view, 13> STATUS_STRINGS = { 
     "None", 
@@ -28,7 +29,7 @@ Peer::Peer(ISocket::Ptr socket)
     : m_socket(std::move(socket)), m_lastPing(std::chrono::steady_clock::now())
 {
     this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer* self) {
-        //LOG(INFO) << "RPC_Disconnect";
+        LOG_INFO(VH_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 
@@ -40,7 +41,7 @@ Peer::Peer(ISocket::Ptr socket)
                 throw std::runtime_error("peer provided 0 owner");
 #endif
             auto version = reader.read<std::string_view>();
-            //LOG_INFO(m_logger, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
+            LOG_INFO(VH_LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
@@ -67,6 +68,7 @@ Peer::Peer(ISocket::Ptr socket)
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
                     
                     if (!steamSocket->authenticate(ticket)) {
+                        LOG_INFO(VH_LOGGER, "Client {} has invalid ticket", rpc->m_socket->GetHostName());
                         return rpc->Close(ConnectionStatus::ErrorDisconnected);
                     }
                 }
@@ -109,7 +111,7 @@ Peer::Peer(ISocket::Ptr socket)
         return false;
     });
 
-    //LOG_INFO(LOGGER, "{} has connected", m_socket->GetHostName());
+    LOG_INFO(VH_LOGGER, "{} has connected", m_socket->GetHostName());
 }
 
 void Peer::Update() {
@@ -144,13 +146,13 @@ void Peer::Update() {
     }
 
     if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
-        //LOG_INFO(LOGGER, "{} has timed out", this->m_socket->GetHostName());
+        LOG_INFO(VH_LOGGER, "{} has timed out", this->m_socket->GetHostName());
         Disconnect();
     }
 }
 
 bool Peer::Close(ConnectionStatus status) {
-    //LOG_INFO(LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
+    LOG_INFO(VH_LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
     Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;

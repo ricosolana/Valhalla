@@ -1,10 +1,13 @@
 #pragma once 
 
+#include "CompileSettings.h"
+
+#if VH_IS_ON(VH_USE_MODS)
+
 #include "Quaternion.h"
 #include "Types.h"
 #include "VUtils.h"
 #include "VUtilsString.h"
-#include "HashUtils.h"
 #include "VUtilsTraits.h"
 #include "Vector.h"
 #include "ZDOID.h"
@@ -12,18 +15,14 @@
 #include <cmath>
 #include <cstdint>
 #include <magic_enum.hpp>
-#include <sol/forward.hpp>
 #include <vector>
-
-
-#if VH_IS_ON(VH_USE_MODS)
 
 #include "DataStream.h"
 #include <sol/sol.hpp>
 #include <list>
 #include <lua.h>
-#include <quill/Logger.h>
-#include <sol/variadic_results.hpp>
+
+
 
 //int GetCurrentLuaLine(lua_State* L);
 
@@ -146,7 +145,6 @@ private:
     avledet::util::Map<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
     avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
 
-    quill::Logger* m_logger{};
     bool m_unsubscribeCurrentEvent;
 
 public:
@@ -177,10 +175,10 @@ public:
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
-                    LOG_WARNING(m_logger, "Event error: ");
+                    LOG_WARNING(VH_LOGGER, "Event error: ");
 
                     sol::error error = result;
-                    LOG_ERROR(m_logger, "{}", error.what());
+                    LOG_ERROR(VH_LOGGER, "{}", error.what());
                     this->m_unsubscribeCurrentEvent = true;
                 }
                 else {

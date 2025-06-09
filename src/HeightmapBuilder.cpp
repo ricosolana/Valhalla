@@ -8,7 +8,6 @@
 #include <future>
 
 #include "GeoManager.h"
-#include "HashUtils.h"
 #include "TerrainModifier.h"
 #include "VUtilsMathf.h"
 
@@ -19,8 +18,6 @@ IHeightmapBuilder* HeightmapBuilder() {
 
 // public
 void IHeightmapBuilder::PostGeoInit() {
-    m_logger = quill::Frontend::create_or_get_logger("heightmap", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
-
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
     for (unsigned int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
@@ -39,7 +36,7 @@ void IHeightmapBuilder::PostGeoInit() {
             std::vector<std::unique_ptr<Heightmap>> baked;
            
 
-            LOG_INFO(m_logger, "Builder thread started");
+            LOG_INFO(VH_LOGGER, "Builder thread started");
             while (!token.stop_requested()) {
                 FrameMarkStart(name.c_str());
 

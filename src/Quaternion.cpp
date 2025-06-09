@@ -240,6 +240,6 @@ namespace avledet::util::CSU {
 
 }// namespace avledet::util
 
-std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Quaternion quat) {
+std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Quaternion const& quat) {
     return st << "(" << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << ")";
 }

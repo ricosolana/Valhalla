@@ -3,10 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+
 #include <quill/Backend.h>
+#include <quill/Frontend.h>
+#include <quill/HelperMacros.h>
+#include <quill/LogMacros.h>
+#include <quill/Logger.h>
 #include <quill/bundled/fmt/ostream.h>
-#include "QuillHelperMacros.h"
-#include "VUtils.h"
+#include <quill/bundled/fmt/ranges.h>
+#include <quill/sinks/ConsoleSink.h>
+
+#include <ankerl/unordered_dense.h>
+
+#include "CompileSettings.h"
 #include "BitPack.h"
 #include "DataStream.h"
 
@@ -115,13 +124,8 @@ namespace avledet::util {
             m_pack.Set<ID_PACK_INDEX>(id);
         }
 
-
-
-        friend std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid) {
-            st << zdoid.get_user_id() << ":" << zdoid.get_id();
-            return st;
-        }
     };
+
 }// namespace avledet::util
 
 using ZDOID = avledet::util::ZDOID;
@@ -153,4 +157,6 @@ struct avledet::util::Streamer<avledet::util::ZDOID> {
     }
 };
 
-QUILL_LOGGABLE_DIRECT_FORMAT(ZDOID)
+std::ostream& operator<<(std::ostream& st, ZDOID const& zdoid);
+
+QUILL_LOGGABLE_DEFERRED_FORMAT(ZDOID)

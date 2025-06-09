@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "VUtils.h"
+#include "ZDOID.h"
 
 class ZDOConnector {
 public:

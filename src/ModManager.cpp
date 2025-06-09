@@ -906,7 +906,7 @@ void IModManager::LoadAPI() {
     }
 
     //TODO logger ref capture; fix
-    m_state["print"] = [m_logger = this->m_logger](sol::this_state ts, sol::variadic_args args) {
+    m_state["print"] = [VH_LOGGER = this->VH_LOGGER](sol::this_state ts, sol::variadic_args args) {
         sol::state_view state = ts;
 
         auto&& tostring(state["tostring"]);
@@ -919,7 +919,7 @@ void IModManager::LoadAPI() {
             s += tostring(arg);
         }
 
-        LOG_INFO(m_logger, "[Lua] {}", s);
+        LOG_INFO(VH_LOGGER, "[Lua] {}", s);
     };
 
 
@@ -1012,10 +1012,10 @@ void IModManager::LoadMod(Mod& mod) {
 
 //TODO
 //inline void my_panic(sol::optional<std::string> maybe_msg) {
-//    LOG_ERROR(m_logger, "Lua is in a panic state and will now abort() the application");
+//    LOG_ERROR(VH_LOGGER, "Lua is in a panic state and will now abort() the application");
 //    if (maybe_msg) {
 //        const std::string& msg = maybe_msg.value();
-//        LOG_ERROR(m_logger, "\terror message: {}", msg);
+//        LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
 //    }
 //    // When this function exits, Lua will exhibit default behavior and abort()
 //}
@@ -1026,15 +1026,15 @@ void IModManager::LoadMod(Mod& mod) {
 //    // L is the lua state, which you can wrap in a state_view if necessary
 //    // maybe_exception will contain exception, if it exists
 //    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
-//    LOG_ERROR(m_logger, "An exception occurred in a function, here's what it says ");
+//    LOG_ERROR(VH_LOGGER, "An exception occurred in a function, here's what it says ");
 //    if (maybe_exception) {
-//        LOG_ERROR(m_logger, "(straight from the exception): ");
+//        LOG_ERROR(VH_LOGGER, "(straight from the exception): ");
 //        const std::exception& ex = *maybe_exception;
-//        LOG_ERROR(m_logger, "{}", ex.what());
+//        LOG_ERROR(VH_LOGGER, "{}", ex.what());
 //    }
 //    else {
-//        LOG_ERROR(m_logger, "(from the description parameter): ");
-//        LOG_ERROR(m_logger, "{}", description);
+//        LOG_ERROR(VH_LOGGER, "(from the description parameter): ");
+//        LOG_ERROR(VH_LOGGER, "{}", description);
 //    }
 //
 //    // you must push 1 element onto the stack to be
@@ -1045,9 +1045,9 @@ void IModManager::LoadMod(Mod& mod) {
 //}
 
 void IModManager::PostInit() {
-    m_logger = quill::Frontend::create_or_get_logger("modmanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
+    VH_LOGGER = quill::Frontend::create_or_get_logger("modmanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
 
-    LOG_INFO(m_logger, "Initializing ModManager");
+    LOG_INFO(VH_LOGGER, "Initializing ModManager");
 
     //m_state.set_exception_handler(&my_exception_handler);
 
@@ -1074,15 +1074,15 @@ void IModManager::PostInit() {
                 auto&& mod = LoadModInfo(dirname);
                 LoadMod(mod);
 
-                LOG_INFO(m_logger, "Loaded mod '{}'", mod.m_name);
+                LOG_INFO(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
             }
         }
         catch (const std::exception& e) {
-            LOG_ERROR(m_logger, "Failed to load mod: {} ({})", e.what(), dir.path().string());
+            LOG_ERROR(VH_LOGGER, "Failed to load mod: {} ({})", e.what(), dir.path().string());
         }
     }
 
-    LOG_INFO(m_logger, "Loaded {} mods", m_mods.size());
+    LOG_INFO(VH_LOGGER, "Loaded {} mods", m_mods.size());
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }
