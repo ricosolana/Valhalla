@@ -161,7 +161,7 @@ public:
     //  allowing this method is better for performance but limits mod catcheability
     template <typename Func>
     void SubInvoke(avledet::util::Hash hash, Func func) {
-        if (!m_socket->Connected())
+        if (m_socket->get_status() == Status::Closed)
             return;
 
         DataWriter writer;
@@ -182,7 +182,7 @@ public:
 
     template <typename Func>
     void SubRoute(avledet::util::Hash hash, ZDOID targetZDO, Func func) {
-        if (!m_socket->Connected())
+        if (m_socket->get_status() == Status::Closed)
             return;
 
         DataWriter writer;
@@ -222,7 +222,7 @@ public:
 
     template <typename... Types>
     void Invoke(avledet::util::Hash hash, const Types&... params) {
-        if (!m_socket->Connected())
+        if (m_socket->get_status() == Status::Closed)
             return;
 
         // Prefix
@@ -247,7 +247,7 @@ public:
     //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
 #if VH_IS_ON(VH_USE_MODS)
     void InvokeLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-        if (!m_socket->Connected())
+        if (m_socket->get_status() == Status::Closed)
             return;
 
         if (args.size() != repr.m_types.size())
@@ -316,10 +316,10 @@ public:
     }
 
     std::optional<avledet::util::Bytes> Recv() {
-        if (auto&& opt = this->m_socket->Recv()) {
-            auto&& bytes = *opt;
+        auto bytes = m_socket->Recv();
+        if (!bytes.empty()) {
             if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
-                return opt;
+                return bytes;
             }
         }
         return std::nullopt;

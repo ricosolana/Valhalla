@@ -62,13 +62,14 @@ Peer::Peer(ISocket::Ptr socket)
             auto password = reader.read<std::string_view>();
 
             if (VH_SETTINGS.playerOnline) {
-                auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket);
                 auto ticket = reader.read<avledet::util::ByteView>();
-                if (steamSocket 
-                    && (VH_SETTINGS.serverDedicated
-                        ? SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())
-                        : SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), steamSocket->m_steamNetId.GetSteamID())) != k_EBeginAuthSessionResultOK)
-                    return rpc->Close(ConnectionStatus::ErrorDisconnected);
+
+                if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
+                    
+                    if (!steamSocket->authenticate(ticket)) {
+                        return rpc->Close(ConnectionStatus::ErrorDisconnected);
+                    }
+                }
             }
 
             if (password != std::string_view(NetManager()->m_passwordHash))
@@ -117,7 +118,7 @@ void Peer::Update() {
     auto now(std::chrono::steady_clock::now());
 
     // Send packet data
-    m_socket->Update();
+    //m_socket->Update();
 
     // Read packets
     while (auto opt = this->Recv()) {

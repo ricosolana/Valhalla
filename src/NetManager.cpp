@@ -7,6 +7,8 @@
 
 #include "NetManager.h"
 #include "Crypto.h"
+#include "NetAcceptor.h"
+#include "NetSocket.h"
 #include "ValhallaServer.h"
 #include "WorldManager.h"
 #include "VUtilsRandom.h"
@@ -319,20 +321,23 @@ void INetManager::PostInit() {
 
     LOG_INFO(m_logger, "Initializing NetManager");
 
-    m_acceptor = std::make_unique<AcceptorSteam>();
-    m_acceptor->Listen();
+    //m_acceptor = std::make_unique<AcceptorSteam>();
+    //m_acceptor->Listen();
+    m_acceptor = IAcceptor::steam_dedicated("127.0.0.1"); // m_acceptor
+
+    m_acceptor->start();
+    m_acceptor->on_connect([this](ISocket::Ptr socket) {
+        auto&& ptr = std::make_unique<Peer>(std::move(socket));
+        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
+            m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
+        }
+    });
 }
 
 void INetManager::Update() {
     ZoneScoped;
 
-    // Accept new connections
-    while (auto sock = m_acceptor->Accept()) {
-        auto&& ptr = std::make_unique<Peer>(std::move(sock));
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
-            m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
-        }
-    }
+    m_acceptor->update();
 
     // Send periodic data (2s)
     if (VUtils::run_periodic<struct periodic_peer_nettime>(2s)) {
@@ -386,7 +391,7 @@ void INetManager::Update() {
         for (auto&& itr = m_onlinePeers.begin(); itr != m_onlinePeers.end(); ) {
             Peer& peer = *(*itr);
 
-            if (!peer.m_socket->Connected()) {
+            if (peer.m_socket->get_status() == Status::Closed) {
                 OnPeerQuit(peer);
 
                 itr = m_onlinePeers.erase(itr);
@@ -401,7 +406,7 @@ void INetManager::Update() {
         for (auto&& itr = m_connectedPeers.begin(); itr != m_connectedPeers.end(); ) {
             Peer& peer = *(*itr);
 
-            if (!peer.m_socket->Connected()) {
+            if (peer.m_socket->get_status() == Status::Closed) {
                 OnPeerDisconnect(peer);
 
                 itr = m_connectedPeers.erase(itr);
@@ -448,21 +453,19 @@ void INetManager::Uninit() {
     }
 
     //m_acceptor.reset();
-    m_acceptor->Close();
+    m_acceptor->stop();
 }
 
 void INetManager::OnConfigLoad(bool reloading) {
     bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {
-        VUtils::Random::GenerateAlphaNum(m_passwordSalt.data(), m_passwordSalt.size());
-
-        const auto merge = VH_SETTINGS.serverPassword + m_passwordSalt;
+        m_passwordSalt = VUtils::Random::GenerateAlphaNum(16);
 
         // Hash a salted password
         //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        auto s = avledet::crypto::md5(merge);
+        auto s = avledet::crypto::md5(VH_SETTINGS.serverPassword + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     }
 }

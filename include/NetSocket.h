@@ -9,91 +9,97 @@
 #include <steamnetworkingtypes.h>
 #include <isteamfriends.h>
 
+#include "Types.h"
 #include "VUtils.h"
+#include "isteamnetworkingsockets.h"
 
-// All ISocket functions are expected to:
-// - return instantly without blocking
-// - be thread safe
-// - be fully implemented
+
+
+enum class Status {
+    //Fresh,
+    Connecting,
+    Connected,
+    Lingering,
+    Closed,
+    Connect_Failed,
+};
+
+
+
 class ISocket : public std::enable_shared_from_this<ISocket> {
 public:
     using Ptr = std::shared_ptr<ISocket>;
 
-public:
     virtual ~ISocket() = default;
 
+    virtual void Close(bool linger) = 0;
 
+    virtual std::vector<char> Recv() = 0;
+    virtual void Send(std::vector<char> buf) = 0;
 
-    // Terminates the connection
-    // If flush is set, socket wont close until a few seconds
-    virtual void Close(bool flush) = 0;
+    virtual std::string GetHostName() = 0;
+    virtual std::string GetAddress() = 0;
+    virtual bool is_outbound() = 0; // TODO impl
 
+    virtual Status get_status() = 0;
+    virtual int GetPing() = 0;
+    virtual int GetSendQueueSize() = 0;
+    //virtual std::tuple<float, float, int, float, float> get_connection_stats() = 0;
 
-
-    // Call every tick to reengage writers
-    virtual void Update() = 0;
-
-    // Send a packet to the remote host
-    // Packet will be copied unless moved
-    virtual void Send(avledet::util::Bytes bytes) = 0;
-
-    // Receive a packet from the remote host
-    // Packet will undergo basic structure validation
-    // This function shall not block
-    virtual std::optional<avledet::util::Bytes> Recv() = 0;
-
-
-
-    // Get the name of this connection
-    // This represents the identity of the remote
-    virtual std::string GetHostName() const = 0;
-
-    // Get the address of this socket
-    virtual std::string GetAddress() const = 0;
-
-    // Returns whether the socket is connected
-    //  The return value is updated every frame, 
-    //  so calls might not reflect the actual 
-    //  state if called from mid-frame
-    virtual bool Connected() const = 0;
-
-
-
-    // Returns the size in bytes of packets queued for sending
-    virtual unsigned int GetSendQueueSize() const = 0;
-
-    virtual unsigned int GetPing() const = 0;
+    // auto [local, remote] = get_connection_quality()
+    virtual std::tuple<float, float> get_connection_quality() = 0;
 };
 
 
 
 class SteamSocket : public ISocket {
+    friend class AcceptorSteam;
+
 private:
-    std::list<avledet::util::Bytes> m_sendQueue;
-    std::string m_address;
-    bool m_connected{};
+    void send_queued();
+
+    void init_identifiers();
+
+protected:
+    static bool is_game_server() {
+        auto game_server = SteamGameServerNetworkingSockets();
+        return game_server != nullptr;
+    }
+
+    static ISteamNetworkingSockets* get_steam_sockets() {
+        auto game_server = SteamGameServerNetworkingSockets();
+        return game_server ? game_server : SteamNetworkingSockets();
+    }
 
 public:
-    const HSteamNetConnection m_hConn;
-    SteamNetworkingIdentity m_steamNetId{};
+    using Ptr = std::shared_ptr<SteamSocket>;
 
-public:
-    explicit SteamSocket(HSteamNetConnection hConn);
+    explicit SteamSocket(HSteamNetConnection hConn, bool is_outbound);
     ~SteamSocket() override;
 
-    void Close(bool flush) override;
-    
-    void Update() override;
-    void Send(avledet::util::Bytes bytes) override;
-    std::optional<avledet::util::Bytes> Recv() override;
+    void flush();
+    bool authenticate(avledet::util::ByteView ticket);
 
-    std::string GetHostName() const override;
-    std::string GetAddress() const override;
-    bool Connected() const override;
+    void Close(bool linger) override;
 
-    unsigned int GetSendQueueSize() const override;
-    unsigned int GetPing() const override;
+    void Send(std::vector<char> bytes) override;
+    std::vector<char> Recv() override;
+
+    std::string GetHostName() override;
+    std::string GetAddress() override;
+    bool is_outbound() override;
+
+    Status get_status() override;
+    int GetPing() override;
+    int GetSendQueueSize() override;
+    //std::tuple<float, float, int, float, float> get_connection_stats() override;
+    std::tuple<float, float> get_connection_quality() override;
 
 private:
-    void SendQueued();
+    SteamNetworkingIdentity m_steam_id{};
+    std::list<std::vector<char>> m_send_queue;
+    std::string m_address;
+    HSteamNetConnection m_conn{};
+    Status m_status{};
+    const bool m_is_outbound;
 };

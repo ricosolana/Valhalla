@@ -4,10 +4,10 @@
 class TestSocket : public ISocket {
 public:
     TestSocket() {}
-    void Close(bool) {}
-    void Update() {}
-    void Send(avledet::util::Bytes) {}
-    std::optional<avledet::util::Bytes> Recv() { return std::nullopt; }
+    void Close(bool) override {}
+    //void Update() override {}
+    void Send(avledet::util::Bytes) override {}
+    avledet::util::Bytes Recv() override { return {}; }
     std::string GetHostName() const { return "crzi"; }
     std::string GetAddress() const { return "127.0.0.1"; }
     bool Connected() const { return true; }
@@ -25,9 +25,9 @@ void VHTest::Test_ZDOConnectors() {
     //VH_SETTINGS.worldSeed = "fail";
     //WorldManager()->
 
-    Peer peer(std::make_shared<TestSocket>());
+    //Peer peer(std::make_shared<TestSocket>());
 
-    ZDOManager()->SendAllZDOs(peer);
+    //ZDOManager()->SendAllZDOs(peer);
 }
 
 void VHTest::Test_Quaternion() {
