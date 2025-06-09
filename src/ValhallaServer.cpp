@@ -836,7 +836,9 @@ void IValhalla::PeriodUpdate() {
     auto lastWriteTime = fs::last_write_time("server.yml", err);
     if (lastWriteTime != this->m_settingsLastTime) {
         // reload the file
+        LOG_INFO(m_logger, "Config change detected!");
         LoadFiles(true);
+        LOG_INFO(m_logger, "Config was reloaded");
     }
 
     if (m_settings.worldSaveInterval > 0s) {

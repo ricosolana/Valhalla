@@ -48,7 +48,12 @@ void IZDOManager::Update() {
 	ZoneScoped;
 
 	if (VUtils::run_periodic_now<struct periodic_zdo_stats>(3min)) {
-		LOG_INFO(m_logger, "Currently {} zdos (~{:0.02f}mb)", m_objectsByID.size(), (GetTotalZDOAlloc() / 1000000.f));
+		LOG_INFO(m_logger, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", 
+			m_objectsByID.size(), 
+			//(this->GetTotalZDOAlloc() / 1000000.f),
+			ZDO::GetTotalAlloc(false) / 1000000.f,
+			ZDO::GetTotalAlloc(true) / 1000000.f
+		);
 	}
 
 	//assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (std::size_t)0,
