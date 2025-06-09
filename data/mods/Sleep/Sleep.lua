@@ -25,23 +25,23 @@ local UPDATE_SLEEP_FN = function()
         for i=1, #peers do
             local peer = peers[i]
             local zdo = peer.zdo
-            if zdo and zdo:GetBool('inBed') then
-                peer:Route(SIG_SleepStop)
+            if zdo and zdo:get_bool('inBed') then
+                peer:route(SIG_SleepStop)
             end
         end
         
         print('ending sleep')
         
         sleeping = false
-        Valhalla.worldTimeMultiplier = 1
+        Valhalla.world_time_multiplier = 1
         
-        event.Unsubscribe()
+        event.unsubscribe()
     end
 end
 
-Valhalla:Subscribe('Periodic', function()
+Valhalla:subscribe('Periodic', function()
     if not sleeping then
-        if Valhalla.isAfternoon or Valhalla.isNight then
+        if Valhalla.is_afternoon or Valhalla.is_night then
             --print('afternoon / night')
             
             local peers = NetManager.peers
@@ -54,7 +54,7 @@ Valhalla:Subscribe('Periodic', function()
                 local peer = peers[i]
                 local zdo = peer.zdo
                 if zdo then
-                    local inBed = zdo:GetBool('inBed')
+                    local inBed = zdo:get_bool('inBed')
                     if inBed then
                         table.insert(sleepingPeers, peer)
                     else
@@ -73,16 +73,16 @@ Valhalla:Subscribe('Periodic', function()
             print('starting sleep')
             
             sleeping = true
-            sleepingUntil = Valhalla.tomorrowMorning
-            Valhalla.worldTimeMultiplier = (sleepingUntil - Valhalla.worldTime) / 12
+            sleepingUntil = Valhalla.next_morning
+            Valhalla.world_time_multiplier = (sleepingUntil - Valhalla.world_time) / 12
             
             for i=1, #sleepingPeers do
                 local peer = sleepingPeers[i]
-                peer:Route(SIG_SleepStart)
+                peer:route(SIG_SleepStart)
             end
             
             -- enable high accuracy sleep timings to not skip 1/12 of the day
-            Valhalla:Subscribe('Update', UPDATE_SLEEP_FN)            
+            Valhalla:subscribe('Update', UPDATE_SLEEP_FN)            
         end
     end    
 end)

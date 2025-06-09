@@ -20,7 +20,7 @@ local commands = {
     worldtime = {
         func = function(peer, cmd, args)
             if #args == 0 then
-                peer:ConsoleMessage('World time: ' .. Valhalla.worldTime)
+                peer:ConsoleMessage('World time: ' .. Valhalla.world_time)
             else
                 Valhalla.worldTime = assert(tonumber(args[1]), 'not a number')
                 peer:ConsoleMessage('Set world time to ' .. args[1])
@@ -32,7 +32,7 @@ local commands = {
     timeofday = {
         func = function(peer, cmd, args)
             if #args == 0 then
-                peer:ConsoleMessage('Time of day: ' .. Valhalla.timeOfDay)
+                peer:ConsoleMessage('Time of day: ' .. Valhalla.time_of_day)
             else
                 Valhalla.timeOfDay = assert(tonumber(args[1]) or TimeOfDay[args[1]:upper()], 'not a number')
                 peer:ConsoleMessage('Set time of day to ' .. args[1] .. '(worldTime: ' .. Valhalla.worldTime .. ')')
@@ -265,14 +265,14 @@ local commands = {
     }
 }
 
-Valhalla:Subscribe('Join', function(peer)
+Valhalla:subscribe('Join', function(peer)
     print('Registering command vs')
 
-    peer:Register(
+    peer:register(
         MethodSig.new('OnCommand', Type.STRING, Type.STRINGS),
         function(peer, label, args)
             if not peer.admin then 
-                peer:ConsoleMessage("must be an admin")
+                peer:console_message("must be an admin")
             else
                 local command = commands[string.lower(label)]
                 
@@ -283,17 +283,17 @@ Valhalla:Subscribe('Join', function(peer)
                     local success, err = pcall(command.func, peer, label, args)
                     if not success then
                         for s in err:gmatch('[^\n]+') do
-                            peer:ConsoleMessage('<color=#FF5555>' .. s .. '</color>')
+                            peer:console_message('<color=#FF5555>' .. s .. '</color>')
                         end
                         
                         if command.usage then
-                            peer:ConsoleMessage('<color=#FFAA00>Usage: ' .. label .. ' ' .. (command.usage or '') .. '</color>')
+                            peer:console_message('<color=#FFAA00>Usage: ' .. label .. ' ' .. (command.usage or '') .. '</color>')
                         end
                     end
                 else
-                    peer:ConsoleMessage('<color=#FF5555>unknown .vs command</color>')
+                    peer:console_message('<color=#FF5555>unknown .vs command</color>')
                     for k,command in pairs(commands) do
-                        peer:ConsoleMessage(' <color=#555555>-</color> ' 
+                        peer:console_message(' <color=#555555>-</color> ' 
                             .. '<color=#AAAAAA>' .. k .. ' ' .. (command.usage or label) .. ' </color><color=#FFAA00>' .. (command.desc or 'a command') .. '</color>')
                     end
                 end

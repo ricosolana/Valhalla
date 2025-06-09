@@ -14,18 +14,18 @@ local SIG_VersionCheck = MethodSig.new('ServerSync VersionCheck', Type.BYTES)
 local Config = {}
 
 local DATA_CONVERTERS = {
-  String =   { qualifier = 'System.String',   serialize = 'Write',        deserialize = 'ReadString'  },
-  Boolean =  { qualifier = 'System.Boolean',  serialize = 'Write',        deserialize = 'ReadBool'    },
-  SByte =    { qualifier = 'System.SByte',    serialize = 'WriteInt8',    deserialize = 'ReadInt8'    },
-  Byte =     { qualifier = 'System.Byte',     serialize = 'WriteUInt8',   deserialize = 'ReadUInt8'   }, 
-  Int16 =    { qualifier = 'System.Int16',    serialize = 'WriteInt16',   deserialize = 'ReadInt16'   },
-  UInt16 =   { qualifier = 'System.UInt16',   serialize = 'WriteUInt16',  deserialize = 'ReadUInt16'  },
-  Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'WriteInt32',   deserialize = 'ReadInt32'   },
-  UInt32 =   { qualifier = 'System.UInt32',   serialize = 'WriteUInt32',  deserialize = 'ReadUInt32'  },
-  Int64 =    { qualifier = 'System.Int64',    serialize = 'Write',        deserialize = 'ReadInt64'   },
-  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'Write',        deserialize = 'ReadUInt64'  },
-  Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'WriteFloat',   deserialize = 'ReadFloat'   },
-  Double =   { qualifier = 'System.Double',   serialize = 'WriteDouble',  deserialize = 'ReadDouble'  },
+  String =   { qualifier = 'System.String',   serialize = 'write_string', deserialize = 'read_string'  },
+  Boolean =  { qualifier = 'System.Boolean',  serialize = 'write_bool',   deserialize = 'read_bool'    },
+  SByte =    { qualifier = 'System.SByte',    serialize = 'write_s8',     deserialize = 'read_s8'    },
+  Byte =     { qualifier = 'System.Byte',     serialize = 'write_u8',     deserialize = 'read_u8'   }, 
+  Int16 =    { qualifier = 'System.Int16',    serialize = 'write_s16',    deserialize = 'read_s16'   },
+  UInt16 =   { qualifier = 'System.UInt16',   serialize = 'write_u16',    deserialize = 'read_u16'  },
+  Int32 =    { qualifier = 'System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',    serialize = 'write_s32',   deserialize = 'read_s32'   },
+  UInt32 =   { qualifier = 'System.UInt32',   serialize = 'write_u32',    deserialize = 'read_u32'  },
+  Int64 =    { qualifier = 'System.Int64',    serialize = 'write_s64',    deserialize = 'read_s64'   },
+  UInt64 =   { qualifier = 'System.UInt64',   serialize = 'write_u64',    deserialize = 'read_u64'  },
+  Single =   { qualifier = 'System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',   serialize = 'write_float',   deserialize = 'read_float'   },
+  Double =   { qualifier = 'System.Double',   serialize = 'write_double',  deserialize = 'read_double'  },
   CraftingTable = { 
     qualifier = 'ItemManager.CraftingTable',
     underlying = 'System.Int32',
@@ -39,17 +39,17 @@ local DATA_CONVERTERS = {
   Color = {
     qualifier = 'UnityEngine.Color',
     serialize = function(writer, value)
-      writer:WriteFloat(value.r)
-      writer:WriteFloat(value.g)
-      writer:WriteFloat(value.b)
-      writer:WriteFloat(value.a)
+      writer:write_float(value.r)
+      writer:write_float(value.g)
+      writer:write_float(value.b)
+      writer:write_float(value.a)
     end,
     deserialize = function(reader)
       return {
-        r = reader:ReadFloat(),
-        g = reader:ReadFloat(),
-        b = reader:ReadFloat(),
-        a = reader:ReadFloat()
+        r = reader:read_float(),
+        g = reader:read_float(),
+        b = reader:read_float(),
+        a = reader:read_float()
       }
     end
   },
@@ -57,10 +57,10 @@ local DATA_CONVERTERS = {
     qualifier = 'PieceManager.BuildPieceCategory',
     underlying = 'System.Int32',
     serialize = function(writer, value)
-      writer:WriteInt32(BuildPieceCategory[value])
+      writer:write_s32(BuildPieceCategory[value])
     end,
     deserialize = function(reader)
-      return assert(TOML.ORDINAL_TO_ENUM(BuildPieceCategory, reader:ReadInt32()), 'unknown BuildPieceCategory')
+      return assert(TOML.ORDINAL_TO_ENUM(BuildPieceCategory, reader:read_s32()), 'unknown BuildPieceCategory')
     end
   },
   DamageModifier = { 
@@ -68,10 +68,10 @@ local DATA_CONVERTERS = {
     qualifier = 'ItemManager.Item+DamageModifier',
     underlying = 'System.Int32',
     serialize = function(writer, value)
-      writer:WriteInt32(DamageModifier[value])
+      writer:write_s32(DamageModifier[value])
     end,
     deserialize = function(reader)
-      return assert(TOML.ORDINAL_TO_ENUM(DamageModifier, reader:ReadInt32()), 'unknown DamageModifier')
+      return assert(TOML.ORDINAL_TO_ENUM(DamageModifier, reader:read_s32()), 'unknown DamageModifier')
     end
   },
   --Decimal = {}
@@ -124,10 +124,10 @@ end
 -- https://github.com/blaxxun-boop/ServerSync/blob/5fc2d710f44c6fe9b35fc707217879f8576414e9/ConfigSync.cs#L949
 Config.SerializeConfig = function(config, extra)
   local bytes = Bytes.new()
-  local writer = DataWriter.new(bytes)
+  local writer = Writer.new(bytes)
   
-  writer:WriteUInt8(0)
-  writer:WriteInt32(table.size(config.cfg) + table.size(extra))
+  writer:write_u8(0)
+  writer:write_s32(table.size(config.cfg) + table.size(extra))
   
   for section, map in pairs(config.cfg) do
     for key, entry in pairs(map) do
@@ -152,9 +152,9 @@ Config.SerializeEntry = function(writer, dataConverters, section, key, entry)
     'missing serializer for type ' .. entry.tomlTypeName
   )
 
-  writer:Write(section)
-  writer:Write(key)
-  writer:Write(cvt.underlying or cvt.qualifier)
+  writer:write(section)
+  writer:write(key)
+  writer:write(cvt.underlying or cvt.qualifier)
   
   print(entry.value)
   
@@ -207,9 +207,10 @@ end--]]
 
 
 Config.sendZPackage = function(peer, config, bytes)
+  assert(false, "TODO ; bytes is not a safe reference")
   if #bytes > 10000 then
     local newBytes = Bytes.new()
-    local writer = DataWriter.new(newBytes)
+    local writer = Writer.new(newBytes)
     
     writer:WriteUInt8(CONFIG_COMPRESSED)
     writer:Write(Deflater.raw:Compress(bytes))
@@ -255,9 +256,9 @@ Valhalla:Subscribe('Connect', function(peer)
       local bytes = Bytes.new()
       local writer = DataWriter.new(bytes)
       
-      writer:Write(name)
-      writer:Write(config.minVersion) -- min
-      writer:Write(config.version) -- current 
+      writer:write(name)
+      writer:write(config.minVersion) -- min
+      writer:write(config.version) -- current 
       
       print('Sending ' .. name .. ' ' 
         .. config.version .. ' to ' .. peer.socket.host)

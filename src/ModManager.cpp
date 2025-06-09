@@ -82,7 +82,9 @@ int LoadFileRequire(lua_State* L) {
     return 1;
 }
 
-void IModManager::LoadAPI() {    
+void IModManager::LoadAPI() {
+    using namespace avledet::util::CSU;
+
     m_state.new_usertype<Vector3f>("Vector3f",
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(),
         "ZERO", sol::property(&Vector3f::zero),
@@ -225,7 +227,7 @@ void IModManager::LoadAPI() {
     //    "nid", &UserProfile::m_networkUserId // TODO change name
     //);
 
-    m_state.new_usertype<DataWriter>("DataWriter",
+    m_state.new_usertype<DataWriter>("Writer",
         sol::constructors<DataWriter(avledet::util::Bytes)>(),
 
         //"ToReader", &DataWriter::ToReader,
@@ -273,7 +275,7 @@ void IModManager::LoadAPI() {
     );
 
     // Package read/write types
-    m_state.new_usertype<DataReader>("DataReader",
+    m_state.new_usertype<DataReader>("Reader",
         sol::constructors<DataReader(avledet::util::Bytes)>(),
 
         //"ToWriter", &DataReader::ToWriter,
@@ -335,9 +337,10 @@ void IModManager::LoadAPI() {
     //    "Invoke", &IMethod<Peer*>::Invoke
     //);
 
+    // TODO full socket impl
     m_state.new_usertype<ISocket>("Socket",
         "close", &ISocket::Close,
-        "connected", sol::property(&ISocket::Connected),
+        //"connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::GetAddress),
         "host", sol::property(&ISocket::GetHostName),
         "send_queue_size", sol::property(&ISocket::GetSendQueueSize)
@@ -521,7 +524,8 @@ void IModManager::LoadAPI() {
         "prefab_hash", sol::property(&ZDO::GetPrefabHash),
         "owner", sol::property([](ZDO self) { return Int64Wrapper(self.Owner()); }, [](ZDO self, Int64Wrapper owner) { self.SetOwner((std::int64_t)owner); }),
         "is_owner", &ZDO::IsOwner, // zdo:is_owner(id)
-        "local", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
+        "is_local", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
+        //"remote", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
         //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
         "owned", sol::property(&ZDO::HasOwner),
         "disown", &ZDO::Disown, //TODO rename?

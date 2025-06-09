@@ -12,8 +12,8 @@
         my code below also exhibits this, (un)fortunately? so.
 --]]
 
-Valhalla:Subscribe('Periodic', function()
-	local portalZdos = ZDOManager:GetZDOs('portal_wood')
+Valhalla:subscribe('Periodic', function()
+	local portalZdos = ZDOManager:get_zdos('portal_wood')
 
 	for i1=1, #portalZdos do
 		local portalZdo1 = portalZdos[i1]
@@ -22,22 +22,22 @@ Valhalla:Subscribe('Periodic', function()
         --local target1 = portal1.target
 		--local tag1 = portal1.tag
         
-        local target1 = portalZdo1:GetZDOID('target')
-		local tag1 = portalZdo1:GetString('tag')
+        local target1 = portalZdo1:get_zdoid('target')
+		local tag1 = portalZdo1:get_string('tag')
         
 		-- if target portal assigned
         if target1 ~= ZDOID.NONE then
-			local portalZdo2 = ZDOManager:GetZDO(target1)
+			local portalZdo2 = ZDOManager:get_zdo(target1)
             --local portal2 = portalZdo2 and Views.Portal.new(portalZdo2) or nil
             
 			-- if target is missing from world, reset target
 			--if not portalZdo2 or portal2.tag ~= tag1 then
-            if not portalZdo2 or portalZdo2:GetString('tag') ~= tag1 then
-				portalZdo1:SetLocal()
+            if not portalZdo2 or portalZdo2:get_string('tag') ~= tag1 then
+				portalZdo1.is_local = true
 
 				--portal1.target = ZDOID.NONE
-                portalZdo1:Set('target', ZDOID.NONE)
-				ZDOManager:ForceSendZDO(portalZdo1.id);
+                portalZdo1:set('target', ZDOID.NONE)
+				ZDOManager:force_send_zdo(portalZdo1.id);
 			end
 		else 
 			-- find other portalZdos with the same tag
@@ -49,20 +49,20 @@ Valhalla:Subscribe('Periodic', function()
                     
                     -- connect unlinked portals
                     --if portal2.target == ZDOID.NONE then
-                    if portalZdo2:GetZDOID('target') == ZDOID.NONE then
+                    if portalZdo2:get_zdoid('target') == ZDOID.NONE then
                         --local tag2 = portal2.tag
 
                         -- link if same tag
-                        if tag1 == portalZdo2:GetString('tag') then
+                        if tag1 == portalZdo2:get_string('tag') then
 
                             print("linking portals")
                     
-                            portalZdo1:SetLocal()
-                            portalZdo2:SetLocal()
+                            portalZdo1.is_local = true
+                            portalZdo2.is_local = true
                             --portal1.target = portalZdo2.id
                             --portal2.target = portalZdo1.id
-                            portalZdo1:Set('target', portalZdo2.id)
-                            portalZdo2:Set('target', portalZdo1.id)
+                            portalZdo1:set('target', portalZdo2.id)
+                            portalZdo2:set('target', portalZdo1.id)
                             
                             -- might be redundant; TeleportWorld requests ZDO
                             --ZDOManager:ForceSendZDO(portalZdo1.id);
