@@ -28,7 +28,7 @@ void IDungeonManager::PostPrefabInit() {
     auto ver = pkg.read<std::string_view>();
     LOG_INFO(VH_LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
-        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server");
+        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server ({})", ver);
     }
 
     std::int32_t count = pkg.read<std::int32_t>();

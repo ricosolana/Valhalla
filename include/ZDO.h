@@ -441,7 +441,7 @@ public:
         return itr->get();
     }
 
-    [[nodiscard]] static unsafe_optional make_unsafe_value(const container::value_type& itr) {
+    [[nodiscard]] static unsafe_optional make_unsafe_value(container::value_type const& itr) {
         return itr.get();
     }
 
@@ -453,7 +453,7 @@ public:
         return itr->get();
     }
     
-    [[nodiscard]] static unsafe_optional make_unsafe_optional(const container::value_type& itr) {
+    [[nodiscard]] static unsafe_optional make_unsafe_optional(container::value_type const& itr) {
         return itr.get();
     }
 
@@ -548,35 +548,14 @@ private:
     
 
 private:
-    // zdoid can be shrunk however, instead of using 8 + 4 bytes  (total 16 bytes; 4 bytes are extra padding), can be just 8 bytes (4 bytes for ID, 4 bytes for owner index)
-    // because pair<K, V> includes padding, pair<zdoid, owner> uses the same memory as pair<zdoid, std::uint8_t>
-    //static constexpr auto szz01311 = sizeof(decltype(ZDO_OWNERS)::value_type); // 24 bytes is a lot, unless zdoid can be aligned, and pair uses
-
-    //static inline std::array<avledet::util::UserID, 
-    //    //decltype(data_t::m_pack)::capacity_v<data_t::BIT_OWNER>
-    //    64
-    //> ZDO_OWNERS_INDEXES;
-
-    //static constexpr auto OWNER_PACK_INDEX = 0;
-    //static constexpr auto FLAGS_PACK_INDEX = 1;
-
     /*
-    * 32 bytes total:
+    * 36 bytes total:
     */
-
     ZDOID m_id;                                             // 4 bytes
     mutable Vector3f m_pos;                                 // 12 bytes
-    mutable ZDO::Rev m_rev;                                 // 4 bytes (PADDING)
+    mutable ZDO::Rev m_rev;                                 // 4 bytes
     mutable Vector3f m_rotation;                            // 12 bytes
-    mutable avledet::util::Hash m_prefabHash{};                          // 4 bytes (PADDING)
-    //^convert to index-basis (as before)
-    //Reasoning:
-    //  Devs have implemented code to warn of unknown prefab hashes
-    //  and to remove several (2 currently) types of broken
-    //  prefabs
-    //  32-bits to
-
-    
+    mutable avledet::util::Hash m_prefabHash{};             // 4 bytes
 
 public:
     ZDO(ZDOID id)
@@ -1108,6 +1087,3 @@ public:
 namespace avledet::sync {
     using ZDO = ::ZDO;
 }
-
-//36 bytes
-static constexpr auto dsfgadr = sizeof(::ZDO);
