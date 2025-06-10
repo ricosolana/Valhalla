@@ -264,7 +264,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State& state) {
 			auto global = VUtils::Physics::LocalToGlobal(roomConnection.get().m_pos, roomConnection.get().m_rot,
 				this->m_pos, this->m_rot);
 
-			auto&& zdo = ZDOManager()->Instantiate(*doorDef->m_prefab, global.first);
+			auto&& zdo = ZDOManager()->InstantiateBounded(*doorDef->m_prefab, global.first);
 			zdo->SetRotation(global.second);
 			num++;
 		}
@@ -546,7 +546,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot)
 		Vector3f pos1 = pos + rot * view.m_pos;
 		Quaternion rot1 = rot * view.m_rot;
 
-		auto&& zdo = ZDOManager()->Instantiate(view.m_prefabHash, pos1);
+		auto&& zdo = ZDOManager()->InstantiateBounded(view.m_prefabHash, pos1);
 		zdo->SetRotation(rot1);
 	}
 
@@ -578,7 +578,7 @@ void DungeonGenerator::PlaceRoom(const Room& room, Vector3f pos, Quaternion rot,
 			// Prefabs can be instantiated exactly in world space (not local room space)
 			auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
-			auto&& zdo = ZDOManager()->Instantiate(view.m_prefabHash, global.first);
+			auto&& zdo = ZDOManager()->InstantiateBounded(view.m_prefabHash, global.first);
 			zdo->SetRotation(global.second);
 		}
 	}

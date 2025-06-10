@@ -5,8 +5,13 @@
 
 #include "CompileSettings.h"
 #include "NetAcceptor.h"
+#include "VUtils.h"
 #include "ValhallaServer.h"
+#include "isteamnetworking.h"
+#include "isteamnetworkingutils.h"
+#include "steam_api.h"
 #include "steam_api_common.h"
+#include "steamnetworkingtypes.h"
 
 std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server) {
     return std::make_unique<AcceptorSteam>(is_lobby_server);
@@ -116,6 +121,8 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
     
     auto [nIP, nPort] = ip_to_machine_order(bind_addr);
 
+    //SteamAPI_InitEx()
+
     {
         SteamErrMsg outErr{};
         auto result = SteamGameServer_InitEx(nIP, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0", &outErr);
@@ -150,7 +157,11 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
 
     LOG_INFO(VH_LOGGER, "Starting server on port {}", m_addr.m_port);
     LOG_INFO(VH_LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
-    LOG_INFO(VH_LOGGER, "Authentication status: {}", (int) auth); // TODO magic enum
+    LOG_INFO(VH_LOGGER, "Authentication status: {}", magic_enum::enum_name(auth)); // TODO magic enum
+
+    //SteamNetworkingUtils_SteamAPI()
+
+    //SteamAPI_InitEx();
 
     using namespace std::chrono_literals;
 
@@ -169,6 +180,38 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMax,
         k_ESteamNetworkingConfig_Global, 0,
         k_ESteamNetworkingConfig_Int32, &sendrate);
+
+    /*
+    {
+        ESteamNetworkingConfigDataType dtype { };
+        //float dval { };
+        int32 dval { };
+        size_t sz = sizeof(dval);
+        auto resuullt = SteamNetworkingUtils()->GetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
+            k_ESteamNetworkingConfig_Global, 0, &dtype, &dval, &sz);
+        
+        LOG_INFO(VH_LOGGER, "read: {}", dval);
+    }
+
+    {
+        ESteamNetworkingConfigDataType dtype { };
+        int32 dval { };
+        size_t sz = sizeof(dval);
+        auto resuullt = SteamNetworkingUtils()->GetConfigValue(k_ESteamNetworkingConfig_IP_AllowWithoutAuth,
+            k_ESteamNetworkingConfig_Global, 0, &dtype, &dval, &sz);
+        
+        LOG_INFO(VH_LOGGER, "read: {}", dval);
+    }
+
+    {
+        ESteamNetworkingConfigDataType dtype { };
+        int32 dval { };
+        size_t sz = sizeof(dval);
+        auto resuullt = SteamNetworkingUtils()->GetConfigValue(k_ESteamNetworkingConfig_SendRateMin,
+            k_ESteamNetworkingConfig_Global, 0, &dtype, &dval, &sz);
+        
+        LOG_INFO(VH_LOGGER, "read: {}", dval);
+    }*/
 }
 
 AcceptorSteam::~AcceptorSteam() {
@@ -215,9 +258,9 @@ void AcceptorSteam::start() {
         // TODO do not test based on port
         //  ie. p2p (logged in) server has no port, only lobby
         if (SteamSocket::is_game_server()) {
-            m_listen_socket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(m_addr, 0, nullptr);
+            m_listen_socket = SteamSocket::get_steam_sockets()->CreateListenSocketIP(m_addr, 0, nullptr);
         } else {
-            m_listen_socket = SteamNetworkingSockets()->CreateListenSocketP2P(0, 0, nullptr);
+            m_listen_socket = SteamSocket::get_steam_sockets()->CreateListenSocketP2P(0, 0, nullptr);
         }
 
         if (m_listen_socket == k_HSteamListenSocket_Invalid) {
@@ -227,24 +270,26 @@ void AcceptorSteam::start() {
 
     using namespace std::chrono_literals;
 
-    LOG_INFO(VH_LOGGER, "waiting for authentication");
+    LOG_INFO(VH_LOGGER, "Waiting for authentication");
 
-    auto btime = std::chrono::steady_clock::now();
-
-    while (SteamSocket::get_steam_sockets()->GetAuthenticationStatus(nullptr)
+    SteamNetAuthenticationStatus_t status {};
+    while (SteamSocket::get_steam_sockets()->GetAuthenticationStatus(&status)
         != ESteamNetworkingAvailability::k_ESteamNetworkingAvailability_Current) {
         this->update();
 
-        auto now = std::chrono::steady_clock::now();
-        if (now - btime > 10s) {
-            LOG_INFO(VH_LOGGER, "authentication took too long");
-            std::exit(EXIT_FAILURE);
+        if (VUtils::run_once_later<struct steam_auth_fail>(10s)) {
+            LOG_ERROR(VH_LOGGER, "authentication took too long");
+            throw std::runtime_error("authentication took too long");
+        }
+
+        if (VUtils::run_periodic_now<struct steam_auth_poll_msg>(1s)) {
+            LOG_WARNING(VH_LOGGER, "{}", status.m_debugMsg);
         }
 
         std::this_thread::sleep_for(1ms);
     }
 
-    LOG_INFO(VH_LOGGER, "authenticated");
+    LOG_INFO(VH_LOGGER, "Authentication success");
 }
 
 void AcceptorSteam::update() {

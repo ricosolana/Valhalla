@@ -1,4 +1,6 @@
 #include <functional>
+#include <ranges>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -228,22 +230,26 @@ void ZDO::Unpack(DataReader& reader, std::int32_t version) {
 // ZDO specific-methods
 
 void ZDO::SetPosition(Vector3f pos) {
-    if (this->GetPosition() != pos) {
-        if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
-            ZDOManager()->_InvalidateZDOZone(this);
+    if (IZoneManager::is_valid_pos(pos)) {
+        if (this->GetPosition() != pos) {// any position change? then update!
+            if (IZoneManager::WorldToZonePos(pos) != GetZone()) {// a zone change? this is important!
+                ZDOManager()->_InvalidateZDOZone(this);
 
-            ZDOManager()->_RemoveFromSector(this);
-            this->_SetPosition(pos); //unrevised
-            ZDOManager()->_AddZDOToZone(this);
+                ZDOManager()->_RemoveFromSector(this);
+                this->_SetPosition(pos); //unrevised
+                ZDOManager()->_AddZDOToZone(this);
+            }
+            else {
+                this->_SetPosition(pos);
+            }
+
+            assert(IZoneManager::WorldToZonePos(pos) == GetZone());
+
+            if (this->IsLocal())
+                this->Revise();
         }
-        else {
-            this->_SetPosition(pos);
-        }
-
-        assert(IZoneManager::WorldToZonePos(pos) == GetZone());
-
-        if (this->IsLocal())
-            this->Revise();
+    } else {
+        throw std::range_error("illegal zdo position");
     }
 }
 

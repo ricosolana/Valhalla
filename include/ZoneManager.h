@@ -172,15 +172,28 @@ class IZoneManager {
 #endif
 
 public:
-	static constexpr int NEAR_ACTIVE_AREA = 2;
-	static constexpr int DISTANT_ACTIVE_AREA = 2;
-	static constexpr int ZONE_SIZE = 64;
+	static constexpr int NEAR_ZRADIUS = 2;
+	static constexpr int DISTANT_ZRADIUS = 2;
+	static constexpr int UNITS_PER_ZONE = 64;
 	static constexpr float WATER_LEVEL = 30;
-	static constexpr int WORLD_RADIUS_IN_ZONES = 157;
-	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
+	
+	static constexpr int WORLD_INNER_ZRADIUS = ((10500)/UNITS_PER_ZONE) + 1;
+	static constexpr int WORLD_INNER_ZDIAMETER = WORLD_INNER_ZRADIUS * 2;
+	static constexpr int WORLD_MAX_ZRADIUS = WORLD_INNER_ZRADIUS + NEAR_ZRADIUS + DISTANT_ZRADIUS + /*the +1 is for error*/ 1;
+	static constexpr int WORLD_MAX_ZDIAMETER = WORLD_MAX_ZRADIUS * 2;
 
-	static constexpr int WORLD_RADIUS_IN_METERS = WORLD_RADIUS_IN_ZONES * ZONE_SIZE;
-	static constexpr int WORLD_DIAMETER_IN_METERS = WORLD_DIAMETER_IN_ZONES * ZONE_SIZE;
+	// if zone is within max bound
+	static bool is_valid_zone(ZoneID const& zone) {
+		// a '<' is used because of array bounds checking at the very bottom right corner (but in 99.99% of cases we dont have to worry)
+		return zone.x * zone.x + zone.y * zone.y < IZoneManager::WORLD_MAX_ZRADIUS * IZoneManager::WORLD_MAX_ZRADIUS;
+	}
+
+	static bool is_valid_pos(Vector3f const& pos) {
+		return is_valid_zone(WorldToZonePos(pos));
+	}
+
+	//static constexpr int WORLD_MAX_RADIUS = WORLD_MAX_ZRADIUS * UNITS_PER_ZONE;
+	//static constexpr int WORLD_MAX_DIAMETER = WORLD_MAX_ZDIAMETER * UNITS_PER_ZONE;
 
 private:
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -247,11 +260,11 @@ private:
 
 	// Generate a zone if it is not already generated
 	//	Returns whether the zone was successfully generated
-	bool GenerateZone(ZoneID zone);
+	bool ForceGenerateZoneWait(ZoneID zone);
 	// Generate a zone if it is not already geenrated
 	//	Returns if zone was successfully generated given heightmap is ready
-	bool TryGenerateZone(ZoneID zone);
-	void PopulateZone(Heightmap& heightmap);
+	bool TryPollGenerateZone(ZoneID zone);
+	void PopulateZoneBounded(Heightmap& heightmap);
 	std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
 	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);
 
@@ -294,7 +307,7 @@ public:
 	//void RegenerateZone(ZoneID zone);
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-	void PopulateZone(ZoneID zone);
+	void PopulateZoneBounded(ZoneID zone);
 
 	// Get the client based icons for minimap
 	std::list<std::reference_wrapper<Feature::Instance>> GetFeatureIcons();
@@ -314,6 +327,7 @@ public:
 
 	static ZoneID WorldToZonePos(Vector3f pos);
 	static Vector3f ZoneToWorldPos(ZoneID zone);
+	//static // TODO Get / ValidateRadialBoundedZone(...)
 
 	bool ZonesOverlap(ZoneID zone, Vector3f areaPoint);
 	bool ZonesOverlap(ZoneID zone, ZoneID areaZone);

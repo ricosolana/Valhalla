@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gtl/btree.hpp>
 #include <quill/Logger.h>
 #include <vector>
 #include <functional>
@@ -36,7 +37,8 @@ class IZDOManager {
 private:
 	// Contains ZDOs according to Zone
 	//	takes up around 5MB; could be around 72 bytes with map
-	std::array<ZDO::ref_container, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+	std::array<ZDO::ref_container, (IZoneManager::WORLD_MAX_ZRADIUS* IZoneManager::WORLD_MAX_ZRADIUS * 2 * 2)> m_objectsBySector;
+	//avledet::util::Map<Vector2s, ZDO::ref_container> m_objectsBySector;
 
 	// Contains ZDOs according to prefab
 	//	TODO is this necessary?
@@ -68,7 +70,7 @@ private:
 	
 	// Retrieve a zone container for storing zdos
 	[[nodiscard]] ZDO::ref_container* _GetZDOContainer(ZoneID zone) {
-		int num = SectorToIndex(zone);
+		int num = SectorToIndexMax(zone);
 		if (num != -1) {
 			return &m_objectsBySector[num];
 		}
@@ -117,25 +119,23 @@ private:
 
 	// Instantiate a ZDO by id if it does not exist
 	// Returns the ZDO or the previously mapped ZDO
-	[[nodiscard]] std::pair<ZDO::container::iterator, bool> _Instantiate(ZDOID zdoid, Vector3f position) noexcept;
+	[[nodiscard]] std::pair<ZDO::container::iterator, bool> _InstantiateBounded(ZDOID zdoid, Vector3f position);
 
 	// Instantiate a ZDO with the next available ID
-	[[nodiscard]] ZDO::unsafe_value _Instantiate(Vector3f position) noexcept;
+	[[nodiscard]] ZDO::unsafe_value _InstantiateBounded(Vector3f position);
 	
 	// Instantiate a ZDO with the specified id
 	// Throws if the ZDO exists
-	[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID uid, Vector3f position);
+	//[[nodiscard]] ZDO::unsafe_value _TryInstantiateBounded(ZDOID uid, Vector3f position);
 		
-	[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID zdoid) {
-		auto&& insert = _Instantiate(zdoid);
-
-		// if inserted, then set pos
-		if (!insert.second) {
-			throw std::runtime_error("zdo already exists");
-		}
-
-		return ZDO::make_unsafe_value(insert.first);
-	}
+	//[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID zdoid) {
+	//	auto&& insert = _Instantiate(zdoid);
+	//	// if inserted, then set pos
+	//	if (!insert.second) {
+	//		throw std::runtime_error("zdo already exists");
+	//	}
+	//	return ZDO::make_unsafe_value(insert.first);
+	//}
 
 
 
@@ -162,21 +162,36 @@ private:
 		return ZDO::unsafe_nullopt;
 	}
 
-	// Performs a coordinate to pitch conversion
 	[[nodiscard]] int SectorToIndex(ZoneID zone) const {
-		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
-			return -1;
-
-		int x = zone.x + IZoneManager::WORLD_RADIUS_IN_ZONES;
-		int y = zone.y + IZoneManager::WORLD_RADIUS_IN_ZONES;
+		int x = zone.x + IZoneManager::WORLD_MAX_ZRADIUS;
+		int y = zone.y + IZoneManager::WORLD_MAX_ZRADIUS;
 		if (x < 0 || y < 0
-			|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
+			|| x >= IZoneManager::WORLD_MAX_ZDIAMETER || y >= IZoneManager::WORLD_MAX_ZDIAMETER) {
 			return -1;
 		}
 
-		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES && y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
+		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_MAX_ZDIAMETER && y < IZoneManager::WORLD_MAX_ZDIAMETER && "sector exceeds world radius");
 
-		return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
+		return y * IZoneManager::WORLD_MAX_ZDIAMETER + x;
+	}
+
+	// Performs a coordinate to pitch conversion
+	//	Use this method most of the time for [x,y -> sector]
+	[[nodiscard]] int SectorToIndexInner(ZoneID zone) const {
+		// Reduced radii check
+		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_INNER_ZRADIUS * IZoneManager::WORLD_INNER_ZRADIUS)
+			return -1;
+
+		return SectorToIndex(zone);
+	}
+
+	// Performs a coordinate to pitch conversion
+	//	Bounds checking within max possible zone limit
+	[[nodiscard]] int SectorToIndexMax(ZoneID zone) const {
+		//if (!IZoneManager::is_valid_zone(zone))
+		//	return -1;
+
+		return SectorToIndex(zone);
 	}
 
 public:
@@ -191,11 +206,13 @@ public:
 	// Used when loading the world from disk
 	void Load(DataReader& reader, int version);
 
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(const Prefab& prefab, Vector3f pos);
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
+	[[maybe_unused]] ZDO::unsafe_value InstantiateBounded(const Prefab& prefab, Vector3f pos);
+	//[[maybe_unused]] ZDO::unsafe_value InstantiateBounded(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
 
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos) {
-		return Instantiate(hash, pos, nullptr);
+	[[maybe_unused]] ZDO::unsafe_value InstantiateBounded(avledet::util::Hash hash, Vector3f pos) {
+		//return InstantiateBounded(hash, pos, nullptr);
+
+		return InstantiateBounded(PrefabManager()->RequirePrefabByHash(hash), pos);
 	}
 	// TODO either correctly implement or?
 	//	intended to instantiate an object based on another

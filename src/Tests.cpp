@@ -78,7 +78,7 @@ void VHTest::Test_ZDO_LoadSave() {
     //  because of the ZDO's being directly tied with ZDOManager
     assert(false);
     //{
-        auto&& zdo = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
+        auto&& zdo = ZDOManager()->InstantiateBounded(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
         //ZDO_Sets(zdo);
         DataWriter writer;
@@ -86,7 +86,7 @@ void VHTest::Test_ZDO_LoadSave() {
         //zdo.Pack(writer, false);
     //}
 
-    auto&& zdo2 = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
+    auto&& zdo2 = ZDOManager()->InstantiateBounded(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
     DataReader reader(writer.get_buf());
     //zdo2.Unpack(reader, VConstants::WORLD);

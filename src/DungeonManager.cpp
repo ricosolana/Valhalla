@@ -28,7 +28,7 @@ void IDungeonManager::PostPrefabInit() {
     auto ver = pkg.read<std::string_view>();
     LOG_INFO(VH_LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
-        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server");
+        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server ({})", ver);
     }
 
     std::int32_t count = pkg.read<std::int32_t>();
@@ -226,7 +226,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 
 
 ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
-    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    auto&& zdo = ZDOManager()->InstantiateBounded(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
     
     DungeonGenerator(dungeon, zdo).Generate();
@@ -235,7 +235,7 @@ ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos
 }
 
 ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
-    auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    auto&& zdo = ZDOManager()->InstantiateBounded(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);

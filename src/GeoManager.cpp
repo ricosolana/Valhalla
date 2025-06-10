@@ -638,14 +638,14 @@ Vector2i IGeoManager::GetRiverGrid(float wx, float wy) {
 avledet::util::BiomeArea IGeoManager::GetBiomeArea(Vector3f point) {
 	auto&& biome = GetBiome(point);
 
-	auto&& biome2 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome3 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome4 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
-	auto&& biome5 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, IZoneManager::ZONE_SIZE));
-	auto&& biome6 = GetBiome(point - Vector3f(-IZoneManager::ZONE_SIZE, 0, 0));
-	auto&& biome7 = GetBiome(point - Vector3f(IZoneManager::ZONE_SIZE, 0, 0));
-	auto&& biome8 = GetBiome(point - Vector3f(0, 0, -IZoneManager::ZONE_SIZE));
-	auto&& biome9 = GetBiome(point - Vector3f(0, 0, IZoneManager::ZONE_SIZE));
+	auto&& biome2 = GetBiome(point - Vector3f(-IZoneManager::UNITS_PER_ZONE, 0, -IZoneManager::UNITS_PER_ZONE));
+	auto&& biome3 = GetBiome(point - Vector3f(IZoneManager::UNITS_PER_ZONE, 0, -IZoneManager::UNITS_PER_ZONE));
+	auto&& biome4 = GetBiome(point - Vector3f(IZoneManager::UNITS_PER_ZONE, 0, IZoneManager::UNITS_PER_ZONE));
+	auto&& biome5 = GetBiome(point - Vector3f(-IZoneManager::UNITS_PER_ZONE, 0, IZoneManager::UNITS_PER_ZONE));
+	auto&& biome6 = GetBiome(point - Vector3f(-IZoneManager::UNITS_PER_ZONE, 0, 0));
+	auto&& biome7 = GetBiome(point - Vector3f(IZoneManager::UNITS_PER_ZONE, 0, 0));
+	auto&& biome8 = GetBiome(point - Vector3f(0, 0, -IZoneManager::UNITS_PER_ZONE));
+	auto&& biome9 = GetBiome(point - Vector3f(0, 0, IZoneManager::UNITS_PER_ZONE));
 	if (biome == biome2
 		&& biome == biome3
 		&& biome == biome4
@@ -713,10 +713,10 @@ avledet::util::Biome IGeoManager::GetBiome(float wx, float wy) {
 avledet::util::Biome IGeoManager::GetBiomes(float x, float z) {
 	//ZoneID zone = IZoneManager::WorldToZonePos(Vector3f(x, 0., z));
 	//Vector3f center = IZoneManager::ZoneToWorldPos(zone) + ;
-	return avledet::util::Biome(std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
-		|| std::to_underlying(GetBiome(x - IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
-		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z - IZoneManager::ZONE_SIZE / 2))
-		|| std::to_underlying(GetBiome(x + IZoneManager::ZONE_SIZE / 2, z + IZoneManager::ZONE_SIZE / 2))
+	return avledet::util::Biome(std::to_underlying(GetBiome(x - IZoneManager::UNITS_PER_ZONE / 2, z - IZoneManager::UNITS_PER_ZONE / 2))
+		|| std::to_underlying(GetBiome(x - IZoneManager::UNITS_PER_ZONE / 2, z + IZoneManager::UNITS_PER_ZONE / 2))
+		|| std::to_underlying(GetBiome(x + IZoneManager::UNITS_PER_ZONE / 2, z - IZoneManager::UNITS_PER_ZONE / 2))
+		|| std::to_underlying(GetBiome(x + IZoneManager::UNITS_PER_ZONE / 2, z + IZoneManager::UNITS_PER_ZONE / 2))
 		|| std::to_underlying(GetBiome(x, z)));
 }
 

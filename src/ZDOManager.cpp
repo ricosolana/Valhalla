@@ -1,7 +1,9 @@
 
+#include <quill/LogMacros.h>
 #include <stdexcept>
 
 #include <range/v3/all.hpp>
+#include <utility>
 
 #include "ZDOManager.h"
 #include "NetManager.h"
@@ -161,7 +163,10 @@ void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
 		//LOG_INFO(VH_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
 	} else {
 		// throw
-		throw std::runtime_error("invalid add zone");
+		//throw std::runtime_error("invalid add zone");
+		assert(false);
+		
+		std::unreachable();
 	}
 }
 
@@ -174,7 +179,12 @@ void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
 
 		//LOG_INFO(VH_LOGGER, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
 	} else {
-		throw std::runtime_error("invalid remove zone");
+		assert(false);
+
+		//throw std::runtime_error("invalid remove zone");
+
+		// Should really make this branch unreachable
+		std::unreachable();
 	}
 }
 
@@ -238,6 +248,12 @@ void IZDOManager::Load(DataReader& reader, int version) {
 #endif // VH_LEGACY_WORLD_LOADING
 		{
 			zdo->Unpack(reader, version);
+		}
+
+		if (!IZoneManager::is_valid_pos(zdo->GetPosition())) {
+			LOG_WARNING(VH_LOGGER, "ZDO has illegal position, killing... {} {} ({})", zdo->GetID(), zdo->GetPosition(), zdo->GetPrefab().m_name);
+			m_objectsByID.erase(insert.first);
+			continue;
 		}
 
 		_AddZDOToZone(zdo);
@@ -331,37 +347,17 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 [[nodiscard]] std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
 	//https://jguegant.github.io/blogs/tech/performing-try-emplace.html
-	
-	//return m_objectsByID.insert(ZDO(zdoid));
-
-	////m_objectsByID.equal_range.try_emplace(zdoid)
-	//auto&& pair = m_objectsByID.equal_range(zdoid);
-	//if (pair.first != m_objectsByID.end()) {
-	//	return { pair.first, false };
-	//}
-	//// see dense do_insert_or_assign
-	//auto&& insert = m_objectsByID.insert(boost::make_local_shared<ZDO>(zdoid));
-	////m_objectsByID.tr.insert_or_assign()
-	
-	// TODO use this
-	// https://jguegant.github.io/blogs/tech/performing-try-emplace.html
-	
-	//auto&& insert = m_objectsByID.try_emplace(zdoid);
-	// TODO unnecessary construction if element ALREADY exists
-	// TODO test only
-
 	auto&& insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
-	//if (insert.second) { // if created
-	//	auto&& pair = insert.first;
-	//	const_cast<std::unique_ptr<ZDO>&>(*pair) = std::make_unique<ZDO>(zdoid);
-	//}
-
 	//LOG_INFO(VH_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
 
 	return insert;
 }
 
-std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+std::pair<ZDO::container::iterator, bool> IZDOManager::_InstantiateBounded(ZDOID zdoid, Vector3f position) {
+	if (!IZoneManager::is_valid_pos(position)) {
+		throw std::out_of_range("ZDO instantiated out of world bounds");
+	}
+	
 	auto&& insert = _Instantiate(zdoid);
 
 	// if inserted, then set pos
@@ -377,30 +373,30 @@ std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid,
 	return insert;
 }
 
-ZDO::unsafe_value IZDOManager::_Instantiate(Vector3f position) noexcept {
+ZDO::unsafe_value IZDOManager::_InstantiateBounded(Vector3f position) {
 	ZDOID zdoid = ZDOID(VH_ID, 0);
 	for(;;) {
 		zdoid.set_id(m_nextUid++);
-		auto&& insert = _Instantiate(zdoid, position);
+		auto&& insert = _InstantiateBounded(zdoid, position);
 		if (insert.second)
 			return ZDO::make_unsafe_value(insert.first);
 	}
 	std::unreachable();
 }
 
-ZDO::unsafe_value IZDOManager::_TryInstantiate(ZDOID uid, Vector3f position) {
-	// See version #2
-	// ...returns a pair object whose first element is an iterator 
-	//		pointing either to the newly inserted element in the 
-	//		container or to the element whose key is equivalent...
-	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
-
-	auto&& insert = _Instantiate(uid, position);
-	if (insert.second)
-		return ZDO::make_unsafe_value(insert.first);
-
-	throw std::runtime_error("zdo already exists");
-}
+//ZDO::unsafe_value IZDOManager::_TryInstantiateBounded(ZDOID uid, Vector3f position) {
+//	// See version #2
+//	// ...returns a pair object whose first element is an iterator 
+//	//		pointing either to the newly inserted element in the 
+//	//		container or to the element whose key is equivalent...
+//	// https://cplusplus.com/reference/unordered_map/unordered_map/insert/
+//
+//	auto&& insert = _InstantiateBounded(uid, position);
+//	if (insert.second)
+//		return ZDO::make_unsafe_value(insert.first);
+//
+//	throw std::runtime_error("zdo already exists");
+//}
 
 
 
@@ -435,8 +431,8 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 
 
 
-ZDO::unsafe_value IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
-	auto&& zdo = _Instantiate(pos);
+ZDO::unsafe_value IZDOManager::InstantiateBounded(const Prefab& prefab, Vector3f pos) {
+	auto&& zdo = _InstantiateBounded(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	//zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	zdo->_SetPrefabHash(prefab.m_hash);
@@ -447,13 +443,13 @@ ZDO::unsafe_value IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	return zdo;
 }
 
-ZDO::unsafe_value IZDOManager::Instantiate(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab) {
-	//auto&& zdo = Instantiate()
-	auto&& prefab = PrefabManager()->RequirePrefabByHash(hash);
-	if (outPrefab) *outPrefab = &prefab;
-	
-	return Instantiate(prefab, pos);
-}
+//ZDO::unsafe_value IZDOManager::InstantiateBounded(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab) {
+//	//auto&& zdo = Instantiate()
+//	auto&& prefab = PrefabManager()->RequirePrefabByHash(hash);
+//	if (outPrefab) *outPrefab = &prefab;
+//	
+//	return InstantiateBounded(prefab, pos);
+//}
 
 /*
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
@@ -603,8 +599,8 @@ void IZDOManager::GetZDOs_ActiveZones(ZoneID zone, std::list<ZDO::unsafe_value>&
 }
 
 void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value>& sectorObjects) {
-	for (auto z = zone.y - IZoneManager::NEAR_ACTIVE_AREA; z <= zone.y + IZoneManager::NEAR_ACTIVE_AREA; z++) {
-		for (auto x = zone.x - IZoneManager::NEAR_ACTIVE_AREA; x <= zone.x + IZoneManager::NEAR_ACTIVE_AREA; x++) {
+	for (auto z = zone.y - IZoneManager::NEAR_ZRADIUS; z <= zone.y + IZoneManager::NEAR_ZRADIUS; z++) {
+		for (auto x = zone.x - IZoneManager::NEAR_ZRADIUS; x <= zone.x + IZoneManager::NEAR_ZRADIUS; x++) {
 			auto current = ZoneID(x, z);
 			// Skip the center zone
 			if (current == zone)
@@ -616,8 +612,8 @@ void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value
 }
 
 void IZDOManager::GetZDOs_DistantZones(ZoneID zone, std::list<ZDO::unsafe_value>& out) {
-	for (std::int16_t r = IZoneManager::NEAR_ACTIVE_AREA + 1; 
-		r <= IZoneManager::NEAR_ACTIVE_AREA + IZoneManager::DISTANT_ACTIVE_AREA; 
+	for (std::int16_t r = IZoneManager::NEAR_ZRADIUS + 1; 
+		r <= IZoneManager::NEAR_ZRADIUS + IZoneManager::DISTANT_ZRADIUS; 
 		r++) {
 		for (std::int16_t x = zone.x - r; x <= zone.x + r; x++) {
 			GetZDOs_Distant(ZoneID(x, zone.y - r), out);
@@ -931,6 +927,36 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			auto des = DataReader(reader.read<std::vector<char>>());		// dont move this
 
+			//bound the position
+			if (!IZoneManager::is_valid_pos(pos)) {
+				// bad zdo position
+				//if (created) {
+					// then kill it
+					//_EraseZDO(pair.first); //Too expressive, just erase it manually, simpler
+					m_erasedZDOs.insert(zdoid);
+					m_destroySendList.push_back(zdoid);
+
+					LOG_WARNING_LIMIT(1s, VH_LOGGER, "unbounded zdo created, killing... ({} {}, sent by: {} / {})", zdoid, pos, peer->m_name, peer->m_socket->GetHostName());
+
+					// dispose of the garbage
+					//m_objectsByID.erase(pair.first);
+					//break; // Skip the remaining of this ZDOs illegal behavior
+					//PANIC OUT for now, ... if player is WAAAAY beyond world edge, fuck em...
+					throw std::runtime_error("player sent unbounded zdo");
+
+					// Could legally be triggered by player 
+					// 	sailing to either exclusive max vertical or horizontal edge,
+					// 	and firing a projectile.
+					// Or if player becomes a projectile, and decides to fire themselves off the edge of the world via
+					//	catapult/feather cape, or launched from another player using abyssal harpoon...
+					// Any other case is illegal
+				//} else {
+					// otherwise, set its position to its old position
+					//pos = zdo->GetPosition();
+					// or, should we kill it too?
+				//}
+			}
+
 			/*
 			ZDO::Rev rev = { 
 				.m_dataRev = dataRev, 
@@ -946,7 +972,9 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 			assert(zdoid == zdo->GetID());
 
-			if (!created) [[likely]] {
+
+
+			if (!created) {
 				// If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
 				//	(because the data will be the same, or at the worst case, it will be outdated)
 				if (dataRev <= zdo->GetDataRevision()) {
@@ -964,10 +992,10 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 					continue;
 				}
 			}
-			else [[unlikely]] {
+			else {
 				assert(!_GetZDOContainer(zdo->GetZone())->contains(zdoid));
 
-				if (m_erasedZDOs.contains(zdoid)) [[unlikely]] {
+				if (m_erasedZDOs.contains(zdoid)) {
 					m_destroySendList.push_back(zdoid);
 
 					m_objectsByID.erase(pair.first);

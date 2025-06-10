@@ -1,18 +1,23 @@
 // main.cpp
 #include <filesystem>
 
+#include <memory>
 #include <quill/Backend.h>
 #include <quill/Frontend.h>
 #include <quill/Logger.h>
 #include <quill/backend/BackendOptions.h>
 #include <quill/core/LogLevel.h>
 #include <quill/core/PatternFormatterOptions.h>
+#include <quill/filters/Filter.h>
 #include <quill/sinks/FileSink.h>
 #include <quill/sinks/RotatingFileSink.h>
 #include <quill/sinks/ConsoleSink.h>
+#include <quill/sinks/RotatingSink.h>
+#include <quill/sinks/Sink.h>
 #include <quill/std/FilesystemPath.h>
 
 #include <tracy/Tracy.hpp>
+#include <vector>
 
 #define SOL_ALL_SAFETIES_ON 1
 
@@ -48,29 +53,51 @@ int main(int argc, char **argv) {
     }
 
     {
-        auto sink = quill::Frontend::create_or_get_sink<quill::FileSink>(
-            "server.log",
-            [](){
-                // See RotatingFileSinkConfig for more options
+        std::vector<std::shared_ptr<quill::Sink>> sinks {
+            quill::Frontend::create_or_get_sink<quill::ConsoleSink>(
+                "server_con",
+                [](){
+                    // See RotatingFileSinkConfig for more options
+    
+                    quill::ConsoleSinkConfig cfg;
 
-                quill::FileSinkConfig cfg;
-
-                cfg.set_open_mode('w');
-                cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
-                //cfg.set_rotation_time_daily("24:00");
-                //cfg.set_rotation_max_file_size(1024); // small value to demonstrate the example
-
-                return cfg;
-            }());
+                    //quill::ConsoleSinkConfig::ColourMode::Always
+                    //cfg.set_open_mode('w');
+                    //cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+                    //cfg.set_rotation_time_daily("24:00");
+                    //cfg.set_rotation_max_file_size(1024); // small value to demonstrate the example
+    
+                    return cfg;
+                }()),
+            quill::Frontend::create_or_get_sink<quill::RotatingFileSink>(
+                "server.log",
+                [](){
+                    // See RotatingFileSinkConfig for more options
+    
+                    quill::RotatingFileSinkConfig cfg;
+    
+                    cfg.set_open_mode('w');
+                    cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+                    cfg.set_rotation_time_daily("00:00");
+                    //cfg.set_rotation_max_file_size(1024); // small value to demonstrate the example
+                    //cfg.set_minimum_fsync_interval(); //fsync forces a disk write
+                    //cfg.set_write_buffer_size()
+                    //cfg.set_fsync_enabled(bool value)
+                    //cfg.set_write_buffer_size(size_t value)
+    
+                    return cfg;
+                }()),                            
+        };
 
         quill::PatternFormatterOptions options {
-            "%(time) [%(thread_name)] %(short_source_location) %(log_level) %(message)", // format
-            "%D %H:%M:%S.%Qms %z",                                              // timestamp format
-            quill::Timezone::GmtTime
+            "%(time) [%(thread_name)] %(short_source_location:<30) %(log_level:<9) %(message)", // format
+            //"%D %H:%M:%S.%Qms",                                              // timestamp format
+            "%H:%M:%S.%Qms",                                              // timestamp format
+            quill::Timezone::LocalTime
         };
 
         auto logger = quill::Frontend::create_or_get_logger(
-            "main", std::move(sink),
+            "main", std::move(sinks),
             options
         );
 

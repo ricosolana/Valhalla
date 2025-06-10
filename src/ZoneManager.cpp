@@ -12,6 +12,7 @@
 #include "DungeonManager.h"
 #include "DungeonGenerator.h"
 #include "ZDOManager.h"
+#include <thread>
 
 auto ZONE_MANAGER = std::make_unique<IZoneManager>(); // TODO stop constructing in global
 IZoneManager* ZoneManager() {
@@ -244,7 +245,7 @@ bool IZoneManager::ZonesOverlap(ZoneID zone, Vector3f refPoint) {
 }
 
 bool IZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone) {
-    int num = NEAR_ACTIVE_AREA - 1;
+    int num = NEAR_ZRADIUS - 1;
     return zone.x >= refCenterZone.x - num
         && zone.x <= refCenterZone.x + num
         && zone.y <= refCenterZone.y + num
@@ -472,10 +473,10 @@ void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint) {
     auto zone = WorldToZonePos(refPoint);
 
     // Prioritize center zone
-    if (!TryGenerateZone(zone)) {
+    if (!TryPollGenerateZone(zone)) {
 
         // If spawning fails, spawn other neighboring zones
-        auto num = NEAR_ACTIVE_AREA + DISTANT_ACTIVE_AREA;
+        auto num = NEAR_ZRADIUS + DISTANT_ZRADIUS;
         for (int z = zone.y - num; z <= zone.y + num; z++) {
             for (int x = zone.x - num; x <= zone.x + num; x++) {
 
@@ -483,33 +484,35 @@ void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint) {
                 if (x == zone.x && z == zone.y)
                     continue;
 
-                TryGenerateZone(ZoneID( x, z ));
+                TryPollGenerateZone(ZoneID( x, z ));
             }
         }
     }
 }
 
-bool IZoneManager::GenerateZone(ZoneID zone) {
-    if ((zone.x > -WORLD_RADIUS_IN_ZONES && zone.y > -WORLD_RADIUS_IN_ZONES
-        && zone.x < WORLD_RADIUS_IN_ZONES && zone.y < WORLD_RADIUS_IN_ZONES)) 
-    {
+bool IZoneManager::ForceGenerateZoneWait(ZoneID zone) {
+    if (is_valid_zone(zone)) {
+    //if ((zone.x > -WORLD_INNER_ZRADIUS && zone.y > -WORLD_INNER_ZRADIUS
+        //&& zone.x < WORLD_INNER_ZRADIUS && zone.y < WORLD_INNER_ZRADIUS)) 
+    //{
         auto&& pair = m_generatedZones.insert(zone);
         if (pair.second) {
-            PopulateZone(HeightmapManager()->GetHeightmap(zone));
+            PopulateZoneBounded(HeightmapManager()->GetHeightmap(zone));
             return true;
         }
     }
     return false;
 }
 
-bool IZoneManager::TryGenerateZone(ZoneID zone) {
-    if ((zone.x >= -WORLD_RADIUS_IN_ZONES && zone.y >= -WORLD_RADIUS_IN_ZONES
-        && zone.x <= WORLD_RADIUS_IN_ZONES && zone.y <= WORLD_RADIUS_IN_ZONES)
-        && !IsZoneGenerated(zone)) {
+bool IZoneManager::TryPollGenerateZone(ZoneID zone) {
+    if (is_valid_zone(zone) && !IsZoneGenerated(zone)) {
+    //if ((zone.x >= -WORLD_INNER_ZRADIUS && zone.y >= -WORLD_INNER_ZRADIUS
+    //    && zone.x <= WORLD_INNER_ZRADIUS && zone.y <= WORLD_INNER_ZRADIUS)
+    //    && !IsZoneGenerated(zone)) {
         if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
             m_generatedZones.insert(zone);
 
-            PopulateZone(*heightmap);
+            PopulateZoneBounded(*heightmap);
 
             return true;
         }
@@ -517,7 +520,7 @@ bool IZoneManager::TryGenerateZone(ZoneID zone) {
     return false;
 }
 
-void IZoneManager::PopulateZone(Heightmap &heightmap) {
+void IZoneManager::PopulateZoneBounded(Heightmap &heightmap) {
     ZoneScoped;
 
 //#if VH_IS_ON(VH_ZONE_GENERATION)
@@ -530,14 +533,14 @@ void IZoneManager::PopulateZone(Heightmap &heightmap) {
         PopulateFoliage(heightmap, m_tempClearAreas);
 
     if (VH_SETTINGS.worldCreatures) {
-        ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, 
+        ZDOManager()->InstantiateBounded(*ZONE_CTRL_PREFAB, 
             ZoneToWorldPos(heightmap.GetZone()));
     }
 //#endif // VH_OPTION_ENABLE_ZONE_GENERATION
 }
 
-void IZoneManager::PopulateZone(ZoneID zone) {
-    this->PopulateZone(HeightmapManager()->GetHeightmap(zone));
+void IZoneManager::PopulateZoneBounded(ZoneID zone) {
+    this->PopulateZoneBounded(HeightmapManager()->GetHeightmap(zone));
 }
 
 
@@ -587,7 +590,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
         //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
         float maxTilt = std::cos(zoneVegetation->m_maxTilt * PI / 180.f);
         float minTilt = std::cos(zoneVegetation->m_minTilt * PI / 180.f);
-        float num6 = ZONE_SIZE * .5f - zoneVegetation->m_groupRadius;
+        float num6 = UNITS_PER_ZONE * .5f - zoneVegetation->m_groupRadius;
         const int spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
         std::int32_t numSpawned = 0;
         for (int i = 0; i < spawnAttempts; i++) {
@@ -705,7 +708,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             //  this is proven because of the correct world loaded zdos, 
                             //  however new generated zone zdos are not correctly rotated
 
-                            auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
+                            auto &&zdo = ZDOManager()->InstantiateBounded(*zoneVegetation->m_prefab, pos);
                             zdo->SetRotation(rotation);
 
                             // basically any solid objects cannot be overlapped
@@ -807,16 +810,16 @@ void IZoneManager::PostGeoInit() {
         LOG_WARNING(VH_LOGGER, "Pregeneration takes up a lot of memory and resources during and after generation!");
         LOG_WARNING(VH_LOGGER, "This setting is experimental and unoptimized! (I dont know why :(");
         LOG_WARNING(VH_LOGGER, "This will take a while!");
-        while (m_generatedZones.size() < WORLD_RADIUS_IN_ZONES*2* WORLD_RADIUS_IN_ZONES*2) {
-            for (std::int16_t y = -WORLD_RADIUS_IN_ZONES; y <= WORLD_RADIUS_IN_ZONES; y++) {
-                for (std::int16_t x = -WORLD_RADIUS_IN_ZONES; x <= WORLD_RADIUS_IN_ZONES; x++) {
-                    TryGenerateZone(ZoneID(x, y));
+        while (m_generatedZones.size() < WORLD_INNER_ZRADIUS*2* WORLD_INNER_ZRADIUS*2) {
+            for (std::int16_t y = -WORLD_INNER_ZRADIUS; y <= WORLD_INNER_ZRADIUS; y++) {
+                for (std::int16_t x = -WORLD_INNER_ZRADIUS; x <= WORLD_INNER_ZRADIUS; x++) {
+                    TryPollGenerateZone(ZoneID(x, y));
                     
                     if (VUtils::run_periodic<struct periodic_pregen_stats>(3s)) {
                         std::string lines;
                         // print a cool grid
-                        for (std::int16_t iy = -WORLD_RADIUS_IN_ZONES; iy <= WORLD_RADIUS_IN_ZONES; iy += 6) {
-                            for (std::int16_t ix = -WORLD_RADIUS_IN_ZONES; ix <= WORLD_RADIUS_IN_ZONES; ix += 6) {
+                        for (std::int16_t iy = -WORLD_INNER_ZRADIUS; iy <= WORLD_INNER_ZRADIUS; iy += 6) {
+                            for (std::int16_t ix = -WORLD_INNER_ZRADIUS; ix <= WORLD_INNER_ZRADIUS; ix += 6) {
                                 if (std::abs(ix - x) < 3 && std::abs(iy - y) < 3) {
                                     lines += COLOR_GOLD;
                                 }
@@ -833,12 +836,15 @@ void IZoneManager::PostGeoInit() {
 
                         LOG_INFO(VH_LOGGER, "Zone progress: \n{}", lines);
                         LOG_WARNING(VH_LOGGER, "{}/{} zones generated \t({} z/s)",
-                            m_generatedZones.size(), (WORLD_RADIUS_IN_ZONES * 2 * WORLD_RADIUS_IN_ZONES * 2),
+                            m_generatedZones.size(), (WORLD_INNER_ZRADIUS * 2 * WORLD_INNER_ZRADIUS * 2),
                             ((m_generatedZones.size() - prevCount) / 3));
                         prevCount = m_generatedZones.size();
                     }
                 }
             }
+            // TODO; sleep to avoid busy loop?
+            //  because many zones will be iterated, just waiting for generation to be successful, in the meantime taking up expensive cycles...
+            //std::this_thread::sleep_for(1ms);
         }
 
         LOG_WARNING(VH_LOGGER, "Pregeneration took {}s", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now).count());
@@ -970,14 +976,14 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
 
 Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float locationRadius) {
     auto pos = ZoneToWorldPos(zone);
-    float num = ZONE_SIZE / 2.f;
+    float num = UNITS_PER_ZONE / 2.f;
     float x = state.Range(-num + locationRadius, num - locationRadius);
     float z = state.Range(-num + locationRadius, num - locationRadius);
     return pos + Vector3f(x, 0.f, z);
 }
 
 ZoneID IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
-    int num = (std::int32_t)range / (std::int32_t)ZONE_SIZE;
+    int num = (std::int32_t)range / (std::int32_t)UNITS_PER_ZONE;
     ZoneID zone;
     do {
         float x = state.Range(-num, num);
@@ -1086,7 +1092,7 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
         //          DG_(dungeon)
 
         if (!(VH_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
-            auto&& zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
+            auto&& zdo = ZDOManager()->InstantiateBounded(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->SetRotation(rot * piece.m_rot);
         } else {
             auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefabHash);
@@ -1105,11 +1111,11 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
 
                 piecePos.y = dungeon.m_interiorPosition.y + pos.y;
 
-                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, piecePos);
+                zdo = ZDOManager()->InstantiateBounded(piece.m_prefabHash, piecePos);
                 zdo->SetRotation(piece.m_rot);
             }
             else {
-                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
+                zdo = ZDOManager()->InstantiateBounded(piece.m_prefabHash, pos + rot * piece.m_pos);
                 zdo->SetRotation(rot * piece.m_rot);
             }
 
@@ -1133,7 +1139,7 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
 // could be inlined...
 // private
 void IZoneManager::GenerateLocationProxy(const Feature& location, avledet::util::Hash seed, Vector3f pos, Quaternion rot) {
-    auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
+    auto &&zdo = ZDOManager()->InstantiateBounded(*LOCATION_PROXY_PREFAB, pos);
     zdo->SetRotation(rot);
     
     zdo->Set(avledet::util::hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
@@ -1249,8 +1255,8 @@ bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3
 // this is world position to zone position
 // formerly GetZone
 ZoneID IZoneManager::WorldToZonePos(Vector3f point) {
-    auto x = floor((point.x + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
-    auto y = floor((point.z + (float)ZONE_SIZE / 2.f) / (float)ZONE_SIZE);
+    auto x = floor((point.x + (float)UNITS_PER_ZONE / 2.f) / (float)UNITS_PER_ZONE);
+    auto y = floor((point.z + (float)UNITS_PER_ZONE / 2.f) / (float)UNITS_PER_ZONE);
     return ZoneID(x, y);
 }
 
@@ -1258,7 +1264,7 @@ ZoneID IZoneManager::WorldToZonePos(Vector3f point) {
 // zone position to ~world position
 // GetZonePos
 Vector3f IZoneManager::ZoneToWorldPos(ZoneID id) {
-    return Vector3f(id.x * ZONE_SIZE, 0, id.y * ZONE_SIZE);
+    return Vector3f(id.x * UNITS_PER_ZONE, 0, id.y * UNITS_PER_ZONE);
 }
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
