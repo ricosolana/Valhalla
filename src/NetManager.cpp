@@ -73,7 +73,7 @@ void INetManager::SendPlayerList() {
 
         DataWriter writer;
 
-        writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList);
+        writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList); // rpc hash
 
         //assert(false); //TODO
         writer.write([this](DataWriter& writer) {
@@ -81,13 +81,18 @@ void INetManager::SendPlayerList() {
 
             for (auto&& peer : m_onlinePeers) {
                 writer.write(peer->m_name);
-                writer.write(peer->m_socket->GetHostName());
                 writer.write(peer->m_characterID);
+                writer.write("steam_" + peer->m_socket->GetHostName());
+                auto&& platformItr = peer->m_syncData.find("platformDisplayName");
+                auto&& platform = platformItr != peer->m_syncData.end() ? platformItr->second : "";
+                writer.write(platform); // ...?
+                auto forcedDisplayName = platform; //TODO the algo / usage is kinda weird / convoluted
+                writer.write(forcedDisplayName); //TODO
                 writer.write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
                 if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
                     if (VH_SETTINGS.playerListSendInterval >= 2s)
                         writer.write(peer->m_pos);
-                    else {
+                    else { // quickly dynamic map
                         auto&& zdo = peer->GetZDO();
                         if (zdo)
                             writer.write(zdo->GetPosition());
@@ -465,5 +470,8 @@ void INetManager::OnConfigLoad(bool reloading) {
 
         auto s = avledet::crypto::md5(VH_SETTINGS.serverPassword + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
+    } else {
+        m_passwordSalt.clear();
+        m_passwordHash.clear();
     }
 }

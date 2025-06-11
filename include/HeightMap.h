@@ -51,7 +51,7 @@ public:
     //11/30/2022 11:24:44: m_scale: 1
     //11/30/2022 11:24:44: m_distantLodEditorHax: False
 
-    static constexpr int E_WIDTH = IZoneManager::ZONE_SIZE + 1;
+    static constexpr int E_WIDTH = IZoneManager::UNITS_PER_ZONE + 1;
 
 private:
     const std::unique_ptr<BaseHeightmap> m_base;

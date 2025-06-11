@@ -34,6 +34,8 @@ namespace avledet::util {
         static constexpr auto USERID_PACK_INDEX = 0;
         static constexpr auto ID_PACK_INDEX = 1;
 
+        static constexpr auto BIT_SHARING = 4;
+
     public:
         static const ZDOID NONE;
 
@@ -45,7 +47,8 @@ namespace avledet::util {
             if (user_id == 0)
                 return 0;
 
-            for (std::size_t i = 1; i < INDEXED_USERID.size(); i++) {
+            //We start at index 4, because the first 4 are reserved for ordinal bit sharing
+            for (std::size_t i = BIT_SHARING; i < INDEXED_USERID.size(); i++) {
                 // after first index, values of 0 mean free
                 if (INDEXED_USERID[i] == 0) {
                     INDEXED_USERID[i] = user_id;
@@ -65,8 +68,8 @@ namespace avledet::util {
 
         static std::int64_t _get_user_id(std::size_t index) {
             // index 0 means no owner, 
-            if (index == 0)
-                return 0;
+            //if (index < BIT_SHARING)
+                //return 0;
 
             if (index < INDEXED_USERID.size())
                 return INDEXED_USERID[index];
@@ -109,17 +112,48 @@ namespace avledet::util {
         }
 
         void set_user_id(std::int64_t user_id) {
-            _set_user_id_index(_get_user_id_index(user_id));
+            // logic:
+            //  if setting to 0, and current index is NOT sharing, set index to 0
+            //  if setting to any UserID != 0, and we are bitsharing greater than 0, we THROW
+
+            auto sharing = _get_user_id_index();
+            if (user_id == 0 && sharing >= BIT_SHARING) {
+                _set_user_id_index(_get_user_id_index(user_id));
+                //_set_user_id_index(0); //AKA
+            } else if (user_id != 0 && sharing > 0 && sharing < BIT_SHARING) {
+                // panic
+                throw std::runtime_error("ID pool exhaustion of user id set");
+            } else {
+                _set_user_id_index(_get_user_id_index(user_id));
+            }
         }
 
         std::uint32_t get_id() const {
-            return m_pack.Get<ID_PACK_INDEX>();
+            //If we are borrowing an extended UserID, then shift our result
+            auto result = m_pack.Get<ID_PACK_INDEX>();
+            auto sharing = _get_user_id_index();
+            if (sharing < BIT_SHARING) {
+                result |= (sharing << decltype(m_pack)::count<ID_PACK_INDEX>());
+            }
+            return result;
         }
 
         void set_id(std::uint32_t id) {
-            if (id > decltype(m_pack)::capacity<ID_PACK_INDEX>()) {
-                throw std::runtime_error("ID exhausts id pool");
+            if (_get_user_id_index() < BIT_SHARING) { // [user_id.index < BIT_SHARING] also refers to 0; AKA no owner
+                // we must set the user id
+                auto sharing = id >> decltype(m_pack)::count<ID_PACK_INDEX>();
+                if (sharing < BIT_SHARING) { // if there are upper bits set, which we can handle (without overflow)
+                    _set_user_id_index(sharing);
+                    id &= decltype(m_pack)::capacity<ID_PACK_INDEX>(); // the & trims off the significant bits, which we just denoted within user id index
+                }
             }
+
+            if (id > decltype(m_pack)::capacity<ID_PACK_INDEX>()) {
+                // exhaustion
+                throw std::domain_error("exhaustion of ID pool");
+            }
+
+            assert(id <= decltype(m_pack)::capacity<ID_PACK_INDEX>());
 
             m_pack.Set<ID_PACK_INDEX>(id);
         }

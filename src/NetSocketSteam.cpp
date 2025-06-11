@@ -2,6 +2,7 @@
 #include <isteamnetworkingsockets.h>
 #include <isteamuser.h>
 #include <steam_gameserver.h>
+#include <quill/Utility.h>
 
 #include "NetSocket.h"
 #include "ValhallaServer.h"
@@ -99,6 +100,9 @@ std::vector<char> SteamSocket::Recv() {
             bytes.insert(bytes.begin(),
                 reinterpret_cast<char*>(msg->m_pData),
                 reinterpret_cast<char*>(msg->m_pData) + msg->m_cbSize);
+
+            //std::cout << quill::utility::to_hex(reinterpret_cast<char*>(msg->m_pData), msg->m_cbSize) << "\n";
+
             msg->Release();
         } else if (res == -1) {
             // TODO suspicious, callback is already used,

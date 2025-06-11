@@ -60,8 +60,9 @@ int main(int argc, char **argv) {
                     // See RotatingFileSinkConfig for more options
     
                     quill::ConsoleSinkConfig cfg;
+                    //cfg.set_colour_mode(quill::ConsoleSinkConfig::ColourMode::Automatic);
+                    //cfg
 
-                    //quill::ConsoleSinkConfig::ColourMode::Always
                     //cfg.set_open_mode('w');
                     //cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
                     //cfg.set_rotation_time_daily("24:00");

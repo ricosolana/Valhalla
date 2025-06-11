@@ -5,6 +5,7 @@
 #include <functional>
 #include <range/v3/all.hpp>
 
+#include "Types.h"
 #include "VUtils.h"
 #include "Vector.h"
 #include "ZDO.h"
@@ -35,8 +36,9 @@ class IZDOManager {
 
 private:
 	// Contains ZDOs according to Zone
-	//	takes up around 5MB; could be around 72 bytes with map
-	std::array<ZDO::ref_container, (IZoneManager::WORLD_RADIUS_IN_ZONES* IZoneManager::WORLD_RADIUS_IN_ZONES * 2 * 2)> m_objectsBySector;
+	//	takes up around 5MB; could be around 72 bytes (initial) with map
+	std::array<ZDO::ref_container, (IZoneManager::WORLD_INNER_ZDIAMETER * IZoneManager::WORLD_INNER_ZDIAMETER)> m_objectsBySector;
+	avledet::util::Map<ZoneID, ZDO::ref_container> m_objectsBySectorOuter;
 
 	// Contains ZDOs according to prefab
 	//	TODO is this necessary?
@@ -57,7 +59,7 @@ private:
 	//std::vector<ZDO> m_zdoEraseQueue; // TODO use zdoid
 
 	// Increments over the course of the game as ZDOs are created
-	std::uint32_t m_nextUid = 1;
+	std::uint32_t m_nextUid {};
 
 private:
 	// Called when an authenticated peer joins (internal)
@@ -67,12 +69,24 @@ private:
 
 	
 	// Retrieve a zone container for storing zdos
-	[[nodiscard]] ZDO::ref_container* _GetZDOContainer(ZoneID zone) {
+	[[nodiscard]] std::reference_wrapper<ZDO::ref_container> _GetZDOContainer(ZoneID zone) {
+		int num = SectorToIndex(zone);
+		if (num != -1) {
+			return m_objectsBySector[num];
+		}
+		return m_objectsBySectorOuter[zone];
+	}
+
+	[[nodiscard]] ZDO::ref_container* _FindZDOContainer(ZoneID zone) {
 		int num = SectorToIndex(zone);
 		if (num != -1) {
 			return &m_objectsBySector[num];
 		}
-		return nullptr;
+		auto&& find = m_objectsBySectorOuter.find(zone);
+		if (find != m_objectsBySectorOuter.end()) {
+			return &find->second;
+		}
+		return &m_objectsBySectorOuter[zone];
 	}
 
 	// Insert a ZDO into zone (internal)
@@ -124,18 +138,16 @@ private:
 	
 	// Instantiate a ZDO with the specified id
 	// Throws if the ZDO exists
-	[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID uid, Vector3f position);
+	//[[nodiscard]] ZDO::unsafe_value _TryInstantiateBounded(ZDOID uid, Vector3f position);
 		
-	[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID zdoid) {
-		auto&& insert = _Instantiate(zdoid);
-
-		// if inserted, then set pos
-		if (!insert.second) {
-			throw std::runtime_error("zdo already exists");
-		}
-
-		return ZDO::make_unsafe_value(insert.first);
-	}
+	//[[nodiscard]] ZDO::unsafe_value _TryInstantiate(ZDOID zdoid) {
+	//	auto&& insert = _Instantiate(zdoid);
+	//	// if inserted, then set pos
+	//	if (!insert.second) {
+	//		throw std::runtime_error("zdo already exists");
+	//	}
+	//	return ZDO::make_unsafe_value(insert.first);
+	//}
 
 
 
@@ -162,21 +174,17 @@ private:
 		return ZDO::unsafe_nullopt;
 	}
 
-	// Performs a coordinate to pitch conversion
 	[[nodiscard]] int SectorToIndex(ZoneID zone) const {
-		if (zone.x * zone.x + zone.y * zone.y >= IZoneManager::WORLD_RADIUS_IN_ZONES * IZoneManager::WORLD_RADIUS_IN_ZONES)
-			return -1;
-
-		int x = zone.x + IZoneManager::WORLD_RADIUS_IN_ZONES;
-		int y = zone.y + IZoneManager::WORLD_RADIUS_IN_ZONES;
+		int x = zone.x + IZoneManager::WORLD_INNER_ZRADIUS;
+		int y = zone.y + IZoneManager::WORLD_INNER_ZRADIUS;
 		if (x < 0 || y < 0
-			|| x >= IZoneManager::WORLD_DIAMETER_IN_ZONES || y >= IZoneManager::WORLD_DIAMETER_IN_ZONES) {
+			|| x >= IZoneManager::WORLD_INNER_ZDIAMETER || y >= IZoneManager::WORLD_INNER_ZDIAMETER) {
 			return -1;
 		}
 
-		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_DIAMETER_IN_ZONES && y < IZoneManager::WORLD_DIAMETER_IN_ZONES && "sector exceeds world radius");
+		assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_INNER_ZDIAMETER && y < IZoneManager::WORLD_INNER_ZDIAMETER && "sector exceeds world radius");
 
-		return y * IZoneManager::WORLD_DIAMETER_IN_ZONES + x;
+		return y * IZoneManager::WORLD_INNER_ZDIAMETER + x;
 	}
 
 public:
@@ -192,10 +200,12 @@ public:
 	void Load(DataReader& reader, int version);
 
 	[[maybe_unused]] ZDO::unsafe_value Instantiate(const Prefab& prefab, Vector3f pos);
-	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
+	//[[maybe_unused]] ZDO::unsafe_value InstantiateBounded(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
 
 	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos) {
-		return Instantiate(hash, pos, nullptr);
+		//return InstantiateBounded(hash, pos, nullptr);
+
+		return Instantiate(PrefabManager()->RequirePrefabByHash(hash), pos);
 	}
 	// TODO either correctly implement or?
 	//	intended to instantiate an object based on another

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <string>
 #include <list>
 #include <cstdint>
@@ -172,15 +173,24 @@ class IZoneManager {
 #endif
 
 public:
-	static constexpr int NEAR_ACTIVE_AREA = 2;
-	static constexpr int DISTANT_ACTIVE_AREA = 2;
-	static constexpr int ZONE_SIZE = 64;
+	static constexpr int NEAR_ZRADIUS = 2;
+	static constexpr int DISTANT_ZRADIUS = 2;
+	static constexpr int UNITS_PER_ZONE = 64;
 	static constexpr float WATER_LEVEL = 30;
-	static constexpr int WORLD_RADIUS_IN_ZONES = 157;
-	static constexpr int WORLD_DIAMETER_IN_ZONES = WORLD_RADIUS_IN_ZONES * 2;
+	
+	// INNER will be the fixed array
+	//static constexpr int WORLD_INNER_ZRADIUS = 118 ((10500)/UNITS_PER_ZONE) + 1; //(164+3)×sin(45)
+	static constexpr int WORLD_INNER_ZRADIUS = 10500/UNITS_PER_ZONE;
+	static constexpr int WORLD_INNER_ZDIAMETER = WORLD_INNER_ZRADIUS * 2;
+	//static constexpr int WORLD_MAX_ZRADIUS = WORLD_INNER_ZRADIUS + NEAR_ZRADIUS + DISTANT_ZRADIUS + /*the +1 is for error*/ 1;
+	//static constexpr int WORLD_MAX_ZDIAMETER = WORLD_MAX_ZRADIUS * 2;
 
-	static constexpr int WORLD_RADIUS_IN_METERS = WORLD_RADIUS_IN_ZONES * ZONE_SIZE;
-	static constexpr int WORLD_DIAMETER_IN_METERS = WORLD_DIAMETER_IN_ZONES * ZONE_SIZE;
+	//static constexpr int WORLD_MAX_RADIUS = WORLD_MAX_ZRADIUS * UNITS_PER_ZONE;
+	//static constexpr int WORLD_MAX_DIAMETER = WORLD_MAX_ZDIAMETER * UNITS_PER_ZONE;
+
+	bool is_inside_world_radius(ZoneID const& zone) {
+		return (zone.x * zone.x + zone.y * zone.y < IZoneManager::WORLD_INNER_ZRADIUS * IZoneManager::WORLD_INNER_ZRADIUS);
+	}
 
 private:
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -247,10 +257,10 @@ private:
 
 	// Generate a zone if it is not already generated
 	//	Returns whether the zone was successfully generated
-	bool GenerateZone(ZoneID zone);
+	bool GenerateZoneBlocking(ZoneID zone);
 	// Generate a zone if it is not already geenrated
 	//	Returns if zone was successfully generated given heightmap is ready
-	bool TryGenerateZone(ZoneID zone);
+	bool TryPollGenerateZone(ZoneID zone);
 	void PopulateZone(Heightmap& heightmap);
 	std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
 	void PopulateFoliage(Heightmap& heightmap, const std::vector<ClearArea>& clearAreas);

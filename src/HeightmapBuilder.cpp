@@ -124,16 +124,16 @@ void IHeightmapBuilder::Update() {
 void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
     //OPTICK_EVENT();
 
-    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::ZONE_SIZE * -0.5f, 0., (float)IZoneManager::ZONE_SIZE * -0.5f);
+    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::UNITS_PER_ZONE * -0.5f, 0., (float)IZoneManager::UNITS_PER_ZONE * -0.5f);
 
     auto GEO(GeoManager());
 
     //WorldGenerator worldGen = data.m_worldGen;
     //data.m_cornerBiomes = new Heightmap.Biome[4];
     base->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z);
-    base->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z);
-    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::ZONE_SIZE);
-    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::ZONE_SIZE, baseWorldPos.z + IZoneManager::ZONE_SIZE);
+    base->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE, baseWorldPos.z);
+    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::UNITS_PER_ZONE);
+    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE, baseWorldPos.z + IZoneManager::UNITS_PER_ZONE);
 
     const auto biome1 = base->m_cornerBiomes[0];
     const auto biome2 = base->m_cornerBiomes[1];
@@ -141,15 +141,15 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
     const auto biome4 = base->m_cornerBiomes[3];
 
     base->m_baseHeights.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
-    base->m_vegMask.resize(IZoneManager::ZONE_SIZE * IZoneManager::ZONE_SIZE);
+    base->m_vegMask.resize(IZoneManager::UNITS_PER_ZONE * IZoneManager::UNITS_PER_ZONE);
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
         const float world_y = baseWorldPos.z + ry;
-        const float ty = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::ZONE_SIZE);
+        const float ty = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::UNITS_PER_ZONE);
 
         for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
             const float world_x = baseWorldPos.x + rx;
-            const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::ZONE_SIZE);
+            const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::UNITS_PER_ZONE);
 
             //avledet::util::Color color = avledet::util::Colors::BLACK;
             float mistlandsMask = 0;
@@ -182,8 +182,8 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
             base->m_baseHeights[ry * Heightmap::E_WIDTH + rx] = height;
 
             // color mask is a bit smaller, so check bounds
-            if (rx < IZoneManager::ZONE_SIZE && ry < IZoneManager::ZONE_SIZE) {
-                base->m_vegMask[ry * IZoneManager::ZONE_SIZE + rx] = mistlandsMask;
+            if (rx < IZoneManager::UNITS_PER_ZONE && ry < IZoneManager::UNITS_PER_ZONE) {
+                base->m_vegMask[ry * IZoneManager::UNITS_PER_ZONE + rx] = mistlandsMask;
             }
         }
     }
