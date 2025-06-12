@@ -1,17 +1,56 @@
 #include "RouteManager.h"
 #include "DataStream.h"
+#include "DiscordManager.h"
 #include "NetManager.h"
 #include "Method.h"
+#include "Types.h"
 #include "ValhallaServer.h"
 #include "ZoneManager.h"
 #include "ZDOManager.h"
 #include "Hashes.h"
 #include "Peer.h"
+#include <cstdint>
+#include <limits>
+#include <ratio>
 
 auto ROUTE_MANAGER = std::make_unique<IRouteManager>(); // TODO stop constructing in global
 IRouteManager* RouteManager() {
 	return ROUTE_MANAGER.get();
 }
+
+
+
+// throttle different packets differently
+// throttling inputs:
+//	- method hash
+//	- if targetZDO (netview aimed), then prefab hash extracted from getzdo(zdoid).prefab
+//	- burst interval
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <chrono>
+
+
+
+
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <chrono>
+#include <cmath>
+
+
+
+
+//	- rate throttling
+//	
+
+
+
+
+
+
 
 
 
@@ -40,6 +79,13 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 			// Confirmed: targetZDO CAN have a value when globally routed
 			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
 				return;
+
+			//dpp death trigger webhook
+			//TODO
+			//	can obviously be spammed by bad actors, but their name is shown, so... self inflicted
+			if (hash == avledet::util::get_stable_hash("OnDeath")) {
+				VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+			}
 
 			// 'EVERYBODY' also targets the server
 			if (!targetZDO) {

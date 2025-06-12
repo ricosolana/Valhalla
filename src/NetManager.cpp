@@ -181,10 +181,13 @@ void INetManager::OnPeerConnect(Peer& peer) {
 
     // Important
     peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
-        // Peer sends 0,0 on death
+        // Peer sends 0,0 on after death
         
-        if (peer->m_characterID)
-            VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+        //TODO the player only sends this:
+        //  on server join
+        //  and on every after-death thereafter        
+        //if (peer->m_characterID)
+            //VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
         //peer->m_characterID.set_id(characterID.get_id());
         peer->m_characterID = characterID;
