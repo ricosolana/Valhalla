@@ -22,7 +22,7 @@ IZDOManager* ZDOManager() {
 
 
 void IZDOManager::Init() {
-	m_nextUid = 1048574; // TODO REMOVE THIS;;;; TEST ONLY
+	m_nextUid = 1;
 
 	LOG_INFO(VH_LOGGER, "Initializing ZDOManager");
 

@@ -45,15 +45,7 @@ World::World(DataReader reader) {
 	m_worldGenVersion = worldVersion >= 26 ? reader.read<std::int32_t>() : 0;
 	bool needsDB = worldVersion >= 30 ? reader.read<bool>() : false;
 	if (worldVersion >= 32) {
-		assert(false); //TODO
-		reader.read([](std::string key) {
-			//TODO starting keys
-		});
-
-		// old
-		//reader.AsEach([](std::string_view key) {
-		//	// TODO add starting keys
-		//});
+		m_startingGlobalKeys = reader.read<decltype(m_startingGlobalKeys)>();
 	}
 }
 
@@ -62,7 +54,7 @@ World::World(DataReader reader) {
 avledet::util::Bytes World::SaveMeta() {
 	DataWriter writer;
 	//assert(false); //TODO
-	writer.write([this](DataWriter writer) {
+	writer.write([this](DataWriter &writer) {
 		writer.write(VConstants::WORLD);
 		writer.write(m_name);
 		writer.write(m_seedName);
@@ -72,7 +64,7 @@ avledet::util::Bytes World::SaveMeta() {
 		writer.write(true);
 		
 		// TODO write starting keys
-		writer.write(avledet::util::Set<std::string>());
+		writer.write(m_startingGlobalKeys);
 	});
 
 	return writer.get_buf();

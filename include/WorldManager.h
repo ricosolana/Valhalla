@@ -1,8 +1,10 @@
 #pragma once
 
+#include <functional>
 #include <future>
 #include <thread>
 
+#include "Types.h"
 #include "VUtils.h"
 #include "DataStream.h"
 #include "DataStream.h"
@@ -18,6 +20,7 @@ public:
     avledet::util::Hash m_seed;
     std::int64_t m_uid;
     std::int32_t m_worldGenVersion;
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_startingGlobalKeys;
 
 public:
     World(std::string name, std::string seedName);

@@ -352,7 +352,7 @@ namespace VConstants {
 
     // Used while loading world from file (ZNet/ZoneSystem/ZDOMan/RandEventSystem)
     // 32: Hildir beta
-    static constexpr std::int32_t WORLD = 32;
+    static constexpr std::int32_t WORLD = 35;
 
     // Used in WorldGenerator terrain
     static constexpr std::int32_t WORLDGEN = 2;
