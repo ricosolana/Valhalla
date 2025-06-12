@@ -44,14 +44,14 @@ void IDungeonManager::PostPrefabInit() {
 
         //VLOG(2) << "Loading dungeon " << name;
 
-        dungeon->m_interiorPosition = pkg.read<Vector3f>();
-        dungeon->m_originalPosition = pkg.read<Vector3f>();
+        dungeon->m_interior_position = pkg.read<Vector3f>();
+        dungeon->m_original_position = pkg.read<Vector3f>();
 
         dungeon->m_algorithm = (Dungeon::Algorithm) pkg.read<std::int32_t>();
-        dungeon->m_alternativeFunctionality = pkg.read<bool>();
-        dungeon->m_campRadiusMax = pkg.read<float>();
-        dungeon->m_campRadiusMin = pkg.read<float>();
-        dungeon->m_doorChance = pkg.read<float>();
+        dungeon->m_alternative_functionality = pkg.read<bool>();
+        dungeon->m_camp_radius_max = pkg.read<float>();
+        dungeon->m_camp_radius_min = pkg.read<float>();
+        dungeon->m_door_chance = pkg.read<float>();
         
         auto doorCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < doorCount; i2++) {
@@ -61,26 +61,26 @@ void IDungeonManager::PostPrefabInit() {
                 throw std::runtime_error("dungeon door missing prefab");
             }
 
-            door.m_connectionType = pkg.read<std::string>();
+            door.m_connection_type = pkg.read<std::string>();
             door.m_chance = pkg.read<float>();
 
-            dungeon->m_doorTypes.push_back(door);
+            dungeon->m_door_types.push_back(door);
         }
 
-        dungeon->m_gridSize = pkg.read<std::int32_t>();
-        dungeon->m_maxRooms = pkg.read<std::int32_t>();
-        dungeon->m_maxTilt = pkg.read<float>();
-        dungeon->m_minAltitude = pkg.read<float>();
-        dungeon->m_minRequiredRooms = pkg.read<std::int32_t>();
-        dungeon->m_minRooms = pkg.read<std::int32_t>();
-        dungeon->m_perimeterBuffer = pkg.read<float>();
-        dungeon->m_perimeterSections = pkg.read<std::int32_t>();
+        dungeon->m_grid_size = pkg.read<std::int32_t>();
+        dungeon->m_max_rooms = pkg.read<std::int32_t>();
+        dungeon->m_max_tilt = pkg.read<float>();
+        dungeon->m_min_altitude = pkg.read<float>();
+        dungeon->m_min_required_rooms = pkg.read<std::int32_t>();
+        dungeon->m_min_rooms = pkg.read<std::int32_t>();
+        dungeon->m_perimeter_buffer = pkg.read<float>();
+        dungeon->m_perimeter_sections = pkg.read<std::int32_t>();
         //decltype(Dungeon::m_requiredRooms)::be
         dungeon->m_requiredRooms = pkg.read<decltype(Dungeon::m_requiredRooms)>();
 
-        dungeon->m_spawnChance = pkg.read<float>();
+        dungeon->m_spawn_chance = pkg.read<float>();
         dungeon->m_themes = (Room::Theme) pkg.read<std::int32_t>();
-        dungeon->m_tileWidth = pkg.read<float>();
+        dungeon->m_tile_width = pkg.read<float>();
         
         auto roomCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < roomCount; i2++) {
@@ -130,7 +130,7 @@ void IDungeonManager::PostPrefabInit() {
             room->m_pos = pkg.read<Vector3f>();
             room->m_rot = pkg.read<Quaternion>();
 
-            dungeon->m_availableRooms.push_back(std::move(room));
+            dungeon->m_available_rooms.push_back(std::move(room));
         }
 
         avledet::util::Hash hash = dungeon->m_prefab->m_hash;

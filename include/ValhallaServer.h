@@ -108,7 +108,7 @@ public:
     }
 
     // The time in seconds since the last frame
-    float Delta() {
+    float delta() {
         auto elapsed = m_nowUpdate - m_prevUpdate;
         return ((double)elapsed.count() * m_serverTimeMultiplier) / (double)std::chrono::duration_cast<decltype(elapsed)>(1s).count();
     }

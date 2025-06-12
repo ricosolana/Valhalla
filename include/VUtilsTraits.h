@@ -38,6 +38,16 @@ namespace avledet::util::traits {
     //concept is_callable = requires(T a) {
     //    a();
     //};
+    
+    //template<typename Tuple, std::size_t Index>
+    //    requires (Index < std::tuple_size_v<Tuple>)
+    //using safe_tuple_element_t = std::tuple_element_t<Index, Tuple>;
+    //
+    //template<typename Tuple, std::size_t Index>
+    //    requires (Index >= std::tuple_size_v<Tuple>)
+    //using safe_tuple_element_t = void;
+
+
 
     //! \brief Provides a small function traits implementation that
     //! works with a reasonably large set of functors.
@@ -57,6 +67,24 @@ namespace avledet::util::traits {
         using args_type = std::tuple<typename std::decay<Args>::type...>;
         //the arguments of the function, with qualifiers, ie, & or const
         using raw_args_type = std::tuple<Args...>;
+        //std::conditional_t<bool Cond, typename Iftrue, typename Iffalse>
+        //TODO create a simple getter for first arg, second arg, third arg...
+        //  but only enable IF those args are found
+        //template
+        //requires (Index < std::tuple_size_v<Tuple>)
+        //using first_arg = safe_tuple_element_t<raw_args_type, 0>;
+        //using second_arg = safe_tuple_element_t<raw_args_type, 1>;
+        //using third_arg = safe_tuple_element_t<raw_args_type, 2>;
+        //using first_arg = std::conditional_t<
+        //    (std::tuple_size_v<raw_args_type> <= 0), 
+        //    void, std::tuple_element_t<0, raw_args_type>>;
+        //using second_arg = std::conditional_t<
+        //    (std::tuple_size_v<raw_args_type> <= 1), 
+        //    void, std::tuple_element_t<1, raw_args_type>>;
+        //using third_arg = std::conditional_t<
+        //    (std::tuple_size_v<raw_args_type> <= 2), 
+        //    void, std::tuple_element_t<2, raw_args_type>>;
+        //... create more as needed
     };
 
 

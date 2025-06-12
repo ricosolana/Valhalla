@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <thread>
 #include <utility>
 #ifdef _WIN32
 #include <winstring.h>
@@ -87,6 +88,8 @@ namespace YAML {
                 dur += (ch - '0');
             }
             else if (index > 0) {
+                for (; index < s.length() && s[index] == ' '; index++) {} // skip spaces
+                
                 dur *= sign;
                 const std::int64_t ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
                 switch (ch) {
@@ -124,25 +127,25 @@ namespace YAML {
             if constexpr (std::is_same_v<D, std::chrono::nanoseconds>)
                 return Node(std::to_string(rhs.count()) + "ns");
             else if constexpr (std::is_same_v<D, avledet::util::Ticks>)
-                return Node(std::to_string(rhs.count()) + "ticks");
+                return Node(std::to_string(rhs.count()) + " ticks");
             else if constexpr (std::is_same_v<D, std::chrono::microseconds>)
                 return Node(std::to_string(rhs.count()) + "us");
             else if constexpr (std::is_same_v<D, std::chrono::milliseconds>)
                 return Node(std::to_string(rhs.count()) + "ms");
             else if constexpr (std::is_same_v<D, std::chrono::seconds>)
-                return Node(std::to_string(rhs.count()) + "seconds");
+                return Node(std::to_string(rhs.count()) + " seconds");
             else if constexpr (std::is_same_v<D, std::chrono::minutes>)
-                return Node(std::to_string(rhs.count()) + "minutes");
+                return Node(std::to_string(rhs.count()) + " minutes");
             else if constexpr (std::is_same_v<D, std::chrono::hours>)
-                return Node(std::to_string(rhs.count()) + "hours");
+                return Node(std::to_string(rhs.count()) + " hours");
             else if constexpr (std::is_same_v<D, std::chrono::days>)
-                return Node(std::to_string(rhs.count()) + "days");
+                return Node(std::to_string(rhs.count()) + " days");
             else if constexpr (std::is_same_v<D, std::chrono::weeks>)
-                return Node(std::to_string(rhs.count()) + "weeks");
+                return Node(std::to_string(rhs.count()) + " weeks");
             else if constexpr (std::is_same_v<D, std::chrono::months>)
-                return Node(std::to_string(rhs.count()) + "months");
+                return Node(std::to_string(rhs.count()) + " months");
             else if constexpr (std::is_same_v<D, std::chrono::years>)
-                return Node(std::to_string(rhs.count()) + "years");
+                return Node(std::to_string(rhs.count()) + " years");
 
             assert(false);
             return Node(std::to_string(rhs.count()) + "?durationtype");
@@ -228,8 +231,6 @@ namespace YAML {
         }
     };
 
-
-
 }
 
 template<class T>
@@ -246,20 +247,14 @@ struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type {};
 
 
 
-template<typename T, typename Def, typename Func = std::nullptr_t>
+template<typename T, typename D, typename Func = std::nullptr_t>
     requires (std::is_same_v<Func, std::nullptr_t> 
-    //|| (std::tuple_size<typename VUtils::Traits::func_traits<Func>::args_type>{} == 1 
-        //&& is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value))
-
-    || ((is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value && is_duration<T>::value) == is_duration<Def>::value))
-    //|| (is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value == is_duration<T>::value))
-void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = nullptr, bool reloading = false, std::string comment = "") {
-    static constexpr auto T_IS_DUR = is_duration<T>::value;
-        
-    if (reloading)
+        || ((is_duration<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>>::value && is_duration<T>::value) == is_duration<D>::value))
+void a(T& set, YAML::Node mutableNode, std::string const& key, D const& default_value, Func valueSanitizer = nullptr, bool skip = false) {        
+    if (skip)
         return;
 
-    auto&& mapping = node[key];
+    auto&& mapping = mutableNode[key];
     
     try {
         auto&& val = mapping.as<T>();
@@ -267,16 +262,14 @@ void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = 
         if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
             using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
 
-            if constexpr (T_IS_DUR) {
-                if (!defPred || !defPred(std::chrono::duration_cast<Param0>(val))) {
+            if constexpr (is_duration<T>::value) {
+                if (!valueSanitizer || !valueSanitizer(std::chrono::duration_cast<Param0>(val))) {
                     set = val;
-                    //if (!comment.empty()) emitter << YAML::Comment(std::string(comment));
-                    //emitter << YAML::
                     return;
                 }
             }
             else {
-                if (!defPred || !defPred(static_cast<Param0>(val))) {
+                if (!valueSanitizer || !valueSanitizer(static_cast<Param0>(val))) {
                     set = val;
                     return;
                 }
@@ -289,15 +282,15 @@ void a(T& set, YAML::Node node, const std::string& key, Def def, Func defPred = 
     }
     catch (const YAML::Exception&) {}
 
-    mapping = def;
+    mapping = default_value;
     
-    assert(node[key].IsDefined());
+    assert(mutableNode[key].IsDefined());
     
-    if constexpr (T_IS_DUR) {
-        set = duration_cast<T>(def);
+    if constexpr (is_duration<T>::value) {
+        set = std::chrono::duration_cast<T>(default_value);
     }
     else
-        set = T(def);
+        set = T(default_value);
 };
 
 void IValhalla::LoadFiles(bool reloading) {
@@ -326,40 +319,56 @@ void IValhalla::LoadFiles(bool reloading) {
         // If the server has just started or theres no config error
         if (!reloading || !fileError) {
             auto&& server = node["server"];
-            auto&& player = node["players"];
+            auto&& players = node["players"];
             auto&& world = node["world"];
             auto&& zdo = node["zdos"];
             auto&& dungeons = node["dungeons"];
             auto&& events = node["events"];
-            //auto&& packet = node["packets"]; //TODO unused for some reason
             auto&& discord = node["discord"];
 
-            a(m_settings.serverName, server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            a(m_settings.serverPassword, server, "password", "", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
-            a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
-            a(m_settings.serverPublic, server, "public", false, nullptr);
-            a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
+            /*
+                Server settings
+            */
 
-            a(m_settings.playerWhitelist, player, "whitelist", true);
-            a(m_settings.playerMax, player, "max", 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, player, "offline", true);
-            a(m_settings.playerTimeout, player, "timeout", 30s, [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.playerListSendInterval, player, "list-send-interval", 2s, [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.playerListForceVisible, player, "list-force-visible", false);
+            a(m_settings.serverName,                    server, "name", "Valhalla server", [](const std::string& val) { return val.empty() || val.length() < 3 || val.length() > 64; });
+            a(m_settings.serverPassword,                server, "password", "", [](const std::string& val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
+            a(m_settings.serverPort,                    server, "port", 2456, nullptr, reloading);
+            a(m_settings.serverPublic,                  server, "public", false, nullptr);
+            a(m_settings.serverDedicated,               server, "dedicated", true, nullptr, reloading);
+
+            /*
+                Player settings
+            */
+
+            a(m_settings.playerWhitelist,               players, "whitelist", true);
+            a(m_settings.playerMax,                     players, "max-online", 10, [](int val) { return val < 1; });
+            a(m_settings.playerOnline,                  players, "authenticate", true);
+            a(m_settings.playerTimeout,                 players, "timeout", 30s, [](std::chrono::seconds val) { return val < 0s; });
 #if VH_IS_ON(VH_PLAYER_SLEEP)
-            a(m_settings.playerSleepSolo, player, "player-sleep-solo", false);
+            a(m_settings.playerSleepSolo,               players, "player-sleep-solo", false);
 #endif
-            a(m_settings.playerGated, player, "player-gated", false, nullptr, false);
+            a(m_settings.TEST_playerRestrict,           players, "experimental-restrict", false, nullptr, false);
+            
+            {
+                auto&& player_list = players["playerlist"];
+                a(m_settings.playerListSmoothUpdating,  players, "smooth-updating", 2s, [](std::chrono::seconds val) { return val < 0s; });
+                a(m_settings.playerListForceVisible,    players, "locations-always-on", false);
+            }
 
-            a(m_settings.worldName, world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
-            a(m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
-            a(m_settings.worldPregenerate, world, "pregenerate", false, nullptr, reloading);
-            a(m_settings.worldSaveInterval, world, "save-interval", 30min, [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.worldFeatures, world, "features", true);
-            a(m_settings.worldVegetation, world, "vegetation", true);
-            a(m_settings.worldCreatures, world, "creatures", true);
-            a(m_settings.worldHeightmapThreads, world, "heightmap-threads", 1, nullptr, reloading);
-            // If desired threads is larger than possible threads, cap to max
+            /*
+                World generation settings
+            */
+
+            a(m_settings.worldName,                     world, "world", "world", [](const std::string& val) { return val.empty() || val.length() < 3; }, reloading);
+            a(m_settings.worldSeed,                     world, "seed", VUtils::Random::GenerateAlphaNum(10), [](const std::string& val) { return val.empty(); }, reloading);
+            a(m_settings.TEST_worldPregenerate,         world, "experimental-pregenerate", false, nullptr, reloading);
+            a(m_settings.worldSaveInterval,             world, "save-interval", 30min, [](std::chrono::seconds val) { return val < 0s; });
+            a(m_settings.worldFeatures,                 world, "features", true);
+            a(m_settings.worldVegetation,               world, "vegetation", true);
+            a(m_settings.worldCreatures,                world, "creatures", true);
+            a(m_settings.worldHeightmapThreads,         world, "heightmap-threading", 1, nullptr, reloading);
+
+            // limit to physically available threads
             if (m_settings.worldHeightmapThreads == 0 
                 || m_settings.worldHeightmapThreads > std::jthread::hardware_concurrency())
                 m_settings.worldHeightmapThreads = std::jthread::hardware_concurrency();
@@ -369,48 +378,65 @@ void IValhalla::LoadFiles(bool reloading) {
                 && m_settings.worldHeightmapThreads >= std::jthread::hardware_concurrency())
                 m_settings.worldHeightmapThreads = std::jthread::hardware_concurrency() - 1;
 
-            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms, [](std::chrono::seconds val) { return val <= 0s; });
-            a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
-            a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
-            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s, [](std::chrono::seconds val) { return val < 1s; });
-            a(m_settings.zdoAssignAlgorithm, zdo, "assign-algorithm", AssignAlgorithm::NONE);
+            /*
+                ZDO traffic settings
+            */
             
-            a(m_settings.dungeonsEnabled, dungeons, "enabled", true);
+            a(m_settings.zdoSendInterval,               zdo, "send-interval", 50ms, [](std::chrono::seconds val) { return val <= 0s; });
+            a(m_settings.zdoMaxCongestion,              zdo, "max-send-threshold", 10240, [](int val) { return val < 1000; });
+            a(m_settings.zdoMinCongestion,              zdo, "min-send-threshold", 2048, [](int val) { return val < 1000; });
+            a(m_settings.zdoAssignInterval,             zdo, "assign-interval", 2s, [](std::chrono::seconds val) { return val < 1s; });
+            a(m_settings.TEST_zdoAssignAlgorithm,       zdo, "experimental-assign-algorithm", AssignAlgorithm::NONE);
+            
+            /*
+                Dungeon generation settings
+            */
+
+            a(m_settings.dungeonsEnabled,               dungeons, "enabled", true);
             {
                 auto&& endcaps = dungeons["endcaps"];
-                a(m_settings.dungeonsEndcapsEnabled, endcaps, "enabled", true);
-                a(m_settings.dungeonsEndcapsInsetFrac, endcaps, "inset-ratio", .5f, [](float val) { return val < 0.f || val > 1.f; });
+                a(m_settings.dungeonsEndcapsEnabled,    endcaps, "enabled", true);
+                a(m_settings.dungeonsEndcapsInsetFrac,  endcaps, "inset-ratio", .5f, [](float val) { return val < 0.f || val > 1.f; });
             }
 
-            a(m_settings.dungeonsDoors, dungeons, "doors", true);
+            a(m_settings.dungeonsDoors,                 dungeons, "doors", true);
 
             {
                 auto&& rooms = dungeons["rooms"];
-                a(m_settings.dungeonsRoomsFlipped, rooms, "flipped", true);
-                a(m_settings.dungeonsRoomsZoneBounded, rooms, "zone-bounded", true);
-                a(m_settings.dungeonsRoomsInsetSize, rooms, "inset-size", .1f, [](float val) { return val < 0; });
-                a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true);
+                a(m_settings.dungeonsRoomsFlipped,      rooms, "flipped", true);
+                a(m_settings.dungeonsRoomsZoneBounded,  rooms, "zone-bounded", true);
+                a(m_settings.dungeonsRoomsInsetSize,    rooms, "inset-size", .1f, [](float val) { return val < 0; });
+                a(m_settings.dungeonsRoomsFurnishing,   rooms, "furnishing", true);
             }
 
             {
-                auto&& regeneration = dungeons["regeneration"];
-                a(m_settings.dungeonsRegenerationInterval, regeneration, "interval", std::chrono::days(3), [](std::chrono::minutes val) { return val < 0s; });
-                a(m_settings.dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
+                auto&& regeneration = dungeons["experimental-regeneration"];
+                a(m_settings.TEST_dungeonsRegenerationInterval, regeneration, "interval", std::chrono::days(3), [](std::chrono::minutes val) { return val < 5s; });
+                a(m_settings.TEST_dungeonsRegenerationMaxSteps, regeneration, "steps", 3, [](int val) { return val < 1; });
             }
 
-            a(m_settings.dungeonsSeeded, dungeons, "seeded", true);
+            a(m_settings.dungeonsSeeded,                dungeons, "seeded", true);
 
-            a(m_settings.eventsChance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
-            a(m_settings.eventsInterval, events, "interval", 46min, [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.eventsRadius, events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
-            a(m_settings.eventsRequireKeys, events, "require-keys", true);
+            /*
+                Random event / raid settings
+            */
+
+            a(m_settings.eventsChance,                  events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
+            a(m_settings.eventsInterval,                events, "interval", 46min, [](std::chrono::seconds val) { return val < 0s; });
+            a(m_settings.eventsRadius,                  events, "activation-radius", 96, [](float val) { return val < 1 || val > 96 * 4; });
+            a(m_settings.eventsRequireKeys,             events, "require-keys", true);
             
+            /*
+                Discord settings
+            */
+
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-            a(m_settings.discordWebhook, discord, "webhook", "");
-            a(m_settings.discordToken, discord, "token", "", nullptr, reloading);
-            a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
-            a(m_settings.discordAccountLinking, discord, "account-linking", false, nullptr, reloading);
-            a(m_settings.discordSyncLeaves, discord, "sync-leaves", false, nullptr, reloading);
+            a(m_settings.discordEnabled,                discord, "enabled", false, nullptr, reloading);
+            a(m_settings.discordWebhook,                discord, "webhook", ""); //TODO move this somewhere more secure
+            a(m_settings.discordToken,                  discord, "token", "", nullptr, reloading); //TODO move this somewhere more secure!!!
+            a(m_settings.discordGuild,                  discord, "guild", 0, nullptr, reloading);
+            a(m_settings.TEST_discordAccountLinking,    discord, "experimental-account-linking", false, nullptr, reloading);
+            a(m_settings.TEST_discordSyncLeaves,        discord, "experimental-sync-leaves", false, nullptr, reloading);
             //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
              
             //a(m_settings.discordDevAccount, discord, "dev-account", avledet::util::Set<std::string>());
@@ -418,7 +444,6 @@ void IValhalla::LoadFiles(bool reloading) {
             //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
 
 #endif
-
             if (m_settings.serverPassword.empty()) {
                 LOG_WARNING(VH_LOGGER, "Server does not have a password");
             }
@@ -467,11 +492,11 @@ void IValhalla::LoadFiles(bool reloading) {
     }
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    if (m_settings.discordAccountLinking) {
-        if (auto&& opt = VUtils::Resource::ReadFile<std::string>("linked.yml")) {
+    if (m_settings.TEST_discordAccountLinking) {
+        if (auto&& opt = VUtils::Resource::ReadFile<std::string>("discord-linked.yml")) {
             try {
                 auto node = YAML::Load(*opt);
-                DiscordManager()->m_linkedAccounts = node.as<decltype(IDiscordManager::m_linkedAccounts)>();
+                DiscordManager()->m_linked_accounts = node.as<decltype(IDiscordManager::m_linked_accounts)>();
             }
             catch (const YAML::Exception& e) {
                 LOG_ERROR(VH_LOGGER, "{}", e.what());
@@ -487,7 +512,7 @@ void IValhalla::LoadFiles(bool reloading) {
 
             // TODO add a 'previously gated' bit
             //  so discord integration doesnt get messed up
-            peer->SetGated(m_settings.playerGated);
+            peer->SetGated(m_settings.TEST_playerRestrict);
         }
     }
 
@@ -542,7 +567,7 @@ void IValhalla::SaveFiles() {
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
     {
-        YAML::Node node(DiscordManager()->m_linkedAccounts);
+        YAML::Node node(DiscordManager()->m_linked_accounts);
 
         YAML::Emitter emit;
         emit.SetIndent(2);
@@ -607,7 +632,7 @@ void IValhalla::Start() {
 #endif
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    DiscordManager()->Init();
+    DiscordManager()->init();
 #endif
 
     /*
@@ -711,7 +736,7 @@ void IValhalla::Update() {
 
     // This is important to processing RPC remote invocations
     if (!NetManager()->GetPeers().empty()) {
-        m_worldTime += Delta() * m_worldTimeMultiplier;
+        m_worldTime += delta() * m_worldTimeMultiplier;
     }
     
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
@@ -739,7 +764,7 @@ void IValhalla::PeriodUpdate() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    DiscordManager()->PeriodUpdate();
+    DiscordManager()->period_update();
 #endif
 
 #if VH_IS_ON(VH_DUNGEON_REGENERATION)

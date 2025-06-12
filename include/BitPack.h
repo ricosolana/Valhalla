@@ -3,10 +3,10 @@
 #include <cstdint>
 #include "VUtilsTraits.h"
 
-template<typename T, std::size_t ...COUNTS>
+template<typename T, std::size_t ...BitAllocs>
     requires std::is_integral_v<T>&& std::is_unsigned_v<T>
 class BitPack {
-    static_assert((COUNTS + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
+    static_assert((BitAllocs + ...) == sizeof(T) * 8, "Exactly all bits must be utilized in mask");
 
 public:
     using type = T;
@@ -14,8 +14,8 @@ public:
 
 
     template<std::size_t index>
-        requires (index < sizeof...(COUNTS))
-    using count = VUtils::Traits::variadic_value_at_index<index, COUNTS...>;
+        requires (index < sizeof...(BitAllocs))
+    using count = VUtils::Traits::variadic_value_at_index<index, BitAllocs...>;
 
     template<std::size_t index>
     static constexpr auto count_v = count<index>::value;
@@ -34,7 +34,7 @@ public:
     template<std::size_t index>
         requires (index > 0)
     struct offset<index>
-        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, COUNTS...>
+        : VUtils::Traits::variadic_accumulate_values_to_index<index - 1ULL, BitAllocs...>
     { };
 
     // now accumulate in reverse, first parameter pack ints are most significant (have highest offsets)
@@ -58,16 +58,16 @@ public:
     constexpr BitPack() : m_data{} {}
     constexpr BitPack(T data) : m_data(data) {}
 
-    void operator=(const BitPack<T, COUNTS...>& other) {
-        this->m_data = other.m_data;
+    void operator=(BitPack<T, BitAllocs...> const& rhs) {
+        this->m_data = rhs.m_data;
     }
 
-    bool operator==(const BitPack<T, COUNTS...>& other) const {
-        return m_data == other.m_data;
+    bool operator==(BitPack<T, BitAllocs...> const& rhs) const {
+        return m_data == rhs.m_data;
     }
 
-    bool operator!=(const BitPack<T, COUNTS...>& other) const {
-        return !(*this == other);
+    bool operator!=(BitPack<T, BitAllocs...> const& rhs) const {
+        return !(*this == rhs);
     }
 
     operator bool() const {
@@ -80,7 +80,7 @@ public:
 
     // Get the value of a specified member at index
     template<std::uint8_t index>
-    type Get() const {
+    type get() const {
         //return (m_data >> offset<index>::value) & capacity<index>::value;
         auto o = offset_v<index>;
         auto c = capacity_v<index>;
@@ -90,28 +90,29 @@ public:
 
     // Set the value of a specified member at index to 0
     template<std::uint8_t index>
-    void Clear() {
+    void clear() {
         m_data &= ~(capacity_v<index> << offset_v<index>);
 
-        assert(Get<index>() == 0);
+        assert(get<index>() == 0);
     }
 
     // Set the value of a specified member at index
     template<std::uint8_t index>
-    void Set(type value) {
-        Clear<index>();
-        Merge<index>(value);
+    void set(type value) {
+        clear<index>();
+        merge<index>(value);
 
-        assert(Get<index>() == value);
+        assert(get<index>() == value);
     }
 
     // Clear the bits within a specified mask
+    //  TODO needs better name
     template<std::uint8_t index>
-    void Unset(type value) {
+    void unset(type value) {
         // flip to get negated mask
         //value ^= std::numeric_limits<type>::max();
 
-        Set<index>(Get<index>() & static_cast<type>(~value));
+        set<index>(get<index>() & static_cast<type>(~value));
 
         //value = ~value;
 
@@ -126,18 +127,18 @@ public:
 
         //assert((Get<index> & value) == 0);
 
-        assert((Get<index>() & value) == 0);
+        assert((get<index>() & value) == 0);
     }
 
     // Merge the bits of a specified index with another value
     template<std::uint8_t index>
-    void Merge(type value) {
+    void merge(type value) {
         m_data |= (value & capacity_v<index>) << offset_v<index>;
 
-        assert((Get<index>() & value) == value);
+        assert((get<index>() & value) == value);
     }
 
-    T get_value() const {
+    T get_underlying() const {
         return m_data;
     }
 };

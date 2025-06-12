@@ -800,7 +800,7 @@ void IZoneManager::PostGeoInit() {
         LOG_INFO(VH_LOGGER, "Location generation took {}s", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now).count());
     }
 
-    if (VH_SETTINGS.worldPregenerate
+    if (VH_SETTINGS.TEST_worldPregenerate
         && m_generatedZones.empty()) 
     {
         auto now(std::chrono::steady_clock::now());
@@ -1107,16 +1107,16 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
             // TODO not really optional, it is required through a branch
             ZDO::unsafe_optional zdo;
 
-            if (dungeon.m_interiorPosition != Vector3f::zero()) {
+            if (dungeon.m_interior_position != Vector3f::zero()) {
 
                 ZoneID zone = WorldToZonePos(pos);
                 Vector3f zonePos = ZoneToWorldPos(zone);
 
                 Vector3f piecePos = zonePos
-                    + dungeon.m_interiorPosition // ( 0, 5000, 0 )
-                    + dungeon.m_originalPosition; // minor position change (usually height and a horizontal axis)
+                    + dungeon.m_interior_position // ( 0, 5000, 0 )
+                    + dungeon.m_original_position; // minor position change (usually height and a horizontal axis)
 
-                piecePos.y = dungeon.m_interiorPosition.y + pos.y;
+                piecePos.y = dungeon.m_interior_position.y + pos.y;
 
                 zdo = ZDOManager()->Instantiate(piece.m_prefabHash, piecePos);
                 zdo->SetRotation(piece.m_rot);

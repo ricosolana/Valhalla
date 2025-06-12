@@ -107,7 +107,7 @@ public:
     }
 
     bool IsMapVisible() const {
-        return m_pack.Get<VISIBLE_PACK_INDEX>();
+        return m_pack.get<VISIBLE_PACK_INDEX>();
     }
 
     bool IsAdmin() const {
@@ -115,17 +115,17 @@ public:
     }
 
     bool IsGated() const {
-        return m_pack.Get<GATED_PACK_INDEX>();
+        return m_pack.get<GATED_PACK_INDEX>();
     }
 
     void SetMapVisible(bool enable) {
-        m_pack.Set<VISIBLE_PACK_INDEX>(enable);
+        m_pack.set<VISIBLE_PACK_INDEX>(enable);
     }
 
     void SetAdmin(bool enable);
 
     void SetGated(bool enable) {
-        m_pack.Set<GATED_PACK_INDEX>(enable);
+        m_pack.set<GATED_PACK_INDEX>(enable);
     }
 
     /**
@@ -189,7 +189,7 @@ public:
         writer.write(avledet::util::hashes::Rpc::RoutedRPC);
 
         //assert(false); //ADDRESS THE BELOW
-        writer.write([&](DataWriter& writer) {
+        writer.write([this, targetZDO, hash, func](DataWriter& writer) {
             // routed rpc spec
             writer.write<std::int64_t>(0); // msg id
             writer.write(VH_ID); // sender

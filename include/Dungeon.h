@@ -19,7 +19,7 @@ public:
 		//GameObject m_prefab;
 		const Prefab* m_prefab = nullptr;
 
-		std::string m_connectionType = "";
+		std::string m_connection_type = "";
 
 		float m_chance = 0;
 	};
@@ -30,48 +30,48 @@ public:
 
 	Algorithm m_algorithm;
 
-	int m_maxRooms = 3;
+	int m_max_rooms = 3;
 
-	int m_minRooms = 20;
+	int m_min_rooms = 20;
 
-	int m_minRequiredRooms;
+	int m_min_required_rooms;
 
 	avledet::util::Set<std::string, ankerl::unordered_dense::string_hash> m_requiredRooms;
 
-	bool m_alternativeFunctionality;
+	bool m_alternative_functionality;
 
 	Room::Theme m_themes = Room::Theme::Crypt;
 
 	// Order is significant (polled with Seeded Random)
-	std::vector<DoorDef> m_doorTypes; // Serialized
+	std::vector<DoorDef> m_door_types; // Serialized
 
-	float m_doorChance = 0.5f;
+	float m_door_chance = 0.5f;
 
-	float m_maxTilt = 10;
+	float m_max_tilt = 10;
 
-	float m_tileWidth = 8;
+	float m_tile_width = 8;
 
-	int m_gridSize = 4;
+	int m_grid_size = 4;
 
-	float m_spawnChance = 1;
+	float m_spawn_chance = 1;
 
-	float m_campRadiusMin = 15;
+	float m_camp_radius_min = 15;
 
-	float m_campRadiusMax = 30;
+	float m_camp_radius_max = 30;
 
-	float m_minAltitude = 1;
+	float m_min_altitude = 1;
 
-	int m_perimeterSections;
+	int m_perimeter_sections;
 
-	float m_perimeterBuffer = 2;
+	float m_perimeter_buffer = 2;
 
 	//bool m_useCustomInteriorTransform;
 
-	Vector3f m_interiorPosition; // {0, 5000, 0} for dg/cave
-	Vector3f m_originalPosition; // {0, 110, 30} and varies for dg/cave
+	Vector3f m_interior_position; // {0, 5000, 0} for dg/cave
+	Vector3f m_original_position; // {0, 110, 30} and varies for dg/cave
 
 	// Order is significant (polled with Seeded Random)
-	std::vector<std::unique_ptr<const Room>> m_availableRooms;
+	std::vector<std::unique_ptr<const Room>> m_available_rooms;
 
 public:
 	//std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot) const;

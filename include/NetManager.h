@@ -1,13 +1,17 @@
 #pragma once
 
+#include <deque>
+#include <mutex>
 #include <string>
 #include <cstdint>
 #include <chrono>
 #include <memory>
+#include <thread>
 #include <utility>
 
 #include "Peer.h"
 #include "NetAcceptor.h"
+#include "Types.h"
 
 class INetManager {
     friend class IModManager;
@@ -22,6 +26,13 @@ private:
 public:
     std::string m_passwordHash;
     std::string m_passwordSalt;
+
+    /*
+        packet statistical capture
+    */
+
+    std::jthread m_adetect_writer;
+
 
 private:
     void SendDisconnect();

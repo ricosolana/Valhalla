@@ -6,6 +6,12 @@
 
 #include "CompileSettings.h"
 
+#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#include <dpp/snowflake.h>
+#endif
+
+//TODO this is finicky at best, dangerous at worst,
+//  consider majorly reworking, or removing it entirely...
 enum class AssignAlgorithm {
     NONE,
     DYNAMIC_RADIUS
@@ -95,16 +101,18 @@ struct ServerSettings {
     std::uint32_t               playerMax;
     bool                        playerOnline;
     std::chrono::seconds        playerTimeout;
-    std::chrono::milliseconds   playerListSendInterval;
+    //std::chrono::milliseconds   playerListSendInterval;
+    //bool                        playerListSmoothUpdating;
+    std::chrono::milliseconds   playerListSmoothUpdating;
     bool                        playerListForceVisible;
 #if VH_IS_ON(VH_PLAYER_SLEEP)
     bool                        playerSleepSolo;
 #endif
-    bool                        playerGated;
+    bool                        TEST_playerRestrict;
 
     std::string                 worldName;
     std::string                 worldSeed;
-    bool                        worldPregenerate;
+    bool                        TEST_worldPregenerate;
     std::chrono::seconds        worldSaveInterval;  // set to 0 to disable
     bool                        worldFeatures;
     bool                        worldVegetation;
@@ -115,7 +123,7 @@ struct ServerSettings {
     std::uint32_t               zdoMinCongestion;    // congestion rate
     std::chrono::milliseconds   zdoSendInterval;
     std::chrono::seconds        zdoAssignInterval;
-    AssignAlgorithm             zdoAssignAlgorithm;
+    AssignAlgorithm             TEST_zdoAssignAlgorithm;
         
     bool                        dungeonsEnabled;
     bool                        dungeonsEndcapsEnabled;
@@ -125,8 +133,8 @@ struct ServerSettings {
     bool                        dungeonsRoomsZoneBounded;
     float                       dungeonsRoomsInsetSize;
     bool                        dungeonsRoomsFurnishing;
-    std::chrono::seconds        dungeonsRegenerationInterval;
-    std::uint32_t               dungeonsRegenerationMaxSteps;
+    std::chrono::seconds        TEST_dungeonsRegenerationInterval;
+    std::uint32_t               TEST_dungeonsRegenerationMaxSteps;
     bool                        dungeonsSeeded;
 
     float                       eventsChance;
@@ -135,12 +143,13 @@ struct ServerSettings {
     bool                        eventsRequireKeys;
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
+    bool                        discordEnabled;
     std::string                 discordWebhook;
     std::string                 discordToken;
     dpp::snowflake              discordGuild;
-    bool                        discordAccountLinking;
+    bool                        TEST_discordAccountLinking;
     // Kick players who leave the Discord server?
-    bool                        discordSyncLeaves;
+    bool                        TEST_discordSyncLeaves;
     // Sync kicks between Valheim and Discord?
     //bool            discordSyncKicks;
     // Sync bans between Valhiem and Discord?

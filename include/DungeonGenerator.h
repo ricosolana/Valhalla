@@ -24,11 +24,11 @@ class Dungeon;
 class DungeonGenerator {
 private:
 	// Instanced
-	std::vector<std::unique_ptr<RoomInstance>> m_placedRooms;
+	std::vector<std::unique_ptr<RoomInstance>> m_placed_rooms;
 	// Instanced
-	std::list<std::reference_wrapper<const RoomConnectionInstance>> m_openConnections;
+	std::list<std::reference_wrapper<const RoomConnectionInstance>> m_open_connections;
 	// Instanced
-	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_doorConnections;
+	std::vector<std::reference_wrapper<const RoomConnectionInstance>> m_door_connections;
 
 public:
 	// TODO use reference
@@ -37,10 +37,10 @@ public:
 	Vector3f m_pos; // instanced position
 	Quaternion m_rot; // instanced rotation
 
-	Vector3f m_zoneCenter;
+	Vector3f m_zone_center;
 
 	// TODO make Constexpr
-	const Vector3f m_zoneSize = Vector3f(64, 64, 64);
+	const Vector3f m_zone_size = Vector3f(64, 64, 64);
 
 	//bool m_useCustomInteriorTransform; // templated
 
@@ -86,13 +86,13 @@ private:
 
 	void CalculateRoomPosRot(const RoomConnection &roomCon, Vector3f pos, Quaternion rot, Vector3f &outPos, Quaternion &outRot);
 
-	bool PlaceRoom(VUtils::Random::State& state, decltype(m_openConnections)::iterator &itr, const Room& roomData, bool* outErased);
+	bool PlaceRoom(VUtils::Random::State& state, decltype(m_open_connections)::iterator &itr, Room const& roomData, bool* outErased);
 
 	// Camps/grid meadows
 	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot);
 
 	// Dungeon placement
-	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot, const RoomConnectionInstance& fromConnection);
+	void PlaceRoom(const Room& room, Vector3f pos, Quaternion rot, RoomConnectionInstance const& fromConnection);
 
 	void AddOpenConnections(RoomInstance &newRoom, const RoomConnectionInstance &skipConnection);
 
@@ -111,7 +111,7 @@ private:
 	const Room* GetRandomRoom(VUtils::Random::State& state, const RoomConnectionInstance *connection);
 
 	// Nullable
-	decltype(m_openConnections)::iterator GetOpenConnection(VUtils::Random::State& state);
+	decltype(m_open_connections)::iterator GetOpenConnection(VUtils::Random::State& state);
 
 	const Room& FindStartRoom(VUtils::Random::State& state);
 

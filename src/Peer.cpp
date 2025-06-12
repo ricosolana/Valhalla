@@ -3,23 +3,8 @@
 #include "ZDOManager.h"
 #include "RouteManager.h"
 #include "VUtilsResource.h"
+#include <magic_enum.hpp>
 #include <quill/LogMacros.h>
-
-static constexpr std::array<std::string_view, 13> STATUS_STRINGS = { 
-    "None", 
-    "Connecting", 
-    "Connected",
-    "ErrorVersion", 
-    "ErrorDisconnected", 
-    "ErrorConnectFailed", 
-    "ErrorPassword",
-    "ErrorAlreadyConnected", 
-    "ErrorBanned", 
-    "ErrorFull",
-    "ErrorPlatformExcluded",
-    "ErrorCrossplayPrivilege",
-    "ErrorKicked"
-};
 
 // Static globals initialized once
 //std::string Peer::PASSWORD;
@@ -152,7 +137,7 @@ void Peer::Update() {
 }
 
 bool Peer::Close(ConnectionStatus status) {
-    LOG_INFO(VH_LOGGER, "Peer error: {}", STATUS_STRINGS[(int)status]);
+    LOG_INFO(VH_LOGGER, "Peer error: {}", magic_enum::enum_name(status));
     Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;

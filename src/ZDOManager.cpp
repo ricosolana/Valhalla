@@ -483,7 +483,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 		}
 	}
 
-	if (VH_SETTINGS.zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+	if (VH_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
 		float minSqDist = std::numeric_limits<float>::max();
 		Vector3f closestPos;

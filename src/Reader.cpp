@@ -11,28 +11,28 @@ namespace avledet::util {
     Reader::Reader(std::vector<char> buf, std::size_t pos) : Stream(std::move(buf), pos) { }
 
 
-    Reader Reader::from_file(std::filesystem::path path) {
-        std::ifstream file(path, std::ios::binary);
+    //Reader Reader::from_file(std::filesystem::path path) {
+    //    std::ifstream file(path, std::ios::binary);
 
-        if (!file)
-            throw std::runtime_error("file not found: " + path.string());
+    //    if (!file)
+    //        throw std::runtime_error("file not found: " + path.string());
 
-        file.unsetf(std::ios::skipws);
+    //    file.unsetf(std::ios::skipws);
 
-        file.seekg(0, std::ios::end);
-        auto fileSize = file.tellg();
-        file.seekg(0, std::ios::beg);
+    //    file.seekg(0, std::ios::end);
+    //    auto fileSize = file.tellg();
+    //    file.seekg(0, std::ios::beg);
 
-        if (fileSize < 0)
-            throw std::runtime_error("file reading failure: " + path.string());
+    //    if (fileSize < 0)
+    //        throw std::runtime_error("file reading failure: " + path.string());
 
-        std::vector<char> result {};
-        result.resize(static_cast<std::uint64_t>(fileSize));
-        file.read(reinterpret_cast<std::ifstream::char_type*>(result.data()),
-            fileSize);
+    //    std::vector<char> result {};
+    //    result.resize(static_cast<std::uint64_t>(fileSize));
+    //    file.read(reinterpret_cast<std::ifstream::char_type*>(result.data()),
+    //        fileSize);
 
-        return Reader(std::move(result));
-    }
+    //    return Reader(std::move(result));
+    //}
 
 
     void Reader::internal_read_bytes(char* outBuf, std::size_t outBufSize) {

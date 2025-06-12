@@ -3,6 +3,7 @@
 #include <string>
 
 #include "WorldManager.h"
+#include "CompileSettings.h"
 #include "VUtils.h"
 #include "VUtilsResource.h"
 #include "ValhallaServer.h"
@@ -126,18 +127,20 @@ void World::LoadFileDB(const fs::path& root) {
 	auto path(root / (m_name + ".db"));
 	if (auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>(path)) {
 		try {
-			DataReader reader(opt.value());
+			DataReader reader(std::move(opt.value()));
 
 			auto worldVersion = reader.read<std::int32_t>();
-			if (worldVersion != VConstants::WORLD) {
+			if (worldVersion < VConstants::WORLD) {
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 				LOG_WARNING(VH_LOGGER, "Loading legacy world with version {}", worldVersion);
 #else // !VH_LEGACY_WORLD_LOADING
-				LOG_ERROR(VH_LOGGER, "Requires VH_LEGACY_WORLD_COMPATIBILITY to loaded legacy worlds");
+				LOG_ERROR(VH_LOGGER, "Requires VH_LEGACY_WORLD_COMPATIBILITY to load legacy worlds");
 				throw std::runtime_error("legacy world loading unsupported with current compile settings");
 #endif // VH_LEGACY_WORLD_LOADING
 			}
-			else {
+			else if (worldVersion > VConstants::WORLD) {
+				LOG_WARNING(VH_LOGGER, "Loading world with a newer version than we support {}", worldVersion);
+			} else {
 				LOG_INFO(VH_LOGGER, "Loading world version {}", worldVersion);
 			}
 
@@ -199,7 +202,7 @@ void World::CopyCompressDB(const fs::path& root) {
 	}
 }
 
-void World::WriteFiles(const fs::path& root) {
+void World::WriteFiles(fs::path const& root) {
 	WriteFileMeta(root);
 	WriteFileDB(root);
 	CopyCompressDB(root);

@@ -79,12 +79,12 @@ namespace avledet::util {
 
         // Retrieve the index of the UserID
         decltype(auto) _get_user_id_index() const {
-            return m_pack.Get<USERID_PACK_INDEX>();
+            return m_pack.get<USERID_PACK_INDEX>();
         }
 
         // Set the associated UserID index 
         void _set_user_id_index(decltype(m_pack)::type index) {
-            m_pack.Set<USERID_PACK_INDEX>(index);
+            m_pack.set<USERID_PACK_INDEX>(index);
         }
 
     public:
@@ -130,7 +130,7 @@ namespace avledet::util {
 
         std::uint32_t get_id() const {
             //If we are borrowing an extended UserID, then shift our result
-            auto result = m_pack.Get<ID_PACK_INDEX>();
+            auto result = m_pack.get<ID_PACK_INDEX>();
             auto sharing = _get_user_id_index();
             if (sharing < BIT_SHARING) {
                 result |= (sharing << decltype(m_pack)::count<ID_PACK_INDEX>());
@@ -155,7 +155,7 @@ namespace avledet::util {
 
             assert(id <= decltype(m_pack)::capacity<ID_PACK_INDEX>());
 
-            m_pack.Set<ID_PACK_INDEX>(id);
+            m_pack.set<ID_PACK_INDEX>(id);
         }
 
     };
@@ -172,7 +172,7 @@ struct ankerl::unordered_dense::hash<avledet::util::ZDOID> {
     //static_assert(std::has_unique_object_representations_v<avledet::util::ZDOID>);
 
     auto operator()(avledet::util::ZDOID const& value) const noexcept -> std::uint64_t {
-        return ankerl::unordered_dense::detail::wyhash::hash(value.m_pack.get_value());
+        return ankerl::unordered_dense::detail::wyhash::hash(value.m_pack.get_underlying());
     }
 };
 

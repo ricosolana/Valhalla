@@ -73,7 +73,7 @@ namespace avledet::util {
 
     public:
         // Read a file into a buffer object
-        static Reader from_file(std::filesystem::path path);
+        //static Reader from_file(std::filesystem::path path);
 
     public:
         // auto a = read(a, b, c, ..)

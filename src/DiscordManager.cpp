@@ -28,9 +28,11 @@ public:
 
 };*/
 
-void IDiscordManager::Init() {
-	if (VH_SETTINGS.discordToken.empty())
+void IDiscordManager::init() {
+	if (!VH_SETTINGS.discordEnabled || VH_SETTINGS.discordToken.empty())
 		return;
+
+	LOG_INFO(VH_LOGGER, "Initializing DiscordManager");
 
 	// https://dpp.dev/slashcommands.html
 
@@ -155,18 +157,18 @@ void IDiscordManager::Init() {
 					auto&& key = std::get_if<std::string>(&key_variant);
 					if (key) {
 						// Verify the key
-						for (auto&& itr = m_tempLinkingKeys.begin(); itr != m_tempLinkingKeys.end(); ) {
+						for (auto&& itr = m_temp_linking_keys.begin(); itr != m_temp_linking_keys.end(); ) {
 							auto&& host = itr->first;
 							auto&& vkey = itr->second.first;
 							if (vkey == *key) {
 								event.reply("Accounts successfully linked!");
 								//m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), );
-								m_linkedAccounts[host] = event.command.get_issuing_user().id;
+								m_linked_accounts[host] = event.command.get_issuing_user().id;
 								if (auto&& peer = NetManager()->GetPeerByHost(host)) {
 									peer->SetGated(false);
 									peer->CenterMessage("Account verified");
 								}
-								itr = m_tempLinkingKeys.erase(itr);
+								itr = m_temp_linking_keys.erase(itr);
 								return;
 							}
 							else {
@@ -398,10 +400,10 @@ void IDiscordManager::Init() {
 	});
 	
 	m_bot->on_guild_member_remove([this](const dpp::guild_member_remove_t& event) {
-		if (VH_SETTINGS.discordSyncLeaves) {
+		if (VH_SETTINGS.TEST_discordSyncLeaves) {
 			// Try kicking player off Valheim server
 
-			if (auto&& peer = UnlinkPeerBySnowflake(event.removed.id)) {
+			if (auto&& peer = unlink_peer(event.removed.id)) {
 				peer->Kick();
 
 				LOG_INFO(VH_LOGGER, "Kicked {} due to guild leave", peer->m_name);
@@ -507,8 +509,12 @@ void IDiscordManager::Init() {
 	m_bot->start(dpp::st_return);
 }
 
-void IDiscordManager::PeriodUpdate() {
-	for (auto&& itr = m_tempLinkingKeys.begin(); itr != m_tempLinkingKeys.end();) {
+void IDiscordManager::period_update() {
+	// If integration is off
+	if (!m_bot)
+		return;
+
+	for (auto&& itr = m_temp_linking_keys.begin(); itr != m_temp_linking_keys.end();) {
 		auto&& peer = NetManager()->GetPeerByHost(itr->first);
 		auto&& since = Valhalla()->Nanos() - itr->second.second;
 		if (since > 5min) {
@@ -519,7 +525,7 @@ void IDiscordManager::PeriodUpdate() {
 				peer->CenterMessage("<color=#FF5555>Verification timed out!</color>");
 				peer->Kick();
 			}
-			itr = m_tempLinkingKeys.erase(itr);
+			itr = m_temp_linking_keys.erase(itr);
 		}
 		else {
 			if (peer) {
@@ -551,8 +557,8 @@ void IDiscordManager::PeriodUpdate() {
 	}*/
 }
 
-Peer* IDiscordManager::GetPeerBySnowflake(dpp::snowflake id) {
-	for (auto&& pair : m_linkedAccounts) {
+Peer* IDiscordManager::find_peer(dpp::snowflake id) {
+	for (auto&& pair : m_linked_accounts) {
 		if (pair.second == id) {
 			return NetManager()->GetPeerByHost(pair.first);
 		}
@@ -560,11 +566,11 @@ Peer* IDiscordManager::GetPeerBySnowflake(dpp::snowflake id) {
 	return nullptr;
 }
 
-Peer* IDiscordManager::UnlinkPeerBySnowflake(dpp::snowflake id) {
-	for (auto&& itr = m_linkedAccounts.begin(); itr != m_linkedAccounts.end();) {
+Peer* IDiscordManager::unlink_peer(dpp::snowflake id) {
+	for (auto&& itr = m_linked_accounts.begin(); itr != m_linked_accounts.end();) {
 		if (itr->second == id) {
 			auto&& peer = NetManager()->GetPeerByHost(itr->first);
-			m_linkedAccounts.erase(itr);
+			m_linked_accounts.erase(itr);
 			return peer;
 		}
 		else {
@@ -574,8 +580,8 @@ Peer* IDiscordManager::UnlinkPeerBySnowflake(dpp::snowflake id) {
 	return nullptr;
 }
 
-void IDiscordManager::SendSimpleMessage(std::string_view msg) {
-	if (VH_SETTINGS.discordWebhook.empty())
+void IDiscordManager::send_webhook_message(std::string_view msg) {
+	if (!m_bot || VH_SETTINGS.discordWebhook.empty())
 		return;
 
 	auto&& webhook = dpp::webhook(VH_SETTINGS.discordWebhook);

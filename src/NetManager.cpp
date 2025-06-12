@@ -90,7 +90,7 @@ void INetManager::SendPlayerList() {
                 writer.write(forcedDisplayName); //TODO
                 writer.write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
                 if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
-                    if (VH_SETTINGS.playerListSendInterval >= 2s)
+                    if (VH_SETTINGS.playerListSmoothUpdating >= 2s)
                         writer.write(peer->m_pos);
                     else { // quickly dynamic map
                         auto&& zdo = peer->GetZDO();
@@ -278,16 +278,16 @@ void INetManager::OnPeerConnect(Peer& peer) {
     ZoneManager()->OnNewPeer(peer);
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    if (VH_SETTINGS.discordAccountLinking) {
-        peer.SetGated(!DiscordManager()->m_linkedAccounts.contains(peer.m_socket->GetHostName()));
+    if (VH_SETTINGS.TEST_discordAccountLinking) {
+        peer.SetGated(!DiscordManager()->m_linked_accounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
-            DiscordManager()->m_tempLinkingKeys[peer.m_socket->GetHostName()] = { VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos() };
+            DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()] = { VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos() };
         }
     }
 #endif
 
     // TODO remove this for debug only
-    peer.SetGated(VH_SETTINGS.playerGated);
+    peer.SetGated(VH_SETTINGS.TEST_playerRestrict);
 
     m_onlinePeers.push_back(&peer);
 }
@@ -349,8 +349,8 @@ void INetManager::Update() {
         SendNetTime();
     }
 
-    if (VH_SETTINGS.playerListSendInterval > 0s) {
-        if (VUtils::run_periodic<struct periodic_peer_tablist>(VH_SETTINGS.playerListSendInterval)) {
+    if (VH_SETTINGS.playerListSmoothUpdating > 0s) {
+        if (VUtils::run_periodic<struct periodic_peer_tablist>(VH_SETTINGS.playerListSmoothUpdating)) {
             SendPlayerList();
         }
     }

@@ -53,21 +53,21 @@ public:
         }
 
         [[nodiscard]] std::uint32_t GetDataRevision() const {
-            return m_pack.Get<DATA_REVISION_PACK_INDEX>();
+            return m_pack.get<DATA_REVISION_PACK_INDEX>();
         }
 
         [[nodiscard]] std::uint16_t GetOwnerRevision() const {
-            return m_pack.Get<OWNER_REVISION_PACK_INDEX>();
+            return m_pack.get<OWNER_REVISION_PACK_INDEX>();
         }
 
 
 
         void SetDataRevision(std::uint32_t dataRev) {
-            m_pack.Set<DATA_REVISION_PACK_INDEX>(dataRev);
+            m_pack.set<DATA_REVISION_PACK_INDEX>(dataRev);
         }
 
         void SetOwnerRevision(std::uint16_t ownerRev) {
-            m_pack.Set<OWNER_REVISION_PACK_INDEX>(ownerRev);
+            m_pack.set<OWNER_REVISION_PACK_INDEX>(ownerRev);
         }
 
 

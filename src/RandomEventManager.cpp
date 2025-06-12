@@ -78,7 +78,7 @@ void IRandomEventManager::Update() {
 		}
 	}
 	else if (VH_SETTINGS.eventsInterval > 0s) {
-		m_eventIntervalTimer += Valhalla()->Delta();
+		m_eventIntervalTimer += Valhalla()->delta();
 
 		// try to set a new current event
 		if (m_eventIntervalTimer > VH_SETTINGS.eventsInterval.count()) {
@@ -183,13 +183,16 @@ void IRandomEventManager::Save(DataWriter& writer) {
 	writer.write(m_eventIntervalTimer);
 	writer.write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
 	//writer.write(m_activeEventTimer);
-	writer.write((float)duration_cast<std::chrono::seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count());
+	writer.write(std::chrono::duration<float>(m_activeEventInitialDuration - m_activeEventRemaining).count());
 	writer.write(m_activeEventPos);
 }
 
 void IRandomEventManager::Load(DataReader& reader, int version) {
 	m_eventIntervalTimer = reader.read<float>();
+
+#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 	if (version >= 25) {
+#endif // VH_LEGACY_WORLD_LOADING
 		this->m_activeEvent = GetEvent(reader.read<std::string_view>());
 		this->m_activeEventRemaining = std::chrono::seconds((std::int64_t)reader.read<float>());
 		this->m_activeEventPos = reader.read<Vector3f>();
@@ -204,7 +207,7 @@ void IRandomEventManager::SendCurrentRandomEvent() {
 	if (m_activeEvent) {
 		RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent,
 			std::string_view(m_activeEvent->m_name),
-			(float)duration_cast<std::chrono::seconds>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
+			std::chrono::duration<float>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
 			m_activeEventPos
 		);
 	}
