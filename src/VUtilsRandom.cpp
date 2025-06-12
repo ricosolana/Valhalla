@@ -24,85 +24,116 @@
 // But I still pulled it off :)
 
 
-namespace VUtils::Random {
+namespace avledet::util {
 
-    State::State() 
-        : State(std::chrono::steady_clock::now().time_since_epoch().count()) {}
+    namespace CSU {
 
-    State::State(std::int32_t seed) {
-        m_seed[0] = seed;
-        m_seed[1] = m_seed[0] * 0x6c078965 + 1;
-        m_seed[2] = m_seed[1] * 0x6c078965 + 1;
-        m_seed[3] = m_seed[2] * 0x6c078965 + 1;
-    }
+        using std::chrono::steady_clock;
 
-    State::State(const State& other) {
-        m_seed[0] = other.m_seed[0];
-        m_seed[1] = other.m_seed[1];
-        m_seed[2] = other.m_seed[2];
-        m_seed[3] = other.m_seed[3];
-    }
+        static constexpr auto PI = 3.14159265435f;
 
-    std::uint32_t State::NextInt() {
-        std::uint32_t mut1 = (m_seed[0] << 11) ^ m_seed[0];
-
-        m_seed[0] = m_seed[1];
-        m_seed[1] = m_seed[2];
-        m_seed[2] = m_seed[3];
-        mut1 = (((m_seed[3] >> 11) ^ mut1) >> 8) ^ m_seed[3] ^ mut1;
-        m_seed[3] = mut1;
-
-        return mut1;
-    }
-
-    float State::NextFloat() {
-        return ((float)(NextInt() & 0x7FFFFF)) * 1.192093e-07;
-    }
-
-    float State::Range(float minInclude, float maxExclude) {
-        float r = NextFloat();
-        return (1.0f - r) * maxExclude + r * minInclude;
-    }
-
-    std::int32_t State::Range(std::int32_t minInclude, std::int32_t maxExclude) {
-        if (minInclude > maxExclude)
-            std::swap(minInclude, maxExclude);
-
-        std::uint32_t diff = maxExclude - minInclude;
-        if (diff) {
-            return minInclude + (NextInt() % diff);
+        // It seems someone already had a random implementation made
+        // This doesnt bother me because this part was relatively easy anyway
+        //  https://gist.github.com/macklinb/a00be6b616cbf20fa95e4227575fe50b
+        // My thread post
+        //  https://forum.unity.com/threads/algorithm-implementations-of-random-and-perlinnoise.1348790/
+        
+        // I primarily used Ghidra along with DnSpy to understand function signatures and what data was passed
+        //  back and forth
+        // This helped a fuckton
+        //  https://reverseengineering.stackexchange.com/questions/29393/is-there-a-way-to-find-the-implementation-of-methods-with-methodimploptions-inte
+        
+        // I searched for several broad strings within the .rdata portion of the .dll
+        // Got references to that string, which pointed to a string table containing CSharp method names and native functions
+        // Find wherever the string tale is referenced (should be within a func that binds names to funcs)
+        // Get the offset into the string table for that reference, now add the offset into the func table
+        
+        // 
+        // PerlinNoise was the harder part
+        // But I still pulled it off :)
+    
+        Random::Random() 
+            : Random(static_cast<std::int32_t>(steady_clock::now().time_since_epoch().count())) {}
+    
+        Random::Random(std::int32_t seed) {
+            m_seed[0] = static_cast<std::uint32_t>(seed);
+            m_seed[1] = m_seed[0] * 0x6c078965 + 1;
+            m_seed[2] = m_seed[1] * 0x6c078965 + 1;
+            m_seed[3] = m_seed[2] * 0x6c078965 + 1;
         }
-        return minInclude;
-    }
-
-    Vector2f State::InsideUnitCircle() {
-
-        // get random 
-        float rad = Range(0.f, PI * 2.f);
-        float x = std::cos(rad);
-        float y = std::sin(rad);
-
-        float ze = Range(0.f, 1.f);
-        float d = std::sqrt(ze);
-
-        return Vector2f(x * d, y * d);
-    }
-
-    Vector3f State::OnUnitSphere() {
-        float dist = Range(-1.f, 1.f);
-        float rad = Range(0.f, PI * 2.f);
-
-        float vecX = std::sqrt(1.0 - dist * dist);
-
-        return Vector3f(std::cos(rad) * vecX, std::sin(rad) * vecX, dist);
-    }
-
-    Vector3f State::InsideUnitSphere() {
-        // unity does this by sampling a point on the surface of sphere
-        auto vec = OnUnitSphere();
-        // then bringing that point in by a random distance
-        float dist = std::pow(NextFloat(), 1.f / 3.f);
-        return vec * dist;
+    
+        Random::Random(const Random& other) {
+            m_seed[0] = other.m_seed[0];
+            m_seed[1] = other.m_seed[1];
+            m_seed[2] = other.m_seed[2];
+            m_seed[3] = other.m_seed[3];
+        }
+    
+        std::uint32_t Random::next_int() {
+            std::uint32_t mut1 = (m_seed[0] << 11) ^ m_seed[0];
+    
+            m_seed[0] = m_seed[1];
+            m_seed[1] = m_seed[2];
+            m_seed[2] = m_seed[3];
+            mut1 = (((m_seed[3] >> 11) ^ mut1) >> 8) ^ m_seed[3] ^ mut1;
+            m_seed[3] = mut1;
+    
+            return mut1;
+        }
+    
+        float Random::next_float() {
+            // The 1.192093e-07 in ghidra is 4-bytes long (indicative of float)
+            // The floating arithmetic is performed in single mode (MULSS)
+            // So can assume that a float is fine
+            //  Testing needed
+            return (float)(next_int() & 0x7FFFFF) * 1.192093e-7f;
+        }
+    
+        float Random::range(float minInclude, float maxExclude) {
+            auto r = next_float();
+            return (1.0f - r) * maxExclude + r * minInclude;
+        }
+    
+        std::int32_t Random::range(std::int32_t minInclude, std::int32_t maxExclude) {
+            if (minInclude > maxExclude)
+                std::swap(minInclude, maxExclude);
+    
+            std::uint32_t diff = static_cast<std::uint32_t>(maxExclude - minInclude);
+            if (diff) {
+                return minInclude + static_cast<std::int32_t>((next_int() % diff));
+            }
+            return minInclude;
+        }
+    
+        Vector2f Random::inside_unit_circle() {
+    
+            // get random 
+            float rad = range(0.f, PI * 2.f);
+            float x = std::cos(rad);
+            float y = std::sin(rad);
+    
+            float ze = range(0.f, 1.f);
+            float d = std::sqrt(ze);
+    
+            return Vector2f(x * d, y * d);
+        }
+    
+        Vector3f Random::on_unit_sphere() {
+            float dist = range(-1.f, 1.f);
+            float rad = range(0.f, 6.2831855f);
+    
+            float vecX = std::sqrt(1.0f - dist * dist);
+    
+            return Vector3f(std::cos(rad) * vecX, std::sin(rad) * vecX, dist);
+        }
+    
+        Vector3f Random::inside_unit_sphere() {
+            // unity does this by sampling a point on the surface of sphere
+            auto vec = on_unit_sphere();
+            // then bringing that point in by a random distance
+            float dist = std::pow(next_float(), 1.f / 3.f);
+            return vec * dist;
+        }
     }
 
 
@@ -147,17 +178,17 @@ namespace VUtils::Random {
     //  This function is non-conforming to the Valheim spec
     //  It returns a positive number for conformance with the strict 32-bit USER_ID_t
     avledet::util::UserID GenerateUID() {
-        State state;
-        return (std::int64_t) state.Range(
+        CSU::Random state;
+        return (std::int64_t) state.range(
             std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()) +
-            (std::int64_t) state.Range(1, std::numeric_limits<std::int32_t>::max());
+            (std::int64_t) state.range(1, std::numeric_limits<std::int32_t>::max());
         //return state.Range(1, std::numeric_limits<std::int32_t>::max());
     }
 
     void GenerateAlphaNum(char* out, std::size_t outSize) {
         VUtils::Random::State state;
         for (std::size_t i = 0; i < outSize; i++) {
-            out[i] = CHARS_ALPHA_NUM[state.Range((std::int32_t)0, (std::int32_t)CHARS_ALPHA_NUM.length())];
+            out[i] = CHARS_ALPHA_NUM[state.range((std::int32_t)0, (std::int32_t)CHARS_ALPHA_NUM.length())];
         }
     }
 

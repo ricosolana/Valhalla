@@ -87,7 +87,7 @@ void IZDOManager::Update() {
 				return ZDO::unsafe_nullopt;
 			}
 
-			return ZDO::make_unsafe_optional(list[VUtils::Random::State().Range(0, list.size())]);
+			return ZDO::make_unsafe_optional(list[VUtils::Random::State().range(0, list.size())]);
 		};
 
 		for (auto&& zdo : portals) {

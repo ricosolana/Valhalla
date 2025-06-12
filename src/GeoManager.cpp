@@ -31,13 +31,13 @@ void IGeoManager::PostWorldInit() {
 	}
 
 	VUtils::Random::State state(m_world->m_seed);
-	m_offset0 = state.Range(-worldSize, worldSize);
-	m_offset1 = state.Range(-worldSize, worldSize);
-	m_offset2 = state.Range(-worldSize, worldSize);
-	m_offset3 = state.Range(-worldSize, worldSize);
-	m_riverSeed = state.Range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
-	m_streamSeed = state.Range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
-	m_offset4 = state.Range(-worldSize, worldSize);
+	m_offset0 = state.range(-worldSize, worldSize);
+	m_offset1 = state.range(-worldSize, worldSize);
+	m_offset2 = state.range(-worldSize, worldSize);
+	m_offset3 = state.range(-worldSize, worldSize);
+	m_riverSeed = state.range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
+	m_streamSeed = state.range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
+	m_offset4 = state.range(-worldSize, worldSize);
 
 	// TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
@@ -142,7 +142,7 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 	float num2 = maxLength;
 	for (int i = 0; i < iterations; i++) {
 		num2 -= num;
-		float f = state.Range(0.f, PI * 2.0f);
+		float f = state.range(0.f, PI * 2.0f);
 		Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
 		float height = GetGenerationHeight(vector.x, vector.y);
 		if (height > minHeight && height < maxHeight)
@@ -157,8 +157,8 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State& state, int iteration
 
 bool IGeoManager::FindStreamStartPoint(VUtils::Random::State& state, int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth) {
 	for (int i = 0; i < iterations; i++) {
-		auto num = state.Range((float)-worldSize, (float)worldSize);
-		auto num2 = state.Range((float)-worldSize, (float)worldSize);
+		auto num = state.range((float)-worldSize, (float)worldSize);
+		auto num2 = state.range((float)-worldSize, (float)worldSize);
 		auto height = GetGenerationHeight(num, num2);
 		if (height > minHeight && height < maxHeight)
 		{
@@ -191,8 +191,8 @@ void IGeoManager::GenerateRivers() {
 			river.p0 = vector;
 			river.p1 = m_lakes[num];
 			river.center = (river.p0 + river.p1) * 0.5f;
-			river.widthMax = state.Range(minRiverWidth, maxRiverWidth);
-			river.widthMin = state.Range(minRiverWidth, river.widthMax);
+			river.widthMax = state.range(minRiverWidth, maxRiverWidth);
+			river.widthMin = state.range(minRiverWidth, river.widthMax);
 			float num2 = river.p0.distance_to(river.p1);
 			river.curveWidth = num2 / 15.f;
 			river.curveWavelength = num2 / 20.f;
@@ -223,7 +223,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State& state, const std::vec
 	if (list.empty())
 		return -1;
 
-	return list[state.Range(0, list.size())];
+	return list[state.range(0, list.size())];
 }
 
 bool IGeoManager::HaveRiver(const std::vector<River>& rivers, Vector2f p0) const {
@@ -276,7 +276,7 @@ void IGeoManager::RenderRivers(VUtils::Random::State& state, const std::vector<R
 		for (float num3 = 0; num3 <= num2; num3 += num) {
 			float num4 = num3 / river.curveWavelength;
 			float d = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
-			float r = state.Range(river.widthMin, river.widthMax);
+			float r = state.range(river.widthMin, river.widthMax);
 			Vector2f p = river.p0 + normalized * num3 + a * d;
 			AddRiverPoint(dictionary, p, r);
 		}
@@ -785,7 +785,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center,
 	Vector3f a = center;
 	for (int i = 0; i < num; i++)
 	{
-		Vector2f vector = state.InsideUnitCircle() * radius;
+		Vector2f vector = state.inside_unit_circle() * radius;
 		Vector3f vector2 = center + Vector3f(vector.x, 0.f, vector.y);
 		float height = GetHeight(vector2.x, vector2.z);
 		if (height < num3)

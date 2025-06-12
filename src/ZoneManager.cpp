@@ -547,8 +547,8 @@ void IZoneManager::PopulateZone(ZoneID zone) {
 
 // private
 Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State& state, Vector3f center, float radius) {
-    float f = state.NextFloat() * PI * 2.f;
-    float num = state.Range(0.f, radius);
+    float f = state.next_float() * PI * 2.f;
+    float num = state.range(0.f, radius);
     return center + Vector3f(std::sin(f) * num, 0.f, std::cos(f) * num);
 }
 
@@ -578,12 +578,12 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
         std::int32_t num3 = 1;
         // max is used for both chance, and quantity in conjunction with min 
         if (zoneVegetation->m_max < 1) {
-            if (state.NextFloat() > zoneVegetation->m_max) {
+            if (state.next_float() > zoneVegetation->m_max) {
                 continue;
             }
         }
         else {
-            num3 = state.Range((std::int32_t) zoneVegetation->m_min, (std::int32_t) zoneVegetation->m_max + 1);
+            num3 = state.range((std::int32_t) zoneVegetation->m_min, (std::int32_t) zoneVegetation->m_max + 1);
         }
 
         // flag should always be true, all vegetation seem to always have a NetView
@@ -594,12 +594,12 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
         const int spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
         std::int32_t numSpawned = 0;
         for (int i = 0; i < spawnAttempts; i++) {
-            float vx = state.Range(center.x - num6, center.x + num6);
-            float vz = state.Range(center.z - num6, center.z + num6);
+            float vx = state.range(center.x - num6, center.x + num6);
+            float vz = state.range(center.z - num6, center.z + num6);
 
             Vector3f basePos(vx, 0., vz);
 
-            const auto groupCount = state.Range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
+            const auto groupCount = state.range(zoneVegetation->m_groupSizeMin, zoneVegetation->m_groupSizeMax + 1);
             bool generated = false;
             for (std::int32_t j = 0; j < groupCount; j++) {
 
@@ -609,12 +609,12 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                 // random rotations
 
                 // y rotation in degrees
-                float rot_y = state.Range(0, 360);
-                float scale = state.Range(zoneVegetation->m_scaleMin, zoneVegetation->m_scaleMax);
+                float rot_y = state.range(0, 360);
+                float scale = state.range(zoneVegetation->m_scaleMin, zoneVegetation->m_scaleMax);
                 // x rotation in degrees
-                float rot_x = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
+                float rot_x = state.range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
                 // z rotation in degrees
-                float rot_z = state.Range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
+                float rot_z = state.range(-zoneVegetation->m_randTilt, zoneVegetation->m_randTilt);
 
                 // Use a method similar to clear area with rectangular regions
                 //if (!zoneVegetation->m_blockCheck
@@ -693,7 +693,7 @@ void IZoneManager::PopulateFoliage(Heightmap& heightmap, const std::vector<Clear
                             Quaternion rotation;
 
                             if (zoneVegetation->m_chanceToUseGroundTilt > 0
-                                && state.NextFloat() <= zoneVegetation->m_chanceToUseGroundTilt) {
+                                && state.next_float() <= zoneVegetation->m_chanceToUseGroundTilt) {
                                 auto rotation2 = Quaternion::euler(0, rot_y, 0);
                                 rotation = Quaternion::look_rotation(
                                     normal.cross(rotation2 * Vector3f::forward()),
@@ -984,8 +984,8 @@ bool IZoneManager::HaveLocationInRange(const Feature& loc, Vector3f p) {
 Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State& state, ZoneID zone, float locationRadius) {
     auto pos = ZoneToWorldPos(zone);
     float num = UNITS_PER_ZONE / 2.f;
-    float x = state.Range(-num + locationRadius, num - locationRadius);
-    float z = state.Range(-num + locationRadius, num - locationRadius);
+    float x = state.range(-num + locationRadius, num - locationRadius);
+    float z = state.range(-num + locationRadius, num - locationRadius);
     return pos + Vector3f(x, 0.f, z);
 }
 
@@ -993,8 +993,8 @@ ZoneID IZoneManager::GetRandomZone(VUtils::Random::State& state, float range) {
     int num = (std::int32_t)range / (std::int32_t)UNITS_PER_ZONE;
     ZoneID zone;
     do {
-        float x = state.Range(-num, num);
-        float y = state.Range(-num, num);
+        float x = state.range(-num, num);
+        float y = state.range(-num, num);
         zone = ZoneID(x, y);
     } while (ZoneToWorldPos(zone).magnitude() >= 10000);
     return zone;
@@ -1042,7 +1042,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
         //}
 
         if (location.m_randomRotation) {
-            rot = Quaternion::euler(0, VUtils::Random::State().Range(0, 16) * 22.5f, 0);
+            rot = Quaternion::euler(0, VUtils::Random::State().range(0, 16) * 22.5f, 0);
         }
 
         avledet::util::Hash seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
@@ -1180,7 +1180,7 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State& state, Vector3f center
     Vector3f b = center;
     Vector3f a = center;
     for (int i = 0; i < 10; i++) {
-        Vector2f vector = state.InsideUnitCircle() * radius;
+        Vector2f vector = state.inside_unit_circle() * radius;
         Vector3f vector2 = center + Vector3f(vector.x, 0.f, vector.y);
         float groundHeight = GetGroundHeight(vector2);
         if (groundHeight < num3) {

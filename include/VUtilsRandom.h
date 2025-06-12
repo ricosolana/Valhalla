@@ -3,33 +3,41 @@
 // reverse engineered implementation of Unity Random and associated functions
 // these are algorithms only, not steps, so shoo patent lawyers!
 
-#include "VUtils.h"
+#include <cstdint>
 #include "Vector.h"
+#include "VUtils.h"
 
-namespace VUtils::Random {
+namespace avledet::util {
 
-    class State {
-    private:
-        std::uint32_t m_seed[4];
+    namespace CSU {
+        class Random {
+        private:
+            std::uint32_t m_seed[4];
 
+        public:
+            Random();
+            Random(std::int32_t seed);
+            Random(Random const& other); // copy construct
 
-    public:
-        State();
-        State(std::int32_t seed);
-        State(const State& other); // copy construct
+            // Returns a random float from 0 to 1
+            float next_float();
+            std::uint32_t next_int();
+            float value() { return next_float(); }
 
-        // Returns a random float from 0 to 1
-        float NextFloat();
-        std::uint32_t NextInt();
-        float Value() { return NextFloat(); }
+            float range(float minInclude, float maxExclude);
+            std::int32_t range(std::int32_t minInclude, std::int32_t maxExclude);
 
-        float Range(float minInclude, float maxExclude);
-        std::int32_t Range(std::int32_t minInclude, std::int32_t maxExclude);
+            Vector2f inside_unit_circle();
+            Vector3f on_unit_sphere();
+            Vector3f inside_unit_sphere();
 
-        Vector2f InsideUnitCircle();
-        Vector3f OnUnitSphere();
-        Vector3f InsideUnitSphere();
-    };
+        public:
+            //const std::uint32_t* extract_seed() {
+            //    return m_seed;
+            //}
+        };
+
+    }// namespace avledet::util::CSU
 
     avledet::util::UserID GenerateUID();
 
@@ -37,5 +45,12 @@ namespace VUtils::Random {
 
     std::string GenerateAlphaNum(std::size_t count);
 
-}
+    //TODO migrate away
+    using State = CSU::Random;
 
+}// namespace avledet::util
+
+//TODO migrate away
+namespace VUtils {
+    namespace Random = avledet::util;
+}

@@ -83,7 +83,7 @@ void IRandomEventManager::Update() {
 		// try to set a new current event
 		if (m_eventIntervalTimer > VH_SETTINGS.eventsInterval.count()) {
 			m_eventIntervalTimer = 0;
-			if (VUtils::Random::State().NextFloat() <= VH_SETTINGS.eventsChance) {
+			if (VUtils::Random::State().next_float() <= VH_SETTINGS.eventsChance) {
 
 				if (auto opt = GetPossibleRandomEvent()) {
 					auto&& e = opt.value().first;
@@ -152,13 +152,13 @@ std::optional<std::pair<std::reference_wrapper<const IRandomEventManager::Event>
 			}
 
 			if (!positions.empty())
-				result.push_back({ *e, positions[VUtils::Random::State().Range(0, positions.size())] });
+				result.push_back({ *e, positions[VUtils::Random::State().range(0, positions.size())] });
 
 		}
 	}
 
 	if (!result.empty())
-		return result[VUtils::Random::State().Range(0, result.size())];
+		return result[VUtils::Random::State().range(0, result.size())];
 
 	return std::nullopt;
 }
