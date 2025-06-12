@@ -11,6 +11,7 @@
 #include "isteamnetworkingutils.h"
 #include "steam_api.h"
 #include "steam_api_common.h"
+#include "steamclientpublic.h"
 #include "steamnetworkingtypes.h"
 
 std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server) {
@@ -293,10 +294,11 @@ void AcceptorSteam::start() {
 }
 
 void AcceptorSteam::update() {
-    if (SteamSocket::is_game_server())
+    if (SteamSocket::is_game_server()) {
         SteamGameServer_RunCallbacks();
-    else
+    } else {
         SteamAPI_RunCallbacks();
+    }
 
     for (auto&& socket : m_ready) {
         m_connect_callback(std::move(socket));
@@ -305,13 +307,14 @@ void AcceptorSteam::update() {
 }
 
 void AcceptorSteam::stop() {
-    {
+    if (m_listen_socket || m_lobbyID.IsValid()) {
         this->cancel_auth_session_ticket();
 
-        {
-            for (auto&& socket : m_sockets)
-                socket->flush();
-        }
+        //stop now, no waiting...
+        //{
+        //    for (auto&& socket : m_sockets)
+        //        socket->flush();
+        //}
 
         // we end the scope prematurely to avoid
         // stealing the mutex during the sleep
@@ -320,9 +323,9 @@ void AcceptorSteam::stop() {
 
         // TODO is sleep really the best here?
         //  there is no great alternative
-        if (m_listen_socket) {
-            std::this_thread::sleep_for(1s);
-        }
+        //if (m_listen_socket) {
+        //    std::this_thread::sleep_for(1s);
+        //}
 
         {
             //std::scoped_lock scoped(m_mux);
@@ -333,7 +336,9 @@ void AcceptorSteam::stop() {
         // TODO does this generate callbacks? 
         // if not, we can stop the thread earlier / immediately
         SteamSocket::get_steam_sockets()->CloseListenSocket(m_listen_socket);
+        
         m_listen_socket = k_HSteamListenSocket_Invalid;
+        m_lobbyID = {};
 
         if (SteamSocket::is_game_server())
             SteamGameServer_Shutdown();

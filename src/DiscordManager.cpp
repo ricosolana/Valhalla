@@ -1,4 +1,7 @@
 #include "DiscordManager.h"
+#include "WorldManager.h"
+#include <dpp/appcommand.h>
+#include <dpp/restresults.h>
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
 
@@ -47,25 +50,32 @@ void IDiscordManager::Init() {
 	m_bot->on_slashcommand([this](const dpp::slashcommand_t& event) {
 		//event.thinking(true);
 		
-		auto&& label = event.command.get_command_name();
+		auto label = event.command.get_command_name();
 
 		if (label == "vhfreset") {
 			event.reply("Deleted all commands");
-			auto&& commands = m_bot->global_commands_get_sync();
-			for (auto&& command : commands) {
-				if (command.second.name == "vhfreset"
-					|| command.second.name == "vhfreg")
-					continue;
-				m_bot->global_command_delete_sync(command.first);
-			}
+			m_bot->global_commands_get([this](dpp::confirmation_callback_t const& cb) {
+				if (!cb.is_error()) {
+					auto&& commands = std::get<dpp::slashcommand_map>(cb.value);
+					for (auto&& command : commands) {
+						if (command.second.name == "vhfreset"
+							|| command.second.name == "vhfreg")
+							continue;
+						//m_bot->global_command_delete_sync(command.first);
+						m_bot->global_command_delete(command.first);
+					}
+				}
+			});
 		}
 		else {
-			Valhalla()->RunTask([=](Task&) {
+			Valhalla()->RunTask([this, label, event](Task&) {
 				if (label == "vhadmin") {
 					auto&& admin = Valhalla()->m_admin;
 
-					auto&& identifier = std::get_if<std::string>(&event.get_parameter("identifier"));
-					auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+					auto param_variant = event.get_parameter("identifier");
+					auto flag_variant = event.get_parameter("flag");
+					auto&& identifier = std::get_if<std::string>(&param_variant);
+					auto&& flag = std::get_if<bool>(&flag_variant);
 					if (identifier) {
 						if (auto&& peer = NetManager()->GetPeer(*identifier)) {
 							if (flag) {
@@ -121,7 +131,8 @@ void IDiscordManager::Init() {
 					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
 						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
 						//seconds duration = duration_cast<std::chrono::seconds>(e->m_duration);
-						auto&& dur = std::get_if<std::int64_t>(&event.get_parameter("duration"));
+						auto dur_variant = event.get_parameter("duration");
+						auto&& dur = std::get_if<std::int64_t>(&dur_variant);
 						RandomEventManager()->SetCurrentRandomEvent(*e, peer->m_pos,
 							dur ? std::chrono::seconds(*dur) : duration_cast<std::chrono::seconds>(e->m_duration));
 						event.reply("Started event in world");
@@ -140,7 +151,8 @@ void IDiscordManager::Init() {
 						event.reply("Player not found");
 				}
 				else if (label == "vhlink") {
-					auto&& key = std::get_if<std::string>(&event.get_parameter("key"));
+					auto key_variant = event.get_parameter("key");
+					auto&& key = std::get_if<std::string>(&key_variant);
 					if (key) {
 						// Verify the key
 						for (auto&& itr = m_tempLinkingKeys.begin(); itr != m_tempLinkingKeys.end(); ) {
@@ -226,7 +238,8 @@ void IDiscordManager::Init() {
 						+ std::to_string(duration_cast<std::chrono::seconds>(Valhalla()->Elapsed()).count()) + "s");
 				}
 				else if (label == "vhtod") {
-					auto&& time = std::get_if<std::string>(&event.get_parameter("time"));
+					auto time_variant = event.get_parameter("time");
+					auto&& time = std::get_if<std::string>(&time_variant);
 					if (time) {
 						char ch = (*time)[0];
 						Valhalla()->SetTimeOfDay(ch == 'M' ? TIME_MORNING : ch == 'D' ? TIME_DAY : ch == 'A' ? TIME_AFTERNOON : TIME_NIGHT);
@@ -238,7 +251,8 @@ void IDiscordManager::Init() {
 					}
 				}
 				else if (label == "vhwhitelist") {
-					auto&& flag = std::get_if<bool>(&event.get_parameter("flag"));
+					auto flag_variant = event.get_parameter("flag");
+					auto&& flag = std::get_if<bool>(&flag_variant);
 					if (flag) {
 						VH_SETTINGS.playerWhitelist = *flag;
 						event.reply(std::string("Whitelist is now ") + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
@@ -259,7 +273,8 @@ void IDiscordManager::Init() {
 						event.reply("Player not found");
 				}
 				else if (label == "vhworldtime") {
-					auto&& time = std::get_if<double>(&event.get_parameter("time"));
+					auto time_variant = event.get_parameter("time");
+					auto&& time = std::get_if<double>(&time_variant);
 					if (time) {
 						Valhalla()->SetWorldTime(*time);
 						event.reply("Set world time to " + std::to_string(*time));
@@ -312,7 +327,7 @@ void IDiscordManager::Init() {
 	m_bot->on_autocomplete([this](const dpp::autocomplete_t& evt) {
 		for (auto& opt : evt.options) {
 			if (opt.focused) {
-				Valhalla()->RunTask([=](Task&) {
+				Valhalla()->RunTask([this, evt, opt](Task&) {
 					auto&& base = std::get<std::string>(opt.value);
 					auto irsp = dpp::interaction_response(dpp::ir_autocomplete_reply);
 					auto&& choices = irsp.autocomplete_choices;
@@ -386,7 +401,7 @@ void IDiscordManager::Init() {
 		if (VH_SETTINGS.discordSyncLeaves) {
 			// Try kicking player off Valheim server
 
-			if (auto&& peer = UnlinkPeerBySnowflake(event.removed->id)) {
+			if (auto&& peer = UnlinkPeerBySnowflake(event.removed.id)) {
 				peer->Kick();
 
 				LOG_INFO(VH_LOGGER, "Kicked {} due to guild leave", peer->m_name);

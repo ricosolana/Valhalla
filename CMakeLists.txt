@@ -81,6 +81,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     message("Discord: enabled")
+    find_package(OpenSSL REQUIRED)
     find_package(dpp CONFIG REQUIRED)
 else()
     message("Discord: disabled")
@@ -175,6 +176,7 @@ endif()
 
 if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     target_link_libraries(${PROJECT_NAME}
+        PUBLIC OpenSSL::SSL OpenSSL::Crypto
         PRIVATE dpp::dpp
     )
 endif()

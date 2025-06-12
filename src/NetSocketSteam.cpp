@@ -30,6 +30,13 @@ void SteamSocket::init_identifiers() {
 }
 
 void SteamSocket::Close(bool linger) {
+    // logic:
+    //  if we are already lingering, and we are close-now (do not linger), then override and close
+    if (m_status == Status::Lingering && !linger) {
+        m_status = Status::Closed;
+        return;
+    }
+
     switch (m_status) {
         case Status::Closed:
         case Status::Connect_Failed:
@@ -39,13 +46,14 @@ void SteamSocket::Close(bool linger) {
             break;
     }
 
+
     if (m_status == Status::Connecting) {
         m_status = Status::Connect_Failed;
     } else {
         if (linger) {
-            m_status = Status::Lingering;
-
             this->flush();
+
+            m_status = Status::Lingering;
         } else {
             m_status = Status::Closed;
         }
@@ -83,7 +91,10 @@ bool SteamSocket::authenticate(avledet::util::ByteView ticket) {
 void SteamSocket::Send(std::vector<char> bytes) {
     assert(!bytes.empty());
 
-    m_send_queue.push_back(std::move(bytes));
+
+    if (m_status != Status::Lingering)
+        m_send_queue.push_back(std::move(bytes));
+
     this->send_queued();
 }
 
@@ -160,7 +171,7 @@ int SteamSocket::GetPing() {
 }
 
 void SteamSocket::send_queued() {
-    if (m_status == Status::Connected) {
+    if (m_status == Status::Connected /* || m_status == Status::Lingering*/) {
         for (auto&& itr = m_send_queue.begin(); itr != m_send_queue.end();) {
             auto&& array = *itr;
             auto res = get_steam_sockets()->SendMessageToConnection(m_conn, array.data(), (uint32_t)array.size(),
