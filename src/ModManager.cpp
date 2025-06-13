@@ -88,7 +88,8 @@ int LoadFileRequire(lua_State* L) {
 }
 
 void IModManager::LoadAPI() {
-    using namespace avledet::util::CSU;
+    using namespace avledet::util;
+    using namespace CSU;
 
     m_state.new_usertype<Vector3f>("Vector3f",
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(),
@@ -196,7 +197,7 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
-        //sol::constructors<ZDOID(avledet::util::UserID userID, std::uint32_t id)>(),
+        //sol::constructors<ZDOID(UserID userID, std::uint32_t id)>(),
         sol::factories([](Int64Wrapper uuid, std::uint32_t id) { return ZDOID((std::int64_t)uuid, id); }),
         "NONE", sol::var(ZDOID::NONE), // sol::property([]() { return ZDOID::NONE; }),
         "user_id", sol::property([](ZDOID& self) { return (Int64Wrapper)self.get_user_id(); }, [](ZDOID& self, Int64Wrapper value) { self.set_user_id((std::int64_t)value); }),
@@ -204,41 +205,41 @@ void IModManager::LoadAPI() {
     );
 
     m_state.new_enum("Type",
-        "BOOL", Type::BOOL,
+        "BOOL", StreamType::BOOL,
 
-        "STRING", Type::STRING,
-        "STRINGS", Type::STRINGS,
+        "STRING", StreamType::STRING,
+        "STRINGS", StreamType::STRINGS,
 
-        "BYTES", Type::BYTES,
+        "BYTES", StreamType::BYTES,
         
-        "ZDOID", Type::ZDOID,
-        "VECTOR3f", Type::VECTOR3f, "vec3f", Type::VECTOR3f,
-        "VECTOR2i", Type::VECTOR2i, "vec2i", Type::VECTOR2i, 
-        "QUATERNION", Type::QUATERNION, "quat", Type::QUATERNION,
+        "ZDOID", StreamType::ZDOID,
+        "VECTOR3f", StreamType::VECTOR3f, "vec3f", StreamType::VECTOR3f,
+        "VECTOR2i", StreamType::VECTOR2i, "vec2i", StreamType::VECTOR2i, 
+        "QUATERNION", StreamType::QUATERNION, "quat", StreamType::QUATERNION,
         
-        "INT8", Type::INT8, "s8", Type::INT8,
-        "INT16", Type::INT16, "SHORT", Type::INT16, "s16", Type::INT16,
-        "INT32", Type::INT32, "INT", Type::INT32, "HASH", Type::INT32, "s32", Type::INT32,
-        "INT64", Type::INT64, "LONG", Type::INT64, "s64", Type::INT64,
+        "INT8", StreamType::INT8, "s8", StreamType::INT8,
+        "INT16", StreamType::INT16, "SHORT", StreamType::INT16, "s16", StreamType::INT16,
+        "INT32", StreamType::INT32, "INT", StreamType::INT32, "HASH", StreamType::INT32, "s32", StreamType::INT32,
+        "INT64", StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
 
-        "UINT8", Type::UINT8, "BYTE", Type::UINT8, "u8", Type::UINT8,
-        "UINT16", Type::UINT16, "USHORT", Type::UINT16, "u16", Type::UINT16,
-        "UINT32", Type::UINT32, "UINT", Type::UINT32, "u32", Type::UINT32,
-        "UINT64", Type::UINT64, "ULONG", Type::UINT64, "u64", Type::UINT64,
+        "UINT8", StreamType::UINT8, "BYTE", StreamType::UINT8, "u8", StreamType::UINT8,
+        "UINT16", StreamType::UINT16, "USHORT", StreamType::UINT16, "u16", StreamType::UINT16,
+        "UINT32", StreamType::UINT32, "UINT", StreamType::UINT32, "u32", StreamType::UINT32,
+        "UINT64", StreamType::UINT64, "ULONG", StreamType::UINT64, "u64", StreamType::UINT64,
 
-        "FLOAT", Type::FLOAT,
-        "DOUBLE", Type::DOUBLE,
+        "FLOAT", StreamType::FLOAT,
+        "DOUBLE", StreamType::DOUBLE,
 
-        "CHAR16", Type::CHAR16
+        "CHAR16", StreamType::CHAR16
     );
     
     // TODO
     //  this seems like some very unsafe / sketchy usage
-    m_state.new_usertype<avledet::util::Bytes>("Bytes",
-        sol::constructors<avledet::util::Bytes(), avledet::util::Bytes(const avledet::util::Bytes&)>(),
-        "assign", [](avledet::util::Bytes& self, const avledet::util::Bytes& other) { self = other; },
-        "move", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self = std::move(other); },
-        "swap", [](avledet::util::Bytes& self, avledet::util::Bytes& other) { self.swap(other); }
+    m_state.new_usertype<Bytes>("Bytes",
+        sol::constructors<Bytes(), Bytes(Bytes const&)>(),
+        "assign", [](Bytes& self, Bytes const& other) { self = other; },
+        "move", [](Bytes& self, Bytes& other) { self = std::move(other); },
+        "swap", [](Bytes& self, Bytes& other) { self.swap(other); }
     );
 
     // TODO impl
@@ -250,7 +251,7 @@ void IModManager::LoadAPI() {
     //);
 
     m_state.new_usertype<DataWriter>("Writer",
-        sol::constructors<DataWriter(avledet::util::Bytes)>(),
+        sol::constructors<DataWriter(Bytes)>(),
 
         //"ToReader", &DataWriter::ToReader,
         //"buf", &DataWriter::get_buf, //TODO currently unsafe
@@ -260,11 +261,11 @@ void IModManager::LoadAPI() {
 
         "write_bool", &DataWriter::write<bool>,
         "write_string", &DataWriter::write<std::string_view>,
-        "write_bytes", &DataWriter::write<avledet::util::Bytes>,
-        "write_zdoid", &DataWriter::write<avledet::util::ZDOID>,
-        "write_vec3f", &DataWriter::write<avledet::util::CSU::Vector3f>,
-        "write_vec2i", &DataWriter::write<avledet::util::CSU::Vector2i>,
-        "write_quat", &DataWriter::write<avledet::util::CSU::Quaternion>,
+        "write_bytes", &DataWriter::write<Bytes>,
+        "write_zdoid", &DataWriter::write<ZDOID>,
+        "write_vec3f", &DataWriter::write<Vector3f>,
+        "write_vec2i", &DataWriter::write<Vector2i>,
+        "write_quat", &DataWriter::write<Quaternion>,
         //"write_profile", &DataWriter::write<UserProfile>, //TODO impl
 
         //TODO impl everything
@@ -282,15 +283,15 @@ void IModManager::LoadAPI() {
         "write", sol::overload(
             [](DataWriter& self, bool val) { return self.write(val); },
             [](DataWriter& self, std::string_view val) { return self.write(val); },
-            [](DataWriter& self, avledet::util::Bytes const& val) { return self.write(val); },
-            [](DataWriter& self, avledet::util::ZDOID const& val) { return self.write(val); },
-            [](DataWriter& self, avledet::util::CSU::Vector3f const& val) { return self.write(val); },
-            [](DataWriter& self, avledet::util::CSU::Vector2i const& val) { return self.write(val); },
-            [](DataWriter& self, avledet::util::CSU::Quaternion const& val) { return self.write(val); },
+            [](DataWriter& self, Bytes const& val) { return self.write(val); },
+            [](DataWriter& self, ZDOID const& val) { return self.write(val); },
+            [](DataWriter& self, Vector3f const& val) { return self.write(val); },
+            [](DataWriter& self, Vector2i const& val) { return self.write(val); },
+            [](DataWriter& self, Quaternion const& val) { return self.write(val); },
             // Variadic serializers:::
-            [](DataWriter &self, IModManager::Type type, sol::object obj) { self.write(type, obj); },
-            //{ &DataWriter::write<IModManager::Type, sol::object> },
-            [](DataWriter &self, IModManager::Types const& types, sol::variadic_args args) {
+            [](DataWriter &self, StreamType type, sol::object obj) { self.write(type, obj); },
+            //{ &DataWriter::write<IModManager::StreamType, sol::object> },
+            [](DataWriter &self, StreamTypes const& types, sol::variadic_args args) {
                 self.write(types, sol::variadic_results(args.begin(), args.end()));
             }
         )
@@ -298,20 +299,20 @@ void IModManager::LoadAPI() {
 
     // Package read/write types
     m_state.new_usertype<DataReader>("Reader",
-        sol::constructors<DataReader(avledet::util::Bytes)>(),
+        sol::constructors<DataReader(Bytes)>(),
 
         //"ToWriter", &DataReader::ToWriter,
         //"buf", &DataReader::m_buf,
         /*
         "buf", sol::property(
             sol::overload(
-                [](DataReader& self, avledet::util::Bytes& value) { self.m_data = std::ref(value); },
-                [](DataReader& self, avledet::util::ByteView value) { self.m_data = value; }
+                [](DataReader& self, Bytes& value) { self.m_data = std::ref(value); },
+                [](DataReader& self, ByteView value) { self.m_data = value; }
             ),
             [this](DataReader& self) {
                 return std::visit(VUtils::Traits::overload{
-                    [this](std::reference_wrapper<avledet::util::Bytes> buf) { return sol::make_object(m_state, buf); },
-                    [this](avledet::util::ByteView buf) { return sol::make_object(m_state, buf); }
+                    [this](std::reference_wrapper<Bytes> buf) { return sol::make_object(m_state, buf); },
+                    [this](ByteView buf) { return sol::make_object(m_state, buf); }
                 }, self.m_data);
             }
         ),*/
@@ -321,14 +322,14 @@ void IModManager::LoadAPI() {
         "read_bool", [](DataReader& self) { return self.read<bool>(); },
 
         "read_string", [](DataReader& self) { return self.read<std::string>(); },
-        "read_strings", [](DataReader& self) { return self.read<avledet::util::Strings>(); }, // ReadStrings,
+        "read_strings", [](DataReader& self) { return self.read<Strings>(); }, // ReadStrings,
 
-        "read_bytes", [](DataReader& self) { return self.read<avledet::util::Bytes>(); },
+        "read_bytes", [](DataReader& self) { return self.read<Bytes>(); },
 
-        "read_zdoid", [](DataReader& self) { return self.read<avledet::util::ZDOID>(); }, //&DataReader::read<avledet::util::ZDOID>,
-        "read_vec3f", [](DataReader& self) { return self.read<avledet::util::CSU::Vector3f>(); }, //&DataReader::read<avledet::util::CSU::Vector3f>,
-        "read_vec2i", [](DataReader& self) { return self.read<avledet::util::CSU::Vector2i>(); }, //&DataReader::read<avledet::util::CSU::Vector2i>,
-        "read_quat", [](DataReader& self) { return self.read<avledet::util::CSU::Quaternion>(); }, //&DataReader::read<avledet::util::CSU::Quaternion>,
+        "read_zdoid", [](DataReader& self) { return self.read<ZDOID>(); }, //&DataReader::read<ZDOID>,
+        "read_vec3f", [](DataReader& self) { return self.read<Vector3f>(); }, //&DataReader::read<CSU::Vector3f>,
+        "read_vec2i", [](DataReader& self) { return self.read<Vector2i>(); }, //&DataReader::read<CSU::Vector2i>,
+        "read_quat", [](DataReader& self) { return self.read<Quaternion>(); }, //&DataReader::read<CSU::Quaternion>,
         //"ReadProfile", [](DataReader& self) { return self.read<UserProfile>(); }, //&DataReader::read<UserProfile>, //TODO impl
 
         "read_s8", [](DataReader& self) { return self.read<std::int8_t>(); }, //&DataReader::read<std::int8_t>,
@@ -350,7 +351,7 @@ void IModManager::LoadAPI() {
         //  local reader = Reader.new()
         //  reader:read()
         "read", [](DataReader& self, sol::state_view state, sol::variadic_args args) { 
-            return self.read(IModManager::Types(args.begin(), args.end()), state);
+            return self.read(StreamTypes(args.begin(), args.end()), state);
         }
         
     );
@@ -431,17 +432,17 @@ void IModManager::LoadAPI() {
         //),
         "disconnect", &Peer::Disconnect,
         "invoke_self", sol::overload(
-            sol::resolve<bool (avledet::util::Hash, DataReader&)>(&Peer::InternalInvoke),
+            sol::resolve<bool (Hash, DataReader&)>(&Peer::InternalInvoke),
             sol::resolve<bool (std::string_view, DataReader&)>(&Peer::InternalInvoke)
         ),
 
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
-            //static_cast<void (Peer::*)(avledet::util::Hash, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
+            //static_cast<void (Peer::*)(Hash, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
         //"Register", [](Peer& self, const MethodSig &repr, sol::function func) {
         //    self.Register(repr.m_hash, func, repr.m_types);
         //},
 
-        // static_cast<void (DataWriter::*)(const avledet::util::Bytes&, std::size_t)>(&DataWriter::write),
+        // static_cast<void (DataWriter::*)(const Bytes&, std::size_t)>(&DataWriter::write),
         "register", &Peer::RegisterLua,
         //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) { 
         //    sol::environment& env = te;
@@ -458,7 +459,7 @@ void IModManager::LoadAPI() {
 
         //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
         //"GetMethod", sol::overload(
-        //    sol::resolve<IMethod<Peer*>* (avledet::util::Hash)>(&Peer::GetMethod),
+        //    sol::resolve<IMethod<Peer*>* (Hash)>(&Peer::GetMethod),
         //    sol::resolve<IMethod<Peer*>* (const std::string&)>(&Peer::GetMethod)
         //
         //    //static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
@@ -532,13 +533,13 @@ void IModManager::LoadAPI() {
     m_state["PrefabManager"] = PrefabManager();
     m_state.new_usertype<IPrefabManager>("IPrefabManager",
         "get_prefab", sol::overload(
-            sol::resolve<const Prefab*(avledet::util::Hash) const>(&IPrefabManager::GetPrefab),
-            sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::GetPrefab)
+            sol::resolve<const Prefab*(Hash) const>(&IPrefabManager::find_prefab),
+            sol::resolve<const Prefab*(std::string_view) const>(&IPrefabManager::find_prefab)
         )
         // TODO restrict prefab registration to startup only
         /*
         "Register", sol::overload(
-            sol::resolve<void(std::string_view, avledet::util::ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
+            sol::resolve<void(std::string_view, ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
             sol::resolve<void(DataReader&)>(&IPrefabManager::Register)
         )*/
     );
@@ -546,7 +547,7 @@ void IModManager::LoadAPI() {
     //auto prefabApiTable = m_state["PrefabManager"].get_or_create<sol::table>();
     //prefabApiTable["GetPrefab"] = sol::overload(
     //    [](const std::string& name) { return PrefabManager()->GetPrefab(name); },
-    //    [](avledet::util::Hash hash) { return PrefabManager()->GetPrefab(hash); }
+    //    [](Hash hash) { return PrefabManager()->GetPrefab(hash); }
     //);
 
 
@@ -571,56 +572,56 @@ void IModManager::LoadAPI() {
         
         // Getters
         "get_float", sol::overload(
-            sol::resolve<float(avledet::util::Hash, float) const>(&ZDO::GetFloat),
-            sol::resolve<float(avledet::util::Hash) const>(&ZDO::GetFloat),
+            sol::resolve<float(Hash, float) const>(&ZDO::GetFloat),
+            sol::resolve<float(Hash) const>(&ZDO::GetFloat),
             sol::resolve<float(std::string_view, float) const>(&ZDO::GetFloat),
             sol::resolve<float(std::string_view) const>(&ZDO::GetFloat)
         ),
         "get_int", sol::overload(
-            sol::resolve<std::int32_t(avledet::util::Hash, std::int32_t) const>(&ZDO::GetInt),
-            sol::resolve<std::int32_t(avledet::util::Hash) const>(&ZDO::GetInt),
+            sol::resolve<std::int32_t(Hash, std::int32_t) const>(&ZDO::GetInt),
+            sol::resolve<std::int32_t(Hash) const>(&ZDO::GetInt),
             sol::resolve<std::int32_t(std::string_view, std::int32_t) const>(&ZDO::GetInt),
             sol::resolve<std::int32_t(std::string_view) const>(&ZDO::GetInt)
         ),
         "get_long", sol::overload(
-            sol::resolve<Int64Wrapper(avledet::util::Hash, Int64Wrapper) const>(&ZDO::GetLongWrapper),
-            sol::resolve<Int64Wrapper(avledet::util::Hash) const>(&ZDO::GetLongWrapper),
+            sol::resolve<Int64Wrapper(Hash, Int64Wrapper) const>(&ZDO::GetLongWrapper),
+            sol::resolve<Int64Wrapper(Hash) const>(&ZDO::GetLongWrapper),
             sol::resolve<Int64Wrapper(std::string_view, Int64Wrapper) const>(&ZDO::GetLongWrapper),
             sol::resolve<Int64Wrapper(std::string_view) const>(&ZDO::GetLongWrapper)
         ),
         "get_quat", sol::overload(
-            sol::resolve<Quaternion(avledet::util::Hash, Quaternion) const>(&ZDO::GetQuaternion),
-            sol::resolve<Quaternion(avledet::util::Hash) const>(&ZDO::GetQuaternion),
+            sol::resolve<Quaternion(Hash, Quaternion) const>(&ZDO::GetQuaternion),
+            sol::resolve<Quaternion(Hash) const>(&ZDO::GetQuaternion),
             sol::resolve<Quaternion(std::string_view, Quaternion) const>(&ZDO::GetQuaternion),
             sol::resolve<Quaternion(std::string_view) const>(&ZDO::GetQuaternion)
         ),
         "get_vec3", sol::overload(
-            sol::resolve<Vector3f (avledet::util::Hash, Vector3f) const>(&ZDO::GetVector3),
-            sol::resolve<Vector3f (avledet::util::Hash) const>(&ZDO::GetVector3),
+            sol::resolve<Vector3f (Hash, Vector3f) const>(&ZDO::GetVector3),
+            sol::resolve<Vector3f (Hash) const>(&ZDO::GetVector3),
             sol::resolve<Vector3f (std::string_view, Vector3f) const>(&ZDO::GetVector3),
             sol::resolve<Vector3f (std::string_view) const>(&ZDO::GetVector3)
         ),
         "get_string", sol::overload(
-            sol::resolve<std::string_view (avledet::util::Hash, std::string_view) const>(&ZDO::GetString),
-            sol::resolve<std::string_view (avledet::util::Hash) const>(&ZDO::GetString),
+            sol::resolve<std::string_view (Hash, std::string_view) const>(&ZDO::GetString),
+            sol::resolve<std::string_view (Hash) const>(&ZDO::GetString),
             sol::resolve<std::string_view (std::string_view, std::string_view) const>(&ZDO::GetString),
             sol::resolve<std::string_view (std::string_view) const>(&ZDO::GetString)
         ),
         "get_bytes", sol::overload(
-            sol::resolve<const avledet::util::Bytes* (avledet::util::Hash) const>(&ZDO::GetBytes),
-            sol::resolve<const avledet::util::Bytes* (std::string_view) const>(&ZDO::GetBytes)
-            //[](ZDO& self, avledet::util::Hash key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(avledet::util::Bytes(*bytes)) : std::nullopt; },
-            //[](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(avledet::util::Bytes(*bytes)) : std::nullopt; }
+            sol::resolve<const Bytes* (Hash) const>(&ZDO::GetBytes),
+            sol::resolve<const Bytes* (std::string_view) const>(&ZDO::GetBytes)
+            //[](ZDO& self, Hash key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; },
+            //[](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; }
         ),
         "get_bool", sol::overload(
-            sol::resolve<bool (avledet::util::Hash, bool) const>(&ZDO::GetBool),
-            sol::resolve<bool (avledet::util::Hash) const>(&ZDO::GetBool),
+            sol::resolve<bool (Hash, bool) const>(&ZDO::GetBool),
+            sol::resolve<bool (Hash) const>(&ZDO::GetBool),
             sol::resolve<bool (std::string_view, bool) const>(&ZDO::GetBool),
             sol::resolve<bool (std::string_view) const>(&ZDO::GetBool)
         ),
         "get_zdoid", sol::overload(
-            //sol::resolve<ZDOID(avledet::util::Hash, const ZDOID&) const>(&ZDO::GetZDOID),
-            //sol::resolve<ZDOID(avledet::util::Hash) const>(&ZDO::GetZDOID),
+            //sol::resolve<ZDOID(Hash, const ZDOID&) const>(&ZDO::GetZDOID),
+            //sol::resolve<ZDOID(Hash) const>(&ZDO::GetZDOID),
             sol::resolve<ZDOID(std::string_view, ZDOID) const>(&ZDO::GetZDOID),
             sol::resolve<ZDOID(std::string_view) const>(&ZDO::GetZDOID)
         ),
@@ -628,31 +629,31 @@ void IModManager::LoadAPI() {
 
         // Setters
         "set_float", sol::overload(
-            static_cast<void (ZDO::*)(avledet::util::Hash, float)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, float)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, float)>(&ZDO::Set)
         ),        
         "set_int", sol::overload(
-            static_cast<void (ZDO::*)(avledet::util::Hash, std::int32_t)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, std::int32_t)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::Set)
         ),
         "set", sol::overload(
             // Quaternion
-            static_cast<void (ZDO::*)(avledet::util::Hash, Quaternion)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, Quaternion)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, Quaternion)>(&ZDO::Set),
             // Vector3f
-            static_cast<void (ZDO::*)(avledet::util::Hash, Vector3f)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, Vector3f)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, Vector3f)>(&ZDO::Set),
             // std::string
-            static_cast<void (ZDO::*)(avledet::util::Hash, std::string)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, std::string)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, std::string)>(&ZDO::Set),
             // bool
-            static_cast<void (ZDO::*)(avledet::util::Hash, bool)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, bool)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, bool)>(&ZDO::Set),
             // zdoid
-            //static_cast<void (ZDO::*)(avledet::util::Hash, avledet::util::Hash, const ZDOID&)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(Hash, Hash, const ZDOID&)>(&ZDO::Set),
             static_cast<void (ZDO::*)(std::string_view, ZDOID)>(&ZDO::Set),
             // int64 wrapper
-            [](ZDO& self, avledet::util::Hash key, Int64Wrapper value) { self.Set(key, (std::int64_t)value); },
+            [](ZDO& self, Hash key, Int64Wrapper value) { self.Set(key, (std::int64_t)value); },
             [](ZDO& self, std::string_view key, Int64Wrapper value) { self.Set(key, (std::int64_t)value); }
         )
     );
@@ -732,7 +733,7 @@ void IModManager::LoadAPI() {
         "next_night", sol::property(&IValhalla::GetTomorrowNight),
 
         "subscribe", [this](IValhalla& self, sol::variadic_args args) {
-            avledet::util::Hash hash = 0;
+            Hash hash = 0;
             sol::function func;
             int priority = 0;
 
@@ -745,9 +746,9 @@ void IModManager::LoadAPI() {
 
                 if (i + offset < args.size()) {
                     if (type == sol::type::string)
-                        hash ^= avledet::util::get_stable_hash(arg.as<std::string>());
+                        hash ^= get_stable_hash(arg.as<std::string>());
                     else if (type == sol::type::number)
-                        hash ^= arg.as<avledet::util::Hash>();
+                        hash ^= arg.as<Hash>();
                     else {
                         throw std::runtime_error("initial params must be string or hash");
                     }
@@ -785,48 +786,48 @@ void IModManager::LoadAPI() {
         "some_zdos", sol::overload(
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, avledet::util::Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const Vector3f& pos, float radius, std::size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, std::size_t, Hash prefabHash, Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)>(&IZDOManager::SomeZDOs),
+            [](IZDOManager& self, const Vector3f& pos, float radius, std::size_t max, std::string_view name) { return self.SomeZDOs(pos, radius, max, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, IZDOManager::pred_t)>(&IZDOManager::SomeZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, const ZoneID& zone, std::size_t max, std::string_view name) { return self.SomeZDOs(zone, max, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            [](IZDOManager& self, const ZoneID& zone, std::size_t max, std::string_view name) { return self.SomeZDOs(zone, max, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float)>(&IZDOManager::SomeZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
-            [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, std::size_t, Vector3f, float, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::SomeZDOs),
+            [](IZDOManager& self, ZoneID zone, std::size_t max, Vector3f pos, float radius, std::string_view name) { return self.SomeZDOs(zone, max, pos, radius, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "get_zdos", sol::overload(
             sol::resolve<std::list<ZDO::unsafe_value>(IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(avledet::util::Hash)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, std::string_view name) { return self.GetZDOs(avledet::util::get_stable_hash(name)); },
+            sol::resolve<std::list<ZDO::unsafe_value>(Hash)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, std::string_view name) { return self.GetZDOs(get_stable_hash(name)); },
 
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<ZDO::unsafe_value>(Vector3f, float, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(pos, radius, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, IZDOManager::pred_t)>(&IZDOManager::GetZDOs),
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID)>(&IZDOManager::GetZDOs),
 
-            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.GetZDOs(zone, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
             sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float)>(&IZDOManager::GetZDOs),
-            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
-            [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<std::list<ZDO::unsafe_value>(ZoneID, Vector3f, float, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::GetZDOs),
+            [](IZDOManager& self, ZoneID zone, Vector3f pos, float radius, std::string_view name) { return self.GetZDOs(zone, pos, radius, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "any_zdo", sol::overload(
-            sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
+            sol::resolve<ZDO::unsafe_optional (Vector3f, float, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.AnyZDO(pos, radius, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); },
 
-            sol::resolve<ZDO::unsafe_optional (ZoneID, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
-            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<ZDO::unsafe_optional (ZoneID, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::AnyZDO),
+            [](IZDOManager& self, ZoneID zone, std::string_view name) { return self.AnyZDO(zone, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "nearest_zdo", sol::overload(
             sol::resolve<ZDO::unsafe_optional (Vector3f, float, IZDOManager::pred_t)>(&IZDOManager::NearestZDO),
-            sol::resolve<ZDO::unsafe_optional (Vector3f, float, avledet::util::Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
-            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, avledet::util::get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
+            sol::resolve<ZDO::unsafe_optional (Vector3f, float, Hash, Prefab::Flag, Prefab::Flag)>(&IZDOManager::NearestZDO),
+            [](IZDOManager& self, Vector3f pos, float radius, std::string_view name) { return self.NearestZDO(pos, radius, get_stable_hash(name), Prefab::Flag::NONE, Prefab::Flag::NONE); }
         ),
         "force_send_zdo", &IZDOManager::ForceSendZDO,
         //"DestroyZDO", sol::resolve<ZDO&>(&IZDOManager::DestroyZDO),
@@ -836,8 +837,8 @@ void IModManager::LoadAPI() {
         ),
         "instantiate", sol::overload(
             sol::resolve<ZDO::unsafe_value (Prefab const&, Vector3f)>(&IZDOManager::Instantiate),
-            [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(avledet::util::get_stable_hash(name), pos); },
-            sol::resolve<ZDO::unsafe_value (avledet::util::Hash, Vector3f)>(&IZDOManager::Instantiate)
+            [](IZDOManager& self, std::string_view name, Vector3f pos) { return self.Instantiate(get_stable_hash(name), pos); },
+            sol::resolve<ZDO::unsafe_value (Hash, Vector3f)>(&IZDOManager::Instantiate)
             //sol::resolve<ZDO (const ZDO)>(&IZDOManager::Instantiate)
         )
 
@@ -849,7 +850,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<INetManager>("INetManager",
         "get_peer", sol::overload(
             [](INetManager& self, Int64Wrapper owner) { return self.FindPeerByUserID((std::int64_t)owner); },
-            //sol::resolve<Peer*(avledet::util::UserID)>(&INetManager::GetPeer),
+            //sol::resolve<Peer*(UserID)>(&INetManager::GetPeer),
             sol::resolve<Peer* (std::string_view)>(&INetManager::FindPeerByName)
         ),
         "peers", sol::readonly(&INetManager::m_onlinePeers)
@@ -882,8 +883,10 @@ void IModManager::LoadAPI() {
 
     m_state["DungeonManager"] = DungeonManager();
     m_state.new_usertype<IDungeonManager>("IDungeonManager",
-        "get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.GetDungeon(avledet::util::get_stable_hash(name)); },
-        "generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.Generate(dungeon, pos, rot); }
+        "find_dungeon", [](IDungeonManager& self, std::string_view name) { return self.find_dungeon(get_stable_hash(name)); },
+        // TODO must make get_dungeon for lua use reference I guess...
+        //"get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.get_dungeon(get_stable_hash(name)); }, //breaks compilation
+        "generate", [](IDungeonManager& self, Dungeon& dungeon, Vector3f pos, Quaternion rot) { self.generate(dungeon, pos, rot); }
     );
 
 
@@ -961,13 +964,13 @@ void IModManager::LoadAPI() {
 
 
     m_state.new_usertype<ZStdCompressor>("ZStdCompressor",
-        sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(const avledet::util::Bytes&)>(),
-        "compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdCompressor::Compress)
+        sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(const Bytes&)>(),
+        "compress", sol::resolve<std::optional<Bytes>(const Bytes&)>(&ZStdCompressor::Compress)
     );
 
     m_state.new_usertype<ZStdDecompressor>("ZStdDecompressor",
-        sol::constructors<ZStdDecompressor(), ZStdDecompressor(const avledet::util::Bytes&)>(),
-        "decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdDecompressor::Decompress)
+        sol::constructors<ZStdDecompressor(), ZStdDecompressor(const Bytes&)>(),
+        "decompress", sol::resolve<std::optional<Bytes>(const Bytes&)>(&ZStdDecompressor::Decompress)
     );
     
 
@@ -976,7 +979,7 @@ void IModManager::LoadAPI() {
         "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
         "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)),
         "raw", sol::property(sol::resolve<Deflater()>(Deflater::Raw)),
-        "compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Deflater::Compress)
+        "compress", sol::resolve<std::optional<Bytes>(const Bytes&)>(&Deflater::Compress)
     );
 
     m_state.new_usertype<Inflater>("Inflater",
@@ -985,7 +988,7 @@ void IModManager::LoadAPI() {
         "gz", sol::property(Inflater::Gz),
         "auto", sol::property(Inflater::Auto),
         "raw", sol::property(Inflater::Raw),
-        "decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&Inflater::Decompress)
+        "decompress", sol::resolve<std::optional<Bytes>(const Bytes&)>(&Inflater::Decompress)
     );
 
 
@@ -993,40 +996,40 @@ void IModManager::LoadAPI() {
     {
         auto utilsTable = m_state["VUtils"].get_or_create<sol::table>();
 
-        utilsTable["create_bytes"] = []() { return avledet::util::Bytes(); };
+        utilsTable["create_bytes"] = []() { return Bytes(); };
 
         utilsTable["assign"] = sol::overload(
-            [](avledet::util::Bytes& replace, avledet::util::Bytes& other) { replace = other; }
+            [](Bytes& replace, Bytes& other) { replace = other; }
         );
 
         utilsTable["swap"] = sol::overload(
-            [](avledet::util::Bytes& a, avledet::util::Bytes& b) { std::swap(a, b); }
+            [](Bytes& a, Bytes& b) { std::swap(a, b); }
         );
 
         //utilsTable["Move"] = sol::overload(
-        //    [](avledet::util::Bytes& a, avledet::util::Bytes& b) { std::swap(a, b); }
+        //    [](Bytes& a, Bytes& b) { std::swap(a, b); }
         //);
 
         {
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
             //TODO
-            //stringUtilsTable["GetStableHashCode"] = avledet::util::get_stable_hash;
+            //stringUtilsTable["GetStableHashCode"] = get_stable_hash;
         }
 
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
             
-            //resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<avledet::util::Bytes>(const fs::path&)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<Bytes>(const fs::path&)>(VUtils::Resource::ReadFile);
             //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
             //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
             
-            resourceUtilsTable["as_bytes"] = [](std::string_view path) { return VUtils::Resource::ReadFile<avledet::util::Bytes>(path); };
+            resourceUtilsTable["as_bytes"] = [](std::string_view path) { return VUtils::Resource::ReadFile<Bytes>(path); };
             resourceUtilsTable["as_string"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::string>(path); };
             resourceUtilsTable["as_lines"] = [](std::string_view path) { return VUtils::Resource::ReadFile<std::vector<std::string>>(path); };
 
             resourceUtilsTable["write_file"] = sol::overload(
-                sol::resolve<bool(const fs::path&, const avledet::util::Bytes&)>(VUtils::Resource::WriteFile),
+                sol::resolve<bool(const fs::path&, const Bytes&)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, std::string_view)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::vector<std::string>&)>(VUtils::Resource::WriteFile),
                 sol::resolve<bool(const fs::path&, const std::list<std::string>&)>(VUtils::Resource::WriteFile)
@@ -1047,45 +1050,61 @@ void IModManager::LoadMod(Mod& mod) {
 
 
 //TODO
-//inline void my_panic(sol::optional<std::string> maybe_msg) {
-//    LOG_ERROR(VH_LOGGER, "Lua is in a panic state and will now abort() the application");
-//    if (maybe_msg) {
-//        const std::string& msg = maybe_msg.value();
-//        LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
-//    }
-//    // When this function exits, Lua will exhibit default behavior and abort()
-//}
+inline void my_panic(sol::optional<std::string> maybe_msg) {
+    LOG_ERROR(VH_LOGGER, "Lua is in a panic state and will now abort() the application");
+    if (maybe_msg) {
+        const std::string& msg = maybe_msg.value();
+        LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
+    }
+    // When this function exits, Lua will exhibit default behavior and abort()
+}
 
 //in my limited usage and experience, no error handler or panic was ever invoked, perhaps because all
 //  errors took place INSIDE one of my event handlers...
-//int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
-//    // L is the lua state, which you can wrap in a state_view if necessary
-//    // maybe_exception will contain exception, if it exists
-//    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
-//    LOG_ERROR(VH_LOGGER, "An exception occurred in a function, here's what it says ");
-//    if (maybe_exception) {
-//        LOG_ERROR(VH_LOGGER, "(straight from the exception): ");
-//        const std::exception& ex = *maybe_exception;
-//        LOG_ERROR(VH_LOGGER, "{}", ex.what());
-//    }
-//    else {
-//        LOG_ERROR(VH_LOGGER, "(from the description parameter): ");
-//        LOG_ERROR(VH_LOGGER, "{}", description);
-//    }
-//
-//    // you must push 1 element onto the stack to be
-//    // transported through as the error object in Lua
-//    // note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
-//    // so we push a single string (in our case, the description of the error)
-//    return sol::stack::push(L, description);
-//}
+int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
+    // L is the lua state, which you can wrap in a state_view if necessary
+    // maybe_exception will contain exception, if it exists
+    // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
+    LOG_ERROR(VH_LOGGER, "An exception occurred in a function, here's what it says ");
+    if (maybe_exception) {
+        LOG_ERROR(VH_LOGGER, "(straight from the exception): ");
+        const std::exception& ex = *maybe_exception;
+        LOG_ERROR(VH_LOGGER, "{}", ex.what());
+    }
+    else {
+        LOG_ERROR(VH_LOGGER, "(from the description parameter): ");
+        LOG_ERROR(VH_LOGGER, "{}", description);
+    }
+
+    // you must push 1 element onto the stack to be
+    // transported through as the error object in Lua
+    // note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
+    // so we push a single string (in our case, the description of the error)
+    return sol::stack::push(L, description);
+}
 
 void IModManager::PostInit() {
     LOG_INFO(VH_LOGGER, "Initializing ModManager");
 
-    //m_state.set_exception_handler(&my_exception_handler);
+    m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
 
-    m_state.open_libraries();
+    m_state.set_exception_handler(&my_exception_handler);
+
+    m_state.open_libraries(
+		sol::lib::base,
+		//sol::lib::package, //unsafe; overridden
+		sol::lib::coroutine,
+		sol::lib::string,
+		//sol::lib::os, //shell exec; unsafe
+		sol::lib::math,
+		sol::lib::table,
+		sol::lib::debug,
+		//sol::lib::bit32, //deprecated
+		//sol::lib::io, //unpermissive file reading; unsafe; overridden
+		//sol::lib::ffi, //luajit; unsafe;
+		//sol::lib::jit, //luajit; unsafe;
+		sol::lib::utf8
+    );
 
     this->LoadAPI();
 
@@ -1126,5 +1145,52 @@ void IModManager::Uninit() {
     m_callbacks.clear();
     m_mods.clear();
 }
+
+//void IModManager::reload_mod() {
+//    if (m_reload) {
+//        // first release all callbacks associated with the mod
+//        for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+//            auto&& callbacks = itr->second;
+//            for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+//                if (itr1->m_mod.get().m_reload) {
+//                    itr1 = callbacks.erase(itr1);
+//                }
+//                else
+//                    ++itr;
+//            }
+//
+//            // Pop callback set for tidy
+//            if (callbacks.empty())
+//                itr = m_callbacks.erase(itr);
+//            else
+//                ++itr;
+//        }
+//
+//        for (auto&& pair : m_mods) {
+//            auto&& mod = *pair.second.get();
+//            if (mod.m_reload) {
+//                LOG(INFO) << "Reloading mod " << mod.m_name;
+//
+//                for (auto&& pair : NetManager()->GetPeers()) {
+//                    auto&& peer = pair.second;
+//                    for (auto&& pair1 : peer->m_methods) {
+//                        auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
+//                        //if (method)
+//                            //method->m_func = 
+//                    }
+//                    //if (auto method = peer->GetMethod()
+//                }
+//
+//                mod.m_env.reset();
+//                LoadMod(mod);
+//                mod.m_reload = false;
+//            }
+//        }
+//
+//        m_state.collect_gc();
+//
+//        m_reload = false;
+//    }
+//}
 
 #endif // VH_USE_MODS

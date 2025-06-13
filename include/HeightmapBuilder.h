@@ -6,6 +6,7 @@
 #include "VUtils.h"
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
+
 #include "HeightmapManager.h"
 #include "Vector.h"
 
@@ -47,4 +48,5 @@ public:
 };
 
 IHeightmapBuilder* HeightmapBuilder();
-#endif
+
+#endif// VH_IS_ON(VH_ZONE_GENERATION)

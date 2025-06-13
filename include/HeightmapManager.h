@@ -52,4 +52,5 @@ public:
 
 // Manager class for everything related to finely partitioned world heights and biomes during generation
 IHeightmapManager* HeightmapManager();
-#endif
+
+#endif// VH_IS_ON(VH_ZONE_GENERATION)

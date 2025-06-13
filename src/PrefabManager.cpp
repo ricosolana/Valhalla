@@ -11,7 +11,7 @@ IPrefabManager* PrefabManager() {
 
 
 const Prefab& Prefab::Instance::GetPrefab() const {
-    return PrefabManager()->RequirePrefabByHash(m_prefabHash);
+    return PrefabManager()->get_prefab(m_prefabHash);
 }
 
 

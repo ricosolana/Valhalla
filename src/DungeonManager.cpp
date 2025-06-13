@@ -16,7 +16,7 @@ IDungeonManager* DungeonManager() {
 
 
 
-void IDungeonManager::PostPrefabInit() {
+void IDungeonManager::post_prefab_init() {
     // load dungeons:
     auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("dungeons.pkg");
     if (!opt)
@@ -40,7 +40,7 @@ void IDungeonManager::PostPrefabInit() {
 
         auto name = pkg.read<std::string_view>();
 
-        dungeon->m_prefab = &PrefabManager()->RequirePrefabByName(name);
+        dungeon->m_prefab = &PrefabManager()->get_prefab(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
@@ -56,7 +56,7 @@ void IDungeonManager::PostPrefabInit() {
         auto doorCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < doorCount; i2++) {
             Dungeon::DoorDef door;
-            door.m_prefab = PrefabManager()->GetPrefab(pkg.read<avledet::util::Hash>());
+            door.m_prefab = PrefabManager()->find_prefab(pkg.read<avledet::util::Hash>());
             if (!door.m_prefab) {
                 throw std::runtime_error("dungeon door missing prefab");
             }
@@ -225,7 +225,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 #endif
 
 
-ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
+ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
     
@@ -234,7 +234,7 @@ ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos
     return zdo;
 }
 
-ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
+ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
 
@@ -243,7 +243,7 @@ ZDO::unsafe_value IDungeonManager::Generate(const Dungeon& dungeon, Vector3f pos
     return zdo;
 }
 
-void IDungeonManager::Generate(const Dungeon& dungeon, ZDO::unsafe_value zdo) {
+void IDungeonManager::generate(const Dungeon& dungeon, ZDO::unsafe_value zdo) {
     DungeonGenerator(dungeon, zdo).Generate();
 }
 #endif

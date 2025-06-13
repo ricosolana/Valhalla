@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "CompileSettings.h"
+//#include <tracy/Tracy.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -25,7 +26,7 @@
 
 class IModManager {
 public:
-    enum class Type {
+    enum class StreamType {
         BOOL,
 
         STRING,
@@ -61,14 +62,14 @@ public:
     //    UNSUBSCRIBE, // Set only when calling function self unsubscribes
     //};
 
-    using Types = std::vector<Type>;
+    using StreamTypes = std::vector<StreamType>;
 
     class MethodSig {
     public:
-        Types m_types;
+        StreamTypes m_types;
         avledet::util::Hash m_hash;
 
-        MethodSig(Types types, avledet::util::Hash hash)
+        MethodSig(StreamTypes types, avledet::util::Hash hash)
             : m_types(std::move(types)), m_hash(hash) {}
 
         MethodSig(std::string_view name, sol::variadic_args types)
@@ -168,6 +169,7 @@ public:
     template <class... Args>
     bool CallEvent(avledet::util::Hash name, Args&&... params) {
         ZoneScoped;
+        //ZoneNamed(CallEvent, true);
 
         this->m_unsubscribeCurrentEvent = false;
 
@@ -176,6 +178,7 @@ public:
             auto&& callbacks = find->second;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
+                //ZoneNamed(per_callback, true);
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
                     LOG_WARNING(VH_LOGGER, "Event error: ");
@@ -248,7 +251,7 @@ public:
 IModManager* ModManager();
 
 template <class F, class ...T>
-    requires (std::is_same_v<F, IModManager::Type>)
+    requires (std::is_same_v<F, IModManager::StreamType>)
 struct avledet::util::Streamer<F, T...>{ //lua_State> {
     //TODO create mapper to jun
     // perhaps tuple of ordered types by Type ordinal valud
@@ -273,61 +276,61 @@ struct avledet::util::Streamer<F, T...>{ //lua_State> {
     //    std::double_t,
     //    char16_t>;
 
-    void operator()(avledet::util::Writer& writer, IModManager::Type type, sol::object const& arg) {
+    void operator()(avledet::util::Writer& writer, IModManager::StreamType type, sol::object const& arg) {
         switch (type) {
             // TODO add recent unsigned types
-        case IModManager::Type::UINT8:
+        case IModManager::StreamType::UINT8:
             writer.write(arg.as<std::uint8_t>());
             break;
-        case IModManager::Type::UINT16:
+        case IModManager::StreamType::UINT16:
             writer.write(arg.as<std::uint16_t>());
             break;
-        case IModManager::Type::UINT32:
+        case IModManager::StreamType::UINT32:
             writer.write(arg.as<std::uint32_t>());
             break;
-        case IModManager::Type::UINT64:
+        case IModManager::StreamType::UINT64:
             writer.write(arg.as<std::uint64_t>());
             break;
-        case IModManager::Type::INT8:
+        case IModManager::StreamType::INT8:
             writer.write(arg.as<std::int8_t>());
             break;
-        case IModManager::Type::INT16:
+        case IModManager::StreamType::INT16:
             writer.write(arg.as<std::int16_t>());
             break;
-        case IModManager::Type::INT32:
+        case IModManager::StreamType::INT32:
             writer.write(arg.as<std::int32_t>());
             break;
-        case IModManager::Type::INT64:
+        case IModManager::StreamType::INT64:
             writer.write(arg.as<std::int64_t>());
             break;
-        case IModManager::Type::FLOAT:
+        case IModManager::StreamType::FLOAT:
             writer.write(arg.as<std::float_t>());
             break;
-        case IModManager::Type::DOUBLE:
+        case IModManager::StreamType::DOUBLE:
             writer.write(arg.as<std::double_t>());
             break;
-        case IModManager::Type::STRING:
+        case IModManager::StreamType::STRING:
             writer.write(arg.as<std::string>());
             break;
-        case IModManager::Type::BOOL:
+        case IModManager::StreamType::BOOL:
             writer.write(arg.as<bool>());
             break;
-        case IModManager::Type::BYTES:
+        case IModManager::StreamType::BYTES:
             writer.write(arg.as<avledet::util::Bytes>());
             break;
-        case IModManager::Type::ZDOID:
+        case IModManager::StreamType::ZDOID:
             writer.write(arg.as<avledet::util::ZDOID>());
             break;
-        case IModManager::Type::VECTOR3f:
+        case IModManager::StreamType::VECTOR3f:
             writer.write(arg.as<avledet::util::CSU::Vector3f>());
             break;
-        case IModManager::Type::VECTOR2i:
+        case IModManager::StreamType::VECTOR2i:
             writer.write(arg.as<avledet::util::CSU::Vector2i>());
             break;
-        case IModManager::Type::QUATERNION:
+        case IModManager::StreamType::QUATERNION:
             writer.write(arg.as<avledet::util::CSU::Quaternion>());
             break;
-        case IModManager::Type::CHAR16:
+        case IModManager::StreamType::CHAR16:
             writer.write(arg.as<char16_t>());
             break;
         default:
@@ -335,64 +338,64 @@ struct avledet::util::Streamer<F, T...>{ //lua_State> {
         }
     }
 
-    sol::object operator()(avledet::util::Reader& reader, IModManager::Type type, lua_State* state) {
+    sol::object operator()(avledet::util::Reader& reader, IModManager::StreamType type, lua_State* state) {
         switch (type) {
-            case IModManager::Type::BYTES:
+            case IModManager::StreamType::BYTES:
                 // Will be interpreted as sol container type
                 // see https://sol2.readthedocs.io/en/latest/containers.html
                 return sol::make_object(state, reader.read<avledet::util::Bytes>());
-            case IModManager::Type::STRING:
+            case IModManager::StreamType::STRING:
                 // Primitive: string
                 return sol::make_object(state, reader.read<std::string>());
-            case IModManager::Type::ZDOID:
+            case IModManager::StreamType::ZDOID:
                 // Userdata: ZDOID
                 return sol::make_object(state, reader.read<avledet::util::ZDOID>());
-            case IModManager::Type::VECTOR3f:
+            case IModManager::StreamType::VECTOR3f:
                 // Userdata: Vector3f
                 return sol::make_object(state, reader.read<avledet::util::CSU::Vector3f>());
-            case IModManager::Type::VECTOR2i:
+            case IModManager::StreamType::VECTOR2i:
                 // Userdata: Vector2i
                 return sol::make_object(state, reader.read<avledet::util::CSU::Vector2i>());
-            case IModManager::Type::QUATERNION:
+            case IModManager::StreamType::QUATERNION:
                 // Userdata: Quaternion
                 return sol::make_object(state, reader.read<avledet::util::CSU::Quaternion>());
-            case IModManager::Type::STRINGS:
+            case IModManager::StreamType::STRINGS:
                 // Container type of Primitive: string
                 return sol::make_object(state, reader.read<std::vector<std::string>>());
-            case IModManager::Type::BOOL:
+            case IModManager::StreamType::BOOL:
                 // Primitive: boolean
                 return sol::make_object(state, reader.read<bool>());
-            case IModManager::Type::INT8:
+            case IModManager::StreamType::INT8:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::int8_t>());
-            case IModManager::Type::INT16:
+            case IModManager::StreamType::INT16:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::int16_t>());
-            case IModManager::Type::INT32:
+            case IModManager::StreamType::INT32:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::int32_t>());
-            case IModManager::Type::INT64:
+            case IModManager::StreamType::INT64:
                 // Userdata: Int64Wrapper
                 return sol::make_object(state, Int64Wrapper(reader.read<std::int64_t>())); // ReadInt64());
-            case IModManager::Type::UINT8:
+            case IModManager::StreamType::UINT8:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::uint8_t>());
-            case IModManager::Type::UINT16:
+            case IModManager::StreamType::UINT16:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::uint16_t>());
-            case IModManager::Type::UINT32:
+            case IModManager::StreamType::UINT32:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::uint32_t>());
-            case IModManager::Type::UINT64:
+            case IModManager::StreamType::UINT64:
                 // Userdata: UInt64Wrapper
                 return sol::make_object(state, UInt64Wrapper(reader.read<std::uint64_t>()));
-            case IModManager::Type::FLOAT:
+            case IModManager::StreamType::FLOAT:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::float_t>());
-            case IModManager::Type::DOUBLE:
+            case IModManager::StreamType::DOUBLE:
                 // Primitive: number
                 return sol::make_object(state, reader.read<std::double_t>());
-            case IModManager::Type::CHAR16:
+            case IModManager::StreamType::CHAR16:
                 // Primitive: number
                 return sol::make_object(state, reader.read<char16_t>());
             default:
@@ -403,15 +406,15 @@ struct avledet::util::Streamer<F, T...>{ //lua_State> {
 
 // TODO
 template <class F, class ...G>
-    requires (std::is_same_v<F, IModManager::Types>)
+    requires (std::is_same_v<F, IModManager::StreamTypes>)
 struct avledet::util::Streamer<F, G...>{ //lua_State> {
-    void operator()(avledet::util::Writer& writer, IModManager::Types const& types, sol::variadic_results const& results) {
+    void operator()(avledet::util::Writer& writer, IModManager::StreamTypes const& types, sol::variadic_results const& results) {
         for (int i = 0; i < results.size(); i++) {
             writer.write(types.at(i), results.at(i));
         }
     }
 
-    sol::variadic_results operator()(avledet::util::Reader& reader, IModManager::Types const& types, lua_State* state) {
+    sol::variadic_results operator()(avledet::util::Reader& reader, IModManager::StreamTypes const& types, lua_State* state) {
         sol::variadic_results results;
 
         for (auto&& type : types) {

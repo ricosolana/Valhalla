@@ -205,7 +205,7 @@ public:
 	[[maybe_unused]] ZDO::unsafe_value Instantiate(avledet::util::Hash hash, Vector3f pos) {
 		//return InstantiateBounded(hash, pos, nullptr);
 
-		return Instantiate(PrefabManager()->RequirePrefabByHash(hash), pos);
+		return Instantiate(PrefabManager()->get_prefab(hash), pos);
 	}
 	// TODO either correctly implement or?
 	//	intended to instantiate an object based on another

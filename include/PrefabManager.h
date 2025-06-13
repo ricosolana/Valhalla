@@ -17,7 +17,7 @@ private:
 public:
 	void Init();
 
-	const Prefab* GetPrefab(avledet::util::Hash hash) const {
+	const Prefab* find_prefab(avledet::util::Hash hash) const {
 		auto&& find = m_prefabs.find(hash);
 		if (find != m_prefabs.end())
 			return &(*find);
@@ -26,14 +26,14 @@ public:
 
 	// Get a prefab by name
 	//	Returns the prefab or null
-	const Prefab* GetPrefab(std::string_view name) const {
-		return GetPrefab(avledet::util::get_stable_hash(name));
+	const Prefab* find_prefab(std::string_view name) const {
+		return find_prefab(avledet::util::get_stable_hash(name));
 	}
 
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefabByHash(avledet::util::Hash hash) const {
-		auto prefab = GetPrefab(hash);
+	const Prefab& get_prefab(avledet::util::Hash hash) const {
+		auto prefab = find_prefab(hash);
 		if (!prefab)
 			throw std::runtime_error("prefab not found");
 		return *prefab;
@@ -41,8 +41,8 @@ public:
 
 	// Get a definite prefab
 	//	Throws if prefab not found
-	const Prefab& RequirePrefabByName(std::string_view name) const {
-		return RequirePrefabByHash(avledet::util::get_stable_hash(name));
+	const Prefab& get_prefab(std::string_view name) const {
+		return get_prefab(avledet::util::get_stable_hash(name));
 	}
 
 	void Register(std::string_view name, Vector3f scale, Prefab::Flag flags) {

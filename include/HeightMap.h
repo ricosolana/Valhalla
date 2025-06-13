@@ -3,6 +3,7 @@
 #include "VUtils.h"
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
+
 #include "Vector.h"
 
 #include "ValhallaServer.h"
@@ -157,4 +158,5 @@ public:
     // TOOD either implement or remove
     TerrainComp GetAndCreateTerrainCompiler();
 };
-#endif
+
+#endif// VH_IS_ON(VH_ZONE_GENERATION)

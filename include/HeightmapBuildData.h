@@ -4,8 +4,6 @@
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 
-#include "Biome.h"
-
 class HMBuildData {
 public:
 	using Heights_t = std::vector<float>;
@@ -17,4 +15,5 @@ public:
 	Heights_t m_baseHeights;
 	Mask_t m_baseMask;
 };
-#endif
+
+#endif// VH_IS_ON(VH_ZONE_GENERATION)

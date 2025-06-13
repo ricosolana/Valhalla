@@ -616,7 +616,7 @@ void IValhalla::Start() {
 
     ZoneManager()->PostPrefabInit();
 #if VH_IS_ON(VH_DUNGEON_GENERATION)
-    DungeonManager()->PostPrefabInit();
+    DungeonManager()->post_prefab_init();
 #endif
     WorldManager()->PostZoneInit();
 #if VH_IS_ON(VH_ZONE_GENERATION)

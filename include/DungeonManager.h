@@ -20,17 +20,17 @@ private:
 	std::size_t m_nextIndex = 0;
 
 public:
-    void PostPrefabInit();
+    void post_prefab_init();
 
-	const Dungeon* GetDungeon(avledet::util::Hash hash) const {
+	const Dungeon* find_dungeon(avledet::util::Hash hash) const {
 		auto&& find = m_dungeons.find(hash);
 		if (find != m_dungeons.end())
 			return find->second.get();
 		return nullptr;
 	}
 
-	const Dungeon& RequireDungeon(avledet::util::Hash hash) const {
-		auto&& dungeon = GetDungeon(hash);
+	const Dungeon& get_dungeon(avledet::util::Hash hash) const {
+		auto&& dungeon = find_dungeon(hash);
 		if (!dungeon)
 			throw std::runtime_error("unknown dungeon");
 		return *dungeon;
@@ -44,9 +44,9 @@ public:
 	void TryRegenerateDungeons();
 #endif
 
-	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot);
-	ZDO::unsafe_value Generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
-	void Generate(const Dungeon& dungeon, ZDO::unsafe_value zdo);
+	ZDO::unsafe_value generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot);
+	ZDO::unsafe_value generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
+	void generate(Dungeon const& dungeon, ZDO::unsafe_value zdo);
 };
 
 // Manager for everything related to dungeon spawning 

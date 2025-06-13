@@ -105,10 +105,10 @@ class MethodImplLua : public IMethod<T> {
 
 private:
     sol::protected_function m_func;
-    IModManager::Types m_types;
+    IModManager::StreamTypes m_types;
 
 public:
-    MethodImplLua(sol::protected_function const& func, IModManager::Types const& types)
+    MethodImplLua(sol::protected_function const& func, IModManager::StreamTypes const& types)
         : m_func(func), 
         m_types(types) {}
 
@@ -146,6 +146,6 @@ public:
 };
 
 template<typename T>
-MethodImplLua(sol::function, IModManager::Types) -> MethodImplLua<T>;
+MethodImplLua(sol::function, IModManager::StreamTypes) -> MethodImplLua<T>;
 
 #endif// VH_IS_ON(VH_USE_MODS)

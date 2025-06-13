@@ -868,7 +868,7 @@ public:
     }
             
     [[nodiscard]] const Prefab& GetPrefab() const {
-        return PrefabManager()->RequirePrefabByHash(this->m_prefabHash);
+        return PrefabManager()->get_prefab(this->m_prefabHash);
     }
     
     [[nodiscard]] avledet::util::Hash GetPrefabHash() const {

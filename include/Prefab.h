@@ -130,7 +130,7 @@ struct ankerl::unordered_dense::hash<Prefab> {
     using is_transparent = void;
     using is_avalanching = void; // mark class as high quality avalanching hash
 
-    [[nodiscard]] auto operator()(const Prefab& prefab) const noexcept -> std::uint64_t {
+    [[nodiscard]] auto operator()(Prefab const& prefab) const noexcept -> std::uint64_t {
         return ankerl::unordered_dense::hash<avledet::util::Hash>{}(prefab.m_hash);
     }
 

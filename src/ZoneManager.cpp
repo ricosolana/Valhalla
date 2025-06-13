@@ -133,7 +133,7 @@ void IZoneManager::PostPrefabInit() {
 
             auto prefabName = pkg.read<std::string>();
 
-            veg->m_prefab = &PrefabManager()->RequirePrefabByName(prefabName);
+            veg->m_prefab = &PrefabManager()->get_prefab(prefabName);
 
             veg->m_biome = (avledet::util::Biome) pkg.read<std::int32_t>();
             veg->m_biomeArea = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
@@ -175,8 +175,8 @@ void IZoneManager::PostPrefabInit() {
     }
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
-    ZONE_CTRL_PREFAB = PrefabManager()->GetPrefab(avledet::util::hashes::Object::_ZoneCtrl);
-    LOCATION_PROXY_PREFAB = PrefabManager()->GetPrefab(avledet::util::hashes::Object::LocationProxy);
+    ZONE_CTRL_PREFAB = PrefabManager()->find_prefab(avledet::util::hashes::Object::_ZoneCtrl);
+    LOCATION_PROXY_PREFAB = PrefabManager()->find_prefab(avledet::util::hashes::Object::LocationProxy);
 
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
         throw std::runtime_error("prefabs missing");
@@ -1102,7 +1102,7 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
             auto&& zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->SetRotation(rot * piece.m_rot);
         } else {
-            auto&& dungeon = DungeonManager()->RequireDungeon(piece.m_prefabHash);
+            auto&& dungeon = DungeonManager()->get_dungeon(piece.m_prefabHash);
 
             // TODO not really optional, it is required through a branch
             ZDO::unsafe_optional zdo;
@@ -1132,7 +1132,7 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
 
-            DungeonManager()->Generate(dungeon, zdo);
+            DungeonManager()->generate(dungeon, zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;
