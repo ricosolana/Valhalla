@@ -45,7 +45,7 @@ public:
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
-	void RegisterLua(const IModManager::MethodSig& sig, sol::function func) {
+	void RegisterLua(IModManager::MethodSig const& sig, sol::function const& func) {
 		//VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
 		m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
@@ -58,7 +58,7 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(avledet::util::UserID target, ZDOID targetZDO, avledet::util::Hash hash, Args&&... params) {
+	void InvokeView(avledet::util::UserID target, ZDOID const& targetZDO, avledet::util::Hash hash, Args&&... params) {
 		// Prefix
 		if ((std::int64_t)target == EVERYBODY) {
 			// targetZDO can have a value apparently
@@ -72,7 +72,7 @@ public:
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeerByUserID(target)) {
+			if (auto peer = NetManager()->FindPeerByUserID(target)) {
 				peer->RouteView(targetZDO, hash, std::forward<Args>(params)...);
 			}
 		}
@@ -80,12 +80,12 @@ public:
 
 	// Invoke a routed function bound to a peer with sub zdo
 	template <typename... Args>
-	void InvokeView(avledet::util::UserID target, ZDOID targetZDO, std::string_view name, Args&&... params) {
+	void InvokeView(avledet::util::UserID target, ZDOID const& targetZDO, std::string_view name, Args&&... params) {
 		InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
-	void InvokeViewLua(Int64Wrapper target, ZDOID targetZDO, const IModManager::MethodSig& repr, const sol::variadic_args& args) {		
+	void InvokeViewLua(Int64Wrapper target, ZDOID const& targetZDO, IModManager::MethodSig const& repr, sol::variadic_args const& args) {		
 		if ((std::int64_t)target == EVERYBODY) {
 			if (args.size() != repr.m_types.size())
 				throw std::runtime_error("mismatched number of args");
@@ -106,7 +106,7 @@ public:
 			}
 		}
 		else {
-			if (auto peer = NetManager()->GetPeerByUserID((std::int64_t)target))
+			if (auto peer = NetManager()->FindPeerByUserID((std::int64_t)target))
 				peer->RouteViewLua(targetZDO, repr, args);
 		}
 		
@@ -132,7 +132,7 @@ public:
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
-	void InvokeLua(Int64Wrapper target, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeLua(Int64Wrapper target, IModManager::MethodSig const& repr, sol::variadic_args const& args) {
 		InvokeViewLua(target, ZDOID::NONE, repr, args);
 	}
 #endif
@@ -152,12 +152,12 @@ public:
 	}
 
 #if VH_IS_ON(VH_USE_MODS)
-	void InvokeAllLua(const IModManager::MethodSig& repr, const sol::variadic_args& args) {
+	void InvokeAllLua(const IModManager::MethodSig& repr, sol::variadic_args const& args) {
 		InvokeLua(EVERYBODY, repr, args);
 	}
 #endif
 
-	avledet::util::Bytes Serialize(avledet::util::UserID sender, avledet::util::UserID target, ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params) {
+	avledet::util::Bytes Serialize(avledet::util::UserID sender, avledet::util::UserID target, ZDOID const& targetZDO, avledet::util::Hash hash, avledet::util::Bytes const& params) {
 		DataWriter writer;
 
 		writer.write((std::int64_t)0); // msg id

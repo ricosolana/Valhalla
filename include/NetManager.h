@@ -51,10 +51,10 @@ public:
     void OnConfigLoad(bool reloading);
 
     // Finds a peer by either name, uuid or host
-    Peer* GetPeer(std::string_view any);
-    Peer* GetPeerByUserID(avledet::util::UserID uuid);
-    Peer* GetPeerByName(std::string_view name);
-    Peer* GetPeerByHost(std::string_view host);
+    Peer* FindPeer(std::string_view any);
+    Peer* FindPeerByUserID(avledet::util::UserID uuid);
+    Peer* FindPeerByName(std::string_view name);
+    Peer* FindPeerByHost(std::string_view host);
 
     void OnPeerConnect(Peer& peer);
 

@@ -253,7 +253,7 @@ bool IZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone) {
 }
 
 bool IZoneManager::IsPeerNearby(ZoneID zone, avledet::util::UserID uid) {
-    auto&& peer = NetManager()->GetPeerByUserID(uid);
+    auto&& peer = NetManager()->FindPeerByUserID(uid);
     //assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer) return ZonesOverlap(zone, peer->m_pos);
     return false;

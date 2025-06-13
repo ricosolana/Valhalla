@@ -26,7 +26,7 @@ Peer::Peer(ISocket::Ptr socket)
                 throw std::runtime_error("peer provided 0 owner");
 #endif
             auto version = reader.read<std::string_view>();
-            LOG_INFO(VH_LOGGER, "Client {} has version {}", rpc->m_socket->GetHostName(), version);
+            LOG_INFO(VH_LOGGER, "Client {} has version {}", rpc->m_socket->get_host_name(), version);
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
@@ -53,7 +53,7 @@ Peer::Peer(ISocket::Ptr socket)
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
                     
                     if (!steamSocket->authenticate(ticket)) {
-                        LOG_INFO(VH_LOGGER, "Client {} has invalid ticket", rpc->m_socket->GetHostName());
+                        LOG_INFO(VH_LOGGER, "Client {} has invalid ticket", rpc->m_socket->get_host_name());
                         return rpc->Close(ConnectionStatus::ErrorDisconnected);
                     }
                 }
@@ -65,7 +65,7 @@ Peer::Peer(ISocket::Ptr socket)
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->GetPeerByUserID(rpc->GetUserID()) || NetManager()->GetPeerByName(rpc->m_name))
+            if (NetManager()->FindPeerByUserID(rpc->GetUserID()) || NetManager()->FindPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
             NetManager()->OnPeerConnect(*rpc);
@@ -73,15 +73,15 @@ Peer::Peer(ISocket::Ptr socket)
             return false;
         });
 
-        if (Valhalla()->m_blacklist.contains(rpc->m_socket->GetHostName()))
+        if (Valhalla()->m_blacklist.contains(rpc->m_socket->get_host_name()))
             return rpc->Close(ConnectionStatus::ErrorBanned);
 
-        if (NetManager()->GetPeerByHost(rpc->m_socket->GetHostName()))
+        if (NetManager()->FindPeerByHost(rpc->m_socket->get_host_name()))
             return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
         if (VH_SETTINGS.playerWhitelist
-            && !Valhalla()->m_whitelist.contains(rpc->m_socket->GetHostName())) {
+            && !Valhalla()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
             return rpc->Close(ConnectionStatus::ErrorFull);
         }
 
@@ -96,10 +96,10 @@ Peer::Peer(ISocket::Ptr socket)
         return false;
     });
 
-    LOG_INFO(VH_LOGGER, "{} has connected", m_socket->GetHostName());
+    LOG_INFO(VH_LOGGER, "{} has connected", m_socket->get_host_name());
 }
 
-void Peer::Update() {
+void Peer::update() {
     ZoneScoped;
 
     auto now(std::chrono::steady_clock::now());
@@ -131,7 +131,7 @@ void Peer::Update() {
     }
 
     if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
-        LOG_INFO(VH_LOGGER, "{} has timed out", this->m_socket->GetHostName());
+        LOG_INFO(VH_LOGGER, "{} has timed out", this->m_socket->get_host_name());
         Disconnect();
     }
 }
@@ -146,8 +146,8 @@ bool Peer::Close(ConnectionStatus status) {
 
 
 void Peer::SetAdmin(bool enable) {
-    if (enable) Valhalla()->m_admin.erase(m_socket->GetHostName());
-    else Valhalla()->m_admin.insert(m_socket->GetHostName());
+    if (enable) Valhalla()->m_admin.erase(m_socket->get_host_name());
+    else Valhalla()->m_admin.insert(m_socket->get_host_name());
 }
 
 ZDO::unsafe_optional Peer::GetZDO() {

@@ -1,13 +1,13 @@
 #include "DiscordManager.h"
 #include "WorldManager.h"
-#include <dpp/appcommand.h>
-#include <dpp/restresults.h>
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
 
 #include <isteamgameserver.h>
 #include <dpp/dpp.h>
 #include <dpp/dispatcher.h>
+#include <dpp/appcommand.h>
+#include <dpp/restresults.h>
 #include <range/v3/all.hpp>
 
 #include "ValhallaServer.h"
@@ -79,7 +79,7 @@ void IDiscordManager::init() {
 					auto&& identifier = std::get_if<std::string>(&param_variant);
 					auto&& flag = std::get_if<bool>(&flag_variant);
 					if (identifier) {
-						if (auto&& peer = NetManager()->GetPeer(*identifier)) {
+						if (auto&& peer = NetManager()->FindPeer(*identifier)) {
 							if (flag) {
 								peer->SetAdmin(*flag);
 								if (*flag)
@@ -131,7 +131,7 @@ void IDiscordManager::init() {
 				}
 				else if (label == "vhevent") {
 					if (auto&& e = RandomEventManager()->GetEvent(std::get<std::string>(event.get_parameter("event")))) {
-						auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
+						auto&& peer = NetManager()->FindPeer(std::get<std::string>(event.get_parameter("identifier")));
 						//seconds duration = duration_cast<std::chrono::seconds>(e->m_duration);
 						auto dur_variant = event.get_parameter("duration");
 						auto&& dur = std::get_if<std::int64_t>(&dur_variant);
@@ -164,7 +164,7 @@ void IDiscordManager::init() {
 								event.reply("Accounts successfully linked!");
 								//m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), );
 								m_linked_accounts[host] = event.command.get_issuing_user().id;
-								if (auto&& peer = NetManager()->GetPeerByHost(host)) {
+								if (auto&& peer = NetManager()->FindPeerByHost(host)) {
 									peer->SetGated(false);
 									peer->CenterMessage("Account verified");
 								}
@@ -198,7 +198,7 @@ void IDiscordManager::init() {
 				else if (label == "vhmessage") {
 					auto&& message = std::get<std::string>(event.get_parameter("message"));
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
-					if (auto peer = NetManager()->GetPeer(identifier)) {
+					if (auto peer = NetManager()->FindPeer(identifier)) {
 						peer->CenterMessage(message);
 						event.reply("Sent message to player");
 					}
@@ -226,7 +226,7 @@ void IDiscordManager::init() {
 				}
 				else if (label == "vhsummon") {
 					auto&& name = std::get<std::string>(event.get_parameter("prefab"));
-					auto&& peer = NetManager()->GetPeer(std::get<std::string>(event.get_parameter("identifier")));
+					auto&& peer = NetManager()->FindPeer(std::get<std::string>(event.get_parameter("identifier")));
 					if (auto&& prefab = PrefabManager()->GetPrefab(name); peer) {
 						ZDOManager()->Instantiate(*prefab, peer->m_pos);
 						event.reply("Object was summoned");
@@ -265,7 +265,7 @@ void IDiscordManager::init() {
 				}
 				else if (label == "vhwhois") {
 					auto&& identifier = std::get<std::string>(event.get_parameter("identifier"));
-					if (auto peer = NetManager()->GetPeer(identifier)) {
+					if (auto peer = NetManager()->FindPeer(identifier)) {
 						event.reply("Name: " + peer->m_name + "\n"
 							+ "Uuid: " + std::to_string(peer->GetUserID()) + "\n"
 							+ "Host: " + peer->m_socket->GetHostName() + "\n"
@@ -515,7 +515,7 @@ void IDiscordManager::period_update() {
 		return;
 
 	for (auto&& itr = m_temp_linking_keys.begin(); itr != m_temp_linking_keys.end();) {
-		auto&& peer = NetManager()->GetPeerByHost(itr->first);
+		auto&& peer = NetManager()->FindPeerByHost(itr->first);
 		auto&& since = Valhalla()->Nanos() - itr->second.second;
 		if (since > 5min) {
 			LOG_INFO(VH_LOGGER, "Discord linking key expired for {}", itr->first);
@@ -541,7 +541,7 @@ void IDiscordManager::period_update() {
 
 	/*
 	for (auto&& pair : m_tempLinkingKeys) {
-		auto&& peer = NetManager()->GetPeerByHost(pair.first);
+		auto&& peer = NetManager()->FindPeerByHost(pair.first);
 		if (peer) {
 			//peer->CenterMessage(std::string("Verification required: <color=#FF1111>") + pair.second + "</color>");
 			peer->CenterMessage("Verification required: <color=#FF1111>" + pair.second.first + "</color>");
@@ -560,7 +560,7 @@ void IDiscordManager::period_update() {
 Peer* IDiscordManager::find_peer(dpp::snowflake id) {
 	for (auto&& pair : m_linked_accounts) {
 		if (pair.second == id) {
-			return NetManager()->GetPeerByHost(pair.first);
+			return NetManager()->FindPeerByHost(pair.first);
 		}
 	}
 	return nullptr;
@@ -569,7 +569,7 @@ Peer* IDiscordManager::find_peer(dpp::snowflake id) {
 Peer* IDiscordManager::unlink_peer(dpp::snowflake id) {
 	for (auto&& itr = m_linked_accounts.begin(); itr != m_linked_accounts.end();) {
 		if (itr->second == id) {
-			auto&& peer = NetManager()->GetPeerByHost(itr->first);
+			auto&& peer = NetManager()->FindPeerByHost(itr->first);
 			m_linked_accounts.erase(itr);
 			return peer;
 		}

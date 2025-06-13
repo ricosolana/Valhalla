@@ -88,7 +88,7 @@ bool SteamSocket::authenticate(avledet::util::ByteView ticket) {
 
 
 
-void SteamSocket::Send(std::vector<char> bytes) {
+void SteamSocket::send(std::vector<char> bytes) {
     assert(!bytes.empty());
 
 
@@ -124,11 +124,11 @@ std::vector<char> SteamSocket::Recv() {
     return bytes;
 }
 
-std::string SteamSocket::GetHostName() {
+std::string SteamSocket::get_host_name() {
     return std::to_string(m_steam_id.GetSteamID64());
 }
 
-std::string SteamSocket::GetAddress() {
+std::string SteamSocket::get_address() {
     return m_address;
 }
 
@@ -136,7 +136,7 @@ bool SteamSocket::is_outbound() {
     return m_is_outbound;
 }
 
-int SteamSocket::GetSendQueueSize() {
+int SteamSocket::get_send_queue_size() {
     int num = 0;
     for (auto&& bytes : m_send_queue) { // this is inefficient
         num += (int)bytes.size();
@@ -162,7 +162,7 @@ Status SteamSocket::get_status() {
     return m_status;
 }
 
-int SteamSocket::GetPing() {
+int SteamSocket::get_ping() {
     SteamNetConnectionRealTimeStatus_t rt{};
     if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
         return rt.m_nPing;

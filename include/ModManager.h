@@ -4,24 +4,21 @@
 
 #if VH_IS_ON(VH_USE_MODS)
 
+#include <cmath>
+#include <cstdint>
+#include <vector>
+#include <list>
+#include <magic_enum.hpp>
+#include <sol/sol.hpp>
+#include <lua.h>
+#include "Hashes.h"
+#include "DataStream.h"
 #include "Quaternion.h"
 #include "Types.h"
 #include "VUtils.h"
-#include "VUtilsString.h"
-#include "VUtilsTraits.h"
 #include "Vector.h"
 #include "ZDOID.h"
-#include <array>
-#include <cmath>
-#include <cstdint>
-#include <magic_enum.hpp>
-#include <vector>
-
-#include "DataStream.h"
-#include <sol/sol.hpp>
-#include <list>
-#include <lua.h>
-
+#include "ValhallaServer.h"
 
 
 //int GetCurrentLuaLine(lua_State* L);
@@ -59,17 +56,23 @@ public:
         max
     };
 
-    enum class EventStatus {
-        NONE,
-        UNSUBSCRIBE, // Set only when calling function self unsubscribes
-    };
+    //enum class EventStatus {
+    //    NONE,
+    //    UNSUBSCRIBE, // Set only when calling function self unsubscribes
+    //};
 
     using Types = std::vector<Type>;
 
     class MethodSig {
     public:
-        avledet::util::Hash m_hash;
         Types m_types;
+        avledet::util::Hash m_hash;
+
+        MethodSig(Types types, avledet::util::Hash hash)
+            : m_types(std::move(types)), m_hash(hash) {}
+
+        MethodSig(std::string_view name, sol::variadic_args types)
+            : m_types(types.begin(), types.end()), m_hash(avledet::util::get_stable_hash(name)) {}
     };
 
     class Events {
@@ -420,6 +423,6 @@ struct avledet::util::Streamer<F, G...>{ //lua_State> {
 };
 
 #else // !VH_USE_MODS
-#define VH_DISPATCH_MOD_EVENT(name, ...) true
-#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) true
+#define VH_DISPATCH_MOD_EVENT(name, ...) (true)
+#define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) (true)
 #endif // VH_USE_MODS

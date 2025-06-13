@@ -3,8 +3,6 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
-#define __H(str) (avledet::util::get_stable_hash(str))
-
 /*
 template<typename T, std::size_t N, typename C = typename T::value_type>
     requires (N >= 1)

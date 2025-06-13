@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Types.h"
-#include "VUtilsString.h"
 
+#define __H(str) (avledet::util::get_stable_hash(str))
 
 /*
 * 

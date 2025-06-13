@@ -105,7 +105,7 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		}
 		else {
 			if (target != VH_ID) {
-				if (auto other = NetManager()->GetPeerByUserID(target)) {
+				if (auto other = NetManager()->FindPeerByUserID(target)) {
 					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
 						return;
 

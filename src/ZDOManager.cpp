@@ -824,7 +824,7 @@ void IZDOManager::ForceSendZDO(ZDOID id) {
 bool IZDOManager::SendZDOs(Peer& peer, bool flush) {
 	ZoneScoped;
 
-	auto sendQueueSize = peer.m_socket->GetSendQueueSize();
+	auto sendQueueSize = peer.m_socket->get_send_queue_size();
 
 	// flushing forces a packet send
 	const auto threshold = VH_SETTINGS.zdoMaxCongestion;
@@ -1021,7 +1021,7 @@ void IZDOManager::OnPeerQuit(Peer& peer) {
 		auto &&zdo = ZDO::make_unsafe_value(itr);
 
 		if (!zdo->IsPersistent()
-			&& (!zdo->HasOwner() || zdo->IsOwner(peer.GetUserID()) || !NetManager()->GetPeerByUserID(zdo->Owner())))
+			&& (!zdo->HasOwner() || zdo->IsOwner(peer.GetUserID()) || !NetManager()->FindPeerByUserID(zdo->Owner())))
 		{
 			itr = _DestroyZDO(itr);
 		}

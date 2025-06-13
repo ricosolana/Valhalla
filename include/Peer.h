@@ -79,11 +79,11 @@ public:
     avledet::util::Map<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_syncData;
 
 private:
-    void Update();
+    void update();
 
     void ZDOSectorInvalidated(ZDO::unsafe_value zdo);
 
-    void ForceSendZDO(ZDOID id) {
+    void ForceSendZDO(ZDOID const& id) {
         m_forceSend.insert(id);
     }
 
@@ -96,7 +96,7 @@ private:
 public:
     Peer(ISocket::Ptr socket);
 
-    Peer(const Peer& other) = delete; // copy
+    Peer(Peer const& other) = delete; // copy
 
     ~Peer() {
         //VLOG(1) << "~Peer()";
@@ -111,7 +111,7 @@ public:
     }
 
     bool IsAdmin() const {
-        return Valhalla()->m_admin.contains(m_socket->GetHostName());
+        return Valhalla()->m_admin.contains(m_socket->get_host_name());
     }
 
     bool IsGated() const {
@@ -149,7 +149,7 @@ public:
     }
 
 #if VH_IS_ON(VH_USE_MODS)
-    void RegisterLua(const IModManager::MethodSig& sig, const sol::function& func) {
+    void RegisterLua(IModManager::MethodSig const& sig, sol::function const& func) {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
         
         m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer*>>(func, sig.m_types);
@@ -181,7 +181,7 @@ public:
     }
 
     template <typename Func>
-    void SubRoute(avledet::util::Hash hash, ZDOID targetZDO, Func func) {
+    void SubRoute(avledet::util::Hash hash, ZDOID const& targetZDO, Func func) {
         if (m_socket->get_status() == Status::Closed)
             return;
 
@@ -221,7 +221,7 @@ public:
 
 
     template <typename... Types>
-    void Invoke(avledet::util::Hash hash, const Types&... params) {
+    void Invoke(avledet::util::Hash hash, Types const&... params) {
         if (m_socket->get_status() == Status::Closed)
             return;
 
@@ -238,7 +238,7 @@ public:
     }
 
     template <typename... Types>
-    decltype(auto) Invoke(std::string_view name, const Types&... params) {
+    decltype(auto) Invoke(std::string_view name, Types const&... params) {
         return Invoke(avledet::util::get_stable_hash(name), params...);
     }
 
@@ -312,7 +312,7 @@ public:
         assert(!bytes.empty());
 
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
-            this->m_socket->Send(std::move(bytes));
+            this->m_socket->send(std::move(bytes));
     }
 
     std::optional<avledet::util::Bytes> Recv() {

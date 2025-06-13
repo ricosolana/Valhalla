@@ -19,6 +19,8 @@ template<class T>
 class IMethod
 {
 public:
+    virtual ~IMethod() {}
+
     // Calls a locally stored function
     //  Expects a passthrough parameter and serialized package
     //  Returns false if the call requested unsubscription
@@ -96,6 +98,7 @@ MethodImpl(F, avledet::util::Hash, avledet::util::Hash) -> MethodImpl<
 
 
 #if VH_IS_ON(VH_USE_MODS)
+
 template<class T>
 class MethodImplLua : public IMethod<T> {
     friend class IModManager;
@@ -105,7 +108,7 @@ private:
     IModManager::Types m_types;
 
 public:
-    MethodImplLua(sol::protected_function func, const IModManager::Types& types)
+    MethodImplLua(sol::protected_function const& func, IModManager::Types const& types)
         : m_func(func), 
         m_types(types) {}
 
@@ -131,10 +134,9 @@ public:
         }
 
         // Postfix
-        /*
-#ifdef VH_OPTION_ENABLE_MOD_SIMULATED_RPC_EVENTS
+#if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
         VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, sol::as_args(results));
-#endif*/
+#endif
 
         if (result.get_type() == sol::type::boolean)
             return result.get<bool>();
@@ -145,4 +147,5 @@ public:
 
 template<typename T>
 MethodImplLua(sol::function, IModManager::Types) -> MethodImplLua<T>;
-#endif
+
+#endif// VH_IS_ON(VH_USE_MODS)

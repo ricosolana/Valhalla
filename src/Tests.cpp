@@ -6,7 +6,7 @@ public:
     TestSocket() {}
     void Close(bool) override {}
     //void Update() override {}
-    void Send(avledet::util::Bytes) override {}
+    void send(avledet::util::Bytes) override {}
     avledet::util::Bytes Recv() override { return {}; }
     std::string GetHostName() const { return "crzi"; }
     std::string GetAddress() const { return "127.0.0.1"; }

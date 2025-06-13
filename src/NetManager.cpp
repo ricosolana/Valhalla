@@ -8,6 +8,7 @@
 
 #include "NetManager.h"
 #include "Crypto.h"
+#include "ModManager.h"
 #include "NetAcceptor.h"
 #include "NetSocket.h"
 #include "ValhallaServer.h"
@@ -30,7 +31,7 @@ INetManager* NetManager() {
 
 
 Peer* INetManager::Kick(std::string_view user) {
-    auto&& peer = GetPeer(user);
+    auto&& peer = FindPeer(user);
     if (peer) {
         peer->Kick();
     }
@@ -39,10 +40,10 @@ Peer* INetManager::Kick(std::string_view user) {
 }
 
 Peer* INetManager::Ban(std::string_view user) {
-    auto&& peer = GetPeer(user);
+    auto&& peer = FindPeer(user);
 
     if (peer) {
-        Valhalla()->m_blacklist.insert(peer->m_socket->GetHostName());
+        Valhalla()->m_blacklist.insert(peer->m_socket->get_host_name());
         peer->Close(ConnectionStatus::ErrorBanned);
     } else    
         Valhalla()->m_blacklist.insert(user);
@@ -82,7 +83,7 @@ void INetManager::SendPlayerList() {
             for (auto&& peer : m_onlinePeers) {
                 writer.write(peer->m_name);
                 writer.write(peer->m_characterID);
-                writer.write("steam_" + peer->m_socket->GetHostName());
+                writer.write("steam_" + peer->m_socket->get_host_name());
                 auto&& platformItr = peer->m_syncData.find("platformDisplayName");
                 auto&& platform = platformItr != peer->m_syncData.end() ? platformItr->second : "";
                 writer.write(platform); // ...?
@@ -140,7 +141,7 @@ void INetManager::SendPeerInfo(Peer& peer) {
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnPeerConnect(Peer& peer) {
-    peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->GetHostName()));
+    peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->get_host_name()));
 
     if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
         return peer.Disconnect();
@@ -193,7 +194,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         peer->m_characterID = characterID;
 
         LOG_INFO(VH_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
-        });
+    });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
         // TODO maybe permissions tree in future?
@@ -208,7 +209,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         else {
             peer->ConsoleMessage("Player not found");
         }
-        });
+    });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
         if (!peer->IsAdmin())
@@ -221,7 +222,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         else {
             peer->ConsoleMessage("Player not found");
         }
-        });
+    });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
         if (!peer->IsAdmin())
@@ -242,7 +243,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         WorldManager()->GetWorld()->WriteFiles();
 
         peer->ConsoleMessage("Saved the world");
-        });
+    });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
         if (!peer->IsAdmin())
@@ -269,7 +270,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
                 }
             }
         }
-        });
+    });
 
     SendPeerInfo(peer);
 
@@ -292,15 +293,15 @@ void INetManager::OnPeerConnect(Peer& peer) {
     m_onlinePeers.push_back(&peer);
 }
 
-Peer* INetManager::GetPeer(std::string_view any) {
-    Peer* peer = GetPeerByHost(any);
-    if (!peer) peer = GetPeerByName(any);
-    if (!peer) peer = GetPeerByUserID(std::atoll(any.data()));
+Peer* INetManager::FindPeer(std::string_view any) {
+    Peer* peer = FindPeerByHost(any);
+    if (!peer) peer = FindPeerByName(any);
+    if (!peer) peer = FindPeerByUserID(std::atoll(any.data()));
     return peer;
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByName(std::string_view name) {
+Peer* INetManager::FindPeerByName(std::string_view name) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->m_name == name)
             return peer;
@@ -309,7 +310,7 @@ Peer* INetManager::GetPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::GetPeerByUserID(avledet::util::UserID uuid) {
+Peer* INetManager::FindPeerByUserID(avledet::util::UserID uuid) {
     for (auto&& peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;
@@ -317,9 +318,9 @@ Peer* INetManager::GetPeerByUserID(avledet::util::UserID uuid) {
     return nullptr;
 }
 
-Peer* INetManager::GetPeerByHost(std::string_view host) {
+Peer* INetManager::FindPeerByHost(std::string_view host) {
     for (auto&& peer : m_onlinePeers) {
-        if (peer->m_socket->GetHostName() == host)
+        if (peer->m_socket->get_host_name() == host)
             return peer;
     }
     return nullptr;
@@ -369,7 +370,7 @@ void INetManager::Update() {
     // Update peers
     for (auto&& peer : m_connectedPeers) {
         try {
-            peer->Update();
+            peer->update();
         }
         catch (const std::runtime_error& e) {
             LOG_WARNING(VH_LOGGER, "Peer error");
@@ -425,26 +426,24 @@ void INetManager::Update() {
 }
 
 void INetManager::OnPeerQuit(Peer& peer) {
-    VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
-
     LOG_INFO(VH_LOGGER, "Cleaning up peer");
+    VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
+
     ZDOManager()->OnPeerQuit(peer);
 
     if (peer.IsAdmin())
-        Valhalla()->m_admin.insert(peer.m_socket->GetHostName());
+        Valhalla()->m_admin.insert(peer.m_socket->get_host_name());
     else
-        Valhalla()->m_admin.erase(peer.m_socket->GetHostName());
+        Valhalla()->m_admin.erase(peer.m_socket->get_host_name());
 }
 
 void INetManager::OnPeerDisconnect(Peer& peer) {
-#if VH_IS_ON(VH_USE_MODS)
-    ModManager()->CallEvent(IModManager::Events::Disconnect, peer);
-#endif
+    VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
 
     peer.SendDisconnect();
 
-    LOG_INFO(VH_LOGGER, "{} has disconnected", peer.m_socket->GetHostName());
+    LOG_INFO(VH_LOGGER, "{} has disconnected", peer.m_socket->get_host_name());
 }
 
 void INetManager::Uninit() {

@@ -5,8 +5,13 @@
 #include <cmath>
 #include <cstdint>
 #include <sol/forward.hpp>
+#include <sol/object.hpp>
+#include <sol/optional_implementation.hpp>
 #include <sol/overload.hpp>
 #include <sol/property.hpp>
+#include <sol/resolve.hpp>
+#include <sol/state_view.hpp>
+#include <sol/types.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -91,6 +96,7 @@ void IModManager::LoadAPI() {
         "x", &Vector3f::x,
         "y", &Vector3f::y,
         "z", &Vector3f::z,
+        sol::meta_function::index, [](Vector3f& self, std::size_t index, sol::state_view view) { return index == 1 ? sol::make_object(view, self.x) : index == 2 ? sol::make_object(view, self.y) : index == 3 ? sol::make_object(view, self.z) : sol::lua_nil; },
         "magnitude", sol::property(&Vector3f::magnitude),
         "sq_magnitude", sol::property(&Vector3f::sq_magnitude),
         "normal", sol::property(&Vector3f::normal),
@@ -111,6 +117,7 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property(&Vector2f::zero),
         "x", &Vector2f::x,
         "y", &Vector2f::y,
+        sol::meta_function::index, [](Vector2f& self, std::size_t index, sol::state_view view) { return index == 1 ? sol::make_object(view, self.x) : index == 2 ? sol::make_object(view, self.y) : sol::lua_nil; },
         "magnitude", sol::property(&Vector2f::magnitude),
         "sq_magnitude", sol::property(&Vector2f::sq_magnitude),
         "normal", sol::property(&Vector2f::normal),
@@ -130,6 +137,7 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property(&Vector2i::zero),
         "x", &Vector2i::x,
         "y", &Vector2i::y,
+        sol::meta_function::index, [](Vector2i& self, std::size_t index, sol::state_view view) { return index == 1 ? sol::make_object(view, self.x) : index == 2 ? sol::make_object(view, self.y) : sol::lua_nil; },
         "magnitude", sol::property(&Vector2i::magnitude),
         "sq_magnitude", sol::property(&Vector2i::sq_magnitude),
         "normal", sol::property(&Vector2i::normal),
@@ -149,6 +157,7 @@ void IModManager::LoadAPI() {
         "ZERO", sol::property(&Vector2s::zero),
         "x", &Vector2s::x,
         "y", &Vector2s::y,
+        sol::meta_function::index, [](Vector2s& self, std::size_t index, sol::state_view view) { return index == 1 ? sol::make_object(view, self.x) : index == 2 ? sol::make_object(view, self.y) : sol::lua_nil; },
         "magnitude", sol::property(&Vector2s::magnitude),
         "sq_magnitude", sol::property(&Vector2s::sq_magnitude),
         "normal", sol::property(&Vector2s::normal),
@@ -166,11 +175,24 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
         "IDENTITY", sol::var(Quaternion::IDENTITY),
-        "x", &Quaternion::x,
-        "y", &Quaternion::y,
-        "z", &Quaternion::z,
-        "w", &Quaternion::w,
-        sol::meta_function::multiplication, sol::resolve<Quaternion(Quaternion) const>(&Quaternion::operator*)
+        "x", sol::readonly(&Quaternion::x),
+        "y", sol::readonly(&Quaternion::y),
+        "z", sol::readonly(&Quaternion::z),
+        "w", sol::readonly(&Quaternion::w),
+        sol::meta_function::index, [](Quaternion& self, std::size_t index, sol::state_view view) { return index == 1 ? sol::make_object(view, self.x) : index == 2 ? sol::make_object(view, self.y) : index == 3 ? sol::make_object(view, self.z) : index == 4 ? sol::make_object(view, self.w) : sol::lua_nil; },
+        "length_squared", sol::property(&Quaternion::length_squared),
+        "xyz", sol::property(&Quaternion::xyz),
+        "euler_angles", sol::property(&Quaternion::euler_angles),
+        "dot", sol::property(&Quaternion::dot),
+        //statics
+        "euler", sol::overload(
+            sol::resolve<Quaternion(float, float, float)>(&Quaternion::euler),
+            sol::resolve<Quaternion(Vector3f)>(&Quaternion::euler)
+        ),
+        //"look_rotation"...
+        sol::meta_function::multiplication, sol::resolve<Quaternion(Quaternion) const>(&Quaternion::operator*),
+        //"multiply", sol::resolve(Q
+        sol::meta_function::equal_to, &Quaternion::operator==
     );
 
     m_state.new_usertype<ZDOID>("ZDOID",
@@ -337,17 +359,31 @@ void IModManager::LoadAPI() {
     //    "Invoke", &IMethod<Peer*>::Invoke
     //);
 
+    // TODO rename
+    m_state.new_enum("NetStatus",
+        "CONNECTING", Status::Connecting,
+        "CONNECTED", Status::Connected,
+        "LINGERING", Status::Lingering,
+        "CLOSED", Status::Closed,
+        "CONNECT_FAILED", Status::Connect_Failed
+    );
+
     // TODO full socket impl
     m_state.new_usertype<ISocket>("Socket",
         "close", &ISocket::Close,
         //"connected", sol::property(&ISocket::Connected),
-        "address", sol::property(&ISocket::GetAddress),
-        "host", sol::property(&ISocket::GetHostName),
-        "send_queue_size", sol::property(&ISocket::GetSendQueueSize)
+        "address", sol::property(&ISocket::get_address),
+        "host", sol::property(&ISocket::get_host_name),
+        "send_queue_size", sol::property(&ISocket::get_send_queue_size),
+        "status", sol::property(&ISocket::get_status),
+        "send", sol::property(&ISocket::send),
+        "ping", sol::property(&ISocket::get_ping),
+        "quality", sol::property(&ISocket::get_connection_quality),
+        "outbound", sol::property(&ISocket::is_outbound)
     );
 
     m_state.new_usertype<MethodSig>("MethodSig",
-        sol::factories([](std::string_view name, sol::variadic_args types) { return MethodSig{ avledet::util::get_stable_hash(name), IModManager::Types(types.begin(), types.end()) }; })
+        sol::constructors<MethodSig(std::string_view, sol::variadic_args)>()
     );
 
     m_state.new_enum("ChatMsgType",
@@ -675,7 +711,7 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<IValhalla>("IValhalla",
         // server members
         "version", sol::var(VConstants::GAME), // Valheim version
-        "delta", sol::property(&IValhalla::Delta),
+        "delta", sol::property(&IValhalla::delta),
         "id", sol::property([](IValhalla& self) { return Int64Wrapper(self.ID()); }),
         "nanos", sol::property([](IValhalla& self) { return Int64Wrapper(self.Nanos().count()); }),
         "time", sol::property(&IValhalla::Time),
@@ -812,9 +848,9 @@ void IModManager::LoadAPI() {
     m_state["NetManager"] = NetManager();
     m_state.new_usertype<INetManager>("INetManager",
         "get_peer", sol::overload(
-            [](INetManager& self, Int64Wrapper owner) { return self.GetPeerByUserID((std::int64_t)owner); },
+            [](INetManager& self, Int64Wrapper owner) { return self.FindPeerByUserID((std::int64_t)owner); },
             //sol::resolve<Peer*(avledet::util::UserID)>(&INetManager::GetPeer),
-            sol::resolve<Peer* (std::string_view)>(&INetManager::GetPeerByName)
+            sol::resolve<Peer* (std::string_view)>(&INetManager::FindPeerByName)
         ),
         "peers", sol::readonly(&INetManager::m_onlinePeers)
     );
@@ -906,7 +942,7 @@ void IModManager::LoadAPI() {
     }
 
     //TODO logger ref capture; fix
-    m_state["print"] = [VH_LOGGER = this->VH_LOGGER](sol::this_state ts, sol::variadic_args args) {
+    m_state["print"] = [](sol::this_state ts, sol::variadic_args args) {
         sol::state_view state = ts;
 
         auto&& tostring(state["tostring"]);
@@ -927,12 +963,12 @@ void IModManager::LoadAPI() {
     m_state.new_usertype<ZStdCompressor>("ZStdCompressor",
         sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(const avledet::util::Bytes&)>(),
         "compress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdCompressor::Compress)
-        );
+    );
 
     m_state.new_usertype<ZStdDecompressor>("ZStdDecompressor",
         sol::constructors<ZStdDecompressor(), ZStdDecompressor(const avledet::util::Bytes&)>(),
         "decompress", sol::resolve<std::optional<avledet::util::Bytes>(const avledet::util::Bytes&)>(&ZStdDecompressor::Decompress)
-        );
+    );
     
 
 
@@ -1045,8 +1081,6 @@ void IModManager::LoadMod(Mod& mod) {
 //}
 
 void IModManager::PostInit() {
-    VH_LOGGER = quill::Frontend::create_or_get_logger("modmanager", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1"));
-
     LOG_INFO(VH_LOGGER, "Initializing ModManager");
 
     //m_state.set_exception_handler(&my_exception_handler);

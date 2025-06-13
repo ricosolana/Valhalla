@@ -35,15 +35,15 @@ public:
     virtual void Close(bool linger) = 0;
 
     virtual std::vector<char> Recv() = 0;
-    virtual void Send(std::vector<char> buf) = 0;
+    virtual void send(std::vector<char> buf) = 0;
 
-    virtual std::string GetHostName() = 0;
-    virtual std::string GetAddress() = 0;
+    virtual std::string get_host_name() = 0;
+    virtual std::string get_address() = 0;
     virtual bool is_outbound() = 0; // TODO impl
 
     virtual Status get_status() = 0;
-    virtual int GetPing() = 0;
-    virtual int GetSendQueueSize() = 0;
+    virtual int get_ping() = 0;
+    virtual int get_send_queue_size() = 0;
     //virtual std::tuple<float, float, int, float, float> get_connection_stats() = 0;
 
     // auto [local, remote] = get_connection_quality()
@@ -82,16 +82,16 @@ public:
 
     void Close(bool linger) override;
 
-    void Send(std::vector<char> bytes) override;
+    void send(std::vector<char> bytes) override;
     std::vector<char> Recv() override;
 
-    std::string GetHostName() override;
-    std::string GetAddress() override;
+    std::string get_host_name() override;
+    std::string get_address() override;
     bool is_outbound() override;
 
     Status get_status() override;
-    int GetPing() override;
-    int GetSendQueueSize() override;
+    int get_ping() override;
+    int get_send_queue_size() override;
     //std::tuple<float, float, int, float, float> get_connection_stats() override;
     std::tuple<float, float> get_connection_quality() override;
 

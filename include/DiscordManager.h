@@ -5,7 +5,6 @@
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
 #include <string>
 
-#include <isteamhttp.h>
 #include <dpp/dpp.h>
 
 #include "Peer.h"
