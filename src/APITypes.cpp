@@ -3,6 +3,8 @@
 #if VH_IS_ON(VH_USE_MODS)
 
 void avledet::api::init_types(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - types");
+
     using namespace avledet::util;
 
     table.new_usertype<ZDOID>("ZDOID",

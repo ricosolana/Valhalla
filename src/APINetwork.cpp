@@ -8,6 +8,8 @@
 using namespace avledet::network;
 
 void avledet::api::init_network(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - network");
+
     table.new_enum("NetStatus",
         "CONNECTING", Status::Connecting,
         "CONNECTED", Status::Connected,

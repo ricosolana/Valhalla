@@ -3,6 +3,8 @@
 #if VH_IS_ON(VH_USE_MODS)
 
 void avledet::api::init_quaternion(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - quaternion");
+
     table.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
         "IDENTITY", sol::var(Quaternion::IDENTITY),

@@ -6,6 +6,8 @@
 using namespace avledet::util;
 
 void avledet::api::init_peer(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - peer");
+
     table.new_usertype<IModManager::MethodSig>("MethodSig",
         sol::constructors<IModManager::MethodSig(std::string_view, sol::variadic_args)>()
     );

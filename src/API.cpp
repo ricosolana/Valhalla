@@ -165,17 +165,12 @@ sol::table IModManager::load_api_table() {
     table["print"] = [](sol::variadic_args args, sol::this_environment tenv) {
         sol::environment& env = tenv;
         auto&& tostring(env["tostring"]);
-        //sol::type to1 = tostring.get_type();
-
-        //auto&& tostring2 = env["_G"]["tostring"];
-        //auto&& to2 = tostring2.get_type();
 
         std::string s;
         int idx = 0;
         for (auto&& arg : args) {
             if (idx++ > 0)
                 s += " ";
-            //sol::type t_arg = arg.get_type();
             s += tostring(arg);
         }
 

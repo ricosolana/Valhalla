@@ -4,6 +4,8 @@
 #if VH_IS_ON(VH_USE_MODS)
 
 void avledet::api::init_prefab(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - prefab");
+
     table.new_enum("Flag",
         "NONE", Prefab::Flag::NONE,
 

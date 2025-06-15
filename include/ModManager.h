@@ -133,8 +133,8 @@ public:
 
         sol::environment m_env;
 
-        Mod(std::string name, fs::path entry, sol::environment env) 
-            : m_name(name), m_entry(entry), m_env(env) {}
+        Mod(std::string name, fs::path entry) 
+            : m_name(name), m_entry(entry) {}
 
         Mod(Mod const&) = delete;
         Mod(Mod&&) = default;
@@ -159,10 +159,10 @@ public:
     sol::state m_state;
 
 private:
-    Mod& LoadModInfo(std::string_view folderName, sol::table api);
+    Mod& LoadModInfo(std::string_view folderName);
 
     sol::table load_api_table();
-    void LoadMod(Mod& mod);
+    void execute_plugin(Mod& mod);
 
 public:
     void PostInit();

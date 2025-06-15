@@ -4,6 +4,7 @@
 #if VH_IS_ON(VH_USE_MODS)
 
 void avledet::api::init_zdo(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - ZDO");
 
     using namespace avledet::util;
 

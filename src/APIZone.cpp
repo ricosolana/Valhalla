@@ -6,6 +6,7 @@
 #if VH_IS_ON(VH_USE_MODS)
 
 void avledet::api::init_zone(sol::table table) {
+    LOG_INFO(VH_LOGGER, "Initializing API types - Zone");
 
     //or VH_DUNGEON_GENERATION?
 #if VH_IS_ON(VH_ZONE_GENERATION)
