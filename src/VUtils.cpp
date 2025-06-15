@@ -38,3 +38,9 @@ namespace VUtils {
         return "";
     }
 }
+
+namespace avledet::util {
+
+
+    
+}

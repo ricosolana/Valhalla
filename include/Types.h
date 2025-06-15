@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+
 #include <vector>
 #include <span>
 #include <ratio>
@@ -8,6 +9,12 @@
 #include <tracy/Tracy.hpp>
 #include <ankerl/unordered_dense.h>
 #include <quill/LogMacros.h>
+
+#include "CompileSettings.h"
+
+#if VH_IS_ON(VH_USE_MODS)
+#include <sol/state.hpp>
+#endif
 
 namespace avledet::util {
     using Byte = char; // Unsigned 8 bit
@@ -87,6 +94,5 @@ namespace avledet::util {
         SOLID,
         TERRAIN
     };
-
 
 }

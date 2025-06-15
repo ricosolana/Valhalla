@@ -111,6 +111,15 @@ endif()
 # Linking
 ##########
 add_executable(${PROJECT_NAME}
+    "src/API.cpp"
+    "src/APINetwork.cpp"
+    "src/APIPeer.cpp"
+    "src/APIPrefab.cpp"
+    "src/APIQuaternion.cpp"
+    "src/APITypes.cpp"
+    "src/APIVector.cpp"
+    "src/APIZdo.cpp"
+    "src/APIZone.cpp"
     "src/Crypto.cpp"
     "src/DiscordManager.cpp"    
     "src/DungeonGenerator.cpp"

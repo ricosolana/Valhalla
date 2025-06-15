@@ -14,6 +14,8 @@
 
 #include <ankerl/unordered_dense.h>
 
+#include "CompileSettings.h"
+
 #include "DataStream.h"
 
 
@@ -320,6 +322,10 @@ namespace avledet::util::CSU {
             return st << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
         }
     };
+
+#if VH_IS_ON(VH_USE_MODS)
+    //void init_api(sol::table api_table);
+#endif
 
     using Vector2f = Vector2<float>;
     using Vector2i = Vector2<std::int32_t>;

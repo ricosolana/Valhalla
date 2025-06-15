@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "CompileSettings.h"
+#include <sol/forward.hpp>
 //#include <tracy/Tracy.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -130,11 +131,14 @@ public:
         std::string m_description;
         std::list<std::string> m_authors;
 
-        Mod(std::string name,
-            fs::path entry) 
-            : m_name(name),
-            m_entry(entry) {}
+        sol::environment m_env;
 
+        Mod(std::string name, fs::path entry, sol::environment env) 
+            : m_name(name), m_entry(entry), m_env(env) {}
+
+        Mod(Mod const&) = delete;
+        Mod(Mod&&) = default;
+        Mod& operator=(Mod const&) = delete;
     };
 
     struct EventHandle {
@@ -155,9 +159,9 @@ public:
     sol::state m_state;
 
 private:
-    Mod& LoadModInfo(std::string_view folderName);
+    Mod& LoadModInfo(std::string_view folderName, sol::table api);
 
-    void LoadAPI();
+    sol::table load_api_table();
     void LoadMod(Mod& mod);
 
 public:
@@ -424,6 +428,28 @@ struct avledet::util::Streamer<F, G...>{ //lua_State> {
         return results;
     }
 };
+
+namespace avledet::api {
+
+    void init_network(sol::table table);
+
+    void init_peer(sol::table table);
+
+    void init_prefab(sol::table table);
+
+    void init_quaternion(sol::table table);
+
+    void init_types(sol::table table);
+
+    void init_vector(sol::table table);
+
+    void init_zdo(sol::table table);
+
+    void init_zone(sol::table table);
+
+}
+
+
 
 #else // !VH_USE_MODS
 #define VH_DISPATCH_MOD_EVENT(name, ...) (true)

@@ -66,10 +66,10 @@ class IZoneManager {
 	friend class INetManager;
 	friend class IModManager;
 
+public:
+
 #if VH_IS_ON(VH_ZONE_GENERATION)
 	class Feature {
-		friend class IModManager;
-
 	public:
 		std::string m_name;
 		avledet::util::Hash m_hash;
@@ -172,7 +172,6 @@ class IZoneManager {
 	const Prefab* ZONE_CTRL_PREFAB = nullptr;
 #endif
 
-public:
 	static constexpr int NEAR_ZRADIUS = 2;
 	static constexpr int DISTANT_ZRADIUS = 2;
 	static constexpr int UNITS_PER_ZONE = 64;

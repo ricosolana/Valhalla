@@ -1,5 +1,7 @@
 #include "Types.h"
+#include "ModManager.h"
 #include "VUtilsMathf.h"
+#include "ZDOID.h"
 
 namespace avledet::util {
 
@@ -21,3 +23,5 @@ namespace avledet::util {
     }
 
 }// namespace avledet::util
+
+
