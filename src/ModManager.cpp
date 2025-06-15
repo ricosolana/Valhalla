@@ -327,6 +327,15 @@ void IModManager::Uninit() {
     m_mods.clear();
 }
 
+//https://github.com/ThePhD/sol2/issues/980
+// to 'reload' a script
+//  clear / kill all references to scripts, by manually clearing out listeners / callbacks...
+
+// how to handle script behavior on a reload?
+//  a reload is handled not on server start, so some callbacks will never post
+//  so rather, run a on_reload() callback that can handle mid-server operations
+//  or other way to detect that this script has just been loaded midway through during server operations
+
 //void IModManager::reload_mod() {
 //    if (m_reload) {
 //        // first release all callbacks associated with the mod
