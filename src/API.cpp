@@ -158,7 +158,7 @@ sol::table IModManager::load_api_table() {
     {
         auto eventTable = table["event"].get_or_create<sol::table>();
 
-        eventTable["unsubscribe"] = [this]() { this->m_unsubscribeCurrentEvent = false; };
+        eventTable["unsubscribe"] = [this]() { this->m_tmp_unsubscribe = false; };
     }
 
     //TODO logger ref capture; fix

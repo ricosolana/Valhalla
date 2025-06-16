@@ -131,8 +131,6 @@ public:
         std::string m_description;
         std::list<std::string> m_authors;
 
-        sol::environment m_env;
-
         Mod(std::string name, fs::path entry) 
             : m_name(name), m_entry(entry) {}
 
@@ -153,7 +151,11 @@ private:
     avledet::util::Map<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_mods;
     avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
 
-    bool m_unsubscribeCurrentEvent;
+    bool m_tmp_unsubscribe {};
+    //bool m_tmp_reload;
+    //Mod* m_tmp_mod_reload {};
+    //std::vector<Mod*> m_tmp_reload {};
+    avledet::util::Set<Mod*> m_tmp_reload_mods;
 
 public:
     sol::state m_state;
@@ -167,6 +169,7 @@ private:
 public:
     void PostInit();
     void Uninit();
+    void update();
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
@@ -175,13 +178,13 @@ public:
         ZoneScoped;
         //ZoneNamed(CallEvent, true);
 
-        this->m_unsubscribeCurrentEvent = false;
-
         auto&& find = m_callbacks.find(name);
         if (find != m_callbacks.end()) {
             auto&& callbacks = find->second;
 
             for (auto&& itr = callbacks.begin(); itr != callbacks.end(); ) {
+                this->m_tmp_unsubscribe = false;
+
                 //ZoneNamed(per_callback, true);
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
@@ -189,7 +192,7 @@ public:
 
                     sol::error error = result;
                     LOG_ERROR(VH_LOGGER, "{}", error.what());
-                    this->m_unsubscribeCurrentEvent = true;
+                    this->m_tmp_unsubscribe = true;
                 }
                 else {
                     // whether cancelled-events should follow Harmony prefix cancellation with bools
@@ -199,7 +202,7 @@ public:
                     }
                 }
 
-                if (this->m_unsubscribeCurrentEvent) {
+                if (this->m_tmp_unsubscribe) {
                     itr = callbacks.erase(itr);
                 }
                 else {
