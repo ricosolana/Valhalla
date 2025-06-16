@@ -1,8 +1,6 @@
 #pragma once 
 
 #include "CompileSettings.h"
-#include <sol/forward.hpp>
-//#include <tracy/Tracy.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -12,6 +10,7 @@
 #include <list>
 #include <magic_enum.hpp>
 #include <sol/sol.hpp>
+#include <sol/forward.hpp>
 #include <lua.h>
 #include "Hashes.h"
 #include "DataStream.h"
@@ -23,7 +22,6 @@
 #include "ValhallaServer.h"
 
 
-//int GetCurrentLuaLine(lua_State* L);
 
 class IModManager {
 public:
@@ -57,11 +55,6 @@ public:
 
         max
     };
-
-    //enum class EventStatus {
-    //    NONE,
-    //    UNSUBSCRIBE, // Set only when calling function self unsubscribes
-    //};
 
     using StreamTypes = std::vector<StreamType>;
 
@@ -152,9 +145,6 @@ private:
     avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
 
     bool m_tmp_unsubscribe {};
-    //bool m_tmp_reload;
-    //Mod* m_tmp_mod_reload {};
-    //std::vector<Mod*> m_tmp_reload {};
     avledet::util::Set<Mod*> m_tmp_reload_mods;
 
 public:
@@ -259,29 +249,7 @@ IModManager* ModManager();
 
 template <class F, class ...T>
     requires (std::is_same_v<F, IModManager::StreamType>)
-struct avledet::util::Streamer<F, T...>{ //lua_State> {
-    //TODO create mapper to jun
-    // perhaps tuple of ordered types by Type ordinal valud
-    //using vals = std::tuple<
-    //    avledet::util::Bytes,
-    //    std::string,
-    //    std::vector<std::string>,
-    //    avledet::util::Bytes,
-    //    avledet::util::ZDOID,
-    //    avledet::util::CSU::Vector3f,
-    //    avledet::util::CSU::Vector2i,
-    //    avledet::util::CSU::Quaternion,
-    //    std::int8_t,
-    //    std::int16_t,
-    //    std::int32_t,
-    //    std::int64_t,
-    //    std::uint8_t,
-    //    std::uint16_t,
-    //    std::uint32_t,
-    //    std::uint64_t,
-    //    std::float_t,
-    //    std::double_t,
-    //    char16_t>;
+struct avledet::util::Streamer<F, T...>{
 
     void operator()(avledet::util::Writer& writer, IModManager::StreamType type, sol::object const& arg) {
         switch (type) {

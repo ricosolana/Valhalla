@@ -225,7 +225,7 @@ void IDungeonManager::TryRegenerateDungeons() {
 #endif
 
 
-ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
+ZDO::reference IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
     
@@ -234,7 +234,7 @@ ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos
     return zdo;
 }
 
-ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
+ZDO::reference IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed) {
     auto&& zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
     zdo->SetRotation(rot);
 
@@ -243,7 +243,7 @@ ZDO::unsafe_value IDungeonManager::generate(const Dungeon& dungeon, Vector3f pos
     return zdo;
 }
 
-void IDungeonManager::generate(const Dungeon& dungeon, ZDO::unsafe_value zdo) {
+void IDungeonManager::generate(const Dungeon& dungeon, ZDO::reference zdo) {
     DungeonGenerator(dungeon, zdo).Generate();
 }
 #endif

@@ -1,15 +1,19 @@
 #include "ModManager.h"
-#include "Types.h"
-#include "UserData.h"
+
+#if VH_IS_ON(VH_USE_MODS)
+
+#include <string_view>
+#include <vector>
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <ranges>
+
 #include <quill/Backend.h>
 #include <quill/Frontend.h>
-#include <ranges>
 #include <sol/environment.hpp>
 #include <sol/forward.hpp>
 #include <sol/object.hpp>
@@ -19,12 +23,12 @@
 #include <sol/resolve.hpp>
 #include <sol/state_view.hpp>
 #include <sol/types.hpp>
-#include <string_view>
-#include <vector>
-
-#if VH_IS_ON(VH_USE_MODS)
-
 #include <yaml-cpp/yaml.h>
+
+#include "Types.h"
+#include "UserData.h"
+
+
 
 #include "ModManager.h"
 #include "VUtilsResource.h"
@@ -128,19 +132,20 @@ IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
     return *mod;
 }
 
-int LoadFileRequire(lua_State* L) {
-    std::string path = sol::stack::get<std::string>(L);
-
-    // first look in the sub mod dir
-    //  ./mods/MyExampleMod/
-    if (auto opt = VUtils::Resource::ReadFile<std::string>("./mods/" + path + ".lua"))
-        luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
-    else {
-        sol::stack::push(L, "Module '" + path + "' not found");
-    }
-
-    return 1;
-}
+// Unused for now, because ...?
+//int LoadFileRequire(lua_State* L) {
+//    std::string path = sol::stack::get<std::string>(L);
+//
+//    // first look in the sub mod dir
+//    //  ./mods/MyExampleMod/
+//    if (auto opt = VUtils::Resource::ReadFile<std::string>("./mods/" + path + ".lua"))
+//        luaL_loadbuffer(L, opt.value().data(), opt.value().size(), path.c_str());
+//    else {
+//        sol::stack::push(L, "Module '" + path + "' not found");
+//    }
+//
+//    return 1;
+//}
 
 void IModManager::execute_plugin(Mod& mod) {
     auto path(mod.m_entry);

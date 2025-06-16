@@ -430,34 +430,41 @@ private:
 
 
 public:
-    using unsafe_value = ZDO*;
-    using unsafe_optional = ZDO*;
+    using reference = ZDO*;
+    using optional = ZDO*;
 
-    using container = avledet::util::Set<std::unique_ptr<ZDO>, hash, equal_to>;
-    using id_container = avledet::util::Set<ZDOID, hash, std::equal_to<>>; // hetero hash?
-    using ref_container = avledet::util::Set<unsafe_value, hash, equal_to>;
+    // unique: owned + safe
+    // soft: indirect through ID
+    // set/list...
+
+    using unique_set = avledet::util::Set<std::unique_ptr<ZDO>, hash, equal_to>;
+    using soft_set = avledet::util::Set<ZDOID, hash, std::equal_to<>>; // hetero hash?
+    using reference_set = avledet::util::Set<reference, hash, equal_to>;
+    using reference_list = std::vector<reference>;
+    using soft_list = std::vector<ZDOID>;
+    using Filter = std::function<bool(reference)>;
     
-    [[nodiscard]] static unsafe_value make_unsafe_value(container::iterator itr) {
+    [[nodiscard]] static reference make_reference(unique_set::iterator itr) {
         return itr->get();
     }
 
-    [[nodiscard]] static unsafe_optional make_unsafe_value(container::value_type const& itr) {
+    [[nodiscard]] static optional make_reference(unique_set::value_type const& itr) {
         return itr.get();
     }
 
-    [[nodiscard]] static unsafe_optional make_unsafe_optional(unsafe_value v) {
+    [[nodiscard]] static optional make_optional(reference v) {
         return v;
     }
 
-    [[nodiscard]] static unsafe_optional make_unsafe_optional(container::iterator itr) {
+    [[nodiscard]] static optional make_optional(unique_set::iterator itr) {
         return itr->get();
     }
     
-    [[nodiscard]] static unsafe_optional make_unsafe_optional(container::value_type const& itr) {
+    [[nodiscard]] static optional make_optional(unique_set::value_type const& itr) {
         return itr.get();
     }
 
-    static inline const auto unsafe_nullopt = nullptr;
+    static inline const auto nullopt = nullptr;
     
 private:
     
@@ -563,8 +570,6 @@ public:
     {}
 
     friend bool operator==(ZDOID const& lhs, ZDO const* rhs) noexcept {
-        //assert((lhs != rhs.get()) == (lhs->GetID() != rhs->GetID()));
-    
         return lhs == rhs->GetID();
     }
 

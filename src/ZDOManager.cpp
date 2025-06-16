@@ -11,6 +11,7 @@
 #include "VUtils.h"
 #include "ValhallaServer.h"
 #include "Hashes.h"
+#include "ZDO.h"
 #include "ZoneManager.h"
 #include "RouteManager.h"
 
@@ -72,8 +73,8 @@ void IZDOManager::Update() {
 		// TODO use the optimized Lua ported code for linking portals
 		//	not the exact code but the way the algo works
 
-		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO::unsafe_optional {
-			std::vector<ZDO::unsafe_value> list;
+		auto&& FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO::optional {
+			std::vector<ZDO::reference> list;
 			for (auto&& zdo : portals) {
 				if (zdo->GetID() != skip
 					&& zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG) == tag
@@ -84,10 +85,10 @@ void IZDOManager::Update() {
 			}
 
 			if (list.empty()) {
-				return ZDO::unsafe_nullopt;
+				return ZDO::nullopt;
 			}
 
-			return ZDO::make_unsafe_optional(list[VUtils::Random::State().range(0, list.size())]);
+			return ZDO::make_optional(list[VUtils::Random::State().range(0, list.size())]);
 		};
 
 		for (auto&& zdo : portals) {
@@ -157,7 +158,7 @@ void IZDOManager::Update() {
 
 
 
-void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
+void IZDOManager::_AddZDOToZone(ZDO::reference zdo) {
 	auto&& container = _GetZDOContainer(zdo->GetZone());
 
 	assert(!container.get().contains(zdo));
@@ -169,7 +170,7 @@ void IZDOManager::_AddZDOToZone(ZDO::unsafe_value zdo) {
 	//LOG_INFO(VH_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
 }
 
-void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
+void IZDOManager::_RemoveFromSector(ZDO::reference zdo) {
 	if (auto&& container = _FindZDOContainer(zdo->GetZone())) {
 		auto&& erase = container->erase(zdo);
 
@@ -183,7 +184,7 @@ void IZDOManager::_RemoveFromSector(ZDO::unsafe_value zdo) {
 	}
 }
 
-void IZDOManager::_InvalidateZDOZone(ZDO::unsafe_value zdo) {
+void IZDOManager::_InvalidateZDOZone(ZDO::reference zdo) {
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ZDOSectorInvalidated(zdo);
 	}
@@ -231,7 +232,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 		
 		//auto&& zdo = ZDO(*insert.first);
 		//auto&& zdo = insert
-		auto&& zdo = ZDO::make_unsafe_value(insert.first);
+		auto&& zdo = ZDO::make_reference(insert.first);
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
 		if (version < 31) {
@@ -334,7 +335,7 @@ void IZDOManager::Load(DataReader& reader, int version) {
 
 
 
-[[nodiscard]] std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
+[[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept {
 	//https://jguegant.github.io/blogs/tech/performing-try-emplace.html
 	auto&& insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
 	//LOG_INFO(VH_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
@@ -342,13 +343,13 @@ void IZDOManager::Load(DataReader& reader, int version) {
 	return insert;
 }
 
-std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
+std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept {
 	auto&& insert = _Instantiate(zdoid);
 
 	// if inserted, then set pos
 	if (insert.second) {
 		//auto&& zdo = ZDO(*insert.first);
-		auto&& zdo = ZDO::make_unsafe_value(insert.first);
+		auto&& zdo = ZDO::make_reference(insert.first);
 
 		// Set zone and position of ZDO
 		zdo->_SetPosition(position);
@@ -358,14 +359,14 @@ std::pair<ZDO::container::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid,
 	return insert;
 }
 
-ZDO::unsafe_value IZDOManager::_Instantiate(Vector3f position) noexcept {
+ZDO::reference IZDOManager::_Instantiate(Vector3f position) noexcept {
 	//ZDOID zdoid = ZDOID(VH_ID, 0);
 	ZDOID zdoid = ZDOID(0, 0);
 	for(;;) {
 		zdoid.set_id(m_nextUid++);
 		auto&& insert = _Instantiate(zdoid, position);
 		if (insert.second)
-			return ZDO::make_unsafe_value(insert.first);
+			return ZDO::make_reference(insert.first);
 	}
 	std::unreachable();
 }
@@ -387,13 +388,13 @@ ZDO::unsafe_value IZDOManager::_Instantiate(Vector3f position) noexcept {
 
 
 
-ZDO::unsafe_optional IZDOManager::GetZDO(ZDOID id) {
+ZDO::optional IZDOManager::GetZDO(ZDOID id) {
 	if (id) {
 		auto&& find = m_objectsByID.find(id);
 		if (find != m_objectsByID.end())
-			return ZDO::make_unsafe_optional(find);
+			return ZDO::make_optional(find);
 	}
-	return ZDO::unsafe_nullopt;
+	return ZDO::nullopt;
 }
 
 
@@ -418,7 +419,7 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 
 
 
-ZDO::unsafe_value IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
+ZDO::reference IZDOManager::Instantiate(const Prefab& prefab, Vector3f pos) {
 	auto&& zdo = _Instantiate(pos);
 	//zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
 	//zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
@@ -459,7 +460,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 	auto&& zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
-	std::list<ZDO::unsafe_value> m_tempNearObjects;
+	ZDO::reference_list m_tempNearObjects;
 	GetZDOs_Zone(zone, m_tempNearObjects); // get zdos: zone, nearby
 	GetZDOs_NeighborZones(zone, m_tempNearObjects); // get zdos: zone, nearby
 
@@ -526,10 +527,10 @@ void IZDOManager::AssignOrReleaseZDOs(Peer& peer) {
 
 }
 
-ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
+ZDO::unique_set::iterator IZDOManager::_EraseZDO(ZDO::unique_set::iterator itr) {
 	assert(itr != m_objectsByID.end());
 
-	auto&& zdo = ZDO::make_unsafe_value(itr);
+	auto&& zdo = ZDO::make_reference(itr);
 	auto&& zdoid = zdo->GetID();
 
 	// update local next only if im the user who created the zdo
@@ -575,7 +576,7 @@ ZDO::container::iterator IZDOManager::_EraseZDO(ZDO::container::iterator itr) {
 	return m_objectsByID.erase(itr);
 }
 
-void IZDOManager::GetZDOs_ActiveZones(ZoneID zone, std::list<ZDO::unsafe_value>& out, std::list<ZDO::unsafe_value>& outDistant) {
+void IZDOManager::GetZDOs_ActiveZones(ZoneID zone, ZDO::reference_list& out, ZDO::reference_list& outDistant) {
 	// Add ZDOs from immediate sector
 	GetZDOs_Zone(zone, out);
 
@@ -586,7 +587,7 @@ void IZDOManager::GetZDOs_ActiveZones(ZoneID zone, std::list<ZDO::unsafe_value>&
 	GetZDOs_DistantZones(zone, outDistant);
 }
 
-void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value>& sectorObjects) {
+void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, ZDO::reference_list& sectorObjects) {
 	for (auto z = zone.y - IZoneManager::NEAR_ZRADIUS; z <= zone.y + IZoneManager::NEAR_ZRADIUS; z++) {
 		for (auto x = zone.x - IZoneManager::NEAR_ZRADIUS; x <= zone.x + IZoneManager::NEAR_ZRADIUS; x++) {
 			auto current = ZoneID(x, z);
@@ -599,7 +600,7 @@ void IZDOManager::GetZDOs_NeighborZones(ZoneID zone, std::list<ZDO::unsafe_value
 	}
 }
 
-void IZDOManager::GetZDOs_DistantZones(ZoneID zone, std::list<ZDO::unsafe_value>& out) {
+void IZDOManager::GetZDOs_DistantZones(ZoneID zone, ZDO::reference_list& out) {
 	for (std::int16_t r = IZoneManager::NEAR_ZRADIUS + 1; 
 		r <= IZoneManager::NEAR_ZRADIUS + IZoneManager::DISTANT_ZRADIUS; 
 		r++) {
@@ -614,15 +615,15 @@ void IZDOManager::GetZDOs_DistantZones(ZoneID zone, std::list<ZDO::unsafe_value>
 	}
 }
 
-std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer& peer) {
+std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer& peer) {
 	auto zone = IZoneManager::WorldToZonePos(peer.m_pos);
 
 	// Gather all updated ZDO's
-	std::list<ZDO::unsafe_value> zoneZDOs;
-	std::list<ZDO::unsafe_value> distantZDOs;
+	ZDO::reference_list zoneZDOs;
+	ZDO::reference_list distantZDOs;
 	GetZDOs_ActiveZones(zone, zoneZDOs, distantZDOs);
 
-	std::list<std::pair<ZDO::unsafe_value, float>> result;
+	std::list<std::pair<ZDO::reference, float>> result;
 
 	// Prepare client-side outdated ZDO's
 	const auto time(Valhalla()->Time());
@@ -638,7 +639,7 @@ std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer&
 	}
 
 	// Prioritize ZDO's	
-	result.sort([&](const std::pair<ZDO::unsafe_value, float>& first, const std::pair<ZDO::unsafe_value, float>& second) {
+	result.sort([&](const std::pair<ZDO::reference, float>& first, const std::pair<ZDO::reference, float>& second) {
 
 		// Sort in rough order of:
 		//	flag -> type/priority -> distance ASC -> age ASC
@@ -696,13 +697,13 @@ std::list<std::pair<ZDO::unsafe_value, float>> IZDOManager::CreateSyncList(Peer&
 	return result;
 }
 
-void IZDOManager::GetZDOs_Zone(ZoneID zone, std::list<ZDO::unsafe_value>& objects) {
+void IZDOManager::GetZDOs_Zone(ZoneID zone, ZDO::reference_list& objects) {
 	if (auto&& container = _FindZDOContainer(zone)) {
 		objects.insert(objects.end(), container->begin(), container->end());
 	}
 }
 
-void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::unsafe_value>& objects) {
+void IZDOManager::GetZDOs_Distant(ZoneID zone, ZDO::reference_list& objects) {
 	if (auto&& container = _FindZDOContainer(zone)) {
 		for (auto&& zdo : *container) {
 			if (zdo->IsDistant()) {
@@ -714,8 +715,8 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, std::list<ZDO::unsafe_value>& obj
 
 
 
-std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(avledet::util::Hash prefab) {
-	std::list<ZDO::unsafe_value> out;
+ZDO::reference_list IZDOManager::GetZDOs(avledet::util::Hash prefab) {
+	ZDO::reference_list out;
 	auto&& find = m_objectsByPrefab.find(prefab);
 	if (find != m_objectsByPrefab.end()) {
 		auto&& container = find->second;
@@ -724,10 +725,10 @@ std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(avledet::util::Hash prefab) {
 	return out;
 }
 
-std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(pred_t pred) {
-	std::list<ZDO::unsafe_value> out;
+ZDO::reference_list IZDOManager::GetZDOs(ZDO::Filter const& pred) {
+	ZDO::reference_list out;
 	for (auto&& v : m_objectsByID) {
-		auto&& zdo = ZDO::make_unsafe_value(v);
+		auto&& zdo = ZDO::make_reference(v);
 		if (!pred || pred(zdo)) {
 			out.push_back(zdo);
 		}
@@ -737,8 +738,8 @@ std::list<ZDO::unsafe_value> IZDOManager::GetZDOs(pred_t pred) {
 
 
 
-std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, std::size_t max, pred_t pred) {
-	std::list<ZDO::unsafe_value> out;
+ZDO::reference_list IZDOManager::SomeZDOs(Vector3f const& pos, float radius, std::size_t max, ZDO::Filter const& pred) {
+	ZDO::reference_list out;
 
 	const float sqRadius = radius * radius;
 
@@ -765,8 +766,8 @@ std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(Vector3f pos, float radius, s
 	return out;
 }
 
-std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(ZoneID zone, std::size_t max, pred_t pred) {
-	std::list<ZDO::unsafe_value> out;
+ZDO::reference_list IZDOManager::SomeZDOs(ZoneID const& zone, std::size_t max, ZDO::Filter const& pred) {
+	ZDO::reference_list out;
 
 	if (auto&& container = _FindZDOContainer(zone)) {
 		for (auto&& zdo : *container) {
@@ -784,10 +785,10 @@ std::list<ZDO::unsafe_value> IZDOManager::SomeZDOs(ZoneID zone, std::size_t max,
 
 
 
-ZDO::unsafe_optional IZDOManager::NearestZDO(Vector3f pos, float radius, pred_t pred) {
+ZDO::optional IZDOManager::NearestZDO(Vector3f const& pos, float radius, ZDO::Filter const& pred) {
 	float minSqDist = radius * radius;
 	
-	ZDO::unsafe_optional out;
+	ZDO::optional out;
 	//float minSqDist = std::numeric_limits<float>::max();
 
 	auto minZone = IZoneManager::WorldToZonePos(Vector3f(pos.x - radius, 0, pos.z - radius));
@@ -815,7 +816,7 @@ ZDO::unsafe_optional IZDOManager::NearestZDO(Vector3f pos, float radius, pred_t 
 
 
 // Global send
-void IZDOManager::ForceSendZDO(ZDOID id) {
+void IZDOManager::ForceSendZDO(ZDOID const& id) {
 	for (auto&& peer : NetManager()->GetPeers()) {
 		peer->ForceSendZDO(id);
 	}
@@ -925,7 +926,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 			auto&& pair = this->_Instantiate(zdoid);
 
 			//auto&& zdo = ZDO(*pair.first);
-			auto &&zdo = ZDO::make_unsafe_value(pair.first);
+			auto &&zdo = ZDO::make_reference(pair.first);
 			auto&& created = pair.second;
 
 			assert(zdoid == zdo->GetID());
@@ -1018,7 +1019,7 @@ void IZDOManager::OnNewPeer(Peer& peer) {
 
 void IZDOManager::OnPeerQuit(Peer& peer) {
 	for (auto&& itr = m_objectsByID.begin(); itr != m_objectsByID.end(); ) {
-		auto &&zdo = ZDO::make_unsafe_value(itr);
+		auto &&zdo = ZDO::make_reference(itr);
 
 		if (!zdo->IsPersistent()
 			&& (!zdo->HasOwner() || zdo->IsOwner(peer.GetUserID()) || !NetManager()->FindPeerByUserID(zdo->Owner())))

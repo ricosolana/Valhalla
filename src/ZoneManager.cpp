@@ -1105,7 +1105,7 @@ void IZoneManager::GenerateFeature(const Feature& location, avledet::util::Hash 
             auto&& dungeon = DungeonManager()->get_dungeon(piece.m_prefabHash);
 
             // TODO not really optional, it is required through a branch
-            ZDO::unsafe_optional zdo;
+            ZDO::optional zdo;
 
             if (dungeon.m_interior_position != Vector3f::zero()) {
 

@@ -11,7 +11,6 @@
 #include <quill/bundled/fmt/ostream.h>
 #include <quill/bundled/fmt/ranges.h>
 #include <quill/sinks/ConsoleSink.h>
-
 #include <ankerl/unordered_dense.h>
 
 #include "CompileSettings.h"

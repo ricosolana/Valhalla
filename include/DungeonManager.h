@@ -44,9 +44,9 @@ public:
 	void TryRegenerateDungeons();
 #endif
 
-	ZDO::unsafe_value generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot);
-	ZDO::unsafe_value generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
-	void generate(Dungeon const& dungeon, ZDO::unsafe_value zdo);
+	ZDO::reference generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot);
+	ZDO::reference generate(Dungeon const& dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
+	void generate(Dungeon const& dungeon, ZDO::reference zdo);
 };
 
 // Manager for everything related to dungeon spawning 

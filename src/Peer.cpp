@@ -150,7 +150,7 @@ void Peer::SetAdmin(bool enable) {
     else Valhalla()->m_admin.insert(m_socket->get_host_name());
 }
 
-ZDO::unsafe_optional Peer::GetZDO() {
+ZDO::optional Peer::GetZDO() {
     return ZDOManager()->GetZDO(m_characterID);
 }
 
@@ -170,7 +170,7 @@ void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util:
 
 
 
-void Peer::ZDOSectorInvalidated(ZDO::unsafe_value zdo) {
+void Peer::ZDOSectorInvalidated(ZDO::reference zdo) {
     if (zdo->IsOwner(this->GetUserID()))
         return;
 
@@ -181,7 +181,7 @@ void Peer::ZDOSectorInvalidated(ZDO::unsafe_value zdo) {
     }
 }
 
-bool Peer::IsOutdatedZDO(ZDO::unsafe_value zdo, decltype(m_zdos)::iterator& outItr) {
+bool Peer::IsOutdatedZDO(ZDO::reference zdo, decltype(m_zdos)::iterator& outItr) {
     auto&& find = m_zdos.find(zdo->GetID());
 
     outItr = find;
