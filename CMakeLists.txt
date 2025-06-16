@@ -1,4 +1,17 @@
-﻿# If using CLion:
+﻿# Compile settings for platforms (06/15/2025):
+#   Linux / VSCod(ium)e:
+#       Extensions
+#           Ctrl+P
+#           ext install ms-vscode.cpptools
+#           ext install llvm-vs-code-extensions.vscode-clangd
+#           ext install ms-vscode.cmake-tools
+#       Select Kits (Compiler) 
+#       Variants (Release / Debug)
+
+
+
+#OUTDATED (but might still work):
+# If using CLion:
 # - use msvc compiler 2022
 # - specify the vcpkg toolchain file location
 # - specify arm64 architecture
@@ -20,30 +33,50 @@
 # - Copy the folders from luasocket/bin/ to lua root dir
 # - Copy the folders from luasocket/lua/ to lua root dir
 
+
+
 ##########
 # Project
 ##########
 cmake_minimum_required (VERSION 3.20)
 project(Valhalla)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# TODO change this file impl or how defines are 'defined'
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(VHSettings)
-#include(get_steamworks_sdk)
-include(get_cpm)
 
-if (NOT CMAKE_BUILD_TYPE)
-    SET(CMAKE_BUILD_TYPE Release)
+# ignore annoying msvc warnings
+if(WIN32)
+   # remove annoying min/max getting in the way of other min/max functions
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+    add_definitions("/wd5045") # spectre
+    add_definitions("/wd4244") # float loss
+    add_definitions("/wd4267") # int loss
+    add_definitions("/wd4996") # unsafe cstd functions
+    add_definitions("/wd4702") # unreachable code
+else()
+    #TODO reenable after tests and unit-migration
+    #set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-deprecated-declarations") # -Wno-unused-but-set-variable")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 
-
+#################
+# Find Steamworks
+#################
+# TODO
+#   Allow USER to specify sdk path via args
 if (WIN32)
-    #set(STEAMWORKS_SDK_BINARY_DIR "$ENV{STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
-    set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
-    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
-    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
-    #set(STEAMWORKS_SDK_STATIC_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+    message (FATAL_ERROR "NYI")
+    #set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
+    #set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
+    #set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
 else ()
     set(STEAMWORKS_SDK_LOCATION "$ENV{HOME}/.local/bin/steamsdk")
     set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
@@ -58,51 +91,57 @@ message ("Steamworks: ${STEAMWORKS_SDK_LOCATION}")
 
 
 
-#option(TRACY_ENABLE "" OFF)
-
-
 ############
 # Libraries
 ############
-#find_package(Boost REQUIRED) # COMPONENTS smart_ptr)
-#add_library(Boost::smart_ptr IMPORTED INTERFACE)
+### abseil:x64-linux                                  20250127.1#1        Abseil is an open-source collection of C++ libra...
+### asio:x64-linux                                    1.32.0              Asio is a cross-platform C++ library for network...
+### dpp:x64-linux                                     10.1.2              D++ Extremely Lightweight C++ Discord Library.
+### gtest:x64-linux                                   1.17.0#1            Google Testing and Mocking Framework
+### gtl:x64-linux                                     1.2.0               Greg's Template Library of useful classes.
+### lua:x64-linux                                     5.4.8               A powerful, fast, lightweight, embeddable script...
+### nlohmann-json:x64-linux                           3.12.0              JSON for Modern C++
+### openssl:x64-linux                                 3.5.0#1             OpenSSL is an open source project that provides ...
+### opus:x64-linux                                    1.5.2               Totally open, royalty-free, highly versatile aud...
+### pthreads:x64-linux                                3.0.0#14            Meta-package that provides PThreads4W on Windows...
+### quill:x64-linux                                   10.0.0              Asynchronous Low Latency C++ Logging Library
+### range-v3:x64-linux                                0.12.0#4            Range library for C++14/17/20, basis for C++20's...
+### sol2:x64-linux                                    3.5.0               Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit...
+### tracy:x64-linux                                   0.11.1#2            A real time, nanosecond resolution, remote telem...
+### tracy[crash-handler]:x64-linux                                        Enable crash handler
+### unordered-dense:x64-linux                         4.5.0               A fast & densely stored hashmap and hashset base...
+### vcpkg-cmake-config:x64-linux                      2024-05-23          
+### vcpkg-cmake-get-vars:x64-linux                    2025-05-29          
+### vcpkg-cmake:x64-linux                             2024-04-23          
+### yaml-cpp:x64-linux                                0.8.0#3             yaml-cpp is a YAML parser and emitter in C++ mat...
+### zlib:x64-linux                                    1.3.1               A compression library
+### zstd:x64-linux                                    1.5.7               Zstandard - Fast real-time compression algorithm
+
 find_package(Threads REQUIRED)
+find_package(GTest REQUIRED) # vcpkg install gtest
 find_package(ZLIB REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)
+find_package(zstd CONFIG REQUIRED)
+find_package(quill CONFIG REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
+find_package(unordered_dense CONFIG REQUIRED) # https://github.com/martinus/unordered_dense?tab=readme-ov-file#21-installing-using-cmake
+
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
     message("Lua: enabled")
-    find_package(lua CONFIG REQUIRED)
+    find_package(lua CONFIG REQUIRED) # could replace with LuaJIT
     find_package(sol2 CONFIG REQUIRED)
 else()
     message("Lua: disabled")
 endif()
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(Tracy CONFIG REQUIRED)
-find_package(zstd CONFIG REQUIRED)
+
 if (NOT DEFINED VH_DISCORD_INTEGRATION OR VH_DISCORD_INTEGRATION)
     message("Discord: enabled")
     find_package(OpenSSL REQUIRED)
     find_package(dpp CONFIG REQUIRED)
 else()
     message("Discord: disabled")
-endif()
-find_package(quill CONFIG REQUIRED)
-find_package(magic_enum CONFIG REQUIRED)
-
-CPMAddPackage(
-    NAME unordered_dense
-    GITHUB_REPOSITORY martinus/unordered_dense
-    VERSION 4.1.2
-)
-
-# remove annoying min/max getting in the way of other min/max functions
-add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
-
-# ignore annoying msvc warnings
-if(WIN32)
-    add_definitions("/wd4244") # float loss
-    add_definitions("/wd4267") # int loss
-    add_definitions("/wd4996") # c functions it seems unsafe
 endif()
 
 
@@ -163,19 +202,12 @@ add_executable(${PROJECT_NAME}
 find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 
 target_include_directories(${PROJECT_NAME} 
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    PUBLIC ${STEAMWORKS_SDK_SOURCE_DIR}
-    PUBLIC ankerl::unordered_dense
-    PRIVATE ${GTL_INCLUDE_DIRS}
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${STEAMWORKS_SDK_SOURCE_DIR}
+        ${GTL_INCLUDE_DIRS}
+        ankerl::unordered_dense
 )
-
-#set(CMAKE_CXX_STANDARD 20)
-
-#set(CXX_STANDARD 23)
-#set(CMAKE_CXX_STANDARD 23)
-#set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-#set_property(TARGET ${PROJECT_NAME} PROPERTY CMAKE_CXX_STANDARD 23)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
     target_link_libraries(${PROJECT_NAME}
@@ -202,7 +234,7 @@ target_link_libraries(${PROJECT_NAME}
         Tracy::TracyClient
         $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
         quill::quill
-        unordered_dense
+        unordered_dense::unordered_dense
         range-v3::meta range-v3::concepts range-v3::range-v3
 )
 

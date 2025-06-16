@@ -157,7 +157,7 @@ void IModManager::execute_plugin(Mod& mod) {
 
         auto env = sol::environment(m_state, sol::create, api_table);
         env["_G"] = env; // otherwise, will point to our state global table; defeating sandboxing...
-        env["this"] = mod;
+        //env["this"] = &mod; //TODO TEST
 
         //sandboxer
         for (const auto& entry : safe_functions) {
