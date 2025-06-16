@@ -5,6 +5,9 @@
 #           ext install ms-vscode.cpptools
 #           ext install llvm-vs-code-extensions.vscode-clangd
 #           ext install ms-vscode.cmake-tools
+#           ext install xaver.clang-format
+#       sudo apt install clang-format
+#           Format with Ctrl+Shift+I
 #       Select Kits (Compiler) 
 #       Variants (Release / Debug)
 
