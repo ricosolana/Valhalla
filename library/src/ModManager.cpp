@@ -125,9 +125,90 @@ void IModManager::execute_plugin(Mod &mod)
         // Load new API globals personally for this mod
         auto api_table = this->load_api_table();
 
-        auto env    = sol::environment(m_state, sol::create, api_table);
+        auto env    = sol::environment(m_state, sol::create);//, api_table);
         env["_G"]   = env; // otherwise, will point to our state global table; defeating sandboxing...
         env["this"] = &mod;//TODO TEST
+
+
+        m_state.new_usertype<IValhalla>(
+                "IValhalla",
+                // server members
+                "version", sol::var(VConstants::GAME),// Valheim version
+                "delta", sol::property(&IValhalla::delta), "id",
+                sol::property([](IValhalla &self) { return Int64Wrapper(self.ID()); }), "nanos",
+                sol::property([](IValhalla &self) { return Int64Wrapper(self.Nanos().count()); }), "time",
+                sol::property(&IValhalla::Time), "time_multiplier", &IValhalla::m_serverTimeMultiplier,
+                // world time functions
+                "world_time",
+                sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime),
+                              &IValhalla::SetWorldTime),
+                "world_time_multiplier",
+                sol::property([](IValhalla &self) { return self.m_worldTimeMultiplier; },
+                              [](IValhalla &self, double mul) {
+                                  if (mul <= 0.001)
+                                      throw std::runtime_error("multiplier too small");
+                                  self.m_worldTimeMultiplier = mul;
+                              }),
+                "world_ticks", sol::property([](IValhalla &self) { return self.GetWorldTicks(); }), "day",
+                sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay),
+                "time_of_day",
+                sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay),
+                              &IValhalla::SetTimeOfDay),
+                "is_morning", sol::property(sol::resolve<bool() const>(&IValhalla::IsMorning)), "is_day",
+                sol::property(sol::resolve<bool() const>(&IValhalla::IsDay)), "is_afternoon",
+                sol::property(sol::resolve<bool() const>(&IValhalla::IsAfternoon)), "is_night",
+                sol::property(sol::resolve<bool() const>(&IValhalla::IsNight)), "next_morning",
+                sol::property(&IValhalla::GetTomorrowMorning), "next_day",
+                sol::property(&IValhalla::GetTomorrowDay), "next_afternoon",
+                sol::property(&IValhalla::GetTomorrowAfternoon), "next_night",
+                sol::property(&IValhalla::GetTomorrowNight),
+
+                "subscribe", [this](IValhalla &self, sol::variadic_args args, sol::this_environment te) {
+                    sol::environment &env = te;
+
+                    auto mod = env["this"].get<Mod *>();
+
+                    avledet::util::Hash hash {};
+                    sol::function func;
+                    int priority = 0;
+
+
+                    // If priority is present (will be at end)
+                    int const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+
+                    for (int i = 0; i < args.size(); i++) {
+                        auto &&arg  = args[i];
+                        auto &&type = arg.get_type();
+
+                        if (i + offset < args.size()) {
+                            if (type == sol::type::string)
+                                hash ^= avledet::util::get_stable_hash(arg.as<std::string>());
+                            else if (type == sol::type::number)
+                                hash ^= arg.as<avledet::util::Hash>();
+                            else {
+                                throw std::runtime_error("initial params must be string or hash");
+                            }
+                        } else {
+                            if (i == args.size() - offset && type == sol::type::function) {
+                                func = arg;
+                            } else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
+                                priority = arg;
+                            } else {
+                                throw std::runtime_error("final param must be a function or priority");
+                            }
+                        }
+                    }
+
+                    auto &&callbacks = m_callbacks[hash];
+
+                    callbacks.emplace_back(func, priority);
+                    callbacks.sort([](EventHandle const &a, EventHandle const &b) {
+                        return a.m_priority < b.m_priority;
+                    });
+                });
+
+        env["Valhalla"] = Valhalla();
+
 
         //sandboxer
         for (auto const &entry : safe_functions) {
