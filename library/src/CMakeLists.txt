@@ -1,0 +1,53 @@
+set(AVLEDET_LIBRARY_INCLUDE_DIR ${AVLEDET_LIBRARY_DIR}/include)
+
+target_sources(avledet_library
+    # Source files
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/API.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APINetwork.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIPeer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIPrefab.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIQuaternion.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APITypes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIVector.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIZdo.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/APIZone.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Crypto.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/DiscordManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/DungeonGenerator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/DungeonManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/DungeonRoom.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/GeoManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Heightmap.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapBuilder.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapManager.cpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ModManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/NetAcceptorSteamDedicated.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/NetManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/NetSocketSteam.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Peer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/PrefabManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/RandomEventManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Reader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/RouteManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/Tests.cpp" # this must mov
+        ${CMAKE_CURRENT_SOURCE_DIR}/Types.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ValhallaServer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Vector.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsMath.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsMathf.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsPhysics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsRandom.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsResource.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsString.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/WorldManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Writer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ZDO.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ZDOID.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ZDOManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ZoneManager.cpp
+)
