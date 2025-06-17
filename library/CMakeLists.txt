@@ -47,4 +47,4 @@ target_link_libraries(avledet_library
 )
 
 #TODO add testing unit!
-#add_subdirectory("test")
+add_subdirectory("test")
