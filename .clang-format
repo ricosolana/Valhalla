@@ -24,6 +24,8 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: true
 BinPackParameters: true
+BraceWrapping:
+  BeforeLambdaBody: false
 BreakBeforeBraces: Mozilla
 BreakBeforeBinaryOperators: All
 BreakBeforeConceptDeclarations: true
@@ -37,16 +39,19 @@ EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
 IndentCaseLabels: false
 IndentExternBlock: true
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentWidth: 4
 LambdaBodyIndentation: Signature
 KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 2
-NamespaceIndentation: None
+NamespaceIndentation: All
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: true
 PackConstructorInitializers: Never
 PointerAlignment: Right
+QualifierAlignment: Custom # see 'QualifierOrder'
+QualifierOrder: [type, const]
+ReferenceAlignment: Right
 ReflowComments: false
 SeparateDefinitionBlocks: Always
 SortIncludes: CaseInsensitive
@@ -55,7 +60,7 @@ SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
-SpaceBeforeCpp11BracedList: false
+SpaceBeforeCpp11BracedList: true
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements

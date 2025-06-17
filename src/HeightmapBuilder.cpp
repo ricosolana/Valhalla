@@ -4,29 +4,32 @@
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 
-#include <mutex>
-#include <future>
+    #include <future>
+    #include <mutex>
 
-#include "GeoManager.h"
-#include "TerrainModifier.h"
-#include "VUtilsMathf.h"
+    #include "GeoManager.h"
+    #include "TerrainModifier.h"
+    #include "VUtilsMathf.h"
 
 auto HEIGHTMAP_BUILDER = std::make_unique<IHeightmapBuilder>();
-IHeightmapBuilder* HeightmapBuilder() {
+
+IHeightmapBuilder *HeightmapBuilder()
+{
     return HEIGHTMAP_BUILDER.get();
 }
 
 // public
-void IHeightmapBuilder::PostGeoInit() {
+void IHeightmapBuilder::PostGeoInit()
+{
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
     for (unsigned int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
-        auto&& insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
+        auto &&insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
-        Shared* shared = insert->get();
+        Shared *shared = insert->get();
 
         shared->m_thread = std::jthread([this, i, shared](std::stop_token token) {
-            std::string name = "HMBuilder" + std::to_string(i); 
+            std::string name = "HMBuilder" + std::to_string(i);
 
             tracy::SetThreadName(name.c_str());
             //el::Helpers::setThreadName(name);
@@ -34,7 +37,7 @@ void IHeightmapBuilder::PostGeoInit() {
             std::vector<ZoneID> next;
 
             std::vector<std::unique_ptr<Heightmap>> baked;
-           
+
 
             LOG_INFO(VH_LOGGER, "Builder thread started");
             while (!token.stop_requested()) {
@@ -48,9 +51,9 @@ void IHeightmapBuilder::PostGeoInit() {
 
                 baked.clear();
 
-                // Bake any pending heightmaps 
+                // Bake any pending heightmaps
                 for (int i = next.size() - 1; i >= 0; --i) {
-                    auto&& zone = next[i];
+                    auto &&zone = next[i];
                     auto base(std::make_unique<BaseHeightmap>());
                     Build(base.get(), zone);
                     baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
@@ -79,8 +82,7 @@ void IHeightmapBuilder::PostGeoInit() {
                 // Add to the pool of ready heightmaps
                 {
                     std::scoped_lock<std::mutex> scoped(m_mux);
-                    for (auto&& heightmap : baked)
-                        m_ready[heightmap->GetZone()] = std::move(heightmap);
+                    for (auto &&heightmap : baked) m_ready[heightmap->GetZone()] = std::move(heightmap);
                 }
 
                 FrameMarkEnd(name.c_str());
@@ -93,20 +95,22 @@ void IHeightmapBuilder::PostGeoInit() {
     m_nextBuilder = m_builders.begin();
 }
 
-void IHeightmapBuilder::Uninit() {
+void IHeightmapBuilder::Uninit()
+{
     // First request all to stop
-    for (auto&& shared : m_builders) {
+    for (auto &&shared : m_builders) {
         shared->m_thread.request_stop();
     }
 
-    // Then join each 
-    for (auto&& builder : m_builders) {
+    // Then join each
+    for (auto &&builder : m_builders) {
         if (builder->m_thread.joinable())
             builder->m_thread.join();
     }
 }
 
-void IHeightmapBuilder::Update() {
+void IHeightmapBuilder::Update()
+{
     if (VUtils::run_periodic<struct clear_heightmaps>(1min)) {
         std::scoped_lock<std::mutex> scoped(m_mux);
         m_ready.clear();
@@ -121,10 +125,13 @@ void IHeightmapBuilder::Update() {
 }
 
 // private
-void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
+void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
+{
     //OPTICK_EVENT();
 
-    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone) + Vector3f((float)IZoneManager::UNITS_PER_ZONE * -0.5f, 0., (float)IZoneManager::UNITS_PER_ZONE * -0.5f);
+    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone)
+                        + Vector3f((float) IZoneManager::UNITS_PER_ZONE * -0.5f, 0.,
+                                   (float) IZoneManager::UNITS_PER_ZONE * -0.5f);
 
     auto GEO(GeoManager());
 
@@ -132,37 +139,38 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
     //data.m_cornerBiomes = new Heightmap.Biome[4];
     base->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z);
     base->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE, baseWorldPos.z);
-    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float)IZoneManager::UNITS_PER_ZONE);
-    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE, baseWorldPos.z + IZoneManager::UNITS_PER_ZONE);
+    base->m_cornerBiomes[2]
+            = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float) IZoneManager::UNITS_PER_ZONE);
+    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE,
+                                            baseWorldPos.z + IZoneManager::UNITS_PER_ZONE);
 
-    const auto biome1 = base->m_cornerBiomes[0];
-    const auto biome2 = base->m_cornerBiomes[1];
-    const auto biome3 = base->m_cornerBiomes[2];
-    const auto biome4 = base->m_cornerBiomes[3];
+    auto const biome1 = base->m_cornerBiomes[0];
+    auto const biome2 = base->m_cornerBiomes[1];
+    auto const biome3 = base->m_cornerBiomes[2];
+    auto const biome4 = base->m_cornerBiomes[3];
 
     base->m_baseHeights.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
     base->m_vegMask.resize(IZoneManager::UNITS_PER_ZONE * IZoneManager::UNITS_PER_ZONE);
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
-        const float world_y = baseWorldPos.z + ry;
-        const float ty = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::UNITS_PER_ZONE);
+        float const world_y = baseWorldPos.z + ry;
+        float const ty      = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::UNITS_PER_ZONE);
 
         for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
-            const float world_x = baseWorldPos.x + rx;
-            const float tx = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::UNITS_PER_ZONE);
+            float const world_x = baseWorldPos.x + rx;
+            float const tx      = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::UNITS_PER_ZONE);
 
             //avledet::util::Color color = avledet::util::Colors::BLACK;
             float mistlandsMask = 0;
             float height;
-            
+
             assert(tx >= 0 && tx <= 1);
             assert(ty >= 0 && ty <= 1);
 
             // slight optimization case
             if (biome1 == biome2 && biome1 == biome3 && biome1 == biome4) {
                 height = GEO->GetBiomeHeight(biome1, world_x, world_y, mistlandsMask);
-            }
-            else {
+            } else {
                 float mask1 = 0, mask2 = 0, mask3 = 0, mask4 = 0;
                 float height1 = GEO->GetBiomeHeight(biome1, world_x, world_y, mask1);
                 float height2 = GEO->GetBiomeHeight(biome2, world_x, world_y, mask2);
@@ -170,13 +178,13 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone) {
                 float height4 = GEO->GetBiomeHeight(biome4, world_x, world_y, mask4);
 
                 // this does nothing if no biomes are mistlands
-                float c1 = std::lerp(mask1, mask2, tx);
-                float c2 = std::lerp(mask3, mask4, tx);
+                float c1      = std::lerp(mask1, mask2, tx);
+                float c2      = std::lerp(mask3, mask4, tx);
                 mistlandsMask = std::lerp(c1, c2, ty);
-                
+
                 float h1 = std::lerp(height1, height2, tx);
                 float h2 = std::lerp(height3, height4, tx);
-                height = std::lerp(h1, h2, ty);
+                height   = std::lerp(h1, h2, ty);
             }
 
             base->m_baseHeights[ry * Heightmap::E_WIDTH + rx] = height;
@@ -210,12 +218,13 @@ void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
     }
 }*/
 
-std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone) {
+std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone)
+{
     {
         std::unique_ptr<Heightmap> result;
         {
             std::scoped_lock<std::mutex> scoped(m_mux);
-            auto&& find = m_ready.find(zone);
+            auto &&find = m_ready.find(zone);
             if (find != m_ready.end()) {
                 result = std::move(find->second);
                 m_ready.erase(find);
@@ -228,9 +237,10 @@ std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone) {
         }
     }
 
-    auto&& insert = m_building.insert(zone);    
+    auto &&insert = m_building.insert(zone);
     if (insert.second) {
-        if (m_nextBuilder == m_builders.end()) m_nextBuilder = m_builders.begin();
+        if (m_nextBuilder == m_builders.end())
+            m_nextBuilder = m_builders.begin();
 
         // Give the next builder a job
         //  Ideally, the builder with the least work should be doing this job...

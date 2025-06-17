@@ -6,32 +6,33 @@
 #include <string_view>
 #include <vector>
 
-#include "NetManager.h"
 #include "Crypto.h"
+#include "DiscordManager.h"
+#include "Hashes.h"
 #include "ModManager.h"
 #include "NetAcceptor.h"
+#include "NetManager.h"
 #include "NetSocket.h"
-#include "ValhallaServer.h"
-#include "WorldManager.h"
-#include "VUtilsRandom.h"
-#include "Hashes.h"
-#include "ZDOManager.h"
 #include "RouteManager.h"
-#include "ZoneManager.h"
+#include "ValhallaServer.h"
+#include "VUtilsRandom.h"
 #include "VUtilsResource.h"
-#include "DiscordManager.h"
+#include "WorldManager.h"
+#include "ZDOManager.h"
+#include "ZoneManager.h"
 
 // TODO use netmanager instance instead
 
 auto NET_MANAGER = std::make_unique<INetManager>();
-INetManager* NetManager() {
+
+INetManager *NetManager()
+{
     return NET_MANAGER.get();
 }
 
-
-
-Peer* INetManager::Kick(std::string_view user) {
-    auto&& peer = FindPeer(user);
+Peer *INetManager::Kick(std::string_view user)
+{
+    auto &&peer = FindPeer(user);
     if (peer) {
         peer->Kick();
     }
@@ -39,62 +40,62 @@ Peer* INetManager::Kick(std::string_view user) {
     return peer;
 }
 
-Peer* INetManager::Ban(std::string_view user) {
-    auto&& peer = FindPeer(user);
+Peer *INetManager::Ban(std::string_view user)
+{
+    auto &&peer = FindPeer(user);
 
     if (peer) {
         Valhalla()->m_blacklist.insert(peer->m_socket->get_host_name());
         peer->Close(ConnectionStatus::ErrorBanned);
-    } else    
+    } else
         Valhalla()->m_blacklist.insert(user);
 
     return peer;
 }
 
-bool INetManager::Unban(std::string_view user) {
+bool INetManager::Unban(std::string_view user)
+{
     return Valhalla()->m_blacklist.erase(user);
 }
 
-
-
-void INetManager::SendDisconnect() {
+void INetManager::SendDisconnect()
+{
     LOG_INFO(VH_LOGGER, "Sending disconnect msg");
 
-    for (auto&& peer : m_connectedPeers) {
+    for (auto &&peer : m_connectedPeers) {
         peer->SendDisconnect();
     }
 }
 
-
-
-void INetManager::SendPlayerList() {
+void INetManager::SendPlayerList()
+{
     if (!m_onlinePeers.empty()) {
         if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
             return;
 
         DataWriter writer;
 
-        writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList); // rpc hash
+        writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList);// rpc hash
 
         //assert(false); //TODO
-        writer.write([this](DataWriter& writer) {
-            writer.write((std::uint32_t)m_onlinePeers.size());
+        writer.write([this](DataWriter &writer) {
+            writer.write((std::uint32_t) m_onlinePeers.size());
 
-            for (auto&& peer : m_onlinePeers) {
+            for (auto &&peer : m_onlinePeers) {
                 writer.write(peer->m_name);
                 writer.write(peer->m_characterID);
                 writer.write("steam_" + peer->m_socket->get_host_name());
-                auto&& platformItr = peer->m_syncData.find("platformDisplayName");
-                auto&& platform = platformItr != peer->m_syncData.end() ? platformItr->second : "";
-                writer.write(platform); // ...?
-                auto forcedDisplayName = platform; //TODO the algo / usage is kinda weird / convoluted
-                writer.write(forcedDisplayName); //TODO
+                auto &&platformItr = peer->m_syncData.find("platformDisplayName");
+                auto &&platform    = platformItr != peer->m_syncData.end() ? platformItr->second : "";
+                writer.write(platform);           // ...?
+                auto forcedDisplayName = platform;//TODO the algo / usage is kinda weird / convoluted
+                writer.write(forcedDisplayName);  //TODO
                 writer.write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
                 if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
                     if (VH_SETTINGS.playerListSmoothUpdating >= 2s)
                         writer.write(peer->m_pos);
-                    else { // quickly dynamic map
-                        auto&& zdo = peer->GetZDO();
+                    else {// quickly dynamic map
+                        auto &&zdo = peer->GetZDO();
                         if (zdo)
                             writer.write(zdo->GetPosition());
                         else
@@ -104,43 +105,42 @@ void INetManager::SendPlayerList() {
             }
         });
 
-        for (auto&& peer : m_onlinePeers) {
+        for (auto &&peer : m_onlinePeers) {
             peer->Send(writer.get_buf());
         }
     }
 }
 
-void INetManager::SendNetTime() {
-    for (auto&& peer : m_onlinePeers) {
+void INetManager::SendNetTime()
+{
+    for (auto &&peer : m_onlinePeers) {
         peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
     }
 }
 
-
-
-void INetManager::SendPeerInfo(Peer& peer) {
-    peer.SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter& writer) {
+void INetManager::SendPeerInfo(Peer &peer)
+{
+    peer.SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter &writer) {
         writer.write(Valhalla()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
-        writer.write(Vector3f::zero()); // dummy
-        writer.write(std::string_view("")); // dummy
+        writer.write(Vector3f::zero());    // dummy
+        writer.write(std::string_view(""));// dummy
 
         auto world = WorldManager()->GetWorld();
 
         writer.write(world->m_name);
         writer.write(world->m_seed);
-        writer.write(world->m_seedName); // Peer does not seem to use
+        writer.write(world->m_seedName);// Peer does not seem to use
         writer.write(world->m_uid);
         writer.write(world->m_worldGenVersion);
         writer.write(Valhalla()->GetWorldTime());
     });
 }
 
-
-
 //void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
-void INetManager::OnPeerConnect(Peer& peer) {
+void INetManager::OnPeerConnect(Peer &peer)
+{
     peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->get_host_name()));
 
     if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
@@ -150,45 +150,46 @@ void INetManager::OnPeerConnect(Peer& peer) {
     VH_DISPATCH_WEBHOOK(peer.m_name + " has joined");
 
     // Important
-    peer.Register(avledet::util::hashes::Rpc::C2S_PlayerData, [this](Peer* peer, avledet::util::ByteView pkg) {
-        //DataReader reader(pkg);
-        auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
+    peer.Register(avledet::util::hashes::Rpc::C2S_PlayerData,
+                  [this](Peer *peer, avledet::util::ByteView pkg) {
+                      //DataReader reader(pkg);
+                      auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
 
-        peer->m_pos = reader.read<Vector3f>();
-        peer->SetMapVisible(reader.read<bool>());
-        
-        auto count = reader.read<std::int32_t>();
-        for (int i = 0; i < count; i++) {
-            // Read player event data (only 2):
-            //  'possibleEvents'
-            //  'baseValue' // used to be a zdo member
-            auto key = reader.read<std::string_view>(); // key
-            peer->m_syncData[key] = reader.read<std::string>(); // value
-        }
-    });
+                      peer->m_pos = reader.read<Vector3f>();
+                      peer->SetMapVisible(reader.read<bool>());
+
+                      auto count = reader.read<std::int32_t>();
+                      for (int i = 0; i < count; i++) {
+                          // Read player event data (only 2):
+                          //  'possibleEvents'
+                          //  'baseValue' // used to be a zdo member
+                          auto key              = reader.read<std::string_view>();// key
+                          peer->m_syncData[key] = reader.read<std::string>();     // value
+                      }
+                  });
 
     // isnt 'ban' a command?
     //  it should be part of RemoteCommand
-    peer.Register(avledet::util::hashes::Rpc::C2S_RemoteCommand, [](Peer* peer, std::string_view command) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RemoteCommand, [](Peer *peer, std::string_view command) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         // TODO run commands or something?
         //  this is still in beta and subject to change
-        //  although unlikely because this commands gets funneled to 
+        //  although unlikely because this commands gets funneled to
         //  valheim commands, which have existed for a while.
         //  The only difference is that some commands are now classified as remote vs local.
     });
 
     // Important
-    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [this](Peer* peer, ZDOID characterID) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [this](Peer *peer, ZDOID characterID) {
         // Peer sends 0,0 on after death
-        
+
         //TODO the player only sends this:
         //  on server join
-        //  and on every after-death thereafter        
+        //  and on every after-death thereafter
         //if (peer->m_characterID)
-            //VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+        //VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
         //peer->m_characterID.set_id(characterID.get_id());
         peer->m_characterID = characterID;
@@ -196,7 +197,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         LOG_INFO(VH_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer *peer, std::string_view user) {
         // TODO maybe permissions tree in future?
         //  lua? ...
         if (!peer->IsAdmin())
@@ -205,36 +206,34 @@ void INetManager::OnPeerConnect(Peer& peer) {
         if (Kick(user)) {
             peer->ConsoleMessage("Kicked '" + std::string(user) + "'");
             VH_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
-        }
-        else {
+        } else {
             peer->ConsoleMessage("Player not found");
         }
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer *peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         if (Ban(user)) {
             peer->ConsoleMessage("Banned '" + std::string(user) + "'");
             VH_DISPATCH_WEBHOOK(std::string(user) + " was banned");
-        }
-        else {
+        } else {
             peer->ConsoleMessage("Player not found");
         }
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestUnban, [this](Peer* peer, std::string_view user) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestUnban, [this](Peer *peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
         // devcommands requires an exact format...
         Unban(user);
 
-        peer->ConsoleMessage("Unbanning user " +  std::string(user));
+        peer->ConsoleMessage("Unbanning user " + std::string(user));
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer* peer) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer *peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -245,7 +244,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
         peer->ConsoleMessage("Saved the world");
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer* peer) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer *peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -253,7 +252,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
             peer->ConsoleMessage("Banned users: (none)");
         else {
             peer->ConsoleMessage("Banned users:");
-            for (auto&& banned : Valhalla()->m_blacklist) {
+            for (auto &&banned : Valhalla()->m_blacklist) {
                 peer->ConsoleMessage(banned);
             }
         }
@@ -265,7 +264,7 @@ void INetManager::OnPeerConnect(Peer& peer) {
                 peer->ConsoleMessage("Whitelisted users: (none)");
             else {
                 peer->ConsoleMessage("Whitelisted users:");
-                for (auto&& banned : Valhalla()->m_whitelist) {
+                for (auto &&banned : Valhalla()->m_whitelist) {
                     peer->ConsoleMessage(banned);
                 }
             }
@@ -282,7 +281,8 @@ void INetManager::OnPeerConnect(Peer& peer) {
     if (VH_SETTINGS.TEST_discordAccountLinking) {
         peer.SetGated(!DiscordManager()->m_linked_accounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
-            DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()] = { VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos() };
+            DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()]
+                    = {VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos()};
         }
     }
 #endif
@@ -293,16 +293,20 @@ void INetManager::OnPeerConnect(Peer& peer) {
     m_onlinePeers.push_back(&peer);
 }
 
-Peer* INetManager::FindPeer(std::string_view any) {
-    Peer* peer = FindPeerByHost(any);
-    if (!peer) peer = FindPeerByName(any);
-    if (!peer) peer = FindPeerByUserID(std::atoll(any.data()));
+Peer *INetManager::FindPeer(std::string_view any)
+{
+    Peer *peer = FindPeerByHost(any);
+    if (!peer)
+        peer = FindPeerByName(any);
+    if (!peer)
+        peer = FindPeerByUserID(std::atoll(any.data()));
     return peer;
 }
 
 // Return the peer or nullptr
-Peer* INetManager::FindPeerByName(std::string_view name) {
-    for (auto&& peer : m_onlinePeers) {
+Peer *INetManager::FindPeerByName(std::string_view name)
+{
+    for (auto &&peer : m_onlinePeers) {
         if (peer->m_name == name)
             return peer;
     }
@@ -310,39 +314,43 @@ Peer* INetManager::FindPeerByName(std::string_view name) {
 }
 
 // Return the peer or nullptr
-Peer* INetManager::FindPeerByUserID(avledet::util::UserID uuid) {
-    for (auto&& peer : m_onlinePeers) {
+Peer *INetManager::FindPeerByUserID(avledet::util::UserID uuid)
+{
+    for (auto &&peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
             return peer;
     }
     return nullptr;
 }
 
-Peer* INetManager::FindPeerByHost(std::string_view host) {
-    for (auto&& peer : m_onlinePeers) {
+Peer *INetManager::FindPeerByHost(std::string_view host)
+{
+    for (auto &&peer : m_onlinePeers) {
         if (peer->m_socket->get_host_name() == host)
             return peer;
     }
     return nullptr;
 }
 
-void INetManager::PostInit() {
+void INetManager::PostInit()
+{
     LOG_INFO(VH_LOGGER, "Initializing NetManager");
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(VH_SETTINGS.serverPort)); // m_acceptor
+    m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(VH_SETTINGS.serverPort));// m_acceptor
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
-        auto&& ptr = std::make_unique<Peer>(std::move(socket));
+        auto &&ptr = std::make_unique<Peer>(std::move(socket));
         if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
             m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
         }
     });
 }
 
-void INetManager::Update() {
+void INetManager::Update()
+{
     ZoneScoped;
 
     // Send periodic data (2s)
@@ -359,26 +367,24 @@ void INetManager::Update() {
     // Send periodic pings (1s)
     if (VUtils::run_periodic<struct periodic_peer_keepalive>(1s)) {
         DataWriter writer;
-        writer.write((avledet::util::Hash)0);
+        writer.write((avledet::util::Hash) 0);
         writer.write(true);
 
-        for (auto&& peer : m_connectedPeers) {
+        for (auto &&peer : m_connectedPeers) {
             peer->Send(writer.get_buf());
         }
     }
 
     // Update peers
-    for (auto&& peer : m_connectedPeers) {
+    for (auto &&peer : m_connectedPeers) {
         try {
             peer->update();
-        }
-        catch (const std::runtime_error& e) {
+        } catch (std::runtime_error const &e) {
             LOG_WARNING(VH_LOGGER, "Peer error");
             LOG_WARNING(VH_LOGGER, "{}", e.what());
             peer->m_socket->Close(false);
         }
     }
-
 
 
     // Pump steam callbacks
@@ -392,40 +398,38 @@ void INetManager::Update() {
     //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();
 
 
-
     // Cleanup
     {
-        for (auto&& itr = m_onlinePeers.begin(); itr != m_onlinePeers.end(); ) {
-            Peer& peer = *(*itr);
+        for (auto &&itr = m_onlinePeers.begin(); itr != m_onlinePeers.end();) {
+            Peer &peer = *(*itr);
 
             if (peer.m_socket->get_status() == Status::Closed) {
                 OnPeerQuit(peer);
 
                 itr = m_onlinePeers.erase(itr);
-            }
-            else {
+            } else {
                 ++itr;
             }
         }
     }
 
     {
-        for (auto&& itr = m_connectedPeers.begin(); itr != m_connectedPeers.end(); ) {
-            Peer& peer = *(*itr);
+        for (auto &&itr = m_connectedPeers.begin(); itr != m_connectedPeers.end();) {
+            Peer &peer = *(*itr);
 
             if (peer.m_socket->get_status() == Status::Closed) {
                 OnPeerDisconnect(peer);
 
                 itr = m_connectedPeers.erase(itr);
-            }
-            else {
+            } else {
                 ++itr;
             }
         }
     }
 }
 
-void INetManager::OnPeerQuit(Peer& peer) {
+void INetManager::OnPeerQuit(Peer &peer)
+{
     LOG_INFO(VH_LOGGER, "Cleaning up peer");
     VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
@@ -438,7 +442,8 @@ void INetManager::OnPeerQuit(Peer& peer) {
         Valhalla()->m_admin.erase(peer.m_socket->get_host_name());
 }
 
-void INetManager::OnPeerDisconnect(Peer& peer) {
+void INetManager::OnPeerDisconnect(Peer &peer)
+{
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
 
     peer.SendDisconnect();
@@ -446,14 +451,15 @@ void INetManager::OnPeerDisconnect(Peer& peer) {
     LOG_INFO(VH_LOGGER, "{} has disconnected", peer.m_socket->get_host_name());
 }
 
-void INetManager::Uninit() {
+void INetManager::Uninit()
+{
     SendDisconnect();
 
-    for (auto&& peer : m_onlinePeers) {
+    for (auto &&peer : m_onlinePeers) {
         OnPeerQuit(*peer);
     }
 
-    for (auto&& peer : m_connectedPeers) {
+    for (auto &&peer : m_connectedPeers) {
         OnPeerDisconnect(*peer);
     }
 
@@ -461,7 +467,8 @@ void INetManager::Uninit() {
     m_acceptor->stop();
 }
 
-void INetManager::OnConfigLoad(bool reloading) {
+void INetManager::OnConfigLoad(bool reloading)
+{
     bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {
@@ -470,7 +477,7 @@ void INetManager::OnConfigLoad(bool reloading) {
         // Hash a salted password
         //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        auto s = avledet::crypto::md5(VH_SETTINGS.serverPassword + m_passwordSalt);
+        auto s         = avledet::crypto::md5(VH_SETTINGS.serverPassword + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     } else {
         m_passwordSalt.clear();

@@ -1,9 +1,9 @@
 #include "Vector.h"
+#include "Quaternion.h"
+#include "ValhallaServer.h"
 #include "VUtils.h"
 #include "VUtilsMath.h"
-#include "ValhallaServer.h"
 #include <quill/LogMacros.h>
-#include "Quaternion.h"
 
 /*
 std::ostream& operator<<(std::ostream& st, avledet::util::CSU::Vector2f const& vec) {

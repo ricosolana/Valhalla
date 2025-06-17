@@ -1,26 +1,54 @@
 #include "Tests.h"
 #include "ZDOManager.h"
 
-class TestSocket : public ISocket {
-public:
+class TestSocket : public ISocket
+{
+  public:
     TestSocket() {}
+
     void Close(bool) override {}
+
     //void Update() override {}
     void send(avledet::util::Bytes) override {}
-    avledet::util::Bytes Recv() override { return {}; }
-    std::string GetHostName() const { return "crzi"; }
-    std::string GetAddress() const { return "127.0.0.1"; }
-    bool Connected() const { return true; }
-    unsigned int GetSendQueueSize() const { return 5000; }
-    unsigned int GetPing() const { return 15; }
+
+    avledet::util::Bytes Recv() override
+    {
+        return {};
+    }
+
+    std::string GetHostName() const
+    {
+        return "crzi";
+    }
+
+    std::string GetAddress() const
+    {
+        return "127.0.0.1";
+    }
+
+    bool Connected() const
+    {
+        return true;
+    }
+
+    unsigned int GetSendQueueSize() const
+    {
+        return 5000;
+    }
+
+    unsigned int GetPing() const
+    {
+        return 15;
+    }
 };
 
-void VHTest::Test_ZDOConnectors() {
+void VHTest::Test_ZDOConnectors()
+{
 
     PrefabManager()->Init();
-    
+
     WorldManager()->RetrieveWorld("betatest0p216p5", "fail")->LoadFileDB();
-    
+
     //VH_SETTINGS.worldName = "betatest0p216p5";
     //VH_SETTINGS.worldSeed = "fail";
     //WorldManager()->
@@ -30,11 +58,13 @@ void VHTest::Test_ZDOConnectors() {
     //ZDOManager()->SendAllZDOs(peer);
 }
 
-void VHTest::Test_Quaternion() {
+void VHTest::Test_Quaternion()
+{
     assert(Quaternion::IDENTITY.euler_angles() == Vector3f::zero());
 }
 
-void VHTest::ZDO_Sets(ZDO zdo) {
+void VHTest::ZDO_Sets(ZDO zdo)
+{
     zdo.Set("my key", std::string("my value"));
     zdo.Set("my int", 10);
     zdo.Set("large prime", 2147483647);
@@ -46,7 +76,8 @@ void VHTest::ZDO_Sets(ZDO zdo) {
     zdo.SetRotation(Quaternion(1, 0, 0, 0));
 }
 
-void VHTest::Test_ZDO_Gets(ZDO zdo) {    
+void VHTest::Test_ZDO_Gets(ZDO zdo)
+{
     assert(zdo.GetString("my key") == "my value");
     assert(*zdo.Get<std::int32_t>("my int") == 10);
     assert(*zdo.Get<std::int32_t>("large prime") == 2147483647);
@@ -61,14 +92,16 @@ void VHTest::Test_ZDO_Gets(ZDO zdo) {
     //  The test was wrong, (and thus the usage, for some reason char* was being interpreted as a int?)
 }
 
-void VHTest::Test_ZDO_SetsGets() {
+void VHTest::Test_ZDO_SetsGets()
+{
     assert(false);
     //ZDO zdo;
     //ZDO_Sets(zdo);
     //Test_ZDO_Gets(zdo);
 }
 
-void VHTest::Test_ZDO_LoadSave() {
+void VHTest::Test_ZDO_LoadSave()
+{
     PrefabManager()->Init();
 
     // ZDO's now require correct pooling
@@ -78,20 +111,20 @@ void VHTest::Test_ZDO_LoadSave() {
     //  because of the ZDO's being directly tied with ZDOManager
     assert(false);
     //{
-        auto&& zdo = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
+    auto &&zdo = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
-        //ZDO_Sets(zdo);
-        DataWriter writer;
+    //ZDO_Sets(zdo);
+    DataWriter writer;
 
-        //zdo.Pack(writer, false);
+    //zdo.Pack(writer, false);
     //}
 
-    auto&& zdo2 = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
+    auto &&zdo2 = ZDOManager()->Instantiate(avledet::util::hashes::Object::Abomination, Vector3f::zero());
 
     DataReader reader(writer.get_buf());
     //zdo2.Unpack(reader, VConstants::WORLD);
 
-    assert(false); //TODO
+    assert(false);//TODO
     /*
     assert(ZDO::ZDO_MEMBERS.size() == 2);
 

@@ -6,10 +6,17 @@
 
 namespace avledet::util {
 
-    Reader::Reader() { }
-    Reader::Reader(std::vector<char> buf) : Stream(std::move(buf)) { }
-    Reader::Reader(std::vector<char> buf, std::size_t pos) : Stream(std::move(buf), pos) { }
+    Reader::Reader() {}
 
+    Reader::Reader(std::vector<char> buf) :
+        Stream(std::move(buf))
+    {
+    }
+
+    Reader::Reader(std::vector<char> buf, std::size_t pos) :
+        Stream(std::move(buf), pos)
+    {
+    }
 
     //Reader Reader::from_file(std::filesystem::path path) {
     //    std::ifstream file(path, std::ios::binary);
@@ -35,19 +42,18 @@ namespace avledet::util {
     //}
 
 
-    void Reader::internal_read_bytes(char* outBuf, std::size_t outBufSize) {
+    void Reader::internal_read_bytes(char *outBuf, std::size_t outBufSize)
+    {
         this->check_offset(outBufSize);
 
-        std::copy(this->data() + m_pos,
-            this->data() + m_pos + outBufSize,
-            outBuf
-        );
+        std::copy(this->data() + m_pos, this->data() + m_pos + outBufSize, outBuf);
 
         m_pos += outBufSize;
     }
 
-    std::int32_t Reader::read_varint() {
-        std::uint32_t out = 0;
+    std::int32_t Reader::read_varint()
+    {
+        std::uint32_t out  = 0;
         std::uint32_t num2 = 0;
         while (num2 != 35) {
             auto b = this->read<std::uint8_t>();

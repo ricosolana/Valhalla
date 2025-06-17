@@ -23,7 +23,6 @@ namespace VUtils::Math {
     float distance_to(float x1, float y1, float z1, float x2, float y2, float z2);
 
 
-
     float Clamp(float value, float min, float max);
 
     // Linear interpolation
@@ -40,4 +39,4 @@ namespace VUtils::Math {
     float PerlinNoise(float x, float y);
 
     bool Between(float i, float a, float b);
-}
+}// namespace VUtils::Math

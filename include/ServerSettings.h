@@ -1,18 +1,19 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <string>
-#include <chrono>
 
 #include "CompileSettings.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-#include <dpp/snowflake.h>
+    #include <dpp/snowflake.h>
 #endif
 
 //TODO this is finicky at best, dangerous at worst,
 //  consider majorly reworking, or removing it entirely...
-enum class AssignAlgorithm {
+enum class AssignAlgorithm
+{
     NONE,
     DYNAMIC_RADIUS
 };
@@ -90,66 +91,67 @@ static constexpr const char* VH_SETTING_KEY_EVENTS_INTERVAL = "interval-dS";
 static constexpr const char* VH_SETTING_KEY_EVENTS_RADIUS = "radius";
 static constexpr const char* VH_SETTING_KEY_EVENTS_REQUIREKEYS = "require-keys";*/
 
-struct ServerSettings {
-    std::string                 serverName;
-    std::uint16_t               serverPort;
-    std::string                 serverPassword;
-    bool                        serverPublic;
-    bool                        serverDedicated;
+struct ServerSettings
+{
+    std::string serverName;
+    std::uint16_t serverPort;
+    std::string serverPassword;
+    bool serverPublic;
+    bool serverDedicated;
 
-    bool                        playerWhitelist;
-    std::uint32_t               playerMax;
-    bool                        playerOnline;
-    std::chrono::seconds        playerTimeout;
+    bool playerWhitelist;
+    std::uint32_t playerMax;
+    bool playerOnline;
+    std::chrono::seconds playerTimeout;
     //std::chrono::milliseconds   playerListSendInterval;
     //bool                        playerListSmoothUpdating;
-    std::chrono::milliseconds   playerListSmoothUpdating;
-    bool                        playerListForceVisible;
+    std::chrono::milliseconds playerListSmoothUpdating;
+    bool playerListForceVisible;
 #if VH_IS_ON(VH_PLAYER_SLEEP)
-    bool                        playerSleepSolo;
+    bool playerSleepSolo;
 #endif
-    bool                        TEST_playerRestrict;
+    bool TEST_playerRestrict;
 
-    std::string                 worldName;
-    std::string                 worldSeed;
-    bool                        TEST_worldPregenerate;
-    std::chrono::seconds        worldSaveInterval;  // set to 0 to disable
-    bool                        worldFeatures;
-    bool                        worldVegetation;
-    bool                        worldCreatures;
-    std::uint32_t               worldHeightmapThreads;
-    
-    std::uint32_t               zdoMaxCongestion;    // congestion rate
-    std::uint32_t               zdoMinCongestion;    // congestion rate
-    std::chrono::milliseconds   zdoSendInterval;
-    std::chrono::seconds        zdoAssignInterval;
-    AssignAlgorithm             TEST_zdoAssignAlgorithm;
-        
-    bool                        dungeonsEnabled;
-    bool                        dungeonsEndcapsEnabled;
-    float                       dungeonsEndcapsInsetFrac;
-    bool                        dungeonsDoors;
-    bool                        dungeonsRoomsFlipped;
-    bool                        dungeonsRoomsZoneBounded;
-    float                       dungeonsRoomsInsetSize;
-    bool                        dungeonsRoomsFurnishing;
-    std::chrono::seconds        TEST_dungeonsRegenerationInterval;
-    std::uint32_t               TEST_dungeonsRegenerationMaxSteps;
-    bool                        dungeonsSeeded;
+    std::string worldName;
+    std::string worldSeed;
+    bool TEST_worldPregenerate;
+    std::chrono::seconds worldSaveInterval;// set to 0 to disable
+    bool worldFeatures;
+    bool worldVegetation;
+    bool worldCreatures;
+    std::uint32_t worldHeightmapThreads;
 
-    float                       eventsChance;
-    std::chrono::seconds        eventsInterval;
-    float                       eventsRadius;
-    bool                        eventsRequireKeys;
+    std::uint32_t zdoMaxCongestion;// congestion rate
+    std::uint32_t zdoMinCongestion;// congestion rate
+    std::chrono::milliseconds zdoSendInterval;
+    std::chrono::seconds zdoAssignInterval;
+    AssignAlgorithm TEST_zdoAssignAlgorithm;
+
+    bool dungeonsEnabled;
+    bool dungeonsEndcapsEnabled;
+    float dungeonsEndcapsInsetFrac;
+    bool dungeonsDoors;
+    bool dungeonsRoomsFlipped;
+    bool dungeonsRoomsZoneBounded;
+    float dungeonsRoomsInsetSize;
+    bool dungeonsRoomsFurnishing;
+    std::chrono::seconds TEST_dungeonsRegenerationInterval;
+    std::uint32_t TEST_dungeonsRegenerationMaxSteps;
+    bool dungeonsSeeded;
+
+    float eventsChance;
+    std::chrono::seconds eventsInterval;
+    float eventsRadius;
+    bool eventsRequireKeys;
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    bool                        discordEnabled;
-    std::string                 discordWebhook;
-    std::string                 discordToken;
-    dpp::snowflake              discordGuild;
-    bool                        TEST_discordAccountLinking;
+    bool discordEnabled;
+    std::string discordWebhook;
+    std::string discordToken;
+    dpp::snowflake discordGuild;
+    bool TEST_discordAccountLinking;
     // Kick players who leave the Discord server?
-    bool                        TEST_discordSyncLeaves;
+    bool TEST_discordSyncLeaves;
     // Sync kicks between Valheim and Discord?
     //bool            discordSyncKicks;
     // Sync bans between Valhiem and Discord?

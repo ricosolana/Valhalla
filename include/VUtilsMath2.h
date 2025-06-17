@@ -18,4 +18,4 @@ namespace VUtils::Math {
     // Wrap degrees
     float FixDegAngle(float p_Angle);
 
-}
+}// namespace VUtils::Math

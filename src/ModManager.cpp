@@ -2,107 +2,86 @@
 
 #if VH_IS_ON(VH_USE_MODS)
 
-#include <string_view>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <cmath>
-#include <cstdint>
-#include <filesystem>
-#include <ranges>
+    #include <algorithm>
+    #include <array>
+    #include <atomic>
+    #include <cmath>
+    #include <cstdint>
+    #include <filesystem>
+    #include <ranges>
+    #include <string_view>
+    #include <vector>
 
-#include <quill/Backend.h>
-#include <quill/Frontend.h>
-#include <sol/environment.hpp>
-#include <sol/forward.hpp>
-#include <sol/object.hpp>
-#include <sol/optional_implementation.hpp>
-#include <sol/overload.hpp>
-#include <sol/property.hpp>
-#include <sol/resolve.hpp>
-#include <sol/state_view.hpp>
-#include <sol/types.hpp>
-#include <yaml-cpp/yaml.h>
+    #include <quill/Backend.h>
+    #include <quill/Frontend.h>
+    #include <sol/environment.hpp>
+    #include <sol/forward.hpp>
+    #include <sol/object.hpp>
+    #include <sol/optional_implementation.hpp>
+    #include <sol/overload.hpp>
+    #include <sol/property.hpp>
+    #include <sol/resolve.hpp>
+    #include <sol/state_view.hpp>
+    #include <sol/types.hpp>
+    #include <yaml-cpp/yaml.h>
 
-#include "Types.h"
-#include "UserData.h"
+    #include "Types.h"
+    #include "UserData.h"
 
 
-
-#include "ModManager.h"
-#include "VUtilsResource.h"
-#include "VUtilsString.h"
-#include "Peer.h"
-#include "DataStream.h"
-#include "DataStream.h"
-#include "Vector.h"
-#include "Quaternion.h"
-#include "ZDOID.h"
-#include "ValhallaServer.h"
-#include "NetSocket.h"
-#include "ZDOManager.h"
-#include "Method.h"
-#include "RouteManager.h"
-#include "NetManager.h"
-#include "DungeonManager.h"
-#include "DungeonGenerator.h"
+    #include "DataStream.h"
+    #include "DungeonGenerator.h"
+    #include "DungeonManager.h"
+    #include "Method.h"
+    #include "ModManager.h"
+    #include "NetManager.h"
+    #include "NetSocket.h"
+    #include "Peer.h"
+    #include "Quaternion.h"
+    #include "RouteManager.h"
+    #include "ValhallaServer.h"
+    #include "Vector.h"
+    #include "VUtilsResource.h"
+    #include "VUtilsString.h"
+    #include "ZDOID.h"
+    #include "ZDOManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
-IModManager* ModManager() {
+
+IModManager *ModManager()
+{
     return MOD_MANAGER.get();
 }
 
-static const std::vector<std::string_view> safe_functions {
-    "assert",
-    "error",
-    "ipairs",
-    "next",
-    "pairs",
-    "pcall",
-    //"print",  // when uncommented, 'attempt to call a nil value' global print
-    "select",
-    "tonumber",
-    "tostring",
-    "type",
-    "unpack",
-    "_VERSION",
-    "xpcall",
+static std::vector<std::string_view> const safe_functions {
+        "assert", "error", "ipairs", "next", "pairs", "pcall",
+        //"print",  // when uncommented, 'attempt to call a nil value' global print
+        "select", "tonumber", "tostring", "type", "unpack", "_VERSION", "xpcall",
 
-    // Entire packages
-    "coroutine.*", 
-    "string.*", 
-    "table.*", 
-    "math.*",
+        // Entire packages
+        "coroutine.*", "string.*", "table.*", "math.*",
 
-    // Partial packages
-    "os.clock",
-    "os.date",
-    "os.difftime",
-    "os.time"
-};
+        // Partial packages
+        "os.clock", "os.date", "os.difftime", "os.time"};
 
-IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
+IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
+{
     YAML::Node loadNode;
 
-    auto modPath = fs::path("mods") / folderName;
+    auto modPath     = fs::path("mods") / folderName;
     auto modInfoPath = modPath / "modInfo.yml";
 
     if (auto opt = VUtils::Resource::ReadFile<std::string>(modInfoPath)) {
         loadNode = YAML::Load(opt.value());
-    }
-    else {
+    } else {
         throw std::runtime_error("unable to open " + modInfoPath.string());
     }
 
     auto name = loadNode["name"].as<std::string>();
 
-    
-
-
 
     // deep copy the 'api', so that we shallow copy all keys, simple strings (immutable reference),
-    //  but then the only real thing which MUST remain preserved is the 
+    //  but then the only real thing which MUST remain preserved is the
 
     //for (auto const& [id_obj, thing] : env) {
     //    std::string id = id_obj.as<std::string>();
@@ -114,21 +93,20 @@ IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
     //VH_LOGGER->flush_log(1000);
 
 
-    auto &&insert = this->m_mods.insert({ name, std::make_unique<Mod>(
-        loadNode["name"].as<std::string>(),
-        modPath / (loadNode["entry"].as<std::string>() + ".lua")
-    )});
+    auto &&insert = this->m_mods.insert(
+            {name, std::make_unique<Mod>(loadNode["name"].as<std::string>(),
+                                         modPath / (loadNode["entry"].as<std::string>() + ".lua"))});
 
     if (!insert.second)
         throw std::runtime_error("Mod " + name + " already loaded");
 
-    auto&& mod = insert.first->second;
+    auto &&mod = insert.first->second;
 
-    mod->m_version = loadNode["version"].as<std::string>("");
-    mod->m_apiVersion = loadNode["api-version"].as<std::string>("");
+    mod->m_version     = loadNode["version"].as<std::string>("");
+    mod->m_apiVersion  = loadNode["api-version"].as<std::string>("");
     mod->m_description = loadNode["description"].as<std::string>("");
-    mod->m_authors = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
-    
+    mod->m_authors     = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
+
     return *mod;
 }
 
@@ -147,7 +125,8 @@ IModManager::Mod& IModManager::LoadModInfo(std::string_view folderName) {
 //    return 1;
 //}
 
-void IModManager::execute_plugin(Mod& mod) {
+void IModManager::execute_plugin(Mod &mod)
+{
     auto path(mod.m_entry);
     if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
         // See Lua Sandboxing and containerized execution
@@ -160,12 +139,12 @@ void IModManager::execute_plugin(Mod& mod) {
         // Load new API globals personally for this mod
         auto api_table = this->load_api_table();
 
-        auto env = sol::environment(m_state, sol::create, api_table);
-        env["_G"] = env; // otherwise, will point to our state global table; defeating sandboxing...
+        auto env  = sol::environment(m_state, sol::create, api_table);
+        env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
         //env["this"] = &mod; //TODO TEST
 
         //sandboxer
-        for (const auto& entry : safe_functions) {
+        for (auto const &entry : safe_functions) {
 
             /*
                 Entire module loading
@@ -175,16 +154,16 @@ void IModManager::execute_plugin(Mod& mod) {
                 // load the package
                 auto package_name = entry.substr(0, idx);
                 assert(!package_name.contains("."));
-                
-                auto copy = env[sol::create_if_nil][package_name]; //.get_or_create<sol::table>();
+
+                auto copy = env[sol::create_if_nil][package_name];//.get_or_create<sol::table>();
                 for (auto [func_name, func] : m_state[package_name].get<sol::table>()) {
                     copy[func_name] = func;
-                    
+
                     assert(env.get<sol::table>(package_name)[func_name].valid());
                 }
                 continue;
             }
-            
+
             /*
                 Partial module function loading
             */
@@ -198,10 +177,10 @@ void IModManager::execute_plugin(Mod& mod) {
                 assert(!func_name.contains("."));
 
                 // https://github.com/ThePhD/sol2/blob/develop/examples/source/table_create_if_nil.cpp
-                
+
                 auto func = m_state[package_name][func_name].get<sol::function>();
                 assert(func.valid());
-                
+
                 env[sol::create_if_nil][package_name][func_name] = func;
 
                 assert(env.get<sol::table>(package_name)[func_name].valid());
@@ -229,20 +208,17 @@ void IModManager::execute_plugin(Mod& mod) {
         //sol::function funcc = result;
 
 
-
         //funcc.se
-    }
-    else
+    } else
         throw std::runtime_error(std::string("unable to open file ") + path.string());
 }
 
-
-
 //TODO
-inline void my_panic(sol::optional<std::string> maybe_msg) {
+inline void my_panic(sol::optional<std::string> maybe_msg)
+{
     LOG_ERROR(VH_LOGGER, "Lua is in a panic state and will now abort() the application");
     if (maybe_msg) {
-        const std::string& msg = maybe_msg.value();
+        std::string const &msg = maybe_msg.value();
         LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
     }
     // When this function exits, Lua will exhibit default behavior and abort()
@@ -250,7 +226,9 @@ inline void my_panic(sol::optional<std::string> maybe_msg) {
 
 //in my limited usage and experience, no error handler or panic was ever invoked, perhaps because all
 //  errors took place INSIDE one of my event handlers...
-int my_exception_handler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description) {
+int my_exception_handler(lua_State *L, sol::optional<std::exception const &> maybe_exception,
+                         sol::string_view description)
+{
     // L is the lua state, which you can wrap in a state_view if necessary
     // maybe_exception will contain exception, if it exists
     // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
@@ -258,8 +236,7 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
     if (maybe_exception) {
         LOG_ERROR(VH_LOGGER, "(straight from the exception): ");
         LOG_ERROR(VH_LOGGER, "{}", maybe_exception->what());
-    }
-    else {
+    } else {
         LOG_ERROR(VH_LOGGER, "(from the description parameter): ");
         LOG_ERROR(VH_LOGGER, "{}", description);
     }
@@ -271,52 +248,50 @@ int my_exception_handler(lua_State* L, sol::optional<const std::exception&> mayb
     return sol::stack::push(L, description);
 }
 
-void IModManager::PostInit() {
+void IModManager::PostInit()
+{
     LOG_INFO(VH_LOGGER, "Initializing ModManager");
 
     m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
     m_state.set_exception_handler(&my_exception_handler);
-    
+
     // open all, we'll worry about sandboxing later
     //m_state.open_libraries();
 
-    m_state.open_libraries(
-		sol::lib::base,
-		//sol::lib::package, //unsafe; overridden
-		sol::lib::coroutine,
-		sol::lib::string,
-		sol::lib::os, //shell exec; unsafe
-		sol::lib::math,
-		sol::lib::table,
-		//sol::lib::debug, //unsafe, according to lua-users sandboxes
-		//sol::lib::bit32, //deprecated
-		//sol::lib::io, //unpermissive file reading; unsafe; overridden
-		//sol::lib::ffi, //luajit; unsafe;
-		//sol::lib::jit, //luajit; unsafe;
-		sol::lib::utf8
-    );
+    m_state.open_libraries(sol::lib::base,
+                           //sol::lib::package, //unsafe; overridden
+                           sol::lib::coroutine, sol::lib::string,
+                           sol::lib::os,//shell exec; unsafe
+                           sol::lib::math, sol::lib::table,
+                           //sol::lib::debug, //unsafe, according to lua-users sandboxes
+                           //sol::lib::bit32, //deprecated
+                           //sol::lib::io, //unpermissive file reading; unsafe; overridden
+                           //sol::lib::ffi, //luajit; unsafe;
+                           //sol::lib::jit, //luajit; unsafe;
+                           sol::lib::utf8);
 
     std::error_code ec;
     fs::create_directories(VH_MOD_PATH, ec);
-    
+
     if (ec)
         return;
 
-    auto sorted = fs::directory_iterator(VH_MOD_PATH, ec)
-        | std::views::filter([](fs::directory_entry e) -> bool { return e.is_directory() && !std::string_view(e.path().filename().c_str()).starts_with("--"); })
-        | std::ranges::to<std::vector>();
+    auto sorted
+            = fs::directory_iterator(VH_MOD_PATH, ec) | std::views::filter([](fs::directory_entry e) -> bool {
+                  return e.is_directory() && !std::string_view(e.path().filename().c_str()).starts_with("--");
+              })
+              | std::ranges::to<std::vector>();
     std::ranges::sort(sorted);
 
-    for (auto const& dir : sorted) {
+    for (auto const &dir : sorted) {
         try {
-            auto&& dirname = dir.path().filename().string();
+            auto &&dirname = dir.path().filename().string();
 
-            auto&& mod = LoadModInfo(dirname);
+            auto &&mod = LoadModInfo(dirname);
             execute_plugin(mod);
-    
+
             LOG_INFO(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
-        }
-        catch (std::exception const& e) {
+        } catch (std::exception const &e) {
             LOG_ERROR(VH_LOGGER, "Failed to load mod: {} ({})", e.what(), dir.path().string());
         }
     }
@@ -326,7 +301,8 @@ void IModManager::PostInit() {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }
 
-void IModManager::Uninit() {
+void IModManager::Uninit()
+{
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
     m_callbacks.clear();
     m_mods.clear();
@@ -341,30 +317,30 @@ void IModManager::Uninit() {
 //  so rather, run a on_reload() callback that can handle mid-server operations
 //  or other way to detect that this script has just been loaded midway through during server operations
 
-void IModManager::update() {
+void IModManager::update()
+{
     if (!m_tmp_reload_mods.empty()) {
-        
+
         /*
             Release all associated callbacks
         */
 
-        for (auto&& itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-            auto&& callbacks = itr->second;
-            for (auto&& itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-                auto&& env = sol::get_environment(itr1->m_func);
+        for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+            auto &&callbacks = itr->second;
+            for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+                auto &&env = sol::get_environment(itr1->m_func);
                 //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
                 assert(env.valid());
-                
-                assert(env["this"].is<Mod*>());
 
-                auto mod = env["this"].get<Mod*>();
+                assert(env["this"].is<Mod *>());
+
+                auto mod = env["this"].get<Mod *>();
 
                 bool contains = m_tmp_reload_mods.contains(mod);
-                
+
                 if (contains) {
                     itr1 = callbacks.erase(itr1);
-                }
-                else {
+                } else {
                     ++itr1;
                 }
             }
@@ -372,8 +348,7 @@ void IModManager::update() {
             // Pop callback set for tidy
             if (callbacks.empty()) {
                 itr = m_callbacks.erase(itr);
-            } 
-            else {
+            } else {
                 ++itr;
             }
         }
@@ -382,19 +357,20 @@ void IModManager::update() {
             Release all registered RPCs        
         */
 
-        for (auto&& peer_pair : NetManager()->m_connectedPeers) {
-            for (auto&& method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end(); ) {
-                auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(method_itr->second.get());
+        for (auto &&peer_pair : NetManager()->m_connectedPeers) {
+            for (auto &&method_itr = peer_pair->m_methods.begin();
+                 method_itr != peer_pair->m_methods.end();) {
+                auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
 
                 if (!method) {
                     ++method_itr;
                     continue;
                 }
 
-                auto&& env = sol::get_environment(method->m_func);
-                assert(env.valid());                
-                assert(env["this"].is<Mod*>());
-                auto mod = env["this"].get<Mod*>();
+                auto &&env = sol::get_environment(method->m_func);
+                assert(env.valid());
+                assert(env["this"].is<Mod *>());
+                auto mod = env["this"].get<Mod *>();
 
                 bool contains = m_tmp_reload_mods.contains(mod);
 
@@ -434,7 +410,7 @@ void IModManager::update() {
         //            for (auto&& pair1 : peer->m_methods) {
         //                auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
         //                //if (method)
-        //                    //method->m_func = 
+        //                    //method->m_func =
         //            }
         //            //if (auto method = peer->GetMethod()
         //        }
@@ -451,4 +427,4 @@ void IModManager::update() {
     }
 }
 
-#endif // VH_USE_MODS
+#endif// VH_USE_MODS

@@ -4,22 +4,22 @@
 #include <utility>
 #include <vector>
 
-#include "ZDO.h"
-#include "Types.h"
-#include "ZDOManager.h"
-#include "ValhallaServer.h"
-#include "ZDOID.h"
-#include "PrefabManager.h"
-#include "Prefab.h"
-#include "ZoneManager.h"
 #include "NetManager.h"
+#include "Prefab.h"
+#include "PrefabManager.h"
+#include "Types.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
-
+#include "ZDO.h"
+#include "ZDOID.h"
+#include "ZDOManager.h"
+#include "ZoneManager.h"
 
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
-void ZDO::Load31Pre(DataReader& pkg, std::int32_t worldVersion) {
-    assert(false); //TODO
+void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
+{
+    assert(false);//TODO
     /*
     pkg.read<std::uint32_t>();       // owner rev
     pkg.read<std::uint32_t>();       // data rev
@@ -114,39 +114,39 @@ void ZDO::Load31Pre(DataReader& pkg, std::int32_t worldVersion) {
         }
     }*/
 }
-#endif //VH_LEGACY_WORLD_LOADING
+#endif//VH_LEGACY_WORLD_LOADING
 
-void ZDO::Unpack(DataReader& reader, std::int32_t version) {
+void ZDO::Unpack(DataReader &reader, std::int32_t version)
+{
     //.m_uid.SetID();
     ushort flags = reader.read<std::uint16_t>();
 
     //this.Persistent = (num & 256) > 0;
     //m_data_flags = m_data_flags | ((num & 256) ? DataFlags::Persistent : DataFlags::None);
-    
+
     //this.Distant = (num & 512) > 0;
     //m_data_flags = m_data_flags | ((num & 512) ? DataFlags::Distant : DataFlags::None);
-    
-    //this.Type = (ZDO.ObjectType)((num >> 10) & 3);		
+
+    //this.Type = (ZDO.ObjectType)((num >> 10) & 3);
     //m_data_flags = m_data_flags | (static_cast<DataFlags>(num >> 10) & DataFlags::Type);
 
     if (version) {
         //this.m_sector = pkg.ReadVector2s();
-        auto zone = reader.read<avledet::util::CSU::Vector2s>(); // sector
+        auto zone = reader.read<avledet::util::CSU::Vector2s>();// sector
 
         //this.m_position = pkg.ReadVector3();
         //m_position = reader.read<util::CSU::Vector3f>();
         _SetPosition(reader.read<avledet::util::CSU::Vector3f>());
-        if (zone != GetZone()) // a mismatch indicates a 99% of corruption
+        if (zone != GetZone())// a mismatch indicates a 99% of corruption
             throw std::runtime_error("sector mismatch");
     }
-    
+
     //this.m_prefab = pkg.ReadInt();
     auto prefab_hash = reader.read<std::int32_t>();
     //_SetPrefabHash(reader.read<std::int32_t>());
-    if (GetPrefabHash() == 0) { // Init once
+    if (GetPrefabHash() == 0) {// Init once
         _SetPrefabHash(prefab_hash);
-    }
-    else {
+    } else {
         // should always run if a version is provided (this assumes that the world is being loaded)
 #ifndef RUN_TESTS
         assert(version == 0);
@@ -164,8 +164,7 @@ void ZDO::Unpack(DataReader& reader, std::int32_t version) {
     //this.SaveClone = false;
 
     //if ((num & 4096) > 0)
-    if (flags & (1 << NETWORK_Rotation))
-    {
+    if (flags & (1 << NETWORK_Rotation)) {
         //this.m_rotation = pkg.ReadVector3();
         //m_rotation = reader.read<avledet::util::CSU::Vector3f>();
         _SetRotation(reader.read<avledet::util::CSU::Vector3f>());
@@ -174,40 +173,32 @@ void ZDO::Unpack(DataReader& reader, std::int32_t version) {
     //ZDOConnector::Type type = ZDOConnector::Type::None;
     if (flags & (1 << NETWORK_Connection)) {
         auto type = reader.read<ZDOConnector::Type>();
-        if (version) { // disk
+        if (version) {// disk
             auto hash = reader.read<avledet::util::Hash>();
             //manager->s_connectionsHashData[m_uid] = std::make_pair(reader.read<ConnectionType>(), reader.read<avledet::util::Hash>());
 
-            auto&& connector = ZDO_CONNECTORS[GetID()]; // = ZDOConnector{ .m_type = type, .m_hash = hash };
+            auto &&connector = ZDO_CONNECTORS[GetID()];// = ZDOConnector{ .m_type = type, .m_hash = hash };
             connector.m_type = type;
             connector.m_hash = hash;
-        }
-        else { // network
-            auto target = reader.read<ZDOID>();
-            auto&& connector = ZDO_TARGETED_CONNECTORS[GetID()];
+        } else {                                       // network
+            auto target      = reader.read<ZDOID>();
+            auto &&connector = ZDO_TARGETED_CONNECTORS[GetID()];
             // set connection
-            connector.m_type = type;
+            connector.m_type   = type;
             connector.m_target = target;
             //type &= ~ZDOConnector::Type::Target;
         }
         //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
-    }
-    else {
+    } else {
         // Remove connector flag
         //m_pack.Unset<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
         //m_pack.Set<FLAGS_PACK_INDEX>(
-            //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
+        //m_pack.Get<FLAGS_PACK_INDEX>() & (~std::to_underlying(LocalFlag::Member_Connection)));
     }
 
-    if (flags & (
-        (1 << NETWORK_Float) 
-        | (1 << NETWORK_Vec3) 
-        | (1 << NETWORK_Quat) 
-        | (1 << NETWORK_Int) 
-        | (1 << NETWORK_Long) 
-        | (1 << NETWORK_String
-        | (1 << NETWORK_ByteArray)))) 
-    {
+    if (flags
+        & ((1 << NETWORK_Float) | (1 << NETWORK_Vec3) | (1 << NETWORK_Quat) | (1 << NETWORK_Int)
+           | (1 << NETWORK_Long) | (1 << NETWORK_String | (1 << NETWORK_ByteArray)))) {
         if (flags & (1 << NETWORK_Float))
             load_vars(reader, version, m_floats);
         if (flags & (1 << NETWORK_Vec3))
@@ -225,20 +216,18 @@ void ZDO::Unpack(DataReader& reader, std::int32_t version) {
     }
 }
 
-
-
 // ZDO specific-methods
 
-void ZDO::SetPosition(Vector3f pos) {
+void ZDO::SetPosition(Vector3f pos)
+{
     if (this->GetPosition() != pos) {
         if (IZoneManager::WorldToZonePos(pos) != GetZone()) {
             ZDOManager()->_InvalidateZDOZone(this);
 
             ZDOManager()->_RemoveFromSector(this);
-            this->_SetPosition(pos); //unrevised
+            this->_SetPosition(pos);//unrevised
             ZDOManager()->_AddZDOToZone(this);
-        }
-        else {
+        } else {
             this->_SetPosition(pos);
         }
 
@@ -249,24 +238,27 @@ void ZDO::SetPosition(Vector3f pos) {
     }
 }
 
-ZoneID ZDO::GetZone() const {
+ZoneID ZDO::GetZone() const
+{
     return IZoneManager::WorldToZonePos(this->GetPosition());
 }
 
-
-
-void ZDO::Pack(DataWriter& writer, bool network) const {    
+void ZDO::Pack(DataWriter &writer, bool network) const
+{
     bool hasRot = this->m_rotation != Vector3f::zero();
 
-    std::uint16_t flags{};
+    std::uint16_t flags {};
 
-    if (IsPersistent()) flags |= 1 << NETWORK_Persistent;
-    if (IsDistant()) flags |= 1 << NETWORK_Distant;
+    if (IsPersistent())
+        flags |= 1 << NETWORK_Persistent;
+    if (IsDistant())
+        flags |= 1 << NETWORK_Distant;
     flags |= std::to_underlying(GetType()) << NETWORK_Type1;
-    if (hasRot) flags |= 1 << NETWORK_Rotation;
+    if (hasRot)
+        flags |= 1 << NETWORK_Rotation;
 
-    const auto flagPos = writer.get_pos();
-    writer.write(flags); // dummy spacer
+    auto const flagPos = writer.get_pos();
+    writer.write(flags);// dummy spacer
     if (!network) {
         writer.write(GetZone());
         writer.write(GetPosition());
@@ -277,19 +269,18 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     }
 
     if (network) {
-        auto&& find = ZDO_TARGETED_CONNECTORS.find(GetID());
+        auto &&find = ZDO_TARGETED_CONNECTORS.find(GetID());
         if (find != ZDO_TARGETED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
-            auto&& connector = find->second;
+            auto &&connector = find->second;
             writer.write(connector.m_type);
             writer.write(connector.m_target);
 
             flags |= 1 << NETWORK_Connection;
         }
-    }
-    else {
-        auto&& find = ZDO_CONNECTORS.find(GetID());
+    } else {
+        auto &&find = ZDO_CONNECTORS.find(GetID());
         if (find != ZDO_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
-            auto&& connector = find->second;
+            auto &&connector = find->second;
             writer.write(connector.m_type);
             writer.write(connector.m_hash);
 
@@ -312,7 +303,7 @@ void ZDO::Pack(DataWriter& writer, bool network) const {
     if (_TryWriteType<avledet::util::Bytes>(writer))
         flags |= 1 << NETWORK_ByteArray;
 
-    const auto endPos = writer.get_pos();
+    auto const endPos = writer.get_pos();
     writer.set_pos(flagPos);
     writer.write(flags);
     writer.set_pos(endPos);

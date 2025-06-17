@@ -4,37 +4,38 @@
 #include <future>
 #include <thread>
 
+#include "DataStream.h"
 #include "Types.h"
 #include "VUtils.h"
-#include "DataStream.h"
-#include "DataStream.h"
 
 class IWorldManager;
 
-class World {
+class World
+{
     friend class IWorldManager;
 
-public:
+  public:
     std::string m_name;
     std::string m_seedName;
     avledet::util::Hash m_seed;
     std::int64_t m_uid;
     std::int32_t m_worldGenVersion;
-    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>> m_startingGlobalKeys;
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_startingGlobalKeys;
 
-public:
+  public:
     World(std::string name, std::string seedName);
     World(DataReader reader);
 
-public:
+  public:
     avledet::util::Bytes SaveMeta();
     //avledet::util::Bytes SaveDB();
 
-    void WriteFileMeta(const fs::path& root);
-    void WriteFileDB(const fs::path& root);
-    void LoadFileDB(const fs::path& root);
-    void CopyCompressDB(const fs::path& root);
-    void WriteFiles(const fs::path& root);
+    void WriteFileMeta(fs::path const &root);
+    void WriteFileDB(fs::path const &root);
+    void LoadFileDB(fs::path const &root);
+    void CopyCompressDB(fs::path const &root);
+    void WriteFiles(fs::path const &root);
 
     void WriteFileMeta();
     void WriteFileDB();
@@ -42,13 +43,14 @@ public:
     void WriteFiles();
 };
 
-class IWorldManager {
-private:
+class IWorldManager
+{
+  private:
     std::unique_ptr<World> m_world;
     //std::jthread m_saveThread;
 
-public:
-    World* GetWorld();
+  public:
+    World *GetWorld();
 
     // Get root path of worlds
     //  threadsafe
@@ -60,7 +62,7 @@ public:
     //  threadsafe
     //fs::path GetWorldDBPath(const std::string& name) const;
 
-    bool LoadWorldMeta(const fs::path &root);
+    bool LoadWorldMeta(fs::path const &root);
 
     std::unique_ptr<World> RetrieveWorld(std::string_view name, std::string_view fallbackSeedName) const;
 
@@ -88,4 +90,4 @@ public:
 };
 
 // Manager class for everything related to world file loading and file saving
-IWorldManager* WorldManager();
+IWorldManager *WorldManager();

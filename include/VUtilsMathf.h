@@ -11,15 +11,11 @@ namespace VUtils::Mathf {
     // Bankers rounding
     float Round(float f);
 
-}
+}// namespace VUtils::Mathf
 
-namespace avledet::util {
+namespace avledet::util { namespace CSU {
 
-    namespace CSU {
+    // return Mathf.Abs(b - a) < Mathf.Max(1E-06f * Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)), Mathf.Epsilon * 8f);
+    bool equal(float, float);
 
-        // return Mathf.Abs(b - a) < Mathf.Max(1E-06f * Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)), Mathf.Epsilon * 8f);
-        bool equal(float, float);
-
-    }// namespace avledet::util::CSU
-
-}// namespace avledet::util
+}}// namespace avledet::util::CSU

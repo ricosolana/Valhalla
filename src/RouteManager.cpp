@@ -1,73 +1,61 @@
 #include "RouteManager.h"
 #include "DataStream.h"
 #include "DiscordManager.h"
-#include "NetManager.h"
+#include "Hashes.h"
 #include "Method.h"
+#include "NetManager.h"
+#include "Peer.h"
 #include "Types.h"
 #include "ValhallaServer.h"
-#include "ZoneManager.h"
 #include "ZDOManager.h"
-#include "Hashes.h"
-#include "Peer.h"
+#include "ZoneManager.h"
 #include <cstdint>
 #include <limits>
 #include <ratio>
 
-auto ROUTE_MANAGER = std::make_unique<IRouteManager>(); // TODO stop constructing in global
-IRouteManager* RouteManager() {
-	return ROUTE_MANAGER.get();
+auto ROUTE_MANAGER = std::make_unique<IRouteManager>();// TODO stop constructing in global
+
+IRouteManager *RouteManager()
+{
+    return ROUTE_MANAGER.get();
 }
-
-
 
 // throttle different packets differently
 // throttling inputs:
 //	- method hash
 //	- if targetZDO (netview aimed), then prefab hash extracted from getzdo(zdoid).prefab
 //	- burst interval
-#include <iostream>
-#include <vector>
-#include <unordered_map>
 #include <chrono>
-
-
-
-
-
 #include <iostream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
+
 #include <chrono>
 #include <cmath>
-
-
-
+#include <iostream>
+#include <unordered_map>
+#include <vector>
 
 //	- rate throttling
-//	
+//
 
 
+void IRouteManager::OnNewPeer(Peer &peer)
+{
+    peer.Register(avledet::util::hashes::Rpc::RoutedRPC, [this](Peer *peer, DataReader reader) {
+        if (peer->IsGated())
+            return;
 
+        reader.read<std::int64_t>();// skip msgid
+        /*DataWriter(avledet::util::ByteView(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/
+        reader.read<avledet::util::UserID>();// skip sender
+        auto target    = reader.read<avledet::util::UserID>();
+        auto targetZDO = reader.read<ZDOID>();
+        auto hash      = reader.read<avledet::util::Hash>();
+        auto params    = DataReader(reader.read<std::vector<char>>());
 
-
-
-
-
-
-void IRouteManager::OnNewPeer(Peer &peer) {
-	peer.Register(avledet::util::hashes::Rpc::RoutedRPC, [this](Peer* peer, DataReader reader) {
-		if (peer->IsGated())
-			return;
-
-		reader.read<std::int64_t>(); // skip msgid
-		/*DataWriter(avledet::util::ByteView(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/ 
-		reader.read<avledet::util::UserID>(); // skip sender
-		auto target = reader.read<avledet::util::UserID>();
-		auto targetZDO = reader.read<ZDOID>();
-		auto hash = reader.read<avledet::util::Hash>();
-		auto params = DataReader(reader.read<std::vector<char>>());
-
-		/*
+        /*
 		* Rpc and multi-execution dilemna
 		*	Should I let multiple handlers be able to call RoutedRpc methods?
 		*	What about packets coming in that do not refer to any currently register Rpc?
@@ -75,53 +63,53 @@ void IRouteManager::OnNewPeer(Peer &peer) {
 		*	Similarly, what about missing RoutedRpc handlers?
 		*/
 
-		if (target == EVERYBODY) {
-			// Confirmed: targetZDO CAN have a value when globally routed
-			if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
-				return;
+        if (target == EVERYBODY) {
+            // Confirmed: targetZDO CAN have a value when globally routed
+            if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
+                return;
 
-			//dpp death trigger webhook
-			//TODO
-			//	can obviously be spammed by bad actors, but their name is shown, so... self inflicted
-			if (hash == avledet::util::get_stable_hash("OnDeath")) {
-				VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
-			}
+            //dpp death trigger webhook
+            //TODO
+            //	can obviously be spammed by bad actors, but their name is shown, so... self inflicted
+            if (hash == avledet::util::get_stable_hash("OnDeath")) {
+                VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+            }
 
-			// 'EVERYBODY' also targets the server
-			if (!targetZDO) {
-				auto&& find = m_methods.find(hash);
-				if (find != m_methods.end()) {
-					find->second->Invoke(peer, params);
-				}
-			} //else ... // netview is not currently supported
+            // 'EVERYBODY' also targets the server
+            if (!targetZDO) {
+                auto &&find = m_methods.find(hash);
+                if (find != m_methods.end()) {
+                    find->second->Invoke(peer, params);
+                }
+            }//else ... // netview is not currently supported
 
-			auto&& peers = NetManager()->GetPeers();
-			for (auto&& other : peers) {
-				// Ignore the src peer
-				if (peer->GetUserID() != other->GetUserID()) {
-					other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
-				}
-			}
-		}
-		else {
-			if (target != VH_ID) {
-				if (auto other = NetManager()->FindPeerByUserID(target)) {
-					if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
-						return;
+            auto &&peers = NetManager()->GetPeers();
+            for (auto &&other : peers) {
+                // Ignore the src peer
+                if (peer->GetUserID() != other->GetUserID()) {
+                    other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t) 0, peer->GetUserID(),
+                                  target, targetZDO, hash, params);
+                }
+            }
+        } else {
+            if (target != VH_ID) {
+                if (auto other = NetManager()->FindPeerByUserID(target)) {
+                    if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
+                        return;
 
-					//other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);
-					other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t)0, peer->GetUserID(), target, targetZDO, hash, params);
-				}
-			}
-			else {
-				if (!targetZDO) {
-					auto&& find = m_methods.find(hash);
-					if (find != m_methods.end()) {
-						//find->second->Invoke(peer, reader.read<DataReader>());
-						find->second->Invoke(peer, params);
-					}
-				} //else ... // netview is not currently supported
-			}
-		}
-	});
+                    //other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);
+                    other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t) 0, peer->GetUserID(),
+                                  target, targetZDO, hash, params);
+                }
+            } else {
+                if (!targetZDO) {
+                    auto &&find = m_methods.find(hash);
+                    if (find != m_methods.end()) {
+                        //find->second->Invoke(peer, reader.read<DataReader>());
+                        find->second->Invoke(peer, params);
+                    }
+                }//else ... // netview is not currently supported
+            }
+        }
+    });
 }

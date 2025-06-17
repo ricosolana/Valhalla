@@ -109,8 +109,10 @@ namespace avledet::lexicon {
     std::string to_lower(std::string_view in);
 
     // Join a container consisting of strings separated by delimiter
-    template<typename T> requires VUtils::Traits::is_iterable<T>
-    std::string join(std::string_view delimiter, T container) {
+    template<typename T>
+        requires VUtils::Traits::is_iterable<T>
+    std::string join(std::string_view delimiter, T container)
+    {
         std::string result;
         for (int i = 0; i < container.size() - 1; i++) {
             result += std::string(*(container.begin() + i)) + std::string(delimiter);
@@ -120,15 +122,15 @@ namespace avledet::lexicon {
     }
 
     template<typename Iterable = std::vector<std::string_view>>
-        requires (VUtils::Traits::is_iterable<Iterable>)
-    Iterable split(std::string_view s, char delim, bool includeBlanks = false) 
+        requires(VUtils::Traits::is_iterable<Iterable>)
+    Iterable split(std::string_view s, char delim, bool includeBlanks = false)
     {
         std::int64_t size = s.size();
-        auto data = s.data();
+        auto data         = s.data();
 
-        Iterable split{};
+        Iterable split {};
 
-        std::int64_t lineIdx = -1;
+        std::int64_t lineIdx  = -1;
         std::int64_t lineSize = 0;
         for (decltype(size) i = 0; i < size; i++) {
             lineSize = i - lineIdx - 1;
@@ -168,12 +170,12 @@ namespace avledet::lexicon {
 
         // Gets the unicode code points in a UTF-8 encoded string
         // Return -1 on bad encoding
-        int get_utf8_code_count(const avledet::util::Byte *p);
+        int get_utf8_code_count(avledet::util::Byte const *p);
 
-        // Gets the unicode byte count needed to encode std::uint16_t or C# char 
+        // Gets the unicode byte count needed to encode std::uint16_t or C# char
         //  Returns 1, 2 or 3
         unsigned int get_utf8_byte_count(std::uint16_t i);
 
-    }// namespace avledet::lexicon::CSU
+    }// namespace CSU
 
 }// namespace avledet::lexicon

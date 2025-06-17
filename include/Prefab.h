@@ -1,17 +1,19 @@
 #pragma once
 
+#include "Hashes.h"
 #include "Quaternion.h"
 #include "Vector.h"
-#include "Hashes.h"
 
-class Prefab {
-public:
-    struct Instance {
-        Quaternion m_rot;       // 16 bytes
-        avledet::util::CSU::Vector3f m_pos;         // 12 bytes
-        avledet::util::Hash m_prefabHash;    // 4 bytes
+class Prefab
+{
+  public:
+    struct Instance
+    {
+        Quaternion m_rot;                  // 16 bytes
+        avledet::util::CSU::Vector3f m_pos;// 12 bytes
+        avledet::util::Hash m_prefabHash;  // 4 bytes
 
-        const Prefab& GetPrefab() const;
+        Prefab const &GetPrefab() const;
     };
 
     // MineRock/5 is interesting
@@ -22,123 +24,138 @@ public:
     //      - the 5th revision of the MineRockX
     //      - im not really sure of the naming besides this
 
-    enum class Flag : std::uint64_t {
+    enum class Flag : std::uint64_t
+    {
         NONE = 0,
 
         SYNC_INITIAL_SCALE = 1ULL << 0,
-        DISTANT = 1ULL << 1,
-        PERSISTENT = 1ULL << 2,
-        TYPE1 = 1ULL << 3,
-        TYPE2 = 1ULL << 4,
+        DISTANT            = 1ULL << 1,
+        PERSISTENT         = 1ULL << 2,
+        TYPE1              = 1ULL << 3,
+        TYPE2              = 1ULL << 4,
 
-        PIECE = 1ULL << 5,
-        BED = 1ULL << 6,
-        DOOR = 1ULL << 7,
-        CHAIR = 1ULL << 8,
-        SHIP = 1ULL << 9,
-        FISH = 1ULL << 10,
-        PLANT = 1ULL << 11,
+        PIECE       = 1ULL << 5,
+        BED         = 1ULL << 6,
+        DOOR        = 1ULL << 7,
+        CHAIR       = 1ULL << 8,
+        SHIP        = 1ULL << 9,
+        FISH        = 1ULL << 10,
+        PLANT       = 1ULL << 11,
         ARMOR_STAND = 1ULL << 12,
 
-        PROJECTILE = 1ULL << 13,
-        ITEM_DROP = 1ULL << 14,
-        PICKABLE = 1ULL << 15,
+        PROJECTILE    = 1ULL << 13,
+        ITEM_DROP     = 1ULL << 14,
+        PICKABLE      = 1ULL << 15,
         PICKABLE_ITEM = 1ULL << 16,
 
-        CONTAINER = 1ULL << 17,
-        COOKING_STATION = 1ULL << 18,
+        CONTAINER        = 1ULL << 17,
+        COOKING_STATION  = 1ULL << 18,
         CRAFTING_STATION = 1ULL << 19,
-        SMELTER = 1ULL << 20,
-        FIREPLACE = 1ULL << 21,
+        SMELTER          = 1ULL << 20,
+        FIREPLACE        = 1ULL << 21,
 
-        WEAR_N_TEAR = 1ULL << 22,
+        WEAR_N_TEAR  = 1ULL << 22,
         DESTRUCTIBLE = 1ULL << 23,
-        ITEM_STAND = 1ULL << 24,
+        ITEM_STAND   = 1ULL << 24,
 
-        ANIMAL_AI = 1ULL << 25,
-        MONSTER_AI = 1ULL << 26,
-        TAMEABLE = 1ULL << 27,
+        ANIMAL_AI   = 1ULL << 25,
+        MONSTER_AI  = 1ULL << 26,
+        TAMEABLE    = 1ULL << 27,
         PROCREATION = 1ULL << 28,
 
-        MINE_ROCK_5 = 1ULL << 29, // rocks
-        TREE_BASE = 1ULL << 30, // vegetation
-        TREE_LOG = 1ULL << 31, // chopped down
+        MINE_ROCK_5 = 1ULL << 29,// rocks
+        TREE_BASE   = 1ULL << 30,// vegetation
+        TREE_LOG    = 1ULL << 31,// chopped down
 
-        DUNGEON = 1ULL << 32,
+        DUNGEON          = 1ULL << 32,
         TERRAIN_MODIFIER = 1ULL << 33,
         CREATURE_SPAWNER = 1ULL << 34,
         SYNCED_TRANSFORM = 1ULL << 35
     };
-        
-public:
-    std::string m_name;         // 40 bytes
-    avledet::util::CSU::Vector3f m_localScale;      // 12 bytes
-    Flag m_flags = Flag::NONE;  // 8 bytes
-    avledet::util::Hash m_hash;              // 4 bytes
 
-public:
-    Prefab(std::string_view name, avledet::util::CSU::Vector3f localScale, Flag flags)
-        : m_hash(avledet::util::get_stable_hash(name)), m_name(std::string(name)), m_localScale(localScale), m_flags(flags) {}
+  public:
+    std::string m_name;                       // 40 bytes
+    avledet::util::CSU::Vector3f m_localScale;// 12 bytes
+    Flag m_flags = Flag::NONE;                // 8 bytes
+    avledet::util::Hash m_hash;               // 4 bytes
 
-    Prefab(const Prefab& other) = default;
-
-
-
-    bool AllFlagsPresent(Flag prefabFlags) const noexcept {
-        return prefabFlags == Flag::NONE 
-            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(prefabFlags);
+  public:
+    Prefab(std::string_view name, avledet::util::CSU::Vector3f localScale, Flag flags) :
+        m_hash(avledet::util::get_stable_hash(name)),
+        m_name(std::string(name)),
+        m_localScale(localScale),
+        m_flags(flags)
+    {
     }
 
-    bool AnyFlagsPresent(Flag prefabFlags) const noexcept {
-        return prefabFlags == Flag::NONE 
-            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(Flag::NONE);
-    }
+    Prefab(Prefab const &other) = default;
 
-    bool AllFlagsAbsent(Flag prefabFlags) const noexcept {
+    bool AllFlagsPresent(Flag prefabFlags) const noexcept
+    {
         return prefabFlags == Flag::NONE
-            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) == std::to_underlying(Flag::NONE);
+               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
+                          == std::to_underlying(prefabFlags);
     }
 
-    bool AnyFlagsAbsent(Flag prefabFlags) const noexcept {
+    bool AnyFlagsPresent(Flag prefabFlags) const noexcept
+    {
         return prefabFlags == Flag::NONE
-            || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags)) != std::to_underlying(prefabFlags);
+               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
+                          != std::to_underlying(Flag::NONE);
     }
 
+    bool AllFlagsAbsent(Flag prefabFlags) const noexcept
+    {
+        return prefabFlags == Flag::NONE
+               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
+                          == std::to_underlying(Flag::NONE);
+    }
 
+    bool AnyFlagsAbsent(Flag prefabFlags) const noexcept
+    {
+        return prefabFlags == Flag::NONE
+               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
+                          != std::to_underlying(prefabFlags);
+    }
 
     bool IsDistant() const noexcept;
     bool IsPersistent() const noexcept;
     avledet::util::ObjectType GetObjectType() const noexcept;
 
-
-
-    bool operator==(const Prefab& other) const noexcept {
+    bool operator==(Prefab const &other) const noexcept
+    {
         return this->m_hash == other.m_hash;
     }
 
-    bool operator==(avledet::util::Hash other) const noexcept {
+    bool operator==(avledet::util::Hash other) const noexcept
+    {
         return this->m_hash == other;
     }
 
-    bool operator==(std::string_view other) const noexcept {
+    bool operator==(std::string_view other) const noexcept
+    {
         return this->m_hash == avledet::util::get_stable_hash(other);
     }
 };
 
-template <>
-struct ankerl::unordered_dense::hash<Prefab> {
+template<>
+struct ankerl::unordered_dense::hash<Prefab>
+{
     using is_transparent = void;
-    using is_avalanching = void; // mark class as high quality avalanching hash
+    using is_avalanching = void;// mark class as high quality avalanching hash
 
-    [[nodiscard]] auto operator()(Prefab const& prefab) const noexcept -> std::uint64_t {
-        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(prefab.m_hash);
+    [[nodiscard]] auto operator()(Prefab const &prefab) const noexcept -> std::uint64_t
+    {
+        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(prefab.m_hash);
     }
 
-    [[nodiscard]] auto operator()(avledet::util::Hash hash) const noexcept -> std::uint64_t {
-        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(hash);
+    [[nodiscard]] auto operator()(avledet::util::Hash hash) const noexcept -> std::uint64_t
+    {
+        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(hash);
     }
 
-    [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
-        return ankerl::unordered_dense::hash<avledet::util::Hash>{}(avledet::util::get_stable_hash(str));
+    [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t
+    {
+        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(avledet::util::get_stable_hash(str));
     }
 };

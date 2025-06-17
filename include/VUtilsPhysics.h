@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector.h"
 #include "Quaternion.h"
+#include "Vector.h"
 
 namespace VUtils::Physics {
 
@@ -13,26 +13,26 @@ namespace VUtils::Physics {
     //bool LinesIntersect(Vector2f a, Vector2f b, Vector2f c, Vector2f d);
 
 
-
     bool PointInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f pos2);
 
     // Checks whether a rectangular region lies completely inside inside another rectangular region
-    bool RectInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2);
+    bool RectInsideRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
+                        Quaternion rot2);
 
     // Check whether 2 rectangles intersect
     // Quaternion x,z should not be assigned due to non-implementation
-    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2, std::string& desmos);
+    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
+                         Quaternion rot2, std::string &desmos);
 
-    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1,
-        Vector3f size2, Vector3f pos2, Quaternion rot2);
+    bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
+                         Quaternion rot2);
 
-    std::pair<Vector3f, Quaternion> LocalToGlobal(const Vector3f& childLocalPos, const Quaternion& childLocalRot,
-        const Vector3f& parentPos, const Quaternion& parentRot);
+    std::pair<Vector3f, Quaternion> LocalToGlobal(Vector3f const &childLocalPos,
+                                                  Quaternion const &childLocalRot, Vector3f const &parentPos,
+                                                  Quaternion const &parentRot);
 
     // TODO requires testing
-    std::pair<Vector3f, Quaternion> GlobalToLocal(const Vector3f& globalPos, const Quaternion& globalRot,
-        const Vector3f& parentPos, const Quaternion& parentRot);
+    std::pair<Vector3f, Quaternion> GlobalToLocal(Vector3f const &globalPos, Quaternion const &globalRot,
+                                                  Vector3f const &parentPos, Quaternion const &parentRot);
 
-}
+}// namespace VUtils::Physics

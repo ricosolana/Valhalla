@@ -1,28 +1,33 @@
 #include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
 #include <isteamuser.h>
-#include <steam_gameserver.h>
 #include <quill/Utility.h>
+#include <steam_gameserver.h>
 
-#include "NetSocket.h"
-#include "ValhallaServer.h"
 #include "ModManager.h"
 #include "NetAcceptor.h"
+#include "NetSocket.h"
 #include "steamclientpublic.h"
+#include "ValhallaServer.h"
 
 namespace avledet::network {
 
-    SteamSocket::SteamSocket(HSteamNetConnection hConn, bool is_outbound)
-        : m_conn(hConn), m_status(Status::Connecting), m_is_outbound(is_outbound) {
+    SteamSocket::SteamSocket(HSteamNetConnection hConn, bool is_outbound) :
+        m_conn(hConn),
+        m_status(Status::Connecting),
+        m_is_outbound(is_outbound)
+    {
         this->init_identifiers();
     }
 
-    SteamSocket::~SteamSocket() {
+    SteamSocket::~SteamSocket()
+    {
         this->Close(true);
     }
 
-    void SteamSocket::init_identifiers() {
-        SteamNetConnectionInfo_t info{};
+    void SteamSocket::init_identifiers()
+    {
+        SteamNetConnectionInfo_t info {};
         get_steam_sockets()->GetConnectionInfo(m_conn, &info);
         m_steam_id = info.m_identityRemote;
 
@@ -31,7 +36,8 @@ namespace avledet::network {
         m_address = buf;
     }
 
-    void SteamSocket::Close(bool linger) {
+    void SteamSocket::Close(bool linger)
+    {
         // logic:
         //  if we are already lingering, and we are close-now (do not linger), then override and close
         if (m_status == Status::Lingering && !linger) {
@@ -40,12 +46,10 @@ namespace avledet::network {
         }
 
         switch (m_status) {
-            case Status::Closed:
-            case Status::Connect_Failed:
-            case Status::Lingering:
-                return;
-            default:
-                break;
+        case Status::Closed:
+        case Status::Connect_Failed:
+        case Status::Lingering: return;
+        default: break;
         }
 
 
@@ -72,15 +76,18 @@ namespace avledet::network {
         get_steam_sockets()->CloseConnection(m_conn, 0, "", linger);
     }
 
-    void SteamSocket::flush() {
+    void SteamSocket::flush()
+    {
         this->send_queued();
         get_steam_sockets()->FlushMessagesOnConnection(m_conn);
     }
 
-    bool SteamSocket::authenticate(avledet::util::ByteView ticket) {
+    bool SteamSocket::authenticate(avledet::util::ByteView ticket)
+    {
         EBeginAuthSessionResult result {};
         if (VH_SETTINGS.serverDedicated) {
-            result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID());
+            result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(),
+                                                         m_steam_id.GetSteamID());
         } else {
             result = SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID());
         }
@@ -88,9 +95,8 @@ namespace avledet::network {
         return result == k_EBeginAuthSessionResultOK;
     }
 
-
-
-    void SteamSocket::send(std::vector<char> bytes) {
+    void SteamSocket::send(std::vector<char> bytes)
+    {
         assert(!bytes.empty());
 
 
@@ -100,19 +106,18 @@ namespace avledet::network {
         this->send_queued();
     }
 
-    std::vector<char> SteamSocket::Recv() {
+    std::vector<char> SteamSocket::Recv()
+    {
         std::vector<char> bytes;
 
-        if (m_status == Status::Connected
-            || m_status == Status::Lingering) {
+        if (m_status == Status::Connected || m_status == Status::Lingering) {
             static constexpr auto MSG_COUNT = 1;
 
-            SteamNetworkingMessage_t* msg{};
+            SteamNetworkingMessage_t *msg {};
             auto res = get_steam_sockets()->ReceiveMessagesOnConnection(m_conn, &msg, MSG_COUNT);
             if (res == MSG_COUNT) {
-                bytes.insert(bytes.begin(),
-                    reinterpret_cast<char*>(msg->m_pData),
-                    reinterpret_cast<char*>(msg->m_pData) + msg->m_cbSize);
+                bytes.insert(bytes.begin(), reinterpret_cast<char *>(msg->m_pData),
+                             reinterpret_cast<char *>(msg->m_pData) + msg->m_cbSize);
 
                 //std::cout << quill::utility::to_hex(reinterpret_cast<char*>(msg->m_pData), msg->m_cbSize) << "\n";
 
@@ -126,25 +131,29 @@ namespace avledet::network {
         return bytes;
     }
 
-    std::string SteamSocket::get_host_name() {
+    std::string SteamSocket::get_host_name()
+    {
         return std::to_string(m_steam_id.GetSteamID64());
     }
 
-    std::string SteamSocket::get_address() {
+    std::string SteamSocket::get_address()
+    {
         return m_address;
     }
 
-    bool SteamSocket::is_outbound() {
+    bool SteamSocket::is_outbound()
+    {
         return m_is_outbound;
     }
 
-    int SteamSocket::get_send_queue_size() {
+    int SteamSocket::get_send_queue_size()
+    {
         int num = 0;
-        for (auto&& bytes : m_send_queue) { // this is inefficient
-            num += (int)bytes.size();
+        for (auto &&bytes : m_send_queue) {// this is inefficient
+            num += (int) bytes.size();
         }
 
-        SteamNetConnectionRealTimeStatus_t rt{};
+        SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
         }
@@ -152,32 +161,37 @@ namespace avledet::network {
         return num;
     }
 
-    std::tuple<float, float> SteamSocket::get_connection_quality() {
-        SteamNetConnectionRealTimeStatus_t rt{};
+    std::tuple<float, float> SteamSocket::get_connection_quality()
+    {
+        SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
-            return { rt.m_flConnectionQualityLocal, rt.m_flConnectionQualityRemote };
+            return {rt.m_flConnectionQualityLocal, rt.m_flConnectionQualityRemote};
         }
         return {};
     }
 
-    Status SteamSocket::get_status() {
+    Status SteamSocket::get_status()
+    {
         return m_status;
     }
 
-    int SteamSocket::get_ping() {
-        SteamNetConnectionRealTimeStatus_t rt{};
+    int SteamSocket::get_ping()
+    {
+        SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
             return rt.m_nPing;
         }
         return 0;
     }
 
-    void SteamSocket::send_queued() {
+    void SteamSocket::send_queued()
+    {
         if (m_status == Status::Connected /* || m_status == Status::Lingering*/) {
-            for (auto&& itr = m_send_queue.begin(); itr != m_send_queue.end();) {
-                auto&& array = *itr;
-                auto res = get_steam_sockets()->SendMessageToConnection(m_conn, array.data(), (uint32_t)array.size(),
-                    k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
+            for (auto &&itr = m_send_queue.begin(); itr != m_send_queue.end();) {
+                auto &&array = *itr;
+                auto res     = get_steam_sockets()->SendMessageToConnection(
+                        m_conn, array.data(), (uint32_t) array.size(),
+                        k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
                 if (res != k_EResultOK) {
                     std::cout << "data send failed\n";
                     //if (res == k_EResultNoConnection) {

@@ -4,48 +4,59 @@
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 
-#include "Vector.h"
+    #include "Vector.h"
 
-#include "ValhallaServer.h"
-#include "TerrainModifier.h"
-//#include "HMBuildData.h"
-#include "ZoneManager.h"
+    #include "TerrainModifier.h"
+    #include "ValhallaServer.h"
+    //#include "HMBuildData.h"
+    #include "ZoneManager.h"
 
 class IHeightmapManager;
 
-class Rigidbody {};
-class TerrainComp {};
-class Material {};
+class Rigidbody
+{};
+
+class TerrainComp
+{};
+
+class Material
+{};
+
 //class Texture2D {};
-class MeshCollider {};
-class Mesh {};
+class MeshCollider
+{};
 
-class BaseHeightmap {
-public:
+class Mesh
+{};
+
+class BaseHeightmap
+{
+  public:
     using Heights_t = std::vector<float>;
-    using Mask_t = std::vector<avledet::util::Color>;
+    using Mask_t    = std::vector<avledet::util::Color>;
 
-public:
+  public:
     std::array<avledet::util::Biome, 4> m_cornerBiomes;
     Heights_t m_baseHeights;
     //Mask_t m_baseMask;
     std::vector<float> m_vegMask;
 };
 
-class Heightmap {
+class Heightmap
+{
     friend class IHeightmapManager;
 
-public:
-    static constexpr avledet::util::Color m_paintMaskDirt = avledet::util::Colors::RED;
+  public:
+    static constexpr avledet::util::Color m_paintMaskDirt       = avledet::util::Colors::RED;
     static constexpr avledet::util::Color m_paintMaskCultivated = avledet::util::Colors::GREEN;
-    static constexpr avledet::util::Color m_paintMaskPaved = avledet::util::Colors::BLUE;
-    static constexpr avledet::util::Color m_paintMaskNothing = avledet::util::Colors::BLACK;
+    static constexpr avledet::util::Color m_paintMaskPaved      = avledet::util::Colors::BLUE;
+    static constexpr avledet::util::Color m_paintMaskNothing    = avledet::util::Colors::BLACK;
 
     //static constexpr int WIDTH = 64;
 
     static constexpr float m_levelMaxDelta = 8;
 
-    static constexpr const float m_smoothMaxDelta = 1;
+    static constexpr float const m_smoothMaxDelta = 1;
 
     //11/30/2022 11:24:44: m_isDistantLod: False
     //11/30/2022 11:24:44: m_width: 64
@@ -54,33 +65,31 @@ public:
 
     static constexpr int E_WIDTH = IZoneManager::UNITS_PER_ZONE + 1;
 
-private:
-    const std::unique_ptr<BaseHeightmap> m_base;
+  private:
+    std::unique_ptr<BaseHeightmap> const m_base;
     BaseHeightmap::Heights_t m_heights;
 
     BaseHeightmap::Mask_t m_paintMask;
 
-    std::array<float, 4> m_oceanDepth{};
+    std::array<float, 4> m_oceanDepth {};
 
-    std::array<avledet::util::Biome, 4> m_cornerBiomes = {
-        avledet::util::Biome::Meadows,
-        avledet::util::Biome::Meadows,
-        avledet::util::Biome::Meadows,
-        avledet::util::Biome::Meadows
-    };
+    std::array<avledet::util::Biome, 4> m_cornerBiomes
+            = {avledet::util::Biome::Meadows, avledet::util::Biome::Meadows, avledet::util::Biome::Meadows,
+               avledet::util::Biome::Meadows};
 
-    const ZoneID m_zone;
+    ZoneID const m_zone;
 
-private:
+  private:
     float Distance(float x, float y, float rx, float ry);
     void ApplyModifiers();
     void ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly);
     Vector3f CalcVertex(std::int32_t x, std::int32_t y);
     void RebuildCollisionMesh();
-    void SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t* levelOnlyHeights, float power);
+    void SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t *levelOnlyHeights,
+                        float power);
     bool AtMaxWorldLevelDepth(Vector3f worldPos);
-    bool GetWorldBaseHeight(Vector3f worldPos, float& height);
-    
+    bool GetWorldBaseHeight(Vector3f worldPos, float &height);
+
     bool GetAverageWorldHeight(Vector3f worldPos, float radius, float &height);
     bool GetMinWorldHeight(Vector3f worldPos, float radius, float &height);
     bool GetMaxWorldHeight(Vector3f worldPos, float radius, float &height);
@@ -88,14 +97,16 @@ private:
     float GetAvgHeight(std::int32_t cx, std::int32_t cy, std::int32_t w);
     float GroundHeight(Vector3f point);
     void FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects);
-    void PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType, bool heightCheck);
-    void WorldToNormalizedHM(Vector3f worldPos, float& x, float &y);
-    void LevelTerrain(Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t* levelOnly);
+    void PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType,
+                      bool heightCheck);
+    void WorldToNormalizedHM(Vector3f worldPos, float &x, float &y);
+    void LevelTerrain(Vector3f worldPos, float radius, bool square, BaseHeightmap::Heights_t *levelOnly);
 
-public:
+  public:
     Heightmap(ZoneID zone, std::unique_ptr<BaseHeightmap> base);
 
-    ZoneID GetZone() {
+    ZoneID GetZone()
+    {
         return m_zone;
     }
 
@@ -106,7 +117,6 @@ public:
     void Regenerate();
     std::array<float, 4> &GetOceanDepth();
 
-    
 
     float GetOceanDepth(Vector3f worldPos);
     std::vector<avledet::util::Biome> GetBiomes();
@@ -120,7 +130,7 @@ public:
 
     bool TerrainVSModifier(TerrainModifier modifier);
 
-    
+
     // Should use an array independent from paintmask
     // only the alpha is used
     float GetVegetationMask(Vector3f worldPos);
@@ -129,7 +139,7 @@ public:
 
     // Get the relative vertex of a world position to this heightmap
     //  Heightmap is treated as the center
-    void WorldToVertex(Vector3f worldPos, std::int32_t& x, std::int32_t &y);
+    void WorldToVertex(Vector3f worldPos, std::int32_t &x, std::int32_t &y);
 
     // Get the underlying color mask in paint array
     //  x, y must be within [0, 63]
@@ -143,7 +153,7 @@ public:
 
     // Get the underlying height in heights array at world position
     //  Returns false if the position outside of this heightmap
-    bool GetWorldHeight(const Vector3f& worldPos, float& height);
+    bool GetWorldHeight(Vector3f const &worldPos, float &height);
 
     // Get the underlying height in builder heights array
     //  x, y must be within [0, 63]
@@ -153,7 +163,7 @@ public:
     bool IsPointInside(Vector3f point, float radius = 0);
 
 
-    bool GetWorldNormal(Vector3f worldPos, Vector3f& normal);
+    bool GetWorldNormal(Vector3f worldPos, Vector3f &normal);
 
     // TOOD either implement or remove
     TerrainComp GetAndCreateTerrainCompiler();

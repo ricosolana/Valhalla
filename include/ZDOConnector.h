@@ -5,38 +5,59 @@
 #include "VUtils.h"
 #include "ZDOID.h"
 
-class ZDOConnector {
-public:
-	enum class Type : std::uint8_t {
-		None = 0,
-		Portal = 1,
-		SyncTransform = 2,
-		Spawned = 3,
-		Target = 16
-	};
+class ZDOConnector
+{
+  public:
+    enum class Type : std::uint8_t
+    {
+        None          = 0,
+        Portal        = 1,
+        SyncTransform = 2,
+        Spawned       = 3,
+        Target        = 16
+    };
 
-public:
-	Type m_type;
+  public:
+    Type m_type;
 
-public:
-	ZDOConnector() : m_type(Type::None) {}
-	ZDOConnector(Type type) : m_type(type) {}
+  public:
+    ZDOConnector() :
+        m_type(Type::None)
+    {
+    }
+
+    ZDOConnector(Type type) :
+        m_type(type)
+    {
+    }
 };
 
-class ZDOConnectorData : public ZDOConnector {
-public:
-	avledet::util::Hash m_hash{};
+class ZDOConnectorData : public ZDOConnector
+{
+  public:
+    avledet::util::Hash m_hash {};
 
-public:
-	ZDOConnectorData() {}
-	ZDOConnectorData(Type type, avledet::util::Hash hash) : ZDOConnector(type), m_hash(hash) {}
+  public:
+    ZDOConnectorData() {}
+
+    ZDOConnectorData(Type type, avledet::util::Hash hash) :
+        ZDOConnector(type),
+        m_hash(hash)
+    {
+    }
 };
 
-class ZDOConnectorTargeted : public ZDOConnector {
-public:
-	ZDOID m_target{};
+class ZDOConnectorTargeted : public ZDOConnector
+{
+  public:
+    ZDOID m_target {};
 
-public:
-	ZDOConnectorTargeted() {}
-	ZDOConnectorTargeted(Type type, ZDOID target) : ZDOConnector(type), m_target(target) {}
+  public:
+    ZDOConnectorTargeted() {}
+
+    ZDOConnectorTargeted(Type type, ZDOID target) :
+        ZDOConnector(type),
+        m_target(target)
+    {
+    }
 };

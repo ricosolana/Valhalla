@@ -3,25 +3,29 @@
 #include "CompileSettings.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-#include <string>
+    #include <string>
 
-#include <dpp/dpp.h>
+    #include <dpp/dpp.h>
 
-#include "Peer.h"
+    #include "Peer.h"
 
-class IDiscordManager {
-private:
+class IDiscordManager
+{
+  private:
     std::unique_ptr<dpp::cluster> m_bot;
 
-public:
+  public:
     // Linked account map
-    avledet::util::Map<std::string, dpp::snowflake, ankerl::unordered_dense::string_hash, std::equal_to<>> m_linked_accounts;
+    avledet::util::Map<std::string, dpp::snowflake, ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_linked_accounts;
 
     // Every time an joins they will be sent a key
     //                  host,        key
-    avledet::util::Map<std::string, std::pair<std::string, std::chrono::nanoseconds>, ankerl::unordered_dense::string_hash, std::equal_to<>> m_temp_linking_keys;
+    avledet::util::Map<std::string, std::pair<std::string, std::chrono::nanoseconds>,
+                       ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_temp_linking_keys;
 
-public:
+  public:
     void init();
     void period_update();
 
@@ -35,16 +39,18 @@ public:
     //    return "";
     //}
 
-    Peer* find_peer(dpp::snowflake id);
+    Peer *find_peer(dpp::snowflake id);
 
-    Peer* unlink_peer(dpp::snowflake id);
+    Peer *unlink_peer(dpp::snowflake id);
 
     void send_webhook_message(std::string_view msg);
 };
 
-#define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_message((msg));
+    #define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_message((msg));
 
-IDiscordManager* DiscordManager();
+IDiscordManager *DiscordManager();
 #else
-#define VH_DISPATCH_WEBHOOK(msg) {}
+    #define VH_DISPATCH_WEBHOOK(msg) \
+        {                            \
+        }
 #endif

@@ -1,141 +1,153 @@
 #pragma once
 
+#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <type_traits>
-#include <cassert>
 #include <utility>
 
-#include <zstd.h>
-#include <zlib.h>
 #include <quill/Logger.h>
+#include <zlib.h>
+#include <zstd.h>
 
 #include "CompileSettings.h"
 #include "Types.h"
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
-#include <dpp/dpp.h>
+    #include <dpp/dpp.h>
 #endif
 
 namespace fs = std::filesystem;
 using namespace std::chrono_literals;
 
 // https://stackoverflow.com/a/17350413
-#define COLOR_RESET "\033[0m"
-#define COLOR_BLACK "\033[30m"
-#define COLOR_RED "\033[31m"
-#define COLOR_GREEN "\033[32m"
-#define COLOR_GOLD "\033[33m"
-#define COLOR_BLUE "\033[34m"
+#define COLOR_RESET  "\033[0m"
+#define COLOR_BLACK  "\033[30m"
+#define COLOR_RED    "\033[31m"
+#define COLOR_GREEN  "\033[32m"
+#define COLOR_GOLD   "\033[33m"
+#define COLOR_BLUE   "\033[34m"
 #define COLOR_PURPLE "\033[35m"
-#define COLOR_CYAN "\033[36m"
-#define COLOR_WHITE "\033[37m"
-#define COLOR_GRAY "\033[90m"
-
+#define COLOR_CYAN   "\033[36m"
+#define COLOR_WHITE  "\033[37m"
+#define COLOR_GRAY   "\033[90m"
 
 
 static constexpr double PI = 3.1415926535897932384626433832795;
 
-
-
-template<typename T> requires (std::is_integral_v<T> && sizeof(T) == 8)
-class IntegralWrapper {
+template<typename T>
+    requires(std::is_integral_v<T> && sizeof(T) == 8)
+class IntegralWrapper
+{
     using Type = IntegralWrapper<T>;
 
-private:
+  private:
     T m_value;
 
-public:
-    constexpr IntegralWrapper() 
-        : m_value(0) {}
+  public:
+    constexpr IntegralWrapper() :
+        m_value(0)
+    {
+    }
 
-    constexpr IntegralWrapper(T value)
-        : m_value(value) {}
-    
-    constexpr IntegralWrapper(std::uint32_t high, std::uint32_t low)
-        : m_value((static_cast<T>(high) << 32) | static_cast<T>(low)) {}
+    constexpr IntegralWrapper(T value) :
+        m_value(value)
+    {
+    }
 
-    constexpr IntegralWrapper(std::string_view raw) {
+    constexpr IntegralWrapper(std::uint32_t high, std::uint32_t low) :
+        m_value((static_cast<T>(high) << 32) | static_cast<T>(low))
+    {
+    }
+
+    constexpr IntegralWrapper(std::string_view raw)
+    {
         // high and low should be bounded around 2^32
 
         // number accepts '0x...', 'bases...'
         // when radix is 0, radix will be deduced from the initial base '0x...'
-        // TODO use from_chars ? or something possibly safer 
+        // TODO use from_chars ? or something possibly safer
         if constexpr (std::is_unsigned_v<T>)
             this->m_value = std::strtoull(raw.data(), nullptr, 0);
-        else 
+        else
             this->m_value = std::strtoll(raw.data(), nullptr, 0);
     }
 
-
-
-    operator std::int64_t() const {
+    operator std::int64_t() const
+    {
         return static_cast<std::int64_t>(this->m_value);
     }
-    
-    operator std::uint64_t() const {
+
+    operator std::uint64_t() const
+    {
         return static_cast<std::uint64_t>(this->m_value);
     }
 
-
-
-    IntegralWrapper<T> operator+(const IntegralWrapper<T>& rhs) const {
+    IntegralWrapper<T> operator+(IntegralWrapper<T> const &rhs) const
+    {
         return IntegralWrapper<T>(this->m_value + rhs.m_value);
     }
 
-    IntegralWrapper<T> operator-(const IntegralWrapper<T>& rhs) const {
+    IntegralWrapper<T> operator-(IntegralWrapper<T> const &rhs) const
+    {
         return IntegralWrapper<T>(this->m_value - rhs.m_value);
     }
 
-    IntegralWrapper<T> operator-() const {
-        return IntegralWrapper<T>((T)0 - this->m_value);
+    IntegralWrapper<T> operator-() const
+    {
+        return IntegralWrapper<T>((T) 0 - this->m_value);
     }
 
-    IntegralWrapper<T> operator*(const IntegralWrapper<T>& rhs) const {
+    IntegralWrapper<T> operator*(IntegralWrapper<T> const &rhs) const
+    {
         return IntegralWrapper<T>(this->m_value * rhs.m_value);
     }
 
-    IntegralWrapper<T> operator/(const IntegralWrapper<T>& rhs) const {
+    IntegralWrapper<T> operator/(IntegralWrapper<T> const &rhs) const
+    {
         return IntegralWrapper<T>(this->m_value / rhs.m_value);
     }
 
-    bool operator==(const IntegralWrapper<T>& rhs) const {
+    bool operator==(IntegralWrapper<T> const &rhs) const
+    {
         return this->m_value == rhs.m_value;
     }
 
-    bool operator!=(const IntegralWrapper<T>& rhs) const {
+    bool operator!=(IntegralWrapper<T> const &rhs) const
+    {
         return this->m_value != rhs.m_value;
     }
 
-    bool operator<(const IntegralWrapper<T>& rhs) const {
+    bool operator<(IntegralWrapper<T> const &rhs) const
+    {
         return this->m_value < rhs.m_value;
     }
 
-    bool operator<=(const IntegralWrapper<T>& rhs) const {
+    bool operator<=(IntegralWrapper<T> const &rhs) const
+    {
         return this->m_value <= rhs.m_value;
     }
 
-
-
-    decltype(auto) __divi(const Type& other) {
+    decltype(auto) __divi(Type const &other)
+    {
         return this->m_value / other.m_value;
     }
 };
 
 using UInt64Wrapper = IntegralWrapper<std::uint64_t>;
-using Int64Wrapper = IntegralWrapper<std::int64_t>;
+using Int64Wrapper  = IntegralWrapper<std::int64_t>;
 
-std::ostream& operator<<(std::ostream& st, const UInt64Wrapper& val);
-std::ostream& operator<<(std::ostream& st, const Int64Wrapper& val);
+std::ostream &operator<<(std::ostream &st, UInt64Wrapper const &val);
+std::ostream &operator<<(std::ostream &st, Int64Wrapper const &val);
 
+class ZStdCompressor
+{
+    ZSTD_CCtx *m_ctx;
+    ZSTD_CDict *m_dict;
 
-
-class ZStdCompressor {
-    ZSTD_CCtx* m_ctx;
-    ZSTD_CDict* m_dict;
-
-public:
-    ZStdCompressor(int level) {
+  public:
+    ZStdCompressor(int level)
+    {
         this->m_ctx = ZSTD_createCCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd cctx");
@@ -148,9 +160,13 @@ public:
         this->m_dict = nullptr;
     }
 
-    ZStdCompressor() : ZStdCompressor(ZSTD_CLEVEL_DEFAULT) {}
+    ZStdCompressor() :
+        ZStdCompressor(ZSTD_CLEVEL_DEFAULT)
+    {
+    }
 
-    ZStdCompressor(const avledet::util::Byte* dict, std::size_t dictSize, int level) {
+    ZStdCompressor(avledet::util::Byte const *dict, std::size_t dictSize, int level)
+    {
         this->m_ctx = ZSTD_createCCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd cctx");
@@ -162,32 +178,40 @@ public:
         }
     }
 
-    ZStdCompressor(const avledet::util::Bytes& dict, int level) 
-        : ZStdCompressor(dict.data(), dict.size(), level) {}
-
-    ZStdCompressor(const avledet::util::Bytes& dict) 
-        : ZStdCompressor(dict, ZSTD_CLEVEL_DEFAULT) {}
-
-    ZStdCompressor(const ZStdCompressor&) = delete;
-    ZStdCompressor(ZStdCompressor&& other) noexcept {
-        this->m_ctx = other.m_ctx;
-        this->m_dict = other.m_dict;
-        other.m_ctx = nullptr;
+    ZStdCompressor(avledet::util::Bytes const &dict, int level) :
+        ZStdCompressor(dict.data(), dict.size(), level)
+    {
     }
 
-    ~ZStdCompressor() {
+    ZStdCompressor(avledet::util::Bytes const &dict) :
+        ZStdCompressor(dict, ZSTD_CLEVEL_DEFAULT)
+    {
+    }
+
+    ZStdCompressor(ZStdCompressor const &) = delete;
+
+    ZStdCompressor(ZStdCompressor &&other) noexcept
+    {
+        this->m_ctx  = other.m_ctx;
+        this->m_dict = other.m_dict;
+        other.m_ctx  = nullptr;
+    }
+
+    ~ZStdCompressor()
+    {
         ZSTD_freeCCtx(this->m_ctx);
         ZSTD_freeCDict(this->m_dict);
     }
 
-public:
-    std::optional<avledet::util::Bytes> Compress(const avledet::util::Byte* in, std::size_t inSize) {
+  public:
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::size_t inSize)
+    {
         avledet::util::Bytes out;
         out.resize(ZSTD_compressBound(inSize));
-        
-        auto status = m_dict ?
-            ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in, inSize, this->m_dict) : 
-            ZSTD_compress2(this->m_ctx, out.data(), out.size(), in, inSize);
+
+        auto status = m_dict ? ZSTD_compress_usingCDict(this->m_ctx, out.data(), out.size(), in, inSize,
+                                                        this->m_dict)
+                             : ZSTD_compress2(this->m_ctx, out.data(), out.size(), in, inSize);
 
         if (ZSTD_isError(status))
             return std::nullopt;
@@ -196,24 +220,28 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Compress(const avledet::util::Bytes& in) {
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const &in)
+    {
         return Compress(in.data(), in.size());
     }
 };
 
-class ZStdDecompressor {
-    ZSTD_DCtx* m_ctx;
-    ZSTD_DDict* m_dict;
+class ZStdDecompressor
+{
+    ZSTD_DCtx *m_ctx;
+    ZSTD_DDict *m_dict;
 
-public:
-    ZStdDecompressor() {
+  public:
+    ZStdDecompressor()
+    {
         this->m_ctx = ZSTD_createDCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd dctx");
         this->m_dict = nullptr;
     }
 
-    ZStdDecompressor(const avledet::util::Byte* dict, std::size_t dictSize) {
+    ZStdDecompressor(avledet::util::Byte const *dict, std::size_t dictSize)
+    {
         this->m_ctx = ZSTD_createDCtx();
         if (!this->m_ctx)
             throw std::runtime_error("failed to init zstd dctx");
@@ -225,23 +253,29 @@ public:
         }
     }
 
-    ZStdDecompressor(const avledet::util::Bytes& dict) 
-        : ZStdDecompressor(dict.data(), dict.size()) {}
-
-    ZStdDecompressor(const ZStdDecompressor&) = delete;
-    ZStdDecompressor(ZStdDecompressor&& other) noexcept {
-        this->m_ctx = other.m_ctx;
-        this->m_dict = other.m_dict;
-        other.m_ctx = nullptr;
+    ZStdDecompressor(avledet::util::Bytes const &dict) :
+        ZStdDecompressor(dict.data(), dict.size())
+    {
     }
 
-    ~ZStdDecompressor() {
+    ZStdDecompressor(ZStdDecompressor const &) = delete;
+
+    ZStdDecompressor(ZStdDecompressor &&other) noexcept
+    {
+        this->m_ctx  = other.m_ctx;
+        this->m_dict = other.m_dict;
+        other.m_ctx  = nullptr;
+    }
+
+    ~ZStdDecompressor()
+    {
         ZSTD_freeDCtx(this->m_ctx);
         ZSTD_freeDDict(this->m_dict);
     }
 
-public:
-    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Byte* in, std::size_t inSize) {
+  public:
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, std::size_t inSize)
+    {
         auto size = ZSTD_getFrameContentSize(in, inSize);
         if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN)
             return std::nullopt;
@@ -257,9 +291,9 @@ public:
                 return std::nullopt;
         }
 
-        auto status = this->m_dict ? 
-            ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in, inSize, this->m_dict) : 
-            ZSTD_decompressDCtx(this->m_ctx, out.data(), out.size(), in, inSize);
+        auto status = this->m_dict ? ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in,
+                                                                inSize, this->m_dict)
+                                   : ZSTD_decompressDCtx(this->m_ctx, out.data(), out.size(), in, inSize);
 
         if (ZSTD_isError(status))
             return std::nullopt;
@@ -270,54 +304,65 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const& in) {
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const &in)
+    {
         return Decompress(in.data(), in.size());
     }
 };
 
-
-
-class Deflater {
+class Deflater
+{
     int m_level;
     int m_windowBits;
 
-    Deflater(int level, int windowBits) : m_level(level), m_windowBits(windowBits) {}
+    Deflater(int level, int windowBits) :
+        m_level(level),
+        m_windowBits(windowBits)
+    {
+    }
 
-public:
-    static Deflater Gz(int level) {
+  public:
+    static Deflater Gz(int level)
+    {
         return Deflater(level, 15 | 16);
     };
 
-    static Deflater Gz() {
+    static Deflater Gz()
+    {
         return Gz(Z_BEST_SPEED);
     };
 
-    static Deflater ZLib(int level) {
+    static Deflater ZLib(int level)
+    {
         return Deflater(level, 15);
     }
 
-    static Deflater ZLib() {
+    static Deflater ZLib()
+    {
         return ZLib(Z_BEST_SPEED);
     }
 
     // Deflater with no header
-    static Deflater Raw(int level) {
+    static Deflater Raw(int level)
+    {
         return Deflater(level, -15);
     }
 
     // Deflater with no header
-    static Deflater Raw() {
+    static Deflater Raw()
+    {
         return Raw(Z_BEST_SPEED);
     }
 
-public:
-    std::optional<avledet::util::Bytes> Compress(const avledet::util::Byte* in, std::size_t inSize) {
+  public:
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::size_t inSize)
+    {
         if (inSize == 0)
             return std::nullopt;
 
         avledet::util::Bytes out;
 
-        z_stream zs{};
+        z_stream zs {};
 
         // https://www.zlib.net/manual.html
         // default windowBits with deflateInit is 15
@@ -334,9 +379,9 @@ public:
         // Might throw if out of memory (unlikely)
         out.resize(deflateBound(&zs, inSize));
 
-        zs.avail_in = (uInt)inSize;
-        zs.next_in = (Bytef*)in;
-        zs.next_out = (Bytef*)out.data();
+        zs.avail_in  = (uInt) inSize;
+        zs.next_in   = (Bytef *) in;
+        zs.next_out  = (Bytef *) out.data();
         zs.avail_out = out.size();
 
         auto r = deflate(&zs, Z_FINISH);
@@ -349,57 +394,67 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const& in) {
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const &in)
+    {
         return Compress(in.data(), in.size());
     }
 };
 
-class Inflater {
-private:
+class Inflater
+{
+  private:
     int m_windowBits;
 
-    Inflater(int windowBits) : m_windowBits(windowBits) {}
+    Inflater(int windowBits) :
+        m_windowBits(windowBits)
+    {
+    }
 
-public:
+  public:
     // Inflater that uses the header from the compressed data
     //static Inflater Any() {
     //    return Inflater(0);
     //}
 
     // Inflater expecting zlib header only
-    static Inflater ZLib() {
+    static Inflater ZLib()
+    {
         return Inflater(15);
     }
 
-    // Inflater expecting gz header only 
-    static Inflater Gz() {
+    // Inflater expecting gz header only
+    static Inflater Gz()
+    {
         return Inflater(16);
     };
 
     // Inflater with automatic zlib/gz header detection
-    static Inflater Auto() {
+    static Inflater Auto()
+    {
         return Inflater(15 | 16);
     }
 
     // Inflater with no header
-    static Inflater Raw() {
+    static Inflater Raw()
+    {
         return Inflater(-15);
     }
 
-public:
-    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Byte* in, unsigned int inSize) {
+  public:
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, unsigned int inSize)
+    {
         if (inSize == 0)
             return std::nullopt;
 
         avledet::util::Bytes out;
-        out.resize((std::size_t)inSize * 2ULL);
+        out.resize((std::size_t) inSize * 2ULL);
 
         z_stream stream;
-        stream.next_in = (Bytef*)in;
-        stream.avail_in = inSize;
+        stream.next_in   = (Bytef *) in;
+        stream.avail_in  = inSize;
         stream.total_out = 0;
-        stream.zalloc = Z_NULL;
-        stream.zfree = Z_NULL;
+        stream.zalloc    = Z_NULL;
+        stream.zfree     = Z_NULL;
 
         if (inflateInit2(&stream, m_windowBits) != Z_OK)
             return std::nullopt;
@@ -411,7 +466,7 @@ public:
             }
 
             // Advance to the next chunk to decode
-            stream.next_out = (Bytef*)(out.data() + stream.total_out);
+            stream.next_out = (Bytef *) (out.data() + stream.total_out);
 
             // Set the available output capacity
             stream.avail_out = out.size() - stream.total_out;
@@ -433,27 +488,22 @@ public:
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Decompress(const avledet::util::Bytes& in) {
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const &in)
+    {
         return Decompress(in.data(), in.size());
     }
 };
 
-
-
-
-
-
-
-
-
-
-static_assert(std::endian::native == std::endian::little, 
-    "System must be little endian (big endian not supported for networking (who uses big endian anyways?)");
+static_assert(std::endian::native == std::endian::little,
+              "System must be little endian (big endian not supported for networking (who uses big endian "
+              "anyways?)");
 
 namespace VUtils {
     // Run a code block once
     //  if (VUtils::run_once<struct my_unique_struct>()) { /* stuff */ }
-    template <typename T> auto run_once() {
+    template<typename T>
+    auto run_once()
+    {
         static auto called = false;
         return !std::exchange(called, true);
     };
@@ -461,9 +511,10 @@ namespace VUtils {
     // Run a code block once after an initial delay
     //  Must be used in a loop to work correctly
     //  if (VUtils::run_once_later<struct my_unique_struct>(5s)) { /* stuff */ }
-    template <typename T, typename Rep, typename Pd> 
-    auto run_once_later(std::chrono::duration<Rep, Pd> after) {
-        auto now = std::chrono::steady_clock::now();
+    template<typename T, typename Rep, typename Pd>
+    auto run_once_later(std::chrono::duration<Rep, Pd> after)
+    {
+        auto now         = std::chrono::steady_clock::now();
         static auto last = now;
         if (now - last > after) {
             last = std::chrono::steady_clock::time_point::max();
@@ -475,9 +526,10 @@ namespace VUtils {
     // Run a code block every so often
     //  Must be used in a loop to work correctly
     //  if (VUtils::run_periodic<struct my_unique_struct>(1s)) { /* stuff */ }
-    template <typename T, typename Rep, typename Pd>
-    auto run_periodic(std::chrono::duration<Rep, Pd> period) {
-        auto now = std::chrono::steady_clock::now();
+    template<typename T, typename Rep, typename Pd>
+    auto run_periodic(std::chrono::duration<Rep, Pd> period)
+    {
+        auto now         = std::chrono::steady_clock::now();
         static auto last = now;
         if (now - last > period) {
             last = now;
@@ -489,9 +541,10 @@ namespace VUtils {
     // Run a code block every so often after an initial delay
     //  Must be used in a loop to work correctly
     //  if (VUtils::run_periodic_later<struct my_unique_struct>(1s, 5s)) { /* stuff */ }
-    template <typename T, typename Rep, typename Pd, typename Rep1, typename Pd1>
-    auto run_periodic_later(std::chrono::duration<Rep, Pd> period, std::chrono::duration<Rep1, Pd1> after) {
-        auto now = std::chrono::steady_clock::now();
+    template<typename T, typename Rep, typename Pd, typename Rep1, typename Pd1>
+    auto run_periodic_later(std::chrono::duration<Rep, Pd> period, std::chrono::duration<Rep1, Pd1> after)
+    {
+        auto now         = std::chrono::steady_clock::now();
         static auto last = now + after;
         if (now - last > period) {
             last = now;
@@ -501,14 +554,17 @@ namespace VUtils {
     };
 
     // if (avledet::util::run_periodic_now<struct my_struct>(60s)) { ... }
-    template <typename T, typename Rep, typename Pd>
-    auto run_periodic_now(std::chrono::duration<Rep, Pd> period) {
+    template<typename T, typename Rep, typename Pd>
+    auto run_periodic_now(std::chrono::duration<Rep, Pd> period)
+    {
         return run_periodic_later<T>(period, std::chrono::seconds(0));
     };
 
     // Returns the smallest 1-value bitshift
-    template<typename Enum> requires std::is_enum_v<Enum>
-    constexpr std::uint8_t GetShift(Enum value) {
+    template<typename Enum>
+        requires std::is_enum_v<Enum>
+    constexpr std::uint8_t GetShift(Enum value)
+    {
         std::uint8_t shift = -1;
 
         auto bits = std::to_underlying(value);
@@ -519,31 +575,29 @@ namespace VUtils {
         return shift;
     }
 
-
-
     // https://github.com/Zunawe/md5-c/blob/main/md5.h
     //   borrowed from
     // MD5
-    typedef struct {
-        std::uint64_t size;        // Size of input in bytes
-        std::uint32_t buffer[4];   // Current accumulation of hash
-        std::uint8_t input[64];    // Input to be used in the next step
-        std::uint8_t digest[16];   // Result of algorithm
+    typedef struct
+    {
+        std::uint64_t size;     // Size of input in bytes
+        std::uint32_t buffer[4];// Current accumulation of hash
+        std::uint8_t input[64]; // Input to be used in the next step
+        std::uint8_t digest[16];// Result of algorithm
     } MD5Context;
 
-    void md5Init(MD5Context* ctx);
+    void md5Init(MD5Context *ctx);
 
-    void md5Update(MD5Context* ctx, std::uint8_t* input_buffer, std::size_t input_len);
+    void md5Update(MD5Context *ctx, std::uint8_t *input_buffer, std::size_t input_len);
 
-    void md5Finalize(MD5Context* ctx);
+    void md5Finalize(MD5Context *ctx);
 
-    void md5Step(std::uint32_t* buffer, std::uint32_t* input);
+    void md5Step(std::uint32_t *buffer, std::uint32_t *input);
 
     // Calculate the md5 hash of a char buffer
-    void md5(const char* in, std::size_t inSize, std::uint8_t* out16);
+    void md5(char const *in, std::size_t inSize, std::uint8_t *out16);
 
 
-    
     // Set an environment variable
     //  Returns whether the assignment was successful
     bool SetEnv(std::string_view key, std::string_view value);
@@ -551,16 +605,18 @@ namespace VUtils {
     // Retrieve an environment variable
     //  Returns the variable or an empty string
     std::string GetEnv(std::string_view key);
-}
+}// namespace VUtils
 
 namespace ankerl::unordered_dense {
-    struct string_hash {
-        using is_transparent = void; // enable heterogeneous overloads
-        using is_avalanching = void; // mark class as high quality avalanching hash
+    struct string_hash
+    {
+        using is_transparent = void;// enable heterogeneous overloads
+        using is_avalanching = void;// mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t {
-            return ankerl::unordered_dense::hash<std::string_view>{}(str);
+        [[nodiscard]] auto operator()(std::string_view str) const noexcept -> std::uint64_t
+        {
+            return ankerl::unordered_dense::hash<std::string_view> {}(str);
         }
     };
 
-} // namespace ankerl::unordered_dense
+}// namespace ankerl::unordered_dense

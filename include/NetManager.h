@@ -1,29 +1,31 @@
 #pragma once
 
+#include <chrono>
+#include <cstdint>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <string>
-#include <cstdint>
-#include <chrono>
-#include <memory>
 #include <thread>
 #include <utility>
 
-#include "Peer.h"
 #include "NetAcceptor.h"
+#include "Peer.h"
 #include "Types.h"
 
-class INetManager {
+class INetManager
+{
     friend class IModManager;
 
-private:
-    avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;    
+  private:
+    avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
     std::vector<std::unique_ptr<Peer>> m_connectedPeers;
-    std::vector<Peer*> m_onlinePeers;    
-    std::list<std::pair<std::string, std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>> m_sortedSessions;
-    std::unique_ptr<IAcceptor> m_acceptor;    
+    std::vector<Peer *> m_onlinePeers;
+    std::list<std::pair<std::string, std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>>
+            m_sortedSessions;
+    std::unique_ptr<IAcceptor> m_acceptor;
 
-public:
+  public:
     std::string m_passwordHash;
     std::string m_passwordSalt;
 
@@ -34,43 +36,44 @@ public:
     std::jthread m_adetect_writer;
 
 
-private:
+  private:
     void SendDisconnect();
     void SendPlayerList();
     void SendNetTime();
     void SendPeerInfo(Peer &peer);
 
-    void OnPeerQuit(Peer& peer);
-    void OnPeerDisconnect(Peer& peer);
+    void OnPeerQuit(Peer &peer);
+    void OnPeerDisconnect(Peer &peer);
 
-public:
+  public:
     void PostInit();
     void Update();
     void Uninit();
-    
+
     void OnConfigLoad(bool reloading);
 
     // Finds a peer by either name, uuid or host
-    Peer* FindPeer(std::string_view any);
-    Peer* FindPeerByUserID(avledet::util::UserID uuid);
-    Peer* FindPeerByName(std::string_view name);
-    Peer* FindPeerByHost(std::string_view host);
+    Peer *FindPeer(std::string_view any);
+    Peer *FindPeerByUserID(avledet::util::UserID uuid);
+    Peer *FindPeerByName(std::string_view name);
+    Peer *FindPeerByHost(std::string_view host);
 
-    void OnPeerConnect(Peer& peer);
+    void OnPeerConnect(Peer &peer);
 
     // Kick a player by identifier
-    Peer* Kick(std::string_view user);
+    Peer *Kick(std::string_view user);
 
     // Ban a player by identifier
-    Peer* Ban(std::string_view user);
+    Peer *Ban(std::string_view user);
 
     // Unban a player by identifier
     bool Unban(std::string_view user);
 
-    const auto& GetPeers() {
+    auto const &GetPeers()
+    {
         return m_onlinePeers;
     }
 };
 
 // Manager class for everything related to networking at a mildly abstracted level
-INetManager* NetManager();
+INetManager *NetManager();

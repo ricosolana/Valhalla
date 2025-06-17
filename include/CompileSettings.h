@@ -9,19 +9,19 @@
 // ELPP log file name
 #define VH_LOGFILE_PATH "logs/log.txt"
 
-#define VH_LUA_PATH "lua"
+#define VH_LUA_PATH  "lua"
 #define VH_LUA_CPATH "bin"
-#define VH_MOD_PATH "mods"
+#define VH_MOD_PATH  "mods"
 
-#define VH_RAW_IS_ON(OP_SYMBOL) ((3 OP_SYMBOL 3) != 0)
-#define VH_RAW_IS_OFF(OP_SYMBOL) ((3 OP_SYMBOL 3) == 0)
-#define VH_RAW_IS_DEFAULT_ON(OP_SYMBOL) ((3 OP_SYMBOL 3) > 3)
+#define VH_RAW_IS_ON(OP_SYMBOL)          ((3 OP_SYMBOL 3) != 0)
+#define VH_RAW_IS_OFF(OP_SYMBOL)         ((3 OP_SYMBOL 3) == 0)
+#define VH_RAW_IS_DEFAULT_ON(OP_SYMBOL)  ((3 OP_SYMBOL 3) > 3)
 #define VH_RAW_IS_DEFAULT_OFF(OP_SYMBOL) ((3 OP_SYMBOL 3 OP_SYMBOL 3) < 0)
 
-#define VH_IS_ON(OP_SYMBOL) VH_RAW_IS_ON(OP_SYMBOL ## _I_)
-#define VH_IS_OFF(OP_SYMBOL) VH_RAW_IS_OFF(OP_SYMBOL ## _I_)
-#define VH_IS_DEFAULT_ON(OP_SYMBOL) VH_RAW_IS_DEFAULT_ON(OP_SYMBOL ## _I_)
-#define VH_IS_DEFAULT_OFF(OP_SYMBOL) VH_RAW_IS_DEFAULT_OFF(OP_SYMBOL ## _I_)
+#define VH_IS_ON(OP_SYMBOL)          VH_RAW_IS_ON(OP_SYMBOL##_I_)
+#define VH_IS_OFF(OP_SYMBOL)         VH_RAW_IS_OFF(OP_SYMBOL##_I_)
+#define VH_IS_DEFAULT_ON(OP_SYMBOL)  VH_RAW_IS_DEFAULT_ON(OP_SYMBOL##_I_)
+#define VH_IS_DEFAULT_OFF(OP_SYMBOL) VH_RAW_IS_DEFAULT_OFF(OP_SYMBOL##_I_)
 
 #define VH_ON          |
 #define VH_OFF         ^
@@ -29,9 +29,9 @@
 #define VH_DEFAULT_OFF -
 
 #if SIZE_MAX <= 0xFFFFULL
-	#define VH_PLATFORM_16BIT_I_ VH_ON
-	#define VH_PLATFORM_32BIT_I_ VH_OFF
-	#define VH_PLATFORM_64BIT_I_ VH_OFF
+    #define VH_PLATFORM_16BIT_I_ VH_ON
+    #define VH_PLATFORM_32BIT_I_ VH_OFF
+    #define VH_PLATFORM_64BIT_I_ VH_OFF
 #elif SIZE_MAX <= 0xFFFFFFFFULL
     #define VH_PLATFORM_16BIT_I_ VH_OFF
     #define VH_PLATFORM_32BIT_I_ VH_ON
@@ -79,21 +79,21 @@
 //  To perform [UserID / ID] lookup:
 //      If significant-most bit in pack is 1: then assume pool exhaustion has occured for this node, and thus the different approach must be used
 //      Otherwise, search for UserID[zdoid.UserIDIndex]
-//  
+//
 //  A good relationship of
 // The default are the remaining bits from VH_USER_BITS
 #if defined(VH_ID_BITS)
     #error "Setting custom ZDOID ID bits not yet supported"
 
-    // 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
-    //#if VH_ID_BITS > 1 && VH_ID_BITS < 8
-    //    #define VH_ID_BITS_I_ VH_ID_BITS
-    //#else
-    //    #error "ID bits must be between 1 and 8 (inclusive)"
-    //#endif
+// 8 is the current max (might change stuff to be more adaptable and flexible with compile settings)
+//#if VH_ID_BITS > 1 && VH_ID_BITS < 8
+//    #define VH_ID_BITS_I_ VH_ID_BITS
+//#else
+//    #error "ID bits must be between 1 and 8 (inclusive)"
+//#endif
 #else
     #if defined(VH_USERID_BITS)
-        #define VH_ID_BITS_I_ 
+        #define VH_ID_BITS_I_
     #else
         #define VH_ID_BITS_I_ (32 - VH_USERID_BITS_I_)
     #endif
@@ -125,7 +125,7 @@
 
 
 // Whether to disallow potentially malicious modded players
-//  'Malicious' is defined as non-conforming or non-standard 
+//  'Malicious' is defined as non-conforming or non-standard
 //  behaviour which can and will break server functionality,
 //  such as errors, undefined behaviour, and general
 //  strict assumptions about the game that require these standards
@@ -143,7 +143,7 @@
 
 // whether to allow non-standard behaviour that does not cause
 //  conflict with the server or other players
-//  might be an extended name 
+//  might be an extended name
 #if defined(VH_DISALLOW_NON_CONFORMING_PLAYERS)
     #if VH_DISALLOW_NON_CONFORMING_PLAYERS != 0
         #define VH_DISALLOW_NON_CONFORMING_PLAYERS_I_ VH_ON
@@ -296,7 +296,7 @@
 //  - Built-in BetterNetworking mod (in C++)
 //  - Dungeon regeneration
 //  - experimental ZDO assignment algorithm
-//  - 
+//  -
 #if defined(VH_EXTRA_FEATURES)
     #if VH_EXTRA_FEATURES != 0
         #define VH_EXTRA_FEATURES_I_ VH_ON
@@ -346,7 +346,8 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static constexpr const char* GAME = "0.220.5"; // WARNING: do NOT change the type of this to anything besides const char*!!! see ModManager...
+    static constexpr char const *GAME
+            = "0.220.5";// WARNING: do NOT change the type of this to anything besides const char*!!! see ModManager...
 
     static constexpr std::uint32_t NETWORK = 34;
 
@@ -359,4 +360,4 @@ namespace VConstants {
 
     // Used in ZoneSystem Feature-Prefabs
     static constexpr std::int32_t LOCATION = 26;
-}
+}// namespace VConstants

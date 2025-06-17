@@ -1,13 +1,13 @@
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <filesystem>
 
-#include "VUtilsTraits.h"
 #include "VUtilsString.h"
+#include "VUtilsTraits.h"
 
 namespace VUtils::Resource {
 
@@ -34,30 +34,31 @@ namespace VUtils::Resource {
 
 
     // Read a file into a buffer object
-    //  Buffer can be a byte vector, string, or 
+    //  Buffer can be a byte vector, string, or
     //  other (preferably) contiguous data structure
     template<typename Buffer = avledet::util::Bytes>
         requires std::is_arithmetic_v<typename Buffer::value_type>
-    std::optional<Buffer> ReadFile(const std::filesystem::path& path) {
-       //ScopedFile file(fopen(path.string().c_str(), "rb"));
-       //
-       //if (!file) return std::nullopt;
-       //
-       //if (!fseek(file, 0, SEEK_END)) return std::nullopt;
-       //
-       //auto size = ftell(file);
-       //if (size == -1) return std::nullopt;
-       //
-       //if (!fseek(file, 0, SEEK_SET)) return std::nullopt;
-       //
-       //T result{};
-       //
-       //// somehow avoid the zero-initialization
-       //result.resize(size);
-       //
-       //fread(result.data(), 1, size, file);
-       //
-       //return result;
+    std::optional<Buffer> ReadFile(std::filesystem::path const &path)
+    {
+        //ScopedFile file(fopen(path.string().c_str(), "rb"));
+        //
+        //if (!file) return std::nullopt;
+        //
+        //if (!fseek(file, 0, SEEK_END)) return std::nullopt;
+        //
+        //auto size = ftell(file);
+        //if (size == -1) return std::nullopt;
+        //
+        //if (!fseek(file, 0, SEEK_SET)) return std::nullopt;
+        //
+        //T result{};
+        //
+        //// somehow avoid the zero-initialization
+        //result.resize(size);
+        //
+        //fread(result.data(), 1, size, file);
+        //
+        //return result;
 
         std::ifstream file(path, std::ios::binary);
 
@@ -74,26 +75,23 @@ namespace VUtils::Resource {
 
         Buffer result {};
         result.resize(fileSize);
-        file.read(reinterpret_cast<std::ifstream::char_type*>(result.data()),
-            fileSize);
+        file.read(reinterpret_cast<std::ifstream::char_type *>(result.data()), fileSize);
 
         return result;
     }
 
-
-
     // Read a file into separate lines
     //  Iterable can be any container type consisting of any buffer object
-    template<typename Iterable = std::vector<std::string>> requires
-        (VUtils::Traits::is_iterable<Iterable>
-            && !std::is_same_v<typename Iterable::value_type, std::string_view>
-            && VUtils::Traits::is_iterable<typename Iterable::value_type>)
-        std::optional<Iterable> ReadFile(const fs::path& path, bool includeBlanks = false) 
+    template<typename Iterable = std::vector<std::string>>
+        requires(VUtils::Traits::is_iterable<Iterable>
+                 && !std::is_same_v<typename Iterable::value_type, std::string_view>
+                 && VUtils::Traits::is_iterable<typename Iterable::value_type>)
+    std::optional<Iterable> ReadFile(fs::path const &path, bool includeBlanks = false)
     {
         auto opt = ReadFile<std::string>(path);
         if (!opt)
             return std::nullopt;
-        
+
         return avledet::lexicon::template split<Iterable>(opt.value(), '\n', includeBlanks);
 
         /*
@@ -126,9 +124,10 @@ namespace VUtils::Resource {
     // Read a file into separate lines
     //  Iterable can be any container type consisting of any buffer object
     //  This method is the most preferred over the Iterable<string> method
-    template<typename Iterable = std::vector<std::string_view>> requires
-        (VUtils::Traits::is_iterable<Iterable>)
-    std::optional<Iterable> ReadFile(const fs::path& path, std::string& out, bool includeBlanks = false) {
+    template<typename Iterable = std::vector<std::string_view>>
+        requires(VUtils::Traits::is_iterable<Iterable>)
+    std::optional<Iterable> ReadFile(fs::path const &path, std::string &out, bool includeBlanks = false)
+    {
         {
             auto opt = ReadFile<std::string>(path);
             if (!opt)
@@ -162,23 +161,22 @@ namespace VUtils::Resource {
     }*/
 
 
-
-        
-    bool WriteFile(const fs::path& path, const avledet::util::Byte* buf, std::size_t size);
-    bool WriteFile(const fs::path& path, const avledet::util::Bytes& buffer);
-    bool WriteFile(const fs::path& path, std::string_view str);
+    bool WriteFile(fs::path const &path, avledet::util::Byte const *buf, std::size_t size);
+    bool WriteFile(fs::path const &path, avledet::util::Bytes const &buffer);
+    bool WriteFile(fs::path const &path, std::string_view str);
 
     // Write a Container<std::string> as lines to a file
-    template<typename Iterable> requires 
-        (VUtils::Traits::is_iterable<Iterable> 
-            && std::is_same_v<typename Iterable::value_type, std::string>)
-    bool WriteFile(const std::filesystem::path& path, const Iterable& in) {
+    template<typename Iterable>
+        requires(VUtils::Traits::is_iterable<Iterable>
+                 && std::is_same_v<typename Iterable::value_type, std::string>)
+    bool WriteFile(std::filesystem::path const &path, Iterable const &in)
+    {
         std::ofstream file(path, std::ios::binary);
 
         if (!file)
             return false;
 
-        for (auto&& str : in) {
+        for (auto &&str : in) {
             file << str << "\n";
         }
 
@@ -197,4 +195,4 @@ namespace VUtils::Resource {
 
         return true;
     }
-};
+};// namespace VUtils::Resource

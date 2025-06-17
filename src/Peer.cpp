@@ -1,8 +1,8 @@
-#include "ValhallaServer.h"
 #include "NetManager.h"
-#include "ZDOManager.h"
 #include "RouteManager.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
+#include "ZDOManager.h"
 #include <magic_enum.hpp>
 #include <quill/LogMacros.h>
 
@@ -10,16 +10,17 @@
 //std::string Peer::PASSWORD;
 //std::string Peer::SALT;
 
-Peer::Peer(ISocket::Ptr socket)
-    : m_socket(std::move(socket)), m_lastPing(std::chrono::steady_clock::now())
+Peer::Peer(ISocket::Ptr socket) :
+    m_socket(std::move(socket)),
+    m_lastPing(std::chrono::steady_clock::now())
 {
-    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer* self) {
+    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer *self) {
         LOG_INFO(VH_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 
-    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer* rpc) {
-        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer* rpc, DataReader reader) {
+    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer *rpc) {
+        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer *rpc, DataReader reader) {
             rpc->m_characterID.set_user_id(reader.read<std::int64_t>());
 #if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
@@ -37,21 +38,22 @@ Peer::Peer(ISocket::Ptr socket)
 
             rpc->m_pos = reader.read<Vector3f>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
-            if (rpc->m_pos.Hsq_magnitude() > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
+            if (rpc->m_pos.Hsq_magnitude()
+                > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
                 throw std::runtime_error("peer position is outside of map");
 #endif
             rpc->m_name = reader.read<std::string>();
 #if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
             if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
                 throw std::runtime_error("peer provided invalid length name");
-#endif            
+#endif
             auto password = reader.read<std::string_view>();
 
             if (VH_SETTINGS.playerOnline) {
                 auto ticket = reader.read<avledet::util::ByteView>();
 
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
-                    
+
                     if (!steamSocket->authenticate(ticket)) {
                         LOG_INFO(VH_LOGGER, "Client {} has invalid ticket", rpc->m_socket->get_host_name());
                         return rpc->Close(ConnectionStatus::ErrorDisconnected);
@@ -91,7 +93,8 @@ Peer::Peer(ISocket::Ptr socket)
 
         bool hasPassword = !VH_SETTINGS.serverPassword.empty();
 
-        rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword, std::string_view(NetManager()->m_passwordSalt));
+        rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword,
+                    std::string_view(NetManager()->m_passwordSalt));
 
         return false;
     });
@@ -99,7 +102,8 @@ Peer::Peer(ISocket::Ptr socket)
     LOG_INFO(VH_LOGGER, "{} has connected", m_socket->get_host_name());
 }
 
-void Peer::update() {
+void Peer::update()
+{
     ZoneScoped;
 
     auto now(std::chrono::steady_clock::now());
@@ -109,23 +113,21 @@ void Peer::update() {
 
     // Read packets
     while (auto opt = this->Recv()) {
-        auto&& bytes = opt.value();
+        auto &&bytes = opt.value();
         DataReader reader(bytes);
 
         auto hash = reader.read<avledet::util::Hash>();
-        if (hash == 0) [[unlikely]] { 
+        if (hash == 0) [[unlikely]] {
             if (reader.read<bool>()) {
                 // Reply to the server with a pong
                 DataWriter writer;
-                writer.write((avledet::util::Hash)0);
+                writer.write((avledet::util::Hash) 0);
                 writer.write(false);
                 this->Send(std::move(writer.get_buf()));
-            }
-            else {
+            } else {
                 m_lastPing = now;
             }
-        }
-        else [[likely]] { 
+        } else [[likely]] {
             InternalInvoke(hash, reader);
         }
     }
@@ -136,41 +138,40 @@ void Peer::update() {
     }
 }
 
-bool Peer::Close(ConnectionStatus status) {
+bool Peer::Close(ConnectionStatus status)
+{
     LOG_INFO(VH_LOGGER, "Peer error: {}", magic_enum::enum_name(status));
     Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;
 }
 
-
-
-void Peer::SetAdmin(bool enable) {
-    if (enable) Valhalla()->m_admin.erase(m_socket->get_host_name());
-    else Valhalla()->m_admin.insert(m_socket->get_host_name());
+void Peer::SetAdmin(bool enable)
+{
+    if (enable)
+        Valhalla()->m_admin.erase(m_socket->get_host_name());
+    else
+        Valhalla()->m_admin.insert(m_socket->get_host_name());
 }
 
-ZDO::optional Peer::GetZDO() {
+ZDO::optional Peer::GetZDO()
+{
     return ZDOManager()->GetZDO(m_characterID);
 }
 
-void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation) {
-    this->Route(avledet::util::hashes::Routed::S2C_RequestTeleport,
-        pos,
-        rot,
-        animation
-    );
+void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
+{
+    this->Route(avledet::util::hashes::Routed::S2C_RequestTeleport, pos, rot, animation);
 }
 
-
-
-void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params) {
-    Invoke(avledet::util::hashes::Rpc::RoutedRPC, RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
+void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)
+{
+    Invoke(avledet::util::hashes::Rpc::RoutedRPC,
+           RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
-
-
-void Peer::ZDOSectorInvalidated(ZDO::reference zdo) {
+void Peer::ZDOSectorInvalidated(ZDO::reference zdo)
+{
     if (zdo->IsOwner(this->GetUserID()))
         return;
 
@@ -181,12 +182,12 @@ void Peer::ZDOSectorInvalidated(ZDO::reference zdo) {
     }
 }
 
-bool Peer::IsOutdatedZDO(ZDO::reference zdo, decltype(m_zdos)::iterator& outItr) {
-    auto&& find = m_zdos.find(zdo->GetID());
+bool Peer::IsOutdatedZDO(ZDO::reference zdo, decltype(m_zdos)::iterator &outItr)
+{
+    auto &&find = m_zdos.find(zdo->GetID());
 
     outItr = find;
 
-    return find == m_zdos.end()
-        || zdo->GetOwnerRevision() > find->second.first.GetOwnerRevision()
-        || zdo->GetDataRevision() > find->second.first.GetDataRevision();
+    return find == m_zdos.end() || zdo->GetOwnerRevision() > find->second.first.GetOwnerRevision()
+           || zdo->GetDataRevision() > find->second.first.GetDataRevision();
 }

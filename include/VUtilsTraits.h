@@ -5,40 +5,63 @@
 //  https://github.com/rpclib/rpclib/blob/master/include/rpc/detail/func_traits.h
 
 #include <tuple>
-#include <variant>
 #include <type_traits>
+#include <variant>
 
 namespace avledet::util::traits {
 
     template<typename T>
     using invoke = typename T::type;
 
-    template <int N, typename... Ts>
+    template<int N, typename... Ts>
     using nth_type = invoke<std::tuple_element<N, std::tuple<Ts...>>>;
 
     namespace tags {
 
         // tags for the function traits, used for tag dispatching
-        struct zero_arg { };
-        struct nonzero_arg { };
-        struct void_result { };
-        struct nonvoid_result { };
+        struct zero_arg
+        {};
 
-        template <int N> struct arg_count_trait { typedef nonzero_arg type; };
+        struct nonzero_arg
+        {};
 
-        template <> struct arg_count_trait<0> { typedef zero_arg type; };
+        struct void_result
+        {};
 
-        template <typename T> struct result_trait { typedef nonvoid_result type; };
+        struct nonvoid_result
+        {};
 
-        template <> struct result_trait<void> { typedef void_result type; };
-    }
+        template<int N>
+        struct arg_count_trait
+        {
+            typedef nonzero_arg type;
+        };
+
+        template<>
+        struct arg_count_trait<0>
+        {
+            typedef zero_arg type;
+        };
+
+        template<typename T>
+        struct result_trait
+        {
+            typedef nonvoid_result type;
+        };
+
+        template<>
+        struct result_trait<void>
+        {
+            typedef void_result type;
+        };
+    }// namespace tags
 
     //untested idea
     //template <class T>
     //concept is_callable = requires(T a) {
     //    a();
     //};
-    
+
     //template<typename Tuple, std::size_t Index>
     //    requires (Index < std::tuple_size_v<Tuple>)
     //using safe_tuple_element_t = std::tuple_element_t<Index, Tuple>;
@@ -48,21 +71,25 @@ namespace avledet::util::traits {
     //using safe_tuple_element_t = void;
 
 
-
     //! \brief Provides a small function traits implementation that
     //! works with a reasonably large set of functors.
-    template <typename T>
-    struct func_traits : func_traits<decltype(&T::operator())> { };
+    template<typename T>
+    struct func_traits : func_traits<decltype(&T::operator())>
+    {};
 
-    template <typename C, typename R, typename... Args>
-    struct func_traits<R(C::*)(Args...)> : func_traits<R(*)(Args...)> { };
+    template<typename C, typename R, typename... Args>
+    struct func_traits<R (C::*)(Args...)> : func_traits<R (*)(Args...)>
+    {};
 
-    template <typename C, typename R, typename... Args>
-    struct func_traits<R(C::*)(Args...) const> : func_traits<R(*)(Args...)> { };
+    template<typename C, typename R, typename... Args>
+    struct func_traits<R (C::*)(Args...) const> : func_traits<R (*)(Args...)>
+    {};
 
-    template <typename R, typename... Args> struct func_traits<R(*)(Args...)> {
+    template<typename R, typename... Args>
+    struct func_traits<R (*)(Args...)>
+    {
         using result_type = R;
-        using arg_count = std::integral_constant<std::size_t, sizeof...(Args)>;
+        using arg_count   = std::integral_constant<std::size_t, sizeof...(Args)>;
         //the arguments of the function, without qualifiers, ie, no & or const
         using args_type = std::tuple<typename std::decay<Args>::type...>;
         //the arguments of the function, with qualifiers, ie, & or const
@@ -76,63 +103,59 @@ namespace avledet::util::traits {
         //using second_arg = safe_tuple_element_t<raw_args_type, 1>;
         //using third_arg = safe_tuple_element_t<raw_args_type, 2>;
         //using first_arg = std::conditional_t<
-        //    (std::tuple_size_v<raw_args_type> <= 0), 
+        //    (std::tuple_size_v<raw_args_type> <= 0),
         //    void, std::tuple_element_t<0, raw_args_type>>;
         //using second_arg = std::conditional_t<
-        //    (std::tuple_size_v<raw_args_type> <= 1), 
+        //    (std::tuple_size_v<raw_args_type> <= 1),
         //    void, std::tuple_element_t<1, raw_args_type>>;
         //using third_arg = std::conditional_t<
-        //    (std::tuple_size_v<raw_args_type> <= 2), 
+        //    (std::tuple_size_v<raw_args_type> <= 2),
         //    void, std::tuple_element_t<2, raw_args_type>>;
         //... create more as needed
     };
 
+    template<typename T>
+    struct func_kind_info : func_kind_info<decltype(&T::operator())>
+    {};
 
+    template<typename C, typename R, typename... Args>
+    struct func_kind_info<R (C::*)(Args...)> : func_kind_info<R (*)(Args...)>
+    {};
 
-    template <typename T>
-    struct func_kind_info : func_kind_info<decltype(&T::operator())> { };
+    template<typename C, typename R, typename... Args>
+    struct func_kind_info<R (C::*)(Args...) const> : func_kind_info<R (*)(Args...)>
+    {};
 
-    template <typename C, typename R, typename... Args>
-    struct func_kind_info<R(C::*)(Args...)> : func_kind_info<R(*)(Args...)> { };
-
-    template <typename C, typename R, typename... Args>
-    struct func_kind_info<R(C::*)(Args...) const>
-        : func_kind_info<R(*)(Args...)> {
-    };
-
-    template <typename R, typename... Args> struct func_kind_info<R(*)(Args...)> {
+    template<typename R, typename... Args>
+    struct func_kind_info<R (*)(Args...)>
+    {
         typedef typename tags::arg_count_trait<sizeof...(Args)>::type args_kind;
         typedef typename tags::result_trait<R>::type result_kind;
     };
 
 
-
-    template <class T>
+    template<class T>
     concept is_iterable = requires {
         std::begin(std::declval<T>());
         std::end(std::declval<T>());
     };
 
-    template <class T>
-    concept has_key_type = requires {
-        typename T::key_type;
+    template<class T>
+    concept has_key_type = requires { typename T::key_type; };
+
+    template<class T>
+    concept has_value_type = requires { typename T::value_type; };
+
+    template<class T>
+    concept has_traits_type = requires { typename T::traits_type; };
+
+    template<class... Ts>
+    struct overload : Ts...
+    {
+        using Ts::operator()...;
     };
-
-    template <class T>
-    concept has_value_type = requires {
-        typename T::value_type;
-    };
-
-    template <class T>
-    concept has_traits_type = requires {
-        typename T::traits_type;
-    };
-
-
-
-    template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-    template<class... Ts> overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
-
+    template<class... Ts>
+    overload(Ts...) -> overload<Ts...>;// line not needed in C++20...
 
 
     // disabled (and unused, how lucky) due to .clangd being dumb
@@ -156,24 +179,24 @@ namespace avledet::util::traits {
     //constexpr std::size_t tuple_index_v = tuple_index<T, U, Types...>::value;
 
 
-
     // https://stackoverflow.com/questions/25958259/how-do-i-find-out-if-a-tuple-contains-a-type
-    template <typename T, typename Tuple>
+    template<typename T, typename Tuple>
     struct tuple_has_type;
 
-    template <typename T, typename... Us>
-    struct tuple_has_type<T, std::tuple<Us...>> : std::disjunction<std::is_same<T, Us>...> { };
+    template<typename T, typename... Us>
+    struct tuple_has_type<T, std::tuple<Us...>> : std::disjunction<std::is_same<T, Us>...>
+    {};
 
     template<typename T, typename... Us>
     constexpr bool tuple_has_type_v = tuple_has_type<T, Us...>::value;
 
 
-
-    template <typename Tuple>
+    template<typename Tuple>
     struct tuple_to_variant;
 
-    template <typename... Ts>
-    struct tuple_to_variant<std::tuple<Ts...>> {
+    template<typename... Ts>
+    struct tuple_to_variant<std::tuple<Ts...>>
+    {
         // typename fails on msvc
         // using type = std::variant<typename Ts...>;
         using type = std::variant<Ts...>;
@@ -183,9 +206,7 @@ namespace avledet::util::traits {
     using tuple_to_variant_t = tuple_to_variant<T...>::type;
 
 
-
     //runtime value at tuple index
-
 
 
     //untested
@@ -207,38 +228,33 @@ namespace avledet::util::traits {
     { };*/
 
 
-
-    template <std::size_t index, std::size_t...>
+    template<std::size_t index, std::size_t...>
     struct variadic_value_at_index;
 
-    template <std::size_t index, std::size_t F, std::size_t... R>
-        requires (index == 0)
-    struct variadic_value_at_index<index, F, R...>
-        : std::integral_constant<std::size_t, F> {
-    };
+    template<std::size_t index, std::size_t F, std::size_t... R>
+        requires(index == 0)
+    struct variadic_value_at_index<index, F, R...> : std::integral_constant<std::size_t, F>
+    {};
 
-    template <std::size_t index, std::size_t F, std::size_t... R>
-        requires (index > 0)
-    struct variadic_value_at_index<index, F, R...>
-        : variadic_value_at_index<index - 1, R...> {
-    };
+    template<std::size_t index, std::size_t F, std::size_t... R>
+        requires(index > 0)
+    struct variadic_value_at_index<index, F, R...> : variadic_value_at_index<index - 1, R...>
+    {};
 
 
-
-    template <std::size_t index, std::size_t... >
+    template<std::size_t index, std::size_t...>
     struct variadic_accumulate_values_to_index;
 
-    template <std::size_t index, std::size_t F, std::size_t...R>
-        requires (index == 0)
-    struct variadic_accumulate_values_to_index<index, F, R...>
-        : std::integral_constant<std::size_t, F> {
-    };
+    template<std::size_t index, std::size_t F, std::size_t... R>
+        requires(index == 0)
+    struct variadic_accumulate_values_to_index<index, F, R...> : std::integral_constant<std::size_t, F>
+    {};
 
-    template <std::size_t index, std::size_t F, std::size_t... R>
-        requires (index > 0)
+    template<std::size_t index, std::size_t F, std::size_t... R>
+        requires(index > 0)
     struct variadic_accumulate_values_to_index<index, F, R...>
-        : std::integral_constant<std::size_t, F + variadic_accumulate_values_to_index<index - 1, R...>::value> {
-    };
+        : std::integral_constant<std::size_t, F + variadic_accumulate_values_to_index<index - 1, R...>::value>
+    {};
 
 }// namespace avledet::util::traits
 

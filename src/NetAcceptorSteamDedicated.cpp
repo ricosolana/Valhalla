@@ -4,26 +4,26 @@
 #include <stdexcept>
 
 #include "CompileSettings.h"
-#include "NetAcceptor.h"
-#include "VUtils.h"
-#include "ValhallaServer.h"
 #include "isteamnetworking.h"
 #include "isteamnetworkingutils.h"
+#include "NetAcceptor.h"
 #include "steam_api.h"
 #include "steam_api_common.h"
 #include "steamclientpublic.h"
 #include "steamnetworkingtypes.h"
+#include "ValhallaServer.h"
+#include "VUtils.h"
 
-std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server) {
+std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server)
+{
     return std::make_unique<AcceptorSteam>(is_lobby_server);
 }
 
-// 
-std::unique_ptr<IAcceptor> IAcceptor::steam_dedicated(std::string bind_addr) {
+//
+std::unique_ptr<IAcceptor> IAcceptor::steam_dedicated(std::string bind_addr)
+{
     return std::make_unique<AcceptorSteam>(std::move(bind_addr));
 }
-
-
 
 //SteamContext::SteamContext(bool use_game_server) {
 //    if (use_game_server) {
@@ -34,24 +34,25 @@ std::unique_ptr<IAcceptor> IAcceptor::steam_dedicated(std::string bind_addr) {
 //    }
 //}
 
-std::pair<uint32_t, uint16_t> ip_to_machine_order(const std::string& ip) {
+std::pair<uint32_t, uint16_t> ip_to_machine_order(std::string const &ip)
+{
     uint32_t result = 0;
-    size_t start = 0;
-    size_t end = ip.find('.');
+    size_t start    = 0;
+    size_t end      = ip.find('.');
 
     //if (ip.starts_with("localhost")) {
     //    result = 0x7f000001;
     //}
     //else {
-        //for (int i = 0; i < 4; ++i) {
-        //    end = ip.find('.');
-        //    result |= std::stoi(ip.substr(start, end - start)) << (24 - i * 8);
-        //
-        //    if (i == 3)
-        //        break;
-        //
-        //    start = end + 1;
-        //}
+    //for (int i = 0; i < 4; ++i) {
+    //    end = ip.find('.');
+    //    result |= std::stoi(ip.substr(start, end - start)) << (24 - i * 8);
+    //
+    //    if (i == 3)
+    //        break;
+    //
+    //    start = end + 1;
+    //}
 
     for (int i = 0; i < 4; ++i) {
         if (end == std::string::npos && i < 3) {
@@ -65,7 +66,7 @@ std::pair<uint32_t, uint16_t> ip_to_machine_order(const std::string& ip) {
 
         // Move to the next part
         start = end + 1;
-        end = ip.find('.', start);
+        end   = ip.find('.', start);
     }
     //}
 
@@ -82,13 +83,13 @@ std::pair<uint32_t, uint16_t> ip_to_machine_order(const std::string& ip) {
         throw std::runtime_error("port is invalid");
     }
 
-    return { result, (uint16_t)port };
+    return {result, (uint16_t) port};
 }
 
-AcceptorSteam::AcceptorSteam(bool is_lobby_server)
-    : m_steamcallback_OnSteamStatusChanged(false),
-        m_addr({})
-     {
+AcceptorSteam::AcceptorSteam(bool is_lobby_server) :
+    m_steamcallback_OnSteamStatusChanged(false),
+    m_addr({})
+{
     //m_steamcallback_OnSteamStatusChanged.SetGameserverFlag();
 
     if (!SteamAPI_Init()) {
@@ -107,32 +108,32 @@ AcceptorSteam::AcceptorSteam(bool is_lobby_server)
     auto auth = SteamNetworkingSockets()->InitAuthentication();
 
     // TODO use magic-enum
-    LOG_INFO(VH_LOGGER, "Authentication status: {}", magic_enum::enum_name(auth)); // TODO magic enum
+    LOG_INFO(VH_LOGGER, "Authentication status: {}", magic_enum::enum_name(auth));// TODO magic enum
 
     // init auth session
     //GetAuthSessionTicketResponse_t
-
 }
 
-AcceptorSteam::AcceptorSteam(std::string bind_addr)
-    : m_steamcallback_OnSteamStatusChanged(true)
+AcceptorSteam::AcceptorSteam(std::string bind_addr) :
+    m_steamcallback_OnSteamStatusChanged(true)
 {
     // host order, i.e 127.0.0.1 == 0x7f000001
     //SteamGameServer_InitEx(0x7f000001)
-    
+
     auto [nIP, nPort] = ip_to_machine_order(bind_addr);
 
     //SteamAPI_InitEx()
 
     {
-        SteamErrMsg outErr{};
-        auto result = SteamGameServer_InitEx(nIP, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0", &outErr);
+        SteamErrMsg outErr {};
+        auto result = SteamGameServer_InitEx(nIP, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication,
+                                             "1.0.0.0", &outErr);
         if (result != k_ESteamAPIInitResult_OK) {
             LOG_ERROR(VH_LOGGER, "{}", outErr);
             throw std::runtime_error("unable to init steam api");
         }
     }
-    
+
     //if (!SteamGameServer_Init(nIP /*m_addr.GetIPv4()*/, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication, "1.0.0.0"))
     //    throw std::runtime_error("unable to init steam game server api");
 
@@ -144,10 +145,9 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
     SteamGameServer()->SetMaxPlayerCount(64);
     SteamGameServer()->LogOnAnonymous();
 
-    SteamGameServer()->SetGameTags(("\"gameversion\"=\""
-        + std::string(VConstants::GAME) + "\",\"networkversion\"=\""
-        + std::to_string(VConstants::NETWORK) + "\"").c_str()
-    );
+    SteamGameServer()->SetGameTags(("\"gameversion\"=\"" + std::string(VConstants::GAME)
+                                    + "\",\"networkversion\"=\"" + std::to_string(VConstants::NETWORK) + "\"")
+                                           .c_str());
 
     SteamGameServer()->SetServerName("avledet");
     SteamGameServer()->SetMapName("avledet");
@@ -158,7 +158,7 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
 
     LOG_INFO(VH_LOGGER, "Starting server on port {}", m_addr.m_port);
     LOG_INFO(VH_LOGGER, "Server ID: {}", SteamGameServer()->GetSteamID().ConvertToUint64());
-    LOG_INFO(VH_LOGGER, "Authentication status: {}", magic_enum::enum_name(auth)); // TODO magic enum
+    LOG_INFO(VH_LOGGER, "Authentication status: {}", magic_enum::enum_name(auth));// TODO magic enum
 
     //SteamNetworkingUtils_SteamAPI()
 
@@ -166,21 +166,21 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
 
     using namespace std::chrono_literals;
 
-    auto timeout = (float)(30000ms).count();
-    int32 offline = 1;
+    auto timeout   = (float) (30000ms).count();
+    int32 offline  = 1;
     int32 sendrate = 153600;
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_TimeoutConnected,
-        k_ESteamNetworkingConfig_Global, 0,
-        k_ESteamNetworkingConfig_Float, &timeout);
+                                           k_ESteamNetworkingConfig_Global, 0, k_ESteamNetworkingConfig_Float,
+                                           &timeout);
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_IP_AllowWithoutAuth,
-        k_ESteamNetworkingConfig_Global, 0,
-        k_ESteamNetworkingConfig_Int32, &offline);
+                                           k_ESteamNetworkingConfig_Global, 0, k_ESteamNetworkingConfig_Int32,
+                                           &offline);
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMin,
-        k_ESteamNetworkingConfig_Global, 0,
-        k_ESteamNetworkingConfig_Int32, &sendrate);
+                                           k_ESteamNetworkingConfig_Global, 0, k_ESteamNetworkingConfig_Int32,
+                                           &sendrate);
     SteamNetworkingUtils()->SetConfigValue(k_ESteamNetworkingConfig_SendRateMax,
-        k_ESteamNetworkingConfig_Global, 0,
-        k_ESteamNetworkingConfig_Int32, &sendrate);
+                                           k_ESteamNetworkingConfig_Global, 0, k_ESteamNetworkingConfig_Int32,
+                                           &sendrate);
 
     /*
     {
@@ -215,19 +215,19 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr)
     }*/
 }
 
-AcceptorSteam::~AcceptorSteam() {
+AcceptorSteam::~AcceptorSteam()
+{
     this->stop();
 }
 
-
-
-std::vector<char> AcceptorSteam::get_auth_session_ticket() {
+std::vector<char> AcceptorSteam::get_auth_session_ticket()
+{
     this->cancel_auth_session_ticket();
 
-    auto array = std::vector<char>(1024);
+    auto array       = std::vector<char>(1024);
     unsigned int num = 0;
-    SteamNetworkingIdentity id{};
-    m_ticket = SteamUser()->GetAuthSessionTicket(array.data(), (int)array.size(), &num, &id);
+    SteamNetworkingIdentity id {};
+    m_ticket = SteamUser()->GetAuthSessionTicket(array.data(), (int) array.size(), &num, &id);
     if (m_ticket != k_HAuthTicketInvalid) {
         array.resize(num);
         return array;
@@ -246,7 +246,8 @@ bool AcceptorSteam::verify_auth_session_ticket(std::span<const char> ticket, ISo
 }
 */
 
-void AcceptorSteam::cancel_auth_session_ticket() {
+void AcceptorSteam::cancel_auth_session_ticket()
+{
     if (m_ticket != k_HAuthTicketInvalid) {
         SteamUser()->CancelAuthTicket(m_ticket);
         m_ticket = k_HAuthTicketInvalid;
@@ -254,7 +255,8 @@ void AcceptorSteam::cancel_auth_session_ticket() {
     }
 }
 
-void AcceptorSteam::start() {
+void AcceptorSteam::start()
+{
     if (m_addr.m_port) {
         // TODO do not test based on port
         //  ie. p2p (logged in) server has no port, only lobby
@@ -275,7 +277,7 @@ void AcceptorSteam::start() {
 
     SteamNetAuthenticationStatus_t status {};
     while (SteamSocket::get_steam_sockets()->GetAuthenticationStatus(&status)
-        != ESteamNetworkingAvailability::k_ESteamNetworkingAvailability_Current) {
+           != ESteamNetworkingAvailability::k_ESteamNetworkingAvailability_Current) {
         this->update();
 
         if (VUtils::run_once_later<struct steam_auth_fail>(10s)) {
@@ -293,20 +295,22 @@ void AcceptorSteam::start() {
     LOG_INFO(VH_LOGGER, "Authentication success");
 }
 
-void AcceptorSteam::update() {
+void AcceptorSteam::update()
+{
     if (SteamSocket::is_game_server()) {
         SteamGameServer_RunCallbacks();
     } else {
         SteamAPI_RunCallbacks();
     }
 
-    for (auto&& socket : m_ready) {
+    for (auto &&socket : m_ready) {
         m_connect_callback(std::move(socket));
     }
     m_ready.clear();
 }
 
-void AcceptorSteam::stop() {
+void AcceptorSteam::stop()
+{
     if (m_listen_socket || m_lobbyID.IsValid()) {
         this->cancel_auth_session_ticket();
 
@@ -329,16 +333,15 @@ void AcceptorSteam::stop() {
 
         {
             //std::scoped_lock scoped(m_mux);
-            for (auto&& socket : m_sockets)
-                socket->Close(false);
+            for (auto &&socket : m_sockets) socket->Close(false);
         }
 
-        // TODO does this generate callbacks? 
+        // TODO does this generate callbacks?
         // if not, we can stop the thread earlier / immediately
         SteamSocket::get_steam_sockets()->CloseListenSocket(m_listen_socket);
-        
+
         m_listen_socket = k_HSteamListenSocket_Invalid;
-        m_lobbyID = {};
+        m_lobbyID       = {};
 
         if (SteamSocket::is_game_server())
             SteamGameServer_Shutdown();
@@ -347,35 +350,33 @@ void AcceptorSteam::stop() {
     }
 }
 
-ISocket::Ptr AcceptorSteam::connect(std::string address) {
-    SteamNetworkingIPAddr addr{};
+ISocket::Ptr AcceptorSteam::connect(std::string address)
+{
+    SteamNetworkingIPAddr addr {};
     auto res = addr.ParseString(address.c_str());
     if (!res)
         throw std::runtime_error("invalid address");
 
     //SteamGameServer()->LogOnAnonymous
-    return *m_sockets.insert(m_sockets.end(),
-        std::make_shared<SteamSocket>(
-            SteamSocket::get_steam_sockets()->ConnectByIPAddress(addr, 0, nullptr),
-            true
-        )
-    );
+    return *m_sockets.insert(
+            m_sockets.end(),
+            std::make_shared<SteamSocket>(
+                    SteamSocket::get_steam_sockets()->ConnectByIPAddress(addr, 0, nullptr), true));
 }
 
-void AcceptorSteam::on_connect(std::function<void(ISocket::Ptr)> callback) {
+void AcceptorSteam::on_connect(std::function<void(ISocket::Ptr)> callback)
+{
     m_connect_callback = callback;
 }
 
-
-
-void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t* data) {
+void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback_t *data)
+{
     // Client has no listen socket; obviously we are not 'listening' for incoming connections
     auto im_client = data->m_info.m_hListenSocket == k_HSteamListenSocket_Invalid;
 
-    LOG_INFO(VH_LOGGER, "status: {} -> {} (im client: {})",
-        magic_enum::enum_name(data->m_eOldState), magic_enum::enum_name(data->m_info.m_eState), // TODO magic enum?
-        (im_client ? "true" : "false")
-    );
+    LOG_INFO(VH_LOGGER, "status: {} -> {} (im client: {})", magic_enum::enum_name(data->m_eOldState),
+             magic_enum::enum_name(data->m_info.m_eState),// TODO magic enum?
+             (im_client ? "true" : "false"));
 
     //std::scoped_lock scoped(m_mux);
 
@@ -386,12 +387,12 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
 
     // Try to ignore outgoing connections
 
-    auto&& socket_itr = this->get_socket(m_sockets, data->m_hConn);
-    auto&& socket = socket_itr != m_sockets.end() ? *socket_itr : nullptr; // take ownership
+    auto &&socket_itr = this->get_socket(m_sockets, data->m_hConn);
+    auto &&socket     = socket_itr != m_sockets.end() ? *socket_itr : nullptr;// take ownership
 
     if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connected
-        && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute ||
-            data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)) {
+        && (data->m_eOldState == k_ESteamNetworkingConnectionState_FindingRoute
+            || data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)) {
         if (socket) {
             if (im_client) {
                 LOG_INFO(VH_LOGGER, "outbound socket connected {}", data->m_hConn);
@@ -406,7 +407,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             //LOG_DEBUG(VH_LOGGER, "connected socket missing {}", data->m_hConn);
         }
     } else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_Connecting
-        && data->m_eOldState == k_ESteamNetworkingConnectionState_None) {
+               && data->m_eOldState == k_ESteamNetworkingConnectionState_None) {
         // ListenSocket will be invalid when the connection is not an incoming client
         //  (when we initiated the connection)
         if (im_client) {
@@ -431,17 +432,16 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             }
         }
     } else if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally
-        || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer
-        || (data->m_info.m_eState == k_ESteamNetworkingConnectionState_None
-            && data->m_eOldState == k_ESteamNetworkingConnectionState_Connected)
-        ) {
+               || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer
+               || (data->m_info.m_eState == k_ESteamNetworkingConnectionState_None
+                   && data->m_eOldState == k_ESteamNetworkingConnectionState_Connected)) {
         if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             LOG_INFO(VH_LOGGER, "{}", data->m_info.m_szEndDebug);
 
         if (socket) {
             socket->Close(false);
 
-            auto&& ready_itr = this->get_socket(m_ready, data->m_hConn);
+            auto &&ready_itr = this->get_socket(m_ready, data->m_hConn);
             if (ready_itr != m_ready.end())
                 m_ready.erase(ready_itr);
 
@@ -471,15 +471,15 @@ void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* dat
 
 
 // auth session ticket has nothing to do with steam networking sockets handshake
-void AcceptorSteam::OnAuthSessionTicketResponse(GetAuthSessionTicketResponse_t* data) {
-    (void)data;
+void AcceptorSteam::OnAuthSessionTicketResponse(GetAuthSessionTicketResponse_t *data)
+{
+    (void) data;
     LOG_INFO(VH_LOGGER, "auth session response callback");
 }
 
-
-
 // call results
-void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
+void AcceptorSteam::OnLobbyCreated(LobbyCreated_t *data, bool failure)
+{
     if (failure) {
         LOG_ERROR(VH_LOGGER, "Failed to create lobby");
     } else if (data->m_eResult == k_EResultNoConnection) {
@@ -489,7 +489,9 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
 
         LOG_INFO(VH_LOGGER, "Created lobby");
 
-        if (!SteamMatchmaking()->SetLobbyType(m_lobbyID, k_ELobbyTypeFriendsOnly)) { //VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
+        if (!SteamMatchmaking()->SetLobbyType(
+                    m_lobbyID,
+                    k_ELobbyTypeFriendsOnly)) {//VH_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
             LOG_ERROR(VH_LOGGER, "Failed to set lobby visibility");
         }
 
@@ -505,7 +507,8 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t* data, bool failure) {
             LOG_WARNING(VH_LOGGER, "Unable to set lobby version");
         }
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion", std::to_string(VConstants::NETWORK).c_str())) {
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "networkversion",
+                                              std::to_string(VConstants::NETWORK).c_str())) {
             LOG_WARNING(VH_LOGGER, "Failed to set lobby networkversion");
         }
 
