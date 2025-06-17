@@ -1,12 +1,10 @@
 #include "ModManager.h"
+#include <quill/LogMacros.h>
 
 #if VH_IS_ON(VH_USE_MODS)
 
     #include <algorithm>
-    #include <array>
-    #include <atomic>
     #include <cmath>
-    #include <cstdint>
     #include <filesystem>
     #include <ranges>
     #include <string_view>
@@ -25,26 +23,14 @@
     #include <sol/types.hpp>
     #include <yaml-cpp/yaml.h>
 
-    #include "Types.h"
-    #include "UserData.h"
-
-
-    #include "DataStream.h"
-    #include "DungeonGenerator.h"
-    #include "DungeonManager.h"
     #include "Method.h"
     #include "ModManager.h"
     #include "NetManager.h"
-    #include "NetSocket.h"
     #include "Peer.h"
-    #include "Quaternion.h"
     #include "RouteManager.h"
+    #include "Types.h"
     #include "ValhallaServer.h"
-    #include "Vector.h"
     #include "VUtilsResource.h"
-    #include "VUtilsString.h"
-    #include "ZDOID.h"
-    #include "ZDOManager.h"
 
 auto MOD_MANAGER(std::make_unique<IModManager>());
 
@@ -53,16 +39,16 @@ IModManager *ModManager()
     return MOD_MANAGER.get();
 }
 
-static std::vector<std::string_view> const safe_functions {
-        "assert", "error", "ipairs", "next", "pairs", "pcall",
-        //"print",  // when uncommented, 'attempt to call a nil value' global print
-        "select", "tonumber", "tostring", "type", "unpack", "_VERSION", "xpcall",
+static std::vector<std::string_view> const safe_functions {// Global objects
+                                                           "assert", "error", "ipairs", "next", "pairs",
+                                                           "pcall", "select", "tonumber", "tostring", "type",
+                                                           "unpack", "_VERSION", "xpcall",
 
-        // Entire packages
-        "coroutine.*", "string.*", "table.*", "math.*",
+                                                           // Full packages
+                                                           "coroutine.*", "string.*", "table.*", "math.*",
 
-        // Partial packages
-        "os.clock", "os.date", "os.difftime", "os.time"};
+                                                           // Partial packages
+                                                           "os.clock", "os.date", "os.difftime", "os.time"};
 
 IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
 {
@@ -139,9 +125,9 @@ void IModManager::execute_plugin(Mod &mod)
         // Load new API globals personally for this mod
         auto api_table = this->load_api_table();
 
-        auto env  = sol::environment(m_state, sol::create, api_table);
-        env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
-        //env["this"] = &mod; //TODO TEST
+        auto env    = sol::environment(m_state, sol::create, api_table);
+        env["_G"]   = env; // otherwise, will point to our state global table; defeating sandboxing...
+        env["this"] = &mod;//TODO TEST
 
         //sandboxer
         for (auto const &entry : safe_functions) {
@@ -292,7 +278,8 @@ void IModManager::PostInit()
 
             LOG_NOTICE(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
         } catch (std::exception const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load mod: {} ({})", e.what(), dir.path().string());
+            LOG_ERROR(VH_LOGGER, "Failed to load mod: {}", dir.path().string());
+            LOG_ERROR(VH_LOGGER, "{}", e.what());
         }
     }
 

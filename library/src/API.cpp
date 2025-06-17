@@ -1,6 +1,8 @@
 #include "ModManager.h"
 #include "RouteManager.h"
 #include "VUtilsResource.h"
+#include <sol/environment.hpp>
+#include <sol/forward.hpp>
 #include <sol/types.hpp>
 
 sol::table IModManager::load_api_table()
@@ -67,10 +69,15 @@ sol::table IModManager::load_api_table()
             sol::property(&IValhalla::GetTomorrowAfternoon), "next_night",
             sol::property(&IValhalla::GetTomorrowNight),
 
-            "subscribe", [this](IValhalla &self, sol::variadic_args args) {
+            "subscribe", [this](IValhalla &self, sol::variadic_args args, sol::this_environment te) {
+                sol::environment &env = te;
+
+                auto mod = env["this"].get<Mod *>();
+
                 Hash hash = 0;
                 sol::function func;
                 int priority = 0;
+
 
                 // If priority is present (will be at end)
                 int const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;

@@ -4,6 +4,8 @@
 
 #if VH_IS_ON(VH_USE_MODS)
 
+    #define SOL_ALL_SAFETIES_ON 1
+
     #include "DataStream.h"
     #include "Hashes.h"
     #include "Quaternion.h"
