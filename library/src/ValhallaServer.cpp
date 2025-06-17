@@ -1,5 +1,8 @@
+#include <quill/core/LogLevel.h>
+#include <quill/LogMacros.h>
 #include <stdlib.h>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #ifdef _WIN32
     #include <winstring.h>
@@ -36,23 +39,26 @@ IValhalla *Valhalla()
     return VALHALLA_INSTANCE.get();
 }
 
+template<class Enum>
+concept scoped_enum = requires { typename std::is_scoped_enum<Enum>; };
+
 namespace YAML {
-    template<>
-    struct convert<AssignAlgorithm>
+    template<scoped_enum Enum>
+    struct convert<Enum>
     {
-        static Node encode(AssignAlgorithm const &rhs)
+        static Node encode(Enum const &rhs)
         {
             auto val = magic_enum::enum_name(rhs);
             return Node(avledet::lexicon::to_lower(std::string(val)));
         }
 
-        static bool decode(Node const &node, AssignAlgorithm &rhs)
+        static bool decode(Node const &node, Enum &rhs)
         {
             if (!node.IsScalar())
                 return false;
 
-            if (auto opt = magic_enum::enum_cast<AssignAlgorithm>(node.as<std::string>(),
-                                                                  magic_enum::case_insensitive)) {
+            if (auto opt
+                = magic_enum::enum_cast<Enum>(node.as<std::string>(), magic_enum::case_insensitive)) {
                 rhs = opt.value();
                 return true;
             }
@@ -139,9 +145,9 @@ namespace YAML {
             else if constexpr (std::is_same_v<D, std::chrono::milliseconds>)
                 return Node(std::to_string(rhs.count()) + "ms");
             else if constexpr (std::is_same_v<D, std::chrono::seconds>)
-                return Node(std::to_string(rhs.count()) + " seconds");
+                return Node(std::to_string(rhs.count()) + "s");
             else if constexpr (std::is_same_v<D, std::chrono::minutes>)
-                return Node(std::to_string(rhs.count()) + " minutes");
+                return Node(std::to_string(rhs.count()) + "min");
             else if constexpr (std::is_same_v<D, std::chrono::hours>)
                 return Node(std::to_string(rhs.count()) + " hours");
             else if constexpr (std::is_same_v<D, std::chrono::days>)
@@ -336,6 +342,7 @@ void IValhalla::LoadFiles(bool reloading)
 
         // If the server has just started or theres no config error
         if (!reloading || !fileError) {
+            auto &&general  = node["general"];
             auto &&server   = node["server"];
             auto &&players  = node["players"];
             auto &&world    = node["world"];
@@ -485,10 +492,18 @@ void IValhalla::LoadFiles(bool reloading)
             //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
 
 #endif
+
+            // reload log level
+            {
+                quill::LogLevel level;
+                a(level, general, "log-level", quill::LogLevel::Info);
+                VH_LOGGER->set_log_level(level);
+            }
+
             if (m_settings.serverPassword.empty()) {
-                LOG_WARNING(VH_LOGGER, "Server does not have a password");
+                LOG_INFO(VH_LOGGER, "Server does not have a password");
             } else {
-                LOG_INFO(VH_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
+                LOG_NOTICE(VH_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
             }
         }
 
@@ -634,7 +649,7 @@ void IValhalla::Start()
 {
     MAIN_THREAD = std::this_thread::get_id();
 
-    LOG_INFO(VH_LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
+    LOG_NOTICE(VH_LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
 
     m_serverID  = VUtils::Random::GenerateUID();
     m_startTime = std::chrono::steady_clock::now();

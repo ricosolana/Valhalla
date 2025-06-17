@@ -42,8 +42,8 @@ World::World(DataReader reader)
 
     m_name     = reader.read<std::string>();
     m_seedName = reader.read<std::string>();
-    reader.read<avledet::util::Hash>();// seed
-    m_seed            = avledet::util::get_stable_hash(m_seedName);
+    //reader.read<avledet::util::Hash>();// seed
+    m_seed            = reader.read<avledet::util::Hash>();//avledet::util::get_stable_hash(m_seedName);
     m_uid             = reader.read<std::int64_t>();
     m_worldGenVersion = worldVersion >= 26 ? reader.read<std::int32_t>() : 0;
     bool needsDB      = worldVersion >= 30 ? reader.read<bool>() : false;
@@ -142,7 +142,7 @@ void World::LoadFileDB(fs::path const &root)
             } else if (worldVersion > VConstants::WORLD) {
                 LOG_WARNING(VH_LOGGER, "Loading world with a newer version than we support {}", worldVersion);
             } else {
-                LOG_INFO(VH_LOGGER, "Loading world version {}", worldVersion);
+                LOG_NOTICE(VH_LOGGER, "Loading world version {}", worldVersion);
             }
 
 #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
@@ -269,6 +269,8 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
 {
     // load world from file
 
+    LOG_NOTICE(VH_LOGGER, "Locating world meta \'{}\'", name);
+
     std::unique_ptr<World> world;
 
     if (auto opt
@@ -281,7 +283,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
     }
 
     if (!world) {
-        LOG_INFO(VH_LOGGER, "Creating a new world meta");
+        LOG_INFO(VH_LOGGER, "World not found, creating new world meta");
         world = std::make_unique<World>(std::string(name), std::string(fallbackSeedName));
 
         try {
@@ -291,7 +293,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
         }
     }
 
-    LOG_INFO(VH_LOGGER, "Loaded world meta with seed {} ({})", world->m_seedName, world->m_seed);
+    LOG_NOTICE(VH_LOGGER, "Loaded world meta with seed {} ({})", world->m_seedName, world->m_seed);
 
     return world;
 }
@@ -367,7 +369,7 @@ void IWorldManager::WriteWorldFiles(const fs::path& root) {
 
 void IWorldManager::PostZoneInit()
 {
-    LOG_INFO(VH_LOGGER, "Initializing WorldManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing WorldManager");
 
     m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
 

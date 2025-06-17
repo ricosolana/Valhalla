@@ -524,6 +524,7 @@ namespace VUtils {
     };
 
     // Run a code block every so often
+    //  Initial run will be after 'period'
     //  Must be used in a loop to work correctly
     //  if (VUtils::run_periodic<struct my_unique_struct>(1s)) { /* stuff */ }
     template<typename T, typename Rep, typename Pd>

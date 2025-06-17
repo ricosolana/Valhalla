@@ -1,6 +1,8 @@
+#include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
 
 #include "HeightmapBuilder.h"
+#include "ValhallaServer.h"
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
 
@@ -23,6 +25,8 @@ void IHeightmapBuilder::PostGeoInit()
 {
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
+    LOG_NOTICE(VH_LOGGER, "Initializing HeightmapBuilder");
+
     for (unsigned int i = 0; i < VH_SETTINGS.worldHeightmapThreads; i++) {
         auto &&insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
@@ -39,7 +43,7 @@ void IHeightmapBuilder::PostGeoInit()
             std::vector<std::unique_ptr<Heightmap>> baked;
 
 
-            LOG_INFO(VH_LOGGER, "Builder thread started");
+            LOG_DEBUG(VH_LOGGER, "Builder thread started");
             while (!token.stop_requested()) {
                 FrameMarkStart(name.c_str());
 

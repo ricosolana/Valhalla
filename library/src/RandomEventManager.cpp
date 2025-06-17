@@ -1,3 +1,4 @@
+#include <quill/LogMacros.h>
 #include <string_view>
 
 #include "DiscordManager.h"
@@ -7,6 +8,7 @@
 #include "Prefab.h"
 #include "RandomEventManager.h"
 #include "RouteManager.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
 #include "ZoneManager.h"
@@ -24,7 +26,7 @@ void IRandomEventManager::Init()
     // chance: 20
     // range: 96
 
-    LOG_INFO(VH_LOGGER, "Initializing EventManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing EventManager");
 
     {
         // load Foliage:
@@ -34,7 +36,9 @@ void IRandomEventManager::Init()
 
         DataReader pkg(*opt);
 
-        pkg.read<std::string_view>();// comment
+        auto comment = pkg.read<std::string_view>();// comment
+        LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
             LOG_WARNING(VH_LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
@@ -58,7 +62,7 @@ void IRandomEventManager::Init()
             m_events[sv] = std::move(e);
         }
 
-        LOG_INFO(VH_LOGGER, "Loaded {} random events", count);
+        LOG_NOTICE(VH_LOGGER, "Loaded {} random events", count);
     }
 }
 

@@ -25,15 +25,16 @@ void IDungeonManager::post_prefab_init()
 
     DataReader pkg(opt.value());
 
-    pkg.read<std::string_view>();// date/comment
+    auto comment = pkg.read<std::string_view>();// comment
+    LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+
     auto ver = pkg.read<std::string_view>();
-    LOG_INFO(VH_LOGGER, "dungeons.pkg has game version {}", ver);
+    LOG_NOTICE(VH_LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
         LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server ({})", ver);
     }
 
     std::int32_t count = pkg.read<std::int32_t>();
-    LOG_INFO(VH_LOGGER, "Loading {} dungeons", count);
     for (int i = 0; i < count; i++) {
         auto dungeon = std::make_unique<Dungeon>();
 
@@ -137,6 +138,8 @@ void IDungeonManager::post_prefab_init()
         avledet::util::Hash hash = dungeon->m_prefab->m_hash;
         m_dungeons.insert({hash, std::move(dungeon)});
     }
+
+    LOG_NOTICE(VH_LOGGER, "Loaded {} dungeons", count);
 }
 
     #if VH_IS_ON(VH_DUNGEON_REGENERATION)

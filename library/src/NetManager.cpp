@@ -194,7 +194,7 @@ void INetManager::OnPeerConnect(Peer &peer)
         //peer->m_characterID.set_id(characterID.get_id());
         peer->m_characterID = characterID;
 
-        LOG_INFO(VH_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
+        LOG_NOTICE(VH_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
     });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer *peer, std::string_view user) {
@@ -334,7 +334,7 @@ Peer *INetManager::FindPeerByHost(std::string_view host)
 
 void INetManager::PostInit()
 {
-    LOG_INFO(VH_LOGGER, "Initializing NetManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing NetManager");
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();

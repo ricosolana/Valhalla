@@ -24,7 +24,7 @@ IZoneManager *ZoneManager()
 // private
 void IZoneManager::PostPrefabInit()
 {
-    LOG_INFO(VH_LOGGER, "Initializing ZoneManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing ZoneManager");
 
     {
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -35,7 +35,9 @@ void IZoneManager::PostPrefabInit()
 
         DataReader pkg(*opt);
 
-        pkg.read<std::string_view>();// comment
+        auto comment = pkg.read<std::string_view>();// comment
+        LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
             LOG_WARNING(VH_LOGGER, "features.pkg uses different game version than server ({})", ver);
@@ -109,7 +111,7 @@ void IZoneManager::PostPrefabInit()
             m_features.push_back(std::move(loc));
         }
 
-        LOG_INFO(VH_LOGGER, "Loaded {} features", count);
+        LOG_NOTICE(VH_LOGGER, "Loaded {} features", count);
 #endif
     }
 
@@ -171,7 +173,7 @@ void IZoneManager::PostPrefabInit()
             m_foliage.push_back(std::move(veg));
         }
 
-        LOG_INFO(VH_LOGGER, "Loaded {} vegetation", count);
+        LOG_NOTICE(VH_LOGGER, "Loaded {} vegetation", count);
 #endif
     }
 
@@ -294,7 +296,7 @@ void IZoneManager::SendLocationIcons()
 // private
 void IZoneManager::SendLocationIcons(Peer &peer)
 {
-    LOG_INFO(VH_LOGGER, "Sending location icons to {}", peer.m_name);
+    LOG_NOTICE(VH_LOGGER, "Sending location icons to {}", peer.m_name);
 
 #if VH_IS_ON(VH_ZONE_GENERATION)
     DataWriter writer;
@@ -434,7 +436,7 @@ void IZoneManager::Load(DataReader &reader, std::int32_t version)
 #endif// VH_ZONE_GENERATION
                 }
 
-                LOG_INFO(VH_LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
+                LOG_NOTICE(VH_LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
 
                 if (locationVersion != VConstants::LOCATION) {
                     // regenerate features?

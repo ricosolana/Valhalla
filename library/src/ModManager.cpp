@@ -203,7 +203,7 @@ void IModManager::execute_plugin(Mod &mod)
 
         //TODO might not even need to use environment...
 
-        m_state.safe_script(opt.value(), env, mod.m_name, sol::load_mode::any);
+        m_state.safe_script(opt.value(), env, mod.m_entry, sol::load_mode::any);
 
         //sol::function funcc = result;
 
@@ -221,7 +221,7 @@ inline void my_panic(sol::optional<std::string> maybe_msg)
         std::string const &msg = maybe_msg.value();
         LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
     }
-    // When this function exits, Lua will exhibit default behavior and abort()
+    // When this function exits, Lua will exhibit default behavior and abort(), unless I throw...
 }
 
 //in my limited usage and experience, no error handler or panic was ever invoked, perhaps because all
@@ -250,7 +250,7 @@ int my_exception_handler(lua_State *L, sol::optional<std::exception const &> may
 
 void IModManager::PostInit()
 {
-    LOG_INFO(VH_LOGGER, "Initializing ModManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing ModManager");
 
     m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
     m_state.set_exception_handler(&my_exception_handler);
@@ -290,13 +290,13 @@ void IModManager::PostInit()
             auto &&mod = LoadModInfo(dirname);
             execute_plugin(mod);
 
-            LOG_INFO(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
+            LOG_NOTICE(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
         } catch (std::exception const &e) {
             LOG_ERROR(VH_LOGGER, "Failed to load mod: {} ({})", e.what(), dir.path().string());
         }
     }
 
-    LOG_INFO(VH_LOGGER, "Loaded {} mods", m_mods.size());
+    LOG_NOTICE(VH_LOGGER, "Loaded {} mods", m_mods.size());
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }
@@ -320,6 +320,7 @@ void IModManager::Uninit()
 void IModManager::update()
 {
     if (!m_tmp_reload_mods.empty()) {
+        assert(false);//TODO
 
         /*
             Release all associated callbacks

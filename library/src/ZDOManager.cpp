@@ -26,7 +26,7 @@ void IZDOManager::Init()
 {
     m_nextUid = 1;
 
-    LOG_INFO(VH_LOGGER, "Initializing ZDOManager");
+    LOG_NOTICE(VH_LOGGER, "Initializing ZDOManager");
 
     RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, [this](Peer *, DataReader reader) {
         // TODO constraint check
@@ -249,7 +249,7 @@ void IZDOManager::Load(DataReader &reader, int version)
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
         }
-#endif  // VH_DUNGEON_REGENERATION \
+#endif// VH_DUNGEON_REGENERATION \
         //m_objectsByID[zdo->GetID()] = std::move(zdo);
     }
 
@@ -315,7 +315,7 @@ void IZDOManager::Load(DataReader &reader, int version)
     }
 #endif// VH_LEGACY_WORLD_LOADING
 
-    LOG_INFO(VH_LOGGER, "Loaded {} zdos", m_objectsByID.size());
+    LOG_NOTICE(VH_LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
 [[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept

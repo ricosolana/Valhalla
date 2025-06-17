@@ -2,6 +2,7 @@
 #include <magic_enum.hpp>
 #include <quill/LogMacros.h>
 #include <stdexcept>
+#include <string_view>
 
 #include "CompileSettings.h"
 #include "isteamnetworking.h"
@@ -273,7 +274,7 @@ void AcceptorSteam::start()
 
     using namespace std::chrono_literals;
 
-    LOG_INFO(VH_LOGGER, "Waiting for authentication");
+    LOG_NOTICE(VH_LOGGER, "Waiting for authentication");
 
     SteamNetAuthenticationStatus_t status {};
     while (SteamSocket::get_steam_sockets()->GetAuthenticationStatus(&status)
@@ -281,15 +282,14 @@ void AcceptorSteam::start()
         this->update();
 
         if (VUtils::run_once_later<struct steam_auth_fail>(10s)) {
-            LOG_ERROR(VH_LOGGER, "authentication took too long");
-            throw std::runtime_error("authentication took too long");
+            throw std::runtime_error("steam authentication took too long");
         }
 
-        if (VUtils::run_periodic_now<struct steam_auth_poll_msg>(1s)) {
-            LOG_WARNING(VH_LOGGER, "{}", status.m_debugMsg);
+        if (VUtils::run_periodic<struct steam_auth_poll_msg>(1s)) {
+            LOG_INFO(VH_LOGGER, "{}", status.m_debugMsg);
         }
 
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(10ms);
     }
 
     LOG_INFO(VH_LOGGER, "Authentication success");
@@ -374,9 +374,23 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
     // Client has no listen socket; obviously we are not 'listening' for incoming connections
     auto im_client = data->m_info.m_hListenSocket == k_HSteamListenSocket_Invalid;
 
-    LOG_INFO(VH_LOGGER, "status: {} -> {} (im client: {})", magic_enum::enum_name(data->m_eOldState),
-             magic_enum::enum_name(data->m_info.m_eState),// TODO magic enum?
-             (im_client ? "true" : "false"));
+    auto old_state = magic_enum::enum_name(data->m_eOldState);
+    auto new_state = magic_enum::enum_name(data->m_info.m_eState);
+
+    {
+        auto idx = old_state.find_last_of("_");
+        if (idx != std::string_view::npos) {
+            old_state = old_state.substr(idx + 1);
+        }
+
+        idx = new_state.find_last_of("_");
+        if (idx != std::string_view::npos) {
+            new_state = new_state.substr(idx + 1);
+        }
+    }
+
+    LOG_DEBUG(VH_LOGGER, "{} -> {} (im client: {})", old_state, new_state,// TODO magic enum?
+              (im_client ? "true" : "false"));
 
     //std::scoped_lock scoped(m_mux);
 
@@ -395,9 +409,9 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             || data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)) {
         if (socket) {
             if (im_client) {
-                LOG_INFO(VH_LOGGER, "outbound socket connected {}", data->m_hConn);
+                LOG_DEBUG(VH_LOGGER, "outbound socket connected {}", data->m_hConn);
             } else {
-                LOG_INFO(VH_LOGGER, "connected socket queued {}", data->m_hConn);
+                LOG_DEBUG(VH_LOGGER, "connected socket queued {}", data->m_hConn);
             }
             socket->m_status = Status::Connected;
             m_ready.push_back(socket);
@@ -413,7 +427,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         if (im_client) {
             if (socket) {
                 //socket->m_status = Status::Connecting;
-                LOG_INFO(VH_LOGGER, "outbound socket connecting {}", data->m_hConn);
+                LOG_DEBUG(VH_LOGGER, "outbound socket connecting {}", data->m_hConn);
             } else {
                 assert(false);
             }
@@ -422,7 +436,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             if (SteamSocket::get_steam_sockets()->AcceptConnection(data->m_hConn) == k_EResultOK) {
                 socket = m_sockets.emplace_back(std::make_shared<SteamSocket>(data->m_hConn, false));
                 //socket->m_status = Status::Connecting;
-                LOG_INFO(VH_LOGGER, "inbound socket connecting {}", data->m_hConn);
+                LOG_DEBUG(VH_LOGGER, "inbound socket connecting {}", data->m_hConn);
             } else {
                 //TODO
                 //  this branch (and all other old->new state branches above)
@@ -435,8 +449,9 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
                || data->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer
                || (data->m_info.m_eState == k_ESteamNetworkingConnectionState_None
                    && data->m_eOldState == k_ESteamNetworkingConnectionState_Connected)) {
-        if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
-            LOG_INFO(VH_LOGGER, "{}", data->m_info.m_szEndDebug);
+        if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally) {
+            LOG_DEBUG(VH_LOGGER, "{}", data->m_info.m_szEndDebug);
+        }
 
         if (socket) {
             socket->Close(false);
