@@ -1,6 +1,36 @@
 #include "ModManager.h"
+#include "Quaternion.h"
+#include <sol/base_traits.hpp>
+#include <sol/property.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
+
+//was readonly
+//template <typename T>
+//struct constant_wrapper : sol::detail::ebco<T> {
+//private:
+//    using base_t = sol::detail::ebco<T>;
+//
+//public:
+//    using base_t::base_t;
+//
+//    operator T&() {
+//        return base_t::value();
+//    }
+//    operator const T&() const {
+//        return base_t::value();
+//    }
+//};
+
+namespace sol {
+    // TODO test this
+    //  Usage is intended for readonly / immutable static constants
+    template<typename V>
+    inline auto constant(V &&v)
+    {
+        return readonly_wrapper<meta::unqualified_t<decltype(v)>>(v);
+    }
+}// namespace sol
 
 void avledet::api::init_quaternion(sol::table table)
 {
@@ -8,9 +38,13 @@ void avledet::api::init_quaternion(sol::table table)
 
     table.new_usertype<Quaternion>(
             "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
-            "IDENTITY", sol::var(Quaternion::IDENTITY), "x", sol::readonly(&Quaternion::x), "y",
-            sol::readonly(&Quaternion::y), "z", sol::readonly(&Quaternion::z), "w",
-            sol::readonly(&Quaternion::w), sol::meta_function::index,
+
+            // TODO test
+            //"IDENTITY", sol::constant(Quaternion::IDENTITY),
+
+            //"IDENTITY", sol::var(Quaternion::IDENTITY),//sol::property([]() {Quaternion::IDENTITY}),
+            "x", sol::readonly(&Quaternion::x), "y", sol::readonly(&Quaternion::y), "z",
+            sol::readonly(&Quaternion::z), "w", sol::readonly(&Quaternion::w), sol::meta_function::index,
             [](Quaternion &self, std::size_t index, sol::state_view view) {
                 return index == 1   ? sol::make_object(view, self.x)
                        : index == 2 ? sol::make_object(view, self.y)
