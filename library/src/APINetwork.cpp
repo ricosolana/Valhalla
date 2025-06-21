@@ -22,7 +22,7 @@ void IModManager::load_userdata_network()
                      Status::Connect_Failed);
 
     // TODO full socket impl
-    m_state.new_usertype<ISocket>(
+    this->new_usertype<ISocket>(
             "Socket", "close", &ISocket::Close,
             //"connected", sol::property(&ISocket::Connected),
             "address", sol::property(&ISocket::get_address), "host", sol::property(&ISocket::get_host_name),
@@ -32,7 +32,7 @@ void IModManager::load_userdata_network()
             "outbound", sol::property(&ISocket::is_outbound));
 
 
-    m_state.new_usertype<INetManager>(
+    this->new_usertype<INetManager>(
             "INetManager", "get_peer",
             sol::overload([](INetManager &self,
                              Int64Wrapper owner) { return self.FindPeerByUserID((std::int64_t) owner); },

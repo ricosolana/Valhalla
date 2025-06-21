@@ -24,7 +24,7 @@ void IModManager::load_userdata_zdo()
 
     using namespace avledet::util;
 
-    m_state.new_usertype<ZDO>(
+    this->new_usertype<ZDO>(
             "ZDO", sol::no_constructor, "id", sol::property(&ZDO::GetID), "pos",
             sol::property(&ZDO::GetPosition, &ZDO::SetPosition), "zone", sol::property(&ZDO::GetZone), "rot",
             sol::property(&ZDO::GetRotation, &ZDO::SetRotation), "prefab", sol::property(&ZDO::GetPrefab),
@@ -135,7 +135,7 @@ void IModManager::load_userdata_zdo()
     // but still retrieve with ZDOManager... class usertypes will be named by their class names, like IZDOManager...
 
 
-    m_state.new_usertype<IZDOManager>(
+    this->new_usertype<IZDOManager>(
             "IZDOManager", "get_zdo", &IZDOManager::GetZDO, "some_zdos",
             sol::overload(
                     sol::resolve<ZDO::reference_list(Vector3f const &, float, std::size_t,

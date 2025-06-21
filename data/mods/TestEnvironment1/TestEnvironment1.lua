@@ -34,7 +34,7 @@ print('vec \'x\':' .. vec.x)
 
 Vector3f.hamburg = 82 --test...
 
-print('vec forced key: "hamburg" :' .. tostring(vec.hamburg))
+print('vec forced key: "hamburg": ' .. tostring(vec.hamburg))
 
 --print('Setting vec3f to nil now...')
 --Vector3f = nil

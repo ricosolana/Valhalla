@@ -9,7 +9,7 @@ void IModManager::load_userdata_types()
 
     using namespace avledet::util;
 
-    m_state.new_usertype<ZDOID>(
+    this->new_usertype<ZDOID>(
             "ZDOID",
             //sol::constructors<ZDOID(UserID userID, std::uint32_t id)>(),
             sol::factories(
@@ -49,7 +49,7 @@ void IModManager::load_userdata_types()
 
     // TODO
     //  this seems like some very unsafe / sketchy usage
-    m_state.new_usertype<Bytes>(
+    this->new_usertype<Bytes>(
             "Bytes", sol::constructors<Bytes(), Bytes(Bytes const &)>(), "assign",
             [](Bytes &self, Bytes const &other) { self = other; }, "move",
             [](Bytes &self, Bytes &other) { self = std::move(other); }, "swap",
@@ -63,7 +63,7 @@ void IModManager::load_userdata_types()
     //    "nid", &UserProfile::m_networkUserId // TODO change name
     //);
 
-    m_state.new_usertype<DataWriter>(
+    this->new_usertype<DataWriter>(
             "Writer", sol::constructors<DataWriter(Bytes)>(),
 
             //"ToReader", &DataWriter::ToReader,
@@ -103,7 +103,7 @@ void IModManager::load_userdata_types()
                           }));
 
     // Package read/write types
-    m_state.new_usertype<DataReader>(
+    this->new_usertype<DataReader>(
             "Reader", sol::constructors<DataReader(Bytes)>(),
 
             //"ToWriter", &DataReader::ToWriter,
@@ -173,7 +173,7 @@ void IModManager::load_userdata_types()
             });
 
 
-    m_state.new_usertype<Int64Wrapper>(
+    this->new_usertype<Int64Wrapper>(
             "Int64",
             sol::constructors<Int64Wrapper(), Int64Wrapper(std::int64_t),
                               Int64Wrapper(std::uint32_t, std::uint32_t),
@@ -188,7 +188,7 @@ void IModManager::load_userdata_types()
             sol::meta_function::equal_to, &Int64Wrapper::operator==, sol::meta_function::less_than,
             &Int64Wrapper::operator<, sol::meta_function::less_than_or_equal_to, &Int64Wrapper::operator<=);
 
-    m_state.new_usertype<UInt64Wrapper>(
+    this->new_usertype<UInt64Wrapper>(
             "UInt64",
             sol::constructors<UInt64Wrapper(), UInt64Wrapper(std::uint64_t),
                               Int64Wrapper(std::uint32_t, std::uint32_t),
@@ -207,27 +207,27 @@ void IModManager::load_userdata_types()
                      "NIGHT", TIME_NIGHT);
 
 
-    m_state.new_usertype<ZStdCompressor>(
+    this->new_usertype<ZStdCompressor>(
             "ZStdCompressor",
             sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(Bytes const &)>(),
             "compress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdCompressor::Compress));
 
-    m_state.new_usertype<ZStdDecompressor>(
+    this->new_usertype<ZStdDecompressor>(
             "ZStdDecompressor", sol::constructors<ZStdDecompressor(), ZStdDecompressor(Bytes const &)>(),
             "decompress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdDecompressor::Decompress));
 
 
-    m_state.new_usertype<Deflater>("Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
-                                   "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
-                                   sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
-                                   sol::resolve<std::optional<Bytes>(Bytes const &)>(&Deflater::Compress));
+    this->new_usertype<Deflater>("Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
+                                 "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
+                                 sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
+                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Deflater::Compress));
 
-    m_state.new_usertype<Inflater>("Inflater",
-                                   //"any", sol::property(Inflater::Any),
-                                   "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz),
-                                   "auto", sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw),
-                                   "decompress",
-                                   sol::resolve<std::optional<Bytes>(Bytes const &)>(&Inflater::Decompress));
+    this->new_usertype<Inflater>("Inflater",
+                                 //"any", sol::property(Inflater::Any),
+                                 "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz),
+                                 "auto", sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw),
+                                 "decompress",
+                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Inflater::Decompress));
 }
 
 #endif

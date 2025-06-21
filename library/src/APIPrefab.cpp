@@ -37,11 +37,10 @@ void IModManager::load_userdata_prefab()
                      "DUNGEON", Prefab::Flag::DUNGEON, "TERRAIN_MODIFIER", Prefab::Flag::TERRAIN_MODIFIER,
                      "CREATURE_SPAWNER", Prefab::Flag::CREATURE_SPAWNER);
 
-    m_state.new_usertype<Prefab>("Prefab", sol::no_constructor, "name", sol::readonly(&Prefab::m_name),
-                                 "hash", sol::readonly(&Prefab::m_hash), "flags_all",
-                                 &Prefab::AllFlagsPresent, "flags_any", &Prefab::AnyFlagsPresent,
-                                 "flags_nall", &Prefab::AllFlagsAbsent, "flags_nany",
-                                 &Prefab::AnyFlagsAbsent);
+    this->new_usertype<Prefab>("Prefab", sol::no_constructor, "name", sol::readonly(&Prefab::m_name), "hash",
+                               sol::readonly(&Prefab::m_hash), "flags_all", &Prefab::AllFlagsPresent,
+                               "flags_any", &Prefab::AnyFlagsPresent, "flags_nall", &Prefab::AllFlagsAbsent,
+                               "flags_nany", &Prefab::AnyFlagsAbsent);
 
     // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
     // When converting flag double to int from lua->c++, double finely represents all integral values with about
@@ -50,7 +49,7 @@ void IModManager::load_userdata_prefab()
     //  ive about reached the limit of using bitflags with lua, and will have to opt for a different type (I dont want to use the intwrapper for flags)
 
 
-    m_state.new_usertype<IPrefabManager>(
+    this->new_usertype<IPrefabManager>(
             "IPrefabManager", "get_prefab",
             sol::overload(
                     sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),

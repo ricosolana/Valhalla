@@ -4,8 +4,6 @@
 
 #if VH_IS_ON(VH_USE_MODS)
 
-    #define SOL_ALL_SAFETIES_ON 1
-
     #include "DataStream.h"
     #include "Hashes.h"
     #include "Quaternion.h"
@@ -185,6 +183,17 @@ class IModManager
     void load_userdata();
     sol::environment create_sandbox(Mod &mod);
     void execute_plugin(Mod &mod);
+
+    // my immutable usertype
+    template<typename Class, typename... Args>
+    sol::usertype<Class> new_usertype(Args &&...args)
+    {
+        return m_state.new_usertype<Class>(std::forward<Args>(args)..., sol::meta_method::static_new_index,
+                                           [](sol::variadic_args) -> sol::object {
+                                               throw std::runtime_error(
+                                                       "cant index userdata, sandboxing is enabled!");
+                                           });
+    }
 
   public:
     void PostInit();

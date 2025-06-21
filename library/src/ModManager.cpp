@@ -1,5 +1,6 @@
 #include "ModManager.h"
 #include <quill/LogMacros.h>
+#include <stdexcept>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -109,6 +110,7 @@ inline void my_panic(sol::optional<std::string> maybe_msg)
         LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
     }
     // When this function exits, Lua will exhibit default behavior and abort(), unless I throw...
+    throw std::runtime_error("plugin errored during load");
 }
 
 //in my limited usage and experience, no error handler or panic was ever invoked, perhaps because all
@@ -139,8 +141,9 @@ void IModManager::PostInit()
 {
     LOG_NOTICE(VH_LOGGER, "Initializing ModManager");
 
-    m_state.set_panic(sol::c_call<decltype(&my_panic), &my_panic>);
-    m_state.set_exception_handler(&my_exception_handler);
+    m_state.set_panic(
+            sol::c_call<decltype(&my_panic), &my_panic>);// important to set; otherwise lua will break things
+    //m_state.set_exception_handler(&my_exception_handler); // triggers on EVERY exception, which I dont want yet
 
     // open all, we'll worry about sandboxing later
     //m_state.open_libraries();

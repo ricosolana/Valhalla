@@ -1,3 +1,4 @@
+#include <exception>
 #include <functional>
 #include <gtest/gtest.h>
 
@@ -45,8 +46,8 @@ void test_independent_envs_users()
     state.new_usertype<Globaline>(
             "Globaline",
             //"subscribe", [](Globaline &self, sol::variadic_args args, sol::this_environment te) {},
-            "subscribe", &Globaline::subscribe
-            //sol::meta_method::static_new_index, [](sol::variadic_args) -> sol::object { throw std::runtime_error("nope static"); }
+            "subscribe", &Globaline::subscribe, sol::meta_method::static_new_index,
+            [](sol::variadic_args) -> sol::object { throw std::runtime_error("nope static"); }
 
             //sol::meta_method::new_index,
             //[](Globaline &self, sol::variadic_args) -> sol::object {
@@ -88,6 +89,7 @@ void test_independent_envs_users()
         Calls
     */
 
+    /*
     // screw it, call multiple times
     state.script("globaline:subscribe();"
                  //"local mt = {__index = function (t) return t.___ end};"
@@ -111,6 +113,19 @@ void test_independent_envs_users()
                  //"print('1: globaline.inst' .. tostring(globaline.inst));"
                  //"Globaline.sta = 192;"
                  ,
+                 env2, "test_independent_envs_users_2", sol::load_mode::text);
+                 */
+
+    try {
+        state.safe_script("Globaline.nefa = 'bad'"
+                          /* comma */,
+                          env1, "test_independent_envs_users_1", sol::load_mode::text);
+    } catch (std::exception const &e) {
+    }
+
+    state.script("assert(Globaline.nefa == nil)"
+                 "print('success #2')"
+                 /* comma */,
                  env2, "test_independent_envs_users_2", sol::load_mode::text);
 }
 

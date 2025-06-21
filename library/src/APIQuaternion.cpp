@@ -37,7 +37,7 @@ void IModManager::load_userdata_quaternion()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - quaternion");
 
-    m_state.new_usertype<Quaternion>(
+    this->new_usertype<Quaternion>(
             "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
 
             // TODO test

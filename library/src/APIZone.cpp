@@ -11,13 +11,13 @@ void IModManager::load_userdata_zone()
 
     //or VH_DUNGEON_GENERATION?
     #if VH_IS_ON(VH_ZONE_GENERATION)
-    m_state.new_usertype<Dungeon>(
+    this->new_usertype<Dungeon>(
             "Dungeon", sol::no_constructor
             //"Generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
 
 
-    m_state.new_usertype<IDungeonManager>(
+    this->new_usertype<IDungeonManager>(
             "IDungeonManager", "find_dungeon",
             [](IDungeonManager &self, std::string_view name) {
                 return self.find_dungeon(avledet::util::get_stable_hash(name));
@@ -30,20 +30,20 @@ void IModManager::load_userdata_zone()
             });
 
 
-    m_state.new_usertype<IZoneManager::Feature::Instance>(
+    this->new_usertype<IZoneManager::Feature::Instance>(
             "FeatureInstance", "pos",
             sol::property([](IZoneManager::Feature::Instance &self) { return self.m_pos; }));
     #endif
 
 
-    m_state.new_usertype<IZoneManager>(
-            "IZoneManager",
+    this->new_usertype<IZoneManager>("IZoneManager",
     #if VH_IS_ON(VH_ZONE_GENERATION)
-            "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
+                                     "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
     #endif
-            "get_nearest_feature", &IZoneManager::GetNearestFeature, "to_zone_pos",
-            &IZoneManager::WorldToZonePos, "to_world_pos", &IZoneManager::ZoneToWorldPos, "global_keys",
-            sol::property(&IZoneManager::GlobalKeys));
+                                     "get_nearest_feature", &IZoneManager::GetNearestFeature, "to_zone_pos",
+                                     &IZoneManager::WorldToZonePos, "to_world_pos",
+                                     &IZoneManager::ZoneToWorldPos, "global_keys",
+                                     sol::property(&IZoneManager::GlobalKeys));
 }
 
 #endif

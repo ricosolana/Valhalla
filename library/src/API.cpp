@@ -21,7 +21,7 @@ void IModManager::load_userdata()
     this->load_userdata_zdo();
     this->load_userdata_zone();
 
-    m_state.new_usertype<IValhalla>(
+    this->new_usertype<IValhalla>(
             "IValhalla",
             // server members
             "version", sol::var(VConstants::GAME),// Valheim version
@@ -97,32 +97,31 @@ void IModManager::load_userdata()
                 });
             });
 
-    m_state.new_usertype<IModManager>("IModManager", "get_mod",
-                                      [](IModManager &self, std::string_view name) {
-                                          auto &&find = self.m_mods.find(name);
-                                          if (find != self.m_mods.end())
-                                              return find->second.get();
-                                          return static_cast<Mod *>(nullptr);
-                                      }
-                                      //"ReloadMod", [](IModManager& self, Mod& mod) {
-                                      //    if (!self.m_reload) {
-                                      //        mod.m_reload = true;
-                                      //        self.m_reload = true;
-                                      //    }
-                                      //}
+    this->new_usertype<IModManager>("IModManager", "get_mod",
+                                    [](IModManager &self, std::string_view name) {
+                                        auto &&find = self.m_mods.find(name);
+                                        if (find != self.m_mods.end())
+                                            return find->second.get();
+                                        return static_cast<Mod *>(nullptr);
+                                    }
+                                    //"ReloadMod", [](IModManager& self, Mod& mod) {
+                                    //    if (!self.m_reload) {
+                                    //        mod.m_reload = true;
+                                    //        self.m_reload = true;
+                                    //    }
+                                    //}
     );
 
-    m_state.new_usertype<Mod>("Mod", "name", sol::readonly(&Mod::m_name),
-                              //"entry", sol::readonly(&Mod::m_entry),
-                              "version", sol::readonly(&Mod::m_version), "api_version",
-                              sol::readonly(&Mod::m_apiVersion), "description",
-                              sol::readonly(&Mod::m_description), "authors", sol::readonly(&Mod::m_authors));
+    this->new_usertype<Mod>("Mod", "name", sol::readonly(&Mod::m_name),
+                            //"entry", sol::readonly(&Mod::m_entry),
+                            "version", sol::readonly(&Mod::m_version), "api_version",
+                            sol::readonly(&Mod::m_apiVersion), "description",
+                            sol::readonly(&Mod::m_description), "authors", sol::readonly(&Mod::m_authors));
 
 
-    m_state.new_usertype<IRouteManager>("IRouteManager", "register", &IRouteManager::RegisterLua,
-                                        "invoke_view", &IRouteManager::InvokeViewLua, "invoke",
-                                        &IRouteManager::InvokeLua, "invoke_all",
-                                        &IRouteManager::InvokeAllLua);
+    this->new_usertype<IRouteManager>("IRouteManager", "register", &IRouteManager::RegisterLua, "invoke_view",
+                                      &IRouteManager::InvokeViewLua, "invoke", &IRouteManager::InvokeLua,
+                                      "invoke_all", &IRouteManager::InvokeAllLua);
 
     // Stl function; Will get copied along with other safe-sandboxed functions
     m_state["print"] = [](sol::variadic_args args, sol::this_environment tenv) {

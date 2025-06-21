@@ -10,7 +10,7 @@ void IModManager::load_userdata_peer()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - peer");
 
-    m_state.new_usertype<IModManager::MethodSig>(
+    this->new_usertype<IModManager::MethodSig>(
             "MethodSig", sol::constructors<IModManager::MethodSig(std::string_view, sol::variadic_args)>());
 
     m_state.new_enum("ChatMsgType", "WHISPER", ChatMsgType::Whisper, "NORMAL", ChatMsgType::Normal, "SHOUT",
@@ -22,7 +22,7 @@ void IModManager::load_userdata_peer()
     //
     //    );
 
-    m_state.new_usertype<Peer>(
+    this->new_usertype<Peer>(
             "Peer",
             // member fields
             //"visibleOnMap", &Peer::m_visibleOnMap,

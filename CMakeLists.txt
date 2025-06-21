@@ -203,6 +203,9 @@ if(DEFINED VH_ZONE_GENERATION)
     add_compile_definitions(VH_ZONE_GENERATION=$<BOOL:${VH_ZONE_GENERATION}>) 
 endif()
 
+add_compile_definitions(SOL_ALL_SAFETIES_ON=1)
+add_compile_definitions(SOL_PRINT_ERRORS=0) #because stdout duplicate errors are anooooying
+
 
 
 #################
