@@ -42,7 +42,7 @@ void avledet::api::init_quaternion(sol::table table)
             // TODO test
             //"IDENTITY", sol::constant(Quaternion::IDENTITY),
 
-            //"IDENTITY", sol::var(Quaternion::IDENTITY),//sol::property([]() {Quaternion::IDENTITY}),
+            "IDENTITY", sol::var(Quaternion::IDENTITY),//sol::property([]() {Quaternion::IDENTITY}),
             "x", sol::readonly(&Quaternion::x), "y", sol::readonly(&Quaternion::y), "z",
             sol::readonly(&Quaternion::z), "w", sol::readonly(&Quaternion::w), sol::meta_function::index,
             [](Quaternion &self, std::size_t index, sol::state_view view) {

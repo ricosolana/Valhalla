@@ -718,7 +718,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                                 && state.next_float() <= zoneVegetation->m_chanceToUseGroundTilt) {
                                 auto rotation2 = Quaternion::euler(0, rot_y, 0);
                                 rotation       = Quaternion::look_rotation(
-                                        normal.cross(rotation2 * Vector3f::forward()), normal);
+                                        normal.cross(rotation2 * Vector3f::FORWARD), normal);
                             } else {
                                 rotation = Quaternion::euler(rot_x, rot_y, rot_z);
                             }
@@ -1133,7 +1133,7 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
             // TODO not really optional, it is required through a branch
             ZDO::optional zdo;
 
-            if (dungeon.m_interior_position != Vector3f::zero()) {
+            if (dungeon.m_interior_position != Vector3f::ZERO) {
 
                 ZoneID zone      = WorldToZonePos(pos);
                 Vector3f zonePos = ZoneToWorldPos(zone);

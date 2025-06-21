@@ -85,7 +85,7 @@ void IRandomEventManager::Update()
             VH_DISPATCH_WEBHOOK("Random event stopped: `" + this->m_activeEvent->m_name + "`");
 
             m_activeEvent    = nullptr;
-            m_activeEventPos = Vector3f::zero();
+            m_activeEventPos = Vector3f::ZERO;
         }
     } else if (VH_SETTINGS.eventsInterval > 0s) {
         m_eventIntervalTimer += Valhalla()->delta();
@@ -231,6 +231,6 @@ void IRandomEventManager::SendCurrentRandomEvent()
                 m_activeEventPos);
     } else {
         RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent, std::string_view(""), 0.f,
-                                  Vector3f::zero());
+                                  Vector3f::ZERO);
     }
 }

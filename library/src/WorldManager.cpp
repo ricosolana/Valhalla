@@ -314,7 +314,7 @@ avledet::util::Bytes IWorldManager::SaveWorldDB() const
     writer.write(0.f);
     writer.write("");
     writer.write(0.f);
-    writer.write(Vector3f::zero());
+    writer.write(Vector3f::ZERO);
 #endif
 
     return writer.get_buf();

@@ -9,28 +9,30 @@ namespace avledet::util::CSU {
 
     static constexpr auto PI = 3.1415926535897932384626f;
 
-    Quaternion const Quaternion::IDENTITY = {0, 0, 0, 1};
+    Quaternion const Quaternion::IDENTITY = Quaternion(0, 0, 0, 1);
 
-    Quaternion::Quaternion() :
-        Quaternion(IDENTITY)
-    {
-    }
+    //constexpr Quaternion Quaternion::IDENTITY(0.f, 0.f, 0.f, 1.f);
 
-    Quaternion::Quaternion(float x, float y, float z, float w) :
-        x(x),
-        y(y),
-        z(z),
-        w(w)
-    {
-    }
+    //constexpr Quaternion::Quaternion() :
+    //    Quaternion(IDENTITY)
+    //{
+    //}
 
-    Quaternion::Quaternion(Vector3f v, float w)
-    {
-        this->x = v.x;
-        this->y = v.y;
-        this->z = v.z;
-        this->w = w;
-    }
+    //constexpr Quaternion::Quaternion(float x, float y, float z, float w) :
+    //    x(x),
+    //    y(y),
+    //    z(z),
+    //    w(w)
+    //{
+    //}
+
+    //constexpr Quaternion::Quaternion(Vector3f const &v, float w)
+    //{
+    //    this->x = v.x;
+    //    this->y = v.y;
+    //    this->z = v.z;
+    //    this->w = w;
+    //}
 
     float Quaternion::length_squared() const
     {

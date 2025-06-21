@@ -8,7 +8,7 @@ void avledet::api::init_vector(sol::table api_table)
 
     api_table.new_usertype<Vector3f>(
             "Vector3f", sol::constructors<Vector3f(), Vector3f(float, float, float)>(), "ZERO",
-            sol::property(&Vector3f::zero), "x", &Vector3f::x, "y", &Vector3f::y, "z", &Vector3f::z,
+            sol::var(Vector3f::ZERO), "x", &Vector3f::x, "y", &Vector3f::y, "z", &Vector3f::z,
             sol::meta_function::index,
             [](Vector3f &self, std::size_t index, sol::state_view view) {
                 return index == 1   ? sol::make_object(view, self.x)
@@ -31,7 +31,7 @@ void avledet::api::init_vector(sol::table api_table)
 
     api_table.new_usertype<Vector2f>(
             "Vector2f", sol::constructors<Vector2f(), Vector2f(float, float)>(), "ZERO",
-            sol::property(&Vector2f::zero), "x", &Vector2f::x, "y", &Vector2f::y, sol::meta_function::index,
+            sol::var(Vector2f::ZERO), "x", &Vector2f::x, "y", &Vector2f::y, sol::meta_function::index,
             [](Vector2f &self, std::size_t index, sol::state_view view) {
                 return index == 1   ? sol::make_object(view, self.x)
                        : index == 2 ? sol::make_object(view, self.y)
@@ -51,7 +51,7 @@ void avledet::api::init_vector(sol::table api_table)
 
     api_table.new_usertype<Vector2i>(
             "Vector2i", sol::constructors<Vector2i(), Vector2i(std::int32_t, std::int32_t)>(), "ZERO",
-            sol::property(&Vector2i::zero), "x", &Vector2i::x, "y", &Vector2i::y, sol::meta_function::index,
+            sol::var(Vector2i::ZERO), "x", &Vector2i::x, "y", &Vector2i::y, sol::meta_function::index,
             [](Vector2i &self, std::size_t index, sol::state_view view) {
                 return index == 1   ? sol::make_object(view, self.x)
                        : index == 2 ? sol::make_object(view, self.y)
@@ -71,7 +71,7 @@ void avledet::api::init_vector(sol::table api_table)
 
     api_table.new_usertype<Vector2s>(
             "Vector2s", sol::constructors<Vector2s(), Vector2s(std::int16_t, std::int16_t)>(), "ZERO",
-            sol::property(&Vector2s::zero), "x", &Vector2s::x, "y", &Vector2s::y, sol::meta_function::index,
+            sol::var(Vector2s::ZERO), "x", &Vector2s::x, "y", &Vector2s::y, sol::meta_function::index,
             [](Vector2s &self, std::size_t index, sol::state_view view) {
                 return index == 1   ? sol::make_object(view, self.x)
                        : index == 2 ? sol::make_object(view, self.y)

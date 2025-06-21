@@ -173,7 +173,7 @@ class IModManager
   private:
     Mod &LoadModInfo(std::string_view folderName);
 
-    sol::table load_api_table();
+    sol::table load_userdata();
     void execute_plugin(Mod &mod);
 
   public:

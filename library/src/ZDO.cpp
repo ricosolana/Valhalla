@@ -245,7 +245,7 @@ ZoneID ZDO::GetZone() const
 
 void ZDO::Pack(DataWriter &writer, bool network) const
 {
-    bool hasRot = this->m_rotation != Vector3f::zero();
+    bool hasRot = this->m_rotation != Vector3f::ZERO;
 
     std::uint16_t flags {};
 

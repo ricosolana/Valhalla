@@ -20,8 +20,18 @@
 namespace avledet::util::CSU {
     template<typename T>
         requires std::is_arithmetic_v<T>
-    struct Vector2
+    class Vector2
     {
+      public:
+        // Constants
+        static inline constexpr Vector2 const ZERO  = Vector2();
+        static inline constexpr Vector2 const UP    = Vector2(0, 1);
+        static inline constexpr Vector2 const DOWN  = Vector2(0, -1);
+        static inline constexpr Vector2 const LEFT  = Vector2(-1, 0);
+        static inline constexpr Vector2 const RIGHT = Vector2(1, 0);
+        static inline constexpr Vector2 const ONE   = Vector2(1, 1);
+
+      public:
         T x, y;
 
         //static const Vector2<T> ZERO;
@@ -158,14 +168,15 @@ namespace avledet::util::CSU {
                 return *this / std::sqrt(sq);
                 //return *this * VUtils::Math::FISQRT(sqmagnitude);
             } else {
-                return zero();
+                //return zero();
+                return ZERO;
             }
         }
 
-        static constexpr Vector2<T> zero()
-        {
-            return Vector2<T>(0, 0);
-        }
+        //static constexpr Vector2<T> zero()
+        //{
+        //    return Vector2<T>(0, 0);
+        //}
 
         // todo quill / fmt formatters...
         friend std::ostream &operator<<(std::ostream &st, Vector2<T> const &vec)
@@ -176,8 +187,20 @@ namespace avledet::util::CSU {
 
     template<typename T>
         requires std::is_arithmetic_v<T>
-    struct Vector3
+    class Vector3
     {
+      public:
+        // Constants
+        static inline constexpr Vector3 const ZERO    = Vector3();
+        static inline constexpr Vector3 const UP      = Vector3(0, 1, 0);
+        static inline constexpr Vector3 const DOWN    = Vector3(0, -1, 0);
+        static inline constexpr Vector3 const FORWARD = Vector3(0, 0, 1);
+        static inline constexpr Vector3 const LEFT    = Vector3(-1, 0, 0);
+        static inline constexpr Vector3 const RIGHT   = Vector3(1, 0, 0);
+        static inline constexpr Vector3 const BACK    = Vector3(0, 0, -1);
+        static inline constexpr Vector3 const ONE     = Vector3(1, 1, 1);
+
+      public:
         T x, y, z;
 
         constexpr Vector3() :
@@ -317,7 +340,8 @@ namespace avledet::util::CSU {
                 return *this / std::sqrt(sq);
                 //return *this * VUtils::Math::FISQRT(sqmagnitude);
             } else {
-                return zero();
+                //return zero();
+                return ZERO;
             }
         }
 
@@ -344,25 +368,26 @@ namespace avledet::util::CSU {
 
         // TODO
         //  define these as constants instead of functions
-        static constexpr Vector3<T> zero()
-        {
-            return Vector3<T>(0, 0, 0);
-        }
+        //static constexpr Vector3<T> zero()
+        //{
+        //    return Vector3<T>(0, 0, 0);
+        //}
 
-        static constexpr Vector3<T> up()
-        {
-            return Vector3<T>(0, 1, 0);
-        }
+        //static constexpr Vector3<T> up()
+        //{
+        //    return Vector3<T>(0, 1, 0);
+        //}
 
-        static constexpr Vector3<T> down()
-        {
-            return Vector3<T>(0, -1, 0);
-        }
+        //static constexpr Vector3<T> down()
+        //{
+        //    return Vector3<T>(0, -1, 0);
+        //}
 
-        static constexpr Vector3<T> forward()
-        {
-            return Vector3<T>(0, 0, 1);
-        }
+        //static constexpr Vector3<T> forward()
+        //{
+        //    return Vector3<T>(0, 0, 1);
+        //}
+
 
         friend std::ostream &operator<<(std::ostream &st, Vector3<T> const &vec)
         {
@@ -374,11 +399,29 @@ namespace avledet::util::CSU {
     //void init_api(sol::table api_table);
 #endif
 
+    // breaks everything ...
+    //struct Vector3f : public Vector3<float>
+    //{
+    //    static constexpr auto const ZERO = Vector3<float>();
+
+    //    constexpr Vector3f(float const x, float const y, float const z) :
+    //        Vector3<float>(x, y, z)
+    //    {
+    //    }
+
+    //    constexpr Vector3f() :
+    //        Vector3<float>()
+    //    {
+    //    }
+    //};
+
     using Vector2f = Vector2<float>;
     using Vector2i = Vector2<std::int32_t>;
     using Vector2s = Vector2<std::int16_t>;
 
     using Vector3f = Vector3<float>;
+
+    //static constexpr auto const UP = Vector3f();
 }// namespace avledet::util::CSU
 
 // Serializers / Deserializers

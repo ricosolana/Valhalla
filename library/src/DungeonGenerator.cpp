@@ -132,7 +132,7 @@ void DungeonGenerator::GenerateCampRadial(VUtils::Random::State &state)
     int num5   = 0;
     for (int i = 0; i < num4; i++) {
         Vector3f vector = this->m_pos
-                          + Quaternion::euler(0.f, state.range(0, 360), 0.f) * Vector3f::forward()
+                          + Quaternion::euler(0.f, state.range(0, 360), 0.f) * Vector3f::FORWARD
                                     * state.range(0.f, num - this->m_dungeon.m_perimeter_buffer);
 
         auto randomWeightedRoom = this->GetRandomWeightedRoom(state, false);
@@ -163,8 +163,8 @@ Quaternion DungeonGenerator::GetCampRoomRotation(VUtils::Random::State &state, R
     if (room.m_faceCenter) {
         Vector3f vector = m_pos - pos;
         vector.y        = 0;
-        if (vector == Vector3f::zero())
-            vector = Vector3f::forward();
+        if (vector == Vector3f::ZERO)
+            vector = Vector3f::FORWARD;
 
         vector.normal();
         float y = VUtils::Mathf::Round(VUtils::Math::YawFromDirection(vector) / 22.5f) * 22.5f;
@@ -182,8 +182,8 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State &state, float radius, int
     for (int i = 0; i < num3; i++) {
         auto &&randomWeightedRoom = this->GetRandomWeightedRoom(state, true);
         if (randomWeightedRoom) {
-            Vector3f vector = this->m_pos
-                              + Quaternion::euler(0, state.range(0, 360), 0) * Vector3f::forward() * radius;
+            Vector3f vector
+                    = this->m_pos + Quaternion::euler(0, state.range(0, 360), 0) * Vector3f::FORWARD * radius;
 
             Quaternion campRoomRotation = this->GetCampRoomRotation(state, *randomWeightedRoom, vector);
 
@@ -425,7 +425,7 @@ void DungeonGenerator::PlaceStartRoom(VUtils::Random::State &state)
 
     Vector3f pos;
     Quaternion rot;
-    this->CalculateRoomPosRot(entrance, Vector3f::zero(), Quaternion::IDENTITY, pos, rot);
+    this->CalculateRoomPosRot(entrance, Vector3f::ZERO, Quaternion::IDENTITY, pos, rot);
 
     // TODO room.POS and room.ROT are ultimately redundant
     auto global = VUtils::Physics::LocalToGlobal(entrance.m_localPos, entrance.m_localRot, roomData.m_pos,

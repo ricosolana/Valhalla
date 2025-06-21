@@ -17,13 +17,37 @@ namespace avledet::util::CSU {
     class Quaternion
     {
       public:
-        static Quaternion const IDENTITY;// (0.f, 0.f, 0.f, 1.f);
+        // Constants
 
+
+      public:
         float x, y, z, w;
 
-        Quaternion();
-        Quaternion(float x, float y, float z, float w);
-        Quaternion(Vector3f v, float w);
+        constexpr Quaternion() :
+            Quaternion(0, 0, 0, 1)
+        {
+        }
+
+        constexpr Quaternion(float x, float y, float z, float w) :
+            x(x),
+            y(y),
+            z(z),
+            w(w)
+        {
+        }
+
+        Quaternion(Vector3f const &v, float w) :
+            x(v.x),
+            y(v.y),
+            z(v.z),
+            w(w)
+        {
+        }
+
+        static Quaternion const IDENTITY;// = {0.f, 0.f, 0.f, 1.f};
+
+        //static constexpr inline Quaternion const IDENTITY
+        //= {0.f, 0.f, 0.f, 1.f};  //= Quaternion(0.f, 0.f, 0.f, 1.f);
 
         //Quaternion(const Quaternion &other)
         //    : x(other.x), y(other.y), z(other.z), w(other.w) {}

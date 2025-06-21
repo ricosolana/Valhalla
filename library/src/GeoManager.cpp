@@ -152,7 +152,7 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State &state, int iteration
             return true;
         }
     }
-    end = Vector2f::zero();
+    end = Vector2f::ZERO;
     return false;
 }
 
@@ -169,7 +169,7 @@ bool IGeoManager::FindStreamStartPoint(VUtils::Random::State &state, int iterati
             return true;
         }
     }
-    p      = Vector2f::zero();
+    p      = Vector2f::ZERO;
     starth = 0;
     return false;
 }

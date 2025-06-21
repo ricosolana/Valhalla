@@ -292,7 +292,7 @@ class IZDOManager
                                                avledet::util::Hash prefab, Prefab::Flag flagsPresent,
                                                Prefab::Flag flagsAbsent)
     {
-        return SomeZDOs(zone, max, Vector3f::zero(), std::numeric_limits<float>::max(), prefab, flagsPresent,
+        return SomeZDOs(zone, max, Vector3f::ZERO, std::numeric_limits<float>::max(), prefab, flagsPresent,
                         flagsAbsent);
     }
 
