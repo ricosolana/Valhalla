@@ -173,7 +173,17 @@ class IModManager
   private:
     Mod &LoadModInfo(std::string_view folderName);
 
-    sol::table load_userdata();
+    void load_userdata_network();
+    void load_userdata_peer();
+    void load_userdata_prefab();
+    void load_userdata_quaternion();
+    void load_userdata_types();
+    void load_userdata_vector();
+    void load_userdata_zdo();
+    void load_userdata_zone();
+
+    void load_userdata();
+    sol::environment create_sandbox(Mod &mod);
     void execute_plugin(Mod &mod);
 
   public:
@@ -393,27 +403,6 @@ struct avledet::util::Streamer<F, G...>
         return results;
     }
 };
-
-namespace avledet::api {
-
-    void init_network(sol::table table);
-
-    void init_peer(sol::table table);
-
-    void init_prefab(sol::table table);
-
-    void init_quaternion(sol::table table);
-
-    void init_types(sol::table table);
-
-    void init_vector(sol::table table);
-
-    void init_zdo(sol::table table);
-
-    void init_zone(sol::table table);
-
-}// namespace avledet::api
-
 
 #else // !VH_USE_MODS
     #define VH_DISPATCH_MOD_EVENT(name, ...)       (true)

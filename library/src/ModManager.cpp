@@ -39,17 +39,6 @@ IModManager *ModManager()
     return MOD_MANAGER.get();
 }
 
-static std::vector<std::string_view> const safe_functions {// Global objects
-                                                           "assert", "error", "ipairs", "next", "pairs",
-                                                           "pcall", "select", "tonumber", "tostring", "type",
-                                                           "unpack", "_VERSION", "xpcall",
-
-                                                           // Full packages
-                                                           "coroutine.*", "string.*", "table.*", "math.*",
-
-                                                           // Partial packages
-                                                           "os.clock", "os.date", "os.difftime", "os.time"};
-
 IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
 {
     YAML::Node loadNode;
@@ -64,20 +53,6 @@ IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
     }
 
     auto name = loadNode["name"].as<std::string>();
-
-
-    // deep copy the 'api', so that we shallow copy all keys, simple strings (immutable reference),
-    //  but then the only real thing which MUST remain preserved is the
-
-    //for (auto const& [id_obj, thing] : env) {
-    //    std::string id = id_obj.as<std::string>();
-    //    LOG_INFO(VH_LOGGER, "got: {}", id);
-    //}
-
-    //TODO remove this; TEST ONLY
-    //LOG_INFO(VH_LOGGER, "FLUSHED");
-    //VH_LOGGER->flush_log(1000);
-
 
     auto &&insert = this->m_mods.insert(
             {name, std::make_unique<Mod>(loadNode["name"].as<std::string>(),
@@ -115,87 +90,12 @@ void IModManager::execute_plugin(Mod &mod)
 {
     auto path(mod.m_entry);
     if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
-        // See Lua Sandboxing and containerized execution
-        //https://blog.rubenwardy.com/2020/07/26/sol3-script-sandbox/
-        //https://forums.solar2d.com/t/unloading-a-lua-module-that-was-required/349169/10
-        //http://lua-users.org/wiki/SandBoxes
-        //https://ericjmritz.wordpress.com/2015/03/25/creating-and-using-environments-in-lua/
-        //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
-
         // Load new API globals personally for this mod
-        auto api_table = this->load_userdata();
+        auto env = this->create_sandbox(mod);
 
-        auto env    = sol::environment(m_state, sol::create);//, api_table);
-        env["_G"]   = env;// otherwise, will point to our state global table; defeating sandboxing...
-        env["this"] = std::ref(mod);//TODO TEST
-
-
-        //sandboxer
-        for (auto const &entry : safe_functions) {
-
-            /*
-                Entire module loading
-            */
-            auto idx = entry.rfind(".*");
-            if (idx != std::string::npos) {
-                // load the package
-                auto package_name = entry.substr(0, idx);
-                assert(!package_name.contains("."));
-
-                auto copy = env[sol::create_if_nil][package_name];//.get_or_create<sol::table>();
-                for (auto [func_name, func] : m_state[package_name].get<sol::table>()) {
-                    copy[func_name] = func;
-
-                    assert(env.get<sol::table>(package_name)[func_name].valid());
-                }
-                continue;
-            }
-
-            /*
-                Partial module function loading
-            */
-            idx = entry.find(".");
-            if (idx != std::string::npos) {
-                // load the partial
-                auto package_name = entry.substr(0, idx);
-                assert(!package_name.contains("."));
-
-                auto func_name = entry.substr(idx + 1);
-                assert(!func_name.contains("."));
-
-                // https://github.com/ThePhD/sol2/blob/develop/examples/source/table_create_if_nil.cpp
-
-                auto func = m_state[package_name][func_name].get<sol::function>();
-                assert(func.valid());
-
-                env[sol::create_if_nil][package_name][func_name] = func;
-
-                assert(env.get<sol::table>(package_name)[func_name].valid());
-                assert(env.get<sol::table>(package_name)[func_name].get_type() == sol::type::function);
-
-                continue;
-            }
-
-            /*
-                Global function loading
-            */
-
-            //1. works for 99% of types (except _VERSION)
-            //env[sol::create_if_nil][entry] = m_state[entry].get<sol::function>();
-
-            env[sol::create_if_nil][entry] = m_state[entry].get<sol::object>();
-
-            //assert(env.get<sol::optional<sol::object>>(entry).has_value()); //fails; cannot find another way to check...
-        }
-
-        //TODO might not even need to use environment...
-
-        m_state.safe_script(opt.value(), env, mod.m_entry, sol::load_mode::any);
-
-        //sol::function funcc = result;
-
-
-        //funcc.se
+        // Important: loadmode.text
+        //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
+        m_state.safe_script(opt.value(), env, mod.m_entry.filename(), sol::load_mode::text);
     } else
         throw std::runtime_error(std::string("unable to open file ") + path.string());
 }
@@ -256,6 +156,9 @@ void IModManager::PostInit()
                            //sol::lib::ffi, //luajit; unsafe;
                            //sol::lib::jit, //luajit; unsafe;
                            sol::lib::utf8);
+
+    // Load globally shared userdata
+    load_userdata();
 
     std::error_code ec;
     fs::create_directories(VH_MOD_PATH, ec);

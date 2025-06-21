@@ -1,7 +1,9 @@
 #include "ModManager.h"
 #include "NetManager.h"
+#include "NetSocket.h"
 #include "ValhallaServer.h"
 #include <quill/core/LogLevel.h>
+#include <sol/forward.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -9,17 +11,18 @@
 
 using namespace avledet::network;
 
-void avledet::api::init_network(sol::table table)
+void IModManager::load_userdata_network()
 {
     //VH_LOGGER->set_log_level(quill::LogLevel::Info);
 
     LOG_DEBUG(VH_LOGGER, "Initializing API types - network");
 
-    table.new_enum("NetStatus", "CONNECTING", Status::Connecting, "CONNECTED", Status::Connected, "LINGERING",
-                   Status::Lingering, "CLOSED", Status::Closed, "CONNECT_FAILED", Status::Connect_Failed);
+    m_state.new_enum("NetStatus", "CONNECTING", Status::Connecting, "CONNECTED", Status::Connected,
+                     "LINGERING", Status::Lingering, "CLOSED", Status::Closed, "CONNECT_FAILED",
+                     Status::Connect_Failed);
 
     // TODO full socket impl
-    table.new_usertype<ISocket>(
+    m_state.new_usertype<ISocket>(
             "Socket", "close", &ISocket::Close,
             //"connected", sol::property(&ISocket::Connected),
             "address", sol::property(&ISocket::get_address), "host", sol::property(&ISocket::get_host_name),
@@ -28,8 +31,8 @@ void avledet::api::init_network(sol::table table)
             sol::property(&ISocket::get_ping), "quality", sol::property(&ISocket::get_connection_quality),
             "outbound", sol::property(&ISocket::is_outbound));
 
-    table["NetManager"] = NetManager();
-    table.new_usertype<INetManager>(
+
+    m_state.new_usertype<INetManager>(
             "INetManager", "get_peer",
             sol::overload([](INetManager &self,
                              Int64Wrapper owner) { return self.FindPeerByUserID((std::int64_t) owner); },

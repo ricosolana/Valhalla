@@ -1,5 +1,6 @@
 #include "ModManager.h"
 #include "ZDOManager.h"
+#include <sol/forward.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -17,13 +18,13 @@ struct ZDOWrapper
     //      - sync perfectly describes this, but this word commonly utilized for zdo operations regarding peers... would become confusing
 };
 
-void avledet::api::init_zdo(sol::table table)
+void IModManager::load_userdata_zdo()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - ZDO");
 
     using namespace avledet::util;
 
-    table.new_usertype<ZDO>(
+    m_state.new_usertype<ZDO>(
             "ZDO", sol::no_constructor, "id", sol::property(&ZDO::GetID), "pos",
             sol::property(&ZDO::GetPosition, &ZDO::SetPosition), "zone", sol::property(&ZDO::GetZone), "rot",
             sol::property(&ZDO::GetRotation, &ZDO::SetRotation), "prefab", sol::property(&ZDO::GetPrefab),
@@ -133,8 +134,8 @@ void avledet::api::init_zdo(sol::table table)
     // TODO turn managers into lua classes that can be indexed
     // but still retrieve with ZDOManager... class usertypes will be named by their class names, like IZDOManager...
 
-    table["ZDOManager"] = ZDOManager();
-    table.new_usertype<IZDOManager>(
+
+    m_state.new_usertype<IZDOManager>(
             "IZDOManager", "get_zdo", &IZDOManager::GetZDO, "some_zdos",
             sol::overload(
                     sol::resolve<ZDO::reference_list(Vector3f const &, float, std::size_t,

@@ -1,6 +1,7 @@
 #include "ModManager.h"
 #include "Quaternion.h"
 #include <sol/base_traits.hpp>
+#include <sol/forward.hpp>
 #include <sol/property.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
@@ -32,11 +33,11 @@ namespace sol {
     }
 }// namespace sol
 
-void avledet::api::init_quaternion(sol::table table)
+void IModManager::load_userdata_quaternion()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - quaternion");
 
-    table.new_usertype<Quaternion>(
+    m_state.new_usertype<Quaternion>(
             "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),
 
             // TODO test

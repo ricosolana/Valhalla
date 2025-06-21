@@ -346,7 +346,7 @@ namespace VConstants {
 
     // Valheim game version
     //  Located in Version.cs
-    static constexpr char const *GAME
+    static constexpr char const *const GAME
             = "0.220.5";// WARNING: do NOT change the type of this to anything besides const char*!!! see ModManager...
 
     static constexpr std::uint32_t NETWORK = 34;

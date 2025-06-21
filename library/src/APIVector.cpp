@@ -1,12 +1,13 @@
 #include "ModManager.h"
+#include <sol/forward.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
-void avledet::api::init_vector(sol::table api_table)
+void IModManager::load_userdata_vector()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - CSU::VectorX");
 
-    api_table.new_usertype<Vector3f>(
+    m_state.new_usertype<Vector3f>(
             "Vector3f", sol::constructors<Vector3f(), Vector3f(float, float, float)>(), "ZERO",
             sol::var(Vector3f::ZERO), "x", &Vector3f::x, "y", &Vector3f::y, "z", &Vector3f::z,
             sol::meta_function::index,
@@ -29,7 +30,7 @@ void avledet::api::init_vector(sol::table api_table)
             sol::resolve<Vector3f(Vector3f const &) const>(&Vector3f::operator/),
             sol::meta_function::equal_to, &Vector3f::operator==);
 
-    api_table.new_usertype<Vector2f>(
+    m_state.new_usertype<Vector2f>(
             "Vector2f", sol::constructors<Vector2f(), Vector2f(float, float)>(), "ZERO",
             sol::var(Vector2f::ZERO), "x", &Vector2f::x, "y", &Vector2f::y, sol::meta_function::index,
             [](Vector2f &self, std::size_t index, sol::state_view view) {
@@ -49,7 +50,7 @@ void avledet::api::init_vector(sol::table api_table)
             sol::resolve<Vector2f(Vector2f const &) const>(&Vector2f::operator/),
             sol::meta_function::equal_to, &Vector2f::operator==);
 
-    api_table.new_usertype<Vector2i>(
+    m_state.new_usertype<Vector2i>(
             "Vector2i", sol::constructors<Vector2i(), Vector2i(std::int32_t, std::int32_t)>(), "ZERO",
             sol::var(Vector2i::ZERO), "x", &Vector2i::x, "y", &Vector2i::y, sol::meta_function::index,
             [](Vector2i &self, std::size_t index, sol::state_view view) {
@@ -69,7 +70,7 @@ void avledet::api::init_vector(sol::table api_table)
             sol::resolve<Vector2i(Vector2i const &) const>(&Vector2i::operator/),
             sol::meta_function::equal_to, &Vector2i::operator==);
 
-    api_table.new_usertype<Vector2s>(
+    m_state.new_usertype<Vector2s>(
             "Vector2s", sol::constructors<Vector2s(), Vector2s(std::int16_t, std::int16_t)>(), "ZERO",
             sol::var(Vector2s::ZERO), "x", &Vector2s::x, "y", &Vector2s::y, sol::meta_function::index,
             [](Vector2s &self, std::size_t index, sol::state_view view) {

@@ -1,14 +1,15 @@
 #include "ModManager.h"
+#include <sol/forward.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
-void avledet::api::init_types(sol::table table)
+void IModManager::load_userdata_types()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - types");
 
     using namespace avledet::util;
 
-    table.new_usertype<ZDOID>(
+    m_state.new_usertype<ZDOID>(
             "ZDOID",
             //sol::constructors<ZDOID(UserID userID, std::uint32_t id)>(),
             sol::factories(
@@ -22,33 +23,33 @@ void avledet::api::init_types(sol::table table)
     using StreamType  = IModManager::StreamType;
     using StreamTypes = IModManager::StreamTypes;
 
-    table.new_enum("Type", "BOOL", StreamType::BOOL,
+    m_state.new_enum("Type", "BOOL", StreamType::BOOL,
 
-                   "STRING", StreamType::STRING, "STRINGS", StreamType::STRINGS,
+                     "STRING", StreamType::STRING, "STRINGS", StreamType::STRINGS,
 
-                   "BYTES", StreamType::BYTES,
+                     "BYTES", StreamType::BYTES,
 
-                   "ZDOID", StreamType::ZDOID, "VECTOR3f", StreamType::VECTOR3f, "vec3f",
-                   StreamType::VECTOR3f, "VECTOR2i", StreamType::VECTOR2i, "vec2i", StreamType::VECTOR2i,
-                   "QUATERNION", StreamType::QUATERNION, "quat", StreamType::QUATERNION,
+                     "ZDOID", StreamType::ZDOID, "VECTOR3f", StreamType::VECTOR3f, "vec3f",
+                     StreamType::VECTOR3f, "VECTOR2i", StreamType::VECTOR2i, "vec2i", StreamType::VECTOR2i,
+                     "QUATERNION", StreamType::QUATERNION, "quat", StreamType::QUATERNION,
 
-                   "INT8", StreamType::INT8, "s8", StreamType::INT8, "INT16", StreamType::INT16, "SHORT",
-                   StreamType::INT16, "s16", StreamType::INT16, "INT32", StreamType::INT32, "INT",
-                   StreamType::INT32, "HASH", StreamType::INT32, "s32", StreamType::INT32, "INT64",
-                   StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
+                     "INT8", StreamType::INT8, "s8", StreamType::INT8, "INT16", StreamType::INT16, "SHORT",
+                     StreamType::INT16, "s16", StreamType::INT16, "INT32", StreamType::INT32, "INT",
+                     StreamType::INT32, "HASH", StreamType::INT32, "s32", StreamType::INT32, "INT64",
+                     StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
 
-                   "UINT8", StreamType::UINT8, "BYTE", StreamType::UINT8, "u8", StreamType::UINT8, "UINT16",
-                   StreamType::UINT16, "USHORT", StreamType::UINT16, "u16", StreamType::UINT16, "UINT32",
-                   StreamType::UINT32, "UINT", StreamType::UINT32, "u32", StreamType::UINT32, "UINT64",
-                   StreamType::UINT64, "ULONG", StreamType::UINT64, "u64", StreamType::UINT64,
+                     "UINT8", StreamType::UINT8, "BYTE", StreamType::UINT8, "u8", StreamType::UINT8, "UINT16",
+                     StreamType::UINT16, "USHORT", StreamType::UINT16, "u16", StreamType::UINT16, "UINT32",
+                     StreamType::UINT32, "UINT", StreamType::UINT32, "u32", StreamType::UINT32, "UINT64",
+                     StreamType::UINT64, "ULONG", StreamType::UINT64, "u64", StreamType::UINT64,
 
-                   "FLOAT", StreamType::FLOAT, "DOUBLE", StreamType::DOUBLE,
+                     "FLOAT", StreamType::FLOAT, "DOUBLE", StreamType::DOUBLE,
 
-                   "CHAR16", StreamType::CHAR16);
+                     "CHAR16", StreamType::CHAR16);
 
     // TODO
     //  this seems like some very unsafe / sketchy usage
-    table.new_usertype<Bytes>(
+    m_state.new_usertype<Bytes>(
             "Bytes", sol::constructors<Bytes(), Bytes(Bytes const &)>(), "assign",
             [](Bytes &self, Bytes const &other) { self = other; }, "move",
             [](Bytes &self, Bytes &other) { self = std::move(other); }, "swap",
@@ -62,7 +63,7 @@ void avledet::api::init_types(sol::table table)
     //    "nid", &UserProfile::m_networkUserId // TODO change name
     //);
 
-    table.new_usertype<DataWriter>(
+    m_state.new_usertype<DataWriter>(
             "Writer", sol::constructors<DataWriter(Bytes)>(),
 
             //"ToReader", &DataWriter::ToReader,
@@ -102,7 +103,7 @@ void avledet::api::init_types(sol::table table)
                           }));
 
     // Package read/write types
-    table.new_usertype<DataReader>(
+    m_state.new_usertype<DataReader>(
             "Reader", sol::constructors<DataReader(Bytes)>(),
 
             //"ToWriter", &DataReader::ToWriter,
@@ -172,7 +173,7 @@ void avledet::api::init_types(sol::table table)
             });
 
 
-    table.new_usertype<Int64Wrapper>(
+    m_state.new_usertype<Int64Wrapper>(
             "Int64",
             sol::constructors<Int64Wrapper(), Int64Wrapper(std::int64_t),
                               Int64Wrapper(std::uint32_t, std::uint32_t),
@@ -187,7 +188,7 @@ void avledet::api::init_types(sol::table table)
             sol::meta_function::equal_to, &Int64Wrapper::operator==, sol::meta_function::less_than,
             &Int64Wrapper::operator<, sol::meta_function::less_than_or_equal_to, &Int64Wrapper::operator<=);
 
-    table.new_usertype<UInt64Wrapper>(
+    m_state.new_usertype<UInt64Wrapper>(
             "UInt64",
             sol::constructors<UInt64Wrapper(), UInt64Wrapper(std::uint64_t),
                               Int64Wrapper(std::uint32_t, std::uint32_t),
@@ -202,31 +203,31 @@ void avledet::api::init_types(sol::table table)
             sol::meta_function::equal_to, &UInt64Wrapper::operator==, sol::meta_function::less_than,
             &UInt64Wrapper::operator<, sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::operator<=);
 
-    table.new_enum("TimeOfDay", "MORNING", TIME_MORNING, "DAY", TIME_DAY, "AFTERNOON", TIME_AFTERNOON,
-                   "NIGHT", TIME_NIGHT);
+    m_state.new_enum("TimeOfDay", "MORNING", TIME_MORNING, "DAY", TIME_DAY, "AFTERNOON", TIME_AFTERNOON,
+                     "NIGHT", TIME_NIGHT);
 
 
-    table.new_usertype<ZStdCompressor>(
+    m_state.new_usertype<ZStdCompressor>(
             "ZStdCompressor",
             sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(Bytes const &)>(),
             "compress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdCompressor::Compress));
 
-    table.new_usertype<ZStdDecompressor>(
+    m_state.new_usertype<ZStdDecompressor>(
             "ZStdDecompressor", sol::constructors<ZStdDecompressor(), ZStdDecompressor(Bytes const &)>(),
             "decompress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdDecompressor::Decompress));
 
 
-    table.new_usertype<Deflater>("Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
-                                 "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
-                                 sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
-                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Deflater::Compress));
+    m_state.new_usertype<Deflater>("Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
+                                   "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
+                                   sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
+                                   sol::resolve<std::optional<Bytes>(Bytes const &)>(&Deflater::Compress));
 
-    table.new_usertype<Inflater>("Inflater",
-                                 //"any", sol::property(Inflater::Any),
-                                 "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz),
-                                 "auto", sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw),
-                                 "decompress",
-                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Inflater::Decompress));
+    m_state.new_usertype<Inflater>("Inflater",
+                                   //"any", sol::property(Inflater::Any),
+                                   "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz),
+                                   "auto", sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw),
+                                   "decompress",
+                                   sol::resolve<std::optional<Bytes>(Bytes const &)>(&Inflater::Decompress));
 }
 
 #endif

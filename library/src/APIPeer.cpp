@@ -1,19 +1,20 @@
 #include "ModManager.h"
 #include "Peer.h"
+#include <sol/forward.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
 using namespace avledet::util;
 
-void avledet::api::init_peer(sol::table table)
+void IModManager::load_userdata_peer()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - peer");
 
-    table.new_usertype<IModManager::MethodSig>(
+    m_state.new_usertype<IModManager::MethodSig>(
             "MethodSig", sol::constructors<IModManager::MethodSig(std::string_view, sol::variadic_args)>());
 
-    table.new_enum("ChatMsgType", "WHISPER", ChatMsgType::Whisper, "NORMAL", ChatMsgType::Normal, "SHOUT",
-                   ChatMsgType::Shout, "PING", ChatMsgType::Ping);
+    m_state.new_enum("ChatMsgType", "WHISPER", ChatMsgType::Whisper, "NORMAL", ChatMsgType::Normal, "SHOUT",
+                     ChatMsgType::Shout, "PING", ChatMsgType::Ping);
 
     //state.new_usertype<NetRpc>("RpcClient",
     //    "socket", sol::readonly(&Peer::m_socket)
@@ -21,7 +22,7 @@ void avledet::api::init_peer(sol::table table)
     //
     //    );
 
-    table.new_usertype<Peer>(
+    m_state.new_usertype<Peer>(
             "Peer",
             // member fields
             //"visibleOnMap", &Peer::m_visibleOnMap,
