@@ -56,7 +56,7 @@ void IModManager::load_userdata()
             "subscribe", [this](IValhalla &self, sol::variadic_args args, sol::this_environment te) {
                 sol::environment &env = te;
 
-                auto mod = env["this"].get<Mod *>();
+                auto mod = env["this"].get<ScriptInfo *>();
 
                 avledet::util::Hash hash {};
                 sol::function func;
@@ -90,33 +90,39 @@ void IModManager::load_userdata()
                 }
 
                 auto &&callbacks = m_callbacks[hash];
-
                 callbacks.emplace_back(func, priority);
-                callbacks.sort([](EventHandle const &a, EventHandle const &b) {
+                //callbacks.emplace_back(priority, func);
+                std::sort(callbacks.begin(), callbacks.end(), [](EventHandle const &a, EventHandle const &b) {
                     return a.m_priority < b.m_priority;
                 });
+                //for std::list custom sort
+                //callbacks.sort([](EventHandle const &a, EventHandle const &b) {
+                //    return a.m_priority < b.m_priority;
+                //});
             });
 
-    this->new_usertype<IModManager>("IModManager", "get_mod",
-                                    [](IModManager &self, std::string_view name) {
-                                        auto &&find = self.m_mods.find(name);
-                                        if (find != self.m_mods.end())
-                                            return find->second.get();
-                                        return static_cast<Mod *>(nullptr);
-                                    }
-                                    //"ReloadMod", [](IModManager& self, Mod& mod) {
-                                    //    if (!self.m_reload) {
-                                    //        mod.m_reload = true;
-                                    //        self.m_reload = true;
-                                    //    }
-                                    //}
-    );
+    // TODO
+    //this->new_usertype<IModManager>("IModManager", "find_mod",
+    //                                [this](IModManager &self, std::string_view name) {
+    //                                    auto &&find = self.m_scripts.find(name);
+    //                                    if (find != self.m_scripts.end())
+    //                                        return find->second.get();
+    //                                    return static_cast<ScriptInfo *>(nullptr);
+    //                                }
+    //                                //"ReloadMod", [](IModManager& self, Mod& mod) {
+    //                                //    if (!self.m_reload) {
+    //                                //        mod.m_reload = true;
+    //                                //        self.m_reload = true;
+    //                                //    }
+    //                                //}
+    //);
 
-    this->new_usertype<Mod>("Mod", "name", sol::readonly(&Mod::m_name),
-                            //"entry", sol::readonly(&Mod::m_entry),
-                            "version", sol::readonly(&Mod::m_version), "api_version",
-                            sol::readonly(&Mod::m_apiVersion), "description",
-                            sol::readonly(&Mod::m_description), "authors", sol::readonly(&Mod::m_authors));
+    this->new_usertype<ScriptInfo>("Mod", "name", sol::readonly(&ScriptInfo::m_name),
+                                   //"entry", sol::readonly(&Mod::m_entry),
+                                   "version", sol::readonly(&ScriptInfo::m_version), "api_version",
+                                   sol::readonly(&ScriptInfo::m_apiVersion), "description",
+                                   sol::readonly(&ScriptInfo::m_description), "authors",
+                                   sol::readonly(&ScriptInfo::m_authors));
 
 
     this->new_usertype<IRouteManager>("IRouteManager", "register", &IRouteManager::RegisterLua, "invoke_view",
@@ -174,7 +180,7 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //http://lua-users.org/wiki/SandBoxes
 //https://ericjmritz.wordpress.com/2015/03/25/creating-and-using-environments-in-lua/
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
-sol::environment IModManager::create_sandbox(Mod &mod)
+sol::environment IModManager::create_sandbox(/*Mod &mod*/)
 {
     auto env  = sol::environment(m_state, sol::create, m_state.globals());//, api_table);
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
@@ -190,7 +196,7 @@ sol::environment IModManager::create_sandbox(Mod &mod)
     env["DungeonManager"] = DungeonManager();
     env["ZoneManager"]    = ZoneManager();
     env["RouteManager"]   = RouteManager();
-    env["this"]           = std::ref(mod);
+    //env["this"]           = std::ref(mod);
 
 
     //table.new_usertype<IRouteManager::Data>("RouteData",

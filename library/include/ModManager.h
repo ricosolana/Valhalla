@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CompileSettings.h"
+#include <sol/protected_function_result.hpp>
 
 #if VH_IS_ON(VH_USE_MODS)
 
@@ -122,26 +123,67 @@ class IModManager
         //static constexpr avledet::util::Hash POSTFIX = __H("POST");
     };
 
-    struct Mod
+    class ScriptInfo
     {
+      public:
         std::string m_name;
 
-        fs::path m_entry;
+        // proto/src name of code chunk
+        //  file:///home/.../script_entry.lua
+        //  https://discord.com/channels/x/y/z
+        std::string m_origin;
 
         std::string m_version;
         std::string m_apiVersion;
         std::string m_description;
-        std::list<std::string> m_authors;
+        std::vector<std::string> m_authors;
 
-        Mod(std::string name, fs::path entry) :
+      public:
+        ScriptInfo(std::string name, fs::path entry) :
             m_name(name),
-            m_entry(entry)
+            m_origin(entry)
         {
         }
 
-        Mod(Mod const &)            = delete;
-        Mod(Mod &&)                 = default;
-        Mod &operator=(Mod const &) = delete;
+        ScriptInfo(std::string name, std::string const &sourceName) :
+            m_name(name),
+            m_origin(sourceName)//no file path, instead dynamically loaded from ?
+        {
+        }
+
+        ScriptInfo(ScriptInfo const &)            = default;
+        ScriptInfo(ScriptInfo &&)                 = default;
+        ScriptInfo &operator=(ScriptInfo const &) = default;
+
+        // If dynamically loaded (ie from discord); not during server initialization like all mods
+        bool is_file_based() const
+        {
+            return m_origin.starts_with("file://");
+        }
+
+        std::string get_chunk_name() const
+        {
+            auto idx = m_origin.find("://") + sizeof("://");
+            if (m_origin.starts_with("file")) {
+                fs::path path = m_origin.substr(idx);
+                return path.filename().string();
+            } else {
+                // assume web URL
+                return m_name;//hmm
+            }
+        }
+
+        fs::path get_entry_path() const
+        {
+            auto idx = m_origin.find("://") + sizeof("://");
+            if (m_origin.starts_with("file")) {
+                fs::path path = m_origin.substr(idx);
+                return path;
+            } else {
+                // assume web URL
+                throw std::runtime_error("dynamic scripts do not have a physical path");
+            }
+        }
     };
 
     struct EventHandle
@@ -157,20 +199,16 @@ class IModManager
     };
 
   private:
-    avledet::util::Map<std::string, std::unique_ptr<Mod>, ankerl::unordered_dense::string_hash,
+    avledet::util::Map<std::string, std::unique_ptr<ScriptInfo>, ankerl::unordered_dense::string_hash,
                        std::equal_to<>>
-            m_mods;
-    avledet::util::Map<avledet::util::Hash, std::list<EventHandle>> m_callbacks;
-
+            m_scripts;                                                            //64 bytes
+    avledet::util::Map<avledet::util::Hash, std::vector<EventHandle>> m_callbacks;//64 bytes
+    //gtl::btree_map<avledet::util::Hash, std::vector<std::pair<int, sol::function>>> m_callbacks;
+    //avledet::util::Set<ScriptInfo *> m_tmp_reload_mods;                           //64 bytes
+    sol::state m_state;//48 bytes
     bool m_tmp_unsubscribe {};
-    avledet::util::Set<Mod *> m_tmp_reload_mods;
-
-  public:
-    sol::state m_state;
 
   private:
-    Mod &LoadModInfo(std::string_view folderName);
-
     void load_userdata_network();
     void load_userdata_peer();
     void load_userdata_prefab();
@@ -180,9 +218,15 @@ class IModManager
     void load_userdata_zdo();
     void load_userdata_zone();
 
+    // TODO authorize based on type
+    //  ie, native, filebased, dynamic...
+    sol::environment create_sandbox();
+
+  public:
     void load_userdata();
-    sol::environment create_sandbox(Mod &mod);
-    void execute_plugin(Mod &mod);
+
+    std::tuple<ScriptInfo, std::string> load_file_script(fs::path script_root);
+    void execute(ScriptInfo const &info, std::string const &code);//dynamic or mobile script
 
     // my immutable usertype
     template<typename Class, typename... Args>
@@ -199,6 +243,7 @@ class IModManager
     void PostInit();
     void Uninit();
     void update();
+    void unload_mod(ScriptInfo &mod);
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
@@ -213,15 +258,19 @@ class IModManager
             auto &&callbacks = find->second;
 
             for (auto &&itr = callbacks.begin(); itr != callbacks.end();) {
-                this->m_tmp_unsubscribe = false;
+                this->m_tmp_unsubscribe = false;// Default unsubscribe state
 
-                //ZoneNamed(per_callback, true);
+                // Params are COPIED
+                //  this makes modifications of primitives impossible, but could still modify
+                //  pointers/userdata tables...
+                //sol::function_result result = itr->second(Args(params)...);
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
-                    LOG_WARNING(VH_LOGGER, "Event error: ");
-
+                    LOG_ERROR(VH_LOGGER, "Event error: ");
                     sol::error error = result;
                     LOG_ERROR(VH_LOGGER, "{}", error.what());
+
+                    // On error, we invalidate the event
                     this->m_tmp_unsubscribe = true;
                 } else {
                     // whether cancelled-events should follow Harmony prefix cancellation with bools
@@ -344,6 +393,7 @@ struct avledet::util::Streamer<F, T...>
             return sol::make_object(state, reader.read<avledet::util::CSU::Quaternion>());
         case IModManager::StreamType::STRINGS:
             // Container type of Primitive: string
+            //return sol::make_object(state, reader.read<avledet::util::Strings>());
             return sol::make_object(state, reader.read<std::vector<std::string>>());
         case IModManager::StreamType::BOOL:
             // Primitive: boolean

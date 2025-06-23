@@ -1,18 +1,21 @@
 #include "ModManager.h"
-#include <quill/LogMacros.h>
-#include <stdexcept>
 
 #if VH_IS_ON(VH_USE_MODS)
 
     #include <algorithm>
     #include <cmath>
     #include <filesystem>
+    #include <functional>
+    #include <memory>
     #include <ranges>
+    #include <stdexcept>
     #include <string_view>
     #include <vector>
 
+    #include <lua.h>
     #include <quill/Backend.h>
     #include <quill/Frontend.h>
+    #include <quill/LogMacros.h>
     #include <sol/environment.hpp>
     #include <sol/forward.hpp>
     #include <sol/object.hpp>
@@ -25,7 +28,6 @@
     #include <yaml-cpp/yaml.h>
 
     #include "Method.h"
-    #include "ModManager.h"
     #include "NetManager.h"
     #include "Peer.h"
     #include "RouteManager.h"
@@ -40,12 +42,13 @@ IModManager *ModManager()
     return MOD_MANAGER.get();
 }
 
-IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
+std::tuple<IModManager::ScriptInfo, std::string> IModManager::load_file_script(fs::path script_root)
 {
     YAML::Node loadNode;
 
-    auto modPath     = fs::path("mods") / folderName;
-    auto modInfoPath = modPath / "modInfo.yml";
+    //auto modPath     = fs::path("mods") / script_root;
+    //auto modInfoPath = modPath / "modInfo.yml";
+    auto modInfoPath = script_root / "modInfo.yml";
 
     if (auto opt = VUtils::Resource::ReadFile<std::string>(modInfoPath)) {
         loadNode = YAML::Load(opt.value());
@@ -53,23 +56,37 @@ IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
         throw std::runtime_error("unable to open " + modInfoPath.string());
     }
 
+    auto raw_entry = loadNode["entry"].as<std::string>();
+    if (!raw_entry.ends_with(".lua"))
+        raw_entry += ".lua";
+
     auto name = loadNode["name"].as<std::string>();
 
-    auto &&insert = this->m_mods.insert(
-            {name, std::make_unique<Mod>(loadNode["name"].as<std::string>(),
-                                         modPath / (loadNode["entry"].as<std::string>() + ".lua"))});
+    auto entry_path = script_root / raw_entry;
+    if (!fs::exists(entry_path)) {
+        throw std::runtime_error("mod entry file not found, skipping...");
+    }
 
-    if (!insert.second)
-        throw std::runtime_error("Mod " + name + " already loaded");
+    auto code_opt = VUtils::Resource::ReadFile<std::string>(entry_path);
 
-    auto &&mod = insert.first->second;
+    //if (!code_opt)
+    //    throw std::runtime_error("file not found");
 
-    mod->m_version     = loadNode["version"].as<std::string>("");
-    mod->m_apiVersion  = loadNode["api-version"].as<std::string>("");
-    mod->m_description = loadNode["description"].as<std::string>("");
-    mod->m_authors     = loadNode["authors"].as<std::list<std::string>>(std::list<std::string>());
+    //auto &&insert = this->m_mods.insert({name, std::make_unique<ModInfo>(name, entry_path)});
 
-    return *mod;
+    //if (!insert.second)
+    //throw std::runtime_error("Mod " + name + " already loaded");
+
+    //auto &&mod = insert.first->second;
+
+    ScriptInfo mod_info(std::move(name), std::move(entry_path));
+
+    mod_info.m_version     = loadNode["version"].as<std::string>("");
+    mod_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
+    mod_info.m_description = loadNode["description"].as<std::string>("");
+    mod_info.m_authors     = loadNode["authors"].as<avledet::util::Strings>(avledet::util::Strings());
+
+    return {mod_info, code_opt.value()};
 }
 
 // Unused for now, because ...?
@@ -87,18 +104,21 @@ IModManager::Mod &IModManager::LoadModInfo(std::string_view folderName)
 //    return 1;
 //}
 
-void IModManager::execute_plugin(Mod &mod)
+void IModManager::execute(ScriptInfo const &info, std::string const &code)
 {
-    auto path(mod.m_entry);
-    if (auto opt = VUtils::Resource::ReadFile<std::string>(path)) {
-        // Load new API globals personally for this mod
-        auto env = this->create_sandbox(mod);
+    //m_scripts[info.m_name] = std::make_unique<ScriptInfo>(info);
+    auto &&try_emplace = m_scripts.try_emplace(info.m_name, std::make_unique<ScriptInfo>(std::move(info)));
+    auto &&plugin_info = *try_emplace.first->second;
+    if (!try_emplace.second)
+        throw std::runtime_error("tried loading plugin twice! " + plugin_info.m_name);
 
-        // Important: loadmode.text
-        //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
-        m_state.safe_script(opt.value(), env, mod.m_entry.filename(), sol::load_mode::text);
-    } else
-        throw std::runtime_error(std::string("unable to open file ") + path.string());
+    auto env = this->create_sandbox();
+
+    env["this"] = std::ref(plugin_info);// copy
+
+    // Important: loadmode::text
+    //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
+    m_state.script(code, env, info.get_chunk_name(), sol::load_mode::text);
 }
 
 //TODO
@@ -178,19 +198,23 @@ void IModManager::PostInit()
 
     for (auto const &dir : sorted) {
         try {
-            auto &&dirname = dir.path().filename().string();
 
-            auto &&mod = LoadModInfo(dirname);
-            execute_plugin(mod);
+            //auto&& absolute = fs::absolute(dir.path());
+            //dir.path().
+            //auto &&dirname = dir.path().filename().string();
 
-            LOG_NOTICE(VH_LOGGER, "Loaded mod '{}'", mod.m_name);
+            //auto [info, code] = load_file_script(dirname);
+            auto [info, code] = load_file_script(dir.path());
+            execute(info, code);
+
+            LOG_NOTICE(VH_LOGGER, "Loaded mod '{}'", info.m_name);
         } catch (std::exception const &e) {
             LOG_ERROR(VH_LOGGER, "Failed to load mod: {}", dir.path().string());
             LOG_ERROR(VH_LOGGER, "{}", e.what());
         }
     }
 
-    LOG_NOTICE(VH_LOGGER, "Loaded {} mods", m_mods.size());
+    LOG_NOTICE(VH_LOGGER, "Loaded {} mods", m_scripts.size());
 
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
 }
@@ -199,7 +223,7 @@ void IModManager::Uninit()
 {
     VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
     m_callbacks.clear();
-    m_mods.clear();
+    m_scripts.clear();
 }
 
 //https://github.com/ThePhD/sol2/issues/980
@@ -213,113 +237,179 @@ void IModManager::Uninit()
 
 void IModManager::update()
 {
-    if (!m_tmp_reload_mods.empty()) {
-        assert(false);//TODO
+    ////if (!m_tmp_reload_mods.empty()) {
+    ////    assert(false);//TODO
 
-        /*
-            Release all associated callbacks
-        */
+    ////    /*
+    ////        Release all associated callbacks
+    ////    */
 
-        for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-            auto &&callbacks = itr->second;
-            for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-                auto &&env = sol::get_environment(itr1->m_func);
-                //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
-                assert(env.valid());
+    ////    for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+    ////        auto &&callbacks = itr->second;
+    ////        for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+    ////            auto &&env = sol::get_environment(itr1->m_func);
+    ////            //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
+    ////            assert(env.valid());
 
-                assert(env["this"].is<Mod *>());
+    ////            assert(env["this"].is<ScriptInfo *>());
 
-                auto mod = env["this"].get<Mod *>();
+    ////            auto mod = env["this"].get<ScriptInfo *>();
 
-                bool contains = m_tmp_reload_mods.contains(mod);
+    ////            bool contains = m_tmp_reload_mods.contains(mod);
 
-                if (contains) {
-                    itr1 = callbacks.erase(itr1);
-                } else {
-                    ++itr1;
-                }
-            }
+    ////            if (contains) {
+    ////                itr1 = callbacks.erase(itr1);
+    ////            } else {
+    ////                ++itr1;
+    ////            }
+    ////        }
 
-            // Pop callback set for tidy
-            if (callbacks.empty()) {
-                itr = m_callbacks.erase(itr);
-            } else {
-                ++itr;
-            }
-        }
+    ////        // Pop callback set for tidy
+    ////        if (callbacks.empty()) {
+    ////            itr = m_callbacks.erase(itr);
+    ////        } else {
+    ////            ++itr;
+    ////        }
+    ////    }
 
-        /*
-            Release all registered RPCs        
-        */
+    ////    /*
+    ////        Release all registered RPCs
+    ////    */
 
-        for (auto &&peer_pair : NetManager()->m_connectedPeers) {
-            for (auto &&method_itr = peer_pair->m_methods.begin();
-                 method_itr != peer_pair->m_methods.end();) {
-                auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
+    ////    //for (auto &&peer_pair : NetManager()->m_connectedPeers) {
+    ////    //    for (auto &&method_itr = peer_pair->m_methods.begin();
+    ////    //         method_itr != peer_pair->m_methods.end();) {
+    ////    //        auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
 
-                if (!method) {
-                    ++method_itr;
-                    continue;
-                }
+    ////    //        if (!method) {
+    ////    //            ++method_itr;
+    ////    //            continue;
+    ////    //        }
 
-                auto &&env = sol::get_environment(method->m_func);
-                assert(env.valid());
-                assert(env["this"].is<Mod *>());
-                auto mod = env["this"].get<Mod *>();
+    ////    //        auto &&env = sol::get_environment(method->m_func);
+    ////    //        assert(env.valid());
+    ////    //        assert(env["this"].is<Mod *>());
+    ////    //        auto mod = env["this"].get<Mod *>();
 
-                bool contains = m_tmp_reload_mods.contains(mod);
+    ////    //        bool contains = m_tmp_reload_mods.contains(mod);
 
-                if (contains) {
-                    // kill it
-                    method_itr = peer_pair->m_methods.erase(method_itr);
-                } else {
-                    ++method_itr;
-                }
-            }
-        }
+    ////    //        if (contains) {
+    ////    //            // kill it
+    ////    //            method_itr = peer_pair->m_methods.erase(method_itr);
+    ////    //        } else {
+    ////    //            ++method_itr;
+    ////    //        }
+    ////    //    }
+    ////    //}
 
-        //TODO rethink how everything is shaped...
+    ////    //TODO rethink how everything is shaped...
 
-        // Perhaps start on reworking Valhalla,
+    ////    // Perhaps start on reworking Valhalla,
 
-        // Migrating towards unit tests like in avl, and avoid
-        //  repeated pitfalls as before with debug hell...
+    ////    // Migrating towards unit tests like in avl, and avoid
+    ////    //  repeated pitfalls as before with debug hell...
 
-        // Clang tidy / formatters to look at,
-        //  refactor as a whole...
+    ////    // Clang tidy / formatters to look at,
+    ////    //  refactor as a whole...
 
-        // Also unload routed rpcs...
-        //for (auto&& mod : m_tmp_reload_mods) {
-        //    mod->
-        //}
+    ////    // Also unload routed rpcs...
+    ////    //for (auto&& mod : m_tmp_reload_mods) {
+    ////    //    mod->
+    ////    //}
 
-        // https://github.com/ricosolana/Valhalla/blob/0121b3db3788c146fc0eda783c3563cb16ef2ca9/src/ModManager.cpp
-        // :::::::::::::::::::OLD::::::::::::::::;
-        //for (auto&& pair : m_mods) {
-        //    auto&& mod = *pair.second.get();
-        //    if (mod.m_reload) {
-        //        LOG(INFO) << "Reloading mod " << mod.m_name;
+    ////    // https://github.com/ricosolana/Valhalla/blob/0121b3db3788c146fc0eda783c3563cb16ef2ca9/src/ModManager.cpp
+    ////    // :::::::::::::::::::OLD::::::::::::::::;
+    ////    //for (auto&& pair : m_mods) {
+    ////    //    auto&& mod = *pair.second.get();
+    ////    //    if (mod.m_reload) {
+    ////    //        LOG(INFO) << "Reloading mod " << mod.m_name;
 
-        //        for (auto&& pair : NetManager()->GetPeers()) {
-        //            auto&& peer = pair.second;
-        //            for (auto&& pair1 : peer->m_methods) {
-        //                auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
-        //                //if (method)
-        //                    //method->m_func =
-        //            }
-        //            //if (auto method = peer->GetMethod()
-        //        }
+    ////    //        for (auto&& pair : NetManager()->GetPeers()) {
+    ////    //            auto&& peer = pair.second;
+    ////    //            for (auto&& pair1 : peer->m_methods) {
+    ////    //                auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
+    ////    //                //if (method)
+    ////    //                    //method->m_func =
+    ////    //            }
+    ////    //            //if (auto method = peer->GetMethod()
+    ////    //        }
 
-        //        mod.m_env.reset();
-        //        LoadMod(mod);
-        //        mod.m_reload = false;
-        //    }
-        //}
+    ////    //        mod.m_env.reset();
+    ////    //        LoadMod(mod);
+    ////    //        mod.m_reload = false;
+    ////    //    }
+    ////    //}
 
-        //m_state.collect_gc();
+    ////    //m_state.collect_gc();
 
-        //m_tmp_mod_reload = nullptr;
-    }
+    ////    //m_tmp_mod_reload = nullptr;
+    ////}
+}
+
+void IModManager::unload_mod(ScriptInfo &mod)
+{
+    assert(false);//MUST TEST
+    /*
+        Release all associated callbacks
+    */
+    ////for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+    ////    auto &&callbacks = itr->second;
+    ////    for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+    ////        auto &&env = sol::get_environment(itr1->m_func);
+    ////        //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
+    ////        assert(env.valid());
+
+    ////        assert(env["this"].is<ScriptInfo *>());
+
+    ////        auto on_mod = env["this"].get<ScriptInfo *>();
+
+    ////        //bool contains = m_tmp_reload_mods.contains(mod);
+    ////        bool contains = &mod == on_mod;
+
+    ////        if (contains) {
+    ////            itr1 = callbacks.erase(itr1);
+    ////        } else {
+    ////            ++itr1;
+    ////        }
+    ////    }
+
+    ////    // Pop callback set for tidy
+    ////    if (callbacks.empty()) {
+    ////        itr = m_callbacks.erase(itr);
+    ////    } else {
+    ////        ++itr;
+    ////    }
+    ////}
+
+    /*
+        Release all registered RPCs        
+    */
+
+    //for (auto &&peer_pair : NetManager()->m_connectedPeers) {
+    //    for (auto &&method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end();) {
+    //        auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
+
+    //        if (!method) {
+    //            ++method_itr;
+    //            continue;
+    //        }
+
+    //        auto &&env = sol::get_environment(method->m_func);
+    //        assert(env.valid());
+    //        assert(env["this"].is<Mod *>());
+    //        auto on_mod = env["this"].get<Mod *>();
+
+    //        //bool contains = m_tmp_reload_mods.contains(mod);
+    //        bool contains = &mod == on_mod;
+
+    //        if (contains) {
+    //            // kill it
+    //            method_itr = peer_pair->m_methods.erase(method_itr);
+    //        } else {
+    //            ++method_itr;
+    //        }
+    //    }
+    //}
 }
 
 #endif// VH_USE_MODS
