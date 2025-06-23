@@ -1,6 +1,6 @@
 #include "DungeonManager.h"
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "DataStream.h"
     #include "DungeonGenerator.h"
     #include "Hashes.h"
@@ -26,12 +26,12 @@ void IDungeonManager::post_prefab_init()
     DataReader pkg(opt.value());
 
     auto comment = pkg.read<std::string_view>();// comment
-    LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+    LOG_DEBUG(AVL_LOGGER, "pkg comment: {}", comment);
 
     auto ver = pkg.read<std::string_view>();
-    LOG_NOTICE(VH_LOGGER, "dungeons.pkg has game version {}", ver);
+    LOG_NOTICE(AVL_LOGGER, "dungeons.pkg has game version {}", ver);
     if (ver != VConstants::GAME) {
-        LOG_WARNING(VH_LOGGER, "dungeons.pkg uses different game version than server ({})", ver);
+        LOG_WARNING(AVL_LOGGER, "dungeons.pkg uses different game version than server ({})", ver);
     }
 
     std::int32_t count = pkg.read<std::int32_t>();
@@ -139,10 +139,10 @@ void IDungeonManager::post_prefab_init()
         m_dungeons.insert({hash, std::move(dungeon)});
     }
 
-    LOG_NOTICE(VH_LOGGER, "Loaded {} dungeons", count);
+    LOG_NOTICE(AVL_LOGGER, "Loaded {} dungeons", count);
 }
 
-    #if VH_IS_ON(VH_DUNGEON_REGENERATION)
+    #if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
 ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
 {
     static constexpr avledet::util::Hash LAST_RESET_HASH = avledet::util::get_stable_hash("Areas LastReset");
@@ -153,7 +153,7 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
 
     auto since = duration_cast<std::chrono::seconds>(unixTime) - lastReset;
 
-    if (since > VH_SETTINGS.dungeonsRegenerationInterval) {
+    if (since > AVL_SETTINGS.dungeonsRegenerationInterval) {
         bool playerNear = false;
 
         // if a player is inside, do not reset
@@ -187,14 +187,14 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
                 ZDOManager()->DestroyZDO(zdo);
             }
 
-            LOG_INFO(VH_LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
+            LOG_INFO(AVL_LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
             auto &&zdo = Generate(dungeon, pos, rot).get();
             zdo.Set(LAST_RESET_HASH, unixTime.count());
 
             return &zdo;
         } else {
-            LOG_INFO(VH_LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name,
+            LOG_INFO(AVL_LOGGER, "Unable to regenerate {} at {} (peer is inside)", dungeon.m_prefab->m_name,
                      pos);
         }
     }
@@ -206,7 +206,7 @@ void IDungeonManager::TryRegenerateDungeons()
 {
     std::size_t idx = m_nextIndex;
     while (idx
-           < std::min(m_dungeonInstances.size(), m_nextIndex + VH_SETTINGS.dungeonsRegenerationMaxSteps)) {
+           < std::min(m_dungeonInstances.size(), m_nextIndex + AVL_SETTINGS.dungeonsRegenerationMaxSteps)) {
         auto &&itr = m_dungeonInstances.begin() + idx;
 
         ZDO *dungeonZdo = ZDOManager()->GetZDO(*itr);

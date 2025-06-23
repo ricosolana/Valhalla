@@ -26,7 +26,7 @@ void IZDOManager::Init()
 {
     m_nextUid = 1;
 
-    LOG_NOTICE(VH_LOGGER, "Initializing ZDOManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing ZDOManager");
 
     RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, [this](Peer *, DataReader reader) {
         // TODO constraint check
@@ -45,7 +45,7 @@ void IZDOManager::Update()
     ZoneScoped;
 
     if (VUtils::run_periodic_now<struct periodic_zdo_stats>(3min)) {
-        LOG_INFO(VH_LOGGER, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", m_objectsByID.size(),
+        LOG_INFO(AVL_LOGGER, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", m_objectsByID.size(),
                  //(this->GetTotalZDOAlloc() / 1000000.f),
                  ZDO::GetTotalAlloc(false) / 1000000.f, ZDO::GetTotalAlloc(true) / 1000000.f);
     }
@@ -58,7 +58,7 @@ void IZDOManager::Update()
 
     // TODO requires testing
     //	link portals if mode enabled
-#if VH_IS_ON(VH_PORTAL_LINKING)
+#if AVL_IS_ON(AVL_PORTAL_LINKING)
     if (VUtils::run_periodic<struct link_portals>(1s)) {
         auto &&portals = GetZDOs(avledet::util::hashes::Object::portal_wood);
 
@@ -116,7 +116,7 @@ void IZDOManager::Update()
 
     auto &&peers = NetManager()->GetPeers();
 
-    if (VUtils::run_periodic<struct zdos_release_assign>(VH_SETTINGS.zdoAssignInterval)) {
+    if (VUtils::run_periodic<struct zdos_release_assign>(AVL_SETTINGS.zdoAssignInterval)) {
         for (auto &&peer : peers) {
             if (!peer->IsGated()) {
                 AssignOrReleaseZDOs(*peer);
@@ -124,7 +124,7 @@ void IZDOManager::Update()
         }
     }
 
-    if (VUtils::run_periodic<struct periodic_send_zdos>(VH_SETTINGS.zdoSendInterval)) {
+    if (VUtils::run_periodic<struct periodic_send_zdos>(AVL_SETTINGS.zdoSendInterval)) {
         for (auto &&peer : peers) {
             SendZDOs(*peer, false);
         }
@@ -154,7 +154,7 @@ void IZDOManager::_AddZDOToZone(ZDO::reference zdo)
 
     assert(insert.second);//ensure newly inserted
 
-                          //LOG_INFO(VH_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
+                          //LOG_INFO(AVL_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
 }
 
 void IZDOManager::_RemoveFromSector(ZDO::reference zdo)
@@ -165,7 +165,7 @@ void IZDOManager::_RemoveFromSector(ZDO::reference zdo)
         // ensure zdo was actually erased
         assert(erase);
 
-        //LOG_INFO(VH_LOGGER, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
+        //LOG_INFO(AVL_LOGGER, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
     } else {
         //TODO otherwise, then poll the sector map
         assert(false);
@@ -220,13 +220,13 @@ void IZDOManager::Load(DataReader &reader, int version)
         //auto&& zdo = insert
         auto &&zdo = ZDO::make_reference(insert.first);
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
         if (version < 31) {
             auto zdoReader = DataReader(reader.read<std::vector<char>>());
 
             zdo->Load31Pre(zdoReader, version);
         } else
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
         {
             zdo->Unpack(reader, version);
         }
@@ -243,17 +243,17 @@ void IZDOManager::Load(DataReader &reader, int version)
         //	}
         //) == m_objectsByID.size());
 
-#if VH_IS_ON(VH_DUNGEON_REGENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
         if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
             // Only add real sky dungeon
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
         }
-#endif// VH_DUNGEON_REGENERATION \
+#endif// AVL_DUNGEON_REGENERATION \
         //m_objectsByID[zdo->GetID()] = std::move(zdo);
     }
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     if (version < 31) {
         auto deadCount = reader.read<std::int32_t>();
         for (decltype(deadCount) j = 0; j < deadCount; j++) {
@@ -313,16 +313,16 @@ void IZDOManager::Load(DataReader &reader, int version)
             }
         }
     }
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
 
-    LOG_NOTICE(VH_LOGGER, "Loaded {} zdos", m_objectsByID.size());
+    LOG_NOTICE(AVL_LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
 [[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept
 {
     //https://jguegant.github.io/blogs/tech/performing-try-emplace.html
     auto &&insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
-    //LOG_INFO(VH_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
+    //LOG_INFO(AVL_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
 
     return insert;
 }
@@ -346,7 +346,7 @@ std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid
 
 ZDO::reference IZDOManager::_Instantiate(Vector3f position) noexcept
 {
-    //ZDOID zdoid = ZDOID(VH_ID, 0);
+    //ZDOID zdoid = ZDOID(AVL_ID, 0);
     ZDOID zdoid = ZDOID(0, 0);
     for (;;) {
         zdoid.set_id(m_nextUid++);
@@ -468,7 +468,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
         }
     }
 
-    if (VH_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+    if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
         float minSqDist = std::numeric_limits<float>::max();
         Vector3f closestPos;
@@ -518,7 +518,7 @@ ZDO::unique_set::iterator IZDOManager::_EraseZDO(ZDO::unique_set::iterator itr)
     auto &&zdoid = zdo->GetID();
 
     // update local next only if im the user who created the zdo
-    if (zdoid.get_user_id() == VH_ID) {
+    if (zdoid.get_user_id() == AVL_ID) {
         this->m_nextUid = std::max(this->m_nextUid, zdoid.get_id() + 1);
     }
 
@@ -556,7 +556,7 @@ ZDO::unique_set::iterator IZDOManager::_EraseZDO(ZDO::unique_set::iterator itr)
 
     ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
-    //LOG_INFO(VH_LOGGER, "zdo erased: {}", zdoid);
+    //LOG_INFO(AVL_LOGGER, "zdo erased: {}", zdoid);
 
     return m_objectsByID.erase(itr);
 }
@@ -814,12 +814,12 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
     auto sendQueueSize = peer.m_socket->get_send_queue_size();
 
     // flushing forces a packet send
-    auto const threshold = VH_SETTINGS.zdoMaxCongestion;
+    auto const threshold = AVL_SETTINGS.zdoMaxCongestion;
     if (!flush && sendQueueSize > threshold)
         return false;
 
     auto availableSpace = threshold - sendQueueSize;
-    if (availableSpace < VH_SETTINGS.zdoMinCongestion)
+    if (availableSpace < AVL_SETTINGS.zdoMinCongestion)
         return false;
 
     auto syncList = CreateSyncList(peer);

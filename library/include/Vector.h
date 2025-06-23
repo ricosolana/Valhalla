@@ -395,7 +395,7 @@ namespace avledet::util::CSU {
         }
     };
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     //void init_api(sol::table api_table);
 #endif
 

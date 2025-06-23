@@ -304,7 +304,7 @@ class IZDOManager
     }
 
     // Get all ZDOs with prefab
-    //	This method is optimized assuming VH_STANDARD_PREFABS is on
+    //	This method is optimized assuming AVL_STANDARD_PREFABS is on
     [[nodiscard]] ZDO::reference_list GetZDOs(avledet::util::Hash prefab);
 
     // Get all ZDOs fulfilling a given predicate

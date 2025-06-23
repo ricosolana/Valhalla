@@ -2,7 +2,7 @@
 
 #include "GeoManager.h"
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "VUtilsMath.h"
     #include "VUtilsMath2.h"
     #include "VUtilsMathf.h"
@@ -18,7 +18,7 @@ IGeoManager *GeoManager()
 
 void IGeoManager::PostWorldInit()
 {
-    LOG_INFO(VH_LOGGER, "Initializing GeoManager");
+    LOG_INFO(AVL_LOGGER, "Initializing GeoManager");
 
     m_world = WorldManager()->GetWorld();
     assert(m_world);
@@ -828,4 +828,4 @@ int IGeoManager::GetSeed()
     return m_world->m_seed;
     #endif
 }
-#endif// VH_GENERATE_ZONES
+#endif// AVL_GENERATE_ZONES

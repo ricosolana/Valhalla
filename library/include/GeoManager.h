@@ -3,7 +3,7 @@
 #include "VUtils.h"
 #include <quill/Logger.h>
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "HeightMap.h"
     #include "Vector.h"
     #include "VUtilsRandom.h"

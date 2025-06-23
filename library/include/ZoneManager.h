@@ -69,7 +69,7 @@ class IZoneManager
     friend class IScriptManager;
 
   public:
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     class Feature
     {
       public:
@@ -205,7 +205,7 @@ class IZoneManager
     }
 
   private:
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     // All Features within a world capable of generation
     std::vector<std::unique_ptr<Feature const>> m_features;
 
@@ -249,14 +249,14 @@ class IZoneManager
     void SendGlobalKeys();
     void SendGlobalKeys(Peer &peer);
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     void SendLocationIcons();
 #endif
     void SendLocationIcons(Peer &peer);
 
     void OnNewPeer(Peer &peer);
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     void TryGenerateNearbyZones(Vector3f pos);
 
 
@@ -297,7 +297,7 @@ class IZoneManager
     void PostPrefabInit();
     void Update();
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     void PostGeoInit();
 #endif
 
@@ -311,7 +311,7 @@ class IZoneManager
 
     //void RegenerateZone(ZoneID zone);
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     void PopulateZone(ZoneID zone);
 
     // Get the client based icons for minimap

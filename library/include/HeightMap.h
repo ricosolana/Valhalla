@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 
     #include "Vector.h"
 
@@ -169,4 +169,4 @@ class Heightmap
     TerrainComp GetAndCreateTerrainCompiler();
 };
 
-#endif// VH_IS_ON(VH_ZONE_GENERATION)
+#endif// AVL_IS_ON(AVL_ZONE_GENERATION)

@@ -1,6 +1,6 @@
 #include "DungeonRoom.h"
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "VUtilsString.h"
 
 //TODO why not return hash?

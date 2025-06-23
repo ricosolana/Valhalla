@@ -3,14 +3,14 @@
 #include "ZoneManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 void IScriptManager::load_userdata_zone()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - Zone");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - Zone");
 
-    //or VH_DUNGEON_GENERATION?
-    #if VH_IS_ON(VH_ZONE_GENERATION)
+    //or AVL_DUNGEON_GENERATION?
+    #if AVL_IS_ON(AVL_ZONE_GENERATION)
     this->new_usertype<Dungeon>(
             "Dungeon", sol::no_constructor
             //"Generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::Generate)
@@ -37,7 +37,7 @@ void IScriptManager::load_userdata_zone()
 
 
     this->new_usertype<IZoneManager>("IZoneManager",
-    #if VH_IS_ON(VH_ZONE_GENERATION)
+    #if AVL_IS_ON(AVL_ZONE_GENERATION)
                                      "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
     #endif
                                      "get_nearest_feature", &IZoneManager::GetNearestFeature, "to_zone_pos",

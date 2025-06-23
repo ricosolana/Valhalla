@@ -24,10 +24,10 @@ IZoneManager *ZoneManager()
 // private
 void IZoneManager::PostPrefabInit()
 {
-    LOG_NOTICE(VH_LOGGER, "Initializing ZoneManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing ZoneManager");
 
     {
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
         // load ZoneLocations:
         auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("features.pkg");
         if (!opt)
@@ -36,11 +36,11 @@ void IZoneManager::PostPrefabInit()
         DataReader pkg(*opt);
 
         auto comment = pkg.read<std::string_view>();// comment
-        LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+        LOG_DEBUG(AVL_LOGGER, "pkg comment: {}", comment);
 
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
-            LOG_WARNING(VH_LOGGER, "features.pkg uses different game version than server ({})", ver);
+            LOG_WARNING(AVL_LOGGER, "features.pkg uses different game version than server ({})", ver);
         }
 
         auto count = pkg.read<std::int32_t>();
@@ -111,12 +111,12 @@ void IZoneManager::PostPrefabInit()
             m_features.push_back(std::move(loc));
         }
 
-        LOG_NOTICE(VH_LOGGER, "Loaded {} features", count);
+        LOG_NOTICE(AVL_LOGGER, "Loaded {} features", count);
 #endif
     }
 
     {
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
         // load Foliage:
         auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("vegetation.pkg");
         if (!opt)
@@ -127,7 +127,7 @@ void IZoneManager::PostPrefabInit()
         pkg.read<std::string_view>();// comment
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
-            LOG_WARNING(VH_LOGGER, "vegetation.pkg uses different game version than server ({})", ver);
+            LOG_WARNING(AVL_LOGGER, "vegetation.pkg uses different game version than server ({})", ver);
         }
 
         auto count = pkg.read<std::int32_t>();
@@ -173,11 +173,11 @@ void IZoneManager::PostPrefabInit()
             m_foliage.push_back(std::move(veg));
         }
 
-        LOG_NOTICE(VH_LOGGER, "Loaded {} vegetation", count);
+        LOG_NOTICE(AVL_LOGGER, "Loaded {} vegetation", count);
 #endif
     }
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     ZONE_CTRL_PREFAB      = PrefabManager()->find_prefab(avledet::util::hashes::Object::_ZoneCtrl);
     LOCATION_PROXY_PREFAB = PrefabManager()->find_prefab(avledet::util::hashes::Object::LocationProxy);
 
@@ -203,19 +203,19 @@ void IZoneManager::PostPrefabInit()
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestIcon,
                              [this](Peer *peer, std::string_view locationName, Vector3f point,
                                     std::string_view pinName, int pinType, bool showMap) {
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
                                  if (auto &&instance = GetNearestFeature(locationName, point)) {
-                                     LOG_INFO(VH_LOGGER, "Found location: '{}'", locationName);
+                                     LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
                                      RouteManager()->Invoke(peer->GetUserID(),
                                                             avledet::util::hashes::Routed::S2C_ResponseIcon,
                                                             pinName, pinType, instance->m_pos, showMap);
                                  } else {
-                                     LOG_INFO(VH_LOGGER, "Failed to find location: '{}'", locationName);
+                                     LOG_INFO(AVL_LOGGER, "Failed to find location: '{}'", locationName);
                                  }
 #else
         Vector3f out;
         if (GetNearestFeature(locationName, point, out)) {
-            LOG_INFO(VH_LOGGER, "Found location: '{}'", locationName);
+            LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
             RouteManager()->Invoke(peer->m_uuid,
                 avledet::util::hashes::Routed::S2C_ResponseIcon,
                 pinName,
@@ -225,7 +225,7 @@ void IZoneManager::PostPrefabInit()
             );
         }
         else {
-            LOG_INFO(VH_LOGGER, "Failed to find location: '{}'", locationName);
+            LOG_INFO(AVL_LOGGER, "Failed to find location: '{}'", locationName);
         }
 #endif
                              });
@@ -275,7 +275,7 @@ void IZoneManager::SendGlobalKeys(Peer &peer)
     peer.Route(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 // private
 void IZoneManager::SendLocationIcons()
 {
@@ -296,9 +296,9 @@ void IZoneManager::SendLocationIcons()
 // private
 void IZoneManager::SendLocationIcons(Peer &peer)
 {
-    LOG_NOTICE(VH_LOGGER, "Sending location icons to {}", peer.m_name);
+    LOG_NOTICE(AVL_LOGGER, "Sending location icons to {}", peer.m_name);
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     DataWriter writer;
 
     auto &&icons = GetFeatureIcons();
@@ -330,14 +330,14 @@ void IZoneManager::SendLocationIcons(Peer &peer)
 // public
 void IZoneManager::Save(DataWriter &pkg)
 {
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     pkg.write((std::int32_t) m_generatedZones.size());
     for (auto &&zone : m_generatedZones) {
         pkg.write((std::int32_t) zone.x);
         pkg.write((std::int32_t) zone.y);
     }
 #else
-    LOG_WARNING(VH_LOGGER, "Saving while VH_ZONE_GENERATION:0 is not fully portable");
+    LOG_WARNING(AVL_LOGGER, "Saving while AVL_ZONE_GENERATION:0 is not fully portable");
 
     pkg.write<std::int32_t>(0);// 0 count
 #endif
@@ -347,7 +347,7 @@ void IZoneManager::Save(DataWriter &pkg)
     pkg.write(true);
     pkg.write((std::int32_t) m_generatedFeatures.size());
     for (auto &&pair : m_generatedFeatures) {
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
         auto &&inst     = pair.second;
         auto &&location = inst->m_feature.get();
 
@@ -374,32 +374,32 @@ void IZoneManager::Load(DataReader &reader, std::int32_t version)
         for (decltype(count) i = 0; i < count; i++) {
             auto x = reader.read<std::int32_t>();
             auto y = reader.read<std::int32_t>();
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
             m_generatedZones.insert(ZoneID(static_cast<std::int16_t>(x), std::int16_t(y)));
-#endif// VH_ZONE_GENERATION
+#endif// AVL_ZONE_GENERATION
         }
     }
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     if (version >= 13)
-#endif                              // VH_LEGACY_WORLD_LOADING
+#endif                              // AVL_LEGACY_WORLD_LOADING
     {
         reader.read<std::int32_t>();// PGW
         auto const locationVersion = (version >= 21) ? reader.read<std::int32_t>() : 0;// 26
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
         if (version >= 14)
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
         {
             m_globalKeys = reader.read<decltype(m_globalKeys)>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
             if (version >= 18)
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
             {
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
                 if (version >= 20)
-#endif                                  // VH_LEGACY_WORLD_LOADING
+#endif                                  // AVL_LEGACY_WORLD_LOADING
                 {
                     reader.read<bool>();// locationsGenerated
                 }
@@ -409,21 +409,21 @@ void IZoneManager::Load(DataReader &reader, std::int32_t version)
                     auto text = reader.read<std::string_view>();
                     auto pos  = reader.read<Vector3f>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
                     bool generated = (version >= 19) ? reader.read<bool>() : false;
-#else // !VH_LEGACY_WORLD_LOADING
+#else // !AVL_LEGACY_WORLD_LOADING
                     bool generated = reader.read<bool>();
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
                     auto &&location = GetFeature(text);
                     if (location) {
                         m_generatedFeatures[WorldToZonePos(pos)]
                                 = std::make_unique<Feature::Instance>(*location, pos);
                     } else {
-                        LOG_ERROR(VH_LOGGER, "Unknown feature '{}'", text);
+                        LOG_ERROR(AVL_LOGGER, "Unknown feature '{}'", text);
                     }
-#else // !VH_ZONE_GENERATION
+#else // !AVL_ZONE_GENERATION
                     static_assert(std::numeric_limits<std::uint8_t>::max() > m_features.size());
                     for (std::uint8_t i = 0; i < m_features.size(); i++) {
                         if (text == std::string_view(m_features[i])) {
@@ -433,10 +433,10 @@ void IZoneManager::Load(DataReader &reader, std::int32_t version)
                             break;
                         }
                     }
-#endif// VH_ZONE_GENERATION
+#endif// AVL_ZONE_GENERATION
                 }
 
-                LOG_NOTICE(VH_LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
+                LOG_NOTICE(AVL_LOGGER, "Loaded {}/{} feature instances ", m_generatedFeatures.size(), count);
 
                 if (locationVersion != VConstants::LOCATION) {
                     // regenerate features?
@@ -452,7 +452,7 @@ void IZoneManager::Update()
 {
     ZoneScoped;
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     // TODO 100ms seems a tad too frequent
     //  peers dont even move that fast
     if (VUtils::run_periodic<struct periodic_zone_generation>(100ms)) {
@@ -478,7 +478,7 @@ void IZoneManager::RegenerateZone(const ZoneID& zone) {
     PopulateZone(HeightmapManager()->GetHeightmap(zone));
     //m_generatedZones.insert(zone);
 }*/
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 // Rename?
 void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint)
 {
@@ -538,19 +538,19 @@ void IZoneManager::PopulateZone(Heightmap &heightmap)
 {
     ZoneScoped;
 
-    //#if VH_IS_ON(VH_ZONE_GENERATION)
+    //#if AVL_IS_ON(AVL_ZONE_GENERATION)
     std::vector<ClearArea> m_tempClearAreas;
 
-    if (VH_SETTINGS.worldFeatures)
+    if (AVL_SETTINGS.worldFeatures)
         m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
 
-    if (VH_SETTINGS.worldVegetation)
+    if (AVL_SETTINGS.worldVegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
-    if (VH_SETTINGS.worldCreatures) {
+    if (AVL_SETTINGS.worldCreatures) {
         ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.GetZone()));
     }
-    //#endif // VH_OPTION_ENABLE_ZONE_GENERATION
+    //#endif // AVL_OPTION_ENABLE_ZONE_GENERATION
 }
 
 void IZoneManager::PopulateZone(ZoneID zone)
@@ -807,8 +807,8 @@ void IZoneManager::PostGeoInit()
     if (!spawnLoc)
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 
-    if (!VH_SETTINGS.worldFeatures) {
-        LOG_WARNING(VH_LOGGER, "Location generation is disabled");
+    if (!AVL_SETTINGS.worldFeatures) {
+        LOG_WARNING(AVL_LOGGER, "Location generation is disabled");
         PrepareFeatures(*spawnLoc);
     } else {
         auto now(std::chrono::steady_clock::now());
@@ -818,20 +818,20 @@ void IZoneManager::PostGeoInit()
             PrepareFeatures(*loc.get());
         }
 
-        LOG_INFO(VH_LOGGER, "Location generation took {}s",
+        LOG_INFO(AVL_LOGGER, "Location generation took {}s",
                  std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now)
                          .count());
     }
 
-    if (VH_SETTINGS.TEST_worldPregenerate && m_generatedZones.empty()) {
+    if (AVL_SETTINGS.TEST_worldPregenerate && m_generatedZones.empty()) {
         auto now(std::chrono::steady_clock::now());
         int prevCount = 0;
 
-        LOG_WARNING(VH_LOGGER, "Pregenerating world...");
-        LOG_WARNING(VH_LOGGER,
+        LOG_WARNING(AVL_LOGGER, "Pregenerating world...");
+        LOG_WARNING(AVL_LOGGER,
                     "Pregeneration takes up a lot of memory and resources during and after generation!");
-        LOG_WARNING(VH_LOGGER, "This setting is experimental and unoptimized! (I dont know why :(");
-        LOG_WARNING(VH_LOGGER, "This will take a while!");
+        LOG_WARNING(AVL_LOGGER, "This setting is experimental and unoptimized! (I dont know why :(");
+        LOG_WARNING(AVL_LOGGER, "This will take a while!");
         while (m_generatedZones.size() < WORLD_INNER_ZDIAMETER * WORLD_INNER_ZDIAMETER) {
             for (std::int16_t y = -WORLD_INNER_ZRADIUS; y < WORLD_INNER_ZRADIUS; y++) {
                 for (std::int16_t x = -WORLD_INNER_ZRADIUS; x < WORLD_INNER_ZRADIUS; x++) {
@@ -861,8 +861,8 @@ void IZoneManager::PostGeoInit()
 
                         std::cout << lines << "\n";
 
-                        //LOG_INFO(VH_LOGGER, "Zone progress: \n{}", lines);
-                        LOG_WARNING(VH_LOGGER, "{}/{} zones generated \t({} z/s)", m_generatedZones.size(),
+                        //LOG_INFO(AVL_LOGGER, "Zone progress: \n{}", lines);
+                        LOG_WARNING(AVL_LOGGER, "{}/{} zones generated \t({} z/s)", m_generatedZones.size(),
                                     (WORLD_INNER_ZRADIUS * 2 * WORLD_INNER_ZRADIUS * 2),
                                     ((m_generatedZones.size() - prevCount) / 3));
                         prevCount = m_generatedZones.size();
@@ -874,7 +874,7 @@ void IZoneManager::PostGeoInit()
             //std::this_thread::sleep_for(1ms);
         }
 
-        LOG_WARNING(VH_LOGGER, "Pregeneration took {}s",
+        LOG_WARNING(AVL_LOGGER, "Pregeneration took {}s",
                     std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now)
                             .count());
     }
@@ -975,7 +975,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
     }
 
     if (spawnedLocations < feature.m_quantity) {
-        LOG_WARNING(VH_LOGGER, "Failed to place all {}, placed {}/{}", feature.m_name, spawnedLocations,
+        LOG_WARNING(AVL_LOGGER, "Failed to place all {}, placed {}/{}", feature.m_name, spawnedLocations,
                     feature.m_quantity);
 
         //LOG(ERROR) << "errLocations " << errLocations;
@@ -1074,7 +1074,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
         GenerateFeature(location, seed, position, rot);
 
         // TODO fix quill Vector find
-        LOG_INFO(VH_LOGGER, "Placed '{}' in zone {} ({})", location.m_name, zoneID, position);
+        LOG_INFO(AVL_LOGGER, "Placed '{}' in zone {} ({})", location.m_name, zoneID, position);
 
         // Remove all other Haldor locations, etc...
         if (location.m_unique) {
@@ -1104,7 +1104,7 @@ void IZoneManager::RemoveUngeneratedFeatures(Feature const &feature)
             ++itr;
     }
 
-    LOG_INFO(VH_LOGGER, "Removed {} unplaced '{}'", count, feature.m_name);
+    LOG_INFO(AVL_LOGGER, "Removed {} unplaced '{}'", count, feature.m_name);
 }
 
 // private
@@ -1124,7 +1124,7 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(VH_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+        if (!(AVL_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto &&zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->SetRotation(rot * piece.m_rot);
         } else {
@@ -1309,7 +1309,7 @@ Vector3f IZoneManager::ZoneToWorldPos(ZoneID id)
     return Vector3f(id.x * UNITS_PER_ZONE, 0, id.y * UNITS_PER_ZONE);
 }
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 // private
 bool IZoneManager::IsZoneGenerated(ZoneID zoneID)
 {

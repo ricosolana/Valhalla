@@ -42,13 +42,13 @@ class MethodImpl : public IMethod<T>
   private:
     F const m_func;
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     avledet::util::Hash const m_categoryHash;
     avledet::util::Hash const m_methodHash;
 #endif
 
   public:
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     MethodImpl(F func, avledet::util::Hash categoryHash, avledet::util::Hash methodHash) :
         m_func(func),
         m_categoryHash(categoryHash),
@@ -71,11 +71,11 @@ class MethodImpl : public IMethod<T>
                                      (std::make_index_sequence<std::tuple_size<args_type> {} - 1> {})));
 
         if (reader.get_pos() != reader.size()) {
-            //LOG_WARNING(VH_LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
+            //LOG_WARNING(AVL_LOGGER, "Peer Rpc Invoke has more data than expected {}/{}", reader.size(), reader.get_pos());
             throw std::runtime_error("peer sent more data than expected");
         }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         // Prefix
         if (!AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
             return true;
@@ -102,7 +102,7 @@ MethodImpl(F, avledet::util::Hash, avledet::util::Hash)
         -> MethodImpl<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, F>;
 
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 template<class T>
 class MethodImplLua : public IMethod<T>
@@ -130,7 +130,7 @@ class MethodImplLua : public IMethod<T>
         auto results = reader.read(m_types, state);
 
         // Prefix
-    #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
+    #if AVL_IS_ON(AVL_REFLECTIVE_MOD_EVENTS)
         if (!AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash, sol::as_args(results)))
             return;
     #endif
@@ -143,7 +143,7 @@ class MethodImplLua : public IMethod<T>
         }
 
         // Postfix
-    #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
+    #if AVL_IS_ON(AVL_REFLECTIVE_MOD_EVENTS)
         AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX,
                          sol::as_args(results));
     #endif
@@ -158,4 +158,4 @@ class MethodImplLua : public IMethod<T>
 template<typename T>
 MethodImplLua(sol::function, IScriptManager::StreamTypes) -> MethodImplLua<T>;
 
-#endif// VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#endif// AVL_IS_ON(AVL_ENABLE_SCRIPTING)

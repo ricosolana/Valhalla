@@ -2,13 +2,13 @@
 #include "Peer.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 using namespace avledet::util;
 
 void IScriptManager::load_userdata_peer()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - peer");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - peer");
 
     this->new_usertype<MethodSig>("MethodSig",
                                   sol::constructors<MethodSig(std::string_view, sol::variadic_args)>());

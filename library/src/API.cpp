@@ -153,9 +153,9 @@ void IScriptManager::load_userdata()
         auto source = ar.source;
         //auto short_src = ar.short_src;
 
-        LOG_INFO(VH_LOGGER, "[{}:{}] {}", source, line, s);
+        LOG_INFO(AVL_LOGGER, "[{}:{}] {}", source, line, s);
 
-        //LOG_INFO(VH_LOGGER, "[Lua] {}", s);
+        //LOG_INFO(AVL_LOGGER, "[Lua] {}", s);
     };
 
     //state.new_usertype<IMethod<Peer*>>("IMethodPeer",

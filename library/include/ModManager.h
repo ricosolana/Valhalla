@@ -2,7 +2,7 @@
 
 #include "CompileSettings.h"
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include "DataStream.h"
     #include "Hashes.h"
@@ -267,9 +267,9 @@ class IScriptManager
                 //sol::function_result result = itr->second(Args(params)...);
                 sol::protected_function_result result = itr->m_func(Args(params)...);
                 if (!result.valid()) {
-                    LOG_ERROR(VH_LOGGER, "Event error: ");
+                    LOG_ERROR(AVL_LOGGER, "Event error: ");
                     sol::error error = result;
-                    LOG_ERROR(VH_LOGGER, "{}", error.what());
+                    LOG_ERROR(AVL_LOGGER, "{}", error.what());
 
                     // On error, we invalidate the event
                     this->m_tmp_unsubscribe = true;

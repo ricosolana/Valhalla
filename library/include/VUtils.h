@@ -13,7 +13,7 @@
 #include "CompileSettings.h"
 #include "Types.h"
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     #include <dpp/dpp.h>
 #endif
 

@@ -85,7 +85,7 @@ namespace avledet::network {
     bool SteamSocket::authenticate(avledet::util::ByteView ticket)
     {
         EBeginAuthSessionResult result {};
-        if (VH_SETTINGS.serverDedicated) {
+        if (AVL_SETTINGS.serverDedicated) {
             result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(),
                                                          m_steam_id.GetSteamID());
         } else {

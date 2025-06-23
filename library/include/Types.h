@@ -12,7 +12,7 @@
 
 #include "CompileSettings.h"
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/state.hpp>
 #endif
 

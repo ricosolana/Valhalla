@@ -60,7 +60,7 @@ bool INetManager::Unban(std::string_view user)
 
 void INetManager::SendDisconnect()
 {
-    LOG_INFO(VH_LOGGER, "Sending disconnect msg");
+    LOG_INFO(AVL_LOGGER, "Sending disconnect msg");
 
     for (auto &&peer : m_connectedPeers) {
         peer->SendDisconnect();
@@ -90,9 +90,9 @@ void INetManager::SendPlayerList()
                 writer.write(platform);           // ...?
                 auto forcedDisplayName = platform;//TODO the algo / usage is kinda weird / convoluted
                 writer.write(forcedDisplayName);  //TODO
-                writer.write(peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible);
-                if (peer->IsMapVisible() || VH_SETTINGS.playerListForceVisible) {
-                    if (VH_SETTINGS.playerListSmoothUpdating >= 2s)
+                writer.write(peer->IsMapVisible() || AVL_SETTINGS.playerListForceVisible);
+                if (peer->IsMapVisible() || AVL_SETTINGS.playerListForceVisible) {
+                    if (AVL_SETTINGS.playerListSmoothUpdating >= 2s)
                         writer.write(peer->m_pos);
                     else {// quickly dynamic map
                         auto &&zdo = peer->GetZDO();
@@ -147,7 +147,7 @@ void INetManager::OnPeerConnect(Peer &peer)
         return peer.Disconnect();
     }
 
-    VH_DISPATCH_WEBHOOK(peer.m_name + " has joined");
+    AVL_DISPATCH_WEBHOOK(peer.m_name + " has joined");
 
     // Important
     peer.Register(avledet::util::hashes::Rpc::C2S_PlayerData,
@@ -189,12 +189,12 @@ void INetManager::OnPeerConnect(Peer &peer)
         //  on server join
         //  and on every after-death thereafter
         //if (peer->m_characterID)
-        //VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+        //AVL_DISPATCH_WEBHOOK(peer->m_name + " has died");
 
         //peer->m_characterID.set_id(characterID.get_id());
         peer->m_characterID = characterID;
 
-        LOG_NOTICE(VH_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
+        LOG_NOTICE(AVL_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
     });
 
     peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer *peer, std::string_view user) {
@@ -205,7 +205,7 @@ void INetManager::OnPeerConnect(Peer &peer)
 
         if (Kick(user)) {
             peer->ConsoleMessage("Kicked '" + std::string(user) + "'");
-            VH_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
+            AVL_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
         } else {
             peer->ConsoleMessage("Player not found");
         }
@@ -217,7 +217,7 @@ void INetManager::OnPeerConnect(Peer &peer)
 
         if (Ban(user)) {
             peer->ConsoleMessage("Banned '" + std::string(user) + "'");
-            VH_DISPATCH_WEBHOOK(std::string(user) + " was banned");
+            AVL_DISPATCH_WEBHOOK(std::string(user) + " was banned");
         } else {
             peer->ConsoleMessage("Player not found");
         }
@@ -257,7 +257,7 @@ void INetManager::OnPeerConnect(Peer &peer)
             }
         }
 
-        if (!VH_SETTINGS.playerWhitelist)
+        if (!AVL_SETTINGS.playerWhitelist)
             peer->ConsoleMessage("Whitelist is disabled");
         else {
             if (Valhalla()->m_whitelist.empty())
@@ -277,8 +277,8 @@ void INetManager::OnPeerConnect(Peer &peer)
     RouteManager()->OnNewPeer(peer);
     ZoneManager()->OnNewPeer(peer);
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
-    if (VH_SETTINGS.TEST_discordAccountLinking) {
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
+    if (AVL_SETTINGS.TEST_discordAccountLinking) {
         peer.SetGated(!DiscordManager()->m_linked_accounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
             DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()]
@@ -288,7 +288,7 @@ void INetManager::OnPeerConnect(Peer &peer)
 #endif
 
     // TODO remove this for debug only
-    peer.SetGated(VH_SETTINGS.TEST_playerRestrict);
+    peer.SetGated(AVL_SETTINGS.TEST_playerRestrict);
 
     m_onlinePeers.push_back(&peer);
 }
@@ -334,11 +334,12 @@ Peer *INetManager::FindPeerByHost(std::string_view host)
 
 void INetManager::PostInit()
 {
-    LOG_NOTICE(VH_LOGGER, "Initializing NetManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing NetManager");
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(VH_SETTINGS.serverPort));// m_acceptor
+    m_acceptor
+            = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
@@ -358,8 +359,8 @@ void INetManager::Update()
         SendNetTime();
     }
 
-    if (VH_SETTINGS.playerListSmoothUpdating > 0s) {
-        if (VUtils::run_periodic<struct periodic_peer_tablist>(VH_SETTINGS.playerListSmoothUpdating)) {
+    if (AVL_SETTINGS.playerListSmoothUpdating > 0s) {
+        if (VUtils::run_periodic<struct periodic_peer_tablist>(AVL_SETTINGS.playerListSmoothUpdating)) {
             SendPlayerList();
         }
     }
@@ -380,8 +381,8 @@ void INetManager::Update()
         try {
             peer->update();
         } catch (std::runtime_error const &e) {
-            LOG_WARNING(VH_LOGGER, "Peer error");
-            LOG_WARNING(VH_LOGGER, "{}", e.what());
+            LOG_WARNING(AVL_LOGGER, "Peer error");
+            LOG_WARNING(AVL_LOGGER, "{}", e.what());
             peer->m_socket->Close(false);
         }
     }
@@ -389,7 +390,7 @@ void INetManager::Update()
 
     // Pump steam callbacks
     m_acceptor->update();
-    //if (VH_SETTINGS.serverDedicated)
+    //if (AVL_SETTINGS.serverDedicated)
     //    SteamGameServer_RunCallbacks();
     //else
     //    SteamAPI_RunCallbacks();
@@ -430,8 +431,8 @@ void INetManager::Update()
 
 void INetManager::OnPeerQuit(Peer &peer)
 {
-    LOG_INFO(VH_LOGGER, "Cleaning up peer");
-    VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
+    LOG_INFO(AVL_LOGGER, "Cleaning up peer");
+    AVL_DISPATCH_WEBHOOK(peer.m_name + " has quit");
     AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
 
     ZDOManager()->OnPeerQuit(peer);
@@ -448,7 +449,7 @@ void INetManager::OnPeerDisconnect(Peer &peer)
 
     peer.SendDisconnect();
 
-    LOG_INFO(VH_LOGGER, "{} has disconnected", peer.m_socket->get_host_name());
+    LOG_INFO(AVL_LOGGER, "{} has disconnected", peer.m_socket->get_host_name());
 }
 
 void INetManager::Uninit()
@@ -469,7 +470,7 @@ void INetManager::Uninit()
 
 void INetManager::OnConfigLoad(bool reloading)
 {
-    bool hasPassword = !VH_SETTINGS.serverPassword.empty();
+    bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {
         m_passwordSalt = VUtils::Random::GenerateAlphaNum(16);
@@ -477,7 +478,7 @@ void INetManager::OnConfigLoad(bool reloading)
         // Hash a salted password
         //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        auto s         = avledet::crypto::md5(VH_SETTINGS.serverPassword + m_passwordSalt);
+        auto s         = avledet::crypto::md5(AVL_SETTINGS.serverPassword + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     } else {
         m_passwordSalt.clear();

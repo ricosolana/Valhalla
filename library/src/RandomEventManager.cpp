@@ -26,7 +26,7 @@ void IRandomEventManager::Init()
     // chance: 20
     // range: 96
 
-    LOG_NOTICE(VH_LOGGER, "Initializing EventManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing EventManager");
 
     {
         // load Foliage:
@@ -37,11 +37,11 @@ void IRandomEventManager::Init()
         DataReader pkg(*opt);
 
         auto comment = pkg.read<std::string_view>();// comment
-        LOG_DEBUG(VH_LOGGER, "pkg comment: {}", comment);
+        LOG_DEBUG(AVL_LOGGER, "pkg comment: {}", comment);
 
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
-            LOG_WARNING(VH_LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
+            LOG_WARNING(AVL_LOGGER, "randomEvents.pkg uses different game version than server ({})", ver);
         }
 
         auto count = pkg.read<std::int32_t>();
@@ -62,7 +62,7 @@ void IRandomEventManager::Init()
             m_events[sv] = std::move(e);
         }
 
-        LOG_NOTICE(VH_LOGGER, "Loaded {} random events", count);
+        LOG_NOTICE(AVL_LOGGER, "Loaded {} random events", count);
     }
 }
 
@@ -74,7 +74,7 @@ void IRandomEventManager::Update()
     if (m_activeEvent) {
         // Update the timer of the current event
         if (!m_activeEvent->m_pauseIfNoPlayerInArea
-            || ZDOManager()->AnyZDO(this->m_activeEventPos, VH_SETTINGS.eventsRadius,
+            || ZDOManager()->AnyZDO(this->m_activeEventPos, AVL_SETTINGS.eventsRadius,
                                     avledet::util::hashes::Object::Player, Prefab::Flag::NONE,
                                     Prefab::Flag::NONE))
             //m_activeEventTimer += Valhalla()->Delta();
@@ -82,18 +82,18 @@ void IRandomEventManager::Update()
 
         //if (m_activeEventTimer > this->m_activeEvent->m_duration) {
         if (m_activeEventRemaining <= 0ns) {
-            VH_DISPATCH_WEBHOOK("Random event stopped: `" + this->m_activeEvent->m_name + "`");
+            AVL_DISPATCH_WEBHOOK("Random event stopped: `" + this->m_activeEvent->m_name + "`");
 
             m_activeEvent    = nullptr;
             m_activeEventPos = Vector3f::ZERO;
         }
-    } else if (VH_SETTINGS.eventsInterval > 0s) {
+    } else if (AVL_SETTINGS.eventsInterval > 0s) {
         m_eventIntervalTimer += Valhalla()->delta();
 
         // try to set a new current event
-        if (m_eventIntervalTimer > VH_SETTINGS.eventsInterval.count()) {
+        if (m_eventIntervalTimer > AVL_SETTINGS.eventsInterval.count()) {
             m_eventIntervalTimer = 0;
-            if (VUtils::Random::State().next_float() <= VH_SETTINGS.eventsChance) {
+            if (VUtils::Random::State().next_float() <= AVL_SETTINGS.eventsChance) {
 
                 if (auto opt = GetPossibleRandomEvent()) {
                     auto &&e   = opt.value().first;
@@ -106,9 +106,9 @@ void IRandomEventManager::Update()
 					this->m_activeEventPos = pos;
 					this->m_activeEventRemaining = this->m_activeEvent->m_duration;
 
-					LOG_INFO(VH_LOGGER, "Set current random event: {}", e.get().m_name);
+					LOG_INFO(AVL_LOGGER, "Set current random event: {}", e.get().m_name);
 
-					VH_DISPATCH_WEBHOOK("Random event started in world `" + this->m_activeEvent->m_name + "`");
+					AVL_DISPATCH_WEBHOOK("Random event started in world `" + this->m_activeEvent->m_name + "`");
 
 					// send event
 					//SendCurrentRandomEvent();
@@ -130,8 +130,8 @@ void IRandomEventManager::SetCurrentRandomEvent(Event const &e, Vector3f pos, st
     this->m_activeEventRemaining       = nanos;
     this->m_activeEventInitialDuration = nanos;
 
-    LOG_INFO(VH_LOGGER, "Set current random event: {}", e.m_name);
-    VH_DISPATCH_WEBHOOK("Random event started in world `" + e.m_name + "`");
+    LOG_INFO(AVL_LOGGER, "Set current random event: {}", e.m_name);
+    AVL_DISPATCH_WEBHOOK("Random event started in world `" + e.m_name + "`");
 }
 
 std::optional<std::pair<std::reference_wrapper<IRandomEventManager::Event const>, Vector3f>>
@@ -181,7 +181,7 @@ IRandomEventManager::GetPossibleRandomEvent()
 
 bool IRandomEventManager::CheckGlobalKeys(Event const &e)
 {
-    if (VH_SETTINGS.eventsRequireKeys) {
+    if (AVL_SETTINGS.eventsRequireKeys) {
         for (auto &&key : e.m_presentGlobalKeys) {
             if (!ZoneManager()->GlobalKeys().contains(key))
                 return false;
@@ -209,9 +209,9 @@ void IRandomEventManager::Load(DataReader &reader, int version)
 {
     m_eventIntervalTimer = reader.read<float>();
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     if (version >= 25) {
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
         this->m_activeEvent          = GetEvent(reader.read<std::string_view>());
         this->m_activeEventRemaining = std::chrono::seconds((std::int64_t) reader.read<float>());
         this->m_activeEventPos       = reader.read<Vector3f>();

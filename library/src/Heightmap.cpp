@@ -1,6 +1,6 @@
 #include "HeightMap.h"
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "HeightmapBuilder.h"
     #include "HeightmapManager.h"
     #include "VUtilsMath.h"

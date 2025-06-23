@@ -1,7 +1,7 @@
 #include "DiscordManager.h"
 #include "WorldManager.h"
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
 
     #include <dpp/appcommand.h>
     #include <dpp/dispatcher.h>
@@ -31,23 +31,23 @@ public:
 
 void IDiscordManager::init()
 {
-    if (!VH_SETTINGS.discordEnabled || VH_SETTINGS.discordToken.empty())
+    if (!AVL_SETTINGS.discordEnabled || AVL_SETTINGS.discordToken.empty())
         return;
 
-    LOG_INFO(VH_LOGGER, "Initializing DiscordManager");
+    LOG_INFO(AVL_LOGGER, "Initializing DiscordManager");
 
     // https://dpp.dev/slashcommands.html
 
-    m_bot = std::make_unique<dpp::cluster>(VH_SETTINGS.discordToken);
+    m_bot = std::make_unique<dpp::cluster>(AVL_SETTINGS.discordToken);
 
     m_bot->on_log([](dpp::log_t const &log) {
         switch (log.severity) {
-        case dpp::loglevel::ll_trace: LOG_TRACE_L1(VH_LOGGER, "{}", log.message); break;
-        case dpp::loglevel::ll_debug: LOG_DEBUG(VH_LOGGER, "{}", log.message); break;
-        case dpp::loglevel::ll_info: LOG_INFO(VH_LOGGER, "{}", log.message); break;
-        case dpp::loglevel::ll_warning: LOG_WARNING(VH_LOGGER, "{}", log.message); break;
-        case dpp::loglevel::ll_error: LOG_ERROR(VH_LOGGER, "{}", log.message); break;
-        case dpp::loglevel::ll_critical: LOG_CRITICAL(VH_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_trace: LOG_TRACE_L1(AVL_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_debug: LOG_DEBUG(AVL_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_info: LOG_INFO(AVL_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_warning: LOG_WARNING(AVL_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_error: LOG_ERROR(AVL_LOGGER, "{}", log.message); break;
+        case dpp::loglevel::ll_critical: LOG_CRITICAL(AVL_LOGGER, "{}", log.message); break;
         }
     });
 
@@ -246,12 +246,12 @@ void IDiscordManager::init()
                     auto flag_variant = event.get_parameter("flag");
                     auto &&flag       = std::get_if<bool>(&flag_variant);
                     if (flag) {
-                        VH_SETTINGS.playerWhitelist = *flag;
+                        AVL_SETTINGS.playerWhitelist = *flag;
                         event.reply(std::string("Whitelist is now ")
-                                    + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+                                    + (AVL_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
                     } else {
                         event.reply(std::string("The whitelist is ")
-                                    + (VH_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+                                    + (AVL_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
                     }
                 } else if (label == "vhwhois") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
@@ -272,7 +272,7 @@ void IDiscordManager::init()
                         event.reply("World time is " + std::to_string(Valhalla()->GetWorldTime()));
                     }
                 }
-    #if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
                 else if (label == "vhlua") {
                     event.thinking(true);
                     auto &&script = std::get<std::string>(event.get_parameter("script"));
@@ -367,7 +367,7 @@ void IDiscordManager::init()
                             //choices.emplace_back(dpp::command_option_choice(prefab->m_name, prefab->m_name));
                         }
                     } else {
-                        LOG_WARNING(VH_LOGGER, "autocomplete not registered");
+                        LOG_WARNING(AVL_LOGGER, "autocomplete not registered");
                         return;
                     }
 
@@ -379,13 +379,13 @@ void IDiscordManager::init()
     });
 
     m_bot->on_guild_member_remove([this](dpp::guild_member_remove_t const &event) {
-        if (VH_SETTINGS.TEST_discordSyncLeaves) {
+        if (AVL_SETTINGS.TEST_discordSyncLeaves) {
             // Try kicking player off Valheim server
 
             if (auto &&peer = unlink_peer(event.removed.id)) {
                 peer->Kick();
 
-                LOG_INFO(VH_LOGGER, "Kicked {} due to guild leave", peer->m_name);
+                LOG_INFO(AVL_LOGGER, "Kicked {} due to guild leave", peer->m_name);
             }
         }
     });
@@ -510,7 +510,7 @@ void IDiscordManager::init()
                                     .set_default_permissions(0),// 0 is admins only
 
                                                                 // Together
-    #if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
                             dpp::slashcommand("vhlua", "Run a Lua script from string", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "script", "script text",
                                                                     true))
@@ -522,7 +522,7 @@ void IDiscordManager::init()
                                     .set_default_permissions(0)// 0 is admins only
     #endif
                     },
-                    VH_SETTINGS.discordGuild);
+                    AVL_SETTINGS.discordGuild);
         }
     });
 
@@ -539,7 +539,7 @@ void IDiscordManager::period_update()
         auto &&peer  = NetManager()->FindPeerByHost(itr->first);
         auto &&since = Valhalla()->Nanos() - itr->second.second;
         if (since > 5min) {
-            LOG_INFO(VH_LOGGER, "Discord linking key expired for {}", itr->first);
+            LOG_INFO(AVL_LOGGER, "Discord linking key expired for {}", itr->first);
 
             // Kick the user to generate a new key
             if (peer) {
@@ -568,7 +568,7 @@ void IDiscordManager::period_update()
 	}*/
 
     /*
-	if (VH_SETTINGS.discordKickOnLeave) {
+	if (AVL_SETTINGS.discordKickOnLeave) {
 		// if a peer has left the discord server and linked players are required, then set gated or kick
 		for (auto&& peer : NetManager()->GetPeers()) {
 			
@@ -602,11 +602,11 @@ Peer *IDiscordManager::unlink_peer(dpp::snowflake id)
 
 void IDiscordManager::send_webhook_message(std::string_view msg)
 {
-    if (!m_bot || VH_SETTINGS.discordWebhook.empty())
+    if (!m_bot || AVL_SETTINGS.discordWebhook.empty())
         return;
 
-    auto &&webhook = dpp::webhook(VH_SETTINGS.discordWebhook);
+    auto &&webhook = dpp::webhook(AVL_SETTINGS.discordWebhook);
 
     m_bot->execute_webhook(webhook, dpp::message(std::string(msg)));
 }
-#endif// VH_DISCORD_INTEGRATION
+#endif// AVL_DISCORD_INTEGRATION

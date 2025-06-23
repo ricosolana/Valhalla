@@ -5,7 +5,7 @@
 #include "Types.h"
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 
 class IHeightmapManager
 {
@@ -53,4 +53,4 @@ class IHeightmapManager
 // Manager class for everything related to finely partitioned world heights and biomes during generation
 IHeightmapManager *HeightmapManager();
 
-#endif// VH_IS_ON(VH_ZONE_GENERATION)
+#endif// AVL_IS_ON(AVL_ZONE_GENERATION)

@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
 
 class HMBuildData
 {
@@ -17,4 +17,4 @@ class HMBuildData
     Mask_t m_baseMask;
 };
 
-#endif// VH_IS_ON(VH_ZONE_GENERATION)
+#endif// AVL_IS_ON(AVL_ZONE_GENERATION)

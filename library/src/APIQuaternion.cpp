@@ -4,7 +4,7 @@
 #include <sol/forward.hpp>
 #include <sol/property.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 //was readonly
 //template <typename T>
@@ -35,7 +35,7 @@ namespace sol {
 
 void IScriptManager::load_userdata_quaternion()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - quaternion");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - quaternion");
 
     this->new_usertype<Quaternion>(
             "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>(),

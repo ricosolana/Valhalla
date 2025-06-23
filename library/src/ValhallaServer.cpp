@@ -32,7 +32,7 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
-quill::Logger *VH_LOGGER {};
+quill::Logger *AVL_LOGGER {};
 
 auto VALHALLA_INSTANCE = std::make_unique<IValhalla>();
 
@@ -178,7 +178,7 @@ namespace YAML {
         }
     };
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     template<>
     struct convert<dpp::snowflake>
     {
@@ -331,12 +331,12 @@ void IValhalla::LoadFiles(bool reloading)
                 try {
                     node = YAML::Load(opt.value());
                 } catch (const YAML::ParserException &e) {
-                    LOG_INFO(VH_LOGGER, "{}", e.what());
+                    LOG_INFO(AVL_LOGGER, "{}", e.what());
                     fileError = true;
                 }
             } else {
                 if (!reloading) {
-                    LOG_INFO(VH_LOGGER, "Server config not found, creating...");
+                    LOG_INFO(AVL_LOGGER, "Server config not found, creating...");
                 }
                 fileError = true;
             }
@@ -374,7 +374,7 @@ void IValhalla::LoadFiles(bool reloading)
             a(m_settings.playerOnline, players, "authenticate", true);
             a(m_settings.playerTimeout, players, "timeout", 30s,
               [](std::chrono::seconds val) { return val < 0s; });
-#if VH_IS_ON(VH_PLAYER_SLEEP)
+#if AVL_IS_ON(AVL_PLAYER_SLEEP)
             a(m_settings.playerSleepSolo, players, "player-sleep-solo", false);
 #endif
             a(m_settings.TEST_playerRestrict, players, "experimental-restrict", false, nullptr, false);
@@ -477,7 +477,7 @@ void IValhalla::LoadFiles(bool reloading)
                 Discord settings
             */
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
             a(m_settings.discordEnabled, discord, "enabled", false, nullptr, reloading);
             a(m_settings.discordWebhook, discord, "webhook", "");//TODO move this somewhere more secure
             a(m_settings.discordToken, discord, "token", "", nullptr,
@@ -499,13 +499,13 @@ void IValhalla::LoadFiles(bool reloading)
             {
                 quill::LogLevel level;
                 a(level, general, "log-level", quill::LogLevel::Info);
-                VH_LOGGER->set_log_level(level);
+                AVL_LOGGER->set_log_level(level);
             }
 
             if (m_settings.serverPassword.empty()) {
-                LOG_INFO(VH_LOGGER, "Server does not have a password");
+                LOG_INFO(AVL_LOGGER, "Server does not have a password");
             } else {
-                LOG_NOTICE(VH_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
+                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
             }
         }
 
@@ -523,7 +523,7 @@ void IValhalla::LoadFiles(bool reloading)
             auto node   = YAML::Load(*opt);
             m_blacklist = node.as<decltype(m_blacklist)>();
         } catch (const YAML::Exception &e) {
-            LOG_ERROR(VH_LOGGER, "{}", e.what());
+            LOG_ERROR(AVL_LOGGER, "{}", e.what());
         }
     }
 
@@ -532,7 +532,7 @@ void IValhalla::LoadFiles(bool reloading)
             auto node   = YAML::Load(*opt);
             m_whitelist = node.as<decltype(m_whitelist)>();
         } catch (const YAML::Exception &e) {
-            LOG_ERROR(VH_LOGGER, "{}", e.what());
+            LOG_ERROR(AVL_LOGGER, "{}", e.what());
         }
     }
 
@@ -541,18 +541,18 @@ void IValhalla::LoadFiles(bool reloading)
             auto node = YAML::Load(*opt);
             m_admin   = node.as<decltype(m_admin)>();
         } catch (const YAML::Exception &e) {
-            LOG_ERROR(VH_LOGGER, "{}", e.what());
+            LOG_ERROR(AVL_LOGGER, "{}", e.what());
         }
     }
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     if (m_settings.TEST_discordAccountLinking) {
         if (auto &&opt = VUtils::Resource::ReadFile<std::string>("discord-linked.yml")) {
             try {
                 auto node                           = YAML::Load(*opt);
                 DiscordManager()->m_linked_accounts = node.as<decltype(IDiscordManager::m_linked_accounts)>();
             } catch (const YAML::Exception &e) {
-                LOG_ERROR(VH_LOGGER, "{}", e.what());
+                LOG_ERROR(AVL_LOGGER, "{}", e.what());
             }
         }
     }
@@ -575,7 +575,7 @@ void IValhalla::LoadFiles(bool reloading)
     {
         //std::string title = m_settings.serverName + " - " + VConstants::GAME;
         std::string title
-                = "Valhalla " + std::string(VH_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+                = "Valhalla " + std::string(AVLEDET_VERSION) + " - Valheim " + std::string(VConstants::GAME);
         SetConsoleTitle(title.c_str());
     }
 #endif
@@ -620,7 +620,7 @@ void IValhalla::SaveFiles()
         VUtils::Resource::WriteFile("admin.yml", emit.c_str());
     }
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     {
         YAML::Node node(DiscordManager()->m_linked_accounts);
 
@@ -710,10 +710,10 @@ void IValhalla::Start()
 
         logger->set_log_level(quill::LogLevel::TraceL3);
 
-        /* global assigned */ VH_LOGGER = logger;
+        /* global assigned */ AVL_LOGGER = logger;
     }
 
-    LOG_NOTICE(VH_LOGGER, "Starting Valhalla {} (Valheim {})", VH_VERSION, VConstants::GAME);
+    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVLEDET_VERSION, VConstants::GAME);
 
     m_serverID  = VUtils::Random::GenerateUID();
     m_startTime = std::chrono::steady_clock::now();
@@ -726,17 +726,17 @@ void IValhalla::Start()
     m_serverTimeMultiplier = 1;
 
     ZDOManager()->Init();
-#if VH_IS_ON(VH_RANDOM_EVENTS)
+#if AVL_IS_ON(AVL_RANDOM_EVENTS)
     RandomEventManager()->Init();
 #endif
     PrefabManager()->Init();
 
     ZoneManager()->PostPrefabInit();
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     DungeonManager()->post_prefab_init();
 #endif
     WorldManager()->PostZoneInit();
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     GeoManager()->PostWorldInit();
     HeightmapBuilder()->PostGeoInit();
     ZoneManager()->PostGeoInit();
@@ -744,19 +744,19 @@ void IValhalla::Start()
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     ScriptManager()->PostInit();
 #endif
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     DiscordManager()->init();
 #endif
 
     /*
-    if (VH_SETTINGS.worldRecording) {
+    if (AVL_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();
         VUtils::Resource::WriteFile(
-            fs::path(VH_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
+            fs::path(AVL_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
             WorldManager()->SaveWorldDB());
     }*/
 
@@ -780,7 +780,7 @@ void IValhalla::Start()
     });
 #endif// !_WIN32
 
-    VH_DISPATCH_WEBHOOK("Server started");
+    AVL_DISPATCH_WEBHOOK("Server started");
 
     m_terminate = false;
     while (!m_terminate) {
@@ -823,23 +823,23 @@ void IValhalla::Start()
         FrameMark;
     }
 
-    VH_DISPATCH_WEBHOOK("Server stopping");
+    AVL_DISPATCH_WEBHOOK("Server stopping");
 
-    LOG_INFO(VH_LOGGER, "Terminating server");
+    LOG_INFO(AVL_LOGGER, "Terminating server");
 
     // Cleanup
     NetManager()->Uninit();
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     HeightmapBuilder()->Uninit();
 #endif
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     ScriptManager()->Uninit();
 #endif
 
     SaveFiles();
 
-    LOG_INFO(VH_LOGGER, "Server was gracefully terminated");
+    LOG_INFO(AVL_LOGGER, "Server was gracefully terminated");
 
     // signal any other dummy thread to continue
     m_terminate = false;
@@ -859,10 +859,10 @@ void IValhalla::Update()
     NetManager()->Update();
     ZDOManager()->Update();
     ZoneManager()->Update();
-#if VH_IS_ON(VH_RANDOM_EVENTS)
+#if AVL_IS_ON(AVL_RANDOM_EVENTS)
     RandomEventManager()->Update();
 #endif
-#if VH_IS_ON(VH_ZONE_GENERATION)
+#if AVL_IS_ON(AVL_ZONE_GENERATION)
     HeightmapBuilder()->Update();
 #endif
 }
@@ -870,26 +870,26 @@ void IValhalla::Update()
 void IValhalla::PeriodUpdate()
 {
     if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
-        LOG_INFO(VH_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
+        LOG_INFO(AVL_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     }
 
     //PERIODIC_NOW(180s, {
-    //    LOG_INFO(VH_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
+    //    LOG_INFO(AVL_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     //});
 
     AVL_SCRIPT_EVENT(IScriptManager::Events::PeriodicUpdate);
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     DiscordManager()->period_update();
 #endif
 
-#if VH_IS_ON(VH_DUNGEON_REGENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
     if (m_settings.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
 #endif
 
 
-#if VH_IS_ON(VH_PLAYER_SLEEP)
+#if AVL_IS_ON(AVL_PLAYER_SLEEP)
     //if (m_settings.playerSleep) {
     if (m_playerSleep) {
         if (m_worldTime > m_playerSleepUntil) {
@@ -969,16 +969,16 @@ void IValhalla::PeriodUpdate()
     auto lastWriteTime = fs::last_write_time("server.yml", err);
     if (lastWriteTime != this->m_settingsLastTime) {
         // reload the file
-        LOG_INFO(VH_LOGGER, "Config change detected!");
+        LOG_INFO(AVL_LOGGER, "Config change detected!");
         LoadFiles(true);
-        LOG_INFO(VH_LOGGER, "Config was reloaded");
+        LOG_INFO(AVL_LOGGER, "Config was reloaded");
     }
 
     if (m_settings.worldSaveInterval > 0s) {
         // save warming message
         if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval,
                                                                      m_settings.worldSaveInterval)) {
-            LOG_INFO(VH_LOGGER, "World saving in 30s");
+            LOG_INFO(AVL_LOGGER, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         }
 
@@ -988,7 +988,7 @@ void IValhalla::PeriodUpdate()
         }
 
         //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
-        //    LOG_INFO(VH_LOGGER, "World saving in 30s");
+        //    LOG_INFO(AVL_LOGGER, "World saving in 30s");
         //    Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         //});
         //

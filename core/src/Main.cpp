@@ -43,22 +43,22 @@ int main(int argc, char **argv)
     /*
     // I think ONLY windows requires this...
     {
-        std::string path = (fs::current_path() / VH_LUA_PATH).string();
-        std::string path2 = (fs::current_path() / VH_MOD_PATH).string();
+        std::string path = (fs::current_path() / AVLEDET_LUA_PATH).string();
+        std::string path2 = (fs::current_path() / AVLEDET_SCRIPTS_PATH).string();
         if (!VUtils::SetEnv("LUA_PATH",
             path + "/?.lua;"
             + path + "/?/?.lua;"
             + path2 + "/?.lua;"
             + path2 + "/?/?.lua"))
-            LOG_ERROR(VH_LOGGER, "Failed to set Lua path");
+            LOG_ERROR(AVL_LOGGER, "Failed to set Lua path");
     }
 
     {
-        std::string path = (fs::current_path() / VH_LUA_CPATH).string();
+        std::string path = (fs::current_path() / AVLEDET_LUA_CPATH).string();
         if (!VUtils::SetEnv("LUA_CPATH",
             path + "/?.dll;"
             + path + "/?/?.dll"))
-            LOG_ERROR(VH_LOGGER, "Failed to set Lua cpath");
+            LOG_ERROR(AVL_LOGGER, "Failed to set Lua cpath");
     }
 */
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         Valhalla()->Start();
 #ifndef _DEBUG
     } catch (std::exception const &e) {
-        LOG_ERROR(VH_LOGGER, "{}", e.what());
+        LOG_ERROR(AVL_LOGGER, "{}", e.what());
         return 1;
     }
 #endif

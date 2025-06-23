@@ -2,7 +2,7 @@
 
 #include "VUtils.h"
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_GENERATION)
 
     #include "Dungeon.h"
     #include "Prefab.h"
@@ -42,7 +42,7 @@ class IDungeonManager
     // Try to replace the target dungeon with a newly generated one
     //	Returns the new dungeon (dungeonZdo is invalidated)
     //	Returns null if replacement failed (dungeonZdo remains valid)
-    #if VH_IS_ON(VH_DUNGEON_REGENERATION)
+    #if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
     ZDO *TryRegenerateDungeon(ZDO dungeonZdo);
     void TryRegenerateDungeons();
     #endif

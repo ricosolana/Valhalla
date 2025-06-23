@@ -72,7 +72,7 @@ void IRouteManager::OnNewPeer(Peer &peer)
             //TODO
             //	can obviously be spammed by bad actors, but their name is shown, so... self inflicted
             if (hash == avledet::util::get_stable_hash("OnDeath")) {
-                VH_DISPATCH_WEBHOOK(peer->m_name + " has died");
+                AVL_DISPATCH_WEBHOOK(peer->m_name + " has died");
             }
 
             // 'EVERYBODY' also targets the server
@@ -92,7 +92,7 @@ void IRouteManager::OnNewPeer(Peer &peer)
                 }
             }
         } else {
-            if (target != VH_ID) {
+            if (target != AVL_ID) {
                 if (auto other = NetManager()->FindPeerByUserID(target)) {
                     if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Routed ^ hash, peer, reader))
                         return;

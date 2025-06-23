@@ -591,10 +591,10 @@ class ZDO
     //  make this a lua-only method?
     //bool Apply() const;
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     // Load ZDO from disk
     void Load31Pre(DataReader &reader, std::int32_t version);
-#endif//VH_LEGACY_WORLD_LOADING
+#endif//AVL_LEGACY_WORLD_LOADING
 
     // Reads from a buffer using the new efficient format (version >= 31)
     //  version=0: Read according to the network deserialize format
@@ -1098,7 +1098,7 @@ class ZDO
     // Returns whether this server is the owner of the ZDO
     [[nodiscard]] bool IsLocal() const
     {
-        return this->IsOwner(VH_ID);
+        return this->IsOwner(AVL_ID);
     }
 
     // Whether the ZDO has an owner
@@ -1111,7 +1111,7 @@ class ZDO
     // Claim personal ownership over the ZDO
     bool SetLocal()
     {
-        return this->SetOwner(VH_ID);
+        return this->SetOwner(AVL_ID);
     }
 
     // Clears the owner of this ZDO

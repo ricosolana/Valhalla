@@ -10,8 +10,8 @@
 #include "Task.h"
 #include "VUtils.h"
 
-#define VH_ID       (Valhalla()->ID())
-#define VH_SETTINGS (Valhalla()->Settings())
+#define AVL_ID       (Valhalla()->ID())
+#define AVL_SETTINGS (Valhalla()->Settings())
 
 enum class UIMsgType : std::int32_t
 {
@@ -59,7 +59,7 @@ class IValhalla
     double m_serverTimeMultiplier = 1;
     fs::file_time_type m_settingsLastTime {};
 
-#if VH_IS_ON(VH_PLAYER_SLEEP)
+#if AVL_IS_ON(AVL_PLAYER_SLEEP)
     bool m_playerSleep {};
     double m_playerSleepUntil {};
 #endif
@@ -336,4 +336,4 @@ class IValhalla
 
 IValhalla *Valhalla();
 
-extern quill::Logger *VH_LOGGER;//#define VH_LOGGER (Valhalla()->m_logger)
+extern quill::Logger *AVL_LOGGER;//#define AVL_LOGGER (Valhalla()->m_logger)

@@ -16,7 +16,7 @@
 #include "ZoneManager.h"
 
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
 {
     assert(false);//TODO
@@ -114,7 +114,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
         }
     }*/
 }
-#endif//VH_LEGACY_WORLD_LOADING
+#endif//AVL_LEGACY_WORLD_LOADING
 
 void ZDO::Unpack(DataReader &reader, std::int32_t version)
 {

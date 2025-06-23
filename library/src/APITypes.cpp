@@ -1,11 +1,11 @@
 #include "ModManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 void IScriptManager::load_userdata_types()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - types");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - types");
 
     using namespace avledet::util;
 

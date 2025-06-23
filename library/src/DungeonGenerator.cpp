@@ -1,6 +1,6 @@
 #include "DungeonGenerator.h"
 
-#if VH_IS_ON(VH_DUNGEON_GENERATION)
+#if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "GeoManager.h"
     #include "VUtilsMath2.h"
     #include "VUtilsMathf.h"
@@ -28,7 +28,7 @@ DungeonGenerator::DungeonGenerator(Dungeon const &dungeon, ZDO::reference zdo) :
 // TODO generate seed during start
 avledet::util::Hash DungeonGenerator::GetSeed()
 {
-    if (VH_SETTINGS.dungeonsSeeded) {
+    if (AVL_SETTINGS.dungeonsSeeded) {
         auto seed = GeoManager()->GetSeed();
         auto zone = IZoneManager::WorldToZonePos(m_pos);
         return seed + (int) m_pos.x * -4271 + (int) m_pos.y * 9187 + (int) m_pos.z * -2134;
@@ -52,7 +52,7 @@ void DungeonGenerator::DungeonGenerator::Generate(avledet::util::Hash seed)
     //this->m_generatedTime = steady_clock::now();
 
     //TODO it appears that quill logger isnt compiling for Vector3f / cant resolve the stream<< Operator
-    //LOG_INFO(VH_LOGGER, "Finished generating dungeon: '{}', pos: {}, seed: {}, rooms: {}/{}", m_dungeon.m_prefab->m_name, m_pos, seed, m_placedRooms.size(), m_dungeon.m_maxRooms);
+    //LOG_INFO(AVL_LOGGER, "Finished generating dungeon: '{}', pos: {}, seed: {}, rooms: {}/{}", m_dungeon.m_prefab->m_name, m_pos, seed, m_placedRooms.size(), m_dungeon.m_maxRooms);
 }
 
 //
@@ -86,10 +86,10 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State &state)
     this->PlaceStartRoom(state);
     this->PlaceRooms(state);
 
-    if (VH_SETTINGS.dungeonsEndcapsEnabled)
+    if (AVL_SETTINGS.dungeonsEndcapsEnabled)
         this->PlaceEndCaps(state);
 
-    if (VH_SETTINGS.dungeonsDoors)
+    if (AVL_SETTINGS.dungeonsDoors)
         this->PlaceDoors(state);
 }
 
@@ -253,7 +253,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State &state)
     for (auto &&roomConnection : m_door_connections) {
         auto &&doorDef = this->FindDoorType(state, roomConnection.get().m_connection.get().m_type);
         if (!doorDef) {
-            LOG_INFO(VH_LOGGER, "No door type for connection: {}",
+            LOG_INFO(AVL_LOGGER, "No door type for connection: {}",
                      roomConnection.get().m_connection.get().m_type);
         } else if ((doorDef->m_chance <= 0 || state.value() <= doorDef->m_chance)
                    && (doorDef->m_chance > 0 || state.value() <= this->m_dungeon.m_door_chance)) {
@@ -266,7 +266,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State &state)
         }
     }
 
-    LOG_INFO(VH_LOGGER, "Placed {} doors", num);
+    LOG_INFO(AVL_LOGGER, "Placed {} doors", num);
 }
 
 void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state)
@@ -310,13 +310,13 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state)
                     }
 
                     if (!flag) {
-                        LOG_WARNING(VH_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+                        LOG_WARNING(AVL_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
                     }
                 } else {
-                    LOG_WARNING(VH_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
+                    LOG_WARNING(AVL_LOGGER, "Cyclic detected: Door mismatch for cyclic room");
                 }
             } else {
-                LOG_INFO(VH_LOGGER, "Cyclic detected: Door types successfully match");
+                LOG_INFO(AVL_LOGGER, "Cyclic detected: Door types successfully match");
             }
 
             ++itr1;
@@ -353,7 +353,7 @@ void DungeonGenerator::PlaceEndCaps(VUtils::Random::State &state)
             }
 
             if (!flag2) {
-                LOG_WARNING(VH_LOGGER, "Failed to place end cap");
+                LOG_WARNING(AVL_LOGGER, "Failed to place end cap");
             }
 
             if (!erased) {
@@ -412,7 +412,7 @@ void DungeonGenerator::PlaceRooms(VUtils::Random::State &state)
     for (int i = 0; i < this->m_dungeon.m_max_rooms; i++) {
         this->PlaceOneRoom(state);
         if (this->CheckRequiredRooms() && m_placed_rooms.size() > this->m_dungeon.m_min_rooms) {
-            LOG_INFO(VH_LOGGER, "All required rooms have been placed, stopping generation");
+            LOG_INFO(AVL_LOGGER, "All required rooms have been placed, stopping generation");
             return;
         }
     }
@@ -498,8 +498,8 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State &state, decltype(m_open_c
     Quaternion rot;
     this->CalculateRoomPosRot(connection2, connection.m_pos,
                               connection.m_rot
-                                      * (VH_SETTINGS.dungeonsRoomsFlipped ? Quaternion::euler(0, 180, 0)
-                                                                          : Quaternion::IDENTITY),
+                                      * (AVL_SETTINGS.dungeonsRoomsFlipped ? Quaternion::euler(0, 180, 0)
+                                                                           : Quaternion::IDENTITY),
                               pos, rot);
 
     // this is making me want to rip my hair out
@@ -570,7 +570,7 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot,
     //for (auto&& randomSpawn : room.m_randomSpawns)
     //	randomSpawn.Randomize();
 
-    if (VH_SETTINGS.dungeonsRoomsFurnishing) {
+    if (AVL_SETTINGS.dungeonsRoomsFurnishing) {
         for (auto &&view : room.m_netViews) {
             Vector3f pos1   = pos + rot * view.m_pos;
             Quaternion rot1 = rot * view.m_rot;
@@ -607,13 +607,13 @@ void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, RoomConnectionI
 //	this just makes sure that a rotated rectangle is within the zone
 bool DungeonGenerator::IsInsideZone(Room const &room, Vector3f pos, Quaternion rot)
 {
-    if (!VH_SETTINGS.dungeonsRoomsZoneBounded)
+    if (!AVL_SETTINGS.dungeonsRoomsZoneBounded)
         return true;
 
     Vector3f semiSize = room.m_size * .5f;
 
     if (room.m_endCap)
-        semiSize *= VH_SETTINGS.dungeonsEndcapsInsetFrac;
+        semiSize *= AVL_SETTINGS.dungeonsEndcapsInsetFrac;
 
     if (pos.y + semiSize.y < m_zone_center.y - m_zone_size.y * .5f
         || pos.y - semiSize.y > m_zone_center.y + m_zone_size.y * .5f)
@@ -695,12 +695,12 @@ bool DungeonGenerator::TestCollision(Room const &room, Vector3f pos, Quaternion 
 
     if (room.m_endCap)
         //size *= .5f;
-        size *= VH_SETTINGS.dungeonsEndcapsInsetFrac;
+        size *= AVL_SETTINGS.dungeonsEndcapsInsetFrac;
     else
         //size -= Vector3f(.1f, .1f, .1f);
-        size -= Vector3f(1, 1, 1) * VH_SETTINGS.dungeonsRoomsInsetSize;
+        size -= Vector3f(1, 1, 1) * AVL_SETTINGS.dungeonsRoomsInsetSize;
 
-    //if (VH_SETTINGS.dungeonsRoomsInsetSize)
+    //if (AVL_SETTINGS.dungeonsRoomsInsetSize)
     //size -= Vector3f(.1f, .1f, .1f);
     //if (room.m_endCap)
     //size -= Vector3f(.2f, .2f, .2f); // subtract because edge touching rectangles always overlap (so prevent that)
@@ -861,4 +861,4 @@ bool DungeonGenerator::CheckRequiredRooms()
 
     return num >= this->m_dungeon.m_min_required_rooms;
 }
-#endif// VH_DUNGEON_GENERATION
+#endif// AVL_DUNGEON_GENERATION

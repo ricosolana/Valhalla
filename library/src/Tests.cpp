@@ -49,8 +49,8 @@ void VHTest::Test_ZDOConnectors()
 
     WorldManager()->RetrieveWorld("betatest0p216p5", "fail")->LoadFileDB();
 
-    //VH_SETTINGS.worldName = "betatest0p216p5";
-    //VH_SETTINGS.worldSeed = "fail";
+    //AVL_SETTINGS.worldName = "betatest0p216p5";
+    //AVL_SETTINGS.worldSeed = "fail";
     //WorldManager()->
 
     //Peer peer(std::make_shared<TestSocket>());

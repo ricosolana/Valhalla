@@ -151,7 +151,7 @@ class Peer
     void Register(avledet::util::Hash hash, F func)
     {
         //VLOG(1) << hash;
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RpcIn, hash);
 #else
         m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func);
@@ -164,7 +164,7 @@ class Peer
         return Register(avledet::util::get_stable_hash(name), func);
     }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
@@ -211,7 +211,7 @@ class Peer
         writer.write([this, targetZDO, hash, func](DataWriter &writer) {
             // routed rpc spec
             writer.write<std::int64_t>(0);            // msg id
-            writer.write(VH_ID);                      // sender
+            writer.write(AVL_ID);                     // sender
             writer.write(m_characterID.get_user_id());// target
             writer.write(targetZDO);                  // target ZDO
             writer.write(hash);                       // routed method hash
@@ -263,7 +263,7 @@ class Peer
     }
 
     //void InvokeLua(sol::state_view state, const IScriptManager::MethodSig& repr, const sol::variadic_args& args) {
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void InvokeLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         if (m_socket->get_status() == Status::Closed)
@@ -453,7 +453,7 @@ class Peer
     }
 
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void RouteViewLua(ZDOID targetZDO, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         if (args.size() != repr.m_types.size())

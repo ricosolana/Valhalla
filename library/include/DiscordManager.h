@@ -2,7 +2,7 @@
 
 #include "CompileSettings.h"
 
-#if VH_IS_ON(VH_DISCORD_INTEGRATION)
+#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     #include <string>
 
     #include <dpp/dpp.h>
@@ -46,11 +46,11 @@ class IDiscordManager
     void send_webhook_message(std::string_view msg);
 };
 
-    #define VH_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_message((msg));
+    #define AVL_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_message((msg));
 
 IDiscordManager *DiscordManager();
 #else
-    #define VH_DISPATCH_WEBHOOK(msg) \
-        {                            \
+    #define AVL_DISPATCH_WEBHOOK(msg) \
+        {                             \
         }
 #endif

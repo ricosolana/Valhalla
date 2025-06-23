@@ -28,7 +28,7 @@ namespace avledet::util {
         using UType = std::uint32_t;
 
         // User: 0, ID: 1
-        BitPack<UType, VH_USERID_BITS_I_, sizeof(UType) * 8 - VH_USERID_BITS_I_> m_pack;
+        BitPack<UType, AVL_USERID_BITS_I_, sizeof(UType) * 8 - AVL_USERID_BITS_I_> m_pack;
 
         static inline std::array<std::int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERID;
 

@@ -5,7 +5,7 @@
 #include <quill/core/LogLevel.h>
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include <sol/property.hpp>
 
@@ -13,9 +13,9 @@ using namespace avledet::network;
 
 void IScriptManager::load_userdata_network()
 {
-    //VH_LOGGER->set_log_level(quill::LogLevel::Info);
+    //AVL_LOGGER->set_log_level(quill::LogLevel::Info);
 
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - network");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - network");
 
     m_state.new_enum("NetStatus", "CONNECTING", Status::Connecting, "CONNECTED", Status::Connected,
                      "LINGERING", Status::Lingering, "CLOSED", Status::Closed, "CONNECT_FAILED",

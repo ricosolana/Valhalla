@@ -15,19 +15,19 @@ Peer::Peer(ISocket::Ptr socket) :
     m_lastPing(std::chrono::steady_clock::now())
 {
     this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer *self) {
-        LOG_INFO(VH_LOGGER, "RPC_Disconnect");
+        LOG_INFO(AVL_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 
     this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer *rpc) {
         rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer *rpc, DataReader reader) {
             rpc->m_characterID.set_user_id(reader.read<std::int64_t>());
-#if VH_IS_ON(VH_DISALLOW_MALICIOUS_PLAYERS)
+#if AVL_IS_ON(AVL_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
                 throw std::runtime_error("peer provided 0 owner");
 #endif
             auto version = reader.read<std::string_view>();
-            LOG_INFO(VH_LOGGER, "Client {} has version {}", rpc->m_socket->get_host_name(), version);
+            LOG_INFO(AVL_LOGGER, "Client {} has version {}", rpc->m_socket->get_host_name(), version);
             if (version != VConstants::GAME)
                 return rpc->Close(ConnectionStatus::ErrorVersion);
 
@@ -37,25 +37,25 @@ Peer::Peer(ISocket::Ptr socket) :
             }
 
             rpc->m_pos = reader.read<Vector3f>();
-#if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
+#if AVL_IS_ON(AVL_DISALLOW_NON_CONFORMING_PLAYERS)
             if (rpc->m_pos.Hsq_magnitude()
                 > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
                 throw std::runtime_error("peer position is outside of map");
 #endif
             rpc->m_name = reader.read<std::string>();
-#if VH_IS_ON(VH_DISALLOW_NON_CONFORMING_PLAYERS)
+#if AVL_IS_ON(AVL_DISALLOW_NON_CONFORMING_PLAYERS)
             if (!(rpc->m_name.length() >= 3 && rpc->m_name.length() <= 15))
                 throw std::runtime_error("peer provided invalid length name");
 #endif
             auto password = reader.read<std::string_view>();
 
-            if (VH_SETTINGS.playerOnline) {
+            if (AVL_SETTINGS.playerOnline) {
                 auto ticket = reader.read<avledet::util::ByteView>();
 
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
 
                     if (!steamSocket->authenticate(ticket)) {
-                        LOG_INFO(VH_LOGGER, "Client {} has invalid ticket", rpc->m_socket->get_host_name());
+                        LOG_INFO(AVL_LOGGER, "Client {} has invalid ticket", rpc->m_socket->get_host_name());
                         return rpc->Close(ConnectionStatus::ErrorDisconnected);
                     }
                 }
@@ -82,16 +82,16 @@ Peer::Peer(ISocket::Ptr socket) :
             return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
-        if (VH_SETTINGS.playerWhitelist
+        if (AVL_SETTINGS.playerWhitelist
             && !Valhalla()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
             return rpc->Close(ConnectionStatus::ErrorFull);
         }
 
         // if too many players online
-        if (NetManager()->GetPeers().size() >= VH_SETTINGS.playerMax)
+        if (NetManager()->GetPeers().size() >= AVL_SETTINGS.playerMax)
             return rpc->Close(ConnectionStatus::ErrorFull);
 
-        bool hasPassword = !VH_SETTINGS.serverPassword.empty();
+        bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
 
         rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword,
                     std::string_view(NetManager()->m_passwordSalt));
@@ -99,7 +99,7 @@ Peer::Peer(ISocket::Ptr socket) :
         return false;
     });
 
-    LOG_INFO(VH_LOGGER, "{} has connected", m_socket->get_host_name());
+    LOG_INFO(AVL_LOGGER, "{} has connected", m_socket->get_host_name());
 }
 
 void Peer::update()
@@ -132,15 +132,15 @@ void Peer::update()
         }
     }
 
-    if (VH_SETTINGS.playerTimeout > 0s && now - m_lastPing > VH_SETTINGS.playerTimeout) [[unlikely]] {
-        LOG_INFO(VH_LOGGER, "{} has timed out", this->m_socket->get_host_name());
+    if (AVL_SETTINGS.playerTimeout > 0s && now - m_lastPing > AVL_SETTINGS.playerTimeout) [[unlikely]] {
+        LOG_INFO(AVL_LOGGER, "{} has timed out", this->m_socket->get_host_name());
         Disconnect();
     }
 }
 
 bool Peer::Close(ConnectionStatus status)
 {
-    LOG_INFO(VH_LOGGER, "Peer error: {}", magic_enum::enum_name(status));
+    LOG_INFO(AVL_LOGGER, "Peer error: {}", magic_enum::enum_name(status));
     Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
     Disconnect();
     return false;
@@ -167,7 +167,7 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
 void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)
 {
     Invoke(avledet::util::hashes::Rpc::RoutedRPC,
-           RouteManager()->Serialize(VH_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
+           RouteManager()->Serialize(AVL_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 void Peer::ZDOSectorInvalidated(ZDO::reference zdo)

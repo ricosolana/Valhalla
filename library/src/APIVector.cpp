@@ -1,11 +1,11 @@
 #include "ModManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 void IScriptManager::load_userdata_vector()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - CSU::VectorX");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - CSU::VectorX");
 
     this->new_usertype<Vector3f>(
             "Vector3f", sol::constructors<Vector3f(), Vector3f(float, float, float)>(), "ZERO",

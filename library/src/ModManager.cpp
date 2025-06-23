@@ -1,6 +1,6 @@
 #include "ModManager.h"
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include <algorithm>
     #include <cmath>
@@ -122,10 +122,10 @@ void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
 //TODO
 inline void my_panic(sol::optional<std::string> maybe_msg)
 {
-    LOG_ERROR(VH_LOGGER, "Lua is in a panic state and will now abort() the application");
+    LOG_ERROR(AVL_LOGGER, "Lua is in a panic state and will now abort() the application");
     if (maybe_msg) {
         std::string const &msg = maybe_msg.value();
-        LOG_ERROR(VH_LOGGER, "\terror message: {}", msg);
+        LOG_ERROR(AVL_LOGGER, "\terror message: {}", msg);
     }
     // When this function exits, Lua will exhibit default behavior and abort(), unless I throw...
     throw std::runtime_error("plugin errored during load");
@@ -139,13 +139,13 @@ int my_exception_handler(lua_State *L, sol::optional<std::exception const &> may
     // L is the lua state, which you can wrap in a state_view if necessary
     // maybe_exception will contain exception, if it exists
     // description will either be the what() of the exception or a description saying that we hit the general-case catch(...)
-    LOG_ERROR(VH_LOGGER, "An exception occurred in a function, here's what it says ");
+    LOG_ERROR(AVL_LOGGER, "An exception occurred in a function, here's what it says ");
     if (maybe_exception) {
-        LOG_ERROR(VH_LOGGER, "(straight from the exception): ");
-        LOG_ERROR(VH_LOGGER, "{}", maybe_exception->what());
+        LOG_ERROR(AVL_LOGGER, "(straight from the exception): ");
+        LOG_ERROR(AVL_LOGGER, "{}", maybe_exception->what());
     } else {
-        LOG_ERROR(VH_LOGGER, "(from the description parameter): ");
-        LOG_ERROR(VH_LOGGER, "{}", description);
+        LOG_ERROR(AVL_LOGGER, "(from the description parameter): ");
+        LOG_ERROR(AVL_LOGGER, "{}", description);
     }
 
     // you must push 1 element onto the stack to be
@@ -157,7 +157,7 @@ int my_exception_handler(lua_State *L, sol::optional<std::exception const &> may
 
 void IScriptManager::PostInit()
 {
-    LOG_NOTICE(VH_LOGGER, "Initializing ModManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing ModManager");
 
     m_state.set_panic(
             sol::c_call<decltype(&my_panic), &my_panic>);// important to set; otherwise lua will break things
@@ -182,16 +182,17 @@ void IScriptManager::PostInit()
     load_userdata();
 
     std::error_code ec;
-    fs::create_directories(VH_MOD_PATH, ec);
+    fs::create_directories(AVLEDET_SCRIPTS_PATH, ec);
 
     if (ec)
         return;
 
-    auto sorted
-            = fs::directory_iterator(VH_MOD_PATH, ec) | std::views::filter([](fs::directory_entry e) -> bool {
-                  return e.is_directory() && !std::string_view(e.path().filename().c_str()).starts_with("--");
-              })
-              | std::ranges::to<std::vector>();
+    auto sorted = fs::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
+                  | std::views::filter([](fs::directory_entry e) -> bool {
+                        return e.is_directory()
+                               && !std::string_view(e.path().filename().c_str()).starts_with("--");
+                    })
+                  | std::ranges::to<std::vector>();
     std::ranges::sort(sorted);
 
     for (auto const &dir : sorted) {
@@ -205,13 +206,13 @@ void IScriptManager::PostInit()
             auto [info, code] = load_file_script(dir.path());
             execute(info, code);
 
-            LOG_NOTICE(VH_LOGGER, "Loaded script '{}'", info.m_name);
+            LOG_NOTICE(AVL_LOGGER, "Loaded script '{}'", info.m_name);
         } catch (std::exception const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load script: {}, {}", dir.path().string(), e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to load script: {}, {}", dir.path().string(), e.what());
         }
     }
 
-    LOG_NOTICE(VH_LOGGER, "Loaded {} scripts", m_scripts.size());
+    LOG_NOTICE(AVL_LOGGER, "Loaded {} scripts", m_scripts.size());
 
     AVL_SCRIPT_EVENT(IScriptManager::Events::Enable);
 }

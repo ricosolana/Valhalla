@@ -2,7 +2,7 @@
 #include "ZDOManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
 struct ZDOWrapper
 {
@@ -20,7 +20,7 @@ struct ZDOWrapper
 
 void IScriptManager::load_userdata_zdo()
 {
-    LOG_DEBUG(VH_LOGGER, "Initializing API types - ZDO");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - ZDO");
 
     using namespace avledet::util;
 

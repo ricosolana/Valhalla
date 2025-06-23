@@ -32,7 +32,7 @@ class IRouteManager
     template<typename F>
     void Register(avledet::util::Hash hash, F func)
     {
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         m_methods[hash]
                 = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RouteIn, hash);
 #else
@@ -46,7 +46,7 @@ class IRouteManager
         return Register(avledet::util::get_stable_hash(name), func);
     }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
@@ -70,7 +70,7 @@ class IRouteManager
             if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ hash, targetZDO, params...))
                 return;
 
-            auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
+            auto bytes = Serialize(AVL_ID, target, targetZDO, hash, DataWriter::serialize(params...));
 
             for (auto &&peer : NetManager()->GetPeers()) {
                 peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);
@@ -90,7 +90,7 @@ class IRouteManager
         InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void InvokeViewLua(Int64Wrapper target, ZDOID const &targetZDO, IScriptManager::MethodSig const &repr,
                        sol::variadic_args const &args)
     {
@@ -100,14 +100,14 @@ class IRouteManager
 
             auto results = sol::variadic_results(args.begin(), args.end());
 
-    #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
+    #if AVL_IS_ON(AVL_REFLECTIVE_MOD_EVENTS)
             if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
                 return;
     #endif
 
             avledet::util::Writer writer;
             writer.write(repr.m_types, results);
-            auto bytes = Serialize(VH_ID, (std::int64_t) target, targetZDO, repr.m_hash,
+            auto bytes = Serialize(AVL_ID, (std::int64_t) target, targetZDO, repr.m_hash,
                                    std::move(writer.get_buf()));
 
             for (auto &&peer : NetManager()->GetPeers()) {
@@ -118,7 +118,7 @@ class IRouteManager
                 peer->RouteViewLua(targetZDO, repr, args);
         }
 
-        //Serialize(VH_ID, target, targetZDO, repr.m_hash,
+        //Serialize(AVL_ID, target, targetZDO, repr.m_hash,
         //DataWriter::serializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
 
         //Invoke(target, targetZDO, repr.m_hash, DataWriter::serializeLua(repr.m_types, sol::variadic_results(args.begin(), args.end())));
@@ -140,7 +140,7 @@ class IRouteManager
         InvokeView(target, ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void InvokeLua(Int64Wrapper target, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeViewLua(target, ZDOID::NONE, repr, args);
@@ -162,7 +162,7 @@ class IRouteManager
         Invoke(EVERYBODY, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void InvokeAllLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeLua(EVERYBODY, repr, args);

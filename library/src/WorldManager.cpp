@@ -37,7 +37,7 @@ World::World(DataReader reader)
     auto worldVersion = reader.read<std::int32_t>();
 
     if (worldVersion != VConstants::WORLD) {
-        LOG_WARNING(VH_LOGGER, "Loading unsupported world meta version: {}", worldVersion);
+        LOG_WARNING(AVL_LOGGER, "Loading unsupported world meta version: {}", worldVersion);
     }
 
     m_name     = reader.read<std::string>();
@@ -98,9 +98,9 @@ void World::WriteFileMeta(fs::path const &root)
 
     // create fwl
     if (VUtils::Resource::WriteFile(path, bytes)) {
-        LOG_INFO(VH_LOGGER, "Wrote world meta to {}", path.string());
+        LOG_INFO(AVL_LOGGER, "Wrote world meta to {}", path.string());
     } else {
-        LOG_ERROR(VH_LOGGER, "Failed to write world meta to {}", path.string());
+        LOG_ERROR(AVL_LOGGER, "Failed to write world meta to {}", path.string());
     }
 }
 
@@ -115,10 +115,10 @@ void World::WriteFileDB(fs::path const &root)
     auto path(root / (m_name + ".db"));
 
     if (VUtils::Resource::WriteFile(path, bytes)) {
-        LOG_INFO(VH_LOGGER, "World save {} took {}ms", path.string(),
+        LOG_INFO(AVL_LOGGER, "World save {} took {}ms", path.string(),
                  std::chrono::duration_cast<std::chrono::milliseconds>(finishTime - startTime).count());
     } else {
-        LOG_WARNING(VH_LOGGER, "Failed to save world to {}", path.string());
+        LOG_WARNING(AVL_LOGGER, "Failed to save world to {}", path.string());
     }
 }
 
@@ -133,47 +133,48 @@ void World::LoadFileDB(fs::path const &root)
 
             auto worldVersion = reader.read<std::int32_t>();
             if (worldVersion < VConstants::WORLD) {
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
-                LOG_WARNING(VH_LOGGER, "Loading legacy world with version {}", worldVersion);
-#else // !VH_LEGACY_WORLD_LOADING
-                LOG_ERROR(VH_LOGGER, "Requires VH_LEGACY_WORLD_COMPATIBILITY to load legacy worlds");
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
+                LOG_WARNING(AVL_LOGGER, "Loading legacy world with version {}", worldVersion);
+#else // !AVL_LEGACY_WORLD_LOADING
+                LOG_ERROR(AVL_LOGGER, "Requires AVL_LEGACY_WORLD_COMPATIBILITY to load legacy worlds");
                 throw std::runtime_error("legacy world loading unsupported with current compile settings");
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
             } else if (worldVersion > VConstants::WORLD) {
-                LOG_WARNING(VH_LOGGER, "Loading world with a newer version than we support {}", worldVersion);
+                LOG_WARNING(AVL_LOGGER, "Loading world with a newer version than we support {}",
+                            worldVersion);
             } else {
-                LOG_NOTICE(VH_LOGGER, "Loading world version {}", worldVersion);
+                LOG_NOTICE(AVL_LOGGER, "Loading world version {}", worldVersion);
             }
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
             if (worldVersion >= 4)
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
             {
                 Valhalla()->m_worldTime = reader.read<double>();
             }
 
             ZDOManager()->Load(reader, worldVersion);
 
-#if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
             if (worldVersion >= 12)
-#endif// VH_LEGACY_WORLD_LOADING
+#endif// AVL_LEGACY_WORLD_LOADING
             {
                 ZoneManager()->Load(reader, worldVersion);
             }
 
-#if VH_IS_ON(VH_RANDOM_EVENTS)
-    #if VH_IS_ON(VH_LEGACY_WORLD_LOADING)
+#if AVL_IS_ON(AVL_RANDOM_EVENTS)
+    #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
             if (worldVersion >= 15)
-    #endif// VH_LEGACY_WORLD_LOADING
+    #endif// AVL_LEGACY_WORLD_LOADING
             {
                 RandomEventManager()->Load(reader, worldVersion);
             }
-#endif// VH_RANDOM_EVENTS
-            LOG_INFO(VH_LOGGER, "World loading took {}s",
+#endif// AVL_RANDOM_EVENTS
+            LOG_INFO(AVL_LOGGER, "World loading took {}s",
                      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - now)
                              .count());
         } catch (std::runtime_error const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load world: {}", e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to load world: {}", e.what());
         }
     }
 }
@@ -186,19 +187,19 @@ void World::CopyCompressDB(fs::path const &root)
         if (auto oldSave = VUtils::Resource::ReadFile<avledet::util::Bytes>(path)) {
             auto compressed = ZStdCompressor().Compress(*oldSave);
             if (!compressed) {
-                LOG_ERROR(VH_LOGGER, "Failed to compress world backup {}", path.string());
+                LOG_ERROR(AVL_LOGGER, "Failed to compress world backup {}", path.string());
                 return;
             }
 
             auto now(std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
             auto backup = path.string() + "-" + now + ".zstd";
             if (VUtils::Resource::WriteFile(backup, *compressed)) {
-                LOG_INFO(VH_LOGGER, "Saved world backup as '{}'", backup);
+                LOG_INFO(AVL_LOGGER, "Saved world backup as '{}'", backup);
             } else {
-                LOG_ERROR(VH_LOGGER, "Failed to save world backup to {}", backup);
+                LOG_ERROR(AVL_LOGGER, "Failed to save world backup to {}", backup);
             }
         } else {
-            LOG_ERROR(VH_LOGGER, "Failed to load old world for backup");
+            LOG_ERROR(AVL_LOGGER, "Failed to load old world for backup");
         }
     }
 }
@@ -253,11 +254,11 @@ fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 bool IWorldManager::LoadWorldMeta(fs::path const &root)
 {
     if (auto opt
-        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (VH_SETTINGS.worldName + ".fwl"))) {
+        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_SETTINGS.worldName + ".fwl"))) {
         try {
             this->m_world = std::make_unique<World>(DataReader(*opt));
         } catch (std::runtime_error const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load world meta: {}", e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to load world meta: {}", e.what());
         }
     }
 
@@ -269,7 +270,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
 {
     // load world from file
 
-    LOG_NOTICE(VH_LOGGER, "Locating world meta \'{}\'", name);
+    LOG_NOTICE(AVL_LOGGER, "Locating world meta \'{}\'", name);
 
     std::unique_ptr<World> world;
 
@@ -278,22 +279,22 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
         try {
             world = std::make_unique<World>(DataReader(*opt));
         } catch (std::runtime_error const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load world meta: {}", e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to load world meta: {}", e.what());
         }
     }
 
     if (!world) {
-        LOG_INFO(VH_LOGGER, "World not found, creating new world meta");
+        LOG_INFO(AVL_LOGGER, "World not found, creating new world meta");
         world = std::make_unique<World>(std::string(name), std::string(fallbackSeedName));
 
         try {
             world->WriteFileMeta();
         } catch (std::exception const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to write world meta: {}", e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to write world meta: {}", e.what());
         }
     }
 
-    LOG_NOTICE(VH_LOGGER, "Loaded world meta with seed {} ({})", world->m_seedName, world->m_seed);
+    LOG_NOTICE(AVL_LOGGER, "Loaded world meta with seed {} ({})", world->m_seedName, world->m_seed);
 
     return world;
 }
@@ -308,7 +309,7 @@ avledet::util::Bytes IWorldManager::SaveWorldDB() const
     ZDOManager()->Save(writer);
     ZoneManager()->Save(writer);
     // This omission only works because random events happen to be saved/loaded last
-#if VH_IS_ON(VH_RANDOM_EVENTS)
+#if AVL_IS_ON(AVL_RANDOM_EVENTS)
     RandomEventManager()->Save(writer);
 #else
     writer.write(0.f);
@@ -369,21 +370,21 @@ void IWorldManager::WriteWorldFiles(const fs::path& root) {
 
 void IWorldManager::PostZoneInit()
 {
-    LOG_NOTICE(VH_LOGGER, "Initializing WorldManager");
+    LOG_NOTICE(AVL_LOGGER, "Initializing WorldManager");
 
-    m_world = RetrieveWorld(VH_SETTINGS.worldName, VH_SETTINGS.worldSeed);
+    m_world = RetrieveWorld(AVL_SETTINGS.worldName, AVL_SETTINGS.worldSeed);
 
-#ifdef VH_OPTION_ENABLE_CAPTURE
-    if (VH_SETTINGS.packetMode == PacketMode::PLAYBACK) {
-        fs::path root = fs::path(VH_CAPTURE_PATH) / m_world->m_name
-                        / std::to_string(VH_SETTINGS.packetPlaybackSessionIndex);
+#ifdef AVL_OPTION_ENABLE_CAPTURE
+    if (AVL_SETTINGS.packetMode == PacketMode::PLAYBACK) {
+        fs::path root = fs::path(AVL_CAPTURE_PATH) / m_world->m_name
+                        / std::to_string(AVL_SETTINGS.packetPlaybackSessionIndex);
 
         if (LoadWorldMeta(root))
             m_world->LoadFileDB(root);
         else
-            LOG_FATAL(VH_LOGGER, "Failed to load world for playback");
+            LOG_FATAL(AVL_LOGGER, "Failed to load world for playback");
     } else
-#endif//VH_OPTION_ENABLE_CAPTURE
+#endif//AVL_OPTION_ENABLE_CAPTURE
     {
         m_world->LoadFileDB();
     }
@@ -391,17 +392,17 @@ void IWorldManager::PostZoneInit()
 
 void IWorldManager::PostInit()
 {
-#ifdef VH_OPTION_ENABLE_CAPTURE
-    if (VH_SETTINGS.packetMode == PacketMode::CAPTURE) {
+#ifdef AVL_OPTION_ENABLE_CAPTURE
+    if (AVL_SETTINGS.packetMode == PacketMode::CAPTURE) {
         // then save world as a copy to captures
         auto world(WorldManager()->GetWorld());
-        fs::path root = fs::path(VH_CAPTURE_PATH) / world->m_name
-                        / std::to_string(VH_SETTINGS.packetCaptureSessionIndex);
+        fs::path root = fs::path(AVL_CAPTURE_PATH) / world->m_name
+                        / std::to_string(AVL_SETTINGS.packetCaptureSessionIndex);
 
         fs::create_directories(root);
 
         // save world
         world->WriteFiles(root);
     }
-#endif//VH_OPTION_ENABLE_CAPTURE
+#endif//AVL_OPTION_ENABLE_CAPTURE
 }
