@@ -70,9 +70,9 @@ void IDiscordManager::init()
                 }
             });
         } else {
-            Valhalla()->RunTask([this, label, event](Task &) {
+            Avledet()->RunTask([this, label, event](Task &) {
                 if (label == "vhadmin") {
-                    auto &&admin = Valhalla()->m_admin;
+                    auto &&admin = Avledet()->m_admin;
 
                     auto param_variant = event.get_parameter("identifier");
                     auto flag_variant  = event.get_parameter("flag");
@@ -121,7 +121,7 @@ void IDiscordManager::init()
                         event.reply("Player not found");
                 } else if (label == "vhbroadcast") {
                     auto &&message = std::get<std::string>(event.get_parameter("message"));
-                    Valhalla()->Broadcast(UIMsgType::Center, message);
+                    Avledet()->Broadcast(UIMsgType::Center, message);
                     event.reply("Broadcasted message to all players");
                 } else if (label == "vhevent") {
                     if (auto &&e = RandomEventManager()->GetEvent(
@@ -197,18 +197,18 @@ void IDiscordManager::init()
                         event.reply("Player not found");
                 } else if (label == "vhpardon") {
                     auto &&host = std::get<std::string>(event.get_parameter("host"));
-                    if (Valhalla()->m_blacklist.erase(host))
+                    if (Avledet()->m_blacklist.erase(host))
                         event.reply("Unbanned " + host);
                     else
                         event.reply("Player is not banned");
                 } else if (label == "reload") {
-                    Valhalla()->LoadFiles(true);
+                    Avledet()->LoadFiles(true);
                     event.reply("All files were reloaded");
                 } else if (label == "vhsave") {
                     WorldManager()->GetWorld()->WriteFiles();
                     event.reply("Saved the world");
                 } else if (label == "vhstop") {
-                    Valhalla()->Stop();
+                    Avledet()->Stop();
                     event.reply("Stopping the server!");
                 } else if (label == "vhsummon") {
                     auto &&name = std::get<std::string>(event.get_parameter("prefab"));
@@ -223,24 +223,24 @@ void IDiscordManager::init()
                 } else if (label == "vhtime") {
                     event.reply("Server time is "
                                 + std::to_string(
-                                        duration_cast<std::chrono::seconds>(Valhalla()->Elapsed()).count())
+                                        duration_cast<std::chrono::seconds>(Avledet()->Elapsed()).count())
                                 + "s");
                 } else if (label == "vhtod") {
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<std::string>(&time_variant);
                     if (time) {
                         char ch = (*time)[0];
-                        Valhalla()->SetTimeOfDay(ch == 'M'   ? TIME_MORNING
-                                                 : ch == 'D' ? TIME_DAY
-                                                 : ch == 'A' ? TIME_AFTERNOON
-                                                             : TIME_NIGHT);
+                        Avledet()->SetTimeOfDay(ch == 'M'   ? TIME_MORNING
+                                                : ch == 'D' ? TIME_DAY
+                                                : ch == 'A' ? TIME_AFTERNOON
+                                                            : TIME_NIGHT);
                         event.reply("Set world time to " + *time);
                     } else {
                         event.reply(std::string("It is currently ")
-                                    + (Valhalla()->IsMorning()     ? "morning"
-                                       : Valhalla()->IsDay()       ? "day"
-                                       : Valhalla()->IsAfternoon() ? "afternoon"
-                                                                   : "night"));
+                                    + (Avledet()->IsMorning()     ? "morning"
+                                       : Avledet()->IsDay()       ? "day"
+                                       : Avledet()->IsAfternoon() ? "afternoon"
+                                                                  : "night"));
                     }
                 } else if (label == "vhwhitelist") {
                     auto flag_variant = event.get_parameter("flag");
@@ -266,10 +266,10 @@ void IDiscordManager::init()
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<double>(&time_variant);
                     if (time) {
-                        Valhalla()->SetWorldTime(*time);
+                        Avledet()->SetWorldTime(*time);
                         event.reply("Set world time to " + std::to_string(*time));
                     } else {
-                        event.reply("World time is " + std::to_string(Valhalla()->GetWorldTime()));
+                        event.reply("World time is " + std::to_string(Avledet()->GetWorldTime()));
                     }
                 }
     #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -311,7 +311,7 @@ void IDiscordManager::init()
     m_bot->on_autocomplete([this](dpp::autocomplete_t const &evt) {
         for (auto &opt : evt.options) {
             if (opt.focused) {
-                Valhalla()->RunTask([this, evt, opt](Task &) {
+                Avledet()->RunTask([this, evt, opt](Task &) {
                     auto &&base    = std::get<std::string>(opt.value);
                     auto irsp      = dpp::interaction_response(dpp::ir_autocomplete_reply);
                     auto &&choices = irsp.autocomplete_choices;
@@ -537,7 +537,7 @@ void IDiscordManager::period_update()
 
     for (auto &&itr = m_temp_linking_keys.begin(); itr != m_temp_linking_keys.end();) {
         auto &&peer  = NetManager()->FindPeerByHost(itr->first);
-        auto &&since = Valhalla()->Nanos() - itr->second.second;
+        auto &&since = Avledet()->Nanos() - itr->second.second;
         if (since > 5min) {
             LOG_INFO(AVL_LOGGER, "Discord linking key expired for {}", itr->first);
 

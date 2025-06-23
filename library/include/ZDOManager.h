@@ -16,7 +16,7 @@
 class IZDOManager
 {
     friend class INetManager;
-    friend class IValhalla;
+    friend class IAvledet;
     friend class ZDO;
     friend class VHTest;
 

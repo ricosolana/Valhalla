@@ -33,7 +33,7 @@ class ZDO
     friend class IZDOManager;
     friend class IPrefabManager;
     friend class VHTest;
-    friend class IValhalla;
+    friend class IAvledet;
 
   public:
     class Rev

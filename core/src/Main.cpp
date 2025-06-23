@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 #ifndef _DEBUG
     try {
 #endif// _DEBUG
-        Valhalla()->Start();
+        Avledet()->Start();
 #ifndef _DEBUG
     } catch (std::exception const &e) {
         LOG_ERROR(AVL_LOGGER, "{}", e.what());

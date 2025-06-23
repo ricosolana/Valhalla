@@ -78,7 +78,7 @@ avledet::util::Bytes World::SaveDB() {
 	DataWriter writer(bytes);
 
 	writer.write(VConstants::WORLD);
-	writer.write(Valhalla()->GetWorldTime());
+	writer.write(Avledet()->GetWorldTime());
 
 	ZDOManager()->Save(writer);
 	ZoneManager()->Save(writer);
@@ -150,7 +150,7 @@ void World::LoadFileDB(fs::path const &root)
             if (worldVersion >= 4)
 #endif// AVL_LEGACY_WORLD_LOADING
             {
-                Valhalla()->m_worldTime = reader.read<double>();
+                Avledet()->m_worldTime = reader.read<double>();
             }
 
             ZDOManager()->Load(reader, worldVersion);
@@ -304,7 +304,7 @@ avledet::util::Bytes IWorldManager::SaveWorldDB() const
     DataWriter writer;
 
     writer.write(VConstants::WORLD);
-    writer.write(Valhalla()->GetWorldTime());
+    writer.write(Avledet()->GetWorldTime());
 
     ZDOManager()->Save(writer);
     ZoneManager()->Save(writer);

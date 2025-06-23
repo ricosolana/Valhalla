@@ -122,7 +122,7 @@ class Peer
 
     bool IsAdmin() const
     {
-        return Valhalla()->m_admin.contains(m_socket->get_host_name());
+        return Avledet()->m_admin.contains(m_socket->get_host_name());
     }
 
     bool IsGated() const

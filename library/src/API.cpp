@@ -21,39 +21,37 @@ void IScriptManager::load_userdata()
     this->load_userdata_zdo();
     this->load_userdata_zone();
 
-    this->new_usertype<IValhalla>(
-            "IValhalla",
+    this->new_usertype<IAvledet>(
+            "IAvledet",
             // server members
             "version", sol::var(VConstants::GAME),// Valheim version
-            "delta", sol::property(&IValhalla::delta), "id",
-            sol::property([](IValhalla &self) { return Int64Wrapper(self.ID()); }), "nanos",
-            sol::property([](IValhalla &self) { return Int64Wrapper(self.Nanos().count()); }), "time",
-            sol::property(&IValhalla::Time), "time_multiplier", &IValhalla::m_serverTimeMultiplier,
+            "delta", sol::property(&IAvledet::delta), "id",
+            sol::property([](IAvledet &self) { return Int64Wrapper(self.ID()); }), "nanos",
+            sol::property([](IAvledet &self) { return Int64Wrapper(self.Nanos().count()); }), "time",
+            sol::property(&IAvledet::Time), "time_multiplier", &IAvledet::m_serverTimeMultiplier,
             // world time functions
             "world_time",
-            sol::property(sol::resolve<WorldTime() const>(&IValhalla::GetWorldTime),
-                          &IValhalla::SetWorldTime),
+            sol::property(sol::resolve<WorldTime() const>(&IAvledet::GetWorldTime), &IAvledet::SetWorldTime),
             "world_time_multiplier",
-            sol::property([](IValhalla &self) { return self.m_worldTimeMultiplier; },
-                          [](IValhalla &self, double mul) {
+            sol::property([](IAvledet &self) { return self.m_worldTimeMultiplier; },
+                          [](IAvledet &self, double mul) {
                               if (mul <= 0.001)
                                   throw std::runtime_error("multiplier too small");
                               self.m_worldTimeMultiplier = mul;
                           }),
-            "world_ticks", sol::property([](IValhalla &self) { return self.GetWorldTicks(); }), "day",
-            sol::property(sol::resolve<int() const>(&IValhalla::GetDay), &IValhalla::SetDay), "time_of_day",
-            sol::property(sol::resolve<TimeOfDay() const>(&IValhalla::GetTimeOfDay),
-                          &IValhalla::SetTimeOfDay),
-            "is_morning", sol::property(sol::resolve<bool() const>(&IValhalla::IsMorning)), "is_day",
-            sol::property(sol::resolve<bool() const>(&IValhalla::IsDay)), "is_afternoon",
-            sol::property(sol::resolve<bool() const>(&IValhalla::IsAfternoon)), "is_night",
-            sol::property(sol::resolve<bool() const>(&IValhalla::IsNight)), "next_morning",
-            sol::property(&IValhalla::GetTomorrowMorning), "next_day",
-            sol::property(&IValhalla::GetTomorrowDay), "next_afternoon",
-            sol::property(&IValhalla::GetTomorrowAfternoon), "next_night",
-            sol::property(&IValhalla::GetTomorrowNight),
+            "world_ticks", sol::property([](IAvledet &self) { return self.GetWorldTicks(); }), "day",
+            sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), "time_of_day",
+            sol::property(sol::resolve<TimeOfDay() const>(&IAvledet::GetTimeOfDay), &IAvledet::SetTimeOfDay),
+            "is_morning", sol::property(sol::resolve<bool() const>(&IAvledet::IsMorning)), "is_day",
+            sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), "is_afternoon",
+            sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), "is_night",
+            sol::property(sol::resolve<bool() const>(&IAvledet::IsNight)), "next_morning",
+            sol::property(&IAvledet::GetTomorrowMorning), "next_day",
+            sol::property(&IAvledet::GetTomorrowDay), "next_afternoon",
+            sol::property(&IAvledet::GetTomorrowAfternoon), "next_night",
+            sol::property(&IAvledet::GetTomorrowNight),
 
-            "subscribe", [this](IValhalla &self, sol::variadic_args args, sol::this_environment te) {
+            "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
                 sol::environment &env = te;
 
                 auto mod = env["this"].get<ScriptInfo *>();
@@ -188,7 +186,7 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
     using namespace avledet::util;
     using namespace CSU;
 
-    env["Valhalla"]       = Valhalla();
+    env["Valhalla"]       = Avledet();
     env["ModManager"]     = ScriptManager();
     env["NetManager"]     = NetManager();
     env["PrefabManager"]  = PrefabManager();

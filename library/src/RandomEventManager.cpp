@@ -77,8 +77,8 @@ void IRandomEventManager::Update()
             || ZDOManager()->AnyZDO(this->m_activeEventPos, AVL_SETTINGS.eventsRadius,
                                     avledet::util::hashes::Object::Player, Prefab::Flag::NONE,
                                     Prefab::Flag::NONE))
-            //m_activeEventTimer += Valhalla()->Delta();
-            m_activeEventRemaining -= Valhalla()->DeltaNanos();
+            //m_activeEventTimer += Avledet()->Delta();
+            m_activeEventRemaining -= Avledet()->DeltaNanos();
 
         //if (m_activeEventTimer > this->m_activeEvent->m_duration) {
         if (m_activeEventRemaining <= 0ns) {
@@ -88,7 +88,7 @@ void IRandomEventManager::Update()
             m_activeEventPos = Vector3f::ZERO;
         }
     } else if (AVL_SETTINGS.eventsInterval > 0s) {
-        m_eventIntervalTimer += Valhalla()->delta();
+        m_eventIntervalTimer += Avledet()->delta();
 
         // try to set a new current event
         if (m_eventIntervalTimer > AVL_SETTINGS.eventsInterval.count()) {

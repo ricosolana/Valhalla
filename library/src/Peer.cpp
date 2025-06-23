@@ -75,7 +75,7 @@ Peer::Peer(ISocket::Ptr socket) :
             return false;
         });
 
-        if (Valhalla()->m_blacklist.contains(rpc->m_socket->get_host_name()))
+        if (Avledet()->m_blacklist.contains(rpc->m_socket->get_host_name()))
             return rpc->Close(ConnectionStatus::ErrorBanned);
 
         if (NetManager()->FindPeerByHost(rpc->m_socket->get_host_name()))
@@ -83,7 +83,7 @@ Peer::Peer(ISocket::Ptr socket) :
 
         // if whitelist enabled
         if (AVL_SETTINGS.playerWhitelist
-            && !Valhalla()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
+            && !Avledet()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
             return rpc->Close(ConnectionStatus::ErrorFull);
         }
 
@@ -149,9 +149,9 @@ bool Peer::Close(ConnectionStatus status)
 void Peer::SetAdmin(bool enable)
 {
     if (enable)
-        Valhalla()->m_admin.erase(m_socket->get_host_name());
+        Avledet()->m_admin.erase(m_socket->get_host_name());
     else
-        Valhalla()->m_admin.insert(m_socket->get_host_name());
+        Avledet()->m_admin.insert(m_socket->get_host_name());
 }
 
 ZDO::optional Peer::GetZDO()

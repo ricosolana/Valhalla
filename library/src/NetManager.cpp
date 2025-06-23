@@ -45,17 +45,17 @@ Peer *INetManager::Ban(std::string_view user)
     auto &&peer = FindPeer(user);
 
     if (peer) {
-        Valhalla()->m_blacklist.insert(peer->m_socket->get_host_name());
+        Avledet()->m_blacklist.insert(peer->m_socket->get_host_name());
         peer->Close(ConnectionStatus::ErrorBanned);
     } else
-        Valhalla()->m_blacklist.insert(user);
+        Avledet()->m_blacklist.insert(user);
 
     return peer;
 }
 
 bool INetManager::Unban(std::string_view user)
 {
-    return Valhalla()->m_blacklist.erase(user);
+    return Avledet()->m_blacklist.erase(user);
 }
 
 void INetManager::SendDisconnect()
@@ -114,14 +114,14 @@ void INetManager::SendPlayerList()
 void INetManager::SendNetTime()
 {
     for (auto &&peer : m_onlinePeers) {
-        peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Valhalla()->GetWorldTime());
+        peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Avledet()->GetWorldTime());
     }
 }
 
 void INetManager::SendPeerInfo(Peer &peer)
 {
     peer.SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter &writer) {
-        writer.write(Valhalla()->ID());
+        writer.write(Avledet()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
         writer.write(Vector3f::ZERO);      // dummy
@@ -134,14 +134,14 @@ void INetManager::SendPeerInfo(Peer &peer)
         writer.write(world->m_seedName);// Peer does not seem to use
         writer.write(world->m_uid);
         writer.write(world->m_worldGenVersion);
-        writer.write(Valhalla()->GetWorldTime());
+        writer.write(Avledet()->GetWorldTime());
     });
 }
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
 void INetManager::OnPeerConnect(Peer &peer)
 {
-    peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->get_host_name()));
+    peer.SetAdmin(Avledet()->m_admin.contains(peer.m_socket->get_host_name()));
 
     if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Join, peer)) {
         return peer.Disconnect();
@@ -248,11 +248,11 @@ void INetManager::OnPeerConnect(Peer &peer)
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
-        if (Valhalla()->m_blacklist.empty())
+        if (Avledet()->m_blacklist.empty())
             peer->ConsoleMessage("Banned users: (none)");
         else {
             peer->ConsoleMessage("Banned users:");
-            for (auto &&banned : Valhalla()->m_blacklist) {
+            for (auto &&banned : Avledet()->m_blacklist) {
                 peer->ConsoleMessage(banned);
             }
         }
@@ -260,11 +260,11 @@ void INetManager::OnPeerConnect(Peer &peer)
         if (!AVL_SETTINGS.playerWhitelist)
             peer->ConsoleMessage("Whitelist is disabled");
         else {
-            if (Valhalla()->m_whitelist.empty())
+            if (Avledet()->m_whitelist.empty())
                 peer->ConsoleMessage("Whitelisted users: (none)");
             else {
                 peer->ConsoleMessage("Whitelisted users:");
-                for (auto &&banned : Valhalla()->m_whitelist) {
+                for (auto &&banned : Avledet()->m_whitelist) {
                     peer->ConsoleMessage(banned);
                 }
             }
@@ -282,7 +282,7 @@ void INetManager::OnPeerConnect(Peer &peer)
         peer.SetGated(!DiscordManager()->m_linked_accounts.contains(peer.m_socket->GetHostName()));
         if (peer.IsGated()) {
             DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()]
-                    = {VUtils::Random::GenerateAlphaNum(4), Valhalla()->Nanos()};
+                    = {VUtils::Random::GenerateAlphaNum(4), Avledet()->Nanos()};
         }
     }
 #endif
@@ -438,9 +438,9 @@ void INetManager::OnPeerQuit(Peer &peer)
     ZDOManager()->OnPeerQuit(peer);
 
     if (peer.IsAdmin())
-        Valhalla()->m_admin.insert(peer.m_socket->get_host_name());
+        Avledet()->m_admin.insert(peer.m_socket->get_host_name());
     else
-        Valhalla()->m_admin.erase(peer.m_socket->get_host_name());
+        Avledet()->m_admin.erase(peer.m_socket->get_host_name());
 }
 
 void INetManager::OnPeerDisconnect(Peer &peer)

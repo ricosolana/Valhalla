@@ -34,9 +34,9 @@
 
 quill::Logger *AVL_LOGGER {};
 
-auto VALHALLA_INSTANCE = std::make_unique<IValhalla>();
+auto VALHALLA_INSTANCE = std::make_unique<IAvledet>();
 
-IValhalla *Valhalla()
+IAvledet *Avledet()
 {
     return VALHALLA_INSTANCE.get();
 }
@@ -320,7 +320,7 @@ void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_
         set = T(default_value);
 };
 
-void IValhalla::LoadFiles(bool reloading)
+void IAvledet::LoadFiles(bool reloading)
 {
     bool fileError = false;
 
@@ -584,7 +584,7 @@ void IValhalla::LoadFiles(bool reloading)
     this->m_settingsLastTime = fs::last_write_time("server.yml", err);
 }
 
-void IValhalla::SaveFiles()
+void IAvledet::SaveFiles()
 {
     {
         WorldManager()->GetWorld()->WriteFiles();
@@ -638,7 +638,7 @@ void IValhalla::SaveFiles()
 //TODO do not put here
 std::thread::id MAIN_THREAD;
 
-void IValhalla::Stop()
+void IAvledet::Stop()
 {
     m_terminate = true;
 
@@ -647,7 +647,7 @@ void IValhalla::Stop()
         m_terminate.wait(true);
 }
 
-void IValhalla::Start()
+void IAvledet::Start()
 {
     tracy::SetThreadName("main");
 
@@ -771,7 +771,7 @@ void IValhalla::Start()
 #endif// !_WIN32
                 tracy::SetThreadName("system");
 
-                Valhalla()->Stop();
+                Avledet()->Stop();
 #ifdef _WIN32
                 return TRUE;
             },
@@ -845,7 +845,7 @@ void IValhalla::Start()
     m_terminate = false;
 }
 
-void IValhalla::Update()
+void IAvledet::Update()
 {
     ZoneScoped;
 
@@ -867,7 +867,7 @@ void IValhalla::Update()
 #endif
 }
 
-void IValhalla::PeriodUpdate()
+void IAvledet::PeriodUpdate()
 {
     if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
         LOG_INFO(AVL_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
@@ -998,41 +998,41 @@ void IValhalla::PeriodUpdate()
     }
 }
 
-Task &IValhalla::RunTask(Task::F f)
+Task &IAvledet::RunTask(Task::F f)
 {
     return RunTaskLater(std::move(f), 0ms);
 }
 
-Task &IValhalla::RunTaskLater(Task::F f, std::chrono::milliseconds after)
+Task &IAvledet::RunTaskLater(Task::F f, std::chrono::milliseconds after)
 {
     return RunTaskLaterRepeat(std::move(f), after, -1ms);
 }
 
-Task &IValhalla::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at)
+Task &IAvledet::RunTaskAt(Task::F f, std::chrono::steady_clock::time_point at)
 {
     return RunTaskAtRepeat(std::move(f), at, -1ms);
 }
 
-Task &IValhalla::RunTaskRepeat(Task::F f, std::chrono::milliseconds period)
+Task &IAvledet::RunTaskRepeat(Task::F f, std::chrono::milliseconds period)
 {
     return RunTaskLaterRepeat(std::move(f), 0ms, period);
 }
 
-Task &IValhalla::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after,
-                                    std::chrono::milliseconds period)
+Task &IAvledet::RunTaskLaterRepeat(Task::F f, std::chrono::milliseconds after,
+                                   std::chrono::milliseconds period)
 {
     return RunTaskAtRepeat(std::move(f), std::chrono::steady_clock::now() + after, period);
 }
 
-Task &IValhalla::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at,
-                                 std::chrono::milliseconds period)
+Task &IAvledet::RunTaskAtRepeat(Task::F f, std::chrono::steady_clock::time_point at,
+                                std::chrono::milliseconds period)
 {
     std::scoped_lock lock(m_taskMutex);
     m_tasks.push_back(std::make_unique<Task>(f, at, period));
     return *m_tasks.back();
 }
 
-void IValhalla::Broadcast(UIMsgType type, std::string_view text)
+void IAvledet::Broadcast(UIMsgType type, std::string_view text)
 {
     RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UIMessage, type, text);
 }

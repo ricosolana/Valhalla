@@ -10,8 +10,8 @@
 #include "Task.h"
 #include "VUtils.h"
 
-#define AVL_ID       (Valhalla()->ID())
-#define AVL_SETTINGS (Valhalla()->Settings())
+#define AVL_ID       (Avledet()->ID())
+#define AVL_SETTINGS (Avledet()->Settings())
 
 enum class UIMsgType : std::int32_t
 {
@@ -37,7 +37,7 @@ static constexpr TimeOfDay TIME_DAY       = 270;
 static constexpr TimeOfDay TIME_AFTERNOON = 900;
 static constexpr TimeOfDay TIME_NIGHT     = 1530;
 
-class IValhalla
+class IAvledet
 {
     friend class IScriptManager;
     friend class IDiscordManager;
@@ -334,6 +334,6 @@ class IValhalla
     void Broadcast(UIMsgType type, std::string_view text);
 };
 
-IValhalla *Valhalla();
+IAvledet *Avledet();
 
-extern quill::Logger *AVL_LOGGER;//#define AVL_LOGGER (Valhalla()->m_logger)
+extern quill::Logger *AVL_LOGGER;//#define AVL_LOGGER (Avledet()->m_logger)

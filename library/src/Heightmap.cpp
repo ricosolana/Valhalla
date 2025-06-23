@@ -53,7 +53,7 @@ void Heightmap::CancelQueuedRegeneration() {
 void Heightmap::QueueRegenerate() {
     CancelQueuedRegeneration();
 
-    m_queuedRegenerateTask = &Valhalla()->RunTaskLater([this](Task&) {
+    m_queuedRegenerateTask = &Avledet()->RunTaskLater([this](Task&) {
         Regenerate();
     }, 100ms);
 }

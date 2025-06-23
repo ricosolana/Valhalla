@@ -181,7 +181,7 @@ void IZDOManager::_InvalidateZDOZone(ZDO::reference zdo)
 
 void IZDOManager::Save(DataWriter &writer)
 {
-    //pkg.write(Valhalla()->ID());
+    //pkg.write(Avledet()->ID());
     writer.write((std::int64_t) 0);
     writer.write(m_nextUid);
 
@@ -614,7 +614,7 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer &pe
     std::list<std::pair<ZDO::reference, float>> result;
 
     // Prepare client-side outdated ZDO's
-    auto const time(Valhalla()->Time());
+    auto const time(Avledet()->Time());
     for (auto &&zdo : zoneZDOs) {
         decltype(Peer::m_zdos)::iterator outItr;
         if (peer.IsOutdatedZDO(zdo, outItr)) {
@@ -837,7 +837,7 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
                                                          availableSpace](DataWriter &writer) {
         writer.write(peer.m_invalidSector);
 
-        auto const time = Valhalla()->Time();
+        auto const time = Avledet()->Time();
 
         for (auto &&itr = syncList.begin(); itr != syncList.end() && writer.size() <= availableSpace; itr++) {
 
@@ -889,7 +889,7 @@ void IZDOManager::OnNewPeer(Peer &peer)
                 _InvalidateZDOZone(zdo);
         });
 
-        auto time = Valhalla()->Time();
+        auto time = Avledet()->Time();
 
         while (auto zdoid = reader.read<ZDOID>()) {
             auto ownerRev = reader.read<std::uint16_t>();           // owner revision
