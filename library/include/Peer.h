@@ -42,7 +42,7 @@ class Peer
 {
     friend class IZDOManager;
     friend class INetManager;
-    friend class IModManager;
+    friend class IScriptManager;
 
     constexpr static int VISIBLE_PACK_INDEX = 0;
     constexpr static int GATED_PACK_INDEX   = 1;
@@ -151,8 +151,8 @@ class Peer
     void Register(avledet::util::Hash hash, F func)
     {
         //VLOG(1) << hash;
-#if VH_IS_ON(VH_USE_MODS)
-        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func, IModManager::Events::RpcIn, hash);
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RpcIn, hash);
 #else
         m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func);
 #endif
@@ -164,8 +164,8 @@ class Peer
         return Register(avledet::util::get_stable_hash(name), func);
     }
 
-#if VH_IS_ON(VH_USE_MODS)
-    void RegisterLua(IModManager::MethodSig const &sig, sol::function const &func)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
@@ -189,13 +189,13 @@ class Peer
         writer.write(func);
 
         // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, bytes))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this, bytes))
         //return;
 
         this->Send(std::move(writer.get_buf()));
 
         // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, writer);
     }
 
     template<typename Func>
@@ -223,13 +223,13 @@ class Peer
         });
 
         // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
         //return;
 
         this->Send(std::move(writer.get_buf()));
 
         // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, writer);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, writer);
     }
 
     template<typename Func>
@@ -245,7 +245,7 @@ class Peer
             return;
 
         // Prefix
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash, this, params...))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this, params...))
             return;
 
         //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
@@ -253,7 +253,7 @@ class Peer
         this->Send(DataWriter::serialize(hash, params...));
 
         // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::Events::RpcOut ^ hash ^ IModManager::Events::POSTFIX, this, params...);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, params...);
     }
 
     template<typename... Types>
@@ -262,9 +262,9 @@ class Peer
         return Invoke(avledet::util::get_stable_hash(name), params...);
     }
 
-    //void InvokeLua(sol::state_view state, const IModManager::MethodSig& repr, const sol::variadic_args& args) {
-#if VH_IS_ON(VH_USE_MODS)
-    void InvokeLua(IModManager::MethodSig const &repr, sol::variadic_args const &args)
+    //void InvokeLua(sol::state_view state, const IScriptManager::MethodSig& repr, const sol::variadic_args& args) {
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void InvokeLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         if (m_socket->get_status() == Status::Closed)
             return;
@@ -273,7 +273,7 @@ class Peer
             throw std::runtime_error("mismatched number of args");
 
         // Prefix
-        //if (!VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
         //    return;
 
         //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
@@ -284,7 +284,7 @@ class Peer
         this->Send(std::move(params.get_buf()));
 
         // Postfix
-        //VH_DISPATCH_MOD_EVENT(IModManager::EVENT_RpcOut ^ repr.m_hash ^ IModManager::EVENT_POST, this, sol::as_args(args));
+        //AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash ^ IScriptManager::EVENT_POST, this, sol::as_args(args));
     }
 #endif
 
@@ -330,7 +330,7 @@ class Peer
     {
         assert(!bytes.empty());
 
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Send, this, std::ref(bytes)))
+        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Send, this, std::ref(bytes)))
             this->m_socket->send(std::move(bytes));
     }
 
@@ -338,7 +338,7 @@ class Peer
     {
         auto bytes = m_socket->Recv();
         if (!bytes.empty()) {
-            if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Recv, this, std::ref(bytes))) {
+            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Recv, this, std::ref(bytes))) {
                 return bytes;
             }
         }
@@ -428,7 +428,7 @@ class Peer
     template<typename... Types>
     void RouteView(ZDOID targetZDO, avledet::util::Hash hash, Types &&...params)
     {
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ hash, this, targetZDO, params...))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this, targetZDO, params...))
             return;
 
         RouteParams(targetZDO, hash, DataWriter::serialize(params...));
@@ -453,8 +453,8 @@ class Peer
     }
 
 
-#if VH_IS_ON(VH_USE_MODS)
-    void RouteViewLua(ZDOID targetZDO, IModManager::MethodSig const &repr, sol::variadic_args const &args)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void RouteViewLua(ZDOID targetZDO, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
@@ -462,8 +462,8 @@ class Peer
         auto results = sol::variadic_results(args.begin(), args.end());
 
     #ifdef MOD_EVENT_RESPONSE
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOut ^ repr.m_hash, this, targetZDO,
-                                   sol::as_args(results)))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ repr.m_hash, this, targetZDO,
+                              sol::as_args(results)))
             return;
     #endif
 
@@ -472,7 +472,7 @@ class Peer
         RouteParams(targetZDO, repr.m_hash, std::move(writer.get_buf()));
     }
 
-    decltype(auto) RouteLua(IModManager::MethodSig const &repr, sol::variadic_args const &args)
+    decltype(auto) RouteLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         return RouteViewLua(ZDOID::NONE, repr, args);
     }

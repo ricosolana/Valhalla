@@ -157,7 +157,7 @@ find_package(quill CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_package(unordered_dense CONFIG REQUIRED) # https://github.com/martinus/unordered_dense?tab=readme-ov-file#21-installing-using-cmake
 
-if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
+if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     message("Lua: enabled")
     find_package(lua CONFIG REQUIRED) # could replace with LuaJIT
     find_package(sol2 CONFIG REQUIRED)
@@ -187,8 +187,8 @@ find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-if(DEFINED VH_USE_MODS)
-    add_compile_definitions(VH_USE_MODS=$<BOOL:${VH_USE_MODS}>) 
+if(DEFINED AVL_ENABLE_SCRIPTING)
+    add_compile_definitions(AVL_ENABLE_SCRIPTING=$<BOOL:${AVL_ENABLE_SCRIPTING}>) 
 endif()
 
 if(DEFINED VH_DISCORD_INTEGRATION)

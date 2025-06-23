@@ -4,7 +4,7 @@
 #include <sol/forward.hpp>
 #include <sol/property.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
 //was readonly
 //template <typename T>
@@ -33,7 +33,7 @@ namespace sol {
     }
 }// namespace sol
 
-void IModManager::load_userdata_quaternion()
+void IScriptManager::load_userdata_quaternion()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - quaternion");
 

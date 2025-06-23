@@ -15,7 +15,7 @@ target_include_directories(avledet_library
 
 add_subdirectory("src")
 
-if (NOT DEFINED VH_USE_MODS OR VH_USE_MODS)
+if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     target_link_libraries(avledet_library
         PUBLIC 
             lua #sol2

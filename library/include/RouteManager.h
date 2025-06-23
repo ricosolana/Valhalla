@@ -32,8 +32,9 @@ class IRouteManager
     template<typename F>
     void Register(avledet::util::Hash hash, F func)
     {
-#if VH_IS_ON(VH_USE_MODS)
-        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func, IModManager::Events::RouteIn, hash);
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+        m_methods[hash]
+                = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RouteIn, hash);
 #else
         m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func);
 #endif
@@ -45,8 +46,8 @@ class IRouteManager
         return Register(avledet::util::get_stable_hash(name), func);
     }
 
-#if VH_IS_ON(VH_USE_MODS)
-    void RegisterLua(IModManager::MethodSig const &sig, sol::function const &func)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
@@ -66,7 +67,7 @@ class IRouteManager
         // Prefix
         if ((std::int64_t) target == EVERYBODY) {
             // targetZDO can have a value apparently
-            if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ hash, targetZDO, params...))
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ hash, targetZDO, params...))
                 return;
 
             auto bytes = Serialize(VH_ID, target, targetZDO, hash, DataWriter::serialize(params...));
@@ -89,8 +90,8 @@ class IRouteManager
         InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(VH_USE_MODS)
-    void InvokeViewLua(Int64Wrapper target, ZDOID const &targetZDO, IModManager::MethodSig const &repr,
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void InvokeViewLua(Int64Wrapper target, ZDOID const &targetZDO, IScriptManager::MethodSig const &repr,
                        sol::variadic_args const &args)
     {
         if ((std::int64_t) target == EVERYBODY) {
@@ -100,7 +101,7 @@ class IRouteManager
             auto results = sol::variadic_results(args.begin(), args.end());
 
     #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
-            if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
                 return;
     #endif
 
@@ -139,8 +140,8 @@ class IRouteManager
         InvokeView(target, ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(VH_USE_MODS)
-    void InvokeLua(Int64Wrapper target, IModManager::MethodSig const &repr, sol::variadic_args const &args)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void InvokeLua(Int64Wrapper target, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeViewLua(target, ZDOID::NONE, repr, args);
     }
@@ -161,8 +162,8 @@ class IRouteManager
         Invoke(EVERYBODY, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
     }
 
-#if VH_IS_ON(VH_USE_MODS)
-    void InvokeAllLua(IModManager::MethodSig const &repr, sol::variadic_args const &args)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    void InvokeAllLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeLua(EVERYBODY, repr, args);
     }

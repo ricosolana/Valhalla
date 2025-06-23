@@ -66,7 +66,7 @@ class Peer;
 class IZoneManager
 {
     friend class INetManager;
-    friend class IModManager;
+    friend class IScriptManager;
 
   public:
 #if VH_IS_ON(VH_ZONE_GENERATION)
@@ -117,7 +117,7 @@ class IZoneManager
 
         class Instance
         {
-            friend class IModManager;
+            friend class IScriptManager;
 
           public:
             std::reference_wrapper<Feature const> m_feature;

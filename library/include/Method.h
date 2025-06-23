@@ -42,13 +42,13 @@ class MethodImpl : public IMethod<T>
   private:
     F const m_func;
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
     avledet::util::Hash const m_categoryHash;
     avledet::util::Hash const m_methodHash;
 #endif
 
   public:
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
     MethodImpl(F func, avledet::util::Hash categoryHash, avledet::util::Hash methodHash) :
         m_func(func),
         m_categoryHash(categoryHash),
@@ -75,9 +75,9 @@ class MethodImpl : public IMethod<T>
             throw std::runtime_error("peer sent more data than expected");
         }
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
         // Prefix
-        if (!VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
+        if (!AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
             return true;
 #endif
 
@@ -90,7 +90,7 @@ class MethodImpl : public IMethod<T>
 
         /*
         // Postfix
-        VH_DISPATCH_MOD_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX, tuple);
+        AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX, tuple);
         */
 
         return result;
@@ -102,19 +102,19 @@ MethodImpl(F, avledet::util::Hash, avledet::util::Hash)
         -> MethodImpl<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, F>;
 
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
 template<class T>
 class MethodImplLua : public IMethod<T>
 {
-    friend class IModManager;
+    friend class IScriptManager;
 
   private:
     sol::protected_function m_func;
-    IModManager::StreamTypes m_types;
+    IScriptManager::StreamTypes m_types;
 
   public:
-    MethodImplLua(sol::protected_function const &func, IModManager::StreamTypes const &types) :
+    MethodImplLua(sol::protected_function const &func, IScriptManager::StreamTypes const &types) :
         m_func(func),
         m_types(types)
     {
@@ -131,7 +131,7 @@ class MethodImplLua : public IMethod<T>
 
         // Prefix
     #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
-        if (!VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash, sol::as_args(results)))
+        if (!AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash, sol::as_args(results)))
             return;
     #endif
 
@@ -144,8 +144,8 @@ class MethodImplLua : public IMethod<T>
 
         // Postfix
     #if VH_IS_ON(VH_REFLECTIVE_MOD_EVENTS)
-        VH_DISPATCH_MOD_EVENT(m_categoryHash ^ m_methodHash ^ IModManager::Events::POSTFIX,
-                              sol::as_args(results));
+        AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX,
+                         sol::as_args(results));
     #endif
 
         if (result.get_type() == sol::type::boolean)
@@ -156,6 +156,6 @@ class MethodImplLua : public IMethod<T>
 };
 
 template<typename T>
-MethodImplLua(sol::function, IModManager::StreamTypes) -> MethodImplLua<T>;
+MethodImplLua(sol::function, IScriptManager::StreamTypes) -> MethodImplLua<T>;
 
-#endif// VH_IS_ON(VH_USE_MODS)
+#endif// VH_IS_ON(AVL_ENABLE_SCRIPTING)

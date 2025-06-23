@@ -1,9 +1,8 @@
 #pragma once
 
 #include "CompileSettings.h"
-#include <sol/protected_function_result.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include "DataStream.h"
     #include "Hashes.h"
@@ -13,16 +12,18 @@
     #include "Vector.h"
     #include "VUtils.h"
     #include "ZDOID.h"
+
     #include <cmath>
     #include <cstdint>
     #include <list>
     #include <lua.h>
     #include <magic_enum.hpp>
     #include <sol/forward.hpp>
+    #include <sol/protected_function_result.hpp>
     #include <sol/sol.hpp>
     #include <vector>
 
-class IModManager
+class IScriptManager
 {
   public:
     enum class StreamType
@@ -155,7 +156,7 @@ class IModManager
         ScriptInfo(ScriptInfo &&)                 = default;
         ScriptInfo &operator=(ScriptInfo const &) = default;
 
-        // If dynamically loaded (ie from discord); not during server initialization like all mods
+        // If dynamically loaded (ie from discord); not during server initialization like all scripts
         bool is_file_based() const
         {
             return m_origin.starts_with("file://");
@@ -243,7 +244,7 @@ class IModManager
     void PostInit();
     void Uninit();
     void update();
-    void unload_mod(ScriptInfo &mod);
+    void unload_script(ScriptInfo &script);
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
@@ -327,122 +328,126 @@ class IModManager
     }
 };
 
-    #define VH_DISPATCH_MOD_EVENT(name, ...) ModManager()->CallEvent((name) __VA_OPT__(, ) __VA_ARGS__)
-    #define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) \
-        ModManager()->CallEventTuple((name) __VA_OPT__(, ) __VA_ARGS__)
+    #define AVL_SCRIPT_EVENT(name, ...) ScriptManager()->CallEvent((name) __VA_OPT__(, ) __VA_ARGS__)
+    #define AVL_SCRIPT_EVENT_TUPLE(name, ...) \
+        ScriptManager()->CallEventTuple((name) __VA_OPT__(, ) __VA_ARGS__)
 
-// Manager class for everything related to mods which affect server functionality
-IModManager *ModManager();
+// Manager class for everything related to lua scripts
+IScriptManager *ScriptManager();
 
 template<class F, class... T>
-    requires(std::is_same_v<F, IModManager::StreamType>)
+    requires(std::is_same_v<F, IScriptManager::StreamType>)
 struct avledet::util::Streamer<F, T...>
 {
 
-    void operator()(avledet::util::Writer &writer, IModManager::StreamType type, sol::object const &arg)
+    void operator()(avledet::util::Writer &writer, IScriptManager::StreamType type, sol::object const &arg)
     {
         switch (type) {
             // TODO add recent unsigned types
-        case IModManager::StreamType::UINT8: writer.write(arg.as<std::uint8_t>()); break;
-        case IModManager::StreamType::UINT16: writer.write(arg.as<std::uint16_t>()); break;
-        case IModManager::StreamType::UINT32: writer.write(arg.as<std::uint32_t>()); break;
-        case IModManager::StreamType::UINT64: writer.write(arg.as<std::uint64_t>()); break;
-        case IModManager::StreamType::INT8: writer.write(arg.as<std::int8_t>()); break;
-        case IModManager::StreamType::INT16: writer.write(arg.as<std::int16_t>()); break;
-        case IModManager::StreamType::INT32: writer.write(arg.as<std::int32_t>()); break;
-        case IModManager::StreamType::INT64: writer.write(arg.as<std::int64_t>()); break;
-        case IModManager::StreamType::FLOAT: writer.write(arg.as<std::float_t>()); break;
-        case IModManager::StreamType::DOUBLE: writer.write(arg.as<std::double_t>()); break;
-        case IModManager::StreamType::STRING: writer.write(arg.as<std::string>()); break;
-        case IModManager::StreamType::BOOL: writer.write(arg.as<bool>()); break;
-        case IModManager::StreamType::BYTES: writer.write(arg.as<avledet::util::Bytes>()); break;
-        case IModManager::StreamType::ZDOID: writer.write(arg.as<avledet::util::ZDOID>()); break;
-        case IModManager::StreamType::VECTOR3f: writer.write(arg.as<avledet::util::CSU::Vector3f>()); break;
-        case IModManager::StreamType::VECTOR2i: writer.write(arg.as<avledet::util::CSU::Vector2i>()); break;
-        case IModManager::StreamType::QUATERNION:
+        case IScriptManager::StreamType::UINT8: writer.write(arg.as<std::uint8_t>()); break;
+        case IScriptManager::StreamType::UINT16: writer.write(arg.as<std::uint16_t>()); break;
+        case IScriptManager::StreamType::UINT32: writer.write(arg.as<std::uint32_t>()); break;
+        case IScriptManager::StreamType::UINT64: writer.write(arg.as<std::uint64_t>()); break;
+        case IScriptManager::StreamType::INT8: writer.write(arg.as<std::int8_t>()); break;
+        case IScriptManager::StreamType::INT16: writer.write(arg.as<std::int16_t>()); break;
+        case IScriptManager::StreamType::INT32: writer.write(arg.as<std::int32_t>()); break;
+        case IScriptManager::StreamType::INT64: writer.write(arg.as<std::int64_t>()); break;
+        case IScriptManager::StreamType::FLOAT: writer.write(arg.as<std::float_t>()); break;
+        case IScriptManager::StreamType::DOUBLE: writer.write(arg.as<std::double_t>()); break;
+        case IScriptManager::StreamType::STRING: writer.write(arg.as<std::string>()); break;
+        case IScriptManager::StreamType::BOOL: writer.write(arg.as<bool>()); break;
+        case IScriptManager::StreamType::BYTES: writer.write(arg.as<avledet::util::Bytes>()); break;
+        case IScriptManager::StreamType::ZDOID: writer.write(arg.as<avledet::util::ZDOID>()); break;
+        case IScriptManager::StreamType::VECTOR3f:
+            writer.write(arg.as<avledet::util::CSU::Vector3f>());
+            break;
+        case IScriptManager::StreamType::VECTOR2i:
+            writer.write(arg.as<avledet::util::CSU::Vector2i>());
+            break;
+        case IScriptManager::StreamType::QUATERNION:
             writer.write(arg.as<avledet::util::CSU::Quaternion>());
             break;
-        case IModManager::StreamType::CHAR16: writer.write(arg.as<char16_t>()); break;
+        case IScriptManager::StreamType::CHAR16: writer.write(arg.as<char16_t>()); break;
         default:
             throw std::runtime_error("type <" + std::string(magic_enum::enum_name(type))
                                      + "> has no write implementation");
         }
     }
 
-    sol::object operator()(avledet::util::Reader &reader, IModManager::StreamType type, lua_State *state)
+    sol::object operator()(avledet::util::Reader &reader, IScriptManager::StreamType type, lua_State *state)
     {
         switch (type) {
-        case IModManager::StreamType::BYTES:
+        case IScriptManager::StreamType::BYTES:
             // Will be interpreted as sol container type
             // see https://sol2.readthedocs.io/en/latest/containers.html
             return sol::make_object(state, reader.read<avledet::util::Bytes>());
-        case IModManager::StreamType::STRING:
+        case IScriptManager::StreamType::STRING:
             // Primitive: string
             return sol::make_object(state, reader.read<std::string>());
-        case IModManager::StreamType::ZDOID:
+        case IScriptManager::StreamType::ZDOID:
             // Userdata: ZDOID
             return sol::make_object(state, reader.read<avledet::util::ZDOID>());
-        case IModManager::StreamType::VECTOR3f:
+        case IScriptManager::StreamType::VECTOR3f:
             // Userdata: Vector3f
             return sol::make_object(state, reader.read<avledet::util::CSU::Vector3f>());
-        case IModManager::StreamType::VECTOR2i:
+        case IScriptManager::StreamType::VECTOR2i:
             // Userdata: Vector2i
             return sol::make_object(state, reader.read<avledet::util::CSU::Vector2i>());
-        case IModManager::StreamType::QUATERNION:
+        case IScriptManager::StreamType::QUATERNION:
             // Userdata: Quaternion
             return sol::make_object(state, reader.read<avledet::util::CSU::Quaternion>());
-        case IModManager::StreamType::STRINGS:
+        case IScriptManager::StreamType::STRINGS:
             // Container type of Primitive: string
             //return sol::make_object(state, reader.read<avledet::util::Strings>());
             return sol::make_object(state, reader.read<std::vector<std::string>>());
-        case IModManager::StreamType::BOOL:
+        case IScriptManager::StreamType::BOOL:
             // Primitive: boolean
             return sol::make_object(state, reader.read<bool>());
-        case IModManager::StreamType::INT8:
+        case IScriptManager::StreamType::INT8:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int8_t>());
-        case IModManager::StreamType::INT16:
+        case IScriptManager::StreamType::INT16:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int16_t>());
-        case IModManager::StreamType::INT32:
+        case IScriptManager::StreamType::INT32:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int32_t>());
-        case IModManager::StreamType::INT64:
+        case IScriptManager::StreamType::INT64:
             // Userdata: Int64Wrapper
             return sol::make_object(state, Int64Wrapper(reader.read<std::int64_t>()));// ReadInt64());
-        case IModManager::StreamType::UINT8:
+        case IScriptManager::StreamType::UINT8:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint8_t>());
-        case IModManager::StreamType::UINT16:
+        case IScriptManager::StreamType::UINT16:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint16_t>());
-        case IModManager::StreamType::UINT32:
+        case IScriptManager::StreamType::UINT32:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint32_t>());
-        case IModManager::StreamType::UINT64:
+        case IScriptManager::StreamType::UINT64:
             // Userdata: UInt64Wrapper
             return sol::make_object(state, UInt64Wrapper(reader.read<std::uint64_t>()));
-        case IModManager::StreamType::FLOAT:
+        case IScriptManager::StreamType::FLOAT:
             // Primitive: number
             return sol::make_object(state, reader.read<std::float_t>());
-        case IModManager::StreamType::DOUBLE:
+        case IScriptManager::StreamType::DOUBLE:
             // Primitive: number
             return sol::make_object(state, reader.read<std::double_t>());
-        case IModManager::StreamType::CHAR16:
+        case IScriptManager::StreamType::CHAR16:
             // Primitive: number
             return sol::make_object(state, reader.read<char16_t>());
-        default: throw std::runtime_error("invalid mod DataReader type");
+        default: throw std::runtime_error("invalid DataReader type");
         }
     }
 };
 
 // TODO
 template<class F, class... G>
-    requires(std::is_same_v<F, IModManager::StreamTypes>)
+    requires(std::is_same_v<F, IScriptManager::StreamTypes>)
 struct avledet::util::Streamer<F, G...>
 {//lua_State> {
 
-    void operator()(avledet::util::Writer &writer, IModManager::StreamTypes const &types,
+    void operator()(avledet::util::Writer &writer, IScriptManager::StreamTypes const &types,
                     sol::variadic_results const &results)
     {
         for (int i = 0; i < results.size(); i++) {
@@ -450,7 +455,7 @@ struct avledet::util::Streamer<F, G...>
         }
     }
 
-    sol::variadic_results operator()(avledet::util::Reader &reader, IModManager::StreamTypes const &types,
+    sol::variadic_results operator()(avledet::util::Reader &reader, IScriptManager::StreamTypes const &types,
                                      lua_State *state)
     {
         sol::variadic_results results;
@@ -463,7 +468,7 @@ struct avledet::util::Streamer<F, G...>
     }
 };
 
-#else // !VH_USE_MODS
-    #define VH_DISPATCH_MOD_EVENT(name, ...)       (true)
-    #define VH_DISPATCH_MOD_EVENT_TUPLE(name, ...) (true)
-#endif// VH_USE_MODS
+#else // !AVL_ENABLE_SCRIPTING
+    #define AVL_SCRIPT_EVENT(name, ...)       (true)
+    #define AVL_SCRIPT_EVENT_TUPLE(name, ...) (true)
+#endif// AVL_ENABLE_SCRIPTING

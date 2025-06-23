@@ -1,6 +1,6 @@
 #include "ModManager.h"
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include <algorithm>
     #include <cmath>
@@ -35,25 +35,23 @@
     #include "ValhallaServer.h"
     #include "VUtilsResource.h"
 
-auto MOD_MANAGER(std::make_unique<IModManager>());
+auto SCRIPT_MANAGER(std::make_unique<IScriptManager>());
 
-IModManager *ModManager()
+IScriptManager *ScriptManager()
 {
-    return MOD_MANAGER.get();
+    return SCRIPT_MANAGER.get();
 }
 
-std::tuple<IModManager::ScriptInfo, std::string> IModManager::load_file_script(fs::path script_root)
+std::tuple<IScriptManager::ScriptInfo, std::string> IScriptManager::load_file_script(fs::path script_root)
 {
     YAML::Node loadNode;
 
-    //auto modPath     = fs::path("mods") / script_root;
-    //auto modInfoPath = modPath / "modInfo.yml";
-    auto modInfoPath = script_root / "modInfo.yml";
+    auto script_info_path = script_root / "scriptInfo.yml";
 
-    if (auto opt = VUtils::Resource::ReadFile<std::string>(modInfoPath)) {
+    if (auto opt = VUtils::Resource::ReadFile<std::string>(script_info_path)) {
         loadNode = YAML::Load(opt.value());
     } else {
-        throw std::runtime_error("unable to open " + modInfoPath.string());
+        throw std::runtime_error("unable to open " + script_info_path.string());
     }
 
     auto raw_entry = loadNode["entry"].as<std::string>();
@@ -64,7 +62,7 @@ std::tuple<IModManager::ScriptInfo, std::string> IModManager::load_file_script(f
 
     auto entry_path = script_root / raw_entry;
     if (!fs::exists(entry_path)) {
-        throw std::runtime_error("mod entry file not found, skipping...");
+        throw std::runtime_error("script entry file not found, skipping...");
     }
 
     auto code_opt = VUtils::Resource::ReadFile<std::string>(entry_path);
@@ -79,14 +77,14 @@ std::tuple<IModManager::ScriptInfo, std::string> IModManager::load_file_script(f
 
     //auto &&mod = insert.first->second;
 
-    ScriptInfo mod_info(std::move(name), std::move(entry_path));
+    ScriptInfo script_info(std::move(name), std::move(entry_path));
 
-    mod_info.m_version     = loadNode["version"].as<std::string>("");
-    mod_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
-    mod_info.m_description = loadNode["description"].as<std::string>("");
-    mod_info.m_authors     = loadNode["authors"].as<avledet::util::Strings>(avledet::util::Strings());
+    script_info.m_version     = loadNode["version"].as<std::string>("");
+    script_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
+    script_info.m_description = loadNode["description"].as<std::string>("");
+    script_info.m_authors     = loadNode["authors"].as<avledet::util::Strings>(avledet::util::Strings());
 
-    return {mod_info, code_opt.value()};
+    return {script_info, code_opt.value()};
 }
 
 // Unused for now, because ...?
@@ -104,7 +102,7 @@ std::tuple<IModManager::ScriptInfo, std::string> IModManager::load_file_script(f
 //    return 1;
 //}
 
-void IModManager::execute(ScriptInfo const &info, std::string const &code)
+void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
 {
     //m_scripts[info.m_name] = std::make_unique<ScriptInfo>(info);
     auto &&try_emplace = m_scripts.try_emplace(info.m_name, std::make_unique<ScriptInfo>(std::move(info)));
@@ -157,7 +155,7 @@ int my_exception_handler(lua_State *L, sol::optional<std::exception const &> may
     return sol::stack::push(L, description);
 }
 
-void IModManager::PostInit()
+void IScriptManager::PostInit()
 {
     LOG_NOTICE(VH_LOGGER, "Initializing ModManager");
 
@@ -207,21 +205,20 @@ void IModManager::PostInit()
             auto [info, code] = load_file_script(dir.path());
             execute(info, code);
 
-            LOG_NOTICE(VH_LOGGER, "Loaded mod '{}'", info.m_name);
+            LOG_NOTICE(VH_LOGGER, "Loaded script '{}'", info.m_name);
         } catch (std::exception const &e) {
-            LOG_ERROR(VH_LOGGER, "Failed to load mod: {}", dir.path().string());
-            LOG_ERROR(VH_LOGGER, "{}", e.what());
+            LOG_ERROR(VH_LOGGER, "Failed to load script: {}, {}", dir.path().string(), e.what());
         }
     }
 
-    LOG_NOTICE(VH_LOGGER, "Loaded {} mods", m_scripts.size());
+    LOG_NOTICE(VH_LOGGER, "Loaded {} scripts", m_scripts.size());
 
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Enable);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Enable);
 }
 
-void IModManager::Uninit()
+void IScriptManager::Uninit()
 {
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Disable);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Disable);
     m_callbacks.clear();
     m_scripts.clear();
 }
@@ -235,7 +232,7 @@ void IModManager::Uninit()
 //  so rather, run a on_reload() callback that can handle mid-server operations
 //  or other way to detect that this script has just been loaded midway through during server operations
 
-void IModManager::update()
+void IScriptManager::update()
 {
     ////if (!m_tmp_reload_mods.empty()) {
     ////    assert(false);//TODO
@@ -346,7 +343,7 @@ void IModManager::update()
     ////}
 }
 
-void IModManager::unload_mod(ScriptInfo &mod)
+void IScriptManager::unload_script(ScriptInfo &script_info)
 {
     assert(false);//MUST TEST
     /*
@@ -412,4 +409,4 @@ void IModManager::unload_mod(ScriptInfo &mod)
     //}
 }
 
-#endif// VH_USE_MODS
+#endif// AVL_ENABLE_SCRIPTING

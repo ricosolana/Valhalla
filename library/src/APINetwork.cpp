@@ -5,13 +5,13 @@
 #include <quill/core/LogLevel.h>
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include <sol/property.hpp>
 
 using namespace avledet::network;
 
-void IModManager::load_userdata_network()
+void IScriptManager::load_userdata_network()
 {
     //VH_LOGGER->set_log_level(quill::LogLevel::Info);
 

@@ -2,7 +2,7 @@
 #include "ZDOManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
 struct ZDOWrapper
 {
@@ -18,7 +18,7 @@ struct ZDOWrapper
     //      - sync perfectly describes this, but this word commonly utilized for zdo operations regarding peers... would become confusing
 };
 
-void IModManager::load_userdata_zdo()
+void IScriptManager::load_userdata_zdo()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - ZDO");
 

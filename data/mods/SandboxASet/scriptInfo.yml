@@ -1,0 +1,4 @@
+name: SandboxASet
+version: '1.0.0'
+apiVersion: 1
+entry: SandboxASet

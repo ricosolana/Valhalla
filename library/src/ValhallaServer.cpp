@@ -744,8 +744,8 @@ void IValhalla::Start()
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
-#if VH_IS_ON(VH_USE_MODS)
-    ModManager()->PostInit();
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    ScriptManager()->PostInit();
 #endif
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
@@ -833,8 +833,8 @@ void IValhalla::Start()
     HeightmapBuilder()->Uninit();
 #endif
 
-#if VH_IS_ON(VH_USE_MODS)
-    ModManager()->Uninit();
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
+    ScriptManager()->Uninit();
 #endif
 
     SaveFiles();
@@ -854,7 +854,7 @@ void IValhalla::Update()
         m_worldTime += delta() * m_worldTimeMultiplier;
     }
 
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Update);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Update);
 
     NetManager()->Update();
     ZDOManager()->Update();
@@ -877,7 +877,7 @@ void IValhalla::PeriodUpdate()
     //    LOG_INFO(VH_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     //});
 
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::PeriodicUpdate);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::PeriodicUpdate);
 
 #if VH_IS_ON(VH_DISCORD_INTEGRATION)
     DiscordManager()->period_update();

@@ -1,9 +1,9 @@
 #include "ModManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
-void IModManager::load_userdata_types()
+void IScriptManager::load_userdata_types()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - types");
 
@@ -19,9 +19,6 @@ void IModManager::load_userdata_types()
             sol::property([](ZDOID &self) { return (Int64Wrapper) self.get_user_id(); },
                           [](ZDOID &self, Int64Wrapper value) { self.set_user_id((std::int64_t) value); }),
             "id", sol::property(&ZDOID::get_id, &ZDOID::set_id));
-
-    using StreamType  = IModManager::StreamType;
-    using StreamTypes = IModManager::StreamTypes;
 
     m_state.new_enum("Type", "BOOL", StreamType::BOOL,
 
@@ -97,7 +94,7 @@ void IModManager::load_userdata_types()
                           [](DataWriter &self, Quaternion const &val) { return self.write(val); },
                           // Variadic serializers:::
                           [](DataWriter &self, StreamType type, sol::object obj) { self.write(type, obj); },
-                          //{ &DataWriter::write<IModManager::StreamType, sol::object> },
+                          //{ &DataWriter::write<IScriptManager::StreamType, sol::object> },
                           [](DataWriter &self, StreamTypes const &types, sol::variadic_args args) {
                               self.write(types, sol::variadic_results(args.begin(), args.end()));
                           }));

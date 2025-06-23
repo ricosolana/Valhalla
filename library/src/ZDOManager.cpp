@@ -846,7 +846,7 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
 
             peer.m_forceSend.erase(zdo->GetID());
 
-            if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::SendingZDO, peer, zdo)) {
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
                 continue;
             }
 
@@ -952,11 +952,11 @@ void IZDOManager::OnNewPeer(Peer &peer)
             // Unpack the ZDOs primary data
             zdo->Unpack(des, 0);
 
-            VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOUnpacked, peer, zdo);
+            AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOUnpacked, peer, zdo);
 
             // Only disperse through world if ZDO is new
             if (created) {
-                //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOCreated, peer, zdo)) {
+                //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOCreated, peer, zdo)) {
                 //	_EraseZDO(pair.first);
                 //	continue;
                 //}
@@ -965,7 +965,7 @@ void IZDOManager::OnNewPeer(Peer &peer)
                 _AddZDOToZone(zdo);
                 m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
             } else {
-                //if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::ZDOModified, peer, zdo, copy, pos)) {
+                //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOModified, peer, zdo, copy, pos)) {
                 //	zdo = std::move(copy);
                 //	continue;
                 //}

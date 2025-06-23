@@ -10,7 +10,7 @@
 #include <sol/property.hpp>
 #include <sol/types.hpp>
 
-void IModManager::load_userdata()
+void IScriptManager::load_userdata()
 {
     this->load_userdata_network();
     this->load_userdata_peer();
@@ -102,14 +102,14 @@ void IModManager::load_userdata()
             });
 
     // TODO
-    //this->new_usertype<IModManager>("IModManager", "find_mod",
-    //                                [this](IModManager &self, std::string_view name) {
+    //this->new_usertype<IScriptManager>("IScriptManager", "find_mod",
+    //                                [this](IScriptManager &self, std::string_view name) {
     //                                    auto &&find = self.m_scripts.find(name);
     //                                    if (find != self.m_scripts.end())
     //                                        return find->second.get();
     //                                    return static_cast<ScriptInfo *>(nullptr);
     //                                }
-    //                                //"ReloadMod", [](IModManager& self, Mod& mod) {
+    //                                //"ReloadMod", [](IScriptManager& self, Mod& mod) {
     //                                //    if (!self.m_reload) {
     //                                //        mod.m_reload = true;
     //                                //        self.m_reload = true;
@@ -180,7 +180,7 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //http://lua-users.org/wiki/SandBoxes
 //https://ericjmritz.wordpress.com/2015/03/25/creating-and-using-environments-in-lua/
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
-sol::environment IModManager::create_sandbox(/*Mod &mod*/)
+sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
 {
     auto env  = sol::environment(m_state, sol::create, m_state.globals());//, api_table);
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
@@ -189,7 +189,7 @@ sol::environment IModManager::create_sandbox(/*Mod &mod*/)
     using namespace CSU;
 
     env["Valhalla"]       = Valhalla();
-    env["ModManager"]     = ModManager();
+    env["ModManager"]     = ScriptManager();
     env["NetManager"]     = NetManager();
     env["PrefabManager"]  = PrefabManager();
     env["ZDOManager"]     = ZDOManager();

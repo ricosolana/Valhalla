@@ -65,7 +65,7 @@ void IRouteManager::OnNewPeer(Peer &peer)
 
         if (target == EVERYBODY) {
             // Confirmed: targetZDO CAN have a value when globally routed
-            if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
                 return;
 
             //dpp death trigger webhook
@@ -94,7 +94,7 @@ void IRouteManager::OnNewPeer(Peer &peer)
         } else {
             if (target != VH_ID) {
                 if (auto other = NetManager()->FindPeerByUserID(target)) {
-                    if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Routed ^ hash, peer, reader))
+                    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Routed ^ hash, peer, reader))
                         return;
 
                     //other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);

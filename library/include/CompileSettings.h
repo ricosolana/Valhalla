@@ -174,14 +174,14 @@
 #endif
 */
 
-#if defined(VH_USE_MODS)
-    #if VH_USE_MODS != 0
-        #define VH_USE_MODS_I_ VH_ON
+#if defined(AVL_ENABLE_SCRIPTING)
+    #if AVL_ENABLE_SCRIPTING != 0
+        #define AVL_ENABLE_SCRIPTING_I_ VH_ON
     #else
-        #define VH_USE_MODS_I_ VH_OFF
+        #define AVL_ENABLE_SCRIPTING_I_ VH_OFF
     #endif
 #else
-    #define VH_USE_MODS_I_ VH_DEFAULT_ON
+    #define AVL_ENABLE_SCRIPTING_I_ VH_DEFAULT_ON
 #endif
 
 // Whether events/rpcs/... called by Lua will self trigger other callbacks
@@ -190,7 +190,7 @@
 //  This name isn't the best
 #if defined(VH_REFLECTIVE_MOD_EVENTS)
     #if VH_REFLECTIVE_MOD_EVENTS != 0
-        #if VH_IS_OFF(VH_USE_MODS)
+        #if VH_IS_OFF(AVL_ENABLE_SCRIPTING)
             #error "Mod visible events must have mods enabled"
         #else
             #define VH_REFLECTIVE_MOD_EVENTS_I_ VH_ON
@@ -257,7 +257,7 @@
         #define VH_CORE_FEATURES_I_ VH_OFF
     #endif
 #else
-    #if VH_IS_ON(VH_USE_MODS)
+    #if VH_IS_ON(AVL_ENABLE_SCRIPTING)
         #define VH_CORE_FEATURES_I_ VH_DEFAULT_OFF
     #else
         #define VH_CORE_FEATURES_I_ VH_DEFAULT_ON

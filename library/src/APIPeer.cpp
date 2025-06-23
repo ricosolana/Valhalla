@@ -2,16 +2,16 @@
 #include "Peer.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
 using namespace avledet::util;
 
-void IModManager::load_userdata_peer()
+void IScriptManager::load_userdata_peer()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - peer");
 
-    this->new_usertype<IModManager::MethodSig>(
-            "MethodSig", sol::constructors<IModManager::MethodSig(std::string_view, sol::variadic_args)>());
+    this->new_usertype<MethodSig>("MethodSig",
+                                  sol::constructors<MethodSig(std::string_view, sol::variadic_args)>());
 
     m_state.new_enum("ChatMsgType", "WHISPER", ChatMsgType::Whisper, "NORMAL", ChatMsgType::Normal, "SHOUT",
                      ChatMsgType::Shout, "PING", ChatMsgType::Ping);
@@ -63,15 +63,15 @@ void IModManager::load_userdata_peer()
 
             // static_cast<void (DataWriter::*)(const Bytes&, std::size_t)>(&DataWriter::write),
             "register", &Peer::RegisterLua,
-            //"Register", [](Peer& self, const IModManager::MethodSig& sig, const sol::function& func, sol::this_environment te) {
+            //"Register", [](Peer& self, const IScriptManager::MethodSig& sig, const sol::function& func, sol::this_environment te) {
             //    sol::environment& env = te;
             //    Mod& mod = env["this"].get<sol::table>().as<Mod&>();
             //    self.RegisterLua(sig, func, &mod);
             //},
             "invoke", &Peer::InvokeLua, "route_view", &Peer::RouteViewLua, "route", &Peer::RouteLua
             //sol::overload(
-            //    sol::resolve<void(const ZDOID&, const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
-            //    sol::resolve<void(const IModManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
+            //    sol::resolve<void(const ZDOID&, const IScriptManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
+            //    sol::resolve<void(const IScriptManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
             //),
 
             //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)

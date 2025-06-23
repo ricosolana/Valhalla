@@ -1,9 +1,9 @@
 #include "ModManager.h"
 #include <sol/forward.hpp>
 
-#if VH_IS_ON(VH_USE_MODS)
+#if VH_IS_ON(AVL_ENABLE_SCRIPTING)
 
-void IModManager::load_userdata_vector()
+void IScriptManager::load_userdata_vector()
 {
     LOG_DEBUG(VH_LOGGER, "Initializing API types - CSU::VectorX");
 

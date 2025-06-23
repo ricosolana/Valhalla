@@ -15,7 +15,7 @@
 
 class INetManager
 {
-    friend class IModManager;
+    friend class IScriptManager;
 
   private:
     avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;

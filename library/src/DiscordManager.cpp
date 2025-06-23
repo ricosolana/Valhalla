@@ -272,12 +272,12 @@ void IDiscordManager::init()
                         event.reply("World time is " + std::to_string(Valhalla()->GetWorldTime()));
                     }
                 }
-    #if VH_IS_ON(VH_USE_MODS)
+    #if VH_IS_ON(AVL_ENABLE_SCRIPTING)
                 else if (label == "vhlua") {
                     event.thinking(true);
                     auto &&script = std::get<std::string>(event.get_parameter("script"));
                     try {
-                        ModManager()->m_state.safe_script(script);
+                        ScriptManager()->m_state.safe_script(script);
                         m_bot->interaction_followup_create(event.command.token, std::string("Script success"),
                                                            [](dpp::confirmation_callback_t const &) {});
                     } catch (std::exception const &e) {
@@ -290,7 +290,7 @@ void IDiscordManager::init()
                     event.thinking(true);
                     auto &&script = std::get<std::string>(event.get_parameter("script"));
                     try {
-                        ModManager()->m_state.safe_script(script);
+                        ScriptManager()->m_state.safe_script(script);
                         m_bot->interaction_followup_create(event.command.token, std::string("Script success"),
                                                            [](dpp::confirmation_callback_t const &) {});
                     } catch (std::exception const &e) {
@@ -509,8 +509,8 @@ void IDiscordManager::init()
                                     .add_option(dpp::command_option(dpp::co_number, "time", "world time"))
                                     .set_default_permissions(0),// 0 is admins only
 
-            // Together
-    #if VH_IS_ON(VH_USE_MODS)
+                                                                // Together
+    #if VH_IS_ON(AVL_ENABLE_SCRIPTING)
                             dpp::slashcommand("vhlua", "Run a Lua script from string", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "script", "script text",
                                                                     true))

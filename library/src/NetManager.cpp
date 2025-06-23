@@ -70,7 +70,7 @@ void INetManager::SendDisconnect()
 void INetManager::SendPlayerList()
 {
     if (!m_onlinePeers.empty()) {
-        if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::PlayerList))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::PlayerList))
             return;
 
         DataWriter writer;
@@ -143,7 +143,7 @@ void INetManager::OnPeerConnect(Peer &peer)
 {
     peer.SetAdmin(Valhalla()->m_admin.contains(peer.m_socket->get_host_name()));
 
-    if (!VH_DISPATCH_MOD_EVENT(IModManager::Events::Join, peer)) {
+    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Join, peer)) {
         return peer.Disconnect();
     }
 
@@ -343,7 +343,7 @@ void INetManager::PostInit()
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
         auto &&ptr = std::make_unique<Peer>(std::move(socket));
-        if (VH_DISPATCH_MOD_EVENT(IModManager::Events::Connect, ptr.get())) {
+        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, ptr.get())) {
             m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
         }
     });
@@ -432,7 +432,7 @@ void INetManager::OnPeerQuit(Peer &peer)
 {
     LOG_INFO(VH_LOGGER, "Cleaning up peer");
     VH_DISPATCH_WEBHOOK(peer.m_name + " has quit");
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Quit, peer);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
 
     ZDOManager()->OnPeerQuit(peer);
 
@@ -444,7 +444,7 @@ void INetManager::OnPeerQuit(Peer &peer)
 
 void INetManager::OnPeerDisconnect(Peer &peer)
 {
-    VH_DISPATCH_MOD_EVENT(IModManager::Events::Disconnect, peer);
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Disconnect, peer);
 
     peer.SendDisconnect();
 
