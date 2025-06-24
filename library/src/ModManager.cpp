@@ -110,6 +110,8 @@ void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
     if (!try_emplace.second)
         throw std::runtime_error("tried loading plugin twice! " + _plugin_info.m_name);
 
+    //LOG_INFO(AVL_LOGGER, "Running script {} / {}", info.m_name, info.m_authors);
+
     auto env = this->create_sandbox();
 
     env["this"] = std::ref(_plugin_info);// copy

@@ -1,16 +1,21 @@
 #pragma once
 
 #include <cstdint>
-
 #include <ratio>
 #include <span>
 #include <vector>
 
 #include <ankerl/unordered_dense.h>
+#include <quill/bundled/fmt/format.h>
+#include <quill/bundled/fmt/ostream.h>
+#include <quill/DeferredFormatCodec.h>
+#include <quill/DirectFormatCodec.h>
+#include <quill/HelperMacros.h>
 #include <quill/LogMacros.h>
 #include <tracy/Tracy.hpp>
 
 #include "CompileSettings.h"
+#include "VUtilsTraits.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/state.hpp>
@@ -142,3 +147,30 @@ namespace avledet::util {
     };
 
 }// namespace avledet::util
+
+template<class T>
+//requires avledet::util::traits::is_iterable<T>
+std::ostream &operator<<(std::ostream &st, std::vector<T> const &value)
+{
+    st << "[ ";
+    for (int i = 0; i < value.size(); i++) {
+        st << value[i];
+        if (i < (int) value.size() - 1) {
+            st << ",";
+        }
+        st << " ";
+    }
+    st << "]";
+    return st;
+}
+
+//QUILL_LOGGABLE_DEFERRED_FORMAT()
+template<class T>
+//requires (avledet::util::traits::is_iterable<T> && )
+struct fmtquill::formatter<std::vector<T>> : fmtquill::ostream_formatter
+{};
+
+template<class T>
+//requires avledet::util::traits::is_iterable<T>
+struct quill::Codec<std::vector<T>> : quill::DeferredFormatCodec<T>
+{};

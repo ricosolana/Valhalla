@@ -208,7 +208,7 @@ void IDiscordManager::init()
                         event.reply("Unbanned " + host);
                     else
                         event.reply("Player is not banned");
-                } else if (label == "reload") {
+                } else if (label == "avlreload") {
                     Avledet()->LoadFiles(true);
                     event.reply("All files were reloaded");
                 } else if (label == "avlsave") {
