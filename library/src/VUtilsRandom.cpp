@@ -197,6 +197,19 @@ namespace avledet::util {
         //return state.Range(1, std::numeric_limits<std::int32_t>::max());
     }
 
+    std::string generate(std::string_view charset, std::size_t count)
+    {
+        std::string out;
+        out.resize(count);
+
+        avledet::util::CSU::Random state;
+        for (std::size_t i = 0; i < count; i++) {
+            out[i] = charset[state.range((std::int32_t) 0, (std::int32_t) charset.length())];
+        }
+
+        return out;
+    }
+
     void GenerateAlphaNum(char *out, std::size_t outSize)
     {
         VUtils::Random::State state;

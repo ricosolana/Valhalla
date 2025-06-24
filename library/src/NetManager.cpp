@@ -279,9 +279,10 @@ void INetManager::OnPeerConnect(Peer &peer)
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     if (AVL_SETTINGS.TEST_discordAccountLinking) {
-        peer.SetGated(!DiscordManager()->m_linked_accounts.contains(peer.m_socket->GetHostName()));
+        auto &&host_name = peer.m_socket->get_host_name();
+        peer.SetGated(!DiscordManager()->m_linked_accounts.contains(host_name));
         if (peer.IsGated()) {
-            DiscordManager()->m_temp_linking_keys[peer.m_socket->GetHostName()]
+            DiscordManager()->m_temp_linking_keys[host_name]
                     = {VUtils::Random::GenerateAlphaNum(4), Avledet()->Nanos()};
         }
     }

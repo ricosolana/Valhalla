@@ -105,18 +105,18 @@ std::tuple<IScriptManager::ScriptInfo, std::string> IScriptManager::load_file_sc
 void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
 {
     //m_scripts[info.m_name] = std::make_unique<ScriptInfo>(info);
-    auto &&try_emplace = m_scripts.try_emplace(info.m_name, std::make_unique<ScriptInfo>(std::move(info)));
-    auto &&plugin_info = *try_emplace.first->second;
+    auto &&try_emplace  = m_scripts.try_emplace(info.m_name, std::make_unique<ScriptInfo>(std::move(info)));
+    auto &&_plugin_info = *try_emplace.first->second;
     if (!try_emplace.second)
-        throw std::runtime_error("tried loading plugin twice! " + plugin_info.m_name);
+        throw std::runtime_error("tried loading plugin twice! " + _plugin_info.m_name);
 
     auto env = this->create_sandbox();
 
-    env["this"] = std::ref(plugin_info);// copy
+    env["this"] = std::ref(_plugin_info);// copy
 
     // Important: loadmode::text
     //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
-    m_state.script(code, env, info.get_chunk_name(), sol::load_mode::text);
+    m_state.script(code, env, info.m_chunk_name, sol::load_mode::text);
 }
 
 //TODO

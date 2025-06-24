@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CompileSettings.h"
+#include "VUtilsRandom.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -132,7 +133,8 @@ class IScriptManager
         // proto/src name of code chunk
         //  file:///home/.../script_entry.lua
         //  https://discord.com/channels/x/y/z
-        std::string m_origin;
+        //std::string m_origin;
+        std::string m_chunk_name;
 
         std::string m_version;
         std::string m_apiVersion;
@@ -140,51 +142,50 @@ class IScriptManager
         std::vector<std::string> m_authors;
 
       public:
-        ScriptInfo(std::string name, fs::path entry) :
-            m_name(name),
-            m_origin(entry)
+        ScriptInfo(std::string name, std::string chunk_name) :
+            m_name(std::move(name)),
+            m_chunk_name(std::move(chunk_name))
         {
         }
 
-        ScriptInfo(std::string name, std::string const &sourceName) :
-            m_name(name),
-            m_origin(sourceName)//no file path, instead dynamically loaded from ?
-        {
-        }
+        //ScriptInfo(std::string name) :
+        //    ScriptInfo(std::move(name), avledet::util::generate("abcdefghijklmnopqrstuvwxyz", 12))
+        //{
+        //}
 
         ScriptInfo(ScriptInfo const &)            = default;
         ScriptInfo(ScriptInfo &&)                 = default;
         ScriptInfo &operator=(ScriptInfo const &) = default;
 
         // If dynamically loaded (ie from discord); not during server initialization like all scripts
-        bool is_file_based() const
-        {
-            return m_origin.starts_with("file://");
-        }
+        //bool is_file_based() const
+        //{
+        //    return m_origin.starts_with("file://");
+        //}
 
-        std::string get_chunk_name() const
-        {
-            auto idx = m_origin.find("://") + sizeof("://");
-            if (m_origin.starts_with("file")) {
-                fs::path path = m_origin.substr(idx);
-                return path.filename().string();
-            } else {
-                // assume web URL
-                return m_name;//hmm
-            }
-        }
+        //std::string get_chunk_name() const
+        //{
+        //    auto idx = m_origin.find("://") + sizeof("://");
+        //    if (m_origin.starts_with("file://")) {
+        //        fs::path path = m_origin.substr(idx);
+        //        return path.filename().string();
+        //    } else {
+        //        // assume web URL
+        //        return m_name;//hmm
+        //    }
+        //}
 
-        fs::path get_entry_path() const
-        {
-            auto idx = m_origin.find("://") + sizeof("://");
-            if (m_origin.starts_with("file")) {
-                fs::path path = m_origin.substr(idx);
-                return path;
-            } else {
-                // assume web URL
-                throw std::runtime_error("dynamic scripts do not have a physical path");
-            }
-        }
+        //fs::path get_entry_path() const
+        //{
+        //    auto idx = m_origin.find("://") + sizeof("://");
+        //    if (m_origin.starts_with("file")) {
+        //        fs::path path = m_origin.substr(idx);
+        //        return path;
+        //    } else {
+        //        // assume web URL
+        //        throw std::runtime_error("dynamic scripts do not have a physical path");
+        //    }
+        //}
     };
 
     struct EventHandle

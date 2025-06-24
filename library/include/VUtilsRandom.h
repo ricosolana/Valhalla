@@ -46,6 +46,8 @@ namespace avledet::util {
 
     avledet::util::UserID GenerateUID();
 
+    std::string generate(std::string_view charset, std::size_t count);
+
     void GenerateAlphaNum(char *out, std::size_t outSize);
 
     std::string GenerateAlphaNum(std::size_t count);

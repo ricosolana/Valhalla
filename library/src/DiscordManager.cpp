@@ -1,5 +1,7 @@
 #include "DiscordManager.h"
+#include "ModManager.h"
 #include "WorldManager.h"
+#include <dpp/queues.h>
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
 
@@ -56,13 +58,13 @@ void IDiscordManager::init()
 
         auto label = event.command.get_command_name();
 
-        if (label == "vhfreset") {
+        if (label == "avlfreset") {
             event.reply("Deleted all commands");
             m_bot->global_commands_get([this](dpp::confirmation_callback_t const &cb) {
                 if (!cb.is_error()) {
                     auto &&commands = std::get<dpp::slashcommand_map>(cb.value);
                     for (auto &&command : commands) {
-                        if (command.second.name == "vhfreset" || command.second.name == "vhfreg")
+                        if (command.second.name == "avlfreset" || command.second.name == "avlfreg")
                             continue;
                         //m_bot->global_command_delete_sync(command.first);
                         m_bot->global_command_delete(command.first);
@@ -71,7 +73,7 @@ void IDiscordManager::init()
             });
         } else {
             Avledet()->RunTask([this, label, event](Task &) {
-                if (label == "vhadmin") {
+                if (label == "avladmin") {
                     auto &&admin = Avledet()->m_admin;
 
                     auto param_variant = event.get_parameter("identifier");
@@ -113,17 +115,17 @@ void IDiscordManager::init()
                             event.reply(msg);
                         }
                     }
-                } else if (label == "vhban") {
+                } else if (label == "avlban") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
                     if (auto peer = NetManager()->Ban(identifier))
-                        event.reply("Banned " + peer->m_name + " (" + peer->m_socket->GetHostName() + ")");
+                        event.reply("Banned " + peer->m_name + " (" + peer->m_socket->get_host_name() + ")");
                     else
                         event.reply("Player not found");
-                } else if (label == "vhbroadcast") {
+                } else if (label == "avlbroadcast") {
                     auto &&message = std::get<std::string>(event.get_parameter("message"));
                     Avledet()->Broadcast(UIMsgType::Center, message);
                     event.reply("Broadcasted message to all players");
-                } else if (label == "vhevent") {
+                } else if (label == "avlevent") {
                     if (auto &&e = RandomEventManager()->GetEvent(
                                 std::get<std::string>(event.get_parameter("event")))) {
                         auto &&peer = NetManager()->FindPeer(
@@ -139,15 +141,15 @@ void IDiscordManager::init()
                     } else {
                         event.reply("Event does not exist");
                     }
-                } else if (label == "vhkick") {
+                } else if (label == "avlkick") {
                     // TODO use get_if to get pointers and not newly allocated strings
 
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
                     if (auto peer = NetManager()->Kick(identifier))
-                        event.reply("Kicked " + peer->m_name + " (" + peer->m_socket->GetHostName() + ")");
+                        event.reply("Kicked " + peer->m_name + " (" + peer->m_socket->get_host_name() + ")");
                     else
                         event.reply("Player not found");
-                } else if (label == "vhlink") {
+                } else if (label == "avllink") {
                     auto key_variant = event.get_parameter("key");
                     auto &&key       = std::get_if<std::string>(&key_variant);
                     if (key) {
@@ -176,7 +178,7 @@ void IDiscordManager::init()
                         event.reply("Join the in-game server and enter the provided key here to link your "
                                     "account");
                     }
-                } else if (label == "vhlist") {
+                } else if (label == "avllist") {
                     if (NetManager()->GetPeers().empty()) {
                         event.reply("No players are online");
                     } else {
@@ -187,7 +189,7 @@ void IDiscordManager::init()
                         }
                         event.reply(msg);
                     }
-                } else if (label == "vhmessage") {
+                } else if (label == "avlmessage") {
                     auto &&message    = std::get<std::string>(event.get_parameter("message"));
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
                     if (auto peer = NetManager()->FindPeer(identifier)) {
@@ -195,7 +197,7 @@ void IDiscordManager::init()
                         event.reply("Sent message to player");
                     } else
                         event.reply("Player not found");
-                } else if (label == "vhpardon") {
+                } else if (label == "avlpardon") {
                     auto &&host = std::get<std::string>(event.get_parameter("host"));
                     if (Avledet()->m_blacklist.erase(host))
                         event.reply("Unbanned " + host);
@@ -204,28 +206,28 @@ void IDiscordManager::init()
                 } else if (label == "reload") {
                     Avledet()->LoadFiles(true);
                     event.reply("All files were reloaded");
-                } else if (label == "vhsave") {
+                } else if (label == "avlsave") {
                     WorldManager()->GetWorld()->WriteFiles();
                     event.reply("Saved the world");
-                } else if (label == "vhstop") {
+                } else if (label == "avlstop") {
                     Avledet()->Stop();
                     event.reply("Stopping the server!");
-                } else if (label == "vhsummon") {
+                } else if (label == "avlsummon") {
                     auto &&name = std::get<std::string>(event.get_parameter("prefab"));
                     auto &&peer = NetManager()->FindPeer(
                             std::get<std::string>(event.get_parameter("identifier")));
-                    if (auto &&prefab = PrefabManager()->GetPrefab(name); peer) {
+                    if (auto &&prefab = PrefabManager()->find_prefab(name); peer) {
                         ZDOManager()->Instantiate(*prefab, peer->m_pos);
                         event.reply("Object was summoned");
                     } else {
                         event.reply("Either prefab or peer are invalid");
                     }
-                } else if (label == "vhtime") {
+                } else if (label == "avltime") {
                     event.reply("Server time is "
                                 + std::to_string(
                                         duration_cast<std::chrono::seconds>(Avledet()->Elapsed()).count())
                                 + "s");
-                } else if (label == "vhtod") {
+                } else if (label == "avltod") {
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<std::string>(&time_variant);
                     if (time) {
@@ -242,7 +244,7 @@ void IDiscordManager::init()
                                        : Avledet()->IsAfternoon() ? "afternoon"
                                                                   : "night"));
                     }
-                } else if (label == "vhwhitelist") {
+                } else if (label == "avlwhitelist") {
                     auto flag_variant = event.get_parameter("flag");
                     auto &&flag       = std::get_if<bool>(&flag_variant);
                     if (flag) {
@@ -253,16 +255,16 @@ void IDiscordManager::init()
                         event.reply(std::string("The whitelist is ")
                                     + (AVL_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
                     }
-                } else if (label == "vhwhois") {
+                } else if (label == "avlwhois") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
                     if (auto peer = NetManager()->FindPeer(identifier)) {
                         event.reply("Name: " + peer->m_name + "\n"
                                     + "Uuid: " + std::to_string(peer->GetUserID()) + "\n"
-                                    + "Host: " + peer->m_socket->GetHostName() + "\n"
-                                    + "Address: " + peer->m_socket->GetAddress());
+                                    + "Host: " + peer->m_socket->get_host_name() + "\n"
+                                    + "Address: " + peer->m_socket->get_address());
                     } else
                         event.reply("Player not found");
-                } else if (label == "vhworldtime") {
+                } else if (label == "avlworldtime") {
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<double>(&time_variant);
                     if (time) {
@@ -273,31 +275,56 @@ void IDiscordManager::init()
                     }
                 }
     #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-                else if (label == "vhlua") {
+                else if (label == "avlscript" || label == "avlscriptf") {
                     event.thinking(true);
-                    auto &&script = std::get<std::string>(event.get_parameter("script"));
-                    try {
-                        ScriptManager()->m_state.safe_script(script);
-                        m_bot->interaction_followup_create(event.command.token, std::string("Script success"),
-                                                           [](dpp::confirmation_callback_t const &) {});
-                    } catch (std::exception const &e) {
-                        //event.reply(std::string("Script failed to run: \n") + e.what());
-                        m_bot->interaction_followup_create(event.command.token,
-                                                           std::string("Script error: \n") + e.what(),
-                                                           [](dpp::confirmation_callback_t const &) {});
+
+                    std::string code, script_name, chunk_name;
+                    if (label == "avlscriptf") {
+                        assert(false);
+                        // script from file is a bit more complicated I guess...
+                        // script
+                        //dpp::snowflake file_id = std::get<dpp::snowflake>(event.get_parameter("file"));
+                        //dpp::attachment const &attachment = event.command.get_resolved_attachment(file_id);
+                        //attachment.download([](http_request_completion_t const &http) {
+                        //    Avledet()->RunTask([http](Task &) {
+                        //        auto idx = attachment.filename.find_last_of('.');
+                        //        if (idx != std::string::npos) {
+                        //            script_name = attachment.filename.substr(0, idx);
+                        //        } else {
+                        //            script_name = attachment.filename;
+                        //        }
+                        //        chunk_name = attachment.filename;
+                        //    });
+                        //})
+                    } else {
+                        //auto &&script_var = event.get_parameter("script");
+                        //code              = std::get<std::string>(script_var);
+                        code = std::get<std::string>(event.get_parameter("script"));
+
+                        auto &&chunk_var = event.get_parameter("chunk");
+                        auto &&chunk_ptr = std::get_if<std::string>(&chunk_var);
+                        chunk_name       = (!chunk_ptr || chunk_ptr->empty())
+                                                   ? avledet::util::generate("abcdefghijklmnopqrstuvwxyz", 12)
+                                                   : *chunk_ptr;
+
+                        script_name = chunk_name;//TODO tmp lazy name
                     }
-                } else if (label == "vhscript") {
-                    event.thinking(true);
-                    auto &&script = std::get<std::string>(event.get_parameter("script"));
+
+                    auto user_id = event.command.member.user_id.str();
+
+                    LOG_INFO(AVL_LOGGER, "dpp / {}: {}", user_id, code);
+
                     try {
-                        ScriptManager()->m_state.safe_script(script);
-                        m_bot->interaction_followup_create(event.command.token, std::string("Script success"),
-                                                           [](dpp::confirmation_callback_t const &) {});
+                        ScriptManager()->execute(IScriptManager::ScriptInfo(script_name, chunk_name), code);
+                        m_bot->interaction_followup_create(
+                                event.command.token,
+                                dpp::message("Script '" + chunk_name + "' was successful"),
+                                [](dpp::confirmation_callback_t const &) {});
                     } catch (std::exception const &e) {
-                        //event.reply(std::string("Script failed to run: \n") + e.what());
-                        m_bot->interaction_followup_create(event.command.token,
-                                                           std::string("Script error: \n") + e.what(),
-                                                           [](dpp::confirmation_callback_t const &) {});
+                        LOG_INFO(AVL_LOGGER, "Script failure / {}: {}", user_id, e.what());
+                        m_bot->interaction_followup_create(
+                                event.command.token, dpp::message(std::string("Script error: \n") + e.what()),
+                                [](dpp::confirmation_callback_t const &) {});
                     }
                 }
     #endif
@@ -350,8 +377,8 @@ void IDiscordManager::init()
                         for (auto &&peer : NetManager()->GetPeers()) {
                             auto &&kw = peer->m_name;
                             choices.emplace_back(dpp::command_option_choice(
-                                    has_num ? peer->m_socket->GetHostName() : peer->m_name,
-                                    peer->m_socket->GetHostName()));
+                                    has_num ? peer->m_socket->get_host_name() : peer->m_name,
+                                    peer->m_socket->get_host_name()));
                         }
                     } else if (opt.name == "event") {
                         //add_choices(ranges::views::keys(RandomEventManager()->m_events));
@@ -395,11 +422,11 @@ void IDiscordManager::init()
             m_bot->guild_bulk_command_create(
                     {
                             // Async commands
-                            dpp::slashcommand("vhfreset", "Delete all commands", m_bot->me.id)
+                            dpp::slashcommand("avlfreset", "Delete all commands", m_bot->me.id)
                                     .set_default_permissions(0),
 
                             // Sync commands
-                            dpp::slashcommand("vhadmin", "See which players are admin", m_bot->me.id)
+                            dpp::slashcommand("avladmin", "See which players are admin", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "identifier",
                                                                     "name/uuid/host")
                                                         .set_auto_complete(true))
@@ -407,21 +434,21 @@ void IDiscordManager::init()
                                                                     "grant/revoke admin"))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("vhban", "Ban a player", m_bot->me.id)
+                            dpp::slashcommand("avlban", "Ban a player", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "identifier",
                                                                     "name/uuid/host", true)
                                                         .set_auto_complete(true))
                                     .set_default_permissions(
                                             dpp::permissions::p_ban_members),// 0 is admins only
 
-                            dpp::slashcommand("vhbroadcast", "Broadcast a message to all players",
+                            dpp::slashcommand("avlbroadcast", "Broadcast a message to all players",
                                               m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "message",
                                                                     "the message to broadcast", true))
                                     .set_default_permissions(
                                             dpp::permissions::p_manage_messages),// 0 is admins only
 
-                            dpp::slashcommand("vhevent", "Set event in world", m_bot->me.id)
+                            dpp::slashcommand("avlevent", "Set event in world", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "event", "Name of event",
                                                                     true)
                                                         .set_auto_complete(true))
@@ -432,20 +459,20 @@ void IDiscordManager::init()
                                                                     "Duration in seconds"))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("vhkick", "Kick a player", m_bot->me.id)
+                            dpp::slashcommand("avlkick", "Kick a player", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "identifier",
                                                                     "name/uuid/host", true)
                                                         .set_auto_complete(true))
                                     .set_default_permissions(
                                             dpp::permissions::p_kick_members),// 0 is admins only
 
-                            dpp::slashcommand("vhlink", "Links your Steam-id to Discord", m_bot->me.id)
+                            dpp::slashcommand("avllink", "Links your Steam-id to Discord", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "key",
                                                                     "Verification key from server")),
 
-                            dpp::slashcommand("vhlist", "List currently online players", m_bot->me.id),
+                            dpp::slashcommand("avllist", "List currently online players", m_bot->me.id),
 
-                            dpp::slashcommand("vhmessage", "Message a player", m_bot->me.id)
+                            dpp::slashcommand("avlmessage", "Message a player", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "identifier",
                                                                     "name/uuid/host", true)
                                                         .set_auto_complete(true))
@@ -454,21 +481,21 @@ void IDiscordManager::init()
                                     .set_default_permissions(
                                             dpp::permissions::p_manage_messages),// 0 is admins only
 
-                            dpp::slashcommand("vhpardon", "Unban a player", m_bot->me.id)
+                            dpp::slashcommand("avlpardon", "Unban a player", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "host", "host", true))
                                     .set_default_permissions(
                                             dpp::permissions::p_ban_members),// 0 is admins only
 
-                            dpp::slashcommand("vhreload", "Reload config files from disk", m_bot->me.id)
+                            dpp::slashcommand("avlreload", "Reload config files from disk", m_bot->me.id)
                                     .set_default_permissions(0),             // 0 is admins only
 
-                            dpp::slashcommand("vhsave", "Save the world", m_bot->me.id)
+                            dpp::slashcommand("avlsave", "Save the world", m_bot->me.id)
                                     .set_default_permissions(0),             // 0 is admins only
 
-                            dpp::slashcommand("vhstop", "Shutdown the server", m_bot->me.id)
+                            dpp::slashcommand("avlstop", "Shutdown the server", m_bot->me.id)
                                     .set_default_permissions(0),             // 0 is admins only
 
-                            dpp::slashcommand("vhsummon", "Spawns an object into the world", m_bot->me.id)
+                            dpp::slashcommand("avlsummon", "Spawns an object into the world", m_bot->me.id)
                                     .add_option(
                                             dpp::command_option(dpp::co_string, "prefab", "prefab name", true)
                                                     .set_auto_complete(true))
@@ -478,9 +505,9 @@ void IDiscordManager::init()
                                                         .set_auto_complete(true))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("vhtime", "Get the server time", m_bot->me.id),
+                            dpp::slashcommand("avltime", "Get the server time", m_bot->me.id),
 
-                            dpp::slashcommand("vhtod", "Get or set time of day", m_bot->me.id)
+                            dpp::slashcommand("avltod", "Get or set time of day", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "time", "time of day")
                                                         .add_choice(dpp::command_option_choice(
                                                                 "Morning", std::string("Morning")))
@@ -492,33 +519,36 @@ void IDiscordManager::init()
                                                                 "Night", std::string("Night"))))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("vhwhitelist", "Whitelist information", m_bot->me.id)
+                            dpp::slashcommand("avlwhitelist", "Whitelist information", m_bot->me.id)
                                     .add_option(
                                             dpp::command_option(dpp::co_boolean, "flag", "enable/disable"))
                                     .set_default_permissions(
                                             dpp::permissions::p_ban_members),// 0 is admins only
 
-                            dpp::slashcommand("vhwhois", "Get player information", m_bot->me.id)
+                            dpp::slashcommand("avlwhois", "Get player information", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_string, "identifier",
                                                                     "name/uuid/host", true)
                                                         .set_auto_complete(true))
                                     .set_default_permissions(
                                             dpp::permissions::p_kick_members),// 0 is admins only
 
-                            dpp::slashcommand("vhworldtime", "Get or set world time", m_bot->me.id)
+                            dpp::slashcommand("avlworldtime", "Get or set world time", m_bot->me.id)
                                     .add_option(dpp::command_option(dpp::co_number, "time", "world time"))
                                     .set_default_permissions(0),// 0 is admins only
 
                                                                 // Together
     #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-                            dpp::slashcommand("vhlua", "Run a Lua script from string", m_bot->me.id)
-                                    .add_option(dpp::command_option(dpp::co_string, "script", "script text",
-                                                                    true))
+                            dpp::slashcommand("avlscript", "Run a Lua string", m_bot->me.id)
+                                    .add_option(dpp::command_option(dpp::co_string, "script", "code", true))
+                                    .add_option(dpp::command_option(dpp::co_string, "chunk",
+                                                                    "lua descriptive name", false))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("vhscript", "Run a Lua script from file", m_bot->me.id)
-                                    .add_option(dpp::command_option(dpp::co_attachment, "script", "lua file",
-                                                                    true))
+                            dpp::slashcommand("avlscriptf", "Run a Lua script from file", m_bot->me.id)
+                                    .add_option(
+                                            dpp::command_option(dpp::co_attachment, "file", "lua file", true))
+                                    .add_option(dpp::command_option(dpp::co_string, "chunk",
+                                                                    "lua descriptive name", false))
                                     .set_default_permissions(0)// 0 is admins only
     #endif
                     },

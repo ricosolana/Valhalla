@@ -1,7 +1,7 @@
 #option (AVL_ENABLE_SCRIPTING "Enable Lua modding subsystem" OFF)
 #option (AVL_USE_PREFABS "Enable Prefab support" ON)
 #option (AVL_ZONE_GENERATION "Generate zones/features/vegetation" ON) # requires AVL_USE_PREFABS default or ON
-option (AVL_DISCORD_INTEGRATION "Enable Discord command bot" OFF)
+option (AVL_DISCORD_INTEGRATION "Enable Discord command bot" ON)
 
 option (AVL_LEGACY_WORLD_LOADING "Enable very old world loading" OFF)
 
