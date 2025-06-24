@@ -1,6 +1,7 @@
 #include "DiscordManager.h"
 #include "ModManager.h"
 #include "WorldManager.h"
+#include <dpp/intents.h>
 #include <dpp/queues.h>
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
@@ -40,7 +41,8 @@ void IDiscordManager::init()
 
     // https://dpp.dev/slashcommands.html
 
-    m_bot = std::make_unique<dpp::cluster>(AVL_SETTINGS.discordToken);
+    uint64_t intents = dpp::i_default_intents | dpp::i_message_content | dpp::i_guild_members;
+    m_bot            = std::make_unique<dpp::cluster>(AVL_SETTINGS.discordToken, intents);
 
     m_bot->on_log([](dpp::log_t const &log) {
         switch (log.severity) {
@@ -59,16 +61,19 @@ void IDiscordManager::init()
         auto label = event.command.get_command_name();
 
         if (label == "avlfreset") {
-            event.reply("Deleted all commands");
-            m_bot->global_commands_get([this](dpp::confirmation_callback_t const &cb) {
+            event.reply("Deleting commands...");
+            m_bot->global_commands_get([this, event](dpp::confirmation_callback_t const &cb) {
                 if (!cb.is_error()) {
                     auto &&commands = std::get<dpp::slashcommand_map>(cb.value);
                     for (auto &&command : commands) {
                         if (command.second.name == "avlfreset" || command.second.name == "avlfreg")
                             continue;
-                        //m_bot->global_command_delete_sync(command.first);
                         m_bot->global_command_delete(command.first);
                     }
+                    //event.reply("Deleted commands...");
+                    m_bot->interaction_followup_create(event.command.token,
+                                                       dpp::message("Deleted all commands!"),
+                                                       [](dpp::confirmation_callback_t const &) {});
                 }
             });
         } else {
@@ -314,8 +319,11 @@ void IDiscordManager::init()
 
                     LOG_INFO(AVL_LOGGER, "dpp / {}: {}", user_id, code);
 
+                    auto script_info = IScriptManager::ScriptInfo(script_name, chunk_name);
+                    script_info.m_authors.push_back(user_id);
+
                     try {
-                        ScriptManager()->execute(IScriptManager::ScriptInfo(script_name, chunk_name), code);
+                        ScriptManager()->execute(script_info, code);
                         m_bot->interaction_followup_create(
                                 event.command.token,
                                 dpp::message("Script '" + chunk_name + "' was successful"),
@@ -544,12 +552,13 @@ void IDiscordManager::init()
                                                                     "lua descriptive name", false))
                                     .set_default_permissions(0),// 0 is admins only
 
-                            dpp::slashcommand("avlscriptf", "Run a Lua script from file", m_bot->me.id)
-                                    .add_option(
-                                            dpp::command_option(dpp::co_attachment, "file", "lua file", true))
-                                    .add_option(dpp::command_option(dpp::co_string, "chunk",
-                                                                    "lua descriptive name", false))
-                                    .set_default_permissions(0)// 0 is admins only
+                                                                // TODO complicated...
+                //dpp::slashcommand("avlscriptf", "Run a Lua script from file", m_bot->me.id)
+                //        .add_option(
+                //                dpp::command_option(dpp::co_attachment, "file", "lua file", true))
+                //        .add_option(dpp::command_option(dpp::co_string, "chunk",
+                //                                        "lua descriptive name", false))
+                //        .set_default_permissions(0)// 0 is admins only
     #endif
                     },
                     AVL_SETTINGS.discordGuild);
