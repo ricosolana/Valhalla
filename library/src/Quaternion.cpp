@@ -7,8 +7,6 @@
 
 namespace avledet::util::CSU {
 
-    static constexpr auto PI = 3.1415926535897932384626f;
-
     Quaternion const Quaternion::IDENTITY = Quaternion(0, 0, 0, 1);
 
     //constexpr Quaternion Quaternion::IDENTITY(0.f, 0.f, 0.f, 1.f);
@@ -46,7 +44,7 @@ namespace avledet::util::CSU {
 
     Vector3f Quaternion::euler_angles() const
     {
-        return normalize_angles(Internal_ToEulerRad(*this) * 180.f / PI);
+        return normalize_angles(Internal_ToEulerRad(*this) * (float) (180.0 / VUtils::PI));
     }
 
     Vector3f Quaternion::Internal_ToEulerRad(Quaternion rotation)
@@ -61,11 +59,11 @@ namespace avledet::util::CSU {
         Vector3f v;
         if (test > 0.4995f * unit) {// singularity at north pole
             v.y = 2.f * std::atan2(rotation.y, rotation.x);
-            v.x = PI * .5f;
+            v.x = (float) (VUtils::PI * 0.5);
             v.z = 0;
         } else if (test < -0.4995f * unit) {// singularity at south pole
             v.y = -2.f * std::atan2(rotation.y, rotation.x);
-            v.x = -PI * .5f;
+            v.x = (float) (-VUtils::PI * 0.5);
             v.z = 0;
         } else {
             auto q = Quaternion(rotation.w, rotation.z, rotation.x, rotation.y);

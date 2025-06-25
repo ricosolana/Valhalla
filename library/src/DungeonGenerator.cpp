@@ -1,4 +1,5 @@
 #include "DungeonGenerator.h"
+#include <cstddef>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "GeoManager.h"
@@ -10,10 +11,10 @@
     #include "ZoneManager.h"
 
 DungeonGenerator::DungeonGenerator(Dungeon const &dungeon, ZDO::reference zdo) :
-    m_dungeon(dungeon),
-    m_zdo(zdo),
+    m_rot(zdo->GetRotation()),
     m_pos(zdo->GetPosition()),
-    m_rot(zdo->GetRotation())
+    m_dungeon(dungeon),
+    m_zdo(zdo)
 {
 
     auto zone = IZoneManager::WorldToZonePos(m_pos);
@@ -30,7 +31,7 @@ avledet::util::Hash DungeonGenerator::GetSeed()
 {
     if (AVL_SETTINGS.dungeonsSeeded) {
         auto seed = GeoManager()->GetSeed();
-        auto zone = IZoneManager::WorldToZonePos(m_pos);
+        //auto zone = IZoneManager::WorldToZonePos(m_pos);
         return seed + (int) m_pos.x * -4271 + (int) m_pos.y * 9187 + (int) m_pos.z * -2134;
     } else {
         return VUtils::Random::State().range(INT_MIN, INT_MAX);
@@ -211,8 +212,8 @@ void DungeonGenerator::Save()
     //m_placedRooms.size() * (sizeof(avledet::util::Hash) + sizeof(Vector3f) + sizeof(Quaternion)));
     DataWriter writer;
 
-    writer.write((std::int32_t) m_placed_rooms.size());
-    for (int i = 0; i < m_placed_rooms.size(); i++) {
+    writer.write((std::uint32_t) m_placed_rooms.size());
+    for (std::size_t i = 0; i < m_placed_rooms.size(); i++) {
         auto &&instance = m_placed_rooms[i];
         auto &&room     = instance->m_room.get();
 

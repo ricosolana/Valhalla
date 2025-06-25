@@ -32,9 +32,6 @@ using namespace std::chrono_literals;
 #define COLOR_WHITE  "\033[37m"
 #define COLOR_GRAY   "\033[90m"
 
-
-static constexpr double PI = 3.1415926535897932384626433832795;
-
 template<typename T>
     requires(std::is_integral_v<T> && sizeof(T) == 8)
 class IntegralWrapper
@@ -499,6 +496,8 @@ static_assert(std::endian::native == std::endian::little,
               "anyways?)");
 
 namespace VUtils {
+    static constexpr double PI = 3.1415926535897932384626433832795;
+
     // Run a code block once
     //  if (VUtils::run_once<struct my_unique_struct>()) { /* stuff */ }
     template<typename T>

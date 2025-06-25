@@ -64,6 +64,14 @@ class IAvledet
     double m_playerSleepUntil {};
 #endif
 
+  public:
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_blacklist;// banned steam ids
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_admin;    // admin steam ids
+    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
+            m_whitelist;// whitelisted steam ids
+
   private:
     void LoadFiles(bool reloading);
     void SaveFiles();
@@ -74,39 +82,15 @@ class IAvledet
     void Start();
     void Stop();
 
-    avledet::util::UserID ID() const
-    {
-        return m_serverID;
-    }
+    avledet::util::UserID ID() const;
 
-    ServerSettings &Settings()
-    {
-        return m_settings;
-    }
-
-    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
-            m_blacklist;// banned steam ids
-    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
-            m_admin;    // admin steam ids
-    avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
-            m_whitelist;// whitelisted steam ids
-
-    //ankerl::unordered_dense::map<std::string, PlayerInfo_t, ankerl::unordered_dense::string_hash, std::equal_to<>> m_users;
+    ServerSettings &Settings();
 
     // Get the time since the server started
     // Updated once per frame
-    auto Elapsed()
-    {
-        //return m_nowUpdate - m_startTime;
-        return std::chrono::nanoseconds((std::int64_t)(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count()
-                * m_serverTimeMultiplier));
-    }
+    std::chrono::nanoseconds Elapsed() const;
 
-    auto Nanos()
-    {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(Elapsed());
-    }
+    std::chrono::nanoseconds Nanos() const;
 
     // Get the time in Ticks (C# DateTime.Ticks)
     //auto Ticks() {
@@ -114,25 +98,13 @@ class IAvledet
     //}
 
     // Get the time in seconds (Unity Time.time)
-    float Time()
-    {
-        return float((double) Nanos().count()
-                     / (double) std::chrono::duration_cast<std::chrono::nanoseconds>(1s).count());
-    }
+    float Time() const;
 
     // The time in seconds since the last frame
-    float delta()
-    {
-        auto elapsed = m_nowUpdate - m_prevUpdate;
-        return ((double) elapsed.count() * m_serverTimeMultiplier)
-               / (double) std::chrono::duration_cast<decltype(elapsed)>(1s).count();
-    }
+    float delta() const;
 
     // The time in nanoseconds since the last frame
-    auto DeltaNanos()
-    {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
-    }
+    std::chrono::nanoseconds DeltaNanos() const;
 
     //static constexpr int WORLD_TIME_MORNING = 240;
     //static constexpr int WORLD_TIME_DAY = 270;
@@ -144,7 +116,7 @@ class IAvledet
     // Get the current day given a world time
     static int GetDay(WorldTime worldTime)
     {
-        return (worldTime - TIME_DAY) / WORLD_TIME_LENGTH;
+        return (int) (worldTime - TIME_DAY) / WORLD_TIME_LENGTH;
     }
 
     // Get the time relative to a given world time

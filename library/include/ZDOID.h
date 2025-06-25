@@ -94,7 +94,8 @@ namespace avledet::util {
       public:
         ZDOID() = default;
         ZDOID(std::int64_t user_id, std::uint32_t id);
-        ZDOID(const ZDOID &) = default;
+
+        //ZDOID(const ZDOID &) = default;
 
         bool operator==(const ZDOID &other) const noexcept
         {

@@ -1,3 +1,4 @@
+#include <chrono>
 #include <quill/core/LogLevel.h>
 #include <quill/LogMacros.h>
 #include <quill/sinks/RotatingFileSink.h>
@@ -278,8 +279,8 @@ template<typename T, typename D, typename Func = std::nullptr_t>
                           0, typename VUtils::Traits::func_traits<Func>::args_type>>::value
                   && is_duration<T>::value)
                  == is_duration<D>::value))
-void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value,
-       Func valueSanitizer = nullptr, bool skip = false)
+void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value, Func valueSanitizer,
+       bool skip = false)
 {
     if (skip)
         return;
@@ -293,12 +294,12 @@ void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_
             using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
 
             if constexpr (is_duration<T>::value) {
-                if (!valueSanitizer || !valueSanitizer(std::chrono::duration_cast<Param0>(val))) {
+                if (!valueSanitizer(std::chrono::duration_cast<Param0>(val))) {
                     set = val;
                     return;
                 }
             } else {
-                if (!valueSanitizer || !valueSanitizer(static_cast<Param0>(val))) {
+                if (!valueSanitizer(static_cast<Param0>(val))) {
                     set = val;
                     return;
                 }
@@ -369,13 +370,13 @@ void IAvledet::LoadFiles(bool reloading)
                 Player settings
             */
 
-            a(m_settings.playerWhitelist, players, "whitelist", true);
+            a(m_settings.playerWhitelist, players, "whitelist", true, nullptr);
             a(m_settings.playerMax, players, "max-online", 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, players, "authenticate", true);
+            a(m_settings.playerOnline, players, "authenticate", true, nullptr);
             a(m_settings.playerTimeout, players, "timeout", 30s,
               [](std::chrono::seconds val) { return val < 0s; });
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
-            a(m_settings.playerSleepSolo, players, "player-sleep-solo", false);
+            a(m_settings.playerSleepSolo, players, "player-sleep-solo", false, nullptr);
 #endif
             a(m_settings.TEST_playerRestrict, players, "experimental-restrict", false, nullptr, false);
 
@@ -383,7 +384,7 @@ void IAvledet::LoadFiles(bool reloading)
                 auto &&player_list = players["playerlist"];
                 a(m_settings.playerListSmoothUpdating, players, "smooth-updating", 2s,
                   [](std::chrono::seconds val) { return val < 0s; });
-                a(m_settings.playerListForceVisible, players, "locations-always-on", false);
+                a(m_settings.playerListForceVisible, players, "locations-always-on", false, nullptr);
             }
 
             /*
@@ -399,9 +400,9 @@ void IAvledet::LoadFiles(bool reloading)
             a(m_settings.TEST_worldPregenerate, world, "experimental-pregenerate", false, nullptr, reloading);
             a(m_settings.worldSaveInterval, world, "save-interval", 30min,
               [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.worldFeatures, world, "features", true);
-            a(m_settings.worldVegetation, world, "vegetation", true);
-            a(m_settings.worldCreatures, world, "creatures", true);
+            a(m_settings.worldFeatures, world, "features", true, nullptr);
+            a(m_settings.worldVegetation, world, "vegetation", true, nullptr);
+            a(m_settings.worldCreatures, world, "creatures", true, nullptr);
             a(m_settings.worldHeightmapThreads, world, "heightmap-threading", 1, nullptr, reloading);
 
             // limit to physically available threads
@@ -426,30 +427,30 @@ void IAvledet::LoadFiles(bool reloading)
               [](int val) { return val < 1000; });
             a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s,
               [](std::chrono::seconds val) { return val < 1s; });
-            a(m_settings.TEST_zdoAssignAlgorithm, zdo, "experimental-assign-algorithm",
-              AssignAlgorithm::NONE);
+            a(m_settings.TEST_zdoAssignAlgorithm, zdo, "experimental-assign-algorithm", AssignAlgorithm::NONE,
+              nullptr);
 
             /*
                 Dungeon generation settings
             */
 
-            a(m_settings.dungeonsEnabled, dungeons, "enabled", true);
+            a(m_settings.dungeonsEnabled, dungeons, "enabled", true, nullptr);
             {
                 auto &&endcaps = dungeons["endcaps"];
-                a(m_settings.dungeonsEndcapsEnabled, endcaps, "enabled", true);
+                a(m_settings.dungeonsEndcapsEnabled, endcaps, "enabled", true, nullptr);
                 a(m_settings.dungeonsEndcapsInsetFrac, endcaps, "inset-ratio", .5f,
                   [](float val) { return val < 0.f || val > 1.f; });
             }
 
-            a(m_settings.dungeonsDoors, dungeons, "doors", true);
+            a(m_settings.dungeonsDoors, dungeons, "doors", true, nullptr);
 
             {
                 auto &&rooms = dungeons["rooms"];
-                a(m_settings.dungeonsRoomsFlipped, rooms, "flipped", true);
-                a(m_settings.dungeonsRoomsZoneBounded, rooms, "zone-bounded", true);
+                a(m_settings.dungeonsRoomsFlipped, rooms, "flipped", true, nullptr);
+                a(m_settings.dungeonsRoomsZoneBounded, rooms, "zone-bounded", true, nullptr);
                 a(m_settings.dungeonsRoomsInsetSize, rooms, "inset-size", .1f,
                   [](float val) { return val < 0; });
-                a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true);
+                a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true, nullptr);
             }
 
             {
@@ -460,7 +461,7 @@ void IAvledet::LoadFiles(bool reloading)
                   [](int val) { return val < 1; });
             }
 
-            a(m_settings.dungeonsSeeded, dungeons, "seeded", true);
+            a(m_settings.dungeonsSeeded, dungeons, "seeded", true, nullptr);
 
             /*
                 Random event / raid settings
@@ -471,7 +472,7 @@ void IAvledet::LoadFiles(bool reloading)
               [](std::chrono::seconds val) { return val < 0s; });
             a(m_settings.eventsRadius, events, "activation-radius", 96,
               [](float val) { return val < 1 || val > 96 * 4; });
-            a(m_settings.eventsRequireKeys, events, "require-keys", true);
+            a(m_settings.eventsRequireKeys, events, "require-keys", true, nullptr);
 
             /*
                 Discord settings
@@ -479,9 +480,10 @@ void IAvledet::LoadFiles(bool reloading)
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
             a(m_settings.discordEnabled, discord, "enabled", false, nullptr, reloading);
-            a(m_settings.discordWebhook, discord, "webhook", "");//TODO move this somewhere more secure
+            a(m_settings.discordWebhook, discord, "webhook", "",
+              nullptr);  //TODO move this somewhere more secure
             a(m_settings.discordToken, discord, "token", "", nullptr,
-              reloading);                                        //TODO move this somewhere more secure!!!
+              reloading);//TODO move this somewhere more secure!!!
             a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
             a(m_settings.TEST_discordAccountLinking, discord, "experimental-account-linking", false, nullptr,
               reloading);
@@ -498,7 +500,7 @@ void IAvledet::LoadFiles(bool reloading)
             // reload log level
             {
                 quill::LogLevel level;
-                a(level, general, "log-level", quill::LogLevel::Info);
+                a(level, general, "log-level", quill::LogLevel::Info, nullptr);
                 AVL_LOGGER->set_log_level(level);
             }
 
@@ -633,6 +635,57 @@ void IAvledet::SaveFiles()
         VUtils::Resource::WriteFile("linked.yml", emit.c_str());
     }
 #endif
+}
+
+avledet::util::UserID IAvledet::ID() const
+{
+    return m_serverID;
+}
+
+ServerSettings &IAvledet::Settings()
+{
+    return m_settings;
+}
+
+// Get the time since the server started
+// Updated once per frame
+std::chrono::nanoseconds IAvledet::Elapsed() const
+{
+    //return m_nowUpdate - m_startTime;
+    return std::chrono::nanoseconds((std::int64_t)(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count()
+            * m_serverTimeMultiplier));
+}
+
+std::chrono::nanoseconds IAvledet::Nanos() const
+{
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(Elapsed());
+}
+
+// Get the time in Ticks (C# DateTime.Ticks)
+//auto Ticks() {
+//    return duration_cast<avledet::util::Ticks>(Nanos());
+//}
+
+// Get the time in seconds (Unity Time.time)
+float IAvledet::Time() const
+{
+    return (float) ((double) Nanos().count()
+                    / (double) std::chrono::duration_cast<std::chrono::nanoseconds>(1s).count());
+}
+
+// The time in seconds since the last frame
+float IAvledet::delta() const
+{
+    auto elapsed = m_nowUpdate - m_prevUpdate;
+    return (float) (((double) elapsed.count() * m_serverTimeMultiplier)
+                    / (double) std::chrono::duration_cast<decltype(elapsed)>(1s).count());
+}
+
+// The time in nanoseconds since the last frame
+std::chrono::nanoseconds IAvledet::DeltaNanos() const
+{
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
 }
 
 //TODO do not put here

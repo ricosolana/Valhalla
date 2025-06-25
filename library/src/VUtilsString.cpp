@@ -1,6 +1,7 @@
 
 #include "VUtilsString.h"
 #include "VUtils.h"
+#include <cstddef>
 
 namespace avledet::lexicon {
 
@@ -62,7 +63,7 @@ namespace avledet::lexicon {
     {
         std::string_view remaining(s);
         std::vector<std::string_view> result;
-        int pos = 0;
+        std::size_t pos = 0;
         //ABC DE FGHI JK
         while ((pos = remaining.find(delim)) != std::string::npos) {
             // If the delim was not at idx 0, then add everything from 0 to the pos
@@ -110,19 +111,19 @@ namespace avledet::lexicon {
             //   11110: total 4 bytes (trailing 10xxxxxx)
             std::int32_t count = 0;
             for (; *p != '\0'; ++p, count++) {
-#define CHECK_TRAILING_BYTES(n)                        \
-    {                                                  \
-        for (p++;                 /*next byte*/        \
-             *p != '\0', i < (n); /*min bounds check*/ \
-             ++p, ++i)            /*increment*/        \
-        {                                              \
-            if (((*p) >> 6) != 0b10) {                 \
-                return -1;                             \
-            }                                          \
-        }                                              \
-        /* if string ended prematurely, panic */       \
-        if (i != (n))                                  \
-            return -1;                                 \
+#define CHECK_TRAILING_BYTES(n)                          \
+    {                                                    \
+        for (p++;                   /*next byte*/        \
+             *p != '\0' && i < (n); /*min bounds check*/ \
+             ++p, ++i)              /*increment*/        \
+        {                                                \
+            if (((*p) >> 6) != 0b10) {                   \
+                return -1;                               \
+            }                                            \
+        }                                                \
+        /* if string ended prematurely, panic */         \
+        if (i != (n))                                    \
+            return -1;                                   \
     }
 
                 // 1-byte code point

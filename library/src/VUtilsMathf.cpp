@@ -28,8 +28,8 @@ namespace VUtils::Mathf {
 
     float Round(float f)
     {
-        float const r = round(f);// Result is round-half-away-from-zero
-        float const d = r - f;   // Difference
+        float const r = std::round(f);// Result is round-half-away-from-zero
+        float const d = r - f;        // Difference
 
         // Result is not half, RHAFZ result same as RHTE
         if ((d != 0.5f) && (d != -0.5f)) {
@@ -37,7 +37,7 @@ namespace VUtils::Mathf {
         }
 
         // Check if RHAFZ result is even, then RHAFZ result same as RHTE
-        if (fmod(r, 2.0f) == 0.0f) {
+        if (std::fmod(r, 2.0f) == 0.0f) {
             return r;
         }
 

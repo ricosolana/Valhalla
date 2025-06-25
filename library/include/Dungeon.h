@@ -35,7 +35,7 @@ class Dungeon
 
     int m_max_rooms = 3;
 
-    int m_min_rooms = 20;
+    unsigned int m_min_rooms = 20;
 
     int m_min_required_rooms;
 

@@ -243,23 +243,23 @@
     #define AVL_DISCORD_INTEGRATION_I_ AVL_DEFAULT_ON
 #endif
 
-#define AVL_CORE_FEATURES 1
+#define AVL_GAME_MECHANICS 1
 
 // Whether to enable:
 //  - portal linking
 //  - sleeping/time skip
 // Disabled by default if mods are enabled
-#if defined(AVL_CORE_FEATURES)
-    #if AVL_CORE_FEATURES != 0
-        #define AVL_CORE_FEATURES_I_ AVL_ON
+#if defined(AVL_GAME_MECHANICS)
+    #if AVL_GAME_MECHANICS != 0
+        #define AVL_GAME_MECHANICS_I_ AVL_ON
     #else
-        #define AVL_CORE_FEATURES_I_ AVL_OFF
+        #define AVL_GAME_MECHANICS_I_ AVL_OFF
     #endif
 #else
     #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-        #define AVL_CORE_FEATURES_I_ AVL_DEFAULT_OFF
+        #define AVL_GAME_MECHANICS_I_ AVL_DEFAULT_OFF
     #else
-        #define AVL_CORE_FEATURES_I_ AVL_DEFAULT_ON
+        #define AVL_GAME_MECHANICS_I_ AVL_DEFAULT_ON
     #endif
 #endif
 
@@ -270,7 +270,7 @@
         #define AVL_PORTAL_LINKING_I_ AVL_OFF
     #endif
 #else
-    #if AVL_IS_ON(AVL_CORE_FEATURES)
+    #if AVL_IS_ON(AVL_GAME_MECHANICS)
         #define AVL_PORTAL_LINKING_I_ AVL_DEFAULT_ON
     #else
         #define AVL_PORTAL_LINKING_I_ AVL_DEFAULT_OFF
@@ -284,7 +284,7 @@
         #define AVL_PLAYER_SLEEP_I_ AVL_OFF
     #endif
 #else
-    #if AVL_IS_ON(AVL_CORE_FEATURES)
+    #if AVL_IS_ON(AVL_GAME_MECHANICS)
         #define AVL_PLAYER_SLEEP_I_ AVL_DEFAULT_ON
     #else
         #define AVL_PLAYER_SLEEP_I_ AVL_DEFAULT_OFF

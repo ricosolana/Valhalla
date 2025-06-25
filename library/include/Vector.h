@@ -87,12 +87,12 @@ namespace avledet::util::CSU {
 
         Vector2<T> operator*(float rhs) const
         {
-            return Vector2<T>(x * rhs, y * rhs);
+            return Vector2<T>((T) ((float) x * rhs), (T) ((float) y * rhs));
         }
 
         Vector2<T> operator/(float rhs) const
         {
-            return Vector2<T>(x / rhs, y / rhs);
+            return Vector2<T>((T) ((float) x / rhs), (T) ((float) y / rhs));
         }
 
         void operator+=(Vector2<T> const &rhs)
@@ -217,14 +217,14 @@ namespace avledet::util::CSU {
         {
         }
 
+        //omitted because of implied deprecation if either is specified
         //constexpr Vector3(Vector3<T> const& rhs) : x(rhs.x), y(rhs.y), z(rhs.z) { }
-
-        void operator=(Vector3<T> const &other)
-        {
-            x = other.x;
-            y = other.y;
-            z = other.z;
-        }
+        //void operator=(Vector3<T> const &other)
+        //{
+        //    x = other.x;
+        //    y = other.y;
+        //    z = other.z;
+        //}
 
         // vector arithmetic
         Vector3<T> operator+(Vector3<T> const &rhs) const

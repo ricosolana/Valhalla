@@ -76,19 +76,13 @@ class Prefab
   public:
     std::string m_name;                       // 40 bytes
     avledet::util::CSU::Vector3f m_localScale;// 12 bytes
-    Flag m_flags = Flag::NONE;                // 8 bytes
+    Flag m_flags;                             // = Flag::NONE;                // 8 bytes
     avledet::util::Hash m_hash;               // 4 bytes
 
   public:
-    Prefab(std::string_view name, avledet::util::CSU::Vector3f localScale, Flag flags) :
-        m_hash(avledet::util::get_stable_hash(name)),
-        m_name(std::string(name)),
-        m_localScale(localScale),
-        m_flags(flags)
-    {
-    }
+    Prefab(std::string name, avledet::util::CSU::Vector3f const &localScale, Flag flags);
 
-    Prefab(Prefab const &other) = default;
+    //Prefab(Prefab const &other) = default;
 
     bool AllFlagsPresent(Flag prefabFlags) const noexcept
     {

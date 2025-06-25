@@ -19,6 +19,8 @@
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
 {
+    (void) pkg;
+    (void) worldVersion;
     assert(false);//TODO
     /*
     pkg.read<std::uint32_t>();       // owner rev

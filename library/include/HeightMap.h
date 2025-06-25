@@ -66,6 +66,7 @@ class Heightmap
     static constexpr int E_WIDTH = IZoneManager::UNITS_PER_ZONE + 1;
 
   private:
+    ZoneID const m_zone;
     std::unique_ptr<BaseHeightmap> const m_base;
     BaseHeightmap::Heights_t m_heights;
 
@@ -76,8 +77,6 @@ class Heightmap
     std::array<avledet::util::Biome, 4> m_cornerBiomes
             = {avledet::util::Biome::Meadows, avledet::util::Biome::Meadows, avledet::util::Biome::Meadows,
                avledet::util::Biome::Meadows};
-
-    ZoneID const m_zone;
 
   private:
     float Distance(float x, float y, float rx, float ry);

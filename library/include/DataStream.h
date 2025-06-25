@@ -354,7 +354,7 @@ namespace avledet::util {
             auto const end = writer.get_pos();
             writer.set_pos(start);
             count = end - start - sizeof(count);
-            assert(count >= 0);
+            //assert(count >= 0);
             writer.write(count);
             writer.set_pos(end);
         }

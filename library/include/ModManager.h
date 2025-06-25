@@ -2,6 +2,7 @@
 
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
+#include <cstddef>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -451,7 +452,7 @@ struct avledet::util::Streamer<F, G...>
     void operator()(avledet::util::Writer &writer, IScriptManager::StreamTypes const &types,
                     sol::variadic_results const &results)
     {
-        for (int i = 0; i < results.size(); i++) {
+        for (std::size_t i = 0; i < results.size(); i++) {
             writer.write(types.at(i), results.at(i));
         }
     }

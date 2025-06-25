@@ -15,7 +15,7 @@ namespace VUtils::Math {
 
     float magnitude(float x, float y)
     {
-        return sqrt(sq_magnitude(x, y));
+        return std::sqrt(sq_magnitude(x, y));
     }
 
     float sq_distance_to(float x1, float y1, float x2, float y2)
@@ -25,7 +25,7 @@ namespace VUtils::Math {
 
     float distance_to(float x1, float y1, float x2, float y2)
     {
-        return std::sqrtf(sq_distance_to(x1, y1, x2, y2));
+        return std::sqrt(sq_distance_to(x1, y1, x2, y2));
     }
 
     float sq_magnitude(float x, float y, float z)
@@ -35,7 +35,7 @@ namespace VUtils::Math {
 
     float magnitude(float x, float y, float z)
     {
-        return sqrt(sq_magnitude(x, y, z));
+        return std::sqrt(sq_magnitude(x, y, z));
     }
 
     float sq_distance_to(float x1, float y1, float z1, float x2, float y2, float z2)
@@ -45,7 +45,7 @@ namespace VUtils::Math {
 
     float distance_to(float x1, float y1, float z1, float x2, float y2, float z2)
     {
-        return std::sqrtf(sq_distance_to(x1, y1, z1, x2, y2, z2));
+        return std::sqrt(sq_distance_to(x1, y1, z1, x2, y2, z2));
     }
 
     float Clamp(float value, float min, float max)
@@ -66,7 +66,7 @@ namespace VUtils::Math {
 
     double LerpStep(double l, double h, double v)
     {
-        return Mathf::Clamp01((v - l) / (h - l));
+        return Mathf::Clamp01((float) ((v - l) / (h - l)));
     }
 
     float Fbm(Vector3f p, int octaves, float lacunarity, float gain)
@@ -99,19 +99,22 @@ namespace VUtils::Math {
 
     float FISQRT(float number)
     {
-        long i;
-        float x2, y;
-        float const threehalfs = 1.5F;
+        (void) number;
+        assert(false);
+        throw std::runtime_error("nyi");
+        //long i;
+        //float x2, y;
+        //float const threehalfs = 1.5F;
 
-        x2 = number * 0.5F;
-        y  = number;
-        i  = *(long *) &y;                   // evil floating point bit level hacking
-        i  = 0x5f3759df - (i >> 1);          // what the fuck?
-        y  = *(float *) &i;
-        y  = y * (threehalfs - (x2 * y * y));// 1st iteration
-        y  = y * (threehalfs - (x2 * y * y));// 2nd iteration, this can be removed
+        //x2 = number * 0.5F;
+        //y  = number;
+        //i  = *(long *) &y;                   // evil floating point bit level hacking
+        //i  = 0x5f3759df - (i >> 1);          // what the fuck?
+        //y  = *(float *) &i;
+        //y  = y * (threehalfs - (x2 * y * y));// 1st iteration
+        //y  = y * (threehalfs - (x2 * y * y));// 2nd iteration, this can be removed
 
-        return y;
+        //return y;
     }
 
     // Ease-in-out function
@@ -167,8 +170,8 @@ namespace VUtils::Math {
     // type is casted to a float, idk whether statically, probably (bytes interpreted in place)
     float PerlinNoise(float x, float y)
     {
-        x = fabs(x);
-        y = fabs(y);
+        x = std::abs(x);
+        y = std::abs(y);
 
         int X = (int) x & 0xFF;
         int Y = (int) y & 0xFF;
@@ -192,7 +195,8 @@ namespace VUtils::Math {
         auto gradBA = mygrad(BA, x - 1, y);
         auto gradAA = mygrad(AA, x, y);
 
-        float res = mylerp(v, mylerp(u, gradAA, gradBA), mylerp(u, gradAB, gradBB));
+        float res = (float) mylerp((float) v, (float) mylerp((float) u, (float) gradAA, (float) gradBA),
+                                   (float) mylerp((float) u, (float) gradAB, (float) gradBB));
 
         return (res + .69f) / 1.483f;
     }

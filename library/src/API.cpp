@@ -4,6 +4,7 @@
 #include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
+#include <cstddef>
 #include <sol/environment.hpp>
 #include <sol/forward.hpp>
 #include <sol/optional_implementation.hpp>
@@ -52,6 +53,8 @@ void IScriptManager::load_userdata()
             sol::property(&IAvledet::GetTomorrowNight),
 
             "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
+                (void) self;
+
                 sol::environment &env = te;
 
                 auto mod = env["this"].get<ScriptInfo *>();
@@ -60,11 +63,10 @@ void IScriptManager::load_userdata()
                 sol::function func;
                 int priority = 0;
 
-
                 // If priority is present (will be at end)
-                int const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+                unsigned const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
 
-                for (int i = 0; i < args.size(); i++) {
+                for (std::size_t i = 0; i < args.size(); i++) {
                     auto &&arg  = args[i];
                     auto &&type = arg.get_type();
 

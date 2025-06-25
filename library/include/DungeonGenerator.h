@@ -32,25 +32,12 @@ class DungeonGenerator
     std::vector<std::reference_wrapper<RoomConnectionInstance const>> m_door_connections;
 
   public:
-    // TODO use reference
-    Dungeon const &m_dungeon;
+    static constexpr Vector3f const m_zone_size = Vector3f(64, 64, 64);
 
-    Vector3f m_pos;  // instanced position
-    Quaternion m_rot;// instanced rotation
-
+    Quaternion m_rot;        // instanced rotation
+    Vector3f m_pos;          // instanced position
     Vector3f m_zone_center;
-
-    // TODO make Constexpr
-    Vector3f const m_zone_size = Vector3f(64, 64, 64);
-
-    //bool m_useCustomInteriorTransform; // templated
-
-    //avledet::util::Hash m_generatedSeed;
-
-    //Vector3f m_originalPosition; // templated
-
-    //steady_clock::time_point m_generatedTime;
-
+    Dungeon const &m_dungeon;//TODO use reference
     ZDO::reference m_zdo;
 
   private:

@@ -291,6 +291,12 @@ namespace VUtils::Physics {
     bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
                          Quaternion rot2)
     {
+        (void) size1;
+        (void) pos1;
+        (void) rot1;
+        (void) size2;
+        (void) pos2;
+        (void) rot2;
         assert(false);
         throw std::runtime_error("not implemented");
     }

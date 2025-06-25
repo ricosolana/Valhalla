@@ -27,6 +27,8 @@ namespace VUtils {
 
     bool SetEnv(std::string_view key, std::string_view value)
     {
+        (void) key;
+        (void) value;
         //return setenv((key.data(), value.data()) == 0;
         throw std::runtime_error("SetEnv nyi");
         //return putenv((key.data() + std::string("=") + value.data()).c_str()) == 0;

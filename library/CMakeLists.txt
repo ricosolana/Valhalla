@@ -3,14 +3,31 @@ set(AVLEDET_LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # add shared
 add_library(avledet_library STATIC)
 
+target_compile_options(avledet_library
+    PRIVATE
+        -Wall 
+        -Wextra 
+        -Wconversion 
+        -Werror 
+        -Wno-unknown-pragmas 
+        -Wno-unused-variable 
+        -Wno-deprecated-declarations
+)
+
 target_include_directories(avledet_library
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${STEAMWORKS_SDK_SOURCE_DIR}
-        ${GTL_INCLUDE_DIRS}
-        ankerl::unordered_dense
-    PRIVATE
-        # ... ?
+)
+
+# SYSTEM - ignore external warnings / errors
+target_include_directories(avledet_library
+    SYSTEM
+        PUBLIC
+            ${STEAMWORKS_SDK_SOURCE_DIR}
+            ${GTL_INCLUDE_DIRS}
+            ankerl::unordered_dense
+        PRIVATE
+            # ... ?
 )
 
 add_subdirectory("src")

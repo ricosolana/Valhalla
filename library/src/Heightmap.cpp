@@ -1,4 +1,7 @@
 #include "HeightMap.h"
+#include "steamclientpublic.h"
+#include <cmath>
+#include <cstddef>
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "HeightmapBuilder.h"
@@ -76,7 +79,9 @@ void Heightmap::Regenerate()
     this->m_heights = m_base->m_baseHeights;
 
     this->m_paintMask.resize(m_base->m_vegMask.size());
-    for (int i = 0; i < m_base->m_vegMask.size(); i++) this->m_paintMask[i].a = m_base->m_vegMask[i];
+    for (std::size_t i = 0; i < m_base->m_vegMask.size(); i++) {
+        this->m_paintMask[i].a = m_base->m_vegMask[i];
+    }
 
     m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, IZoneManager::UNITS_PER_ZONE));
     m_oceanDepth[1]
@@ -273,6 +278,8 @@ void Heightmap::ApplyModifiers()
 // private
 void Heightmap::ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t *levelOnly)
 {
+    (void) modifier;
+    (void) levelOnly;
     assert(false);
 
     //if (modifier.m_level) {
@@ -303,6 +310,7 @@ void Heightmap::ApplyModifier(TerrainModifier modifier, BaseHeightmap::Heights_t
 // public
 bool Heightmap::TerrainVSModifier(TerrainModifier modifier)
 {
+    (void) modifier;
     throw std::runtime_error("not implemented");
 
     //Vector3f position = modifier.transform.position;
@@ -380,7 +388,10 @@ void Heightmap::RebuildCollisionMesh()
 void Heightmap::SmoothTerrain2(Vector3f worldPos, float radius, BaseHeightmap::Heights_t *levelOnlyHeights,
                                float power)
 {
-
+    (void) worldPos;
+    (void) radius;
+    (void) levelOnlyHeights;
+    (void) power;
     assert(false);
 
     /*
@@ -506,8 +517,8 @@ bool Heightmap::GetAverageWorldHeight(Vector3f worldPos, float radius, float &he
 
     float sumHeight      = 0;
     std::int32_t sumArea = 0;
-    for (std::int32_t i = y - radius; i <= y + radius; i++) {
-        for (std::int32_t j = x - radius; j <= x + radius; j++) {
+    for (std::int32_t i = y - (int) std::floor(radius); i <= y + (int) std::ceil(radius); i++) {
+        for (std::int32_t j = x - (int) std::floor(radius); j <= x + (int) std::ceil(radius); j++) {
             if (VUtils::Math::sq_distance_to(x, y, j, i) <= radius * radius) {
                 if (!(j >= 0 && i >= 0 && j < E_WIDTH && i < E_WIDTH))
                     continue;
@@ -535,13 +546,14 @@ bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height
     this->WorldToVertex(worldPos, x, y);
 
     float num3        = radius;
-    std::int32_t num4 = ceil(num3);
+    std::int32_t num4 = (int) std::ceil(num3);
     Vector2f a        = Vector2f(x, y);
     std::int32_t num5 = IZoneManager::UNITS_PER_ZONE + 1;
     height            = 99999;
     for (std::int32_t i = y - num4; i <= y + num4; i++) {
         for (std::int32_t j = x - num4; j <= x + num4; j++) {
-            if (a.distance_to(Vector2f(j, i)) <= num3 && j >= 0 && i >= 0 && j < num5 && i < num5) {
+            if (a.distance_to(Vector2f((float) j, (float) i)) <= num3 && j >= 0 && i >= 0 && j < num5
+                && i < num5) {
                 float height2 = this->GetHeight(j, i);
                 if (height2 < height) {
                     height = height2;
@@ -561,7 +573,7 @@ bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height
     this->WorldToVertex(worldPos, x, y);
 
     float num3        = radius;
-    std::int32_t num4 = ceil(num3);
+    std::int32_t num4 = (int) std::ceil(num3);
     Vector2f a        = Vector2f(x, y);
 
     height = -99999;
@@ -582,6 +594,12 @@ bool Heightmap::GetMaxWorldHeight(Vector3f worldPos, float radius, float &height
 // private
 void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, float intensity)
 {
+    (void) worldPos;
+    (void) radius;
+    (void) square;
+    (void) intensity;
+    assert(false);
+    /*
     std::int32_t x;
     std::int32_t y;
     this->WorldToVertex(worldPos, x, y);
@@ -601,7 +619,7 @@ void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, floa
     for (auto &&pair : list) {
         float h = VUtils::Mathf::Lerp(this->GetHeight(pair.first.x, pair.first.y), pair.second, intensity);
         this->SetHeight(pair.first.x, pair.first.y, h);
-    }
+    }*/
 }
 
 // private
@@ -629,6 +647,7 @@ float Heightmap::GetAvgHeight(std::int32_t cx, std::int32_t cy, std::int32_t w)
 // private
 float Heightmap::GroundHeight(Vector3f point)
 {
+    (void) point;
     assert(false);
 
     //Ray ray = new Ray(point + Vector3f::UP * 100.f, Vector3f::DOWN);
@@ -642,6 +661,9 @@ float Heightmap::GroundHeight(Vector3f point)
 // private
 void Heightmap::FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rigidbody> &objects)
 {
+    (void) worldPos;
+    (void) area;
+    (void) objects;
     assert(false);
 
     //if (this->m_collider == nullptr) {
@@ -662,7 +684,10 @@ void Heightmap::FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rig
 void Heightmap::PaintCleared(Vector3f worldPos, float radius, TerrainModifier::PaintType paintType,
                              bool heightCheck)
 {
-
+    (void) worldPos;
+    (void) radius;
+    (void) paintType;
+    (void) heightCheck;
     assert(false);
 
     /*
@@ -747,8 +772,8 @@ bool Heightmap::IsCultivated(Vector3f worldPos)
 void Heightmap::WorldToVertex(Vector3f worldPos, std::int32_t &x, std::int32_t &y)
 {
     Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x               = floor(vector.x + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
-    y               = floor(vector.z + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
+    x               = (int) std::floor(vector.x + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
+    y               = (int) std::floor(vector.z + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
 }
 
 // private
@@ -769,7 +794,7 @@ void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square,
     this->WorldToVertex(worldPos, num, num2);
     Vector3f vector   = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
     float num3        = radius;
-    std::int32_t num4 = ceil(num3);
+    std::int32_t num4 = (int) std::ceil(num3);
     std::int32_t num5 = E_WIDTH;
     Vector2f a        = Vector2f(num, num2);
     for (std::int32_t i = num2 - num4; i <= num2 + num4; i++) {

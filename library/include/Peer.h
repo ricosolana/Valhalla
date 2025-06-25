@@ -75,7 +75,6 @@ class Peer
     Vector3f m_pos;
     ZDOID m_characterID;
 
-  public:
     // Visible: 0, Gated: 1
     BitPack<std::uint8_t, 1, 1, 1, 5> m_pack;
 
@@ -105,10 +104,10 @@ class Peer
 
     Peer(Peer const &other) = delete;// copy
 
-    ~Peer()
-    {
-        //VLOG(1) << "~Peer()";
-    }
+    //~Peer()
+    //{
+    //    //VLOG(1) << "~Peer()";
+    //}
 
     avledet::util::UserID GetUserID()
     {

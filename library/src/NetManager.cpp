@@ -179,10 +179,11 @@ void INetManager::OnPeerConnect(Peer &peer)
         //  although unlikely because this commands gets funneled to
         //  valheim commands, which have existed for a while.
         //  The only difference is that some commands are now classified as remote vs local.
+        (void) command;
     });
 
     // Important
-    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [this](Peer *peer, ZDOID characterID) {
+    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [](Peer *peer, ZDOID characterID) {
         // Peer sends 0,0 on after death
 
         //TODO the player only sends this:
@@ -471,6 +472,8 @@ void INetManager::Uninit()
 
 void INetManager::OnConfigLoad(bool reloading)
 {
+    (void) reloading;
+
     bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
 
     if (hasPassword) {

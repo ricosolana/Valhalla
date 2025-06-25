@@ -30,8 +30,6 @@ namespace avledet::util {
 
         using std::chrono::steady_clock;
 
-        static constexpr auto PI = 3.14159265435f;
-
         // It seems someone already had a random implementation made
         // This doesnt bother me because this part was relatively easy anyway
         //  https://gist.github.com/macklinb/a00be6b616cbf20fa95e4227575fe50b
@@ -117,7 +115,7 @@ namespace avledet::util {
         {
 
             // get random
-            float rad = range(0.f, PI * 2.f);
+            float rad = range(0.f, (float) (VUtils::PI * 2.0));
             float x   = std::cos(rad);
             float y   = std::sin(rad);
 

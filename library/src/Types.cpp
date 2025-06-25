@@ -14,8 +14,10 @@ namespace avledet::util {
 
     Color32 Color32::Lerp(Color32 const &other, float t)
     {
-        return Color32(VUtils::Mathf::Lerp(r, other.r, t), VUtils::Mathf::Lerp(g, other.g, t),
-                       VUtils::Mathf::Lerp(b, other.b, t), VUtils::Mathf::Lerp(a, other.a, t));
+        return Color32((avledet::util::Byte) VUtils::Mathf::Lerp((float) r, (float) other.r, t),
+                       (avledet::util::Byte) VUtils::Mathf::Lerp((float) g, (float) other.g, t),
+                       (avledet::util::Byte) VUtils::Mathf::Lerp((float) b, (float) other.b, t),
+                       (avledet::util::Byte) VUtils::Mathf::Lerp((float) a, (float) other.a, t));
     }
 
 }// namespace avledet::util

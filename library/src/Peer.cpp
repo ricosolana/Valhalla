@@ -11,8 +11,8 @@
 //std::string Peer::SALT;
 
 Peer::Peer(ISocket::Ptr socket) :
-    m_socket(std::move(socket)),
-    m_lastPing(std::chrono::steady_clock::now())
+    m_lastPing(std::chrono::steady_clock::now()),
+    m_socket(std::move(socket))
 {
     this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer *self) {
         LOG_INFO(AVL_LOGGER, "RPC_Disconnect");

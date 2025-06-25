@@ -1,5 +1,6 @@
 
 #include <cassert>
+#include <cstdint>
 #include <quill/LogMacros.h>
 #include <stdexcept>
 
@@ -249,7 +250,8 @@ void IZDOManager::Load(DataReader &reader, int version)
             if (zdo->GetPosition().y > 4000)
                 DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
         }
-#endif// AVL_DUNGEON_REGENERATION \
+#endif
+
         //m_objectsByID[zdo->GetID()] = std::move(zdo);
     }
 
@@ -811,7 +813,7 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
 {
     ZoneScoped;
 
-    auto sendQueueSize = peer.m_socket->get_send_queue_size();
+    auto sendQueueSize = (std::uint32_t) peer.m_socket->get_send_queue_size();
 
     // flushing forces a packet send
     auto const threshold = AVL_SETTINGS.zdoMaxCongestion;

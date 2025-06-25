@@ -348,6 +348,7 @@ void IScriptManager::update()
 
 void IScriptManager::unload_script(ScriptInfo &script_info)
 {
+    (void) script_info;
     assert(false);//MUST TEST
     /*
         Release all associated callbacks

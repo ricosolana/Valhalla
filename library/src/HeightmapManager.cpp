@@ -205,7 +205,10 @@ avledet::util::Biome IHeightmapManager::FindBiome(const Vector3f& point) {
 // public static
 bool IHeightmapManager::IsRegenerateQueued(Vector3f point, float radius)
 {
+    (void) point;
+    (void) radius;
     assert(false);
+
     return false;
     //auto heightmaps = GetHeightmaps(point, radius);
     //for (auto&& hmap : heightmaps) {

@@ -18,62 +18,23 @@ class IPrefabManager
   public:
     void Init();
 
-    Prefab const *find_prefab(avledet::util::Hash hash) const
-    {
-        auto &&find = m_prefabs.find(hash);
-        if (find != m_prefabs.end())
-            return &(*find);
-        return nullptr;
-    }
+    Prefab const *find_prefab(avledet::util::Hash hash) const;
 
     // Get a prefab by name
     //	Returns the prefab or null
-    Prefab const *find_prefab(std::string_view name) const
-    {
-        return find_prefab(avledet::util::get_stable_hash(name));
-    }
+    Prefab const *find_prefab(std::string_view name) const;
 
     // Get a definite prefab
     //	Throws if prefab not found
-    Prefab const &get_prefab(avledet::util::Hash hash) const
-    {
-        auto prefab = find_prefab(hash);
-        if (!prefab)
-            throw std::runtime_error("prefab not found");
-        return *prefab;
-    }
+    Prefab const &get_prefab(avledet::util::Hash hash) const;
 
     // Get a definite prefab
     //	Throws if prefab not found
-    Prefab const &get_prefab(std::string_view name) const
-    {
-        return get_prefab(avledet::util::get_stable_hash(name));
-    }
+    Prefab const &get_prefab(std::string_view name) const;
 
-    void Register(std::string_view name, Vector3f scale, Prefab::Flag flags)
-    {
-        avledet::util::Hash hash = avledet::util::get_stable_hash(name);
-        Prefab prefab(name, scale, flags);
-        m_prefabs.emplace(prefab);
+    void Register(std::string name, Vector3f scale, Prefab::Flag flags);
 
-        if (name == "_TerrainCompiler") {
-            assert(prefab.GetObjectType() == avledet::util::ObjectType::TERRAIN);
-        }
-
-        //VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
-    }
-
-    void Register(DataReader &reader)
-    {
-        auto name       = reader.read<std::string_view>();
-        auto localScale = reader.read<Vector3f>();
-        auto flags      = reader.read<Prefab::Flag>();
-
-        auto hash = avledet::util::get_stable_hash(name);
-        Register(name, localScale, flags);
-
-        //VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
-    }
+    void Register(DataReader &reader);
 };
 
 // Manager class for everything related to ZDO-belonging Prefabs and their base data

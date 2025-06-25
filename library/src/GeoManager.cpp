@@ -1,6 +1,8 @@
+#include <cstddef>
 #include <quill/sinks/ConsoleSink.h>
 
 #include "GeoManager.h"
+#include "Types.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "VUtilsMath.h"
@@ -93,12 +95,12 @@ int IGeoManager::FindClosest(std::vector<Vector2f> const &points, Vector2f p, fl
 {
     int result = -1;
     float num  = std::numeric_limits<float>::max();
-    for (int i = 0; i < points.size(); i++) {
+    for (std::size_t i = 0; i < points.size(); i++) {
         if (!(points[i] == p)) {
             //float num2 = p.distance_to(points[i]); // not optimal
             float num2 = p.sq_distance_to(points[i]);
             if (num2 < maxDistance * maxDistance && num2 < num) {
-                result = i;
+                result = (int) i;
                 num    = num2;
             }
         }
@@ -109,7 +111,7 @@ int IGeoManager::FindClosest(std::vector<Vector2f> const &points, Vector2f p, fl
 void IGeoManager::GenerateStreams()
 {
     VUtils::Random::State state(m_streamSeed);
-    int num = 0;
+    //int num = 0;
     for (int i = 0; i < streams; i++) {
         Vector2f vector;
         float num2;
@@ -129,7 +131,7 @@ void IGeoManager::GenerateStreams()
                 river.curveWidth      = num3 / 15;
                 river.curveWavelength = num3 / 20;
                 m_streams.push_back(river);                            // use move / emplacer
-                num++;
+                //num++;
             }
         }
     }
@@ -144,8 +146,8 @@ bool IGeoManager::FindStreamEndPoint(VUtils::Random::State &state, int iteration
     float num2 = maxLength;
     for (int i = 0; i < iterations; i++) {
         num2 -= num;
-        float f         = state.range(0.f, PI * 2.0f);
-        Vector2f vector = start + Vector2f(sin(f), cos(f)) * num2;
+        float f         = state.range(0.f, (float) (VUtils::PI * 2.0));
+        Vector2f vector = start + Vector2f(std::sin(f), std::cos(f)) * num2;
         float height    = GetGenerationHeight(vector.x, vector.y);
         if (height > minHeight && height < maxHeight) {
             end = vector;
@@ -212,17 +214,17 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State &state, std::vector<Ri
 {
 
     std::vector<int> list;
-    for (int i = 0; i < points.size(); i++) {
+    for (std::size_t i = 0; i < points.size(); i++) {
         if (!(points[i] == p) && p.distance_to(points[i]) < maxDistance && !HaveRiver(rivers, p, points[i])
             && IsRiverAllowed(p, points[i], checkStep, heightLimit)) {
-            list.push_back(i);
+            list.push_back((int) i);
         }
     }
 
     if (list.empty())
         return -1;
 
-    return list[state.range(0, list.size())];
+    return list[state.range(0, (int) list.size())];
 }
 
 bool IGeoManager::HaveRiver(std::vector<River> const &rivers, Vector2f p0) const
@@ -267,7 +269,6 @@ void IGeoManager::RenderRivers(VUtils::Random::State &state, std::vector<River> 
     //Dictionary<Vector2i, List<WorldGenerator.RiverPoint>> dictionary;
     avledet::util::Map<Vector2i, std::vector<RiverPoint>> dictionary;
     for (auto &&river : rivers) {
-
         float num                 = river.widthMin / 8.f;
         Vector2f const normalized = (river.p1 - river.p0).normal();
         Vector2f const a(-normalized.y, normalized.x);
@@ -275,7 +276,8 @@ void IGeoManager::RenderRivers(VUtils::Random::State &state, std::vector<River> 
 
         for (float num3 = 0; num3 <= num2; num3 += num) {
             float num4 = num3 / river.curveWavelength;
-            float d    = sin(num4) * sin(num4 * 0.63412f) * sin(num4 * 0.33412f) * river.curveWidth;
+            float d    = std::sin(num4) * std::sin(num4 * 0.63412f) * std::sin(num4 * 0.33412f)
+                      * river.curveWidth;
             float r    = state.range(river.widthMin, river.widthMax);
             Vector2f p = river.p0 + normalized * num3 + a * d;
             AddRiverPoint(dictionary, p, r);
@@ -293,7 +295,7 @@ void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPo
                                 Vector2f p, float r)
 {
     Vector2i riverGrid = GetRiverGrid(p.x, p.y);
-    int num            = ceil(r / riverGridSize);// Mathf.CeilToInt(r / 64);
+    int num            = (int) std::ceil(r / riverGridSize);// Mathf.CeilToInt(r / 64);
     for (int i = riverGrid.y - num; i <= riverGrid.y + num; i++) {
         for (int j = riverGrid.x - num; j <= riverGrid.x + num; j++) {
             Vector2i grid(j, i);
@@ -349,7 +351,7 @@ void IGeoManager::GetWeight(std::vector<RiverPoint> const &points, float wx, flo
     for (auto &&riverPoint : points) {
         float num3 = (riverPoint.p - b).sq_magnitude();
         if (num3 < riverPoint.w2) {
-            float num4 = sqrt(num3);
+            float num4 = std::sqrt(num3);
             float num5 = 1.f - num4 / riverPoint.w;
             outWeight  = std::max(num5, outWeight);
 
@@ -364,7 +366,7 @@ void IGeoManager::GetWeight(std::vector<RiverPoint> const &points, float wx, flo
 
 float IGeoManager::WorldAngle(float wx, float wy)
 {
-    return sin(atan2(wx, wy) * 20.f);
+    return std::sin(std::atan2(wx, wy) * 20.f);
 }
 
 float IGeoManager::GetBaseHeight(float wx, float wy) const
@@ -776,6 +778,7 @@ float IGeoManager::GetBiomeHeight(avledet::util::Biome biome, float wx, float wy
     case avledet::util::Biome::DeepNorth: return GetDeepNorthHeight(wx, wy) * 200.f;
     case avledet::util::Biome::Ocean: return GetOceanHeight(wx, wy) * 200.f;
     case avledet::util::Biome::Mistlands: return GetMistlandsHeight(wx, wy, mask) * 200.f;
+    default: break;
     }
     return 0;
 }

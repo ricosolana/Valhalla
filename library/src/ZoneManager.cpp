@@ -187,6 +187,7 @@ void IZoneManager::PostPrefabInit()
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_SetGlobalKey,
                              [this](Peer *peer, std::string_view name) {
+                                 (void) peer;
                                  // TODO limit keys based on peer and the creature killed
                                  //  have this as a compiler macro
                                  if (m_globalKeys.insert(name).second)
@@ -195,6 +196,7 @@ void IZoneManager::PostPrefabInit()
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RemoveGlobalKey,
                              [this](Peer *peer, std::string_view name) {
+                                 (void) peer;
                                  // TODO limit keys based on peer and the creature killed
                                  if (m_globalKeys.erase(name))
                                      SendGlobalKeys();// Notify clients
@@ -496,7 +498,7 @@ void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint)
                 if (x == zone.x && z == zone.y)
                     continue;
 
-                TryPollGenerateZone(ZoneID(x, z));
+                TryPollGenerateZone(ZoneID((std::int16_t) x, (std::int16_t) z));
             }
         }
     }
@@ -561,7 +563,7 @@ void IZoneManager::PopulateZone(ZoneID zone)
 // private
 Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State &state, Vector3f center, float radius)
 {
-    float f   = state.next_float() * PI * 2.f;
+    float f   = state.next_float() * (float) (VUtils::PI * 2.0);
     float num = state.range(0.f, radius);
     return center + Vector3f(std::sin(f) * num, 0.f, std::cos(f) * num);
 }
@@ -602,8 +604,8 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
 
         // flag should always be true, all vegetation seem to always have a NetView
         //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
-        float maxTilt           = std::cos(zoneVegetation->m_maxTilt * PI / 180.f);
-        float minTilt           = std::cos(zoneVegetation->m_minTilt * PI / 180.f);
+        float maxTilt           = std::cos(zoneVegetation->m_maxTilt * (float) (VUtils::PI / 180.0));
+        float minTilt           = std::cos(zoneVegetation->m_minTilt * (float) (VUtils::PI / 180.0));
         float num6              = UNITS_PER_ZONE * .5f - zoneVegetation->m_groupRadius;
         int const spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
         std::int32_t numSpawned = 0;
@@ -1018,9 +1020,9 @@ ZoneID IZoneManager::GetRandomZone(VUtils::Random::State &state, float range)
     int num = (std::int32_t) range / (std::int32_t) UNITS_PER_ZONE;
     ZoneID zone;
     do {
-        float x = state.range(-num, num);
-        float y = state.range(-num, num);
-        zone    = ZoneID(x, y);
+        float x = (float) state.range(-num, num);
+        float y = (float) state.range(-num, num);
+        zone    = ZoneID((std::int16_t) x, (std::int16_t) y);
     } while (ZoneToWorldPos(zone).magnitude() >= 10000);
     return zone;
 }
@@ -1296,9 +1298,9 @@ bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3
 // formerly GetZone
 ZoneID IZoneManager::WorldToZonePos(Vector3f point)
 {
-    auto x = floor((point.x + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
-    auto y = floor((point.z + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
-    return ZoneID(x, y);
+    auto x = std::floor((point.x + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
+    auto y = std::floor((point.z + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
+    return ZoneID((std::int16_t) x, (std::int16_t) y);
 }
 
 // public

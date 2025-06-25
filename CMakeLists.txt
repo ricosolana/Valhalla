@@ -183,6 +183,25 @@ find_path(GTL_INCLUDE_DIRS "gtl/adv_utils.hpp")
 #
 #################
 
+# Disable warnings for yaml-cpp
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(yaml-cpp PUBLIC -Wno-implicit-int-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter)
+    target_compile_options(yaml-cpp-read PRIVATE -Wno-implicit-int-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter)
+    target_compile_options(yaml-cpp-parse PRIVATE -Wno-implicit-int-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter)
+    target_compile_options(yaml-cpp-sandbox PRIVATE -Wno-implicit-int-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message ("Using GNU compiler: ${CMAKE_CXX_COMPILER_ID}")
+    #target_compile_options(yaml-cpp PUBLIC -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-read PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-parse PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-sandbox PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    ###target_compile_options(${STEAMWORKS_SDK_SOURCE_DIR} PUBLIC -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-read PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-parse PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+    #target_compile_options(yaml-cpp-sandbox PRIVATE -Wno-conversion -Wno-shadow -Wno-unused-parameter -Wno-restrict)
+
+endif ()
+
 # working dir
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data
     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
