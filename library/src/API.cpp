@@ -238,9 +238,9 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
         {
             auto resourceUtilsTable = utilsTable["Resource"].get_or_create<sol::table>();
 
-            //resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<Bytes>(const fs::path&)>(VUtils::Resource::ReadFile);
-            //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const fs::path&)>(VUtils::Resource::ReadFile);
-            //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const fs::path&, bool)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileBytes"] = sol::resolve<std::optional<Bytes>(const std::filesystem::path&)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileString"] = sol::resolve<std::optional<std::string>(const std::filesystem::path&)>(VUtils::Resource::ReadFile);
+            //resourceUtilsTable["ReadFileLines"] = sol::resolve<std::optional<std::vector<std::string>>(const std::filesystem::path&, bool)>(VUtils::Resource::ReadFile);
 
             resourceUtilsTable["as_bytes"]
                     = [](std::string_view path) { return VUtils::Resource::ReadFile<Bytes>(path); };
@@ -251,11 +251,13 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
             };
 
             resourceUtilsTable["write_file"] = sol::overload(
-                    sol::resolve<bool(fs::path const &, Bytes const &)>(VUtils::Resource::WriteFile),
-                    sol::resolve<bool(fs::path const &, std::string_view)>(VUtils::Resource::WriteFile),
-                    sol::resolve<bool(fs::path const &, std::vector<std::string> const &)>(
+                    sol::resolve<bool(std::filesystem::path const &, Bytes const &)>(
                             VUtils::Resource::WriteFile),
-                    sol::resolve<bool(fs::path const &, std::list<std::string> const &)>(
+                    sol::resolve<bool(std::filesystem::path const &, std::string_view)>(
+                            VUtils::Resource::WriteFile),
+                    sol::resolve<bool(std::filesystem::path const &, std::vector<std::string> const &)>(
+                            VUtils::Resource::WriteFile),
+                    sol::resolve<bool(std::filesystem::path const &, std::list<std::string> const &)>(
                             VUtils::Resource::WriteFile));
         }
     }

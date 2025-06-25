@@ -31,11 +31,11 @@ class World
     avledet::util::Bytes SaveMeta();
     //avledet::util::Bytes SaveDB();
 
-    void WriteFileMeta(fs::path const &root);
-    void WriteFileDB(fs::path const &root);
-    void LoadFileDB(fs::path const &root);
-    void CopyCompressDB(fs::path const &root);
-    void WriteFiles(fs::path const &root);
+    void WriteFileMeta(std::filesystem::path const &root);
+    void WriteFileDB(std::filesystem::path const &root);
+    void LoadFileDB(std::filesystem::path const &root);
+    void CopyCompressDB(std::filesystem::path const &root);
+    void WriteFiles(std::filesystem::path const &root);
 
     void WriteFileMeta();
     void WriteFileDB();
@@ -54,20 +54,20 @@ class IWorldManager
 
     // Get root path of worlds
     //  threadsafe
-    fs::path GetWorldsPath() const;
+    std::filesystem::path GetWorldsPath() const;
     // Get meta path of world
     //  threadsafe
-    //fs::path GetWorldMetaPath(const std::string& name) const;
+    //std::filesystem::path GetWorldMetaPath(const std::string& name) const;
     // Get db path of world
     //  threadsafe
-    //fs::path GetWorldDBPath(const std::string& name) const;
+    //std::filesystem::path GetWorldDBPath(const std::string& name) const;
 
-    bool LoadWorldMeta(fs::path const &root);
+    bool LoadWorldMeta(std::filesystem::path const &root);
 
     std::unique_ptr<World> RetrieveWorld(std::string_view name, std::string_view fallbackSeedName) const;
 
     avledet::util::Bytes SaveWorldDB() const;
-    //void LoadFileWorldDB(const fs::path& path) const;
+    //void LoadFileWorldDB(const std::filesystem::path& path) const;
 
     // Create a copy of a world by name
     //  threadsafe
@@ -76,7 +76,7 @@ class IWorldManager
     // Write the db of the current world to disk
     //  The world is only saved
     //  Threadsafe
-    //void WriteFileWorldDB(const fs::path& path, bool sync);
+    //void WriteFileWorldDB(const std::filesystem::path& path, bool sync);
 
     // Write the db of the current world to disk
     //  This is the go-to method to save the world to disk

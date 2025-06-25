@@ -2,11 +2,14 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstddef>
 #include <iostream>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
 #include <quill/Logger.h>
+#include <zconf.h>
 #include <zlib.h>
 #include <zstd.h>
 
@@ -17,7 +20,6 @@
     #include <dpp/dpp.h>
 #endif
 
-namespace fs = std::filesystem;
 using namespace std::chrono_literals;
 
 // https://stackoverflow.com/a/17350413
@@ -201,7 +203,7 @@ class ZStdCompressor
     }
 
   public:
-    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::size_t inSize)
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::size_t inSize) const
     {
         avledet::util::Bytes out;
         out.resize(ZSTD_compressBound(inSize));
@@ -217,7 +219,7 @@ class ZStdCompressor
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const &in)
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const &in) const
     {
         return Compress(in.data(), in.size());
     }
@@ -262,6 +264,7 @@ class ZStdDecompressor
         this->m_ctx  = other.m_ctx;
         this->m_dict = other.m_dict;
         other.m_ctx  = nullptr;
+        other.m_dict = nullptr;
     }
 
     ~ZStdDecompressor()
@@ -271,7 +274,7 @@ class ZStdDecompressor
     }
 
   public:
-    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, std::size_t inSize)
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, std::size_t inSize) const
     {
         auto size = ZSTD_getFrameContentSize(in, inSize);
         if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN)
@@ -288,20 +291,21 @@ class ZStdDecompressor
                 return std::nullopt;
         }
 
-        auto status = this->m_dict ? ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in,
+        auto status_size = this->m_dict
+                                   ? ZSTD_decompress_usingDDict(this->m_ctx, out.data(), out.size(), in,
                                                                 inSize, this->m_dict)
                                    : ZSTD_decompressDCtx(this->m_ctx, out.data(), out.size(), in, inSize);
 
-        if (ZSTD_isError(status))
+        if (ZSTD_isError(status_size))
             return std::nullopt;
 
-        assert(status == out.size());
+        assert(status_size == out.size());
 
-        out.resize(status);
+        out.resize(status_size);
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const &in)
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const &in) const
     {
         return Decompress(in.data(), in.size());
     }
@@ -352,10 +356,11 @@ class Deflater
     }
 
   public:
-    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::size_t inSize)
+    std::optional<avledet::util::Bytes> Compress(avledet::util::Byte const *in, std::uint32_t inSize) const
     {
-        if (inSize == 0)
+        if (inSize == 0) {
             return std::nullopt;
+        }
 
         avledet::util::Bytes out;
 
@@ -369,8 +374,9 @@ class Deflater
         //  - out of memory (unlikely)
         //  - incompatible version (should be fine if using the init macro)
         // https://stackoverflow.com/a/72499721
-        if (deflateInit2(&zs, m_level, Z_DEFLATED, m_windowBits, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+        if (deflateInit2(&zs, m_level, Z_DEFLATED, m_windowBits, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
             return std::nullopt;
+        }
 
         // Set output buffer size to an upper bound compressed size
         // Might throw if out of memory (unlikely)
@@ -379,7 +385,7 @@ class Deflater
         zs.avail_in  = (uInt) inSize;
         zs.next_in   = (Bytef *) in;
         zs.next_out  = (Bytef *) out.data();
-        zs.avail_out = out.size();
+        zs.avail_out = (uInt) out.size();
 
         auto r = deflate(&zs, Z_FINISH);
         if (r != Z_STREAM_END) {
@@ -391,9 +397,13 @@ class Deflater
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Compress(avledet::util::Bytes const &in)
+    std::optional<avledet::util::Bytes> Compress(avledet::util::ByteView const &in) const
     {
-        return Compress(in.data(), in.size());
+        if (in.size() > (std::size_t) std::numeric_limits<uInt>::max()) {
+            return std::nullopt;
+        }
+
+        return Compress(in.data(), (std::uint32_t) in.size());
     }
 };
 
@@ -438,7 +448,7 @@ class Inflater
     }
 
   public:
-    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, unsigned int inSize)
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::Byte const *in, std::uint32_t inSize) const
     {
         if (inSize == 0)
             return std::nullopt;
@@ -466,7 +476,7 @@ class Inflater
             stream.next_out = (Bytef *) (out.data() + stream.total_out);
 
             // Set the available output capacity
-            stream.avail_out = out.size() - stream.total_out;
+            stream.avail_out = (uInt) (out.size() - stream.total_out);
 
             // Inflate another chunk.
             int err = inflate(&stream, Z_SYNC_FLUSH);
@@ -485,9 +495,13 @@ class Inflater
         return out;
     }
 
-    std::optional<avledet::util::Bytes> Decompress(avledet::util::Bytes const &in)
+    std::optional<avledet::util::Bytes> Decompress(avledet::util::ByteView const &in) const
     {
-        return Decompress(in.data(), in.size());
+        if (in.size() > (std::size_t) std::numeric_limits<uInt>::max()) {
+            return std::nullopt;
+        }
+
+        return Decompress(in.data(), (std::uint32_t) in.size());
     }
 };
 
@@ -563,9 +577,9 @@ namespace VUtils {
     // Returns the smallest 1-value bitshift
     template<typename Enum>
         requires std::is_enum_v<Enum>
-    constexpr std::uint8_t GetShift(Enum value)
+    constexpr int GetShift(Enum value)
     {
-        std::uint8_t shift = -1;
+        int shift = -1;
 
         auto bits = std::to_underlying(value);
         for (; bits; shift++) {
@@ -578,24 +592,24 @@ namespace VUtils {
     // https://github.com/Zunawe/md5-c/blob/main/md5.h
     //   borrowed from
     // MD5
-    typedef struct
-    {
-        std::uint64_t size;     // Size of input in bytes
-        std::uint32_t buffer[4];// Current accumulation of hash
-        std::uint8_t input[64]; // Input to be used in the next step
-        std::uint8_t digest[16];// Result of algorithm
-    } MD5Context;
+    ////typedef struct
+    ////{
+    ////    std::uint64_t size;     // Size of input in bytes
+    ////    std::uint32_t buffer[4];// Current accumulation of hash
+    ////    std::uint8_t input[64]; // Input to be used in the next step
+    ////    std::uint8_t digest[16];// Result of algorithm
+    ////} MD5Context;
 
-    void md5Init(MD5Context *ctx);
+    ////void md5Init(MD5Context *ctx);
 
-    void md5Update(MD5Context *ctx, std::uint8_t *input_buffer, std::size_t input_len);
+    ////void md5Update(MD5Context *ctx, std::uint8_t *input_buffer, std::size_t input_len);
 
-    void md5Finalize(MD5Context *ctx);
+    ////void md5Finalize(MD5Context *ctx);
 
-    void md5Step(std::uint32_t *buffer, std::uint32_t *input);
+    ////void md5Step(std::uint32_t *buffer, std::uint32_t *input);
 
-    // Calculate the md5 hash of a char buffer
-    void md5(char const *in, std::size_t inSize, std::uint8_t *out16);
+    ////// Calculate the md5 hash of a char buffer
+    ////void md5(char const *in, std::size_t inSize, std::uint8_t *out16);
 
 
     // Set an environment variable

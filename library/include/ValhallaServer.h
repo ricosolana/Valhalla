@@ -57,7 +57,7 @@ class IAvledet
     WorldTime m_worldTime {};
     double m_worldTimeMultiplier  = 1;
     double m_serverTimeMultiplier = 1;
-    fs::file_time_type m_settingsLastTime {};
+    std::filesystem::file_time_type m_settingsLastTime {};
 
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
     bool m_playerSleep {};

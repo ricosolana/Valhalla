@@ -42,7 +42,8 @@ IScriptManager *ScriptManager()
     return SCRIPT_MANAGER.get();
 }
 
-std::tuple<IScriptManager::ScriptInfo, std::string> IScriptManager::load_file_script(fs::path script_root)
+std::tuple<IScriptManager::ScriptInfo, std::string>
+IScriptManager::load_file_script(std::filesystem::path script_root)
 {
     YAML::Node loadNode;
 
@@ -61,7 +62,7 @@ std::tuple<IScriptManager::ScriptInfo, std::string> IScriptManager::load_file_sc
     auto name = loadNode["name"].as<std::string>();
 
     auto entry_path = script_root / raw_entry;
-    if (!fs::exists(entry_path)) {
+    if (!std::filesystem::exists(entry_path)) {
         throw std::runtime_error("script entry file not found, skipping...");
     }
 
@@ -184,13 +185,13 @@ void IScriptManager::PostInit()
     load_userdata();
 
     std::error_code ec;
-    fs::create_directories(AVLEDET_SCRIPTS_PATH, ec);
+    std::filesystem::create_directories(AVLEDET_SCRIPTS_PATH, ec);
 
     if (ec)
         return;
 
-    auto sorted = fs::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
-                  | std::views::filter([](fs::directory_entry e) -> bool {
+    auto sorted = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
+                  | std::views::filter([](std::filesystem::directory_entry e) -> bool {
                         return e.is_directory()
                                && !std::string_view(e.path().filename().c_str()).starts_with("--");
                     })
@@ -200,7 +201,7 @@ void IScriptManager::PostInit()
     for (auto const &dir : sorted) {
         try {
 
-            //auto&& absolute = fs::absolute(dir.path());
+            //auto&& absolute = std::filesystem::absolute(dir.path());
             //dir.path().
             //auto &&dirname = dir.path().filename().string();
 

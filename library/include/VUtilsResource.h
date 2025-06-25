@@ -86,7 +86,7 @@ namespace VUtils::Resource {
         requires(VUtils::Traits::is_iterable<Iterable>
                  && !std::is_same_v<typename Iterable::value_type, std::string_view>
                  && VUtils::Traits::is_iterable<typename Iterable::value_type>)
-    std::optional<Iterable> ReadFile(fs::path const &path, bool includeBlanks = false)
+    std::optional<Iterable> ReadFile(std::filesystem::path const &path, bool includeBlanks = false)
     {
         auto opt = ReadFile<std::string>(path);
         if (!opt)
@@ -126,7 +126,8 @@ namespace VUtils::Resource {
     //  This method is the most preferred over the Iterable<string> method
     template<typename Iterable = std::vector<std::string_view>>
         requires(VUtils::Traits::is_iterable<Iterable>)
-    std::optional<Iterable> ReadFile(fs::path const &path, std::string &out, bool includeBlanks = false)
+    std::optional<Iterable> ReadFile(std::filesystem::path const &path, std::string &out,
+                                     bool includeBlanks = false)
     {
         {
             auto opt = ReadFile<std::string>(path);
@@ -144,7 +145,7 @@ namespace VUtils::Resource {
     template<typename Iterable> requires
         (VUtils::Traits::is_iterable<Iterable>
             && VUtils::Traits::has_key_type_v<Iterable>)
-        std::optional<Iterable> ReadFile(const fs::path& path) 
+        std::optional<Iterable> ReadFile(const std::filesystem::path& path) 
     {
         auto opt = ReadFile<std::string>(path);
         if (opt) {
@@ -161,9 +162,9 @@ namespace VUtils::Resource {
     }*/
 
 
-    bool WriteFile(fs::path const &path, avledet::util::Byte const *buf, std::size_t size);
-    bool WriteFile(fs::path const &path, avledet::util::Bytes const &buffer);
-    bool WriteFile(fs::path const &path, std::string_view str);
+    bool WriteFile(std::filesystem::path const &path, avledet::util::Byte const *buf, std::size_t size);
+    bool WriteFile(std::filesystem::path const &path, avledet::util::Bytes const &buffer);
+    bool WriteFile(std::filesystem::path const &path, std::string_view str);
 
     // Write a Container<std::string> as lines to a file
     template<typename Iterable>

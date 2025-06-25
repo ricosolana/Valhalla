@@ -9,9 +9,9 @@ class Prefab
   public:
     struct Instance
     {
-        Quaternion m_rot;                  // 16 bytes
-        avledet::util::CSU::Vector3f m_pos;// 12 bytes
-        avledet::util::Hash m_prefabHash;  // 4 bytes
+        avledet::util::CSU::Quaternion m_rot;// 16 bytes
+        avledet::util::CSU::Vector3f m_pos;  // 12 bytes
+        avledet::util::Hash m_prefabHash;    // 4 bytes
 
         Prefab const &GetPrefab() const;
     };
@@ -82,54 +82,18 @@ class Prefab
   public:
     Prefab(std::string name, avledet::util::CSU::Vector3f const &localScale, Flag flags);
 
-    //Prefab(Prefab const &other) = default;
-
-    bool AllFlagsPresent(Flag prefabFlags) const noexcept
-    {
-        return prefabFlags == Flag::NONE
-               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
-                          == std::to_underlying(prefabFlags);
-    }
-
-    bool AnyFlagsPresent(Flag prefabFlags) const noexcept
-    {
-        return prefabFlags == Flag::NONE
-               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
-                          != std::to_underlying(Flag::NONE);
-    }
-
-    bool AllFlagsAbsent(Flag prefabFlags) const noexcept
-    {
-        return prefabFlags == Flag::NONE
-               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
-                          == std::to_underlying(Flag::NONE);
-    }
-
-    bool AnyFlagsAbsent(Flag prefabFlags) const noexcept
-    {
-        return prefabFlags == Flag::NONE
-               || (std::to_underlying(m_flags) & std::to_underlying(prefabFlags))
-                          != std::to_underlying(prefabFlags);
-    }
+    bool AllFlagsPresent(Flag prefabFlags) const noexcept;
+    bool AnyFlagsPresent(Flag prefabFlags) const noexcept;
+    bool AllFlagsAbsent(Flag prefabFlags) const noexcept;
+    bool AnyFlagsAbsent(Flag prefabFlags) const noexcept;
 
     bool IsDistant() const noexcept;
     bool IsPersistent() const noexcept;
     avledet::util::ObjectType GetObjectType() const noexcept;
 
-    bool operator==(Prefab const &other) const noexcept
-    {
-        return this->m_hash == other.m_hash;
-    }
-
-    bool operator==(avledet::util::Hash other) const noexcept
-    {
-        return this->m_hash == other;
-    }
-
-    bool operator==(std::string_view other) const noexcept
-    {
-        return this->m_hash == avledet::util::get_stable_hash(other);
-    }
+    bool operator==(Prefab const &other) const noexcept;
+    bool operator==(avledet::util::Hash other) const noexcept;
+    bool operator==(std::string_view other) const noexcept;
 };
 
 template<>

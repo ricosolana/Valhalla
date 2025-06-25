@@ -207,24 +207,26 @@ void IScriptManager::load_userdata_types()
     this->new_usertype<ZStdCompressor>(
             "ZStdCompressor",
             sol::constructors<ZStdCompressor(int), ZStdCompressor(), ZStdCompressor(Bytes const &)>(),
-            "compress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdCompressor::Compress));
+            "compress", sol::resolve<std::optional<Bytes>(Bytes const &) const>(&ZStdCompressor::Compress));
 
     this->new_usertype<ZStdDecompressor>(
             "ZStdDecompressor", sol::constructors<ZStdDecompressor(), ZStdDecompressor(Bytes const &)>(),
-            "decompress", sol::resolve<std::optional<Bytes>(Bytes const &)>(&ZStdDecompressor::Decompress));
+            "decompress",
+            sol::resolve<std::optional<Bytes>(Bytes const &) const>(&ZStdDecompressor::Decompress));
 
 
-    this->new_usertype<Deflater>("Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)),
-                                 "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
-                                 sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
-                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Deflater::Compress));
+    this->new_usertype<Deflater>(
+            "Deflater", "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)), "zlib",
+            sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), "raw",
+            sol::property(sol::resolve<Deflater()>(Deflater::Raw)), "compress",
+            sol::resolve<std::optional<Bytes>(ByteView const &) const>(&Deflater::Compress));
 
-    this->new_usertype<Inflater>("Inflater",
-                                 //"any", sol::property(Inflater::Any),
-                                 "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz),
-                                 "auto", sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw),
-                                 "decompress",
-                                 sol::resolve<std::optional<Bytes>(Bytes const &)>(&Inflater::Decompress));
+    this->new_usertype<Inflater>(
+            "Inflater",
+            //"any", sol::property(Inflater::Any),
+            "zlib", sol::property(Inflater::Gz), "gz", sol::property(Inflater::Gz), "auto",
+            sol::property(Inflater::Auto), "raw", sol::property(Inflater::Raw), "decompress",
+            sol::resolve<std::optional<Bytes>(ByteView const &) const>(&Inflater::Decompress));
 }
 
 #endif

@@ -43,8 +43,8 @@ int main(int argc, char **argv)
     /*
     // I think ONLY windows requires this...
     {
-        std::string path = (fs::current_path() / AVLEDET_LUA_PATH).string();
-        std::string path2 = (fs::current_path() / AVLEDET_SCRIPTS_PATH).string();
+        std::string path = (std::filesystem::current_path() / AVLEDET_LUA_PATH).string();
+        std::string path2 = (std::filesystem::current_path() / AVLEDET_SCRIPTS_PATH).string();
         if (!VUtils::SetEnv("LUA_PATH",
             path + "/?.lua;"
             + path + "/?/?.lua;"
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     }
 
     {
-        std::string path = (fs::current_path() / AVLEDET_LUA_CPATH).string();
+        std::string path = (std::filesystem::current_path() / AVLEDET_LUA_CPATH).string();
         if (!VUtils::SetEnv("LUA_CPATH",
             path + "/?.dll;"
             + path + "/?/?.dll"))

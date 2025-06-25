@@ -10,40 +10,6 @@ IPrefabManager *PrefabManager()
     return PREFAB_MANAGER.get();
 }
 
-Prefab const &Prefab::Instance::GetPrefab() const
-{
-    return PrefabManager()->get_prefab(m_prefabHash);
-}
-
-Prefab::Prefab(std::string name, avledet::util::CSU::Vector3f const &localScale, Flag flags) :
-    m_name(std::move(name)),
-    m_localScale(localScale),
-    m_flags(flags),
-    m_hash(avledet::util::get_stable_hash(m_name))//dependent assign, WATCH THE ORDER!
-{
-    assert(!m_name.empty());
-    assert(m_hash);
-}
-
-bool Prefab::IsDistant() const noexcept
-{
-    return AllFlagsPresent(Flag::DISTANT);
-}
-
-bool Prefab::IsPersistent() const noexcept
-{
-    return AllFlagsPresent(Flag::PERSISTENT);
-}
-
-avledet::util::ObjectType Prefab::GetObjectType() const noexcept
-{
-    unsigned int v = (1 & AllFlagsPresent(Flag::TYPE1)) | ((1 & AllFlagsPresent(Flag::TYPE2)) << 1);
-
-    assert(v <= 0b11);
-
-    return (avledet::util::ObjectType) v;
-}
-
 void IPrefabManager::Init()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing PrefabManager");
@@ -70,9 +36,7 @@ void IPrefabManager::Init()
         Register(pkg);
     }
 
-    //assert(count == (std::int32_t) m_prefabs.size());
-
-    LOG_NOTICE(AVL_LOGGER, "Loaded {} prefabs", count);
+    LOG_NOTICE(AVL_LOGGER, "Loaded {}/{} prefabs", m_prefabs.size(), count);
 }
 
 Prefab const *IPrefabManager::find_prefab(avledet::util::Hash hash) const
@@ -110,22 +74,18 @@ Prefab const &IPrefabManager::get_prefab(std::string_view name) const
 void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)
 {
     avledet::util::Hash hash = avledet::util::get_stable_hash(name);
-    Prefab prefab(name, scale, flags);
-    auto &&emp = m_prefabs.emplace(prefab);
+    auto &&emp               = m_prefabs.emplace(Prefab(std::move(name), scale, flags));
+    auto &&prefab            = *emp.first;
+
+    assert(!prefab.m_name.empty());
 
     if (!emp.second) {
-        LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", name);
+        LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", prefab.m_name);
     }
-
-    //assert(emp.second);//hmm, why wasnt this inserted?
-
-    assert(!name.empty());
 
     if (name == "_TerrainCompiler") {
         assert(prefab.GetObjectType() == avledet::util::ObjectType::TERRAIN);
     }
-
-    //VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 }
 
 void IPrefabManager::Register(DataReader &reader)
@@ -134,8 +94,5 @@ void IPrefabManager::Register(DataReader &reader)
     auto localScale = reader.read<Vector3f>();
     auto flags      = reader.read<Prefab::Flag>();
 
-    //auto hash = avledet::util::get_stable_hash(name);
     Register(std::move(name), localScale, flags);
-
-    //VLOG(1) << "'" << prefab.m_name << "', '" << prefab.m_hash << "'";
 }

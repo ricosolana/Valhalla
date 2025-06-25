@@ -27,6 +27,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/NetManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetSocketSteam.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Peer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Prefab.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/PrefabManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/RandomEventManager.cpp

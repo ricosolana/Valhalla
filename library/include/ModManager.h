@@ -168,7 +168,7 @@ class IScriptManager
         //{
         //    auto idx = m_origin.find("://") + sizeof("://");
         //    if (m_origin.starts_with("file://")) {
-        //        fs::path path = m_origin.substr(idx);
+        //        std::filesystem::path path = m_origin.substr(idx);
         //        return path.filename().string();
         //    } else {
         //        // assume web URL
@@ -176,11 +176,11 @@ class IScriptManager
         //    }
         //}
 
-        //fs::path get_entry_path() const
+        //std::filesystem::path get_entry_path() const
         //{
         //    auto idx = m_origin.find("://") + sizeof("://");
         //    if (m_origin.starts_with("file")) {
-        //        fs::path path = m_origin.substr(idx);
+        //        std::filesystem::path path = m_origin.substr(idx);
         //        return path;
         //    } else {
         //        // assume web URL
@@ -228,7 +228,7 @@ class IScriptManager
   public:
     void load_userdata();
 
-    std::tuple<ScriptInfo, std::string> load_file_script(fs::path script_root);
+    std::tuple<ScriptInfo, std::string> load_file_script(std::filesystem::path script_root);
     void execute(ScriptInfo const &info, std::string const &code);//dynamic or mobile script
 
     // my immutable usertype

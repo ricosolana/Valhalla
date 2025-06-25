@@ -583,7 +583,7 @@ void IAvledet::LoadFiles(bool reloading)
 #endif
 
     std::error_code err;
-    this->m_settingsLastTime = fs::last_write_time("server.yml", err);
+    this->m_settingsLastTime = std::filesystem::last_write_time("server.yml", err);
 }
 
 void IAvledet::SaveFiles()
@@ -809,7 +809,7 @@ void IAvledet::Start()
     if (AVL_SETTINGS.worldRecording) {
         World* world = WorldManager()->GetWorld();
         VUtils::Resource::WriteFile(
-            fs::path(AVL_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
+            std::filesystem::path(AVL_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
             WorldManager()->SaveWorldDB());
     }*/
 
@@ -1019,7 +1019,7 @@ void IAvledet::PeriodUpdate()
 
 
     std::error_code err;
-    auto lastWriteTime = fs::last_write_time("server.yml", err);
+    auto lastWriteTime = std::filesystem::last_write_time("server.yml", err);
     if (lastWriteTime != this->m_settingsLastTime) {
         // reload the file
         LOG_INFO(AVL_LOGGER, "Config change detected!");

@@ -88,9 +88,9 @@ avledet::util::Bytes World::SaveDB() {
 }*/
 
 
-void World::WriteFileMeta(fs::path const &root)
+void World::WriteFileMeta(std::filesystem::path const &root)
 {
-    fs::create_directories(root);
+    std::filesystem::create_directories(root);
 
     avledet::util::Bytes bytes = SaveMeta();
 
@@ -104,9 +104,9 @@ void World::WriteFileMeta(fs::path const &root)
     }
 }
 
-void World::WriteFileDB(fs::path const &root)
+void World::WriteFileDB(std::filesystem::path const &root)
 {
-    fs::create_directories(root);
+    std::filesystem::create_directories(root);
 
     auto startTime(std::chrono::steady_clock::now());
     avledet::util::Bytes bytes = WorldManager()->SaveWorldDB();
@@ -122,7 +122,7 @@ void World::WriteFileDB(fs::path const &root)
     }
 }
 
-void World::LoadFileDB(fs::path const &root)
+void World::LoadFileDB(std::filesystem::path const &root)
 {
     auto now(std::chrono::steady_clock::now());
 
@@ -179,11 +179,11 @@ void World::LoadFileDB(fs::path const &root)
     }
 }
 
-void World::CopyCompressDB(fs::path const &root)
+void World::CopyCompressDB(std::filesystem::path const &root)
 {
     auto path = root / (m_name + ".db");
 
-    if (fs::exists(path)) {
+    if (std::filesystem::exists(path)) {
         if (auto oldSave = VUtils::Resource::ReadFile<avledet::util::Bytes>(path)) {
             auto compressed = ZStdCompressor().Compress(*oldSave);
             if (!compressed) {
@@ -204,7 +204,7 @@ void World::CopyCompressDB(fs::path const &root)
     }
 }
 
-void World::WriteFiles(fs::path const &root)
+void World::WriteFiles(std::filesystem::path const &root)
 {
     WriteFileMeta(root);
     WriteFileDB(root);
@@ -236,22 +236,22 @@ World *IWorldManager::GetWorld()
     return m_world.get();
 }
 
-fs::path IWorldManager::GetWorldsPath() const
+std::filesystem::path IWorldManager::GetWorldsPath() const
 {
     return "./worlds";
 }
 
 /*
-fs::path IWorldManager::GetWorldMetaPath(const std::string& name) const {
+std::filesystem::path IWorldManager::GetWorldMetaPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".fwl");
 }
 
-fs::path IWorldManager::GetWorldDBPath(const std::string& name) const {
+std::filesystem::path IWorldManager::GetWorldDBPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".db");
 }*/
 
 
-bool IWorldManager::LoadWorldMeta(fs::path const &root)
+bool IWorldManager::LoadWorldMeta(std::filesystem::path const &root)
 {
     if (auto opt
         = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_SETTINGS.worldName + ".fwl"))) {
@@ -322,7 +322,7 @@ avledet::util::Bytes IWorldManager::SaveWorldDB() const
 }
 
 /*
-void IWorldManager::WriteFileWorldDB(const fs::path& path, bool sync) const {
+void IWorldManager::WriteFileWorldDB(const std::filesystem::path& path, bool sync) const {
 	if (m_saveThread.joinable()) {
 		//LOG(WARNING) << "Save thread is still active, joining...";
 		m_saveThread.join();
@@ -362,7 +362,7 @@ void IWorldManager::WriteFileWorldDB(bool sync) {
 }*/
 
 /*
-void IWorldManager::WriteWorldFiles(const fs::path& root) {
+void IWorldManager::WriteWorldFiles(const std::filesystem::path& root) {
 	m_world->WriteFileMeta(root);
 	m_world->WriteFileDB(root);
 }*/
@@ -376,8 +376,8 @@ void IWorldManager::PostZoneInit()
 
 #ifdef AVL_OPTION_ENABLE_CAPTURE
     if (AVL_SETTINGS.packetMode == PacketMode::PLAYBACK) {
-        fs::path root = fs::path(AVL_CAPTURE_PATH) / m_world->m_name
-                        / std::to_string(AVL_SETTINGS.packetPlaybackSessionIndex);
+        std::filesystem::path root = std::filesystem::path(AVL_CAPTURE_PATH) / m_world->m_name
+                                     / std::to_string(AVL_SETTINGS.packetPlaybackSessionIndex);
 
         if (LoadWorldMeta(root))
             m_world->LoadFileDB(root);
@@ -396,10 +396,10 @@ void IWorldManager::PostInit()
     if (AVL_SETTINGS.packetMode == PacketMode::CAPTURE) {
         // then save world as a copy to captures
         auto world(WorldManager()->GetWorld());
-        fs::path root = fs::path(AVL_CAPTURE_PATH) / world->m_name
-                        / std::to_string(AVL_SETTINGS.packetCaptureSessionIndex);
+        std::filesystem::path root = std::filesystem::path(AVL_CAPTURE_PATH) / world->m_name
+                                     / std::to_string(AVL_SETTINGS.packetCaptureSessionIndex);
 
-        fs::create_directories(root);
+        std::filesystem::create_directories(root);
 
         // save world
         world->WriteFiles(root);
