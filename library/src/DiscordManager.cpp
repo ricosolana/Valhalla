@@ -615,7 +615,7 @@ void IDiscordManager::period_update()
 	}*/
 }
 
-Peer *IDiscordManager::find_peer(dpp::snowflake id)
+Peer::Ptr IDiscordManager::find_peer(dpp::snowflake id)
 {
     for (auto &&pair : m_linked_accounts) {
         if (pair.second == id) {
@@ -625,7 +625,7 @@ Peer *IDiscordManager::find_peer(dpp::snowflake id)
     return nullptr;
 }
 
-Peer *IDiscordManager::unlink_peer(dpp::snowflake id)
+Peer::Ptr IDiscordManager::unlink_peer(dpp::snowflake id)
 {
     for (auto &&itr = m_linked_accounts.begin(); itr != m_linked_accounts.end();) {
         if (itr->second == id) {

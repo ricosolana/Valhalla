@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include <ankerl/unordered_dense.h>
 #include <quill/Backend.h>
 #include <quill/bundled/fmt/ostream.h>
 #include <quill/bundled/fmt/ranges.h>
@@ -12,8 +13,6 @@
 #include <quill/Logger.h>
 #include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
-
-#include <ankerl/unordered_dense.h>
 
 #include "BitPack.h"
 #include "CompileSettings.h"

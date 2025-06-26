@@ -39,9 +39,9 @@ class IDiscordManager
     //    return "";
     //}
 
-    Peer *find_peer(dpp::snowflake id);
+    Peer::Ptr find_peer(dpp::snowflake id);
 
-    Peer *unlink_peer(dpp::snowflake id);
+    Peer::Ptr unlink_peer(dpp::snowflake id);
 
     void send_webhook_message(std::string_view msg);
 };

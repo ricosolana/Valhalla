@@ -15,13 +15,13 @@ Peer::Peer(ISocket::Ptr socket) :
     m_lastPing(std::chrono::steady_clock::now()),
     m_socket(std::move(socket))
 {
-    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer *self) {
+    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer::Ptr self) {
         LOG_INFO(AVL_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 
-    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer *rpc) {
-        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer *rpc, DataReader reader) {
+    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer::Ptr rpc) {
+        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer::Ptr rpc, DataReader reader) {
             rpc->m_characterID.set_user_id(reader.read<std::int64_t>());
 #if AVL_IS_ON(AVL_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)
@@ -71,7 +71,7 @@ Peer::Peer(ISocket::Ptr socket) :
             if (NetManager()->FindPeerByUserID(rpc->GetUserID()) || NetManager()->FindPeerByName(rpc->m_name))
                 return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
 
-            NetManager()->OnPeerConnect(*rpc);
+            NetManager()->OnPeerConnect(rpc);
 
             return false;
         });
@@ -149,7 +149,7 @@ void Peer::InternalInvoke(avledet::util::Hash hash, DataReader &reader)
     //this->internal_invoke(self, hash, reader);
 
     //TODO it is possible that there are header issues with ext...
-    this->internal_invoke(this, hash, reader);
+    this->internal_invoke(shared_from_this(), hash, reader);
     assert(false);
 }
 

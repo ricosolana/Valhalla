@@ -15,6 +15,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "CompileSettings.h"
+#include "Vector.h"
 #include "VUtilsTraits.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -146,7 +147,12 @@ namespace avledet::util {
         TERRAIN
     };
 
+    using ZoneID = Vector2s;
+
 }// namespace avledet::util
+
+// TODO migrate away...
+using ZoneID = avledet::util::ZoneID;
 
 template<class T>
 //requires avledet::util::traits::is_iterable<T>

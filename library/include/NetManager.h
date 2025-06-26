@@ -19,8 +19,9 @@ class INetManager
 
   private:
     avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
-    std::vector<std::unique_ptr<Peer>> m_connectedPeers;
-    std::vector<Peer *> m_onlinePeers;
+    std::vector<Peer::Ptr>
+            m_connectedPeers;// TODO condense this down to 1 list, use m_online BOOL instead / flag
+    std::vector<Peer::Ptr> m_onlinePeers;// TODO remove this (use above^)
     std::list<std::pair<std::string, std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>>
             m_sortedSessions;
     std::unique_ptr<IAcceptor> m_acceptor;
@@ -29,21 +30,14 @@ class INetManager
     std::string m_passwordHash;
     std::string m_passwordSalt;
 
-    /*
-        packet statistical capture
-    */
-
-    std::jthread m_adetect_writer;
-
-
   private:
     void SendDisconnect();
     void SendPlayerList();
     void SendNetTime();
-    void SendPeerInfo(Peer &peer);
+    void SendPeerInfo(Peer::Ptr peer);
 
-    void OnPeerQuit(Peer &peer);
-    void OnPeerDisconnect(Peer &peer);
+    void OnPeerQuit(Peer::Ptr peer);
+    void OnPeerDisconnect(Peer::Ptr peer);
 
   public:
     void PostInit();
@@ -53,18 +47,18 @@ class INetManager
     void OnConfigLoad(bool reloading);
 
     // Finds a peer by either name, uuid or host
-    Peer *FindPeer(std::string_view any);
-    Peer *FindPeerByUserID(avledet::util::UserID uuid);
-    Peer *FindPeerByName(std::string_view name);
-    Peer *FindPeerByHost(std::string_view host);
+    Peer::Ptr FindPeer(std::string_view any);
+    Peer::Ptr FindPeerByUserID(avledet::util::UserID uuid);
+    Peer::Ptr FindPeerByName(std::string_view name);
+    Peer::Ptr FindPeerByHost(std::string_view host);
 
-    void OnPeerConnect(Peer &peer);
+    void OnPeerConnect(Peer::Ptr peer);
 
     // Kick a player by identifier
-    Peer *Kick(std::string_view user);
+    Peer::Ptr Kick(std::string_view user);
 
     // Ban a player by identifier
-    Peer *Ban(std::string_view user);
+    Peer::Ptr Ban(std::string_view user);
 
     // Unban a player by identifier
     bool Unban(std::string_view user);

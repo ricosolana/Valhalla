@@ -3,9 +3,10 @@
 // reverse engineered implementation of Unity Random and associated functions
 // these are algorithms only, not steps, so shoo patent lawyers!
 
+#include <cstdint>
+
 #include "Vector.h"
 #include "VUtils.h"
-#include <cstdint>
 
 namespace avledet::util {
 

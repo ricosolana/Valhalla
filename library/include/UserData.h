@@ -1,7 +1,8 @@
 #pragma once
 
-#include "DataStream.h"
 #include <stdexcept>
+
+#include "DataStream.h"
 
 class UserProfile
 {

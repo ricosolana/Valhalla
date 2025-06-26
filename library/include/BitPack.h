@@ -1,7 +1,8 @@
 #pragma once
 
-#include "VUtilsTraits.h"
 #include <cstdint>
+
+#include "VUtilsTraits.h"
 
 template<typename T, std::size_t... BitAllocs>
     requires std::is_integral_v<T> && std::is_unsigned_v<T>

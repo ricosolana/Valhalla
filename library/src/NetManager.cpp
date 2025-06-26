@@ -30,7 +30,7 @@ INetManager *NetManager()
     return NET_MANAGER.get();
 }
 
-Peer *INetManager::Kick(std::string_view user)
+Peer::Ptr INetManager::Kick(std::string_view user)
 {
     auto &&peer = FindPeer(user);
     if (peer) {
@@ -40,7 +40,7 @@ Peer *INetManager::Kick(std::string_view user)
     return peer;
 }
 
-Peer *INetManager::Ban(std::string_view user)
+Peer::Ptr INetManager::Ban(std::string_view user)
 {
     auto &&peer = FindPeer(user);
 
@@ -118,9 +118,9 @@ void INetManager::SendNetTime()
     }
 }
 
-void INetManager::SendPeerInfo(Peer &peer)
+void INetManager::SendPeerInfo(Peer::Ptr peer)
 {
-    peer.SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter &writer) {
+    peer->SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter &writer) {
         writer.write(Avledet()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
@@ -139,51 +139,52 @@ void INetManager::SendPeerInfo(Peer &peer)
 }
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
-void INetManager::OnPeerConnect(Peer &peer)
+void INetManager::OnPeerConnect(Peer::Ptr peer)
 {
-    peer.SetAdmin(Avledet()->m_admin.contains(peer.m_socket->get_host_name()));
+    peer->SetAdmin(Avledet()->m_admin.contains(peer->m_socket->get_host_name()));
 
     if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Join, peer)) {
-        return peer.Disconnect();
+        return peer->Disconnect();
     }
 
-    AVL_DISPATCH_WEBHOOK(peer.m_name + " has joined");
+    AVL_DISPATCH_WEBHOOK(peer->m_name + " has joined");
 
     // Important
-    peer.Register(avledet::util::hashes::Rpc::C2S_PlayerData,
-                  [this](Peer *peer, avledet::util::ByteView pkg) {
-                      //DataReader reader(pkg);
-                      auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
+    peer->Register(avledet::util::hashes::Rpc::C2S_PlayerData,
+                   [this](Peer::Ptr peer, avledet::util::ByteView pkg) {
+                       //DataReader reader(pkg);
+                       auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
 
-                      peer->m_pos = reader.read<Vector3f>();
-                      peer->SetMapVisible(reader.read<bool>());
+                       peer->m_pos = reader.read<Vector3f>();
+                       peer->SetMapVisible(reader.read<bool>());
 
-                      auto count = reader.read<std::int32_t>();
-                      for (int i = 0; i < count; i++) {
-                          // Read player event data (only 2):
-                          //  'possibleEvents'
-                          //  'baseValue' // used to be a zdo member
-                          auto key              = reader.read<std::string_view>();// key
-                          peer->m_syncData[key] = reader.read<std::string>();     // value
-                      }
-                  });
+                       auto count = reader.read<std::int32_t>();
+                       for (int i = 0; i < count; i++) {
+                           // Read player event data (only 2):
+                           //  'possibleEvents'
+                           //  'baseValue' // used to be a zdo member
+                           auto key              = reader.read<std::string_view>();// key
+                           peer->m_syncData[key] = reader.read<std::string>();     // value
+                       }
+                   });
 
     // isnt 'ban' a command?
     //  it should be part of RemoteCommand
-    peer.Register(avledet::util::hashes::Rpc::C2S_RemoteCommand, [](Peer *peer, std::string_view command) {
-        if (!peer->IsAdmin())
-            return peer->ConsoleMessage("You are not admin");
+    peer->Register(avledet::util::hashes::Rpc::C2S_RemoteCommand,
+                   [](Peer::Ptr peer, std::string_view command) {
+                       if (!peer->IsAdmin())
+                           return peer->ConsoleMessage("You are not admin");
 
-        // TODO run commands or something?
-        //  this is still in beta and subject to change
-        //  although unlikely because this commands gets funneled to
-        //  valheim commands, which have existed for a while.
-        //  The only difference is that some commands are now classified as remote vs local.
-        (void) command;
-    });
+                       // TODO run commands or something?
+                       //  this is still in beta and subject to change
+                       //  although unlikely because this commands gets funneled to
+                       //  valheim commands, which have existed for a while.
+                       //  The only difference is that some commands are now classified as remote vs local.
+                       (void) command;
+                   });
 
     // Important
-    peer.Register(avledet::util::hashes::Rpc::C2S_UpdateID, [](Peer *peer, ZDOID characterID) {
+    peer->Register(avledet::util::hashes::Rpc::C2S_UpdateID, [](Peer::Ptr peer, ZDOID characterID) {
         // Peer sends 0,0 on after death
 
         //TODO the player only sends this:
@@ -198,21 +199,22 @@ void INetManager::OnPeerConnect(Peer &peer)
         LOG_NOTICE(AVL_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestKick, [this](Peer *peer, std::string_view user) {
-        // TODO maybe permissions tree in future?
-        //  lua? ...
-        if (!peer->IsAdmin())
-            return peer->ConsoleMessage("You are not admin");
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestKick,
+                   [this](Peer::Ptr peer, std::string_view user) {
+                       // TODO maybe permissions tree in future?
+                       //  lua? ...
+                       if (!peer->IsAdmin())
+                           return peer->ConsoleMessage("You are not admin");
 
-        if (Kick(user)) {
-            peer->ConsoleMessage("Kicked '" + std::string(user) + "'");
-            AVL_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
-        } else {
-            peer->ConsoleMessage("Player not found");
-        }
-    });
+                       if (Kick(user)) {
+                           peer->ConsoleMessage("Kicked '" + std::string(user) + "'");
+                           AVL_DISPATCH_WEBHOOK(std::string(user) + " was kicked");
+                       } else {
+                           peer->ConsoleMessage("Player not found");
+                       }
+                   });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer *peer, std::string_view user) {
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer::Ptr peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -224,17 +226,18 @@ void INetManager::OnPeerConnect(Peer &peer)
         }
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestUnban, [this](Peer *peer, std::string_view user) {
-        if (!peer->IsAdmin())
-            return peer->ConsoleMessage("You are not admin");
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestUnban,
+                   [this](Peer::Ptr peer, std::string_view user) {
+                       if (!peer->IsAdmin())
+                           return peer->ConsoleMessage("You are not admin");
 
-        // devcommands requires an exact format...
-        Unban(user);
+                       // devcommands requires an exact format...
+                       Unban(user);
 
-        peer->ConsoleMessage("Unbanning user " + std::string(user));
-    });
+                       peer->ConsoleMessage("Unbanning user " + std::string(user));
+                   });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer *peer) {
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer::Ptr peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -245,7 +248,7 @@ void INetManager::OnPeerConnect(Peer &peer)
         peer->ConsoleMessage("Saved the world");
     });
 
-    peer.Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer *peer) {
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer::Ptr peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -280,9 +283,9 @@ void INetManager::OnPeerConnect(Peer &peer)
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     if (AVL_SETTINGS.TEST_discordAccountLinking) {
-        auto &&host_name = peer.m_socket->get_host_name();
-        peer.SetGated(!DiscordManager()->m_linked_accounts.contains(host_name));
-        if (peer.IsGated()) {
+        auto &&host_name = peer->m_socket->get_host_name();
+        peer->SetGated(!DiscordManager()->m_linked_accounts.contains(host_name));
+        if (peer->IsGated()) {
             DiscordManager()->m_temp_linking_keys[host_name]
                     = {VUtils::Random::GenerateAlphaNum(4), Avledet()->Nanos()};
         }
@@ -290,14 +293,14 @@ void INetManager::OnPeerConnect(Peer &peer)
 #endif
 
     // TODO remove this for debug only
-    peer.SetGated(AVL_SETTINGS.TEST_playerRestrict);
+    peer->SetGated(AVL_SETTINGS.TEST_playerRestrict);
 
-    m_onlinePeers.push_back(&peer);
+    m_onlinePeers.push_back(peer);
 }
 
-Peer *INetManager::FindPeer(std::string_view any)
+Peer::Ptr INetManager::FindPeer(std::string_view any)
 {
-    Peer *peer = FindPeerByHost(any);
+    Peer::Ptr peer = FindPeerByHost(any);
     if (!peer)
         peer = FindPeerByName(any);
     if (!peer)
@@ -306,7 +309,7 @@ Peer *INetManager::FindPeer(std::string_view any)
 }
 
 // Return the peer or nullptr
-Peer *INetManager::FindPeerByName(std::string_view name)
+Peer::Ptr INetManager::FindPeerByName(std::string_view name)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->m_name == name)
@@ -316,7 +319,7 @@ Peer *INetManager::FindPeerByName(std::string_view name)
 }
 
 // Return the peer or nullptr
-Peer *INetManager::FindPeerByUserID(avledet::util::UserID uuid)
+Peer::Ptr INetManager::FindPeerByUserID(avledet::util::UserID uuid)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
@@ -325,7 +328,7 @@ Peer *INetManager::FindPeerByUserID(avledet::util::UserID uuid)
     return nullptr;
 }
 
-Peer *INetManager::FindPeerByHost(std::string_view host)
+Peer::Ptr INetManager::FindPeerByHost(std::string_view host)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->m_socket->get_host_name() == host)
@@ -404,9 +407,9 @@ void INetManager::Update()
     // Cleanup
     {
         for (auto &&itr = m_onlinePeers.begin(); itr != m_onlinePeers.end();) {
-            Peer &peer = *(*itr);
+            Peer::Ptr &peer = *itr;
 
-            if (peer.m_socket->get_status() == Status::Closed) {
+            if (peer->m_socket->get_status() == Status::Closed) {
                 OnPeerQuit(peer);
 
                 itr = m_onlinePeers.erase(itr);
@@ -418,9 +421,9 @@ void INetManager::Update()
 
     {
         for (auto &&itr = m_connectedPeers.begin(); itr != m_connectedPeers.end();) {
-            Peer &peer = *(*itr);
+            Peer::Ptr &peer = *itr;
 
-            if (peer.m_socket->get_status() == Status::Closed) {
+            if (peer->m_socket->get_status() == Status::Closed) {
                 OnPeerDisconnect(peer);
 
                 itr = m_connectedPeers.erase(itr);
@@ -431,39 +434,40 @@ void INetManager::Update()
     }
 }
 
-void INetManager::OnPeerQuit(Peer &peer)
+void INetManager::OnPeerQuit(Peer::Ptr peer)
 {
     LOG_INFO(AVL_LOGGER, "Cleaning up peer");
-    AVL_DISPATCH_WEBHOOK(peer.m_name + " has quit");
+    AVL_DISPATCH_WEBHOOK(peer->m_name + " has quit");
     AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
 
     ZDOManager()->OnPeerQuit(peer);
 
-    if (peer.IsAdmin())
-        Avledet()->m_admin.insert(peer.m_socket->get_host_name());
+    if (peer->IsAdmin())
+        Avledet()->m_admin.insert(peer->m_socket->get_host_name());
     else
-        Avledet()->m_admin.erase(peer.m_socket->get_host_name());
+        Avledet()->m_admin.erase(peer->m_socket->get_host_name());
 }
 
-void INetManager::OnPeerDisconnect(Peer &peer)
+void INetManager::OnPeerDisconnect(Peer::Ptr peer)
 {
     AVL_SCRIPT_EVENT(IScriptManager::Events::Disconnect, peer);
 
-    peer.SendDisconnect();
+    peer->SendDisconnect();
 
-    LOG_INFO(AVL_LOGGER, "{} has disconnected", peer.m_socket->get_host_name());
+    LOG_INFO(AVL_LOGGER, "{} has disconnected", peer->m_socket->get_host_name());
 }
 
 void INetManager::Uninit()
 {
     SendDisconnect();
 
+    //TODO ... dont like both of these...
     for (auto &&peer : m_onlinePeers) {
-        OnPeerQuit(*peer);
+        OnPeerQuit(peer);
     }
 
     for (auto &&peer : m_connectedPeers) {
-        OnPeerDisconnect(*peer);
+        OnPeerDisconnect(peer);
     }
 
     //m_acceptor.reset();

@@ -7,9 +7,9 @@
 #include <string>
 
 #include <isteamfriends.h>
+#include <isteamnetworkingsockets.h>
 #include <steamnetworkingtypes.h>
 
-#include "isteamnetworkingsockets.h"
 #include "Types.h"
 #include "VUtils.h"
 

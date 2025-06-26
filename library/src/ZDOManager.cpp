@@ -29,7 +29,7 @@ void IZDOManager::Init()
 
     LOG_NOTICE(AVL_LOGGER, "Initializing ZDOManager");
 
-    RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, [this](Peer *, DataReader reader) {
+    RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, [this](Peer::Ptr, DataReader reader) {
         // TODO constraint check
         reader.read([this](ZDOID zdoid) { EraseZDO(zdoid); });
     });
@@ -38,7 +38,7 @@ void IZDOManager::Init()
     //m_members.insert({0, ZDO::Ord()});
     //insert.first->second.Get
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestZDO,
-                             [this](Peer *peer, ZDOID id) { peer->ForceSendZDO(id); });
+                             [this](Peer::Ptr peer, ZDOID id) { peer->ForceSendZDO(id); });
 }
 
 void IZDOManager::Update()
@@ -120,14 +120,14 @@ void IZDOManager::Update()
     if (VUtils::run_periodic<struct zdos_release_assign>(AVL_SETTINGS.zdoAssignInterval)) {
         for (auto &&peer : peers) {
             if (!peer->IsGated()) {
-                AssignOrReleaseZDOs(*peer);
+                AssignOrReleaseZDOs(peer);
             }
         }
     }
 
     if (VUtils::run_periodic<struct periodic_send_zdos>(AVL_SETTINGS.zdoSendInterval)) {
         for (auto &&peer : peers) {
-            SendZDOs(*peer, false);
+            SendZDOs(peer, false);
         }
     }
 
@@ -441,11 +441,11 @@ ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
 }*/
 
 
-void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
+void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
 {
     ZoneScoped;
 
-    auto &&zone = IZoneManager::WorldToZonePos(peer.m_pos);
+    auto &&zone = IZoneManager::WorldToZonePos(peer->m_pos);
 
     ZDO::reference_list m_tempNearObjects;
     GetZDOs_Zone(zone, m_tempNearObjects);         // get zdos: zone, nearby
@@ -453,7 +453,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
 
     for (auto &&zdo : m_tempNearObjects) {
         if (zdo->IsPersistent()) {
-            if (zdo->IsOwner(peer.GetUserID())) {
+            if (zdo->IsOwner(peer->GetUserID())) {
                 // If peer no longer in area of zdo, unclaim zdo
                 if (!ZoneManager()->ZonesOverlap(zdo->GetZone(), zone)) {
                     zdo->Disown();
@@ -464,7 +464,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
                 if (!(zdo->HasOwner() && ZoneManager()->IsPeerNearby(zdo->GetZone(), zdo->Owner()))
                     && ZoneManager()->ZonesOverlap(zdo->GetZone(), zone)) {
 
-                    zdo->SetOwner(peer.GetUserID());
+                    zdo->SetOwner(peer->GetUserID());
                 }
             }
         }
@@ -477,14 +477,14 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
 
         // get the distance to the closest peer
         for (auto &&otherPeer : NetManager()->GetPeers()) {
-            if (otherPeer == &peer)
+            if (otherPeer == peer)
                 continue;
 
             if (!ZoneManager()->IsPeerNearby(IZoneManager::WorldToZonePos(otherPeer->m_pos),
-                                             peer.GetUserID()))
+                                             peer->GetUserID()))
                 continue;
 
-            float sqDist = otherPeer->m_pos.sq_distance_to(peer.m_pos);
+            float sqDist = otherPeer->m_pos.sq_distance_to(peer->m_pos);
             if (sqDist < minSqDist) {
                 minSqDist  = sqDist;
                 closestPos = otherPeer->m_pos;
@@ -497,7 +497,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
 
         if (minSqDist != std::numeric_limits<float>::max() && minSqDist > 12 * 12) {
             // Get zdos immediate to this peer
-            auto zdos = GetZDOs(peer.m_pos, std::sqrt(minSqDist) * 0.5f - 2.f);
+            auto zdos = GetZDOs(peer->m_pos, std::sqrt(minSqDist) * 0.5f - 2.f);
 
             // Basically reassign zdos from another owner to me instead
             for (auto &&zdo : zdos) {
@@ -505,7 +505,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer &peer)
                     && zdo->GetPosition().sq_distance_to(closestPos)
                                > 12 * 12// Ensure the ZDO is far from the other player
                 ) {
-                    zdo->SetOwner(peer.GetUserID());
+                    zdo->SetOwner(peer->GetUserID());
                 }
             }
         }
@@ -604,9 +604,9 @@ void IZDOManager::GetZDOs_DistantZones(ZoneID zone, ZDO::reference_list &out)
     }
 }
 
-std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer &peer)
+std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer::Ptr peer)
 {
-    auto zone = IZoneManager::WorldToZonePos(peer.m_pos);
+    auto zone = IZoneManager::WorldToZonePos(peer->m_pos);
 
     // Gather all updated ZDO's
     ZDO::reference_list zoneZDOs;
@@ -619,12 +619,12 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer &pe
     auto const time(Avledet()->Time());
     for (auto &&zdo : zoneZDOs) {
         decltype(Peer::m_zdos)::iterator outItr;
-        if (peer.IsOutdatedZDO(zdo, outItr)) {
+        if (peer->IsOutdatedZDO(zdo, outItr)) {
             float weight = 150;
-            if (outItr != peer.m_zdos.end())
+            if (outItr != peer->m_zdos.end())
                 weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
-            result.push_back({zdo, zdo->GetPosition().sq_distance_to(peer.m_pos) - weight * weight});
+            result.push_back({zdo, zdo->GetPosition().sq_distance_to(peer->m_pos) - weight * weight});
         }
     }
 
@@ -640,9 +640,9 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer &pe
         auto &&b = second.first;
 
         bool flag = a->GetType() == avledet::util::ObjectType::PRIORITIZED && a->HasOwner()
-                    && !a->IsOwner(peer.GetUserID());
+                    && !a->IsOwner(peer->GetUserID());
         bool flag2 = b->GetType() == avledet::util::ObjectType::PRIORITIZED && b->HasOwner()
-                     && !b->IsOwner(peer.GetUserID());
+                     && !b->IsOwner(peer->GetUserID());
 
         if (flag == flag2) {
             if ((flag && flag2) || a->GetType() == b->GetType()) {
@@ -665,21 +665,21 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer &pe
     // Add a minimum amount of ZDOs
     if (result.size() < 10) {
         for (auto &&zdo2 : distantZDOs) {
-            if (peer.IsOutdatedZDO(zdo2)) {
+            if (peer->IsOutdatedZDO(zdo2)) {
                 result.push_back({zdo2, 0});
             }
         }
     }
 
     // Add forcible send ZDOs
-    for (auto &&itr = peer.m_forceSend.begin(); itr != peer.m_forceSend.end();) {
+    for (auto &&itr = peer->m_forceSend.begin(); itr != peer->m_forceSend.end();) {
         auto &&zdoid = *itr;
         auto zdo     = GetZDO(zdoid);
-        if (zdo && peer.IsOutdatedZDO(zdo)) {
+        if (zdo && peer->IsOutdatedZDO(zdo)) {
             result.push_front({zdo, 0});
             ++itr;
         } else {
-            itr = peer.m_forceSend.erase(itr);
+            itr = peer->m_forceSend.erase(itr);
         }
     }
 
@@ -809,11 +809,11 @@ void IZDOManager::ForceSendZDO(ZDOID const &id)
     }
 }
 
-bool IZDOManager::SendZDOs(Peer &peer, bool flush)
+bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
 {
     ZoneScoped;
 
-    auto sendQueueSize = (std::uint32_t) peer.m_socket->get_send_queue_size();
+    auto sendQueueSize = (std::uint32_t) peer->m_socket->get_send_queue_size();
 
     // flushing forces a packet send
     auto const threshold = AVL_SETTINGS.zdoMaxCongestion;
@@ -827,7 +827,7 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
     auto syncList = CreateSyncList(peer);
 
     // continue only if there are updated/invalid ZDOs to send
-    if (syncList.empty() && peer.m_invalidSector.empty())
+    if (syncList.empty() && peer->m_invalidSector.empty())
         return false;
 
     // TODO a better optimization would be to use write a special
@@ -835,9 +835,9 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
     //	to avoid a few buffer allocs
     //	this only matters if performance is upmost concern, which it is because c :>
 
-    peer.SubInvoke(avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList,
-                                                         availableSpace](DataWriter &writer) {
-        writer.write(peer.m_invalidSector);
+    peer->SubInvoke(avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList,
+                                                          availableSpace](DataWriter &writer) {
+        writer.write(peer->m_invalidSector);
 
         auto const time = Avledet()->Time();
 
@@ -846,7 +846,7 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
             // copy is intentional
             auto zdo = itr->first;
 
-            peer.m_forceSend.erase(zdo->GetID());
+            peer->m_forceSend.erase(zdo->GetID());
 
             if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
                 continue;
@@ -862,13 +862,13 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
 
             writer.write([zdo](DataWriter &writer) { zdo->Pack(writer, true); });
 
-            peer.m_zdos[zdo->GetID()] = {zdo->GetRevision(), time};
+            peer->m_zdos[zdo->GetID()] = {zdo->GetRevision(), time};
         }
         writer.write(ZDOID::NONE);// null terminator
     });
 
-    if (!peer.m_invalidSector.empty() || !syncList.empty()) {
-        peer.m_invalidSector.clear();
+    if (!peer->m_invalidSector.empty() || !syncList.empty()) {
+        peer->m_invalidSector.clear();
 
         return true;
     }
@@ -876,9 +876,9 @@ bool IZDOManager::SendZDOs(Peer &peer, bool flush)
     return false;
 }
 
-void IZDOManager::OnNewPeer(Peer &peer)
+void IZDOManager::OnNewPeer(Peer::Ptr peer)
 {
-    peer.Register(avledet::util::hashes::Rpc::ZDOData, [this](Peer *peer, DataReader reader) {
+    peer->Register(avledet::util::hashes::Rpc::ZDOData, [this](Peer::Ptr peer, DataReader reader) {
         ZoneScoped;
 
         // Only allow if normal mode
@@ -995,13 +995,13 @@ void IZDOManager::OnNewPeer(Peer &peer)
     });
 }
 
-void IZDOManager::OnPeerQuit(Peer &peer)
+void IZDOManager::OnPeerQuit(Peer::Ptr peer)
 {
     for (auto &&itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
         auto &&zdo = ZDO::make_reference(itr);
 
         if (!zdo->IsPersistent()
-            && (!zdo->HasOwner() || zdo->IsOwner(peer.GetUserID())
+            && (!zdo->HasOwner() || zdo->IsOwner(peer->GetUserID())
                 || !NetManager()->FindPeerByUserID(zdo->Owner()))) {
             itr = _DestroyZDO(itr);
         } else

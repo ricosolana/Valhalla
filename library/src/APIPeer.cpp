@@ -32,7 +32,7 @@ void IScriptManager::load_userdata_peer()
             "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),
             //"admin", &Peer::m_admin,
             "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin), "character_id",
-            sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// return copy
+            sol::property([](Peer::Ptr self) -> ZDOID { return self.m_characterID; }),// return copy
             "name", sol::readonly(&Peer::m_name),// strings are immutable in Lua similarly to Java
             "pos", &Peer::m_pos,
             //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),

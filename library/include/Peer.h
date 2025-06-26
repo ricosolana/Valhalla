@@ -3,15 +3,17 @@
 #include <memory>
 #include <string_view>
 #include <tracy/Tracy.hpp>
+#include <tuple>
 
 #include "DataStream.h"
 #include "Hashes.h"
 #include "NetSocket.h"
-#include "Rpc.h"//TODO UNcomment!
+#include "Rpc.h"
 #include "UserData.h"
 #include "Vector.h"
 #include "VUtils.h"
-#include "ZDO.h"
+#include "VUtilsTraits.h"
+#include "ZDO.h"//HMMM
 
 enum class ChatMsgType : std::int32_t
 {
@@ -39,10 +41,9 @@ enum class ConnectionStatus : std::int32_t
     MAX// 13
 };
 
-//class Peer : public std::enable_shared_from_this<Peer>,
-//             public avledet::rpc::RpcBase<std::shared_ptr<Peer>>
+class Peer : public std::enable_shared_from_this<Peer>,
+             public avledet::rpc::RpcBase<std::shared_ptr<Peer>>
 // TODO replace with shared_ptr later...
-class Peer : public avledet::rpc::RpcBase<Peer *>
 {
     friend class IZDOManager;
     friend class INetManager;
@@ -55,7 +56,7 @@ class Peer : public avledet::rpc::RpcBase<Peer *>
     std::chrono::steady_clock::time_point m_lastPing;
 
   public:
-    //using Ptr = std::shared_ptr<Peer>;
+    using Ptr = std::shared_ptr<Peer>;
 
     // Elements are never removed
     //  Queried frequently, and frequent adds
@@ -148,9 +149,13 @@ class Peer : public avledet::rpc::RpcBase<Peer *>
     template<typename F>
     void Register(avledet::util::Hash hash, F func)
     {
+        static_assert(
+                std::is_same_v<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>,
+                               Ptr>,
+                "Rpc must accept a shared_ptr<Peer> as first argument");
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-        register_method(std::make_unique<MethodImpl<Peer *, F>>(hash, std::move(func),
-                                                                IScriptManager::Events::RpcIn));
+        register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func),
+                                                                   IScriptManager::Events::RpcIn));
 #else
         register_method(hash, std::move(func));
         //register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func)));
@@ -168,7 +173,7 @@ class Peer : public avledet::rpc::RpcBase<Peer *>
     {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer *>>(func, sig.m_types);
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
     }
 #endif
 
@@ -462,6 +467,6 @@ class Peer : public avledet::rpc::RpcBase<Peer *>
 
     /*
     friend std::ostream& operator<<(std::ostream& ost, const Peer& peer) {
-        return ost << peer.m_name << " (" << peer.m_socket << ")";
+        return ost << peer->m_name << " (" << peer->m_socket << ")";
     }*/
 };

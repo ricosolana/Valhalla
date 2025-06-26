@@ -45,7 +45,8 @@ namespace avledet::rpc {
         void register_method(avledet::util::Hash hash, F func)
         {
             //m_methods.emplace(std::make_unique<MethodImpl<T, F>>(hash, std::move(func)));
-            m_methods[hash] = std::make_unique<MethodImpl<T, F>>(std::move(func));
+            //m_methods[hash] = std::make_unique<MethodImpl<T, F>>(std::move(func));
+            m_methods[hash] = std::make_unique<MethodImpl<T, F>>(hash, std::move(func));
         }
 
         template<typename F>

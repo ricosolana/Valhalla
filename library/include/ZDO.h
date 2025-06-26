@@ -25,14 +25,14 @@
 #include "VUtilsMathf.h"
 #include "ZDOConnector.h"
 #include "ZDOID.h"
-#include "ZoneManager.h"
+
+//#include "ZoneManager.h" //hmm
 
 class ZDO
 {
     // TODO are these friend classes safe?
     friend class IZDOManager;
     friend class IPrefabManager;
-    friend class VHTest;
     friend class IAvledet;
 
   public:
@@ -1036,7 +1036,7 @@ class ZDO
     //  - This will change and invalidate sectors if the new position is in a different zone than this ZDOs position
     void SetPosition(Vector3f pos);
 
-    [[nodiscard]] ZoneID GetZone() const;
+    [[nodiscard]] avledet::util::ZoneID GetZone() const;
 
     [[nodiscard]] Quaternion GetRotation() const
     {

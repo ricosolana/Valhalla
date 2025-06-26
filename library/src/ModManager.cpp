@@ -158,6 +158,13 @@ int my_exception_handler(lua_State *L, sol::optional<std::exception const &> may
     return sol::stack::push(L, description);
 }
 
+void my_sethook_cb(lua_State *L, lua_Debug *ar)
+{
+    (void) L;
+    (void) ar;
+    LOG_INFO(AVL_LOGGER, "HOOKAH!!!");
+};
+
 void IScriptManager::PostInit()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing ModManager");
@@ -183,6 +190,18 @@ void IScriptManager::PostInit()
 
     // Load globally shared userdata
     load_userdata();
+
+    // might utterly break everything
+    //lua_sethook(
+    //        m_state.lua_state(),
+    //        [](lua_State *L, lua_Debug *ar) {
+    //            (void) L;
+    //            (void) ar;
+    //            LOG_INFO(AVL_LOGGER, "HOOKAH!!!");
+    //        },
+    //        LUA_MASKCOUNT, 1);
+
+    //lua_sethook(m_state.lua_state(), &my_sethook_cb, LUA_MASKCOUNT, 1);
 
     std::error_code ec;
     std::filesystem::create_directories(AVLEDET_SCRIPTS_PATH, ec);

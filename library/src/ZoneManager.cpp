@@ -186,7 +186,7 @@ void IZoneManager::PostPrefabInit()
 #endif
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_SetGlobalKey,
-                             [this](Peer *peer, std::string_view name) {
+                             [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
                                  //  have this as a compiler macro
@@ -195,7 +195,7 @@ void IZoneManager::PostPrefabInit()
                              });
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RemoveGlobalKey,
-                             [this](Peer *peer, std::string_view name) {
+                             [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
                                  if (m_globalKeys.erase(name))
@@ -203,7 +203,7 @@ void IZoneManager::PostPrefabInit()
                              });
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestIcon,
-                             [this](Peer *peer, std::string_view locationName, Vector3f point,
+                             [this](Peer::Ptr peer, std::string_view locationName, Vector3f point,
                                     std::string_view pinName, int pinType, bool showMap) {
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
                                  if (auto &&instance = GetNearestFeature(locationName, point)) {
@@ -232,13 +232,13 @@ void IZoneManager::PostPrefabInit()
 #endif
                              });
 
-    RouteManager()->Register(avledet::util::hashes::Routed::S2C_ResponsePing, [](Peer *peer, float time) {
+    RouteManager()->Register(avledet::util::hashes::Routed::S2C_ResponsePing, [](Peer::Ptr peer, float time) {
         peer->Route(avledet::util::hashes::Routed::Pong, time);
     });
 }
 
 // private
-void IZoneManager::OnNewPeer(Peer &peer)
+void IZoneManager::OnNewPeer(Peer::Ptr peer)
 {
     SendGlobalKeys(peer);
     SendLocationIcons(peer);
@@ -271,10 +271,10 @@ void IZoneManager::SendGlobalKeys()
     RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
-void IZoneManager::SendGlobalKeys(Peer &peer)
+void IZoneManager::SendGlobalKeys(Peer::Ptr peer)
 {
     //RouteManager()->Invoke(peer, avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
-    peer.Route(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    peer->Route(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
@@ -296,9 +296,9 @@ void IZoneManager::SendLocationIcons()
 #endif
 
 // private
-void IZoneManager::SendLocationIcons(Peer &peer)
+void IZoneManager::SendLocationIcons(Peer::Ptr peer)
 {
-    LOG_NOTICE(AVL_LOGGER, "Sending location icons to {}", peer.m_name);
+    LOG_NOTICE(AVL_LOGGER, "Sending location icons to {}", peer->m_name);
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     DataWriter writer;
@@ -311,9 +311,9 @@ void IZoneManager::SendLocationIcons(Peer &peer)
         writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
-    peer.Route(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.get_buf());
+    peer->Route(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.get_buf());
 #else
-    peer.SubRoute(avledet::util::hashes::Routed::S2C_UpdateIcons, [this](DataWriter &writer) {
+    peer->SubRoute(avledet::util::hashes::Routed::S2C_UpdateIcons, [this](DataWriter &writer) {
         writer.write<std::int32_t>(1);// dummy count
         for (auto &&pair : m_generatedFeatures) {
             // We only care about StartTemple

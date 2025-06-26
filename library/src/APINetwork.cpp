@@ -38,7 +38,7 @@ void IScriptManager::load_userdata_network()
             sol::overload([](INetManager &self,
                              Int64Wrapper owner) { return self.FindPeerByUserID((std::int64_t) owner); },
                           //sol::resolve<Peer*(UserID)>(&INetManager::GetPeer),
-                          sol::resolve<Peer *(std::string_view)>(&INetManager::FindPeerByName)),
+                          sol::resolve<Peer::Ptr(std::string_view)>(&INetManager::FindPeerByName)),
             "peers", sol::property(&INetManager::GetPeers));
 }
 

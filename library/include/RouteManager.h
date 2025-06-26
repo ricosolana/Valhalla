@@ -17,11 +17,11 @@ class IRouteManager
     static constexpr std::int64_t EVERYBODY = 0;
 
   private:
-    avledet::util::Map<avledet::util::Hash, std::unique_ptr<IMethod<Peer *>>> m_methods;
+    avledet::util::Map<avledet::util::Hash, std::unique_ptr<IMethod<Peer::Ptr>>> m_methods;
 
   private:
     // Called from NetManager
-    void OnNewPeer(Peer &peer);
+    void OnNewPeer(Peer::Ptr peer);
 
   public:
     /**
@@ -34,9 +34,9 @@ class IRouteManager
     {
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         m_methods[hash]
-                = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RouteIn, hash);
+                = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, IScriptManager::Events::RouteIn, hash);
 #else
-        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func);
+        m_methods[hash] = std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, func);
 #endif
     }
 
@@ -51,7 +51,7 @@ class IRouteManager
     {
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer *>>(func, sig.m_types);
+        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
     }
 #endif
 

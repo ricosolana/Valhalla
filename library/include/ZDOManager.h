@@ -67,9 +67,9 @@ class IZDOManager
 
   private:
     // Called when an authenticated peer joins (internal)
-    void OnNewPeer(Peer &peer);
+    void OnNewPeer(Peer::Ptr peer);
     // Called when an authenticated peer leaves (internal)
-    void OnPeerQuit(Peer &peer);
+    void OnPeerQuit(Peer::Ptr peer);
 
     // Retrieve a zone container for storing zdos
     [[nodiscard]] std::reference_wrapper<ZDO::reference_set> _GetZDOContainer(ZoneID zone)
@@ -101,7 +101,7 @@ class IZDOManager
     // Relay a ZDO zone change to clients (internal)
     void _InvalidateZDOZone(ZDO::reference zdo);
 
-    void AssignOrReleaseZDOs(Peer &peer);
+    void AssignOrReleaseZDOs(Peer::Ptr peer);
     //void SmartAssignZDOs();
 
     // Frees a ZDO from memory by a valid iterator
@@ -125,13 +125,13 @@ class IZDOManager
         return _EraseZDO(itr);
     }
 
-    void SendAllZDOs(Peer &peer)
+    void SendAllZDOs(Peer::Ptr peer)
     {
         while (SendZDOs(peer, true));
     }
 
-    [[maybe_unused]] bool SendZDOs(Peer &peer, bool flush);
-    [[nodiscard]] std::list<std::pair<ZDO::reference, float>> CreateSyncList(Peer &peer);
+    [[maybe_unused]] bool SendZDOs(Peer::Ptr peer, bool flush);
+    [[nodiscard]] std::list<std::pair<ZDO::reference, float>> CreateSyncList(Peer::Ptr peer);
 
 
     // Instantiate a ZDO by id if it does not exist

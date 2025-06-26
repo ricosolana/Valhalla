@@ -6,6 +6,7 @@
 #include <string>
 
 #include "DataStream.h"
+#include "Peer.h"
 #include "Prefab.h"
 #include "Quaternion.h"
 #include "Types.h"
@@ -58,10 +59,7 @@ enum class GlobalKey
     MAX
 };
 
-using ZoneID = Vector2s;
-
 class Heightmap;
-class Peer;
 
 class IZoneManager
 {
@@ -247,14 +245,14 @@ class IZoneManager
 
   private:
     void SendGlobalKeys();
-    void SendGlobalKeys(Peer &peer);
+    void SendGlobalKeys(Peer::Ptr peer);
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     void SendLocationIcons();
 #endif
-    void SendLocationIcons(Peer &peer);
+    void SendLocationIcons(Peer::Ptr peer);
 
-    void OnNewPeer(Peer &peer);
+    void OnNewPeer(Peer::Ptr peer);
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     void TryGenerateNearbyZones(Vector3f pos);

@@ -1,11 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
 
 #include "DataStream.h"
 #include "ModManager.h"
+#include "Types.h"
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
@@ -19,12 +21,30 @@ template<class T>
 class IMethod
 {
   public:
+    avledet::util::Hash m_hash;
+
+  public:
+    IMethod(avledet::util::Hash hash) :
+        m_hash(hash)
+    {
+    }
+
     virtual ~IMethod() {}
 
     // Calls a locally stored function
     //  Expects a passthrough parameter and serialized package
     //  Returns false if the call requested unsubscription
     virtual bool Invoke(T t, DataReader reader) = 0;
+
+    friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, std::unique_ptr<IMethod<T>> const &rhs)
+    {
+        return lhs->m_hash <=> rhs->m_hash;
+    }
+
+    friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, avledet::util::Hash rhs)
+    {
+        return lhs->m_hash <=> rhs;
+    }
 };
 
 // Package lambda invoker
@@ -44,20 +64,20 @@ class MethodImpl : public IMethod<T>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     avledet::util::Hash const m_categoryHash;
-    avledet::util::Hash const m_methodHash;
 #endif
 
   public:
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    MethodImpl(F func, avledet::util::Hash categoryHash, avledet::util::Hash methodHash) :
-        m_func(func),
+    MethodImpl(avledet::util::Hash hash, F func, avledet::util::Hash categoryHash) :
+        IMethod<T>(hash),
+        m_func(std::move(func)),
         m_categoryHash(categoryHash),
-        m_methodHash(methodHash)
     {
     }
 #else
-    MethodImpl(F func) :
-        m_func(func)
+    MethodImpl(avledet::util::Hash hash, F func) :
+        IMethod<T>(hash),
+        m_func(std::move(func))
     {
     }
 #endif
@@ -81,10 +101,10 @@ class MethodImpl : public IMethod<T>
             return true;
 #endif
 
-        bool result = true;
+        bool keep_me_mapped = true;
 
         if constexpr (std::is_same_v<bool, typename VUtils::Traits::func_traits<F>::result_type>) {
-            result = std::apply(m_func, tuple);
+            keep_me_mapped = std::apply(m_func, tuple);
         } else
             std::apply(m_func, tuple);
 
@@ -93,7 +113,7 @@ class MethodImpl : public IMethod<T>
         AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX, tuple);
         */
 
-        return result;
+        return keep_me_mapped;
     }
 };
 
