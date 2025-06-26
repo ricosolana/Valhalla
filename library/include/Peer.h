@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <string_view>
 #include <tracy/Tracy.hpp>
 
 #include "DataStream.h"
 #include "Hashes.h"
-#include "Method.h"
 #include "NetSocket.h"
+#include "Rpc.h"//TODO UNcomment!
 #include "UserData.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -38,7 +39,10 @@ enum class ConnectionStatus : std::int32_t
     MAX// 13
 };
 
-class Peer
+//class Peer : public std::enable_shared_from_this<Peer>,
+//             public avledet::rpc::RpcBase<std::shared_ptr<Peer>>
+// TODO replace with shared_ptr later...
+class Peer : public avledet::rpc::RpcBase<Peer *>
 {
     friend class IZDOManager;
     friend class INetManager;
@@ -47,17 +51,12 @@ class Peer
     constexpr static int VISIBLE_PACK_INDEX = 0;
     constexpr static int GATED_PACK_INDEX   = 1;
 
-  public:
-    using Method = IMethod<Peer *>;
-
   private:
     std::chrono::steady_clock::time_point m_lastPing;
 
-    // Elements rarely added/removed
-    //  Queried frequently
-    avledet::util::Map<avledet::util::Hash, std::unique_ptr<Method>> m_methods;
-
   public:
+    //using Ptr = std::shared_ptr<Peer>;
+
     // Elements are never removed
     //  Queried frequently, and frequent adds
     // TODO use zdo as key itself
@@ -149,11 +148,12 @@ class Peer
     template<typename F>
     void Register(avledet::util::Hash hash, F func)
     {
-        //VLOG(1) << hash;
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func, IScriptManager::Events::RpcIn, hash);
+        register_method(std::make_unique<MethodImpl<Peer *, F>>(hash, std::move(func),
+                                                                IScriptManager::Events::RpcIn));
 #else
-        m_methods[hash] = std::make_unique<MethodImpl<Peer *, F>>(func);
+        register_method(hash, std::move(func));
+        //register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func)));
 #endif
     }
 
@@ -301,26 +301,19 @@ class Peer
     }*/
 
 
-    bool InternalInvoke(avledet::util::Hash hash, DataReader &reader)
+    void InternalInvoke(avledet::util::Hash hash, DataReader &reader)
     {
-        auto &&find = m_methods.find(hash);
-        if (find != m_methods.end()) {
-            ZoneScoped;
-            //VLOG(2) << "InternalInvoke, hash: " << hash;
+        //ZoneScoped;
+        //TODO no clue why this shared_from_this() was failing...
+        //auto self(shared_from_this());
+        //this->internal_invoke(self, hash, reader);
 
-            auto result = find->second->Invoke(this, reader);
-            if (!result) {
-                // this is UB in cases where a method is added by the Invoked func
-                //  insertions of deletions invalidate iterators, causing the crash
-                //m_methods.erase(find);
-                m_methods.erase(hash);
-            }
-            return result;
-        }
-        return true;
+        //TODO it is possible that there are header issues with ext...
+        //internal_invoke(this, hash, reader);
+        assert(false);
     }
 
-    decltype(auto) InternalInvoke(std::string_view name, DataReader &reader)
+    void InternalInvoke(std::string_view name, DataReader &reader)
     {
         return InternalInvoke(avledet::util::get_stable_hash(name), reader);
     }
