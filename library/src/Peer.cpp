@@ -141,16 +141,7 @@ void Peer::update()
 
 void Peer::InternalInvoke(avledet::util::Hash hash, DataReader &reader)
 {
-    (void) hash;
-    (void) reader;
-    //ZoneScoped;
-    //TODO no clue why this shared_from_this() was failing...
-    //auto self(shared_from_this());
-    //this->internal_invoke(self, hash, reader);
-
-    //TODO it is possible that there are header issues with ext...
     this->internal_invoke(shared_from_this(), hash, reader);
-    assert(false);
 }
 
 bool Peer::Close(ConnectionStatus status)
