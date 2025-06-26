@@ -1,9 +1,12 @@
-#include "DungeonManager.h"
-#include "ModManager.h"
-#include "ZoneManager.h"
-#include <sol/forward.hpp>
+#include "CompileSettings.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+
+    #include <sol/forward.hpp>
+
+    #include "DungeonManager.h"
+    #include "ModManager.h"
+    #include "ZoneManager.h"
 
 void IScriptManager::load_userdata_zone()
 {

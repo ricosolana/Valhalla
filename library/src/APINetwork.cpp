@@ -1,13 +1,14 @@
-#include "ModManager.h"
-#include "NetManager.h"
-#include "NetSocket.h"
-#include "ValhallaServer.h"
-#include <quill/core/LogLevel.h>
-#include <sol/forward.hpp>
+#include "CompileSettings.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-
+    #include <quill/core/LogLevel.h>
+    #include <sol/forward.hpp>
     #include <sol/property.hpp>
+
+    #include "ModManager.h"
+    #include "NetManager.h"
+    #include "NetSocket.h"
+    #include "ValhallaServer.h"
 
 using namespace avledet::network;
 

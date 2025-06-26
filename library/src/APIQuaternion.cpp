@@ -1,37 +1,12 @@
-#include "ModManager.h"
-#include "Quaternion.h"
-#include <sol/base_traits.hpp>
-#include <sol/forward.hpp>
-#include <sol/property.hpp>
+#include "CompileSettings.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+    #include <sol/base_traits.hpp>
+    #include <sol/forward.hpp>
+    #include <sol/property.hpp>
 
-//was readonly
-//template <typename T>
-//struct constant_wrapper : sol::detail::ebco<T> {
-//private:
-//    using base_t = sol::detail::ebco<T>;
-//
-//public:
-//    using base_t::base_t;
-//
-//    operator T&() {
-//        return base_t::value();
-//    }
-//    operator const T&() const {
-//        return base_t::value();
-//    }
-//};
-
-namespace sol {
-    // TODO test this
-    //  Usage is intended for readonly / immutable static constants
-    template<typename V>
-    inline auto constant(V &&v)
-    {
-        return readonly_wrapper<meta::unqualified_t<decltype(v)>>(v);
-    }
-}// namespace sol
+    #include "ModManager.h"
+    #include "Quaternion.h"
 
 void IScriptManager::load_userdata_quaternion()
 {

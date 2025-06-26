@@ -2,9 +2,21 @@
 
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
-#include <cstddef>
+
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+
+    #include <cmath>
+    #include <cstddef>
+    #include <cstdint>
+    #include <list>
+    #include <vector>
+
+    #include <lua.h>
+    #include <magic_enum.hpp>
+    #include <sol/forward.hpp>
+    #include <sol/protected_function_result.hpp>
+    #include <sol/sol.hpp>
 
     #include "DataStream.h"
     #include "Hashes.h"
@@ -14,16 +26,6 @@
     #include "Vector.h"
     #include "VUtils.h"
     #include "ZDOID.h"
-
-    #include <cmath>
-    #include <cstdint>
-    #include <list>
-    #include <lua.h>
-    #include <magic_enum.hpp>
-    #include <sol/forward.hpp>
-    #include <sol/protected_function_result.hpp>
-    #include <sol/sol.hpp>
-    #include <vector>
 
 class IScriptManager
 {

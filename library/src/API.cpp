@@ -1,15 +1,21 @@
-#include "DungeonManager.h"
-#include "ModManager.h"
-#include "RouteManager.h"
-#include "ValhallaServer.h"
-#include "VUtilsResource.h"
-#include "ZDOManager.h"
-#include <cstddef>
-#include <sol/environment.hpp>
-#include <sol/forward.hpp>
-#include <sol/optional_implementation.hpp>
-#include <sol/property.hpp>
-#include <sol/types.hpp>
+#include "CompileSettings.h"
+
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+
+    #include <cstddef>
+
+    #include <sol/environment.hpp>
+    #include <sol/forward.hpp>
+    #include <sol/optional_implementation.hpp>
+    #include <sol/property.hpp>
+    #include <sol/types.hpp>
+
+    #include "DungeonManager.h"
+    #include "ModManager.h"
+    #include "RouteManager.h"
+    #include "ValhallaServer.h"
+    #include "VUtilsResource.h"
+    #include "ZDOManager.h"
 
 void IScriptManager::load_userdata()
 {
@@ -188,8 +194,8 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
     using namespace avledet::util;
     using namespace CSU;
 
-    env["Valhalla"]       = Avledet();
-    env["ModManager"]     = ScriptManager();
+    env["Avledet"]        = Avledet();
+    env["ScriptManager"]  = ScriptManager();
     env["NetManager"]     = NetManager();
     env["PrefabManager"]  = PrefabManager();
     env["ZDOManager"]     = ZDOManager();
@@ -320,3 +326,5 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
 
     return env;
 }
+
+#endif
