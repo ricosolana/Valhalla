@@ -215,8 +215,8 @@ void IDiscordManager::init()
                     WorldManager()->GetWorld()->WriteFiles();
                     event.reply("Saved the world");
                 } else if (label == "avlstop") {
-                    Avledet()->Stop();
                     event.reply("Stopping the server!");
+                    Avledet()->Stop();
                 } else if (label == "avlsummon") {
                     auto &&name = std::get<std::string>(event.get_parameter("prefab"));
                     auto &&peer = NetManager()->FindPeer(

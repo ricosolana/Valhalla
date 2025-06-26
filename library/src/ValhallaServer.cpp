@@ -1,7 +1,5 @@
 #include <chrono>
-#include <quill/core/LogLevel.h>
-#include <quill/LogMacros.h>
-#include <quill/sinks/RotatingFileSink.h>
+#include <mutex>
 #include <stdlib.h>
 #include <thread>
 #include <type_traits>
@@ -10,11 +8,10 @@
     #include <winstring.h>
 #endif
 
-#include "ValhallaServer.h"
-
-
-#include <cctype>
 #include <magic_enum.hpp>
+#include <quill/core/LogLevel.h>
+#include <quill/LogMacros.h>
+#include <quill/sinks/RotatingFileSink.h>
 #include <tracy/Tracy.hpp>
 #include <yaml-cpp/yaml.h>
 
@@ -28,11 +25,13 @@
 #include "RandomEventManager.h"
 #include "RouteManager.h"
 #include "ServerSettings.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
+// Defined
 quill::Logger *AVL_LOGGER {};
 
 auto VALHALLA_INSTANCE = std::make_unique<IAvledet>();
@@ -279,8 +278,8 @@ template<typename T, typename D, typename Func = std::nullptr_t>
                           0, typename VUtils::Traits::func_traits<Func>::args_type>>::value
                   && is_duration<T>::value)
                  == is_duration<D>::value))
-void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value, Func valueSanitizer,
-       bool skip = false)
+void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value,
+       Func valueSanitizer = nullptr, bool skip = false)
 {
     if (skip)
         return;
@@ -653,7 +652,7 @@ std::chrono::nanoseconds IAvledet::Elapsed() const
 {
     //return m_nowUpdate - m_startTime;
     return std::chrono::nanoseconds((std::int64_t)(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count()
+            (double) std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_startTime).count()
             * m_serverTimeMultiplier));
 }
 
@@ -688,24 +687,11 @@ std::chrono::nanoseconds IAvledet::DeltaNanos() const
     return std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
 }
 
-//TODO do not put here
-std::thread::id MAIN_THREAD;
-
-void IAvledet::Stop()
+void IAvledet::init()
 {
-    m_terminate = true;
+    assert(!m_run_state && "unexpected run state during init(), did you call init() twice?");
 
-    // prevent deadlock
-    if (std::this_thread::get_id() != MAIN_THREAD)
-        m_terminate.wait(true);
-}
-
-void IAvledet::Start()
-{
-    tracy::SetThreadName("main");
-
-    MAIN_THREAD = std::this_thread::get_id();
-
+    tracy::SetThreadName("game");
 
     {
         quill::BackendOptions options;
@@ -766,12 +752,12 @@ void IAvledet::Start()
         /* global assigned */ AVL_LOGGER = logger;
     }
 
-    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVLEDET_VERSION, VConstants::GAME);
-
     m_serverID  = VUtils::Random::GenerateUID();
     m_startTime = std::chrono::steady_clock::now();
 
     this->LoadFiles(false);
+
+    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVLEDET_VERSION, VConstants::GAME);
 
     //m_worldTime = 2040;
     m_worldTime = GetMorning(1);
@@ -805,26 +791,23 @@ void IAvledet::Start()
     DiscordManager()->init();
 #endif
 
-    /*
-    if (AVL_SETTINGS.worldRecording) {
-        World* world = WorldManager()->GetWorld();
-        VUtils::Resource::WriteFile(
-            std::filesystem::path(AVL_CAPTURE_PATH) / world->m_name / (world->m_name + ".db"),
-            WorldManager()->SaveWorldDB());
-    }*/
+    AVL_DISPATCH_WEBHOOK("Server started");
 
     m_prevUpdate = std::chrono::steady_clock::now();
-    m_nowUpdate  = std::chrono::steady_clock::now();
+    m_nowUpdate  = m_prevUpdate;
+
+    m_run_state = true;
 
 #ifdef _WIN32
     SetConsoleCtrlHandler(
             [](DWORD dwCtrlType) {
-#else // !_WIN32
+#else                                              // !_WIN32
     signal(SIGINT, [](int) {
-#endif// !_WIN32
-                tracy::SetThreadName("system");
+#endif                                             // !_WIN32
+                tracy::SetThreadName("kernel");
 
-                Avledet()->Stop();
+                Avledet()->Stop();                 // set to true
+                Avledet()->m_run_state.wait(false);// block until notify by uninit()
 #ifdef _WIN32
                 return TRUE;
             },
@@ -832,50 +815,10 @@ void IAvledet::Start()
 #else // !_WIN32
     });
 #endif// !_WIN32
+}
 
-    AVL_DISPATCH_WEBHOOK("Server started");
-
-    m_terminate = false;
-    while (!m_terminate) {
-        auto now     = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
-
-        m_prevUpdate = m_nowUpdate;// old state
-        m_nowUpdate  = now;        // new state
-
-        // Mutex is scoped
-        {
-            std::scoped_lock lock(m_taskMutex);
-            for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
-                auto ptr = itr->get();
-                if (ptr->m_at < now) {
-                    if (ptr->m_period == std::chrono::milliseconds::min()) {// if task cancelled
-                        itr = m_tasks.erase(itr);
-                    } else {
-                        ptr->m_func(*ptr);
-                        if (ptr->Repeats()) {
-                            ptr->m_at += ptr->m_period;
-                            ++itr;
-                        } else
-                            itr = m_tasks.erase(itr);
-                    }
-                } else
-                    ++itr;
-            }
-        }
-
-        Update();
-
-        //TODO run periodically starting from now?
-        if (VUtils::run_periodic<struct server_period_update>(1s)) {
-            PeriodUpdate();
-        }
-
-        std::this_thread::sleep_for(1ms);
-
-        FrameMark;
-    }
-
+void IAvledet::uninit()
+{
     AVL_DISPATCH_WEBHOOK("Server stopping");
 
     LOG_INFO(AVL_LOGGER, "Terminating server");
@@ -890,18 +833,46 @@ void IAvledet::Start()
     ScriptManager()->Uninit();
 #endif
 
-    SaveFiles();
+    this->SaveFiles();
 
     LOG_INFO(AVL_LOGGER, "Server was gracefully terminated");
 
-    // signal any other dummy thread to continue
-    m_terminate = false;
+    // notify
+    m_run_state = true;
 }
 
-void IAvledet::Update()
+bool IAvledet::update()
 {
     ZoneScoped;
 
+    auto now     = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(m_nowUpdate - m_prevUpdate);
+
+    m_prevUpdate = m_nowUpdate;// old state
+    m_nowUpdate  = now;        // new state
+
+    // Mutex is scoped
+    {
+        std::scoped_lock lock(m_taskMutex);
+        for (auto itr = m_tasks.begin(); itr != m_tasks.end();) {
+            auto ptr = itr->get();
+            if (ptr->m_at < now) {
+                if (ptr->m_period == std::chrono::milliseconds::min()) {// if task cancelled
+                    itr = m_tasks.erase(itr);
+                } else {
+                    ptr->m_func(*ptr);
+                    if (ptr->Repeats()) {
+                        ptr->m_at += ptr->m_period;
+                        ++itr;
+                    } else
+                        itr = m_tasks.erase(itr);
+                }
+            } else
+                ++itr;
+        }
+    }
+
+    // Update();
     // This is important to processing RPC remote invocations
     if (!NetManager()->GetPeers().empty()) {
         m_worldTime += delta() * m_worldTimeMultiplier;
@@ -918,6 +889,17 @@ void IAvledet::Update()
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     HeightmapBuilder()->Update();
 #endif
+
+    //TODO run periodically starting from now?
+    if (VUtils::run_periodic<struct server_period_update>(1s)) {
+        PeriodUpdate();
+    }
+
+    std::this_thread::sleep_for(1ms);
+
+    FrameMark;
+
+    return m_run_state;
 }
 
 void IAvledet::PeriodUpdate()
@@ -1039,16 +1021,22 @@ void IAvledet::PeriodUpdate()
                                                              m_settings.worldSaveInterval + 30s)) {
             WorldManager()->GetWorld()->WriteFiles();
         }
-
-        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval, {
-        //    LOG_INFO(AVL_LOGGER, "World saving in 30s");
-        //    Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
-        //});
-        //
-        //PERIODIC_LATER(m_settings.worldSaveInterval, m_settings.worldSaveInterval + 30s, {
-        //    WorldManager()->GetWorld()->WriteFiles();
-        //});
     }
+}
+
+// Intended to be ran from ANY thread
+void IAvledet::Stop()
+{
+    m_run_state = false;
+}
+
+void IAvledet::Start()
+{
+    this->init();
+
+    while (this->update()) {}
+
+    this->uninit();
 }
 
 Task &IAvledet::RunTask(Task::F f)

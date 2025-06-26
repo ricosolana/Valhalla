@@ -2,9 +2,11 @@
 
 #include <atomic>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <list>
 #include <mutex>
+#include <thread>
 
 #include "ServerSettings.h"
 #include "Task.h"
@@ -42,7 +44,6 @@ class IAvledet
     friend class IScriptManager;
     friend class IDiscordManager;
     friend class IWorldManager;
-    friend class Tests;
     friend class World;
 
   private:
@@ -50,7 +51,6 @@ class IAvledet
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
     avledet::util::UserID m_serverID {};              // const
-    std::atomic_bool m_terminate {};
     std::chrono::steady_clock::time_point m_startTime;// const
     std::chrono::steady_clock::time_point m_prevUpdate;
     std::chrono::steady_clock::time_point m_nowUpdate;
@@ -58,13 +58,15 @@ class IAvledet
     double m_worldTimeMultiplier  = 1;
     double m_serverTimeMultiplier = 1;
     std::filesystem::file_time_type m_settingsLastTime {};
-
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
     bool m_playerSleep {};
     double m_playerSleepUntil {};
 #endif
 
   public:
+    //Internal use ONLY!!!
+    std::atomic_bool m_run_state {};
+
     avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
             m_blacklist;// banned steam ids
     avledet::util::Set<std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
@@ -75,10 +77,26 @@ class IAvledet
   private:
     void LoadFiles(bool reloading);
     void SaveFiles();
-    void Update();
     void PeriodUpdate();
 
   public:
+    /*
+        Avledet methods of operation:
+            Standalone
+                calling from user-supplied code:
+                init() -> update() -> uninit()
+            Manual
+                calling Start() once
+        Stop() 
+            can be used standalone or manually...
+        Start() 
+            requires Stop() (or a throw) to
+            terminate the loop
+    */
+    void init();
+    bool update();
+    void uninit();
+
     void Start();
     void Stop();
 
@@ -308,4 +326,4 @@ class IAvledet
 
 IAvledet *Avledet();
 
-extern quill::Logger *AVL_LOGGER;//#define AVL_LOGGER (Avledet()->m_logger)
+extern quill::Logger *AVL_LOGGER;

@@ -11,7 +11,8 @@ target_compile_options(avledet_library
         -Werror 
         -Wno-unknown-pragmas 
         -Wno-unused-variable 
-        -Wno-deprecated-declarations
+        -Wno-deprecated-declarations #hmm change detected?
+        -Wno-unused-value
 )
 
 target_include_directories(avledet_library
