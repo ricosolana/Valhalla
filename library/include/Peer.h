@@ -301,17 +301,7 @@ class Peer : public avledet::rpc::RpcBase<Peer *>
     }*/
 
 
-    void InternalInvoke(avledet::util::Hash hash, DataReader &reader)
-    {
-        //ZoneScoped;
-        //TODO no clue why this shared_from_this() was failing...
-        //auto self(shared_from_this());
-        //this->internal_invoke(self, hash, reader);
-
-        //TODO it is possible that there are header issues with ext...
-        //internal_invoke(this, hash, reader);
-        assert(false);
-    }
+    void InternalInvoke(avledet::util::Hash hash, DataReader &reader);
 
     void InternalInvoke(std::string_view name, DataReader &reader)
     {
