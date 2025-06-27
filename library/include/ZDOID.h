@@ -34,6 +34,17 @@ namespace avledet::util {
         static constexpr auto USERID_PACK_INDEX = 0;
         static constexpr auto ID_PACK_INDEX     = 1;
 
+        // HMM, this is solely for zdos loaded by the server
+        //  where userID == 0
+        //  If any player-created ZDOs go over the UID limit, we shall punish them
+        //      (really, 1M+ zdos in a SINGLE SESSION!?! either this gamer has no life, or is being malicious...)
+        //      (IF being MALICIOUS, two likely possibilities:)
+        //          - player knows / guessed the upper limit of possible ZDOID-UIDs bits,
+        //              this is easily avoidable if we add a ZDOID-UID increment limit
+        //              either way, kick the player?
+        //                  then decide to discard ALL those ZDOs, or keep..? why would you want to keep illegitimate objects...
+        //          - player has actually created x 1M+ ZDOs
+        //              - nuke them
         static constexpr auto BIT_SHARING = 4;
 
       public:

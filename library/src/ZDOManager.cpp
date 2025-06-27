@@ -835,37 +835,47 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
     //	to avoid a few buffer allocs
     //	this only matters if performance is upmost concern, which it is because c :>
 
-    peer->SubInvoke(avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList,
-                                                          availableSpace](DataWriter &writer) {
-        writer.write(peer->m_invalidSector);
+    peer->SubInvoke(
+            avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter &writer) {
+                writer.write(peer->m_invalidSector);
 
-        auto const time = Avledet()->Time();
+                auto const time = Avledet()->Time();
 
-        for (auto &&itr = syncList.begin(); itr != syncList.end() && writer.size() <= availableSpace; itr++) {
+                for (auto &&itr = syncList.begin();
+                     itr != syncList.end() && writer.size() <= availableSpace /* (1) */; itr++) {
 
-            // copy is intentional
-            auto zdo = itr->first;
+                    // if size exceeded, break now
+                    //  HEY DUMMY! look above (1), I already did this
+                    //if (writer.size() > availableSpace) {
+                    //    break;
+                    //}
 
-            peer->m_forceSend.erase(zdo->GetID());
+                    // copy is intentional
+                    //  TODO copy is solely for LUA
+                    //      - I've already decided that copies are tacky as fuck
+                    //          the better alternative would be to use shared ptr zdos
+                    //          the problem is shared_ptr has a lot of overhead
+                    //          so use boost intrusive ptr, where bits will have to be used for refcount
+                    auto zdo = itr->first;
 
-            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
-                continue;
-            }
+                    peer->m_forceSend.erase(zdo->GetID());
 
-            writer.write(zdo->GetID());
-            writer.write(zdo->GetOwnerRevision());
-            writer.write(zdo->GetDataRevision());
-            writer.write(zdo->Owner());
-            writer.write(zdo->GetPosition());
+                    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
+                        continue;
+                    }
 
-            //assert(false); //TODO
+                    writer.write(zdo->GetID());
+                    writer.write(zdo->GetOwnerRevision());
+                    writer.write(zdo->GetDataRevision());
+                    writer.write(zdo->Owner());
+                    writer.write(zdo->GetPosition());
 
-            writer.write([zdo](DataWriter &writer) { zdo->Pack(writer, true); });
+                    writer.write([zdo](DataWriter &writer) { zdo->Pack(writer, true); });
 
-            peer->m_zdos[zdo->GetID()] = {zdo->GetRevision(), time};
-        }
-        writer.write(ZDOID::NONE);// null terminator
-    });
+                    peer->m_zdos[zdo->GetID()] = {zdo->GetRevision(), time};
+                }
+                writer.write(ZDOID::NONE);// null terminator
+            });
 
     if (!peer->m_invalidSector.empty() || !syncList.empty()) {
         peer->m_invalidSector.clear();
