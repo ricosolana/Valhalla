@@ -320,16 +320,19 @@ void IZDOManager::Load(DataReader &reader, int version)
     LOG_NOTICE(AVL_LOGGER, "Loaded {} zdos", m_objectsByID.size());
 }
 
-[[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept
+[[nodiscard]] std::pair<ZDO::smart_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid) noexcept
 {
     //https://jguegant.github.io/blogs/tech/performing-try-emplace.html
-    auto &&insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
+    //auto &&insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
+
+    auto &&insert = m_objectsByID.insert(ZDO::make_shared(zdoid));
+
     //LOG_INFO(AVL_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
 
     return insert;
 }
 
-std::pair<ZDO::unique_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept
+std::pair<ZDO::smart_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid, Vector3f position) noexcept
 {
     auto &&insert = _Instantiate(zdoid);
 
@@ -512,7 +515,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
     }
 }
 
-ZDO::unique_set::iterator IZDOManager::_EraseZDO(ZDO::unique_set::iterator itr)
+ZDO::smart_set::iterator IZDOManager::_EraseZDO(ZDO::smart_set::iterator itr)
 {
     assert(itr != m_objectsByID.end());
 

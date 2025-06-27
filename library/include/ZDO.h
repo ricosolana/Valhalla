@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -125,20 +126,58 @@ class ZDO
     template<typename T>
     static constexpr bool is_member_v = is_member<T>::value;
 
+
+  public:
+    struct ptr_traits
+    {
+        static void add_ref(ZDO *ptr) noexcept
+        {
+            //auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
+            //if ((std::size_t) val >= decltype(m_packed_prefab_refcnt)::capacity_v<IDX_REFCNT>) {
+            //    // very unusual but possible I guess
+            //    //  otherwise, we can probably just
+            //    std::exit(EXIT_FAILURE);
+            //} else {
+            //    ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(val + 1);
+            //}
+            assert(false);//TODO
+        }
+
+        static void sub_ref(ZDO *ptr) noexcept
+        {
+            //auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
+            //assert(val != 0);// ensure no 0-ref, would be awkward...
+            //ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(--val);
+            //if (val == 0) {
+            //    // free
+            //    delete ptr;
+            //}
+            assert(false);//TODO
+        }
+    };
+
+    //using unique    = std::unique_ptr<ZDO>;
+    //using smart     = isptr::refcnt_ptr<ZDO>; //err: incomplete class (I think..)
+    using pointer   = ZDO *;
+    using smart     = isptr::intrusive_shared_ptr<ZDO, ptr_traits>;
+    using reference = smart;//fucking ref counting pointlessly //std::reference_wrapper<smart>;
+    using optional  = smart;// considers null as empty
+
     struct hash
     {
         using is_transparent = void;// enable heterogeneous overloads
         using is_avalanching = void;// mark class as high quality avalanching hash
 
-        [[nodiscard]] auto operator()(std::unique_ptr<ZDO> const &value) const noexcept -> std::uint64_t
+        [[nodiscard]] auto operator()(pointer const &value) const noexcept -> std::uint64_t
         {
             assert(value);
             return ankerl::unordered_dense::hash<avledet::util::ZDOID> {}(value->m_id);
         }
 
-        [[nodiscard]] auto operator()(ZDO const *v) const noexcept -> std::uint64_t
+        [[nodiscard]] auto operator()(smart const &value) const noexcept -> std::uint64_t
         {
-            return ankerl::unordered_dense::hash<ZDOID> {}(v->m_id);
+            assert(value);
+            return ankerl::unordered_dense::hash<avledet::util::ZDOID> {}(value->m_id);
         }
 
         [[nodiscard]] auto operator()(avledet::util::ZDOID const &value) const noexcept -> std::uint64_t
@@ -147,23 +186,23 @@ class ZDO
         }
     };
 
-    struct equal_to//<std::unique_ptr<ZDO>>
+    struct equal_to
     {
         using is_transparent = void;
 
-        bool operator()(std::unique_ptr<ZDO> const &lhs, std::unique_ptr<ZDO> const &rhs) const
+        bool operator()(smart const &lhs, smart const &rhs) const
         {
             assert(lhs && rhs);
             return lhs->GetID() == rhs->GetID();
         }
 
-        bool operator()(ZDO *const &lhs, ZDO *const &rhs) const
+        bool operator()(pointer const &lhs, pointer const &rhs) const
         {
             assert(lhs && rhs);
             return lhs->GetID() == rhs->GetID();
         }
 
-        bool operator()(ZDOID const &lhs, std::unique_ptr<ZDO> const &rhs) const
+        bool operator()(ZDOID const &lhs, smart const &rhs) const
         {
             assert(lhs && rhs);
             return lhs == rhs->GetID();
@@ -181,6 +220,67 @@ class ZDO
         //    return lhs == rhs->GetID();
         //}
     };
+
+    // unique: owned + safe
+    // soft: indirect through ID
+    // set/list...
+
+    using smart_set      = avledet::util::Set<smart, hash, equal_to>;
+    using soft_set       = avledet::util::Set<ZDOID, hash, std::equal_to<>>;// hetero hash?
+    using reference_set  = avledet::util::Set<reference, hash, equal_to>;
+    using reference_list = std::vector<reference>;
+    using soft_list      = std::vector<ZDOID>;
+    using Filter         = std::function<bool(reference)>;
+
+    // Returns ref
+    [[nodiscard]] static reference make_reference(smart_set::iterator itr)
+    {
+        assert(false);//TODO
+        throw std::runtime_error("nyi");
+        //return itr->get();
+    }
+
+    // Returns ref
+    [[nodiscard]] static optional make_reference(smart_set::value_type const &itr)
+    {
+        assert(false);//TODO
+        throw std::runtime_error("nyi");
+        //return itr.get();
+    }
+
+    // Returns new shared
+    [[nodiscard]] static optional make_optional(reference v)
+    {
+        assert(false);//TODO
+        throw std::runtime_error("nyi");
+        //return v;
+    }
+
+    // Returns new shared
+    [[nodiscard]] static optional make_optional(smart_set::iterator itr)
+    {
+        assert(false);//TODO
+        throw std::runtime_error("nyi");
+        //return itr->get();
+    }
+
+  private:
+    smart intrusive_from_this()
+    {
+        //return isptr::refcnt_retain(this);
+        return smart::ref(this);
+    }
+
+  public:
+    // Returns new shared
+    //[[nodiscard]] static optional make_optional(smart_set::value_type const &itr)
+    //{
+    //    assert(false);//TODO
+    //    throw std::runtime_error("nyi");
+    //    //return itr.get();
+    //}
+
+    static inline auto const nullopt = nullptr;
 
 
     template<class T>
@@ -285,10 +385,7 @@ class ZDO
         }
         return false;
     }
-        //using unique    = std::unique_ptr<ZDO>;
-        using smart     = isptr::refcnt_ptr<ZDO>;
-        using reference = smart &;
-        using optional  = smart;
+
     template<class T>
     bool set(std::string_view key, T data)
     {
@@ -436,48 +533,6 @@ class ZDO
     }
 
 
-  public:
-    using reference = ZDO *;
-    using optional  = ZDO *;
-
-    // unique: owned + safe
-    // soft: indirect through ID
-    // set/list...
-
-        using unique_set     = avledet::util::Set<smart, ZDO::hash, equal_to>;
-    using soft_set       = avledet::util::Set<ZDOID, hash, std::equal_to<>>;// hetero hash?
-    using reference_set  = avledet::util::Set<reference, hash, equal_to>;
-    using reference_list = std::vector<reference>;
-    using soft_list      = std::vector<ZDOID>;
-    using Filter         = std::function<bool(reference)>;
-
-    [[nodiscard]] static reference make_reference(unique_set::iterator itr)
-    {
-        return itr->get();
-    }
-
-    [[nodiscard]] static optional make_reference(unique_set::value_type const &itr)
-    {
-        return itr.get();
-    }
-
-    [[nodiscard]] static optional make_optional(reference v)
-    {
-        return v;
-    }
-
-    [[nodiscard]] static optional make_optional(unique_set::iterator itr)
-    {
-        return itr->get();
-    }
-
-    [[nodiscard]] static optional make_optional(unique_set::value_type const &itr)
-    {
-        return itr.get();
-    }
-
-    static inline auto const nullopt = nullptr;
-
   private:
     template<typename T>
     [[maybe_unused]] bool _Set(avledet::util::Hash key, T value)
@@ -572,21 +627,28 @@ class ZDO
     /*
     * 36 bytes total:
     */
-        ZDOID m_id;                 // 4 bytes
-        mutable Vector3f m_pos;     // 12 bytes
-        mutable Rev m_rev;          // 4 bytes
-        mutable Vector3f m_rotation;// 12 bytes
-        //mutable BitPack<std::uint32_t, 16, 16> m_packed_prefab_refcnt;// 4 bytes
+    ZDOID m_id;                 // 4 bytes
+    mutable Vector3f m_pos;     // 12 bytes
+    mutable Rev m_rev;          // 4 bytes
+    mutable Vector3f m_rotation;// 12 bytes
+    //mutable BitPack<std::uint32_t, 16, 16> m_packed_prefab_refcnt;// 4 bytes
     mutable avledet::util::Hash m_prefabHash {};// 4 bytes
-        mutable std::uint32_t m_ref_cnt {};         //TODO migrate as packed
+    mutable std::uint32_t m_ref_cnt {};         //TODO migrate as packed
 
-                                                    //static constexpr int IDX_PREFAB = 0;
-        //static constexpr int IDX_REFCNT = 1;
+                                                //static constexpr int IDX_PREFAB = 0;
+    //static constexpr int IDX_REFCNT = 1;
 
-  public:
+  private:
     ZDO(ZDOID id) :
         m_id(id)
     {
+    }
+
+  public:
+    template<class... Args>
+    static smart make_shared(Args &&...args)
+    {
+        return smart::noref(new ZDO(std::forward<Args>(args)...));
     }
 
     friend bool operator==(ZDOID const &lhs, ZDO const *rhs) noexcept

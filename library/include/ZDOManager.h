@@ -1,9 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <vector>
+
 #include <quill/Logger.h>
 #include <range/v3/all.hpp>
-#include <vector>
 
 #include "Peer.h"
 #include "PrefabManager.h"
@@ -49,7 +50,7 @@ class IZDOManager
 
     // Responsible for managing ZDOs lifetimes
     //	A segmented map is used instead of a vector map
-    ZDO::unique_set m_objectsByID;
+    ZDO::smart_set m_objectsByID;
 
     // Container of retired ZDOs
     //	TODO benchmark storage here vs keeping ZDOIDs in m_objectsByID map (but setting values to null to diffreenciate between alive/dead)
@@ -104,7 +105,7 @@ class IZDOManager
     //void SmartAssignZDOs();
 
     // Frees a ZDO from memory by a valid iterator
-    [[maybe_unused]] ZDO::unique_set::iterator _EraseZDO(ZDO::unique_set::iterator itr);
+    [[maybe_unused]] ZDO::smart_set::iterator _EraseZDO(ZDO::smart_set::iterator itr);
 
     void EraseZDO(ZDOID zdoid)
     {
@@ -118,7 +119,7 @@ class IZDOManager
     // Destroys a ZDO globally
     // The ZDO is freed from memory
     // Returns an iterator to the next ZDO
-    [[maybe_unused]] ZDO::unique_set::iterator _DestroyZDO(ZDO::unique_set::iterator itr)
+    [[maybe_unused]] ZDO::smart_set::iterator _DestroyZDO(ZDO::smart_set::iterator itr)
     {
         m_destroySendList.push_back((*itr)->GetID());
         return _EraseZDO(itr);
@@ -135,12 +136,12 @@ class IZDOManager
 
     // Instantiate a ZDO by id if it does not exist
     // Returns the ZDO or the previously mapped ZDO
-    [[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> _Instantiate(ZDOID zdoid) noexcept;
+    [[nodiscard]] std::pair<ZDO::smart_set::iterator, bool> _Instantiate(ZDOID zdoid) noexcept;
 
     // Instantiate a ZDO by id if it does not exist
     // Returns the ZDO or the previously mapped ZDO
-    [[nodiscard]] std::pair<ZDO::unique_set::iterator, bool> _Instantiate(ZDOID zdoid,
-                                                                          Vector3f position) noexcept;
+    [[nodiscard]] std::pair<ZDO::smart_set::iterator, bool> _Instantiate(ZDOID zdoid,
+                                                                         Vector3f position) noexcept;
 
     // Instantiate a ZDO with the next available ID
     [[nodiscard]] ZDO::reference _Instantiate(Vector3f position) noexcept;
