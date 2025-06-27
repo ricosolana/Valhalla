@@ -18,7 +18,6 @@ class IZDOManager
     friend class INetManager;
     friend class IAvledet;
     friend class ZDO;
-    friend class VHTest;
 
     // Predicate for whether a zdo is a prefab with or without given flags
     //	prefabHash: if 0, then prefabHash check is skipped

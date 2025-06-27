@@ -13,6 +13,7 @@ target_compile_options(avledet_library
         -Wno-unused-variable 
         -Wno-deprecated-declarations #hmm change detected?
         -Wno-unused-value
+        -Wno-unused-parameter
 )
 
 target_include_directories(avledet_library
@@ -62,6 +63,7 @@ target_link_libraries(avledet_library
         unordered_dense::unordered_dense
         # TODO, are we really using v3? c++23 ranges are released...
         range-v3::meta range-v3::concepts range-v3::range-v3
+        isptr::isptr
 )
 
 #TODO add testing unit!

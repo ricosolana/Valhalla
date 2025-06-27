@@ -156,6 +156,7 @@ find_package(zstd CONFIG REQUIRED)
 find_package(quill CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_package(unordered_dense CONFIG REQUIRED) # https://github.com/martinus/unordered_dense?tab=readme-ov-file#21-installing-using-cmake
+find_package(isptr CONFIG REQUIRED) #intrusive pointer
 
 if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     message("Lua: enabled")

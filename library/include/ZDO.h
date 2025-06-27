@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -12,6 +14,8 @@
 #include <vector>
 
 #include <gtl/btree.hpp>
+#include <intrusive_shared_ptr/intrusive_shared_ptr.h>
+#include <intrusive_shared_ptr/refcnt_ptr.h>
 
 #include "BitPack.h"
 #include "DataStream.h"
@@ -281,7 +285,10 @@ class ZDO
         }
         return false;
     }
-
+        //using unique    = std::unique_ptr<ZDO>;
+        using smart     = isptr::refcnt_ptr<ZDO>;
+        using reference = smart &;
+        using optional  = smart;
     template<class T>
     bool set(std::string_view key, T data)
     {
@@ -437,7 +444,7 @@ class ZDO
     // soft: indirect through ID
     // set/list...
 
-    using unique_set     = avledet::util::Set<std::unique_ptr<ZDO>, hash, equal_to>;
+        using unique_set     = avledet::util::Set<smart, ZDO::hash, equal_to>;
     using soft_set       = avledet::util::Set<ZDOID, hash, std::equal_to<>>;// hetero hash?
     using reference_set  = avledet::util::Set<reference, hash, equal_to>;
     using reference_list = std::vector<reference>;
@@ -565,11 +572,16 @@ class ZDO
     /*
     * 36 bytes total:
     */
-    ZDOID m_id;                                 // 4 bytes
-    mutable Vector3f m_pos;                     // 12 bytes
-    mutable ZDO::Rev m_rev;                     // 4 bytes
-    mutable Vector3f m_rotation;                // 12 bytes
+        ZDOID m_id;                 // 4 bytes
+        mutable Vector3f m_pos;     // 12 bytes
+        mutable Rev m_rev;          // 4 bytes
+        mutable Vector3f m_rotation;// 12 bytes
+        //mutable BitPack<std::uint32_t, 16, 16> m_packed_prefab_refcnt;// 4 bytes
     mutable avledet::util::Hash m_prefabHash {};// 4 bytes
+        mutable std::uint32_t m_ref_cnt {};         //TODO migrate as packed
+
+                                                    //static constexpr int IDX_PREFAB = 0;
+        //static constexpr int IDX_REFCNT = 1;
 
   public:
     ZDO(ZDOID id) :
