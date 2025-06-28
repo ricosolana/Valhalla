@@ -76,7 +76,7 @@ class Prefab
   public:
     std::string m_name;                       // 40 bytes
     avledet::util::CSU::Vector3f m_localScale;// 12 bytes
-    Flag m_flags;                             // = Flag::NONE;                // 8 bytes
+    Flag m_flags;                             // 8 bytes
     avledet::util::Hash m_hash;               // 4 bytes
 
   public:

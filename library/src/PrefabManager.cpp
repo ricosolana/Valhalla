@@ -1,7 +1,11 @@
-#include "PrefabManager.h"
+#include <cstddef>
+#include <iterator>
+#include <stdexcept>
+#include <utility>
 
+#include "PrefabManager.h"
+#include "ValhallaServer.h"
 #include "VUtilsResource.h"
-#include "ZDOManager.h"
 
 auto PREFAB_MANAGER = std::make_unique<IPrefabManager>();
 
@@ -71,11 +75,39 @@ Prefab const &IPrefabManager::get_prefab(std::string_view name) const
     return get_prefab(avledet::util::get_stable_hash(name));
 }
 
+Prefab const &IPrefabManager::get_indexed_prefab(std::size_t index) const
+{
+    //assert(false);
+    //throw std::runtime_error("nyi");
+    auto itr = m_prefabs.begin();
+    assert(index < (std::size_t) std::distance(itr, std::end(m_prefabs)));
+    std::advance(itr, index);
+    return *itr;
+}
+
+std::size_t IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
+{
+    auto &&itr = m_prefabs.find(hash);
+    if (itr != m_prefabs.end()) {
+        return std::distance(m_prefabs.begin(), itr);
+    }
+    throw std::runtime_error("prefab not found");
+    //assert(false);
+    //throw std::runtime_error("nyi");
+}
+
+std::size_t IPrefabManager::get_prefab_index(Prefab &prefab) const
+{
+    return this->get_prefab_index(prefab.m_hash);
+    //assert(false);
+    //throw std::runtime_error("nyi");
+}
+
 void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)
 {
-    avledet::util::Hash hash = avledet::util::get_stable_hash(name);
-    auto &&emp               = m_prefabs.emplace(Prefab(std::move(name), scale, flags));
-    auto &&prefab            = *emp.first;
+    //avledet::util::Hash hash = avledet::util::get_stable_hash(name);
+    auto &&emp    = m_prefabs.emplace(Prefab(std::move(name), scale, flags));
+    auto &&prefab = *emp.first;
 
     assert(!prefab.m_name.empty());
 
@@ -83,9 +115,10 @@ void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag fla
         LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", prefab.m_name);
     }
 
-    if (name == "_TerrainCompiler") {
+    if (prefab.m_name == "_TerrainCompiler") {
         assert(prefab.GetObjectType() == avledet::util::ObjectType::TERRAIN);
     }
+    //assert(false);//TODO ^^^
 }
 
 void IPrefabManager::Register(DataReader &reader)

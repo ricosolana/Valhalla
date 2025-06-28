@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <quill/LogMacros.h>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -128,34 +129,37 @@ class ZDO
     {
         static void add_ref(ZDO *ptr) noexcept
         {
-            //auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
-            //if ((std::size_t) val >= decltype(m_packed_prefab_refcnt)::capacity_v<IDX_REFCNT>) {
-            //    // very unusual but possible I guess
-            //    //  otherwise, we can probably just
-            //    std::exit(EXIT_FAILURE);
-            //} else {
-            //    ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(val + 1);
-            //}
+            auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
+            // if already at max, AN OVERFLOW WILL HAPPEN
+            if ((std::size_t) val >= decltype(m_packed_prefab_refcnt)::capacity_v<IDX_REFCNT>) {
+                // very unusual but possible I guess
+                //  otherwise, we can probably just
+                LOG_CRITICAL(AVL_LOGGER, "refcnt exceeded, this is very unusual: {}", ptr->m_id);
+                std::exit(EXIT_FAILURE);
+            } else {
+                ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(val + 1);
+            }
+
             //assert(false);//TODO
 
-            ptr->m_ref_cnt++;
+            //ptr->m_ref_cnt++;
         }
 
         static void sub_ref(ZDO *ptr) noexcept
         {
-            //auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
-            //assert(val != 0);// ensure no 0-ref, would be awkward...
-            //ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(--val);
-            //if (val == 0) {
-            //    // free
-            //    delete ptr;
-            //}
-            //assert(false);//TODO
-
-            if (--ptr->m_ref_cnt == 0) {
+            auto val = ptr->m_packed_prefab_refcnt.get<IDX_REFCNT>();
+            assert(val != 0);// ensure no 0-ref, would be awkward...
+            ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(--val);
+            if (val == 0) {
                 // free
                 delete ptr;
             }
+            //assert(false);//TODO
+
+            //if (--ptr->m_ref_cnt == 0) {
+            //    // free
+            //    delete ptr;
+            //}
         }
     };
 
@@ -581,7 +585,8 @@ class ZDO
 
     void _SetPrefabHash(avledet::util::Hash hash)
     {
-        this->m_prefabHash = hash;
+        m_packed_prefab_refcnt.set<IDX_PREFAB>(PrefabManager()->get_prefab_index(hash));
+        //this->m_prefabHash = hash;
     }
 
     // Set the owner of the ZDO without revising
@@ -610,16 +615,16 @@ class ZDO
     /*
     * 36 bytes total:
     */
-    ZDOID m_id;                 // 4 bytes
-    mutable Vector3f m_pos;     // 12 bytes
-    mutable Rev m_rev;          // 4 bytes
-    mutable Vector3f m_rotation;// 12 bytes
-    //mutable BitPack<std::uint32_t, 16, 16> m_packed_prefab_refcnt;// 4 bytes
-    mutable avledet::util::Hash m_prefabHash {};// 4 bytes
-    mutable std::uint32_t m_ref_cnt {};         //TODO migrate as packed
+    ZDOID m_id;                                                   // 4 bytes
+    mutable Vector3f m_pos;                                       // 12 bytes
+    mutable Rev m_rev;                                            // 4 bytes
+    mutable Vector3f m_rotation;                                  // 12 bytes
+    mutable BitPack<std::uint32_t, 16, 16> m_packed_prefab_refcnt;// 4 bytes
+    //mutable avledet::util::Hash m_prefabHash {};// 4 bytes
+    //mutable std::uint32_t m_ref_cnt {};         //TODO migrate as packed
 
-                                                //static constexpr int IDX_PREFAB = 0;
-    //static constexpr int IDX_REFCNT = 1;
+    static constexpr int IDX_PREFAB = 0;
+    static constexpr int IDX_REFCNT = 1;
 
   private:
     ZDO(ZDOID id) :
@@ -1111,12 +1116,14 @@ class ZDO
 
     [[nodiscard]] Prefab const &GetPrefab() const
     {
-        return PrefabManager()->get_prefab(this->m_prefabHash);
+        return PrefabManager()->get_indexed_prefab(m_packed_prefab_refcnt.get<IDX_PREFAB>());
+        //return PrefabManager()->get_prefab(this->m_prefabHash);
     }
 
     [[nodiscard]] avledet::util::Hash GetPrefabHash() const
     {
-        return this->m_prefabHash;
+        return this->GetPrefab().m_hash;
+        //return this->m_prefabHash;
     }
 
     void SetLocalScale(Vector3f scale, bool allowIdentity)
