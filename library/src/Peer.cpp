@@ -16,7 +16,7 @@ Peer::Peer(ISocket::Ptr socket) :
     m_socket(std::move(socket))
 {
     this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer::Ptr self) {
-        LOG_INFO(AVL_LOGGER, "RPC_Disconnect");
+        //LOG_INFO(AVL_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 

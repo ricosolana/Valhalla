@@ -389,8 +389,8 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         }
     }
 
-    LOG_DEBUG(AVL_LOGGER, "{} -> {} (im client: {})", old_state, new_state,// TODO magic enum?
-              (im_client ? "true" : "false"));
+    LOG_TRACE_L1(AVL_LOGGER, "{} -> {} (im client: {})", old_state, new_state,// TODO magic enum?
+                 (im_client ? "true" : "false"));
 
     //std::scoped_lock scoped(m_mux);
 
@@ -409,9 +409,9 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             || data->m_eOldState == k_ESteamNetworkingConnectionState_Connecting)) {
         if (socket) {
             if (im_client) {
-                LOG_DEBUG(AVL_LOGGER, "outbound socket connected {}", data->m_hConn);
+                LOG_TRACE_L1(AVL_LOGGER, "outbound socket connected {}", data->m_hConn);
             } else {
-                LOG_DEBUG(AVL_LOGGER, "connected socket queued {}", data->m_hConn);
+                LOG_TRACE_L1(AVL_LOGGER, "connected socket queued {}", data->m_hConn);
             }
             socket->m_status = Status::Connected;
             m_ready.push_back(socket);
@@ -427,7 +427,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         if (im_client) {
             if (socket) {
                 //socket->m_status = Status::Connecting;
-                LOG_DEBUG(AVL_LOGGER, "outbound socket connecting {}", data->m_hConn);
+                LOG_TRACE_L1(AVL_LOGGER, "outbound socket connecting {}", data->m_hConn);
             } else {
                 assert(false);
             }
@@ -436,7 +436,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
             if (SteamSocket::get_steam_sockets()->AcceptConnection(data->m_hConn) == k_EResultOK) {
                 socket = m_sockets.emplace_back(std::make_shared<SteamSocket>(data->m_hConn, false));
                 //socket->m_status = Status::Connecting;
-                LOG_DEBUG(AVL_LOGGER, "inbound socket connecting {}", data->m_hConn);
+                LOG_TRACE_L1(AVL_LOGGER, "inbound socket connecting {}", data->m_hConn);
             } else {
                 //TODO
                 //  this branch (and all other old->new state branches above)
@@ -450,7 +450,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
                || (data->m_info.m_eState == k_ESteamNetworkingConnectionState_None
                    && data->m_eOldState == k_ESteamNetworkingConnectionState_Connected)) {
         if (data->m_info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally) {
-            LOG_DEBUG(AVL_LOGGER, "{}", data->m_info.m_szEndDebug);
+            LOG_TRACE_L1(AVL_LOGGER, "{}", data->m_info.m_szEndDebug);
         }
 
         if (socket) {
@@ -489,7 +489,7 @@ void AcceptorSteam::OnSteamServerConnectFailure(SteamServerConnectFailure_t* dat
 void AcceptorSteam::OnAuthSessionTicketResponse(GetAuthSessionTicketResponse_t *data)
 {
     (void) data;
-    LOG_INFO(AVL_LOGGER, "auth session response callback");
+    LOG_TRACE_L1(AVL_LOGGER, "auth session response callback");
 }
 
 // call results

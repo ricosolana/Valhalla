@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <quill/LogMacros.h>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
@@ -8,6 +9,7 @@
 #include "DataStream.h"
 #include "ModManager.h"
 #include "Types.h"
+#include "ValhallaServer.h"
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 
@@ -60,6 +62,8 @@ class MethodImpl : public IMethod<T>
     }
 
   private:
+    //using IMethod<T>::m_hash;
+
     F const m_func;
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -103,10 +107,13 @@ class MethodImpl : public IMethod<T>
 
         bool keep_me_mapped = true;
 
+        LOG_TRACE_L1(AVL_LOGGER, "calling internal method, hash {}", this->m_hash);
+
         if constexpr (std::is_same_v<bool, typename VUtils::Traits::func_traits<F>::result_type>) {
             keep_me_mapped = std::apply(m_func, tuple);
-        } else
+        } else {
             std::apply(m_func, tuple);
+        }
 
         /*
         // Postfix

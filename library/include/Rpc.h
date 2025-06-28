@@ -1,4 +1,6 @@
 #include <memory>
+#include <quill/core/LogLevel.h>
+#include <quill/LogMacros.h>
 #include <string_view>
 
 #include <gtl/btree.hpp>
@@ -6,6 +8,7 @@
 
 #include "Hashes.h"
 #include "Method.h"
+#include "ValhallaServer.h"
 
 //#include "Peer.h"//TODO remove!!
 
@@ -27,6 +30,7 @@ namespace avledet::rpc {
                 //bool keep_mapped = find->get()->Invoke(std::move(handle), reader);//(1)
                 bool keep_mapped = find->second->Invoke(std::move(handle), reader);//(1)
                 if (!keep_mapped) {
+                    LOG_TRACE_L1(AVL_LOGGER, "method {} unsubscribed", hash);
                     m_methods.erase(
                             hash);// do not erase using iterator; changes between (1) and here can result in invalid iterator
                 }

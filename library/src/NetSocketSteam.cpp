@@ -1,6 +1,8 @@
 #include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
 #include <isteamuser.h>
+#include <magic_enum.hpp>
+#include <quill/LogMacros.h>
 #include <quill/Utility.h>
 #include <steam_gameserver.h>
 
@@ -29,11 +31,13 @@ namespace avledet::network {
     {
         SteamNetConnectionInfo_t info {};
         get_steam_sockets()->GetConnectionInfo(m_conn, &info);
-        m_steam_id = info.m_identityRemote;
+        this->m_steam_id = info.m_identityRemote;
 
         char buf[SteamNetworkingIPAddr::k_cchMaxString];
         info.m_addrRemote.ToString(buf, sizeof(buf), false);
-        m_address = buf;
+        this->m_address = buf;
+
+        LOG_TRACE_L1(AVL_LOGGER, "init_identifiers for {}, address {}", get_host_name(), m_address);
     }
 
     void SteamSocket::Close(bool linger)
@@ -41,6 +45,7 @@ namespace avledet::network {
         // logic:
         //  if we are already lingering, and we are close-now (do not linger), then override and close
         if (m_status == Status::Lingering && !linger) {
+            LOG_TRACE_L1(AVL_LOGGER, "forced close while lingering for {}", get_host_name());
             m_status = Status::Closed;
             return;
         }
@@ -51,7 +56,6 @@ namespace avledet::network {
         case Status::Lingering: return;
         default: break;
         }
-
 
         if (m_status == Status::Connecting) {
             m_status = Status::Connect_Failed;
@@ -73,6 +77,9 @@ namespace avledet::network {
             SteamUser()->EndAuthSession(steam_id);
         }
 
+        LOG_TRACE_L2(AVL_LOGGER, "close for {}, status {}, linger {}", get_host_name(),
+                     magic_enum::enum_name(m_status), linger);
+
         get_steam_sockets()->CloseConnection(m_conn, 0, "", linger);
     }
 
@@ -84,6 +91,8 @@ namespace avledet::network {
 
     bool SteamSocket::authenticate(avledet::util::ByteView ticket)
     {
+        LOG_TRACE_L1(AVL_LOGGER, "authenticating for {}", get_host_name());
+
         EBeginAuthSessionResult result {};
         if (AVL_SETTINGS.serverDedicated) {
             result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(),
@@ -99,6 +108,7 @@ namespace avledet::network {
     {
         assert(!bytes.empty());
 
+        LOG_TRACE_L2(AVL_LOGGER, "send for {}", get_host_name());
 
         if (m_status != Status::Lingering)
             m_send_queue.push_back(std::move(bytes));
@@ -119,14 +129,19 @@ namespace avledet::network {
                 bytes.insert(bytes.begin(), reinterpret_cast<char *>(msg->m_pData),
                              reinterpret_cast<char *>(msg->m_pData) + msg->m_cbSize);
 
-                //std::cout << quill::utility::to_hex(reinterpret_cast<char*>(msg->m_pData), msg->m_cbSize) << "\n";
+                LOG_TRACE_L3(AVL_LOGGER, "recv for {}, | {} |", get_host_name(),
+                             quill::utility::to_hex(bytes.data(), bytes.size()));
 
                 msg->Release();
             } else if (res == -1) {
                 // TODO suspicious, callback is already used,
                 // why require a manual close
+                LOG_TRACE_L1(AVL_LOGGER, "recv failed for {}", get_host_name());
                 this->Close(false);
             }
+        } else {
+            LOG_TRACE_L2(AVL_LOGGER, "illegal recv attempted for {}, status ", get_host_name(),
+                         magic_enum::enum_name(m_status));
         }
         return bytes;
     }
@@ -155,7 +170,13 @@ namespace avledet::network {
 
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
+            LOG_TRACE_L2(AVL_LOGGER,
+                         "get_send_queue_size for {}, queued {}, reliable {}, unreliable {}, unacked {}",
+                         get_host_name(), num, rt.m_cbPendingReliable, rt.m_cbPendingUnreliable,
+                         rt.m_cbSentUnackedReliable);
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
+        } else {
+            LOG_TRACE_L2(AVL_LOGGER, "get_send_queue_size failed, hostname {}", get_host_name());
         }
 
         return num;
@@ -165,7 +186,13 @@ namespace avledet::network {
     {
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
-            return {rt.m_flConnectionQualityLocal, rt.m_flConnectionQualityRemote};
+            auto &&local  = rt.m_flConnectionQualityLocal;
+            auto &&remote = rt.m_flConnectionQualityRemote;
+            LOG_TRACE_L2(AVL_LOGGER, "get_connection_quality for {}, local {}, remote {}", get_host_name(),
+                         local, remote);
+            return {local, remote};
+        } else {
+            LOG_TRACE_L2(AVL_LOGGER, "get_connection_quality failed, hostname {}", get_host_name());
         }
         return {};
     }
@@ -179,25 +206,30 @@ namespace avledet::network {
     {
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
+            LOG_TRACE_L2(AVL_LOGGER, "get_ping for {}, {}ms", get_host_name(), rt.m_nPing);
             return rt.m_nPing;
+        } else {
+            LOG_TRACE_L2(AVL_LOGGER, "get_ping failed, hostname {}", get_host_name());
         }
         return 0;
     }
 
     void SteamSocket::send_queued()
     {
+        LOG_TRACE_L2(AVL_LOGGER, "sending queued, hostname ", get_host_name());
+
         if (m_status == Status::Connected /* || m_status == Status::Lingering*/) {
             for (auto &&itr = m_send_queue.begin(); itr != m_send_queue.end();) {
                 auto &&array = *itr;
-                auto res     = get_steam_sockets()->SendMessageToConnection(
+                LOG_TRACE_L3(AVL_LOGGER, "sending: | {} |",
+                             quill::utility::to_hex(array.data(), array.size()));
+
+                auto res = get_steam_sockets()->SendMessageToConnection(
                         m_conn, array.data(), (uint32_t) array.size(),
                         k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
+
                 if (res != k_EResultOK) {
-                    std::cout << "data send failed\n";
-                    //if (res == k_EResultNoConnection) {
-                    //    // close
-                    //    this->close(true);
-                    //}
+                    LOG_TRACE_L1(AVL_LOGGER, "send_queued() failed: {}", magic_enum::enum_name(res));
                     break;
                 }
                 itr = m_send_queue.erase(itr);
