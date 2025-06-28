@@ -324,8 +324,14 @@ void IZDOManager::Load(DataReader &reader, int version)
 {
     //https://jguegant.github.io/blogs/tech/performing-try-emplace.html
     //auto &&insert = m_objectsByID.insert(std::make_unique<ZDO>(zdoid));
+    auto contained = m_objectsByID.contains(zdoid);//TODO dbg test
 
     auto &&insert = m_objectsByID.insert(ZDO::make_shared(zdoid));
+
+    // if newly inserted, but ALREADY CONTAINED???
+    if (insert.second && contained) {
+        assert(false);
+    }
 
     //LOG_INFO(AVL_LOGGER, "zdo instantiated: {} {}", insert.second, zdoid);
 

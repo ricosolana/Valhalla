@@ -140,7 +140,9 @@ class ZDO
             //} else {
             //    ptr->m_packed_prefab_refcnt.set<IDX_REFCNT>(val + 1);
             //}
-            assert(false);//TODO
+            //assert(false);//TODO
+
+            ptr->m_ref_cnt++;
         }
 
         static void sub_ref(ZDO *ptr) noexcept
@@ -152,7 +154,12 @@ class ZDO
             //    // free
             //    delete ptr;
             //}
-            assert(false);//TODO
+            //assert(false);//TODO
+
+            if (--ptr->m_ref_cnt == 0) {
+                // free
+                delete ptr;
+            }
         }
     };
 
@@ -235,33 +242,33 @@ class ZDO
     // Returns ref
     [[nodiscard]] static reference make_reference(smart_set::iterator itr)
     {
-        assert(false);//TODO
-        throw std::runtime_error("nyi");
-        //return itr->get();
+        //assert(false);//TODO
+        //throw std::runtime_error("nyi");
+        return *itr;
     }
 
     // Returns ref
-    [[nodiscard]] static optional make_reference(smart_set::value_type const &itr)
+    [[nodiscard]] static reference make_reference(smart_set::value_type const &itr)
     {
-        assert(false);//TODO
-        throw std::runtime_error("nyi");
-        //return itr.get();
+        //assert(false);//TODO
+        //throw std::runtime_error("nyi");
+        return itr;
     }
 
     // Returns new shared
     [[nodiscard]] static optional make_optional(reference v)
     {
-        assert(false);//TODO
-        throw std::runtime_error("nyi");
-        //return v;
+        //assert(false);//TODO
+        //throw std::runtime_error("nyi");
+        return v;
     }
 
     // Returns new shared
     [[nodiscard]] static optional make_optional(smart_set::iterator itr)
     {
-        assert(false);//TODO
-        throw std::runtime_error("nyi");
-        //return itr->get();
+        //assert(false);//TODO
+        //throw std::runtime_error("nyi");
+        return *itr;
     }
 
   private:
