@@ -37,14 +37,13 @@ class IPrefabManager
     };
 
     // TODO use set and use hash within from prefab
-    //	TODO use gtl btree?
-    //avledet::util::Set<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
+    avledet::util::Set<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
     //gtl::btree_set<Prefab,
     //               decltype([](Prefab const &lhs, Prefab const &rhs) { return lhs.m_hash < rhs.m_hash; })>
     //        m_prefabs;// ordered
 
-    gtl::btree_set<Prefab,
-                   cmp> m_prefabs;// ordered
+    //gtl::btree_set<Prefab,
+    //               cmp> m_prefabs;// ordered
 
 
   public:

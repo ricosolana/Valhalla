@@ -616,7 +616,13 @@ class ZDO
     template<class... Args>
     static smart make_shared(Args &&...args)
     {
-        return smart::noref(new ZDO(std::forward<Args>(args)...));
+        //return smart::noref(new ZDO(std::forward<Args>(args)...));
+        //https://github.com/gershnik/intrusive_shared_ptr?tab=readme-ov-file#using-provided-base-classes
+        // "ATTACH" uses "noref", which "CLAIMS" to create with refcnt of '1'
+        //  this is UNTRUE
+        //  directly via the code, noref does NOTHING, except for encapsulate the raw pointer
+        //  which results in the pointer leaking memory when the last wrapper is destroyed (this)
+        return smart::ref(new ZDO(std::forward<Args>(args)...));
     }
 
     friend bool operator==(ZDOID const &lhs, ZDO const *rhs) noexcept
