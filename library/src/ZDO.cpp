@@ -146,7 +146,8 @@ void ZDO::Unpack(DataReader &reader, std::int32_t version)
     //this.m_prefab = pkg.ReadInt();
     auto prefab_hash = reader.read<std::int32_t>();
     //_SetPrefabHash(reader.read<std::int32_t>());
-    if (GetPrefabHash() == 0) {// Init once
+    //if (GetPrefabHash() == 0) {// Init once
+    if (m_prefab_index == Prefab::NONE) {// Init once
         _SetPrefabHash(prefab_hash);
     } else {
         // should always run if a version is provided (this assumes that the world is being loaded)

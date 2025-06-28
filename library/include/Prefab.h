@@ -3,10 +3,14 @@
 #include "Hashes.h"
 #include "Quaternion.h"
 #include "Vector.h"
+#include <cstdint>
+#include <limits>
 
 class Prefab
 {
   public:
+    static constexpr auto NONE = std::numeric_limits<std::uint16_t>::max();
+
     struct Instance
     {
         avledet::util::CSU::Quaternion m_rot;// 16 bytes

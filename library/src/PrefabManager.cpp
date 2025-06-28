@@ -1,11 +1,13 @@
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
 #include "PrefabManager.h"
 #include "ValhallaServer.h"
 #include "VUtilsResource.h"
+#include "ZDO.h"
 
 auto PREFAB_MANAGER = std::make_unique<IPrefabManager>();
 
@@ -77,6 +79,9 @@ Prefab const &IPrefabManager::get_prefab(std::string_view name) const
 
 Prefab const &IPrefabManager::get_indexed_prefab(std::size_t index) const
 {
+    //Do not query a "NULL" prefab
+    assert(index != Prefab::NONE);
+
     //assert(false);
     //throw std::runtime_error("nyi");
     auto itr = m_prefabs.begin();
