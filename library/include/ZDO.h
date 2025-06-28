@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
-#include <memory>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -30,8 +28,6 @@
 #include "VUtilsMathf.h"
 #include "ZDOConnector.h"
 #include "ZDOID.h"
-
-//#include "ZoneManager.h" //hmm
 
 class ZDO
 {
@@ -163,11 +159,9 @@ class ZDO
         }
     };
 
-    //using unique    = std::unique_ptr<ZDO>;
-    //using smart     = isptr::refcnt_ptr<ZDO>; //err: incomplete class (I think..)
     using pointer   = ZDO *;
     using smart     = isptr::intrusive_shared_ptr<ZDO, ptr_traits>;
-    using reference = smart;//fucking ref counting pointlessly //std::reference_wrapper<smart>;
+    using reference = smart;
     using optional  = smart;// considers null as empty
 
     struct hash
@@ -209,27 +203,37 @@ class ZDO
             return lhs->GetID() == rhs->GetID();
         }
 
+        bool operator()(smart const &lhs, ZDOID const &rhs) const
+        {
+            assert(lhs && rhs);
+            return lhs->GetID() == rhs;
+        }
+
+        bool operator()(pointer const &lhs, ZDOID const &rhs) const
+        {
+            assert(lhs && rhs);
+            return lhs->GetID() == rhs;
+        }
+
+        /*
+            repeats of above, but swapped args
+        */
+
         bool operator()(ZDOID const &lhs, smart const &rhs) const
         {
             assert(lhs && rhs);
             return lhs == rhs->GetID();
         }
 
-        bool operator()(ZDOID const &lhs, ZDO *const &rhs) const
+        bool operator()(ZDOID const &lhs, pointer const &rhs) const
         {
             assert(lhs && rhs);
             return lhs == rhs->GetID();
         }
-
-        //bool operator()(std::unique_ptr<ZDO> const& rhs, ZDOID const& lhs) const
-        //{
-        //    assert(lhs && rhs);
-        //    return lhs == rhs->GetID();
-        //}
     };
 
-    // unique: owned + safe
-    // soft: indirect through ID
+    // smart: noref
+    // soft: IDs stored
     // set/list...
 
     using smart_set      = avledet::util::Set<smart, hash, equal_to>;
@@ -242,51 +246,34 @@ class ZDO
     // Returns ref
     [[nodiscard]] static reference make_reference(smart_set::iterator itr)
     {
-        //assert(false);//TODO
-        //throw std::runtime_error("nyi");
         return *itr;
     }
 
     // Returns ref
     [[nodiscard]] static reference make_reference(smart_set::value_type const &itr)
     {
-        //assert(false);//TODO
-        //throw std::runtime_error("nyi");
         return itr;
     }
 
     // Returns new shared
     [[nodiscard]] static optional make_optional(reference v)
     {
-        //assert(false);//TODO
-        //throw std::runtime_error("nyi");
         return v;
     }
 
     // Returns new shared
     [[nodiscard]] static optional make_optional(smart_set::iterator itr)
     {
-        //assert(false);//TODO
-        //throw std::runtime_error("nyi");
         return *itr;
     }
 
   private:
     smart intrusive_from_this()
     {
-        //return isptr::refcnt_retain(this);
         return smart::ref(this);
     }
 
   public:
-    // Returns new shared
-    //[[nodiscard]] static optional make_optional(smart_set::value_type const &itr)
-    //{
-    //    assert(false);//TODO
-    //    throw std::runtime_error("nyi");
-    //    //return itr.get();
-    //}
-
     static inline auto const nullopt = nullptr;
 
 
@@ -296,9 +283,6 @@ class ZDO
     template<class T>
     using VarMap = ankerl::unordered_dense::segmented_map<avledet::util::ZDOID, Tree<T>, ZDO::hash,
                                                           std::equal_to<>>;
-
-    // zdo hash members
-    //ankerl::unordered_dense::map<avledet::util::ZDOID, std::pair<ZDO::ConnectionType, avledet::util::Hash>, avledet::sync::ZDO::hash, std::equal_to<>> s_connectionsHashData;
 
     static inline VarMap<float> m_floats;
     static inline VarMap<avledet::util::CSU::Vector3f> m_vec3;
@@ -349,13 +333,6 @@ class ZDO
         return false;
     }
 
-    //template <class T>
-    //static std::pair<bool, Tree<T>*> _GetVarTree(avledet::util::ZDOID const& uid) {
-    //    auto&& map = _GetVars<T>();
-    //    auto&& emp = map.try_emplace(uid);
-    //    return { emp.second, emp.first->second };
-    //}
-
     template<class T, bool create = true>
     static std::pair<bool, Tree<T> *> _GetVarTree(avledet::util::ZDOID const &uid)
     {
@@ -375,7 +352,6 @@ class ZDO
     }
 
     template<class T>
-    //requires is_member_v<T> //std::remove_cvref_t<T>>
     static bool _set(avledet::util::ZDOID const &uid, avledet::util::Hash key, T data)
     {
         auto &&[inserted, tree] = _GetVarTree<T>(uid);
