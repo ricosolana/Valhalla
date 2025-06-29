@@ -18,6 +18,7 @@
 #include "Vector.h"
 #include "VUtilsTraits.h"
 
+// Order-dependent //dont put before 'CompileSettings.h'
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/state.hpp>
 #endif

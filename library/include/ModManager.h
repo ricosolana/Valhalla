@@ -1,9 +1,6 @@
 #pragma once
 
 #include "CompileSettings.h"
-#include "VUtilsRandom.h"
-#include <utility>
-
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -11,8 +8,13 @@
     #include <cstddef>
     #include <cstdint>
     #include <list>
+    #include <utility>
     #include <vector>
 
+    // Important order // Must be before lua.h
+    #include <sol/state.hpp>
+
+    #include <intrusive_shared_ptr/intrusive_shared_ptr.h>
     #include <lua.h>
     #include <magic_enum.hpp>
     #include <sol/forward.hpp>
@@ -26,7 +28,47 @@
     #include "ValhallaServer.h"
     #include "Vector.h"
     #include "VUtils.h"
+    #include "VUtilsRandom.h"
     #include "ZDOID.h"
+
+namespace sol {
+    ////template<>
+    ////struct unique_usertype_traits<ZDO::smart>
+    ////{
+    ////    typedef ZDO type;
+    ////    typedef ZDO::smart actual_type;
+    ////    static bool const value = true;
+
+    ////    static bool is_null(actual_type const &ptr)
+    ////    {
+    ////        return ptr == nullptr;
+    ////    }
+
+    ////    static type *get(actual_type const &ptr)
+    ////    {
+    ////        return ptr.get();
+    ////    }
+    ////};
+
+
+    template<typename T, typename Traits>
+    struct unique_usertype_traits<isptr::intrusive_shared_ptr<T, Traits>>
+    {
+        typedef T type;
+        typedef isptr::intrusive_shared_ptr<T, Traits> actual_type;
+        static bool const value = true;
+
+        static bool is_null(actual_type const &ptr)
+        {
+            return ptr == nullptr;
+        }
+
+        static type *get(actual_type const &ptr)
+        {
+            return ptr.get();
+        }
+    };
+}// namespace sol
 
 class IScriptManager
 {

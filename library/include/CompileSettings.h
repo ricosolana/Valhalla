@@ -243,8 +243,6 @@
     #define AVL_DISCORD_INTEGRATION_I_ AVL_DEFAULT_ON
 #endif
 
-#define AVL_GAME_MECHANICS 1
-
 // Whether to enable:
 //  - portal linking
 //  - sleeping/time skip
