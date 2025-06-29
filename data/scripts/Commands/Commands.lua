@@ -20,9 +20,9 @@ local commands = {
     worldtime = {
         func = function(peer, cmd, args)
             if #args == 0 then
-                peer:ConsoleMessage('World time: ' .. Valhalla.world_time)
+                peer:ConsoleMessage('World time: ' .. Avledet.world_time)
             else
-                Valhalla.worldTime = assert(tonumber(args[1]), 'not a number')
+                Avledet.worldTime = assert(tonumber(args[1]), 'not a number')
                 peer:ConsoleMessage('Set world time to ' .. args[1])
             end
         end,
@@ -32,10 +32,10 @@ local commands = {
     timeofday = {
         func = function(peer, cmd, args)
             if #args == 0 then
-                peer:ConsoleMessage('Time of day: ' .. Valhalla.time_of_day)
+                peer:ConsoleMessage('Time of day: ' .. Avledet.time_of_day)
             else
-                Valhalla.timeOfDay = assert(tonumber(args[1]) or TimeOfDay[args[1]:upper()], 'not a number')
-                peer:ConsoleMessage('Set time of day to ' .. args[1] .. '(worldTime: ' .. Valhalla.worldTime .. ')')
+                Avledet.timeOfDay = assert(tonumber(args[1]) or TimeOfDay[args[1]:upper()], 'not a number')
+                peer:ConsoleMessage('Set time of day to ' .. args[1] .. '(worldTime: ' .. Avledet.worldTime .. ')')
             end
         end,
         usage = '[time]',
@@ -265,7 +265,7 @@ local commands = {
     }
 }
 
-Valhalla:subscribe('Join', function(peer)
+Avledet:subscribe('Join', function(peer)
     print('Registering command vs')
 
     peer:register(

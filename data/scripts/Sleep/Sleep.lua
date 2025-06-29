@@ -19,7 +19,7 @@ local SIG_SleepStop = MethodSig.new('SleepStop')
 local UPDATE_SLEEP_FN = function() 
     assert(sleeping)
     
-    if Valhalla.worldTime > sleepingUntil then
+    if Avledet.worldTime > sleepingUntil then
         local peers = NetManager.peers
     
         for i=1, #peers do
@@ -33,15 +33,15 @@ local UPDATE_SLEEP_FN = function()
         print('ending sleep')
         
         sleeping = false
-        Valhalla.world_time_multiplier = 1
+        Avledet.world_time_multiplier = 1
         
         event.unsubscribe()
     end
 end
 
-Valhalla:subscribe('Periodic', function()
+Avledet:subscribe('Periodic', function()
     if not sleeping then
-        if Valhalla.is_afternoon or Valhalla.is_night then
+        if Avledet.is_afternoon or Avledet.is_night then
             --print('afternoon / night')
             
             local peers = NetManager.peers
@@ -73,8 +73,8 @@ Valhalla:subscribe('Periodic', function()
             print('starting sleep')
             
             sleeping = true
-            sleepingUntil = Valhalla.next_morning
-            Valhalla.world_time_multiplier = (sleepingUntil - Valhalla.world_time) / 12
+            sleepingUntil = Avledet.next_morning
+            Avledet.world_time_multiplier = (sleepingUntil - Avledet.world_time) / 12
             
             for i=1, #sleepingPeers do
                 local peer = sleepingPeers[i]
@@ -82,7 +82,7 @@ Valhalla:subscribe('Periodic', function()
             end
             
             -- enable high accuracy sleep timings to not skip 1/12 of the day
-            Valhalla:subscribe('Update', UPDATE_SLEEP_FN)            
+            Avledet:subscribe('Update', UPDATE_SLEEP_FN)            
         end
     end    
 end)

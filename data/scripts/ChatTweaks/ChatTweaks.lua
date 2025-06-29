@@ -13,7 +13,7 @@
 
 local peers = {}
 
-Valhalla:subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
+Avledet:subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     -- grab a writer beforehand so position is maintained
     if peers[peer.socket.host] then
         return
@@ -32,6 +32,6 @@ Valhalla:subscribe('RouteInAll', 'ChatMessage', function(peer, _, params)
     end
 end)
 
-Valhalla:subscribe('Quit', function(peer)
+Avledet:subscribe('Quit', function(peer)
     peers[peer.socket.host] = nil
 end)

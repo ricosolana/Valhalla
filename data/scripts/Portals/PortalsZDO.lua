@@ -12,7 +12,7 @@
         my code below also exhibits this, (un)fortunately? so.
 --]]
 
-Valhalla:subscribe('Periodic', function()
+Avledet:subscribe('Periodic', function()
 	local portalZdos = ZDOManager:get_zdos('portal_wood')
 
 	for i1=1, #portalZdos do
