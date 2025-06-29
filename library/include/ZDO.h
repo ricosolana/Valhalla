@@ -153,6 +153,43 @@ class ZDO
     using reference = smart;
     using optional  = smart;// considers null as empty
 
+    /*
+        OPERATOR <=>
+    */
+    friend auto operator<=>(smart const &lhs, smart const &rhs) noexcept
+    {
+        return lhs->m_id <=> rhs->m_id;
+    }
+
+    friend auto operator<=>(smart const &lhs, ZDOID const &rhs) noexcept
+    {
+        return lhs->m_id <=> rhs;
+    }
+
+    friend auto operator<=>(ZDO const &lhs, ZDO const &rhs) noexcept
+    {
+        return lhs.m_id <=> rhs.m_id;
+    }
+
+    /*
+        OPERATOR ==
+    */
+
+    friend bool operator==(smart const &lhs, smart const &rhs) noexcept
+    {
+        return lhs->m_id == rhs->m_id;
+    }
+
+    friend bool operator==(smart const &lhs, ZDOID const &rhs) noexcept
+    {
+        return lhs->m_id == rhs;
+    }
+
+    friend bool operator==(ZDO const &lhs, ZDO const &rhs) noexcept
+    {
+        return lhs.m_id == rhs.m_id;
+    }
+
     struct hash
     {
         using is_transparent = void;// enable heterogeneous overloads
@@ -180,44 +217,10 @@ class ZDO
     {
         using is_transparent = void;
 
-        bool operator()(smart const &lhs, smart const &rhs) const
+        template<typename T, typename U>
+        bool operator()(T const &lhs, U const &rhs) const
         {
-            assert(lhs && rhs);
-            return lhs->GetID() == rhs->GetID();
-        }
-
-        bool operator()(pointer const &lhs, pointer const &rhs) const
-        {
-            assert(lhs && rhs);
-            return lhs->GetID() == rhs->GetID();
-        }
-
-        bool operator()(smart const &lhs, ZDOID const &rhs) const
-        {
-            assert(lhs && rhs);
-            return lhs->GetID() == rhs;
-        }
-
-        bool operator()(pointer const &lhs, ZDOID const &rhs) const
-        {
-            assert(lhs && rhs);
-            return lhs->GetID() == rhs;
-        }
-
-        /*
-            repeats of above, but swapped args
-        */
-
-        bool operator()(ZDOID const &lhs, smart const &rhs) const
-        {
-            assert(lhs && rhs);
-            return lhs == rhs->GetID();
-        }
-
-        bool operator()(ZDOID const &lhs, pointer const &rhs) const
-        {
-            assert(lhs && rhs);
-            return lhs == rhs->GetID();
+            return lhs == rhs;
         }
     };
 
@@ -626,35 +629,6 @@ class ZDO
         return smart::ref(new ZDO(std::forward<Args>(args)...));
     }
 
-    friend auto operator<=>(ZDOID const &lhs, pointer const &rhs) noexcept
-    {
-        return lhs <=> rhs->GetID();
-    }
-
-    friend auto operator<=>(ZDOID const &lhs, smart const &rhs) noexcept
-    {
-        return lhs <=> rhs->GetID();
-    }
-
-    friend auto operator<=>(ZDO const &lhs, ZDO const &rhs) noexcept
-    {
-        return lhs.m_id <=> rhs.m_id;
-    }
-
-    friend bool operator==(ZDOID const &lhs, pointer const &rhs) noexcept
-    {
-        return lhs == rhs->GetID();
-    }
-
-    friend bool operator==(ZDOID const &lhs, smart const &rhs) noexcept
-    {
-        return lhs == rhs->GetID();
-    }
-
-    friend bool operator==(ZDO const &lhs, ZDO const &rhs) noexcept
-    {
-        return lhs.m_id == rhs.m_id;
-    }
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     // Load ZDO from disk
