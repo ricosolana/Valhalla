@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -22,13 +23,13 @@ namespace avledet::util {
     class ZDOID
     {
         friend struct ankerl::unordered_dense::hash<ZDOID>;
-        //friend class ZDO;
 
         using UType = std::uint32_t;
 
         // User: 0, ID: 1
         BitPack<UType, AVL_USERID_BITS_I_, sizeof(UType) * 8 - AVL_USERID_BITS_I_> m_pack;
 
+      private:
         static inline std::array<std::int64_t, decltype(m_pack)::capacity<0>::value> INDEXED_USERID;
 
         static constexpr auto USERID_PACK_INDEX = 0;
@@ -107,22 +108,45 @@ namespace avledet::util {
 
         //ZDOID(const ZDOID &) = default;
 
-        bool operator==(const ZDOID &other) const noexcept
-        {
-            return this->m_pack == other.m_pack;
-            //return this->m_user_id == other.m_user_id
-            //&& this->m_id == other.m_id;
-        }
+        ////friend bool operator==(ZDOID const &lhs, ZDOID const &rhs) noexcept
+        ////{
+        ////    return lhs.m_pack == rhs.m_pack;
+        ////}
 
-        bool operator!=(const ZDOID &other) const noexcept
-        {
-            return !(*this == other);
-        }
+        ////friend bool operator<(ZDOID const &lhs, ZDOID const &rhs) noexcept
+        ////{
+        ////    return lhs.m_pack < rhs.m_pack;
+        ////}
+
+        // 3-way <=> broken? (see bitpack <=> / == and <)
+        //friend auto operator<=>(ZDOID const &lhs, ZDOID const &rhs) noexcept
+        //{
+        //    return lhs.m_pack <=> rhs.m_pack;
+        //}
+
+        friend auto operator<=>(ZDOID const &lhs, ZDOID const &rhs) noexcept = default;
+
+        //friend bool operator==(ZDOID const &lhs, ZDOID const &rhs) noexcept = default;
+
+        //bool operator==(const ZDOID &other) const noexcept
+        //{
+        //    return this->m_pack == other.m_pack;
+        //    //return this->m_user_id == other.m_user_id
+        //    //&& this->m_id == other.m_id;
+        //}
+
+        //bool operator!=(const ZDOID &other) const noexcept
+        //{
+        //    return !(*this == other);
+        //}
 
         // Return whether this has a value besides NONE
         operator bool() const noexcept
         {
+            //return !(m_pack == ZDOID::NONE.m_pack);
             return *this != ZDOID::NONE;
+            //assert(false);
+            //return false;
         }
 
         std::int64_t get_user_id() const

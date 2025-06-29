@@ -23,12 +23,13 @@ template<class T>
 class IMethod
 {
   public:
-    avledet::util::Hash m_hash;
+    avledet::util::Hash const m_hash;
 
   public:
     IMethod(avledet::util::Hash hash) :
         m_hash(hash)
     {
+        assert(m_hash);
     }
 
     virtual ~IMethod() {}
@@ -38,15 +39,16 @@ class IMethod
     //  Returns false if the call requested unsubscription
     virtual bool Invoke(T t, DataReader reader) = 0;
 
-    friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, std::unique_ptr<IMethod<T>> const &rhs)
-    {
-        return lhs->m_hash <=> rhs->m_hash;
-    }
-
-    friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, avledet::util::Hash rhs)
-    {
-        return lhs->m_hash <=> rhs;
-    }
+    // unused, but will be used for method hashset
+    //friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, std::unique_ptr<IMethod<T>> const &rhs)
+    //{
+    //    return lhs->m_hash <=> rhs->m_hash;
+    //}
+    //
+    //friend bool operator<=>(std::unique_ptr<IMethod<T>> const &lhs, avledet::util::Hash rhs)
+    //{
+    //    return lhs->m_hash <=> rhs;
+    //}
 };
 
 // Package lambda invoker
@@ -62,35 +64,31 @@ class MethodImpl : public IMethod<T>
     }
 
   private:
-    //using IMethod<T>::m_hash;
-
     F const m_func;
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    avledet::util::Hash const m_categoryHash;
+    avledet::util::Hash const m_categoryHash {};
+
+  public:
+    MethodImpl(avledet::util::Hash hash, avledet::util::Hash categoryHash, F func) :
+        IMethod<T>(hash),
+        m_func(std::move(func)),
+        m_categoryHash(categoryHash)//will keep this as a member for dynamic lua usages...
+    {
+    }
 #endif
 
   public:
-#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    MethodImpl(avledet::util::Hash hash, F func, avledet::util::Hash categoryHash) :
-        IMethod<T>(hash),
-        m_func(std::move(func)),
-        m_categoryHash(categoryHash),
-    {
-    }
-#else
     MethodImpl(avledet::util::Hash hash, F func) :
         IMethod<T>(hash),
         m_func(std::move(func))
     {
     }
-#endif
 
     bool Invoke(T t, DataReader reader) override
     {
         auto tuple = std::tuple_cat(
                 std::forward_as_tuple(t),
-                //NetPackage::Deserialize<Args...>(pkg));
                 impl_tail<args_type>(reader,
                                      (std::make_index_sequence<std::tuple_size<args_type> {} - 1> {})));
 
@@ -99,9 +97,12 @@ class MethodImpl : public IMethod<T>
             throw std::runtime_error("peer sent more data than expected");
         }
 
+        // TODO add category solo-prefix
+        //  dont know where it went... likely performance concerns... but still fast-ish
+
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         // Prefix
-        if (!AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash, tuple))
+        if (!AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ this->m_hash, tuple))
             return true;
 #endif
 
@@ -124,9 +125,16 @@ class MethodImpl : public IMethod<T>
     }
 };
 
+
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 template<typename F>
-MethodImpl(F, avledet::util::Hash, avledet::util::Hash)
-        -> MethodImpl<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, F>;
+MethodImpl(avledet::util::Hash, avledet::util::Hash,
+           F) -> MethodImpl<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, F>;
+#else
+template<typename F>
+MethodImpl(avledet::util::Hash,
+           F) -> MethodImpl<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>, F>;
+#endif
 
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -141,7 +149,9 @@ class MethodImplLua : public IMethod<T>
     IScriptManager::StreamTypes m_types;
 
   public:
-    MethodImplLua(sol::protected_function const &func, IScriptManager::StreamTypes const &types) :
+    MethodImplLua(avledet::util::Hash hash, sol::protected_function const &func,
+                  IScriptManager::StreamTypes const &types) :
+        IMethod<T>(hash),
         m_func(func),
         m_types(types)
     {
@@ -183,6 +193,6 @@ class MethodImplLua : public IMethod<T>
 };
 
 template<typename T>
-MethodImplLua(sol::function, IScriptManager::StreamTypes) -> MethodImplLua<T>;
+MethodImplLua(avledet::util::Hash, sol::function, IScriptManager::StreamTypes) -> MethodImplLua<T>;
 
 #endif// AVL_IS_ON(AVL_ENABLE_SCRIPTING)

@@ -32,7 +32,7 @@ void IScriptManager::load_userdata_peer()
             "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),
             //"admin", &Peer::m_admin,
             "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin), "character_id",
-            sol::property([](Peer::Ptr self) -> ZDOID { return self.m_characterID; }),// return copy
+            sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// return copy
             "name", sol::readonly(&Peer::m_name),// strings are immutable in Lua similarly to Java
             "pos", &Peer::m_pos,
             //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
@@ -55,8 +55,8 @@ void IScriptManager::load_userdata_peer()
             //    sol::resolve<void(const Vector3f& pos)>(&Peer::MoveTo)
             //),
             "disconnect", &Peer::Disconnect, "invoke_self",
-            sol::overload(sol::resolve<bool(Hash, DataReader &)>(&Peer::InternalInvoke),
-                          sol::resolve<bool(std::string_view, DataReader &)>(&Peer::InternalInvoke)),
+            sol::overload(sol::resolve<void(Hash, DataReader &)>(&Peer::InternalInvoke),
+                          sol::resolve<void(std::string_view, DataReader &)>(&Peer::InternalInvoke)),
 
             //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
             //static_cast<void (Peer::*)(Hash, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,

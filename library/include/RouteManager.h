@@ -5,19 +5,15 @@
 #include "Method.h"
 #include "ModManager.h"
 #include "NetManager.h"
+#include "Peer.h"
 #include "ValhallaServer.h"
 
-class Peer;
-
-class IRouteManager
+class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 {
     friend class INetManager;
 
   public:
     static constexpr std::int64_t EVERYBODY = 0;
-
-  private:
-    avledet::util::Map<avledet::util::Hash, std::unique_ptr<IMethod<Peer::Ptr>>> m_methods;
 
   private:
     // Called from NetManager
@@ -33,10 +29,15 @@ class IRouteManager
     void Register(avledet::util::Hash hash, F func)
     {
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-        m_methods[hash]
-                = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, IScriptManager::Events::RouteIn, hash);
+        register_method(
+                std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, IScriptManager::Events::RouteIn, func));
+
+        //m_methods[hash]
+        //        = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, IScriptManager::Events::RouteIn, hash);
 #else
-        m_methods[hash] = std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, func);
+        register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, func));
+
+        //m_methods[hash] = std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, func);
 #endif
     }
 
@@ -51,7 +52,8 @@ class IRouteManager
     {
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
+        //m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
+        register_method(std::make_unique<MethodImplLua<Peer::Ptr>>(sig.m_hash, func, sig.m_types));
     }
 #endif
 

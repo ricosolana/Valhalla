@@ -3,18 +3,18 @@ set(AVLEDET_LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # add shared
 add_library(avledet_library STATIC)
 
-target_compile_options(avledet_library
-    PRIVATE
-        -Wall 
-        -Wextra 
-        -Wconversion 
-        -Werror 
-        -Wno-unknown-pragmas 
-        -Wno-unused-variable 
-        -Wno-deprecated-declarations #hmm change detected?
-        -Wno-unused-value
-        -Wno-unused-parameter
-)
+#target_compile_options(avledet_library
+#    PRIVATE
+#        -Wall 
+#        -Wextra 
+#        -Wconversion 
+#        -Werror 
+#        -Wno-unknown-pragmas 
+#        -Wno-unused-variable 
+#        -Wno-deprecated-declarations #hmm change detected?
+#        -Wno-unused-value
+#        -Wno-unused-parameter
+#)
 
 target_include_directories(avledet_library
     PUBLIC

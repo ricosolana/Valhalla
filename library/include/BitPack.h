@@ -62,30 +62,39 @@ class BitPack
     {
     }
 
-    void operator=(BitPack<T, BitAllocs...> const &rhs)
-    {
-        this->m_data = rhs.m_data;
-    }
+    constexpr friend auto operator<=>(BitPack<T, BitAllocs...> const &lhs,
+                                      BitPack<T, BitAllocs...> const &rhs) noexcept
+            = default;
 
-    bool operator==(BitPack<T, BitAllocs...> const &rhs) const
-    {
-        return m_data == rhs.m_data;
-    }
+    ////constexpr friend bool operator==(BitPack<T, BitAllocs...> const &lhs,
+    ////                                 BitPack<T, BitAllocs...> const &rhs) noexcept
+    ////{
+    ////    return lhs.m_data == rhs.m_data;
+    ////}
 
-    bool operator!=(BitPack<T, BitAllocs...> const &rhs) const
-    {
-        return !(*this == rhs);
-    }
+    ////constexpr friend bool operator<(BitPack<T, BitAllocs...> const &lhs,
+    ////                                BitPack<T, BitAllocs...> const &rhs) noexcept
+    ////{
+    ////    return lhs.m_data < rhs.m_data;
+    ////}
+
+    //spaceship (3-way) <=> operator might be broken, but again, 7 year old paper...
+    // https://www.foonathan.net/2018/10/spaceship-proposals/
+    //constexpr friend auto operator<=>(BitPack<T, BitAllocs...> const &lhs,
+    //                                  BitPack<T, BitAllocs...> const &rhs) noexcept
+    //{
+    //    return lhs.m_data <=> rhs.m_data;
+    //}
 
     operator bool() const
     {
         return static_cast<bool>(m_data);
     }
 
-    operator T() const
-    {
-        return m_data;
-    }
+    //operator T() const
+    //{
+    //    return m_data;
+    //}
 
     // Get the value of a specified member at index
     template<std::uint8_t index>

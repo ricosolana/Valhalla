@@ -13,7 +13,7 @@
 #include "Vector.h"
 #include "VUtils.h"
 #include "VUtilsTraits.h"
-#include "ZDO.h"//HMMM
+#include "ZDO.h"//TODO might not need this class...
 
 enum class ChatMsgType : std::int32_t
 {
@@ -154,8 +154,8 @@ class Peer : public std::enable_shared_from_this<Peer>,
                                Ptr>,
                 "Rpc must accept a shared_ptr<Peer> as first argument");
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-        register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func),
-                                                                   IScriptManager::Events::RpcIn));
+        register_method(
+                std::make_unique<MethodImpl<Ptr, F>>(hash, IScriptManager::Events::RpcIn, std::move(func)));
 #else
         register_method(hash, std::move(func));
         //register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func)));
@@ -163,17 +163,18 @@ class Peer : public std::enable_shared_from_this<Peer>,
     }
 
     template<typename F>
-    decltype(auto) Register(std::string_view name, F func)
+    void Register(std::string_view name, F func)
     {
-        return Register(avledet::util::get_stable_hash(name), func);
+        Register(avledet::util::get_stable_hash(name), func);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
+        register_method(std::make_unique<MethodImplLua<Ptr>>(sig.m_hash, func, sig.m_types));
 
-        m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
+        //m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
     }
 #endif
 
@@ -192,13 +193,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         //assert(false); // ADDRESS THE BELOW
         writer.write(func);
 
-        // Prefix
+        // TODO Prefix
         //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this, bytes))
         //return;
 
         this->Send(std::move(writer.get_buf()));
 
-        // Postfix
+        // TODO Postfix
         //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, writer);
     }
 

@@ -149,7 +149,9 @@ void IZDOManager::_AddZDOToZone(ZDO::reference zdo)
 {
     auto &&container = _GetZDOContainer(zdo->GetZone());
 
-    assert(!container.get().contains(zdo));
+    assert(!container.get().contains(zdo)
+           && "\nSomething wrong with ZDO; possibilities: \n - zoning encapsulation is broken \n - ZDOID "
+              "equal operator is broken");
 
     auto &&insert = container.get().insert(zdo);
 

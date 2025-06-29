@@ -2,6 +2,7 @@
 
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
+#include <utility>
 
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -269,7 +270,7 @@ class IScriptManager
                 //  this makes modifications of primitives impossible, but could still modify
                 //  pointers/userdata tables...
                 //sol::function_result result = itr->second(Args(params)...);
-                sol::protected_function_result result = itr->m_func(Args(params)...);
+                sol::protected_function_result result = itr->m_func(std::forward<Args>(params)...);
                 if (!result.valid()) {
                     LOG_ERROR(AVL_LOGGER, "Event error: ");
                     sol::error error = result;

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <compare>
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
@@ -625,19 +626,35 @@ class ZDO
         return smart::ref(new ZDO(std::forward<Args>(args)...));
     }
 
-    friend bool operator==(ZDOID const &lhs, ZDO const *rhs) noexcept
+    friend auto operator<=>(ZDOID const &lhs, pointer const &rhs) noexcept
+    {
+        return lhs <=> rhs->GetID();
+    }
+
+    friend auto operator<=>(ZDOID const &lhs, smart const &rhs) noexcept
+    {
+        return lhs <=> rhs->GetID();
+    }
+
+    friend auto operator<=>(ZDO const &lhs, ZDO const &rhs) noexcept
+    {
+        return lhs.m_id <=> rhs.m_id;
+    }
+
+    friend bool operator==(ZDOID const &lhs, pointer const &rhs) noexcept
     {
         return lhs == rhs->GetID();
     }
 
-    friend bool operator==(ZDOID const &lhs, std::unique_ptr<ZDO> const &rhs) noexcept
+    friend bool operator==(ZDOID const &lhs, smart const &rhs) noexcept
     {
         return lhs == rhs->GetID();
     }
 
-    // Apply changes to ZDOManager
-    //  make this a lua-only method?
-    //bool Apply() const;
+    friend bool operator==(ZDO const &lhs, ZDO const &rhs) noexcept
+    {
+        return lhs.m_id == rhs.m_id;
+    }
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     // Load ZDO from disk

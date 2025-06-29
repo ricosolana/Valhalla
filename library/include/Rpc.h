@@ -8,6 +8,7 @@
 
 #include "Hashes.h"
 #include "Method.h"
+#include "Types.h"
 #include "ValhallaServer.h"
 
 //#include "Peer.h"//TODO remove!!
@@ -18,8 +19,6 @@ namespace avledet::rpc {
     class RpcBase
     {
       public:
-        //using T = std::shared_ptr<Peer>;
-        //using MethodPtr = std::unique_ptr<IMethod<T>>;
         using Method = IMethod<T>;// keep consistent for now...
 
       protected:
@@ -39,18 +38,17 @@ namespace avledet::rpc {
 
       public:
         // TODO later, for custom LUA
-        //void register_method(MethodPtr method)
-        //{
-        //    m_methods.emplace(std::move(method));
-        //}
+        void register_method(std::unique_ptr<Method> method)
+        {
+            auto hash       = method->m_hash;
+            m_methods[hash] = std::move(method);
+        }
 
         // *note: registering a rpc by assign ([]) *might* break things if called from within a invoked function
         template<typename F>
         void register_method(avledet::util::Hash hash, F func)
         {
-            //m_methods.emplace(std::make_unique<MethodImpl<T, F>>(hash, std::move(func)));
-            //m_methods[hash] = std::make_unique<MethodImpl<T, F>>(std::move(func));
-            m_methods[hash] = std::make_unique<MethodImpl<T, F>>(hash, std::move(func));
+            this->register_method(std::make_unique<MethodImpl<T, F>>(hash, std::move(func)));
         }
 
         template<typename F>

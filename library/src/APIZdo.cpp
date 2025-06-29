@@ -4,6 +4,7 @@
     #include <sol/forward.hpp>
 
     #include "ModManager.h"
+    #include "Types.h"
     #include "ZDOManager.h"
 
 struct ZDOWrapper
