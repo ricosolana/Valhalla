@@ -1,4 +1,6 @@
 #include "CompileSettings.h"
+#include "VUtilsRandom.h"
+#include <sol/resolve.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -131,9 +133,24 @@ void IScriptManager::load_userdata()
                                    sol::readonly(&ScriptInfo::m_authors));
 
 
+    this->new_usertype<MethodSig>("MethodSig",
+                                  sol::constructors<MethodSig(std::string_view, sol::variadic_args)>());
+
     this->new_usertype<IRouteManager>("IRouteManager", "register", &IRouteManager::RegisterLua, "invoke_view",
                                       &IRouteManager::InvokeViewLua, "invoke", &IRouteManager::InvokeLua,
                                       "invoke_all", &IRouteManager::InvokeAllLua);
+
+    using avledet::util::CSU::Random;
+
+    this->new_usertype<Random>("Random",
+                               sol::constructors<Random(), Random(std::int32_t), Random(Random const &)>(),
+                               "next_float", sol::property(&Random::next_float), "next_int",
+                               sol::property(&Random::next_int), "value", sol::property(&Random::value),
+                               "frange", sol::resolve<float(float, float)>(&Random::range), "irange",
+                               sol::resolve<std::int32_t(std::int32_t, std::int32_t)>(&Random::range),
+                               "inside_unit_circle", sol::property(&Random::inside_unit_circle),
+                               "on_unit_sphere", sol::property(&Random::on_unit_sphere), "inside_unit_sphere",
+                               sol::property(&Random::inside_unit_sphere));
 
     // Stl function; Will get copied along with other safe-sandboxed functions
     m_state["print"] = [](sol::variadic_args args, sol::this_environment tenv) {

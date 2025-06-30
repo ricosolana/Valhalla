@@ -13,9 +13,6 @@ void IScriptManager::load_userdata_peer()
 {
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - peer");
 
-    this->new_usertype<MethodSig>("MethodSig",
-                                  sol::constructors<MethodSig(std::string_view, sol::variadic_args)>());
-
     m_state.new_enum("ChatMsgType", "WHISPER", ChatMsgType::Whisper, "NORMAL", ChatMsgType::Normal, "SHOUT",
                      ChatMsgType::Shout, "PING", ChatMsgType::Ping);
 

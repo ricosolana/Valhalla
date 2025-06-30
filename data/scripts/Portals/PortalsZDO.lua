@@ -11,72 +11,121 @@
 
         my code below also exhibits this, (un)fortunately? so.
 --]]
+local const
+SIG_RPC_SetConnection = MethodSig.new("RPC_SetConnection", Type.ZDOID, Type.ZDOID)
 
-Avledet:subscribe('Periodic', function()
-	local portalZdos = ZDOManager:get_zdos('portal_wood')
+-- todo rename...
+local ConnectionType = ConnectorType
 
-	for i1=1, #portalZdos do
-		local portalZdo1 = portalZdos[i1]
-        --local portal1 = Views.Portal.new(portalZdo1)
-                
-        --local target1 = portal1.target
-		--local tag1 = portal1.tag
-        
-        local target1 = portalZdo1:get_zdoid('target')
-		local tag1 = portalZdo1:get_string('tag')
-        
-		-- if target portal assigned
-        if target1 ~= ZDOID.NONE then
-			local portalZdo2 = ZDOManager:get_zdo(target1)
-            --local portal2 = portalZdo2 and Views.Portal.new(portalZdo2) or nil
-            
-			-- if target is missing from world, reset target
-			--if not portalZdo2 or portal2.tag ~= tag1 then
-            if not portalZdo2 or portalZdo2:get_string('tag') ~= tag1 then
-				portalZdo1.is_local = true
+-- stored ZDOs in connected pairs
+local connecting_portals = {}
 
-				--portal1.target = ZDOID.NONE
-                portalZdo1:set('target', ZDOID.NONE)
-				ZDOManager:force_send_zdo(portalZdo1.id);
-			end
-		else 
-			-- find other portalZdos with the same tag
-			for i2=i1, #portalZdos do
-                if i2 ~= i1 then
-                    
-                    local portalZdo2 = portalZdos[i2]
-                    --local portal2 = Views.Portal.new(portalZdo2)
-                    
-                    -- connect unlinked portals
-                    --if portal2.target == ZDOID.NONE then
-                    if portalZdo2:get_zdoid('target') == ZDOID.NONE then
-                        --local tag2 = portal2.tag
+local is_connecting = function(zdo)
+    for _, paired in ipairs(connecting_portals) do
+        if zdo == paired[1] or zdo == paired[2] then
+            return true
+        end
+    end
+    return false
+end
 
-                        -- link if same tag
-                        if tag1 == portalZdo2:get_string('tag') then
+local set_connection = function(portal, connection, force)
+    local flag = NetManager:find_peer(portal.owner)
+    if not portal.owned or not flag or force then
+        portal.owner = Avledet.id
+        portal:set_connection(ConnectionType.PORTAL, connection)
+        ZDOManager:force_send_zdo(portal.id)
+    else
+        --ZRoutedRpc.instance.InvokeRoutedRPC(owner, "RPC_SetConnection", new object[] { portal.m_uid, connection })
+        RouteManager:invoke(portal.owner, SIG_RPC_SetConnection, portal.id, connection)
+    end
+end
 
-                            print("linking portals")
-                    
-                            portalZdo1.is_local = true
-                            portalZdo2.is_local = true
-                            --portal1.target = portalZdo2.id
-                            --portal2.target = portalZdo1.id
-                            portalZdo1:set('target', portalZdo2.id)
-                            portalZdo2:set('target', portalZdo1.id)
-                            
-                            -- might be redundant; TeleportWorld requests ZDO
-                            --ZDOManager:ForceSendZDO(portalZdo1.id);
-                            --ZDOManager:ForceSendZDO(portalZdo2.id);
-                        
-                            break -- prevent portals from forming more than 1 link
-                        end
-                    end
+local force_set_connection = function(portal, connection)
+    if portal:get_connection(ConnectionType.PORTAL) ~= connection then
+        set_connection(portal, connection, true)
+    end
+end
+
+local clear_connecting = function()
+    for _, paired in ipairs(connecting_portals) do
+        force_set_connection(connectingPortals[1], connectingPortals[2].id)
+        force_set_connection(connectingPortals[2], connectingPortals[1].id)
+    end
+    connecting_portals = {} -- effective clear
+end
+
+local add_connecting = function(portalA, portalB)
+    connecting_portals:insert({portalA, portalB})
+end
+
+local find_any_portal = function(portals, ignore_zdo, tag)
+    local list = {}
+    for _, zdo in ipairs(portals) do
+        if
+            zdo ~= ignore_zdo and zdo:get_string("tag") == tag and
+                zdo:get_connection(ConnectionType.PORTAL) == ZDOID.NONE and
+                not is_connecting(zdo)
+         then
+            table.insert(list, zdo)
+        end
+    end
+
+    if #list == 0 then
+        return nil
+    end
+
+    --ensure index within range
+    return assert(list[Random.new():irange(0, #list) + 1])
+end
+
+local RPC_SetConnection = function(sender, portalID, connectionID)
+    local zdo = ZDOManager:get_zdo(portalID)
+    if zdo then
+        zdo.is_local = true
+        assert(zdo.is_owner(Avledet.id))
+        zdo:set_connection(ConnectionType.PORTAL, connectionID)
+        ZDOManager:force_send_zdo(portalID)
+    end
+end
+
+Avledet:subscribe(
+    "Periodic",
+    function()
+        clear_connecting()
+
+        local portals = ZDOManager:get_zdos("portal_wood")
+
+        for _, zdo in ipairs(portals) do
+            local connectionZDOID = zdo:get_connection(ConnectionType.PORTAL)
+
+            if connectionZDOID ~= ZDOID.NONE then
+                local tag = zdo:get_string("tag")
+                local zdo2 = ZDOManager:get_zdo(connectionZDOID)
+                if not zdo2 or zdo2:get_string("tag") ~= tag then
+                    set_connection(zdo, ZDOID.NONE --[[, false--]])
                 end
-			end
-		end
-	end
-end)
+            end
+        end
 
---debug.sethook(function(_, line)
---    print(line)
---end, "l")
+        local num = 0
+        for _, zdo3 in ipairs(portals) do
+            if not is_connecting(zdo3) and zdo3:get_connection(ConnectionType.PORTAL) == ZDOID.NONE then
+                local zdo4 = find_any_portal(portals, zdo3, zdo3:get_string("tag"))
+                if zdo4 then
+                    add_connecting(zdo3, zdo4)
+                    set_connection(zdo3, zdo4.id --[[, false--]])
+                    set_connection(zdo4, zdo3.id --[[, false--]])
+
+                    print("Connected portals", zdo3, "<->", zdo4)
+
+                    num = num + 1
+                end
+            end
+        end
+
+        if num > 0 then
+            print("[", "Connected", num, "portals", "]")
+        end
+    end
+)

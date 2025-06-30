@@ -15,6 +15,184 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
+bool ZDO::_SetConnection(ZDOConnector::Type type, ZDOID zdoid)
+{
+    auto &&insert = ZDO_TARGETED_CONNECTORS.try_emplace(m_id, type, zdoid);
+
+    auto &&connector = insert.first->second;
+
+    // if it was not newly inserted
+    //  check the old values
+    if (!insert.second) {
+        auto &&type2  = connector.m_type;
+        auto &&zdoid2 = connector.m_target;
+
+        if (type == type2 && zdoid2 == zdoid) {
+            return false;
+        }
+    }
+
+    connector.m_type   = type;
+    connector.m_target = zdoid;
+
+    //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+
+    return true;
+}
+
+void ZDO::SetConnection(ZDOConnector::Type type, ZDOID zdoid)
+{
+    if (_SetConnection(type, zdoid)) {
+        Revise();
+    }
+}
+
+ZDOID ZDO::GetConnectionZDOID(ZDOConnector::Type type) const
+{
+    auto &&find = ZDO_TARGETED_CONNECTORS.find(m_id);
+    if (find != ZDO_TARGETED_CONNECTORS.end()) {
+        if (find->second.m_type == type)
+            return find->second.m_target;
+    }
+    return ZDOID::NONE;
+}
+
+//ZDOID ZDO::GetConnectionZDOID() const
+//{
+//    auto &&find = ZDO_TARGETED_CONNECTORS.find(m_id);
+//    if (find != ZDO_TARGETED_CONNECTORS.end()) {
+//        return find->second.m_target;
+//    }
+//    return ZDOID::NONE;
+//}
+
+ZDOID ZDO::GetID() const
+{
+    return this->m_id;
+}
+
+Vector3f ZDO::GetPosition() const
+{
+    return this->m_pos;
+}
+
+ZDO::Rev &ZDO::GetRevision()
+{
+    return this->m_rev;
+}
+
+Quaternion ZDO::GetRotation() const
+{
+    return Quaternion::euler(this->m_rotation);
+}
+
+void ZDO::SetRotation(Quaternion rot)
+{
+    auto &&euler = rot.euler_angles();
+    if (euler != this->m_rotation) {
+        this->m_rotation = euler;
+        this->Revise();
+    }
+}
+
+Prefab const &ZDO::GetPrefab() const
+{
+    return PrefabManager()->get_indexed_prefab(m_prefab_index);
+    //return PrefabManager()->get_prefab(this->m_prefabHash);
+}
+
+avledet::util::Hash ZDO::GetPrefabHash() const
+{
+    return this->GetPrefab().m_hash;
+}
+
+void ZDO::SetLocalScale(Vector3f scale, bool allowIdentity)
+{
+    // if scaling along all axis VS scaling axis differently
+    // this is just to save some memory
+    if (std::abs(scale.x - scale.y) < std::numeric_limits<float>::epsilon() * 8
+        && std::abs(scale.y - scale.z) < std::numeric_limits<float>::epsilon() * 8) {
+
+        if (allowIdentity || std::abs(scale.x - 1) > std::numeric_limits<float>::epsilon() * 8) {
+            this->set(avledet::util::hashes::ZDO::ZNetView::SCALE_SCALAR, scale);
+        }
+    } else {
+        // otherwise use scale
+        this->set(avledet::util::hashes::ZDO::ZNetView::SCALE, scale);
+    }
+}
+
+avledet::util::UserID ZDO::Owner() const
+{
+    // TODO optimize by checking owner bit
+    auto &&find = ZDO_OWNERS.find(GetID());
+    if (find != ZDO_OWNERS.end()) {
+        return find->second;
+    }
+    return 0;
+}
+
+bool ZDO::IsOwner(avledet::util::UserID owner) const
+{
+    return owner == this->Owner();
+}
+
+bool ZDO::IsLocal() const
+{
+    return this->IsOwner(AVL_ID);
+}
+
+bool ZDO::HasOwner() const
+{
+    return this->Owner() != 0;
+}
+
+bool ZDO::SetLocal()
+{
+    return this->SetOwner(AVL_ID);
+}
+
+void ZDO::Disown()
+{
+    this->SetOwner(0);
+}
+
+bool ZDO::SetOwner(avledet::util::UserID owner)
+{
+    // only if the owner has changed, then revise it
+    if (this->Owner() != owner) {
+        this->_SetOwner(owner);
+
+        this->m_rev.ReviseOwner();
+        return true;
+    }
+    return false;
+}
+
+std::uint16_t ZDO::GetOwnerRevision() const
+{
+    return this->m_rev.GetOwnerRevision();
+}
+
+std::uint32_t ZDO::GetDataRevision() const
+{
+    return this->m_rev.GetDataRevision();
+}
+
+bool ZDO::IsPersistent() const
+{
+    return GetPrefab().IsPersistent();
+}
+
+bool ZDO::IsDistant() const
+{
+    return GetPrefab().IsDistant();
+}
+
+avledet::util::ObjectType ZDO::GetType() const
+{
+    return GetPrefab().GetObjectType();
+}
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
 void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)

@@ -1,4 +1,5 @@
 #include "CompileSettings.h"
+#include "ZDOConnector.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/forward.hpp>
@@ -26,6 +27,10 @@ void IScriptManager::load_userdata_zdo()
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - ZDO");
 
     using namespace avledet::util;
+
+    m_state.new_enum("ConnectorType", "NONE", ZDOConnector::Type::None, "PORTAL", ZDOConnector::Type::Portal,
+                     "SYNC_TRANSFORM", ZDOConnector::Type::SyncTransform, "SPAWNED",
+                     ZDOConnector::Type::Spawned, "TARGET", ZDOConnector::Type::Target);
 
     this->new_usertype<ZDO>(
             "ZDO", sol::no_constructor, "id", sol::property(&ZDO::GetID), "pos",
@@ -126,7 +131,17 @@ void IScriptManager::load_userdata_zdo()
                     [](ZDO &self, Hash key, Int64Wrapper value) { self.Set(key, (std::int64_t) value); },
                     [](ZDO &self, std::string_view key, Int64Wrapper value) {
                         self.Set(key, (std::int64_t) value);
-                    }));
+                    }),
+
+            // TODO create enum CONNECTOR,
+            // Also, create property accessor for the connected
+            "set_connection", &ZDO::SetConnection, "get_connection",
+            sol::overload(sol::resolve<ZDOID(ZDOConnector::Type) const>(&ZDO::GetConnectionZDOID)
+                          //sol::resolve<ZDOID() const>(&ZDO::GetConnectionZDOID)
+                          )
+
+
+    );
 
     // setting meta functions
     // https://sol2.readthedocs.io/en/latest/api/metatable_key.html
@@ -139,6 +154,7 @@ void IScriptManager::load_userdata_zdo()
 
 
     this->new_usertype<IZDOManager>(
+            // rename get to find
             "IZDOManager", "get_zdo", &IZDOManager::GetZDO, "some_zdos",
             sol::overload(
                     sol::resolve<ZDO::reference_list(Vector3f const &, float, std::size_t,

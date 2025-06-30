@@ -1004,57 +1004,21 @@ class ZDO
 
     // Internal use
     //  Raw sets the connector with no revision
-    bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid)
-    {
-        auto &&insert = ZDO_TARGETED_CONNECTORS.insert({GetID(), ZDOConnectorTargeted(type, zdoid)});
+    bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid);
 
-        auto &&connector = insert.first->second;
+    void SetConnection(ZDOConnector::Type type, ZDOID zdoid);
 
-        // if it was not newly inserted
-        //  check the old values
-        if (!insert.second) {
-            auto &&type2  = connector.m_type;
-            auto &&zdoid2 = connector.m_target;
+    ZDOID GetConnectionZDOID(ZDOConnector::Type type) const;
 
-            if (type == type2 && zdoid2 == zdoid) {
-                return false;
-            }
-        }
+    // TODO define
+    //ZDOConnectorTargeted get_connection() const;
 
-        connector.m_type   = type;
-        connector.m_target = zdoid;
+    // my special overload
+    //ZDOID GetConnectionZDOID() const;
 
-        //m_pack.Merge<FLAGS_PACK_INDEX>(std::to_underlying(LocalFlag::Member_Connection));
+    ZDOID GetID() const;
 
-        return true;
-    }
-
-    void SetConnection(ZDOConnector::Type type, ZDOID zdoid)
-    {
-        if (_SetConnection(type, zdoid)) {
-            Revise();
-        }
-    }
-
-    [[nodiscard]] ZDOID GetConnectionZDOID(ZDOConnector::Type type) const
-    {
-        auto &&find = ZDO_TARGETED_CONNECTORS.find(GetID());
-        if (find != ZDO_TARGETED_CONNECTORS.end()) {
-            if (find->second.m_type == type)
-                return find->second.m_target;
-        }
-        return ZDOID::NONE;
-    }
-
-    [[nodiscard]] ZDOID GetID() const
-    {
-        return this->m_id;
-    }
-
-    [[nodiscard]] Vector3f GetPosition() const
-    {
-        return this->m_pos;
-    }
+    Vector3f GetPosition() const;
 
     //void SetDataRevision(std::uint32_t dataRev) {
     //    m_data.get().m_rev.SetDataRevision(dataRev);
@@ -1065,139 +1029,55 @@ class ZDO
     //}
 
 
-    Rev &GetRevision()
-    {
-        return this->m_rev;
-    }
+    Rev &GetRevision();
 
     // Set the position of the ZDO
     //  - Use this method 99.9% of the time when updating the ZDO's position
     //  - This will change and invalidate sectors if the new position is in a different zone than this ZDOs position
     void SetPosition(Vector3f pos);
 
-    [[nodiscard]] avledet::util::ZoneID GetZone() const;
+    avledet::util::ZoneID GetZone() const;
 
-    [[nodiscard]] Quaternion GetRotation() const
-    {
-        return Quaternion::euler(this->m_rotation);
-    }
+    Quaternion GetRotation() const;
 
-    void SetRotation(Quaternion rot)
-    {
-        auto &&euler = rot.euler_angles();
-        if (euler != this->m_rotation) {
-            this->m_rotation = euler;
-            this->Revise();
-        }
-    }
+    void SetRotation(Quaternion rot);
 
-    [[nodiscard]] Prefab const &GetPrefab() const
-    {
-        return PrefabManager()->get_indexed_prefab(m_prefab_index);
-        //return PrefabManager()->get_prefab(this->m_prefabHash);
-    }
+    Prefab const &GetPrefab() const;
 
-    [[nodiscard]] avledet::util::Hash GetPrefabHash() const
-    {
-        return this->GetPrefab().m_hash;
-        //return this->m_prefabHash;
-    }
+    avledet::util::Hash GetPrefabHash() const;
 
-    void SetLocalScale(Vector3f scale, bool allowIdentity)
-    {
-        // if scaling along all axis VS scaling axis differently
-        // this is just to save some memory
-        if (std::abs(scale.x - scale.y) < std::numeric_limits<float>::epsilon() * 8
-            && std::abs(scale.y - scale.z) < std::numeric_limits<float>::epsilon() * 8) {
-
-            if (allowIdentity || std::abs(scale.x - 1) > std::numeric_limits<float>::epsilon() * 8) {
-                this->set(avledet::util::hashes::ZDO::ZNetView::SCALE_SCALAR, scale);
-            }
-        } else {
-            // otherwise use scale
-            this->set(avledet::util::hashes::ZDO::ZNetView::SCALE, scale);
-        }
-    }
+    void SetLocalScale(Vector3f scale, bool allowIdentity);
 
     // The owner of the ZDO
-    [[nodiscard]] avledet::util::UserID Owner() const
-    {
-        // TODO optimize by checking owner bit
-        auto &&find = ZDO_OWNERS.find(GetID());
-        if (find != ZDO_OWNERS.end()) {
-            return find->second;
-        }
-        return 0;
-    }
+    avledet::util::UserID Owner() const;
 
     // Whether the ZDO is owned by a specific owner
-    [[nodiscard]] bool IsOwner(avledet::util::UserID owner) const
-    {
-        return owner == this->Owner();
-    }
+    bool IsOwner(avledet::util::UserID owner) const;
 
     // Returns whether this server is the owner of the ZDO
-    [[nodiscard]] bool IsLocal() const
-    {
-        return this->IsOwner(AVL_ID);
-    }
+    bool IsLocal() const;
 
     // Whether the ZDO has an owner
-    [[nodiscard]] bool HasOwner() const
-    {
-        return this->Owner() != 0;
-        //return m_pack.Get<OWNER_PACK_INDEX>();
-    }
+    bool HasOwner() const;
 
     // Claim personal ownership over the ZDO
-    bool SetLocal()
-    {
-        return this->SetOwner(AVL_ID);
-    }
+    bool SetLocal();
 
     // Clears the owner of this ZDO
-    void Disown()
-    {
-        this->SetOwner(0);
-    }
+    void Disown();
 
     // Set the owner of the ZDO
-    bool SetOwner(avledet::util::UserID owner)
-    {
-        // only if the owner has changed, then revise it
-        if (this->Owner() != owner) {
-            this->_SetOwner(owner);
+    bool SetOwner(avledet::util::UserID owner);
 
-            this->m_rev.ReviseOwner();
-            return true;
-        }
-        return false;
-    }
+    std::uint16_t GetOwnerRevision() const;
 
-    [[nodiscard]] std::uint16_t GetOwnerRevision() const
-    {
-        return this->m_rev.GetOwnerRevision();
-    }
+    std::uint32_t GetDataRevision() const;
 
-    [[nodiscard]] std::uint32_t GetDataRevision() const
-    {
-        return this->m_rev.GetDataRevision();
-    }
+    bool IsPersistent() const;
 
-    [[nodiscard]] bool IsPersistent() const
-    {
-        return GetPrefab().IsPersistent();
-    }
+    bool IsDistant() const;
 
-    [[nodiscard]] bool IsDistant() const
-    {
-        return GetPrefab().IsDistant();
-    }
-
-    [[nodiscard]] avledet::util::ObjectType GetType() const
-    {
-        return GetPrefab().GetObjectType();
-    }
+    avledet::util::ObjectType GetType() const;
 
     static bool is_sso(std::string const &str)
     {
