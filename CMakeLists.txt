@@ -72,7 +72,6 @@ if(WIN32)
     #    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)
     #endif()
 else()
-    #TODO reenable after tests and unit-migration
     #set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-deprecated-declarations") # -Wno-unused-but-set-variable")
 endif()
 

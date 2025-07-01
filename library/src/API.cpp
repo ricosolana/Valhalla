@@ -31,91 +31,91 @@ void IScriptManager::load_userdata()
     this->load_userdata_zdo();
     this->load_userdata_zone();
 
-    this->new_usertype<IAvledet>(
-            "IAvledet",
-            // server members
-            "version", sol::var(VConstants::GAME),// Valheim version
-            "delta", sol::property(&IAvledet::delta), "id",
-            sol::property([](IAvledet &self) { return Int64Wrapper(self.ID()); }), "nanos",
-            sol::property([](IAvledet &self) { return Int64Wrapper(self.Nanos().count()); }), "time",
-            sol::property(&IAvledet::Time), "time_multiplier", &IAvledet::m_serverTimeMultiplier,
-            // world time functions
-            "world_time",
-            sol::property(sol::resolve<WorldTime() const>(&IAvledet::GetWorldTime), &IAvledet::SetWorldTime),
-            "world_time_multiplier",
-            sol::property([](IAvledet &self) { return self.m_worldTimeMultiplier; },
-                          [](IAvledet &self, double mul) {
-                              if (mul <= 0.001)
-                                  throw std::runtime_error("multiplier too small");
-                              self.m_worldTimeMultiplier = mul;
-                          }),
-            "world_ticks", sol::property([](IAvledet &self) { return self.GetWorldTicks(); }), "day",
-            sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), "time_of_day",
-            sol::property(sol::resolve<TimeOfDay() const>(&IAvledet::GetTimeOfDay), &IAvledet::SetTimeOfDay),
-            "is_morning", sol::property(sol::resolve<bool() const>(&IAvledet::IsMorning)), "is_day",
-            sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), "is_afternoon",
-            sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), "is_night",
-            sol::property(sol::resolve<bool() const>(&IAvledet::IsNight)), "next_morning",
-            sol::property(&IAvledet::GetTomorrowMorning), "next_day",
-            sol::property(&IAvledet::GetTomorrowDay), "next_afternoon",
-            sol::property(&IAvledet::GetTomorrowAfternoon), "next_night",
-            sol::property(&IAvledet::GetTomorrowNight),
+    // clang-format off
+    // ; butchering of my key-value pairs, so fuck it
 
-            "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
-                (void) self;
+    this->new_usertype<IAvledet>("IAvledet",
+        // server members
+        "version", sol::var(VConstants::GAME),
+        "delta", sol::property(&IAvledet::delta),
+        "id", sol::property([](IAvledet &self) { return Int64Wrapper(self.ID()); }), // server id
+        "nanos", sol::property([](IAvledet &self) { return Int64Wrapper(self.Nanos().count()); }), // nanos
+        "time", sol::property(&IAvledet::Time), // time
+        "time_multiplier", &IAvledet::m_serverTimeMultiplier, // time_multiplier
+        // world time functions
+        "world_time", sol::property(sol::resolve<WorldTime() const>(&IAvledet::GetWorldTime), &IAvledet::SetWorldTime), // world_time
+        "world_time_multiplier", sol::property(
+            // getter
+            [](IAvledet &self) { return self.m_worldTimeMultiplier; },
+            // setter
+            [](IAvledet &self, double mul) {
+                if (mul <= 0.001)
+                    throw std::runtime_error("multiplier too small");
+                self.m_worldTimeMultiplier = mul;
+            }
+        ), //
+        "world_ticks", sol::property([](IAvledet &self) { return self.GetWorldTicks(); }), // world_ticks
+        "day", sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), // numeric elapsed days
+        "time_of_day", sol::property(
+            // getter
+            sol::resolve<TimeOfDay() const>(&IAvledet::GetTimeOfDay), 
+            // setter
+            &IAvledet::SetTimeOfDay
+        ),
+        "is_morning", sol::property(sol::resolve<bool() const>(&IAvledet::IsMorning)), // bool morning
+        "is_day", sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), // bool day
+        "is_afternoon", sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), // bool afternoon
+        "is_night", sol::property(sol::resolve<bool() const>(&IAvledet::IsNight)), // bool night
+        "next_morning", sol::property(&IAvledet::GetTomorrowMorning), // next morning
+        "next_day", sol::property(&IAvledet::GetTomorrowDay), // next day
+        "next_afternoon", sol::property(&IAvledet::GetTomorrowAfternoon), // next afternoon
+        "next_night", sol::property(&IAvledet::GetTomorrowNight), // next night
 
-                sol::environment &env = te;
+        "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
+            (void) self;
 
-                auto mod = env["this"].get<ScriptInfo *>();
+            sol::environment &env = te;
 
-                avledet::util::Hash hash {};
+            auto mod = env["this"].get<ScriptInfo *>();
 
-                sol::function func;
-                int priority = 0;
+            avledet::util::Hash hash {};
 
-                // If priority is present (will be at end)
-                unsigned const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+            sol::function func;
+            int priority = 0;
 
-                for (std::size_t i = 0; i < args.size(); i++) {
-                    auto &&arg  = args[i];
-                    auto &&type = arg.get_type();
+            // If priority is present (will be at end)
+            unsigned const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
 
-                    if (i + offset < args.size()) {
-                        if (type == sol::type::string)
-                            hash ^= avledet::util::get_stable_hash(arg.as<std::string>());
-                        else if (type == sol::type::number)
-                            hash ^= arg.as<avledet::util::Hash>();
-                        else {
-                            throw std::runtime_error("initial params must be string or hash");
-                        }
+            for (std::size_t i = 0; i < args.size(); i++) {
+                auto &&arg  = args[i];
+                auto &&type = arg.get_type();
+
+                if (i + offset < args.size()) {
+                    if (type == sol::type::string)
+                        hash ^= avledet::util::get_stable_hash(arg.as<std::string>());
+                    else if (type == sol::type::number)
+                        hash ^= arg.as<avledet::util::Hash>();
+                    else {
+                        throw std::runtime_error("initial params must be string or hash");
+                    }
+                } else {
+                    if (i == args.size() - offset && type == sol::type::function) {
+                        func = arg;
+                    } else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
+                        priority = arg;
                     } else {
-                        if (i == args.size() - offset && type == sol::type::function) {
-                            func = arg;
-                        } else if (offset == 2 && i == args.size() - 1 && type == sol::type::number) {
-                            priority = arg;
-                        } else {
-                            throw std::runtime_error("final param must be a function or priority");
-                        }
+                        throw std::runtime_error("final param must be a function or priority");
                     }
                 }
+            }
 
-                // TEST THIS FOR WEIRDNESS
-                //  env is not set on functions which do not happen to use any globals
-                //  so trying to set the environment of a function that doesnt really do much, will fail.
-                //auto &&result = env.set_on(func);
-
-                //assert(result);
-                auto &&callbacks = m_callbacks[hash];
-                callbacks.emplace_back(func, env, priority);
-                //callbacks.emplace_back(priority, func);
-                std::sort(callbacks.begin(), callbacks.end(), [](EventHandle const &a, EventHandle const &b) {
-                    return a.m_priority < b.m_priority;
-                });
-                //for std::list custom sort
-                //callbacks.sort([](EventHandle const &a, EventHandle const &b) {
-                //    return a.m_priority < b.m_priority;
-                //});
+            auto &&callbacks = m_callbacks[hash];
+            callbacks.emplace_back(func, env, priority);
+            std::sort(callbacks.begin(), callbacks.end(), [](EventHandle const &a, EventHandle const &b) {
+                return a.m_priority < b.m_priority;
             });
+        }
+    );
 
     // TODO
     //this->new_usertype<IScriptManager>("IScriptManager", "find_mod",
@@ -133,32 +133,40 @@ void IScriptManager::load_userdata()
     //                                //}
     //);
 
-    this->new_usertype<ScriptInfo>("Mod", "name", sol::readonly(&ScriptInfo::m_name),
+    this->new_usertype<ScriptInfo>("Mod", 
+        "name", sol::readonly(&ScriptInfo::m_name),
                                    //"entry", sol::readonly(&Mod::m_entry),
-                                   "version", sol::readonly(&ScriptInfo::m_version), "api_version",
-                                   sol::readonly(&ScriptInfo::m_apiVersion), "description",
-                                   sol::readonly(&ScriptInfo::m_description), "authors",
-                                   sol::readonly(&ScriptInfo::m_authors));
+        "version", sol::readonly(&ScriptInfo::m_version), 
+        "api_version", sol::readonly(&ScriptInfo::m_apiVersion), 
+        "description", sol::readonly(&ScriptInfo::m_description), 
+        "authors", sol::readonly(&ScriptInfo::m_authors)
+    );
 
 
-    this->new_usertype<MethodSig>("MethodSig",
-                                  sol::constructors<MethodSig(std::string_view, sol::variadic_args)>());
+    this->new_usertype<MethodSig>("MethodSig", 
+        sol::constructors<MethodSig(std::string_view, sol::variadic_args)>()
+    );
 
-    this->new_usertype<IRouteManager>("IRouteManager", "register", &IRouteManager::RegisterLua, "invoke_view",
-                                      &IRouteManager::InvokeViewLua, "invoke", &IRouteManager::InvokeLua,
-                                      "invoke_all", &IRouteManager::InvokeAllLua);
+    this->new_usertype<IRouteManager>("IRouteManager", 
+        "register", &IRouteManager::RegisterLua, 
+        "invoke_view", &IRouteManager::InvokeViewLua, 
+        "invoke", &IRouteManager::InvokeLua,
+        "invoke_all", &IRouteManager::InvokeAllLua
+    );
 
     using avledet::util::CSU::Random;
 
     this->new_usertype<Random>("Random",
-                               sol::constructors<Random(), Random(std::int32_t), Random(Random const &)>(),
-                               "next_float", sol::property(&Random::next_float), "next_int",
-                               sol::property(&Random::next_int), "value", sol::property(&Random::value),
-                               "frange", sol::resolve<float(float, float)>(&Random::range), "irange",
-                               sol::resolve<std::int32_t(std::int32_t, std::int32_t)>(&Random::range),
-                               "inside_unit_circle", sol::property(&Random::inside_unit_circle),
-                               "on_unit_sphere", sol::property(&Random::on_unit_sphere), "inside_unit_sphere",
-                               sol::property(&Random::inside_unit_sphere));
+        sol::constructors<Random(), Random(std::int32_t), Random(Random const &)>(),
+        "next_float", sol::property(&Random::next_float), 
+        "next_int", sol::property(&Random::next_int), 
+        "value", sol::property(&Random::value),
+        "frange", sol::resolve<float(float, float)>(&Random::range), 
+        "irange", sol::resolve<std::int32_t(std::int32_t, std::int32_t)>(&Random::range),
+        "inside_unit_circle", sol::property(&Random::inside_unit_circle),
+        "on_unit_sphere", sol::property(&Random::on_unit_sphere), 
+        "inside_unit_sphere", sol::property(&Random::inside_unit_sphere)
+    );
 
     // Stl function; Will get copied along with other safe-sandboxed functions
     m_state["print"] = [](sol::variadic_args args, sol::this_environment tenv) {
@@ -194,6 +202,9 @@ void IScriptManager::load_userdata()
     //);
 }
 
+// I think were fine from here...
+// clang-format on
+
 static std::vector<std::string_view> const safe_functions {// Global objects
                                                            "assert", "error", "ipairs", "next", "pairs",
                                                            "pcall", "print", "select", "tonumber", "tostring",
@@ -211,11 +222,10 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //http://lua-users.org/wiki/SandBoxes
 //https://ericjmritz.wordpress.com/2015/03/25/creating-and-using-environments-in-lua/
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
-sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
+sol::environment IScriptManager::create_sandbox()
 {
     auto env  = sol::environment(m_state, sol::create, m_state.globals());//, api_table);
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
-    //env["_ENV"] = env;// hmm; test
 
     using namespace avledet::util;
     using namespace CSU;
@@ -228,7 +238,6 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
     env["DungeonManager"] = DungeonManager();
     env["ZoneManager"]    = ZoneManager();
     env["RouteManager"]   = RouteManager();
-    //env["this"]           = std::ref(mod);
 
 
     //table.new_usertype<IRouteManager::Data>("RouteData",

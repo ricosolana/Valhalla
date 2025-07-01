@@ -67,8 +67,8 @@ The above is a collective list of my vcpkg. Some dependencies are unused, but go
     - To debug plainly, use the cmake debug/launch
     - To debug with command line arguments, use the VSC `RUN AND DEBUG` side tab. Create and configure launch.json beforehand.
 
-- Useful Utilities
-  - clangd (Super Intellisense Extension for vscode)
+- VSCode extensions
+  - clangd
     - Installation:
       - `Ctrl + P` , then paste `ext install llvm-vs-code-extensions.vscode-clangd`
     - Must disable C++ Intellisense for clangd to take over:
@@ -85,3 +85,7 @@ The above is a collective list of my vcpkg. Some dependencies are unused, but go
                             ]
         ```
     - See https://stackoverflow.com/a/59820115 for more
+  - clang-format
+    - cpp file formatter
+  - emmy-lua
+    - lua file formatter + ...

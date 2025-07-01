@@ -1,0 +1,37 @@
+TODO
+    ZDO ostream<<
+
+    sol noconstruct for manager usertypes\
+
+    peer ostream<<
+
+    script reload quirks
+        reload on script save
+
+
+    specific reload functionality
+        config option or smth
+
+        reload on script file save
+            instead of info save
+
+    remove 'Event error:' (ugly placement)
+
+    fix lua print(er)
+        path spec
+        primarily quill formatting for file path
+
+    test multi-player functioning
+
+    finalize refactors of get_ / find_ ...
+        get implies IT EXISTS (otherwise panic)
+
+        find implies it might not exist, and to recover...
+
+    restructure / synchronize the entire load/re/unload
+        functionality, to reduce code duplication
+
+    clang-format
+        for some reason cant find a way to skip files
+
+        or per-file formatting

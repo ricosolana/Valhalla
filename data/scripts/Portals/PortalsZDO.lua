@@ -30,7 +30,7 @@ local is_connecting = function(zdo)
 end
 
 local set_connection = function(portal, connection, force)
-    local flag = NetManager:find_peer(portal.owner)
+    local flag = NetManager:get_peer(portal.owner)
     if not portal.owned or not flag or force then
         portal.owner = Avledet.id
         portal:set_connection(ConnectionType.PORTAL, connection)
@@ -49,14 +49,14 @@ end
 
 local clear_connecting = function()
     for _, paired in ipairs(connecting_portals) do
-        force_set_connection(connectingPortals[1], connectingPortals[2].id)
-        force_set_connection(connectingPortals[2], connectingPortals[1].id)
+        force_set_connection(paired[1], paired[2].id)
+        force_set_connection(paired[2], paired[1].id)
     end
     connecting_portals = {} -- effective clear
 end
 
 local add_connecting = function(portalA, portalB)
-    connecting_portals:insert({portalA, portalB})
+    table.insert(connecting_portals, {portalA, portalB})
 end
 
 local find_any_portal = function(portals, ignore_zdo, tag)
