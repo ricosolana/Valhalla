@@ -1,5 +1,6 @@
 #include "ModManager.h"
 #include "VUtils.h"
+#include <chrono>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -79,7 +80,9 @@ IScriptManager::load_file_script(std::filesystem::path script_root)
 
     //auto &&mod = insert.first->second;
 
-    ScriptInfo script_info(std::move(name), std::move(entry_path), std::move(script_root));
+    auto last_write_time = std::filesystem::last_write_time(script_info_path);
+
+    ScriptInfo script_info(std::move(name), std::move(entry_path), std::move(script_root), last_write_time);
 
     script_info.m_version     = loadNode["version"].as<std::string>("");
     script_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
@@ -104,25 +107,32 @@ IScriptManager::load_file_script(std::filesystem::path script_root)
 //    return 1;
 //}
 
-void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
+void IScriptManager::execute(ScriptInfo const &_plugin_info, std::string const &code, bool replace)
 {
     //m_scripts[info.m_name] = std::make_unique<ScriptInfo>(info);
-    auto &&try_emplace  = m_scripts.try_emplace(info.m_name, std::make_unique<ScriptInfo>(std::move(info)));
-    auto &&_plugin_info = *try_emplace.first->second;
-    if (!try_emplace.second)
-        throw std::runtime_error("tried loading plugin twice! " + _plugin_info.m_name);
+    auto &&try_emplace
+            = m_scripts.try_emplace(_plugin_info.m_name, std::make_unique<ScriptInfo>(_plugin_info));
+    auto &&plugin_info = *try_emplace.first->second;
+    if (!try_emplace.second) {
+        if (!replace) {
+            throw std::runtime_error("tried loading script twice! " + plugin_info.m_name);
+        } else {
+            LOG_TRACE_L1(AVL_LOGGER, "Overwriting script '{}'", plugin_info.m_name);
+            plugin_info = _plugin_info;
+        }
+    }
 
     //LOG_INFO(AVL_LOGGER, "Running script {} / {}", info.m_name, info.m_authors);
 
     auto env = this->create_sandbox();
 
-    env["this"] = std::ref(_plugin_info);// copy
+    env["this"] = std::ref(plugin_info);// ptr
 
-    _plugin_info.m_env = env;
+    plugin_info.m_env = env;
 
     // Important: loadmode::text
     //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
-    m_state.script(code, env, info.m_chunk_name, sol::load_mode::text);
+    m_state.script(code, env, plugin_info.m_chunk_name, sol::load_mode::text);
 }
 
 //TODO
@@ -229,7 +239,7 @@ void IScriptManager::PostInit()
 
             //auto [info, code] = load_file_script(dirname);
             auto [info, code] = load_file_script(dir.path());
-            execute(info, code);
+            execute(info, code, false);
 
             LOG_NOTICE(AVL_LOGGER, "Loaded script '{}'", info.m_name);
         } catch (std::exception const &e) {
@@ -260,27 +270,53 @@ void IScriptManager::Uninit()
 
 void IScriptManager::update()
 {
-    if (VUtils::run_periodic<struct my_test_reloads>(10000ns)) {
-        auto &&f = m_scripts.begin();
-        unload_script(f->second->m_name);
+    //if (VUtils::run_periodic<struct my_test_reloads>(10000ns)) {
+    //    auto &&f = m_scripts.begin();
+    //    unload_script(f->second->m_name);
+    //}
+
+    if (VUtils::run_periodic<struct my_test_reloads>(1s)) {
+        // iterate all mod entrys
+        for (auto &&itr = m_scripts.begin(); itr != m_scripts.end();) {
+            auto &&info_dir = itr->second->get_info_dir();
+
+            std::error_code ec;
+            auto lastWriteTime = std::filesystem::last_write_time(info_dir, ec);
+            if (ec) {
+                ++itr;
+                continue;
+            }
+
+            if (lastWriteTime != itr->second->m_last_change) {
+                // reload the file
+                reload_script(itr);
+            } else {
+                ++itr;
+            }
+        }
     }
 }
 
-bool IScriptManager::unload_script(std::string_view name)
+void IScriptManager::reload_all()
 {
-    //LOG_WARNING(AVL_LOGGER, "Unloading script '{}'", name);
+    assert(false);
+    //m_scripts.clear();
+    //m_callbacks
 
-    auto &&find = m_scripts.find(name);
-    if (find == m_scripts.end()) {
-        LOG_ERROR(AVL_LOGGER, "Script '{}' not found", name);
-        return false;
-    }
+    // TODO clear all peer lua-registered rpcs
 
-    ScriptInfo &script_info = *find->second;
+    // TODO clear all peer lua-registered routes
 
-    auto root = std::get<std::filesystem::path>(script_info.m_uri);
+    // TODO clear anything else
+    //m_state = sol::state();
+}
+
+void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bool gc, bool pop)
+{
+    ScriptInfo &script_info = *script_itr->second;
 
     //TODO call onDisables() or equivalent
+    this->CallEventOn(&script_info, Events::Disable, true /* true here means reload=true */);
 
     /*
         Release all associated callbacks
@@ -292,22 +328,16 @@ bool IScriptManager::unload_script(std::string_view name)
             //auto &&env = sol::get_environment(itr1->m_func);
             //assert(env.valid());
 
-            //assert(env["this"].is<ScriptInfo *>());
-
-            //auto on_script_info = env["this"].get<ScriptInfo *>();
-
-            //bool contains = (&script_info == on_script_info);
             bool contains = (script_info.m_env == itr1->m_env);
 
             if (contains) {
                 itr1 = callbacks.erase(itr1);
-                //++itr1;
             } else {
                 ++itr1;
             }
         }
 
-        // Pop callback set for tidy
+        // Pop callback for tidy
         if (callbacks.empty()) {
             itr = m_callbacks.erase(itr);
         } else {
@@ -351,34 +381,48 @@ bool IScriptManager::unload_script(std::string_view name)
 
     //TODO release all routemanager RPCs
 
-    //reset() calls luaL_unref
-    //  which basically reduces its refcnt
-    //script_info.m_env.reset();
-
-    //script_info.m_env["_G"] = sol::lua_nil; //nope; pointless
-
     //pop script
-    m_scripts.erase(find);
+    if (pop) {
+        script_itr = m_scripts.erase(script_itr);
+    } else {
+        script_info.m_env.reset();
+        script_itr++;
+    }
 
     //force lua gc
-    //  omit this later for perf
-    m_state.collect_gc();
+    if (gc) {
+        m_state.collect_gc();
+    }
+}
 
+void IScriptManager::reload_script(decltype(m_scripts)::iterator &script_itr)
+{
+    ScriptInfo &script_info = *script_itr->second;
+    auto root               = std::get<std::filesystem::path>(script_info.m_uri);
 
-    /*
-        TODO this section is specifically for loading the script back into Avledet
-            so more of reload_script() functionality
-    */
+    LOG_WARNING(AVL_LOGGER, "Unloading script '{}'", script_info.m_name);
+    this->unload_script(script_itr, true, false);
 
-    //LOG_WARNING(AVL_LOGGER, "Reloading script '{}'...", name);
+    LOG_NOTICE(AVL_LOGGER, "Unloaded script '{}'", script_info.m_name);
 
     // reload from scratch
     auto [info, code] = load_file_script(root);
-    execute(info, code);
+    execute(info, code, true);
 
-    //LOG_NOTICE(AVL_LOGGER, "Reloaded script '{}'", info.m_name);
+    LOG_NOTICE(AVL_LOGGER, "Reloaded script '{}'", info.m_name);
 
-    LOG_NOTICE_LIMIT(1s, AVL_LOGGER, "Lua memory: {}bytes", m_state.memory_used());
+    LOG_NOTICE(AVL_LOGGER, "Lua memory: {}kB", (m_state.memory_used() / 1024));
+}
+
+bool IScriptManager::reload_script(std::string_view name)
+{
+    auto &&find = m_scripts.find(name);
+    if (find == m_scripts.end()) {
+        LOG_ERROR(AVL_LOGGER, "Script '{}' not found", name);
+        return false;
+    }
+
+    reload_script(find);
 
     return true;
 }

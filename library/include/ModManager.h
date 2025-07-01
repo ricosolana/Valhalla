@@ -2,6 +2,10 @@
 
 #include "CompileSettings.h"
 #include <filesystem>
+#include <sol/as_args.hpp>
+#include <sol/as_returns.hpp>
+#include <sol/object.hpp>
+#include <sol/variadic_args.hpp>
 #include <string>
 #include <variant>
 
@@ -192,6 +196,8 @@ class IScriptManager
         // root or the script url
         std::variant<std::filesystem::path, std::string> m_uri;
 
+        std::filesystem::file_time_type m_last_change;
+
       private:
         //ScriptInfo(std::string name, std::string chunk_name, sol::environment env) :
         //    m_name(std::move(name)),
@@ -201,10 +207,12 @@ class IScriptManager
         //}
 
       public:
-        ScriptInfo(std::string name, std::string chunk_name, decltype(m_uri) uri) :
+        ScriptInfo(std::string name, std::string chunk_name, decltype(m_uri) uri,
+                   std::filesystem::file_time_type last_change) :
             m_name(std::move(name)),
             m_chunk_name(std::move(chunk_name)),
-            m_uri(std::move(uri))
+            m_uri(std::move(uri)),
+            m_last_change(last_change)
         {
         }
 
@@ -221,6 +229,11 @@ class IScriptManager
         {
             auto &&get = std::get_if<std::filesystem::path>(&m_uri);
             return get != nullptr;
+        }
+
+        std::filesystem::path get_info_dir() const
+        {
+            return std::get<std::filesystem::path>(m_uri) / "scriptInfo.yml";
         }
 
         // If dynamically loaded (ie from discord); not during server initialization like all scripts
@@ -292,11 +305,15 @@ class IScriptManager
     //  ie, native, filebased, dynamic...
     sol::environment create_sandbox();
 
+    void unload_script(decltype(m_scripts)::iterator &script_itr, bool gc, bool pop);
+
+    void reload_script(decltype(m_scripts)::iterator &script_itr);
+
   public:
     void load_userdata();
 
     std::tuple<ScriptInfo, std::string> load_file_script(std::filesystem::path script_root);
-    void execute(ScriptInfo const &info, std::string const &code);//dynamic or mobile script
+    void execute(ScriptInfo const &info, std::string const &code, bool replace);//dynamic or mobile script
 
     // my immutable usertype
     template<typename Class, typename... Args>
@@ -313,12 +330,51 @@ class IScriptManager
     void PostInit();
     void Uninit();
     void update();
-    bool unload_script(std::string_view name);
 
-    // Dispatch a Lua event
-    //  Returns false if the event requested cancellation
+    bool reload_script(std::string_view name);
+
+    void reload_all();
+
+    //decltype(m_callbacks)::iterator::value_type::second_type::iterator
+    // Returns if early cancel requested by script
+    bool _CallEvent(std::vector<EventHandle> &evts, std::vector<EventHandle>::iterator &evt_itr,
+                    sol::variadic_results args)
+    {
+        this->m_tmp_unsubscribe = false;// Default unsubscribe state
+
+        // Params are COPIED
+        //  this makes modifications of primitives impossible, but could still modify
+        //  pointers/userdata tables...
+        //sol::function_result result = itr->second(Args(params)...);
+        sol::protected_function_result result = evt_itr->m_func(sol::as_args(args));
+        if (!result.valid()) {
+            LOG_ERROR(AVL_LOGGER, "Event error: ");
+            sol::error error = result;
+            LOG_ERROR(AVL_LOGGER, "{}", error.what());
+
+            // On error, we invalidate the event
+            this->m_tmp_unsubscribe = true;
+        } else {
+            // whether cancelled-events should follow Harmony prefix cancellation with bools
+            if (result.get_type() == sol::type::boolean) {
+                if (!result.get<bool>())
+                    return false;
+            }
+        }
+
+        if (this->m_tmp_unsubscribe) {
+            evt_itr = evts.erase(evt_itr);
+        } else {
+            ++evt_itr;
+        }
+
+        return true;
+    }
+
+    // script_info is optionally null
+    // call events NOT globally (across all scripts), but instead on given script
     template<class... Args>
-    bool CallEvent(avledet::util::Hash name, Args &&...params)
+    bool CallEventOn(ScriptInfo *script_info, avledet::util::Hash name, Args &&...params)
     {
         ZoneScoped;
         //ZoneNamed(CallEvent, true);
@@ -328,37 +384,38 @@ class IScriptManager
             auto &&callbacks = find->second;
 
             for (auto &&itr = callbacks.begin(); itr != callbacks.end();) {
-                this->m_tmp_unsubscribe = false;// Default unsubscribe state
-
-                // Params are COPIED
-                //  this makes modifications of primitives impossible, but could still modify
-                //  pointers/userdata tables...
-                //sol::function_result result = itr->second(Args(params)...);
-                sol::protected_function_result result = itr->m_func(std::forward<Args>(params)...);
-                if (!result.valid()) {
-                    LOG_ERROR(AVL_LOGGER, "Event error: ");
-                    sol::error error = result;
-                    LOG_ERROR(AVL_LOGGER, "{}", error.what());
-
-                    // On error, we invalidate the event
-                    this->m_tmp_unsubscribe = true;
-                } else {
-                    // whether cancelled-events should follow Harmony prefix cancellation with bools
-                    if (result.get_type() == sol::type::boolean) {
-                        if (!result.get<bool>())
-                            return false;
-                    }
+                if (script_info && itr->m_env != script_info->m_env) {
+                    ++itr;
+                    continue;
                 }
 
-                if (this->m_tmp_unsubscribe) {
-                    itr = callbacks.erase(itr);
-                } else {
-                    ++itr;
+                sol::variadic_results results;
+                results.reserve(sizeof...(params));
+
+                // folding
+                ((results.emplace_back(sol::make_object(m_state.lua_state(), std::forward<Args>(params)))),
+                 ...);
+
+                //sol::variadic_results results(
+                //        sol::make_object(m_state.lua_state(), std::forward<Args>(params))...);
+
+                //sol::variadic_results results(std::forward<Args>(params)...);
+
+                if (!this->_CallEvent(callbacks, itr, std::move(results))) {
+                    return false;
                 }
             }
         }
 
         return true;
+    }
+
+    // Dispatch a Lua event
+    //  Returns false if the event requested cancellation
+    template<class... Args>
+    bool CallEvent(avledet::util::Hash name, Args &&...params)
+    {
+        return CallEventOn(nullptr, name, std::forward<Args>(params)...);
     }
 
     // Dispatch a Lua event

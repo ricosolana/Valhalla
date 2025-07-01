@@ -194,13 +194,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         writer.write(func);
 
         // TODO Prefix
-        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this, bytes))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this->shared_from_this(), bytes))
         //return;
 
         this->Send(std::move(writer.get_buf()));
 
         // TODO Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, writer);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
     }
 
     template<typename Func>
@@ -228,13 +228,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         });
 
         // Prefix
-        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this, targetZDO, bytes))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this->shared_from_this(), targetZDO, bytes))
         //return;
 
         this->Send(std::move(writer.get_buf()));
 
         // Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, writer);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
     }
 
     template<typename Func>
@@ -250,7 +250,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
             return;
 
         // Prefix
-        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this, params...))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this->shared_from_this(), params...))
             return;
 
         //VLOG(2) << "Invoke, hash: " << hash << ", #params: " << sizeof...(params);
@@ -258,7 +258,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
         this->Send(DataWriter::serialize(hash, params...));
 
         // Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this, params...);
+        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), params...);
     }
 
     template<typename... Types>
@@ -278,7 +278,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
             throw std::runtime_error("mismatched number of args");
 
         // Prefix
-        //if (!AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash, this, sol::as_args(args)))
+        //if (!AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash, this->shared_from_this(), sol::as_args(args)))
         //    return;
 
         //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
@@ -289,7 +289,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
         this->Send(std::move(params.get_buf()));
 
         // Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash ^ IScriptManager::EVENT_POST, this, sol::as_args(args));
+        //AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash ^ IScriptManager::EVENT_POST, this->shared_from_this(), sol::as_args(args));
     }
 #endif
 
@@ -318,7 +318,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     {
         assert(!bytes.empty());
 
-        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Send, this, std::ref(bytes)))
+        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Send, this->shared_from_this(), std::ref(bytes)))
             this->m_socket->send(std::move(bytes));
     }
 
@@ -326,7 +326,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     {
         auto bytes = m_socket->Recv();
         if (!bytes.empty()) {
-            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Recv, this, std::ref(bytes))) {
+            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Recv, this->shared_from_this(), std::ref(bytes))) {
                 return bytes;
             }
         }
@@ -416,7 +416,8 @@ class Peer : public std::enable_shared_from_this<Peer>,
     template<typename... Types>
     void RouteView(ZDOID targetZDO, avledet::util::Hash hash, Types &&...params)
     {
-        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this, targetZDO, params...))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this->shared_from_this(), targetZDO,
+                              params...))
             return;
 
         RouteParams(targetZDO, hash, DataWriter::serialize(params...));
@@ -450,8 +451,8 @@ class Peer : public std::enable_shared_from_this<Peer>,
         auto results = sol::variadic_results(args.begin(), args.end());
 
     #ifdef MOD_EVENT_RESPONSE
-        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ repr.m_hash, this, targetZDO,
-                              sol::as_args(results)))
+        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ repr.m_hash, this->shared_from_this(),
+                              targetZDO, sol::as_args(results)))
             return;
     #endif
 
