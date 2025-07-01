@@ -1,4 +1,5 @@
 #include "ModManager.h"
+#include "VUtils.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -78,7 +79,7 @@ IScriptManager::load_file_script(std::filesystem::path script_root)
 
     //auto &&mod = insert.first->second;
 
-    ScriptInfo script_info(std::move(name), std::move(entry_path));
+    ScriptInfo script_info(std::move(name), std::move(entry_path), std::move(script_root));
 
     script_info.m_version     = loadNode["version"].as<std::string>("");
     script_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
@@ -116,6 +117,8 @@ void IScriptManager::execute(ScriptInfo const &info, std::string const &code)
     auto env = this->create_sandbox();
 
     env["this"] = std::ref(_plugin_info);// copy
+
+    _plugin_info.m_env = env;
 
     // Important: loadmode::text
     //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
@@ -257,180 +260,127 @@ void IScriptManager::Uninit()
 
 void IScriptManager::update()
 {
-    ////if (!m_tmp_reload_mods.empty()) {
-    ////    assert(false);//TODO
-
-    ////    /*
-    ////        Release all associated callbacks
-    ////    */
-
-    ////    for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-    ////        auto &&callbacks = itr->second;
-    ////        for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-    ////            auto &&env = sol::get_environment(itr1->m_func);
-    ////            //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
-    ////            assert(env.valid());
-
-    ////            assert(env["this"].is<ScriptInfo *>());
-
-    ////            auto mod = env["this"].get<ScriptInfo *>();
-
-    ////            bool contains = m_tmp_reload_mods.contains(mod);
-
-    ////            if (contains) {
-    ////                itr1 = callbacks.erase(itr1);
-    ////            } else {
-    ////                ++itr1;
-    ////            }
-    ////        }
-
-    ////        // Pop callback set for tidy
-    ////        if (callbacks.empty()) {
-    ////            itr = m_callbacks.erase(itr);
-    ////        } else {
-    ////            ++itr;
-    ////        }
-    ////    }
-
-    ////    /*
-    ////        Release all registered RPCs
-    ////    */
-
-    ////    //for (auto &&peer_pair : NetManager()->m_connectedPeers) {
-    ////    //    for (auto &&method_itr = peer_pair->m_methods.begin();
-    ////    //         method_itr != peer_pair->m_methods.end();) {
-    ////    //        auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
-
-    ////    //        if (!method) {
-    ////    //            ++method_itr;
-    ////    //            continue;
-    ////    //        }
-
-    ////    //        auto &&env = sol::get_environment(method->m_func);
-    ////    //        assert(env.valid());
-    ////    //        assert(env["this"].is<Mod *>());
-    ////    //        auto mod = env["this"].get<Mod *>();
-
-    ////    //        bool contains = m_tmp_reload_mods.contains(mod);
-
-    ////    //        if (contains) {
-    ////    //            // kill it
-    ////    //            method_itr = peer_pair->m_methods.erase(method_itr);
-    ////    //        } else {
-    ////    //            ++method_itr;
-    ////    //        }
-    ////    //    }
-    ////    //}
-
-    ////    //TODO rethink how everything is shaped...
-
-    ////    // Perhaps start on reworking Valhalla,
-
-    ////    // Migrating towards unit tests like in avl, and avoid
-    ////    //  repeated pitfalls as before with debug hell...
-
-    ////    // Clang tidy / formatters to look at,
-    ////    //  refactor as a whole...
-
-    ////    // Also unload routed rpcs...
-    ////    //for (auto&& mod : m_tmp_reload_mods) {
-    ////    //    mod->
-    ////    //}
-
-    ////    // https://github.com/ricosolana/Valhalla/blob/0121b3db3788c146fc0eda783c3563cb16ef2ca9/src/ModManager.cpp
-    ////    // :::::::::::::::::::OLD::::::::::::::::;
-    ////    //for (auto&& pair : m_mods) {
-    ////    //    auto&& mod = *pair.second.get();
-    ////    //    if (mod.m_reload) {
-    ////    //        LOG(INFO) << "Reloading mod " << mod.m_name;
-
-    ////    //        for (auto&& pair : NetManager()->GetPeers()) {
-    ////    //            auto&& peer = pair.second;
-    ////    //            for (auto&& pair1 : peer->m_methods) {
-    ////    //                auto&& method = dynamic_cast<MethodImplLua<Peer*>*>(pair1.second.get());
-    ////    //                //if (method)
-    ////    //                    //method->m_func =
-    ////    //            }
-    ////    //            //if (auto method = peer->GetMethod()
-    ////    //        }
-
-    ////    //        mod.m_env.reset();
-    ////    //        LoadMod(mod);
-    ////    //        mod.m_reload = false;
-    ////    //    }
-    ////    //}
-
-    ////    //m_state.collect_gc();
-
-    ////    //m_tmp_mod_reload = nullptr;
-    ////}
+    if (VUtils::run_periodic<struct my_test_reloads>(10000ns)) {
+        auto &&f = m_scripts.begin();
+        unload_script(f->second->m_name);
+    }
 }
 
-void IScriptManager::unload_script(ScriptInfo &script_info)
+bool IScriptManager::unload_script(std::string_view name)
 {
-    (void) script_info;
-    assert(false);//MUST TEST
+    //LOG_WARNING(AVL_LOGGER, "Unloading script '{}'", name);
+
+    auto &&find = m_scripts.find(name);
+    if (find == m_scripts.end()) {
+        LOG_ERROR(AVL_LOGGER, "Script '{}' not found", name);
+        return false;
+    }
+
+    ScriptInfo &script_info = *find->second;
+
+    auto root = std::get<std::filesystem::path>(script_info.m_uri);
+
+    //TODO call onDisables() or equivalent
+
     /*
         Release all associated callbacks
     */
-    ////for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
-    ////    auto &&callbacks = itr->second;
-    ////    for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
-    ////        auto &&env = sol::get_environment(itr1->m_func);
-    ////        //if (itr1->m_func.e.get() == m_tmp_mod_reload) {
-    ////        assert(env.valid());
+    for (auto &&itr = m_callbacks.begin(); itr != m_callbacks.end();) {
+        auto &&callbacks = itr->second;
+        for (auto &&itr1 = callbacks.begin(); itr1 != callbacks.end();) {
+            // This will FAIL for functions which do not use globals (_ENV will not set an an upvalue)
+            //auto &&env = sol::get_environment(itr1->m_func);
+            //assert(env.valid());
 
-    ////        assert(env["this"].is<ScriptInfo *>());
+            //assert(env["this"].is<ScriptInfo *>());
 
-    ////        auto on_mod = env["this"].get<ScriptInfo *>();
+            //auto on_script_info = env["this"].get<ScriptInfo *>();
 
-    ////        //bool contains = m_tmp_reload_mods.contains(mod);
-    ////        bool contains = &mod == on_mod;
+            //bool contains = (&script_info == on_script_info);
+            bool contains = (script_info.m_env == itr1->m_env);
 
-    ////        if (contains) {
-    ////            itr1 = callbacks.erase(itr1);
-    ////        } else {
-    ////            ++itr1;
-    ////        }
-    ////    }
+            if (contains) {
+                //itr1 = callbacks.erase(itr1);
+                ++itr1;
+            } else {
+                ++itr1;
+            }
+        }
 
-    ////    // Pop callback set for tidy
-    ////    if (callbacks.empty()) {
-    ////        itr = m_callbacks.erase(itr);
-    ////    } else {
-    ////        ++itr;
-    ////    }
-    ////}
+        // Pop callback set for tidy
+        if (callbacks.empty()) {
+            itr = m_callbacks.erase(itr);
+        } else {
+            ++itr;
+        }
+    }
 
     /*
-        Release all registered RPCs        
+        Release all registered RPCs
     */
 
-    //for (auto &&peer_pair : NetManager()->m_connectedPeers) {
-    //    for (auto &&method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end();) {
-    //        auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
+    for (auto &&peer_pair : NetManager()->m_connectedPeers) {
+        for (auto &&method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end();) {
+            auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
 
-    //        if (!method) {
-    //            ++method_itr;
-    //            continue;
-    //        }
+            if (!method) {
+                ++method_itr;
+                continue;
+            }
 
-    //        auto &&env = sol::get_environment(method->m_func);
-    //        assert(env.valid());
-    //        assert(env["this"].is<Mod *>());
-    //        auto on_mod = env["this"].get<Mod *>();
+            // This will fail sometimes (see above); unused _ENV
+            //  but for now, I am lazy
+            auto &&env = sol::get_environment(method->m_func);
+            assert(env.valid());
 
-    //        //bool contains = m_tmp_reload_mods.contains(mod);
-    //        bool contains = &mod == on_mod;
+            //assert(env["this"].is<Mod *>());
+            //auto on_mod = env["this"].get<Mod *>();
 
-    //        if (contains) {
-    //            // kill it
-    //            method_itr = peer_pair->m_methods.erase(method_itr);
-    //        } else {
-    //            ++method_itr;
-    //        }
-    //    }
-    //}
+            //bool contains = m_tmp_reload_mods.contains(mod);
+            //bool contains = &mod == on_mod;
+            bool contains = (script_info.m_env == env);
+
+            if (contains) {
+                // kill it
+                method_itr = peer_pair->m_methods.erase(method_itr);
+            } else {
+                ++method_itr;
+            }
+        }
+    }
+
+    //TODO release all routemanager RPCs
+
+    //reset() calls luaL_unref
+    //  which basically reduces its refcnt
+    //script_info.m_env.reset();
+
+    //script_info.m_env["_G"] = sol::lua_nil; //nope; pointless
+
+    //pop script
+    m_scripts.erase(find);
+
+    //force lua gc
+    //  omit this later for perf
+    m_state.collect_gc();
+
+
+    /*
+        TODO this section is specifically for loading the script back into Avledet
+            so more of reload_script() functionality
+    */
+
+    //LOG_WARNING(AVL_LOGGER, "Reloading script '{}'...", name);
+
+    // reload from scratch
+    auto [info, code] = load_file_script(root);
+    execute(info, code);
+
+    //LOG_NOTICE(AVL_LOGGER, "Reloaded script '{}'", info.m_name);
+
+    LOG_NOTICE_LIMIT(1s, AVL_LOGGER, "Lua memory: {}bytes", m_state.memory_used());
+
+    return true;
 }
 
 #endif// AVL_ENABLE_SCRIPTING

@@ -890,6 +890,8 @@ bool IAvledet::update()
     HeightmapBuilder()->Update();
 #endif
 
+    ScriptManager()->update();
+
     //TODO run periodically starting from now?
     if (VUtils::run_periodic<struct server_period_update>(1s)) {
         PeriodUpdate();

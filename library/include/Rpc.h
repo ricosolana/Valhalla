@@ -8,6 +8,7 @@
 
 #include "Hashes.h"
 #include "Method.h"
+#include "ModManager.h"
 #include "Types.h"
 #include "ValhallaServer.h"
 
@@ -57,7 +58,7 @@ namespace avledet::rpc {
             this->register_method(avledet::util::get_stable_hash(name), std::move(func));
         }
 
-      private:
+      public:
         //gtl::btree_set<MethodPtr, std::less<>> m_methods;
         avledet::util::Map<avledet::util::Hash, std::unique_ptr<Method>> m_methods;
     };

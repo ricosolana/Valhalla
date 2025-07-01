@@ -1,5 +1,6 @@
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
+#include <sol/call.hpp>
 #include <sol/resolve.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -68,6 +69,7 @@ void IScriptManager::load_userdata()
                 auto mod = env["this"].get<ScriptInfo *>();
 
                 avledet::util::Hash hash {};
+
                 sol::function func;
                 int priority = 0;
 
@@ -97,8 +99,14 @@ void IScriptManager::load_userdata()
                     }
                 }
 
+                // TEST THIS FOR WEIRDNESS
+                //  env is not set on functions which do not happen to use any globals
+                //  so trying to set the environment of a function that doesnt really do much, will fail.
+                //auto &&result = env.set_on(func);
+
+                //assert(result);
                 auto &&callbacks = m_callbacks[hash];
-                callbacks.emplace_back(func, priority);
+                callbacks.emplace_back(func, env, priority);
                 //callbacks.emplace_back(priority, func);
                 std::sort(callbacks.begin(), callbacks.end(), [](EventHandle const &a, EventHandle const &b) {
                     return a.m_priority < b.m_priority;
@@ -207,6 +215,7 @@ sol::environment IScriptManager::create_sandbox(/*Mod &mod*/)
 {
     auto env  = sol::environment(m_state, sol::create, m_state.globals());//, api_table);
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
+    //env["_ENV"] = env;// hmm; test
 
     using namespace avledet::util;
     using namespace CSU;

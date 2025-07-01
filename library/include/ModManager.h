@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CompileSettings.h"
+#include <filesystem>
+#include <string>
+#include <variant>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -173,24 +176,35 @@ class IScriptManager
 
     class ScriptInfo
     {
+        friend class IScriptManager;
+
       public:
         std::string m_name;
-
-        // proto/src name of code chunk
-        //  file:///home/.../script_entry.lua
-        //  https://discord.com/channels/x/y/z
-        //std::string m_origin;
         std::string m_chunk_name;
 
+      private:
         std::string m_version;
         std::string m_apiVersion;
         std::string m_description;
         std::vector<std::string> m_authors;
+        sol::environment m_env;
+
+        // root or the script url
+        std::variant<std::filesystem::path, std::string> m_uri;
+
+      private:
+        //ScriptInfo(std::string name, std::string chunk_name, sol::environment env) :
+        //    m_name(std::move(name)),
+        //    m_chunk_name(std::move(chunk_name)),
+        //    m_env(std::move(env))
+        //{
+        //}
 
       public:
-        ScriptInfo(std::string name, std::string chunk_name) :
+        ScriptInfo(std::string name, std::string chunk_name, decltype(m_uri) uri) :
             m_name(std::move(name)),
-            m_chunk_name(std::move(chunk_name))
+            m_chunk_name(std::move(chunk_name)),
+            m_uri(std::move(uri))
         {
         }
 
@@ -202,6 +216,12 @@ class IScriptManager
         ScriptInfo(ScriptInfo const &)            = default;
         ScriptInfo(ScriptInfo &&)                 = default;
         ScriptInfo &operator=(ScriptInfo const &) = default;
+
+        bool is_fs_script() const
+        {
+            auto &&get = std::get_if<std::filesystem::path>(&m_uri);
+            return get != nullptr;
+        }
 
         // If dynamically loaded (ie from discord); not during server initialization like all scripts
         //bool is_file_based() const
@@ -236,11 +256,13 @@ class IScriptManager
 
     struct EventHandle
     {
-        sol::protected_function m_func;
-        int m_priority;
+        sol::protected_function m_func;//32 bytes
+        sol::environment m_env;        //16 bytes
+        int m_priority;                //4 bytes
 
-        EventHandle(sol::function func, int priority) :
-            m_func(func),
+        EventHandle(sol::function func, sol::environment env, int priority) :
+            m_func(std::move(func)),
+            m_env(std::move(env)),
             m_priority(priority)
         {
         }
@@ -291,7 +313,7 @@ class IScriptManager
     void PostInit();
     void Uninit();
     void update();
-    void unload_script(ScriptInfo &script);
+    bool unload_script(std::string_view name);
 
     // Dispatch a Lua event
     //  Returns false if the event requested cancellation
