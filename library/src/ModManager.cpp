@@ -300,8 +300,8 @@ bool IScriptManager::unload_script(std::string_view name)
             bool contains = (script_info.m_env == itr1->m_env);
 
             if (contains) {
-                //itr1 = callbacks.erase(itr1);
-                ++itr1;
+                itr1 = callbacks.erase(itr1);
+                //++itr1;
             } else {
                 ++itr1;
             }
