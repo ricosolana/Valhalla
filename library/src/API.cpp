@@ -54,16 +54,14 @@ void IScriptManager::load_userdata()
                 if (mul <= 0.001)
                     throw std::runtime_error("multiplier too small");
                 self.m_worldTimeMultiplier = mul;
-            }
-        ), //
+            }),
         "world_ticks", sol::property([](IAvledet &self) { return self.GetWorldTicks(); }), // world_ticks
         "day", sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), // numeric elapsed days
         "time_of_day", sol::property(
             // getter
             sol::resolve<TimeOfDay() const>(&IAvledet::GetTimeOfDay), 
             // setter
-            &IAvledet::SetTimeOfDay
-        ),
+            &IAvledet::SetTimeOfDay),
         "is_morning", sol::property(sol::resolve<bool() const>(&IAvledet::IsMorning)), // bool morning
         "is_day", sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), // bool day
         "is_afternoon", sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), // bool afternoon

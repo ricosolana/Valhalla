@@ -1,4 +1,11 @@
 #include "CompileSettings.h"
+#include "DataStream.h"
+#include "Quaternion.h"
+#include "Types.h"
+#include "Vector.h"
+#include "VUtils.h"
+#include <sol/resolve.hpp>
+#include <string_view>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -19,8 +26,7 @@ void IScriptManager::load_userdata_types()
         "NONE", sol::var(ZDOID::NONE),
         "user_id", sol::property(
             [](ZDOID &self) { return (Int64Wrapper) self.get_user_id(); },
-            [](ZDOID &self, Int64Wrapper value) { self.set_user_id((std::int64_t) value); }
-        ),
+            [](ZDOID &self, Int64Wrapper value) { self.set_user_id((std::int64_t) value); }),
         "id", sol::property(&ZDOID::get_id, &ZDOID::set_id)
     );
 
@@ -70,14 +76,9 @@ void IScriptManager::load_userdata_types()
     //);
 
     this->new_usertype<DataWriter>("Writer", 
-        sol::constructors<DataWriter(Bytes)>(),
-
-        //"ToReader", &DataWriter::ToReader,
-        //"buf", &DataWriter::get_buf, //TODO currently unsafe
+        sol::constructors<DataWriter(), DataWriter(Bytes)>(),
         "pos", sol::property(&DataWriter::get_pos, &DataWriter::set_pos),//& DataWriter::m_pos,
-
-        //"Clear", &DataWriter::Clear,
-
+        "seek", &DataWriter::seek,
         "write_bool", &DataWriter::write<bool>, 
         "write_string", &DataWriter::write<std::string_view>,
         "write_bytes", &DataWriter::write<Bytes>, 
@@ -85,21 +86,30 @@ void IScriptManager::load_userdata_types()
         "write_vec3f", &DataWriter::write<Vector3f>, 
         "write_vec2i", &DataWriter::write<Vector2i>, 
         "write_quat", &DataWriter::write<Quaternion>,
-        //"write_profile", &DataWriter::write<UserProfile>, //TODO impl
-
-        //TODO impl everything
-        "write_s8", &DataWriter::write< std::int8_t>,
+        //"write_profile", &DataWriter::write<UserProfile>, //TODO
+        "write_s8", &DataWriter::write<std::int8_t>,
         "write_s16", &DataWriter::write<std::int16_t>, 
         "write_s32", &DataWriter::write<std::int32_t>,
-        //"write_s64", &DataWriter::write<std::int64_t>,// TODO impl: intwrapper
+        "write_s64", &DataWriter::write<Int64Wrapper>,
         "write_u8", &DataWriter::write<std::uint8_t>, 
         "write_u16", &DataWriter::write<std::uint16_t>,
         "write_u32", &DataWriter::write<std::uint32_t>, 
-        "write_u64", &DataWriter::write<std::uint64_t>,
+        "write_u64", &DataWriter::write<UInt64Wrapper>,
         "write_float", &DataWriter::write<std::float_t>, 
         "write_double", &DataWriter::write<std::double_t>, 
         "write_char16", &DataWriter::write<char16_t>, 
-        "write", sol::overload(
+        "write", sol::overload( // lazy write overloads
+            //&DataWriter::write<bool>,
+            //&DataWriter::write<std::string_view>,
+            //&DataWriter::write<Bytes>,
+            //&DataWriter::write<ZDOID>,
+            //&DataWriter::write<Vector3f>,
+            //&DataWriter::write<Vector2i>,
+            //&DataWriter::write<Quaternion>,
+            //&DataWriter::write<StreamType, sol::object>, //usage: writer:write(Type.INT16, my_num)
+            //// variadics
+            //&DataWriter::write<StreamTypes, sol::variadic_args> //usage: writer:write({Type...}, a, b, c)
+
             [](DataWriter &self, bool val) { return self.write(val); },
             [](DataWriter &self, std::string_view val) { return self.write(val); },
             [](DataWriter &self, Bytes const &val) { return self.write(val); },
@@ -112,31 +122,15 @@ void IScriptManager::load_userdata_types()
             //{ &DataWriter::write<IScriptManager::StreamType, sol::object> },
             [](DataWriter &self, StreamTypes const &types, sol::variadic_args args) {
                 self.write(types, sol::variadic_results(args.begin(), args.end()));
-            })
+            }
+        )
     );
 
     // Package read/write types
     this->new_usertype<DataReader>("Reader", 
         sol::constructors<DataReader(Bytes)>(),
-
-        //"ToWriter", &DataReader::ToWriter,
-        //"buf", &DataReader::m_buf,
-        /*
-        "buf", sol::property(
-            sol::overload(
-                [](DataReader& self, Bytes& value) { self.m_data = std::ref(value); },
-                [](DataReader& self, ByteView value) { self.m_data = value; }
-            ),
-            [this](DataReader& self) {
-                return std::visit(VUtils::Traits::overload{
-                    [this](std::reference_wrapper<Bytes> buf) { return sol::make_object(state, buf); },
-                    [this](ByteView buf) { return sol::make_object(state, buf); }
-                }, self.m_data);
-            }
-        ),*/
-        //"buf", &DataReader::m_data, // TODO ref change
-        "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos),//& DataWriter::m_pos,
-
+        "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos),
+        "seek", &DataReader::seek,
         // TODO why did I wrap everything in a lambda
         "read_bool", [](DataReader &self) { return self.read<bool>(); },
 

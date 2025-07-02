@@ -1,4 +1,5 @@
 #include "CompileSettings.h"
+#include <sol/property.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/forward.hpp>
@@ -32,65 +33,34 @@ void IScriptManager::load_userdata_peer()
         sol::no_constructor,
         // member fields
         //"visibleOnMap", &Peer::m_visibleOnMap,
-        "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),
+        "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible), //TODO rename this...
         //"admin", &Peer::m_admin,
         "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin), 
-        "character_id", sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// return copy
+        "character_id", sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// returns a copy; TODO test with readonly
         "name", sol::readonly(&Peer::m_name),// strings are immutable in Lua similarly to Java
-        "pos", &Peer::m_pos,
+        "pos", sol::readonly(&Peer::m_pos),
         //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
         "socket", sol::readonly(&Peer::m_socket), 
         "zdo", sol::property(&Peer::GetZDO),
         // member functions
-        "kick", sol::resolve<void()>(&Peer::Kick),
+        "kick", &Peer::Kick,
         // message functions
-        "chat_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::ChatMessage),
-        "console_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::ConsoleMessage),
-        //"ConsoleMessage", sol::resolve<void(std::string_view)>(&Peer::ConsoleMessage),
-        //"ConsoleMessage", &Peer::ConsoleMessage,
-        "corner_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::CornerMessage),
-        "center_message", static_cast<void (Peer::*)(std::string_view)>(&Peer::CenterMessage),
+        "chat_message", sol::resolve<void (std::string_view)>(&Peer::ChatMessage),
+        "console_message", sol::resolve<void (std::string_view)>(&Peer::ConsoleMessage),
+        "corner_message", sol::resolve<void (std::string_view)>(&Peer::CornerMessage),
+        "center_message", sol::resolve<void (std::string_view)>(&Peer::CenterMessage),
         // misc functions
-        "teleport", sol::overload(sol::resolve<void(Vector3f pos, Quaternion rot, bool animation)>(&Peer::Teleport),
-                        sol::resolve<void(Vector3f pos)>(&Peer::Teleport)),
-        //"MoveTo", sol::overload(
-        //    sol::resolve<void(const Vector3f& pos, const Quaternion& rot)>(&Peer::MoveTo),
-        //    sol::resolve<void(const Vector3f& pos)>(&Peer::MoveTo)
-        //),
+        "teleport", sol::overload(
+            sol::resolve<void(Vector3f pos, Quaternion rot, bool animation)>(&Peer::Teleport),
+            sol::resolve<void(Vector3f pos)>(&Peer::Teleport)),
         "disconnect", &Peer::Disconnect, 
         "invoke_self", sol::overload(
-        sol::resolve<void(Hash, DataReader &)>(&Peer::InternalInvoke),
-            sol::resolve<void(std::string_view, DataReader &)>(&Peer::InternalInvoke)
-        ),
-
-        //static_cast<void (Peer::*)(const std::string&, DataReader)>(&Peer::InvokeSelf), //  &Peer::InvokeSelf,
-        //static_cast<void (Peer::*)(Hash, DataReader)>(&Peer::InvokeSelf)), //  &Peer::InvokeSelf,
-        //"Register", [](Peer& self, const MethodSig &repr, sol::function func) {
-        //    self.Register(repr.m_hash, func, repr.m_types);
-        //},
-
-        // static_cast<void (DataWriter::*)(const Bytes&, std::size_t)>(&DataWriter::write),
+            sol::resolve<void(Hash, DataReader &)>(&Peer::InternalInvoke),
+            sol::resolve<void(std::string_view, DataReader &)>(&Peer::InternalInvoke)),
         "register", &Peer::RegisterLua,
-        //"Register", [](Peer& self, const IScriptManager::MethodSig& sig, const sol::function& func, sol::this_environment te) {
-        //    sol::environment& env = te;
-        //    Mod& mod = env["this"].get<sol::table>().as<Mod&>();
-        //    self.RegisterLua(sig, func, &mod);
-        //},
         "invoke", &Peer::InvokeLua, 
         "route_view", &Peer::RouteViewLua, 
         "route", &Peer::RouteLua
-        //sol::overload(
-        //    sol::resolve<void(const ZDOID&, const IScriptManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua),
-        //    sol::resolve<void(const IScriptManager::MethodSig&, const sol::variadic_args&)>(&Peer::RouteLua)
-        //),
-
-        //"GetMethod", static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
-        //"GetMethod", sol::overload(
-        //    sol::resolve<IMethod<Peer*>* (Hash)>(&Peer::GetMethod),
-        //    sol::resolve<IMethod<Peer*>* (const std::string&)>(&Peer::GetMethod)
-        //
-        //    //static_cast<IMethod<Peer*>* (Peer::*)(const std::string&)>(&Peer::GetMethod)
-        //)
     );
 
     // clang-format on

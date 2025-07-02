@@ -1,4 +1,5 @@
 #include "CompileSettings.h"
+#include "Vector.h"
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/base_traits.hpp>
@@ -26,8 +27,7 @@ void IScriptManager::load_userdata_quaternion()
                  : index == 2 ? sol::make_object(view, self.y)
                  : index == 3 ? sol::make_object(view, self.z)
                  : index == 4 ? sol::make_object(view, self.w)
-                 : sol::lua_nil;
-        },
+                 : sol::lua_nil; },
         "length_squared", sol::property(&Quaternion::length_squared), 
         "xyz", sol::property(&Quaternion::xyz), 
         "euler_angles", sol::property(&Quaternion::euler_angles), 
@@ -35,13 +35,10 @@ void IScriptManager::load_userdata_quaternion()
         //statics
         "euler", sol::overload(
             sol::resolve<Quaternion(float, float, float)>(&Quaternion::euler),
-            sol::resolve<Quaternion(Vector3f)>(&Quaternion::euler)
-        ),
+            sol::resolve<Quaternion(Vector3f)>(&Quaternion::euler)),
         //"look_rotation"...
-        sol::meta_function::multiplication,
-        sol::resolve<Quaternion(Quaternion) const>(&Quaternion::operator*),
-        //"multiply", sol::resolve(Q
-        sol::meta_function::equal_to, &Quaternion::operator==
+        sol::meta_function::multiplication, sol::resolve<Quaternion(Quaternion) const>(&Quaternion::operator*),
+        "multiply", sol::resolve<Vector3f(Vector3f) const>(&Quaternion::operator*)
     );
 
     // clang-format on

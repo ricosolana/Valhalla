@@ -63,8 +63,8 @@ void IScriptManager::load_userdata_prefab()
         "hash", sol::readonly(&Prefab::m_hash), 
         "flags_all", &Prefab::AllFlagsPresent,
         "flags_any", &Prefab::AnyFlagsPresent, 
-        "flags_nall", &Prefab::AllFlagsAbsent, //TODO UGLY NAMING
-        "flags_nany", &Prefab::AnyFlagsAbsent //TODO UGLY NAMING
+        "flags_none", &Prefab::AllFlagsAbsent, //TODO UGLY NAMING
+        "flags_absent", &Prefab::AnyFlagsAbsent //TODO UGLY NAMING
     );
 
     // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
@@ -78,8 +78,7 @@ void IScriptManager::load_userdata_prefab()
         sol::no_constructor,
         "get_prefab", sol::overload(
             sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),
-            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab)
-        )
+            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab))
             // TODO restrict prefab registration to startup only
             /*
         "Register", sol::overload(

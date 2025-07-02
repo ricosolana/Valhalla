@@ -35,7 +35,7 @@ void IScriptManager::load_userdata_network()
         "host", sol::property(&ISocket::get_host_name),
         "send_queue_size", sol::property(&ISocket::get_send_queue_size), 
         "status", sol::property(&ISocket::get_status), 
-        "send", sol::property(&ISocket::send), 
+        "send", &ISocket::send, 
         "ping", sol::property(&ISocket::get_ping), 
         "quality", sol::property(&ISocket::get_connection_quality),
         "outbound", sol::property(&ISocket::is_outbound)
@@ -43,12 +43,8 @@ void IScriptManager::load_userdata_network()
 
     this->new_usertype<INetManager>("INetManager", 
         sol::no_constructor,
-        "get_peer", sol::overload([](INetManager &self, Int64Wrapper owner) 
-            { return self.FindPeerByUserID((std::int64_t) owner); },
-            //sol::resolve<Peer*(UserID)>(&INetManager::GetPeer),
-            sol::resolve<Peer::Ptr(std::string_view)>(&INetManager::FindPeerByName)
-        ),
-        "peers", sol::property(&INetManager::GetPeers)
+        "find_peer", &INetManager::FindPeer,
+        "peers", sol::property(&INetManager::GetPeers) //TODO stop using odd references
     );
 
     // clang-format on

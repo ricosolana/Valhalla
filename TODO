@@ -1,21 +1,12 @@
 TODO
-    ZDO ostream<<
-
-    sol noconstruct for manager usertypes\
-
-    peer ostream<<
-
     script reload quirks
         reload on script save
-
 
     specific reload functionality
         config option or smth
 
         reload on script file save
             instead of info save
-
-    remove 'Event error:' (ugly placement)
 
     fix lua print(er)
         path spec
@@ -31,7 +22,5 @@ TODO
     restructure / synchronize the entire load/re/unload
         functionality, to reduce code duplication
 
-    clang-format
-        for some reason cant find a way to skip files
-
-        or per-file formatting
+    template-spec lua Data|Reader/Writer
+        the lambdas... (remove the lambdas)

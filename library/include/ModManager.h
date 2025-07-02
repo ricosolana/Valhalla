@@ -348,7 +348,6 @@ class IScriptManager
         //sol::function_result result = itr->second(Args(params)...);
         sol::protected_function_result result = evt_itr->m_func(sol::as_args(args));
         if (!result.valid()) {
-            LOG_ERROR(AVL_LOGGER, "Event error: ");
             sol::error error = result;
             LOG_ERROR(AVL_LOGGER, "{}", error.what());
 

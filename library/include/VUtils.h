@@ -14,6 +14,7 @@
 #include <zstd.h>
 
 #include "CompileSettings.h"
+#include "DataStream.h"
 #include "Types.h"
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
@@ -131,13 +132,29 @@ class IntegralWrapper
     {
         return this->m_value / other.m_value;
     }
+
+    friend std::ostream &operator<<(std::ostream &ost, IntegralWrapper<T> const &value)
+    {
+        return ost << value.m_value;
+    }
+};
+
+template<class L>
+struct avledet::util::Streamer<IntegralWrapper<L>>
+{
+    void operator()(Writer &writer, IntegralWrapper<L> const &value) const
+    {
+        writer.write((L) value);
+    }
+
+    IntegralWrapper<L> operator()(Reader &reader) const
+    {
+        return reader.read<L>();
+    }
 };
 
 using UInt64Wrapper = IntegralWrapper<std::uint64_t>;
 using Int64Wrapper  = IntegralWrapper<std::int64_t>;
-
-std::ostream &operator<<(std::ostream &st, UInt64Wrapper const &val);
-std::ostream &operator<<(std::ostream &st, Int64Wrapper const &val);
 
 class ZStdCompressor
 {
@@ -509,7 +526,7 @@ static_assert(std::endian::native == std::endian::little,
               "System must be little endian (big endian not supported for networking (who uses big endian "
               "anyways?)");
 
-namespace VUtils {
+namespace avledet::util {
     static constexpr double PI = 3.1415926535897932384626433832795;
 
     // Run a code block once
@@ -619,7 +636,11 @@ namespace VUtils {
     // Retrieve an environment variable
     //  Returns the variable or an empty string
     std::string GetEnv(std::string_view key);
-}// namespace VUtils
+}// namespace avledet::util
+
+namespace VUtils {
+    using namespace avledet::util;
+}
 
 namespace ankerl::unordered_dense {
     struct string_hash

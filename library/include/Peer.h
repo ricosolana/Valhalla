@@ -471,4 +471,9 @@ class Peer : public std::enable_shared_from_this<Peer>,
     friend std::ostream& operator<<(std::ostream& ost, const Peer& peer) {
         return ost << peer->m_name << " (" << peer->m_socket << ")";
     }*/
+
+    friend std::ostream &operator<<(std::ostream &ost, Peer const &value)
+    {
+        return ost << "{ " << value.m_name << " | " << value.m_socket->get_host_name() << " }";
+    }
 };
