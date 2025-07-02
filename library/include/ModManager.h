@@ -5,7 +5,9 @@
 #include <sol/as_args.hpp>
 #include <sol/as_returns.hpp>
 #include <sol/object.hpp>
+#include <sol/stack_reference.hpp>
 #include <sol/variadic_args.hpp>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -465,34 +467,35 @@ template<class F, class... T>
 struct avledet::util::Streamer<F, T...>
 {
 
-    void operator()(avledet::util::Writer &writer, IScriptManager::StreamType type, sol::object const &arg)
+    template<class ObjectOrProxy>
+    void operator()(avledet::util::Writer &writer, IScriptManager::StreamType type, ObjectOrProxy const &arg)
     {
         switch (type) {
             // TODO add recent unsigned types
-        case IScriptManager::StreamType::UINT8: writer.write(arg.as<std::uint8_t>()); break;
-        case IScriptManager::StreamType::UINT16: writer.write(arg.as<std::uint16_t>()); break;
-        case IScriptManager::StreamType::UINT32: writer.write(arg.as<std::uint32_t>()); break;
-        case IScriptManager::StreamType::UINT64: writer.write(arg.as<std::uint64_t>()); break;
-        case IScriptManager::StreamType::INT8: writer.write(arg.as<std::int8_t>()); break;
-        case IScriptManager::StreamType::INT16: writer.write(arg.as<std::int16_t>()); break;
-        case IScriptManager::StreamType::INT32: writer.write(arg.as<std::int32_t>()); break;
-        case IScriptManager::StreamType::INT64: writer.write(arg.as<std::int64_t>()); break;
-        case IScriptManager::StreamType::FLOAT: writer.write(arg.as<std::float_t>()); break;
-        case IScriptManager::StreamType::DOUBLE: writer.write(arg.as<std::double_t>()); break;
-        case IScriptManager::StreamType::STRING: writer.write(arg.as<std::string>()); break;
-        case IScriptManager::StreamType::BOOL: writer.write(arg.as<bool>()); break;
-        case IScriptManager::StreamType::BYTES: writer.write(arg.as<avledet::util::Bytes>()); break;
-        case IScriptManager::StreamType::ZDOID: writer.write(arg.as<avledet::util::ZDOID>()); break;
+        case IScriptManager::StreamType::UINT8: writer.write(arg.template as<std::uint8_t>()); break;
+        case IScriptManager::StreamType::UINT16: writer.write(arg.template as<std::uint16_t>()); break;
+        case IScriptManager::StreamType::UINT32: writer.write(arg.template as<std::uint32_t>()); break;
+        case IScriptManager::StreamType::UINT64: writer.write(arg.template as<std::uint64_t>()); break;
+        case IScriptManager::StreamType::INT8: writer.write(arg.template as<std::int8_t>()); break;
+        case IScriptManager::StreamType::INT16: writer.write(arg.template as<std::int16_t>()); break;
+        case IScriptManager::StreamType::INT32: writer.write(arg.template as<std::int32_t>()); break;
+        case IScriptManager::StreamType::INT64: writer.write(arg.template as<std::int64_t>()); break;
+        case IScriptManager::StreamType::FLOAT: writer.write(arg.template as<std::float_t>()); break;
+        case IScriptManager::StreamType::DOUBLE: writer.write(arg.template as<std::double_t>()); break;
+        case IScriptManager::StreamType::STRING: writer.write(arg.template as<std::string>()); break;
+        case IScriptManager::StreamType::BOOL: writer.write(arg.template as<bool>()); break;
+        case IScriptManager::StreamType::BYTES: writer.write(arg.template as<avledet::util::Bytes>()); break;
+        case IScriptManager::StreamType::ZDOID: writer.write(arg.template as<avledet::util::ZDOID>()); break;
         case IScriptManager::StreamType::VECTOR3f:
-            writer.write(arg.as<avledet::util::CSU::Vector3f>());
+            writer.write(arg.template as<avledet::util::CSU::Vector3f>());
             break;
         case IScriptManager::StreamType::VECTOR2i:
-            writer.write(arg.as<avledet::util::CSU::Vector2i>());
+            writer.write(arg.template as<avledet::util::CSU::Vector2i>());
             break;
         case IScriptManager::StreamType::QUATERNION:
-            writer.write(arg.as<avledet::util::CSU::Quaternion>());
+            writer.write(arg.template as<avledet::util::CSU::Quaternion>());
             break;
-        case IScriptManager::StreamType::CHAR16: writer.write(arg.as<char16_t>()); break;
+        case IScriptManager::StreamType::CHAR16: writer.write(arg.template as<char16_t>()); break;
         default:
             throw std::runtime_error("type <" + std::string(magic_enum::enum_name(type))
                                      + "> has no write implementation");
@@ -572,11 +575,16 @@ template<class F, class... G>
 struct avledet::util::Streamer<F, G...>
 {//lua_State> {
 
+    template<typename ArgsOrResults>
     void operator()(avledet::util::Writer &writer, IScriptManager::StreamTypes const &types,
-                    sol::variadic_results const &results)
+                    ArgsOrResults const &args)
     {
-        for (std::size_t i = 0; i < results.size(); i++) {
-            writer.write(types.at(i), results.at(i));
+        if (types.size() != args.size()) {
+            throw std::runtime_error("types size must match the # of passed write arguments");
+        }
+
+        for (std::size_t i = 0; i < args.size(); i++) {
+            writer.write(types[i], args[(int) i]);
         }
     }
 

@@ -43,12 +43,12 @@ void IScriptManager::load_userdata_types()
         "VECTOR2i", StreamType::VECTOR2i, "vec2i", StreamType::VECTOR2i,
         "QUATERNION", StreamType::QUATERNION, "quat", StreamType::QUATERNION,
 
-        "INT8", StreamType::INT8, "s8", StreamType::INT8, 
-        "INT16", StreamType::INT16, "SHORT", StreamType::INT16, "s16", StreamType::INT16, 
-        
-        "INT32", StreamType::INT32, "INT", StreamType::INT32, "HASH", StreamType::INT32, "s32", StreamType::INT32, 
-        "INT64", StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
+        "HASH", StreamType::INT32, 
 
+        "INT8", StreamType::INT8, "s8", StreamType::INT8, 
+        "INT16", StreamType::INT16, "SHORT", StreamType::INT16, "s16", StreamType::INT16,
+        "INT32", StreamType::INT32, "INT", StreamType::INT32, "s32", StreamType::INT32, 
+        "INT64", StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
         "UINT8", StreamType::UINT8, "BYTE", StreamType::UINT8, "u8", StreamType::UINT8, 
         "UINT16", StreamType::UINT16, "USHORT", StreamType::UINT16, "u16", StreamType::UINT16, 
         "UINT32", StreamType::UINT32, "UINT", StreamType::UINT32, "u32", StreamType::UINT32, 
@@ -75,95 +75,86 @@ void IScriptManager::load_userdata_types()
     //    "nid", &UserProfile::m_networkUserId // TODO change name
     //);
 
-    this->new_usertype<DataWriter>("Writer", 
-        sol::constructors<DataWriter(), DataWriter(Bytes)>(),
-        "pos", sol::property(&DataWriter::get_pos, &DataWriter::set_pos),//& DataWriter::m_pos,
-        "seek", &DataWriter::seek,
-        "write_bool", &DataWriter::write<bool>, 
-        "write_string", &DataWriter::write<std::string_view>,
-        "write_bytes", &DataWriter::write<Bytes>, 
-        "write_zdoid", &DataWriter::write<ZDOID>, 
-        "write_vec3f", &DataWriter::write<Vector3f>, 
-        "write_vec2i", &DataWriter::write<Vector2i>, 
-        "write_quat", &DataWriter::write<Quaternion>,
+    this->new_usertype<Writer>("Writer", 
+        sol::constructors<Writer(), Writer(Bytes)>(),
+        "pos", sol::property(&Writer::get_pos, &Writer::set_pos),//& DataWriter::m_pos,
+        "seek", &Writer::seek,
+        "write_bool", &Writer::write<bool>, 
+        "write_string", &Writer::write<std::string_view>,
+        "write_strings", &Writer::write<Strings>,
+        "write_bytes", &Writer::write<Bytes>, 
+        "write_zdoid", &Writer::write<ZDOID>, 
+        "write_vec3f", &Writer::write<Vector3f>, 
+        "write_vec2i", &Writer::write<Vector2i>, 
+        "write_quat", &Writer::write<Quaternion>,
         //"write_profile", &DataWriter::write<UserProfile>, //TODO
-        "write_s8", &DataWriter::write<std::int8_t>,
-        "write_s16", &DataWriter::write<std::int16_t>, 
-        "write_s32", &DataWriter::write<std::int32_t>,
-        "write_s64", &DataWriter::write<Int64Wrapper>,
-        "write_u8", &DataWriter::write<std::uint8_t>, 
-        "write_u16", &DataWriter::write<std::uint16_t>,
-        "write_u32", &DataWriter::write<std::uint32_t>, 
-        "write_u64", &DataWriter::write<UInt64Wrapper>,
-        "write_float", &DataWriter::write<std::float_t>, 
-        "write_double", &DataWriter::write<std::double_t>, 
-        "write_char16", &DataWriter::write<char16_t>, 
+        "write_s8", &Writer::write<std::int8_t>,
+        "write_s16", &Writer::write<std::int16_t>, 
+        "write_s32", &Writer::write<std::int32_t>,
+        "write_s64", &Writer::write<Int64Wrapper>,
+        "write_u8", &Writer::write<std::uint8_t>, 
+        "write_u16", &Writer::write<std::uint16_t>,
+        "write_u32", &Writer::write<std::uint32_t>, 
+        "write_u64", &Writer::write<UInt64Wrapper>,
+        "write_float", &Writer::write<std::float_t>, 
+        "write_double", &Writer::write<std::double_t>, 
+        "write_char16", &Writer::write<char16_t>, 
         "write", sol::overload( // lazy write overloads
-            //&DataWriter::write<bool>,
-            //&DataWriter::write<std::string_view>,
-            //&DataWriter::write<Bytes>,
-            //&DataWriter::write<ZDOID>,
-            //&DataWriter::write<Vector3f>,
-            //&DataWriter::write<Vector2i>,
-            //&DataWriter::write<Quaternion>,
-            //&DataWriter::write<StreamType, sol::object>, //usage: writer:write(Type.INT16, my_num)
-            //// variadics
-            //&DataWriter::write<StreamTypes, sol::variadic_args> //usage: writer:write({Type...}, a, b, c)
+            &Writer::write<bool>,
+            &Writer::write<std::string_view>,
+            &Writer::write<Bytes>,
+            &Writer::write<ZDOID>,
+            &Writer::write<Vector3f>,
+            &Writer::write<Vector2i>,
+            &Writer::write<Quaternion>,
+            &Writer::write<StreamType, sol::object>, //usage: writer:write(Type.INT16, my_num)
+            // variadics
+            &Writer::write<StreamTypes, sol::variadic_args> //usage: writer:write({Type...}, a, b, c)
 
-            [](DataWriter &self, bool val) { return self.write(val); },
-            [](DataWriter &self, std::string_view val) { return self.write(val); },
-            [](DataWriter &self, Bytes const &val) { return self.write(val); },
-            [](DataWriter &self, ZDOID const &val) { return self.write(val); },
-            [](DataWriter &self, Vector3f const &val) { return self.write(val); },
-            [](DataWriter &self, Vector2i const &val) { return self.write(val); },
-            [](DataWriter &self, Quaternion const &val) { return self.write(val); },
-            // Variadic serializers:::
-            [](DataWriter &self, StreamType type, sol::object obj) { self.write(type, obj); },
-            //{ &DataWriter::write<IScriptManager::StreamType, sol::object> },
-            [](DataWriter &self, StreamTypes const &types, sol::variadic_args args) {
-                self.write(types, sol::variadic_results(args.begin(), args.end()));
-            }
+            //[](DataWriter &self, bool val) { return self.write(val); },
+            //[](DataWriter &self, std::string_view val) { return self.write(val); },
+            //[](DataWriter &self, Bytes const &val) { return self.write(val); },
+            //[](DataWriter &self, ZDOID const &val) { return self.write(val); },
+            //[](DataWriter &self, Vector3f const &val) { return self.write(val); },
+            //[](DataWriter &self, Vector2i const &val) { return self.write(val); },
+            //[](DataWriter &self, Quaternion const &val) { return self.write(val); },
+            //// Variadic serializers:::
+            //[](DataWriter &self, StreamType type, sol::object obj) { self.write(type, obj); },
+            ////{ &DataWriter::write<IScriptManager::StreamType, sol::object> },
+            //[](DataWriter &self, StreamTypes const &types, sol::variadic_args args) {
+            //    self.write(types, sol::variadic_results(args.begin(), args.end()));
+            //}
         )
     );
 
     // Package read/write types
-    this->new_usertype<DataReader>("Reader", 
-        sol::constructors<DataReader(Bytes)>(),
-        "pos", sol::property(&DataReader::get_pos, &DataReader::set_pos),
-        "seek", &DataReader::seek,
-        // TODO why did I wrap everything in a lambda
-        "read_bool", [](DataReader &self) { return self.read<bool>(); },
-
-        "read_string", [](DataReader &self) { return self.read<std::string>(); }, 
-        "read_strings", [](DataReader &self) { return self.read<Strings>(); },// ReadStrings,
-
-        "read_bytes", [](DataReader &self) { return self.read<Bytes>(); },
-
-        "read_zdoid", [](DataReader &self) { return self.read<ZDOID>(); },//&DataReader::read<ZDOID>,
-        "read_vec3f", [](DataReader &self) { return self.read<Vector3f>(); },  //&DataReader::read<CSU::Vector3f>,
-        "read_vec2i", [](DataReader &self) { return self.read<Vector2i>(); },  //&DataReader::read<CSU::Vector2i>,
-        "read_quat", [](DataReader &self) { return self.read<Quaternion>(); },//&DataReader::read<CSU::Quaternion>,
-        //"ReadProfile", [](DataReader& self) { return self.read<UserProfile>(); }, //&DataReader::read<UserProfile>, //TODO impl
-
-        "read_s8", [](DataReader &self) { return self.read<std::int8_t>(); }, //&DataReader::read<std::int8_t>,
-        "read_s16", [](DataReader &self) { return self.read<std::int16_t>(); },//&DataReader::read<std::int16_t>,
-        "read_s32", [](DataReader &self) { return self.read<std::int32_t>(); },//&DataReader::read<std::int32_t>,
-        //"read_s64", &DataReader::ReadInt64Wrapper, //TODO Streamer impl
-
-        "read_u8", [](DataReader &self) { return self.read<std::uint8_t>(); }, //&DataReader::read<std::uint8_t>,
-        "read_u16", [](DataReader &self) { return self.read<std::uint16_t>(); },//&DataReader::read<std::uint16_t>,
-        "read_u32", [](DataReader &self) { return self.read<std::uint32_t>(); },//&DataReader::read<std::uint32_t>,
-        //"read_u64", &DataReader::ReadUInt64Wrapper, //TODO Streamer impl
-
-        "read_float", [](DataReader &self) { return self.read<std::float_t>(); }, //&DataReader::read<std::float_t>,
-        "read_double", [](DataReader &self) { return self.read<std::double_t>(); },//&DataReader::read<std::double_t>,
-
-        "read_char16", [](DataReader &self) { return self.read<char16_t>(); },     //&DataReader::read<char16_t>,
-
-        // Generalized variadic read
+    this->new_usertype<Reader>("Reader", 
+        sol::constructors<Reader(Bytes)>(),
+        "pos", sol::property(&Reader::get_pos, &Reader::set_pos),
+        "seek", &Reader::seek,
+        "read_bool", &Reader::read<bool>,
+        "read_string", &Reader::read<std::string>,
+        "read_strings", &Reader::read<Strings>,
+        "read_bytes", &Reader::read<Bytes>,
+        "read_zdoid", &Reader::read<ZDOID>,
+        "read_vec3f", &Reader::read<Vector3f>,
+        "read_vec2i", &Reader::read<Vector2i>,
+        "read_quat", &Reader::read<Quaternion>,
+        //"ReadProfile", [](Reader& self) { return self.read<UserProfile>(); }, //&Reader::read<UserProfile>, //TODO impl
+        "read_s8", &Reader::read<std::int8_t>,
+        "read_s16", &Reader::read<std::int16_t>,
+        "read_s32", &Reader::read<std::int32_t>,
+        "read_s64", &Reader::read<Int64Wrapper>,
+        "read_u8", &Reader::read<std::uint8_t>,
+        "read_u16", &Reader::read<std::uint16_t>,
+        "read_u32", &Reader::read<std::uint32_t>,
+        "read_u64", &Reader::read<UInt64Wrapper>,
+        "read_float", &Reader::read<std::float_t>,
+        "read_double", &Reader::read<std::double_t>,
+        "read_char16", &Reader::read<char16_t>,
         //  local reader = Reader.new()
-        //  reader:read()
-        "read", [](DataReader &self, sol::state_view state, sol::variadic_args args) {
+        //  local a, b, c = reader:read(Type.INT, Type.FLOAT, Type.QUATERNION)
+        "read", [](Reader &self, sol::state_view state, sol::variadic_args args) {
             return self.read(StreamTypes(args.begin(), args.end()), state);
         }
     );
