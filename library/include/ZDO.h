@@ -1199,6 +1199,11 @@ class ZDO
 
         return size;
     }*/
+
+    friend std::ostream &operator<<(std::ostream &ostr, ZDO const &value)
+    {
+        return ostr << value.m_id;
+    }
 };
 
 namespace avledet::sync {

@@ -302,9 +302,9 @@ class IZoneManager
     void Save(DataWriter &pkg);
     void Load(DataReader &reader, std::int32_t version);
 
-    auto &GlobalKeys()
+    bool has_global_key(std::string_view key) const
     {
-        return m_globalKeys;
+        return m_globalKeys.contains(key);
     }
 
     //void RegenerateZone(ZoneID zone);

@@ -183,12 +183,12 @@ bool IRandomEventManager::CheckGlobalKeys(Event const &e)
 {
     if (AVL_SETTINGS.eventsRequireKeys) {
         for (auto &&key : e.m_presentGlobalKeys) {
-            if (!ZoneManager()->GlobalKeys().contains(key))
+            if (!ZoneManager()->has_global_key(key))
                 return false;
         }
 
         for (auto &&key : e.m_absentGlobalKeys) {
-            if (ZoneManager()->GlobalKeys().contains(key))
+            if (ZoneManager()->has_global_key(key))
                 return false;
         }
     }

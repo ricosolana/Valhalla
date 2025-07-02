@@ -38,7 +38,7 @@ void IScriptManager::load_userdata_zone()
         "pos", sol::property([](IZoneManager::Feature::Instance &self) { return self.m_pos; })
     );
 
-    #endif
+#endif
 
     this->new_usertype<IZoneManager>("IZoneManager",
         sol::no_constructor,
@@ -48,7 +48,7 @@ void IScriptManager::load_userdata_zone()
         "get_nearest_feature", &IZoneManager::GetNearestFeature, 
         "to_zone_pos", &IZoneManager::WorldToZonePos, 
         "to_world_pos", &IZoneManager::ZoneToWorldPos, 
-        "global_keys", sol::property(&IZoneManager::GlobalKeys)
+        "global_keys", sol::property(&IZoneManager::m_globalKeys)
     );
 
     // clang-format on
