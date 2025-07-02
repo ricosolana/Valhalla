@@ -22,6 +22,7 @@ void IScriptManager::load_userdata_zone()
     );
 
     this->new_usertype<IDungeonManager>("IDungeonManager", 
+        sol::no_constructor,
         "find_dungeon", [](IDungeonManager &self, std::string_view name) {
             return self.find_dungeon(avledet::util::get_stable_hash(name));
         },
@@ -33,12 +34,14 @@ void IScriptManager::load_userdata_zone()
     );
 
     this->new_usertype<IZoneManager::Feature::Instance>("FeatureInstance", 
+        sol::no_constructor,
         "pos", sol::property([](IZoneManager::Feature::Instance &self) { return self.m_pos; })
     );
 
     #endif
 
     this->new_usertype<IZoneManager>("IZoneManager",
+        sol::no_constructor,
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
         "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
 #endif

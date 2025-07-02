@@ -136,6 +136,7 @@ void IScriptManager::load_userdata_zdo()
 
 
     this->new_usertype<IZDOManager>("IZDOManager", 
+        sol::no_constructor,
         "get_zdo", &IZDOManager::GetZDO, 
         "some_zdos", sol::overload(
             sol::resolve<ZDO::reference_list(Vector3f const &, float, std::size_t,

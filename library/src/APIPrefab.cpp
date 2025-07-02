@@ -75,6 +75,7 @@ void IScriptManager::load_userdata_prefab()
 
 
     this->new_usertype<IPrefabManager>("IPrefabManager", 
+        sol::no_constructor,
         "get_prefab", sol::overload(
             sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),
             sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab)

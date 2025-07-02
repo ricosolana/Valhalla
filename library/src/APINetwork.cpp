@@ -28,6 +28,7 @@ void IScriptManager::load_userdata_network()
 
     // TODO full socket impl
     this->new_usertype<ISocket>("Socket", 
+        sol::no_constructor,
         "close", &ISocket::Close,
         //"connected", sol::property(&ISocket::Connected),
         "address", sol::property(&ISocket::get_address), 
@@ -41,6 +42,7 @@ void IScriptManager::load_userdata_network()
     );
 
     this->new_usertype<INetManager>("INetManager", 
+        sol::no_constructor,
         "get_peer", sol::overload([](INetManager &self, Int64Wrapper owner) 
             { return self.FindPeerByUserID((std::int64_t) owner); },
             //sol::resolve<Peer*(UserID)>(&INetManager::GetPeer),

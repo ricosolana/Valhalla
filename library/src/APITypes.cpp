@@ -54,10 +54,11 @@ void IScriptManager::load_userdata_types()
 
     // TODO
     //  this seems like some very unsafe / sketchy usage (wrapping vector...)
-    this->new_usertype<Bytes>("Bytes", sol::constructors<Bytes(), Bytes(Bytes const &)>(), "assign",
-        [](Bytes &self, Bytes const &other) { self = other; }, "move",
-        [](Bytes &self, Bytes &other) { self = std::move(other); }, "swap",
-        [](Bytes &self, Bytes &other) { self.swap(other); }
+    this->new_usertype<Bytes>("Bytes", 
+        sol::constructors<Bytes(), Bytes(Bytes const &)>(), 
+        "assign", [](Bytes &self, Bytes const &other) { self = other; }, 
+        "move", [](Bytes &self, Bytes &other) { self = std::move(other); }, 
+        "swap", [](Bytes &self, Bytes &other) { self.swap(other); }
     );
 
     // TODO impl
@@ -228,6 +229,7 @@ void IScriptManager::load_userdata_types()
 
 
     this->new_usertype<Deflater>("Deflater", 
+        sol::no_constructor,
         "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)), 
         "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), 
         "raw", sol::property(sol::resolve<Deflater()>(Deflater::Raw)), 
@@ -235,6 +237,7 @@ void IScriptManager::load_userdata_types()
     );
 
     this->new_usertype<Inflater>("Inflater",
+        sol::no_constructor,
         //"any", sol::property(Inflater::Any),
         "zlib", sol::property(Inflater::Gz), 
         "gz", sol::property(Inflater::Gz), 

@@ -29,6 +29,7 @@ void IScriptManager::load_userdata_peer()
     //    );
 
     this->new_usertype<Peer>("Peer",
+        sol::no_constructor,
         // member fields
         //"visibleOnMap", &Peer::m_visibleOnMap,
         "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible),

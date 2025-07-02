@@ -1,6 +1,7 @@
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
 #include <sol/call.hpp>
+#include <sol/raii.hpp>
 #include <sol/resolve.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -35,6 +36,7 @@ void IScriptManager::load_userdata()
     // ; butchering of my key-value pairs, so fuck it
 
     this->new_usertype<IAvledet>("IAvledet",
+        sol::no_constructor,
         // server members
         "version", sol::var(VConstants::GAME),
         "delta", sol::property(&IAvledet::delta),
@@ -84,10 +86,10 @@ void IScriptManager::load_userdata()
             int priority = 0;
 
             // If priority is present (will be at end)
-            unsigned const offset = args[args.size() - 1].get_type() == sol::type::number ? 2 : 1;
+            unsigned const offset = args[(int)args.size() - 1].get_type() == sol::type::number ? 2 : 1;
 
             for (std::size_t i = 0; i < args.size(); i++) {
-                auto &&arg  = args[i];
+                auto &&arg  = args[(int)i];
                 auto &&type = arg.get_type();
 
                 if (i + offset < args.size()) {
@@ -134,6 +136,7 @@ void IScriptManager::load_userdata()
     //);
 
     this->new_usertype<ScriptInfo>("Mod", 
+        sol::no_constructor,
         "name", sol::readonly(&ScriptInfo::m_name),
                                    //"entry", sol::readonly(&Mod::m_entry),
         "version", sol::readonly(&ScriptInfo::m_version), 
@@ -148,6 +151,7 @@ void IScriptManager::load_userdata()
     );
 
     this->new_usertype<IRouteManager>("IRouteManager", 
+        sol::no_constructor,
         "register", &IRouteManager::RegisterLua, 
         "invoke_view", &IRouteManager::InvokeViewLua, 
         "invoke", &IRouteManager::InvokeLua,
