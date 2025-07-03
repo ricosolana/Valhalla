@@ -278,7 +278,14 @@ void IScriptManager::update()
     if (VUtils::run_periodic<struct my_test_reloads>(1s)) {
         // iterate all mod entrys
         for (auto &&itr = m_scripts.begin(); itr != m_scripts.end();) {
-            auto &&info_dir = itr->second->get_info_dir();
+            auto &&info = itr->second;
+
+            if (!info->is_fs_script()) {
+                ++itr;
+                continue;
+            }
+
+            auto &&info_dir = info->get_info_dir();
 
             std::error_code ec;
             auto lastWriteTime = std::filesystem::last_write_time(info_dir, ec);

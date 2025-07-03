@@ -110,20 +110,6 @@ void IScriptManager::load_userdata_types()
             &Writer::write<StreamType, sol::object>, //usage: writer:write(Type.INT16, my_num)
             // variadics
             &Writer::write<StreamTypes, sol::variadic_args> //usage: writer:write({Type...}, a, b, c)
-
-            //[](DataWriter &self, bool val) { return self.write(val); },
-            //[](DataWriter &self, std::string_view val) { return self.write(val); },
-            //[](DataWriter &self, Bytes const &val) { return self.write(val); },
-            //[](DataWriter &self, ZDOID const &val) { return self.write(val); },
-            //[](DataWriter &self, Vector3f const &val) { return self.write(val); },
-            //[](DataWriter &self, Vector2i const &val) { return self.write(val); },
-            //[](DataWriter &self, Quaternion const &val) { return self.write(val); },
-            //// Variadic serializers:::
-            //[](DataWriter &self, StreamType type, sol::object obj) { self.write(type, obj); },
-            ////{ &DataWriter::write<IScriptManager::StreamType, sol::object> },
-            //[](DataWriter &self, StreamTypes const &types, sol::variadic_args args) {
-            //    self.write(types, sol::variadic_results(args.begin(), args.end()));
-            //}
         )
     );
 

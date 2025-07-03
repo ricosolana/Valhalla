@@ -1,6 +1,7 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <quill/core/LogLevel.h>
 #include <stdexcept>
 #include <string_view>
@@ -15,12 +16,15 @@
 #include <sol/variadic_args.hpp>
 
 #include "ModManager.h"
+#include "NetSocket.h"
+#include "Peer.h"
 #include "ValhallaServer.h"
 #include "ZDO.h"
 
-TEST(Scripting, blah)
-{
+#include "TestSocket.h"
 
+TEST(Scripting, Network)
+{
     // server.yml logging is none until later, for easier test
 
     std::filesystem::current_path("test/scripting");
@@ -34,6 +38,11 @@ TEST(Scripting, blah)
 
     AVL_LOGGER->set_log_level(quill::LogLevel::Info);
 
+    auto peer = std::make_shared<Peer>(std::make_shared<TestSocket>());
+
+    //sol::
+
+    // testing that readonlys sub tables are immutable
     std::string code = ""
                        "";
 

@@ -1,4 +1,6 @@
 TODO
+    MOVE THINGS OUT OF THE HEADER!!!
+
     script reload quirks
         reload on script save
 
@@ -22,5 +24,8 @@ TODO
     restructure / synchronize the entire load/re/unload
         functionality, to reduce code duplication
 
-    template-spec lua Data|Reader/Writer
-        the lambdas... (remove the lambdas)
+    create google test unit for scripts
+        silence the logger,
+        use custom logger
+        make loggers decentralized? instead of single global AVL_LOGGER
+        

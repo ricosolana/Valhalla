@@ -198,6 +198,8 @@ class IScriptManager
         // root or the script url
         std::variant<std::filesystem::path, std::string> m_uri;
 
+        // only if a file-script
+        //  TODO consider making paired with fs::path / uri above ^^^
         std::filesystem::file_time_type m_last_change;
 
       private:
@@ -209,12 +211,20 @@ class IScriptManager
         //}
 
       public:
-        ScriptInfo(std::string name, std::string chunk_name, decltype(m_uri) uri,
+        ScriptInfo(std::string name, std::string chunk_name, std::filesystem::path path,
                    std::filesystem::file_time_type last_change) :
             m_name(std::move(name)),
             m_chunk_name(std::move(chunk_name)),
-            m_uri(std::move(uri)),
+            m_uri(std::move(path)),
             m_last_change(last_change)
+        {
+        }
+
+        ScriptInfo(std::string name, std::string chunk_name, std::string uri) :
+            m_name(std::move(name)),
+            m_chunk_name(std::move(chunk_name)),
+            m_uri(std::move(uri)),
+            m_last_change()
         {
         }
 
