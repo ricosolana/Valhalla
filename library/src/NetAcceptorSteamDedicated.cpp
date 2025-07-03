@@ -333,7 +333,7 @@ void AcceptorSteam::stop()
 
         {
             //std::scoped_lock scoped(m_mux);
-            for (auto &&socket : m_sockets) socket->Close(false);
+            for (auto &&socket : m_sockets) socket->close(false);
         }
 
         // TODO does this generate callbacks?
@@ -454,7 +454,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         }
 
         if (socket) {
-            socket->Close(false);
+            socket->close(false);
 
             auto &&ready_itr = this->get_socket(m_ready, data->m_hConn);
             if (ready_itr != m_ready.end())

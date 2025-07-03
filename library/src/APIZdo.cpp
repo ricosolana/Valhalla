@@ -22,104 +22,105 @@ void IScriptManager::load_userdata_zdo()
 
     this->new_usertype<ZDO>("ZDO", 
         sol::no_constructor, 
-        "id", sol::property(&ZDO::GetID), 
-        "pos", sol::property(&ZDO::GetPosition, &ZDO::SetPosition), 
-        "zone", sol::property(&ZDO::GetZone), 
-        "rot", sol::property(&ZDO::GetRotation, &ZDO::SetRotation), 
-        "prefab", sol::property(&ZDO::GetPrefab),
-        "prefab_hash", sol::property(&ZDO::GetPrefabHash), 
-        "owner", sol::property( [](ZDO self) { return Int64Wrapper(self.Owner()); },
-                                [](ZDO self, Int64Wrapper owner) { self.SetOwner((std::int64_t) owner); }),
-        "is_owner", &ZDO::IsOwner,// zdo:is_owner(id)
-        "is_local", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
-        //"remote", sol::property(&ZDO::IsLocal, &ZDO::SetLocal),
-        //"isLocal", sol::property(&ZDO::IsLocal, [](ZDO& self, bool b) { if (b) self.SetLocal(); else self.Disown(); }),
-        "owned", sol::property(&ZDO::HasOwner), 
-        "disown", &ZDO::Disown,//TODO rename?
-        "data_rev",sol::property(&ZDO::GetDataRevision),// sol::property([](ZDO self) { return self.Revision().GetDataRevision(); }),
-        "owner_rev", sol::property(&ZDO::GetOwnerRevision),
+        "id", sol::property(&ZDO::get_id), 
+        "pos", sol::property(&ZDO::get_position, &ZDO::set_position), 
+        "zone", sol::property(&ZDO::get_zone), 
+        "rot", sol::property(&ZDO::get_rotation, &ZDO::set_rotation), 
+        "prefab", sol::property(&ZDO::get_prefab),
+        "prefab_hash", sol::property(&ZDO::get_prefab_hash), 
+        "owner", sol::property( [](ZDO self) { return Int64Wrapper(self.get_owner()); },
+                                [](ZDO self, Int64Wrapper owner) { self.set_owner((std::int64_t) owner); }),
+        "is_owner", &ZDO::is_owner,// zdo:is_owner(id)
+        "mine", sol::property(&ZDO::owned_by_me, sol::resolve<void(bool)>(&ZDO::set_claimed)),
+        //"remote", sol::property(&ZDO::owned_by_me, &ZDO::set_claimed),
+        //"isLocal", sol::property(&ZDO::owned_by_me, [](ZDO& self, bool b) { if (b) self.set_claimed(); else self.disown(); }),
+        "owned", sol::property(&ZDO::has_owner), 
+        "disown", &ZDO::disown,//TODO rename?
+        "data_rev",sol::property(&ZDO::get_data_rev),// sol::property([](ZDO self) { return self.Revision().get_data_rev(); }),
+        "owner_rev", sol::property(&ZDO::get_owner_rev),
         //"ticksCreated", sol::property([](ZDO& self) { return (Int64Wrapper) self.m_rev.m_ticksCreated.count(); }), // hmm chrono...
 
         // Getters
         "get_float", sol::overload(
-            sol::resolve<float(Hash, float) const>(&ZDO::GetFloat),
-            sol::resolve<float(Hash) const>(&ZDO::GetFloat),
-            sol::resolve<float(std::string_view, float) const>(&ZDO::GetFloat),
-            sol::resolve<float(std::string_view) const>(&ZDO::GetFloat)),
-        "get_int", sol::overload(sol::resolve<std::int32_t(Hash, std::int32_t) const>(&ZDO::GetInt),
-            sol::resolve<std::int32_t(Hash) const>(&ZDO::GetInt),
-            sol::resolve<std::int32_t(std::string_view, std::int32_t) const>(&ZDO::GetInt),
-            sol::resolve<std::int32_t(std::string_view) const>(&ZDO::GetInt)),
+            sol::resolve<float(Hash, float) const>(&ZDO::get_float),
+            sol::resolve<float(Hash) const>(&ZDO::get_float),
+            sol::resolve<float(std::string_view, float) const>(&ZDO::get_float),
+            sol::resolve<float(std::string_view) const>(&ZDO::get_float)),
+        "get_int", sol::overload(sol::resolve<std::int32_t(Hash, std::int32_t) const>(&ZDO::get_int),
+            sol::resolve<std::int32_t(Hash) const>(&ZDO::get_int),
+            sol::resolve<std::int32_t(std::string_view, std::int32_t) const>(&ZDO::get_int),
+            sol::resolve<std::int32_t(std::string_view) const>(&ZDO::get_int)),
         "get_long", sol::overload(
-            sol::resolve<Int64Wrapper(Hash, Int64Wrapper) const>(&ZDO::GetLongWrapper),
-            sol::resolve<Int64Wrapper(Hash) const>(&ZDO::GetLongWrapper),
-            sol::resolve<Int64Wrapper(std::string_view, Int64Wrapper) const>(&ZDO::GetLongWrapper),
-            sol::resolve<Int64Wrapper(std::string_view) const>(&ZDO::GetLongWrapper)),
-        "get_quat", sol::overload(sol::resolve<Quaternion(Hash, Quaternion) const>(&ZDO::GetQuaternion),
-            sol::resolve<Quaternion(Hash) const>(&ZDO::GetQuaternion),
-            sol::resolve<Quaternion(std::string_view, Quaternion) const>(&ZDO::GetQuaternion),
-            sol::resolve<Quaternion(std::string_view) const>(&ZDO::GetQuaternion)),
-        "get_vec3", sol::overload(sol::resolve<Vector3f(Hash, Vector3f) const>(&ZDO::GetVector3),
-            sol::resolve<Vector3f(Hash) const>(&ZDO::GetVector3),
-            sol::resolve<Vector3f(std::string_view, Vector3f) const>(&ZDO::GetVector3),
-            sol::resolve<Vector3f(std::string_view) const>(&ZDO::GetVector3)),
+            sol::resolve<Int64Wrapper(Hash, Int64Wrapper) const>(&ZDO::get_long_wrapper),
+            sol::resolve<Int64Wrapper(Hash) const>(&ZDO::get_long_wrapper),
+            sol::resolve<Int64Wrapper(std::string_view, Int64Wrapper) const>(&ZDO::get_long_wrapper),
+            sol::resolve<Int64Wrapper(std::string_view) const>(&ZDO::get_long_wrapper)),
+        "get_quat", sol::overload(sol::resolve<Quaternion(Hash, Quaternion) const>(&ZDO::get_quat),
+            sol::resolve<Quaternion(Hash) const>(&ZDO::get_quat),
+            sol::resolve<Quaternion(std::string_view, Quaternion) const>(&ZDO::get_quat),
+            sol::resolve<Quaternion(std::string_view) const>(&ZDO::get_quat)),
+        "get_vec3", sol::overload(sol::resolve<Vector3f(Hash, Vector3f) const>(&ZDO::get_vec3),
+            sol::resolve<Vector3f(Hash) const>(&ZDO::get_vec3),
+            sol::resolve<Vector3f(std::string_view, Vector3f) const>(&ZDO::get_vec3),
+            sol::resolve<Vector3f(std::string_view) const>(&ZDO::get_vec3)),
         "get_string", sol::overload(
-            sol::resolve<std::string_view(Hash, std::string_view) const>(&ZDO::GetString),
-            sol::resolve<std::string_view(Hash) const>(&ZDO::GetString),
-            sol::resolve<std::string_view(std::string_view, std::string_view) const>(&ZDO::GetString),
-            sol::resolve<std::string_view(std::string_view) const>(&ZDO::GetString)),
-        "get_bytes", sol::overload(
-            sol::resolve<Bytes const *(Hash) const>(&ZDO::GetBytes),
-            sol::resolve<Bytes const *(std::string_view) const>(&ZDO::GetBytes)
-            //[](ZDO& self, Hash key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; },
-            //[](ZDO& self, std::string_view key) { auto&& bytes = self.GetBytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; }
-            ),
-        "get_bool", sol::overload(sol::resolve<bool(Hash, bool) const>(&ZDO::GetBool),
-            sol::resolve<bool(Hash) const>(&ZDO::GetBool),
-            sol::resolve<bool(std::string_view, bool) const>(&ZDO::GetBool),
-            sol::resolve<bool(std::string_view) const>(&ZDO::GetBool)),
+            sol::resolve<std::string_view(Hash, std::string_view) const>(&ZDO::get_string),
+            sol::resolve<std::string_view(Hash) const>(&ZDO::get_string),
+            sol::resolve<std::string_view(std::string_view, std::string_view) const>(&ZDO::get_string),
+            sol::resolve<std::string_view(std::string_view) const>(&ZDO::get_string)),
+        // TODO DO NOT RETURN POINTERS TO BYTES
+            //"get_bytes", sol::overload(
+        //    //sol::resolve<Bytes const *(Hash) const>(&ZDO::find_bytes),
+        //    //sol::resolve<Bytes const *(std::string_view) const>(&ZDO::find_bytes)
+        //    ////[](ZDO& self, Hash key) { auto&& bytes = self.find_bytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; },
+        //    ////[](ZDO& self, std::string_view key) { auto&& bytes = self.find_bytes(key); return bytes ? std::make_optional(Bytes(*bytes)) : std::nullopt; }
+        //    ),
+        "get_bool", sol::overload(sol::resolve<bool(Hash, bool) const>(&ZDO::get_bool),
+            sol::resolve<bool(Hash) const>(&ZDO::get_bool),
+            sol::resolve<bool(std::string_view, bool) const>(&ZDO::get_bool),
+            sol::resolve<bool(std::string_view) const>(&ZDO::get_bool)),
         "get_zdoid",sol::overload(
-            //sol::resolve<ZDOID(Hash, const ZDOID&) const>(&ZDO::GetZDOID),
-            //sol::resolve<ZDOID(Hash) const>(&ZDO::GetZDOID),
-            sol::resolve<ZDOID(std::string_view, ZDOID) const>(&ZDO::GetZDOID),
-            sol::resolve<ZDOID(std::string_view) const>(&ZDO::GetZDOID)),
+            //sol::resolve<ZDOID(Hash, const ZDOID&) const>(&ZDO::get_zdoid),
+            //sol::resolve<ZDOID(Hash) const>(&ZDO::get_zdoid),
+            sol::resolve<ZDOID(std::string_view, ZDOID) const>(&ZDO::get_zdoid),
+            sol::resolve<ZDOID(std::string_view) const>(&ZDO::get_zdoid)),
 
         // Setters
         "set_float", sol::overload(
-            static_cast<void (ZDO::*)(Hash, float)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, float)>(&ZDO::Set)),
+            static_cast<void (ZDO::*)(Hash, float)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, float)>(&ZDO::set)),
         "set_int", sol::overload(
-            static_cast<void (ZDO::*)(Hash, std::int32_t)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::Set)),
+            static_cast<void (ZDO::*)(Hash, std::int32_t)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::set)),
         "set", sol::overload(
             // Quaternion
-            static_cast<void (ZDO::*)(Hash, Quaternion)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, Quaternion)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, Quaternion)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, Quaternion)>(&ZDO::set),
             // Vector3f
-            static_cast<void (ZDO::*)(Hash, Vector3f)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, Vector3f)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, Vector3f)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, Vector3f)>(&ZDO::set),
             // std::string
-            static_cast<void (ZDO::*)(Hash, std::string)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, std::string)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, std::string)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, std::string)>(&ZDO::set),
             // bool
-            static_cast<void (ZDO::*)(Hash, bool)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, bool)>(&ZDO::Set),
+            static_cast<void (ZDO::*)(Hash, bool)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, bool)>(&ZDO::set),
             // zdoid
-            //static_cast<void (ZDO::*)(Hash, Hash, const ZDOID&)>(&ZDO::Set),
-            static_cast<void (ZDO::*)(std::string_view, ZDOID)>(&ZDO::Set),
+            //static_cast<void (ZDO::*)(Hash, Hash, const ZDOID&)>(&ZDO::set),
+            static_cast<void (ZDO::*)(std::string_view, ZDOID)>(&ZDO::set),
             // int64 wrapper
-            [](ZDO &self, Hash key, Int64Wrapper value) { self.Set(key, (std::int64_t) value); },
+            [](ZDO &self, Hash key, Int64Wrapper value) { self.set(key, (std::int64_t) value); },
             [](ZDO &self, std::string_view key, Int64Wrapper value) {
-            self.Set(key, (std::int64_t) value);
+            self.set(key, (std::int64_t) value);
             }
         ),
 
         // TODO create enum CONNECTOR,
         // Also, create property accessor for the connected
-        "set_connection", &ZDO::SetConnection, 
+        "set_connection", &ZDO::set_connection, 
         "get_connection", sol::overload(
-            sol::resolve<ZDOID(ZDOConnector::Type) const>(&ZDO::GetConnectionZDOID)
-            //sol::resolve<ZDOID() const>(&ZDO::GetConnectionZDOID)
+            sol::resolve<ZDOID(ZDOConnector::Type) const>(&ZDO::get_connection_zdoid)
+            //sol::resolve<ZDOID() const>(&ZDO::get_connection_zdoid)
         )
 
 
@@ -137,7 +138,7 @@ void IScriptManager::load_userdata_zdo()
 
     this->new_usertype<IZDOManager>("IZDOManager", 
         sol::no_constructor,
-        "get_zdo", &IZDOManager::GetZDO, 
+        "find_zdo", &IZDOManager::find_zdo, 
         "some_zdos", sol::overload(
             sol::resolve<ZDO::reference_list(Vector3f const &, float, std::size_t,
                                                 ZDO::Filter const &)>(&IZDOManager::SomeZDOs),

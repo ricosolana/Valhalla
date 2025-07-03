@@ -13,6 +13,12 @@ TODO
 
         pass copy-by-value for blahs...
 
+        readonly is 'fake'
+            applies to the immediate top-level table only (for returned usertypes)
+
+            better alternative would be a sol::property(getter)
+                with getter only
+
 
 
     script reload quirks

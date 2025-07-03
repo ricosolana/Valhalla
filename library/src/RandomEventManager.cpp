@@ -148,23 +148,23 @@ IRandomEventManager::GetPossibleRandomEvent()
 
             // now look for valid spaces
             for (auto &&peer : NetManager()->GetPeers()) {
-                auto &&zdo = peer->GetZDO();
+                auto &&zdo = peer->find_zdo();
                 if (!zdo)
                     continue;
 
                 if (
                         // Check biome first
                         (e->m_biome == avledet::util::Biome::None
-                         || (std::to_underlying(GeoManager()->GetBiome(zdo->GetPosition()))
+                         || (std::to_underlying(GeoManager()->GetBiome(zdo->get_position()))
                              & std::to_underlying(e->m_biome))
                                     != std::to_underlying(avledet::util::Biome::None))
                         // check base next
                         && (!e->m_nearBaseOnly
-                            || zdo->GetInt(avledet::util::hashes::ZDO::Player::BASE_VALUE) >= 3)
+                            || zdo->get_int(avledet::util::hashes::ZDO::Player::BASE_VALUE) >= 3)
                         // check that player is not in dungeon
-                        && (zdo->GetPosition().y < 3000.f)) {
+                        && (zdo->get_position().y < 3000.f)) {
                     //result.push_back({VUtils::Random::State().Range(0, )})
-                    positions.push_back(zdo->GetPosition());
+                    positions.push_back(zdo->get_position());
                 }
             }
 

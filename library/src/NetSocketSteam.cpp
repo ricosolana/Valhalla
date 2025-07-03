@@ -24,7 +24,7 @@ namespace avledet::network {
 
     SteamSocket::~SteamSocket()
     {
-        this->Close(true);
+        this->close(true);
     }
 
     void SteamSocket::init_identifiers()
@@ -40,7 +40,7 @@ namespace avledet::network {
         LOG_TRACE_L1(AVL_LOGGER, "init_identifiers for {}, address {}", get_host_name(), m_address);
     }
 
-    void SteamSocket::Close(bool linger)
+    void SteamSocket::close(bool linger)
     {
         // logic:
         //  if we are already lingering, and we are close-now (do not linger), then override and close
@@ -137,7 +137,7 @@ namespace avledet::network {
                 // TODO suspicious, callback is already used,
                 // why require a manual close
                 LOG_TRACE_L1(AVL_LOGGER, "recv failed for {}", get_host_name());
-                this->Close(false);
+                this->close(false);
             }
         } else {
             LOG_TRACE_L2(AVL_LOGGER, "illegal recv attempted for {}, status ", get_host_name(),

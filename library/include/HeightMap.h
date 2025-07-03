@@ -104,7 +104,7 @@ class Heightmap
   public:
     Heightmap(ZoneID zone, std::unique_ptr<BaseHeightmap> base);
 
-    ZoneID GetZone()
+    ZoneID get_zone()
     {
         return m_zone;
     }

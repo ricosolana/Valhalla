@@ -935,8 +935,8 @@ void IAvledet::PeriodUpdate()
             if (m_settings.playerSleepSolo) {
                 // only awake sleeping players
                 for (auto &&peer : NetManager()->GetPeers()) {
-                    auto &&zdo = peer->GetZDO();
-                    if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                    auto &&zdo = peer->find_zdo();
+                    if (zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
                         RouteManager()->Invoke(peer->GetUserID(),
                                                avledet::util::hashes::Routed::S2C_RequestStopSleep);
                     }
@@ -955,8 +955,8 @@ void IAvledet::PeriodUpdate()
             bool anyInBed = false;
 
             for (auto &&peer : NetManager()->GetPeers()) {
-                auto &&zdo = peer->GetZDO();
-                bool inBed = zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false);
+                auto &&zdo = peer->find_zdo();
+                bool inBed = zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false);
                 if (!inBed) {
                     allInBed = false;
                     if (!m_settings.playerSleepSolo)// early break if special sleep mode is not enabled
@@ -982,8 +982,8 @@ void IAvledet::PeriodUpdate()
                 if (m_settings.playerSleepSolo) {
                     // Players who are ALREADY in bed, go ahead and signal them to sleep
                     for (auto &&peer : NetManager()->GetPeers()) {
-                        auto &&zdo = peer->GetZDO();
-                        if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                        auto &&zdo = peer->find_zdo();
+                        if (zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
                             RouteManager()->Invoke(peer->GetUserID(),
                                                    avledet::util::hashes::Routed::S2C_RequestSleep);
                         } else {

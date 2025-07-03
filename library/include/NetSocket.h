@@ -32,7 +32,7 @@ namespace avledet::network {
 
         virtual ~ISocket() = default;
 
-        virtual void Close(bool linger) = 0;
+        virtual void close(bool linger) = 0;
 
         virtual std::vector<char> Recv()         = 0;
         virtual void send(std::vector<char> buf) = 0;
@@ -81,7 +81,7 @@ namespace avledet::network {
         void flush();
         bool authenticate(avledet::util::ByteView ticket);
 
-        void Close(bool linger) override;
+        void close(bool linger) override;
 
         void send(std::vector<char> bytes) override;
         std::vector<char> Recv() override;

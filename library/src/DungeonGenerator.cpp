@@ -11,8 +11,8 @@
     #include "ZoneManager.h"
 
 DungeonGenerator::DungeonGenerator(Dungeon const &dungeon, ZDO::reference zdo) :
-    m_rot(zdo->GetRotation()),
-    m_pos(zdo->GetPosition()),
+    m_rot(zdo->get_rotation()),
+    m_pos(zdo->get_position()),
     m_dungeon(dungeon),
     m_zdo(zdo)
 {
@@ -66,7 +66,7 @@ void DungeonGenerator::DungeonGenerator::Generate(avledet::util::Hash seed)
 //void DungeonGenerator::Regenerate(const ZDO zdo) {
 //	// Find the dungeon in that zone
 //	//ZDOManager()->AnyZDO(zone).
-//	if (!zdo.GetPrefab()->FlagsPresent(Prefab::FLAG_t::Dungeon))
+//	if (!zdo.get_prefab()->FlagsPresent(Prefab::FLAG_t::Dungeon))
 //		throw std::runtime_error("not a dungeon");
 //
 //
@@ -229,7 +229,7 @@ void DungeonGenerator::Save()
         writer.write(rot);
     }
 
-    m_zdo->Set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
+    m_zdo->set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
 }
 
 Dungeon::DoorDef const *DungeonGenerator::FindDoorType(VUtils::Random::State &state, std::string_view type)
@@ -262,7 +262,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State &state)
                     roomConnection.get().m_pos, roomConnection.get().m_rot, this->m_pos, this->m_rot);
 
             auto &&zdo = ZDOManager()->Instantiate(*doorDef->m_prefab, global.first);
-            zdo->SetRotation(global.second);
+            zdo->set_rotation(global.second);
             num++;
         }
     }
@@ -546,7 +546,7 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot)
         Quaternion rot1 = rot * view.m_rot;
 
         auto &&zdo = ZDOManager()->Instantiate(view.m_prefabHash, pos1);
-        zdo->SetRotation(rot1);
+        zdo->set_rotation(rot1);
     }
 
     // TODO this might be redundant for dummy 'dungeons' (plains villages shouldnt be considered dungeons)
@@ -580,7 +580,7 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot,
             auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
             auto &&zdo = ZDOManager()->Instantiate(view.m_prefabHash, global.first);
-            zdo->SetRotation(global.second);
+            zdo->set_rotation(global.second);
         }
     }
 

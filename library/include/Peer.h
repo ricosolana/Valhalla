@@ -337,7 +337,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
     void Disconnect()
     {
-        m_socket->Close(true);
+        m_socket->close(true);
     }
 
     void SendDisconnect()
@@ -356,13 +356,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         Disconnect();
     }
 
-    bool Close(ConnectionStatus status);
+    bool close(ConnectionStatus status);
 
 
     // Higher utility functions once authenticated
 
 
-    ZDO::optional GetZDO();
+    ZDO::optional find_zdo();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 

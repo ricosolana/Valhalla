@@ -46,7 +46,7 @@ Peer::Ptr INetManager::Ban(std::string_view user)
 
     if (peer) {
         Avledet()->m_blacklist.insert(peer->m_socket->get_host_name());
-        peer->Close(ConnectionStatus::ErrorBanned);
+        peer->close(ConnectionStatus::ErrorBanned);
     } else
         Avledet()->m_blacklist.insert(user);
 
@@ -95,9 +95,9 @@ void INetManager::SendPlayerList()
                     if (AVL_SETTINGS.playerListSmoothUpdating >= 2s)
                         writer.write(peer->m_pos);
                     else {// quickly dynamic map
-                        auto &&zdo = peer->GetZDO();
+                        auto &&zdo = peer->find_zdo();
                         if (zdo)
-                            writer.write(zdo->GetPosition());
+                            writer.write(zdo->get_position());
                         else
                             writer.write(peer->m_pos);
                     }
@@ -388,7 +388,7 @@ void INetManager::Update()
         } catch (std::runtime_error const &e) {
             LOG_WARNING(AVL_LOGGER, "Peer error");
             LOG_WARNING(AVL_LOGGER, "{}", e.what());
-            peer->m_socket->Close(false);
+            peer->m_socket->close(false);
         }
     }
 

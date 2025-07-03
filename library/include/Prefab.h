@@ -17,7 +17,7 @@ class Prefab
         avledet::util::CSU::Vector3f m_pos;  // 12 bytes
         avledet::util::Hash m_prefabHash;    // 4 bytes
 
-        Prefab const &GetPrefab() const;
+        Prefab const &get_prefab() const;
     };
 
     // MineRock/5 is interesting
@@ -91,8 +91,8 @@ class Prefab
     bool AllFlagsAbsent(Flag prefabFlags) const noexcept;
     bool AnyFlagsAbsent(Flag prefabFlags) const noexcept;
 
-    bool IsDistant() const noexcept;
-    bool IsPersistent() const noexcept;
+    bool is_distant() const noexcept;
+    bool is_persistent() const noexcept;
     avledet::util::ObjectType GetObjectType() const noexcept;
 
     bool operator==(Prefab const &other) const noexcept;

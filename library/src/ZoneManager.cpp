@@ -102,7 +102,7 @@ void IZoneManager::PostPrefabInit()
                 piece.m_pos        = pkg.read<Vector3f>();
                 piece.m_rot        = pkg.read<Quaternion>();
 
-                piece.GetPrefab();
+                piece.get_prefab();
 
                 loc->m_pieces.push_back(piece);
             }
@@ -544,13 +544,13 @@ void IZoneManager::PopulateZone(Heightmap &heightmap)
     std::vector<ClearArea> m_tempClearAreas;
 
     if (AVL_SETTINGS.worldFeatures)
-        m_tempClearAreas = TryGenerateFeature(heightmap.GetZone());
+        m_tempClearAreas = TryGenerateFeature(heightmap.get_zone());
 
     if (AVL_SETTINGS.worldVegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
     if (AVL_SETTINGS.worldCreatures) {
-        ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.GetZone()));
+        ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.get_zone()));
     }
     //#endif // AVL_OPTION_ENABLE_ZONE_GENERATION
 }
@@ -571,7 +571,7 @@ Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State &state, Vect
 // private
 void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> const &clearAreas)
 {
-    auto &&zoneID = heightmap.GetZone();
+    auto &&zoneID = heightmap.get_zone();
 
     Vector3f const center = ZoneToWorldPos(zoneID);
 
@@ -730,7 +730,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             //  however new generated zone zdos are not correctly rotated
 
                             auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
-                            zdo->SetRotation(rotation);
+                            zdo->set_rotation(rotation);
 
                             // basically any solid objects cannot be overlapped
                             //  the exception to this rule is mist, swamp_beacon, silvervein... basically non-physical vegetation
@@ -738,7 +738,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                                 placedAreas.push_back({pos, zoneVegetation->m_radius});
 
                             if (scale != zoneVegetation->m_prefab->m_localScale.x) {
-                                zdo->SetLocalScale(Vector3f(scale, scale, scale), true);
+                                zdo->set_local_scale(Vector3f(scale, scale, scale), true);
                             }
 
                             generated = true;
@@ -1126,9 +1126,9 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(AVL_SETTINGS.dungeonsEnabled && piece.GetPrefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+        if (!(AVL_SETTINGS.dungeonsEnabled && piece.get_prefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto &&zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
-            zdo->SetRotation(rot * piece.m_rot);
+            zdo->set_rotation(rot * piece.m_rot);
         } else {
             auto &&dungeon = DungeonManager()->get_dungeon(piece.m_prefabHash);
 
@@ -1147,17 +1147,17 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
                 piecePos.y = dungeon.m_interior_position.y + pos.y;
 
                 zdo = ZDOManager()->Instantiate(piece.m_prefabHash, piecePos);
-                zdo->SetRotation(piece.m_rot);
+                zdo->set_rotation(piece.m_rot);
             } else {
                 zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
-                zdo->SetRotation(rot * piece.m_rot);
+                zdo->set_rotation(rot * piece.m_rot);
             }
 
             assert(zdo);
 
             // Only add real sky dungeon
-            if (zdo->GetPosition().y > 4000)
-                DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
+            if (zdo->get_position().y > 4000)
+                DungeonManager()->m_dungeonInstances.push_back(zdo->get_id());
 
             DungeonManager()->generate(dungeon, zdo);
         }
@@ -1176,10 +1176,10 @@ void IZoneManager::GenerateLocationProxy(Feature const &location, avledet::util:
                                          Quaternion rot)
 {
     auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
-    zdo->SetRotation(rot);
+    zdo->set_rotation(rot);
 
-    zdo->Set(avledet::util::hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
-    zdo->Set(avledet::util::hashes::ZDO::ZoneManager::SEED, seed);
+    zdo->set(avledet::util::hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
+    zdo->set(avledet::util::hashes::ZDO::ZoneManager::SEED, seed);
 }
 
 // public

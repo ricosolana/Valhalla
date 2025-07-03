@@ -48,7 +48,7 @@ void IZDOManager::Update()
     if (VUtils::run_periodic_now<struct periodic_zdo_stats>(3min)) {
         LOG_INFO(AVL_LOGGER, "Currently {} zdos (~{:0.02f}MB -> ~{:0.02f}MB)", m_objectsByID.size(),
                  //(this->GetTotalZDOAlloc() / 1000000.f),
-                 ZDO::GetTotalAlloc(false) / 1000000.f, ZDO::GetTotalAlloc(true) / 1000000.f);
+                 ZDO::get_memory(false) / 1000000.f, ZDO::get_memory(true) / 1000000.f);
     }
 
     //assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (std::size_t)0,
@@ -69,9 +69,9 @@ void IZDOManager::Update()
         auto &&FindRandomUnconnectedPortal = [&](ZDOID skip, std::string_view tag) -> ZDO::optional {
             std::vector<ZDO::reference> list;
             for (auto &&zdo : portals) {
-                if (zdo->GetID() != skip
-                    && zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG) == tag
-                    && !zdo->GetConnectionZDOID(ZDOConnector::Type::Portal)) {
+                if (zdo->get_id() != skip
+                    && zdo->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG) == tag
+                    && !zdo->get_connection_zdoid(ZDOConnector::Type::Portal)) {
                     list.push_back(zdo);
                 }
             }
@@ -84,29 +84,29 @@ void IZDOManager::Update()
         };
 
         for (auto &&zdo : portals) {
-            auto &&connectionZDOID = zdo->GetConnectionZDOID(ZDOConnector::Type::Portal);
-            auto &&string          = zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
+            auto &&connectionZDOID = zdo->get_connection_zdoid(ZDOConnector::Type::Portal);
+            auto &&string          = zdo->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG);
             if (connectionZDOID) {
-                auto &&zdo2 = GetZDO(connectionZDOID);
-                if (!zdo2 || zdo2->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG) != string) {
-                    zdo->SetLocal();
-                    zdo->SetConnection(ZDOConnector::Type::Portal, ZDOID::NONE);
-                    ForceSendZDO(zdo->GetID());
+                auto &&zdo2 = find_zdo(connectionZDOID);
+                if (!zdo2 || zdo2->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG) != string) {
+                    zdo->set_claimed();
+                    zdo->set_connection(ZDOConnector::Type::Portal, ZDOID::NONE);
+                    ForceSendZDO(zdo->get_id());
                 }
             }
         }
 
         for (auto &&zdo3 : portals) {
-            if (!zdo3->GetConnectionZDOID(ZDOConnector::Type::Portal)) {
-                auto &&string2 = zdo3->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
-                auto &&zdo4    = FindRandomUnconnectedPortal(zdo3->GetID(), string2);
+            if (!zdo3->get_connection_zdoid(ZDOConnector::Type::Portal)) {
+                auto &&string2 = zdo3->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG);
+                auto &&zdo4    = FindRandomUnconnectedPortal(zdo3->get_id(), string2);
                 if (zdo4) {
-                    zdo3->SetLocal();
-                    zdo4->SetLocal();
-                    zdo3->SetConnection(ZDOConnector::Type::Portal, zdo4->GetID());
-                    zdo4->SetConnection(ZDOConnector::Type::Portal, zdo3->GetID());
-                    ForceSendZDO(zdo3->GetID());
-                    ForceSendZDO(zdo4->GetID());
+                    zdo3->set_claimed();
+                    zdo4->set_claimed();
+                    zdo3->set_connection(ZDOConnector::Type::Portal, zdo4->get_id());
+                    zdo4->set_connection(ZDOConnector::Type::Portal, zdo3->get_id());
+                    ForceSendZDO(zdo3->get_id());
+                    ForceSendZDO(zdo4->get_id());
                     //zdo3.Apply();
                 }
             }
@@ -147,7 +147,7 @@ void IZDOManager::Update()
 
 void IZDOManager::_AddZDOToZone(ZDO::reference zdo)
 {
-    auto &&container = _GetZDOContainer(zdo->GetZone());
+    auto &&container = _GetZDOContainer(zdo->get_zone());
 
     assert(!container.get().contains(zdo)
            && "\nSomething wrong with ZDO; possibilities: \n - zoning encapsulation is broken \n - ZDOID "
@@ -157,18 +157,18 @@ void IZDOManager::_AddZDOToZone(ZDO::reference zdo)
 
     assert(insert.second);//ensure newly inserted
 
-                          //LOG_INFO(AVL_LOGGER, "zdo added to zone: {} {}", zdo->GetID(), zdo->GetZone());
+                          //LOG_INFO(AVL_LOGGER, "zdo added to zone: {} {}", zdo->get_id(), zdo->get_zone());
 }
 
 void IZDOManager::_RemoveFromSector(ZDO::reference zdo)
 {
-    if (auto &&container = _FindZDOContainer(zdo->GetZone())) {
+    if (auto &&container = _FindZDOContainer(zdo->get_zone())) {
         auto &&erase = container->erase(zdo);
 
         // ensure zdo was actually erased
         assert(erase);
 
-        //LOG_INFO(AVL_LOGGER, "zdo removed from zone: {} {}", zdo->GetID(), zdo->GetZone());
+        //LOG_INFO(AVL_LOGGER, "zdo removed from zone: {} {}", zdo->get_id(), zdo->get_zone());
     } else {
         //TODO otherwise, then poll the sector map
         assert(false);
@@ -196,8 +196,8 @@ void IZDOManager::Save(DataWriter &writer)
         writer.write(count);
 
         for (auto &&zdo : m_objectsByID) {
-            if (zdo->IsPersistent()) {
-                zdo->Pack(writer, false);
+            if (zdo->is_persistent()) {
+                zdo->pack(writer, false);
                 count++;
             }
         }
@@ -231,14 +231,14 @@ void IZDOManager::Load(DataReader &reader, int version)
         } else
 #endif// AVL_LEGACY_WORLD_LOADING
         {
-            zdo->Unpack(reader, version);
+            zdo->unpack(reader, version);
         }
 
         _AddZDOToZone(zdo);
 
-        //auto&& prefab = zdo.GetPrefab();
+        //auto&& prefab = zdo.get_prefab();
 
-        m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
+        m_objectsByPrefab[zdo->get_prefab_hash()].insert(zdo);
 
         //assert(std::accumulate(m_objectsByPrefab.begin(), m_objectsByPrefab.end(), (std::size_t)0,
         //	[](std::size_t value, const decltype(m_objectsByPrefab)::value_type& v) -> std::size_t {
@@ -249,12 +249,12 @@ void IZDOManager::Load(DataReader &reader, int version)
 #if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
         if (prefab.AllFlagsPresent(Prefab::Flag::DUNGEON)) {
             // Only add real sky dungeon
-            if (zdo->GetPosition().y > 4000)
-                DungeonManager()->m_dungeonInstances.push_back(zdo->GetID());
+            if (zdo->get_position().y > 4000)
+                DungeonManager()->m_dungeonInstances.push_back(zdo->get_id());
         }
 #endif
 
-        //m_objectsByID[zdo->GetID()] = std::move(zdo);
+        //m_objectsByID[zdo->get_id()] = std::move(zdo);
     }
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
@@ -270,20 +270,20 @@ void IZDOManager::Load(DataReader &reader, int version)
 
         // convert portals
         for (auto &&zdo : GetZDOs(avledet::util::hashes::Object::portal_wood)) {
-            auto &&string = zdo->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
+            auto &&string = zdo->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG);
             ZDOID zdoid;
-            zdo->Extract("target", zdoid);
+            zdo->extract("target", zdoid);
             if (zdoid && !string.empty()) {
-                auto &&zdo2 = GetZDO(zdoid);
+                auto &&zdo2 = find_zdo(zdoid);
                 if (zdo2) {
-                    auto &&string2 = zdo2->GetString(avledet::util::hashes::ZDO::TeleportWorld::TAG);
+                    auto &&string2 = zdo2->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG);
                     ZDOID zdoid2;
-                    zdo2->Extract("target", zdoid2);
-                    if (string == string2 && zdoid == zdo2->GetID() && zdoid2 == zdo->GetID()) {
-                        zdo->SetLocal();
-                        zdo2->SetLocal();
-                        zdo->SetConnection(ZDOConnector::Type::Portal, zdo2->GetID());
-                        zdo2->SetConnection(ZDOConnector::Type::Portal, zdo->GetID());
+                    zdo2->extract("target", zdoid2);
+                    if (string == string2 && zdoid == zdo2->get_id() && zdoid2 == zdo->get_id()) {
+                        zdo->set_claimed();
+                        zdo2->set_claimed();
+                        zdo->set_connection(ZDOConnector::Type::Portal, zdo2->get_id());
+                        zdo2->set_connection(ZDOConnector::Type::Portal, zdo->get_id());
                         //zdo.Apply();
                     }
                 }
@@ -292,22 +292,22 @@ void IZDOManager::Load(DataReader &reader, int version)
 
         // convert spawners
         for (auto &&zdo : GetZDOs(Prefab::Flag::CREATURE_SPAWNER, Prefab::Flag::NONE)) {
-            zdo->SetLocal();
+            zdo->set_claimed();
             ZDOID zdoid;
-            zdo->Extract("spawn_id", zdoid);
-            auto &&zdo2 = GetZDO(zdoid);
-            zdo->SetConnection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->GetID() : ZDOID::NONE);
+            zdo->extract("spawn_id", zdoid);
+            auto &&zdo2 = find_zdo(zdoid);
+            zdo->set_connection(ZDOConnector::Type::Spawned, zdo2 ? zdo2->get_id() : ZDOID::NONE);
             //zdo.Apply();
         }
 
         // convert sync transforms
         for (auto &&zdo : GetZDOs(Prefab::Flag::SYNCED_TRANSFORM, Prefab::Flag::NONE)) {
-            zdo->SetLocal();
+            zdo->set_claimed();
             ZDOID zdoid;
-            zdo->Extract("parentID", zdoid);
-            auto &&zdo2 = GetZDO(zdoid);
+            zdo->extract("parentID", zdoid);
+            auto &&zdo2 = find_zdo(zdoid);
             if (zdo2) {
-                zdo->SetConnection(ZDOConnector::Type::Spawned, zdo2->GetID());
+                zdo->set_connection(ZDOConnector::Type::Spawned, zdo2->get_id());
                 //zdo.Apply();
             } else {
                 //zdo.m_pack.Set<ZDO::FLAGS_PACK_INDEX>(
@@ -333,7 +333,7 @@ void IZDOManager::Load(DataReader &reader, int version)
         }
     }
 
-    auto &&insert = m_objectsByID.insert(ZDO::make_shared(zdoid));
+    auto &&insert = m_objectsByID.insert(ZDO::make_smart(zdoid));
 
     // if newly inserted, but ALREADY CONTAINED???
     if (insert.second && contained) {
@@ -355,7 +355,7 @@ std::pair<ZDO::smart_set::iterator, bool> IZDOManager::_Instantiate(ZDOID zdoid,
         auto &&zdo = ZDO::make_reference(insert.first);
 
         // Set zone and position of ZDO
-        zdo->_SetPosition(position);
+        zdo->_set_position(position);
         _AddZDOToZone(zdo);
     }
 
@@ -391,7 +391,7 @@ ZDO::reference IZDOManager::_Instantiate(Vector3f position) noexcept
 //}
 
 
-ZDO::optional IZDOManager::GetZDO(ZDOID id)
+ZDO::optional IZDOManager::find_zdo(ZDOID id)
 {
     if (id) {
         auto &&find = m_objectsByID.find(id);
@@ -426,9 +426,9 @@ ZDO::reference IZDOManager::Instantiate(Prefab const &prefab, Vector3f pos)
     auto &&zdo = _Instantiate(pos);
     //zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
     //zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
-    zdo->_SetPrefabHash(prefab.m_hash);
+    zdo->_set_prefab_hash(prefab.m_hash);
     if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
-        zdo->SetLocalScale(prefab.m_localScale, false);
+        zdo->set_local_scale(prefab.m_localScale, false);
     }
 
     return zdo;
@@ -447,7 +447,7 @@ ZDO::reference IZDOManager::Instantiate(Prefab const &prefab, Vector3f pos)
 ZDO::reference IZDOManager::Instantiate(const ZDO& zdo) {
 	assert(false);
 
-	auto&& copy = _Instantiate(zdo.GetPosition());
+	auto&& copy = _Instantiate(zdo.get_position());
 	
 	//copy.get().m_encoded = zdo.m_encoded;
 	//copy.get().m_pack = zdo.m_pack;
@@ -468,19 +468,19 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
     GetZDOs_NeighborZones(zone, m_tempNearObjects);// get zdos: zone, nearby
 
     for (auto &&zdo : m_tempNearObjects) {
-        if (zdo->IsPersistent()) {
-            if (zdo->IsOwner(peer->GetUserID())) {
+        if (zdo->is_persistent()) {
+            if (zdo->is_owner(peer->GetUserID())) {
                 // If peer no longer in area of zdo, unclaim zdo
-                if (!ZoneManager()->ZonesOverlap(zdo->GetZone(), zone)) {
-                    zdo->Disown();
+                if (!ZoneManager()->ZonesOverlap(zdo->get_zone(), zone)) {
+                    zdo->disown();
                 }
             } else {
                 // If ZDO no longer has owner, or the owner went far away,
                 //  Then assign this new peer as owner
-                if (!(zdo->HasOwner() && ZoneManager()->IsPeerNearby(zdo->GetZone(), zdo->Owner()))
-                    && ZoneManager()->ZonesOverlap(zdo->GetZone(), zone)) {
+                if (!(zdo->has_owner() && ZoneManager()->IsPeerNearby(zdo->get_zone(), zdo->get_owner()))
+                    && ZoneManager()->ZonesOverlap(zdo->get_zone(), zone)) {
 
-                    zdo->SetOwner(peer->GetUserID());
+                    zdo->set_owner(peer->GetUserID());
                 }
             }
         }
@@ -517,11 +517,11 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
 
             // Basically reassign zdos from another owner to me instead
             for (auto &&zdo : zdos) {
-                if (zdo->IsPersistent()
-                    && zdo->GetPosition().sq_distance_to(closestPos)
+                if (zdo->is_persistent()
+                    && zdo->get_position().sq_distance_to(closestPos)
                                > 12 * 12// Ensure the ZDO is far from the other player
                 ) {
-                    zdo->SetOwner(peer->GetUserID());
+                    zdo->set_owner(peer->GetUserID());
                 }
             }
         }
@@ -533,18 +533,18 @@ ZDO::smart_set::iterator IZDOManager::_EraseZDO(ZDO::smart_set::iterator itr)
     assert(itr != m_objectsByID.end());
 
     auto &&zdo   = ZDO::make_reference(itr);
-    auto &&zdoid = zdo->GetID();
+    auto &&zdoid = zdo->get_id();
 
     // update local next only if im the user who created the zdo
     if (zdoid.get_user_id() == AVL_ID) {
         this->m_nextUid = std::max(this->m_nextUid, zdoid.get_id() + 1);
     }
 
-    //VLOG(2) << "Destroying zdo (" << zdo->GetPrefab().m_name << ")";
+    //VLOG(2) << "Destroying zdo (" << zdo->get_prefab().m_name << ")";
 
     _RemoveFromSector(zdo);
     {
-        auto &&pfind = m_objectsByPrefab.find(zdo->GetPrefabHash());
+        auto &&pfind = m_objectsByPrefab.find(zdo->get_prefab_hash());
         if (pfind != m_objectsByPrefab.end())
             pfind->second.erase(zdoid);
     }
@@ -570,7 +570,7 @@ ZDO::smart_set::iterator IZDOManager::_EraseZDO(ZDO::smart_set::iterator itr)
     // erase members and connectors
     //assert(false); //TODO erase from all maps the entry for zdoid
     //ZDO::ZDO_MEMBERS.erase(zdoid);
-    ////ZDO::ZDO_CONNECTORS.erase(zdo->GetID());
+    ////ZDO::ZDO_CONNECTORS.erase(zdo->get_id());
 
     ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
 
@@ -640,7 +640,7 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer::Pt
             if (outItr != peer->m_zdos.end())
                 weight = std::min(time - outItr->second.second, 100.f) * 1.5f;
 
-            result.push_back({zdo, zdo->GetPosition().sq_distance_to(peer->m_pos) - weight * weight});
+            result.push_back({zdo, zdo->get_position().sq_distance_to(peer->m_pos) - weight * weight});
         }
     }
 
@@ -655,13 +655,13 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer::Pt
         auto &&a = first.first;
         auto &&b = second.first;
 
-        bool flag = a->GetType() == avledet::util::ObjectType::PRIORITIZED && a->HasOwner()
-                    && !a->IsOwner(peer->GetUserID());
-        bool flag2 = b->GetType() == avledet::util::ObjectType::PRIORITIZED && b->HasOwner()
-                     && !b->IsOwner(peer->GetUserID());
+        bool flag = a->get_type() == avledet::util::ObjectType::PRIORITIZED && a->has_owner()
+                    && !a->is_owner(peer->GetUserID());
+        bool flag2 = b->get_type() == avledet::util::ObjectType::PRIORITIZED && b->has_owner()
+                     && !b->is_owner(peer->GetUserID());
 
         if (flag == flag2) {
-            if ((flag && flag2) || a->GetType() == b->GetType()) {
+            if ((flag && flag2) || a->get_type() == b->get_type()) {
                 return first.second < second.second;
             } else
                 // > (shows large trees first)
@@ -672,7 +672,7 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer::Pt
                 // but with the ZDOManager being bottlenecked by the expensive HeightmapBuilder
                 //	(if Heightmap is not ready, vegetation cannot be generated -> ZDOs cannot be sent)
                 //	this only applies to newly generated areas
-                return a->GetType() >= b->GetType();
+                return a->get_type() >= b->get_type();
         } else {
             return flag;
         }
@@ -690,7 +690,7 @@ std::list<std::pair<ZDO::reference, float>> IZDOManager::CreateSyncList(Peer::Pt
     // Add forcible send ZDOs
     for (auto &&itr = peer->m_forceSend.begin(); itr != peer->m_forceSend.end();) {
         auto &&zdoid = *itr;
-        auto zdo     = GetZDO(zdoid);
+        auto zdo     = find_zdo(zdoid);
         if (zdo && peer->IsOutdatedZDO(zdo)) {
             result.push_front({zdo, 0});
             ++itr;
@@ -713,7 +713,7 @@ void IZDOManager::GetZDOs_Distant(ZoneID zone, ZDO::reference_list &objects)
 {
     if (auto &&container = _FindZDOContainer(zone)) {
         for (auto &&zdo : *container) {
-            if (zdo->IsDistant()) {
+            if (zdo->is_distant()) {
                 objects.push_back(zdo);
             }
         }
@@ -757,7 +757,7 @@ ZDO::reference_list IZDOManager::SomeZDOs(Vector3f const &pos, float radius, std
         for (auto x = minZone.x; x <= maxZone.x; x++) {
             if (auto &&container = _FindZDOContainer(ZoneID(x, z))) {
                 for (auto &&zdo : *container) {
-                    if (zdo->GetPosition().sq_distance_to(pos) <= sqRadius && (!pred || pred(zdo))) {
+                    if (zdo->get_position().sq_distance_to(pos) <= sqRadius && (!pred || pred(zdo))) {
                         if (max--)
                             out.push_back(zdo);
                         else
@@ -803,7 +803,7 @@ ZDO::optional IZDOManager::NearestZDO(Vector3f const &pos, float radius, ZDO::Fi
         for (auto x = minZone.x; x <= maxZone.x; x++) {
             if (auto &&container = _FindZDOContainer(ZoneID(x, z))) {
                 for (auto &&zdo : *container) {
-                    float sqDist = zdo->GetPosition().sq_distance_to(pos);
+                    float sqDist = zdo->get_position().sq_distance_to(pos);
                     if (sqDist < minSqDist// Filter to closest ZDO
                         && (!pred || pred(zdo))) {
                         out       = zdo;
@@ -874,21 +874,21 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
                     //          so use boost intrusive ptr, where bits will have to be used for refcount
                     auto zdo = itr->first;
 
-                    peer->m_forceSend.erase(zdo->GetID());
+                    peer->m_forceSend.erase(zdo->get_id());
 
                     if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
                         continue;
                     }
 
-                    writer.write(zdo->GetID());
-                    writer.write(zdo->GetOwnerRevision());
-                    writer.write(zdo->GetDataRevision());
-                    writer.write(zdo->Owner());
-                    writer.write(zdo->GetPosition());
+                    writer.write(zdo->get_id());
+                    writer.write(zdo->get_owner_rev());
+                    writer.write(zdo->get_data_rev());
+                    writer.write(zdo->get_owner());
+                    writer.write(zdo->get_position());
 
-                    writer.write([zdo](DataWriter &writer) { zdo->Pack(writer, true); });
+                    writer.write([zdo](DataWriter &writer) { zdo->pack(writer, true); });
 
-                    peer->m_zdos[zdo->GetID()] = {zdo->GetRevision(), time};
+                    peer->m_zdos[zdo->get_id()] = {zdo->_get_revision(), time};
                 }
                 writer.write(ZDOID::NONE);// null terminator
             });
@@ -913,7 +913,7 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 
         //assert(false); //TODO
         reader.read([this](ZDOID zdoid) {
-            if (auto zdo = GetZDO(zdoid))
+            if (auto zdo = find_zdo(zdoid))
                 _InvalidateZDOZone(zdo);
         });
 
@@ -940,25 +940,24 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
             auto &&zdo     = ZDO::make_reference(pair.first);
             auto &&created = pair.second;
 
-            assert(zdoid == zdo->GetID());
+            assert(zdoid == zdo->get_id());
 
             if (!created) {
                 // If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
                 //	(because the data will be the same, or at the worst case, it will be outdated)
-                if (dataRev <= zdo->GetDataRevision()) {
+                if (dataRev <= zdo->get_data_rev()) {
 
                     // If the owner has changed, keep a copy
-                    if (ownerRev > zdo->GetOwnerRevision()) {
-                        zdo->_SetOwner(owner);
-                        //zdo.SetOwnerRevision(ownerRev);
-                        zdo->GetRevision().SetOwnerRevision(ownerRev);
+                    if (ownerRev > zdo->get_owner_rev()) {
+                        zdo->_set_owner(owner);
+                        zdo->_get_revision().set_owner_rev(ownerRev);
                         peer->m_zdos[zdoid] = {ZDO::Rev(dataRev, ownerRev), time};
                     }
                     continue;
                 }
             } else {
-                assert((_FindZDOContainer(zdo->GetZone()))
-                               ? !_FindZDOContainer(zdo->GetZone())->contains(zdoid)
+                assert((_FindZDOContainer(zdo->get_zone()))
+                               ? !_FindZDOContainer(zdo->get_zone())->contains(zdoid)
                                : true);
 
                 if (m_erasedZDOs.contains(zdoid)) {
@@ -973,12 +972,12 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
             //ZDO copy(zdo);
 
             //try {
-            zdo->_SetOwner(owner);
-            zdo->GetRevision().SetDataRevision(dataRev);
-            zdo->GetRevision().SetOwnerRevision(ownerRev);
+            zdo->_set_owner(owner);
+            zdo->_get_revision().set_data_rev(dataRev);
+            zdo->_get_revision().set_owner_rev(ownerRev);
 
             // Unpack the ZDOs primary data
-            zdo->Unpack(des, 0);
+            zdo->unpack(des, 0);
 
             AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOUnpacked, peer, zdo);
 
@@ -989,23 +988,23 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 //	continue;
                 //}
 
-                zdo->_SetPosition(pos);//unrevised because is fresh zdo
+                zdo->_set_position(pos);//unrevised because is fresh zdo
                 _AddZDOToZone(zdo);
-                m_objectsByPrefab[zdo->GetPrefabHash()].insert(zdo);
+                m_objectsByPrefab[zdo->get_prefab_hash()].insert(zdo);
             } else {
                 //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOModified, peer, zdo, copy, pos)) {
                 //	zdo = std::move(copy);
                 //	continue;
                 //}
 
-                zdo->SetPosition(pos);
+                zdo->set_position(pos);
             }
 
-            assert(_FindZDOContainer(zdo->GetZone()));
+            assert(_FindZDOContainer(zdo->get_zone()));
 
-            assert(_FindZDOContainer(zdo->GetZone())->contains(zdo));
+            assert(_FindZDOContainer(zdo->get_zone())->contains(zdo));
 
-            peer->m_zdos[zdoid] = {zdo->GetRevision(), time};
+            peer->m_zdos[zdoid] = {zdo->_get_revision(), time};
             /*
 			}
 			catch (const std::runtime_error& e) {
@@ -1026,9 +1025,9 @@ void IZDOManager::OnPeerQuit(Peer::Ptr peer)
     for (auto &&itr = m_objectsByID.begin(); itr != m_objectsByID.end();) {
         auto &&zdo = ZDO::make_reference(itr);
 
-        if (!zdo->IsPersistent()
-            && (!zdo->HasOwner() || zdo->IsOwner(peer->GetUserID())
-                || !NetManager()->FindPeerByUserID(zdo->Owner()))) {
+        if (!zdo->is_persistent()
+            && (!zdo->has_owner() || zdo->is_owner(peer->GetUserID())
+                || !NetManager()->FindPeerByUserID(zdo->get_owner()))) {
             itr = _DestroyZDO(itr);
         } else
             ++itr;
@@ -1065,9 +1064,9 @@ float IZDOManager::GetStDevZDOMembers()
 std::size_t IZDOManager::GetTotalZDOAlloc()
 {
     //std::size_t bytes = m_objectsByID.size() * sizeof(ZDO);
-    //for (auto&& zdo : m_objectsByID) bytes += zdo->GetTotalAlloc();
+    //for (auto&& zdo : m_objectsByID) bytes += zdo->get_memory();
     //return bytes;
-    return ZDO::GetTotalAlloc(false);
+    return ZDO::get_memory(false);
 }
 
 std::size_t IZDOManager::GetCountEmptyZDOs()
@@ -1075,7 +1074,7 @@ std::size_t IZDOManager::GetCountEmptyZDOs()
     // so gather each ZDO member, and write how many of them are empty
     std::size_t count = 0;
     for (auto &&zdo : m_objectsByID) {
-        auto alloc = zdo->GetTotalAlloc(false);
+        auto alloc = zdo->get_memory(false);
         if (alloc == 0)
             count++;
     }

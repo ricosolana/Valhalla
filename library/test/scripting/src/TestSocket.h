@@ -24,7 +24,7 @@ class TestSocket : public avledet::network::ISocket
     TestSocket() {}
 
   public:
-    void Close(bool linger) override {}
+    void close(bool linger) override {}
 
     void send(std::vector<char> bytes) override {}
 

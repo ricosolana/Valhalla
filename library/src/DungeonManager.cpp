@@ -121,7 +121,7 @@ void IDungeonManager::post_prefab_init()
                 instance.m_rot        = pkg.read<Quaternion>();
 
                 // ensure prefab existence
-                instance.GetPrefab();
+                instance.get_prefab();
 
                 room->m_netViews.push_back(instance);
             }
@@ -159,27 +159,27 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
         // if a player is inside, do not reset
         for (auto &&peer : NetManager()->GetPeers()) {
             // if peer in dungeon sector, and they are high up (presumably inside the dungeon)
-            if (dungeonZdo.GetZone() == ZoneManager()->WorldToZonePos(peer->m_pos) && peer->m_pos.y > 4000) {
+            if (dungeonZdo.get_zone() == ZoneManager()->WorldToZonePos(peer->m_pos) && peer->m_pos.y > 4000) {
                 playerNear = true;
                 break;
             }
         }
 
-        auto &&dungeon = RequireDungeon(dungeonZdo.GetPrefab().m_hash);
+        auto &&dungeon = RequireDungeon(dungeonZdo.get_prefab().m_hash);
 
         // Destroy all zdos high in the sky near dungeon IN ZONE
-        auto pos = dungeonZdo.GetPosition();
-        auto rot = dungeonZdo.GetRotation();
+        auto pos = dungeonZdo.get_position();
+        auto rot = dungeonZdo.get_rotation();
 
         if (!playerNear) {
-            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.GetZone(), [](const ZDO zdo) {
-                return zdo.GetPosition().y > 4000
-                       && zdo.GetPrefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
+            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.get_zone(), [](const ZDO zdo) {
+                return zdo.get_position().y > 4000
+                       && zdo.get_prefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
             });
 
             for (auto &&ref : zdos) {
                 auto &&zdo    = ref.get();
-                auto &&prefab = zdo.GetPrefab();
+                auto &&prefab = zdo.get_prefab();
 
                 assert(!(prefab.m_hash == avledet::util::hashes::Object::Player
                          || prefab.m_hash == avledet::util::hashes::Object::Player_tombstone));
@@ -190,7 +190,7 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
             LOG_INFO(AVL_LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
 
             auto &&zdo = Generate(dungeon, pos, rot).get();
-            zdo.Set(LAST_RESET_HASH, unixTime.count());
+            zdo.set(LAST_RESET_HASH, unixTime.count());
 
             return &zdo;
         } else {
@@ -209,14 +209,14 @@ void IDungeonManager::TryRegenerateDungeons()
            < std::min(m_dungeonInstances.size(), m_nextIndex + AVL_SETTINGS.dungeonsRegenerationMaxSteps)) {
         auto &&itr = m_dungeonInstances.begin() + idx;
 
-        ZDO *dungeonZdo = ZDOManager()->GetZDO(*itr);
+        ZDO *dungeonZdo = ZDOManager()->find_zdo(*itr);
         if (!dungeonZdo) {
             m_dungeonInstances.erase(itr);
             //LOG(WARNING) << "Dungeon ZDO no longer exists";
             break;
         } else {
             if (auto &&newDungeon = TryRegenerateDungeon(*dungeonZdo)) {
-                *itr = newDungeon->GetID();
+                *itr = newDungeon->get_id();
             }
             ++idx;
         }
@@ -234,7 +234,7 @@ void IDungeonManager::TryRegenerateDungeons()
 ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot)
 {
     auto &&zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo->SetRotation(rot);
+    zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate();
 
@@ -245,7 +245,7 @@ ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Q
                                          avledet::util::Hash seed)
 {
     auto &&zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
-    zdo->SetRotation(rot);
+    zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
 
