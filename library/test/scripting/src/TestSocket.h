@@ -13,9 +13,9 @@
 #include <sol/variadic_args.hpp>
 #include <tuple>
 
+#include "Avledet.h"
 #include "ModManager.h"
 #include "NetSocket.h"
-#include "ValhallaServer.h"
 #include "ZDO.h"
 
 class TestSocket : public avledet::network::ISocket

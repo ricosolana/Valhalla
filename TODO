@@ -1,5 +1,19 @@
 TODO
+    ORGANIZE!!!
+    
     MOVE THINGS OUT OF THE HEADER!!!
+        notable offenders:
+            Peer.h
+            ZDO.h
+
+    script rules:
+        do not pass pointers, except for full lifetime types (mans)
+
+        pass shared ptr for managed types
+
+        pass copy-by-value for blahs...
+
+
 
     script reload quirks
         reload on script save

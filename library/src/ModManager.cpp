@@ -29,12 +29,12 @@
     #include <sol/types.hpp>
     #include <yaml-cpp/yaml.h>
 
+    #include "Avledet.h"
     #include "Method.h"
     #include "NetManager.h"
     #include "Peer.h"
     #include "RouteManager.h"
     #include "Types.h"
-    #include "ValhallaServer.h"
     #include "VUtilsResource.h"
 
 auto SCRIPT_MANAGER(std::make_unique<IScriptManager>());

@@ -1,8 +1,8 @@
 #include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
 
+#include "Avledet.h"
 #include "HeightmapBuilder.h"
-#include "ValhallaServer.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 

@@ -6,11 +6,11 @@
 #include <quill/Utility.h>
 #include <steam_gameserver.h>
 
+#include "Avledet.h"
 #include "ModManager.h"
 #include "NetAcceptor.h"
 #include "NetSocket.h"
 #include "steamclientpublic.h"
-#include "ValhallaServer.h"
 
 namespace avledet::network {
 

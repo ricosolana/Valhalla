@@ -14,8 +14,8 @@
 #include <sol/types.hpp>
 #include <sol/variadic_args.hpp>
 
+#include "Avledet.h"
 #include "ModManager.h"
-#include "ValhallaServer.h"
 #include "ZDO.h"
 
 TEST(Scripting, blah)

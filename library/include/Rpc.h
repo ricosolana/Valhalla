@@ -6,13 +6,11 @@
 #include <gtl/btree.hpp>
 #include <gtl/gtl_base.hpp>
 
+#include "Avledet.h"
 #include "Hashes.h"
 #include "Method.h"
 #include "ModManager.h"
 #include "Types.h"
-#include "ValhallaServer.h"
-
-//#include "Peer.h"//TODO remove!!
 
 namespace avledet::rpc {
 

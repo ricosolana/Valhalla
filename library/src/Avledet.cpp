@@ -15,6 +15,7 @@
 #include <tracy/Tracy.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "Avledet.h"
 #include "DiscordManager.h"
 #include "DungeonManager.h"
 #include "GeoManager.h"
@@ -25,7 +26,6 @@
 #include "RandomEventManager.h"
 #include "RouteManager.h"
 #include "ServerSettings.h"
-#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "ZDOManager.h"

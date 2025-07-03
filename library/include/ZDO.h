@@ -19,13 +19,13 @@
 #include <intrusive_shared_ptr/intrusive_shared_ptr.h>
 #include <intrusive_shared_ptr/refcnt_ptr.h>
 
+#include "Avledet.h"
 #include "BitPack.h"
 #include "DataStream.h"
 #include "Hashes.h"
 #include "PrefabManager.h"
 #include "Quaternion.h"
 #include "Types.h"
-#include "ValhallaServer.h"
 #include "Vector.h"
 #include "VUtils.h"
 #include "VUtilsMathf.h"

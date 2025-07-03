@@ -15,10 +15,10 @@
 #include <sol/types.hpp>
 #include <sol/variadic_args.hpp>
 
+#include "Avledet.h"
 #include "ModManager.h"
 #include "NetSocket.h"
 #include "Peer.h"
-#include "ValhallaServer.h"
 #include "ZDO.h"
 
 #include "TestSocket.h"

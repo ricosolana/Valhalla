@@ -6,8 +6,8 @@
 #include <steam_gameserver.h>
 #include <thread>
 
+#include "Avledet.h"
 #include "NetSocket.h"
-#include "ValhallaServer.h"
 
 namespace avledet::network {
     class IAcceptor

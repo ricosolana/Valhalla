@@ -30,36 +30,17 @@
     #include <sol/protected_function_result.hpp>
     #include <sol/sol.hpp>
 
+    #include "Avledet.h"
     #include "DataStream.h"
     #include "Hashes.h"
     #include "Quaternion.h"
     #include "Types.h"
-    #include "ValhallaServer.h"
     #include "Vector.h"
     #include "VUtils.h"
     #include "VUtilsRandom.h"
     #include "ZDOID.h"
 
 namespace sol {
-    ////template<>
-    ////struct unique_usertype_traits<ZDO::smart>
-    ////{
-    ////    typedef ZDO type;
-    ////    typedef ZDO::smart actual_type;
-    ////    static bool const value = true;
-
-    ////    static bool is_null(actual_type const &ptr)
-    ////    {
-    ////        return ptr == nullptr;
-    ////    }
-
-    ////    static type *get(actual_type const &ptr)
-    ////    {
-    ////        return ptr.get();
-    ////    }
-    ////};
-
-
     template<typename T, typename Traits>
     struct unique_usertype_traits<isptr::intrusive_shared_ptr<T, Traits>>
     {

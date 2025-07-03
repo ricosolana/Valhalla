@@ -14,10 +14,10 @@
     #include <sol/property.hpp>
     #include <sol/types.hpp>
 
+    #include "Avledet.h"
     #include "DungeonManager.h"
     #include "ModManager.h"
     #include "RouteManager.h"
-    #include "ValhallaServer.h"
     #include "VUtilsResource.h"
     #include "ZDOManager.h"
 

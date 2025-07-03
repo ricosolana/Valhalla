@@ -1,6 +1,7 @@
 #include <quill/LogMacros.h>
 #include <string_view>
 
+#include "Avledet.h"
 #include "DiscordManager.h"
 #include "GeoManager.h"
 #include "Hashes.h"
@@ -8,7 +9,6 @@
 #include "Prefab.h"
 #include "RandomEventManager.h"
 #include "RouteManager.h"
-#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
 #include "ZoneManager.h"
@@ -212,7 +212,7 @@ void IRandomEventManager::Load(DataReader &reader, int version)
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
     if (version >= 25) {
 #endif// AVL_LEGACY_WORLD_LOADING
-        this->m_activeEvent          = GetEvent(reader.read<std::string_view>());
+        this->m_activeEvent          = find_event(reader.read<std::string_view>());
         this->m_activeEventRemaining = std::chrono::seconds((std::int64_t) reader.read<float>());
         this->m_activeEventPos       = reader.read<Vector3f>();
     }

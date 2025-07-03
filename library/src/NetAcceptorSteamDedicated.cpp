@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "Avledet.h"
 #include "CompileSettings.h"
 #include "isteamnetworking.h"
 #include "isteamnetworkingutils.h"
@@ -12,7 +13,6 @@
 #include "steam_api_common.h"
 #include "steamclientpublic.h"
 #include "steamnetworkingtypes.h"
-#include "ValhallaServer.h"
 #include "VUtils.h"
 
 std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server)

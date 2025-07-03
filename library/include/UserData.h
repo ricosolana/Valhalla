@@ -4,6 +4,8 @@
 
 #include "DataStream.h"
 
+// TODO
+//  this class (c# is UserInfo) is severely outdated and broken
 class UserProfile
 {
   public:
@@ -35,7 +37,7 @@ struct avledet::util::Streamer<UserProfile>
     {
         (void) reader;
         throw std::runtime_error("nyi");
-        // TODO read seperately, not like UserData(read(), read(), read())
+        // TODO read separately, not like UserData(read(), read(), read())
         // because these could be out of order, causing UBF
     }
 };

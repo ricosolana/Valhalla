@@ -56,7 +56,7 @@ class IRandomEventManager
 
     // Get an event by name
     //	Returns null if not found
-    Event const *GetEvent(std::string_view name)
+    Event const *find_event(std::string_view name)
     {
         auto &&find = m_events.find(name);
         if (find != m_events.end())

@@ -5,10 +5,10 @@
     #include <sol/forward.hpp>
     #include <sol/property.hpp>
 
+    #include "Avledet.h"
     #include "ModManager.h"
     #include "NetManager.h"
     #include "NetSocket.h"
-    #include "ValhallaServer.h"
 
 using namespace avledet::network;
 
