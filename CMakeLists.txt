@@ -66,8 +66,6 @@ if(WIN32)
     add_definitions("/wd4996") # unsafe cstd functions
     add_definitions("/wd4702") # unreachable code
 
-    target_compile_options(avledet PRIVATE /bigobj "/diagnostics:caret")
-
     #if(CMAKE_BUILD_TYPE MATCHES Release)
     #    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)
     #endif()
@@ -88,10 +86,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 # TODO
 #   Allow USER to specify sdk path via args
 if(WIN32)
-    message(FATAL_ERROR "NYI")
-    #set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
-    #set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
-    #set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+    #message(FATAL_ERROR "NYI")
+    set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
+    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
+    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
 else()
     set(STEAMWORKS_SDK_LOCATION "$ENV{HOME}/.local/bin/steamsdk")
     set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")

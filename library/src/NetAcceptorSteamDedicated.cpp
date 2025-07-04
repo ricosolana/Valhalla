@@ -1,5 +1,6 @@
 #include <isteamutils.h>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
+//TODO //#include <magic_enum.hpp> // I guess linux only
 #include <quill/LogMacros.h>
 #include <stdexcept>
 #include <string_view>
