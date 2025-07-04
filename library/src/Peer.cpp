@@ -1,7 +1,7 @@
 #include "Peer.h"
+#include "Avledet.h"
 #include "NetManager.h"
 #include "RouteManager.h"
-#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
 #include <magic_enum.hpp>
@@ -30,11 +30,11 @@ Peer::Peer(ISocket::Ptr socket) :
             auto version = reader.read<std::string_view>();
             LOG_INFO(AVL_LOGGER, "Client {} has version {}", rpc->m_socket->get_host_name(), version);
             if (version != VConstants::GAME)
-                return rpc->Close(ConnectionStatus::ErrorVersion);
+                return rpc->close(ConnectionStatus::ErrorVersion);
 
             // network version
             if (reader.read<std::uint32_t>() != VConstants::NETWORK) {
-                return rpc->Close(ConnectionStatus::ErrorVersion);
+                return rpc->close(ConnectionStatus::ErrorVersion);
             }
 
             rpc->m_pos = reader.read<Vector3f>();
@@ -57,19 +57,19 @@ Peer::Peer(ISocket::Ptr socket) :
 
                     if (!steamSocket->authenticate(ticket)) {
                         LOG_INFO(AVL_LOGGER, "Client {} has invalid ticket", rpc->m_socket->get_host_name());
-                        return rpc->Close(ConnectionStatus::ErrorDisconnected);
+                        return rpc->close(ConnectionStatus::ErrorDisconnected);
                     }
                 }
             }
 
             if (password != std::string_view(NetManager()->m_passwordHash))
-                return rpc->Close(ConnectionStatus::ErrorPassword);
+                return rpc->close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
             if (NetManager()->FindPeerByUserID(rpc->GetUserID()) || NetManager()->FindPeerByName(rpc->m_name))
-                return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+                return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
             NetManager()->OnPeerConnect(rpc);
 
@@ -77,20 +77,20 @@ Peer::Peer(ISocket::Ptr socket) :
         });
 
         if (Avledet()->m_blacklist.contains(rpc->m_socket->get_host_name()))
-            return rpc->Close(ConnectionStatus::ErrorBanned);
+            return rpc->close(ConnectionStatus::ErrorBanned);
 
         if (NetManager()->FindPeerByHost(rpc->m_socket->get_host_name()))
-            return rpc->Close(ConnectionStatus::ErrorAlreadyConnected);
+            return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
         if (AVL_SETTINGS.playerWhitelist
             && !Avledet()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
-            return rpc->Close(ConnectionStatus::ErrorFull);
+            return rpc->close(ConnectionStatus::ErrorFull);
         }
 
         // if too many players online
         if (NetManager()->GetPeers().size() >= AVL_SETTINGS.playerMax)
-            return rpc->Close(ConnectionStatus::ErrorFull);
+            return rpc->close(ConnectionStatus::ErrorFull);
 
         bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
 
@@ -144,7 +144,7 @@ void Peer::InternalInvoke(avledet::util::Hash hash, DataReader &reader)
     this->internal_invoke(shared_from_this(), hash, reader);
 }
 
-bool Peer::Close(ConnectionStatus status)
+bool Peer::close(ConnectionStatus status)
 {
     LOG_INFO(AVL_LOGGER, "Peer error: {}", magic_enum::enum_name(status));
     Invoke(avledet::util::hashes::Rpc::S2C_Error, status);
@@ -160,9 +160,9 @@ void Peer::SetAdmin(bool enable)
         Avledet()->m_admin.insert(m_socket->get_host_name());
 }
 
-ZDO::optional Peer::GetZDO()
+ZDO::optional Peer::find_zdo()
 {
-    return ZDOManager()->GetZDO(m_characterID);
+    return ZDOManager()->find_zdo(m_characterID);
 }
 
 void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
@@ -178,22 +178,22 @@ void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util:
 
 void Peer::ZDOSectorInvalidated(ZDO::reference zdo)
 {
-    if (zdo->IsOwner(this->GetUserID()))
+    if (zdo->is_owner(this->GetUserID()))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo->GetZone(), m_pos)) {
-        if (m_zdos.erase(zdo->GetID())) {
-            m_invalidSector.insert(zdo->GetID());
+    if (!ZoneManager()->ZonesOverlap(zdo->get_zone(), m_pos)) {
+        if (m_zdos.erase(zdo->get_id())) {
+            m_invalidSector.insert(zdo->get_id());
         }
     }
 }
 
 bool Peer::IsOutdatedZDO(ZDO::reference zdo, decltype(m_zdos)::iterator &outItr)
 {
-    auto &&find = m_zdos.find(zdo->GetID());
+    auto &&find = m_zdos.find(zdo->get_id());
 
     outItr = find;
 
-    return find == m_zdos.end() || zdo->GetOwnerRevision() > find->second.first.GetOwnerRevision()
-           || zdo->GetDataRevision() > find->second.first.GetDataRevision();
+    return find == m_zdos.end() || zdo->get_owner_rev() > find->second.first.get_owner_rev()
+           || zdo->get_data_rev() > find->second.first.get_data_rev();
 }

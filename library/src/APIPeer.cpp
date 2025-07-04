@@ -32,24 +32,20 @@ void IScriptManager::load_userdata_peer()
     this->new_usertype<Peer>("Peer",
         sol::no_constructor,
         // member fields
-        //"visibleOnMap", &Peer::m_visibleOnMap,
         "marker", sol::property(&Peer::IsMapVisible, &Peer::SetMapVisible), //TODO rename this...
-        //"admin", &Peer::m_admin,
         "admin", sol::property(&Peer::IsAdmin, &Peer::SetAdmin), 
-        "character_id", sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// returns a copy; TODO test with readonly
+        "character_id", sol::property([](Peer &self) -> ZDOID { return self.m_characterID; }),// returns a copy
         "name", sol::readonly(&Peer::m_name),// strings are immutable in Lua similarly to Java
         "pos", sol::readonly(&Peer::m_pos),
         //"uuid", sol::property([](Peer& self) { return Int64Wrapper(self.m_uuid); }),
         "socket", sol::readonly(&Peer::m_socket), 
-        "zdo", sol::property(&Peer::GetZDO),
+        "zdo", sol::property(&Peer::find_zdo),
         // member functions
         "kick", &Peer::Kick,
-        // message functions
         "chat_message", sol::resolve<void (std::string_view)>(&Peer::ChatMessage),
         "console_message", sol::resolve<void (std::string_view)>(&Peer::ConsoleMessage),
         "corner_message", sol::resolve<void (std::string_view)>(&Peer::CornerMessage),
         "center_message", sol::resolve<void (std::string_view)>(&Peer::CenterMessage),
-        // misc functions
         "teleport", sol::overload(
             sol::resolve<void(Vector3f pos, Quaternion rot, bool animation)>(&Peer::Teleport),
             sol::resolve<void(Vector3f pos)>(&Peer::Teleport)),

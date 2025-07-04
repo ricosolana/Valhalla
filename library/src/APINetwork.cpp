@@ -5,10 +5,10 @@
     #include <sol/forward.hpp>
     #include <sol/property.hpp>
 
+    #include "Avledet.h"
     #include "ModManager.h"
     #include "NetManager.h"
     #include "NetSocket.h"
-    #include "ValhallaServer.h"
 
 using namespace avledet::network;
 
@@ -29,8 +29,7 @@ void IScriptManager::load_userdata_network()
     // TODO full socket impl
     this->new_usertype<ISocket>("Socket", 
         sol::no_constructor,
-        "close", &ISocket::Close,
-        //"connected", sol::property(&ISocket::Connected),
+        "close", &ISocket::close,
         "address", sol::property(&ISocket::get_address), 
         "host", sol::property(&ISocket::get_host_name),
         "send_queue_size", sol::property(&ISocket::get_send_queue_size), 
@@ -43,8 +42,9 @@ void IScriptManager::load_userdata_network()
 
     this->new_usertype<INetManager>("INetManager", 
         sol::no_constructor,
-        "find_peer", &INetManager::FindPeer,
-        "peers", sol::property(&INetManager::GetPeers) //TODO stop using odd references
+        "find_peer", &INetManager::FindPeer
+        // TODO unsafe, mutable container is returned
+        //"peers", sol::property(&INetManager::GetPeers) //TODO stop using odd references
     );
 
     // clang-format on

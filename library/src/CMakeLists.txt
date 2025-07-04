@@ -12,6 +12,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/APIVector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/APIZdo.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/APIZone.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Avledet.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Crypto.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DiscordManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DungeonGenerator.cpp
@@ -21,7 +22,6 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/Heightmap.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapBuilder.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapManager.cpp
-        #${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ModManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetAcceptorSteamDedicated.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetManager.cpp
@@ -34,9 +34,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/Reader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/RouteManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cpp
-        #${CMAKE_CURRENT_SOURCE_DIR}/Tests.cpp" # this must mov
         ${CMAKE_CURRENT_SOURCE_DIR}/Types.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/ValhallaServer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Vector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/VUtils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/VUtilsMath.cpp

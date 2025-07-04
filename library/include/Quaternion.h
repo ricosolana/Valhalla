@@ -18,7 +18,7 @@ namespace avledet::util::CSU {
     {
       public:
         // Constants
-
+        static Quaternion const IDENTITY;
 
       public:
         float x, y, z, w;
@@ -43,14 +43,6 @@ namespace avledet::util::CSU {
             w(w)
         {
         }
-
-        static Quaternion const IDENTITY;// = {0.f, 0.f, 0.f, 1.f};
-
-        //static constexpr inline Quaternion const IDENTITY
-        //= {0.f, 0.f, 0.f, 1.f};  //= Quaternion(0.f, 0.f, 0.f, 1.f);
-
-        //Quaternion(const Quaternion &other)
-        //    : x(other.x), y(other.y), z(other.z), w(other.w) {}
 
         float length_squared() const;
         Vector3f xyz() const;

@@ -4,8 +4,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "Avledet.h"
 #include "PrefabManager.h"
-#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "ZDO.h"
 
@@ -77,7 +77,7 @@ Prefab const &IPrefabManager::get_prefab(std::string_view name) const
     return get_prefab(avledet::util::get_stable_hash(name));
 }
 
-Prefab const &IPrefabManager::get_indexed_prefab(std::size_t index) const
+Prefab const &IPrefabManager::get_indexed_prefab(Prefab::IndexType index) const
 {
     //Do not query a "NULL" prefab
     assert(index != Prefab::NONE);
@@ -90,7 +90,7 @@ Prefab const &IPrefabManager::get_indexed_prefab(std::size_t index) const
     return *itr;
 }
 
-std::size_t IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
+Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
 {
     auto &&itr = m_prefabs.find(hash);
     if (itr != m_prefabs.end()) {
@@ -101,11 +101,9 @@ std::size_t IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
     //throw std::runtime_error("nyi");
 }
 
-std::size_t IPrefabManager::get_prefab_index(Prefab &prefab) const
+Prefab::IndexType IPrefabManager::get_prefab_index(Prefab &prefab) const
 {
     return this->get_prefab_index(prefab.m_hash);
-    //assert(false);
-    //throw std::runtime_error("nyi");
 }
 
 void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)

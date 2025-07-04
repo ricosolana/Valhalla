@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "Avledet.h"
 #include "CompileSettings.h"
 #include "isteamnetworking.h"
 #include "isteamnetworkingutils.h"
@@ -13,7 +14,6 @@
 #include "steam_api_common.h"
 #include "steamclientpublic.h"
 #include "steamnetworkingtypes.h"
-#include "ValhallaServer.h"
 #include "VUtils.h"
 
 std::unique_ptr<IAcceptor> IAcceptor::steam_user(bool is_lobby_server)
@@ -334,7 +334,7 @@ void AcceptorSteam::stop()
 
         {
             //std::scoped_lock scoped(m_mux);
-            for (auto &&socket : m_sockets) socket->Close(false);
+            for (auto &&socket : m_sockets) socket->close(false);
         }
 
         // TODO does this generate callbacks?
@@ -455,7 +455,7 @@ void AcceptorSteam::OnSteamStatusChanged(SteamNetConnectionStatusChangedCallback
         }
 
         if (socket) {
-            socket->Close(false);
+            socket->close(false);
 
             auto &&ready_itr = this->get_socket(m_ready, data->m_hConn);
             if (ready_itr != m_ready.end())

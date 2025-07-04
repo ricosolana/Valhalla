@@ -1,4 +1,34 @@
 TODO
+    dump new game data packages
+        the current ones are VERY outdated
+
+        
+
+    start entering other classes
+        remove raw & references (replace with std::reference_wrapper / pointer / smarts as needed)
+
+    ORGANIZE!!!
+    
+    MOVE THINGS OUT OF THE HEADER!!!
+        notable offenders:
+            Peer.h
+            ZDO.h
+
+    script rules:
+        do not pass pointers, except for full lifetime types (mans)
+
+        pass shared ptr for managed types
+
+        pass copy-by-value for blahs...
+
+        readonly is 'fake'
+            applies to the immediate top-level table only (for returned usertypes)
+
+            better alternative would be a sol::property(getter)
+                with getter only
+
+
+
     script reload quirks
         reload on script save
 
@@ -22,5 +52,8 @@ TODO
     restructure / synchronize the entire load/re/unload
         functionality, to reduce code duplication
 
-    template-spec lua Data|Reader/Writer
-        the lambdas... (remove the lambdas)
+    create google test unit for scripts
+        silence the logger,
+        use custom logger
+        make loggers decentralized? instead of single global AVL_LOGGER
+        

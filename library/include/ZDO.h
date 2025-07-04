@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <quill/LogMacros.h>
 #include <string>
 #include <string_view>
@@ -19,13 +20,13 @@
 #include <intrusive_shared_ptr/intrusive_shared_ptr.h>
 #include <intrusive_shared_ptr/refcnt_ptr.h>
 
+#include "Avledet.h"
 #include "BitPack.h"
 #include "DataStream.h"
 #include "Hashes.h"
 #include "PrefabManager.h"
 #include "Quaternion.h"
 #include "Types.h"
-#include "ValhallaServer.h"
 #include "Vector.h"
 #include "VUtils.h"
 #include "VUtilsMathf.h"
@@ -39,58 +40,6 @@ class ZDO
     friend class IPrefabManager;
     friend class IAvledet;
 
-  public:
-    class Rev
-    {
-      private:
-        // DataRevision: 0, OwnerRevision: 1
-        //BitPack<std::uint32_t, 21, 32 - 21> m_pack;
-        BitPack<std::uint32_t, 23, 32 - 23> m_pack;
-
-        static constexpr auto DATA_REVISION_PACK_INDEX  = 0;
-        static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
-
-      public:
-        Rev() {}
-
-        Rev(std::uint32_t dataRev, std::uint16_t ownerRev)
-        {
-            SetDataRevision(dataRev);
-            SetOwnerRevision(ownerRev);
-        }
-
-        [[nodiscard]] std::uint32_t GetDataRevision() const
-        {
-            return m_pack.get<DATA_REVISION_PACK_INDEX>();
-        }
-
-        [[nodiscard]] std::uint16_t GetOwnerRevision() const
-        {
-            return m_pack.get<OWNER_REVISION_PACK_INDEX>();
-        }
-
-        void SetDataRevision(std::uint32_t dataRev)
-        {
-            m_pack.set<DATA_REVISION_PACK_INDEX>(dataRev);
-        }
-
-        void SetOwnerRevision(std::uint16_t ownerRev)
-        {
-            m_pack.set<OWNER_REVISION_PACK_INDEX>(ownerRev);
-        }
-
-        void ReviseData()
-        {
-            this->SetDataRevision(GetDataRevision() + 1);
-        }
-
-        void ReviseOwner()
-        {
-            this->SetOwnerRevision(GetOwnerRevision() + 1);
-        }
-    };
-
-  private:
     static constexpr unsigned int MACHINE_Persistent = 0;
     static constexpr unsigned int MACHINE_Distant    = 1;
     static constexpr unsigned int MACHINE_Type1      = 2;
@@ -110,12 +59,6 @@ class ZDO
     static constexpr unsigned int NETWORK_Type2      = 11;
     static constexpr unsigned int NETWORK_Rotation   = 12;
 
-
-    //using member_hash = std::uint64_t;
-    //using member_tuple = std::tuple<float, Vector3f, Quaternion, std::int32_t, std::int64_t, std::string, avledet::util::Bytes>;
-    //using member_variant = VUtils::Traits::tuple_to_variant<member_tuple>::type;
-    //using member_map = avledet::util::Map<member_hash, member_variant>;
-
     template<typename T>
     using is_member
             = VUtils::Traits::tuple_has_type<std::remove_cvref_t<T>,
@@ -125,6 +68,40 @@ class ZDO
     template<typename T>
     static constexpr bool is_member_v = is_member<T>::value;
 
+  public:
+    class Rev
+    {
+      private:
+        // DataRevision: 0, OwnerRevision: 1
+        BitPack<std::uint32_t, 23, 32 - 23> m_pack;
+
+        static constexpr auto DATA_REVISION_PACK_INDEX  = 0;
+        static constexpr auto OWNER_REVISION_PACK_INDEX = 1;
+
+      public:
+        Rev();
+        Rev(std::uint32_t dataRev, std::uint16_t ownerRev);
+
+        std::uint32_t get_data_rev() const;
+        std::uint16_t get_owner_rev() const;
+
+        void set_data_rev(std::uint32_t dataRev);
+        void set_owner_rev(std::uint16_t ownerRev);
+
+        void rev_data();
+        void rev_owner();
+    };
+
+  private:
+    /*
+    * 36 bytes total:
+    */
+    ZDOID m_id;                                         // 4 bytes
+    mutable Vector3f m_pos;                             // 12 bytes
+    mutable Rev m_rev;                                  // 4 bytes
+    mutable Vector3f m_rotation;                        // 12 bytes
+    mutable std::uint16_t m_refcnt {};                  // 2 bytes
+    mutable std::uint16_t m_prefab_index = Prefab::NONE;// 2 bytes
 
   public:
     struct ptr_traits
@@ -259,16 +236,9 @@ class ZDO
         return *itr;
     }
 
-  private:
-    smart intrusive_from_this()
-    {
-        return smart::ref(this);
-    }
-
-  public:
     static inline auto const nullopt = nullptr;
 
-
+  private:
     template<class T>
     using Tree = gtl::btree_map<avledet::util::Hash, T>;
 
@@ -285,14 +255,18 @@ class ZDO
     static inline VarMap<std::vector<char>> m_byteArrays;
 
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted>
-            ZDO_TARGETED_CONNECTORS;// Current linked connectors
+            PAIRED_CONNECTORS;// Current linked connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData>
-            ZDO_CONNECTORS;         // Saved typed-connectors
+            TYPED_CONNECTORS; // Saved typed-connectors
     static inline ankerl::unordered_dense::segmented_map<ZDOID, std::int64_t> ZDO_OWNERS;
+
+    /*
+        Internal global tree getters
+    */
 
     template<class T>
         requires is_member_v<T>
-    static VarMap<T> &_GetVars()
+    static VarMap<T> &_get_vars()
     {
         if constexpr (std::is_same_v<T, float>) {
             return m_floats;
@@ -313,234 +287,111 @@ class ZDO
     }
 
     template<class T>
-    static bool _set(Tree<T> &tree, avledet::util::Hash key, T data)
+    static Tree<T> *_find_var_tree(avledet::util::ZDOID const &uid)
     {
-        auto &&entry = tree.try_emplace(key);
-        if (entry.second || entry.first->second != data) {// if a modification took place
-            entry.first->second = std::move(data);
-            return true;
-        }
-
-        // else, nothing changed...
-        return false;
-    }
-
-    template<class T, bool create = true>
-    static std::pair<bool, Tree<T> *> _GetVarTree(avledet::util::ZDOID const &uid)
-    {
-        auto &&map = _GetVars<T>();
-        if constexpr (create) {
-            auto &&emp = map.try_emplace(uid);
-
-            return {emp.second, &emp.first->second};
+        auto &&map = _get_vars<T>();
+        auto &&itr = map.find(uid);
+        if (itr != map.end()) {
+            return &itr->second;
         } else {
-            auto &&itr = map.find(uid);
-            if (itr == map.end()) {
-                return {false, nullptr};
-            } else {
-                return {true, &itr->second};
-            }
+            return nullptr;
         }
     }
 
     template<class T>
-    static bool _set(avledet::util::ZDOID const &uid, avledet::util::Hash key, T data)
+    static std::pair<bool, std::reference_wrapper<Tree<T>>> _get_var_tree(avledet::util::ZDOID const &uid)
     {
-        auto &&[inserted, tree] = _GetVarTree<T>(uid);
-        assert(tree);
-        return _set(*tree, key, std::move(data)) || inserted;
+        auto &&map = _get_vars<T>();
+        auto &&emp = map.try_emplace(uid);
+        return {emp.second, std::ref(emp.first->second)};
     }
 
-    template<class T>
-    bool set(avledet::util::Hash key, T data)
-    {
-        if (_set(m_id, key, std::move(data))) {
-            Revise();
-            return true;
-        }
-        return false;
-    }
+    /*
+        Converters for outdated versions
+    */
 
-    template<class T>
-    bool set(std::string_view key, T data)
-    {
-        return set(avledet::util::get_stable_hash(key), std::move(data));
-    }
-
-    static inline auto strippable_nodes = ankerl::unordered_dense::set<avledet::util::Hash>(
-            {avledet::util::get_stable_hash("generated"), avledet::util::get_stable_hash("patrolSpawnPoint"),
-             avledet::util::get_stable_hash("autoDespawn"), avledet::util::get_stable_hash("targetHear"),
-             avledet::util::get_stable_hash("targetSee"), avledet::util::get_stable_hash("burnt0"),
-             avledet::util::get_stable_hash("burnt1"), avledet::util::get_stable_hash("burnt2"),
-             avledet::util::get_stable_hash("burnt3"), avledet::util::get_stable_hash("burnt4"),
-             avledet::util::get_stable_hash("burnt5"), avledet::util::get_stable_hash("burnt6"),
-             avledet::util::get_stable_hash("burnt7"), avledet::util::get_stable_hash("burnt8"),
-             avledet::util::get_stable_hash("burnt9"), avledet::util::get_stable_hash("burnt10"),
-             avledet::util::get_stable_hash("LookDir"), avledet::util::get_stable_hash("RideSpeed")});
-
-    static inline auto &&strippable_long_nodes = ankerl::unordered_dense::set<avledet::util::Hash>({
-            avledet::util::get_stable_hash("user_u"),
-            avledet::util::get_stable_hash("user_i"),
-            avledet::util::get_stable_hash("RodOwner_u"),
-            avledet::util::get_stable_hash("RodOwner_i"),
-            avledet::util::get_stable_hash("CatchID_u"),
-            avledet::util::get_stable_hash("CatchID_i"),
-    });
-
-    static bool can_strip(std::int32_t key)
-    {
-        return strippable_nodes.contains(key);
-    }
-
-    static bool can_strip(std::int32_t key, float data)
-    {
-        return strippable_nodes.contains(key)
-               || (key == avledet::util::get_stable_hash("scaleScalar")
-                   && avledet::util::CSU::equal(data, 1.f));
-    }
-
-    static bool can_strip(std::int32_t key, avledet::util::CSU::Quaternion const &data)
-    {
-        return data == avledet::util::CSU::Quaternion::IDENTITY || can_strip(key);
-    }
-
-    static bool can_strip(std::int32_t key, std::int32_t data)
-    {
-        return data == 0 || can_strip(key);
-    }
-
-    static bool can_strip(std::int32_t key, std::int64_t data)
-    {
-        return data == 0 || can_strip(key) || strippable_long_nodes.contains(key);
-    }
-
-    static bool can_strip(std::int32_t key, std::string const &data)
-    {
-        return data.empty() || can_strip(key);
-    }
-
-    static bool can_strip(std::int32_t key, std::vector<char> const &data)
-    {
-        return data.empty() || can_strip(key);
-    }
-
-    // (Keep as a member function, to access m_id as needed in future)
-    template<class T>
-        requires(!std::is_same_v<T, avledet::util::CSU::Vector3f>)
-    bool try_convert(std::int32_t key, T const &data)
-    {
-        return can_strip(key, data);
-    }
-
-    // (Keep as a member function, to access m_id as needed in future)
-    bool try_convert(std::int32_t key, avledet::util::CSU::Vector3f data)
-    {
-        if (can_strip(key)) {
-            return true;
-        }
-        if (key == avledet::util::get_stable_hash("SpawnPoint")) {
-            //ZDOExtraData.Set(zdoid, ZDOVars.s_spawnPoint, data);
-            _set(m_id, avledet::util::get_stable_hash("spawnpoint"), data);
-            return true;
-        }
-
-        // if x == y == z
-        if (avledet::util::CSU::equal(data.x, data.y) && avledet::util::CSU::equal(data.y, data.z)) {
-            if (key == avledet::util::get_stable_hash("scale")) {
-                // 1 is unit scale
-                if (avledet::util::CSU::equal(data.x, 1.f)) {
-                    return true;
-                }
-                _set(m_id, avledet::util::get_stable_hash("scale"), data.x);
-                //ZDOExtraData.Set(zid, ZDOVars.s_scaleScalarHash, data.x);
-                return true;
-            }
-            // 0 is default ZDO when no mapping exists
-            else if (avledet::util::CSU::equal(data.x, 0.f)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static std::uint32_t read_num_items(avledet::util::Reader &reader, int version)
-    {
-        if (version < 33) {
-            return (std::uint32_t) reader.read<std::uint8_t>();
-        }
-        auto num = (std::uint32_t) reader.read<std::uint8_t>();
-        if ((num & 128) != 0) {
-            num = ((num & 127) << 8) | (std::uint32_t) reader.read<std::uint8_t>();
-        }
-        return num;
-    };
-
-    template<class T>
-    void load_vars(avledet::util::Reader &reader, int version, VarMap<T> &map)
-    {
-        // TODO
-        //  these lambdas should be used as ZDO member functions instead (due to some other uses...)
-
-
-        auto num3     = read_num_items(reader, version);
-        auto &&insert = map.try_emplace(m_id);
-        //auto&& pair = map.insert({m_id, std::vector<std::pair<int, T>>()});
-        // https://stackoverflow.com/a/27553949/9044814
-        //auto&& pair = map.try_emplace(std::piecewise_construct,
-        //    std::forward_as_tuple(uid),
-        //    std::forward_as_tuple());
-        auto &&tree = insert.first->second;
-        //tree.reserve(num3);
-        for (decltype(num3) i = 0; i < num3; i++) {
-            int num4  = reader.read<avledet::util::Hash>();
-            auto num5 = reader.read<T>();
-            if (!try_convert(num4, num5)) {
-                //tree.push_back({ num4, num5 });
-                tree[num4] = num5;
-            }
-        }
-
-        if (tree.empty()) {// remove empty vars to save space
-            map.erase(insert.first);
-
-            // !!! WARNING !!! do NOT access 'insert'!
-        }
-    }
-
-
-  private:
+    // TODO rename this to '_erase'
     template<typename T>
-    [[maybe_unused]] bool _Set(avledet::util::Hash key, T value)
+        requires is_member_v<T>
+    static bool _extract(VarMap<T> &map, ZDOID const &uid, avledet::util::Hash key, T &out)
     {
-        //return _Set(key, std::move(value), ZDO_MEMBERS[GetID()]);
-        //return ZDOManager()->GetMember()
-        return _set(m_id, key, std::move(value));
-    }
-
-    static void WriteNumItems(DataWriter &writer, int numItems)
-    {
-        if (numItems < 128) {
-            writer.write((std::uint8_t) numItems);
-            return;
+        auto &&find = map.find(uid);
+        if (find != map.end()) {
+            auto &&tree  = find->second;
+            auto &&entry = tree.find(key);
+            if (entry != tree.end()) {
+                out = std::move(entry->second);
+                tree.erase(entry);
+                return true;
+            }
         }
-        writer.write((std::uint8_t)((numItems >> 8) | 128));
-        writer.write((std::uint8_t) numItems);
+        return false;
     }
 
     template<typename T>
         requires is_member_v<T>
-    decltype(auto) _TryWriteType(DataWriter &writer) const
-    {//}, Tree<float>& tree) {
-        auto &&[_, tree_ptr] = _GetVarTree<T, false>(m_id);
+    static bool _extract(VarMap<T> &map, ZDOID const &uid, std::string_view key, T &out)
+    {
+        return _extract(map, uid, avledet::util::get_stable_hash(key), out);
+    }
+
+    static bool _can_strip(avledet::util::Hash key);
+    static bool _can_strip(avledet::util::Hash key, float data);
+    static bool _can_strip(avledet::util::Hash key, avledet::util::CSU::Quaternion const &data);
+    static bool _can_strip(avledet::util::Hash key, std::int32_t data);
+    static bool _can_strip(avledet::util::Hash key, std::int64_t data);
+    static bool _can_strip(avledet::util::Hash key, std::string const &data);
+    static bool _can_strip(avledet::util::Hash key, std::vector<char> const &data);
+
+    // (Keep as a member function, to access m_id as needed in future)
+    template<class T>
+        requires(!std::is_same_v<T, avledet::util::CSU::Vector3f>)
+    bool _try_convert(avledet::util::Hash key, T const &data)
+    {
+        return _can_strip(key, data);
+    }
+
+    // (Keep as a member function, to access m_id as needed in future)
+    bool _try_convert(avledet::util::Hash key, avledet::util::CSU::Vector3f data);
+
+    static std::uint32_t _read_num_items(avledet::util::Reader &reader, int version);
+
+    static void _write_num_items(DataWriter &writer, int numItems);
+
+    template<class T>
+    void _load_vars(avledet::util::Reader &reader, int version, VarMap<T> &map)
+    {
+        auto num3     = _read_num_items(reader, version);
+        auto &&insert = map.try_emplace(m_id);
+        auto &&tree   = insert.first->second;
+        for (decltype(num3) i = 0; i < num3; i++) {
+            int num4  = reader.read<avledet::util::Hash>();
+            auto num5 = reader.read<T>();
+            if (!_try_convert(num4, num5)) {
+                tree[num4] = num5;
+            }
+        }
+
+        if (tree.empty()) {
+            map.erase(insert.first);
+
+            // !!!WARNING!!! do NOT access 'insert' or 'tree'!
+        }
+    }
+
+    template<typename T>
+        requires is_member_v<T>
+    decltype(auto) _try_write_type(DataWriter &writer) const
+    {
+        auto &&tree_ptr = _find_var_tree<T>(m_id);
         if (tree_ptr) {
             auto &&tree      = *tree_ptr;
             auto const count = tree.size();
             assert(count);// tree exists; assume there are *some* items
-            WriteNumItems(writer, count);
+            _write_num_items(writer, count);
             for (auto &&pair : tree) {
                 writer.write(pair.first);
                 writer.write(pair.second);
-                //(std::tuple<> { pair.first, pair.second });
             }
             return true;
         }
@@ -564,134 +415,46 @@ class ZDO
         }
     }*/
 
-
-    // TODO rename _Revise() ?
-    void Revise()
-    {
-        this->m_rev.ReviseData();
-    }
-
-    void _SetPrefabHash(avledet::util::Hash hash)
-    {
-        m_prefab_index = PrefabManager()->get_prefab_index(hash);
-        //this->m_prefabHash = hash;
-    }
-
-    // Set the owner of the ZDO without revising
-    void _SetOwner(avledet::util::UserID owner)
-    {
-        ZDO_OWNERS[GetID()] = owner;
-    }
-
-    void _SetPosition(Vector3f pos)
-    {
-        this->m_pos = pos;
-    }
-
-    void _SetRotation(Vector3f rot)
-    {
-        this->m_rotation = rot;
-    }
-
-    void _SetRotation(Quaternion rot)
-    {
-        this->_SetRotation(rot.euler_angles());
-    }
-
-
   private:
     /*
-    * 36 bytes total:
+        Internal data setters
     */
-    ZDOID m_id;                                         // 4 bytes
-    mutable Vector3f m_pos;                             // 12 bytes
-    mutable Rev m_rev;                                  // 4 bytes
-    mutable Vector3f m_rotation;                        // 12 bytes
-    mutable std::uint16_t m_refcnt {};                  // 2 bytes
-    mutable std::uint16_t m_prefab_index = Prefab::NONE;// 2 bytes
 
-  private:
-    ZDO(ZDOID id) :
-        m_id(id)
+    template<class T>
+    static bool _set(Tree<T> &tree, avledet::util::Hash key, T data)
     {
-    }
-
-  public:
-    template<class... Args>
-    static smart make_shared(Args &&...args)
-    {
-        //return smart::noref(new ZDO(std::forward<Args>(args)...));
-        //https://github.com/gershnik/intrusive_shared_ptr?tab=readme-ov-file#using-provided-base-classes
-        // "ATTACH" uses "noref", which "CLAIMS" to create with refcnt of '1'
-        //  this is UNTRUE
-        //  directly via the code, noref does NOTHING, except for encapsulate the raw pointer
-        //  which results in the pointer leaking memory when the last wrapper is destroyed (this)
-        return smart::ref(new ZDO(std::forward<Args>(args)...));
-    }
-
-
-#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
-    // Load ZDO from disk
-    void Load31Pre(DataReader &reader, std::int32_t version);
-#endif//AVL_LEGACY_WORLD_LOADING
-
-    // Reads from a buffer using the new efficient format (version >= 31)
-    //  version=0: Read according to the network deserialize format
-    //  version>0: Read according to the file load format
-    void Unpack(DataReader &reader, std::int32_t version);
-
-    // Writes to a buffer using the new efficient format (version >= 31)
-    //  If 'network' is true, write according to the network serialize format
-    //  Otherwise write according to the file save format
-    void Pack(DataWriter &writer, bool network) const;
-
-    // TODO rename this to Remove (this has nearly the same functionality)
-    // TODO add an extract that returns an optional (eliminate the T& out)
-    // Erases and returns the value
-    template<typename T>
-    //requires is_member_v<T>
-    static bool _Extract(VarMap<T> &map, ZDOID const &uid, avledet::util::Hash key, T &out)
-    {
-        auto &&find = map.find(uid);
-        if (find != map.end()) {
-            auto &&tree  = find->second;
-            auto &&entry = tree.find(key);
-            if (entry != tree.end()) {
-                out = std::move(entry->second);
-                tree.erase(entry);
-                return true;
-            }
+        auto &&entry = tree.try_emplace(key);
+        if (entry.second || entry.first->second != data) {// if a modification took place
+            entry.first->second = std::move(data);
+            return true;
         }
+
+        // else, nothing changed...
         return false;
     }
 
-    template<typename T>
-    //requires is_member_v<T>
-    static bool _Extract(VarMap<T> &map, ZDOID const &uid, std::string_view key, T &out)
+    template<class T>
+    static bool _set(avledet::util::ZDOID const &uid, avledet::util::Hash key, T data)
     {
-        return _Extract(map, uid, avledet::util::get_stable_hash(key), out);
+        auto &&[inserted, tree] = _get_var_tree<T>(uid);
+        return _set(tree.get(), key, std::move(data)) || inserted;
     }
 
     template<typename T>
         requires is_member_v<T>
-    bool Extract(avledet::util::Hash key, T &out)
+    [[maybe_unused]] bool _set(avledet::util::Hash key, T value)
     {
-        return _Extract(_GetVars<T>(), m_id, key, out);
+        return _set(m_id, key, std::move(value));
     }
 
-    template<typename T>
-        requires is_member_v<T>
-    bool Extract(std::string_view key, T &out)
-    {
-        return _Extract(_GetVars<T>(), m_id, key, out);
-    }
+    bool _set_connection(ZDOConnector::Type type, ZDOID zdoid);
 
     // Get a member by hash
     //  Returns null if absent
     //  Throws on type mismatch
     template<typename T>
-    //requires is_member_v<T>
-    [[nodiscard]] static T const *_Get(VarMap<T> const &map, ZDOID const &uid, avledet::util::Hash key)
+        requires is_member_v<T>
+    [[nodiscard]] static T const *_find(VarMap<T> const &map, ZDOID const &uid, avledet::util::Hash key)
     {
         auto &&find = map.find(uid);
         if (find != map.end()) {
@@ -708,288 +471,132 @@ class ZDO
     //  Returns null if absent
     //  Throws on type mismatch
     template<typename T>
-    //requires is_member_v<T>
-    [[nodiscard]] static T const *_Get(VarMap<T> const &map, ZDOID const &uid, std::string_view key)
+        requires is_member_v<T>
+    [[nodiscard]] static T const *_find(VarMap<T> const &map, ZDOID const &uid, std::string_view key)
     {
-        return _Get(map, uid, avledet::util::get_stable_hash(key));
+        return _find(map, uid, avledet::util::get_stable_hash(key));
     }
 
-    // Get a member by string
+    /*
+        Internal member setters (unrevised)
+    */
+
+    void _revise();
+
+    void _set_prefab_hash(avledet::util::Hash hash);
+
+    void _set_owner(avledet::util::UserID owner);
+
+    void _set_position(Vector3f const &pos);
+
+    void _set_rotation(Vector3f const &rot);
+
+    void _set_rotation(Quaternion const &rot);
+
+  private:
+    ZDO(ZDOID id) :
+        m_id(id)
+    {
+    }
+
+    // similar to shared_from_this()
+    smart smart_from_this()
+    {
+        return smart::ref(this);
+    }
+
+    // similar to make_shared()
+    template<class... Args>
+    static smart make_smart(Args &&...args)
+    {
+        //return smart::noref(new ZDO(std::forward<Args>(args)...));
+        //https://github.com/gershnik/intrusive_shared_ptr?tab=readme-ov-file#using-provided-base-classes
+        // "ATTACH" uses "noref", which "CLAIMS" to create with refcnt of '1'
+        //  this is UNTRUE
+        //  directly via the code, noref does NOTHING, except for encapsulate the raw pointer
+        //  which results in the pointer leaking memory when the last wrapper is destroyed (this)
+        return smart::ref(new ZDO(std::forward<Args>(args)...));
+    }
+
+  public:
+#if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
+    // Load ZDO from disk
+    void Load31Pre(DataReader &reader, std::int32_t version);
+#endif//AVL_LEGACY_WORLD_LOADING
+
+    // Reads from a buffer using the new efficient format (version >= 31)
+    //  version=0: Read according to the network deserialize format
+    //  version>0: Read according to the file load format
+    void unpack(DataReader &reader, std::int32_t version);
+
+    // Writes to a buffer using the new efficient format (version >= 31)
+    //  If 'network' is true, write according to the network serialize format
+    //  Otherwise write according to the file save format
+    void pack(DataWriter &writer, bool network) const;
+
+    // Get a member by hash
     //  Returns null if absent
     //  Throws on type mismatch
+    //template<typename T>
+    //    requires is_member_v<T>
+    //[[nodiscard]] static decltype(auto) _find_vars(VarMap<T> const &map, ZDOID const &uid, avledet::util::Hash key)
+    //{
+    //    auto &&find = map.find(uid);
+    //    if (find != map.end()) {
+    //        auto &&tree  = find->second;
+    //        auto &&entry = tree.find(key);
+    //        if (entry != tree.end()) {
+    //            return entry;
+    //        }
+    //    }
+    //    return std::make_tuple(nullptr,;
+    //}
+
+    //VarMap<std::string>::
+
+    /*
+        Data removers
+    */
+
+    // Remove type from vars
+    // (not safe while looping members)
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] T const *Get(avledet::util::Hash key) const
+    bool extract(avledet::util::Hash key, T &out)
     {
-        return _Get<T>(_GetVars<T>(), m_id, key);
+        return _extract(_get_vars<T>(), m_id, key, out);
     }
 
-    // Get a member by string
-    //  Returns null if absent
-    //  Throws on type mismatch
+    // Remove type from vars
+    // (not safe while looping members)
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] T const *Get(std::string_view key) const
+    bool extract(std::string_view key, T &out)
     {
-        return Get<T>(avledet::util::get_stable_hash(key));
+        return _extract(_get_vars<T>(), m_id, key, out);
     }
 
-    // Trivial hash getters
+    // Remove type from vars
+    // (not safe while looping members)
     template<typename T>
         requires is_member_v<T>
-    [[nodiscard]] T const &Get(avledet::util::Hash key, T const &def) const
+    std::optional<T> extract(std::string_view key)
     {
-        auto &&get = Get<T>(key);
-        return get ? *get : def;
+        T out;
+        if (extract(key, out)) {
+            return out;
+        }
+        return std::nullopt;
     }
 
-    // Hash-key getters
-    template<typename T>
-        requires is_member_v<T>
-    [[nodiscard]] T const &Get(std::string_view key, T const &def) const
-    {
-        return Get<T>(avledet::util::get_stable_hash(key), def);
-    }
-
-    [[nodiscard]] float GetFloat(avledet::util::Hash key, float value) const
-    {
-        return Get<float>(key, value);
-    }
-
-    [[nodiscard]] std::int32_t GetInt(avledet::util::Hash key, std::int32_t value) const
-    {
-        return Get<std::int32_t>(key, value);
-    }
-
-    [[nodiscard]] std::int64_t GetLong(avledet::util::Hash key, std::int64_t value) const
-    {
-        return Get<std::int64_t>(key, value);
-    }
-
-    [[nodiscard]] Int64Wrapper GetLongWrapper(avledet::util::Hash key, Int64Wrapper value) const
-    {
-        return Get<std::int64_t>(key, value);
-    }
-
-    [[nodiscard]] Quaternion GetQuaternion(avledet::util::Hash key, Quaternion value) const
-    {
-        return Get<Quaternion>(key, value);
-    }
-
-    [[nodiscard]] Vector3f GetVector3(avledet::util::Hash key, Vector3f value) const
-    {
-        return Get<Vector3f>(key, value);
-    }
-
-    [[nodiscard]] std::string_view GetString(avledet::util::Hash key, std::string_view value) const
-    {
-        auto &&val = Get<std::string>(key);
-        return val ? std::string_view(*val) : value;
-    }
-
-    [[nodiscard]] avledet::util::Bytes const *GetBytes(avledet::util::Hash key) const
-    {
-        return Get<avledet::util::Bytes>(key);
-    }
-
-    [[nodiscard]] bool GetBool(avledet::util::Hash key, bool value) const
-    {
-        return GetInt(key, value ? 1 : 0);
-    }
-
-    [[nodiscard]] ZDOID GetZDOID(std::pair<avledet::util::Hash, avledet::util::Hash> key, ZDOID value) const
-    {
-        return ZDOID(GetLong(key.first, value.get_user_id()), GetLong(key.second, value.get_id()));
-    }
-
-    // Hash-key default getters
-    [[nodiscard]] float GetFloat(avledet::util::Hash key) const
-    {
-        return Get<float>(key, {});
-    }
-
-    [[nodiscard]] std::int32_t GetInt(avledet::util::Hash key) const
-    {
-        return Get<std::int32_t>(key, {});
-    }
-
-    [[nodiscard]] std::int64_t GetLong(avledet::util::Hash key) const
-    {
-        return Get<std::int64_t>(key, {});
-    }
-
-    [[nodiscard]] Int64Wrapper GetLongWrapper(avledet::util::Hash key) const
-    {
-        return Get<std::int64_t>(key, {});
-    }
-
-    [[nodiscard]] Quaternion GetQuaternion(avledet::util::Hash key) const
-    {
-        return Get<Quaternion>(key, {});
-    }
-
-    [[nodiscard]] Vector3f GetVector3(avledet::util::Hash key) const
-    {
-        return Get<Vector3f>(key, {});
-    }
-
-    [[nodiscard]] std::string_view GetString(avledet::util::Hash key) const
-    {
-        return Get<std::string>(key, {});
-    }
-
-    [[nodiscard]] bool GetBool(avledet::util::Hash key) const
-    {
-        return Get<std::int32_t>(key);
-    }
-
-    [[nodiscard]] ZDOID GetZDOID(std::pair<avledet::util::Hash, avledet::util::Hash> key) const
-    {
-        return GetZDOID(key, {});
-    }
-
-    // String-key getters
-    [[nodiscard]] float GetFloat(std::string_view key, float value) const
-    {
-        return Get<float>(key, value);
-    }
-
-    [[nodiscard]] std::int32_t GetInt(std::string_view key, std::int32_t value) const
-    {
-        return Get<std::int32_t>(key, value);
-    }
-
-    [[nodiscard]] std::int64_t GetLong(std::string_view key, std::int64_t value) const
-    {
-        return Get<std::int64_t>(key, value);
-    }
-
-    [[nodiscard]] Int64Wrapper GetLongWrapper(std::string_view key, Int64Wrapper value) const
-    {
-        return Get<std::int64_t>(key, value);
-    }
-
-    [[nodiscard]] Quaternion GetQuaternion(std::string_view key, Quaternion value) const
-    {
-        return Get<Quaternion>(key, value);
-    }
-
-    [[nodiscard]] Vector3f GetVector3(std::string_view key, Vector3f value) const
-    {
-        return Get<Vector3f>(key, value);
-    }
-
-    [[nodiscard]] std::string_view GetString(std::string_view key, std::string_view value) const
-    {
-        auto &&val = Get<std::string>(key);
-        return val ? std::string_view(*val) : value;
-    }
-
-    [[nodiscard]] avledet::util::Bytes const *GetBytes(std::string_view key) const
-    {
-        return Get<avledet::util::Bytes>(key);
-    }
-
-    [[nodiscard]] bool GetBool(std::string_view key, bool value) const
-    {
-        return Get<std::int32_t>(key, value);
-    }
-
-    [[nodiscard]] ZDOID GetZDOID(std::string_view key, ZDOID value) const
-    {
-        return GetZDOID(avledet::util::to_hash_pair(key), value);
-    }
-
-    // String-key default getters
-    [[nodiscard]] float GetFloat(std::string_view key) const
-    {
-        return Get<float>(key, {});
-    }
-
-    [[nodiscard]] std::int32_t GetInt(std::string_view key) const
-    {
-        return Get<std::int32_t>(key, {});
-    }
-
-    [[nodiscard]] std::int64_t GetLong(std::string_view key) const
-    {
-        return Get<std::int64_t>(key, {});
-    }
-
-    [[nodiscard]] Int64Wrapper GetLongWrapper(std::string_view key) const
-    {
-        return Get<std::int64_t>(key, {});
-    }
-
-    [[nodiscard]] Quaternion GetQuaternion(std::string_view key) const
-    {
-        return Get<Quaternion>(key, {});
-    }
-
-    [[nodiscard]] Vector3f GetVector3(std::string_view key) const
-    {
-        return Get<Vector3f>(key, {});
-    }
-
-    [[nodiscard]] std::string_view GetString(std::string_view key) const
-    {
-        return Get<std::string>(key, {});
-    }
-
-    [[nodiscard]] bool GetBool(std::string_view key) const
-    {
-        return Get<std::int32_t>(key, {});
-    }
-
-    [[nodiscard]] ZDOID GetZDOID(std::string_view key) const
-    {
-        return GetZDOID(key, {});
-    }
-
-    // Trivial hash setters
-    template<typename T>
-        requires is_member_v<T>
-    void Set(avledet::util::Hash key, T value)
-    {
-        if (_Set(key, std::move(value)))
-            Revise();
-    }
-
-    // Special hash setters
-    void Set(avledet::util::Hash key, bool value)
-    {
-        Set(key, value ? (std::int32_t) 1 : 0);
-    }
-
-    void Set(std::pair<avledet::util::Hash, avledet::util::Hash> const &key, ZDOID value)
-    {
-        Set(key.first, value.get_user_id());
-        Set(key.second, (std::int64_t) value.get_id());
-    }
-
-    template<typename T>
-        requires is_member_v<T>
-    void Set(std::string_view key, T value)
-    {
-        Set(avledet::util::get_stable_hash(key), std::move(value));
-    }
-
-    void Set(std::string_view key, bool value)
-    {
-        Set(avledet::util::get_stable_hash(key), value ? (std::int32_t) 1 : 0);
-    }
-
-    void Set(std::string_view key, ZDOID value)
-    {
-        Set(avledet::util::to_hash_pair(key), value);
-    }
-
-    bool Extract(std::pair<avledet::util::Hash, avledet::util::Hash> key, ZDOID &out)
+    // Remove type from vars (ZDOID overload)
+    // (not safe while looping members)
+    bool extract(std::pair<avledet::util::Hash, avledet::util::Hash> key, ZDOID &out)
     {
         std::int64_t userID {};
-        if (Extract(key.first, userID)) {
+        if (this->extract(key.first, userID)) {
             std::int64_t id {};
-            if (Extract(key.second, id)) {
+            if (extract(key.second, id)) {
                 out = ZDOID(userID, id);
                 return true;
             }
@@ -997,102 +604,391 @@ class ZDO
         return false;
     }
 
-    bool Extract(std::string_view key, ZDOID &out)
+    // Remove type from vars (ZDOID overload)
+    // (not safe while looping members)
+    bool extract(std::string_view key, ZDOID &out)
     {
-        return Extract(avledet::util::to_hash_pair(key), out);
+        return extract(avledet::util::to_hash_pair(key), out);
     }
 
-    // Internal use
-    //  Raw sets the connector with no revision
-    bool _SetConnection(ZDOConnector::Type type, ZDOID zdoid);
-
-    void SetConnection(ZDOConnector::Type type, ZDOID zdoid);
-
-    ZDOID GetConnectionZDOID(ZDOConnector::Type type) const;
-
-    // TODO define
-    //ZDOConnectorTargeted get_connection() const;
-
-    // my special overload
-    //ZDOID GetConnectionZDOID() const;
-
-    ZDOID GetID() const;
-
-    Vector3f GetPosition() const;
-
-    //void SetDataRevision(std::uint32_t dataRev) {
-    //    m_data.get().m_rev.SetDataRevision(dataRev);
-    //}
-    //
-    //void SetOwnerRevision(std::uint16_t ownerRev) {
-    //    m_data.get().m_rev.SetOwnerRevision(ownerRev);
-    //}
-
-
-    Rev &GetRevision();
-
-    // Set the position of the ZDO
-    //  - Use this method 99.9% of the time when updating the ZDO's position
-    //  - This will change and invalidate sectors if the new position is in a different zone than this ZDOs position
-    void SetPosition(Vector3f pos);
-
-    avledet::util::ZoneID GetZone() const;
-
-    Quaternion GetRotation() const;
-
-    void SetRotation(Quaternion rot);
-
-    Prefab const &GetPrefab() const;
-
-    avledet::util::Hash GetPrefabHash() const;
-
-    void SetLocalScale(Vector3f scale, bool allowIdentity);
-
-    // The owner of the ZDO
-    avledet::util::UserID Owner() const;
-
-    // Whether the ZDO is owned by a specific owner
-    bool IsOwner(avledet::util::UserID owner) const;
-
-    // Returns whether this server is the owner of the ZDO
-    bool IsLocal() const;
-
-    // Whether the ZDO has an owner
-    bool HasOwner() const;
-
-    // Claim personal ownership over the ZDO
-    bool SetLocal();
-
-    // Clears the owner of this ZDO
-    void Disown();
-
-    // Set the owner of the ZDO
-    bool SetOwner(avledet::util::UserID owner);
-
-    std::uint16_t GetOwnerRevision() const;
-
-    std::uint32_t GetDataRevision() const;
-
-    bool IsPersistent() const;
-
-    bool IsDistant() const;
-
-    avledet::util::ObjectType GetType() const;
-
-    static bool is_sso(std::string const &str)
+    std::optional<ZDOID> extract(std::pair<avledet::util::Hash, avledet::util::Hash> key)
     {
-        void const *strAddr  = static_cast<void const *>(&str);
-        void const *dataAddr = static_cast<void const *>(str.data());
-
-        bool addressCheck = std::fabs(reinterpret_cast<std::uintptr_t>(strAddr)
-                                      - reinterpret_cast<std::uintptr_t>(dataAddr))
-                            < sizeof(str);
-
-        return addressCheck;
+        ZDOID out;
+        if (extract(key, out)) {
+            return out;
+        }
+        return std::nullopt;
     }
+
+    // Remove type from vars (ZDOID overload)
+    // (not safe while looping members)
+    std::optional<ZDOID> extract(std::string_view key)
+    {
+        return extract(avledet::util::to_hash_pair(key));
+    }
+
+    // Get a member by string
+    //  Returns null if absent
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] T const *find(avledet::util::Hash key) const
+    {
+        return _find(_get_vars<T>(), m_id, key);
+    }
+
+    // Get a member by string
+    //  Returns null if absent
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] T const *find(std::string_view key) const
+    {
+        return find<T>(avledet::util::get_stable_hash(key));
+    }
+
+    // Trivial hash getters
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] T const &get(avledet::util::Hash key, T const &def) const
+    {
+        auto &&get = find<T>(key);
+        return get ? *get : def;
+    }
+
+    /*******************
+        Hash getters
+    *******************/
+
+    template<typename T>
+        requires is_member_v<T>
+    [[nodiscard]] T const &get(std::string_view key, T const &def) const
+    {
+        return get<T>(avledet::util::get_stable_hash(key), def);
+    }
+
+    [[nodiscard]] float get_float(avledet::util::Hash key, float value) const
+    {
+        return get<float>(key, value);
+    }
+
+    [[nodiscard]] std::int32_t get_int(avledet::util::Hash key, std::int32_t value) const
+    {
+        return get<std::int32_t>(key, value);
+    }
+
+    [[nodiscard]] std::int64_t get_long(avledet::util::Hash key, std::int64_t value) const
+    {
+        return get<std::int64_t>(key, value);
+    }
+
+    [[nodiscard]] Int64Wrapper get_long_wrapper(avledet::util::Hash key, Int64Wrapper value) const
+    {
+        return get<std::int64_t>(key, value);
+    }
+
+    [[nodiscard]] Quaternion get_quat(avledet::util::Hash key, Quaternion value) const
+    {
+        return get<Quaternion>(key, value);
+    }
+
+    [[nodiscard]] Vector3f get_vec3(avledet::util::Hash key, Vector3f value) const
+    {
+        return get<Vector3f>(key, value);
+    }
+
+    [[nodiscard]] std::string_view get_string(avledet::util::Hash key, std::string_view value) const
+    {
+        auto &&val = find<std::string>(key);
+        return val ? std::string_view(*val) : value;
+    }
+
+    // TODO return view
+    [[nodiscard]] avledet::util::Bytes const *find_bytes(avledet::util::Hash key) const
+    {
+        return find<avledet::util::Bytes>(key);
+    }
+
+    [[nodiscard]] bool get_bool(avledet::util::Hash key, bool value) const
+    {
+        return get_int(key, value ? 1 : 0);
+    }
+
+    [[nodiscard]] ZDOID get_zdoid(std::pair<avledet::util::Hash, avledet::util::Hash> key, ZDOID value) const
+    {
+        return ZDOID(get_long(key.first, value.get_user_id()), get_long(key.second, value.get_id()));
+    }
+
+    /*******************
+    Hash getters (default)
+    *******************/
+
+    [[nodiscard]] float get_float(avledet::util::Hash key) const
+    {
+        return get<float>(key, {});
+    }
+
+    [[nodiscard]] std::int32_t get_int(avledet::util::Hash key) const
+    {
+        return get<std::int32_t>(key, {});
+    }
+
+    [[nodiscard]] std::int64_t get_long(avledet::util::Hash key) const
+    {
+        return get<std::int64_t>(key, {});
+    }
+
+    [[nodiscard]] Int64Wrapper get_long_wrapper(avledet::util::Hash key) const
+    {
+        return get<std::int64_t>(key, {});
+    }
+
+    [[nodiscard]] Quaternion get_quat(avledet::util::Hash key) const
+    {
+        return get<Quaternion>(key, {});
+    }
+
+    [[nodiscard]] Vector3f get_vec3(avledet::util::Hash key) const
+    {
+        return get<Vector3f>(key, {});
+    }
+
+    [[nodiscard]] std::string_view get_string(avledet::util::Hash key) const
+    {
+        return get<std::string>(key, {});
+    }
+
+    [[nodiscard]] bool get_bool(avledet::util::Hash key) const
+    {
+        return get<std::int32_t>(key, {});
+    }
+
+    [[nodiscard]] ZDOID get_zdoid(std::pair<avledet::util::Hash, avledet::util::Hash> key) const
+    {
+        return get_zdoid(key, {});
+    }
+
+    /*******************
+     String-key getters
+    *******************/
+
+    [[nodiscard]] float get_float(std::string_view key, float value) const
+    {
+        return get<float>(key, value);
+    }
+
+    [[nodiscard]] std::int32_t get_int(std::string_view key, std::int32_t value) const
+    {
+        return get<std::int32_t>(key, value);
+    }
+
+    [[nodiscard]] std::int64_t get_long(std::string_view key, std::int64_t value) const
+    {
+        return get<std::int64_t>(key, value);
+    }
+
+    [[nodiscard]] Int64Wrapper get_long_wrapper(std::string_view key, Int64Wrapper value) const
+    {
+        return get<std::int64_t>(key, value);
+    }
+
+    [[nodiscard]] Quaternion get_quat(std::string_view key, Quaternion value) const
+    {
+        return get<Quaternion>(key, value);
+    }
+
+    [[nodiscard]] Vector3f get_vec3(std::string_view key, Vector3f value) const
+    {
+        return get<Vector3f>(key, value);
+    }
+
+    [[nodiscard]] std::string_view get_string(std::string_view key, std::string_view value) const
+    {
+        auto &&val = find<std::string>(key);
+        return val ? std::string_view(*val) : value;
+    }
+
+    [[nodiscard]] avledet::util::Bytes const *find_bytes(std::string_view key) const
+    {
+        return find<avledet::util::Bytes>(key);
+    }
+
+    [[nodiscard]] bool get_bool(std::string_view key, bool value) const
+    {
+        return get<std::int32_t>(key, value);
+    }
+
+    [[nodiscard]] ZDOID get_zdoid(std::string_view key, ZDOID value) const
+    {
+        return get_zdoid(avledet::util::to_hash_pair(key), value);
+    }
+
+    /*******************
+     String getters (default)
+    *******************/
+
+    [[nodiscard]] float get_float(std::string_view key) const
+    {
+        return get<float>(key, {});
+    }
+
+    [[nodiscard]] std::int32_t get_int(std::string_view key) const
+    {
+        return get<std::int32_t>(key, {});
+    }
+
+    [[nodiscard]] std::int64_t get_long(std::string_view key) const
+    {
+        return get<std::int64_t>(key, {});
+    }
+
+    [[nodiscard]] Int64Wrapper get_long_wrapper(std::string_view key) const
+    {
+        return get<std::int64_t>(key, {});
+    }
+
+    [[nodiscard]] Quaternion get_quat(std::string_view key) const
+    {
+        return get<Quaternion>(key, {});
+    }
+
+    [[nodiscard]] Vector3f get_vec3(std::string_view key) const
+    {
+        return get<Vector3f>(key, {});
+    }
+
+    [[nodiscard]] std::string_view get_string(std::string_view key) const
+    {
+        return get<std::string>(key, {});
+    }
+
+    [[nodiscard]] bool get_bool(std::string_view key) const
+    {
+        return get<std::int32_t>(key, {});
+    }
+
+    [[nodiscard]] ZDOID get_zdoid(std::string_view key) const
+    {
+        return get_zdoid(key, {});
+    }
+
+    /*
+        Hash setters
+    */
 
     template<class T>
-    static std::size_t GetTreeAlloc(Tree<T> &tree, bool full)
+        requires is_member_v<T>
+    bool set(avledet::util::Hash key, T data)
+    {
+        if (_set(key, std::move(data))) {
+            _revise();
+            return true;
+        }
+        return false;
+    }
+
+    // Special hash setters
+    bool set(avledet::util::Hash key, bool value)
+    {
+        return set(key, value ? (std::int32_t) 1 : 0);
+    }
+
+    bool set(std::pair<avledet::util::Hash, avledet::util::Hash> const &key, ZDOID value)
+    {
+        bool a = set(key.first, value.get_user_id());
+        bool b = set(key.second, (std::int64_t) value.get_id());
+        return a || b;
+    }
+
+    // TODO remove?
+    //template<class T>
+    //bool set(std::string_view key, T data)
+    //{
+    //    return set(avledet::util::get_stable_hash(key), std::move(data));
+    //}
+
+    template<typename T>
+    bool set(std::string_view key, T value)
+    {
+        return set(avledet::util::get_stable_hash(key), std::move(value));
+    }
+
+    bool set(std::string_view key, bool value)
+    {
+        return set(avledet::util::get_stable_hash(key), value);
+    }
+
+    bool set(std::string_view key, ZDOID value)
+    {
+        return set(avledet::util::to_hash_pair(key), value);
+    }
+
+    // Internal use; (mutable revision for use by RPC_ZDOData lambda)
+    Rev &_get_revision();
+
+    /*
+        Member accessors
+    */
+
+    void set_connection(ZDOConnector::Type type, ZDOID zdoid);
+
+    ZDOID get_connection_zdoid(ZDOConnector::Type type) const;
+
+    ZDOID get_id() const;
+
+    Vector3f get_position() const;
+
+    void set_position(Vector3f pos);
+
+    avledet::util::ZoneID get_zone() const;
+
+    Quaternion get_rotation() const;
+
+    void set_rotation(Quaternion rot);
+
+    Prefab const &get_prefab() const;
+
+    avledet::util::Hash get_prefab_hash() const;
+
+    void set_local_scale(Vector3f scale, bool allowIdentity);
+
+    // The owner of the ZDO
+    avledet::util::UserID get_owner() const;
+
+    // Whether the ZDO is owned by
+    bool is_owner(avledet::util::UserID owner) const;
+
+    // Whether im the owner
+    bool owned_by_me() const;
+
+    // Whether the ZDO has an owner
+    bool has_owner() const;
+
+    // Claim personal ownership over the ZDO
+    bool claim();
+
+    void set_claimed(bool local);
+
+    // Clears the owner of this ZDO
+    void disown();
+
+    // Set the owner of the ZDO
+    bool set_owner(avledet::util::UserID owner);
+
+    std::uint16_t get_owner_rev() const;
+
+    std::uint32_t get_data_rev() const;
+
+    bool is_persistent() const;
+
+    bool is_distant() const;
+
+    avledet::util::ObjectType get_type() const;
+
+    /*
+        Memory polling utilities
+    */
+
+    template<class T>
+    static std::size_t get_tree_memory(Tree<T> &tree, bool full)
     {
         std::size_t var_count {};
         std::size_t extra_bytes {};
@@ -1102,6 +998,17 @@ class ZDO
         if (full) {
             if constexpr (std::is_same_v<T, std::string>) {
                 for (auto &&[k1, v1] : tree) {
+                    auto is_sso = [](auto &&str) {
+                        void const *strAddr  = static_cast<void const *>(&str);
+                        void const *dataAddr = static_cast<void const *>(str.data());
+
+                        bool addressCheck = std::fabs(reinterpret_cast<std::uintptr_t>(strAddr)
+                                                      - reinterpret_cast<std::uintptr_t>(dataAddr))
+                                            < sizeof(str);
+
+                        return addressCheck;
+                    };
+
                     if (!is_sso(v1)) {//if string is heap allocated, then add this extra size
                         extra_bytes += v1.length();
                     }
@@ -1117,88 +1024,28 @@ class ZDO
     }
 
     template<class T>
-    static std::size_t GetMapAlloc(bool full)
+    static std::size_t get_memory_vars(bool full)
     {
-        auto &&map = _GetVars<T>();
+        auto &&map = _get_vars<T>();
 
         std::size_t count_bytes {};
         for (auto &&[k, tree] : map) {
-            count_bytes += GetTreeAlloc(tree, full);
+            count_bytes += get_tree_memory(tree, full);
         }
 
         return count_bytes + (sizeof(ZDOID) * map.size());
-
-        /*
-        std::size_t var_count {};
-
-        auto&& map = _GetVars<T>();
-
-        std::size_t extra_bytes {};
-        const std::size_t unit_var_size = sizeof(T) + sizeof(std::int32_t);
-        for (auto&& [k, tree] : map) {
-            if (full) {
-                if constexpr (std::is_same_v<T, std::string>) {
-                    for (auto&& [k1, v1] : tree) {
-                        if (!is_sso(v1)) { //if string is heap allocated, then add this extra size
-                            extra_bytes += v1.length();
-                        }
-                    }
-                } else if constexpr (std::is_same_v<T, std::vector<char>>) {
-                    for (auto&& [k1, v1] : tree) {
-                        extra_bytes += v1.size();
-                    }
-                }
-            }
-
-            var_count += tree.size();
-        }
-
-        return var_count * unit_var_size + (sizeof(ZDOID) * map.size()) + extra_bytes;
-        */
     }
 
-    static std::size_t GetTotalAlloc(bool full)
+    static std::size_t get_memory(bool full)
     {
-        return GetMapAlloc<float>(full) + GetMapAlloc<avledet::util::CSU::Quaternion>(full)
-               + GetMapAlloc<std::int32_t>(full) + GetMapAlloc<std::int64_t>(full)
-               + GetMapAlloc<std::string>(full) + GetMapAlloc<std::vector<char>>(full)
-               + GetMapAlloc<float>(full) + GetMapAlloc<float>(full)
-               + ZDO_TARGETED_CONNECTORS.size()
-                         * sizeof(decltype(ZDO_TARGETED_CONNECTORS)::value_type)//yes, pair  \/
-               + ZDO_CONNECTORS.size() * sizeof(decltype(ZDO_CONNECTORS)::value_type)
+        return get_memory_vars<float>(full) + get_memory_vars<avledet::util::CSU::Quaternion>(full)
+               + get_memory_vars<std::int32_t>(full) + get_memory_vars<std::int64_t>(full)
+               + get_memory_vars<std::string>(full) + get_memory_vars<std::vector<char>>(full)
+               + get_memory_vars<float>(full) + get_memory_vars<float>(full)
+               + PAIRED_CONNECTORS.size() * sizeof(decltype(PAIRED_CONNECTORS)::value_type)//yes, pair  \/
+               + TYPED_CONNECTORS.size() * sizeof(decltype(TYPED_CONNECTORS)::value_type)
                + ZDO_OWNERS.size() * sizeof(decltype(ZDO_OWNERS)::value_type);
     }
-
-    /*
-    [[nodiscard]] std::size_t GetTotalAlloc() const {
-        //(decltype(m_floats)::bucket_type)
-        std::size_t size = 0;
-
-        //static inline VarMap<float> m_floats;
-        //static inline VarMap<avledet::util::CSU::Vector3f> m_vec3;
-        //static inline VarMap<avledet::util::CSU::Quaternion> m_quats;
-        //static inline VarMap<std::int32_t> m_ints;
-        //static inline VarMap<std::int64_t> m_longs;
-        //static inline VarMap<std::string> m_strings;
-        //static inline VarMap<std::vector<char>> m_byteArrays;
-    //
-        //static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorTargeted> ZDO_TARGETED_CONNECTORS; // Current linked connectors
-        //static inline ankerl::unordered_dense::segmented_map<ZDOID, ZDOConnectorData> ZDO_CONNECTORS; // Saved typed-connectors
-        //static inline ankerl::unordered_dense::segmented_map<ZDOID, std::int64_t> ZDO_OWNERS;
-        
-        auto&& find = ZDO_MEMBERS.find(GetID());
-        if (find != ZDO_MEMBERS.end()) {
-            for (auto&& member : find->second) {
-                // TODO this only counts the compiled type size
-                //  it does not include dynamically sized types like strings or arrays
-                size += std::visit([](const auto& value) {
-                    return sizeof(value);
-                }, member.second);
-            }
-        }
-
-        return size;
-    }*/
 
     friend std::ostream &operator<<(std::ostream &ostr, ZDO const &value)
     {

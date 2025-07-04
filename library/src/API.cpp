@@ -14,10 +14,10 @@
     #include <sol/property.hpp>
     #include <sol/types.hpp>
 
+    #include "Avledet.h"
     #include "DungeonManager.h"
     #include "ModManager.h"
     #include "RouteManager.h"
-    #include "ValhallaServer.h"
     #include "VUtilsResource.h"
     #include "ZDOManager.h"
 
@@ -55,7 +55,7 @@ void IScriptManager::load_userdata()
                     throw std::runtime_error("multiplier too small");
                 self.m_worldTimeMultiplier = mul;
             }),
-        "world_ticks", sol::property([](IAvledet &self) { return self.GetWorldTicks(); }), // world_ticks
+        "world_ticks", sol::property(&IAvledet::GetWorldTicks), // world_ticks
         "day", sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), // numeric elapsed days
         "time_of_day", sol::property(
             // getter
@@ -66,10 +66,10 @@ void IScriptManager::load_userdata()
         "is_day", sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), // bool day
         "is_afternoon", sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), // bool afternoon
         "is_night", sol::property(sol::resolve<bool() const>(&IAvledet::IsNight)), // bool night
-        "next_morning", sol::property(&IAvledet::GetTomorrowMorning), // next morning
-        "next_day", sol::property(&IAvledet::GetTomorrowDay), // next day
-        "next_afternoon", sol::property(&IAvledet::GetTomorrowAfternoon), // next afternoon
-        "next_night", sol::property(&IAvledet::GetTomorrowNight), // next night
+        "tomorrow_morning", sol::property(&IAvledet::GetTomorrowMorning), // next morning
+        "tomorrow", sol::property(&IAvledet::GetTomorrowDay), // next day
+        "tomorrow_afternoon", sol::property(&IAvledet::GetTomorrowAfternoon), // next afternoon
+        "tomorrow_night", sol::property(&IAvledet::GetTomorrowNight), // next night
 
         "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
             (void) self;
@@ -133,7 +133,7 @@ void IScriptManager::load_userdata()
     //                                //}
     //);
 
-    this->new_usertype<ScriptInfo>("Mod", 
+    this->new_usertype<ScriptInfo>("Script", 
         sol::no_constructor,
         "name", sol::readonly(&ScriptInfo::m_name),
                                    //"entry", sol::readonly(&Mod::m_entry),
@@ -147,6 +147,14 @@ void IScriptManager::load_userdata()
     this->new_usertype<MethodSig>("MethodSig", 
         sol::constructors<MethodSig(std::string_view, sol::variadic_args)>()
     );
+
+    //table.new_usertype<IRouteManager::Data>("RouteData",
+    //    "sender", &IRouteManager::Data::m_sender,
+    //    "target", &IRouteManager::Data::m_target,
+    //    "targetZDO", &IRouteManager::Data::m_targetZDO,
+    //    "method", &IRouteManager::Data::m_method,
+    //    "params", &IRouteManager::Data::m_params
+    //);
 
     this->new_usertype<IRouteManager>("IRouteManager", 
         sol::no_constructor,
@@ -162,9 +170,9 @@ void IScriptManager::load_userdata()
         sol::constructors<Random(), Random(std::int32_t), Random(Random const &)>(),
         "next_float", sol::property(&Random::next_float), 
         "next_int", sol::property(&Random::next_int), 
-        "value", sol::property(&Random::value),
-        "frange", sol::resolve<float(float, float)>(&Random::range), 
-        "irange", sol::resolve<std::int32_t(std::int32_t, std::int32_t)>(&Random::range),
+        "value", sol::property(&Random::value), // next_float
+        "range_float", sol::resolve<float(float, float)>(&Random::range), // TODO ugly name
+        "range_int", sol::resolve<std::int32_t(std::int32_t, std::int32_t)>(&Random::range), // TODO ugly name
         "inside_unit_circle", sol::property(&Random::inside_unit_circle),
         "on_unit_sphere", sol::property(&Random::on_unit_sphere), 
         "inside_unit_sphere", sol::property(&Random::inside_unit_sphere)
@@ -226,7 +234,7 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
 sol::environment IScriptManager::create_sandbox()
 {
-    auto env  = sol::environment(m_state, sol::create, m_state.globals());//, api_table);
+    auto env  = sol::environment(m_state, sol::create, m_state.globals());
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
 
     using namespace avledet::util;
@@ -240,15 +248,6 @@ sol::environment IScriptManager::create_sandbox()
     env["DungeonManager"] = DungeonManager();
     env["ZoneManager"]    = ZoneManager();
     env["RouteManager"]   = RouteManager();
-
-
-    //table.new_usertype<IRouteManager::Data>("RouteData",
-    //    "sender", &IRouteManager::Data::m_sender,
-    //    "target", &IRouteManager::Data::m_target,
-    //    "targetZDO", &IRouteManager::Data::m_targetZDO,
-    //    "method", &IRouteManager::Data::m_method,
-    //    "params", &IRouteManager::Data::m_params
-    //);
 
 
     {

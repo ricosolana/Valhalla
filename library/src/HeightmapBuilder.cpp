@@ -1,8 +1,8 @@
 #include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
 
+#include "Avledet.h"
 #include "HeightmapBuilder.h"
-#include "ValhallaServer.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 
@@ -86,7 +86,7 @@ void IHeightmapBuilder::PostGeoInit()
                 // Add to the pool of ready heightmaps
                 {
                     std::scoped_lock<std::mutex> scoped(m_mux);
-                    for (auto &&heightmap : baked) m_ready[heightmap->GetZone()] = std::move(heightmap);
+                    for (auto &&heightmap : baked) m_ready[heightmap->get_zone()] = std::move(heightmap);
                 }
 
                 FrameMarkEnd(name.c_str());

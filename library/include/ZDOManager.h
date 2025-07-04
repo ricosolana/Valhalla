@@ -25,7 +25,7 @@ class IZDOManager
     static bool PREFAB_CHECK_FUNCTION(ZDO::reference zdo, avledet::util::Hash prefabHash,
                                       Prefab::Flag flagsPresent, Prefab::Flag flagsAbsent)
     {
-        auto &&prefab = zdo->GetPrefab();
+        auto &&prefab = zdo->get_prefab();
 
         return prefab.AllFlagsAbsent(flagsAbsent) && (prefabHash == 0 || prefab.m_hash == prefabHash)
                && prefab.AllFlagsPresent(flagsPresent);
@@ -121,7 +121,7 @@ class IZDOManager
     // Returns an iterator to the next ZDO
     [[maybe_unused]] ZDO::smart_set::iterator _DestroyZDO(ZDO::smart_set::iterator itr)
     {
-        m_destroySendList.push_back((*itr)->GetID());
+        m_destroySendList.push_back((*itr)->get_id());
         return _EraseZDO(itr);
     }
 
@@ -231,7 +231,7 @@ class IZDOManager
 
     // Get a ZDO by id
     //	TODO use optional<reference>
-    [[nodiscard]] ZDO::optional GetZDO(ZDOID id);
+    [[nodiscard]] ZDO::optional find_zdo(ZDOID id);
 
     // Get all ZDOs strictly within a zone
     void GetZDOs_Zone(ZoneID zone, ZDO::reference_list &out);
@@ -282,7 +282,7 @@ class IZDOManager
     {
         float sqRadius = radius * radius;
         return SomeZDOs(zone, max, [&](ZDO::reference zdo) {
-            return zdo->GetPosition().sq_distance_to(pos) <= sqRadius
+            return zdo->get_position().sq_distance_to(pos) <= sqRadius
                    && PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
         });
     }
@@ -366,7 +366,7 @@ class IZDOManager
     {
         auto const sqRadius = radius * radius;
         return SomeZDOs(zone, -1, [&](ZDO::reference zdo) {
-            return zdo->GetPosition().sq_distance_to(pos) <= sqRadius
+            return zdo->get_position().sq_distance_to(pos) <= sqRadius
                    && PREFAB_CHECK_FUNCTION(zdo, prefab, flagsPresent, flagsAbsent);
         });
     }
@@ -423,7 +423,7 @@ class IZDOManager
 
     void DestroyZDO(ZDO::reference zdo)
     {
-        DestroyZDO(zdo->GetID());
+        DestroyZDO(zdo->get_id());
     }
 
     [[nodiscard]] std::size_t GetSumZDOMembers();

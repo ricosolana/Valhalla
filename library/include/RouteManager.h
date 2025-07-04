@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Avledet.h"
 #include "DataStream.h"
 #include "Hashes.h"
 #include "Method.h"
 #include "ModManager.h"
 #include "NetManager.h"
 #include "Peer.h"
-#include "ValhallaServer.h"
 
 class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 {

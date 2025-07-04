@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <sol/as_args.hpp>
+#include <sol/variadic_args.hpp>
 #include <string_view>
 #include <tracy/Tracy.hpp>
 #include <tuple>
@@ -285,7 +287,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
         DataWriter params;
         params.write(repr.m_hash);
-        params.write(repr.m_types, sol::variadic_results(args.begin(), args.end()));
+        params.write(repr.m_types, args);
         this->Send(std::move(params.get_buf()));
 
         // Postfix
@@ -335,7 +337,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
     void Disconnect()
     {
-        m_socket->Close(true);
+        m_socket->close(true);
     }
 
     void SendDisconnect()
@@ -354,13 +356,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         Disconnect();
     }
 
-    bool Close(ConnectionStatus status);
+    bool close(ConnectionStatus status);
 
 
     // Higher utility functions once authenticated
 
 
-    ZDO::optional GetZDO();
+    ZDO::optional find_zdo();
 
     void Teleport(Vector3f pos, Quaternion rot, bool animation);
 
@@ -448,16 +450,17 @@ class Peer : public std::enable_shared_from_this<Peer>,
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-        auto results = sol::variadic_results(args.begin(), args.end());
+            //auto results = sol::variadic_results(args.begin(), args.end());
 
+    // TODO wtf even is this? the 'old' reflection?
     #ifdef MOD_EVENT_RESPONSE
         if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ repr.m_hash, this->shared_from_this(),
-                              targetZDO, sol::as_args(results)))
+                              targetZDO, sol::as_args(args)))
             return;
     #endif
 
         DataWriter writer;
-        writer.write(repr.m_types, results);
+        writer.write(repr.m_types, args);
         RouteParams(targetZDO, repr.m_hash, std::move(writer.get_buf()));
     }
 

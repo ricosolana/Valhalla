@@ -76,6 +76,37 @@ namespace avledet::util {
         //static Reader from_file(std::filesystem::path path);
 
       public:
+        /*
+            read(T) and read<T>(void)
+
+            the first (read(T)) is the special overload, accepting 1 or more args
+
+            the second is the normal read, accepting a single template parameter
+        */
+
+        // Usage
+        //  read<int>()
+        //  read(arg1) --> read<void, decltype(arg1)>(arg1)
+        template<class T = void, class... Args>
+            requires(std::is_void_v<T> == (sizeof...(Args) > 0))
+        decltype(auto) read(Args &&...args)
+        {
+            //If void
+            //static_assert(std::is_void_v<First> == (sizeof...(Second) > 0),
+            //"read() must be used as 'read<T>()' or 'read(args)', and nothing in between");
+
+            // First must be absent (implicitly void)
+            // Passed args are variadic 'Second...'
+            if constexpr (sizeof...(Args) > 0) {
+                // TODO pass std::ref(*this) for copy-prevent
+                return Streamer<std::remove_cvref_t<Args>...> {}.operator()(*this,
+                                                                            std::forward<Args>(args)...);
+            } else {
+                return Streamer<std::remove_cvref_t<T>> {}.operator()(*this);
+            }
+        }
+
+        /*
         // auto a = read(a, b, c, ..)
         template<class... T>
             requires(sizeof...(T) >= 1)
@@ -89,7 +120,7 @@ namespace avledet::util {
         decltype(auto) read()
         {
             return Streamer<std::remove_cvref_t<T>> {}.operator()(*this);
-        }
+        }*/
 
         // auto [a, b, c] = read<int, char, string>();
         template<class... T>
@@ -134,8 +165,8 @@ namespace avledet::util {
 
         // variadic "serialize"
         //  write(std::tuple<> {});
-        template<class T, class... Args>
-            requires(sizeof...(Args) >= 1)
+        template<class V = void, class T, class... Args>
+            requires(std::is_void_v<T>, sizeof...(Args) >= 1)
         void write(std::tuple<T, Args...> const &args)
         {
             return [&]<std::size_t... I>(std::index_sequence<I...>) {
@@ -328,21 +359,11 @@ namespace avledet::util {
 
     // nested byte write
     //  then returns to the original position, writes the following bytes written
-    //template <class T>
     template<invokable_read1 T>
-    //requires (std::is_invocable_v<T, Writer&>
-    //    && std::is_same_v<
-    //        std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::raw_args_type>,
-    //        Writer&>
-    //)
-
     struct Streamer<T>
-    {//<std::function<void(Writer&)>> {
-
+    {
         void operator()(Writer &writer, T const &value) const
         {
-            //static_assert(std::is_invocable_v<T, Writer&>, "Writer::write(func) must have a Writer& as argument");
-
             auto const start    = writer.get_pos();
             std::uint32_t count = 0;
             writer.write(count);//dummy
@@ -376,41 +397,6 @@ namespace avledet::util {
             return count > 0;
         }
     };
-
-    //template <class T>
-    //concept invokable_read = (T) {
-    //    Streamer<typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>>{}
-    //
-    //    //Streamer<std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>>{}
-    //    //    .operator()(std::declval<Reader&>())
-    //};
-
-    // container foreach(...) read
-    //  writes all sub counts
-    //  then returns to the original position, writes the following bytes written
-    //template <invokable_read T>
-
-    //template <class T>
-    //    requires std::is_invocable_v<
-    //        decltype(Streamer<
-    //            typename std::tuple_element_t<0, typename VUtils::Traits::func_traits<T>::args_type>
-    //        >{}.operator()),
-    //        Reader
-    //    >
-    /*
-    template <invokable_read1 T>
-    struct Streamer<T> {
-        //makes no sense to deserialize a foreach function
-        int operator()(Reader& reader, T const& func) const {
-            assert(false); //TODO
-            //auto count = reader.read<std::uint32_t>();
-            //for (decltype(count) i=0; i < count; i++) {
-            //    
-            //}
-            return 1;
-        }
-    };
-    */
 }// namespace avledet::util
 
 using DataReader = avledet::util::Reader;

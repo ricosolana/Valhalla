@@ -6,8 +6,8 @@
 
     #include "Vector.h"
 
+    #include "Avledet.h"
     #include "TerrainModifier.h"
-    #include "ValhallaServer.h"
     //#include "HMBuildData.h"
     #include "ZoneManager.h"
 
@@ -104,7 +104,7 @@ class Heightmap
   public:
     Heightmap(ZoneID zone, std::unique_ptr<BaseHeightmap> base);
 
-    ZoneID GetZone()
+    ZoneID get_zone()
     {
         return m_zone;
     }

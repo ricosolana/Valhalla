@@ -1,4 +1,6 @@
 #include "CompileSettings.h"
+#include "Prefab.h"
+#include <sol/property.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     #include <sol/forward.hpp>
@@ -60,11 +62,14 @@ void IScriptManager::load_userdata_prefab()
     this->new_usertype<Prefab>("Prefab", 
         sol::no_constructor, 
         "name", sol::readonly(&Prefab::m_name), 
-        "hash", sol::readonly(&Prefab::m_hash), 
+        "hash", sol::readonly(&Prefab::m_hash),
         "flags_all", &Prefab::AllFlagsPresent,
         "flags_any", &Prefab::AnyFlagsPresent, 
-        "flags_none", &Prefab::AllFlagsAbsent, //TODO UGLY NAMING
-        "flags_absent", &Prefab::AnyFlagsAbsent //TODO UGLY NAMING
+        "flags_none", &Prefab::AllFlagsAbsent,
+        "flags_absent", &Prefab::AnyFlagsAbsent,
+        "distant", sol::property(&Prefab::is_distant),
+        "persistent", sol::property(&Prefab::is_persistent),
+        "type", sol::property(&Prefab::GetObjectType)
     );
 
     // https://commons.wikimedia.org/wiki/File:IEEE754.svg#/media/File:IEEE754.svg
@@ -76,15 +81,14 @@ void IScriptManager::load_userdata_prefab()
 
     this->new_usertype<IPrefabManager>("IPrefabManager", 
         sol::no_constructor,
-        "get_prefab", sol::overload(
+        "find_prefab", sol::overload(
             sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),
-            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab))
-            // TODO restrict prefab registration to startup only
-            /*
-        "Register", sol::overload(
-            sol::resolve<void(std::string_view, ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
-            sol::resolve<void(DataReader&)>(&IPrefabManager::Register)
-        )*/
+            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab)),
+        // TODO restrict prefab registration to startup only
+        //  Will require an event handler to be called prior to ZDOs being loaded
+        "register", sol::overload(
+            sol::resolve<void(std::string, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
+            sol::resolve<void(DataReader&)>(&IPrefabManager::Register))
     );
 
     // clang-format on

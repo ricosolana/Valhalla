@@ -1,7 +1,7 @@
 #include "Prefab.h"
 #include "PrefabManager.h"
 
-Prefab const &Prefab::Instance::GetPrefab() const
+Prefab const &Prefab::Instance::get_prefab() const
 {
     return PrefabManager()->get_prefab(m_prefabHash);
 }
@@ -44,12 +44,12 @@ bool Prefab::AnyFlagsAbsent(Flag prefabFlags) const noexcept
                       != std::to_underlying(prefabFlags);
 }
 
-bool Prefab::IsDistant() const noexcept
+bool Prefab::is_distant() const noexcept
 {
     return AllFlagsPresent(Flag::DISTANT);
 }
 
-bool Prefab::IsPersistent() const noexcept
+bool Prefab::is_persistent() const noexcept
 {
     return AllFlagsPresent(Flag::PERSISTENT);
 }

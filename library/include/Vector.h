@@ -24,12 +24,19 @@ namespace avledet::util::CSU {
     {
       public:
         // Constants
-        static inline constexpr Vector2 const ZERO  = Vector2();
-        static inline constexpr Vector2 const UP    = Vector2(0, 1);
-        static inline constexpr Vector2 const DOWN  = Vector2(0, -1);
-        static inline constexpr Vector2 const LEFT  = Vector2(-1, 0);
-        static inline constexpr Vector2 const RIGHT = Vector2(1, 0);
-        static inline constexpr Vector2 const ONE   = Vector2(1, 1);
+        //static inline constexpr Vector2 const ZERO  = Vector2();
+        //static inline constexpr Vector2 const UP    = Vector2(0, 1);
+        //static inline constexpr Vector2 const DOWN  = Vector2(0, -1);
+        //static inline constexpr Vector2 const LEFT  = Vector2(-1, 0);
+        //static inline constexpr Vector2 const RIGHT = Vector2(1, 0);
+        //static inline constexpr Vector2 const ONE   = Vector2(1, 1);
+
+        static Vector2 const ZERO;
+        static Vector2 const UP;
+        static Vector2 const DOWN;
+        static Vector2 const LEFT;
+        static Vector2 const RIGHT;
+        static Vector2 const ONE;
 
       public:
         T x, y;
@@ -187,18 +194,49 @@ namespace avledet::util::CSU {
 
     template<typename T>
         requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::ZERO(0, 0);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::UP(0, 1);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::DOWN(0, -1);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::LEFT(-1, 0);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::RIGHT(1, 0);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector2<T> Vector2<T>::ONE(1, 1);
+
+    //static inline constexpr Vector2 const ZERO  = Vector2();
+    //static inline constexpr Vector2 const UP    = Vector2(0, 1);
+    //static inline constexpr Vector2 const DOWN  = Vector2(0, -1);
+    //static inline constexpr Vector2 const LEFT  = Vector2(-1, 0);
+    //static inline constexpr Vector2 const RIGHT = Vector2(1, 0);
+    //static inline constexpr Vector2 const ONE   = Vector2(1, 1);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
     class Vector3
     {
       public:
         // Constants
-        static inline constexpr Vector3 const ZERO    = Vector3();
-        static inline constexpr Vector3 const UP      = Vector3(0, 1, 0);
-        static inline constexpr Vector3 const DOWN    = Vector3(0, -1, 0);
-        static inline constexpr Vector3 const FORWARD = Vector3(0, 0, 1);
-        static inline constexpr Vector3 const LEFT    = Vector3(-1, 0, 0);
-        static inline constexpr Vector3 const RIGHT   = Vector3(1, 0, 0);
-        static inline constexpr Vector3 const BACK    = Vector3(0, 0, -1);
-        static inline constexpr Vector3 const ONE     = Vector3(1, 1, 1);
+        static Vector3 const ZERO;
+        static Vector3 const UP;
+        static Vector3 const DOWN;
+        static Vector3 const FORWARD;
+        static Vector3 const LEFT;
+        static Vector3 const RIGHT;
+        static Vector3 const BACK;
+        static Vector3 const ONE;
 
       public:
         T x, y, z;
@@ -395,25 +433,37 @@ namespace avledet::util::CSU {
         }
     };
 
-#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    //void init_api(sol::table api_table);
-#endif
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::ZERO(0, 0, 0);
 
-    // breaks everything ...
-    //struct Vector3f : public Vector3<float>
-    //{
-    //    static constexpr auto const ZERO = Vector3<float>();
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::UP(0, 1, 0);
 
-    //    constexpr Vector3f(float const x, float const y, float const z) :
-    //        Vector3<float>(x, y, z)
-    //    {
-    //    }
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::DOWN(0, -1, 0);
 
-    //    constexpr Vector3f() :
-    //        Vector3<float>()
-    //    {
-    //    }
-    //};
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::FORWARD(0, 0, 1);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::LEFT(-1, 0, 0);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::RIGHT(1, 0, 0);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::BACK(0, 0, -1);
+
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    inline constexpr Vector3<T> Vector3<T>::ONE(1, 1, 1);
 
     using Vector2f = Vector2<float>;
     using Vector2i = Vector2<std::int32_t>;
@@ -421,7 +471,6 @@ namespace avledet::util::CSU {
 
     using Vector3f = Vector3<float>;
 
-    //static constexpr auto const UP = Vector3f();
 }// namespace avledet::util::CSU
 
 // Serializers / Deserializers

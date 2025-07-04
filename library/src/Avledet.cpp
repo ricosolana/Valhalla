@@ -15,6 +15,7 @@
 #include <tracy/Tracy.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "Avledet.h"
 #include "DiscordManager.h"
 #include "DungeonManager.h"
 #include "GeoManager.h"
@@ -25,7 +26,6 @@
 #include "RandomEventManager.h"
 #include "RouteManager.h"
 #include "ServerSettings.h"
-#include "ValhallaServer.h"
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "ZDOManager.h"
@@ -770,6 +770,12 @@ void IAvledet::init()
 #endif
     PrefabManager()->Init();
 
+//TODO add Script Init here, with callback
+//ScriptManager()->Init()// Will initially load ALL scripts (anything that immediately runs in the body can be considered pre zdo-init [occurs in worldmanager])
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+    ScriptManager()->Init();
+#endif
+
     ZoneManager()->PostPrefabInit();
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     DungeonManager()->post_prefab_init();
@@ -783,9 +789,8 @@ void IAvledet::init()
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
-#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    ScriptManager()->PostInit();
-#endif
+
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Enable);
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     DiscordManager()->init();
@@ -935,8 +940,8 @@ void IAvledet::PeriodUpdate()
             if (m_settings.playerSleepSolo) {
                 // only awake sleeping players
                 for (auto &&peer : NetManager()->GetPeers()) {
-                    auto &&zdo = peer->GetZDO();
-                    if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                    auto &&zdo = peer->find_zdo();
+                    if (zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
                         RouteManager()->Invoke(peer->GetUserID(),
                                                avledet::util::hashes::Routed::S2C_RequestStopSleep);
                     }
@@ -955,8 +960,8 @@ void IAvledet::PeriodUpdate()
             bool anyInBed = false;
 
             for (auto &&peer : NetManager()->GetPeers()) {
-                auto &&zdo = peer->GetZDO();
-                bool inBed = zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false);
+                auto &&zdo = peer->find_zdo();
+                bool inBed = zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false);
                 if (!inBed) {
                     allInBed = false;
                     if (!m_settings.playerSleepSolo)// early break if special sleep mode is not enabled
@@ -982,8 +987,8 @@ void IAvledet::PeriodUpdate()
                 if (m_settings.playerSleepSolo) {
                     // Players who are ALREADY in bed, go ahead and signal them to sleep
                     for (auto &&peer : NetManager()->GetPeers()) {
-                        auto &&zdo = peer->GetZDO();
-                        if (zdo && zdo->GetBool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
+                        auto &&zdo = peer->find_zdo();
+                        if (zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false)) {
                             RouteManager()->Invoke(peer->GetUserID(),
                                                    avledet::util::hashes::Routed::S2C_RequestSleep);
                         } else {

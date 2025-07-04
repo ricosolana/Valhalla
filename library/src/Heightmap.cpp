@@ -673,7 +673,7 @@ void Heightmap::FindObjectsToMove(Vector3f worldPos, float area, std::vector<Rig
     //    if (!(collider == this->m_collider) && collider.attachedRigidbody) {
     //        Rigidbody attachedRigidbody = collider.attachedRigidbody;
     //        ZNetView component = attachedRigidbody.GetComponent<ZNetView>();
-    //        if (!component || component.IsOwner()) {
+    //        if (!component || component.is_owner()) {
     //            objects.push_back(attachedRigidbody);
     //        }
     //    }
