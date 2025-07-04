@@ -1,7 +1,8 @@
 #include <isteamgameserver.h>
 #include <isteamnetworkingsockets.h>
 #include <isteamuser.h>
-#include <magic_enum.hpp>
+//#include <magic_enum.hpp> //TODO magic
+#include <magic_enum/magic_enum.hpp>
 #include <quill/LogMacros.h>
 #include <quill/Utility.h>
 #include <steam_gameserver.h>

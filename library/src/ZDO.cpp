@@ -487,7 +487,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
 
 void ZDO::unpack(DataReader &reader, std::int32_t version)
 {
-    ushort flags = reader.read<std::uint16_t>();
+    auto flags = reader.read<std::uint16_t>();
 
     if (version) {
         auto zone = reader.read<avledet::util::CSU::Vector2s>();// sector

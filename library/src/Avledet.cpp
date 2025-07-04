@@ -5,10 +5,11 @@
 #include <type_traits>
 #include <utility>
 #ifdef _WIN32
-    #include <winstring.h>
+    //#include <winstring.h> //TODO getting many dumb errors 'LookuPContect' unknown override specifier'...
 #endif
 
-#include <magic_enum.hpp>
+//#include <magic_enum.hpp> //TODO magic
+#include <magic_enum/magic_enum.hpp>
 #include <quill/core/LogLevel.h>
 #include <quill/LogMacros.h>
 #include <quill/sinks/RotatingFileSink.h>
@@ -894,8 +895,10 @@ bool IAvledet::update()
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     HeightmapBuilder()->Update();
 #endif
-
+    
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     ScriptManager()->update();
+#endif
 
     //TODO run periodically starting from now?
     if (VUtils::run_periodic<struct server_period_update>(1s)) {
@@ -914,10 +917,6 @@ void IAvledet::PeriodUpdate()
     if (VUtils::run_periodic<struct periodic_peer_print>(3min)) {
         LOG_INFO(AVL_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
     }
-
-    //PERIODIC_NOW(180s, {
-    //    LOG_INFO(AVL_LOGGER, "There are a total of {} peers online", NetManager()->GetPeers().size());
-    //});
 
     AVL_SCRIPT_EVENT(IScriptManager::Events::PeriodicUpdate);
 

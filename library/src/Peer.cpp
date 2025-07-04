@@ -4,7 +4,9 @@
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
-#include <magic_enum.hpp>
+
+//#include <magic_enum.hpp> //TODO magic
+#include <magic_enum/magic_enum.hpp>
 #include <quill/LogMacros.h>
 
 // Static globals initialized once
