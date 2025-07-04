@@ -9,7 +9,8 @@
 class Prefab
 {
   public:
-    static constexpr auto NONE = std::numeric_limits<std::uint16_t>::max();
+    using IndexType            = std::uint16_t;
+    static constexpr auto NONE = std::numeric_limits<IndexType>::max();
 
     struct Instance
     {

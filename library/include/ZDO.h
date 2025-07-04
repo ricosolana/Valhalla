@@ -509,7 +509,7 @@ class ZDO
     //  Throws on type mismatch
     //template<typename T>
     //    requires is_member_v<T>
-    //[[nodiscard]] static VarMap<T> _find(VarMap<T> const &map, ZDOID const &uid, avledet::util::Hash key)
+    //[[nodiscard]] static decltype(auto) _find_vars(VarMap<T> const &map, ZDOID const &uid, avledet::util::Hash key)
     //{
     //    auto &&find = map.find(uid);
     //    if (find != map.end()) {
@@ -519,14 +519,16 @@ class ZDO
     //            return entry;
     //        }
     //    }
-    //    return nullptr;
+    //    return std::make_tuple(nullptr,;
     //}
+
+    //VarMap<std::string>::
 
     // TODO rename this to Remove (this has nearly the same functionality)
     // TODO add an extract that returns an optional (eliminate the T& out)
     // Erases and returns the value
     template<typename T>
-    //requires is_member_v<T>
+        requires is_member_v<T>
     static bool _extract(VarMap<T> &map, ZDOID const &uid, avledet::util::Hash key, T &out)
     {
         auto &&find = map.find(uid);

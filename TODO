@@ -1,4 +1,12 @@
 TODO
+    dump new game data packages
+        the current ones are VERY outdated
+
+        
+
+    start entering other classes
+        remove raw & references (replace with std::reference_wrapper / pointer / smarts as needed)
+
     ORGANIZE!!!
     
     MOVE THINGS OUT OF THE HEADER!!!
