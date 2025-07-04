@@ -320,7 +320,7 @@ class IScriptManager
     }
 
   public:
-    void PostInit();
+    void Init();
     void Uninit();
     void update();
 

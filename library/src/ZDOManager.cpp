@@ -89,7 +89,7 @@ void IZDOManager::Update()
             if (connectionZDOID) {
                 auto &&zdo2 = find_zdo(connectionZDOID);
                 if (!zdo2 || zdo2->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG) != string) {
-                    zdo->set_claimed();
+                    zdo->claim();
                     zdo->set_connection(ZDOConnector::Type::Portal, ZDOID::NONE);
                     ForceSendZDO(zdo->get_id());
                 }
@@ -101,8 +101,8 @@ void IZDOManager::Update()
                 auto &&string2 = zdo3->get_string(avledet::util::hashes::ZDO::TeleportWorld::TAG);
                 auto &&zdo4    = FindRandomUnconnectedPortal(zdo3->get_id(), string2);
                 if (zdo4) {
-                    zdo3->set_claimed();
-                    zdo4->set_claimed();
+                    zdo3->claim();
+                    zdo4->claim();
                     zdo3->set_connection(ZDOConnector::Type::Portal, zdo4->get_id());
                     zdo4->set_connection(ZDOConnector::Type::Portal, zdo3->get_id());
                     ForceSendZDO(zdo3->get_id());
@@ -280,8 +280,8 @@ void IZDOManager::Load(DataReader &reader, int version)
                     ZDOID zdoid2;
                     zdo2->extract("target", zdoid2);
                     if (string == string2 && zdoid == zdo2->get_id() && zdoid2 == zdo->get_id()) {
-                        zdo->set_claimed();
-                        zdo2->set_claimed();
+                        zdo->claim();
+                        zdo2->claim();
                         zdo->set_connection(ZDOConnector::Type::Portal, zdo2->get_id());
                         zdo2->set_connection(ZDOConnector::Type::Portal, zdo->get_id());
                         //zdo.Apply();
@@ -292,7 +292,7 @@ void IZDOManager::Load(DataReader &reader, int version)
 
         // convert spawners
         for (auto &&zdo : GetZDOs(Prefab::Flag::CREATURE_SPAWNER, Prefab::Flag::NONE)) {
-            zdo->set_claimed();
+            zdo->claim();
             ZDOID zdoid;
             zdo->extract("spawn_id", zdoid);
             auto &&zdo2 = find_zdo(zdoid);
@@ -302,7 +302,7 @@ void IZDOManager::Load(DataReader &reader, int version)
 
         // convert sync transforms
         for (auto &&zdo : GetZDOs(Prefab::Flag::SYNCED_TRANSFORM, Prefab::Flag::NONE)) {
-            zdo->set_claimed();
+            zdo->claim();
             ZDOID zdoid;
             zdo->extract("parentID", zdoid);
             auto &&zdo2 = find_zdo(zdoid);
@@ -564,15 +564,9 @@ ZDO::smart_set::iterator IZDOManager::_EraseZDO(ZDO::smart_set::iterator itr)
     ZDO::m_longs.erase(zdoid);
     ZDO::m_strings.erase(zdoid);
     ZDO::m_byteArrays.erase(zdoid);
+
     ZDO::ZDO_OWNERS.erase(zdoid);
-    ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
-
-    // erase members and connectors
-    //assert(false); //TODO erase from all maps the entry for zdoid
-    //ZDO::ZDO_MEMBERS.erase(zdoid);
-    ////ZDO::ZDO_CONNECTORS.erase(zdo->get_id());
-
-    ZDO::ZDO_TARGETED_CONNECTORS.erase(zdoid);
+    ZDO::PAIRED_CONNECTORS.erase(zdoid);
 
     //LOG_INFO(AVL_LOGGER, "zdo erased: {}", zdoid);
 

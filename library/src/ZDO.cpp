@@ -81,46 +81,46 @@ static auto const strippable_long_nodes = ankerl::unordered_dense::set<avledet::
         avledet::util::get_stable_hash("CatchID_i"),
 });
 
-bool ZDO::can_strip(avledet::util::Hash key)
+bool ZDO::_can_strip(avledet::util::Hash key)
 {
     return strippable_nodes.contains(key);
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, float data)
+bool ZDO::_can_strip(avledet::util::Hash key, float data)
 {
     return strippable_nodes.contains(key)
            || (key == avledet::util::get_stable_hash("scaleScalar") && avledet::util::CSU::equal(data, 1.f));
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, avledet::util::CSU::Quaternion const &data)
+bool ZDO::_can_strip(avledet::util::Hash key, avledet::util::CSU::Quaternion const &data)
 {
-    return data == avledet::util::CSU::Quaternion::IDENTITY || can_strip(key);
+    return data == avledet::util::CSU::Quaternion::IDENTITY || _can_strip(key);
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, std::int32_t data)
+bool ZDO::_can_strip(avledet::util::Hash key, std::int32_t data)
 {
-    return data == 0 || can_strip(key);
+    return data == 0 || _can_strip(key);
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, std::int64_t data)
+bool ZDO::_can_strip(avledet::util::Hash key, std::int64_t data)
 {
-    return data == 0 || can_strip(key) || strippable_long_nodes.contains(key);
+    return data == 0 || _can_strip(key) || strippable_long_nodes.contains(key);
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, std::string const &data)
+bool ZDO::_can_strip(avledet::util::Hash key, std::string const &data)
 {
-    return data.empty() || can_strip(key);
+    return data.empty() || _can_strip(key);
 }
 
-bool ZDO::can_strip(avledet::util::Hash key, std::vector<char> const &data)
+bool ZDO::_can_strip(avledet::util::Hash key, std::vector<char> const &data)
 {
-    return data.empty() || can_strip(key);
+    return data.empty() || _can_strip(key);
 }
 
 // (Keep as a member function, to access m_id as needed in future)
-bool ZDO::try_convert(avledet::util::Hash key, avledet::util::CSU::Vector3f data)
+bool ZDO::_try_convert(avledet::util::Hash key, avledet::util::CSU::Vector3f data)
 {
-    if (this->can_strip(key)) {
+    if (this->_can_strip(key)) {
         return true;
     }
     if (key == avledet::util::get_stable_hash("SpawnPoint")) {
@@ -148,7 +148,7 @@ bool ZDO::try_convert(avledet::util::Hash key, avledet::util::CSU::Vector3f data
     return false;
 }
 
-std::uint32_t ZDO::read_num_items(avledet::util::Reader &reader, int version)
+std::uint32_t ZDO::_read_num_items(avledet::util::Reader &reader, int version)
 {
     if (version < 33) {
         return (std::uint32_t) reader.read<std::uint8_t>();
@@ -160,11 +160,21 @@ std::uint32_t ZDO::read_num_items(avledet::util::Reader &reader, int version)
     return num;
 };
 
+void ZDO::_write_num_items(DataWriter &writer, int numItems)
+{
+    if (numItems < 128) {
+        writer.write((std::uint8_t) numItems);
+        return;
+    }
+    writer.write((std::uint8_t)((numItems >> 8) | 128));
+    writer.write((std::uint8_t) numItems);
+}
+
 /*
     ZDO define
 */
 
-void ZDO::revise()
+void ZDO::_revise()
 {
     this->m_rev.rev_data();
 }
@@ -197,7 +207,7 @@ void ZDO::_set_rotation(Quaternion const &rot)
 
 bool ZDO::_set_connection(ZDOConnector::Type type, ZDOID zdoid)
 {
-    auto &&insert = ZDO_TARGETED_CONNECTORS.try_emplace(m_id, type, zdoid);
+    auto &&insert = PAIRED_CONNECTORS.try_emplace(m_id, type, zdoid);
 
     auto &&connector = insert.first->second;
 
@@ -223,14 +233,14 @@ bool ZDO::_set_connection(ZDOConnector::Type type, ZDOID zdoid)
 void ZDO::set_connection(ZDOConnector::Type type, ZDOID zdoid)
 {
     if (this->_set_connection(type, zdoid)) {
-        this->revise();
+        this->_revise();
     }
 }
 
 ZDOID ZDO::get_connection_zdoid(ZDOConnector::Type type) const
 {
-    auto &&find = ZDO_TARGETED_CONNECTORS.find(m_id);
-    if (find != ZDO_TARGETED_CONNECTORS.end()) {
+    auto &&find = PAIRED_CONNECTORS.find(m_id);
+    if (find != PAIRED_CONNECTORS.end()) {
         if (find->second.m_type == type)
             return find->second.m_target;
     }
@@ -262,7 +272,7 @@ void ZDO::set_rotation(Quaternion rot)
     auto &&euler = rot.euler_angles();
     if (euler != this->m_rotation) {
         this->m_rotation = euler;
-        this->revise();
+        this->_revise();
     }
 }
 
@@ -317,7 +327,7 @@ bool ZDO::has_owner() const
     return this->get_owner() != 0;
 }
 
-bool ZDO::set_claimed()
+bool ZDO::claim()
 {
     return this->set_owner(AVL_ID);
 }
@@ -325,7 +335,7 @@ bool ZDO::set_claimed()
 void ZDO::set_claimed(bool local)
 {
     if (local) {
-        this->set_claimed();
+        this->claim();
     } else {
         this->disown();
     }
@@ -443,7 +453,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
         {
             auto&& zdoid = get_zdoid("user");
             if (zdoid) {
-                set_claimed();
+                claim();
                 set(avledet::util::hashes::ZDO::USER, zdoid.GetOwner());
             }
         }
@@ -451,7 +461,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
         {
             auto&& zdoid = get_zdoid("RodOwner");
             if (zdoid) {
-                set_claimed();
+                claim();
                 set(avledet::util::hashes::ZDO::FishingFloat::ROD_OWNER, zdoid.GetOwner());
             }
         }
@@ -509,12 +519,12 @@ void ZDO::unpack(DataReader &reader, std::int32_t version)
             auto hash = reader.read<avledet::util::Hash>();
             //manager->s_connectionsHashData[m_uid] = std::make_pair(reader.read<ConnectionType>(), reader.read<avledet::util::Hash>());
 
-            auto &&connector = ZDO_CONNECTORS[get_id()];// = ZDOConnector{ .m_type = type, .m_hash = hash };
+            auto &&connector = TYPED_CONNECTORS[get_id()];// = ZDOConnector{ .m_type = type, .m_hash = hash };
             connector.m_type = type;
             connector.m_hash = hash;
-        } else {                                        // network
+        } else {                                          // network
             auto target      = reader.read<ZDOID>();
-            auto &&connector = ZDO_TARGETED_CONNECTORS[get_id()];
+            auto &&connector = PAIRED_CONNECTORS[get_id()];
             // set connection
             connector.m_type   = type;
             connector.m_target = target;
@@ -532,19 +542,19 @@ void ZDO::unpack(DataReader &reader, std::int32_t version)
         & ((1 << NETWORK_Float) | (1 << NETWORK_Vec3) | (1 << NETWORK_Quat) | (1 << NETWORK_Int)
            | (1 << NETWORK_Long) | (1 << NETWORK_String | (1 << NETWORK_ByteArray)))) {
         if (flags & (1 << NETWORK_Float))
-            this->load_vars(reader, version, m_floats);
+            this->_load_vars(reader, version, m_floats);
         if (flags & (1 << NETWORK_Vec3))
-            this->load_vars(reader, version, m_vec3);
+            this->_load_vars(reader, version, m_vec3);
         if (flags & (1 << NETWORK_Quat))
-            this->load_vars(reader, version, m_quats);
+            this->_load_vars(reader, version, m_quats);
         if (flags & (1 << NETWORK_Int))
-            this->load_vars(reader, version, m_ints);
+            this->_load_vars(reader, version, m_ints);
         if (flags & (1 << NETWORK_Long))
-            this->load_vars(reader, version, m_longs);
+            this->_load_vars(reader, version, m_longs);
         if (flags & (1 << NETWORK_String))
-            this->load_vars(reader, version, m_strings);
+            this->_load_vars(reader, version, m_strings);
         if (flags & (1 << NETWORK_ByteArray))
-            this->load_vars(reader, version, m_byteArrays);
+            this->_load_vars(reader, version, m_byteArrays);
     }
 }
 
@@ -566,7 +576,7 @@ void ZDO::set_position(Vector3f pos)
         assert(IZoneManager::WorldToZonePos(pos) == this->get_zone());
 
         if (this->owned_by_me())
-            this->revise();
+            this->_revise();
     }
 }
 
@@ -601,8 +611,8 @@ void ZDO::pack(DataWriter &writer, bool network) const
     }
 
     if (network) {
-        auto &&find = ZDO_TARGETED_CONNECTORS.find(this->m_id);
-        if (find != ZDO_TARGETED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
+        auto &&find = PAIRED_CONNECTORS.find(this->m_id);
+        if (find != PAIRED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto &&connector = find->second;
             writer.write(connector.m_type);
             writer.write(connector.m_target);
@@ -610,8 +620,8 @@ void ZDO::pack(DataWriter &writer, bool network) const
             flags |= 1 << NETWORK_Connection;
         }
     } else {
-        auto &&find = ZDO_CONNECTORS.find(this->m_id);
-        if (find != ZDO_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
+        auto &&find = TYPED_CONNECTORS.find(this->m_id);
+        if (find != TYPED_CONNECTORS.end() && find->second.m_type != ZDOConnector::Type::None) {
             auto &&connector = find->second;
             writer.write(connector.m_type);
             writer.write(connector.m_hash);

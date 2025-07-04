@@ -83,14 +83,12 @@ void IScriptManager::load_userdata_prefab()
         sol::no_constructor,
         "find_prefab", sol::overload(
             sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),
-            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab))
-        /*
+            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab)),
         // TODO restrict prefab registration to startup only
         //  Will require an event handler to be called prior to ZDOs being loaded
-        "Register", sol::overload(
-            sol::resolve<void(std::string_view, ObjectType, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
-            sol::resolve<void(DataReader&)>(&IPrefabManager::Register)
-        )*/
+        "register", sol::overload(
+            sol::resolve<void(std::string, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
+            sol::resolve<void(DataReader&)>(&IPrefabManager::Register))
     );
 
     // clang-format on

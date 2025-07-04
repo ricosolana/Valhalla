@@ -27,7 +27,7 @@ void IScriptManager::load_userdata_quaternion()
                  : index == 2 ? sol::make_object(view, self.y)
                  : index == 3 ? sol::make_object(view, self.z)
                  : index == 4 ? sol::make_object(view, self.w)
-                 : sol::lua_nil; },
+                              : sol::lua_nil; },
         "length_squared", sol::property(&Quaternion::length_squared), 
         "xyz", sol::property(&Quaternion::xyz), 
         "euler_angles", sol::property(&Quaternion::euler_angles), 

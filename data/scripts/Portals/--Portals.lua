@@ -28,7 +28,7 @@ Valhalla:Subscribe(
 
                 -- if target is missing from world, reset target
                 if not portalZdo2 or portal2.tag ~= tag1 then
-                    portalZdo1:set_claimed()
+                    portalZdo1:claim()
 
                     portal1.target = ZDOID.NONE
                     ZDOManager:ForceSendZDO(portalZdo1.id)
@@ -48,8 +48,8 @@ Valhalla:Subscribe(
                             if tag1 == portal2.tag then
                                 print("linking portals")
 
-                                portalZdo1:set_claimed()
-                                portalZdo2:set_claimed()
+                                portalZdo1:claim()
+                                portalZdo2:claim()
                                 portal1.target = portalZdo2.id
                                 portal2.target = portalZdo1.id
                                 ZDOManager:ForceSendZDO(portalZdo1.id)

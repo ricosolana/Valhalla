@@ -770,6 +770,12 @@ void IAvledet::init()
 #endif
     PrefabManager()->Init();
 
+//TODO add Script Init here, with callback
+//ScriptManager()->Init()// Will initially load ALL scripts (anything that immediately runs in the body can be considered pre zdo-init [occurs in worldmanager])
+#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
+    ScriptManager()->Init();
+#endif
+
     ZoneManager()->PostPrefabInit();
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     DungeonManager()->post_prefab_init();
@@ -783,9 +789,8 @@ void IAvledet::init()
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
-#if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    ScriptManager()->PostInit();
-#endif
+
+    AVL_SCRIPT_EVENT(IScriptManager::Events::Enable);
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     DiscordManager()->init();

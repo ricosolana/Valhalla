@@ -16,9 +16,12 @@ void IScriptManager::load_userdata_zdo()
 
     // clang-format off
 
-    m_state.new_enum("ConnectorType", "NONE", ZDOConnector::Type::None, "PORTAL", ZDOConnector::Type::Portal,
-                     "SYNC_TRANSFORM", ZDOConnector::Type::SyncTransform, "SPAWNED",
-                     ZDOConnector::Type::Spawned, "TARGET", ZDOConnector::Type::Target);
+    m_state.new_enum("ConnectorType", 
+        "NONE", ZDOConnector::Type::None, 
+        "PORTAL", ZDOConnector::Type::Portal,
+        "SYNC_TRANSFORM", ZDOConnector::Type::SyncTransform, 
+        "SPAWNED", ZDOConnector::Type::Spawned, 
+        "TARGET", ZDOConnector::Type::Target);
 
     this->new_usertype<ZDO>("ZDO", 
         sol::no_constructor, 
@@ -87,27 +90,27 @@ void IScriptManager::load_userdata_zdo()
 
         // Setters
         "set_float", sol::overload(
-            static_cast<void (ZDO::*)(Hash, float)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, float)>(&ZDO::set)),
+            static_cast<bool (ZDO::*)(Hash, float)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, float)>(&ZDO::set)),
         "set_int", sol::overload(
-            static_cast<void (ZDO::*)(Hash, std::int32_t)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::set)),
+            static_cast<bool (ZDO::*)(Hash, std::int32_t)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, std::int32_t)>(&ZDO::set)),
         "set", sol::overload(
             // Quaternion
-            static_cast<void (ZDO::*)(Hash, Quaternion)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, Quaternion)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(Hash, Quaternion)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, Quaternion)>(&ZDO::set),
             // Vector3f
-            static_cast<void (ZDO::*)(Hash, Vector3f)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, Vector3f)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(Hash, Vector3f)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, Vector3f)>(&ZDO::set),
             // std::string
-            static_cast<void (ZDO::*)(Hash, std::string)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, std::string)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(Hash, std::string)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, std::string)>(&ZDO::set),
             // bool
-            static_cast<void (ZDO::*)(Hash, bool)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, bool)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(Hash, bool)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, bool)>(&ZDO::set),
             // zdoid
             //static_cast<void (ZDO::*)(Hash, Hash, const ZDOID&)>(&ZDO::set),
-            static_cast<void (ZDO::*)(std::string_view, ZDOID)>(&ZDO::set),
+            static_cast<bool (ZDO::*)(std::string_view, ZDOID)>(&ZDO::set),
             // int64 wrapper
             [](ZDO &self, Hash key, Int64Wrapper value) { self.set(key, (std::int64_t) value); },
             [](ZDO &self, std::string_view key, Int64Wrapper value) {

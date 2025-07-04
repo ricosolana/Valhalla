@@ -19,13 +19,12 @@ void IScriptManager::load_userdata_vector()
         "y", &Vector3f::y, 
         "z", &Vector3f::z,
         // TODO access vector axis's by index?
-        //sol::meta_function::index,
-        //[](Vector3f &self, std::size_t index, sol::state_view view) {
-        //    return index == 1   ? sol::make_object(view, self.x)
-        //           : index == 2 ? sol::make_object(view, self.y)
-        //           : index == 3 ? sol::make_object(view, self.z)
-        //                        : sol::lua_nil;
-        //},
+        sol::meta_function::index, [](Vector3f &self, std::size_t index, sol::state_view view) {
+            return index == 1 ? sol::make_object(view, self.x)
+                 : index == 2 ? sol::make_object(view, self.y)
+                 : index == 3 ? sol::make_object(view, self.z)
+                              : sol::lua_nil;
+        },
         "magnitude", sol::property(&Vector3f::magnitude), 
         "sq_magnitude", sol::property(&Vector3f::sq_magnitude), 
         "normal", sol::property(&Vector3f::normal), 
@@ -46,12 +45,11 @@ void IScriptManager::load_userdata_vector()
         "ZERO", sol::var(Vector2f::ZERO), 
         "x", &Vector2f::x, 
         "y", &Vector2f::y,
-        //sol::meta_function::index,
-        //[](Vector2f &self, std::size_t index, sol::state_view view) {
-        //    return index == 1   ? sol::make_object(view, self.x)
-        //           : index == 2 ? sol::make_object(view, self.y)
-        //                        : sol::lua_nil;
-        //},
+        sol::meta_function::index, [](Vector2f &self, std::size_t index, sol::state_view view) {
+            return index == 1 ? sol::make_object(view, self.x)
+                 : index == 2 ? sol::make_object(view, self.y)
+                              : sol::lua_nil;
+        },
         "magnitude", sol::property(&Vector2f::magnitude), 
         "sq_magnitude", sol::property(&Vector2f::sq_magnitude), 
         "normal", sol::property(&Vector2f::normal), 
@@ -71,12 +69,11 @@ void IScriptManager::load_userdata_vector()
         "ZERO", sol::var(Vector2i::ZERO), 
         "x", &Vector2i::x, 
         "y", &Vector2i::y,
-        //sol::meta_function::index,
-        //[](Vector2i &self, std::size_t index, sol::state_view view) {
-        //    return index == 1   ? sol::make_object(view, self.x)
-        //           : index == 2 ? sol::make_object(view, self.y)
-        //                        : sol::lua_nil;
-        //},
+        sol::meta_function::index, [](Vector2i &self, std::size_t index, sol::state_view view) {
+            return index == 1 ? sol::make_object(view, self.x)
+                 : index == 2 ? sol::make_object(view, self.y)
+                              : sol::lua_nil;
+        },
         "magnitude", sol::property(&Vector2i::magnitude), 
         "sq_magnitude", sol::property(&Vector2i::sq_magnitude), 
         "normal", sol::property(&Vector2i::normal), 
@@ -96,12 +93,11 @@ void IScriptManager::load_userdata_vector()
         "ZERO", sol::var(Vector2s::ZERO), 
         "x", &Vector2s::x, 
         "y", &Vector2s::y,
-        //sol::meta_function::index,
-        //[](Vector2s &self, std::size_t index, sol::state_view view) {
-        //    return index == 1   ? sol::make_object(view, self.x)
-        //           : index == 2 ? sol::make_object(view, self.y)
-        //                        : sol::lua_nil;
-        //},
+        sol::meta_function::index, [](Vector2s &self, std::size_t index, sol::state_view view) {
+            return index == 1 ? sol::make_object(view, self.x)
+                 : index == 2 ? sol::make_object(view, self.y)
+                              : sol::lua_nil;
+        },
         "magnitude", sol::property(&Vector2s::magnitude), 
         "sq_magnitude", sol::property(&Vector2s::sq_magnitude), 
         "normal", sol::property(&Vector2s::normal), 
