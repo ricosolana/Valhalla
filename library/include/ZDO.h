@@ -310,7 +310,7 @@ class ZDO
         Converters for outdated versions
     */
 
-    // TODO rename this to Remove
+    // TODO rename this to '_erase'
     template<typename T>
         requires is_member_v<T>
     static bool _extract(VarMap<T> &map, ZDOID const &uid, avledet::util::Hash key, T &out)
