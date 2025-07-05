@@ -4,67 +4,83 @@ Valheim server written in modern C++.
 
 Includes Discord integration, Lua scripting, and potential Valheim modding support between clients (WIP).
 
-## Dependencies
-Requires the following dependencies with versions (./vcpkg list):
+## Building
 
-- abseil:x64-linux                                  20250127.1#1        Abseil is an open-source collection of C++ libra...
-- asio:x64-linux                                    1.32.0              Asio is a cross-platform C++ library for network...
-- dpp:x64-linux                                     10.1.2              D++ Extremely Lightweight C++ Discord Library.
-- gtest:x64-linux                                   1.17.0#1            Google Testing and Mocking Framework
-- gtl:x64-linux                                     1.2.0               Greg's Template Library of useful classes.
-- intrusive-shared-ptr:x64-linux                    1.9                 Intrusive reference counting smart pointer, high...
-- lua:x64-linux                                     5.4.8               A powerful, fast, lightweight, embeddable script...
-- nlohmann-json:x64-linux                           3.12.0              JSON for Modern C++
-- openssl:x64-linux                                 3.5.0#1             OpenSSL is an open source project that provides ...
-- opus:x64-linux                                    1.5.2               Totally open, royalty-free, highly versatile aud...
-- pthreads:x64-linux                                3.0.0#14            Meta-package that provides PThreads4W on Windows...
-- quill:x64-linux                                   10.0.0              Asynchronous Low Latency C++ Logging Library
-- range-v3:x64-linux                                0.12.0#4            Range library for C++14/17/20, basis for C++20's...
-- sol2:x64-linux                                    3.5.0               Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit...
-- tracy:x64-linux                                   0.11.1#2            A real time, nanosecond resolution, remote telem...
-- tracy[crash-handler]:x64-linux                                        Enable crash handler
-- unordered-dense:x64-linux                         4.5.0               A fast & densely stored hashmap and hashset base...
-- vcpkg-cmake-config:x64-linux                      2024-05-23          
-- vcpkg-cmake-get-vars:x64-linux                    2025-05-29          
-- vcpkg-cmake:x64-linux                             2024-04-23          
-- yaml-cpp:x64-linux                                0.8.0#3             yaml-cpp is a YAML parser and emitter in C++ mat...
-- zlib:x64-linux                                    1.3.1               A compression library
-- zstd:x64-linux                                    1.5.7               Zstandard - Fast real-time compression algorithm
+### Dependencies
+The below is my `./vcpkg list`:
+
+|name | version | description |
+|--------------------------------|--------------|-----------------------------------------------------|
+| abseil:x64-linux               | 20250127.1#1 | Abseil is an open-source collection of C++ libra... |
+| asio:x64-linux                 | 1.32.0       | Asio is a cross-platform C++ library for network... |
+| dpp:x64-linux                  | 10.1.2       | D++ Extremely Lightweight C++ Discord Library.      |
+| gtest:x64-linux                | 1.17.0#1     | Google Testing and Mocking Framework                |
+| gtl:x64-linux                  | 1.2.0        | Greg's Template Library of useful classes.          |
+| intrusive-shared-ptr:x64-linux | 1.9          | Intrusive reference counting smart pointer, high... |
+| lua:x64-linux                  | 5.4.8        | A powerful, fast, lightweight, embeddable script... | 
+| magic-enum:x64-linux           | 0.9.7#1      | Header-only C++17 library provides static reflec... |
+| nlohmann-json:x64-linux        | 3.12.0       | JSON for Modern C++                                 |
+| openssl:x64-linux              | 3.5.0#1      | OpenSSL is an open source project that provides ... |
+| opus:x64-linux                 | 1.5.2        | Totally open, royalty-free, highly versatile aud... |
+| pthreads:x64-linux             | 3.0.0#14     | Meta-package that provides PThreads4W on Windows... |
+| quill:x64-linux                | 10.0.0       | Asynchronous Low Latency C++ Logging Library        |
+| range-v3:x64-linux             | 0.12.0#4     | Range library for C++14/17/20, basis for C++20's... |
+| sol2:x64-linux                 | 3.5.0        | Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit... |
+| tracy:x64-linux                | 0.11.1#2     | A real time, nanosecond resolution, remote telem... |
+| tracy[crash-handler]:x64-linux |              | Enable crash handler                                |
+| unordered-dense:x64-linux      | 4.5.0        | A fast & densely stored hashmap and hashset base... |
+| vcpkg-cmake-config:x64-linux   | 2024-05-23   |                                                     |
+| vcpkg-cmake-get-vars:x64-linux | 2025-05-29   | |
+| vcpkg-cmake:x64-linux          | 2024-04-23   | |
+| yaml-cpp:x64-linux             | 0.8.0#3      | yaml-cpp is a YAML parser and emitter in C++ mat... |
+| zlib:x64-linux                 | 1.3.1        | A compression library |
+| zstd:x64-linux                 | 1.5.7        | Zstandard - Fast real-time compression algorithm  |
+
+<sub> yes, I spent my time manually formatting this table... </sub>
 
 Using anything later, or earlier, will (99% Guaranteed, without your money back) result in compiler errors from hell.
 
-The above is a collective list of my vcpkg. Some dependencies are unused, but good to have as future changes are implemented.
+### Installation
 
-## Building
-
-- Steamworks SDK 
-  - Download from https://partner.steamgames.com/downloads/list
-  - Extract to your home directory. `sdk` must be placed inside `steamsdk`
+- Install your favorite **IDE** (VSC / MSVC)
+  - **VSC** (or even better VSCodium)
+    - Extensions
+      - `CMake Tools`
+      - `C/C++`
+      - `clangd` (optional; 'better' intellisense)
+      - `Clang-Format` (optional; automatic C++ code formatting)
+      - `EmmyLua` (optional; Lua formatting + highlighting)
+  - **MSVC**
+    - Visual Studio Installer
+      - Install C++ Desktop Environment (or similar)
+        - Uncheck some things <sub>(like *copilot* and some of the other default checked things that take up an extra 5GB when my computer is on the other side of the house on 4MB/s download speed)</sub>
+      - Install CMake Tools
+- Install **Steamworks SDK**
+  - Download from https://partner.steamgames.com/downloads/list (sign in)
+  - Extract to your home directory, Making sure `sdk` is placed inside `steamsdk`
     - Windows: `C:/Users/~/steamsdk/sdk`
     - Linux: `/home/~/.local/bin/steamsdk/sdk`
-- Install avledet
-  - `git clone https://github.com/ricosolana/avledet`
-- Install vcpkg
-    - `git clone https://github.com/microsoft/vcpkg`
-    - Windows: `cd vcpkg && bootstrap-vcpkg.bat -disableMetrics && vcpkg integrate install`
+  - I'm still working on correctly setting env / CMake args / workspace args for path variables
+  such as with Steam above...
+- Install **vcpkg** `git clone https://github.com/microsoft/vcpkg`
+    - Windows: `cd vcpkg && ./bootstrap-vcpkg -disableMetrics && ./vcpkg integrate install`
     - Linux: `cd vcpkg && ./bootstrap-vcpkg.sh -disableMetrics`
-- Install packages 
-  - `./vcpkg install abseil asio dpp gtest gtl intrusive-shared-ptr lua nlohmann-json quill range-v3 sol2 tracy unordered-dense magic-enum yaml-cpp zlib zstd`
-  - Linux via apt (if the above aren't recognized by CMake)
-    - sudo apt install libabsl-dev -y
-    - sudo apt install libmagicenum-dev
-    - sudo apt install libasio-dev -y
+- Install packages `./vcpkg install abseil asio dpp gtest gtl intrusive-shared-ptr lua nlohmann-json quill range-v3 sol2 tracy unordered-dense magic-enum yaml-cpp zlib zstd`
+  - (Optional) Linux via **apt** (if the above aren't recognized by CMake)
+    - `sudo apt install libabsl-dev -y`
+    - `sudo apt install libmagicenum-dev`
+    - `sudo apt install libasio-dev -y`
       - Always failed to find asio, but setting the toolchain worked.
       - https://stackoverflow.com/questions/42034606/compiling-standalone-asio-with-makefile-on-linux
-        ~~
-
-- Open avledet using your favorite editor (MSVC, VSC, ...)
-  - Launch CMake configuration
-  - VSC:
+- Open in editor (MSVC, VSC, ...)
+  - Install **avledet** or clone from Version Control `ricosolana/avledet`
+    - `git clone https://github.com/ricosolana/avledet` or manually...
+  - Linux / Windows + VSC(odium):
     - On first launch, must select kit first 'CMAKE Tab -> Launch -> GCC / (Your compiler)'
       - If packages missing, set the toolchain `Ctrl + Shift + P` -> `CMake: Open CMake Tools Extention Settings` -> `Configure Args`,
         add entry: `-DCMAKE_TOOLCHAIN_FILE=/home/~/vcpkg/scripts/buildsystems/vcpkg.cmake` (change as needed).
-      - Make sure to clean or manually delete `build` directory
+      - ~~Make sure to clean or manually delete `build` directory~~ *why again?*
+    - Launch CMake Configure Task (on both VSC and MSVC it launches automatically on opening CMake Project)
     - To debug plainly, use the cmake debug/launch
     - To debug with command line arguments, use the VSC `RUN AND DEBUG` side tab. Create and configure launch.json beforehand.
 

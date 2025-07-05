@@ -1,8 +1,21 @@
 TODO
+    Linux:
+        I just installed magic-enum via vcpkg, and is working fine...
+
+    Unexpected behaviour when player is blocking with fists
+        starts blocking, but never resets animation / whatever
+
+        likely issue with route manager or netview routing / ...
+        just depends on how the packet is sent
+
+    Appears that RouteManager
+    
+    windows fixes
+
     dump new game data packages
         the current ones are VERY outdated
 
-        
+
 
     start entering other classes
         remove raw & references (replace with std::reference_wrapper / pointer / smarts as needed)
