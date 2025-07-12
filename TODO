@@ -8,6 +8,13 @@ TODO
         likely issue with route manager or netview routing / ...
         just depends on how the packet is sent
 
+        - Mumanoid blocking is networked as:
+            nview ZDO bool (int), "IsBlocking"
+            zanim ZDO bool (int), "blocking" >>> via Unity Internal Hash
+
+            so, possibly something wrong with animation hash / revising
+
+
     Appears that RouteManager
     
     windows fixes

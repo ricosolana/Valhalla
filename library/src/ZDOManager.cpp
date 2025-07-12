@@ -830,6 +830,7 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
     if (!flush && sendQueueSize > threshold)
         return false;
 
+    // if very little space remaining, skip
     auto availableSpace = threshold - sendQueueSize;
     if (availableSpace < AVL_SETTINGS.zdoMinCongestion)
         return false;
@@ -914,10 +915,10 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
         auto time = Avledet()->Time();
 
         while (auto zdoid = reader.read<ZDOID>()) {
-            auto ownerRev = reader.read<std::uint16_t>();           // owner revision
-            auto dataRev  = reader.read<std::uint32_t>();           // data revision
-            auto owner    = reader.read<std::int64_t>();            // owner
-            auto pos      = reader.read<Vector3f>();                // position
+            auto owner_rev = reader.read<std::uint16_t>();          // owner revision
+            auto data_rev  = reader.read<std::uint32_t>();          // data revision
+            auto owner     = reader.read<std::int64_t>();           // owner
+            auto pos       = reader.read<Vector3f>();               // position
 
             auto des = DataReader(reader.read<std::vector<char>>());// dont move this
 
@@ -928,24 +929,21 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 				.m_syncTime = time 
 			};*/
 
-            auto &&pair = this->_Instantiate(zdoid);
-
-            //auto&& zdo = ZDO(*pair.first);
-            auto &&zdo     = ZDO::make_reference(pair.first);
-            auto &&created = pair.second;
+            auto &&[zdo_itr, created] = this->_Instantiate(zdoid);
+            auto &&zdo                = ZDO::make_reference(zdo_itr);
 
             assert(zdoid == zdo->get_id());
 
             if (!created) {
                 // If the incoming data revision is at most older or equal to this revision, we do NOT need to deserialize
                 //	(because the data will be the same, or at the worst case, it will be outdated)
-                if (dataRev <= zdo->get_data_rev()) {
+                if (data_rev <= zdo->get_data_rev()) {
 
                     // If the owner has changed, keep a copy
-                    if (ownerRev > zdo->get_owner_rev()) {
+                    if (owner_rev > zdo->get_owner_rev()) {
                         zdo->_set_owner(owner);
-                        zdo->_get_revision().set_owner_rev(ownerRev);
-                        peer->m_zdos[zdoid] = {ZDO::Rev(dataRev, ownerRev), time};
+                        zdo->_get_revision().set_owner_rev(owner_rev);
+                        peer->m_zdos[zdoid] = {ZDO::Rev(data_rev, owner_rev), time};
                     }
                     continue;
                 }
@@ -957,7 +955,7 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 if (m_erasedZDOs.contains(zdoid)) {
                     m_destroySendList.push_back(zdoid);
 
-                    m_objectsByID.erase(pair.first);
+                    m_objectsByID.erase(zdo_itr);
                     continue;
                 }
             }
@@ -967,8 +965,8 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 
             //try {
             zdo->_set_owner(owner);
-            zdo->_get_revision().set_data_rev(dataRev);
-            zdo->_get_revision().set_owner_rev(ownerRev);
+            zdo->_get_revision().set_data_rev(data_rev);
+            zdo->_get_revision().set_owner_rev(owner_rev);
 
             // Unpack the ZDOs primary data
             zdo->unpack(des, 0);
@@ -982,17 +980,18 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 //	continue;
                 //}
 
-                zdo->_set_position(pos);//unrevised because is fresh zdo
-                _AddZDOToZone(zdo);
+                //zdo->_set_position(pos);//unrevised because is fresh zdo
+                //_AddZDOToZone(zdo);
+
                 m_objectsByPrefab[zdo->get_prefab_hash()].insert(zdo);
             } else {
                 //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::ZDOModified, peer, zdo, copy, pos)) {
                 //	zdo = std::move(copy);
                 //	continue;
                 //}
-
-                zdo->set_position(pos);
             }
+
+            zdo->set_position(pos);
 
             assert(_FindZDOContainer(zdo->get_zone()));
 

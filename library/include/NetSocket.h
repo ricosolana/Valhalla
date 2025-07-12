@@ -93,7 +93,6 @@ namespace avledet::network {
         Status get_status() override;
         int get_ping() override;
         int get_send_queue_size() override;
-        //std::tuple<float, float, int, float, float> get_connection_stats() override;
         std::tuple<float, float> get_connection_quality() override;
 
       private:

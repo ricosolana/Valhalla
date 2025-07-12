@@ -207,10 +207,10 @@ namespace avledet::network {
     {
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
-            LOG_TRACE_L2(AVL_LOGGER, "get_ping for {}, {}ms", get_host_name(), rt.m_nPing);
+            LOG_TRACE_L2(AVL_LOGGER, "get_ping, hostname {}, {}ms", get_host_name(), rt.m_nPing);
             return rt.m_nPing;
         } else {
-            LOG_TRACE_L2(AVL_LOGGER, "get_ping failed, hostname {}", get_host_name());
+            LOG_TRACE_L2(AVL_LOGGER, "get_ping fail, hostname {}", get_host_name());
         }
         return 0;
     }

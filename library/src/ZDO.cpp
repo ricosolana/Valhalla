@@ -187,7 +187,11 @@ void ZDO::_set_prefab_hash(avledet::util::Hash hash)
 // Set the owner of the ZDO without revising
 void ZDO::_set_owner(avledet::util::UserID owner)
 {
-    ZDO_OWNERS[m_id] = owner;
+    if (owner) {
+        ZDO_OWNERS[m_id] = owner;
+    } else {
+        ZDO_OWNERS.erase(m_id);
+    }
 }
 
 void ZDO::_set_position(Vector3f const &pos)
@@ -501,10 +505,8 @@ void ZDO::unpack(DataReader &reader, std::int32_t version)
     if (m_prefab_index == Prefab::NONE) {// Init once
         this->_set_prefab_hash(prefab_hash);
     } else {
-        // should always run if a version is provided (this assumes that the world is being loaded)
-#ifndef RUN_TESTS
-        assert(version == 0);
-#endif
+        // prefab index is set once for world loads,
+        //assert(version == 0);
     }
 
     //if ((num & 4096) > 0)

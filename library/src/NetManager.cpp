@@ -2,6 +2,7 @@
 //#include <openssl/md5.h>
 //#include <openssl/rand.h>
 #include <isteamgameserver.h>
+#include <quill/LogMacros.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "NetManager.h"
 #include "NetSocket.h"
 #include "RouteManager.h"
+#include "VUtils.h"
 #include "VUtilsRandom.h"
 #include "VUtilsResource.h"
 #include "WorldManager.h"
@@ -384,6 +386,11 @@ void INetManager::Update()
     // Update peers
     for (auto &&peer : m_connectedPeers) {
         try {
+            if (VUtils::run_periodic<struct log_trace_player_status>(1s)) {
+                LOG_TRACE_L1(AVL_LOGGER, "{}, {}, {}ms", peer->m_socket->get_host_name(),
+                             peer->m_socket->get_address(), peer->m_socket->get_ping());
+            }
+
             peer->update();
         } catch (std::runtime_error const &e) {
             LOG_WARNING(AVL_LOGGER, "Peer error");
@@ -392,17 +399,8 @@ void INetManager::Update()
         }
     }
 
-
     // Pump steam callbacks
     m_acceptor->update();
-    //if (AVL_SETTINGS.serverDedicated)
-    //    SteamGameServer_RunCallbacks();
-    //else
-    //    SteamAPI_RunCallbacks();
-
-    // doesnt seem to work
-    //AcceptorSteam::STEAM_NETWORKING_SOCKETS->RunCallbacks();
-
 
     // Cleanup
     {

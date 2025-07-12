@@ -367,7 +367,8 @@ class ZDO
         for (decltype(num3) i = 0; i < num3; i++) {
             int num4  = reader.read<avledet::util::Hash>();
             auto num5 = reader.read<T>();
-            if (!_try_convert(num4, num5)) {
+            // Run during network, or if conversion during world-load
+            if (!(version && _try_convert(num4, num5))) {
                 tree[num4] = num5;
             }
         }
