@@ -98,6 +98,7 @@ struct ServerSettings
     std::string serverPassword;
     bool serverPublic;
     bool serverDedicated;
+    bool TEST_serverTcp;
 
     bool playerWhitelist;
     std::uint32_t playerMax;

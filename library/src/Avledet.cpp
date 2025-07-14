@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 #ifdef _WIN32
-    //#include <winstring.h> //TODO getting many dumb errors 'LookuPContect' unknown override specifier'...
+//#include <winstring.h> //TODO getting many dumb errors 'LookuPContect' unknown override specifier'...
 #endif
 
 //#include <magic_enum.hpp> //TODO magic
@@ -365,6 +365,7 @@ void IAvledet::LoadFiles(bool reloading)
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
+            a(m_settings.TEST_serverTcp, server, "tcp", false, nullptr, reloading);
 
             /*
                 Player settings
@@ -895,7 +896,7 @@ bool IAvledet::update()
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     HeightmapBuilder()->Update();
 #endif
-    
+
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
     ScriptManager()->update();
 #endif

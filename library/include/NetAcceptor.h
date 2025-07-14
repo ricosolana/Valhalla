@@ -17,8 +17,8 @@ namespace avledet::network {
         static std::unique_ptr<IAcceptor> steam_user(bool is_lobby_server);
         static std::unique_ptr<IAcceptor> steam_dedicated(std::string bind_addr);
 
-        //static std::unique_ptr<Context> tcp_user();
-        //static std::unique_ptr<Context> tcp_dedicated(std::string bind_addr);
+        static std::unique_ptr<IAcceptor> tcp_user();
+        static std::unique_ptr<IAcceptor> tcp_dedicated(std::string bind_addr);
 
       public:
         virtual ~IAcceptor() = default;

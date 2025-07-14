@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <list>
 #include <memory>
 #include <optional>
 #include <queue>
 #include <string>
 
+#include <asio.hpp>
 #include <isteamfriends.h>
 #include <isteamnetworkingsockets.h>
 #include <steamnetworkingtypes.h>
@@ -15,7 +18,7 @@
 
 namespace avledet::network {
 
-    enum class Status
+    enum class Status : std::uint8_t
     {
         //Fresh,
         Connecting,
@@ -101,6 +104,56 @@ namespace avledet::network {
         std::string m_address;
         HSteamNetConnection m_conn {};
         Status m_status {};
+        bool const m_is_outbound;
+    };
+
+    class TcpSocket : public ISocket
+    {
+        friend class TCPAcceptor;
+
+      private:
+        void do_read_header();
+        void do_read_body();
+        void do_write_header(std::reference_wrapper<std::vector<char> const> packet);
+        void do_write_body(std::reference_wrapper<std::vector<char> const> packet);
+
+      public:
+        using Ptr = std::shared_ptr<TcpSocket>;
+
+        explicit TcpSocket(asio::ip::tcp::socket socket, bool is_outbound);
+        ~TcpSocket();
+
+        void close(bool linger) override;
+
+        std::vector<char> Recv() override;
+        void send(std::vector<char> buf) override;
+
+        std::string get_host_name() override;
+        std::string get_address() override;
+        bool is_outbound() override;
+
+        Status get_status() override;
+        int get_ping() override;
+        int get_send_queue_size() override;
+
+        //std::tuple<float, float, int, float, float> get_connection_stats() override {
+        //	return {};
+        //};
+
+        std::tuple<float, float> get_connection_quality() override;
+
+        void do_read();
+
+      private:
+        asio::ip::tcp::socket m_socket;           // 160 bytes
+        std::list<std::vector<char>> m_recv;      // 24 bytes
+        std::list<std::vector<char>> m_send;      // 24 bytes
+        std::vector<char> m_temp_read_bytes;      // 32 bytes
+        std::shared_mutex m_mux;                  // 8 bytes
+        std::uint32_t m_temp_read_size {};        // 4 bytes
+        std::uint32_t m_temp_write_size {};       // 4 bytes
+        std::atomic_uint32_t m_send_queue_size {};// 4 bytes
+        std::atomic<Status> m_status {};          // 1 bytes
         bool const m_is_outbound;
     };
 

@@ -24,8 +24,10 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ModManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetAcceptorSteamDedicated.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/NetAcceptorTCP.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/NetSocketSteam.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/NetSocketTcp.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Peer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Prefab.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/PrefabManager.cpp

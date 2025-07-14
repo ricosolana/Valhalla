@@ -153,7 +153,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
 
     // Important
     peer->Register(avledet::util::hashes::Rpc::C2S_PlayerData,
-                   [this](Peer::Ptr peer, avledet::util::ByteView pkg) {
+                   [](Peer::Ptr peer, avledet::util::ByteView pkg) {
                        //DataReader reader(pkg);
                        auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
 
@@ -250,7 +250,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         peer->ConsoleMessage("Saved the world");
     });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [this](Peer::Ptr peer) {
+    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [](Peer::Ptr peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -345,8 +345,13 @@ void INetManager::PostInit()
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    m_acceptor
-            = IAcceptor::steam_dedicated("0.0.0.0:" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
+    if (AVL_SETTINGS.TEST_serverTcp) {
+        m_acceptor
+                = IAcceptor::tcp_dedicated("0.0.0.0:" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
+    } else {
+        m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:"
+                                                + std::to_string(AVL_SETTINGS.serverPort));      // m_acceptor
+    }
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
