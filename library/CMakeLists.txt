@@ -59,6 +59,14 @@ if (NOT DEFINED AVL_DISCORD_INTEGRATION OR AVL_DISCORD_INTEGRATION)
     )
 endif()
 
+if(WIN32)
+    target_link_libraries(avledet_library
+        LINK_PRIVATE
+            # TODO SYSTEM?
+            iphlpapi # windows api, for my socket function get_ping()
+    )
+endif()
+
 target_link_libraries(avledet_library
     PUBLIC 
         Threads::Threads

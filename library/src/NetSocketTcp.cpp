@@ -13,6 +13,7 @@
 #endif
 
 #include "NetSocket.h"
+#include "Avledet.h"
 
 namespace avledet::network {
 
@@ -102,7 +103,24 @@ namespace avledet::network {
 
     std::string TcpSocket::get_address()
     {
-        return m_socket.remote_endpoint().address().to_string();
+        asio::error_code ec;
+
+        auto local  = m_socket.local_endpoint(ec);
+        if (ec) {
+            // error
+            std::cout << "error1: " << ec.message();
+            //LOG_ERROR(AVL_LOGGER, "error1: {}", ec.message());
+        }
+
+        auto remote = m_socket.remote_endpoint(ec);
+        if (ec) {
+            // error
+            std::cout << "error2: " << ec.message();
+        }
+
+        
+
+        return remote.address().to_string();
     }
 
     bool TcpSocket::is_outbound()
